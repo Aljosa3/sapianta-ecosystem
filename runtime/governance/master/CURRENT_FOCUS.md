@@ -1,0 +1,82 @@
+# SAPIANTA Current Focus
+
+## Document Role
+
+This is a canonical state document. It records the current authoritative development focus only.
+
+Historical milestone summaries remain append-only lineage documents.
+
+## Current Focus
+
+- server/demo branch
+
+Current milestone branch:
+- `feature/governance-evolution-loop`
+
+## Governance Foundation
+
+- Frozen
+- Stable
+- Dormant
+- Replay-safe
+- Observational only
+- Documentation-only
+
+ACTIVE has no runtime meaning. Current focus does not activate governance, runtime enforcement, policy execution, approval validation, arbitration, or automated reads.
+
+## Meta-Root Architecture Focus
+
+Architectural memory is now explicitly treated as meta-root memory for `/sapianta`.
+
+The existing `runtime/governance/master/` documents remain in place as the physical governance memory location, but they are not runtime execution and do not belong to the governed runtime kernel.
+
+Domain memory belongs to orchestration lineage. Runtime behavior, Decision Spine behavior, policy behavior, and domain activation remain outside the current focus.
+
+## Current Priorities
+
+- AI Decision Validator productization
+- cinematic enterprise demo
+- audit viewer polish
+- EU AI Act positioning
+- explainability UX
+- enterprise trust narrative
+
+## Dormant Domain Status
+
+- Trading remains dormant, validation-oriented, replay/simulation-oriented, partially implemented, not production-active, and not autonomous.
+- Explosion remains dormant and experimental. No formal Explosion domain currently exists; it is documented only as a conceptual latent acceleration layer and governance-dependent future layer.
+
+The Trading and Explosion investigation is finalized as research lineage only. It does not change current active focus.
+
+Persistence status: confirmed in workspace as documentation-only domain focus context.
+
+## Intentionally Not Being Worked On Now
+
+- Runtime governance activation
+- Trading activation
+- Live trading
+- Broker execution
+- Autonomous strategy execution
+- Explosion activation
+- Autonomous acceleration
+- Moving runtime files
+- Runtime repository restructuring
+- Decision Spine changes
+- Policy engine changes
+- Enforcement activation
+- Approval validation execution
+- Governance arbitration
+- Runtime-safe activation
+- Self-modifying governance
+- Autonomous governance execution
+- Automated ADR generation
+- Automated milestone generation
+- Automatic git commit or tag execution
+
+## Why This Focus Was Selected
+
+The governance memory foundation is stable enough to preserve lineage, constraints, maturity, boundaries, and continuity across future AI and human sessions.
+
+Primary development focus has shifted back to product clarity: making AI Decision Validator understandable, demonstrable, and credible for enterprise and EU AI Act-aligned evaluation.
+
+Server/demo work remains intentionally separated from governance activation so UI, demo, audit viewer, positioning, explainability UX, and enterprise trust narrative work can advance without implying active runtime governance.

@@ -1,0 +1,11 @@
+{
+  "/home/pisarna/work/sapianta/runtime/development/generated/generated_module.py": "MODULE",
+  "/home/pisarna/work/sapianta/runtime/development/generated/strategy_memory.py": "MODULE",
+  "/home/pisarna/work/sapianta/runtime/development/generated/test_module.py": "MODULE",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/gen_test_module.py": "MODULE",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/generated_module.py": "MODULE",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/strategy_memory.py": "MODULE",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/test_gen_test_module.py": "TEST",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/test_generated_module.py": "TEST",
+  "/home/pisarna/work/sapianta/sapianta_system/runtime/development/generated/test_strategy_memory.py": "TEST"
+}

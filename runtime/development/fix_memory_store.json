@@ -1,0 +1,6 @@
+{
+  "TypeError: missing argument": {
+    "strategy_a": 30,
+    "strategy_b": 4
+  }
+}
