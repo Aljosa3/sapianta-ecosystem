@@ -1,0 +1,3 @@
+#!/usr/bin/env python
+from sapianta_system.runtime.cli.sapianta_cli import main
+main()
