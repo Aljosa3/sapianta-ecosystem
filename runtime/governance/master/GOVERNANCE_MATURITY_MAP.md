@@ -171,6 +171,159 @@ Characteristics:
 Reason:
 The governance memory layer became meta-root memory for orchestration, architectural lineage, governance memory, roadmap state, ADR lineage, and domain memory. Its physical location under `runtime/governance/master/` must not be interpreted as runtime authority.
 
+### Governed Ecosystem Topology Layer
+
+Status:
+IMPLEMENTED AS DOCUMENTATION
+
+Maturity:
+LEVEL 1
+
+Components:
+- `ARCHITECTURE/ECOSYSTEM_TOPOLOGY_SPEC_v1.md`
+- `ARCHITECTURE/LAUNCHER_AUTHORITY_MODEL_v1.md`
+- `ARCHITECTURE/REPOSITORY_INTERACTION_CONTRACT_v1.md`
+- `ARCHITECTURE/GOVERNED_ORCHESTRATION_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_MODEL_v1.md`
+- `ARCHITECTURE/SANDBOX_AND_FACTORY_ISOLATION_v1.md`
+
+Characteristics:
+- documentation-only
+- deterministic
+- governance-aware
+- repository-authority clarifying
+- import-authority clarifying
+- mutation-authority clarifying
+- replay-lineage oriented
+- dormant future orchestration only
+- no runtime integration
+- no enforcement activation
+- no autonomous activation
+
+Reason:
+SAPIANTA is evolving from a single governed runtime toward a federated deterministic AI ecosystem. The topology layer records authority boundaries and future orchestration semantics without implementing or activating them.
+
+### Repository Interaction Flow Layer
+
+Status:
+IMPLEMENTED AS DOCUMENTATION
+
+Maturity:
+LEVEL 1
+
+Components:
+- `ARCHITECTURE/REPOSITORY_INTERACTION_FLOW_v1.md`
+- `ARCHITECTURE/DOMAIN_LIFECYCLE_MODEL_v1.md`
+- `ARCHITECTURE/FACTORY_PROPOSAL_FLOW_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
+Characteristics:
+- documentation-only
+- deterministic
+- lifecycle-oriented
+- proposal-flow oriented
+- runtime-acceptance-gate oriented
+- replay-lineage oriented
+- no lifecycle enforcement
+- no runtime acceptance tooling
+- no promotion automation
+- no runtime integration
+- no activation semantics changed
+
+Reason:
+The repository interaction flow layer extends the ecosystem topology foundation with artifact movement, lifecycle states, proposal isolation, acceptance requirements, and lineage propagation while preserving dormant activation semantics.
+
+### Governed Artifact Identity Layer
+
+Status:
+IMPLEMENTED AS DOCUMENTATION
+
+Maturity:
+LEVEL 1
+
+Components:
+- `ARCHITECTURE/ARTIFACT_IDENTITY_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_PROPAGATION_v1.md`
+- `ARCHITECTURE/PROMOTION_LINEAGE_CONTINUITY_v1.md`
+- `ARCHITECTURE/AUDIT_CONTINUITY_MODEL_v1.md`
+- `ARCHITECTURE/GOVERNED_ARTIFACT_INHERITANCE_v1.md`
+
+Characteristics:
+- documentation-only
+- deterministic
+- artifact-identity oriented
+- replay-lineage oriented
+- promotion-continuity oriented
+- audit-continuity oriented
+- evidence-inheritance oriented
+- no hashing implementation
+- no replay tooling
+- no audit tooling
+- no runtime integration
+- no activation semantics changed
+
+Reason:
+The governed artifact identity layer extends repository interaction and replay lineage architecture with deterministic identity, lineage continuity, audit reconstruction, and evidence inheritance while preserving authority separation and dormant activation semantics.
+
+### Lineage Integrity Hardening
+
+Status:
+IMPLEMENTED AS DOCUMENTATION
+
+Maturity:
+LEVEL 1
+
+Components:
+- `ARCHITECTURE/ARTIFACT_IDENTITY_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_PROPAGATION_v1.md`
+- `ARCHITECTURE/PROMOTION_LINEAGE_CONTINUITY_v1.md`
+- `ARCHITECTURE/AUDIT_CONTINUITY_MODEL_v1.md`
+- `ARCHITECTURE/GOVERNED_ARTIFACT_INHERITANCE_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_MODEL_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
+Characteristics:
+- documentation-only
+- deterministic
+- lineage-loss blocking
+- silent-truncation prohibiting
+- no runtime validator implementation
+- no enforcement activation
+- no runtime integration
+- no activation semantics changed
+
+Reason:
+Lineage loss must be treated as a governance integrity failure. Missing lineage must block governed promotion and must not be silently inferred, repaired, or replaced without explicit governance review and new evidence.
+
+### Governed Ecosystem Foundation Finalization
+
+Status:
+IMPLEMENTED AS DOCUMENTATION AND STABILIZED
+
+Maturity:
+LEVEL 1
+
+Components:
+- `ARCHITECTURE/FOUNDATION_FINALIZATION_v1.md`
+- `ARCHITECTURE/FOUNDATION_CANONICAL_SEMANTICS_v1.md`
+- `ARCHITECTURE/FOUNDATION_EXTENSION_RULES_v1.md`
+- `ARCHITECTURE/FOUNDATION_ANTI_DRIFT_RULES_v1.md`
+
+Characteristics:
+- documentation-only
+- deterministic
+- canonicalizing
+- extension-only
+- anti-drift oriented
+- interpretation-freezing
+- no new runtime semantics
+- no enforcement activation
+- no runtime integration
+- no activation semantics changed
+
+Reason:
+Foundation Phase v1 is complete and stabilized. Future architecture must extend the foundation and must not silently redefine topology, authority, lifecycle, factory, acceptance, replay, lineage, artifact identity, audit continuity, or lineage integrity semantics.
+
 ### Governance Foundations
 
 Status:

@@ -32,6 +32,32 @@ The existing `runtime/governance/master/` documents remain in place as the physi
 
 Domain memory belongs to orchestration lineage. Runtime behavior, Decision Spine behavior, policy behavior, and domain activation remain outside the current focus.
 
+## Ecosystem Topology Focus
+
+The governed ecosystem topology layer is documented as meta-root architecture memory.
+
+It defines repository federation, launcher authority concepts, replay lineage movement, sandbox isolation, and governed orchestration architecture as dormant future architecture. It does not implement launcher execution, runtime orchestration, imports, promotion automation, or activation semantics.
+
+## Repository Interaction Flow Focus
+
+The repository interaction flow layer documents domain lifecycle semantics, factory proposal flow, runtime acceptance gate requirements, and replay lineage propagation.
+
+This layer extends the ecosystem topology foundation without changing activation semantics. It does not implement lifecycle enforcement, acceptance tooling, promotion automation, runtime imports, or orchestration code.
+
+## Governed Artifact Identity Focus
+
+The governed artifact identity layer documents deterministic artifact identity, replay lineage propagation, promotion continuity, audit continuity, and governed artifact inheritance.
+
+This layer extends lineage architecture only. It does not implement hashing, replay tooling, audit tooling, acceptance automation, promotion automation, runtime integration, or activation behavior.
+
+## Foundation Finalization Focus
+
+The governed ecosystem foundation is finalized for Foundation Phase v1.
+
+Future work must extend foundation semantics and must not redefine topology, authority, lifecycle, factory, acceptance, replay, lineage, artifact identity, audit continuity, or lineage integrity semantics.
+
+This finalization does not implement orchestration, enforcement, automation, runtime integration, or activation behavior.
+
 ## Current Priorities
 
 - AI Decision Validator productization
@@ -61,6 +87,20 @@ Persistence status: confirmed in workspace as documentation-only domain focus co
 - Autonomous acceleration
 - Moving runtime files
 - Runtime repository restructuring
+- Launcher execution implementation
+- Runtime orchestration implementation
+- Repository import enforcement
+- Domain lifecycle enforcement
+- Runtime acceptance tooling
+- Artifact identity tooling
+- Audit continuity tooling
+- Governed artifact inheritance tooling
+- Replay lineage tooling
+- Foundation reinterpretation
+- Duplicate foundation semantic layers
+- Hidden authority semantics
+- Anti-drift tooling implementation
+- Factory promotion automation
 - Decision Spine changes
 - Policy engine changes
 - Enforcement activation

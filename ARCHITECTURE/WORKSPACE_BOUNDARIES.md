@@ -29,6 +29,12 @@ Authoritative meta-root documentation:
 Important clarification:
 `runtime/governance/master/` is physically located under `runtime/`, but its current architectural role is meta-root memory. It is not the governed runtime kernel and must not be treated as runtime execution.
 
+Repository interaction flow references:
+- `ARCHITECTURE/REPOSITORY_INTERACTION_FLOW_v1.md`
+- `ARCHITECTURE/DOMAIN_LIFECYCLE_MODEL_v1.md`
+- `ARCHITECTURE/FACTORY_PROPOSAL_FLOW_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
 ## GOVERNED RUNTIME ROOT
 
 Canonical root:

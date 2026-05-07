@@ -28,6 +28,38 @@ The authoritative meta-root architecture index is tracked in:
 - `ARCHITECTURE/CANONICAL_ROOTS.md`
 - `ARCHITECTURE/WORKSPACE_INTEGRITY_LAYER.md`
 
+The governed ecosystem topology layer is tracked in:
+- `ARCHITECTURE/ECOSYSTEM_TOPOLOGY_SPEC_v1.md`
+- `ARCHITECTURE/LAUNCHER_AUTHORITY_MODEL_v1.md`
+- `ARCHITECTURE/REPOSITORY_INTERACTION_CONTRACT_v1.md`
+- `ARCHITECTURE/GOVERNED_ORCHESTRATION_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_MODEL_v1.md`
+- `ARCHITECTURE/SANDBOX_AND_FACTORY_ISOLATION_v1.md`
+
+The repository interaction flow layer is tracked in:
+- `ARCHITECTURE/REPOSITORY_INTERACTION_FLOW_v1.md`
+- `ARCHITECTURE/DOMAIN_LIFECYCLE_MODEL_v1.md`
+- `ARCHITECTURE/FACTORY_PROPOSAL_FLOW_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
+The governed artifact identity and replay lineage continuity layer is tracked in:
+- `ARCHITECTURE/ARTIFACT_IDENTITY_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_PROPAGATION_v1.md`
+- `ARCHITECTURE/PROMOTION_LINEAGE_CONTINUITY_v1.md`
+- `ARCHITECTURE/AUDIT_CONTINUITY_MODEL_v1.md`
+- `ARCHITECTURE/GOVERNED_ARTIFACT_INHERITANCE_v1.md`
+
+Lineage integrity hardening rule:
+Silent lineage truncation is prohibited. Lineage loss is a governance integrity failure. Missing lineage blocks governed promotion. Lineage must not be silently inferred. Lineage recovery requires explicit governance review.
+
+The governed ecosystem foundation finalization layer is tracked in:
+- `ARCHITECTURE/FOUNDATION_FINALIZATION_v1.md`
+- `ARCHITECTURE/FOUNDATION_CANONICAL_SEMANTICS_v1.md`
+- `ARCHITECTURE/FOUNDATION_EXTENSION_RULES_v1.md`
+- `ARCHITECTURE/FOUNDATION_ANTI_DRIFT_RULES_v1.md`
+
+Foundation Phase v1 is stabilized. Future work must extend foundation semantics and must not redefine foundation semantics.
+
 ## Current Governance State
 
 Governance memory is stable, frozen, deterministic, replay-safe, dormant, and observational only.
@@ -67,6 +99,24 @@ Dormant domain state memory now exists for Trading and Explosion under `runtime/
 ## Stable Components
 
 - Meta-root architecture index under `ARCHITECTURE/`
+- Governed ecosystem topology specification layer
+- Launcher authority model documentation
+- Repository federation and interaction contract documentation
+- Repository interaction flow documentation
+- Domain lifecycle model documentation
+- Factory proposal flow documentation
+- Runtime acceptance gate documentation
+- Governed artifact identity model documentation
+- Replay lineage propagation documentation
+- Promotion lineage continuity documentation
+- Audit continuity model documentation
+- Governed artifact inheritance documentation
+- Governed ecosystem foundation finalization documentation
+- Foundation canonical semantics documentation
+- Foundation extension rules documentation
+- Foundation anti-drift rules documentation
+- Replay lineage movement model documentation
+- Sandbox and factory isolation documentation
 - Architectural memory structure under `runtime/governance/master/`
 - ADR lineage structure
 - Milestone categorization structure
@@ -148,6 +198,16 @@ Research lineage status: physically re-applied as documentation-only architectur
 
 Persistence status: confirmed in workspace as documentation-only domain lineage state.
 
+## Latest Infrastructure Milestone
+
+Latest infrastructure milestone: `GOVERNED_ECOSYSTEM_FOUNDATION_FINALIZATION_V1`
+
+Milestone file: `ARCHITECTURE/MILESTONES/infrastructure/GOVERNED_ECOSYSTEM_FOUNDATION_FINALIZATION_V1.md`
+
+Milestone tag: `governed-ecosystem-foundation-finalization-v1`
+
+Infrastructure lineage status: documentation-only governed ecosystem foundation finalization.
+
 ## Current Governance Maturity
 
 Current maturity:
@@ -164,6 +224,21 @@ Current maturity:
 - approval execution: NOT IMPLEMENTED
 - runtime integration: NOT IMPLEMENTED
 - governance arbitration: NOT IMPLEMENTED
+- ecosystem topology layer: LEVEL 1 documented
+- launcher authority model: LEVEL 1 documented future concept
+- repository federation model: LEVEL 1 documented
+- repository interaction flow layer: LEVEL 1 documented
+- domain lifecycle model: LEVEL 1 documented
+- factory proposal flow: LEVEL 1 documented
+- runtime acceptance gate: LEVEL 1 documented future concept
+- governed artifact identity layer: LEVEL 1 documented
+- replay lineage propagation: LEVEL 1 documented
+- promotion lineage continuity: LEVEL 1 documented
+- audit continuity model: LEVEL 1 documented
+- governed artifact inheritance: LEVEL 1 documented
+- lineage integrity hardening: LEVEL 1 documented
+- governed ecosystem foundation finalization: LEVEL 1 documented and stabilized
+- governed orchestration architecture: LEVEL 1 documented future concept
 - Trading domain: LEVEL 2 dormant validation/simulation domain
 - Explosion domain: LEVEL 1 conceptual latent acceleration domain
 

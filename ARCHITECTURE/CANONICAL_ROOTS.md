@@ -97,3 +97,24 @@ AI tooling must not infer authority from:
 - a path name alone
 - generated but unpersisted patch text
 - stale prior-session memory
+
+## Canonical Flow Layer References
+
+Repository interaction flow and lifecycle semantics:
+- `ARCHITECTURE/REPOSITORY_INTERACTION_FLOW_v1.md`
+- `ARCHITECTURE/DOMAIN_LIFECYCLE_MODEL_v1.md`
+- `ARCHITECTURE/FACTORY_PROPOSAL_FLOW_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
+These files are meta-root architecture memory. They do not implement runtime behavior.
+
+## Canonical Artifact Lineage References
+
+Governed artifact identity and lineage continuity:
+- `ARCHITECTURE/ARTIFACT_IDENTITY_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_PROPAGATION_v1.md`
+- `ARCHITECTURE/PROMOTION_LINEAGE_CONTINUITY_v1.md`
+- `ARCHITECTURE/AUDIT_CONTINUITY_MODEL_v1.md`
+- `ARCHITECTURE/GOVERNED_ARTIFACT_INHERITANCE_v1.md`
+
+These files are meta-root architecture memory. They do not implement hashing, replay tooling, audit tooling, or activation behavior.

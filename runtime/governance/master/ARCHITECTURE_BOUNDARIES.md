@@ -25,6 +25,10 @@ Runtime is not governance memory. Governance memory is not runtime execution. Do
 
 Canonical workspace boundaries are indexed under `ARCHITECTURE/`.
 
+The governed ecosystem topology layer is also indexed under `ARCHITECTURE/` and defines repository federation, launcher authority, repository interaction contracts, replay lineage movement, sandbox isolation, and future governed orchestration semantics.
+
+The governed ecosystem foundation finalization layer is indexed under `ARCHITECTURE/` and freezes Foundation Phase v1 interpretation. Future work must extend foundation semantics and must not redefine foundation semantics.
+
 ---
 
 # CORE DOMAIN SEPARATION
@@ -32,6 +36,13 @@ Canonical workspace boundaries are indexed under `ARCHITECTURE/`.
 SAPIANTA is intentionally divided into multiple architectural domains.
 
 These domains must remain explicitly separated unless future ADRs approve controlled integration.
+
+The broader workspace topology is also divided by repository authority:
+- meta root: ecosystem coordination and governance lineage
+- governed runtime: deterministic execution authority
+- domain roots: bounded capability repositories
+- factory root: sandbox-only proposal generation
+- governance memory: append-only lineage and architectural memory
 
 ---
 
@@ -175,6 +186,16 @@ Current enforced architectural boundaries:
 - no automatic governance activation
 - no automatic git execution
 - no runtime mutation through architectural memory
+- no factory authority over runtime
+- no domain authority over governance mutation
+- no launcher execution implied by topology documentation
+- no governed orchestration activation implied by repository federation documentation
+- no topology drift
+- no authority drift
+- no replay drift
+- no lineage drift
+- no activation drift
+- no governance reinterpretation drift
 
 ---
 

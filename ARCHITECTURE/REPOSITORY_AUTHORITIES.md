@@ -99,3 +99,24 @@ Forbidden:
 - Do not collapse historical lineage into canonical state documents.
 - Do not execute git commits, tags, pushes, or activation commands automatically.
 - Do not treat conversational plans as persisted filesystem changes.
+
+## Interaction Flow References
+
+Repository interaction flow, lifecycle states, factory proposal flow, and runtime acceptance gate semantics are documented in:
+- `ARCHITECTURE/REPOSITORY_INTERACTION_FLOW_v1.md`
+- `ARCHITECTURE/DOMAIN_LIFECYCLE_MODEL_v1.md`
+- `ARCHITECTURE/FACTORY_PROPOSAL_FLOW_v1.md`
+- `ARCHITECTURE/RUNTIME_ACCEPTANCE_GATE_v1.md`
+
+These references do not change repository authority.
+
+## Artifact Identity References
+
+Governed artifact identity, replay propagation, promotion continuity, audit continuity, and inheritance semantics are documented in:
+- `ARCHITECTURE/ARTIFACT_IDENTITY_MODEL_v1.md`
+- `ARCHITECTURE/REPLAY_LINEAGE_PROPAGATION_v1.md`
+- `ARCHITECTURE/PROMOTION_LINEAGE_CONTINUITY_v1.md`
+- `ARCHITECTURE/AUDIT_CONTINUITY_MODEL_v1.md`
+- `ARCHITECTURE/GOVERNED_ARTIFACT_INHERITANCE_v1.md`
+
+These references do not grant mutation authority, runtime authority, or governance activation authority.
