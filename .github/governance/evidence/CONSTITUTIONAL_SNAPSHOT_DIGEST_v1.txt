@@ -1,0 +1,22 @@
+CONSTITUTIONAL SNAPSHOT DIGEST v1
+
+Snapshot:
+constitutional-governance-finalize-v1.bundle
+
+Snapshot path:
+/home/pisarna/work/sapianta/snapshots/constitutional-governance-finalize-v1.bundle
+
+Replay tag:
+constitutional-governance-finalize-v1
+
+SHA256:
+6f8d5358b93da6ecadb86078ee3cb198f3302ea6ef2d7fe854b9c7bc87033e1a
+
+Purpose:
+Replay-safe constitutional governance recovery checkpoint.
+
+Status:
+IMMUTABLE SNAPSHOT
+
+Generated after:
+[FINALIZE] Constitutional governance architecture + conformance baseline v1
