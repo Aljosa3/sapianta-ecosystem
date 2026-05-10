@@ -1,0 +1,57 @@
+{
+  "acceptance_state": "ACCEPTED_BOUNDED_CAPABILITY_MEMORY",
+  "capability_id": "LOCALHOST_PREVIEW_RUNTIME_V1",
+  "constitutional_baseline": "constitutional-governance-finalize-v1",
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/GOVERNED_CAPABILITY_MEMORY_V1.md",
+    "docs/governance/GOVERNED_CAPABILITY_MEMORY_FINALIZATION_V1.md",
+    "docs/governance/GOVERNED_CAPABILITY_MEMORY_ACCEPTANCE_CRITERIA_V1.md",
+    "docs/governance/GOVERNED_CAPABILITY_SCOPE_LOCK_V1.md",
+    ".github/governance/evidence/GOVERNED_CAPABILITY_MEMORY_EVIDENCE_V1.md",
+    ".github/governance/finalize/GOVERNED_CAPABILITY_MEMORY_FINALIZE_MANIFEST_V1.json",
+    ".github/governance/finalize/GOVERNED_CAPABILITY_MEMORY_CERTIFICATION_V1.json",
+    "runtime/governance/capability_models.py",
+    "runtime/governance/capability_registry.py",
+    "tests/test_governed_capability_memory.py"
+  ],
+  "finalized_guarantees": [
+    "bounded operational trust semantics",
+    "scope-locked localhost preview capability",
+    "replay-visible approval lineage",
+    "deterministic capability evaluation",
+    "strict escalation-first semantics",
+    "revocable trust semantics",
+    "non-self-modifying registry semantics"
+  ],
+  "finalized_subsystem": "GOVERNED_CAPABILITY_MEMORY_V1",
+  "forbidden_authority": [
+    "deployment automation",
+    "autonomous runtime orchestration",
+    "daemon persistence",
+    "unrestricted shell execution",
+    "self-modifying permissions",
+    "unrestricted operational inheritance"
+  ],
+  "governance_status": "FINALIZED_BOUNDED_OPERATIONAL_CAPABILITY",
+  "known_limitations": [
+    "registry does not start servers",
+    "registry does not execute shell commands",
+    "registry does not deploy software",
+    "registry does not create persistent background services",
+    "registry does not provide autonomous scheduling"
+  ],
+  "locked_scope": {
+    "host": "127.0.0.1",
+    "lifecycle": [
+      "start",
+      "validate",
+      "stop"
+    ],
+    "runtime": "uvicorn",
+    "temporary": true,
+    "visual_validation": true
+  },
+  "milestone_id": "GOVERNED_CAPABILITY_MEMORY_FINALIZATION_V1"
+}
+

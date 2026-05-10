@@ -1,0 +1,25 @@
+{
+  "capability_id": "LOCALHOST_PREVIEW_RUNTIME_V1",
+  "certification_status": "CERTIFIED_BOUNDED_CAPABILITY",
+  "constitutional_constraints": [
+    "no deployment automation",
+    "no daemon persistence",
+    "no unrestricted shell execution",
+    "no autonomous runtime orchestration",
+    "no self-modifying governance",
+    "no unrestricted operational inheritance"
+  ],
+  "deterministic_timestamp": "NONE",
+  "evaluation_model": "deterministic_read_only_registry",
+  "finalized_subsystem": "GOVERNED_CAPABILITY_MEMORY_V1",
+  "replay_visibility_status": "PRESENT",
+  "revocation_status": "SUPPORTED",
+  "scope_lock_status": "LOCKED",
+  "test_status": {
+    "command": "pytest tests/test_governed_capability_memory.py",
+    "result": "PASSED",
+    "tests_passed": 7
+  },
+  "validation_status": "PASSED"
+}
+
