@@ -6,3 +6,6 @@ sapianta-domain-credit/
 artifacts/
 infrastructure/
 sapianta/
+
+# Replay-safe snapshot artifacts
+snapshots/*.bundle
