@@ -8,10 +8,19 @@ Historical milestone summaries remain append-only lineage documents.
 
 ## Current Focus
 
-- server/demo branch
+- Product 1 execution and enterprise demo productization
 
 Current milestone branch:
 - `feature/governance-evolution-loop`
+
+Current execution guardrails:
+- preserve deterministic semantics
+- preserve governance-first architecture
+- preserve replay safety
+- preserve audit lineage integrity
+- build on PC first
+- push stable states to GitHub
+- pull to server only for controlled demo updates
 
 ## Governance Foundation
 

@@ -1,0 +1,69 @@
+{
+  "certification_references": {
+    "conformance_evidence": ".github/governance/evidence/CONFORMANCE_EVIDENCE.md",
+    "conformance_report": ".github/governance/evidence/GOVERNANCE_CONFORMANCE_REPORT.json",
+    "conformance_report_hash": "0790499ee53f9a82e15225e15eff1c2637b7e60523fa38be0c921281abe4cbea",
+    "test_suite": "tests/test_governance_conformance.py"
+  },
+  "constitutional_scope": {
+    "controlled": [
+      "enforcement implementations",
+      "conformance rule expansion",
+      "governance reporting"
+    ],
+    "locked": [
+      "constitutional semantics",
+      "canonical layer meanings",
+      "invariant semantics",
+      "enforcement hierarchy semantics",
+      "governance lineage semantics"
+    ],
+    "outside_scope": [
+      "runtime behavior changes",
+      "governance redesign",
+      "autonomous mutation",
+      "broker or execution capability",
+      "AI reasoning"
+    ]
+  },
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md",
+    "docs/governance/CANONICAL_LAYER_MODEL.md",
+    "docs/governance/CONSTITUTIONAL_INVARIANTS.md",
+    "docs/governance/GOVERNANCE_ENFORCEMENT_HIERARCHY.md",
+    "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+    "docs/governance/GOVERNANCE_CONFORMANCE_SYSTEM_V1.md",
+    "runtime/governance/governance_conformance_engine.py",
+    "runtime/governance/conformance_rules.py",
+    "runtime/governance/conformance_models.py",
+    "tests/test_governance_conformance.py"
+  ],
+  "finalized_guarantees": [
+    "canonical constitutional taxonomy exists",
+    "canonical layer model exists",
+    "constitutional invariants are documented",
+    "governance enforcement hierarchy is documented",
+    "governance lineage model is documented",
+    "conformance verification exists",
+    "conformance output is deterministic",
+    "known governance drift remains visible"
+  ],
+  "finalized_subsystem": "constitutional_governance_subsystem",
+  "governance_status": "FINALIZED_WITH_KNOWN_PARTIAL_CONFORMANCE",
+  "known_limitations": [
+    "installed hook enforcement is weaker than documented governance hook expectations",
+    "conformance verification is evidence-oriented and not full formal verification",
+    "repository-wide constitutional enforcement remains distributed",
+    "documentation-only governance memory remains non-runtime activation",
+    "domain-specific constitutional enforcement remains scoped to its domain"
+  ],
+  "milestone_id": "CONSTITUTIONAL_GOVERNANCE_FINALIZATION_V1",
+  "replay_safe_references": [
+    "docs/governance/REPLAY_SAFE_VALIDATION.md",
+    "docs/governance/CONSTITUTIONAL_INVARIANTS.md",
+    "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+    ".github/governance/evidence/GOVERNANCE_CONFORMANCE_REPORT.json"
+  ]
+}
+

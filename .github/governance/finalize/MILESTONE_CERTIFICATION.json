@@ -1,0 +1,26 @@
+{
+  "certification_status": "CERTIFIED_WITH_LIMITATIONS",
+  "conformance_result": {
+    "checks_failed": 2,
+    "checks_passed": 18,
+    "critical_violations": 0,
+    "report_hash": "0790499ee53f9a82e15225e15eff1c2637b7e60523fa38be0c921281abe4cbea",
+    "status": "PARTIALLY_CONFORMANT",
+    "warnings": 1
+  },
+  "deterministic_timestamp": "NONE",
+  "evidence_integrity_status": "PRESENT",
+  "governance_validation_status": "PASSED_WITH_KNOWN_HOOK_DRIFT",
+  "known_limitations": [
+    "HOOK_MISMATCH at .git/hooks/pre-commit",
+    "HOOK_MISMATCH at sapianta_system/.git/hooks/pre-commit"
+  ],
+  "milestone_id": "CONSTITUTIONAL_GOVERNANCE_FINALIZATION_V1",
+  "replay_verification_status": "REPLAY_SAFE_EVIDENCE_PRESENT",
+  "test_status": {
+    "command": "pytest tests/test_governance_conformance.py",
+    "result": "PASSED",
+    "tests_passed": 5
+  }
+}
+
