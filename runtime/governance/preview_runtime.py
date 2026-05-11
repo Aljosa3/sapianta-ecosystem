@@ -14,8 +14,8 @@ from .capability_models import CapabilityDecision
 from .capability_registry import (
     LOCALHOST_PREVIEW_RUNTIME_V1,
     evaluate_capability_request,
-    stable_hash,
 )
+from .primitive_replay import build_deterministic_result_hash, build_replay_identity
 
 
 PREVIEW_APP_TARGET = "sapianta_system.sapianta_product.main:app"
@@ -186,21 +186,31 @@ def validate_preview_request(request: PreviewRuntimeRequest) -> PreviewRuntimeRe
         "approved": approved,
         "capability_id": request.capability_id,
         "command": list(command),
-        "command_hash": stable_hash(list(command)),
         "decision": decision,
         "escalation_required": escalation_required,
         "forbidden_boundary_checks": list(forbidden),
         "lifecycle": list(request.lifecycle),
-        "primitive_id": PRIMITIVE_ID,
         "reason": reason,
         "rejected": rejected,
-        "replay_lineage": list(REPLAY_LINEAGE),
-        "request_hash": stable_hash(request.to_dict()),
         "server_started": False,
-        "scope_hash": _scope_hash(),
+    }
+    replay_identity = build_replay_identity(
+        primitive_id=PRIMITIVE_ID,
+        request_payload=request.to_dict(),
+        command=command,
+        scope_payload=_scope_payload(),
+        replay_lineage=REPLAY_LINEAGE,
+    )
+    hash_payload = {
+        **base,
+        "command_hash": replay_identity["command_hash"],
+        "primitive_id": replay_identity["primitive_id"],
+        "replay_lineage": list(REPLAY_LINEAGE),
+        "request_hash": replay_identity["request_hash"],
+        "scope_hash": replay_identity["scope_hash"],
     }
     return PreviewRuntimeResult(
-        primitive_id=PRIMITIVE_ID,
+        primitive_id=str(replay_identity["primitive_id"]),
         capability_id=request.capability_id,
         decision=decision,
         approved=approved,
@@ -210,11 +220,11 @@ def validate_preview_request(request: PreviewRuntimeRequest) -> PreviewRuntimeRe
         reason=reason,
         forbidden_boundary_checks=forbidden,
         lifecycle=tuple(request.lifecycle),
-        request_hash=stable_hash(request.to_dict()),
-        command_hash=stable_hash(list(command)),
-        scope_hash=_scope_hash(),
+        request_hash=str(replay_identity["request_hash"]),
+        command_hash=str(replay_identity["command_hash"]),
+        scope_hash=str(replay_identity["scope_hash"]),
         replay_lineage=REPLAY_LINEAGE,
-        deterministic_hash=stable_hash(base),
+        deterministic_hash=build_deterministic_result_hash(hash_payload),
     )
 
 
@@ -238,16 +248,26 @@ def _forbidden_boundary_checks(request: PreviewRuntimeRequest) -> tuple[str, ...
 
 
 def _scope_hash() -> str:
-    return stable_hash(
-        {
-            "allowed_command": list(PREVIEW_COMMAND),
-            "app_target": PREVIEW_APP_TARGET,
-            "capability_id": LOCALHOST_PREVIEW_RUNTIME_V1.capability_id,
-            "host": "127.0.0.1",
-            "lifecycle": list(PREVIEW_LIFECYCLE),
-            "port": 8010,
-            "primitive_id": PRIMITIVE_ID,
-            "runtime": "uvicorn",
-            "scope_id": SCOPE_ID,
-        }
+    return str(
+        build_replay_identity(
+            primitive_id=PRIMITIVE_ID,
+            request_payload={},
+            command=PREVIEW_COMMAND,
+            scope_payload=_scope_payload(),
+            replay_lineage=REPLAY_LINEAGE,
+        )["scope_hash"]
     )
+
+
+def _scope_payload() -> dict[str, object]:
+    return {
+        "allowed_command": list(PREVIEW_COMMAND),
+        "app_target": PREVIEW_APP_TARGET,
+        "capability_id": LOCALHOST_PREVIEW_RUNTIME_V1.capability_id,
+        "host": "127.0.0.1",
+        "lifecycle": list(PREVIEW_LIFECYCLE),
+        "port": 8010,
+        "primitive_id": PRIMITIVE_ID,
+        "runtime": "uvicorn",
+        "scope_id": SCOPE_ID,
+    }

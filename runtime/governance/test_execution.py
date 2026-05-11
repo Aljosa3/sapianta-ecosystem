@@ -7,10 +7,10 @@ shell commands, or grants arbitrary subprocess authority.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass
 from typing import Any
+
+from .primitive_replay import build_deterministic_result_hash, build_replay_identity
 
 
 ALLOWED_TEST_TARGET = "tests/test_governed_preview_runtime.py"
@@ -104,14 +104,6 @@ class GovernedTestExecutionResult:
         if include_hash:
             data["deterministic_hash"] = self.deterministic_hash
         return data
-
-
-def canonical_json(data: object) -> str:
-    return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-
-def stable_hash(data: object) -> str:
-    return hashlib.sha256(canonical_json(data).encode("utf-8")).hexdigest()
 
 
 def describe_test_execution_scope() -> dict[str, object]:
@@ -220,61 +212,75 @@ def _result(
     reason: str,
     forbidden_boundary_checks: tuple[str, ...],
 ) -> GovernedTestExecutionResult:
-    request_evidence = {
+    request_payload = {
         "command": list(command),
         "forbidden_boundary_checks": list(forbidden_boundary_checks),
         "primitive_id": PRIMITIVE_ID,
         "reason": reason,
         "scope_id": SCOPE_ID,
     }
-    request_hash = stable_hash(request_evidence)
-    command_hash = stable_hash(list(command))
-    scope_hash = _scope_hash()
+    replay_identity = build_replay_identity(
+        primitive_id=PRIMITIVE_ID,
+        request_payload=request_payload,
+        command=command,
+        scope_payload=_scope_payload(),
+        replay_lineage=REPLAY_LINEAGE,
+    )
     base = {
         "approved": approved,
         "command": list(command),
-        "command_hash": command_hash,
+        "command_hash": replay_identity["command_hash"],
         "escalation_required": escalation_required,
         "executed": False,
         "forbidden_boundary_checks": list(forbidden_boundary_checks),
-        "primitive_id": PRIMITIVE_ID,
+        "primitive_id": replay_identity["primitive_id"],
         "reason": reason,
         "replay_lineage": list(REPLAY_LINEAGE),
-        "request_hash": request_hash,
+        "request_hash": replay_identity["request_hash"],
         "rejected": rejected,
-        "scope_hash": scope_hash,
+        "scope_hash": replay_identity["scope_hash"],
     }
     return GovernedTestExecutionResult(
-        primitive_id=PRIMITIVE_ID,
+        primitive_id=str(replay_identity["primitive_id"]),
         approved=approved,
         escalation_required=escalation_required,
         rejected=rejected,
         command=command,
         reason=reason,
         forbidden_boundary_checks=forbidden_boundary_checks,
-        request_hash=request_hash,
-        command_hash=command_hash,
-        scope_hash=scope_hash,
+        request_hash=str(replay_identity["request_hash"]),
+        command_hash=str(replay_identity["command_hash"]),
+        scope_hash=str(replay_identity["scope_hash"]),
         replay_lineage=REPLAY_LINEAGE,
-        deterministic_hash=stable_hash(base),
+        deterministic_hash=build_deterministic_result_hash(base),
     )
 
 
 def _scope_hash() -> str:
-    return stable_hash(
-        {
-            "allowed_command": list(ALLOWED_TEST_COMMAND),
-            "forbidden": [
-                "full test suite by default",
-                "deployment",
-                "server start",
-                "shell chaining",
-                "arbitrary subprocess",
-                "destructive commands",
-                "background execution",
-                "production mutation",
-            ],
-            "primitive_id": PRIMITIVE_ID,
-            "scope_id": SCOPE_ID,
-        }
+    return str(
+        build_replay_identity(
+            primitive_id=PRIMITIVE_ID,
+            request_payload={},
+            command=ALLOWED_TEST_COMMAND,
+            scope_payload=_scope_payload(),
+            replay_lineage=REPLAY_LINEAGE,
+        )["scope_hash"]
     )
+
+
+def _scope_payload() -> dict[str, object]:
+    return {
+        "allowed_command": list(ALLOWED_TEST_COMMAND),
+        "forbidden": [
+            "full test suite by default",
+            "deployment",
+            "server start",
+            "shell chaining",
+            "arbitrary subprocess",
+            "destructive commands",
+            "background execution",
+            "production mutation",
+        ],
+        "primitive_id": PRIMITIVE_ID,
+        "scope_id": SCOPE_ID,
+    }
