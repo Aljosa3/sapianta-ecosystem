@@ -15,6 +15,15 @@ from typing import Any
 
 ALLOWED_TEST_TARGET = "tests/test_governed_preview_runtime.py"
 ALLOWED_TEST_COMMAND = ("pytest", ALLOWED_TEST_TARGET)
+PRIMITIVE_ID = "GOVERNED_TEST_EXECUTION_V1"
+SCOPE_ID = "TARGETED_PYTEST_PREVIEW_RUNTIME_ONLY"
+REPLAY_LINEAGE = (
+    "AGENTS.md",
+    "docs/governance/CODEX_TASK_EXECUTION_PROTOCOL_V1.md",
+    "docs/governance/GOVERNED_TEST_EXECUTION_V1.md",
+    "runtime/governance/test_execution.py",
+    "tests/test_governed_test_execution.py",
+)
 FORBIDDEN_TOKENS = (
     "&&",
     "||",
@@ -63,24 +72,34 @@ class GovernedTestExecutionRequest:
 
 @dataclass(frozen=True)
 class GovernedTestExecutionResult:
+    primitive_id: str
     approved: bool
     escalation_required: bool
     rejected: bool
     command: tuple[str, ...]
     reason: str
     forbidden_boundary_checks: tuple[str, ...]
+    request_hash: str
+    command_hash: str
+    scope_hash: str
+    replay_lineage: tuple[str, ...]
     deterministic_hash: str
     executed: bool = False
 
     def to_dict(self, include_hash: bool = True) -> dict[str, Any]:
         data: dict[str, Any] = {
             "approved": self.approved,
+            "command_hash": self.command_hash,
             "command": list(self.command),
             "escalation_required": self.escalation_required,
             "executed": self.executed,
             "forbidden_boundary_checks": list(self.forbidden_boundary_checks),
+            "primitive_id": self.primitive_id,
             "reason": self.reason,
             "rejected": self.rejected,
+            "replay_lineage": list(self.replay_lineage),
+            "request_hash": self.request_hash,
+            "scope_hash": self.scope_hash,
         }
         if include_hash:
             data["deterministic_hash"] = self.deterministic_hash
@@ -108,7 +127,10 @@ def describe_test_execution_scope() -> dict[str, object]:
             "background execution",
             "production mutation",
         ],
-        "primitive": "GOVERNED_TEST_EXECUTION_V1",
+        "primitive": PRIMITIVE_ID,
+        "replay_lineage": list(REPLAY_LINEAGE),
+        "scope_id": SCOPE_ID,
+        "scope_hash": _scope_hash(),
         "tests_executed_by_helper": False,
     }
 
@@ -198,22 +220,61 @@ def _result(
     reason: str,
     forbidden_boundary_checks: tuple[str, ...],
 ) -> GovernedTestExecutionResult:
+    request_evidence = {
+        "command": list(command),
+        "forbidden_boundary_checks": list(forbidden_boundary_checks),
+        "primitive_id": PRIMITIVE_ID,
+        "reason": reason,
+        "scope_id": SCOPE_ID,
+    }
+    request_hash = stable_hash(request_evidence)
+    command_hash = stable_hash(list(command))
+    scope_hash = _scope_hash()
     base = {
         "approved": approved,
         "command": list(command),
+        "command_hash": command_hash,
         "escalation_required": escalation_required,
         "executed": False,
         "forbidden_boundary_checks": list(forbidden_boundary_checks),
+        "primitive_id": PRIMITIVE_ID,
         "reason": reason,
+        "replay_lineage": list(REPLAY_LINEAGE),
+        "request_hash": request_hash,
         "rejected": rejected,
+        "scope_hash": scope_hash,
     }
     return GovernedTestExecutionResult(
+        primitive_id=PRIMITIVE_ID,
         approved=approved,
         escalation_required=escalation_required,
         rejected=rejected,
         command=command,
         reason=reason,
         forbidden_boundary_checks=forbidden_boundary_checks,
+        request_hash=request_hash,
+        command_hash=command_hash,
+        scope_hash=scope_hash,
+        replay_lineage=REPLAY_LINEAGE,
         deterministic_hash=stable_hash(base),
     )
 
+
+def _scope_hash() -> str:
+    return stable_hash(
+        {
+            "allowed_command": list(ALLOWED_TEST_COMMAND),
+            "forbidden": [
+                "full test suite by default",
+                "deployment",
+                "server start",
+                "shell chaining",
+                "arbitrary subprocess",
+                "destructive commands",
+                "background execution",
+                "production mutation",
+            ],
+            "primitive_id": PRIMITIVE_ID,
+            "scope_id": SCOPE_ID,
+        }
+    )

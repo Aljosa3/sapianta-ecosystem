@@ -1,0 +1,25 @@
+{
+  "certification_state": "CERTIFIED_BOUNDED_TEST_EXECUTION",
+  "deterministic_timestamp": "NONE",
+  "finalized_primitive": "GOVERNED_TEST_EXECUTION_V1",
+  "forbidden_authority_confirmed": [
+    "no unrestricted pytest execution introduced",
+    "no arbitrary shell execution introduced",
+    "no deployment automation introduced",
+    "no daemon orchestration introduced",
+    "no background execution introduced",
+    "no production mutation introduced",
+    "no CI/CD authority introduced",
+    "no autonomous operational authority introduced"
+  ],
+  "locked_prepared_command": "pytest tests/test_governed_preview_runtime.py",
+  "replay_visibility_status": "PRESENT",
+  "scope_lock_status": "LOCKED",
+  "test_status": {
+    "command": "pytest tests/test_governed_test_execution.py",
+    "result": "PASSED",
+    "tests_passed": 9
+  },
+  "validation_status": "PASSED"
+}
+

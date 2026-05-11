@@ -17,6 +17,21 @@ pytest tests/test_governed_preview_runtime.py
 
 The helper does not execute the command.
 
+## Replay Visibility Evidence
+
+The result model includes:
+
+- primitive ID;
+- request hash;
+- command hash;
+- scope hash;
+- replay lineage references;
+- deterministic result hash;
+- `executed: false`.
+
+These fields make repeated equivalent command-preparation evaluations
+replay-comparable without granting execution authority.
+
 ## Implementation Evidence
 
 Runtime helper:
@@ -59,4 +74,3 @@ The result model includes:
 - `executed: false`
 
 No test command is run by the helper.
-

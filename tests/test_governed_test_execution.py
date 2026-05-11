@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from runtime.governance.test_execution import (
     ALLOWED_TEST_COMMAND,
+    PRIMITIVE_ID,
     GovernedTestExecutionRequest,
     build_test_command,
     describe_test_execution_scope,
@@ -89,3 +90,15 @@ def test_result_hash_is_stable() -> None:
     assert first.deterministic_hash == second.deterministic_hash
     assert first.to_dict() == second.to_dict()
 
+
+def test_replay_visibility_fields_are_present_and_stable() -> None:
+    result = validate_test_execution_request(GovernedTestExecutionRequest())
+    repeated = validate_test_execution_request(GovernedTestExecutionRequest())
+    description = describe_test_execution_scope()
+
+    assert result.primitive_id == PRIMITIVE_ID
+    assert result.request_hash == repeated.request_hash
+    assert result.command_hash == repeated.command_hash
+    assert result.scope_hash == repeated.scope_hash
+    assert result.scope_hash == description["scope_hash"]
+    assert "runtime/governance/test_execution.py" in result.replay_lineage

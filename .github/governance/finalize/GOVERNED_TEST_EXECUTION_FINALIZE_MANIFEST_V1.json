@@ -1,0 +1,44 @@
+{
+  "acceptance_state": "ACCEPTED_BOUNDED_TEST_EXECUTION",
+  "certification_state": "CERTIFIED_BOUNDED_TEST_EXECUTION",
+  "constitutional_baseline": "constitutional-governance-finalize-v1",
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/GOVERNED_TEST_EXECUTION_V1.md",
+    "docs/governance/GOVERNED_TEST_EXECUTION_FINALIZATION_V1.md",
+    "docs/governance/GOVERNED_TEST_EXECUTION_ACCEPTANCE_CRITERIA_V1.md",
+    "docs/governance/GOVERNED_TEST_EXECUTION_SCOPE_LOCK_V1.md",
+    ".github/governance/evidence/GOVERNED_TEST_EXECUTION_EVIDENCE_V1.md",
+    ".github/governance/evidence/GOVERNED_TEST_EXECUTION_FINALIZATION_EVIDENCE_V1.md",
+    ".github/governance/finalize/GOVERNED_TEST_EXECUTION_FINALIZE_MANIFEST_V1.json",
+    ".github/governance/finalize/GOVERNED_TEST_EXECUTION_CERTIFICATION_V1.json",
+    "runtime/governance/test_execution.py",
+    "tests/test_governed_test_execution.py"
+  ],
+  "finalized_guarantees": [
+    "bounded governed test preparation",
+    "deterministic test validation semantics",
+    "replay-safe test execution preparation",
+    "capability-scoped test lifecycle structure",
+    "validation-first operational discipline",
+    "non-executing command preparation"
+  ],
+  "finalized_primitive": "GOVERNED_TEST_EXECUTION_V1",
+  "forbidden_authority": [
+    "unrestricted pytest execution",
+    "arbitrary shell execution",
+    "deployment automation",
+    "daemon orchestration",
+    "background execution",
+    "production mutation",
+    "CI/CD authority",
+    "autonomous operational authority"
+  ],
+  "locked_prepared_command": [
+    "pytest",
+    "tests/test_governed_preview_runtime.py"
+  ],
+  "milestone_id": "GOVERNED_TEST_EXECUTION_FINALIZATION_V1",
+  "runtime_execution_introduced": false
+}
+

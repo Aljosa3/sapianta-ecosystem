@@ -47,12 +47,21 @@ Execution remains a separate user/tooling action requiring explicit approval or 
 
 Validation output includes:
 
+- primitive ID;
 - approved/escalation state;
 - prepared command when approved;
 - reason;
 - forbidden boundary checks;
+- request hash;
+- command hash;
+- scope hash;
+- replay lineage references;
 - deterministic hash;
 - `executed: false`.
+
+Replay visibility is intentionally explicit. The primitive exposes enough stable
+identity to compare repeated equivalent evaluations without executing the test
+command.
 
 ## Relation to Governance Substrate
 
@@ -77,4 +86,3 @@ This primitive does not:
 - execute arbitrary shell commands;
 - manage background jobs;
 - mutate production runtime state.
-
