@@ -1,0 +1,64 @@
+{
+  "acceptance_state": "ACCEPTED_BOUNDED_CONVERGENCE_AWARE_REFINEMENT",
+  "certification_state": "CERTIFIED_BOUNDED_CONVERGENCE_AWARE_REFINEMENT",
+  "constitutional_baseline": "constitutional-governance-finalize-v1",
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/AGOL_ADAPTIVE_INTENT_AWARENESS_V1.md",
+    "docs/governance/AGOL_REFINEMENT_GUIDANCE_WORKFLOW_V1.md",
+    "docs/governance/AGOL_VISUAL_CONTINUITY_MEMORY_V1.md",
+    "docs/governance/AGOL_CONVERGENCE_AWARE_REFINEMENT_V1.md",
+    "docs/governance/AGOL_CONVERGENCE_AWARE_REFINEMENT_FINALIZATION_V1.md",
+    "docs/governance/AGOL_CONVERGENCE_AWARE_REFINEMENT_ACCEPTANCE_CRITERIA_V1.md",
+    "docs/governance/AGOL_CONVERGENCE_AWARE_REFINEMENT_SCOPE_LOCK_V1.md",
+    ".github/governance/evidence/AGOL_CONVERGENCE_AWARE_REFINEMENT_EVIDENCE_V1.md",
+    ".github/governance/evidence/AGOL_CONVERGENCE_AWARE_REFINEMENT_FINALIZATION_EVIDENCE_V1.md",
+    ".github/governance/finalize/AGOL_CONVERGENCE_AWARE_REFINEMENT_FINALIZE_MANIFEST_V1.json",
+    ".github/governance/finalize/AGOL_CONVERGENCE_AWARE_REFINEMENT_CERTIFICATION_V1.json",
+    "runtime/governance/agol_convergence_aware_refinement.py",
+    "tests/test_agol_convergence_aware_refinement.py"
+  ],
+  "finalized_capabilities": [
+    "convergence detection",
+    "stabilized region detection",
+    "continuity protection recommendation",
+    "freeze-zone recommendation",
+    "mutation pressure risk detection",
+    "preserve-existing-direction guidance",
+    "local-refinement-only guidance",
+    "replay-visible convergence guidance"
+  ],
+  "finalized_guarantees": [
+    "proposal-only behavior",
+    "deterministic convergence guidance",
+    "replay-visible refinement stabilization",
+    "user-authority preserving workflow",
+    "continuity protection remains advisory",
+    "local_refinement_only remains advisory",
+    "preserve_existing_direction remains non-binding",
+    "non-executing guidance semantics"
+  ],
+  "finalized_primitive": "AGOL_CONVERGENCE_AWARE_REFINEMENT_V1",
+  "forbidden_authority": [
+    "autonomous redesign",
+    "automatic UI freezing",
+    "automatic mutation blocking",
+    "runtime authority",
+    "orchestration authority",
+    "deployment authority",
+    "user intent override",
+    "autonomous execution",
+    "automatic Product 1 mutation"
+  ],
+  "milestone_id": "AGOL_CONVERGENCE_AWARE_REFINEMENT_FINALIZATION_V1",
+  "product_1_mutation_performed": false,
+  "replay_fields": [
+    "primitive_id",
+    "request_hash",
+    "command_hash",
+    "scope_hash",
+    "deterministic_hash",
+    "replay_lineage"
+  ],
+  "runtime_execution_introduced": false
+}
