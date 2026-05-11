@@ -1,0 +1,36 @@
+{
+  "capability_id": "LOCALHOST_PREVIEW_RUNTIME_V1",
+  "certification_state": "CERTIFIED_BOUNDED_PREVIEW_RUNTIME",
+  "deterministic_timestamp": "NONE",
+  "finalized_primitive": "GOVERNED_PREVIEW_RUNTIME_EXECUTION_V1",
+  "forbidden_authority_confirmed": [
+    "no server auto-start introduced",
+    "no deployment automation introduced",
+    "no daemon persistence introduced",
+    "no public runtime exposure introduced",
+    "no unrestricted subprocess execution introduced",
+    "no autonomous orchestration introduced",
+    "no production runtime lifecycle introduced"
+  ],
+  "lifecycle": [
+    "start",
+    "validate",
+    "stop"
+  ],
+  "locked_scope": {
+    "host": "127.0.0.1",
+    "port": 8010,
+    "runtime": "uvicorn",
+    "target": "sapianta_system.sapianta_product.main:app"
+  },
+  "prepared_command": "uvicorn sapianta_system.sapianta_product.main:app --host 127.0.0.1 --port 8010",
+  "replay_visibility_status": "PRESENT",
+  "scope_lock_status": "LOCKED",
+  "test_status": {
+    "command": "pytest tests/test_governed_preview_runtime.py",
+    "result": "PASSED",
+    "tests_passed": 9
+  },
+  "validation_status": "PASSED"
+}
+

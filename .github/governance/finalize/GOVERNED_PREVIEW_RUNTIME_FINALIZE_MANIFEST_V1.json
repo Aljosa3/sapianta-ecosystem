@@ -1,0 +1,59 @@
+{
+  "acceptance_state": "ACCEPTED_BOUNDED_PREVIEW_RUNTIME",
+  "capability_id": "LOCALHOST_PREVIEW_RUNTIME_V1",
+  "certification_state": "CERTIFIED_BOUNDED_PREVIEW_RUNTIME",
+  "constitutional_baseline": "constitutional-governance-finalize-v1",
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/GOVERNED_PREVIEW_RUNTIME_EXECUTION_V1.md",
+    "docs/governance/GOVERNED_PREVIEW_RUNTIME_FINALIZATION_V1.md",
+    "docs/governance/GOVERNED_PREVIEW_RUNTIME_ACCEPTANCE_CRITERIA_V1.md",
+    "docs/governance/GOVERNED_PREVIEW_RUNTIME_SCOPE_LOCK_V1.md",
+    ".github/governance/evidence/GOVERNED_PREVIEW_RUNTIME_EXECUTION_EVIDENCE_V1.md",
+    ".github/governance/evidence/GOVERNED_PREVIEW_RUNTIME_FINALIZATION_EVIDENCE_V1.md",
+    ".github/governance/finalize/GOVERNED_PREVIEW_RUNTIME_FINALIZE_MANIFEST_V1.json",
+    ".github/governance/finalize/GOVERNED_PREVIEW_RUNTIME_CERTIFICATION_V1.json",
+    "runtime/governance/preview_runtime.py",
+    "tests/test_governed_preview_runtime.py"
+  ],
+  "finalized_guarantees": [
+    "bounded localhost preview lifecycle semantics",
+    "replay-safe preview execution preparation",
+    "capability-scoped runtime preparation",
+    "deterministic preview validation",
+    "governed operational lifecycle structure",
+    "non-executing command preparation"
+  ],
+  "finalized_primitive": "GOVERNED_PREVIEW_RUNTIME_EXECUTION_V1",
+  "forbidden_authority": [
+    "server auto-start",
+    "deployment automation",
+    "daemon persistence",
+    "public runtime exposure",
+    "unrestricted subprocess execution",
+    "autonomous orchestration",
+    "production runtime lifecycle"
+  ],
+  "locked_scope": {
+    "host": "127.0.0.1",
+    "lifecycle": [
+      "start",
+      "validate",
+      "stop"
+    ],
+    "port": 8010,
+    "runtime": "uvicorn",
+    "target": "sapianta_system.sapianta_product.main:app"
+  },
+  "milestone_id": "GOVERNED_PREVIEW_RUNTIME_FINALIZATION_V1",
+  "prepared_command": [
+    "uvicorn",
+    "sapianta_system.sapianta_product.main:app",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "8010"
+  ],
+  "runtime_execution_introduced": false
+}
+
