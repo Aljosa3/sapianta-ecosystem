@@ -45,3 +45,15 @@ def test_non_execution_markers_remain_distinct_and_visible() -> None:
     assert preview["server_started"] is False
     assert test["executed"] is False
 
+
+def test_test_execution_request_hash_uses_full_request_payload() -> None:
+    runner_change = validate_test_execution_request(
+        GovernedTestExecutionRequest(runner="python")
+    )
+    target_change = validate_test_execution_request(
+        GovernedTestExecutionRequest(test_target="tests/test_governed_capability_memory.py")
+    )
+
+    assert runner_change.request_hash != target_change.request_hash
+    assert runner_change.command == ()
+    assert target_change.command == ()

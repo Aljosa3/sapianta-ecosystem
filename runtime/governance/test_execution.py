@@ -120,6 +120,7 @@ def describe_test_execution_scope() -> dict[str, object]:
             "production mutation",
         ],
         "primitive": PRIMITIVE_ID,
+        "primitive_id": PRIMITIVE_ID,
         "replay_lineage": list(REPLAY_LINEAGE),
         "scope_id": SCOPE_ID,
         "scope_hash": _scope_hash(),
@@ -142,6 +143,7 @@ def validate_test_execution_request(
     forbidden = _forbidden_boundary_checks(request)
     if forbidden:
         return _result(
+            request=request,
             approved=False,
             escalation_required=True,
             rejected=False,
@@ -152,6 +154,7 @@ def validate_test_execution_request(
 
     if request.runner != "pytest":
         return _result(
+            request=request,
             approved=False,
             escalation_required=True,
             rejected=False,
@@ -162,6 +165,7 @@ def validate_test_execution_request(
 
     if request.test_target != ALLOWED_TEST_TARGET:
         return _result(
+            request=request,
             approved=False,
             escalation_required=True,
             rejected=False,
@@ -171,6 +175,7 @@ def validate_test_execution_request(
         )
 
     return _result(
+        request=request,
         approved=True,
         escalation_required=False,
         rejected=False,
@@ -205,6 +210,7 @@ def _forbidden_boundary_checks(
 
 def _result(
     *,
+    request: GovernedTestExecutionRequest,
     approved: bool,
     escalation_required: bool,
     rejected: bool,
@@ -212,16 +218,9 @@ def _result(
     reason: str,
     forbidden_boundary_checks: tuple[str, ...],
 ) -> GovernedTestExecutionResult:
-    request_payload = {
-        "command": list(command),
-        "forbidden_boundary_checks": list(forbidden_boundary_checks),
-        "primitive_id": PRIMITIVE_ID,
-        "reason": reason,
-        "scope_id": SCOPE_ID,
-    }
     replay_identity = build_replay_identity(
         primitive_id=PRIMITIVE_ID,
-        request_payload=request_payload,
+        request_payload=request.to_dict(),
         command=command,
         scope_payload=_scope_payload(),
         replay_lineage=REPLAY_LINEAGE,
