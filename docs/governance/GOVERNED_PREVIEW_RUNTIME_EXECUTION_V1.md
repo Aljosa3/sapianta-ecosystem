@@ -100,6 +100,7 @@ This layer does not do that. It only validates a request and returns a prepared 
 
 Preview validation output includes:
 
+- primitive ID;
 - capability ID;
 - decision;
 - approved/escalation/rejected state;
@@ -107,6 +108,10 @@ Preview validation output includes:
 - reason;
 - lifecycle;
 - forbidden boundary checks;
+- request hash;
+- command hash;
+- scope hash;
+- replay lineage references;
 - deterministic hash;
 - `server_started: false`.
 
@@ -126,4 +131,3 @@ This layer does not:
 - authorize runtime mutation.
 
 These limitations are intentional governance boundaries.
-

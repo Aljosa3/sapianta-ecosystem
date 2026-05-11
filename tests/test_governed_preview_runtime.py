@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from runtime.governance.preview_runtime import (
     PREVIEW_COMMAND,
     PREVIEW_LIFECYCLE,
+    PRIMITIVE_ID,
     PreviewRuntimeRequest,
     build_preview_command,
     describe_preview_lifecycle,
@@ -90,3 +91,16 @@ def test_result_hash_is_stable() -> None:
     assert first.deterministic_hash == second.deterministic_hash
     assert first.to_dict() == second.to_dict()
 
+
+def test_replay_lineage_fields_are_present_and_stable() -> None:
+    result = validate_preview_request(PreviewRuntimeRequest())
+    repeated = validate_preview_request(PreviewRuntimeRequest())
+    description = describe_preview_lifecycle()
+
+    assert result.primitive_id == PRIMITIVE_ID
+    assert result.request_hash == repeated.request_hash
+    assert result.command_hash == repeated.command_hash
+    assert result.scope_hash == repeated.scope_hash
+    assert result.scope_hash == description["scope_hash"]
+    assert "runtime/governance/preview_runtime.py" in result.replay_lineage
+    assert "runtime/governance/capability_registry.py" in result.replay_lineage

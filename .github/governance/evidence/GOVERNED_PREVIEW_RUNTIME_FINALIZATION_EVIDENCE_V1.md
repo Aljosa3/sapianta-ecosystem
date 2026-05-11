@@ -22,6 +22,9 @@ It provides:
 - prepared command generation;
 - forbidden boundary checks;
 - escalation-first behavior;
+- explicit primitive identity;
+- request, command, and scope hashes;
+- replay lineage references;
 - replay-visible deterministic hashes;
 - lifecycle description.
 
@@ -84,4 +87,3 @@ Required validation:
 ## Known Limitations
 
 The primitive does not perform browser checks, screenshot validation, runtime health polling, process management, deployment, or daemon orchestration. These limitations are intentional governance boundaries.
-

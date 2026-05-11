@@ -49,6 +49,7 @@ Any deviation requires escalation.
 
 Preview runtime validation produces deterministic evidence:
 
+- primitive ID;
 - capability ID;
 - decision;
 - approved, rejected, or escalation state;
@@ -56,6 +57,10 @@ Preview runtime validation produces deterministic evidence:
 - lifecycle;
 - forbidden boundary checks;
 - reason;
+- request hash;
+- command hash;
+- scope hash;
+- replay lineage references;
 - deterministic hash;
 - `server_started: false`.
 
@@ -105,4 +110,3 @@ This finalization explicitly confirms:
 This primitive is an executable governance primitive under `EXECUTABLE_GOVERNANCE_PRIMITIVE_EVOLUTION_V1`.
 
 It converts repeated operational instructions about localhost preview execution into a bounded, deterministic, replay-visible helper without expanding runtime authority.
-

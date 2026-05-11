@@ -19,6 +19,8 @@ from .capability_registry import (
 
 
 PREVIEW_APP_TARGET = "sapianta_system.sapianta_product.main:app"
+PRIMITIVE_ID = "GOVERNED_PREVIEW_RUNTIME_EXECUTION_V1"
+SCOPE_ID = "LOCALHOST_UVICORN_PREVIEW_ONLY"
 PREVIEW_COMMAND = (
     "uvicorn",
     PREVIEW_APP_TARGET,
@@ -28,6 +30,15 @@ PREVIEW_COMMAND = (
     "8010",
 )
 PREVIEW_LIFECYCLE = ("start", "validate", "stop")
+REPLAY_LINEAGE = (
+    "AGENTS.md",
+    "docs/governance/CODEX_TASK_EXECUTION_PROTOCOL_V1.md",
+    "docs/governance/GOVERNED_CAPABILITY_MEMORY_V1.md",
+    "docs/governance/GOVERNED_PREVIEW_RUNTIME_EXECUTION_V1.md",
+    "runtime/governance/capability_registry.py",
+    "runtime/governance/preview_runtime.py",
+    "tests/test_governed_preview_runtime.py",
+)
 
 
 @dataclass(frozen=True)
@@ -66,6 +77,7 @@ class PreviewRuntimeRequest:
 
 @dataclass(frozen=True)
 class PreviewRuntimeResult:
+    primitive_id: str
     capability_id: str
     decision: str
     approved: bool
@@ -75,6 +87,10 @@ class PreviewRuntimeResult:
     reason: str
     forbidden_boundary_checks: tuple[str, ...]
     lifecycle: tuple[str, ...]
+    request_hash: str
+    command_hash: str
+    scope_hash: str
+    replay_lineage: tuple[str, ...]
     deterministic_hash: str
     server_started: bool = False
 
@@ -83,13 +99,18 @@ class PreviewRuntimeResult:
             "approved": self.approved,
             "capability_id": self.capability_id,
             "command": list(self.command),
+            "command_hash": self.command_hash,
             "decision": self.decision,
             "escalation_required": self.escalation_required,
             "forbidden_boundary_checks": list(self.forbidden_boundary_checks),
             "lifecycle": list(self.lifecycle),
+            "primitive_id": self.primitive_id,
             "reason": self.reason,
             "rejected": self.rejected,
+            "replay_lineage": list(self.replay_lineage),
+            "request_hash": self.request_hash,
             "server_started": self.server_started,
+            "scope_hash": self.scope_hash,
         }
         if include_hash:
             data["deterministic_hash"] = self.deterministic_hash
@@ -105,7 +126,11 @@ def describe_preview_lifecycle() -> dict[str, object]:
             "validate": "use the preview for bounded visual/runtime verification",
             "stop": "terminate the temporary preview process",
         },
+        "primitive_id": PRIMITIVE_ID,
+        "replay_lineage": list(REPLAY_LINEAGE),
         "server_started_by_helper": False,
+        "scope_hash": _scope_hash(),
+        "scope_id": SCOPE_ID,
     }
 
 
@@ -161,15 +186,21 @@ def validate_preview_request(request: PreviewRuntimeRequest) -> PreviewRuntimeRe
         "approved": approved,
         "capability_id": request.capability_id,
         "command": list(command),
+        "command_hash": stable_hash(list(command)),
         "decision": decision,
         "escalation_required": escalation_required,
         "forbidden_boundary_checks": list(forbidden),
         "lifecycle": list(request.lifecycle),
+        "primitive_id": PRIMITIVE_ID,
         "reason": reason,
         "rejected": rejected,
+        "replay_lineage": list(REPLAY_LINEAGE),
+        "request_hash": stable_hash(request.to_dict()),
         "server_started": False,
+        "scope_hash": _scope_hash(),
     }
     return PreviewRuntimeResult(
+        primitive_id=PRIMITIVE_ID,
         capability_id=request.capability_id,
         decision=decision,
         approved=approved,
@@ -179,6 +210,10 @@ def validate_preview_request(request: PreviewRuntimeRequest) -> PreviewRuntimeRe
         reason=reason,
         forbidden_boundary_checks=forbidden,
         lifecycle=tuple(request.lifecycle),
+        request_hash=stable_hash(request.to_dict()),
+        command_hash=stable_hash(list(command)),
+        scope_hash=_scope_hash(),
+        replay_lineage=REPLAY_LINEAGE,
         deterministic_hash=stable_hash(base),
     )
 
@@ -201,3 +236,18 @@ def _forbidden_boundary_checks(request: PreviewRuntimeRequest) -> tuple[str, ...
         checks.append("unapproved_app_target_forbidden")
     return tuple(sorted(checks))
 
+
+def _scope_hash() -> str:
+    return stable_hash(
+        {
+            "allowed_command": list(PREVIEW_COMMAND),
+            "app_target": PREVIEW_APP_TARGET,
+            "capability_id": LOCALHOST_PREVIEW_RUNTIME_V1.capability_id,
+            "host": "127.0.0.1",
+            "lifecycle": list(PREVIEW_LIFECYCLE),
+            "port": 8010,
+            "primitive_id": PRIMITIVE_ID,
+            "runtime": "uvicorn",
+            "scope_id": SCOPE_ID,
+        }
+    )

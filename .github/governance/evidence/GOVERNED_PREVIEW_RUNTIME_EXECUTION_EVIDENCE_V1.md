@@ -16,6 +16,9 @@ It supports:
 - capability registry validation;
 - prepared command generation;
 - forbidden boundary reporting;
+- primitive identity;
+- request, command, and scope hashes;
+- replay lineage references;
 - deterministic result hashes.
 
 It does not execute the command or start a server.
@@ -69,7 +72,11 @@ The helper does not start a server.
 
 The result model includes:
 
+- primitive ID;
+- request hash;
+- command hash;
+- scope hash;
+- replay lineage references;
 - `server_started: false`
 
 No deployment automation is introduced.
-
