@@ -1,0 +1,58 @@
+{
+  "acceptance_state": "ACCEPTED_BOUNDED_REFINEMENT_GUIDANCE",
+  "certification_state": "CERTIFIED_BOUNDED_REFINEMENT_GUIDANCE",
+  "constitutional_baseline": "constitutional-governance-finalize-v1",
+  "deterministic_timestamp": "NONE",
+  "finalized_artifacts": [
+    "docs/governance/AGOL_ADAPTIVE_INTENT_AWARENESS_V1.md",
+    "docs/governance/AGOL_REFINEMENT_GUIDANCE_WORKFLOW_V1.md",
+    "docs/governance/AGOL_REFINEMENT_GUIDANCE_FINALIZATION_V1.md",
+    "docs/governance/AGOL_REFINEMENT_GUIDANCE_ACCEPTANCE_CRITERIA_V1.md",
+    "docs/governance/AGOL_REFINEMENT_GUIDANCE_SCOPE_LOCK_V1.md",
+    ".github/governance/evidence/AGOL_ADAPTIVE_INTENT_AWARENESS_EVIDENCE_V1.md",
+    ".github/governance/evidence/AGOL_REFINEMENT_GUIDANCE_WORKFLOW_EVIDENCE_V1.md",
+    ".github/governance/evidence/AGOL_REFINEMENT_GUIDANCE_FINALIZATION_EVIDENCE_V1.md",
+    ".github/governance/finalize/AGOL_REFINEMENT_GUIDANCE_FINALIZE_MANIFEST_V1.json",
+    ".github/governance/finalize/AGOL_REFINEMENT_GUIDANCE_CERTIFICATION_V1.json",
+    "runtime/governance/agol_adaptive_intent.py",
+    "runtime/governance/agol_refinement_guidance.py",
+    "tests/test_agol_adaptive_intent.py",
+    "tests/test_agol_refinement_guidance.py"
+  ],
+  "finalized_capabilities": [
+    "refinement guidance",
+    "refinement recommendation",
+    "prompt augmentation assistance",
+    "bounded escalation suggestion",
+    "refinement mode interpretation"
+  ],
+  "finalized_guarantees": [
+    "proposal-only behavior",
+    "deterministic guidance output",
+    "replay-visible refinement guidance",
+    "user-authority preserving workflow",
+    "governance continuity preservation",
+    "non-executing guidance semantics"
+  ],
+  "finalized_workflow": "AGOL_REFINEMENT_GUIDANCE_WORKFLOW_V1",
+  "forbidden_authority": [
+    "autonomous redesign authority",
+    "automatic file mutation",
+    "runtime behavior authority",
+    "orchestration authority",
+    "deployment authority",
+    "user authority override",
+    "Product 1 automatic mutation"
+  ],
+  "milestone_id": "AGOL_REFINEMENT_GUIDANCE_FINALIZATION_V1",
+  "product_1_mutation_performed": false,
+  "replay_fields": [
+    "primitive_id",
+    "request_hash",
+    "command_hash",
+    "scope_hash",
+    "deterministic_hash",
+    "replay_lineage"
+  ],
+  "runtime_execution_introduced": false
+}
