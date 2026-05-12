@@ -1,0 +1,22 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "allowed_future_changes": [
+    "governance_policy_engine",
+    "policy_escalation_classes",
+    "approval_dashboard",
+    "approval_audit_view",
+    "human_identity_binding",
+    "bounded_execution_authorization_model"
+  ],
+  "forbidden_without_new_milestone": [
+    "approval_triggered_execution",
+    "automatic_approval",
+    "automatic_rejection",
+    "reflection_triggered_execution",
+    "self_approval",
+    "approval_bypassing_policy",
+    "approval_mutating_replay_evidence",
+    "approval_invoking_codex",
+    "recursive_task_generation"
+  ]
+}

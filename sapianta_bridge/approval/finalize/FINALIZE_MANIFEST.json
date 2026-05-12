@@ -1,0 +1,25 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "status": "FINALIZED",
+  "depends_on": [
+    "BRIDGE_PROTOCOL_V0_1_FINAL",
+    "BRIDGE_SCHEMA_VALIDATOR_INTEGRATION_V1",
+    "CODEX_BRIDGE_TRANSPORT_MVP_V1_FINAL",
+    "EXECUTION_OBSERVABILITY_V1_FINAL",
+    "REFLECTION_LAYER_V1_FINAL"
+  ],
+  "finalized_at": "2026-05-12T07:56:00+02:00",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "replay_safe": true,
+  "approval_boundary_present": true,
+  "human_governance_checkpoint_present": true,
+  "immutable_decision_evidence_present": true,
+  "execution_authority_present": false,
+  "automatic_approval_present": false,
+  "transport_invocation_present": false,
+  "codex_invocation_present": false,
+  "recursive_execution_present": false,
+  "runtime_authority_escalation_present": false,
+  "certification_level": "GOVERNANCE_FINALIZED_HUMAN_APPROVAL_BOUNDARY"
+}

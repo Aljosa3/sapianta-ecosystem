@@ -1,0 +1,14 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "replay_safe": true,
+  "approval_artifacts_immutable_after_decision": true,
+  "decision_artifacts_immutable": true,
+  "approval_lineage_recorded": true,
+  "reflection_lineage_recorded": true,
+  "task_lineage_recorded": true,
+  "decision_timestamp_recorded": true,
+  "approved_by_recorded": true,
+  "decision_reason_recorded": true,
+  "execution_authority_granted_always_false": true,
+  "non_deterministic_behavior_detected": false
+}

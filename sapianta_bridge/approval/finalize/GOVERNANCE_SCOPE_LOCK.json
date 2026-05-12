@@ -1,0 +1,28 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "scope_locked": true,
+  "included_capabilities": [
+    "approval_queue",
+    "pending_approval_storage",
+    "approved_rejected_decision_storage",
+    "immutable_governance_decision_artifacts",
+    "approval_cli",
+    "approval_history_reader",
+    "duplicate_approval_blocking",
+    "reflection_task_lineage_preservation"
+  ],
+  "excluded_capabilities": [
+    "execution_triggering",
+    "transport_invocation",
+    "codex_invocation",
+    "automatic_approval",
+    "automatic_rejection",
+    "recursive_execution",
+    "task_generation",
+    "reflection_orchestration",
+    "policy_engine",
+    "bounded_autonomy",
+    "runtime_authority_escalation",
+    "self_modifying_governance"
+  ]
+}

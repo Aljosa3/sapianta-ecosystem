@@ -1,0 +1,31 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "evidence_recorded_at": "2026-05-12T07:56:00+02:00",
+  "pytest": {
+    "executed": true,
+    "passed": true,
+    "command": "pytest tests/test_protocol_validator.py tests/test_lifecycle.py tests/test_hashing.py tests/test_lineage.py tests/test_enforcement.py tests/test_cli_validation.py tests/test_quarantine.py tests/test_bridge_listener.py tests/test_codex_runner.py tests/test_task_queue.py tests/test_task_lock.py tests/test_replay_log.py tests/test_runtime_status.py tests/test_replay_reader.py tests/test_execution_summary.py tests/test_state_transitions.py tests/test_queue_inspector.py tests/test_observability_cli.py tests/test_advisory_proposals.py tests/test_capability_delta.py tests/test_governance_risk.py tests/test_reflection_cli.py tests/test_reflection_engine.py tests/test_reflection_reader.py tests/test_approval_cli.py tests/test_approval_queue.py tests/test_approval_reader.py tests/test_approval_storage.py tests/test_governance_decisions.py",
+    "summary": "90 tests passed across protocol, enforcement, quarantine, bounded transport, observability, reflection, and human approval queue."
+  },
+  "py_compile": {
+    "executed": true,
+    "passed": true,
+    "command": "python -m py_compile over sapianta_bridge protocol, transport, observability, reflection, and approval modules"
+  },
+  "git_diff_check": {
+    "executed": true,
+    "passed": true,
+    "commands": [
+      "git diff --check",
+      "git -C sapianta_system diff --check"
+    ]
+  },
+  "approval_artifact_validation": true,
+  "governance_decision_artifact_validation": true,
+  "duplicate_approval_blocking": true,
+  "lineage_preservation": true,
+  "no_execution_authority": true,
+  "no_auto_approval": true,
+  "no_codex_invocation": true,
+  "behavior_changes_introduced_by_finalization": false
+}

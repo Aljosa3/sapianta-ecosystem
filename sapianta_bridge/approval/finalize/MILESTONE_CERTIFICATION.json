@@ -1,0 +1,16 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "certified": true,
+  "certification_type": "GOVERNANCE_HUMAN_APPROVAL_BOUNDARY",
+  "behavior_frozen": true,
+  "deterministic": true,
+  "fail_closed": true,
+  "replay_safe": true,
+  "human_governance_checkpoint": true,
+  "immutable_decision_evidence": true,
+  "reflection_remains_advisory": true,
+  "transport_remains_bounded": true,
+  "execution_authority_excluded": true,
+  "requires_new_milestone_for_policy_engine": true,
+  "requires_new_milestone_for_bounded_autonomy": true
+}

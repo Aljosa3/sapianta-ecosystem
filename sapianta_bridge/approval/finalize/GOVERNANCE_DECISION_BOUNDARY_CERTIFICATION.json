@@ -1,0 +1,13 @@
+{
+  "milestone_id": "HUMAN_APPROVAL_QUEUE_V1",
+  "governance_boundary_present": true,
+  "approval_required_for_future_execution_authority": true,
+  "reflection_remains_advisory": true,
+  "approval_records_decisions_only": true,
+  "execution_authority_granted_by_approval": false,
+  "approval_can_trigger_transport": false,
+  "approval_can_invoke_codex": false,
+  "approval_can_generate_tasks": false,
+  "self_approval_possible": false,
+  "automatic_approval_possible": false
+}
