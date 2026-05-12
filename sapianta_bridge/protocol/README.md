@@ -60,6 +60,42 @@ Validation fails closed for invalid JSON, invalid protocol versions, missing lin
 
 Malformed artifacts are never silently repaired.
 
+## Validator CLI
+
+The protocol validator is available as a deterministic command-line gate:
+
+```bash
+python -m sapianta_bridge.protocol.cli validate path/to/artifact.json
+```
+
+Exit codes:
+
+- `0`: artifact is valid and allowed to continue.
+- `1`: artifact is invalid and must not continue.
+- `2`: internal validator failure or invalid CLI usage.
+
+The CLI automatically classifies supported protocol artifacts, validates schema, hashes, lineage, protocol version, and lifecycle state fields, then emits deterministic JSON.
+
+## Enforcement Lifecycle
+
+`enforcement.py` wraps the schema validator and lifecycle validator into a mandatory governance gate. An artifact may continue only if it is a known supported artifact, schema-valid, hash-valid where hashes are required, lineage-valid, protocol-version-valid, and lifecycle-valid.
+
+Invalid, malformed, unknown, or uncertain artifacts are blocked with `required_state: "QUARANTINED"`.
+
+## Quarantine Philosophy
+
+`quarantine.py` preserves malformed or governance-unsafe artifacts without repair. Each quarantine record stores the original artifact bytes and a `quarantine.json` envelope containing a quarantine ID, timestamp, artifact path, reason, validation errors, and `sha256:` source hash.
+
+Quarantine categories are:
+
+- `malformed`
+- `invalid_hash`
+- `invalid_lineage`
+- `invalid_lifecycle`
+- `unknown_artifact`
+
+Quarantine exists so future execution layers cannot bypass deterministic protocol contracts. Quarantined artifacts are isolated, not fixed, and must not continue.
+
 ## Why Execution Is Excluded
 
 Execution transport comes after protocol stability. This milestone prevents artifact drift, hidden state transitions, non-replayable coordination, and uncontrolled AI execution paths before any bridge listener or runtime invocation exists.
@@ -70,4 +106,3 @@ Execution transport comes after protocol stability. This milestone prevents arti
 - Reflection layer
 - Governance orchestration
 - Bounded autonomy
-
