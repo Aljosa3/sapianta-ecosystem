@@ -1,0 +1,40 @@
+{
+  "milestone_id": "GOVERNANCE_POLICY_ENGINE_V1",
+  "evidence_recorded_at": "2026-05-12T08:12:43+02:00",
+  "full_pytest": {
+    "executed": true,
+    "passed": false,
+    "command": "pytest",
+    "summary": "Full repository pytest collection failed with 82 pre-existing collection errors outside the policy milestone surface, including generated invalid tests, missing optional domain packages, missing numpy, and import path errors in nested runtime suites."
+  },
+  "focused_bridge_governance_pytest": {
+    "executed": true,
+    "passed": true,
+    "command": "pytest tests/test_protocol_validator.py tests/test_lifecycle.py tests/test_hashing.py tests/test_lineage.py tests/test_enforcement.py tests/test_cli_validation.py tests/test_quarantine.py tests/test_bridge_listener.py tests/test_codex_runner.py tests/test_task_queue.py tests/test_task_lock.py tests/test_replay_log.py tests/test_runtime_status.py tests/test_replay_reader.py tests/test_execution_summary.py tests/test_state_transitions.py tests/test_queue_inspector.py tests/test_observability_cli.py tests/test_advisory_proposals.py tests/test_capability_delta.py tests/test_governance_risk.py tests/test_reflection_cli.py tests/test_reflection_engine.py tests/test_reflection_reader.py tests/test_approval_cli.py tests/test_approval_queue.py tests/test_approval_reader.py tests/test_approval_storage.py tests/test_governance_decisions.py tests/test_policy_engine.py tests/test_policy_rules.py tests/test_admissibility.py tests/test_escalation.py tests/test_policy_evidence.py tests/test_policy_reader.py tests/test_policy_cli.py",
+    "summary": "108 focused bridge governance tests passed across protocol, enforcement, quarantine, bounded transport, observability, reflection, approval, and policy classification."
+  },
+  "py_compile": {
+    "executed": true,
+    "passed": true,
+    "command": "python -m py_compile over sapianta_bridge protocol, transport, observability, reflection, approval, and policy modules"
+  },
+  "git_diff_check": {
+    "executed": true,
+    "passed": true,
+    "commands": [
+      "git diff --check",
+      "git -C sapianta_system diff --check"
+    ]
+  },
+  "admissibility_classification_verified": true,
+  "escalation_classification_verified": true,
+  "forbidden_capability_blocking_verified": true,
+  "policy_evidence_append_only_verified": true,
+  "no_execution_authority_verified": true,
+  "no_automatic_approval_verified": true,
+  "no_transport_invocation_verified": true,
+  "no_codex_invocation_verified": true,
+  "behavior_changes_introduced_by_finalization": false,
+  "finalization_complete": false,
+  "finalization_blocker": "Full repository pytest suite failed collection; fail-closed finalization withheld."
+}

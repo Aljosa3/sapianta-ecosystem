@@ -1,0 +1,23 @@
+{
+  "milestone_id": "GOVERNANCE_POLICY_ENGINE_V1",
+  "allowed_future_changes": [
+    "policy_escalation_classes",
+    "policy_dashboards",
+    "governance_audit_visualization",
+    "execution_authorization_model",
+    "bounded_authority_envelopes",
+    "policy_analytics",
+    "human_identity_binding"
+  ],
+  "forbidden_without_new_milestone": [
+    "policy_triggered_execution",
+    "automatic_approval",
+    "automatic_rejection",
+    "codex_invocation",
+    "transport_invocation",
+    "recursive_task_generation",
+    "self_modifying_governance",
+    "policy_bypass",
+    "execution_authority_escalation"
+  ]
+}

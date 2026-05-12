@@ -1,0 +1,15 @@
+{
+  "milestone_id": "GOVERNANCE_POLICY_ENGINE_V1",
+  "constitutional_policy_layer_present": true,
+  "classification_only_behavior": true,
+  "policy_cannot_execute": true,
+  "policy_cannot_approve": true,
+  "policy_cannot_trigger_transport": true,
+  "policy_cannot_invoke_codex": true,
+  "policy_cannot_generate_tasks": true,
+  "policy_cannot_mutate_governance": true,
+  "forbidden_capability_detection_present": true,
+  "escalation_model_present": true,
+  "execution_authority_granted": false,
+  "allowed_to_execute_automatically": false
+}

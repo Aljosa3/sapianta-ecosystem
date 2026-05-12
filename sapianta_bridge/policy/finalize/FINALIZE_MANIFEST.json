@@ -1,0 +1,27 @@
+{
+  "milestone_id": "GOVERNANCE_POLICY_ENGINE_V1",
+  "status": "VALIDATION_BLOCKED",
+  "depends_on": [
+    "BRIDGE_PROTOCOL_V0_1_FINAL",
+    "BRIDGE_SCHEMA_VALIDATOR_INTEGRATION_V1",
+    "CODEX_BRIDGE_TRANSPORT_MVP_V1_FINAL",
+    "EXECUTION_OBSERVABILITY_V1_FINAL",
+    "REFLECTION_LAYER_V1_FINAL",
+    "HUMAN_APPROVAL_QUEUE_V1_GOVERNANCE_FINAL"
+  ],
+  "finalized_at": "2026-05-12T08:12:43+02:00",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "replay_safe": true,
+  "policy_engine_present": true,
+  "constitutional_admissibility_present": true,
+  "escalation_model_present": true,
+  "forbidden_capability_detection_present": true,
+  "execution_authority_present": false,
+  "automatic_approval_present": false,
+  "transport_invocation_present": false,
+  "codex_invocation_present": false,
+  "recursive_execution_present": false,
+  "runtime_authority_escalation_present": false,
+  "certification_level": "FINALIZATION_BLOCKED_FULL_REPOSITORY_PYTEST_FAILURE"
+}

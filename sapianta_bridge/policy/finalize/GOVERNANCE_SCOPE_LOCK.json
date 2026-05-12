@@ -1,0 +1,27 @@
+{
+  "milestone_id": "GOVERNANCE_POLICY_ENGINE_V1",
+  "scope_locked": true,
+  "included_capabilities": [
+    "policy_engine",
+    "admissibility_classification",
+    "escalation_classification",
+    "forbidden_capability_detection",
+    "policy_evidence_artifacts",
+    "policy_reader",
+    "policy_cli",
+    "replay_safe_policy_lineage"
+  ],
+  "excluded_capabilities": [
+    "execution_authorization",
+    "execution_triggering",
+    "automatic_approval",
+    "automatic_rejection",
+    "transport_invocation",
+    "codex_invocation",
+    "recursive_execution",
+    "bounded_autonomy",
+    "policy_triggered_execution",
+    "governance_mutation",
+    "self_modifying_governance"
+  ]
+}
