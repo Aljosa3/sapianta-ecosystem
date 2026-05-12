@@ -1,0 +1,24 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "allowed_future_changes": [
+    "execution_observability",
+    "reflection_layer",
+    "human_approval_queue",
+    "systemd_service",
+    "bounded_retry_policy",
+    "transport_metrics",
+    "workspace_sandboxing"
+  ],
+  "forbidden_without_new_milestone": [
+    "recursive_task_generation",
+    "automatic_followup_execution",
+    "autonomous_planning",
+    "self_modifying_governance",
+    "auto_merge",
+    "auto_push",
+    "unbounded_subprocess_execution",
+    "implicit_state_transitions",
+    "bypassing_protocol_enforcement"
+  ],
+  "current_milestone_mutation_policy": "finalization artifacts only; transport behavior remains unchanged"
+}

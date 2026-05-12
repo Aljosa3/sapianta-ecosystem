@@ -1,0 +1,15 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "certified": true,
+  "certification_type": "GOVERNANCE_BOUNDED_TRANSPORT_FOUNDATION",
+  "behavior_frozen": true,
+  "deterministic": true,
+  "fail_closed": true,
+  "replay_safe": true,
+  "single_task_only": true,
+  "codex_non_authoritative": true,
+  "protocol_gate_required": true,
+  "requires_human_approval_for_future_autonomy_layers": true,
+  "runtime_authority_escalation_present": false,
+  "recursive_execution_present": false
+}

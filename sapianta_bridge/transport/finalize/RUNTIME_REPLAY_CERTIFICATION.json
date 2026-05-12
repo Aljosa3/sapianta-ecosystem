@@ -1,0 +1,17 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "replay_safe": true,
+  "append_only_replay_log": true,
+  "task_hash_recorded": true,
+  "result_hash_recorded": true,
+  "execution_timestamp_recorded": true,
+  "codex_exit_code_recorded": true,
+  "final_state_recorded": true,
+  "processing_duration_recorded": true,
+  "deterministic_transport_lifecycle": true,
+  "non_deterministic_behavior_detected": false,
+  "runtime_execution_present": true,
+  "runtime_authority_bounded": true,
+  "autonomous_chaining_present": false,
+  "codex_non_authoritative": true
+}

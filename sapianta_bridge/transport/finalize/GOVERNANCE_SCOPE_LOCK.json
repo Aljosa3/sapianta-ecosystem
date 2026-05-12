@@ -1,0 +1,26 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "included_capabilities": [
+    "task_queue_transport",
+    "single_task_locking",
+    "bounded_codex_subprocess_execution",
+    "canonical_result_generation",
+    "result_validation",
+    "append_only_replay_logging"
+  ],
+  "excluded_capabilities": [
+    "recursive_execution",
+    "auto_next_task_generation",
+    "reflection_orchestration",
+    "auto_repair",
+    "auto_merge",
+    "auto_push",
+    "systemd_daemonization",
+    "distributed_orchestration",
+    "multi_agent_planning",
+    "self_modifying_governance",
+    "runtime_authority_escalation"
+  ]
+}

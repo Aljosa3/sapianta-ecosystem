@@ -1,0 +1,23 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "status": "FINALIZED",
+  "depends_on": [
+    "BRIDGE_PROTOCOL_V0_1_FINAL",
+    "BRIDGE_SCHEMA_VALIDATOR_INTEGRATION_V1"
+  ],
+  "finalized_at": "2026-05-12T07:03:02+02:00",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "replay_safe": true,
+  "bounded_transport_present": true,
+  "execution_transport_present": true,
+  "runtime_authority_escalation_present": false,
+  "recursive_execution_present": false,
+  "auto_next_task_generation_present": false,
+  "auto_repair_present": false,
+  "auto_merge_present": false,
+  "auto_push_present": false,
+  "reflection_orchestration_present": false,
+  "systemd_daemon_present": false,
+  "certification_level": "GOVERNANCE_FINALIZED_BOUNDED_TRANSPORT"
+}

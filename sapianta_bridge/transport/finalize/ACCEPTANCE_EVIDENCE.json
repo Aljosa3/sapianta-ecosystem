@@ -1,0 +1,45 @@
+{
+  "milestone_id": "CODEX_BRIDGE_TRANSPORT_MVP_V1",
+  "evidence_recorded_at": "2026-05-12T07:03:02+02:00",
+  "pytest": {
+    "executed": true,
+    "passed": true,
+    "command": "pytest tests/test_protocol_validator.py tests/test_lifecycle.py tests/test_hashing.py tests/test_lineage.py tests/test_enforcement.py tests/test_cli_validation.py tests/test_quarantine.py tests/test_bridge_listener.py tests/test_codex_runner.py tests/test_task_queue.py tests/test_task_lock.py tests/test_replay_log.py",
+    "summary": "45 tests passed across protocol validation, enforcement, quarantine, bridge listener, Codex runner, task queue, task lock, and replay log."
+  },
+  "py_compile": {
+    "executed": true,
+    "passed": true,
+    "command": "python -m py_compile sapianta_bridge/__init__.py sapianta_bridge/protocol/__init__.py sapianta_bridge/protocol/schemas.py sapianta_bridge/protocol/validator.py sapianta_bridge/protocol/lifecycle.py sapianta_bridge/protocol/hashing.py sapianta_bridge/protocol/lineage.py sapianta_bridge/protocol/enforcement.py sapianta_bridge/protocol/cli.py sapianta_bridge/protocol/quarantine.py sapianta_bridge/transport/__init__.py sapianta_bridge/transport/bridge_listener.py sapianta_bridge/transport/codex_runner.py sapianta_bridge/transport/task_queue.py sapianta_bridge/transport/task_lock.py sapianta_bridge/transport/replay_log.py sapianta_bridge/transport/transport_config.py"
+  },
+  "git_diff_check": {
+    "executed": true,
+    "passed": true,
+    "commands": [
+      "git diff --check",
+      "git -C sapianta_system diff --check"
+    ]
+  },
+  "validation_scope": [
+    "protocol_validator",
+    "enforcement_gate",
+    "quarantine",
+    "bridge_listener",
+    "codex_runner",
+    "task_queue",
+    "task_lock",
+    "replay_log"
+  ],
+  "protocol_validation_gate_verified": true,
+  "lock_behavior_verified": true,
+  "bounded_subprocess_verified": true,
+  "result_validation_verified": true,
+  "replay_log_verified": true,
+  "transport_scope_verified": true,
+  "single_task_execution_verified": true,
+  "no_recursion_verified": true,
+  "no_auto_push_verified": true,
+  "no_auto_merge_verified": true,
+  "no_auto_repair_verified": true,
+  "behavior_changes_introduced_by_finalization": false
+}
