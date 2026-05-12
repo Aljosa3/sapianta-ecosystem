@@ -1,0 +1,22 @@
+{
+  "milestone_id": "BRIDGE_PROTOCOL_V0_1",
+  "allowed_future_changes": [
+    "bridge_transport",
+    "reflection_layer",
+    "schema_validator_integration",
+    "governance_orchestration",
+    "human_approval_queue",
+    "bounded_autonomy"
+  ],
+  "forbidden_without_new_milestone": [
+    "runtime_authority",
+    "self_modifying_governance",
+    "unbounded_recursion",
+    "autonomous_execution",
+    "implicit_state_transitions",
+    "execution_transport",
+    "automatic_approval",
+    "automatic_merge_or_push"
+  ],
+  "current_milestone_mutation_policy": "finalization artifacts only; protocol behavior remains unchanged"
+}

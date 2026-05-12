@@ -1,0 +1,14 @@
+{
+  "milestone_id": "BRIDGE_PROTOCOL_V0_1",
+  "certified": true,
+  "certification_type": "GOVERNANCE_PROTOCOL_FOUNDATION",
+  "protocol_version": "0.1",
+  "behavior_frozen": true,
+  "deterministic": true,
+  "fail_closed": true,
+  "replay_safe": true,
+  "scope_locked": true,
+  "requires_human_approval_for_future_execution_layers": true,
+  "execution_transport_present": false,
+  "runtime_authority_present": false
+}

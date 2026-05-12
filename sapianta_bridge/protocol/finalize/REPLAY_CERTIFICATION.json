@@ -1,0 +1,13 @@
+{
+  "milestone_id": "BRIDGE_PROTOCOL_V0_1",
+  "protocol_version": "0.1",
+  "replay_safe": true,
+  "deterministic_hashing": true,
+  "stable_schema_validation": true,
+  "canonical_json_required": true,
+  "lineage_required": true,
+  "non_deterministic_behavior_detected": false,
+  "runtime_execution_present": false,
+  "protocol_only": true,
+  "self_hash_rule": "self-hash fields are omitted from canonical hash input to preserve deterministic replay"
+}

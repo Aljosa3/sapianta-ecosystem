@@ -1,0 +1,34 @@
+{
+  "protocol_version": "0.1",
+  "task_id": "TASK-EXAMPLE-001",
+  "result_id": "RESULT-EXAMPLE-001",
+  "status": "PASS",
+  "execution_summary": "Protocol substrate artifacts were created without execution transport.",
+  "files_created": [
+    "sapianta_bridge/protocol/schemas.py"
+  ],
+  "files_modified": [],
+  "files_deleted": [],
+  "tests": {
+    "pytest": {
+      "passed": true
+    },
+    "py_compile": {
+      "passed": true
+    },
+    "git_diff_check": {
+      "passed": true
+    }
+  },
+  "errors": [],
+  "warnings": [],
+  "diff_summary": "Added deterministic protocol schemas and validators.",
+  "artifact_hashes": {
+    "result_sha256": "c993d79b1d3e71576d6e32cdf59a68f9720329e980e688930ff15ac6787aeb68",
+    "task_sha256": "c28948ea404bb1ae7db61dd6fb923606a02162e0c76f4b71f6c1a0fb2f460b94"
+  },
+  "lineage": {
+    "source_task_id": "TASK-EXAMPLE-001",
+    "parent_result_id": null
+  }
+}

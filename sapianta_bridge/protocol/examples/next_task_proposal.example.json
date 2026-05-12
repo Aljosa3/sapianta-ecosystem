@@ -1,0 +1,14 @@
+{
+  "protocol_version": "0.1",
+  "proposal_id": "NEXT-EXAMPLE-001",
+  "proposal_type": "FOLLOW_UP",
+  "recommended_action": "Design bridge transport as a future governed milestone.",
+  "rationale": "Transport should consume validated artifacts without changing protocol semantics.",
+  "approval_required": true,
+  "allowed_to_execute_automatically": false,
+  "lineage": {
+    "source_task_id": "TASK-EXAMPLE-001",
+    "source_result_id": "RESULT-EXAMPLE-001",
+    "source_analysis_context_id": "CTX-EXAMPLE-001"
+  }
+}

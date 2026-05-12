@@ -1,0 +1,26 @@
+{
+  "milestone_id": "BRIDGE_PROTOCOL_V0_1",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "excluded_capabilities": [
+    "subprocess_execution",
+    "runtime_transport",
+    "bridge_listener",
+    "recursive_autonomy",
+    "auto_execution",
+    "auto_approval",
+    "auto_repair",
+    "auto_merge",
+    "auto_push",
+    "reflection_automation",
+    "governance_mutation"
+  ],
+  "included_capabilities": [
+    "protocol_schemas",
+    "schema_validation",
+    "lifecycle_state_machine",
+    "artifact_hashing",
+    "lineage_validation",
+    "deterministic_evidence_contracts"
+  ]
+}

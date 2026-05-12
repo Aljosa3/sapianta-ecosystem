@@ -1,0 +1,32 @@
+{
+  "protocol_name": "SAPIANTA_CODEX_BRIDGE_PROTOCOL",
+  "protocol_version": "0.1",
+  "fail_closed": true,
+  "replay_required": true,
+  "lineage_required": true,
+  "supported_artifacts": [
+    "task.json",
+    "result.json",
+    "analysis_context.json",
+    "next_task_proposal.json"
+  ],
+  "lifecycle_states": [
+    "CREATED",
+    "VALIDATED",
+    "SENT_TO_CODEX",
+    "EXECUTING",
+    "RESULT_RECEIVED",
+    "ANALYSIS_CONTEXT_CREATED",
+    "INTERPRETED",
+    "NEXT_TASK_PROPOSED",
+    "CLOSED",
+    "VALIDATION_FAILED",
+    "EXECUTION_FAILED",
+    "TEST_FAILED",
+    "RESULT_MISSING",
+    "CONTEXT_MISSING",
+    "ESCALATED",
+    "BLOCKED",
+    "QUARANTINED"
+  ]
+}

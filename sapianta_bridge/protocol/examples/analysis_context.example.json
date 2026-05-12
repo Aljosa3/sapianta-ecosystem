@@ -1,0 +1,30 @@
+{
+  "protocol_version": "0.1",
+  "task_id": "TASK-EXAMPLE-001",
+  "analysis_context_id": "CTX-EXAMPLE-001",
+  "interpretation_ready": true,
+  "architectural_impact": {
+    "level": "LOW",
+    "summary": "Introduces schema-only protocol contracts."
+  },
+  "governance_impact": {
+    "level": "LOW",
+    "summary": "Improves replay-safe evidence structure without execution authority."
+  },
+  "risk_analysis": [],
+  "opportunities": [
+    "Future bridge transport can consume validated artifacts."
+  ],
+  "recommended_next_milestone": {
+    "milestone_id": "BRIDGE-TRANSPORT-V0.1",
+    "reason": "Transport should be implemented only after protocol validation stabilizes."
+  },
+  "artifact_hashes": {
+    "analysis_context_sha256": "20f5241a7aa397076bc8439f920270ce3fdab6b75c92ecdf1ce1d79489c17e96",
+    "source_result_sha256": "c993d79b1d3e71576d6e32cdf59a68f9720329e980e688930ff15ac6787aeb68"
+  },
+  "lineage": {
+    "source_task_id": "TASK-EXAMPLE-001",
+    "source_result_id": "RESULT-EXAMPLE-001"
+  }
+}

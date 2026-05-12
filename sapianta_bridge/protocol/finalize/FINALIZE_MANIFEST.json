@@ -1,0 +1,12 @@
+{
+  "milestone_id": "BRIDGE_PROTOCOL_V0_1",
+  "status": "FINALIZED",
+  "protocol_version": "0.1",
+  "finalized_at": "2026-05-12T06:41:44+02:00",
+  "scope_locked": true,
+  "behavior_locked": true,
+  "replay_safe": true,
+  "execution_transport_present": false,
+  "runtime_authority_present": false,
+  "certification_level": "GOVERNANCE_FINALIZED"
+}

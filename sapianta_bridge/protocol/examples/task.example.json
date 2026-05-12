@@ -1,0 +1,39 @@
+{
+  "protocol_version": "0.1",
+  "task_id": "TASK-EXAMPLE-001",
+  "milestone_id": "BRIDGE-PROTOCOL-V0.1",
+  "task_type": "PATCH",
+  "objective": "Create deterministic protocol artifacts without execution transport.",
+  "target_paths": [
+    "sapianta_bridge/protocol"
+  ],
+  "allowed_operations": [
+    "create schema files",
+    "create validation tests"
+  ],
+  "forbidden_operations": [
+    "subprocess execution",
+    "auto-merge",
+    "auto-push"
+  ],
+  "constraints": [
+    "fail closed",
+    "preserve replay evidence"
+  ],
+  "validation_required": {
+    "pytest": true,
+    "py_compile": true,
+    "git_diff_check": true
+  },
+  "expected_outputs": [
+    "result.json",
+    "analysis_context.json"
+  ],
+  "risk_level": "LOW",
+  "human_approval_required": true,
+  "lineage": {
+    "parent_task_id": null,
+    "source_result_id": null,
+    "source_reflection_id": null
+  }
+}
