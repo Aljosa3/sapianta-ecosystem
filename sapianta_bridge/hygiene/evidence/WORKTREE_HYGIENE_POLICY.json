@@ -1,0 +1,31 @@
+{
+  "policy_id": "GOVERNANCE_WORKTREE_HYGIENE_V1",
+  "status": "ACTIVE",
+  "allowed_artifact_classes": [
+    "CANONICAL_GOVERNANCE_ARTIFACT"
+  ],
+  "forbidden_artifact_classes": [
+    "TRANSIENT_RUNTIME_ARTIFACT",
+    "UNKNOWN_ARTIFACT"
+  ],
+  "required_gitignore_patterns": [
+    "__pycache__/",
+    "*.pyc",
+    ".pytest_cache/",
+    "*.pyo"
+  ],
+  "replay_pollution_rules": {
+    "transient_artifacts_blocked": true,
+    "unknown_artifacts_fail_closed": true,
+    "automatic_cleanup_allowed": false,
+    "history_rewrite_allowed": false,
+    "canonical_tag_mutation_allowed": false
+  },
+  "deterministic_lineage_rules": {
+    "governance_lineage_minimal": true,
+    "governance_lineage_explainable": true,
+    "governance_lineage_reproducible": true,
+    "transient_runtime_artifacts_excluded": true
+  },
+  "semantics_changed": false
+}

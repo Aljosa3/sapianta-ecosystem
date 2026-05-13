@@ -1,0 +1,1 @@
+"""Governance worktree hygiene enforcement."""

@@ -1,0 +1,36 @@
+{
+  "policy_id": "GOVERNANCE_WORKTREE_HYGIENE_V1",
+  "artifact_classes": {
+    "CANONICAL_GOVERNANCE_ARTIFACT": {
+      "allowed_in_governance_lineage": true,
+      "examples": [
+        "ADRs",
+        "governance manifests",
+        "replay evidence",
+        "deterministic test evidence",
+        "policy evidence",
+        "architecture evidence"
+      ]
+    },
+    "TRANSIENT_RUNTIME_ARTIFACT": {
+      "allowed_in_governance_lineage": false,
+      "examples": [
+        "__pycache__",
+        "*.pyc",
+        "*.pyo",
+        ".pytest_cache",
+        "runtime temp files",
+        "generated runtime noise",
+        "transient logs",
+        "ephemeral execution state",
+        "replay cache noise"
+      ]
+    },
+    "UNKNOWN_ARTIFACT": {
+      "allowed_in_governance_lineage": false,
+      "policy": "FAIL_CLOSED_EXPLICIT_CLASSIFICATION_REQUIRED"
+    }
+  },
+  "automatic_deletion_allowed": false,
+  "history_rewrite_allowed": false
+}

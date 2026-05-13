@@ -1,0 +1,21 @@
+{
+  "policy_id": "GOVERNANCE_WORKTREE_HYGIENE_V1",
+  "replay_pollution_policy": "FAIL_CLOSED",
+  "pollution_detected_when": [
+    "transient runtime artifact appears in candidate governance lineage",
+    "unknown artifact appears in candidate governance lineage",
+    "compiled Python artifact appears in candidate governance lineage",
+    "runtime noise appears in candidate governance lineage",
+    "generated execution output appears without explicit canonical classification"
+  ],
+  "polluting_artifact_classes": [
+    "TRANSIENT_RUNTIME_ARTIFACT",
+    "UNKNOWN_ARTIFACT"
+  ],
+  "required_response": {
+    "block_milestone_certification": true,
+    "requires_human_review": true,
+    "automatic_cleanup_performed": false,
+    "history_rewrite_allowed": false
+  }
+}

@@ -9,3 +9,9 @@ sapianta/
 
 # Replay-safe snapshot artifacts
 snapshots/*.bundle
+
+# Governance worktree hygiene: transient runtime/cache artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
