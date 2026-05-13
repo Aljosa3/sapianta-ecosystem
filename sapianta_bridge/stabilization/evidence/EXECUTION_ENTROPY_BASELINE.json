@@ -1,0 +1,18 @@
+{
+  "milestone_id": "REPO_WIDE_TEST_COLLECTION_STABILIZATION_V1",
+  "entropy_metrics": {
+    "repo_scan_frequency": 2,
+    "repeated_collect_only_invocations": 4,
+    "repeated_regeneration_cycles": 0,
+    "reasoning_repetition_events": 1,
+    "token_heavy_patterns": [
+      "collect_only",
+      "repo_wide_scan"
+    ]
+  },
+  "observability_mode": "PASSIVE_ONLY",
+  "influences_execution": false,
+  "influences_governance_decisions": false,
+  "adaptive_orchestration_present": false,
+  "provider_routing_present": false
+}

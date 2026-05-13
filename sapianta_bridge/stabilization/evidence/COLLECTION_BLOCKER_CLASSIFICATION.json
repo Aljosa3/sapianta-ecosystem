@@ -1,0 +1,52 @@
+{
+  "milestone_id": "REPO_WIDE_TEST_COLLECTION_STABILIZATION_V1",
+  "classification_model": [
+    "OPTIONAL_DEPENDENCY",
+    "STALE_GENERATED_ARTIFACT",
+    "NESTED_PROJECT_SURFACE",
+    "IMPORT_TOPOLOGY",
+    "REAL_TEST_FAILURE",
+    "UNKNOWN"
+  ],
+  "pre_stabilization_blocker_classes": [
+    {
+      "classification": "STALE_GENERATED_ARTIFACT",
+      "examples": [
+        "runtime/development/generated/test_llm_module.py",
+        "sapianta_system/runtime/development/generated/val_*/test_ai_firewall_module.py",
+        "sapianta_system/runtime/development/quarantine/test_llm_module*.py"
+      ],
+      "recommended_action": "targeted collection ignore for generated and quarantine runtime artifact roots"
+    },
+    {
+      "classification": "NESTED_PROJECT_SURFACE",
+      "examples": [
+        "sapianta_system/venv/lib/python3.12/site-packages/numpy/conftest.py",
+        "sapianta_system/runtime_platform/tests/*",
+        "sapianta_system/tests/runtime/*"
+      ],
+      "recommended_action": "root collection uses explicit testpaths and excludes nested virtualenvs"
+    },
+    {
+      "classification": "IMPORT_TOPOLOGY",
+      "examples": [
+        "tests/test_agol_adaptive_intent.py importing runtime.governance.*",
+        "sapianta-domain-trading/tests importing sapianta_domain_trading",
+        "sapianta-domain-credit/tests importing credit_domain"
+      ],
+      "recommended_action": "explicit pythonpath and root runtime package markers"
+    },
+    {
+      "classification": "OPTIONAL_DEPENDENCY",
+      "examples": [
+        "numpy",
+        "hypothesis",
+        "legacy sapianta_core proposal API"
+      ],
+      "recommended_action": "source-specific optional dependency guard or explicit project isolation"
+    }
+  ],
+  "unknown_blockers_remaining": 0,
+  "real_test_failures_hidden": false,
+  "broad_skip_strategy_used": false
+}

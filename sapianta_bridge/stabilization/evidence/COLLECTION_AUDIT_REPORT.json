@@ -1,0 +1,39 @@
+{
+  "milestone_id": "REPO_WIDE_TEST_COLLECTION_STABILIZATION_V1",
+  "evidence_recorded_at": "2026-05-13T00:00:00+02:00",
+  "collection_status": "PASSED",
+  "command": "python -m pytest --collect-only",
+  "collected_items": 398,
+  "skipped_modules": 1,
+  "total_blockers": 0,
+  "blockers": [],
+  "post_collection_test_execution": {
+    "command": "python -m pytest",
+    "status": "TEST_EXECUTION_FAILURES",
+    "passed": 347,
+    "failed": 51,
+    "skipped": 1,
+    "collection_crashes": 0,
+    "failure_scope": "sapianta-domain-trading execution-time governance artifact checks",
+    "failure_summary": [
+      "Missing domain finalization manifests and evidence artifacts.",
+      "Domain manifest/document hash mismatches.",
+      "No import or pytest collection crash remained after stabilization."
+    ]
+  },
+  "validation": {
+    "collect_only": "398 collected / 1 skipped / 0 collection crashes",
+    "focused_bridge_governance_suite": "108 passed",
+    "py_compile": "passed for sapianta_bridge Python modules",
+    "git_diff_check": "passed",
+    "sapianta_system_git_diff_check": "passed"
+  },
+  "pre_stabilization_status": "FAILED",
+  "pre_stabilization_observed_errors": 82,
+  "notes": [
+    "Root collection now uses explicit testpaths for root governance tests and domain test surfaces.",
+    "Generated runtime artifacts and quarantine surfaces are ignored by targeted collection rules.",
+    "Nested virtualenv collection is excluded by pytest norecursedirs.",
+    "Legacy optional credit constitutional flow is guarded with a source-specific optional API skip."
+  ]
+}
