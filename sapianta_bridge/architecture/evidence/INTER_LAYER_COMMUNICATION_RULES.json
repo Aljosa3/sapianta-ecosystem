@@ -1,0 +1,57 @@
+{
+  "model_id": "AGOL_LAYER_SEPARATION_MODEL_V1",
+  "undefined_flow_policy": "BLOCK",
+  "allowed_flow": [
+    {
+      "source": "USER",
+      "target": "INTERACTION_LAYER"
+    },
+    {
+      "source": "INTERACTION_LAYER",
+      "target": "GOVERNANCE_LAYER"
+    },
+    {
+      "source": "GOVERNANCE_LAYER",
+      "target": "EXECUTION_LAYER"
+    },
+    {
+      "source": "EXECUTION_LAYER",
+      "target": "VALIDATION_LAYER"
+    },
+    {
+      "source": "VALIDATION_LAYER",
+      "target": "REFLECTION_LAYER"
+    },
+    {
+      "source": "REFLECTION_LAYER",
+      "target": "INTERACTION_LAYER"
+    }
+  ],
+  "forbidden_flow": [
+    {
+      "source": "EXECUTION_LAYER",
+      "target": "USER",
+      "reason": "execution cannot communicate directly with user"
+    },
+    {
+      "source": "REFLECTION_LAYER",
+      "target": "EXECUTION_LAYER",
+      "reason": "reflection cannot trigger execution"
+    },
+    {
+      "source": "EXECUTION_LAYER",
+      "target": "GOVERNANCE_LAYER",
+      "reason": "execution cannot mutate governance"
+    },
+    {
+      "source": "VALIDATION_LAYER",
+      "target": "EXECUTION_LAYER",
+      "reason": "validation cannot silently retry execution"
+    },
+    {
+      "source": "INTERACTION_LAYER",
+      "target": "EXECUTION_LAYER",
+      "reason": "interaction cannot bypass governance"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "model_id": "AGOL_LAYER_SEPARATION_MODEL_V1",
+  "stabilization_baseline": "STABILIZATION_CERTIFICATION_EPOCH_V1",
+  "permanent_invariant": "INTERACTION_LAYER != EXECUTION_LAYER",
+  "layers": {
+    "INTERACTION_LAYER": {
+      "responsibilities": [
+        "receive_user_intent",
+        "create_structured_proposal",
+        "explain_outcomes",
+        "summarize_replay_evidence",
+        "provide_strategic_reasoning"
+      ],
+      "authority": "NONE_OVER_EXECUTION"
+    },
+    "GOVERNANCE_LAYER": {
+      "responsibilities": [
+        "intent_classification",
+        "admissibility_analysis",
+        "risk_classification",
+        "execution_envelope_creation",
+        "escalation_decisions",
+        "approval_requirements",
+        "replay_identity_creation"
+      ],
+      "authority": "CONTROLS_EXECUTION_ADMISSIBILITY"
+    },
+    "EXECUTION_LAYER": {
+      "responsibilities": [
+        "execute_bounded_execution_envelope",
+        "generate_artifacts",
+        "return_normalized_results"
+      ],
+      "authority": "ONLY_INSIDE_PROVIDED_ENVELOPE"
+    },
+    "VALIDATION_LAYER": {
+      "responsibilities": [
+        "guardian_validation",
+        "test_execution",
+        "policy_validation",
+        "certification",
+        "replay_safe_verification"
+      ],
+      "authority": "DETERMINES_ARTIFACT_VALIDITY"
+    },
+    "REFLECTION_LAYER": {
+      "responsibilities": [
+        "interpret_evidence",
+        "summarize_capability_deltas",
+        "summarize_governance_risk",
+        "propose_future_directions"
+      ],
+      "authority": "ADVISORY_ONLY"
+    }
+  },
+  "provider_independent_execution": {
+    "providers_replaceable": true,
+    "providers_non_authoritative": true,
+    "provider_identity_affects_governance_semantics": false,
+    "replay_evidence_format_stable_across_providers": true
+  }
+}

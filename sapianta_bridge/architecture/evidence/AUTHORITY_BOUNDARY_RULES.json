@@ -1,0 +1,87 @@
+{
+  "model_id": "AGOL_LAYER_SEPARATION_MODEL_V1",
+  "undefined_authority_policy": "BLOCK",
+  "no_silent_authority_inheritance": true,
+  "no_self_promotion": true,
+  "rules": {
+    "INTERACTION_LAYER": {
+      "allowed": [
+        "proposal_generation",
+        "interpretation",
+        "explanation",
+        "user_communication"
+      ],
+      "forbidden": [
+        "direct_execution",
+        "direct_filesystem_mutation",
+        "governance_override",
+        "certification",
+        "silent_task_execution",
+        "self_promote_authority"
+      ]
+    },
+    "GOVERNANCE_LAYER": {
+      "allowed": [
+        "allow",
+        "block",
+        "escalate",
+        "constrain_execution"
+      ],
+      "forbidden": [
+        "direct_execution",
+        "direct_code_mutation",
+        "hidden_orchestration",
+        "silent_approval_bypass",
+        "self_promote_authority"
+      ]
+    },
+    "EXECUTION_LAYER": {
+      "allowed": [
+        "bounded_execution",
+        "patch_generation",
+        "test_generation",
+        "artifact_creation"
+      ],
+      "forbidden": [
+        "self_authorize",
+        "governance_modification",
+        "approval_override",
+        "policy_mutation",
+        "autonomous_task_generation",
+        "replay_mutation",
+        "self_promote_authority"
+      ]
+    },
+    "VALIDATION_LAYER": {
+      "allowed": [
+        "certify",
+        "reject",
+        "produce_evidence",
+        "verify_determinism"
+      ],
+      "forbidden": [
+        "execution_planning",
+        "hidden_repair",
+        "silent_mutation",
+        "approval_override",
+        "silent_execution_retry",
+        "self_promote_authority"
+      ]
+    },
+    "REFLECTION_LAYER": {
+      "allowed": [
+        "advisory_reasoning",
+        "explanation",
+        "next_step_proposals"
+      ],
+      "forbidden": [
+        "execution",
+        "task_enqueueing",
+        "hidden_orchestration",
+        "governance_mutation",
+        "autonomous_escalation",
+        "self_promote_authority"
+      ]
+    }
+  }
+}
