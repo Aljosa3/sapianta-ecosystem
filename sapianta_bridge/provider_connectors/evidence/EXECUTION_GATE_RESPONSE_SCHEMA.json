@@ -1,0 +1,31 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "execution_gate_id",
+    "connector_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "transport_id",
+    "replay_identity",
+    "status",
+    "stdout",
+    "stderr",
+    "exit_code",
+    "execution_started_at",
+    "execution_ended_at",
+    "result_metadata",
+    "provider_response_is_governance_decision",
+    "arbitrary_command_execution_present",
+    "shell_execution_present",
+    "network_execution_present",
+    "routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_execution_present",
+    "replay_safe"
+  ],
+  "title": "EXECUTION_GATE_RESPONSE_SCHEMA",
+  "type": "object"
+}

@@ -1,0 +1,24 @@
+{
+  "fail_closed_on": [
+    "missing_connector_identity",
+    "missing_provider_identity",
+    "missing_envelope_identity",
+    "missing_invocation_identity",
+    "missing_replay_identity",
+    "provider_identity_mismatch",
+    "envelope_identity_mismatch",
+    "transport_identity_mismatch",
+    "replay_identity_mismatch",
+    "unsupported_connector_mode",
+    "unsupported_connector_type",
+    "malformed_provider_transport_request",
+    "malformed_provider_transport_response",
+    "routing_detected",
+    "retry_detected",
+    "fallback_detected",
+    "orchestration_detected",
+    "autonomous_execution_detected"
+  ],
+  "validation_model": "fail_closed",
+  "version": "FIRST_REAL_PROVIDER_CONNECTOR_V1"
+}

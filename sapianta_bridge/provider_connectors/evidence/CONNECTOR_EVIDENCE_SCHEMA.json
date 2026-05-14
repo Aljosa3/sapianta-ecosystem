@@ -1,0 +1,26 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "connector_id",
+    "connector_mode",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "transport_id",
+    "replay_identity",
+    "connector_request_valid",
+    "task_artifact_written",
+    "codex_cli_invoked",
+    "real_external_api_call_present",
+    "shell_execution_present",
+    "network_execution_present",
+    "routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_execution_present",
+    "replay_safe"
+  ],
+  "title": "CONNECTOR_EVIDENCE_SCHEMA",
+  "type": "object"
+}

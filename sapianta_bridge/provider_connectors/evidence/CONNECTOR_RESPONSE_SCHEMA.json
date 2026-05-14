@@ -1,0 +1,24 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "connector_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "transport_id",
+    "replay_identity",
+    "provider_transport_response",
+    "result_artifact_path",
+    "status",
+    "provider_response_is_governance_decision",
+    "connector_response_is_execution_authority",
+    "routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_execution_present",
+    "replay_safe"
+  ],
+  "title": "CONNECTOR_RESPONSE_SCHEMA",
+  "type": "object"
+}

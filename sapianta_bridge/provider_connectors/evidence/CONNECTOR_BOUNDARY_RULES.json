@@ -1,0 +1,23 @@
+{
+  "boundaries": {
+    "connector_artifact_is_execution_authority": false,
+    "connector_is_provider_router": false,
+    "connector_is_orchestration": false,
+    "provider_response_is_governance_decision": false,
+    "autonomous_execution_allowed": false,
+    "routing_allowed": false,
+    "retry_allowed": false,
+    "fallback_allowed": false,
+    "shell_execution_allowed": false,
+    "network_execution_allowed": false
+  },
+  "connector_mode": "PREPARE_ONLY",
+  "invariants": [
+    "CONNECTOR != ORCHESTRATION",
+    "CONNECTOR != PROVIDER_ROUTER",
+    "CONNECTOR_ARTIFACT != EXECUTION_AUTHORITY",
+    "PROVIDER_RESPONSE != GOVERNANCE_DECISION",
+    "NO_AUTONOMOUS_EXECUTION"
+  ],
+  "version": "FIRST_REAL_PROVIDER_CONNECTOR_V1"
+}

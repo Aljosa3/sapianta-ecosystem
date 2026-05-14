@@ -1,0 +1,28 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "connector_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "transport_id",
+    "replay_identity",
+    "provider_transport_request",
+    "bounded_task_artifact_path",
+    "expected_result_artifact_path",
+    "connector_mode",
+    "connector_binding",
+    "connector_artifact_is_execution_authority",
+    "provider_auto_selection_present",
+    "routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_execution_present",
+    "shell_execution_present",
+    "network_execution_present",
+    "replay_safe"
+  ],
+  "title": "CONNECTOR_REQUEST_SCHEMA",
+  "type": "object"
+}

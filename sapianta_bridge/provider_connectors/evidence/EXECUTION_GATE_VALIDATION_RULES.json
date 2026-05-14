@@ -1,0 +1,27 @@
+{
+  "fail_closed_on": [
+    "missing_execution_authorization",
+    "approved_by_not_human",
+    "provider_identity_mismatch",
+    "connector_identity_mismatch",
+    "envelope_identity_mismatch",
+    "invocation_identity_mismatch",
+    "transport_identity_mismatch",
+    "missing_replay_identity",
+    "workspace_escape",
+    "parent_traversal",
+    "missing_timeout",
+    "unbounded_timeout",
+    "unsupported_operation",
+    "arbitrary_command_execution_detected",
+    "shell_execution_detected",
+    "network_execution_detected",
+    "routing_detected",
+    "retry_detected",
+    "fallback_detected",
+    "orchestration_detected",
+    "autonomous_execution_detected"
+  ],
+  "validation_model": "fail_closed",
+  "version": "REAL_PROVIDER_CONNECTOR_EXECUTION_GATE_V1"
+}

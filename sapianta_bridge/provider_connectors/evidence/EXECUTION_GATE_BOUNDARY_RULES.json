@@ -1,0 +1,25 @@
+{
+  "boundaries": {
+    "arbitrary_command_execution_allowed": false,
+    "autonomous_execution_allowed": false,
+    "background_execution_allowed": false,
+    "concurrent_execution_allowed": false,
+    "fallback_allowed": false,
+    "memory_mutation_allowed": false,
+    "network_execution_allowed": false,
+    "orchestration_allowed": false,
+    "prepared_artifact_is_execution_authority": false,
+    "retry_allowed": false,
+    "routing_allowed": false,
+    "shell_execution_allowed": false
+  },
+  "execution_model": "single_provider_single_workspace_single_bounded_operation",
+  "invariants": [
+    "PREPARED PROVIDER ARTIFACT != EXECUTION AUTHORITY",
+    "EXECUTION_GATE != ORCHESTRATION",
+    "EXECUTION_GATE != PROVIDER_ROUTER",
+    "EXECUTION_GATE != SHELL FREEDOM",
+    "NO_AUTONOMOUS_EXECUTION"
+  ],
+  "version": "REAL_PROVIDER_CONNECTOR_EXECUTION_GATE_V1"
+}
