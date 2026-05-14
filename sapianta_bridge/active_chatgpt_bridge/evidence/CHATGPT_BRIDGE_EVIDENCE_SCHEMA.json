@@ -1,0 +1,20 @@
+{
+  "milestone": "ACTIVE_CHATGPT_BRIDGE_V1",
+  "required_fields": [
+    "bridge_id",
+    "bridge_status",
+    "ingress_bound",
+    "envelope_bound",
+    "session_bound",
+    "provider_invocation_bound",
+    "result_return_bound",
+    "response_created",
+    "replay_safe",
+    "copy_paste_reduction_ready"
+  ],
+  "orchestration_introduced": false,
+  "retry_introduced": false,
+  "provider_routing_introduced": false,
+  "autonomous_execution_introduced": false,
+  "hidden_memory_mutation_introduced": false
+}

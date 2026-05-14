@@ -1,0 +1,21 @@
+{
+  "milestone": "ACTIVE_CHATGPT_BRIDGE_V1",
+  "fail_closed": true,
+  "required_validations": [
+    "request_identity",
+    "replay_identity",
+    "ingress_binding",
+    "envelope_binding",
+    "session_binding",
+    "provider_identity_consistency",
+    "invocation_identity",
+    "result_lineage",
+    "lifecycle_correctness",
+    "evidence_completeness"
+  ],
+  "provider_routing_allowed": false,
+  "retries_allowed": false,
+  "fallback_allowed": false,
+  "autonomous_execution_allowed": false,
+  "hidden_execution_authority_allowed": false
+}

@@ -1,0 +1,14 @@
+{
+  "milestone": "ACTIVE_CHATGPT_BRIDGE_V1",
+  "active_chatgpt_bridge_is_orchestration": false,
+  "bridge_response_is_autonomous_interpretation": false,
+  "chatgpt_input_is_execution_authority": false,
+  "bridge_may_choose_providers": false,
+  "bridge_may_retry": false,
+  "bridge_may_fallback": false,
+  "bridge_may_schedule": false,
+  "bridge_may_create_follow_up_tasks": false,
+  "bridge_may_mutate_governance": false,
+  "bridge_may_mutate_replay_state": false,
+  "bridge_may_invoke_multiple_providers": false
+}

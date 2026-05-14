@@ -1,0 +1,19 @@
+{
+  "milestone": "ACTIVE_CHATGPT_BRIDGE_V1",
+  "required_fields": [
+    "bridge_id",
+    "session_id",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "result_status",
+    "interpretation_ready_payload",
+    "evidence_references",
+    "replay_identity"
+  ],
+  "follow_up_tasks_executed": false,
+  "autonomous_interpretation_present": false,
+  "provider_output_hidden": false,
+  "result_lineage_mutated": false,
+  "execution_authority_granted": false
+}

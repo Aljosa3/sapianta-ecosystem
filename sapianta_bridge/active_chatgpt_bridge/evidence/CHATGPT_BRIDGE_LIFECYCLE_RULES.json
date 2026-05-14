@@ -1,0 +1,24 @@
+{
+  "milestone": "ACTIVE_CHATGPT_BRIDGE_V1",
+  "success_path": [
+    "CREATED",
+    "INGRESS_BOUND",
+    "ENVELOPE_PROPOSED",
+    "SESSION_CREATED",
+    "PROVIDER_INVOKED",
+    "RESULT_RETURNED",
+    "RESPONSE_CREATED",
+    "EVIDENCE_RECORDED",
+    "COMPLETED"
+  ],
+  "failure_states": [
+    "BLOCKED",
+    "FAILED"
+  ],
+  "hidden_states_allowed": false,
+  "backwards_transitions_allowed": false,
+  "skipped_required_states_allowed": false,
+  "retry_loop_allowed": false,
+  "provider_fallback_allowed": false,
+  "multiple_invocations_allowed": false
+}
