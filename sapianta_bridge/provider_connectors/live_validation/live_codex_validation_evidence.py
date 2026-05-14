@@ -65,6 +65,19 @@ def live_codex_validation_evidence_v2(
         "codex run <prepared_task_artifact>",
     )
     evidence["shell_used"] = False
+    capture = (bounded_execution_result or {}).get("capture", {})
+    evidence["completion_state"] = capture.get("completion_state", "UNKNOWN")
+    evidence["process_state"] = capture.get("process_state", "UNKNOWN")
+    evidence["timeout_duration"] = capture.get("duration_seconds", 0)
+    evidence["stdout_sample"] = capture.get("stdout_sample", "")
+    evidence["stderr_sample"] = capture.get("stderr_sample", "")
+    evidence["exit_code"] = capture.get("exit_code")
+    evidence["process_terminated"] = capture.get("process_terminated", False)
+    evidence["completion_marker_detected"] = capture.get("completion_marker_detected", False)
+    evidence["bounded_result_captured"] = capture.get("bounded_result_captured", False)
+    evidence["graceful_termination_attempted"] = capture.get("graceful_termination_attempted", False)
+    evidence["graceful_termination_succeeded"] = capture.get("graceful_termination_succeeded", False)
+    evidence["suspected_blocker"] = capture.get("suspected_blocker", "")
     return evidence
 
 
@@ -98,6 +111,18 @@ def validate_live_codex_validation_evidence(evidence: Any) -> dict[str, Any]:
             errors.append({"field": "previous_blocked_contract", "reason": "V2 must preserve previous blocked contract"})
         if evidence.get("shell_used") is not False:
             errors.append({"field": "shell_used", "reason": "V2 must preserve shell=False"})
+        for field in (
+            "completion_state",
+            "process_state",
+            "timeout_duration",
+            "stdout_sample",
+            "stderr_sample",
+            "exit_code",
+            "process_terminated",
+            "suspected_blocker",
+        ):
+            if field not in evidence:
+                errors.append({"field": field, "reason": "V2 must expose process termination evidence"})
     for field in (
         "orchestration_introduced",
         "routing_introduced",

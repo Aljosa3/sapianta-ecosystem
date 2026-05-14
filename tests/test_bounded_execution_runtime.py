@@ -68,10 +68,13 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
     assert result["bounded_execution_status"] == "SUCCESS"
     capture = result["capture"]
     assert capture["completion_state"] == "COMPLETED"
+    assert capture["process_state"] == "TERMINATED_COMPLETED"
     assert result["completion_classification"]["completion_state"] == "COMPLETED"
+    assert result["process_classification"]["process_state"] == "TERMINATED_COMPLETED"
     stdout = json.loads(capture["stdout"])
     assert stdout["argv"][0] == "exec"
     assert "SAPIANTA_CODEX_VALIDATION_OK" in stdout["prompt"]
+    assert "AIGOL_TASK_COMPLETE" in stdout["prompt"]
     assert result["runtime_validation"]["contract_used"] == "codex exec <bounded_prompt>"
     state = result["runtime_validation"]["runtime_state"]
     assert stdout["home"] == state["runtime_state_dir"]
@@ -126,7 +129,34 @@ def test_bounded_execution_runtime_handles_timeout(tmp_path):
     assert result["capture"]["timed_out"] is True
     assert result["capture"]["exit_code"] == 124
     assert result["capture"]["completion_state"] == "TIMEOUT"
+    assert result["capture"]["process_state"] == "TIMEOUT_NO_COMPLETION"
+    assert result["capture"]["bounded_result_captured"] is False
     assert result["timeout_telemetry"]["timeout_exceeded"] is True
+
+
+def test_bounded_execution_runtime_captures_marker_then_terminates(tmp_path):
+    codex = tmp_path / "codex"
+    _write_codex_executable(
+        codex,
+        body="""\
+        #!/usr/bin/env python3
+        import sys
+        import time
+        print("SAPIANTA_CODEX_VALIDATION_OK AIGOL_TASK_COMPLETE", flush=True)
+        time.sleep(10)
+        """,
+    )
+    request = _gate_request(tmp_path, timeout_seconds=1)
+
+    result = execute_bounded_codex(gate_request=request, codex_executable=str(codex))
+
+    assert result["bounded_execution_status"] == "RESULT_CAPTURED_WITH_TERMINATION"
+    assert result["capture"]["process_state"] == "OUTPUT_COMPLETED_PROCESS_RUNNING"
+    assert result["capture"]["completion_marker_detected"] is True
+    assert result["capture"]["bounded_result_captured"] is True
+    assert result["capture"]["graceful_termination_attempted"] is True
+    assert result["bounded_execution_evidence"]["bounded_result_captured"] is True
+    assert result["bounded_execution_evidence"]["retry_present"] is False
 
 
 def test_bounded_execution_runtime_rejects_arbitrary_executable(tmp_path):

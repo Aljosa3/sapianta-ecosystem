@@ -34,9 +34,57 @@ from .bounded_runtime_state import (
     validate_bounded_runtime_state_env,
 )
 from .codex_completion_classifier import classify_codex_completion
+from .codex_process_termination import classify_codex_process_termination
 from .codex_timeout_telemetry import codex_timeout_telemetry
 from .execution_gate_request import EXECUTION_GATE_OPERATION_CODEX_CLI_RUN
 from .execution_gate_validator import validate_execution_gate_request
+
+
+GRACEFUL_TERMINATION_TIMEOUT_SECONDS = 2
+
+
+def _coerce_process_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def _terminate_process_safely(process: subprocess.Popen[str]) -> dict[str, Any]:
+    if process.poll() is not None:
+        return {
+            "attempted": False,
+            "succeeded": True,
+            "forced_kill": False,
+            "returncode": process.returncode,
+            "stdout": "",
+            "stderr": "",
+        }
+    process.terminate()
+    try:
+        stdout, stderr = process.communicate(timeout=GRACEFUL_TERMINATION_TIMEOUT_SECONDS)
+        return {
+            "attempted": True,
+            "succeeded": True,
+            "forced_kill": False,
+            "returncode": process.returncode,
+            "stdout": _coerce_process_text(stdout),
+            "stderr": _coerce_process_text(stderr),
+        }
+    except subprocess.TimeoutExpired as exc:
+        process.kill()
+        stdout, stderr = process.communicate()
+        return {
+            "attempted": True,
+            "succeeded": True,
+            "forced_kill": True,
+            "returncode": process.returncode,
+            "stdout": _coerce_process_text(exc.stdout) + _coerce_process_text(stdout),
+            "stderr": _coerce_process_text(exc.stderr) + _coerce_process_text(stderr),
+        }
 
 
 def validate_bounded_execution_runtime_request(
@@ -162,36 +210,62 @@ def execute_bounded_codex(
         execution_env = dict(os.environ)
         execution_env.update(runtime_validation["runtime_state_env"])
         started = time.monotonic()
-        completed = subprocess.run(
+        process = subprocess.Popen(
             runtime_validation["command"],
             cwd=gate_request["workspace_path"],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=gate_request["timeout_seconds"],
             shell=False,
-            check=False,
             env=execution_env,
         )
+        completed_stdout, completed_stderr = process.communicate(timeout=gate_request["timeout_seconds"])
         duration_seconds = int(time.monotonic() - started)
         classification = classify_codex_completion(
-            stdout=completed.stdout,
-            stderr=completed.stderr,
-            exit_code=completed.returncode,
+            stdout=completed_stdout,
+            stderr=completed_stderr,
+            exit_code=process.returncode if process.returncode is not None else 1,
             timed_out=False,
             duration_seconds=duration_seconds,
         )
+        process_classification = classify_codex_process_termination(
+            stdout=completed_stdout,
+            stderr=completed_stderr,
+            exit_code=process.returncode if process.returncode is not None else 1,
+            timed_out=False,
+            process_terminated=True,
+            idle_window_seconds=0,
+        )
         capture = capture_completed_execution(
-            stdout=completed.stdout,
-            stderr=completed.stderr,
-            exit_code=completed.returncode,
+            stdout=completed_stdout,
+            stderr=completed_stderr,
+            exit_code=process.returncode if process.returncode is not None else 1,
             duration_seconds=duration_seconds,
             completion_state=classification["completion_state"],
+            process_state=process_classification["process_state"],
             suspected_blocker=classification["suspected_blocker"],
+            completion_marker_detected=process_classification["completion_marker_detected"],
+            bounded_result_captured=process_classification["bounded_result_available"],
         ).to_dict()
-        status = "SUCCESS" if completed.returncode == 0 else "FAILED"
+        status = "SUCCESS" if process.returncode == 0 else "FAILED"
     except subprocess.TimeoutExpired as exc:
-        stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-        stderr = exc.stderr if isinstance(exc.stderr, str) else "bounded codex execution timed out"
+        stdout = _coerce_process_text(exc.stdout)
+        stderr = _coerce_process_text(exc.stderr)
+        process_classification = classify_codex_process_termination(
+            stdout=stdout,
+            stderr=stderr,
+            exit_code=124,
+            timed_out=True,
+            process_terminated=False,
+            idle_window_seconds=gate_request["timeout_seconds"],
+        )
+        termination = _terminate_process_safely(process)
+        if termination["stdout"]:
+            stdout += termination["stdout"]
+        if termination["stderr"]:
+            stderr += termination["stderr"]
+        if not stderr:
+            stderr = "bounded codex execution timed out"
         classification = classify_codex_completion(
             stdout=stdout,
             stderr=stderr,
@@ -204,10 +278,24 @@ def execute_bounded_codex(
             stderr=stderr,
             duration_seconds=gate_request["timeout_seconds"],
             completion_state=classification["completion_state"],
-            suspected_blocker=classification["suspected_blocker"],
+            process_state=process_classification["process_state"],
+            suspected_blocker=process_classification["suspected_blocker"],
+            process_terminated=termination["succeeded"],
+            completion_marker_detected=process_classification["completion_marker_detected"],
+            bounded_result_captured=process_classification["bounded_result_available"],
+            graceful_termination_attempted=termination["attempted"],
+            graceful_termination_succeeded=termination["succeeded"],
         ).to_dict()
-        status = "TIMEOUT"
+        status = "RESULT_CAPTURED_WITH_TERMINATION" if process_classification["bounded_result_available"] else "TIMEOUT"
     except OSError as exc:
+        process_classification = classify_codex_process_termination(
+            stdout="",
+            stderr=f"bounded Codex execution failed: {exc.__class__.__name__}",
+            exit_code=127,
+            timed_out=False,
+            process_terminated=True,
+            idle_window_seconds=0,
+        )
         classification = classify_codex_completion(
             stdout="",
             stderr=f"bounded Codex execution failed: {exc.__class__.__name__}",
@@ -220,6 +308,7 @@ def execute_bounded_codex(
             stderr=f"bounded Codex execution failed: {exc.__class__.__name__}",
             exit_code=127,
             completion_state=classification["completion_state"],
+            process_state=process_classification["process_state"],
             suspected_blocker=classification["suspected_blocker"],
         ).to_dict()
         status = "FAILED"
@@ -242,7 +331,8 @@ def execute_bounded_codex(
         "capture": capture,
         "capture_validation": capture_validation,
         "completion_classification": classification,
+        "process_classification": process_classification,
         "timeout_telemetry": timeout_telemetry,
         "bounded_execution_evidence": evidence,
-        "result_return_ready": status in ("SUCCESS", "FAILED", "TIMEOUT"),
+        "result_return_ready": status in ("SUCCESS", "FAILED", "TIMEOUT", "RESULT_CAPTURED_WITH_TERMINATION"),
     }

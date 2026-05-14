@@ -23,11 +23,11 @@ def bounded_prompt_from_task_artifact(task_artifact: dict[str, Any]) -> str:
     artifact_hash = stable_hash(task_artifact)
     return (
         "SAPIANTA bounded live validation task. "
-        "Read this prompt and return exactly one deterministic line: "
+        "Read this prompt and return exactly one deterministic line ending with AIGOL_TASK_COMPLETE: "
         f"SAPIANTA_CODEX_VALIDATION_OK provider_id={provider_id} "
         f"envelope_id={envelope_id} invocation_id={invocation_id} "
         f"transport_id={transport_id} replay_identity={replay_identity} "
-        f"artifact_sha256={artifact_hash}. "
+        f"artifact_sha256={artifact_hash} AIGOL_TASK_COMPLETE. "
         "Do not modify files. Do not run commands. Do not access network intentionally."
     )
 

@@ -1,0 +1,13 @@
+{
+  "bounded_result_requires_marker": true,
+  "output_quiescence_requires": [
+    "process_running == true",
+    "marker_detected == true",
+    "output_present == true",
+    "idle_window_seconds > 0"
+  ],
+  "quiescence_name": "CODEX_OUTPUT_QUIESCENCE_RULES",
+  "replay_safe": true,
+  "success_from_quiescence_without_marker": false,
+  "version": "1.0"
+}

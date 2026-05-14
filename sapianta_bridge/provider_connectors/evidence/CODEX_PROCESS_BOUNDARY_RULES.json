@@ -1,0 +1,15 @@
+{
+  "arbitrary_command_execution_allowed": false,
+  "autonomous_continuation_allowed": false,
+  "background_execution_allowed": false,
+  "fallback_allowed": false,
+  "memory_mutation_allowed": false,
+  "orchestration_allowed": false,
+  "process_boundary_name": "CODEX_PROCESS_BOUNDARY_RULES",
+  "provider_routing_allowed": false,
+  "retries_allowed": false,
+  "single_process_only": true,
+  "single_provider_only": true,
+  "unrestricted_shell_allowed": false,
+  "version": "1.0"
+}
