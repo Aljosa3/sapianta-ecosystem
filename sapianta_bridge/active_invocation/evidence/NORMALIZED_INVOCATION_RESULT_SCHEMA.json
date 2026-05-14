@@ -1,0 +1,22 @@
+{
+  "milestone": "ACTIVE_PROVIDER_INVOCATION_V1",
+  "allowed_invocation_statuses": [
+    "SUCCESS",
+    "FAILED",
+    "BLOCKED",
+    "NEEDS_REVIEW"
+  ],
+  "required_fields": [
+    "invocation_status",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "replay_identity",
+    "runtime_result",
+    "normalized_result",
+    "lifecycle",
+    "replay_safe"
+  ],
+  "adaptive_interpretation_present": false,
+  "provider_specific_governance_semantics_allowed": false
+}

@@ -1,0 +1,25 @@
+{
+  "milestone": "ACTIVE_PROVIDER_INVOCATION_V1",
+  "required_fields": [
+    "invocation_executed",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "replay_identity",
+    "lifecycle",
+    "lifecycle_valid",
+    "provider_identity_valid",
+    "envelope_valid",
+    "runtime_binding_valid",
+    "invocation_binding_valid",
+    "runtime_status",
+    "normalized_execution_status",
+    "normalized_result_bound",
+    "replay_safe"
+  ],
+  "routing_present": false,
+  "retry_present": false,
+  "fallback_present": false,
+  "orchestration_present": false,
+  "adaptive_provider_selection_present": false
+}

@@ -1,0 +1,12 @@
+{
+  "milestone": "ACTIVE_PROVIDER_INVOCATION_V1",
+  "activation_model": "EXPLICIT_SINGLE_PROVIDER",
+  "exactly_one_provider": true,
+  "provider_auto_selection": false,
+  "provider_routing": false,
+  "provider_fallback": false,
+  "provider_retry": false,
+  "provider_concurrency": false,
+  "provider_may_mutate_governance": false,
+  "provider_may_expand_envelope_authority": false
+}

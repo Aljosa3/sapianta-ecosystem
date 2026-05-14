@@ -1,0 +1,17 @@
+{
+  "milestone": "ACTIVE_PROVIDER_INVOCATION_V1",
+  "required_validations": [
+    "envelope_integrity",
+    "provider_identity",
+    "runtime_binding",
+    "invocation_binding",
+    "lifecycle_order",
+    "deterministic_identity"
+  ],
+  "fail_closed": true,
+  "provider_auto_selection_allowed": false,
+  "routing_allowed": false,
+  "retry_allowed": false,
+  "fallback_allowed": false,
+  "adaptive_provider_selection_allowed": false
+}

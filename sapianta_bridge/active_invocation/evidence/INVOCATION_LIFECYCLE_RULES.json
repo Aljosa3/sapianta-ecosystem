@@ -1,0 +1,15 @@
+{
+  "milestone": "ACTIVE_PROVIDER_INVOCATION_V1",
+  "lifecycle_states": [
+    "PROPOSED",
+    "VALIDATED",
+    "INVOKED",
+    "RESULT_RECEIVED",
+    "EVIDENCE_RECORDED"
+  ],
+  "hidden_states_allowed": false,
+  "retries_allowed": false,
+  "concurrent_execution_allowed": false,
+  "fallback_allowed": false,
+  "orchestration_allowed": false
+}
