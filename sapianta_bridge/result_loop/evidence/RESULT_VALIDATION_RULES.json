@@ -1,0 +1,18 @@
+{
+  "milestone": "RESULT_RETURN_LOOP_V1",
+  "fail_closed": true,
+  "rejects": [
+    "malformed_payloads",
+    "missing_lineage",
+    "provider_mismatch",
+    "invalid_replay_binding",
+    "missing_evidence",
+    "invalid_status_transitions",
+    "hidden_execution_authority",
+    "orchestration_behavior"
+  ],
+  "provider_invocation_allowed": false,
+  "retry_allowed": false,
+  "routing_allowed": false,
+  "autonomous_interpretation_allowed": false
+}

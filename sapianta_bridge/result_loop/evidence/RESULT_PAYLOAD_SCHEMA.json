@@ -1,0 +1,23 @@
+{
+  "milestone": "RESULT_RETURN_LOOP_V1",
+  "required_fields": [
+    "result_return_id",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "execution_status",
+    "invocation_status",
+    "normalized_provider_result",
+    "replay_identity",
+    "replay_hash",
+    "evidence_references",
+    "result_binding",
+    "interpretation_ready"
+  ],
+  "autonomous_interpretation_present": false,
+  "hidden_instructions_generated": false,
+  "provider_invocation_present": false,
+  "retry_present": false,
+  "orchestration_present": false,
+  "execution_authority_granted": false
+}

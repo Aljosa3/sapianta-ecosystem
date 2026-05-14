@@ -1,0 +1,17 @@
+{
+  "milestone": "RESULT_RETURN_LOOP_V1",
+  "required_lineage": [
+    "result_return_id",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "replay_identity",
+    "normalized_result_hash",
+    "invocation_evidence_hash"
+  ],
+  "lineage_mutation_allowed": false,
+  "provider_identity_preserved": true,
+  "envelope_identity_preserved": true,
+  "invocation_identity_preserved": true,
+  "replay_binding_preserved": true
+}
