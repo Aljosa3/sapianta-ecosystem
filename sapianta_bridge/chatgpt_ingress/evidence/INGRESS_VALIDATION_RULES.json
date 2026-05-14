@@ -1,0 +1,20 @@
+{
+  "milestone_id": "CHATGPT_INGRESS_BRIDGE_V1",
+  "fail_closed": true,
+  "validation_requires": [
+    "valid_ingress_session",
+    "valid_ingress_request",
+    "valid_ingress_binding",
+    "admissibility_present",
+    "authority_scope_present_when_proposal_generated",
+    "workspace_scope_present_when_proposal_generated",
+    "deterministic_proposal_identity"
+  ],
+  "rejects": [
+    "invalid_replay_binding",
+    "hidden_prompt_rewrite",
+    "execution_authority_granted",
+    "missing_admissibility",
+    "proposal_generated_for_rejected_request"
+  ]
+}

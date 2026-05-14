@@ -1,0 +1,17 @@
+{
+  "milestone_id": "CHATGPT_INGRESS_BRIDGE_V1",
+  "binding_model": "CHATGPT_TO_NL_ENVELOPE_PROPOSAL",
+  "required_binding_fields": [
+    "session_id",
+    "request_id",
+    "semantic_request_id",
+    "replay_identity",
+    "envelope_id",
+    "admissibility",
+    "ingress_binding_sha256"
+  ],
+  "deterministic": true,
+  "replay_safe": true,
+  "mutable_memory_allowed": false,
+  "hidden_prompt_rewrite_allowed": false
+}

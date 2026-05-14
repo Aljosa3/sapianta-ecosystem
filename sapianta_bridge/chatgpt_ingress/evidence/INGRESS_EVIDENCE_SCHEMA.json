@@ -1,0 +1,31 @@
+{
+  "milestone_id": "CHATGPT_INGRESS_BRIDGE_V1",
+  "schema_name": "INGRESS_EVIDENCE",
+  "required_fields": [
+    "session_id",
+    "request_id",
+    "semantic_request_id",
+    "replay_identity",
+    "ingress_binding_sha256",
+    "intent_type",
+    "admissibility",
+    "authority_scope",
+    "workspace_scope",
+    "envelope_id",
+    "proposal_generated",
+    "ingress_valid",
+    "replay_safe",
+    "chatgpt_governance_authority",
+    "execution_authority_granted",
+    "provider_invoked",
+    "transport_executed",
+    "runtime_executed"
+  ],
+  "required_false_fields": [
+    "chatgpt_governance_authority",
+    "execution_authority_granted",
+    "provider_invoked",
+    "transport_executed",
+    "runtime_executed"
+  ]
+}

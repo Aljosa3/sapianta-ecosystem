@@ -1,0 +1,15 @@
+{
+  "milestone_id": "CHATGPT_INGRESS_BRIDGE_V1",
+  "semantic_lineage_required": true,
+  "lineage_fields": [
+    "conversation_id",
+    "request_hash",
+    "source",
+    "semantic_request_id",
+    "replay_identity"
+  ],
+  "lineage_source": "CHATGPT_INTERACTION",
+  "lineage_mutable": false,
+  "memory_mutation_allowed": false,
+  "replay_deterministic": true
+}
