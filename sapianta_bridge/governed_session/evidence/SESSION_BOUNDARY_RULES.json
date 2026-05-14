@@ -1,0 +1,13 @@
+{
+  "milestone": "GOVERNED_EXECUTION_SESSION_V1",
+  "session_is_orchestration": false,
+  "session_is_autonomous_execution": false,
+  "session_may_choose_providers": false,
+  "session_may_retry": false,
+  "session_may_fallback": false,
+  "session_may_schedule": false,
+  "session_may_create_follow_up_tasks": false,
+  "session_may_mutate_governance": false,
+  "session_may_invoke_multiple_providers": false,
+  "session_may_bypass_validation": false
+}

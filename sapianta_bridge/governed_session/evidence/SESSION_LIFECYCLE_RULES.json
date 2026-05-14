@@ -1,0 +1,23 @@
+{
+  "milestone": "GOVERNED_EXECUTION_SESSION_V1",
+  "success_path": [
+    "CREATED",
+    "INGRESS_CAPTURED",
+    "ENVELOPE_PROPOSED",
+    "ENVELOPE_VALIDATED",
+    "PROVIDER_INVOKED",
+    "RESULT_RETURNED",
+    "EVIDENCE_RECORDED",
+    "COMPLETED"
+  ],
+  "failure_states": [
+    "BLOCKED",
+    "FAILED"
+  ],
+  "hidden_states_allowed": false,
+  "skipped_required_states_allowed": false,
+  "backwards_transitions_allowed": false,
+  "retry_loop_allowed": false,
+  "automatic_recovery_allowed": false,
+  "multiple_provider_invocations_allowed": false
+}

@@ -1,0 +1,23 @@
+{
+  "milestone": "GOVERNED_EXECUTION_SESSION_V1",
+  "required_fields": [
+    "session_id",
+    "session_status",
+    "ingress_bound",
+    "envelope_bound",
+    "provider_invocation_bound",
+    "result_return_bound",
+    "lifecycle",
+    "identity_valid",
+    "context_valid",
+    "lifecycle_valid",
+    "provider_identity_consistent",
+    "envelope_identity_consistent",
+    "replay_safe"
+  ],
+  "orchestration_introduced": false,
+  "retry_introduced": false,
+  "provider_routing_introduced": false,
+  "autonomous_execution_introduced": false,
+  "hidden_memory_mutation_introduced": false
+}

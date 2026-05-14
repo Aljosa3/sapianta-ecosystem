@@ -1,0 +1,18 @@
+{
+  "milestone": "GOVERNED_EXECUTION_SESSION_V1",
+  "fail_closed": true,
+  "required_validations": [
+    "identity_completeness",
+    "lifecycle_validity",
+    "envelope_reference",
+    "provider_identity_consistency",
+    "invocation_reference",
+    "result_reference",
+    "replay_evidence_binding"
+  ],
+  "provider_routing_allowed": false,
+  "retries_allowed": false,
+  "fallback_allowed": false,
+  "autonomous_execution_allowed": false,
+  "governance_mutation_allowed": false
+}
