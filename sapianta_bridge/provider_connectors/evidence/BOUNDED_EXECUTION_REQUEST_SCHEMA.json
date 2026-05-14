@@ -1,0 +1,22 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "execution_gate_id",
+    "connector_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "transport_id",
+    "replay_identity",
+    "connector_request",
+    "execution_authorized",
+    "approved_by",
+    "workspace_path",
+    "timeout_seconds",
+    "operation",
+    "execution_gate_binding",
+    "replay_safe"
+  ],
+  "title": "BOUNDED_EXECUTION_REQUEST_SCHEMA",
+  "type": "object"
+}

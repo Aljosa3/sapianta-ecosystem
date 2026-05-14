@@ -1,0 +1,21 @@
+{
+  "fail_closed_on": [
+    "missing_authorization",
+    "provider_not_codex_cli",
+    "operation_not_codex_cli_run",
+    "workspace_escape",
+    "missing_timeout",
+    "unbounded_timeout",
+    "invalid_command_vector",
+    "shell_execution_detected",
+    "arbitrary_command_detected",
+    "network_execution_detected",
+    "routing_detected",
+    "retry_detected",
+    "fallback_detected",
+    "orchestration_detected",
+    "autonomous_execution_detected"
+  ],
+  "validation_model": "fail_closed",
+  "version": "FIRST_BOUNDED_REAL_CODEX_EXECUTION_V1"
+}

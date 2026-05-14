@@ -11,6 +11,7 @@ from .connector_identity import create_connector_identity, validate_connector_id
 from .connector_request import create_connector_request
 from .connector_response import create_connector_response
 from .connector_validator import validate_connector_request, validate_connector_response
+from .bounded_execution_runtime import execute_bounded_codex, validate_bounded_execution_runtime_request
 from .execution_gate_binding import create_execution_gate_binding, validate_execution_gate_binding
 from .execution_gate_controller import execute_through_execution_gate
 from .execution_gate_evidence import execution_gate_evidence, validate_execution_gate_evidence
@@ -26,6 +27,7 @@ __all__ = [
     "create_connector_request",
     "create_connector_response",
     "connector_evidence",
+    "execute_bounded_codex",
     "create_execution_gate_binding",
     "create_execution_gate_identity",
     "create_execution_gate_request",
@@ -39,6 +41,7 @@ __all__ = [
     "validate_connector_identity",
     "validate_connector_request",
     "validate_connector_response",
+    "validate_bounded_execution_runtime_request",
     "validate_execution_gate_binding",
     "validate_execution_gate_evidence",
     "validate_execution_gate_identity",

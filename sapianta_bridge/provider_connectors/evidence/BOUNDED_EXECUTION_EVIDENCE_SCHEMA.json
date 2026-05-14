@@ -1,0 +1,29 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "execution_name",
+    "execution_gate_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "replay_identity",
+    "execution_authorized",
+    "runtime_valid",
+    "stdout_captured",
+    "stderr_captured",
+    "provider_identity_preserved",
+    "workspace_bounded",
+    "timeout_bounded",
+    "arbitrary_command_execution_present",
+    "shell_execution_present",
+    "network_execution_present",
+    "routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_execution_present",
+    "replay_safe"
+  ],
+  "title": "BOUNDED_EXECUTION_EVIDENCE_SCHEMA",
+  "type": "object"
+}

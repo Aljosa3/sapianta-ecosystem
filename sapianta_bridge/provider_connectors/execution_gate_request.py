@@ -10,6 +10,7 @@ from .execution_gate_identity import create_execution_gate_identity
 
 
 EXECUTION_GATE_OPERATION_CAPTURE_CONNECTOR_TASK = "CAPTURE_CONNECTOR_TASK"
+EXECUTION_GATE_OPERATION_CODEX_CLI_RUN = "CODEX_CLI_RUN"
 
 
 @dataclass(frozen=True)

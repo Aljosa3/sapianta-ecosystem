@@ -1,0 +1,11 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "bounded_execution_status",
+    "runtime_validation",
+    "capture",
+    "bounded_execution_evidence"
+  ],
+  "title": "BOUNDED_EXECUTION_RESPONSE_SCHEMA",
+  "type": "object"
+}

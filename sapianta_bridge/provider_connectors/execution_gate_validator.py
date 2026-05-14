@@ -8,11 +8,18 @@ from typing import Any
 from .connector_validator import validate_connector_request
 from .execution_gate_binding import validate_execution_gate_binding
 from .execution_gate_identity import validate_execution_gate_identity
-from .execution_gate_request import EXECUTION_GATE_OPERATION_CAPTURE_CONNECTOR_TASK
+from .execution_gate_request import (
+    EXECUTION_GATE_OPERATION_CAPTURE_CONNECTOR_TASK,
+    EXECUTION_GATE_OPERATION_CODEX_CLI_RUN,
+)
 from .execution_gate_response import EXECUTION_GATE_RESPONSE_STATUSES
 
 
 MAX_TIMEOUT_SECONDS = 300
+SUPPORTED_EXECUTION_GATE_OPERATIONS = (
+    EXECUTION_GATE_OPERATION_CAPTURE_CONNECTOR_TASK,
+    EXECUTION_GATE_OPERATION_CODEX_CLI_RUN,
+)
 
 FORBIDDEN_REQUEST_FLAGS = (
     "prepared_artifact_is_execution_authority",
@@ -123,7 +130,7 @@ def validate_execution_gate_request(request: Any) -> dict[str, Any]:
         errors.append({"field": "timeout_seconds", "reason": "timeout must be an explicit integer"})
     elif value["timeout_seconds"] <= 0 or value["timeout_seconds"] > MAX_TIMEOUT_SECONDS:
         errors.append({"field": "timeout_seconds", "reason": "timeout must be positive and bounded"})
-    if value.get("operation") != EXECUTION_GATE_OPERATION_CAPTURE_CONNECTOR_TASK:
+    if value.get("operation") not in SUPPORTED_EXECUTION_GATE_OPERATIONS:
         errors.append({"field": "operation", "reason": "unsupported execution gate operation"})
     connector_validation = validate_connector_request(value.get("connector_request"))
     identity_validation = validate_execution_gate_identity(

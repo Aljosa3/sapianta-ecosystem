@@ -1,0 +1,27 @@
+{
+  "boundaries": {
+    "allowed_command_shape": "codex run <prepared_task_artifact>",
+    "arbitrary_command_execution_allowed": false,
+    "autonomous_execution_allowed": false,
+    "background_execution_allowed": false,
+    "concurrent_execution_allowed": false,
+    "fallback_allowed": false,
+    "memory_mutation_allowed": false,
+    "network_execution_allowed": false,
+    "orchestration_allowed": false,
+    "provider_auto_selection_allowed": false,
+    "retry_allowed": false,
+    "routing_allowed": false,
+    "shell_execution_allowed": false,
+    "unrestricted_filesystem_access_allowed": false
+  },
+  "execution_model": "single_provider_single_workspace_single_bounded_task_single_result",
+  "invariants": [
+    "REAL_EXECUTION != AUTONOMOUS_EXECUTION",
+    "CODEX_OUTPUT != GOVERNANCE_DECISION",
+    "BOUNDED_EXECUTION != ORCHESTRATION",
+    "BOUNDED_EXECUTION != ROUTING",
+    "NO_UNRESTRICTED_RUNTIME_AUTHORITY"
+  ],
+  "version": "FIRST_BOUNDED_REAL_CODEX_EXECUTION_V1"
+}
