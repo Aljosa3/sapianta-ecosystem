@@ -1,0 +1,16 @@
+{
+  "milestone": "FIRST_NO_COPY_PASTE_LOOP_V1",
+  "chatgpt_is_governance": false,
+  "natural_language_is_execution_authority": false,
+  "proposal_is_execution": false,
+  "provider_is_governance": false,
+  "loop_is_orchestration": false,
+  "loop_may_continue_autonomously": false,
+  "loop_may_execute_recursively": false,
+  "loop_may_retry": false,
+  "loop_may_fallback": false,
+  "loop_may_route_providers": false,
+  "loop_may_schedule": false,
+  "loop_may_mutate_memory": false,
+  "loop_may_escalate_capabilities": false
+}

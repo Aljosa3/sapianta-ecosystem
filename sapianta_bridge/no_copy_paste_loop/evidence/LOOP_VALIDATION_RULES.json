@@ -1,0 +1,21 @@
+{
+  "milestone": "FIRST_NO_COPY_PASTE_LOOP_V1",
+  "fail_closed": true,
+  "required_validations": [
+    "request_identity",
+    "bridge_binding",
+    "session_binding",
+    "envelope_binding",
+    "provider_identity_consistency",
+    "invocation_identity",
+    "result_lineage",
+    "response_delivery",
+    "evidence_completeness"
+  ],
+  "provider_auto_selection_allowed": false,
+  "adaptive_routing_allowed": false,
+  "retries_allowed": false,
+  "fallback_allowed": false,
+  "autonomous_continuation_allowed": false,
+  "hidden_memory_mutation_allowed": false
+}

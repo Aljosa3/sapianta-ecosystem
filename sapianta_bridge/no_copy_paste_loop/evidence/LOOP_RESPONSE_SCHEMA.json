@@ -1,0 +1,22 @@
+{
+  "milestone": "FIRST_NO_COPY_PASTE_LOOP_V1",
+  "required_fields": [
+    "loop_id",
+    "bridge_id",
+    "session_id",
+    "invocation_id",
+    "provider_id",
+    "envelope_id",
+    "result_status",
+    "chatgpt_response_payload",
+    "replay_identity",
+    "evidence_references"
+  ],
+  "autonomous_continuation_present": false,
+  "recursive_execution_present": false,
+  "orchestration_present": false,
+  "retry_present": false,
+  "provider_routing_present": false,
+  "hidden_execution_present": false,
+  "execution_authority_granted": false
+}

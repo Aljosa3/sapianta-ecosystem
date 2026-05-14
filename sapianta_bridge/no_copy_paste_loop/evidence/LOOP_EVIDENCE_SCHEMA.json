@@ -1,0 +1,25 @@
+{
+  "milestone": "FIRST_NO_COPY_PASTE_LOOP_V1",
+  "required_fields": [
+    "loop_id",
+    "loop_status",
+    "bridge_bound",
+    "session_bound",
+    "envelope_bound",
+    "provider_invocation_bound",
+    "result_return_bound",
+    "response_delivered",
+    "lineage_continuity_valid",
+    "replay_safe"
+  ],
+  "chatgpt_is_governance": false,
+  "natural_language_is_execution_authority": false,
+  "proposal_is_execution": false,
+  "provider_is_governance": false,
+  "loop_is_orchestration": false,
+  "orchestration_introduced": false,
+  "retry_introduced": false,
+  "provider_routing_introduced": false,
+  "autonomous_execution_introduced": false,
+  "hidden_memory_mutation_introduced": false
+}
