@@ -1,0 +1,11 @@
+{
+  "capability_model_is_orchestration": false,
+  "capability_model_is_routing": false,
+  "capability_model_may_rank_providers": false,
+  "capability_model_may_select_providers": false,
+  "capability_may_bypass_envelopes": false,
+  "capability_may_expand_execution_authority": false,
+  "capability_may_invoke_provider": false,
+  "modality_may_grant_execution_permission": false,
+  "version": "MULTIMODAL_PROVIDER_CAPABILITY_MODEL_V1"
+}

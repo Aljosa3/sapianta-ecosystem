@@ -1,0 +1,21 @@
+{
+  "autonomous_provider_selection_enabled": false,
+  "execution_authority_granted": false,
+  "modality_execution_permission_granted": false,
+  "orchestration_enabled": false,
+  "provider_invocation_enabled": false,
+  "required_fields": [
+    "provider_id",
+    "capability_class",
+    "modality_class",
+    "capability_admissible",
+    "execution_authority_granted",
+    "provider_invocation_enabled",
+    "routing_enabled",
+    "orchestration_enabled",
+    "replay_safe"
+  ],
+  "routing_enabled": false,
+  "schema": "CAPABILITY_EVIDENCE_SCHEMA",
+  "version": "MULTIMODAL_PROVIDER_CAPABILITY_MODEL_V1"
+}

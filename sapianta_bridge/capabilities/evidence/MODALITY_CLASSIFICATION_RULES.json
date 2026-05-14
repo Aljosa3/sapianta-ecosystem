@@ -1,0 +1,18 @@
+{
+  "fail_closed_on_unknown": true,
+  "modality_classes": [
+    "TEXT",
+    "CODE",
+    "IMAGE",
+    "DESIGN",
+    "CAD",
+    "AUDIO",
+    "VIDEO",
+    "BROWSER",
+    "ROBOTIC",
+    "INDUSTRIAL",
+    "UNKNOWN"
+  ],
+  "modality_is_execution_permission": false,
+  "version": "MULTIMODAL_PROVIDER_CAPABILITY_MODEL_V1"
+}

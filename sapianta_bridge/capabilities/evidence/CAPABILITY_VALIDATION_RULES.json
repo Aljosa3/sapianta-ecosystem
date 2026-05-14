@@ -1,0 +1,17 @@
+{
+  "capability_grants_authority": false,
+  "capability_invokes_provider": false,
+  "fail_closed": true,
+  "rejects": [
+    "UNKNOWN capability",
+    "UNKNOWN modality",
+    "capability/modality mismatch",
+    "execution authority grant",
+    "envelope bypass",
+    "provider abstraction bypass",
+    "routing enabled",
+    "orchestration enabled",
+    "autonomous provider selection"
+  ],
+  "version": "MULTIMODAL_PROVIDER_CAPABILITY_MODEL_V1"
+}

@@ -1,0 +1,16 @@
+{
+  "autonomous_provider_selection_enabled": false,
+  "envelope_bypass_allowed": false,
+  "execution_authority_granted": false,
+  "provider_abstraction_bypass_allowed": false,
+  "required_fields": [
+    "provider_id",
+    "capability_class",
+    "modality_class",
+    "evidence_refs",
+    "replay_safe"
+  ],
+  "routing_enabled": false,
+  "schema": "CAPABILITY_DECLARATION_SCHEMA",
+  "version": "MULTIMODAL_PROVIDER_CAPABILITY_MODEL_V1"
+}
