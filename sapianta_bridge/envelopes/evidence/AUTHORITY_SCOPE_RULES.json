@@ -1,0 +1,19 @@
+{
+  "milestone_id": "EXECUTION_ENVELOPE_MODEL_V1",
+  "authority_scopes": [
+    "READ_ONLY",
+    "PATCH_EXISTING_FILES",
+    "CREATE_NEW_FILES",
+    "RUN_TESTS",
+    "NO_NETWORK",
+    "NO_RUNTIME_EXECUTION",
+    "NO_PRIVILEGE_ESCALATION"
+  ],
+  "required_deny_scopes": [
+    "NO_NETWORK",
+    "NO_PRIVILEGE_ESCALATION"
+  ],
+  "undefined_authority_policy": "FAIL_CLOSED",
+  "implicit_authority_allowed": false,
+  "provider_specific_authority_behavior_allowed": false
+}

@@ -1,0 +1,16 @@
+{
+  "milestone_id": "EXECUTION_ENVELOPE_MODEL_V1",
+  "replay_binding_fields": [
+    "replay_identity",
+    "provider_id",
+    "authority_scope",
+    "workspace_scope",
+    "validation_requirements"
+  ],
+  "same_envelope_same_authority_semantics": true,
+  "provider_identity_bound": true,
+  "authority_scope_bound": true,
+  "workspace_scope_bound": true,
+  "validation_requirements_bound": true,
+  "replay_safe": true
+}

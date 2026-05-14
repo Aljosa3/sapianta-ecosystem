@@ -1,0 +1,25 @@
+{
+  "milestone_id": "EXECUTION_ENVELOPE_MODEL_V1",
+  "schema_name": "EXECUTION_ENVELOPE",
+  "required_fields": [
+    "envelope_id",
+    "provider_id",
+    "workspace_scope",
+    "authority_scope",
+    "allowed_actions",
+    "forbidden_actions",
+    "timeout_seconds",
+    "replay_identity",
+    "validation_requirements",
+    "human_approval_required",
+    "replay_safe",
+    "constraints",
+    "replay_binding_sha256"
+  ],
+  "required_values": {
+    "replay_safe": true,
+    "provider_independent_semantics": true,
+    "routing_present": false,
+    "orchestration_present": false
+  }
+}

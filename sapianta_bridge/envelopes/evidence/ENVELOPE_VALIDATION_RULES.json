@@ -1,0 +1,22 @@
+{
+  "milestone_id": "EXECUTION_ENVELOPE_MODEL_V1",
+  "validation_rules": {
+    "authority_scope_required": true,
+    "workspace_scope_required": true,
+    "provider_identity_required": true,
+    "timeout_required": true,
+    "replay_binding_required": true,
+    "validation_requirements_required": true,
+    "undefined_permissions_fail_closed": true,
+    "malformed_envelopes_rejected": true,
+    "hidden_permissions_blocked": true
+  },
+  "forbidden_runtime_behaviors": [
+    "routing",
+    "orchestration",
+    "adaptive_retry",
+    "fallback_execution",
+    "real_provider_api_call",
+    "autonomous_task_execution"
+  ]
+}
