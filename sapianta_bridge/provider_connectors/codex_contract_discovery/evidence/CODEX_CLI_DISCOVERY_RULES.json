@@ -1,0 +1,27 @@
+{
+  "allowed_probes": [
+    "codex --help",
+    "codex -h",
+    "codex run --help",
+    "codex run -h",
+    "codex --version"
+  ],
+  "forbidden": {
+    "arbitrary_commands": true,
+    "autonomous_execution": true,
+    "fallback": true,
+    "orchestration": true,
+    "provider_routing": true,
+    "real_task_execution": true,
+    "repo_mutation": true,
+    "retries": true,
+    "shell_true": true
+  },
+  "status_meanings": {
+    "BLOCKED": "Codex CLI is unavailable or safe probes cannot run.",
+    "DISCOVERED": "A bounded non-interactive invocation contract is fully discoverable.",
+    "DISCOVERED_PARTIAL": "A bounded candidate is discoverable, but file or stdin input support remains unconfirmed.",
+    "FAILED": "Discovery probe failed unexpectedly."
+  },
+  "version": "CODEX_CLI_CONTRACT_DISCOVERY_V1"
+}
