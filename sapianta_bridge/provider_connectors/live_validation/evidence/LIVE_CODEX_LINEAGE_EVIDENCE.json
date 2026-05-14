@@ -1,0 +1,19 @@
+{
+  "bounded_runtime_used": true,
+  "execution_gate_used": true,
+  "lineage_chain": [
+    "live_validation_case",
+    "execution_envelope",
+    "connector_request",
+    "execution_gate_request",
+    "bounded_codex_runtime",
+    "execution_capture",
+    "live_validation_evidence"
+  ],
+  "manual_copy_paste_required": false,
+  "provider_id": "codex_cli",
+  "replay_identity": "REPLAY-LIVE-CODEX-VALIDATION",
+  "replay_safe": true,
+  "status": "BLOCKED",
+  "validation_name": "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V1"
+}

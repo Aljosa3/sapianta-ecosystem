@@ -1,0 +1,20 @@
+{
+  "autonomous_execution_introduced": false,
+  "blocked_reason": "Codex CLI detected and executed through the bounded runtime, but the installed CLI rejected the fixed command vector codex run <prepared_task_artifact> with exit code 2.",
+  "codex_cli_detected": true,
+  "codex_cli_executed": true,
+  "execution_authorized": true,
+  "exit_code_captured": true,
+  "fallback_introduced": false,
+  "orchestration_introduced": false,
+  "provider_id": "codex_cli",
+  "replay_safe": true,
+  "retries_introduced": false,
+  "routing_introduced": false,
+  "status": "BLOCKED",
+  "stderr_captured": true,
+  "stdout_captured": true,
+  "timeout_seconds": 30,
+  "validation_name": "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V1",
+  "workspace_bounded": true
+}
