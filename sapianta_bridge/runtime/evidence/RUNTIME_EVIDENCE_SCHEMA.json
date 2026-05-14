@@ -1,0 +1,24 @@
+{
+  "milestone_id": "EXECUTOR_ADAPTER_RUNTIME_V1",
+  "schema_name": "RUNTIME_EVIDENCE",
+  "required_fields": [
+    "runtime_executed",
+    "envelope_id",
+    "provider_id",
+    "runtime_status",
+    "envelope_valid",
+    "provider_bound",
+    "authority_scope_preserved",
+    "workspace_scope_preserved",
+    "normalized_result_valid",
+    "replay_safe"
+  ],
+  "required_false_fields": [
+    "routing_present",
+    "orchestration_present",
+    "fallback_present",
+    "retry_present",
+    "external_api_calls_present"
+  ],
+  "provider_specific_semantics_allowed": false
+}

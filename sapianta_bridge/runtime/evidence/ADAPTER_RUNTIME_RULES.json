@@ -1,0 +1,27 @@
+{
+  "milestone_id": "EXECUTOR_ADAPTER_RUNTIME_V1",
+  "runtime_model": "BOUNDED_ADAPTER_DELIVERY",
+  "requires_valid_execution_envelope": true,
+  "requires_explicit_provider_adapter": true,
+  "requires_provider_identity_match": true,
+  "requires_normalized_result": true,
+  "allowed_adapters": [
+    "CodexAdapter",
+    "ClaudeAdapter",
+    "LocalAdapter",
+    "DeterministicMockAdapter"
+  ],
+  "forbidden_behaviors": [
+    "provider_routing",
+    "autonomous_orchestration",
+    "dynamic_scheduling",
+    "provider_optimization",
+    "fallback_logic",
+    "retry_logic",
+    "hidden_execution",
+    "real_provider_api_calls",
+    "shell_execution",
+    "network_calls",
+    "task_chaining"
+  ]
+}

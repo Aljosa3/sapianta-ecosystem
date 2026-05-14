@@ -1,0 +1,16 @@
+{
+  "milestone_id": "EXECUTOR_ADAPTER_RUNTIME_V1",
+  "binding_fields": [
+    "envelope_id",
+    "provider_id",
+    "replay_identity",
+    "authority_scope",
+    "workspace_scope",
+    "validation_requirements"
+  ],
+  "deterministic": true,
+  "serializable": true,
+  "replay_safe": true,
+  "immutable_during_execution": true,
+  "incomplete_binding_policy": "FAIL_CLOSED"
+}
