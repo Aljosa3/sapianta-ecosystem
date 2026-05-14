@@ -1,0 +1,20 @@
+{
+  "autonomous_execution_introduced": false,
+  "chatgpt_request_bound": true,
+  "chatgpt_response_bound": true,
+  "fallback_introduced": false,
+  "hidden_prompt_rewriting_introduced": false,
+  "ingress_bound": true,
+  "manual_copy_paste_required": false,
+  "memory_mutation_introduced": false,
+  "nl_to_envelope_bound": true,
+  "orchestration_introduced": false,
+  "provider_invocation_bound": true,
+  "provider_routing_introduced": false,
+  "replay_safe": true,
+  "result_return_bound": true,
+  "retries_introduced": false,
+  "session_bound": true,
+  "status": "PASSED",
+  "validation_name": "FIRST_END_TO_END_NO_COPY_PASTE_VALIDATION_V1"
+}

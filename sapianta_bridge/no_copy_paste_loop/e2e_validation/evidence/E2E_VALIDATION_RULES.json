@@ -1,0 +1,27 @@
+{
+  "adaptive_planning_allowed": false,
+  "autonomous_execution_allowed": false,
+  "external_api_calls_allowed": false,
+  "fail_closed": true,
+  "fallback_allowed": false,
+  "hidden_prompt_rewriting_allowed": false,
+  "manual_intermediate_transfer_allowed": false,
+  "memory_mutation_allowed": false,
+  "milestone": "FIRST_END_TO_END_NO_COPY_PASTE_VALIDATION_V1",
+  "multimodal_expansion_allowed": false,
+  "network_execution_allowed": false,
+  "orchestration_allowed": false,
+  "provider_routing_allowed": false,
+  "required_bindings": [
+    "chatgpt_request",
+    "ingress_identity",
+    "nl_to_envelope",
+    "execution_envelope",
+    "governed_session",
+    "provider_invocation",
+    "result_return",
+    "chatgpt_response"
+  ],
+  "retries_allowed": false,
+  "shell_execution_allowed": false
+}

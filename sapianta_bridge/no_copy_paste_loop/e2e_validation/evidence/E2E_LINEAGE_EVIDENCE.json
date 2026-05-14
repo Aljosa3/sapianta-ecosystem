@@ -1,0 +1,18 @@
+{
+  "bridge_id": "CHATGPT-BRIDGE-512a12b3b37693db12c86591",
+  "envelope_id": "ENV-SEM-7dfc020e5de1",
+  "envelope_identity_preserved": true,
+  "ingress_session_id": "INGRESS-SESSION-cb497b261fc7a552",
+  "invocation_id": "INVOCATION-e7605f89973fb1bd343321a5",
+  "loop_id": "NO-COPY-LOOP-65dbd3e458d64fe2fa04a66d",
+  "manual_copy_paste_required": false,
+  "provider_id": "deterministic_mock",
+  "provider_identity_preserved": true,
+  "replay_identity": "REPLAY-7dfc020e5de159c2",
+  "replay_safe": true,
+  "result_return_id": "RESULT-fd0c72041d6094273684efb3",
+  "result_lineage_preserved": true,
+  "semantic_request_id": "SEM-7dfc020e5de1",
+  "session_id": "SESSION-4d4babc3304f7229082c743f",
+  "validation_name": "FIRST_END_TO_END_NO_COPY_PASTE_VALIDATION_V1"
+}
