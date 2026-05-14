@@ -1,0 +1,23 @@
+{
+  "fail_closed": true,
+  "forbidden_behaviors": [
+    "real external API calls",
+    "shell execution",
+    "network execution",
+    "provider routing",
+    "retries",
+    "fallback",
+    "orchestration",
+    "autonomous execution"
+  ],
+  "required_validations": [
+    "envelope validation",
+    "request identity",
+    "response identity",
+    "provider identity continuity",
+    "envelope identity continuity",
+    "replay identity continuity",
+    "transport binding validity"
+  ],
+  "version": "REAL_PROVIDER_TRANSPORT_V1"
+}

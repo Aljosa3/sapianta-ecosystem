@@ -1,0 +1,17 @@
+{
+  "fallback_present": false,
+  "provider_response_is_governance_decision": false,
+  "required_fields": [
+    "transport_id",
+    "provider_id",
+    "envelope_id",
+    "status",
+    "result_payload",
+    "evidence_references",
+    "replay_identity"
+  ],
+  "retry_present": false,
+  "routing_present": false,
+  "schema": "PROVIDER_TRANSPORT_RESPONSE_SCHEMA",
+  "version": "REAL_PROVIDER_TRANSPORT_V1"
+}

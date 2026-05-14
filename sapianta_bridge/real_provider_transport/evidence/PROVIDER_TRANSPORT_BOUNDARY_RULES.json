@@ -1,0 +1,13 @@
+{
+  "connector_is_provider_router": false,
+  "fallback_allowed": false,
+  "no_autonomous_execution": true,
+  "provider_response_is_governance_decision": false,
+  "real_external_provider_api_calls_allowed": false,
+  "retry_allowed": false,
+  "routing_allowed": false,
+  "shell_execution_allowed": false,
+  "transport_artifact_is_execution_authority": false,
+  "transport_is_orchestration": false,
+  "version": "REAL_PROVIDER_TRANSPORT_V1"
+}

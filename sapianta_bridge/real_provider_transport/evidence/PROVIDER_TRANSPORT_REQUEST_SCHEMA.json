@@ -1,0 +1,20 @@
+{
+  "real_external_api_call_present": false,
+  "required_fields": [
+    "transport_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "replay_identity",
+    "bounded_task_payload",
+    "authority_scope",
+    "workspace_scope",
+    "validation_requirements"
+  ],
+  "retry_present": false,
+  "routing_present": false,
+  "schema": "PROVIDER_TRANSPORT_REQUEST_SCHEMA",
+  "shell_execution_present": false,
+  "transport_artifact_is_execution_authority": false,
+  "version": "REAL_PROVIDER_TRANSPORT_V1"
+}

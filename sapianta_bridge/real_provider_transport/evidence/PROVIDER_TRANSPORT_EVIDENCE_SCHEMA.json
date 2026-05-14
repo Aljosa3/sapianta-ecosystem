@@ -1,0 +1,23 @@
+{
+  "autonomous_execution_present": false,
+  "fallback_present": false,
+  "orchestration_present": false,
+  "real_external_api_call_present": false,
+  "required_fields": [
+    "transport_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "replay_identity",
+    "provider_transport_request_valid",
+    "provider_transport_response_valid",
+    "identity_continuity_valid",
+    "local_file_transport_used",
+    "replay_safe"
+  ],
+  "retry_present": false,
+  "routing_present": false,
+  "schema": "PROVIDER_TRANSPORT_EVIDENCE_SCHEMA",
+  "shell_execution_present": false,
+  "version": "REAL_PROVIDER_TRANSPORT_V1"
+}
