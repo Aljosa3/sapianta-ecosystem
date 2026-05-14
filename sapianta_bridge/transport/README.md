@@ -46,3 +46,47 @@ v1 does not generate new tasks, process follow-up proposals, call reflection gen
 
 One task enters. One result exits. Nothing more.
 
+---
+
+# TRANSPORT BRIDGE v1
+
+`TRANSPORT_BRIDGE_V1` adds bounded envelope transport semantics on top of the provider and runtime adapter substrate.
+
+The bridge flow is:
+
+```text
+ExecutionEnvelope
+-> validated transport request
+-> explicit provider transport binding
+-> bounded adapter runtime delivery
+-> normalized runtime response
+-> replay-safe transport evidence
+```
+
+## Envelope-First Transport
+
+Transport may deliver only validated execution envelopes. Invalid envelopes are blocked before transport execution.
+
+## Provider Binding
+
+Transport binds to one explicit provider identity. It does not select, route, optimize, retry, or fall back to another provider.
+
+## Bounded Transport Guarantees
+
+Transport preserves:
+
+- provider identity;
+- envelope identity;
+- replay identity;
+- runtime binding;
+- authority scope;
+- workspace scope;
+- normalized runtime result semantics.
+
+## Transport vs Runtime vs Orchestration
+
+Transport delivers the validated request to a bounded runtime adapter. Runtime invokes the explicit adapter. Orchestration would choose, schedule, retry, coordinate, or chain execution. This milestone does none of that.
+
+## Non-Goals
+
+`TRANSPORT_BRIDGE_V1` does not add autonomous orchestration, planning, provider routing intelligence, dynamic optimization, retries, fallback, hidden execution, multi-agent coordination, unrestricted provider execution, autonomous scheduling, or production bridge behavior.

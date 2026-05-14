@@ -1,0 +1,23 @@
+{
+  "milestone_id": "TRANSPORT_BRIDGE_V1",
+  "schema_name": "TRANSPORT_EVIDENCE",
+  "required_fields": [
+    "transport_executed",
+    "transport_id",
+    "provider_id",
+    "envelope_id",
+    "runtime_status",
+    "transport_binding_valid",
+    "runtime_binding_valid",
+    "authority_preserved",
+    "workspace_preserved",
+    "replay_safe"
+  ],
+  "required_false_fields": [
+    "routing_present",
+    "orchestration_present",
+    "fallback_present",
+    "retry_present"
+  ],
+  "provider_specific_transport_semantics_allowed": false
+}

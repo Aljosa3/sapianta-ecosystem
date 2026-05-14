@@ -1,0 +1,26 @@
+{
+  "milestone_id": "TRANSPORT_BRIDGE_V1",
+  "schema_name": "TRANSPORT_RESPONSE",
+  "status_values": [
+    "SUCCESS",
+    "FAILED",
+    "BLOCKED",
+    "NEEDS_REVIEW"
+  ],
+  "required_fields": [
+    "transport_status",
+    "envelope_id",
+    "provider_id",
+    "replay_identity",
+    "runtime_result",
+    "normalized_result",
+    "runtime_evidence",
+    "transport_evidence",
+    "replay_safe"
+  ],
+  "preserves_identity": [
+    "replay_identity",
+    "provider_identity",
+    "envelope_identity"
+  ]
+}

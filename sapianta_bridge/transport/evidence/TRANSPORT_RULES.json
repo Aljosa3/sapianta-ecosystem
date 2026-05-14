@@ -1,0 +1,22 @@
+{
+  "milestone_id": "TRANSPORT_BRIDGE_V1",
+  "transport_model": "BOUNDED_GOVERNED_EXECUTION_TRANSPORT",
+  "requires_valid_execution_envelope": true,
+  "requires_valid_transport_request": true,
+  "requires_explicit_provider_binding": true,
+  "requires_runtime_guard": true,
+  "requires_runtime_evidence": true,
+  "forbidden_behaviors": [
+    "autonomous_orchestration",
+    "autonomous_planning",
+    "provider_routing_intelligence",
+    "dynamic_optimization",
+    "retry_systems",
+    "adaptive_fallback",
+    "hidden_execution",
+    "multi_agent_coordination",
+    "unrestricted_provider_execution",
+    "autonomous_scheduling",
+    "real_provider_api_calls"
+  ]
+}

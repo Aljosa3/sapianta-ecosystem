@@ -1,0 +1,15 @@
+{
+  "milestone_id": "TRANSPORT_BRIDGE_V1",
+  "binding_fields": [
+    "transport_id",
+    "provider_id",
+    "envelope_id",
+    "replay_identity",
+    "runtime_binding_hash"
+  ],
+  "same_validated_envelope_same_transport_semantics": true,
+  "deterministic": true,
+  "immutable": true,
+  "replay_safe": true,
+  "incomplete_binding_policy": "FAIL_CLOSED"
+}
