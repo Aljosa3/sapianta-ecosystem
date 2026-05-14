@@ -1,0 +1,22 @@
+{
+  "boundaries": {
+    "adaptive_provider_selection_allowed": false,
+    "arbitrary_subprocess_execution_allowed": false,
+    "autonomous_continuation_allowed": false,
+    "background_execution_allowed": false,
+    "concurrent_execution_allowed": false,
+    "external_apis_allowed": false,
+    "fallback_allowed": false,
+    "hidden_execution_allowed": false,
+    "hidden_prompt_rewriting_allowed": false,
+    "memory_mutation_allowed": false,
+    "network_execution_allowed": false,
+    "orchestration_allowed": false,
+    "provider_routing_allowed": false,
+    "retry_allowed": false,
+    "unrestricted_filesystem_access_allowed": false,
+    "unrestricted_shell_execution_allowed": false
+  },
+  "execution_model": "single_pass_single_provider_single_workspace_single_result",
+  "version": "FIRST_REAL_E2E_CODEX_LOOP_V1"
+}

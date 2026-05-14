@@ -1,0 +1,18 @@
+{
+  "lineage_chain": [
+    "chatgpt_request",
+    "ingress_request",
+    "semantic_request",
+    "execution_envelope",
+    "connector_request",
+    "execution_gate_request",
+    "bounded_codex_execution",
+    "invocation_result",
+    "result_return_payload",
+    "chatgpt_response"
+  ],
+  "manual_copy_paste_required": false,
+  "provider_id_required": "codex_cli",
+  "replay_safe": true,
+  "version": "FIRST_REAL_E2E_CODEX_LOOP_V1"
+}

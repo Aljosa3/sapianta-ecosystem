@@ -1,0 +1,25 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "loop_id",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "result_return_id",
+    "replay_identity",
+    "execution_status",
+    "chatgpt_response_payload",
+    "loop_binding",
+    "evidence_references",
+    "manual_copy_paste_required",
+    "hidden_prompt_rewriting_present",
+    "provider_routing_present",
+    "retry_present",
+    "fallback_present",
+    "orchestration_present",
+    "autonomous_continuation_present",
+    "replay_safe"
+  ],
+  "title": "REAL_E2E_LOOP_RESPONSE_SCHEMA",
+  "type": "object"
+}

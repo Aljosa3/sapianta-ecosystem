@@ -1,0 +1,25 @@
+{
+  "fail_closed_on": [
+    "missing_human_authorization",
+    "provider_not_codex_cli",
+    "missing_workspace",
+    "workspace_escape",
+    "missing_timeout",
+    "timeout_violation",
+    "lineage_mismatch",
+    "result_identity_mismatch",
+    "manual_copy_paste_required",
+    "orchestration_detected",
+    "retry_detected",
+    "fallback_detected",
+    "routing_detected",
+    "adaptive_provider_selection_detected",
+    "hidden_execution_detected",
+    "hidden_prompt_rewriting_detected",
+    "memory_mutation_detected",
+    "autonomous_continuation_detected",
+    "unrestricted_shell_execution_detected"
+  ],
+  "validation_model": "fail_closed",
+  "version": "FIRST_REAL_E2E_CODEX_LOOP_V1"
+}

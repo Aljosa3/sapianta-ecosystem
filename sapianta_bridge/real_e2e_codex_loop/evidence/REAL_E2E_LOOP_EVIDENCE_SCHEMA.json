@@ -1,0 +1,27 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "validation_name",
+    "loop_id",
+    "provider_id",
+    "replay_identity",
+    "request_valid",
+    "response_valid",
+    "chatgpt_request_bound",
+    "ingress_bound",
+    "nl_to_envelope_bound",
+    "session_bound",
+    "execution_gate_bound",
+    "bounded_codex_execution_bound",
+    "result_return_bound",
+    "chatgpt_response_bound",
+    "manual_copy_paste_required",
+    "replay_safe",
+    "orchestration_introduced",
+    "retry_introduced",
+    "fallback_introduced",
+    "provider_routing_introduced"
+  ],
+  "title": "REAL_E2E_LOOP_EVIDENCE_SCHEMA",
+  "type": "object"
+}
