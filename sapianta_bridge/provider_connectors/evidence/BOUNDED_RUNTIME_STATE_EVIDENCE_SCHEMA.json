@@ -1,0 +1,16 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "runtime_state",
+    "runtime_state_valid",
+    "runtime_state_env_valid",
+    "runtime_state_root",
+    "runtime_state_dir",
+    "home_directory_mutation_allowed",
+    "repo_root_state_allowed",
+    "global_state_mutation_allowed",
+    "arbitrary_env_mutation_allowed"
+  ],
+  "title": "BOUNDED_RUNTIME_STATE_EVIDENCE_SCHEMA",
+  "type": "object"
+}

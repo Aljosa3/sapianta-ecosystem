@@ -1,0 +1,19 @@
+{
+  "allowed_environment_keys": [
+    "HOME",
+    "XDG_CACHE_HOME",
+    "XDG_CONFIG_HOME",
+    "TMPDIR"
+  ],
+  "default_runtime_state_root": "/tmp/sapianta_codex_runtime",
+  "forbidden": {
+    "arbitrary_env_mutation": true,
+    "global_state_mutation": true,
+    "hidden_global_cache": true,
+    "home_directory_mutation": true,
+    "repo_root_state": true,
+    "runtime_state_outside_root": true,
+    "workspace_escape": true
+  },
+  "version": "BOUNDED_RUNTIME_WRITABLE_STATE_V1"
+}

@@ -1,0 +1,19 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "provider_id",
+    "invocation_id",
+    "replay_identity",
+    "runtime_state_root",
+    "runtime_state_dir",
+    "session_id",
+    "cleanup_policy",
+    "home_directory_mutation_allowed",
+    "repo_root_state_allowed",
+    "global_state_mutation_allowed",
+    "arbitrary_env_mutation_allowed",
+    "replay_safe"
+  ],
+  "title": "BOUNDED_RUNTIME_STATE_SCHEMA",
+  "type": "object"
+}

@@ -29,3 +29,16 @@ def test_bounded_execution_workspace_rejects_artifact_escape(tmp_path):
 
     assert validation["valid"] is False
     assert validation["filesystem_escape_detected"] is True
+
+
+def test_bounded_execution_workspace_rejects_parent_traversal(tmp_path):
+    artifact = tmp_path / "task.json"
+    artifact.write_text("{}", encoding="utf-8")
+
+    validation = validate_bounded_execution_workspace(
+        workspace_path=str(tmp_path / ".."),
+        task_artifact_path=str(artifact),
+    )
+
+    assert validation["valid"] is False
+    assert validation["filesystem_escape_detected"] is True

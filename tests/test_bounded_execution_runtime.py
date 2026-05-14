@@ -49,7 +49,15 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
         #!/usr/bin/env python3
         import json
         import sys
-        payload = {"argv": sys.argv[1:], "prompt": sys.argv[2]}
+        import os
+        payload = {
+            "argv": sys.argv[1:],
+            "prompt": sys.argv[2],
+            "home": os.environ.get("HOME"),
+            "xdg_cache": os.environ.get("XDG_CACHE_HOME"),
+            "xdg_config": os.environ.get("XDG_CONFIG_HOME"),
+            "tmpdir": os.environ.get("TMPDIR"),
+        }
         print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
         """,
     )
@@ -63,6 +71,11 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
     assert stdout["argv"][0] == "exec"
     assert "SAPIANTA_CODEX_VALIDATION_OK" in stdout["prompt"]
     assert result["runtime_validation"]["contract_used"] == "codex exec <bounded_prompt>"
+    state = result["runtime_validation"]["runtime_state"]
+    assert stdout["home"] == state["runtime_state_dir"]
+    assert stdout["xdg_cache"].startswith(state["runtime_state_dir"])
+    assert result["bounded_execution_evidence"]["runtime_state_valid"] is True
+    assert result["bounded_execution_evidence"]["repo_root_state_allowed"] is False
     assert capture["stderr"] == ""
     assert capture["exit_code"] == 0
     assert result["bounded_execution_evidence"]["provider_id"] == "codex_cli"
@@ -122,3 +135,16 @@ def test_bounded_execution_runtime_rejects_arbitrary_executable(tmp_path):
 
     assert validation["valid"] is False
     assert any(error["field"] == "codex_executable" for error in validation["errors"])
+
+
+def test_bounded_execution_runtime_rejects_runtime_state_escape(tmp_path):
+    request = _gate_request(tmp_path)
+
+    validation = validate_bounded_execution_runtime_request(
+        gate_request=request,
+        codex_executable=str(tmp_path / "codex"),
+        runtime_state_root=str(tmp_path / ".."),
+    )
+
+    assert validation["valid"] is False
+    assert validation["runtime_state_valid"] is False

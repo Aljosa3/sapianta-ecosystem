@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,13 @@ from .bounded_execution_capture import (
 from .bounded_execution_evidence import bounded_execution_evidence
 from .bounded_execution_timeout import validate_bounded_execution_timeout
 from .bounded_execution_workspace import validate_bounded_execution_workspace
+from .bounded_runtime_state import (
+    bounded_runtime_state_env,
+    create_bounded_runtime_state,
+    ensure_bounded_runtime_state_dirs,
+    validate_bounded_runtime_state,
+    validate_bounded_runtime_state_env,
+)
 from .execution_gate_request import EXECUTION_GATE_OPERATION_CODEX_CLI_RUN
 from .execution_gate_validator import validate_execution_gate_request
 
@@ -32,6 +40,7 @@ def validate_bounded_execution_runtime_request(
     *,
     gate_request: dict[str, Any],
     codex_executable: str = "codex",
+    runtime_state_root: str | Path = "/tmp/sapianta_codex_runtime",
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     gate_validation = validate_execution_gate_request(gate_request)
@@ -57,9 +66,20 @@ def validate_bounded_execution_runtime_request(
             errors.append({"field": "bounded_task_artifact_path", "reason": f"prepared task artifact unreadable: {exc.__class__.__name__}"})
     command = bounded_codex_command(codex_executable=codex_executable, bounded_prompt=bounded_prompt)
     command_validation = validate_bounded_codex_command(codex_executable=codex_executable, command=command)
+    runtime_state = create_bounded_runtime_state(
+        provider_id=gate_request.get("provider_id", ""),
+        invocation_id=gate_request.get("invocation_id", ""),
+        replay_identity=gate_request.get("replay_identity", ""),
+        runtime_state_root=runtime_state_root,
+    ).to_dict()
+    runtime_state_validation = validate_bounded_runtime_state(runtime_state)
+    runtime_state_env = bounded_runtime_state_env(runtime_state)
+    runtime_state_env_validation = validate_bounded_runtime_state_env(runtime_state_env, runtime_state)
     errors.extend(workspace_validation["errors"])
     errors.extend(timeout_validation["errors"])
     errors.extend(command_validation["errors"])
+    errors.extend(runtime_state_validation["errors"])
+    errors.extend(runtime_state_env_validation["errors"])
     return {
         "valid": not errors,
         "errors": errors,
@@ -68,7 +88,11 @@ def validate_bounded_execution_runtime_request(
         "workspace_valid": workspace_validation["valid"],
         "timeout_valid": timeout_validation["valid"],
         "command_valid": command_validation["valid"],
+        "runtime_state_valid": runtime_state_validation["valid"],
+        "runtime_state_env_valid": runtime_state_env_validation["valid"],
         "command": command,
+        "runtime_state": runtime_state,
+        "runtime_state_env": runtime_state_env,
         "bounded_prompt_sha256": hashlib.sha256(bounded_prompt.encode("utf-8")).hexdigest() if bounded_prompt else "",
         "contract_used": CODEX_EXEC_CONTRACT,
         "previous_blocked_contract": PREVIOUS_BLOCKED_CONTRACT,
@@ -88,10 +112,12 @@ def execute_bounded_codex(
     *,
     gate_request: dict[str, Any],
     codex_executable: str = "codex",
+    runtime_state_root: str | Path = "/tmp/sapianta_codex_runtime",
 ) -> dict[str, Any]:
     runtime_validation = validate_bounded_execution_runtime_request(
         gate_request=gate_request,
         codex_executable=codex_executable,
+        runtime_state_root=runtime_state_root,
     )
     if not runtime_validation["valid"]:
         capture = capture_completed_execution(
@@ -111,6 +137,9 @@ def execute_bounded_codex(
             "bounded_execution_evidence": evidence,
         }
     try:
+        ensure_bounded_runtime_state_dirs(runtime_validation["runtime_state"])
+        execution_env = dict(os.environ)
+        execution_env.update(runtime_validation["runtime_state_env"])
         completed = subprocess.run(
             runtime_validation["command"],
             cwd=gate_request["workspace_path"],
@@ -119,6 +148,7 @@ def execute_bounded_codex(
             timeout=gate_request["timeout_seconds"],
             shell=False,
             check=False,
+            env=execution_env,
         )
         capture = capture_completed_execution(
             stdout=completed.stdout,

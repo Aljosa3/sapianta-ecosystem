@@ -23,6 +23,11 @@ def bounded_execution_evidence(
         "replay_identity": gate_request.get("replay_identity", ""),
         "workspace_path": gate_request.get("workspace_path", ""),
         "timeout_seconds": gate_request.get("timeout_seconds", 0),
+        "runtime_state": runtime_validation.get("runtime_state", {}),
+        "runtime_state_valid": runtime_validation.get("runtime_state_valid", False),
+        "runtime_state_env_valid": runtime_validation.get("runtime_state_env_valid", False),
+        "runtime_state_root": runtime_validation.get("runtime_state", {}).get("runtime_state_root", ""),
+        "runtime_state_dir": runtime_validation.get("runtime_state", {}).get("runtime_state_dir", ""),
         "contract_used": runtime_validation.get("contract_used", ""),
         "previous_blocked_contract": runtime_validation.get("previous_blocked_contract", ""),
         "execution_authorized": gate_request.get("execution_authorized") is True,
@@ -36,6 +41,10 @@ def bounded_execution_evidence(
         "workspace_bounded": runtime_validation.get("workspace_valid", False),
         "timeout_bounded": runtime_validation.get("timeout_valid", False),
         "shell_used": False,
+        "home_directory_mutation_allowed": False,
+        "repo_root_state_allowed": False,
+        "global_state_mutation_allowed": False,
+        "arbitrary_env_mutation_allowed": False,
         "arbitrary_command_execution_present": False,
         "shell_execution_present": False,
         "network_execution_present": False,
@@ -69,6 +78,8 @@ def validate_bounded_execution_evidence(evidence: Any) -> dict[str, Any]:
         "provider_identity_preserved",
         "workspace_bounded",
         "timeout_bounded",
+        "runtime_state_valid",
+        "runtime_state_env_valid",
         "replay_safe",
     ):
         if field not in evidence:
@@ -85,6 +96,10 @@ def validate_bounded_execution_evidence(evidence: Any) -> dict[str, Any]:
         "background_execution_present",
         "concurrent_execution_present",
         "memory_mutation_present",
+        "home_directory_mutation_allowed",
+        "repo_root_state_allowed",
+        "global_state_mutation_allowed",
+        "arbitrary_env_mutation_allowed",
     ):
         if evidence.get(field) is not False:
             errors.append({"field": field, "reason": "bounded execution evidence reports forbidden behavior"})

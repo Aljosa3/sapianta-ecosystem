@@ -1,0 +1,16 @@
+{
+  "fail_closed_on": [
+    "missing_runtime_state",
+    "runtime_state_outside_approved_root",
+    "parent_traversal",
+    "non_deterministic_state_path",
+    "shared_uncontrolled_cache",
+    "home_directory_mutation",
+    "repo_root_state",
+    "global_state_mutation",
+    "arbitrary_env_mutation",
+    "unsupported_env_key"
+  ],
+  "validation_model": "fail_closed",
+  "version": "BOUNDED_RUNTIME_WRITABLE_STATE_V1"
+}
