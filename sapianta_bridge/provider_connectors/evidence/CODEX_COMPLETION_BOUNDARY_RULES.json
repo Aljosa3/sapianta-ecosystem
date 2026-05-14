@@ -1,0 +1,15 @@
+{
+  "forbidden": {
+    "adaptive_provider_selection": true,
+    "autonomous_continuation": true,
+    "command_mutation": true,
+    "fallback_execution": true,
+    "hidden_prompt_rewriting": true,
+    "orchestration": true,
+    "provider_routing": true,
+    "retries": true,
+    "unrestricted_shell_execution": true
+  },
+  "classification_only": true,
+  "version": "CODEX_EXEC_COMPLETION_STABILIZATION_V1"
+}

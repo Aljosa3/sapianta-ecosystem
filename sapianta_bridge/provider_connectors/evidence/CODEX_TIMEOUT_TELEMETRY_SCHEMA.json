@@ -1,0 +1,14 @@
+{
+  "additionalProperties": true,
+  "required": [
+    "timeout_seconds",
+    "duration_seconds",
+    "timed_out",
+    "stdout_sample",
+    "stderr_sample",
+    "timeout_exceeded",
+    "replay_safe"
+  ],
+  "title": "CODEX_TIMEOUT_TELEMETRY_SCHEMA",
+  "type": "object"
+}

@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,8 @@ from .bounded_runtime_state import (
     validate_bounded_runtime_state,
     validate_bounded_runtime_state_env,
 )
+from .codex_completion_classifier import classify_codex_completion
+from .codex_timeout_telemetry import codex_timeout_telemetry
 from .execution_gate_request import EXECUTION_GATE_OPERATION_CODEX_CLI_RUN
 from .execution_gate_validator import validate_execution_gate_request
 
@@ -120,11 +123,27 @@ def execute_bounded_codex(
         runtime_state_root=runtime_state_root,
     )
     if not runtime_validation["valid"]:
+        classification = classify_codex_completion(
+            stdout="",
+            stderr="bounded Codex execution validation failed",
+            exit_code=1,
+            timed_out=False,
+            duration_seconds=0,
+        )
         capture = capture_completed_execution(
             stdout="",
             stderr="bounded Codex execution validation failed",
             exit_code=1,
+            completion_state=classification["completion_state"],
+            suspected_blocker=classification["suspected_blocker"],
         ).to_dict()
+        timeout_telemetry = codex_timeout_telemetry(
+            timeout_seconds=gate_request.get("timeout_seconds", 0) if isinstance(gate_request.get("timeout_seconds"), int) else 0,
+            duration_seconds=0,
+            timed_out=False,
+            stdout="",
+            stderr=capture["stderr"],
+        )
         evidence = bounded_execution_evidence(
             gate_request=gate_request,
             runtime_validation=runtime_validation,
@@ -134,12 +153,15 @@ def execute_bounded_codex(
             "bounded_execution_status": "BLOCKED",
             "runtime_validation": runtime_validation,
             "capture": capture,
+            "completion_classification": classification,
+            "timeout_telemetry": timeout_telemetry,
             "bounded_execution_evidence": evidence,
         }
     try:
         ensure_bounded_runtime_state_dirs(runtime_validation["runtime_state"])
         execution_env = dict(os.environ)
         execution_env.update(runtime_validation["runtime_state_env"])
+        started = time.monotonic()
         completed = subprocess.run(
             runtime_validation["command"],
             cwd=gate_request["workspace_path"],
@@ -150,24 +172,64 @@ def execute_bounded_codex(
             check=False,
             env=execution_env,
         )
+        duration_seconds = int(time.monotonic() - started)
+        classification = classify_codex_completion(
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+            exit_code=completed.returncode,
+            timed_out=False,
+            duration_seconds=duration_seconds,
+        )
         capture = capture_completed_execution(
             stdout=completed.stdout,
             stderr=completed.stderr,
             exit_code=completed.returncode,
+            duration_seconds=duration_seconds,
+            completion_state=classification["completion_state"],
+            suspected_blocker=classification["suspected_blocker"],
         ).to_dict()
         status = "SUCCESS" if completed.returncode == 0 else "FAILED"
     except subprocess.TimeoutExpired as exc:
         stdout = exc.stdout if isinstance(exc.stdout, str) else ""
         stderr = exc.stderr if isinstance(exc.stderr, str) else "bounded codex execution timed out"
-        capture = capture_timeout(stdout=stdout, stderr=stderr).to_dict()
+        classification = classify_codex_completion(
+            stdout=stdout,
+            stderr=stderr,
+            exit_code=124,
+            timed_out=True,
+            duration_seconds=gate_request["timeout_seconds"],
+        )
+        capture = capture_timeout(
+            stdout=stdout,
+            stderr=stderr,
+            duration_seconds=gate_request["timeout_seconds"],
+            completion_state=classification["completion_state"],
+            suspected_blocker=classification["suspected_blocker"],
+        ).to_dict()
         status = "TIMEOUT"
     except OSError as exc:
+        classification = classify_codex_completion(
+            stdout="",
+            stderr=f"bounded Codex execution failed: {exc.__class__.__name__}",
+            exit_code=127,
+            timed_out=False,
+            duration_seconds=0,
+        )
         capture = capture_completed_execution(
             stdout="",
             stderr=f"bounded Codex execution failed: {exc.__class__.__name__}",
             exit_code=127,
+            completion_state=classification["completion_state"],
+            suspected_blocker=classification["suspected_blocker"],
         ).to_dict()
         status = "FAILED"
+    timeout_telemetry = codex_timeout_telemetry(
+        timeout_seconds=gate_request["timeout_seconds"],
+        duration_seconds=capture["duration_seconds"],
+        timed_out=capture["timed_out"],
+        stdout=capture["stdout"],
+        stderr=capture["stderr"],
+    )
     capture_validation = validate_bounded_execution_capture(capture)
     evidence = bounded_execution_evidence(
         gate_request=gate_request,
@@ -179,6 +241,8 @@ def execute_bounded_codex(
         "runtime_validation": runtime_validation,
         "capture": capture,
         "capture_validation": capture_validation,
+        "completion_classification": classification,
+        "timeout_telemetry": timeout_telemetry,
         "bounded_execution_evidence": evidence,
         "result_return_ready": status in ("SUCCESS", "FAILED", "TIMEOUT"),
     }

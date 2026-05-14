@@ -1,0 +1,16 @@
+{
+  "completion_states": [
+    "COMPLETED",
+    "TIMEOUT",
+    "INTERACTIVE_WAIT",
+    "AUTH_WAIT",
+    "APP_SERVER_WAIT",
+    "STREAMING_WAIT",
+    "HANGING_PROCESS",
+    "CLI_ERROR",
+    "UNKNOWN"
+  ],
+  "success_state": "COMPLETED",
+  "title": "CODEX_COMPLETION_STATE_SCHEMA",
+  "type": "object"
+}

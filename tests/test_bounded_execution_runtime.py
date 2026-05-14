@@ -67,6 +67,8 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
 
     assert result["bounded_execution_status"] == "SUCCESS"
     capture = result["capture"]
+    assert capture["completion_state"] == "COMPLETED"
+    assert result["completion_classification"]["completion_state"] == "COMPLETED"
     stdout = json.loads(capture["stdout"])
     assert stdout["argv"][0] == "exec"
     assert "SAPIANTA_CODEX_VALIDATION_OK" in stdout["prompt"]
@@ -123,6 +125,8 @@ def test_bounded_execution_runtime_handles_timeout(tmp_path):
     assert result["bounded_execution_status"] == "TIMEOUT"
     assert result["capture"]["timed_out"] is True
     assert result["capture"]["exit_code"] == 124
+    assert result["capture"]["completion_state"] == "TIMEOUT"
+    assert result["timeout_telemetry"]["timeout_exceeded"] is True
 
 
 def test_bounded_execution_runtime_rejects_arbitrary_executable(tmp_path):

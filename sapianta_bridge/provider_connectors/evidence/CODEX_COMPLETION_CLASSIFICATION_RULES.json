@@ -1,0 +1,31 @@
+{
+  "classifier_inputs": [
+    "stdout",
+    "stderr",
+    "exit_code",
+    "timed_out",
+    "duration_seconds"
+  ],
+  "fail_closed_states": [
+    "TIMEOUT",
+    "INTERACTIVE_WAIT",
+    "AUTH_WAIT",
+    "APP_SERVER_WAIT",
+    "STREAMING_WAIT",
+    "HANGING_PROCESS",
+    "CLI_ERROR",
+    "UNKNOWN"
+  ],
+  "rules": {
+    "APP_SERVER_WAIT": "timeout or stderr markers mention app-server/state runtime",
+    "AUTH_WAIT": "auth markers present",
+    "CLI_ERROR": "process terminates with non-zero exit code",
+    "COMPLETED": "process terminates with exit code 0",
+    "HANGING_PROCESS": "timeout with no captured output",
+    "INTERACTIVE_WAIT": "interactive prompt markers present",
+    "STREAMING_WAIT": "streaming markers present",
+    "TIMEOUT": "timeout with output and no more specific blocker",
+    "UNKNOWN": "unclassified states fail closed"
+  },
+  "version": "CODEX_EXEC_COMPLETION_STABILIZATION_V1"
+}
