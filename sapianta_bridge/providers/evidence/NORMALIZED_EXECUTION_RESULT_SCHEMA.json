@@ -1,0 +1,26 @@
+{
+  "milestone_id": "PROVIDER_ABSTRACTION_FOUNDATION_V1",
+  "schema_name": "NORMALIZED_EXECUTION_RESULT",
+  "required_fields": [
+    "provider_id",
+    "execution_status",
+    "artifacts_created",
+    "tests_executed",
+    "governance_modified",
+    "execution_time_ms",
+    "replay_safe"
+  ],
+  "execution_status_values": [
+    "SUCCESS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_EXECUTED"
+  ],
+  "required_values": {
+    "governance_modified": false,
+    "replay_safe": true,
+    "hidden_tasks_generated": false,
+    "validation_bypassed": false
+  },
+  "provider_specific_output_changes_governance_semantics": false
+}

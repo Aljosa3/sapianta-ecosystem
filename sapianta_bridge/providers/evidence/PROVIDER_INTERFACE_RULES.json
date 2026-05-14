@@ -1,0 +1,27 @@
+{
+  "milestone_id": "PROVIDER_ABSTRACTION_FOUNDATION_V1",
+  "permanent_invariant": "PROVIDER != GOVERNANCE",
+  "provider_contract_required_fields": [
+    "provider_id",
+    "provider_type",
+    "bounded_execution",
+    "governance_authority",
+    "replay_safe"
+  ],
+  "provider_required_values": {
+    "bounded_execution": true,
+    "governance_authority": false,
+    "replay_safe": true,
+    "self_authorization_allowed": false,
+    "governance_mutation_allowed": false,
+    "replay_mutation_allowed": false,
+    "authority_escalation_allowed": false,
+    "validation_bypass_allowed": false
+  },
+  "registry_boundary": {
+    "scheduling_present": false,
+    "dynamic_selection_present": false,
+    "routing_present": false,
+    "optimization_present": false
+  }
+}
