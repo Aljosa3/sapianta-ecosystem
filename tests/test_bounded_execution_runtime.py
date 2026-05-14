@@ -49,7 +49,7 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
         #!/usr/bin/env python3
         import json
         import sys
-        payload = {"argv": sys.argv[1:], "artifact": sys.argv[2]}
+        payload = {"argv": sys.argv[1:], "prompt": sys.argv[2]}
         print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
         """,
     )
@@ -60,8 +60,9 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
     assert result["bounded_execution_status"] == "SUCCESS"
     capture = result["capture"]
     stdout = json.loads(capture["stdout"])
-    assert stdout["argv"][0] == "run"
-    assert stdout["artifact"] == request["connector_request"]["bounded_task_artifact_path"]
+    assert stdout["argv"][0] == "exec"
+    assert "SAPIANTA_CODEX_VALIDATION_OK" in stdout["prompt"]
+    assert result["runtime_validation"]["contract_used"] == "codex exec <bounded_prompt>"
     assert capture["stderr"] == ""
     assert capture["exit_code"] == 0
     assert result["bounded_execution_evidence"]["provider_id"] == "codex_cli"

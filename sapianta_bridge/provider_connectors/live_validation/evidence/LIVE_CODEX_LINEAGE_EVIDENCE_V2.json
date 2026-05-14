@@ -1,0 +1,24 @@
+{
+  "bounded_prompt_generated_from_prepared_artifact": true,
+  "bounded_runtime_used": true,
+  "contract_used": "codex exec <bounded_prompt>",
+  "execution_gate_used": true,
+  "lineage_chain": [
+    "live_validation_case_v2",
+    "execution_envelope",
+    "connector_request",
+    "prepared_task_artifact",
+    "bounded_prompt",
+    "execution_gate_request",
+    "bounded_codex_runtime",
+    "execution_capture",
+    "live_validation_evidence_v2"
+  ],
+  "manual_copy_paste_required": false,
+  "previous_blocked_contract": "codex run <prepared_task_artifact>",
+  "provider_id": "codex_cli",
+  "replay_identity": "REPLAY-LIVE-CODEX-VALIDATION",
+  "replay_safe": true,
+  "status": "BLOCKED",
+  "validation_name": "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V2"
+}

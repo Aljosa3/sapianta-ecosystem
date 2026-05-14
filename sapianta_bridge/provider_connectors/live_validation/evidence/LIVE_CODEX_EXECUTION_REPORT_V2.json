@@ -1,0 +1,23 @@
+{
+  "autonomous_execution_introduced": false,
+  "blocked_reason": "Codex CLI detected and executed through the bounded runtime using codex exec <bounded_prompt>, but the installed CLI failed during local state/app-server initialization in a read-only filesystem environment.",
+  "codex_cli_detected": true,
+  "codex_cli_executed": true,
+  "contract_used": "codex exec <bounded_prompt>",
+  "execution_authorized": true,
+  "exit_code_captured": true,
+  "fallback_introduced": false,
+  "orchestration_introduced": false,
+  "previous_blocked_contract": "codex run <prepared_task_artifact>",
+  "provider_id": "codex_cli",
+  "replay_safe": true,
+  "retries_introduced": false,
+  "routing_introduced": false,
+  "shell_used": false,
+  "status": "BLOCKED",
+  "stderr_captured": true,
+  "stdout_captured": true,
+  "timeout_seconds": 30,
+  "validation_name": "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V2",
+  "workspace_bounded": true
+}

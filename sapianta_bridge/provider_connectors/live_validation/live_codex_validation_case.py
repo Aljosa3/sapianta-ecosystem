@@ -16,6 +16,7 @@ from sapianta_bridge.provider_connectors.execution_gate_request import (
 
 
 VALIDATION_NAME = "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V1"
+VALIDATION_NAME_V2 = "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V2"
 
 
 @dataclass(frozen=True)
@@ -93,4 +94,27 @@ def create_live_codex_validation_case(
         envelope=envelope,
         connector_request=connector_request,
         execution_gate_request=gate_request,
+    )
+
+
+def create_live_codex_validation_case_v2(
+    *,
+    workspace_path: str | Path,
+    codex_executable: str | None = None,
+    timeout_seconds: int = 30,
+) -> LiveCodexValidationCase | dict[str, Any]:
+    case = create_live_codex_validation_case(
+        workspace_path=workspace_path,
+        codex_executable=codex_executable,
+        timeout_seconds=timeout_seconds,
+    )
+    if isinstance(case, dict):
+        return {**case, "validation_name": VALIDATION_NAME_V2}
+    return LiveCodexValidationCase(
+        validation_name=VALIDATION_NAME_V2,
+        workspace_path=case.workspace_path,
+        codex_executable=case.codex_executable,
+        envelope=case.envelope,
+        connector_request=case.connector_request,
+        execution_gate_request=case.execution_gate_request,
     )

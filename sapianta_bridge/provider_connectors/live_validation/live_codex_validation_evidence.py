@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .live_codex_validation_case import VALIDATION_NAME
+from .live_codex_validation_case import VALIDATION_NAME, VALIDATION_NAME_V2
 
 
 def live_codex_validation_evidence(
@@ -42,6 +42,32 @@ def live_codex_validation_evidence(
     }
 
 
+def live_codex_validation_evidence_v2(
+    *,
+    status: str,
+    codex_cli_detected: bool,
+    case: dict[str, Any] | None = None,
+    bounded_execution_result: dict[str, Any] | None = None,
+    blocked_reason: str = "",
+) -> dict[str, Any]:
+    evidence = live_codex_validation_evidence(
+        status=status,
+        codex_cli_detected=codex_cli_detected,
+        case=case,
+        bounded_execution_result=bounded_execution_result,
+        blocked_reason=blocked_reason,
+    )
+    runtime_validation = (bounded_execution_result or {}).get("runtime_validation", {})
+    evidence["validation_name"] = VALIDATION_NAME_V2
+    evidence["contract_used"] = runtime_validation.get("contract_used", "codex exec <bounded_prompt>")
+    evidence["previous_blocked_contract"] = runtime_validation.get(
+        "previous_blocked_contract",
+        "codex run <prepared_task_artifact>",
+    )
+    evidence["shell_used"] = False
+    return evidence
+
+
 def validate_live_codex_validation_evidence(evidence: Any) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     if not isinstance(evidence, dict):
@@ -63,8 +89,15 @@ def validate_live_codex_validation_evidence(evidence: Any) -> dict[str, Any]:
             errors.append({"field": field, "reason": "missing live validation evidence field"})
     if evidence.get("status") not in ("PASSED", "BLOCKED", "FAILED"):
         errors.append({"field": "status", "reason": "unsupported live validation status"})
-    if evidence.get("validation_name") != VALIDATION_NAME:
+    if evidence.get("validation_name") not in (VALIDATION_NAME, VALIDATION_NAME_V2):
         errors.append({"field": "validation_name", "reason": "validation name mismatch"})
+    if evidence.get("validation_name") == VALIDATION_NAME_V2:
+        if evidence.get("contract_used") != "codex exec <bounded_prompt>":
+            errors.append({"field": "contract_used", "reason": "V2 must use codex exec contract"})
+        if evidence.get("previous_blocked_contract") != "codex run <prepared_task_artifact>":
+            errors.append({"field": "previous_blocked_contract", "reason": "V2 must preserve previous blocked contract"})
+        if evidence.get("shell_used") is not False:
+            errors.append({"field": "shell_used", "reason": "V2 must preserve shell=False"})
     for field in (
         "orchestration_introduced",
         "routing_introduced",

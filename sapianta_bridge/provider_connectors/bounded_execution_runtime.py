@@ -2,10 +2,20 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import subprocess
+from pathlib import Path
 from typing import Any
 
-from .bounded_codex_execution import CODEX_PROVIDER_ID, bounded_codex_command, validate_bounded_codex_command
+from .bounded_codex_execution import (
+    CODEX_EXEC_CONTRACT,
+    CODEX_PROVIDER_ID,
+    PREVIOUS_BLOCKED_CONTRACT,
+    bounded_codex_command,
+    bounded_prompt_from_task_artifact,
+    validate_bounded_codex_command,
+)
 from .bounded_execution_capture import (
     capture_completed_execution,
     capture_timeout,
@@ -38,7 +48,14 @@ def validate_bounded_execution_runtime_request(
         task_artifact_path=task_artifact_path,
     )
     timeout_validation = validate_bounded_execution_timeout(gate_request.get("timeout_seconds"))
-    command = bounded_codex_command(codex_executable=codex_executable, task_artifact_path=task_artifact_path)
+    bounded_prompt = ""
+    if Path(task_artifact_path).exists():
+        try:
+            task_artifact = json.loads(Path(task_artifact_path).read_text(encoding="utf-8"))
+            bounded_prompt = bounded_prompt_from_task_artifact(task_artifact)
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append({"field": "bounded_task_artifact_path", "reason": f"prepared task artifact unreadable: {exc.__class__.__name__}"})
+    command = bounded_codex_command(codex_executable=codex_executable, bounded_prompt=bounded_prompt)
     command_validation = validate_bounded_codex_command(codex_executable=codex_executable, command=command)
     errors.extend(workspace_validation["errors"])
     errors.extend(timeout_validation["errors"])
@@ -52,6 +69,9 @@ def validate_bounded_execution_runtime_request(
         "timeout_valid": timeout_validation["valid"],
         "command_valid": command_validation["valid"],
         "command": command,
+        "bounded_prompt_sha256": hashlib.sha256(bounded_prompt.encode("utf-8")).hexdigest() if bounded_prompt else "",
+        "contract_used": CODEX_EXEC_CONTRACT,
+        "previous_blocked_contract": PREVIOUS_BLOCKED_CONTRACT,
         "shell_execution_present": False,
         "arbitrary_command_execution_present": False,
         "network_execution_present": False,

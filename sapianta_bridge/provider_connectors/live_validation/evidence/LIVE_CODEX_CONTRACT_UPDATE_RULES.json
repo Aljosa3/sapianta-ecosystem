@@ -1,0 +1,31 @@
+{
+  "contract_update": {
+    "bounded_prompt_source": "prepared_task_artifact_content",
+    "current_contract": "codex exec <bounded_prompt>",
+    "file_input_assumed": false,
+    "previous_blocked_contract": "codex run <prepared_task_artifact>",
+    "shell_used": false
+  },
+  "fail_closed_on": [
+    "missing_human_authorization",
+    "provider_not_codex_cli",
+    "workspace_escape",
+    "missing_timeout",
+    "missing_prepared_task_artifact",
+    "bounded_prompt_generation_failed",
+    "bounded_runtime_not_used",
+    "codex_run_contract_detected",
+    "shell_execution_detected",
+    "missing_stdout_capture",
+    "missing_stderr_capture",
+    "missing_exit_code_capture",
+    "lineage_mismatch",
+    "orchestration_detected",
+    "retry_detected",
+    "fallback_detected",
+    "routing_detected",
+    "autonomous_execution_detected"
+  ],
+  "validation_model": "bounded_runtime_contract_correction",
+  "version": "LIVE_REAL_CODEX_EXECUTION_VALIDATION_V2"
+}
