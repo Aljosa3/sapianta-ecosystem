@@ -1,0 +1,19 @@
+{
+  "milestone_id": "NATURAL_LANGUAGE_TO_ENVELOPE_V1",
+  "admissibility_outputs": [
+    "ADMISSIBLE",
+    "REVIEW_REQUIRED",
+    "REJECTED"
+  ],
+  "fail_closed": true,
+  "rejects": [
+    "ambiguous authority escalation",
+    "implicit execution authority",
+    "governance bypass",
+    "validation bypass",
+    "unrestricted shell",
+    "unrestricted filesystem mutation",
+    "auto execution without approval"
+  ],
+  "execution_authority_granted": false
+}

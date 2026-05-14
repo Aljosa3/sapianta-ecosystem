@@ -1,0 +1,21 @@
+{
+  "milestone_id": "NATURAL_LANGUAGE_TO_ENVELOPE_V1",
+  "least_privilege": true,
+  "implicit_workspace_expansion_allowed": false,
+  "allowed_hint_roots": [
+    "sapianta_bridge",
+    "tests",
+    ".github/governance",
+    "docs"
+  ],
+  "default_roots": {
+    "GOVERNANCE_INSPECTION": ".github/governance",
+    "CREATIVE_GENERATION": "docs",
+    "GOVERNED_REFINEMENT": "sapianta_bridge",
+    "GOVERNED_EXECUTION_PROPOSAL": "sapianta_bridge"
+  },
+  "forbidden_roots": [
+    ".git",
+    "sapianta_system/venv"
+  ]
+}

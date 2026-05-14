@@ -1,0 +1,31 @@
+{
+  "milestone_id": "NATURAL_LANGUAGE_TO_ENVELOPE_V1",
+  "least_privilege": true,
+  "implicit_authority_allowed": false,
+  "mappings": {
+    "GOVERNANCE_INSPECTION": [
+      "READ_ONLY",
+      "NO_NETWORK",
+      "NO_RUNTIME_EXECUTION",
+      "NO_PRIVILEGE_ESCALATION"
+    ],
+    "CREATIVE_GENERATION": [
+      "CREATE_NEW_FILES",
+      "NO_NETWORK",
+      "NO_RUNTIME_EXECUTION",
+      "NO_PRIVILEGE_ESCALATION"
+    ],
+    "GOVERNED_REFINEMENT": [
+      "PATCH_EXISTING_FILES",
+      "NO_NETWORK",
+      "NO_RUNTIME_EXECUTION",
+      "NO_PRIVILEGE_ESCALATION"
+    ],
+    "GOVERNED_EXECUTION_PROPOSAL": [
+      "RUN_TESTS",
+      "NO_NETWORK",
+      "NO_PRIVILEGE_ESCALATION"
+    ]
+  },
+  "unknown_intent_policy": "BLOCK_MAPPING"
+}

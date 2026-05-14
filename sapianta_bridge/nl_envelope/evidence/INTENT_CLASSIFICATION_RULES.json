@@ -1,0 +1,14 @@
+{
+  "milestone_id": "NATURAL_LANGUAGE_TO_ENVELOPE_V1",
+  "intent_types": [
+    "GOVERNED_REFINEMENT",
+    "CREATIVE_GENERATION",
+    "GOVERNED_EXECUTION_PROPOSAL",
+    "GOVERNANCE_INSPECTION",
+    "UNKNOWN"
+  ],
+  "confidence_model": "DETERMINISTIC",
+  "unknown_policy": "FAIL_CLOSED",
+  "ambiguous_classification_policy": "FAIL_CLOSED",
+  "auto_escalation_allowed": false
+}

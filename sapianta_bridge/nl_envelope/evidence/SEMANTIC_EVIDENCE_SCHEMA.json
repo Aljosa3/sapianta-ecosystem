@@ -1,0 +1,22 @@
+{
+  "milestone_id": "NATURAL_LANGUAGE_TO_ENVELOPE_V1",
+  "schema_name": "SEMANTIC_EVIDENCE",
+  "required_fields": [
+    "semantic_request_id",
+    "replay_identity",
+    "intent_type",
+    "admissibility",
+    "authority_scope",
+    "workspace_scope",
+    "envelope_generated",
+    "downstream_validation_required",
+    "replay_safe",
+    "execution_authority_granted",
+    "prompt_is_authority"
+  ],
+  "required_values": {
+    "replay_safe": true,
+    "execution_authority_granted": false,
+    "prompt_is_authority": false
+  }
+}
