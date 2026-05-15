@@ -1,0 +1,1 @@
+{"lineage":["interaction_session_id","prior_turn_id","prior_response_id","transport_session_id","governed_session_id","execution_gate_id","provider_invocation_id","bounded_runtime_id","result_capture_id","response_return_id"],"replay_safe":true}
