@@ -1,0 +1,20 @@
+{
+  "states": [
+    "REQUEST_RECEIVED",
+    "ENVELOPE_BOUND",
+    "EXECUTION_AUTHORIZED",
+    "PROVIDER_RUNNING",
+    "RESULT_CAPTURED",
+    "RESULT_RETURNED",
+    "BLOCKED",
+    "FAILED"
+  ],
+  "success_path": [
+    "REQUEST_RECEIVED",
+    "ENVELOPE_BOUND",
+    "EXECUTION_AUTHORIZED",
+    "PROVIDER_RUNNING",
+    "RESULT_CAPTURED",
+    "RESULT_RETURNED"
+  ]
+}

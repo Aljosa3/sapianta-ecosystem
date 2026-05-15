@@ -1,0 +1,1 @@
+{"required_fields":["ingress_artifact_id","human_input","conversation_id","execution_gate_id","bounded_runtime_id","result_capture_id","requested_provider_id"]}

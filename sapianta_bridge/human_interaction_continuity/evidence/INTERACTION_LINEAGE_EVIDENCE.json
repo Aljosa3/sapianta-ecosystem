@@ -1,0 +1,13 @@
+{
+  "lineage": [
+    "human_request",
+    "interaction_request",
+    "governed_session",
+    "execution_gate_reference",
+    "provider_invocation",
+    "result_return",
+    "interaction_response"
+  ],
+  "replay_safe": true,
+  "version": "1.0"
+}

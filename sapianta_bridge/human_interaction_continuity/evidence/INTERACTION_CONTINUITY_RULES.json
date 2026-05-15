@@ -1,0 +1,10 @@
+{
+  "deterministic_request_result_association": true,
+  "execution_gate_reference_required": true,
+  "governed_session_reference_required": true,
+  "provider_identity_preserved": true,
+  "replay_visible_conversational_chain": true,
+  "result_lineage_preserved": true,
+  "rules_name": "INTERACTION_CONTINUITY_RULES",
+  "version": "1.0"
+}

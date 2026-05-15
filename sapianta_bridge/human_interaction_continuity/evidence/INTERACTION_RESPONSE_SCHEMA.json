@@ -1,0 +1,16 @@
+{
+  "required_fields": [
+    "interaction_session_id",
+    "current_state",
+    "execution_phases",
+    "provider_id",
+    "envelope_id",
+    "invocation_id",
+    "execution_gate_id",
+    "governed_session_id",
+    "result_payload",
+    "replay_identity"
+  ],
+  "schema_name": "INTERACTION_RESPONSE_SCHEMA",
+  "version": "1.0"
+}

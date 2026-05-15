@@ -1,0 +1,10 @@
+{
+  "async_execution_allowed": false,
+  "autonomous_continuation_allowed": false,
+  "background_execution_allowed": false,
+  "memory_persistence_allowed": false,
+  "orchestration_allowed": false,
+  "provider_routing_allowed": false,
+  "retries_allowed": false,
+  "version": "1.0"
+}
