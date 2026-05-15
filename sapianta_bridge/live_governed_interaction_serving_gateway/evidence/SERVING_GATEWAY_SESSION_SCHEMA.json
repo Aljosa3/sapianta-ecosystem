@@ -1,0 +1,11 @@
+{
+  "required": [
+    "serving_gateway_session_id",
+    "runtime_serving_session_id",
+    "terminal_attachment_session_id",
+    "ingress_id",
+    "egress_id",
+    "replay_safe"
+  ],
+  "schema_name": "SERVING_GATEWAY_SESSION_SCHEMA"
+}

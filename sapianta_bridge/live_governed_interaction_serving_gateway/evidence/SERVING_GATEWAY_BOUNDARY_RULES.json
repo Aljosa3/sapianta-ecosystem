@@ -1,0 +1,21 @@
+{
+  "forbidden": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback",
+    "routing",
+    "provider_switching",
+    "websocket_infrastructure",
+    "async_loops",
+    "background_workers",
+    "daemon_systems",
+    "distributed_runtimes",
+    "network_apis",
+    "frontend_runtime_infrastructure",
+    "hidden_execution_layers",
+    "unrestricted_shell_execution",
+    "shell_true"
+  ],
+  "schema_name": "SERVING_GATEWAY_BOUNDARY_RULES"
+}
