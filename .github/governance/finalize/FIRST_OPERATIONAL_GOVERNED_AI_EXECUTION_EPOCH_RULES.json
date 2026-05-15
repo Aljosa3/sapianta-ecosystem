@@ -1,0 +1,27 @@
+{
+  "classification": "FOUNDATIONAL_OPERATIONAL",
+  "forbidden_capability_expansion": {
+    "async_background_execution": false,
+    "autonomous_continuation": false,
+    "distributed_workers": false,
+    "multimodal_execution": false,
+    "orchestration": false,
+    "persistent_memory_layer": false,
+    "retries": false,
+    "routing": false
+  },
+  "governance_guarantees": {
+    "bounded_runtime": true,
+    "deterministic_replay": true,
+    "explicit_authorization": true,
+    "explicit_evidence_generation": true,
+    "fail_closed_behavior": true,
+    "lineage_preservation": true,
+    "shell_false": true,
+    "timeout_containment": true,
+    "workspace_containment": true
+  },
+  "not_classified_as": "FULLY_AUTONOMOUS",
+  "rules_name": "FIRST_OPERATIONAL_GOVERNED_AI_EXECUTION_EPOCH_RULES",
+  "version": "1.0"
+}
