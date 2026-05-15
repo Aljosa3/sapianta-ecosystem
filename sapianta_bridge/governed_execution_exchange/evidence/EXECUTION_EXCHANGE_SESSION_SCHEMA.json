@@ -1,0 +1,8 @@
+{
+  "required": [
+    "execution_exchange_session_id",
+    "live_request_ingestion_session_id",
+    "replay_safe"
+  ],
+  "schema_name": "EXECUTION_EXCHANGE_SESSION_SCHEMA"
+}
