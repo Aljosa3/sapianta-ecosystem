@@ -1,0 +1,9 @@
+{
+  "alter_execution_evidence": false,
+  "fabricate_provider_success": false,
+  "preserve_bounded_execution_identity": true,
+  "preserve_provider_evidence": true,
+  "preserve_replay_lineage": true,
+  "rewrite_prompts": false,
+  "synthesize_missing_outputs": false
+}

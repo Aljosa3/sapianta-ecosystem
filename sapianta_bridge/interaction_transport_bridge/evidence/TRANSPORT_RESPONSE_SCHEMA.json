@@ -1,0 +1,8 @@
+{
+  "required_fields": [
+    "transport_session_id",
+    "transport_state",
+    "normalized_result",
+    "replay_identity"
+  ]
+}

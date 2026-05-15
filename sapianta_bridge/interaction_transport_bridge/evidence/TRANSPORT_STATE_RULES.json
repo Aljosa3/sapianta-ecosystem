@@ -1,0 +1,20 @@
+{
+  "states": [
+    "REQUEST_RECEIVED",
+    "TRANSPORT_BOUND",
+    "EXECUTION_LINKED",
+    "PROVIDER_ACTIVE",
+    "RESULT_NORMALIZED",
+    "RESULT_RETURNED",
+    "BLOCKED",
+    "FAILED"
+  ],
+  "success_path": [
+    "REQUEST_RECEIVED",
+    "TRANSPORT_BOUND",
+    "EXECUTION_LINKED",
+    "PROVIDER_ACTIVE",
+    "RESULT_NORMALIZED",
+    "RESULT_RETURNED"
+  ]
+}

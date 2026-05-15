@@ -1,0 +1,10 @@
+{
+  "required_fields": [
+    "transport_request_id",
+    "transport_session_id",
+    "interaction_session_id",
+    "governed_session_id",
+    "execution_gate_id",
+    "replay_identity"
+  ]
+}
