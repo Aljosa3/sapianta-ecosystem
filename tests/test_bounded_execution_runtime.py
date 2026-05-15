@@ -87,6 +87,26 @@ def test_bounded_execution_runtime_executes_fixed_codex_vector(tmp_path):
     assert result["bounded_execution_evidence"]["orchestration_present"] is False
     assert result["bounded_execution_evidence"]["retry_present"] is False
     assert result["bounded_execution_evidence"]["routing_present"] is False
+    assert result["bounded_execution_evidence"]["stdin_sealed"] is True
+
+
+def test_bounded_execution_runtime_seals_stdin(tmp_path):
+    codex = tmp_path / "codex"
+    _write_codex_executable(
+        codex,
+        body="""\
+        #!/usr/bin/env python3
+        import sys
+        print("stdin_empty=" + str(sys.stdin.read() == ""))
+        """,
+    )
+    request = _gate_request(tmp_path)
+
+    result = execute_bounded_codex(gate_request=request, codex_executable=str(codex))
+
+    assert result["bounded_execution_status"] == "SUCCESS"
+    assert "stdin_empty=True" in result["capture"]["stdout"]
+    assert result["bounded_execution_evidence"]["stdin_sealed"] is True
 
 
 def test_bounded_execution_runtime_requires_authorization(tmp_path):

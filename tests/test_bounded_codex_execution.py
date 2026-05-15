@@ -48,4 +48,5 @@ def test_bounded_prompt_is_deterministic_from_task_artifact():
 
     assert prompt == bounded_prompt_from_task_artifact(artifact)
     assert "SAPIANTA_CODEX_VALIDATION_OK" in prompt
+    assert "AIGOL_TASK_COMPLETE" in prompt
     assert "ENV-1" in prompt

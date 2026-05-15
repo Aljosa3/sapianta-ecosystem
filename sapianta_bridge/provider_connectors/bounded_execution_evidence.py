@@ -52,6 +52,7 @@ def bounded_execution_evidence(
         "workspace_bounded": runtime_validation.get("workspace_valid", False),
         "timeout_bounded": runtime_validation.get("timeout_valid", False),
         "shell_used": False,
+        "stdin_sealed": True,
         "home_directory_mutation_allowed": False,
         "repo_root_state_allowed": False,
         "global_state_mutation_allowed": False,
@@ -89,6 +90,7 @@ def validate_bounded_execution_evidence(evidence: Any) -> dict[str, Any]:
         "provider_identity_preserved",
         "workspace_bounded",
         "timeout_bounded",
+        "stdin_sealed",
         "completion_state",
         "process_state",
         "process_terminated",
@@ -121,4 +123,6 @@ def validate_bounded_execution_evidence(evidence: Any) -> dict[str, Any]:
     ):
         if evidence.get(field) is not False:
             errors.append({"field": field, "reason": "bounded execution evidence reports forbidden behavior"})
+    if evidence.get("stdin_sealed") is not True:
+        errors.append({"field": "stdin_sealed", "reason": "bounded execution must seal inherited stdin"})
     return {"valid": not errors, "errors": errors}

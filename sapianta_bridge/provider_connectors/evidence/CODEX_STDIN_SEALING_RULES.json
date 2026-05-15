@@ -1,0 +1,10 @@
+{
+  "contract_preserved": "codex exec <bounded_prompt>",
+  "hidden_prompt_rewriting_allowed": false,
+  "stdin_mode": "DEVNULL",
+  "stdin_prompt_mode_allowed": false,
+  "stdin_sealed": true,
+  "stdin_sealing_name": "CODEX_STDIN_SEALING_FIX_V1",
+  "unrestricted_shell_allowed": false,
+  "version": "1.0"
+}

@@ -213,6 +213,7 @@ def execute_bounded_codex(
         process = subprocess.Popen(
             runtime_validation["command"],
             cwd=gate_request["workspace_path"],
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
