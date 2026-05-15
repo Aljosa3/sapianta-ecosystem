@@ -1,0 +1,18 @@
+{
+  "agents_introduced": false,
+  "async_background_execution_introduced": false,
+  "autonomous_continuation_introduced": false,
+  "distributed_runtimes_introduced": false,
+  "fallback_introduced": false,
+  "hidden_execution_introduced": false,
+  "hidden_memory_introduced": false,
+  "orchestration_introduced": false,
+  "provider_routing_introduced": false,
+  "provider_switching_introduced": false,
+  "retries_introduced": false,
+  "shell_true_used": false,
+  "unrestricted_apis_introduced": false,
+  "unrestricted_runtime_execution_introduced": false,
+  "unrestricted_subprocess_execution_introduced": false,
+  "websocket_infrastructure_introduced": false
+}
