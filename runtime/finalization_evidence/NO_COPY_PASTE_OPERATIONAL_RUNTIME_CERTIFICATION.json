@@ -1,0 +1,8 @@
+{
+  "certification": "NO_COPY_PASTE_OPERATIONAL_RUNTIME_CERTIFICATION",
+  "manual_prompt_relay": false,
+  "manual_result_relay": false,
+  "operational_runtime_certified": true,
+  "replay_safe": true,
+  "status": "PASSED"
+}

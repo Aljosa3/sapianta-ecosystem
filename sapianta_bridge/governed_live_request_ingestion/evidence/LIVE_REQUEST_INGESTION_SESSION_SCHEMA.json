@@ -1,0 +1,9 @@
+{
+  "required": [
+    "live_request_ingestion_session_id",
+    "serving_gateway_session_id",
+    "request_activation_id",
+    "replay_safe"
+  ],
+  "schema_name": "LIVE_REQUEST_INGESTION_SESSION_SCHEMA"
+}

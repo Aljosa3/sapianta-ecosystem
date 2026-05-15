@@ -1,0 +1,20 @@
+{
+  "forbidden": [
+    "autonomous_agents",
+    "orchestration",
+    "retries",
+    "routing",
+    "provider_switching",
+    "websocket_infrastructure",
+    "async_background_execution",
+    "unrestricted_apis",
+    "daemon_systems",
+    "shell_true",
+    "unrestricted_subprocess_execution",
+    "hidden_execution",
+    "hidden_memory",
+    "autonomous_continuation",
+    "distributed_runtimes"
+  ],
+  "schema_name": "LIVE_REQUEST_INGESTION_BOUNDARY_RULES"
+}

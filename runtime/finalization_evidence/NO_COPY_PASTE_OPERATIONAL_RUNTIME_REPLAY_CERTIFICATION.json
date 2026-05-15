@@ -1,0 +1,8 @@
+{
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "lineage_bound": true,
+  "replay_visible": true,
+  "status": "CERTIFIED"
+}

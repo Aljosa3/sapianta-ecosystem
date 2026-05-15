@@ -1,0 +1,16 @@
+{
+  "continuity_chain": [
+    "human_interaction",
+    "governed_interaction_continuity",
+    "transport_continuity",
+    "execution_continuity",
+    "live_runtime_continuity",
+    "runtime_attachment_continuity",
+    "governed_response_continuity"
+  ],
+  "continuity_fabricated": false,
+  "hidden_provider_memory_trusted": false,
+  "manual_prompt_transport": false,
+  "manual_result_relay": false,
+  "status": "PASSED"
+}
