@@ -1,0 +1,10 @@
+{
+  "required": [
+    "terminal_attachment_session_id",
+    "runtime_serving_session_id",
+    "stdin_binding_id",
+    "stdout_binding_id",
+    "replay_safe"
+  ],
+  "schema_name": "TERMINAL_ATTACHMENT_SESSION_SCHEMA"
+}

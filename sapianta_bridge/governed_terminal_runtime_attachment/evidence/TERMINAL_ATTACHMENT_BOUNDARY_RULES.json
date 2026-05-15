@@ -1,0 +1,20 @@
+{
+  "forbidden": [
+    "orchestration",
+    "agents",
+    "retries",
+    "fallback",
+    "routing",
+    "provider_switching",
+    "websocket_infrastructure",
+    "async_loops",
+    "filesystem_watchers",
+    "frontend_runtime_infrastructure",
+    "network_apis",
+    "shell_true",
+    "unrestricted_subprocess_execution",
+    "autonomous_continuation",
+    "hidden_execution_layers"
+  ],
+  "schema_name": "TERMINAL_ATTACHMENT_BOUNDARY_RULES"
+}
