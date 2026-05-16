@@ -1,0 +1,10 @@
+{
+  "required": [
+    "execution_relay_session_id",
+    "execution_exchange_session_id",
+    "stdin_relay_id",
+    "stdout_relay_id",
+    "replay_safe"
+  ],
+  "schema_name": "EXECUTION_RELAY_SESSION_SCHEMA"
+}
