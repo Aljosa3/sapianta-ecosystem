@@ -1,0 +1,10 @@
+{
+  "bounded_non_autonomous": true,
+  "certification": "FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "milestone": "FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_V1",
+  "replay_visible": true,
+  "status": "PASSED"
+}

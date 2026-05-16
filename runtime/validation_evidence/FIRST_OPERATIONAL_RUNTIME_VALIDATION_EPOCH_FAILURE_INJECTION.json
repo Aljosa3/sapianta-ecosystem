@@ -1,0 +1,18 @@
+{
+  "cases": [
+    "malformed_request",
+    "missing_activation_gate_approval",
+    "invalid_operation_envelope",
+    "missing_capability_mapping",
+    "invalid_execution_surface",
+    "invalid_exchange_artifact",
+    "invalid_relay_artifact",
+    "invalid_commit_artifact",
+    "lineage_mismatch",
+    "replay_hash_mismatch",
+    "bypass_closure",
+    "outside_bounded_surface"
+  ],
+  "fail_closed_required": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,12 @@
+{
+  "deterministic_replay_identity": true,
+  "method": [
+    "recompute replay identity from deterministic operational snapshot",
+    "compare same-input replay identity",
+    "verify validation is read-only",
+    "verify immutable snapshot is unchanged"
+  ],
+  "mutation_detected": false,
+  "read_only": true,
+  "status": "PASSED"
+}
