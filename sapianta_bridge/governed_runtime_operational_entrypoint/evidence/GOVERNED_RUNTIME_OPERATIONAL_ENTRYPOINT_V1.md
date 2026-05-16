@@ -1,11 +1,13 @@
 # GOVERNED_RUNTIME_OPERATIONAL_ENTRYPOINT_V1
 
-This milestone creates one deterministic operational runtime entry surface over the realized governed runtime path.
+Previous milestones created runtime continuity, serving continuity, relay continuity, exchange continuity, execution continuity, and operational convergence.
 
-It distinguishes:
+The runtime still existed as multiple adjacent governance concepts. This milestone converges them into one deterministic operational runtime entry surface:
 
-- runtime exists
-- runtime operational entry has been admitted
-- runtime execution realization transaction exists
+`human interaction`
+-> `governed runtime operational entry`
+-> `governed runtime activation`
+-> `governed execution realization continuity`
+-> `governed response continuity`
 
-The composed entrypoint reduces manual interpretation across ingress, serving, relay, realization, and response continuity without introducing autonomous runtime behavior.
+That reduces manual runtime stitching, manual operational interpretation, manual execution continuity mapping, and manual response continuity interpretation because the runtime now exposes one replay-visible operational entry transaction.

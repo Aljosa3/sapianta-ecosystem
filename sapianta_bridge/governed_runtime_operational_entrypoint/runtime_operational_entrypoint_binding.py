@@ -23,6 +23,8 @@ LINEAGE_FIELDS = (
     "bounded_runtime_id",
     "result_capture_id",
     "response_return_id",
+    "stdin_relay_id",
+    "stdout_relay_id",
 )
 
 
@@ -35,4 +37,8 @@ def create_runtime_operational_entrypoint_binding(
         "runtime_operational_entrypoint_id": runtime_operational_entrypoint_id,
         **{field: lineage[field] for field in LINEAGE_FIELDS},
     }
-    return {**value, "binding_sha256": stable_hash(value)}
+    return {
+        **value,
+        "runtime_operational_entrypoint_binding_id": f"RUNTIME-OPERATIONAL-ENTRYPOINT-BINDING-{stable_hash(value)[:24]}",
+        "binding_sha256": stable_hash(value),
+    }

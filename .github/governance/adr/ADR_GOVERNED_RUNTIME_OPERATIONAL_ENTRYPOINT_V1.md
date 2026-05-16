@@ -2,11 +2,11 @@
 
 ## Decision
 
-Introduce a deterministic governed runtime operational entrypoint transaction.
+Introduce a deterministic governed runtime operational entrypoint surface.
 
 ## Rationale
 
-The architecture now has ingress, continuity, activation, and realization artifacts. A single operational entry surface reduces the remaining need for humans to mentally compose those concepts across the stack.
+The architecture now has ingress, continuity, activation, and realization artifacts. A single operational entry surface reduces the remaining need for humans to mentally compose those concepts across the stack and formalizes operational convergence.
 
 ## Boundary
 

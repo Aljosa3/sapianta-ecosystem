@@ -1,17 +1,15 @@
 from sapianta_bridge.governed_runtime_operational_entrypoint.runtime_operational_entrypoint_binding import LINEAGE_FIELDS
-from sapianta_bridge.governed_runtime_operational_entrypoint.runtime_operational_entrypoint_evidence import (
-    runtime_operational_entrypoint_evidence,
-)
+from sapianta_bridge.governed_runtime_operational_entrypoint.runtime_operational_entrypoint_evidence import runtime_operational_entrypoint_evidence
 
 
-def test_evidence_is_replay_visible():
+def test_evidence_records_replay_visible_convergence():
     evidence = runtime_operational_entrypoint_evidence(
-        entrypoint={"runtime_operational_entrypoint_id": "ENTRY-1", "operational_entry_mode": "GOVERNED_OPERATIONAL_RUNTIME_ENTRY"},
-        contract={"runtime_operational_entrypoint_contract_id": "CONTRACT-1"},
-        transaction={"runtime_operational_entrypoint_transaction_id": "TX-1"},
-        binding={field: field for field in LINEAGE_FIELDS},
-        policy={"runtime_operational_entrypoint_policy_id": "POLICY-1"},
+        session={"runtime_operational_entrypoint_id": "ENTRY-1"},
+        request={"runtime_operational_entrypoint_request_id": "REQ-1"},
+        response={"runtime_operational_entrypoint_response_id": "RESP-1"},
+        binding={**{field: field for field in LINEAGE_FIELDS}, "runtime_operational_entrypoint_binding_id": "BIND-1"},
         valid=True,
+        states=("RUNTIME_OPERATIONAL_ENTRY_FINALIZED",),
     )
-    assert evidence["operational_entry_admitted"] is True
-    assert evidence["runtime_execution_realization_id"] == "runtime_execution_realization_id"
+    assert evidence["operational_entry_finalized"] is True
+    assert evidence["stdin_relay_id"] == "stdin_relay_id"

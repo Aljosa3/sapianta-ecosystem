@@ -17,7 +17,7 @@ def _realization():
 
 
 def _supplemental():
-    required = set(LINEAGE_FIELDS) - {
+    missing = set(LINEAGE_FIELDS) - {
         "runtime_execution_realization_id",
         "runtime_execution_commit_id",
         "execution_relay_session_id",
@@ -25,31 +25,14 @@ def _supplemental():
         "result_capture_id",
         "response_return_id",
     }
-    return {field: field for field in required}
+    return {field: field for field in missing}
 
 
-def test_controller_admits_operational_entry():
-    result = create_runtime_operational_entrypoint(
-        realization_output=_realization(),
-        operational_entry_mode="GOVERNED_OPERATIONAL_RUNTIME_ENTRY",
-        supplemental_lineage=_supplemental(),
-    )
+def test_controller_finalizes_unified_operational_entry():
+    result = create_runtime_operational_entrypoint(realization_output=_realization(), supplemental_lineage=_supplemental())
     assert result["validation"]["valid"] is True
-    assert result["states"] == ["OPERATIONAL_ENTRYPOINT_ADMITTED"]
+    assert result["states"][-1] == "RUNTIME_OPERATIONAL_ENTRY_FINALIZED"
 
 
-def test_controller_rejects_forbidden_mode():
-    result = create_runtime_operational_entrypoint(
-        realization_output=_realization(),
-        operational_entry_mode="RAW_RUNTIME_ENTRY",
-        supplemental_lineage=_supplemental(),
-    )
-    assert result["states"] == ["OPERATIONAL_ENTRYPOINT_REJECTED"]
-
-
-def test_controller_blocks_incomplete_linkage():
-    assert create_runtime_operational_entrypoint(
-        realization_output={},
-        operational_entry_mode="GOVERNED_OPERATIONAL_RUNTIME_ENTRY",
-        supplemental_lineage={},
-    )["states"] == ["BLOCKED"]
+def test_controller_blocks_missing_realization():
+    assert create_runtime_operational_entrypoint(realization_output={}, supplemental_lineage={})["states"] == ["BLOCKED"]
