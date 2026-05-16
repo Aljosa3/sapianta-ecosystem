@@ -2,11 +2,11 @@
 
 ## Decision
 
-Introduce a deterministic governed runtime activation gate above the existing governed local runtime bridge.
+Introduce the first deterministic governed runtime activation authority boundary above the governed operational runtime entrypoint.
 
 ## Rationale
 
-The bridge layer proves local runtime transport continuity. The activation gate adds the separate governance decision that a valid bridge is not by itself permission to enter an active runtime state. Activation must be explicit, human-approved, and replay-visible.
+The operational entrypoint proves governed ingress admission, and earlier layers prove continuity. Neither fact alone means the runtime is activatable. The activation gate adds the separate governance decision that continuity exists does not imply activation is authorized. Boundary, contract, admission, and required execution continuity must bind together before approval.
 
 ## Boundary
 
@@ -14,4 +14,4 @@ The gate is not orchestration, autonomous execution, routing, retries, hidden me
 
 ## Consequence
 
-Runtime activation becomes explicit, deterministic, fail-closed, and governance-verifiable while remaining distinct from runtime transport continuity.
+Runtime activation becomes explicit, deterministic, fail-closed, and governance-verifiable while remaining distinct from continuity preservation and execution autonomy.

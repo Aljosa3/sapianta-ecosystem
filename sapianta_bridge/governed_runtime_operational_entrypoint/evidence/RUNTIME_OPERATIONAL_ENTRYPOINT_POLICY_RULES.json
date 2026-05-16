@@ -1,0 +1,1 @@
+{"prohibits":["shell_true","raw_shell_execution","unrestricted_subprocess_execution","runtime_self_expansion"],"schema_name":"RUNTIME_OPERATIONAL_ENTRYPOINT_POLICY_RULES"}

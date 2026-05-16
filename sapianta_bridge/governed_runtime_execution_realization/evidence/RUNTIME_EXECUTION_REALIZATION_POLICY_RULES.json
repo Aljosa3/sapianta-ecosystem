@@ -1,0 +1,1 @@
+{"prohibits":["shell_true","raw_shell_execution","unrestricted_subprocess_execution","unrestricted_network_execution","autonomous_execution"],"schema_name":"RUNTIME_EXECUTION_REALIZATION_POLICY_RULES"}

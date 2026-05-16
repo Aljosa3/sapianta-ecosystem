@@ -1,0 +1,1 @@
+{"required":["operational_entry_contract_id","runtime_activation_boundary_id","operational_intent","operational_ingress_governed","replay_safe"],"schema_name":"OPERATIONAL_RUNTIME_ENTRYPOINT_CONTRACT_SCHEMA"}

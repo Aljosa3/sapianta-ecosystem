@@ -1,0 +1,1 @@
+{"requires":["operational_entry_admission_id","admitted_true","approved_by_human"],"rejects":["incomplete_contract","non_human_approval","silent_activation"],"schema_name":"OPERATIONAL_RUNTIME_ENTRYPOINT_ADMISSION_RULES"}

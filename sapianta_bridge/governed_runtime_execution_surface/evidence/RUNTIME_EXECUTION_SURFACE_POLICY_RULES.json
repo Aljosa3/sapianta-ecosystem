@@ -1,0 +1,1 @@
+{"requires":["runtime_execution_surface_policy_id","runtime_execution_surface_id"],"prohibits":["dynamic_surface_inference","shell_true","raw_shell_execution","unrestricted_subprocess","unrestricted_network_execution"],"schema_name":"RUNTIME_EXECUTION_SURFACE_POLICY_RULES"}

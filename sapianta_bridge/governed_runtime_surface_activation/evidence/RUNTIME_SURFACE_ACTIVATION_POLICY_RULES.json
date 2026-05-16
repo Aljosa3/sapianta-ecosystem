@@ -1,0 +1,1 @@
+{"prohibits":["adaptive_activation","shell_true","raw_shell_execution","unrestricted_subprocess_execution","unrestricted_network_execution"],"schema_name":"RUNTIME_SURFACE_ACTIVATION_POLICY_RULES"}

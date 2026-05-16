@@ -12,7 +12,7 @@ class RuntimeActivationGateResponse:
         return {
             "runtime_activation_gate_id": self.runtime_activation_gate_id,
             "response_return_id": self.response_return_id,
-            "activation_status": "RUNTIME_ACTIVATION_RESPONSE_EMITTED",
+            "activation_status": "RUNTIME_ACTIVATION_APPROVED",
         }
 
 

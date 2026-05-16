@@ -1,46 +1,40 @@
-from sapianta_bridge.governed_execution_exchange import create_execution_exchange
-from sapianta_bridge.governed_execution_relay import create_execution_relay
-from sapianta_bridge.governed_interaction_loop import create_loop_session, run_interaction_loop_turn
-from sapianta_bridge.governed_live_request_ingestion import ingest_live_request
-from sapianta_bridge.governed_local_runtime_bridge import create_local_runtime_bridge
 from sapianta_bridge.governed_runtime_activation_gate import create_runtime_activation_gate
-from sapianta_bridge.governed_terminal_runtime_attachment import attach_governed_terminal_runtime
-from sapianta_bridge.live_governed_interaction_runtime import run_live_governed_interaction_runtime
-from sapianta_bridge.live_governed_interaction_serving_gateway import run_serving_gateway
-from sapianta_bridge.live_governed_runtime_serving import attach_runtime_serving_turn, create_runtime_serving_session
-from sapianta_bridge.live_governed_session_runtime import attach_session_runtime_turn, create_session_runtime_session
-from sapianta_bridge.live_runtime_interaction_attachment import attach_live_runtime_interaction
 
 
-def _bridge_output():
-    loop = create_loop_session(conversation_id="C-1", replay_identity="R-1").to_dict()
-    turn = run_interaction_loop_turn("Inspect governance evidence", session=loop, turn_index=1, execution_gate_id="G-1", bounded_runtime_id="RT-1", result_capture_id="CAP-1")
-    live = run_live_governed_interaction_runtime(loop_session=loop, loop_output=turn)
-    attachment = attach_live_runtime_interaction(live_runtime_output=live)
-    session_runtime = create_session_runtime_session(interaction_loop_session_id=loop["interaction_session_id"]).to_dict()
-    session_output = attach_session_runtime_turn(session_runtime=session_runtime, attachment_output=attachment)
-    serving = create_runtime_serving_session(session_runtime=session_runtime).to_dict()
-    serving_output = attach_runtime_serving_turn(serving_session=serving, session_runtime_output=session_output)
-    terminal = attach_governed_terminal_runtime(runtime_serving_output=serving_output, stdin_binding_id="STDIN-1", stdout_binding_id="STDOUT-1")
-    gateway = run_serving_gateway(terminal_output=terminal, ingress_id="IN-1", egress_id="OUT-1")
-    ingestion = ingest_live_request(gateway_output=gateway, request_activation_id="ACTIVATE-1")
-    exchange = create_execution_exchange(ingestion_output=ingestion)
-    relay = create_execution_relay(exchange_output=exchange, terminal_output=terminal)
-    return create_local_runtime_bridge(relay_output=relay, runtime_transport_bridge_id="RTB-1")
+def _entrypoint():
+    return {
+        "validation": {"valid": True},
+        "activation": {
+            "operational_runtime_entrypoint_id": "ENTRY-1",
+            "runtime_activation_boundary_id": "BOUNDARY-1",
+            "operational_entry_contract_id": "CONTRACT-1",
+            "operational_entry_admission_id": "ADMISSION-1",
+        },
+        "contract": {"operational_entry_contract_id": "CONTRACT-1"},
+        "admission": {"operational_entry_admission_id": "ADMISSION-1", "admitted": True, "approved_by": "human"},
+        "evidence": {
+            "execution_exchange_session_id": "EXCHANGE-1",
+            "execution_relay_session_id": "RELAY-1",
+            "runtime_execution_commit_id": "COMMIT-1",
+            "runtime_delivery_finalization_id": "FINAL-1",
+            "response_return_id": "RETURN-1",
+        },
+    }
 
 
-def test_runtime_activation_gate_approves_human_authorized_bridge():
-    result = create_runtime_activation_gate(bridge_output=_bridge_output(), activation_authorized=True, approved_by="human")
+def test_controller_approves_complete_entrypoint_authority_chain():
+    result = create_runtime_activation_gate(entrypoint_output=_entrypoint())
     assert result["validation"]["valid"] is True
-    assert result["states"][-1] == "RUNTIME_ACTIVATION_RESPONSE_EMITTED"
+    assert result["states"][-1] == "RUNTIME_ACTIVATION_APPROVED"
 
 
-def test_runtime_activation_gate_rejects_missing_authorization():
-    result = create_runtime_activation_gate(bridge_output=_bridge_output(), activation_authorized=False, approved_by="human")
-    assert result["validation"]["valid"] is False
-    assert result["states"] == ["RUNTIME_ACTIVATION_REJECTED"]
+def test_controller_blocks_incomplete_entrypoint():
+    result = create_runtime_activation_gate(entrypoint_output={})
+    assert result["states"] == ["BLOCKED"]
 
 
-def test_runtime_activation_gate_blocks_incomplete_bridge():
-    result = create_runtime_activation_gate(bridge_output={}, activation_authorized=True, approved_by="human")
-    assert result["states"] == ["RUNTIME_ACTIVATION_BLOCKED"]
+def test_controller_blocks_invalid_admission():
+    entrypoint = _entrypoint()
+    entrypoint["admission"]["admitted"] = False
+    result = create_runtime_activation_gate(entrypoint_output=entrypoint)
+    assert result["states"] == ["BLOCKED"]

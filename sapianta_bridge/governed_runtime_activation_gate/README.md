@@ -1,5 +1,7 @@
 # Governed Runtime Activation Gate V1
 
-This package adds an explicit bounded authorization step above an already valid governed local runtime bridge.
+This package introduces the first deterministic runtime activation authority boundary.
 
-The gate preserves the full runtime lineage and requires `activation_authorized: true` with `approved_by: human` before emitting an approved runtime activation response. It does not add execution authority beyond that bounded approval surface.
+Continuity alone does not make the runtime activatable. The canonical path consumes the operational entrypoint boundary, contract, and admission artifacts, then validates the required execution continuity before emitting `RUNTIME_ACTIVATION_APPROVED`.
+
+The gate does not execute runtime work. It determines only whether runtime activation is governance-authorized, replay-visible, bounded, and fail-closed.

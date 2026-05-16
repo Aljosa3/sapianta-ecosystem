@@ -1,0 +1,1 @@
+{"required":["runtime_persistent_channel_id","direct_runtime_interaction_session_id","close_requested","replay_safe"],"schema_name":"RUNTIME_PERSISTENT_CHANNEL_SESSION_SCHEMA"}

@@ -1,9 +1,15 @@
-from sapianta_bridge.governed_runtime_activation_gate.runtime_activation_gate_request import create_runtime_activation_gate_request
+from sapianta_bridge.governed_runtime_activation_gate.runtime_activation_gate_request import (
+    create_runtime_activation_gate_request,
+)
 
 
-def test_runtime_activation_gate_request_preserves_authorization():
+def test_request_preserves_activation_source():
     request = create_runtime_activation_gate_request(
-        gate_session={"runtime_activation_gate_id": "ACT-1", "local_runtime_bridge_session_id": "BR-1", "activation_authorized": True, "approved_by": "human"}
+        gate_session={
+            "runtime_activation_gate_id": "GATE-1",
+            "activation_source_id": "ENTRY-1",
+            "activation_source_kind": "operational_entrypoint",
+        }
     ).to_dict()
-    assert request["activation_authorized"] is True
-    assert request["approved_by"] == "human"
+    assert request["activation_source_id"] == "ENTRY-1"
+    assert request["activation_source_kind"] == "operational_entrypoint"

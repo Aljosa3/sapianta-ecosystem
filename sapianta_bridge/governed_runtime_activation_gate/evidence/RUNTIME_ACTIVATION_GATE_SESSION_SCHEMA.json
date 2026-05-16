@@ -1,9 +1,8 @@
 {
   "required": [
     "runtime_activation_gate_id",
-    "local_runtime_bridge_session_id",
-    "activation_authorized",
-    "approved_by",
+    "activation_source_id",
+    "activation_source_kind",
     "replay_safe"
   ],
   "schema_name": "RUNTIME_ACTIVATION_GATE_SESSION_SCHEMA"

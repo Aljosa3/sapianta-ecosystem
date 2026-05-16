@@ -1,0 +1,1 @@
+{"required":["runtime_operation_policy_id","runtime_operation_envelope_id","raw_prompt_to_shell_forbidden","bounded_operation_required"],"schema_name":"RUNTIME_OPERATION_ENVELOPE_POLICY_RULES"}

@@ -1,0 +1,1 @@
+{"requires":["operational_runtime_entrypoint_id","runtime_activation_boundary_id","operational_entry_contract_id","operational_entry_admission_id"],"prohibits":["hidden_runtime_activation","fabricated_entry_authorization"],"schema_name":"OPERATIONAL_RUNTIME_ENTRYPOINT_ACTIVATION_RULES"}

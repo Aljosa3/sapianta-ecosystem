@@ -4,17 +4,20 @@
     "orchestration",
     "retries",
     "fallback",
-    "websocket_infrastructure",
-    "async_execution",
-    "distributed_runtimes",
+    "provider_routing",
+    "provider_switching",
     "daemon_workers",
-    "shell_true",
-    "unrestricted_subprocess_execution",
+    "websocket_infrastructure",
+    "distributed_runtimes",
+    "async_background_execution",
     "hidden_execution",
     "hidden_memory",
     "autonomous_continuation",
-    "provider_routing",
-    "network_apis"
+    "network_apis",
+    "public_serving_infrastructure",
+    "frontend_runtime",
+    "unrestricted_subprocess_execution",
+    "shell_true"
   ],
   "schema_name": "RUNTIME_ACTIVATION_GATE_BOUNDARY_RULES"
 }
