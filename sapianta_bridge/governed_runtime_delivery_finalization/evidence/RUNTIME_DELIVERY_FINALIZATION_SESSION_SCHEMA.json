@@ -1,0 +1,8 @@
+{
+  "required": [
+    "runtime_delivery_finalization_id",
+    "runtime_execution_commit_id",
+    "replay_safe"
+  ],
+  "schema_name": "RUNTIME_DELIVERY_FINALIZATION_SESSION_SCHEMA"
+}

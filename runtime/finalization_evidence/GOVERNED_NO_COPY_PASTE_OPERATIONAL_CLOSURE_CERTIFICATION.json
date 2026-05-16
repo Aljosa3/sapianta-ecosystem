@@ -1,0 +1,10 @@
+{
+  "certification": "GOVERNED_NO_COPY_PASTE_OPERATIONAL_CLOSURE_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "lineage_bound": true,
+  "operational_lifecycle_closure_continuity": true,
+  "replay_visible": true,
+  "status": "PASSED"
+}

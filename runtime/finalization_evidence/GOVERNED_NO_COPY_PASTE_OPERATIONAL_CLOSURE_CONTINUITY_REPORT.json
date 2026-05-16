@@ -1,0 +1,30 @@
+{
+  "blocking_conditions": [
+    "missing_lineage",
+    "broken_continuity",
+    "broken_runtime_attachment",
+    "broken_serving_continuity",
+    "broken_relay_continuity",
+    "missing_execution_commit",
+    "missing_response_return",
+    "missing_delivery_finalization"
+  ],
+  "continuity_chain": [
+    "request_ingestion",
+    "serving_continuity",
+    "runtime_continuity",
+    "terminal_continuity",
+    "execution_continuity",
+    "exchange_continuity",
+    "relay_continuity",
+    "execution_commit_continuity",
+    "response_delivery_continuity",
+    "delivery_finalization_continuity",
+    "operational_lifecycle_closure_continuity"
+  ],
+  "continuity_fabricated": false,
+  "hidden_provider_memory_trusted": false,
+  "hidden_runtime_state_inferred": false,
+  "prior_runtime_history_mutated": false,
+  "status": "PASSED"
+}
