@@ -1,0 +1,9 @@
+{
+  "required": [
+    "local_runtime_bridge_session_id",
+    "execution_relay_session_id",
+    "runtime_transport_bridge_id",
+    "replay_safe"
+  ],
+  "schema_name": "LOCAL_RUNTIME_BRIDGE_SESSION_SCHEMA"
+}
