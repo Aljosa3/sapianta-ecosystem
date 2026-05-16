@@ -1,0 +1,11 @@
+{
+  "bounded_non_autonomous_runtime_execution": true,
+  "certification": "FIRST_OPERATIONAL_GOVERNED_RUNTIME_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "lineage_bound": true,
+  "operationally_closed": true,
+  "replay_visible": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,20 @@
+{
+  "absent": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback",
+    "provider_routing",
+    "provider_switching",
+    "async_background_execution",
+    "websocket_infrastructure",
+    "network_api",
+    "unrestricted_subprocess_execution",
+    "shell_true",
+    "hidden_execution",
+    "hidden_memory",
+    "autonomous_continuation"
+  ],
+  "bounded": true,
+  "non_autonomous": true
+}
