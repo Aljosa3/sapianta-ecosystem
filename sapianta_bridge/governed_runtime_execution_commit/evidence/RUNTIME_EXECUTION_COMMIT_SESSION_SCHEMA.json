@@ -1,0 +1,8 @@
+{
+  "required": [
+    "runtime_execution_commit_id",
+    "runtime_activation_gate_id",
+    "replay_safe"
+  ],
+  "schema_name": "RUNTIME_EXECUTION_COMMIT_SESSION_SCHEMA"
+}
