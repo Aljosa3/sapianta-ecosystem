@@ -1,0 +1,41 @@
+{
+  "acceptance_criteria": [
+    "all lifecycle artifacts present",
+    "deterministic replay identity",
+    "read-only replay validation",
+    "full operational continuity",
+    "all failure injection cases fail closed",
+    "bounded recovery without retries or fallback",
+    "sequential requests remain isolated",
+    "invalid requests do not corrupt valid replay state"
+  ],
+  "certification_status": "PASSED",
+  "milestone": "FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_V1",
+  "mutation_boundaries": [
+    "validation artifacts are static after creation",
+    "replay validation is read-only",
+    "prior runtime history is not mutated"
+  ],
+  "non_goals": [
+    "autonomous execution",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "provider routing",
+    "websocket systems",
+    "distributed runtime infrastructure",
+    "hidden execution",
+    "hidden memory",
+    "unrestricted subprocess execution",
+    "shell=True"
+  ],
+  "scope": [
+    "bounded runtime validation",
+    "replay validation",
+    "operational continuity verification",
+    "deterministic recovery proof",
+    "bounded failure injection",
+    "governance verification under stress",
+    "replay-safe operational certification"
+  ]
+}
