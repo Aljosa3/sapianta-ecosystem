@@ -1,0 +1,18 @@
+{
+  "binding_id": "CROSS-REPOSITORY-LINEAGE-BINDING-4f1b4617c32957dfd3d3575a",
+  "inner_repository": {
+    "branch": "feature/governance-evolution-loop",
+    "commit": "decf9d90410ccd1387baac6f35de006a29db9b99",
+    "repo_path": "sapianta_system",
+    "runtime_implementation_hash": "7787283e6fd312e358ea7108e93bfd437f215b79",
+    "runtime_implementation_reference": {
+      "path": "sapianta_system/runtime/validation/operational_epoch.py",
+      "sha256": "90d5402300c914a721da47b9765485ca6e4190b10dfe9f33d4ce2b44e8dce0ed"
+    },
+    "structural_governance_approval_reference": {
+      "path": "sapianta_system/governance/evolution/approvals/STRUCTURAL_APPROVAL_TEMPLATE_v0.1.md",
+      "reference_status": "template-only-no-specific-approval-artifact-located"
+    }
+  },
+  "read_only_after_creation": true
+}

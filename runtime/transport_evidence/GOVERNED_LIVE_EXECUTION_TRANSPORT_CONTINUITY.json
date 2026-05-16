@@ -1,0 +1,13 @@
+{
+  "continuity": [
+    "governed request",
+    "activation gate",
+    "operation envelope",
+    "bounded execution surface",
+    "governed result return",
+    "transport closure"
+  ],
+  "lineage_preserved": true,
+  "manual_copy_paste_required": false,
+  "status": "PASSED"
+}

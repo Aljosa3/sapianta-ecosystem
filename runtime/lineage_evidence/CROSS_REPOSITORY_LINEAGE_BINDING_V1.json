@@ -1,0 +1,9 @@
+{
+  "binding_hash": "4d3edb6d3ee8dcb500e73ac872a6527a719f3dea28815b9197a3fac92b5340ad",
+  "binding_id": "CROSS-REPOSITORY-LINEAGE-BINDING-4f1b4617c32957dfd3d3575a",
+  "canonical_json_sha256": "4f1b4617c32957dfd3d3575a2df1f12f33e09d06e3c44ea05520bf1538ce4581",
+  "inner_commit": "decf9d90410ccd1387baac6f35de006a29db9b99",
+  "milestone": "CROSS_REPOSITORY_LINEAGE_BINDING_V1",
+  "outer_commit": "8d3a28f358eef48d6cfa69eceaeecf717269d5e1",
+  "replay_safe": true
+}

@@ -1,0 +1,9 @@
+{
+  "bounded": true,
+  "certification": "GOVERNED_LIVE_EXECUTION_TRANSPORT_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "replay_visible": true,
+  "status": "PASSED"
+}

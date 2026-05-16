@@ -1,0 +1,23 @@
+{
+  "binding_id": "CROSS-REPOSITORY-LINEAGE-BINDING-4f1b4617c32957dfd3d3575a",
+  "finalization_reference": {
+    "milestone": "FINALIZE_FIRST_OPERATIONAL_GOVERNED_RUNTIME_V1",
+    "path": ".github/governance/finalize/FINALIZE_FIRST_OPERATIONAL_GOVERNED_RUNTIME_V1.json",
+    "sha256": "a78528e7ef671237213da4bc3b3197fe58a226ce65566fc2cd219a22a4ad4eb0"
+  },
+  "replay_certification_references": [
+    {
+      "path": "runtime/finalization_evidence/FIRST_OPERATIONAL_GOVERNED_RUNTIME_REPLAY_CERTIFICATION.json",
+      "sha256": "3af1120bf72be9a4a9a21ce8047737e1fb35ea0c6ac54230775756ec096d6dba"
+    },
+    {
+      "path": "runtime/validation_evidence/FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_REPLAY_VALIDATION.json",
+      "sha256": "fa3330cd9ed4222a7d7d475740b0ae54bb07d956e55a008c1e08731021cb7658"
+    }
+  ],
+  "validation_epoch_reference": {
+    "milestone": "FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_V1",
+    "path": ".github/governance/validation/FIRST_OPERATIONAL_RUNTIME_VALIDATION_EPOCH_V1.json",
+    "sha256": "901001e012689d9bfad0c5ef0893af8c602834e8abb680cc0fcedb0b3886d21d"
+  }
+}

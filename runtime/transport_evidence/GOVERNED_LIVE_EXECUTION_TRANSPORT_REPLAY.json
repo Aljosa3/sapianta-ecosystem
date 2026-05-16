@@ -1,0 +1,7 @@
+{
+  "deterministic_request_identity": true,
+  "deterministic_result_identity": true,
+  "replay_linked_result_return": true,
+  "replay_safe": true,
+  "status": "PASSED"
+}

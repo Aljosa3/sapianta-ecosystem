@@ -1,0 +1,33 @@
+{
+  "deterministic_guarantees": [
+    "deterministic request identity",
+    "deterministic transport envelope identity",
+    "deterministic result identity",
+    "replay-visible request/result pairing",
+    "lineage-bound delivery evidence"
+  ],
+  "milestone": "GOVERNED_LIVE_EXECUTION_TRANSPORT_V1",
+  "non_goals": [
+    "autonomous execution",
+    "orchestration",
+    "agent runtime",
+    "distributed runtime infrastructure",
+    "websocket system",
+    "background worker system",
+    "provider routing",
+    "unrestricted shell execution",
+    "hidden execution",
+    "hidden state",
+    "autonomous continuation",
+    "retry/fallback execution engine"
+  ],
+  "scope": [
+    "deterministic governed live execution transport",
+    "bounded request transport",
+    "replay-visible execution delivery",
+    "governed transport continuity",
+    "fail-closed transport behavior",
+    "deterministic request/result exchange"
+  ],
+  "status": "PASSED"
+}
