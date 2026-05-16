@@ -1,0 +1,1 @@
+{"forbidden":["agents","orchestration","fallback","retries","provider_routing","provider_switching","websocket_infrastructure","daemon_workers","distributed_runtimes","async_background_execution","network_apis","hidden_execution","hidden_memory","autonomous_continuation","shell_true","unrestricted_subprocess_execution"],"schema_name":"RUNTIME_SURFACE_BOUNDARY_RULES"}

@@ -1,0 +1,1 @@
+{"required":["runtime_surface_session_id","runtime_delivery_finalization_id","surface_ingress_id","surface_egress_id","replay_safe"],"schema_name":"RUNTIME_SURFACE_SESSION_SCHEMA"}
