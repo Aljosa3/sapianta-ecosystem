@@ -1,0 +1,8 @@
+{
+  "bounded": true,
+  "certification": "GOVERNED_STATE_SYNCHRONIZATION_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}

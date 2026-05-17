@@ -1,0 +1,24 @@
+{
+  "allowed_synchronization_scope": "SESSION_EXCHANGE_METADATA",
+  "allowed_synchronized_fields": [
+    "last_exchange_id",
+    "last_exchange_hash",
+    "last_connector_result_id",
+    "last_result_status"
+  ],
+  "prohibited_capabilities": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden memory",
+    "hidden mutable state",
+    "autonomous continuation",
+    "provider autonomy",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

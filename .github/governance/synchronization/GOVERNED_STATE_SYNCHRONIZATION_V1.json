@@ -1,0 +1,32 @@
+{
+  "allowed_synchronization_scope": "SESSION_EXCHANGE_METADATA",
+  "allowed_synchronized_fields": [
+    "last_exchange_id",
+    "last_exchange_hash",
+    "last_connector_result_id",
+    "last_result_status"
+  ],
+  "deterministic_guarantees": [
+    "deterministic synchronization chain identity",
+    "explicit field boundary",
+    "replay-linked synchronization chaining",
+    "copy-on-write operational isolation",
+    "deterministic synchronization closure"
+  ],
+  "milestone": "GOVERNED_STATE_SYNCHRONIZATION_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden memory",
+    "hidden mutable state",
+    "autonomous continuation",
+    "provider autonomy",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

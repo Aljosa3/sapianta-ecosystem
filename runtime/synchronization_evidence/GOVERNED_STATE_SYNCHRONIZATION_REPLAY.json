@@ -1,0 +1,7 @@
+{
+  "deterministic_synchronization_identity": true,
+  "read_only_replay_validation": true,
+  "replay_linked_chain": true,
+  "replay_safe": true,
+  "status": "PASSED"
+}

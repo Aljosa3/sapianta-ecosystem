@@ -1,0 +1,8 @@
+{
+  "bounded_execution_guarantees": true,
+  "certification": "GOVERNED_EXECUTION_CONNECTORS_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}

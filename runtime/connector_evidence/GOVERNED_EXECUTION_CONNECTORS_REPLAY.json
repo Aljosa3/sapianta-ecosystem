@@ -1,0 +1,7 @@
+{
+  "deterministic_connector_identity": true,
+  "deterministic_result_identity": true,
+  "replay_linked_connector_evidence": true,
+  "replay_safe": true,
+  "status": "PASSED"
+}

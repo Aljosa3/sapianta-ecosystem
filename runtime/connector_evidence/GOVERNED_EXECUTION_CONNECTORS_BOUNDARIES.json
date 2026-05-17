@@ -1,0 +1,17 @@
+{
+  "absent": [
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "autonomous provider selection",
+    "hidden execution",
+    "hidden state",
+    "websocket infrastructure",
+    "background daemons",
+    "shell=True",
+    "unrestricted subprocess execution",
+    "distributed coordination"
+  ],
+  "bounded": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,32 @@
+{
+  "deterministic_guarantees": [
+    "deterministic session identity",
+    "ordered exchange hash chaining",
+    "replay-linked exchange continuity",
+    "deterministic closure identity",
+    "immutable prior session snapshots"
+  ],
+  "milestone": "GOVERNED_EXECUTION_SESSION_CONTINUITY_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden memory",
+    "hidden state mutation",
+    "autonomous continuation",
+    "provider autonomy",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "scope": [
+    "deterministic session identity",
+    "multi-exchange continuity",
+    "replay-linked exchange chains",
+    "replay-safe closure",
+    "fail-closed session validation"
+  ],
+  "status": "PASSED"
+}

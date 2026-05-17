@@ -1,0 +1,29 @@
+{
+  "connector_scope": [
+    "local execution connector",
+    "Codex execution connector",
+    "Claude Code execution connector",
+    "deterministic filesystem connector",
+    "bounded tool execution connector"
+  ],
+  "deterministic_guarantees": [
+    "deterministic registration identity",
+    "static allowed-surface binding",
+    "replay-visible handoff evidence",
+    "deterministic result return"
+  ],
+  "milestone": "GOVERNED_EXECUTION_CONNECTORS_V1",
+  "non_goals": [
+    "orchestration",
+    "provider routing",
+    "autonomous execution",
+    "background agents",
+    "retries/fallbacks",
+    "hidden execution",
+    "hidden provider selection",
+    "distributed runtime infrastructure",
+    "websocket systems",
+    "unrestricted shell execution"
+  ],
+  "status": "PASSED"
+}

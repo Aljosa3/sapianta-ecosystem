@@ -1,0 +1,7 @@
+{
+  "deterministic_session_identity": true,
+  "exchange_hash_chain_validated": true,
+  "read_only_replay_validation": true,
+  "replay_safe": true,
+  "status": "PASSED"
+}
