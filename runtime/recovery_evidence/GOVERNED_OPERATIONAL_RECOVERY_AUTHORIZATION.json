@@ -1,0 +1,7 @@
+{
+  "authorization_required": true,
+  "authorization_source_explicit": true,
+  "approved_by_human_required": true,
+  "implicit_recovery_rejected": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,26 @@
+{
+  "allowed_recovery_scope": "AUTHORIZED_INTERRUPTION_CONTINUATION",
+  "deterministic_guarantees": [
+    "deterministic recovery chain identity",
+    "explicit recovery authorization",
+    "replay-linked recovery chaining",
+    "copy-on-write interruption isolation",
+    "deterministic recovery closure"
+  ],
+  "milestone": "GOVERNED_OPERATIONAL_RECOVERY_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden continuation",
+    "hidden memory",
+    "hidden mutable state",
+    "provider autonomy",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

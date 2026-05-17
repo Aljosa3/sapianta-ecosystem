@@ -1,0 +1,27 @@
+{
+  "deterministic_guarantees": [
+    "deterministic interaction session identity",
+    "explicit request construction",
+    "replay-linked interaction continuity",
+    "replay-visible operational evidence return",
+    "deterministic governed response return",
+    "copy-on-write interaction isolation"
+  ],
+  "interaction_scope": "GOVERNED_OPERATIONAL_INTERACTION",
+  "milestone": "TRUE_NO_COPY_PASTE_UX_LAYER_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden execution",
+    "hidden continuation",
+    "hidden memory",
+    "websocket infrastructure",
+    "distributed coordination",
+    "autonomous provider selection",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

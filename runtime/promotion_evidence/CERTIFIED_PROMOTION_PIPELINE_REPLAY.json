@@ -1,0 +1,6 @@
+{
+  "promotion_replay_identity_deterministic": true,
+  "read_only_replay_validation": true,
+  "replay_linked_promotion_continuity": true,
+  "status": "PASSED"
+}

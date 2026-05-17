@@ -1,0 +1,8 @@
+{
+  "bounded": true,
+  "certification": "TRUE_NO_COPY_PASTE_UX_LAYER_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}

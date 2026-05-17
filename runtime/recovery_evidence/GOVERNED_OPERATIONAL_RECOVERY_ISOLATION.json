@@ -1,0 +1,6 @@
+{
+  "copy_on_write_recovery": true,
+  "hidden_continuation_absent": true,
+  "operational_interruption_isolation_preserved": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,7 @@
+{
+  "explicit_governed_request_construction": true,
+  "governed_response_return_replay_visible": true,
+  "interaction_scope": "GOVERNED_OPERATIONAL_INTERACTION",
+  "manual_copy_paste_relay_reduced": true,
+  "status": "PASSED"
+}

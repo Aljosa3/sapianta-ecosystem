@@ -1,0 +1,27 @@
+{
+  "certification_scope": "BOUNDED_OPERATIONAL_STATE_ELIGIBILITY",
+  "deterministic_guarantees": [
+    "deterministic promotion pipeline identity",
+    "explicit promotion authorization",
+    "replay-linked promotion chaining",
+    "deterministic certification artifacts",
+    "copy-on-write certification isolation",
+    "deterministic promotion closure"
+  ],
+  "milestone": "CERTIFIED_PROMOTION_PIPELINE_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "autonomous deployment",
+    "retries",
+    "fallback routing",
+    "hidden approval paths",
+    "hidden mutable state",
+    "provider autonomy",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

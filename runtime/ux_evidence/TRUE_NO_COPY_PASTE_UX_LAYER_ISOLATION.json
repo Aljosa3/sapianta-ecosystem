@@ -1,0 +1,6 @@
+{
+  "copy_on_write_interaction": true,
+  "hidden_mutable_state_absent": true,
+  "interaction_isolation_preserved": true,
+  "status": "PASSED"
+}

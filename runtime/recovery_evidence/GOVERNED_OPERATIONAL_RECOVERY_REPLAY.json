@@ -1,0 +1,6 @@
+{
+  "read_only_replay_validation": true,
+  "recovery_replay_identity_deterministic": true,
+  "replay_linked_recovery_continuity": true,
+  "status": "PASSED"
+}

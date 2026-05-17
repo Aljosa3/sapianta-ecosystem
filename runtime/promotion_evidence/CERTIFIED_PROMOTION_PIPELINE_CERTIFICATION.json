@@ -1,0 +1,8 @@
+{
+  "bounded": true,
+  "certification": "CERTIFIED_PROMOTION_PIPELINE_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}

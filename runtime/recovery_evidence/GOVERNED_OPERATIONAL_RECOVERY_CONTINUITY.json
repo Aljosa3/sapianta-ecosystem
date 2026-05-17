@@ -1,0 +1,13 @@
+{
+  "continuity": [
+    "governed session",
+    "governed exchange",
+    "explicit governed synchronization",
+    "governed interruption",
+    "explicit governed recovery authorization",
+    "deterministic replay-linked recovery continuation",
+    "deterministic closure"
+  ],
+  "recovery_continuity_preserved": true,
+  "status": "PASSED"
+}
