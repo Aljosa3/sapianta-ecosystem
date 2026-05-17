@@ -1,0 +1,6 @@
+{
+  "invocation_replay_identity_deterministic": true,
+  "read_only_replay_validation": true,
+  "replay_linked_invocation_continuity": true,
+  "status": "PASSED"
+}

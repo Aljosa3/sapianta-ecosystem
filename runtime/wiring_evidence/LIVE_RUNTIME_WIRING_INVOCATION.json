@@ -1,0 +1,7 @@
+{
+  "explicit_request_envelopes": true,
+  "governed_response_return_replay_visible": true,
+  "invocation_scope": "LOCAL_GOVERNED_RUNTIME_ENDPOINT_INVOCATION",
+  "manual_copy_paste_relay_removed_from_wiring_path": true,
+  "status": "PASSED"
+}

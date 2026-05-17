@@ -1,0 +1,25 @@
+{
+  "deterministic_guarantees": [
+    "deterministic invocation session identity",
+    "replay-linked invocation continuity",
+    "bounded synchronous request/response relay",
+    "replay-visible response return",
+    "copy-on-write invocation isolation"
+  ],
+  "invocation_scope": "LOCAL_GOVERNED_RUNTIME_ENDPOINT_INVOCATION",
+  "milestone": "LIVE_RUNTIME_WIRING_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "websocket infrastructure",
+    "distributed coordination",
+    "hidden mutable state",
+    "hidden memory",
+    "autonomous continuation",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

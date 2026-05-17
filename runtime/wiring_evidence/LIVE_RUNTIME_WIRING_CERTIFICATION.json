@@ -1,0 +1,8 @@
+{
+  "bounded": true,
+  "certification": "LIVE_RUNTIME_WIRING_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}
