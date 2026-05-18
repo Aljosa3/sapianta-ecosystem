@@ -1,0 +1,14 @@
+{
+  "milestone": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "certification": "PASS",
+  "inspection_only": true,
+  "observed_surfaces": [
+    "authority_tokens",
+    "handoff_packages",
+    "execution_consumer_receipts",
+    "codex_execution_adapter_receipts",
+    "replay_identities",
+    "stdout_hashes",
+    "stderr_hashes"
+  ]
+}

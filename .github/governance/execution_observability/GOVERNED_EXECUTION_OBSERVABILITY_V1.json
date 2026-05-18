@@ -1,0 +1,21 @@
+{
+  "milestone": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "scope": "read_only_execution_observability",
+  "read_only": true,
+  "deterministic": true,
+  "replay_visible": true,
+  "fail_closed": true,
+  "non_mutating": true,
+  "prohibited_capabilities": [
+    "orchestration",
+    "retries",
+    "autonomous_execution",
+    "hidden_continuation",
+    "new_execution_authority",
+    "codex_dispatch_expansion",
+    "shell_execution",
+    "subprocess_expansion",
+    "worker_routing",
+    "background_execution"
+  ]
+}

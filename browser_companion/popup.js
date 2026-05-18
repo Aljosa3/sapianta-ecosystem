@@ -5,6 +5,7 @@ const LOCAL_CODEX_HANDOFF_ENDPOINT = "http://127.0.0.1:8110/governed-codex-hando
 const LOCAL_EXECUTION_AUTHORIZE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-authorize";
 const LOCAL_EXECUTION_CONSUME_ENDPOINT = "http://127.0.0.1:8110/governed-execution-consume";
 const LOCAL_CODEX_EXECUTE_ENDPOINT = "http://127.0.0.1:8110/governed-codex-execute";
+const LOCAL_EXECUTION_OBSERVE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-observe";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
@@ -12,6 +13,8 @@ let pendingCodexSynthesis = null;
 let confirmedCodexSynthesis = null;
 let confirmedHandoffPackage = null;
 let currentAuthorityToken = null;
+let latestConsumerResponse = null;
+let latestAdapterResponse = null;
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -151,6 +154,8 @@ async function previewIntent() {
       confirmedCodexSynthesis = null;
       confirmedHandoffPackage = null;
       currentAuthorityToken = null;
+      latestConsumerResponse = null;
+      latestAdapterResponse = null;
       renderResult({
         status: payload.status,
         task_class: payload.task_class,
@@ -184,6 +189,8 @@ async function previewIntent() {
     confirmedCodexSynthesis = null;
     confirmedHandoffPackage = null;
     currentAuthorityToken = null;
+    latestConsumerResponse = null;
+    latestAdapterResponse = null;
     renderResult({ status: "BLOCKED", error: error.message });
   }
 }
@@ -297,6 +304,8 @@ async function requestExecutionAuthorization() {
       throw new Error("Execution authorization failed governed validation.");
     }
     currentAuthorityToken = payload;
+    latestConsumerResponse = null;
+    latestAdapterResponse = null;
     renderResult({
       status: payload.status,
       token_id: payload.token_id,
@@ -341,6 +350,7 @@ async function runMockGovernedExecution() {
     if (!validateMockExecution(payload)) {
       throw new Error("Mock execution consumer failed governed validation.");
     }
+    latestConsumerResponse = payload;
     renderResult({
       status: payload.status,
       replay_identity: payload.replay_identity,
@@ -386,6 +396,7 @@ async function runGovernedCodexExecution() {
     if (!validateCodexExecution(payload)) {
       throw new Error("Codex execution adapter failed governed validation.");
     }
+    latestAdapterResponse = payload;
     renderResult({
       status: payload.status,
       replay_identity: payload.replay_identity,
@@ -395,6 +406,65 @@ async function runGovernedCodexExecution() {
       bounded_execution_status: payload.dispatch.execution_status,
       stdout_hash: payload.receipt.stdout_hash,
       stderr_hash: payload.receipt.stderr_hash
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+function validateExecutionObservability(response) {
+  return response
+    && response.status === "OBSERVED"
+    && response.read_only === true
+    && response.execution_triggered === false
+    && response.trace
+    && typeof response.trace.execution_trace_id === "string"
+    && typeof response.trace.stdout_hash === "string"
+    && typeof response.trace.stderr_hash === "string"
+    && Array.isArray(response.timeline);
+}
+
+async function inspectGovernedExecution() {
+  if (
+    document.getElementById("mode").value !== "codex"
+    || !confirmedHandoffPackage
+    || !currentAuthorityToken
+    || !latestConsumerResponse
+    || !latestAdapterResponse
+  ) {
+    renderResult({ status: "BLOCKED", error: "Completed governed execution receipts are required before inspection." });
+    return;
+  }
+  try {
+    const response = await fetch(LOCAL_EXECUTION_OBSERVE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        handoff_package: confirmedHandoffPackage,
+        authority_token: currentAuthorityToken,
+        consumer_response: latestConsumerResponse,
+        adapter_response: latestAdapterResponse,
+        now: new Date().toISOString(),
+        revoked_token_ids: []
+      })
+    });
+    const payload = await response.json();
+    if (!validateExecutionObservability(payload)) {
+      throw new Error("Execution observability failed governed validation.");
+    }
+    renderResult({
+      status: payload.status,
+      replay_identity: payload.trace.replay_identity,
+      timeline: payload.timeline,
+      authority_status: payload.trace.authorization_status,
+      receipt_status: {
+        consumer: payload.trace.consumer_receipt_status,
+        adapter: payload.trace.adapter_receipt_status
+      },
+      stdout_hash: payload.trace.stdout_hash,
+      stderr_hash: payload.trace.stderr_hash,
+      blocked_capabilities: payload.trace.blocked_capabilities,
+      execution_triggered: payload.execution_triggered
     });
   } catch (error) {
     renderResult({ status: "BLOCKED", error: error.message });
@@ -437,4 +507,5 @@ document.getElementById("export").addEventListener("click", exportGovernedHandof
 document.getElementById("authorize").addEventListener("click", requestExecutionAuthorization);
 document.getElementById("consume").addEventListener("click", runMockGovernedExecution);
 document.getElementById("codex-execute").addEventListener("click", runGovernedCodexExecution);
+document.getElementById("observe").addEventListener("click", inspectGovernedExecution);
 document.getElementById("invoke").addEventListener("click", invokeGovernedRuntime);

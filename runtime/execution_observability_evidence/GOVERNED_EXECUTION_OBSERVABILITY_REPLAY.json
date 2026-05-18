@@ -1,0 +1,21 @@
+{
+  "milestone": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "replay_visible_fields": [
+    "execution_trace_id",
+    "replay_identity",
+    "authority_token_id",
+    "task_class",
+    "governance_mode",
+    "authorization_status",
+    "expiration_status",
+    "revocation_status",
+    "handoff_integrity_status",
+    "consumer_receipt_status",
+    "adapter_receipt_status",
+    "execution_performed",
+    "stdout_hash",
+    "stderr_hash",
+    "blocked_capabilities",
+    "deterministic_closure_status"
+  ]
+}

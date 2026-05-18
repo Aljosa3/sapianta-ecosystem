@@ -1,0 +1,15 @@
+{
+  "milestone": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "read_only": true,
+  "non_mutating": true,
+  "execution_triggered": false,
+  "orchestration": false,
+  "retries": false,
+  "autonomous_execution": false,
+  "hidden_continuation": false,
+  "new_execution_authority": false,
+  "shell_execution": false,
+  "subprocess_expansion": false,
+  "worker_routing": false,
+  "background_execution": false
+}

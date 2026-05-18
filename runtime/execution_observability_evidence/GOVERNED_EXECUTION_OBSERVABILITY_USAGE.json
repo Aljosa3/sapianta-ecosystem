@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "browser_companion_action": "Inspect governed execution",
+  "endpoint": "http://127.0.0.1:8110/governed-execution-observe",
+  "response_status": "OBSERVED",
+  "inspection_only": true,
+  "execution_triggered": false
+}
