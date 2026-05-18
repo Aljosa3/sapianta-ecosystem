@@ -8,6 +8,7 @@ const LOCAL_CODEX_EXECUTE_ENDPOINT = "http://127.0.0.1:8110/governed-codex-execu
 const LOCAL_EXECUTION_OBSERVE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-observe";
 const LOCAL_CHATGPT_BRIDGE_ENDPOINT = "http://127.0.0.1:8110/governed-chatgpt-bridge";
 const LOCAL_INTENT_TRANSFER_ENDPOINT = "http://127.0.0.1:8110/governed-intent-transfer";
+const LOCAL_INTENT_TRANSFER_INGEST_ENDPOINT = "http://127.0.0.1:8110/governed-intent-transfer-ingest";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
@@ -18,6 +19,7 @@ let currentAuthorityToken = null;
 let latestConsumerResponse = null;
 let latestAdapterResponse = null;
 let pendingConversationBridge = null;
+let latestIntentTransferPackage = null;
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -297,6 +299,16 @@ function validateIntentTransferPackage(response) {
     && response.package.transfer_boundary_statement === "This transfer package is non-executing and requires explicit governance preview and confirmation.";
 }
 
+function validateIntentTransferIngestion(response) {
+  return response
+    && response.ingestion_status === "INGESTED_PREVIEW_READY"
+    && response.preview_required === true
+    && response.confirmation_required === true
+    && response.authority_granted === false
+    && response.authority_validated === true
+    && response.ingestion_boundary_statement === "Governed transfer ingestion validates transfer admissibility but does not grant execution authority.";
+}
+
 function exportJsonFile(filename, value) {
   const blob = new Blob([JSON.stringify(canonicalize(value), null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -362,6 +374,7 @@ async function exportGovernedIntentTransferPackage() {
       throw new Error("Intent transfer package failed governed validation.");
     }
     exportJsonFile(`governed_intent_transfer_${payload.transfer_identity}.json`, payload.package);
+    latestIntentTransferPackage = payload;
     renderResult({
       status: payload.status,
       conversational_input: conversationalInput,
@@ -371,6 +384,42 @@ async function exportGovernedIntentTransferPackage() {
       boundary_guarantees: payload.boundary_state,
       transfer_boundary_statement: payload.package.transfer_boundary_statement,
       export_confirmed: true
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+async function ingestGovernedIntentTransferPackage() {
+  if (document.getElementById("mode").value !== "conversation" || !latestIntentTransferPackage) {
+    renderResult({ status: "BLOCKED", error: "Exported governed transfer package is required before ingestion." });
+    return;
+  }
+  try {
+    const response = await fetch(LOCAL_INTENT_TRANSFER_INGEST_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transfer_package: latestIntentTransferPackage.package,
+        replay_identity: latestIntentTransferPackage.package.replay_identity,
+        transfer_identity: latestIntentTransferPackage.transfer_identity
+      })
+    });
+    const payload = await response.json();
+    if (!validateIntentTransferIngestion(payload)) {
+      throw new Error("Intent transfer ingestion failed governed validation.");
+    }
+    renderResult({
+      ingestion_status: payload.ingestion_status,
+      transfer_identity: payload.transfer_identity,
+      replay_identity: payload.replay_identity,
+      ingestion_identity: payload.ingestion_identity,
+      authority_validated: payload.authority_validated,
+      authority_granted: payload.authority_granted,
+      preview_required: payload.preview_required,
+      confirmation_required: payload.confirmation_required,
+      blocked_capabilities: payload.blocked_capabilities,
+      ingestion_boundary_guarantees: payload.boundary_state
     });
   } catch (error) {
     renderResult({ status: "BLOCKED", error: error.message });
@@ -606,6 +655,7 @@ async function invokeGovernedRuntime() {
 document.getElementById("preview").addEventListener("click", previewIntent);
 document.getElementById("confirm").addEventListener("click", confirmIntentPreview);
 document.getElementById("transfer-export").addEventListener("click", exportGovernedIntentTransferPackage);
+document.getElementById("transfer-ingest").addEventListener("click", ingestGovernedIntentTransferPackage);
 document.getElementById("export").addEventListener("click", exportGovernedHandoffPackage);
 document.getElementById("authorize").addEventListener("click", requestExecutionAuthorization);
 document.getElementById("consume").addEventListener("click", runMockGovernedExecution);

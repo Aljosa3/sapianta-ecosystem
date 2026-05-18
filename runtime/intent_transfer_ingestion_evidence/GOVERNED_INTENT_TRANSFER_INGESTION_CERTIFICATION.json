@@ -1,0 +1,7 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "certification": "PASS",
+  "deterministic_ingestion_receipts": true,
+  "preview_ready_intake": true,
+  "authority_granted": false
+}

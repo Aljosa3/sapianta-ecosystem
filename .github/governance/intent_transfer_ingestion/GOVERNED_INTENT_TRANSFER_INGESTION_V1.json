@@ -1,0 +1,9 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "scope": "governed_transfer_ingestion",
+  "preview_required": true,
+  "confirmation_required": true,
+  "authority_granted": false,
+  "replay_visible": true,
+  "fail_closed": true
+}

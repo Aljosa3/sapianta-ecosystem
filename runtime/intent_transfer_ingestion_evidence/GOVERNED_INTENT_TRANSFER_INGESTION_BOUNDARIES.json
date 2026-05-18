@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "chatgpt_authority": false,
+  "execution_authority": false,
+  "authority_granted": false,
+  "automatic_dispatch": false,
+  "orchestration": false,
+  "hidden_continuation": false,
+  "preview_required": true,
+  "confirmation_required": true,
+  "ingestion_boundary_statement": "Governed transfer ingestion validates transfer admissibility but does not grant execution authority."
+}

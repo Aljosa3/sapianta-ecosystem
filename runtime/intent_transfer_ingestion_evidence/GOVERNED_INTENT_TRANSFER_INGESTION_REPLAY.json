@@ -1,0 +1,15 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "replay_visible_fields": [
+    "original conversational input",
+    "normalized governed request",
+    "transfer package",
+    "transfer identity",
+    "replay identity",
+    "ingestion identity",
+    "ingestion validation outcome",
+    "blocked capability guarantees",
+    "ingestion boundary state",
+    "deterministic closure semantics"
+  ]
+}

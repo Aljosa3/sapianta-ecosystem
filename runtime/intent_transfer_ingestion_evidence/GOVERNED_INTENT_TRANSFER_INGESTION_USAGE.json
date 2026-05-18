@@ -1,0 +1,7 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "endpoint": "http://127.0.0.1:8110/governed-intent-transfer-ingest",
+  "browser_companion_action": "Ingest governed transfer package",
+  "ingestion_status": "INGESTED_PREVIEW_READY",
+  "authority_granted": false
+}
