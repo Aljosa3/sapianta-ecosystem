@@ -1,0 +1,21 @@
+{
+  "milestone": "GOVERNED_DOWNSTREAM_EXECUTION_GATE_V1",
+  "replay_visible_fields": [
+    "original_human_request",
+    "synthesized_prompt",
+    "handoff_package",
+    "authorization_token",
+    "approval_chain",
+    "authority_expiration",
+    "revocation_events",
+    "execution_receipts",
+    "blocked_capability_guarantees",
+    "constitutional_boundary_evidence"
+  ],
+  "execution_receipt_states": [
+    "AUTHORIZED",
+    "REVOKED",
+    "EXPIRED",
+    "REJECTED"
+  ]
+}

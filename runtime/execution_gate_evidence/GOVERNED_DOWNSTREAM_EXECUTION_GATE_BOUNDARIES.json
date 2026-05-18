@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_DOWNSTREAM_EXECUTION_GATE_V1",
+  "automatic_execution": false,
+  "hidden_execution": false,
+  "autonomous_retries": false,
+  "orchestration": false,
+  "hidden_continuation": false,
+  "shell_execution": false,
+  "unrestricted_subprocess_execution": false,
+  "implicit_approvals": false,
+  "perpetual_authorization": false
+}

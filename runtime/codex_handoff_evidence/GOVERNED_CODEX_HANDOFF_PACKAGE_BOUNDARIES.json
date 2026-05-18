@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CODEX_HANDOFF_PACKAGE_V1",
+  "codex_execution": false,
+  "codex_api_calls": false,
+  "subprocess_execution": false,
+  "shell_invocation": false,
+  "automatic_prompt_dispatch": false,
+  "hidden_retries": false,
+  "hidden_continuation": false,
+  "orchestration": false,
+  "unrestricted_networking": false
+}

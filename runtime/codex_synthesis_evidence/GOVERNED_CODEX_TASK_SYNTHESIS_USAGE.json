@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CODEX_TASK_SYNTHESIS_V1",
+  "preview_endpoint": "http://127.0.0.1:8110/governed-codex-synthesize",
+  "example_input": "prepare finalize milestone for replay validation",
+  "example_task_class": "FINALIZE_TASK",
+  "browser_flow": [
+    "preview governed Codex task",
+    "inspect synthesized prompt",
+    "confirm preview",
+    "optional downstream handoff preparation"
+  ]
+}

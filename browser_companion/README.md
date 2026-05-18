@@ -48,3 +48,21 @@ status: RETURNED
 closure: PASS
 replay evidence visible
 ```
+
+## Governed Codex Task Preview
+
+1. Choose `Governed Codex Task`.
+2. Enter:
+
+   ```text
+   prepare finalize milestone for replay validation
+   ```
+
+3. Click `Preview intent`.
+4. Inspect the synthesized prompt preview and blocked-capability list.
+5. Click `Confirm preview` if the preview is acceptable.
+6. Click `Export governed handoff package` to download the inert JSON envelope.
+7. Click `Request execution authorization` to preview temporary eligibility.
+
+This mode is preview/export only. It does not execute Codex or invoke downstream
+tools.

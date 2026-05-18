@@ -1,0 +1,9 @@
+{
+  "milestone": "GOVERNED_CODEX_HANDOFF_PACKAGE_V1",
+  "status": "HANDOFF_READY",
+  "requires_confirmation": true,
+  "automatic_execution": false,
+  "downstream_execution_authority": false,
+  "deterministic_json_export": true,
+  "replay_visible": true
+}

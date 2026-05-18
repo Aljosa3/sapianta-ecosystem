@@ -1,0 +1,11 @@
+{
+  "milestone": "GOVERNED_CODEX_HANDOFF_PACKAGE_V1",
+  "preview_endpoint": "http://127.0.0.1:8110/governed-codex-handoff",
+  "export_directory": "runtime/handoff_exports/",
+  "export_name_shape": "governed_codex_handoff_<replay_id>.json",
+  "browser_flow": [
+    "preview governed Codex task",
+    "confirm preview",
+    "export governed handoff package"
+  ]
+}

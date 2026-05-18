@@ -1,0 +1,9 @@
+{
+  "milestone": "GOVERNED_DOWNSTREAM_EXECUTION_GATE_V1",
+  "execution_window_seconds": 300,
+  "explicit_approval_required": true,
+  "revocation_supported": true,
+  "execution_authorization_is_execution": false,
+  "automatic_execution": false,
+  "replay_visible": true
+}

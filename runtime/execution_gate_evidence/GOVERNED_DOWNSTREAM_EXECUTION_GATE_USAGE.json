@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_DOWNSTREAM_EXECUTION_GATE_V1",
+  "authorization_endpoint": "http://127.0.0.1:8110/governed-execution-authorize",
+  "required_predecessor": "governed handoff package",
+  "browser_flow": [
+    "preview task",
+    "confirm preview",
+    "export handoff package",
+    "request execution authorization"
+  ],
+  "disclaimer": "execution authorization is not execution itself"
+}

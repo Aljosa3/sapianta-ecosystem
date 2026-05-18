@@ -1,8 +1,14 @@
 const LOCAL_ENDPOINT = "http://127.0.0.1:8110/governed-invoke";
 const LOCAL_INTERPRET_ENDPOINT = "http://127.0.0.1:8110/governed-interpret";
+const LOCAL_CODEX_SYNTHESIS_ENDPOINT = "http://127.0.0.1:8110/governed-codex-synthesize";
+const LOCAL_CODEX_HANDOFF_ENDPOINT = "http://127.0.0.1:8110/governed-codex-handoff";
+const LOCAL_EXECUTION_AUTHORIZE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-authorize";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
+let pendingCodexSynthesis = null;
+let confirmedCodexSynthesis = null;
+let confirmedHandoffPackage = null;
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -112,15 +118,47 @@ function validateInterpretation(response) {
     && validateArtifact(response.artifact_candidate);
 }
 
+function validateCodexSynthesis(response) {
+  return response
+    && response.status === "SYNTHESIZED"
+    && response.requires_confirmation === true
+    && response.allowed_to_execute_automatically === false
+    && response.replay_visible === true
+    && typeof response.codex_prompt_preview === "string";
+}
+
 async function previewIntent() {
+  const mode = document.getElementById("mode").value;
   const text = document.getElementById("artifact").value.trim();
   try {
-    const response = await fetch(LOCAL_INTERPRET_ENDPOINT, {
+    const endpoint = mode === "codex" ? LOCAL_CODEX_SYNTHESIS_ENDPOINT : LOCAL_INTERPRET_ENDPOINT;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ natural_language: text })
     });
     const payload = await response.json();
+    if (mode === "codex") {
+      if (!validateCodexSynthesis(payload)) {
+        throw new Error("Codex synthesis failed governed validation.");
+      }
+      pendingArtifact = null;
+      confirmedArtifact = null;
+      pendingCodexSynthesis = payload;
+      confirmedCodexSynthesis = null;
+      confirmedHandoffPackage = null;
+      renderResult({
+        status: payload.status,
+        task_class: payload.task_class,
+        governance_mode: payload.governance_mode,
+        replay_identity: payload.replay_identity,
+        codex_prompt_preview: payload.codex_prompt_preview,
+        blocked_capability_checks: payload.blocked_capability_checks,
+        requires_confirmation: payload.requires_confirmation,
+        allowed_to_execute_automatically: payload.allowed_to_execute_automatically
+      });
+      return;
+    }
     if (!validateInterpretation(payload)) {
       throw new Error("Intent interpretation failed governed validation.");
     }
@@ -138,11 +176,28 @@ async function previewIntent() {
   } catch (error) {
     pendingArtifact = null;
     confirmedArtifact = null;
+    pendingCodexSynthesis = null;
+    confirmedCodexSynthesis = null;
+    confirmedHandoffPackage = null;
     renderResult({ status: "BLOCKED", error: error.message });
   }
 }
 
 function confirmIntentPreview() {
+  if (document.getElementById("mode").value === "codex") {
+    if (!pendingCodexSynthesis) {
+      renderResult({ status: "BLOCKED", error: "No governed Codex preview is available to confirm." });
+      return;
+    }
+    confirmedCodexSynthesis = pendingCodexSynthesis;
+    renderResult({
+      status: "CONFIRMED",
+      requires_confirmation: false,
+      allowed_to_execute_automatically: false,
+      downstream_handoff_prepared: true
+    });
+    return;
+  }
   if (!pendingArtifact) {
     renderResult({ status: "BLOCKED", error: "No governed preview is available to confirm." });
     return;
@@ -156,8 +211,110 @@ function confirmIntentPreview() {
   });
 }
 
+function validateHandoffPackage(response) {
+  return response
+    && response.status === "HANDOFF_READY"
+    && response.requires_confirmation === true
+    && response.allowed_to_execute_automatically === false
+    && response.downstream_execution_authority === false
+    && typeof response.replay_identity === "string";
+}
+
+function exportJsonFile(filename, value) {
+  const blob = new Blob([JSON.stringify(canonicalize(value), null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportGovernedHandoffPackage() {
+  if (document.getElementById("mode").value !== "codex" || !confirmedCodexSynthesis) {
+    renderResult({ status: "BLOCKED", error: "Explicit Codex preview confirmation is required before export." });
+    return;
+  }
+  const originalHumanRequest = document.getElementById("artifact").value.trim();
+  try {
+    const response = await fetch(LOCAL_CODEX_HANDOFF_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        synthesis_response: confirmedCodexSynthesis,
+        original_human_request: originalHumanRequest
+      })
+    });
+    const payload = await response.json();
+    if (!validateHandoffPackage(payload)) {
+      throw new Error("Handoff package failed governed validation.");
+    }
+    confirmedHandoffPackage = payload;
+    exportJsonFile(`governed_codex_handoff_${payload.replay_identity}.json`, payload);
+    renderResult({
+      status: payload.status,
+      replay_identity: payload.replay_identity,
+      blocked_capabilities: payload.blocked_capabilities,
+      downstream_execution_authority: payload.downstream_execution_authority,
+      export_confirmed: true
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+function validateExecutionAuthorization(response) {
+  return response
+    && response.status === "AUTHORIZED"
+    && response.downstream_execution_authority === true
+    && response.revocation_supported === true
+    && typeof response.token_id === "string"
+    && typeof response.authorization_expiration === "string";
+}
+
+async function requestExecutionAuthorization() {
+  if (document.getElementById("mode").value !== "codex" || !confirmedHandoffPackage) {
+    renderResult({ status: "BLOCKED", error: "Exported handoff package is required before authorization." });
+    return;
+  }
+  try {
+    const response = await fetch(LOCAL_EXECUTION_AUTHORIZE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        handoff_package: confirmedHandoffPackage,
+        approved_by: "human",
+        approval_timestamp: new Date().toISOString()
+      })
+    });
+    const payload = await response.json();
+    if (!validateExecutionAuthorization(payload)) {
+      throw new Error("Execution authorization failed governed validation.");
+    }
+    renderResult({
+      status: payload.status,
+      token_id: payload.token_id,
+      replay_identity: payload.replay_identity,
+      authorization_expiration: payload.authorization_expiration,
+      execution_window_seconds: payload.execution_window_seconds,
+      blocked_capabilities: payload.blocked_capabilities,
+      revocation_supported: payload.revocation_supported,
+      execution_disclaimer: "Execution authorization does not execute Codex."
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
 async function invokeGovernedRuntime() {
   const mode = document.getElementById("mode").value;
+  if (mode === "codex") {
+    renderResult({
+      status: "BLOCKED",
+      error: "Governed Codex Task mode is preview-only and does not execute Codex."
+    });
+    return;
+  }
   const artifact = mode === "intent" ? confirmedArtifact : document.getElementById("artifact").value.trim();
   try {
     if (mode === "intent" && !artifact) {
@@ -181,4 +338,6 @@ async function invokeGovernedRuntime() {
 
 document.getElementById("preview").addEventListener("click", previewIntent);
 document.getElementById("confirm").addEventListener("click", confirmIntentPreview);
+document.getElementById("export").addEventListener("click", exportGovernedHandoffPackage);
+document.getElementById("authorize").addEventListener("click", requestExecutionAuthorization);
 document.getElementById("invoke").addEventListener("click", invokeGovernedRuntime);

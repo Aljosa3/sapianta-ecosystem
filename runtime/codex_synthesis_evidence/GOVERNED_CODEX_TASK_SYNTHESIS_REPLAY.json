@@ -1,0 +1,16 @@
+{
+  "milestone": "GOVERNED_CODEX_TASK_SYNTHESIS_V1",
+  "replay_visible_fields": [
+    "original_human_input",
+    "task_class",
+    "governance_mode",
+    "codex_prompt_preview",
+    "replay_identity",
+    "blocked_capability_checks",
+    "validator_outcomes",
+    "requires_confirmation",
+    "closure"
+  ],
+  "blocked_cases_recorded": true,
+  "automatic_execution_allowed": false
+}

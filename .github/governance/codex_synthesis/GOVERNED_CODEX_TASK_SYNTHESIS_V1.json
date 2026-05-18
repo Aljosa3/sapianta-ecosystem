@@ -1,0 +1,13 @@
+{
+  "milestone": "GOVERNED_CODEX_TASK_SYNTHESIS_V1",
+  "supported_task_classes": [
+    "GOVERNANCE_ARTIFACT_TASK",
+    "VALIDATION_TASK",
+    "TEST_GENERATION_TASK",
+    "FINALIZE_TASK"
+  ],
+  "governance_mode": "BOUNDED_CODEX_SYNTHESIS",
+  "requires_confirmation": true,
+  "automatic_execution": false,
+  "replay_visible": true
+}

@@ -1,0 +1,16 @@
+{
+  "milestone": "GOVERNED_CODEX_HANDOFF_PACKAGE_V1",
+  "replay_visible_fields": [
+    "original_human_request",
+    "synthesized_prompt",
+    "handoff_package",
+    "replay_identity",
+    "blocked_capability_guarantees",
+    "requires_confirmation",
+    "downstream_execution_authority",
+    "export_identity",
+    "closure"
+  ],
+  "stable_json_export": true,
+  "approval_required": true
+}

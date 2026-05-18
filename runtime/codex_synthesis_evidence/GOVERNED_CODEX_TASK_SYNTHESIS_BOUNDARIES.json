@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CODEX_TASK_SYNTHESIS_V1",
+  "autonomous_codex_execution": false,
+  "hidden_planning": false,
+  "orchestration": false,
+  "hidden_retries": false,
+  "hidden_continuation": false,
+  "shell_execution": false,
+  "unrestricted_filesystem_access": false,
+  "unrestricted_subprocess_execution": false,
+  "hidden_networking": false
+}

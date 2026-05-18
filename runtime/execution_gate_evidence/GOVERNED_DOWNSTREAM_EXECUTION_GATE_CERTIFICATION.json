@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_DOWNSTREAM_EXECUTION_GATE_V1",
+  "certification_status": "PASS",
+  "constitutional_execution_authorization_model": true,
+  "temporary_authority_tokens": true,
+  "revocation_supported": true,
+  "downstream_execution_implemented": false
+}
