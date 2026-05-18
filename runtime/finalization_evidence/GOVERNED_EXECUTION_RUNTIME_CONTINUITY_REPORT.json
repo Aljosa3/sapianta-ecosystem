@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "continuity_chain": [
+    "Browser Companion",
+    "Local Preview Runtime",
+    "Intent Interpretation Layer",
+    "Codex Task Synthesis Layer",
+    "Codex Handoff Package Layer",
+    "Execution Authorization Gate",
+    "Execution Consumer",
+    "Codex Execution Adapter",
+    "Replay Identity Chain",
+    "Deterministic Execution Receipts"
+  ],
+  "bounded_execution_runtime_closed": true
+}

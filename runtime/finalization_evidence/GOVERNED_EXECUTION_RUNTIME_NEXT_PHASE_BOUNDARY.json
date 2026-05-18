@@ -1,0 +1,10 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "next_phase": "GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "alternate_future_boundary": "GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "constitutional_statement": "The system can perform bounded governance-controlled Codex execution, but does not perform autonomous execution.",
+  "no_further_execution_expansion_before_observability_review": true,
+  "future_chatgpt_integration_must_remain_non_authoritative": true,
+  "future_orchestration_requires_separate_constitutional_approval_layer": true,
+  "future_multi_step_execution_requires_separate_replay_certified_lifecycle_semantics": true
+}

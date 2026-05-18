@@ -1,0 +1,18 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "replay_visible_fields": [
+    "original human request",
+    "interpreted intent",
+    "synthesized Codex task",
+    "handoff package",
+    "authority token",
+    "execution consumer validation",
+    "Codex adapter validation",
+    "bounded execution metadata",
+    "stdout hash",
+    "stderr hash",
+    "execution receipt",
+    "blocked capability guarantees",
+    "deterministic closure semantics"
+  ]
+}

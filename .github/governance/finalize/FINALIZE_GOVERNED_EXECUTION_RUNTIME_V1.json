@@ -1,0 +1,42 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "included_components": [
+    "Browser Companion",
+    "Local Preview Runtime",
+    "Intent Interpretation Layer",
+    "Codex Task Synthesis Layer",
+    "Codex Handoff Package Layer",
+    "Execution Authorization Gate",
+    "Execution Consumer",
+    "Codex Execution Adapter",
+    "Authority Token Validation",
+    "Replay Identity Chain",
+    "Explicit Human Approval Model",
+    "Bounded Codex Dispatch",
+    "Deterministic Execution Receipts",
+    "stdout/stderr hashing",
+    "shell=False enforcement",
+    "bounded timeout enforcement"
+  ],
+  "excluded_capabilities": [
+    "autonomous execution",
+    "orchestration",
+    "retries/fallbacks",
+    "hidden continuation",
+    "recursive planning",
+    "worker coordination",
+    "general agent runtime",
+    "unrestricted Codex execution",
+    "unrestricted subprocess execution",
+    "shell=True",
+    "hidden networking",
+    "automatic escalation",
+    "implicit approvals",
+    "persistent execution authority",
+    "public runtime exposure",
+    "self-modifying governance"
+  ],
+  "constitutional_statement": "The system can perform bounded governance-controlled Codex execution, but does not perform autonomous execution.",
+  "runtime_behavior_modified": false
+}

@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "constitutional_statement": "The system can perform bounded governance-controlled Codex execution, but does not perform autonomous execution.",
+  "explicit_human_approval_required": true,
+  "authority_token_required": true,
+  "authority_expiration_enforced": true,
+  "revocation_state_checked": true,
+  "handoff_integrity_checked": true,
+  "replay_identity_continuity_checked": true,
+  "shell_false_enforced": true,
+  "bounded_timeout_enforced": true,
+  "arbitrary_command_execution": false,
+  "autonomous_continuation": false,
+  "retries_fallbacks": false,
+  "orchestration": false
+}

@@ -1,0 +1,9 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "certification_status": "PASS",
+  "bounded_governed_execution_runtime": true,
+  "authority_token_consumption": true,
+  "bounded_codex_dispatch": true,
+  "deterministic_execution_receipts": true,
+  "autonomous_execution": false
+}

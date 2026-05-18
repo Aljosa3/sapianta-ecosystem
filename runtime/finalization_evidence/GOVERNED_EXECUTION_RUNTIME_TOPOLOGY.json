@@ -1,0 +1,24 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_RUNTIME_V1",
+  "topology": [
+    "Human",
+    "Browser Companion",
+    "Governed Intent Interpretation",
+    "Governed Codex Task Synthesis",
+    "Replay-certified Handoff Package",
+    "Execution Authorization Gate",
+    "Execution Consumer",
+    "Governed Codex Execution Adapter",
+    "Bounded Codex Execution",
+    "Replay-certified Execution Receipt"
+  ],
+  "roles": {
+    "browser_companion": "local ingress UI",
+    "aigol": "governance authority",
+    "codex": "downstream bounded execution surface",
+    "execution_adapter": "not an agent",
+    "execution_consumer": "not an orchestrator"
+  },
+  "codex_execution_is_authority_token_gated": true,
+  "constitutional_statement": "The system can perform bounded governance-controlled Codex execution, but does not perform autonomous execution."
+}
