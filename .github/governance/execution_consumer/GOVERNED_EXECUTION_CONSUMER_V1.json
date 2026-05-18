@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "dispatch_mode": "DETERMINISTIC_PRE_EXECUTION_SIMULATION",
+  "execution_performed": false,
+  "constitutional_statement": "Mock execution authorization consumption does not constitute downstream execution.",
+  "mock_dispatch_only": true,
+  "replay_visible": true
+}

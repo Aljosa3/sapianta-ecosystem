@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "consumer_endpoint": "http://127.0.0.1:8110/governed-execution-consume",
+  "constitutional_statement": "Mock execution authorization consumption does not constitute downstream execution.",
+  "browser_flow": [
+    "preview task",
+    "confirm preview",
+    "export handoff package",
+    "request execution authorization",
+    "run mock governed execution"
+  ]
+}

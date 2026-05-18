@@ -63,6 +63,8 @@ replay evidence visible
 5. Click `Confirm preview` if the preview is acceptable.
 6. Click `Export governed handoff package` to download the inert JSON envelope.
 7. Click `Request execution authorization` to preview temporary eligibility.
+8. Click `Run mock governed execution` to consume the authority token in mock mode.
+9. Click `Run governed Codex execution` only when a bounded real downstream run is intended.
 
 This mode is preview/export only. It does not execute Codex or invoke downstream
 tools.

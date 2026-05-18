@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "codex_execution": false,
+  "shell_execution": false,
+  "subprocess_execution": false,
+  "orchestration": false,
+  "autonomous_loops": false,
+  "retries_fallbacks": false,
+  "hidden_continuation": false,
+  "worker_routing": false,
+  "task_decomposition": false
+}

@@ -1,0 +1,21 @@
+{
+  "milestone": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "replay_visible_fields": [
+    "original_human_request",
+    "synthesized_task",
+    "handoff_package",
+    "authority_token",
+    "consumer_validation_results",
+    "mock_dispatch_receipt",
+    "blocked_capability_checks",
+    "deterministic_closure"
+  ],
+  "receipt_statuses": [
+    "MOCK_EXECUTION_ACCEPTED",
+    "MOCK_EXECUTION_REJECTED",
+    "AUTHORITY_EXPIRED",
+    "AUTHORITY_REVOKED",
+    "HANDOFF_MISMATCH",
+    "BLOCKED_CAPABILITY_DETECTED"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "certification_status": "PASS",
+  "authority_validation": true,
+  "mock_dispatch_only": true,
+  "execution_performed": false,
+  "downstream_execution_present": false
+}

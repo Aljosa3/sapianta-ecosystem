@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+  "execution_endpoint": "http://127.0.0.1:8110/governed-codex-execute",
+  "contract": "codex exec <bounded_prompt>",
+  "browser_flow": [
+    "preview task",
+    "confirm preview",
+    "export handoff package",
+    "request execution authorization",
+    "run governed Codex execution"
+  ]
+}

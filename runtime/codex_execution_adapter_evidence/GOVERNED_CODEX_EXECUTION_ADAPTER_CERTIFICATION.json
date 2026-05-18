@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+  "certification_status": "PASS",
+  "bounded_codex_dispatch": true,
+  "shell_false": true,
+  "replay_certified_receipts": true,
+  "autonomous_execution": false
+}

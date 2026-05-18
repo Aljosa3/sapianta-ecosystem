@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+  "orchestration": false,
+  "multi_step_planning": false,
+  "recursive_execution": false,
+  "hidden_retries": false,
+  "hidden_continuation": false,
+  "shell_true": false,
+  "unrestricted_subprocess_execution": false,
+  "unrestricted_networking": false,
+  "worker_routing": false
+}

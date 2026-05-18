@@ -3,12 +3,15 @@ const LOCAL_INTERPRET_ENDPOINT = "http://127.0.0.1:8110/governed-interpret";
 const LOCAL_CODEX_SYNTHESIS_ENDPOINT = "http://127.0.0.1:8110/governed-codex-synthesize";
 const LOCAL_CODEX_HANDOFF_ENDPOINT = "http://127.0.0.1:8110/governed-codex-handoff";
 const LOCAL_EXECUTION_AUTHORIZE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-authorize";
+const LOCAL_EXECUTION_CONSUME_ENDPOINT = "http://127.0.0.1:8110/governed-execution-consume";
+const LOCAL_CODEX_EXECUTE_ENDPOINT = "http://127.0.0.1:8110/governed-codex-execute";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
 let pendingCodexSynthesis = null;
 let confirmedCodexSynthesis = null;
 let confirmedHandoffPackage = null;
+let currentAuthorityToken = null;
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -147,6 +150,7 @@ async function previewIntent() {
       pendingCodexSynthesis = payload;
       confirmedCodexSynthesis = null;
       confirmedHandoffPackage = null;
+      currentAuthorityToken = null;
       renderResult({
         status: payload.status,
         task_class: payload.task_class,
@@ -179,6 +183,7 @@ async function previewIntent() {
     pendingCodexSynthesis = null;
     confirmedCodexSynthesis = null;
     confirmedHandoffPackage = null;
+    currentAuthorityToken = null;
     renderResult({ status: "BLOCKED", error: error.message });
   }
 }
@@ -291,6 +296,7 @@ async function requestExecutionAuthorization() {
     if (!validateExecutionAuthorization(payload)) {
       throw new Error("Execution authorization failed governed validation.");
     }
+    currentAuthorityToken = payload;
     renderResult({
       status: payload.status,
       token_id: payload.token_id,
@@ -300,6 +306,95 @@ async function requestExecutionAuthorization() {
       blocked_capabilities: payload.blocked_capabilities,
       revocation_supported: payload.revocation_supported,
       execution_disclaimer: "Execution authorization does not execute Codex."
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+function validateMockExecution(response) {
+  return response
+    && response.status === "MOCK_EXECUTION_ACCEPTED"
+    && response.execution_performed === false
+    && response.receipt
+    && response.receipt.execution_performed === false
+    && typeof response.receipt.receipt_id === "string";
+}
+
+async function runMockGovernedExecution() {
+  if (document.getElementById("mode").value !== "codex" || !confirmedHandoffPackage || !currentAuthorityToken) {
+    renderResult({ status: "BLOCKED", error: "Authorization is required before mock execution consumption." });
+    return;
+  }
+  try {
+    const response = await fetch(LOCAL_EXECUTION_CONSUME_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        handoff_package: confirmedHandoffPackage,
+        authority_token: currentAuthorityToken,
+        now: new Date().toISOString(),
+        revoked_token_ids: []
+      })
+    });
+    const payload = await response.json();
+    if (!validateMockExecution(payload)) {
+      throw new Error("Mock execution consumer failed governed validation.");
+    }
+    renderResult({
+      status: payload.status,
+      replay_identity: payload.replay_identity,
+      receipt_id: payload.receipt.receipt_id,
+      authority_token_id: payload.receipt.authority_token_id,
+      expiration_validation: payload.validation.valid,
+      execution_performed: payload.execution_performed,
+      constitutional_statement: payload.receipt.constitutional_statement
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+function validateCodexExecution(response) {
+  return response
+    && ["EXECUTION_ACCEPTED", "EXECUTION_FAILURE", "EXECUTION_TIMEOUT"].includes(response.status)
+    && response.receipt
+    && typeof response.receipt.receipt_id === "string"
+    && typeof response.receipt.stdout_hash === "string"
+    && typeof response.receipt.stderr_hash === "string";
+}
+
+async function runGovernedCodexExecution() {
+  if (document.getElementById("mode").value !== "codex" || !confirmedHandoffPackage || !currentAuthorityToken) {
+    renderResult({ status: "BLOCKED", error: "Authorization is required before governed Codex execution." });
+    return;
+  }
+  try {
+    const response = await fetch(LOCAL_CODEX_EXECUTE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        handoff_package: confirmedHandoffPackage,
+        authority_token: currentAuthorityToken,
+        now: new Date().toISOString(),
+        revoked_token_ids: [],
+        codex_executable: "codex",
+        timeout_seconds: 30
+      })
+    });
+    const payload = await response.json();
+    if (!validateCodexExecution(payload)) {
+      throw new Error("Codex execution adapter failed governed validation.");
+    }
+    renderResult({
+      status: payload.status,
+      replay_identity: payload.replay_identity,
+      receipt_id: payload.receipt.receipt_id,
+      authority_token_id: payload.receipt.authority_token_id,
+      expiration_validation: payload.validation.consumer_validation.valid,
+      bounded_execution_status: payload.dispatch.execution_status,
+      stdout_hash: payload.receipt.stdout_hash,
+      stderr_hash: payload.receipt.stderr_hash
     });
   } catch (error) {
     renderResult({ status: "BLOCKED", error: error.message });
@@ -340,4 +435,6 @@ document.getElementById("preview").addEventListener("click", previewIntent);
 document.getElementById("confirm").addEventListener("click", confirmIntentPreview);
 document.getElementById("export").addEventListener("click", exportGovernedHandoffPackage);
 document.getElementById("authorize").addEventListener("click", requestExecutionAuthorization);
+document.getElementById("consume").addEventListener("click", runMockGovernedExecution);
+document.getElementById("codex-execute").addEventListener("click", runGovernedCodexExecution);
 document.getElementById("invoke").addEventListener("click", invokeGovernedRuntime);

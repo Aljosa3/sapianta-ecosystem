@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+  "contract": "codex exec <bounded_prompt>",
+  "shell_false_required": true,
+  "bounded_timeout_required": true,
+  "constitutional_statement": "Bounded Codex execution remains governance-controlled and does not constitute autonomous execution.",
+  "autonomous_execution": false
+}

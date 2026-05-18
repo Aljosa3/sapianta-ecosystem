@@ -1,0 +1,26 @@
+{
+  "milestone": "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+  "replay_visible_fields": [
+    "original_human_request",
+    "synthesized_task",
+    "handoff_package",
+    "authority_token",
+    "execution_validation_results",
+    "bounded_execution_metadata",
+    "stdout_hash",
+    "stderr_hash",
+    "execution_receipt",
+    "blocked_capability_checks",
+    "deterministic_closure"
+  ],
+  "receipt_statuses": [
+    "EXECUTION_ACCEPTED",
+    "EXECUTION_REJECTED",
+    "AUTHORITY_EXPIRED",
+    "AUTHORITY_REVOKED",
+    "HANDOFF_MISMATCH",
+    "BLOCKED_CAPABILITY_DETECTED",
+    "EXECUTION_TIMEOUT",
+    "EXECUTION_FAILURE"
+  ]
+}
