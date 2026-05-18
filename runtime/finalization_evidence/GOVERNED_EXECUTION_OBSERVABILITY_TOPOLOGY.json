@@ -1,0 +1,26 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "topology": [
+    "Human",
+    "Browser Companion",
+    "Governed Intent Interpretation",
+    "Governed Codex Task Synthesis",
+    "Replay-certified Handoff Package",
+    "Execution Authorization Gate",
+    "Execution Consumer",
+    "Governed Codex Execution Adapter",
+    "Bounded Codex Execution",
+    "Replay-certified Execution Receipt",
+    "Read-only Execution Observability"
+  ],
+  "roles": {
+    "browser_companion": "local ingress and inspection UI",
+    "aigol": "governance authority",
+    "codex": "bounded downstream execution surface",
+    "observability": "inspection-only",
+    "observability_executor": false,
+    "observability_orchestrator": false,
+    "observability_can_create_authority": false
+  },
+  "constitutional_statement": "Governed execution observability is read-only and does not trigger execution."
+}

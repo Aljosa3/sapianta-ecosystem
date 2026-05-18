@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "constitutional_statement": "Governed execution observability is read-only and does not trigger execution.",
+  "read_only": true,
+  "execution_triggered": false,
+  "codex_dispatch_path_exists": false,
+  "subprocess_path_exists": false,
+  "state_mutation_path_exists": false,
+  "malformed_observability_requests_fail_closed": true,
+  "expired_revoked_authority_visible_not_mutated": true,
+  "blocked_capabilities_displayed_not_modified": true,
+  "replay_identity_inspected_not_regenerated_as_execution": true,
+  "inspection_creates_authorization": false,
+  "orchestration": false,
+  "autonomous_execution": false
+}

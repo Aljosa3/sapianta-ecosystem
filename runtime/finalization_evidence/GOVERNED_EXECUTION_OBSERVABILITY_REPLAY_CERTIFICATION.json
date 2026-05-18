@@ -1,0 +1,20 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "replay_visible_fields": [
+    "original human request",
+    "interpreted intent",
+    "synthesized Codex task",
+    "handoff package",
+    "authority token",
+    "consumer receipt",
+    "adapter receipt",
+    "execution trace id",
+    "replay identity",
+    "stdout hash",
+    "stderr hash",
+    "blocked capability guarantees",
+    "timeline events",
+    "summary status",
+    "deterministic closure semantics"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "continuity_chain": [
+    "Browser Companion execution inspection",
+    "Local Preview Runtime observability endpoint",
+    "Execution Observability Layer",
+    "Execution trace generation",
+    "Execution timeline generation",
+    "Authority token inspection",
+    "Handoff package inspection",
+    "Execution consumer receipt inspection",
+    "Codex adapter receipt inspection",
+    "Replay identity inspection",
+    "Deterministic observability summaries"
+  ],
+  "observability_epoch_closed": true
+}

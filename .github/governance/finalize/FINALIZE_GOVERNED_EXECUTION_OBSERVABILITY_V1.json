@@ -1,0 +1,39 @@
+{
+  "milestone": "FINALIZE_GOVERNED_EXECUTION_OBSERVABILITY_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "included_components": [
+    "Browser Companion execution inspection",
+    "Local Preview Runtime observability endpoint",
+    "Execution Observability Layer",
+    "Execution trace generation",
+    "Execution timeline generation",
+    "Authority token inspection",
+    "Handoff package inspection",
+    "Execution consumer receipt inspection",
+    "Codex adapter receipt inspection",
+    "Replay identity inspection",
+    "stdout/stderr hash inspection",
+    "blocked capability inspection",
+    "expiration and revocation visibility",
+    "deterministic observability summaries",
+    "read-only observability response"
+  ],
+  "excluded_capabilities": [
+    "execution triggering",
+    "Codex dispatch",
+    "subprocess execution",
+    "shell execution",
+    "orchestration",
+    "retries/fallbacks",
+    "hidden continuation",
+    "autonomous execution",
+    "worker routing",
+    "state mutation",
+    "hidden persistence",
+    "background execution",
+    "public runtime exposure",
+    "analytics that mutate state",
+    "self-modifying governance"
+  ],
+  "constitutional_statement": "Governed execution observability is read-only and does not trigger execution."
+}
