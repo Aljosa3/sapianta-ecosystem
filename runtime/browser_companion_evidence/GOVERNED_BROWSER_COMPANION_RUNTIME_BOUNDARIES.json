@@ -1,0 +1,13 @@
+{
+  "milestone": "GOVERNED_BROWSER_COMPANION_RUNTIME_V1",
+  "host_permissions": [
+    "http://127.0.0.1:8110/*"
+  ],
+  "all_urls_permission": false,
+  "credential_access": false,
+  "page_scraping": false,
+  "automatic_prompt_submission": false,
+  "hidden_execution": false,
+  "retry": false,
+  "fallback": false
+}

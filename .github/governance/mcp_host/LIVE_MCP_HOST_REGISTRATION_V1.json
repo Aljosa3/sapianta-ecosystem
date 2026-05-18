@@ -1,0 +1,22 @@
+{
+  "milestone": "LIVE_MCP_HOST_REGISTRATION_V1",
+  "tool_count": 1,
+  "tool_name": "sapianta_governed_invoke",
+  "transport": "streamable-http",
+  "connector_path": "/mcp",
+  "delegates_to_existing_bridge": true,
+  "requires_official_mcp_sdk": true,
+  "localhost_runtime_only": true,
+  "public_exposure_introduced": false,
+  "prohibited_capabilities_absent": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback_routing",
+    "hidden_execution",
+    "hidden_state",
+    "dynamic_provider_selection",
+    "shell_true",
+    "unrestricted_subprocess_execution"
+  ]
+}

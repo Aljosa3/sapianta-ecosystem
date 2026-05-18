@@ -1,0 +1,11 @@
+{
+  "milestone": "FINALIZE_OPERATIONAL_GOVERNED_INTERACTION_RUNTIME_V1",
+  "deterministic_request_identity": true,
+  "deterministic_response_identity": true,
+  "replay_identity_generation": true,
+  "evidence_visibility": true,
+  "explicit_closure": true,
+  "interpretation_replay_identity": true,
+  "blocked_interpretation_evidence": true,
+  "invocation_result_replay_visibility": true
+}

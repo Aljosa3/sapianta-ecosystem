@@ -1,0 +1,33 @@
+{
+  "hardening_scope": "EXISTING_GOVERNED_RUNTIME_OPERATIONAL_PROOF",
+  "milestone": "GOVERNED_RUNTIME_OPERATIONAL_HARDENING_V1",
+  "negative_matrix": [
+    "malformed invocation lineage",
+    "replay mismatch",
+    "unauthorized execution",
+    "invalid transport continuity",
+    "closure corruption",
+    "hidden continuation attempt",
+    "hidden routing attempt",
+    "hidden execution flag",
+    "invalid connector surface",
+    "invalid response continuity"
+  ],
+  "non_goals": [
+    "new architecture",
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden execution",
+    "hidden continuation",
+    "hidden memory",
+    "dynamic provider selection",
+    "websocket infrastructure",
+    "distributed coordination",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED",
+  "success_signal": "invocation_status == RETURNED"
+}

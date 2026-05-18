@@ -1,0 +1,14 @@
+{
+  "milestone": "LIVE_MCP_HOST_REGISTRATION_V1",
+  "replay_visible": true,
+  "response_shape_preserved": [
+    "status",
+    "closure",
+    "request_id",
+    "response_id",
+    "replay_identity",
+    "evidence"
+  ],
+  "delegates_to_existing_replay_validated_bridge": true,
+  "response_projection_mutates_runtime_history": false
+}

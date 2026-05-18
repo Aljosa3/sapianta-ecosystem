@@ -1,0 +1,7 @@
+{
+  "certification": "GOVERNED_RUNTIME_OPERATIONAL_HARDENING_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "status": "PASSED"
+}

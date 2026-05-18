@@ -1,0 +1,11 @@
+{
+  "milestone": "GOVERNED_INTENT_INTERPRETATION_LAYER_V1",
+  "preview_endpoint": "http://127.0.0.1:8110/governed-interpret",
+  "example_input": "create governance artifact for operational replay proof",
+  "example_artifact_candidate": "TEST_OPERATIONAL_REPLAY_PROOF_V1",
+  "browser_flow": [
+    "preview intent",
+    "confirm preview",
+    "optional invoke"
+  ]
+}

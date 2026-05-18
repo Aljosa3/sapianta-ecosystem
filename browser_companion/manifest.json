@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "SAPIANTA Governed Browser Companion",
+  "version": "1.0.0",
+  "description": "Explicit local-only companion for invoking the governed SAPIANTA runtime.",
+  "action": {
+    "default_title": "SAPIANTA Companion",
+    "default_popup": "popup.html"
+  },
+  "host_permissions": [
+    "http://127.0.0.1:8110/*"
+  ]
+}

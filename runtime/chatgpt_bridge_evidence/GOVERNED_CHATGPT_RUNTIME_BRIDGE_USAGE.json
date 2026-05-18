@@ -1,0 +1,5 @@
+{
+  "function_example": "invoke_from_chatgpt_bridge(\"TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1\", host=\"127.0.0.1\", port=8110)",
+  "status": "PASSED",
+  "tool_name": "sapianta_governed_invoke"
+}

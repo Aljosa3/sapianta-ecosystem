@@ -1,0 +1,7 @@
+{
+  "certification": "GOVERNED_MCP_RUNTIME_WRAPPER_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "tool_count": 1,
+  "status": "PASSED"
+}

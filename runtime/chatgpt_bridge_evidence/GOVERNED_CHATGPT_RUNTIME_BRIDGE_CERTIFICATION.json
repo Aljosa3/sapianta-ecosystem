@@ -1,0 +1,7 @@
+{
+  "certification": "GOVERNED_CHATGPT_RUNTIME_BRIDGE_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "localhost_only": true,
+  "status": "PASSED"
+}

@@ -1,0 +1,5 @@
+{
+  "bridge_request_identity_deterministic": true,
+  "replay_visible_response_summary": true,
+  "status": "PASSED"
+}

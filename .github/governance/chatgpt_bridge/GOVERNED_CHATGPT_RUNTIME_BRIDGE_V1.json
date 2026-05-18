@@ -1,0 +1,19 @@
+{
+  "default_host": "127.0.0.1",
+  "default_port": 8110,
+  "milestone": "GOVERNED_CHATGPT_RUNTIME_BRIDGE_V1",
+  "non_goals": [
+    "new execution authority",
+    "orchestration",
+    "agents",
+    "retries",
+    "fallback routing",
+    "hidden state",
+    "dynamic provider routing",
+    "public network exposure",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED",
+  "tool_name": "sapianta_governed_invoke"
+}

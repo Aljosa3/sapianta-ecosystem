@@ -1,0 +1,16 @@
+{
+  "prohibited_capabilities_absent": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden execution",
+    "hidden state",
+    "hidden memory",
+    "autonomous continuation",
+    "public exposure",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

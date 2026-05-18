@@ -1,0 +1,25 @@
+{
+  "milestone": "FINALIZE_OPERATIONAL_GOVERNED_INTERACTION_RUNTIME_V1",
+  "browser_topology": [
+    "Human",
+    "browser companion",
+    "localhost preview runtime",
+    "governed invocation chain",
+    "deterministic governed response",
+    "replay-visible evidence"
+  ],
+  "mcp_topology": [
+    "ChatGPT-style structured invocation",
+    "MCP wrapper / live MCP host",
+    "governed bridge",
+    "localhost preview runtime",
+    "governed response"
+  ],
+  "roles": {
+    "browser_companion": "local ingress UI",
+    "preview_runtime": "local execution surface",
+    "mcp_host": "protocol surface only",
+    "bridge": "relay only",
+    "runtime": "governance authority"
+  }
+}

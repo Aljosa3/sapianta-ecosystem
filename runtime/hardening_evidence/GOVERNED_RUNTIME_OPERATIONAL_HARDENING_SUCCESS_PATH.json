@@ -1,0 +1,14 @@
+{
+  "invocation_status": "RETURNED",
+  "path": [
+    "interaction",
+    "invocation wiring",
+    "UX layer",
+    "transport",
+    "connector",
+    "governed response",
+    "replay-visible evidence",
+    "closure"
+  ],
+  "status": "PASSED"
+}

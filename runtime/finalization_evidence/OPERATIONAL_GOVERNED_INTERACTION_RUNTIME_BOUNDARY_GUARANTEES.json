@@ -1,0 +1,15 @@
+{
+  "milestone": "FINALIZE_OPERATIONAL_GOVERNED_INTERACTION_RUNTIME_V1",
+  "localhost_only_runtime_target_preserved": true,
+  "browser_extension_minimal_permissions": true,
+  "broad_page_scraping": false,
+  "credential_access": false,
+  "automatic_prompt_submission": false,
+  "hidden_execution": false,
+  "agentic_continuation": false,
+  "retries": false,
+  "fallbacks": false,
+  "shell_true": false,
+  "unrestricted_subprocess_execution": false,
+  "codex_execution_authority": false
+}

@@ -1,0 +1,9 @@
+{
+  "milestone": "LIVE_MCP_HOST_REGISTRATION_V1",
+  "launch_command": "python -m sapianta_system.runtime.mcp_wrapper.live_mcp_server",
+  "required_sdk_package": "mcp",
+  "transport": "streamable-http",
+  "connector_url_shape": "http://<approved-host>:<approved-port>/mcp",
+  "current_local_scope": "local MCP clients only until a separately governed remote deployment is approved",
+  "tool_name": "sapianta_governed_invoke"
+}

@@ -1,0 +1,16 @@
+{
+  "all_invalid_cases_fail_closed": true,
+  "cases": [
+    "malformed invocation lineage",
+    "replay mismatch",
+    "unauthorized execution",
+    "invalid transport continuity",
+    "closure corruption",
+    "hidden continuation attempt",
+    "hidden routing attempt",
+    "hidden execution flag",
+    "invalid connector surface",
+    "invalid response continuity"
+  ],
+  "status": "PASSED"
+}

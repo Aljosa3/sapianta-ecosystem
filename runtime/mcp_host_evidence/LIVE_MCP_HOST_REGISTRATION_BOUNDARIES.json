@@ -1,0 +1,12 @@
+{
+  "milestone": "LIVE_MCP_HOST_REGISTRATION_V1",
+  "local_only_runtime_target": "127.0.0.1",
+  "rejects_non_localhost_target": true,
+  "no_public_execution_authority": true,
+  "no_retry": true,
+  "no_fallback": true,
+  "no_orchestration": true,
+  "no_hidden_state": true,
+  "no_shell_true": true,
+  "no_unrestricted_subprocess_execution": true
+}

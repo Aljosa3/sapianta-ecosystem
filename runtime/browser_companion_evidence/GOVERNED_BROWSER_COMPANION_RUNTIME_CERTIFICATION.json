@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_BROWSER_COMPANION_RUNTIME_V1",
+  "certification_status": "PASS",
+  "local_only": true,
+  "explicit_user_action_required": true,
+  "governed_runtime_path_preserved": true,
+  "runtime_authority_added": false
+}

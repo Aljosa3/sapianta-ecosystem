@@ -1,0 +1,17 @@
+{
+  "prohibited_capabilities_absent": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "websocket infrastructure",
+    "distributed coordination",
+    "hidden mutable state",
+    "hidden memory",
+    "autonomous continuation",
+    "shell=True",
+    "unrestricted subprocess execution",
+    "background autonomous workers"
+  ],
+  "status": "PASSED"
+}

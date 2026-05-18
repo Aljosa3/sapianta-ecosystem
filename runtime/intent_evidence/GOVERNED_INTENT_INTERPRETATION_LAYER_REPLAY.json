@@ -1,0 +1,14 @@
+{
+  "milestone": "GOVERNED_INTENT_INTERPRETATION_LAYER_V1",
+  "replay_visible_fields": [
+    "original_natural_language",
+    "intent_class",
+    "governance_mode",
+    "artifact_candidate",
+    "replay_identity",
+    "closure"
+  ],
+  "blocked_cases_recorded": true,
+  "ambiguity_rejection_recorded": true,
+  "automatic_execution_allowed": false
+}

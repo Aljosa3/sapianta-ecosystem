@@ -1,0 +1,8 @@
+{
+  "evidence_artifacts_stable": true,
+  "lineage_ids_stable": true,
+  "read_only_inspection": true,
+  "replay_hashes_deterministic": true,
+  "request_response_continuity_visible": true,
+  "status": "PASSED"
+}

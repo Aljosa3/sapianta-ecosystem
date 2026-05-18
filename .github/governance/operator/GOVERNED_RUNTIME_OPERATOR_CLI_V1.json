@@ -1,0 +1,22 @@
+{
+  "commands": [
+    "invoke",
+    "validate-response"
+  ],
+  "milestone": "GOVERNED_RUNTIME_OPERATOR_CLI_V1",
+  "non_goals": [
+    "new runtime authority",
+    "orchestration",
+    "agents",
+    "retries",
+    "fallback routing",
+    "background workers",
+    "hidden memory",
+    "hidden continuation",
+    "dynamic provider selection",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED",
+  "target_host": "127.0.0.1"
+}

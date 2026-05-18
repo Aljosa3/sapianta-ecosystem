@@ -1,0 +1,13 @@
+{
+  "milestone": "FINALIZE_OPERATIONAL_GOVERNED_INTERACTION_RUNTIME_V1",
+  "next_phase": "GOVERNED_CODEX_TASK_SYNTHESIS_V1",
+  "allowed_only_after_finalization": true,
+  "requirements": {
+    "non_executing": true,
+    "preview_only": true,
+    "explicit_approval_required": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "silent_transition_to_codex_execution_authority_allowed": false
+}

@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_BROWSER_COMPANION_RUNTIME_V1",
+  "extension_path": "browser_companion/",
+  "runtime_start": "create_local_preview_server(host=\"127.0.0.1\", port=8110)",
+  "action": "user enters artifact and clicks Invoke governed runtime",
+  "artifact_example": "TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1",
+  "endpoint": "http://127.0.0.1:8110/governed-invoke"
+}

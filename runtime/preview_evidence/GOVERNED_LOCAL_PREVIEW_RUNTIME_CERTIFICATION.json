@@ -1,0 +1,8 @@
+{
+  "certification": "GOVERNED_LOCAL_PREVIEW_RUNTIME_CERTIFICATION",
+  "deterministic": true,
+  "fail_closed": true,
+  "governance_verifiable": true,
+  "localhost_only": true,
+  "status": "PASSED"
+}

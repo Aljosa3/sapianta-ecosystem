@@ -1,0 +1,6 @@
+{
+  "closure_prevents_continuation": true,
+  "multi_invocation_ordering_preserved": true,
+  "replay_chaining_stable": true,
+  "status": "PASSED"
+}

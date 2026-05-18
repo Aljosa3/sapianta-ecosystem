@@ -1,0 +1,9 @@
+{
+  "milestone": "LIVE_MCP_HOST_REGISTRATION_V1",
+  "certification_status": "PASS",
+  "host_entrypoint": "sapianta_system.runtime.mcp_wrapper.live_mcp_server",
+  "tool_name": "sapianta_governed_invoke",
+  "tool_count": 1,
+  "bridge_path_preserved": true,
+  "runtime_authority_added": false
+}

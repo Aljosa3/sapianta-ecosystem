@@ -1,0 +1,12 @@
+{
+  "example": "python -m sapianta_system.runtime.operator.cli invoke --artifact TEST_OPERATIONAL_RUNTIME_PROOF_V1",
+  "status": "PASSED",
+  "summary_fields": [
+    "status",
+    "closure",
+    "replay_identity",
+    "request_id",
+    "response_id",
+    "evidence"
+  ]
+}

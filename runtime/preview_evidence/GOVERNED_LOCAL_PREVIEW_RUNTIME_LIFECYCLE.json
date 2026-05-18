@@ -1,0 +1,10 @@
+{
+  "bounded_lifecycle": [
+    "start",
+    "governed invocation handling",
+    "governed response return",
+    "deterministic closure"
+  ],
+  "localhost_only_binding_enforced": true,
+  "status": "PASSED"
+}

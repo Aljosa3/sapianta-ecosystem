@@ -1,0 +1,16 @@
+{
+  "prohibited_capabilities_absent": [
+    "new runtime authority",
+    "orchestration",
+    "agents",
+    "retries",
+    "fallback routing",
+    "background workers",
+    "hidden memory",
+    "hidden continuation",
+    "dynamic provider selection",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

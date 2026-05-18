@@ -1,0 +1,11 @@
+{
+  "milestone": "GOVERNED_INTENT_INTERPRETATION_LAYER_V1",
+  "autonomous_planning": false,
+  "hidden_reasoning": false,
+  "hidden_continuation": false,
+  "shell_execution": false,
+  "codex_direct_invocation": false,
+  "orchestration": false,
+  "retries": false,
+  "governance_rewrite": false
+}

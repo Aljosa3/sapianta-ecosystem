@@ -1,0 +1,11 @@
+{
+  "milestone": "GOVERNED_BROWSER_COMPANION_RUNTIME_V1",
+  "endpoint": "http://127.0.0.1:8110/governed-invoke",
+  "explicit_user_action_required": true,
+  "artifact_pattern": "^[A-Z0-9_-]{1,96}$",
+  "broad_browser_permissions": false,
+  "automatic_prompt_execution": false,
+  "credential_access": false,
+  "governed_runtime_path_preserved": true,
+  "replay_visible_response_display": true
+}

@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_INTENT_INTERPRETATION_LAYER_V1",
+  "certification_status": "PASS",
+  "bounded_vocabulary": true,
+  "deterministic_classification": true,
+  "requires_confirmation": true,
+  "runtime_authority_added": false
+}

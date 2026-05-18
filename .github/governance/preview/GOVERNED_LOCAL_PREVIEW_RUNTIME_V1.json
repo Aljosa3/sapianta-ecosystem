@@ -1,0 +1,25 @@
+{
+  "binding": "127.0.0.1",
+  "deterministic_guarantees": [
+    "deterministic localhost invocation handling",
+    "replay-visible governed response return",
+    "deterministic response identity",
+    "deterministic lifecycle closure"
+  ],
+  "milestone": "GOVERNED_LOCAL_PREVIEW_RUNTIME_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "websocket infrastructure",
+    "distributed coordination",
+    "hidden mutable state",
+    "hidden memory",
+    "autonomous continuation",
+    "shell=True",
+    "unrestricted subprocess execution",
+    "background autonomous workers"
+  ],
+  "status": "PASSED"
+}

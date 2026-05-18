@@ -1,0 +1,16 @@
+{
+  "milestone": "GOVERNED_BROWSER_COMPANION_RUNTIME_V1",
+  "deterministic_request_builder": true,
+  "canonical_json_hashing": true,
+  "replay_visible_response_fields": [
+    "status",
+    "closure",
+    "request_id",
+    "response_id",
+    "replay_identity",
+    "evidence.localhost_only",
+    "evidence.replay_safe",
+    "evidence.response_returned"
+  ],
+  "response_history_mutated": false
+}

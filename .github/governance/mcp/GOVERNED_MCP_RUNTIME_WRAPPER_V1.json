@@ -1,0 +1,21 @@
+{
+  "default_host": "127.0.0.1",
+  "default_port": 8110,
+  "milestone": "GOVERNED_MCP_RUNTIME_WRAPPER_V1",
+  "non_goals": [
+    "agents",
+    "orchestration",
+    "retries",
+    "fallback routing",
+    "hidden execution",
+    "hidden state",
+    "hidden memory",
+    "autonomous continuation",
+    "public exposure",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED",
+  "tool_name": "sapianta_governed_invoke",
+  "tool_count": 1
+}

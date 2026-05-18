@@ -1,0 +1,15 @@
+{
+  "prohibited_capabilities_absent": [
+    "new execution authority",
+    "orchestration",
+    "agents",
+    "retries",
+    "fallback routing",
+    "hidden state",
+    "dynamic provider routing",
+    "public network exposure",
+    "shell=True",
+    "unrestricted subprocess execution"
+  ],
+  "status": "PASSED"
+}

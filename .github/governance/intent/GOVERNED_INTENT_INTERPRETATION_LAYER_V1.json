@@ -1,0 +1,13 @@
+{
+  "milestone": "GOVERNED_INTENT_INTERPRETATION_LAYER_V1",
+  "supported_intents": [
+    "GOVERNANCE_ARTIFACT_CREATION",
+    "RUNTIME_VALIDATION_REQUEST",
+    "REPLAY_INSPECTION_REQUEST"
+  ],
+  "requires_confirmation": true,
+  "automatic_execution": false,
+  "ambiguous_intents_fail_closed": true,
+  "artifact_pattern": "^[A-Z0-9_]{1,96}$",
+  "replay_visible": true
+}

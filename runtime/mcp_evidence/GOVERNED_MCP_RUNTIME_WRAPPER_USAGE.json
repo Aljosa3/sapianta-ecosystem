@@ -1,0 +1,5 @@
+{
+  "manual_registration_boundary": "register the local handler with an MCP-capable host",
+  "status": "PASSED",
+  "tool_name": "sapianta_governed_invoke"
+}

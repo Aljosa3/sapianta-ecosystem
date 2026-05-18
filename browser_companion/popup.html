@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SAPIANTA Companion</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main>
+      <h1>SAPIANTA</h1>
+      <label for="mode">Mode</label>
+      <select id="mode" name="mode">
+        <option value="artifact">Artifact</option>
+        <option value="intent">Natural Language Intent</option>
+      </select>
+      <label for="artifact">Artifact or intent</label>
+      <input id="artifact" name="artifact" autocomplete="off" placeholder="TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1">
+      <button id="preview" type="button">Preview intent</button>
+      <button id="confirm" type="button">Confirm preview</button>
+      <button id="invoke" type="button">Invoke governed runtime</button>
+      <section id="result" aria-live="polite"></section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

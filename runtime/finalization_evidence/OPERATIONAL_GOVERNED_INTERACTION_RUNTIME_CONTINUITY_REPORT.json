@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_OPERATIONAL_GOVERNED_INTERACTION_RUNTIME_V1",
+  "lineage": [
+    "governed runtime operational hardening",
+    "preview runtime",
+    "operator CLI",
+    "ChatGPT bridge",
+    "MCP wrapper",
+    "live MCP host",
+    "browser companion",
+    "intent interpretation"
+  ],
+  "closed_operational_interaction_epoch": true,
+  "future_codex_task_synthesis_must_build_on_finalized_baseline": true,
+  "implicit_baseline_mutation_allowed": false
+}

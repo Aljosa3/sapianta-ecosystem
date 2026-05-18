@@ -1,0 +1,5 @@
+{
+  "read_only_replay_validation": true,
+  "response_identity_deterministic": true,
+  "status": "PASSED"
+}
