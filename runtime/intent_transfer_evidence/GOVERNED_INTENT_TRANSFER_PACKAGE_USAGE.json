@@ -1,0 +1,8 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "endpoint": "http://127.0.0.1:8110/governed-intent-transfer",
+  "browser_companion_action": "Export governed intent transfer package",
+  "status": "TRANSFER_READY",
+  "requires_preview": true,
+  "requires_confirmation": true
+}

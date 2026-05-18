@@ -1,0 +1,40 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "included_components": [
+    "governed intent transfer package layer",
+    "deterministic transfer identity",
+    "replay identity continuity",
+    "conversational input preservation",
+    "normalized governed request preservation",
+    "downstream runtime target description",
+    "explicit preview requirement",
+    "explicit confirmation requirement",
+    "non-executing transfer semantics",
+    "ChatGPT non-authority guarantee",
+    "execution non-authority guarantee",
+    "Browser Companion transfer export",
+    "blocked capability guarantees",
+    "fail-closed transfer validation"
+  ],
+  "excluded_capabilities": [
+    "automatic transfer ingestion",
+    "hidden ChatGPT/runtime coupling",
+    "hidden page scraping",
+    "full conversation ingestion",
+    "automatic dispatch",
+    "execution authority",
+    "ChatGPT authority",
+    "Codex execution",
+    "Codex dispatch",
+    "orchestration",
+    "retries/fallbacks",
+    "hidden continuation",
+    "implicit approvals",
+    "autonomous execution",
+    "background synchronization",
+    "broad NLP interpretation",
+    "public runtime exposure"
+  ],
+  "constitutional_statement": "Governed intent transfer packages are non-executing and require explicit governance preview and confirmation."
+}

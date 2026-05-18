@@ -1,0 +1,22 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "topology": [
+    "Human",
+    "ChatGPT-style conversational reasoning",
+    "explicit governed intent transfer package",
+    "Browser Companion / AiGOL preview",
+    "governance validation",
+    "explicit confirmation",
+    "authorization-gated execution path"
+  ],
+  "roles": {
+    "transfer_packages": "inert",
+    "transfer_packages_trigger_runtime_execution": false,
+    "chatgpt": "non-authoritative",
+    "aigol": "governance authority",
+    "browser_companion": "explicit local export and preview",
+    "ingestion_implemented": false,
+    "execution_authority": "token-gated"
+  },
+  "constitutional_statement": "Governed intent transfer packages are non-executing and require explicit governance preview and confirmation."
+}

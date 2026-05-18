@@ -1,0 +1,14 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "next_phase": "GOVERNED_INTENT_TRANSFER_INGESTION_V1",
+  "constitutional_statement": "Governed intent transfer packages are non-executing and require explicit governance preview and confirmation.",
+  "ingestion_must_be_explicit": true,
+  "ingestion_must_validate_transfer_identity": true,
+  "ingestion_must_validate_replay_identity": true,
+  "ingestion_must_preserve_preview_first_semantics": true,
+  "ingestion_must_preserve_confirmation_requirement": true,
+  "ingestion_must_not_create_execution_authority": true,
+  "ingestion_must_not_bypass_aigol_governance": true,
+  "hidden_chatgpt_page_scraping_remains_prohibited": true,
+  "full_conversation_ingestion_requires_separate_governed_consent_model": true
+}

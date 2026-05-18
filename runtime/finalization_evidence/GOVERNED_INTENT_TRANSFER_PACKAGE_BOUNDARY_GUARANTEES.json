@@ -1,0 +1,17 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "constitutional_statement": "Governed intent transfer packages are non-executing and require explicit governance preview and confirmation.",
+  "chatgpt_authority": false,
+  "execution_authority": false,
+  "automatic_dispatch": false,
+  "orchestration": false,
+  "hidden_continuation": false,
+  "requires_preview": true,
+  "requires_confirmation": true,
+  "transfer_packages_remain_inert": true,
+  "ingestion_runtime_exists": false,
+  "automatic_execution_path_exists": false,
+  "hidden_page_ingestion_exists": false,
+  "full_conversation_ingestion_exists": false,
+  "automatic_transfer_ingestion": false
+}

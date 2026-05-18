@@ -1,0 +1,17 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "continuity_chain": [
+    "governed intent transfer package layer",
+    "deterministic transfer identity",
+    "replay identity continuity",
+    "conversational input preservation",
+    "normalized governed request preservation",
+    "downstream runtime target description",
+    "explicit preview requirement",
+    "explicit confirmation requirement",
+    "non-executing transfer semantics",
+    "Browser Companion transfer export",
+    "fail-closed transfer validation"
+  ],
+  "intent_transfer_package_epoch_closed": true
+}

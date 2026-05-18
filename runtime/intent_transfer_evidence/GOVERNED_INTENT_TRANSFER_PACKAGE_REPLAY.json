@@ -1,0 +1,13 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "replay_visible_fields": [
+    "original conversational input",
+    "normalized governed request",
+    "transfer identity",
+    "replay identity",
+    "downstream target description",
+    "blocked capability guarantees",
+    "transfer boundary state",
+    "closure semantics"
+  ]
+}

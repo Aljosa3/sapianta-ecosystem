@@ -1,0 +1,11 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "chatgpt_authority": false,
+  "execution_authority": false,
+  "automatic_dispatch": false,
+  "orchestration": false,
+  "hidden_continuation": false,
+  "preview_required": true,
+  "confirmation_required": true,
+  "transfer_boundary_statement": "This transfer package is non-executing and requires explicit governance preview and confirmation."
+}

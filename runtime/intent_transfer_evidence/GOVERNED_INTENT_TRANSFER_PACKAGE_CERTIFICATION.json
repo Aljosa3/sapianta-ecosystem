@@ -1,0 +1,7 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "certification": "PASS",
+  "deterministic_transfer_packages": true,
+  "preview_first": true,
+  "inert": true
+}

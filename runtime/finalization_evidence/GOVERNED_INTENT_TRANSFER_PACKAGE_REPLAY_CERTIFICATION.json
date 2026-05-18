@@ -1,0 +1,14 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "constitutional_statement": "Governed intent transfer packages are non-executing and require explicit governance preview and confirmation.",
+  "replay_visible_fields": [
+    "original conversational input",
+    "normalized governed request",
+    "transfer identity",
+    "replay identity",
+    "downstream runtime target description",
+    "blocked capability guarantees",
+    "transfer boundary state",
+    "deterministic closure semantics"
+  ]
+}

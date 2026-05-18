@@ -1,0 +1,8 @@
+{
+  "milestone": "FINALIZE_GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "certification_status": "PASS",
+  "explicit_transfer_package_layer": true,
+  "preview_first": true,
+  "confirmation_gated": true,
+  "non_executing": true
+}

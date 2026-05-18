@@ -7,6 +7,7 @@ const LOCAL_EXECUTION_CONSUME_ENDPOINT = "http://127.0.0.1:8110/governed-executi
 const LOCAL_CODEX_EXECUTE_ENDPOINT = "http://127.0.0.1:8110/governed-codex-execute";
 const LOCAL_EXECUTION_OBSERVE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-observe";
 const LOCAL_CHATGPT_BRIDGE_ENDPOINT = "http://127.0.0.1:8110/governed-chatgpt-bridge";
+const LOCAL_INTENT_TRANSFER_ENDPOINT = "http://127.0.0.1:8110/governed-intent-transfer";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
@@ -285,6 +286,17 @@ function validateHandoffPackage(response) {
     && typeof response.replay_identity === "string";
 }
 
+function validateIntentTransferPackage(response) {
+  return response
+    && response.status === "TRANSFER_READY"
+    && response.requires_preview === true
+    && response.requires_confirmation === true
+    && response.execution_authority === false
+    && response.chatgpt_authority === false
+    && response.package
+    && response.package.transfer_boundary_statement === "This transfer package is non-executing and requires explicit governance preview and confirmation.";
+}
+
 function exportJsonFile(filename, value) {
   const blob = new Blob([JSON.stringify(canonicalize(value), null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -321,6 +333,43 @@ async function exportGovernedHandoffPackage() {
       replay_identity: payload.replay_identity,
       blocked_capabilities: payload.blocked_capabilities,
       downstream_execution_authority: payload.downstream_execution_authority,
+      export_confirmed: true
+    });
+  } catch (error) {
+    renderResult({ status: "BLOCKED", error: error.message });
+  }
+}
+
+async function exportGovernedIntentTransferPackage() {
+  if (document.getElementById("mode").value !== "conversation" || !pendingConversationBridge) {
+    renderResult({ status: "BLOCKED", error: "Conversational bridge preview is required before transfer export." });
+    return;
+  }
+  const conversationalInput = document.getElementById("artifact").value.trim();
+  try {
+    const response = await fetch(LOCAL_INTENT_TRANSFER_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conversational_input: conversationalInput,
+        normalized_governed_request: pendingConversationBridge.normalized_request,
+        governance_mode: pendingConversationBridge.governance_mode,
+        replay_identity: pendingConversationBridge.replay_identity
+      })
+    });
+    const payload = await response.json();
+    if (!validateIntentTransferPackage(payload)) {
+      throw new Error("Intent transfer package failed governed validation.");
+    }
+    exportJsonFile(`governed_intent_transfer_${payload.transfer_identity}.json`, payload.package);
+    renderResult({
+      status: payload.status,
+      conversational_input: conversationalInput,
+      normalized_governed_request: payload.package.normalized_governed_request,
+      transfer_identity: payload.transfer_identity,
+      replay_identity: payload.replay_identity,
+      boundary_guarantees: payload.boundary_state,
+      transfer_boundary_statement: payload.package.transfer_boundary_statement,
       export_confirmed: true
     });
   } catch (error) {
@@ -556,6 +605,7 @@ async function invokeGovernedRuntime() {
 
 document.getElementById("preview").addEventListener("click", previewIntent);
 document.getElementById("confirm").addEventListener("click", confirmIntentPreview);
+document.getElementById("transfer-export").addEventListener("click", exportGovernedIntentTransferPackage);
 document.getElementById("export").addEventListener("click", exportGovernedHandoffPackage);
 document.getElementById("authorize").addEventListener("click", requestExecutionAuthorization);
 document.getElementById("consume").addEventListener("click", runMockGovernedExecution);

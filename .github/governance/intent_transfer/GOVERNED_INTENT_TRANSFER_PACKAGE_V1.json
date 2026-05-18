@@ -1,0 +1,10 @@
+{
+  "milestone": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "scope": "explicit_governed_intent_transfer",
+  "chatgpt_authority": false,
+  "execution_authority": false,
+  "requires_preview": true,
+  "requires_confirmation": true,
+  "replay_visible": true,
+  "fail_closed": true
+}
