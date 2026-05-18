@@ -1,0 +1,34 @@
+{
+  "milestone": "FINALIZE_GOVERNED_PRE_EXECUTION_STACK_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "included_components": [
+    "Browser Companion",
+    "Local Preview Runtime",
+    "Intent Interpretation Layer",
+    "Codex Task Synthesis Layer",
+    "Codex Handoff Package Layer",
+    "Execution Authorization Gate",
+    "Replay Identity Chain",
+    "Explicit Human Approval Model",
+    "Revocation Support",
+    "Temporary Authority Tokens"
+  ],
+  "excluded_capabilities": [
+    "Codex execution",
+    "automatic prompt dispatch",
+    "downstream task execution",
+    "orchestration",
+    "retries/fallbacks",
+    "hidden continuation",
+    "autonomous loops",
+    "worker coordination",
+    "unrestricted subprocess execution",
+    "shell=True",
+    "hidden networking",
+    "automatic tool routing",
+    "self-modifying governance",
+    "persistent execution authority"
+  ],
+  "constitutional_statement": "The system may authorize bounded downstream execution eligibility, but does not execute downstream tasks.",
+  "runtime_behavior_modified": false
+}

@@ -1,0 +1,12 @@
+{
+  "milestone": "FINALIZE_GOVERNED_PRE_EXECUTION_STACK_V1",
+  "localhost_only_ingress": true,
+  "explicit_human_approval": true,
+  "bounded_authority_windows": true,
+  "replay_safe_identity_chain": true,
+  "deterministic_authorization_semantics": true,
+  "hidden_execution_authority": false,
+  "autonomous_dispatch": false,
+  "hidden_retries": false,
+  "implicit_approval_escalation": false
+}

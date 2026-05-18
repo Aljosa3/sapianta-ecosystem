@@ -1,0 +1,13 @@
+{
+  "milestone": "FINALIZE_GOVERNED_PRE_EXECUTION_STACK_V1",
+  "topology": [
+    "Human",
+    "Browser Companion",
+    "Intent Interpretation Layer",
+    "Codex Task Synthesis Layer",
+    "Codex Handoff Package Layer",
+    "Execution Authorization Gate"
+  ],
+  "constitutional_statement": "The system may authorize bounded downstream execution eligibility, but does not execute downstream tasks.",
+  "execution_position": "constitutionally external"
+}

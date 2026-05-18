@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_PRE_EXECUTION_STACK_V1",
+  "replay_visible_fields": [
+    "original human request",
+    "interpreted intent",
+    "synthesized Codex task",
+    "handoff package",
+    "authority token",
+    "approval lineage",
+    "revocation events",
+    "execution receipts",
+    "blocked capability guarantees"
+  ],
+  "replay_safe_identity_chain": true,
+  "authorization_receipts_visible": true
+}

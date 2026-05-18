@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_PRE_EXECUTION_STACK_V1",
+  "next_phase": "GOVERNED_EXECUTION_CONSUMER_V1",
+  "constitutional_statement": "The system may authorize bounded downstream execution eligibility, but does not execute downstream tasks.",
+  "execution_remains_constitutionally_external": true,
+  "authorization_is_execution": false,
+  "downstream_execution_still_prohibited": true,
+  "future_execution_consumers_must_validate": [
+    "replay identity",
+    "expiration",
+    "blocked capabilities",
+    "authority lineage",
+    "task class",
+    "governance mode"
+  ]
+}
