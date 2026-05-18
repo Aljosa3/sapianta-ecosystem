@@ -1,0 +1,16 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "continuity_chain": [
+    "ChatGPT-style conversational input normalization",
+    "bounded conversational request mapping",
+    "replay identity generation",
+    "downstream governed request description",
+    "browser companion conversational mode",
+    "bridge boundary guarantees",
+    "explicit confirmation preservation",
+    "non-authoritative ChatGPT semantics",
+    "fail-closed ambiguity handling",
+    "exact-match bounded vocabulary"
+  ],
+  "bridge_v2_epoch_closed": true
+}

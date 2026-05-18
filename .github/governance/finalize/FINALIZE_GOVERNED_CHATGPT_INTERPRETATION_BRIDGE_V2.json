@@ -1,0 +1,34 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "status": "FROZEN_AND_CERTIFIED",
+  "included_components": [
+    "ChatGPT-style conversational input normalization",
+    "bounded conversational request mapping",
+    "replay identity generation",
+    "downstream governed request description",
+    "browser companion conversational mode",
+    "bridge boundary guarantees",
+    "explicit confirmation preservation",
+    "non-authoritative ChatGPT semantics",
+    "fail-closed ambiguity handling",
+    "exact-match bounded vocabulary"
+  ],
+  "excluded_capabilities": [
+    "ChatGPT execution authority",
+    "automatic ChatGPT-to-runtime transfer",
+    "hidden page reading",
+    "full conversation scraping",
+    "hidden context ingestion",
+    "automatic Codex dispatch",
+    "automatic authority issuance",
+    "orchestration",
+    "retries/fallbacks",
+    "hidden continuation",
+    "autonomous execution",
+    "implicit approvals",
+    "broad NLP interpretation",
+    "worker routing",
+    "public runtime exposure"
+  ],
+  "constitutional_statement": "ChatGPT reasoning is non-authoritative and cannot directly trigger execution."
+}

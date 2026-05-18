@@ -1,0 +1,22 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "topology": [
+    "Human",
+    "ChatGPT-style conversational reasoning",
+    "Browser Companion / ChatGPT Bridge V2",
+    "AiGOL governed interpretation boundary",
+    "Governance runtime",
+    "Authorization-gated execution",
+    "Replay-certified observability"
+  ],
+  "roles": {
+    "chatgpt": "reasoning and decomposition surface only",
+    "browser_companion": "local governance console",
+    "aigol": "governance authority",
+    "execution_authority": "token-gated",
+    "chatgpt_can_issue_authority_tokens": false,
+    "chatgpt_can_dispatch_codex": false,
+    "bridge_normalization": "preview-only and confirmation-gated"
+  },
+  "constitutional_statement": "ChatGPT reasoning is non-authoritative and cannot directly trigger execution."
+}

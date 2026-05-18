@@ -1,0 +1,12 @@
+{
+  "milestone": "GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "endpoint": "http://127.0.0.1:8110/governed-chatgpt-bridge",
+  "browser_companion_mode": "Conversational governance request",
+  "supported_examples": [
+    "prepare finalize milestone",
+    "prepare governance validation",
+    "inspect previous execution",
+    "show execution trace"
+  ],
+  "requires_confirmation": true
+}

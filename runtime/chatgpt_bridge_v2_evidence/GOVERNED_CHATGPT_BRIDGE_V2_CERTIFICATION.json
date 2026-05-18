@@ -1,0 +1,7 @@
+{
+  "milestone": "GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "certification": "PASS",
+  "bounded_conversational_ingress": true,
+  "non_authoritative": true,
+  "localhost_only": true
+}

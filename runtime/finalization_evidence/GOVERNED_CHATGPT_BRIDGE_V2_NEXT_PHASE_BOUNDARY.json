@@ -1,0 +1,12 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "next_phase": "GOVERNED_INTENT_TRANSFER_PACKAGE_V1",
+  "constitutional_statement": "ChatGPT reasoning is non-authoritative and cannot directly trigger execution.",
+  "future_intent_transfer_must_be_explicit": true,
+  "hidden_chatgpt_page_scraping_allowed": false,
+  "full_conversation_ingestion_without_separate_consent_model_allowed": false,
+  "future_bridge_automation_must_remain_preview_first": true,
+  "user_confirmation_remains_mandatory": true,
+  "chatgpt_remains_non_authoritative": true,
+  "aigol_remains_governance_authority": true
+}

@@ -1,0 +1,14 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "constitutional_statement": "ChatGPT reasoning is non-authoritative and cannot directly trigger execution.",
+  "replay_visible_fields": [
+    "original conversational input",
+    "normalized governed request",
+    "replay identity",
+    "normalization outcome",
+    "blocked ambiguity cases",
+    "bridge boundary state",
+    "downstream request description",
+    "closure semantics"
+  ]
+}

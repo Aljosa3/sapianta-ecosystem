@@ -1,0 +1,19 @@
+{
+  "milestone": "FINALIZE_GOVERNED_CHATGPT_INTERPRETATION_BRIDGE_V2",
+  "constitutional_statement": "ChatGPT reasoning is non-authoritative and cannot directly trigger execution.",
+  "chatgpt_authority": false,
+  "execution_authority": false,
+  "automatic_dispatch": false,
+  "orchestration": false,
+  "hidden_continuation": false,
+  "explicit_confirmation_required": true,
+  "ambiguous_requests_fail_closed": true,
+  "direct_codex_execution_requests_fail_closed": true,
+  "authority_escalation_requests_fail_closed": true,
+  "automatic_chatgpt_to_runtime_transfer": false,
+  "hidden_page_reading": false,
+  "full_conversation_scraping": false,
+  "direct_codex_dispatch": false,
+  "observability_remains_read_only": true,
+  "execution_remains_authority_token_gated": true
+}

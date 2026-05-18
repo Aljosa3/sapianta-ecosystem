@@ -6,6 +6,7 @@ const LOCAL_EXECUTION_AUTHORIZE_ENDPOINT = "http://127.0.0.1:8110/governed-execu
 const LOCAL_EXECUTION_CONSUME_ENDPOINT = "http://127.0.0.1:8110/governed-execution-consume";
 const LOCAL_CODEX_EXECUTE_ENDPOINT = "http://127.0.0.1:8110/governed-codex-execute";
 const LOCAL_EXECUTION_OBSERVE_ENDPOINT = "http://127.0.0.1:8110/governed-execution-observe";
+const LOCAL_CHATGPT_BRIDGE_ENDPOINT = "http://127.0.0.1:8110/governed-chatgpt-bridge";
 const ARTIFACT_PATTERN = /^[A-Z0-9_-]{1,96}$/;
 let confirmedArtifact = null;
 let pendingArtifact = null;
@@ -15,6 +16,7 @@ let confirmedHandoffPackage = null;
 let currentAuthorityToken = null;
 let latestConsumerResponse = null;
 let latestAdapterResponse = null;
+let pendingConversationBridge = null;
 
 function canonicalize(value) {
   if (Array.isArray(value)) {
@@ -133,10 +135,44 @@ function validateCodexSynthesis(response) {
     && typeof response.codex_prompt_preview === "string";
 }
 
+function validateConversationBridge(response) {
+  return response
+    && response.status === "NORMALIZED"
+    && response.requires_confirmation === true
+    && response.allowed_to_execute_automatically === false
+    && response.replay_visible === true
+    && response.bridge_boundary_state
+    && response.bridge_boundary_state.chatgpt_authority === false
+    && response.bridge_boundary_state.execution_authority === false;
+}
+
 async function previewIntent() {
   const mode = document.getElementById("mode").value;
   const text = document.getElementById("artifact").value.trim();
   try {
+    if (mode === "conversation") {
+      const response = await fetch(LOCAL_CHATGPT_BRIDGE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversational_input: text })
+      });
+      const payload = await response.json();
+      if (!validateConversationBridge(payload)) {
+        throw new Error("Conversational bridge failed governed validation.");
+      }
+      pendingConversationBridge = payload;
+      renderResult({
+        status: payload.status,
+        original_conversational_request: text,
+        normalized_governed_request: payload.normalized_request,
+        replay_identity: payload.replay_identity,
+        governance_mode: payload.governance_mode,
+        bridge_boundary_guarantees: payload.bridge_boundary_state,
+        requires_confirmation: payload.requires_confirmation,
+        explicit_statement: "ChatGPT reasoning is non-authoritative and cannot directly trigger execution."
+      });
+      return;
+    }
     const endpoint = mode === "codex" ? LOCAL_CODEX_SYNTHESIS_ENDPOINT : LOCAL_INTERPRET_ENDPOINT;
     const response = await fetch(endpoint, {
       method: "POST",
@@ -156,6 +192,7 @@ async function previewIntent() {
       currentAuthorityToken = null;
       latestConsumerResponse = null;
       latestAdapterResponse = null;
+      pendingConversationBridge = null;
       renderResult({
         status: payload.status,
         task_class: payload.task_class,
@@ -191,11 +228,27 @@ async function previewIntent() {
     currentAuthorityToken = null;
     latestConsumerResponse = null;
     latestAdapterResponse = null;
+    pendingConversationBridge = null;
     renderResult({ status: "BLOCKED", error: error.message });
   }
 }
 
 function confirmIntentPreview() {
+  if (document.getElementById("mode").value === "conversation") {
+    if (!pendingConversationBridge) {
+      renderResult({ status: "BLOCKED", error: "No conversational bridge preview is available to confirm." });
+      return;
+    }
+    renderResult({
+      status: "CONFIRMED",
+      normalized_governed_request: pendingConversationBridge.normalized_request,
+      downstream_governance_request: pendingConversationBridge.downstream_governance_request,
+      requires_confirmation: false,
+      allowed_to_execute_automatically: false,
+      explicit_statement: "ChatGPT reasoning is non-authoritative and cannot directly trigger execution."
+    });
+    return;
+  }
   if (document.getElementById("mode").value === "codex") {
     if (!pendingCodexSynthesis) {
       renderResult({ status: "BLOCKED", error: "No governed Codex preview is available to confirm." });
