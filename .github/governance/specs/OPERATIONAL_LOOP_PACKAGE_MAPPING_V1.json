@@ -1,0 +1,112 @@
+{
+  "spec_id": "OPERATIONAL_LOOP_PACKAGE_MAPPING_V1",
+  "status": "DRAFT_MAPPING_SPECIFICATION",
+  "core_decision": "Do not mutate existing AGOL Bridge foundation schemas directly; define a separate loop envelope over existing task/result packages.",
+  "loop_envelope_schema": {
+    "loop_id": "stable loop identity",
+    "originating_human_request_ref": "replay-safe human request reference",
+    "semantic_context_ref": "model-native semantic context reference",
+    "task_package_ref": "reference to existing AGOL Bridge task package",
+    "result_package_ref": "reference to existing AGOL Bridge result package",
+    "lineage_id": "immutable lineage identity",
+    "execution_provider_ref": "provider identity and boundary reference",
+    "governance_state_ref": "governance, approval, risk, and lifecycle state reference",
+    "replay_refs": "append-only replay references",
+    "lifecycle_refs": "bounded lifecycle transition references",
+    "semantic_interpretation_boundary": "boundary separating interpretation from authority",
+    "next_step_ref": "non-authoritative next-step proposal reference",
+    "authority_boundary_statement": "explicit authority separation statement",
+    "created_at": "envelope creation timestamp",
+    "envelope_hash": "hash of canonical envelope content excluding envelope_hash"
+  },
+  "task_package_mapping": {
+    "task_id": {"maps_to": "task_package_ref.task_id", "classification": "exact"},
+    "governance_mode": {"maps_to": "governance_state_ref.governance_mode", "classification": "exact"},
+    "risk_class": {"maps_to": "governance_state_ref.risk_class", "classification": "exact"},
+    "approval_required": {"maps_to": "governance_state_ref.approval_required", "classification": "exact"},
+    "codex_prompt": {"maps_to": "semantic_context_ref.execution_prompt_ref", "classification": "partial"},
+    "constraints": {"maps_to": "governance_state_ref.constraints_ref", "classification": "partial"},
+    "expected_outputs": {"maps_to": "governance_state_ref.expected_outputs_ref", "classification": "partial"},
+    "metadata": {"maps_to": ["lineage_id", "semantic_context_ref", "lifecycle_refs"], "classification": "partial"}
+  },
+  "result_package_mapping": {
+    "task_id": {"maps_to": "result_package_ref.originating_task_id", "classification": "missing_in_current_schema"},
+    "status": {"maps_to": "governance_state_ref.result_status", "classification": "exact"},
+    "executor": {"maps_to": "execution_provider_ref.provider_id", "classification": "missing_in_current_schema"},
+    "files_changed": {"maps_to": "result_package_ref.files_changed", "classification": "exact"},
+    "commands_run": {"maps_to": "result_package_ref.commands_run", "classification": "missing_in_current_schema"},
+    "tests": {"maps_to": "result_package_ref.tests", "classification": "exact"},
+    "artifacts": {"maps_to": "result_package_ref.artifacts", "classification": "exact"},
+    "errors": {"maps_to": "result_package_ref.errors", "classification": "missing_in_current_schema"},
+    "summary": {"maps_to": "result_package_ref.summary", "classification": "exact"},
+    "requires_human_review": {"maps_to": "governance_state_ref.requires_human_review", "classification": "exact"}
+  },
+  "replay_lifecycle_mapping": {
+    "replay_refs": "append-only replay records",
+    "lifecycle_refs": "bounded lifecycle state transition records",
+    "immutable_dispatched_packages": "task_package_ref.dispatched_path or equivalent replay-safe reference",
+    "result_package_hashes": "result_package_ref.package_hash",
+    "quarantine_failure_states": "governance_state_ref.lifecycle_state and lifecycle_refs",
+    "rules": [
+      "must not mutate replay records",
+      "must not rewrite package hashes",
+      "must preserve historical artifact paths",
+      "must keep quarantine and failure states visible",
+      "must not imply transitions that did not occur"
+    ]
+  },
+  "semantic_continuity_mapping": {
+    "semantic_cognition_source": "semantic_context_ref.source",
+    "semantic_context_reference": "semantic_context_ref.reference",
+    "semantic_interpretation_boundary": "semantic_interpretation_boundary",
+    "next_step_synthesis_reference": "next_step_ref",
+    "non_deterministic_reasoning_limitation": "semantic_interpretation_boundary.reasoning_determinism",
+    "interpretation_vs_governance_decision": "authority_boundary_statement",
+    "rules": [
+      "semantic interpretation is not governance approval",
+      "next-step synthesis is not approved continuation",
+      "semantic reasoning is model-native and non-deterministic",
+      "transport replay is deterministic, semantic reasoning replay is limited"
+    ]
+  },
+  "authority_boundaries": {
+    "ChatGPT": "may propose semantic direction",
+    "AiGOL / AGOL": "may admit, constrain, quarantine, or reject",
+    "Codex / providers": "may execute only through governed transport",
+    "sidepanel": "may observe only",
+    "next_step_synthesis": "is not approval"
+  },
+  "safety_rules": [
+    "must not rewrite task packages",
+    "must not rewrite result packages",
+    "must not mutate replay records",
+    "must not create execution authority",
+    "must not bypass approval",
+    "must not imply semantic replay determinism",
+    "must not create autonomous continuation",
+    "must not dispatch work",
+    "must not execute provider work",
+    "must not approve next steps"
+  ],
+  "missing_fields": [
+    "loop_id",
+    "originating_human_request_ref",
+    "semantic_context_ref",
+    "lineage_id",
+    "execution_provider_ref",
+    "task_package_ref.package_hash",
+    "result_package_ref.originating_task_id",
+    "result_package_ref.package_hash",
+    "semantic_interpretation_boundary",
+    "next_step_ref",
+    "authority_boundary_statement"
+  ],
+  "deferred_fields": [
+    "provider capability profile",
+    "normalized command transcript",
+    "provider capability constraints",
+    "result interpretation artifact",
+    "next-step proposal artifact"
+  ],
+  "recommended_next_step": "Create a review-only envelope example fixture that references existing task and result packages without changing their schemas, then review envelope validation before implementation."
+}
