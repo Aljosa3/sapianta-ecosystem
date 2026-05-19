@@ -1,0 +1,93 @@
+{
+  "plan_id": "REPLAY_AND_LIFECYCLE_VISUALIZATION_IMPLEMENTATION_PLAN_V1",
+  "status": "PLAN_ONLY",
+  "references": [
+    ".github/governance/specs/REPLAY_AND_LIFECYCLE_VISUALIZATION_SPEC_V1.md",
+    ".github/governance/review/AGOL_CONSTITUTIONAL_LINEAGE_NORMALIZATION_V1.md",
+    ".github/governance/review/AGOL_CONSTITUTIONAL_FOUNDATION_REVIEW_V1.md",
+    ".github/governance/finalize/FINALIZE_GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1.md",
+    ".github/governance/finalize/FINALIZE_AGOL_BRIDGE_RUNTIME_FOUNDATION_V1.md"
+  ],
+  "implementation_scope": {
+    "sidepanel_only_ui_changes": true,
+    "read_only_visualization": true,
+    "runtime_modification": false,
+    "new_backend_authority": false,
+    "new_execution_paths": false,
+    "persistence_expansion": false,
+    "automatic_dispatch": false,
+    "orchestration": false,
+    "semantic_autonomy": false
+  },
+  "ui_sections": [
+    "Replay Timeline",
+    "Lifecycle Graph",
+    "Approval State",
+    "Governance Boundary",
+    "Constitutional Layer View",
+    "Semantic Direction View"
+  ],
+  "data_sources": [
+    "replay artifacts",
+    "lifecycle artifacts",
+    "finalize artifacts",
+    "evidence artifacts",
+    "browser sidepanel session state",
+    "governed localhost runtime responses already available to the sidepanel",
+    "explicit operator-selected JSON artifacts"
+  ],
+  "read_only_guarantees": {
+    "no_mutation": true,
+    "no_dispatch": true,
+    "no_approval_action": true,
+    "no_validation_trigger": true,
+    "no_runtime_write": true,
+    "no_hidden_persistence": true,
+    "no_hidden_execution": true,
+    "no_lifecycle_transition_creation": true
+  },
+  "labeling_rules": {
+    "transport_replay_label": "Transport replay - deterministic package movement evidence",
+    "semantic_replay_label": "Semantic reasoning - model-native and non-deterministic",
+    "lifecycle_state_label": "Lifecycle state - governed transport state",
+    "approval_state_label": "Approval state - visibility only",
+    "execution_authority_label": "Execution authority - not granted by visualization",
+    "continuity_label": "In-memory sidepanel continuity - non-durable",
+    "alias_label": "Alias - historical reference preserved"
+  },
+  "implementation_boundaries": {
+    "allowed": [
+      "render new sidepanel sections",
+      "render already-returned governed runtime response data",
+      "render explicitly selected local JSON artifacts",
+      "render localhost-only governed read responses if such reads already exist",
+      "preserve active-session in-memory UI state"
+    ],
+    "not_allowed": [
+      "new backend authority",
+      "new execution paths",
+      "new automatic dispatch",
+      "new approval actions",
+      "new runtime write operations",
+      "hidden persistence",
+      "hidden networking",
+      "browser scraping",
+      "orchestration",
+      "semantic autonomy"
+    ]
+  },
+  "risks": [
+    "visualization may imply authorization",
+    "timeline may imply deterministic semantic replay",
+    "aliases may overwrite historical names",
+    "in-memory continuity may be mistaken for durable replay"
+  ],
+  "recommended_sequence": [
+    "Add static sidepanel section containers with read-only labels.",
+    "Add formatting helpers for replay, lifecycle, approval, boundary, layer, and semantic direction views.",
+    "Render existing sidepanel session entries into the new sections without changing event handlers.",
+    "Add optional explicit local JSON artifact selection only if separately approved.",
+    "Add tests that assert no new fetch, dispatch, approval, storage, background, or execution paths are introduced.",
+    "Validate labels distinguish transport replay from semantic reasoning and approval visibility from approval authority."
+  ]
+}
