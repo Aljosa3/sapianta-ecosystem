@@ -1,0 +1,39 @@
+{
+  "milestone": "BOUNDED_REPLAY_COCKPIT_IMPLEMENTATION_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "replay timeline visibility",
+    "lifecycle view visibility",
+    "approval visibility",
+    "governance boundary visibility",
+    "constitutional layer visibility",
+    "semantic direction visibility",
+    "read-only observability over existing sidepanel session entries"
+  ],
+  "read_only_guarantees": {
+    "new_backend_endpoints": false,
+    "new_fetch_paths": false,
+    "new_storage": false,
+    "background_execution": false,
+    "automatic_dispatch": false,
+    "approval_action": false,
+    "validation_trigger": false,
+    "lifecycle_mutation": false,
+    "runtime_writes": false,
+    "hidden_persistence": false,
+    "browser_scraping": false,
+    "execution_authority": false
+  },
+  "observability_guarantees": {
+    "sidepanel_only": true,
+    "existing_session_entries_only": true,
+    "transport_replay_labeling": true,
+    "semantic_reasoning_labeling": true,
+    "approval_visibility_labeling": true,
+    "non_durable_continuity_labeling": true
+  },
+  "test_evidence": {
+    "pytest_command": "python -m pytest tests/test_browser_companion_sidepanel.py tests/test_governed_browser_companion_runtime.py",
+    "diff_check_command": "git diff --check"
+  }
+}
