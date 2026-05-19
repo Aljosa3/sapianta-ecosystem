@@ -1,0 +1,175 @@
+{
+  "spec_id": "CONTINUITY_REPORT_SYNTHESIS_V1",
+  "status": "DRAFT_SYNTHESIS_SPECIFICATION",
+  "references": [
+    ".github/governance/specs/OPERATIONAL_LOOP_CONTRACT_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_PACKAGE_MAPPING_V1.md",
+    ".github/governance/specs/VALIDATOR_COMPOSITION_LAYER_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_ENVELOPE_VALIDATOR_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_VALIDATOR_COMPOSITION_V1.md"
+  ],
+  "synthesis_model": {
+    "inputs": [
+      "envelope validation report",
+      "validator composition report",
+      "replay references",
+      "lifecycle references",
+      "semantic interpretation boundary",
+      "authority boundary statements",
+      "deterministic lineage references"
+    ],
+    "outputs": [
+      "continuity_report_id",
+      "aggregate_governance_status",
+      "replay_visibility_summary",
+      "lifecycle_visibility_summary",
+      "authority_boundary_summary",
+      "semantic_boundary_summary",
+      "determinism_summary",
+      "continuity_findings",
+      "continuity_risks",
+      "continuity_recommendations",
+      "lineage_summary"
+    ],
+    "model_summary": "Explicit deterministic governance artifacts are synthesized into a deterministic read-only continuity report."
+  },
+  "required_statuses": [
+    "CONTINUITY_VALID",
+    "CONTINUITY_INCOMPLETE",
+    "CONTINUITY_BOUNDARY_VIOLATION",
+    "CONTINUITY_REPLAY_GAP",
+    "CONTINUITY_LIFECYCLE_GAP",
+    "CONTINUITY_NON_DETERMINISTIC",
+    "CONTINUITY_AUTHORITY_VIOLATION"
+  ],
+  "continuity_report_contract": {
+    "report_is_approval": false,
+    "report_is_dispatch": false,
+    "report_is_execution": false,
+    "report_is_lifecycle_transition": false,
+    "report_is_replay_mutation": false,
+    "report_is_semantic_authority": false,
+    "report_is_autonomous_continuation": false,
+    "recommendations_are_report_only": true
+  },
+  "deterministic_synthesis_rules": {
+    "explicit_inputs_only": true,
+    "preserve_meaningful_input_order": true,
+    "canonical_serialization_for_report_identity": true,
+    "stable_status_precedence": true,
+    "missing_inputs_create_findings": true,
+    "unknown_statuses_fail_closed": true,
+    "no_wall_clock_dependency": true,
+    "no_random_dependency": true,
+    "no_filesystem_dependency": true,
+    "no_network_dependency": true,
+    "no_process_state_dependency": true,
+    "no_environment_dependency": true,
+    "no_hidden_persistence_dependency": true
+  },
+  "report_aggregation_semantics": {
+    "aggregated_sources": [
+      "envelope validation status",
+      "validator composition aggregate status",
+      "replay reference completeness",
+      "lifecycle reference completeness",
+      "authority boundary consistency",
+      "semantic boundary consistency",
+      "deterministic lineage visibility"
+    ],
+    "status_rules": {
+      "all_required_evidence_valid": "CONTINUITY_VALID",
+      "missing_evidence": "CONTINUITY_INCOMPLETE",
+      "replay_gap": "CONTINUITY_REPLAY_GAP",
+      "lifecycle_gap": "CONTINUITY_LIFECYCLE_GAP",
+      "non_deterministic_evidence": "CONTINUITY_NON_DETERMINISTIC",
+      "authority_violation": "CONTINUITY_AUTHORITY_VIOLATION",
+      "constitutional_boundary_inconsistency": "CONTINUITY_BOUNDARY_VIOLATION"
+    },
+    "source_reports_rewritten": false
+  },
+  "replay_continuity_semantics": {
+    "summarizes_replay_visibility": true,
+    "transport_replay_visible": true,
+    "semantic_replay_limitations_visible": true,
+    "replay_references_observed_not_mutated": true,
+    "append_replay_records": false,
+    "rewrite_historical_references": false,
+    "infer_missing_replay_records": false
+  },
+  "lifecycle_continuity_semantics": {
+    "summarizes_lifecycle_visibility": true,
+    "lifecycle_references_observed_not_mutated": true,
+    "create_lifecycle_transitions": false,
+    "repair_lifecycle_gaps": false,
+    "report_is_transition_event": false
+  },
+  "semantic_interpretation_boundaries": {
+    "llms_semantic_cognition_only": true,
+    "semantic_reasoning_model_native": true,
+    "semantic_reasoning_non_deterministic": true,
+    "semantic_interpretation_is_approval": false,
+    "next_step_synthesis_is_continuation_authority": false,
+    "semantic_replay_is_transport_replay": false,
+    "semantic_authority_created": false
+  },
+  "authority_boundary_semantics": {
+    "aigol_agol_governs_admissibility_replay_lifecycle_boundaries": true,
+    "codex_providers_execute_only_through_governed_transport": true,
+    "sidepanel_and_reports_observe_only": true,
+    "validation_success_is_approval": false,
+    "continuity_success_is_dispatch": false,
+    "continuity_success_is_execution": false,
+    "continuity_success_is_continuation": false,
+    "ambiguous_authority_fails_closed": true
+  },
+  "continuity_failure_semantics": {
+    "CONTINUITY_INCOMPLETE": "required evidence is missing or incomplete",
+    "CONTINUITY_BOUNDARY_VIOLATION": "constitutional or governance boundary is inconsistent",
+    "CONTINUITY_REPLAY_GAP": "replay visibility is missing or inconsistent",
+    "CONTINUITY_LIFECYCLE_GAP": "lifecycle visibility is missing or inconsistent",
+    "CONTINUITY_NON_DETERMINISTIC": "supplied reports or synthesis evidence are not deterministic",
+    "CONTINUITY_AUTHORITY_VIOLATION": "approval, dispatch, execution, or provider authority is implied where it is not allowed",
+    "failure_is_report_only": true
+  },
+  "continuity_risk_semantics": [
+    "missing evidence",
+    "inconsistent evidence",
+    "authority ambiguity",
+    "replay gaps",
+    "lifecycle gaps",
+    "semantic replay overclaim",
+    "non-deterministic report source",
+    "lineage ambiguity",
+    "future integration risk"
+  ],
+  "bounded_continuity_guarantees": {
+    "explicit_input_only": true,
+    "deterministic_output": true,
+    "read_only_synthesis": true,
+    "replay_safe_summary": true,
+    "lifecycle_visibility_without_lifecycle_mutation": true,
+    "authority_visibility_without_authority_creation": true,
+    "semantic_boundary_visibility_without_semantic_authority": true,
+    "lineage_summary_without_lineage_mutation": true,
+    "hidden_persistence": false,
+    "orchestration_behavior": false
+  },
+  "forbidden_behaviors": [
+    "mutate replay state",
+    "mutate lifecycle state",
+    "mutate envelopes",
+    "mutate validator reports",
+    "dispatch execution",
+    "approve actions",
+    "create lifecycle transitions",
+    "perform IO",
+    "call providers",
+    "load runtime plugins",
+    "create orchestration behavior",
+    "create autonomous continuation",
+    "create hidden persistence",
+    "create semantic authority"
+  ],
+  "recommended_next_step": "Prepare CONTINUITY_REPORT_SYNTHESIS_IMPLEMENTATION_REVIEW_V1 before writing code, verifying that pure-function synthesis can produce deterministic in-memory reports from explicit artifacts without IO, mutation, authority expansion, orchestration, persistence, or semantic autonomy."
+}
