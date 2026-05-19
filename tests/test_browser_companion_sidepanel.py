@@ -64,15 +64,59 @@ def test_sidepanel_renders_scrollable_session_lifecycle_output():
     assert "result.scrollTop = result.scrollHeight;" in source
 
 
+def test_sidepanel_replay_cockpit_sections_exist():
+    html = _sidepanel_html()
+    for section_id in (
+        "replay-timeline",
+        "lifecycle-view",
+        "approval-visibility",
+        "governance-boundary",
+        "constitutional-layer",
+        "semantic-direction",
+    ):
+        assert f'id="{section_id}"' in html
+    assert "Replay Timeline" in html
+    assert "Lifecycle View" in html
+    assert "Approval Visibility" in html
+    assert "Governance Boundary View" in html
+    assert "Constitutional Layer View" in html
+    assert "Semantic Direction View" in html
+
+
+def test_sidepanel_cockpit_labels_prevent_authority_confusion():
+    combined = "\n".join((_sidepanel_html(), _sidepanel_js()))
+    assert "Transport replay - deterministic package movement evidence" in combined
+    assert "Semantic reasoning is model-native and non-deterministic" in combined
+    assert "Approval state - visibility only" in combined
+    assert "not an approval control" in combined
+    assert "grants no execution authority" in combined
+    assert "Observability only" in combined
+    assert "no automatic dispatch" in combined
+    assert "In-memory sidepanel continuity - non-durable" in combined
+
+
+def test_sidepanel_cockpit_renders_existing_session_entries_only():
+    source = _sidepanel_js()
+    assert "function renderReadOnlyCockpit()" in source
+    assert "lifecycleEntries.map(replaySummary)" in source
+    assert "lifecycleEntries.push(canonicalize(summary));" in source
+    assert "renderReadOnlyCockpit();" in source
+    assert "addEventListener" not in source
+
+
 def test_sidepanel_adds_no_automatic_dispatch_or_authority_expansion():
     combined = "\n".join((_sidepanel_html(), _sidepanel_js()))
     lowered = combined.lower()
     assert "setinterval" not in lowered
     assert "settimeout" not in lowered
     assert "chrome.storage" not in lowered
+    assert "localstorage" not in lowered
+    assert "indexeddb" not in lowered
     assert "fetch(" not in lowered
-    assert "automatic_dispatch" not in lowered
+    assert "dispatchtask" not in lowered
+    assert "approvetask" not in lowered
     assert "background execution" not in lowered
+    assert "sidepanelrenderresult" in lowered
 
 
 def test_sidepanel_reuses_existing_explicit_governed_runtime_path():
