@@ -1,0 +1,140 @@
+{
+  "fixture_id": "OPERATIONAL_LOOP_ENVELOPE_FIXTURE_V1",
+  "fixture_type": "REVIEW_ONLY_SEMANTIC_CONTINUITY_ENVELOPE",
+  "status": "NON_EXECUTING_EXAMPLE",
+  "loop_envelope": {
+    "loop_id": "LOOP-EXAMPLE-0001",
+    "originating_human_request_ref": {
+      "reference_type": "operator_request",
+      "request_id": "HUMAN-REQUEST-EXAMPLE-0001",
+      "request_summary": "Prepare a bounded governed implementation review.",
+      "authority_note": "Human request initiates review context but does not bypass governance."
+    },
+    "semantic_context_ref": {
+      "source": "ChatGPT / LLM",
+      "semantic_context_id": "SEMANTIC-CONTEXT-EXAMPLE-0001",
+      "reasoning_determinism": "NON_DETERMINISTIC_MODEL_NATIVE",
+      "replay_limitation": "Semantic reasoning is referenced, not fully replayed.",
+      "authority_note": "Semantic cognition may propose direction only."
+    },
+    "task_package_ref": {
+      "reference_type": "existing_agol_bridge_task_package",
+      "task_id": "TASK-EXAMPLE-0001",
+      "package_path": "agol_bridge/runtime/dispatched/TASK-EXAMPLE-0001.json",
+      "package_hash": "sha256:example-task-package-hash",
+      "schema_status": "REFERENCED_NOT_REWRITTEN",
+      "mapped_fields": [
+        "task_id",
+        "governance_mode",
+        "risk_class",
+        "approval_required",
+        "codex_prompt",
+        "constraints",
+        "expected_outputs",
+        "metadata"
+      ]
+    },
+    "result_package_ref": {
+      "reference_type": "existing_agol_bridge_result_package",
+      "result_id": "RESULT-EXAMPLE-0001",
+      "originating_task_id": "TASK-EXAMPLE-0001",
+      "package_path": "agol_bridge/runtime/results/RESULT-EXAMPLE-0001.json",
+      "package_hash": "sha256:example-result-package-hash",
+      "schema_status": "REFERENCED_NOT_REWRITTEN",
+      "mapped_fields": [
+        "status",
+        "tests",
+        "files_changed",
+        "artifacts",
+        "summary",
+        "requires_human_review"
+      ]
+    },
+    "lineage_id": "LINEAGE-EXAMPLE-TASK-RESULT-0001",
+    "execution_provider_ref": {
+      "provider_id": "codex",
+      "provider_role": "EXECUTION_ONLY",
+      "governance_authority": false,
+      "approval_authority": false,
+      "replay_mutation_authority": false,
+      "transport_requirement": "governed transport only"
+    },
+    "governance_state_ref": {
+      "governance_mode": "governed_execution_bridge",
+      "risk_class": "bounded",
+      "approval_required": true,
+      "approval_state": "APPROVED_BEFORE_DISPATCH",
+      "lifecycle_state": "RETURNED",
+      "admissibility_state": "ADMITTED_BY_AGOL_GOVERNANCE"
+    },
+    "replay_refs": [
+      {
+        "replay_id": "AGOL-REPLAY-EXAMPLE-APPROVED",
+        "event_type": "APPROVED",
+        "reference_status": "REFERENCED_NOT_MUTATED"
+      },
+      {
+        "replay_id": "AGOL-REPLAY-EXAMPLE-DISPATCHED",
+        "event_type": "DISPATCHED",
+        "reference_status": "REFERENCED_NOT_MUTATED"
+      },
+      {
+        "replay_id": "AGOL-REPLAY-EXAMPLE-RETURNED",
+        "event_type": "RETURNED",
+        "reference_status": "REFERENCED_NOT_MUTATED"
+      }
+    ],
+    "lifecycle_refs": [
+      {
+        "previous_state": "WAITING_FOR_APPROVAL",
+        "next_state": "APPROVED",
+        "reference_status": "VISIBLE_APPEND_ONLY_REFERENCE"
+      },
+      {
+        "previous_state": "APPROVED",
+        "next_state": "DISPATCHED",
+        "reference_status": "VISIBLE_APPEND_ONLY_REFERENCE"
+      },
+      {
+        "previous_state": "DISPATCHED",
+        "next_state": "RETURNED",
+        "reference_status": "VISIBLE_APPEND_ONLY_REFERENCE"
+      }
+    ],
+    "semantic_interpretation_boundary": {
+      "interpretation_source": "ChatGPT / LLM",
+      "interpretation_status": "NON_AUTHORITATIVE",
+      "governance_decision_status": "SEPARATE_FROM_INTERPRETATION",
+      "semantic_replay_determinism": false,
+      "statement": "Semantic interpretation may explain result meaning but does not approve continuation or mutate governance state."
+    },
+    "next_step_ref": {
+      "next_step_id": "NEXT-STEP-PROPOSAL-EXAMPLE-0001",
+      "status": "PROPOSED_NOT_APPROVED",
+      "approval_granted": false,
+      "authority_note": "Next-step synthesis is not approval and must become a new governed task if continued."
+    },
+    "authority_boundary_statement": "ChatGPT / LLMs provide semantic cognition only; AiGOL / AGOL governs admissibility, lifecycle, replay, and boundaries; Codex/providers execute only through governed transport; sidepanel observes only.",
+    "created_at": "1970-01-01T00:00:00Z",
+    "envelope_hash_semantics": {
+      "algorithm": "sha256",
+      "canonicalization": "sort_keys true, compact separators",
+      "hash_excludes_fields": [
+        "envelope_hash"
+      ],
+      "source_packages_mutated": false,
+      "replay_records_mutated": false
+    },
+    "envelope_hash": "sha256:example-envelope-hash"
+  },
+  "safety_assertions": {
+    "task_result_packages_referenced_not_rewritten": true,
+    "replay_records_referenced_not_mutated": true,
+    "next_step_synthesis_is_not_approval": true,
+    "semantic_reasoning_non_deterministic_not_fully_replayed": true,
+    "sidepanel_observes_only": true,
+    "providers_execute_only_through_governed_transport": true,
+    "aigol_agol_governs_admissibility_lifecycle_replay_boundaries": true,
+    "chatgpt_llms_semantic_cognition_only": true
+  }
+}
