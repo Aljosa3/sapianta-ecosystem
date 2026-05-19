@@ -1,0 +1,43 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "pure in-memory envelope validation",
+    "explicit artifact_map input",
+    "deterministic canonical envelope hashing",
+    "deterministic validation reports",
+    "task package reference validation",
+    "result package reference validation",
+    "replay reference validation",
+    "lifecycle reference validation",
+    "authority boundary validation",
+    "semantic replay limitation validation",
+    "next-step approval-confusion validation",
+    "provider boundary validation"
+  ],
+  "accepted_exclusions": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "automatic_artifact_discovery": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "timers": false,
+    "background_threads": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "semantic_autonomy": false,
+    "hidden_persistence": false
+  },
+  "test_evidence": {
+    "focused_pytest_command": "python -B -m pytest agol_bridge/tests/test_pure_function_envelope_validator.py",
+    "bridge_pytest_command": "python -B -m pytest agol_bridge/tests",
+    "diff_check_command": "git diff --check"
+  }
+}

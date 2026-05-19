@@ -1,0 +1,13 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "evidence_type": "NO_MUTATION_GUARANTEE",
+  "mutation_boundaries": {
+    "input_envelope_mutation": false,
+    "artifact_map_mutation": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "runtime_mutation": false,
+    "sidepanel_mutation": false
+  },
+  "test_reference": "test_input_envelope_and_artifact_map_are_not_mutated"
+}

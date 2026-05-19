@@ -1,0 +1,17 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "evidence_type": "NO_IO_GUARANTEE",
+  "validator_scope": "pure function over explicit in-memory inputs",
+  "io_boundaries": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "automatic_artifact_discovery": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "timers": false,
+    "background_threads": false,
+    "hidden_persistence": false
+  },
+  "source_guard_test": "test_no_filesystem_network_subprocess_provider_sidepanel_runtime_calls_are_introduced"
+}

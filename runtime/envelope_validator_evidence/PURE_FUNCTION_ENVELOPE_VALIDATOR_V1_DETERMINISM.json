@@ -1,0 +1,26 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "evidence_type": "DETERMINISTIC_VALIDATION_EVIDENCE",
+  "deterministic_properties": {
+    "canonical_json_sorted_keys": true,
+    "canonical_json_compact_separators": true,
+    "canonical_json_ascii_output": true,
+    "canonical_hash_algorithm": "sha256",
+    "envelope_hash_excludes_envelope_hash_field": true,
+    "validation_report_is_in_memory": true,
+    "same_input_same_output_tested": true
+  },
+  "validation_report_statuses": [
+    "VALID",
+    "INVALID_SCHEMA",
+    "MISSING_REFERENCE",
+    "HASH_MISMATCH",
+    "AUTHORITY_BOUNDARY_VIOLATION",
+    "REPLAY_REFERENCE_INVALID",
+    "LIFECYCLE_REFERENCE_INVALID",
+    "SEMANTIC_REPLAY_OVERCLAIM",
+    "NEXT_STEP_APPROVAL_CONFUSION",
+    "PROVIDER_BOUNDARY_VIOLATION"
+  ],
+  "test_reference": "agol_bridge/tests/test_pure_function_envelope_validator.py"
+}

@@ -1,0 +1,19 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "evidence_type": "NO_AUTHORITY_GUARANTEE",
+  "authority_boundaries": {
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "semantic_autonomy": false,
+    "provider_calls": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false
+  },
+  "positive_scope": [
+    "authority boundary statement validation",
+    "next-step approval-confusion validation",
+    "provider execution-only boundary validation"
+  ]
+}
