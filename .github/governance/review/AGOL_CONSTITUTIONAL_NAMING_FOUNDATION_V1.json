@@ -1,0 +1,118 @@
+{
+  "review_id": "AGOL_CONSTITUTIONAL_NAMING_FOUNDATION_V1",
+  "decision": "NORMALIZATION_PARTIAL",
+  "canonical_identity": {
+    "SAPIANTA": {
+      "meaning": "constitutional governance substrate and product governance identity",
+      "scope": [
+        "constitutional governance infrastructure",
+        "Product 1 AI Decision Validator",
+        "enterprise execution governance positioning",
+        "repository-wide governance substrate"
+      ]
+    },
+    "AGOL": {
+      "meaning": "governed operational layer family within SAPIANTA",
+      "scope": [
+        "governed operational layer milestones",
+        "AGOL Bridge",
+        "replay-safe operational continuity",
+        "lifecycle and transport artifacts"
+      ]
+    },
+    "AiGOL": {
+      "meaning": "semantic-direction governance identity within AGOL",
+      "scope": [
+        "admissible semantic evolution",
+        "semantic direction governance",
+        "governance over LLM-proposed direction"
+      ]
+    },
+    "hierarchy": [
+      "SAPIANTA -> constitutional governance substrate",
+      "AGOL -> governed operational layer family within SAPIANTA",
+      "AiGOL -> semantic-direction governance identity within AGOL"
+    ],
+    "role_boundary": {
+      "ChatGPT / LLMs": "semantic cognition",
+      "AiGOL / AGOL": "semantic direction governance, replay, lifecycle, transport",
+      "Codex / workers": "execution through governed transport only"
+    }
+  },
+  "naming_hierarchy": {
+    "constitutional_layer": "Use SAPIANTA for constitutional architecture, invariants, enforcement, lineage, substrate, and product identity.",
+    "governance_layer": "Use AGOL for governed operational governance primitives; use AiGOL only for semantic direction governance.",
+    "runtime_layer": "Use AGOL_BRIDGE_RUNTIME_* for filesystem bridge runtime; use GOVERNED_*_RUNTIME_* for non-bridge governed runtime surfaces.",
+    "observability_layer": "Use GOVERNED_*_OBSERVABILITY_* for read-only inspection and SIDEPANEL only for Browser Companion UX surfaces.",
+    "replay_certification": [
+      "_REPLAY_CERTIFICATION",
+      "_LIFECYCLE_CERTIFICATION",
+      "_OBSERVABILITY_CERTIFICATION",
+      "_ACCEPTANCE",
+      "_BOUNDARIES",
+      "_USAGE"
+    ],
+    "adr_numbering_rules": "Replace ADR-00X with stable ADR-### identifiers before constitutional finalization.",
+    "finalize_milestone_rules": "Use FINALIZE_<MILESTONE_ID>_V<N> unless the milestone id already includes a version suffix.",
+    "evidence_naming_rules": "Use <MILESTONE_ID>_<EVIDENCE_TYPE> with explicit evidence type."
+  },
+  "canonical_terms": [
+    "SAPIANTA constitutional governance substrate",
+    "AGOL governed operational layer",
+    "AiGOL semantic direction governance",
+    "AGOL Bridge",
+    "AGOL Bridge Transport Spec v1",
+    "AGOL Bridge Runtime Foundation",
+    "Governed Browser Sidepanel Runtime",
+    "governed transport",
+    "replay-safe transport",
+    "append-only replay log",
+    "lifecycle transition",
+    "approval-gated dispatch",
+    "quarantine",
+    "fail-closed",
+    "bounded in-memory continuity",
+    "localhost-only interaction",
+    "explicit confirmation",
+    "read-only observability"
+  ],
+  "deprecated_terms": [
+    "full autonomous semantic runtime",
+    "autonomous semantic operating system",
+    "semantic autonomy engine",
+    "unrestricted autonomous AI",
+    "self-evolving governance",
+    "hidden orchestration",
+    "automatic execution authority",
+    "ChatGPT execution authority"
+  ],
+  "ambiguities_remaining": [
+    "Top-level governance ADRs still use ADR-00X placeholder numbering.",
+    "Historical artifacts mix AGOL, AiGOL, AIGOL, and SAPIANTA naming.",
+    "AGOL Bridge Transport Spec v1 remains Draft v1 while implementation finalization exists.",
+    "Some sidepanel evidence uses pre-finalization Browser Companion naming."
+  ],
+  "constitutional_layers": {
+    "constitutional": "SAPIANTA",
+    "governance": "AGOL",
+    "semantic_direction_governance": "AiGOL",
+    "transport": "AGOL Bridge",
+    "observability": "Governed Browser Sidepanel Runtime",
+    "execution": "Codex / workers through governed transport only"
+  },
+  "artifact_normalization_status": {
+    "adr_names": "PARTIAL_PLACEHOLDER_NUMBERING_REMAINS",
+    "finalize_milestone_names": "ALIGNED",
+    "runtime_evidence_names": "PARTIAL_TRANSITIONAL_NAMING_REMAINS",
+    "governance_artifact_names": "HISTORICAL_MIX_ACCEPTED_WITH_FUTURE_GUIDANCE",
+    "sidepanel_terminology": "ALIGNED_FOR_FUTURE_USE",
+    "bridge_terminology": "ALIGNED",
+    "transport_spec_status": "DRAFT_FOUNDATION_SPEC_NOT_YET_CANONICAL"
+  },
+  "recommended_followup": [
+    "Assign stable numeric ADR ids.",
+    "Record alias mappings for AGOL, AiGOL, AIGOL, and SAPIANTA.",
+    "Decide whether AGOL Bridge Transport Spec v1 becomes canonical.",
+    "Define whether historical artifact renaming is prohibited, optional, or migration-manifest governed."
+  ]
+}

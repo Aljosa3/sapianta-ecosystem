@@ -1,0 +1,120 @@
+{
+  "review_id": "AGOL_CONSTITUTIONAL_LINEAGE_NORMALIZATION_V1",
+  "stabilization_status": "CONSTITUTIONAL_LINEAGE_STABLE",
+  "canonical_identity": {
+    "SAPIANTA": "constitutional governance substrate and product governance identity",
+    "AGOL": "governed operational layer family within SAPIANTA",
+    "AiGOL": "semantic-direction governance identity within AGOL",
+    "Browser Companion": "browser UX surface for explicit local governed interaction",
+    "AGOL Bridge": "deterministic governed transport and lifecycle substrate"
+  },
+  "constitutional_layers": {
+    "semantic_cognition_layer": "ChatGPT / LLMs generate semantic possibilities and proposed directions without execution authority.",
+    "semantic_direction_governance_layer": "AiGOL / AGOL governs admissibility, constraints, approval, quarantine, and rejection of proposed direction.",
+    "execution_layer": "Codex / workers execute only through governed transport and bounded runtime authority.",
+    "observability_layer": "Read-only inspection of lifecycle state, runtime responses, results, and replay-visible evidence.",
+    "replay_layer": "Deterministic historical references, append-only records, hashes, certifications, and audit continuity.",
+    "lifecycle_layer": "Bounded transitions across created, normalized, waiting, approved, dispatched, executing, returned, validated, finalized, quarantined, and failed states."
+  },
+  "canonical_terms": [
+    "SAPIANTA constitutional governance substrate",
+    "AGOL governed operational layer",
+    "AiGOL semantic direction governance",
+    "Browser Companion",
+    "Governed Browser Sidepanel Runtime",
+    "AGOL Bridge",
+    "governed transport",
+    "replay-safe reference",
+    "append-only replay log",
+    "migration manifest",
+    "replay-safe alias mapping",
+    "lifecycle transition",
+    "approval-gated dispatch",
+    "quarantine",
+    "fail-closed",
+    "read-only observability",
+    "bounded continuity"
+  ],
+  "deprecated_terms": [
+    "full autonomous semantic runtime",
+    "autonomous semantic operating system",
+    "semantic autonomy engine",
+    "worker mesh",
+    "unrestricted autonomous AI",
+    "self-evolving governance",
+    "hidden orchestration",
+    "automatic execution authority",
+    "ChatGPT execution authority",
+    "silent artifact rename"
+  ],
+  "alias_mappings": {
+    "AIGOL": "AiGOL",
+    "AGOL Bridge Runtime v0.1": "AGOL Bridge Runtime Foundation v1",
+    "Browser Companion sidepanel": "Governed Browser Sidepanel Runtime",
+    "SAPIANTA Companion": "Browser Companion",
+    "ADR-00X-AGOL-BRIDGE-PIVOT": "pending stable numeric ADR alias",
+    "ADR-00X-SEMANTIC-DIRECTION-GOVERNANCE": "pending stable numeric ADR alias"
+  },
+  "adr_numbering_policy": {
+    "canonical_format": "ADR-###-SHORT-TITLE.md",
+    "allocation": "monotonic next available numeric id",
+    "reuse_numbers": false,
+    "placeholder_policy": "ADR-00X files are transitional and require stable numbering or alias manifest before constitutional promotion.",
+    "historical_validity": "Historical ADR filenames remain valid replay references.",
+    "migration_policy": "Do not rename historical ADR files automatically; create alias and migration manifests first."
+  },
+  "replay_safe_reference_policy": {
+    "must_include_one_of": [
+      "canonical numeric ADR id",
+      "original historical filename",
+      "migration manifest id",
+      "alias mapping id"
+    ],
+    "existing_evidence_rewrites": false,
+    "new_evidence_policy": "Add canonical references while preserving historical references that existed at creation time.",
+    "lineage_priority": "Replay continuity and audit continuity take precedence over tidy naming."
+  },
+  "artifact_renaming_policy": {
+    "automatic_renaming_allowed": false,
+    "historical_renaming_allowed": "only with dedicated migration manifest",
+    "migration_manifest_required_fields": [
+      "old_path",
+      "new_path",
+      "migration_reason",
+      "affected_references",
+      "replay_impact",
+      "rollback_guidance",
+      "audit_continuity_certification"
+    ],
+    "original_references_remain_valid": true
+  },
+  "governance_state_definitions": {
+    "Draft": {
+      "meaning": "usable for bounded implementation or review guidance but open to correction before canonical freeze",
+      "mutation_constraints": "edits allowed when scope and lineage are preserved",
+      "replay_implication": "valid historical reference, not immutable constitutional authority"
+    },
+    "Finalized": {
+      "meaning": "milestone accepted and certified against stated scope",
+      "mutation_constraints": "changes require follow-up milestone or superseding finalization",
+      "replay_implication": "stable evidence for that milestone"
+    },
+    "Canonical": {
+      "meaning": "governing reference for future work within declared scope",
+      "mutation_constraints": "changes require governance review, versioning, or supersession",
+      "replay_implication": "primary reference while older historical references remain valid"
+    },
+    "Constitutional": {
+      "meaning": "artifact constrains repository interpretation and cannot be silently bypassed",
+      "mutation_constraints": "mutation forbidden except through explicit constitutional governance process",
+      "replay_implication": "stable control for future review and conformance"
+    }
+  },
+  "ambiguities_remaining": [
+    "Stable numeric ADR ids are pending for top-level governance ADRs.",
+    "Historical references include AGOL, AiGOL, and AIGOL variants.",
+    "AGOL Bridge Transport Spec v1 remains Draft Foundation Spec pending canonical promotion.",
+    "Transitional sidepanel naming remains in existing evidence and must stay historically valid."
+  ],
+  "recommended_next_step": "Create an append-only alias registry and ADR numbering manifest that assigns stable numeric ids to placeholder ADRs, preserves historical filenames as aliases, and decides whether AGOL Bridge Transport Spec v1 is canonical or superseded."
+}
