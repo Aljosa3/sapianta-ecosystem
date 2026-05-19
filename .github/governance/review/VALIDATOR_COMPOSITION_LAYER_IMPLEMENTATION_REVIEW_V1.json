@@ -1,0 +1,101 @@
+{
+  "review_id": "VALIDATOR_COMPOSITION_LAYER_IMPLEMENTATION_REVIEW_V1",
+  "review_decision": "COMPOSITION_IMPLEMENTATION_SAFE",
+  "implementation_model": {
+    "type": "pure_function_composition_primitive",
+    "description": "Accepts an envelope object, explicit read-only artifact map, explicit validator registry, and ordered validator ids, then returns an in-memory aggregate validation report.",
+    "runtime_code_in_this_review": false,
+    "filesystem_discovery": false,
+    "dynamic_loading": false,
+    "side_effects": false
+  },
+  "allowed_inputs": [
+    "envelope object",
+    "explicit read-only artifact map",
+    "explicit in-memory validator registry",
+    "ordered validator ids"
+  ],
+  "allowed_outputs": [
+    "composition_id",
+    "aggregate_status",
+    "ordered_validator_reports",
+    "failures",
+    "authority_findings",
+    "determinism_findings",
+    "recommended_action"
+  ],
+  "forbidden_behaviors": [
+    "filesystem reads",
+    "filesystem writes",
+    "network calls",
+    "provider calls",
+    "execution dispatch",
+    "approval action",
+    "lifecycle transitions",
+    "runtime mutation",
+    "sidepanel state update",
+    "replay mutation",
+    "artifact map mutation",
+    "envelope mutation",
+    "validator output mutation",
+    "hidden persistence",
+    "dynamic loading",
+    "validator auto-discovery",
+    "orchestration behavior",
+    "semantic autonomy behavior"
+  ],
+  "determinism_requirements": {
+    "stable_validator_ordering": true,
+    "stable_duplicate_validator_detection": true,
+    "stable_unknown_validator_detection": true,
+    "stable_status_precedence": true,
+    "stable_report_construction": true,
+    "stable_composition_id_derivation": true,
+    "no_time_dependency": true,
+    "no_random_dependency": true,
+    "no_filesystem_dependency": true,
+    "no_environment_dependency": true,
+    "no_network_dependency": true,
+    "no_process_global_mutable_state": true,
+    "no_hidden_persistence": true
+  },
+  "safety_rules": {
+    "envelope_read_only": true,
+    "artifact_map_read_only": true,
+    "validator_outputs_read_only_after_capture": true,
+    "new_aggregate_report_object": true,
+    "no_io": true,
+    "no_provider_calls": true,
+    "no_runtime_mutation": true,
+    "no_authority_expansion": true,
+    "no_orchestration_behavior": true,
+    "no_dynamic_loading": true,
+    "no_auto_discovery": true
+  },
+  "failure_semantics": [
+    "VALID",
+    "INVALID_COMPOSITION",
+    "UNKNOWN_VALIDATOR",
+    "DUPLICATE_VALIDATOR",
+    "VALIDATOR_FAILED",
+    "NON_DETERMINISTIC_REPORT",
+    "AUTHORITY_BOUNDARY_VIOLATION"
+  ],
+  "authority_guarantees": {
+    "validation_success_is_approval": false,
+    "validation_success_is_dispatch": false,
+    "validation_success_is_execution": false,
+    "validation_success_is_lifecycle_transition": false,
+    "validation_success_is_continuation_authority": false,
+    "composition_is_orchestration_runtime": false,
+    "composition_calls_providers": false
+  },
+  "risks": [
+    "Future implementation could blur explicit registry input into dynamic loading or discovery.",
+    "Future implementation could persist aggregate reports as a side effect.",
+    "A validator could return non-deterministic output unless tests compare repeated composition runs.",
+    "A caller could mistake aggregate VALID for approval unless labels remain explicit.",
+    "A future implementation could mutate validator outputs while aggregating unless copied or treated immutably."
+  ],
+  "recommended_next_step": "Implement a small pure-function composition primitive with tests proving deterministic order, duplicate and unknown validator failures, explicit supplied-function invocation only, deterministic aggregation, no input or validator-output mutation, and no filesystem/network/provider/dispatch/approval/sidepanel/runtime/dynamic-loading/orchestration calls."
+}
