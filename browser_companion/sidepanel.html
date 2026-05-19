@@ -74,6 +74,12 @@
         white-space: pre-wrap;
       }
 
+      .inspection-panel summary {
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       #result {
         background: #fff;
         display: grid;
@@ -218,6 +224,46 @@ Codex / workers: execution through governed transport only</pre>
             <p class="cockpit-label">Report-only continuity findings, risks, and recommendations. No autonomous continuation.</p>
             <pre id="continuity-findings" class="cockpit-output">No findings, risks, or recommendations rendered.</pre>
           </article>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Envelope Validation Artifact</summary>
+            <p class="cockpit-label">Read-only artifact JSON. Validation status creates no approval authority.</p>
+            <pre id="inspection-envelope-validation-artifact" class="cockpit-output">No envelope validation artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Validator Composition Artifact</summary>
+            <p class="cockpit-label">Read-only artifact JSON. Composition status creates no dispatch authority.</p>
+            <pre id="inspection-validator-composition-artifact" class="cockpit-output">No validator composition artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Continuity Report Artifact</summary>
+            <p class="cockpit-label">Read-only artifact JSON. Continuity status creates no execution or continuation authority.</p>
+            <pre id="inspection-continuity-report-artifact" class="cockpit-output">No continuity report artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Replay Summary Artifact</summary>
+            <p class="cockpit-label">Read-only replay visibility. Inspection does not append, rewrite, or mutate replay.</p>
+            <pre id="inspection-replay-summary-artifact" class="cockpit-output">No replay summary artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Lifecycle Summary Artifact</summary>
+            <p class="cockpit-label">Read-only lifecycle visibility. Inspection creates no lifecycle transition.</p>
+            <pre id="inspection-lifecycle-summary-artifact" class="cockpit-output">No lifecycle summary artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Lineage Summary Artifact</summary>
+            <p class="cockpit-label">Read-only lineage visibility. Inspection does not mutate lineage.</p>
+            <pre id="inspection-lineage-summary-artifact" class="cockpit-output">No lineage summary artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Authority Boundary Artifact</summary>
+            <p class="cockpit-label">Read-only authority boundary visibility. Inspection grants no approval, dispatch, or execution authority.</p>
+            <pre id="inspection-authority-boundary-artifact" class="cockpit-output">No authority boundary artifact rendered.</pre>
+          </details>
+          <details class="cockpit-panel inspection-panel">
+            <summary>Semantic Boundary Artifact</summary>
+            <p class="cockpit-label">Read-only semantic boundary visibility. Semantic cognition remains non-authoritative.</p>
+            <pre id="inspection-semantic-boundary-artifact" class="cockpit-output">No semantic boundary artifact rendered.</pre>
+          </details>
         </section>
         <section id="result" aria-live="polite"></section>
       </section>

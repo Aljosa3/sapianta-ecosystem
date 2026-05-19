@@ -11,7 +11,15 @@ const COCKPIT_IDS = {
   validatorCompositionStatus: "validator-composition-status",
   continuityStatus: "continuity-status",
   lineageSummary: "lineage-summary",
-  continuityFindings: "continuity-findings"
+  continuityFindings: "continuity-findings",
+  envelopeValidationArtifact: "inspection-envelope-validation-artifact",
+  validatorCompositionArtifact: "inspection-validator-composition-artifact",
+  continuityReportArtifact: "inspection-continuity-report-artifact",
+  replaySummaryArtifact: "inspection-replay-summary-artifact",
+  lifecycleSummaryArtifact: "inspection-lifecycle-summary-artifact",
+  lineageSummaryArtifact: "inspection-lineage-summary-artifact",
+  authorityBoundaryArtifact: "inspection-authority-boundary-artifact",
+  semanticBoundaryArtifact: "inspection-semantic-boundary-artifact"
 };
 
 function deterministicId(prefix, value) {
@@ -184,6 +192,68 @@ function continuityFindingsSummary(entry) {
   ].join("\n");
 }
 
+function artifactJson(value) {
+  return JSON.stringify(canonicalize(value || {}), null, 2);
+}
+
+function replaySummaryArtifact(entry) {
+  const report = continuityReport(entry);
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  return {
+    label: "Replay Summary Artifact - read-only inspection",
+    authority: "inspection creates no dispatch, approval, execution, or replay mutation",
+    replay_refs: envelope.replay_refs || [],
+    replay_visibility_summary: report.replay_visibility_summary || {},
+    replay_lifecycle_visibility: sidepanelContinuityRendering(entry).replay_lifecycle_visibility || {}
+  };
+}
+
+function lifecycleSummaryArtifact(entry) {
+  const report = continuityReport(entry);
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  return {
+    label: "Lifecycle Summary Artifact - read-only inspection",
+    authority: "inspection creates no lifecycle transition",
+    lifecycle_refs: envelope.lifecycle_refs || [],
+    lifecycle_visibility_summary: report.lifecycle_visibility_summary || {}
+  };
+}
+
+function lineageSummaryArtifact(entry) {
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  const report = continuityReport(entry);
+  const rendering = sidepanelContinuityRendering(entry);
+  return {
+    label: "Lineage Summary Artifact - read-only inspection",
+    mutation: false,
+    lineage_id: envelope.lineage_id || "unknown",
+    lineage_summary: rendering.lineage_summary || report.lineage_summary || {}
+  };
+}
+
+function authorityBoundaryArtifact(entry) {
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  const report = continuityReport(entry);
+  const rendering = sidepanelContinuityRendering(entry);
+  return {
+    label: "Authority Boundary Artifact - read-only inspection",
+    authority_boundary_statement: envelope.authority_boundary_statement || "No authority boundary statement rendered.",
+    authority_boundary_summary: rendering.authority_boundary_visibility || report.authority_boundary_summary || {},
+    guarantees: entry.authority_guarantees || {}
+  };
+}
+
+function semanticBoundaryArtifact(entry) {
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  const report = continuityReport(entry);
+  const rendering = sidepanelContinuityRendering(entry);
+  return {
+    label: "Semantic Boundary Artifact - read-only inspection",
+    semantic_interpretation_boundary: envelope.semantic_interpretation_boundary || {},
+    semantic_boundary_summary: rendering.semantic_boundary_visibility || report.semantic_boundary_summary || {}
+  };
+}
+
 function demoReplayReferences() {
   return [
     { replay_id: "DEMO-REPLAY-ENVELOPE", reference_status: "REFERENCED_NOT_MUTATED" },
@@ -300,6 +370,14 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.continuityStatus, continuityStatusSummary(latest));
   setCockpitText(COCKPIT_IDS.lineageSummary, lineageSummary(latest));
   setCockpitText(COCKPIT_IDS.continuityFindings, continuityFindingsSummary(latest));
+  setCockpitText(COCKPIT_IDS.envelopeValidationArtifact, artifactJson(latest.envelope_validation_report));
+  setCockpitText(COCKPIT_IDS.validatorCompositionArtifact, artifactJson(latest.validator_composition_report));
+  setCockpitText(COCKPIT_IDS.continuityReportArtifact, artifactJson(continuityReport(latest)));
+  setCockpitText(COCKPIT_IDS.replaySummaryArtifact, artifactJson(replaySummaryArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.lifecycleSummaryArtifact, artifactJson(lifecycleSummaryArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.lineageSummaryArtifact, artifactJson(lineageSummaryArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.authorityBoundaryArtifact, artifactJson(authorityBoundaryArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.semanticBoundaryArtifact, artifactJson(semanticBoundaryArtifact(latest)));
 }
 
 window.sidepanelRenderResult = function renderLifecycleResult(summary) {
