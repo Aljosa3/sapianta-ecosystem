@@ -1,0 +1,83 @@
+{
+  "milestone": "PERSISTENT_REPLAY_SESSION_V1",
+  "finalize_artifact": "FINALIZE_PERSISTENT_REPLAY_SESSION_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    ".github/governance/finalize/FINALIZE_GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1.md",
+    ".github/governance/finalize/FINALIZE_BOUNDED_REPLAY_COCKPIT_IMPLEMENTATION_V1.md",
+    "browser_companion/sidepanel.html",
+    "browser_companion/sidepanel.js",
+    "tests/test_persistent_replay_session.py"
+  ],
+  "certified_components": [
+    "append-only replaySessionEntries",
+    "deterministic replay entry IDs",
+    "canonical JSON serialization",
+    "explicit Load Replay control",
+    "current replay session visibility",
+    "read-only replay entry inspection",
+    "session-only in-memory replay persistence",
+    "continuity report persistence visibility",
+    "replay summary persistence visibility",
+    "lifecycle summary persistence visibility",
+    "lineage summary persistence visibility",
+    "authority boundary summary persistence visibility",
+    "semantic boundary summary persistence visibility"
+  ],
+  "replay_persistence_guarantees": {
+    "append_only_replay_entries": true,
+    "deterministic_replay_entry_ids": true,
+    "canonical_json_serialization": true,
+    "explicit_replay_loading_only": true,
+    "read_only_replay_entry_inspection": true,
+    "session_only_persistence": true,
+    "durable_browser_storage": false,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "replay_deletion": false,
+    "hidden_replay_mutation": false
+  },
+  "continuity_persistence_scope": [
+    "continuity reports",
+    "replay summaries",
+    "lifecycle summaries",
+    "lineage summaries",
+    "authority boundary summaries",
+    "semantic boundary summaries"
+  ],
+  "session_only_persistence_evidence": {
+    "in_memory_array": "replaySessionEntries",
+    "chrome_storage": false,
+    "local_storage": false,
+    "session_storage": false,
+    "indexeddb": false,
+    "cache_api": false,
+    "filesystem_api": false,
+    "network_persistence": false,
+    "background_worker": false
+  },
+  "authority_boundary_guarantees": {
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "autonomous_continuation": false,
+    "lifecycle_transition": false,
+    "runtime_mutation": false,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "hidden_persistence": false
+  },
+  "test_evidence": {
+    "focused_pytest": "python -B -m pytest tests/test_persistent_replay_session.py",
+    "full_pytest": "python -B -m pytest tests",
+    "diff_check": "git diff --check"
+  },
+  "risks_remaining": [
+    "Replay persistence remains bounded to the active sidepanel runtime session.",
+    "Reloading the browser panel clears the in-memory replay session.",
+    "This milestone does not introduce durable replay storage or backend replay persistence."
+  ],
+  "constitutional_statement": "Persistent replay session v1 is bounded in-memory replay visibility and does not create execution, approval, dispatch, lifecycle, orchestration, or durable persistence authority."
+}

@@ -1,0 +1,41 @@
+{
+  "milestone": "PERSISTENT_REPLAY_SESSION_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "bounded in-memory replay session visibility",
+    "append-only replay entry capture",
+    "deterministic replay entry identity",
+    "canonical JSON replay rendering",
+    "explicit Load Replay action",
+    "read-only replay entry inspection",
+    "continuity report visibility",
+    "replay summary visibility",
+    "lifecycle summary visibility",
+    "lineage summary visibility",
+    "authority boundary summary visibility",
+    "semantic boundary summary visibility"
+  ],
+  "persistence_scope": {
+    "session_only": true,
+    "in_memory_only": true,
+    "durable_browser_storage": false,
+    "hidden_persistence": false
+  },
+  "read_only_guarantees": {
+    "replay_entry_inspection": true,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "lifecycle_transition": false,
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "autonomous_continuation": false
+  },
+  "test_evidence": {
+    "focused_pytest": "python -B -m pytest tests/test_persistent_replay_session.py",
+    "full_pytest": "python -B -m pytest tests",
+    "diff_check": "git diff --check"
+  }
+}

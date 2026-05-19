@@ -1,0 +1,18 @@
+{
+  "milestone": "PERSISTENT_REPLAY_SESSION_V1",
+  "certification": "DETERMINISTIC_SERIALIZATION",
+  "status": "CERTIFIED",
+  "evidence": {
+    "canonicalization": "canonicalize(value || {})",
+    "json_rendering": "JSON.stringify(canonicalize(value || {}), null, 2)",
+    "replay_entry_id_generation": "deterministicId(\"REPLAY-ENTRY\", { sequence, continuity_report_id, lineage_id })",
+    "randomness": false,
+    "time_dependency": false,
+    "environment_dependency": false
+  },
+  "guarantees": {
+    "deterministic_replay_entry_ids": true,
+    "canonical_json_serialization": true,
+    "stable_rendering_for_same_input": true
+  }
+}

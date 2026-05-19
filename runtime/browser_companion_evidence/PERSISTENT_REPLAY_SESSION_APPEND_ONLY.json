@@ -1,0 +1,21 @@
+{
+  "milestone": "PERSISTENT_REPLAY_SESSION_V1",
+  "certification": "APPEND_ONLY_REPLAY_SESSION",
+  "status": "CERTIFIED",
+  "evidence": {
+    "replay_session_entries": "append-only in-memory replaySessionEntries",
+    "append_operation": "replaySessionEntries.push(replaySessionEntry(canonicalSummary, replaySessionEntries.length))",
+    "entry_sequence": "sequence: index + 1",
+    "load_behavior": "explicit Load Replay renders existing entries read-only",
+    "delete_operation": false,
+    "rewrite_operation": false,
+    "repair_operation": false,
+    "lifecycle_transition": false
+  },
+  "guarantees": {
+    "append_only": true,
+    "explicit_loading_only": true,
+    "read_only_inspection": true,
+    "hidden_mutation": false
+  }
+}
