@@ -7,6 +7,7 @@ from .envelope_validator import (
     validate_envelope,
 )
 from .continuity_report_synthesis import CONTINUITY_STATUSES, synthesize_continuity_report
+from .minimal_operational_loop_demo import run_minimal_governed_operational_loop_demo
 from .validator_composition import COMPOSITION_STATUSES, compose_validators
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "canonical_envelope_hash",
     "canonical_hash",
     "compose_validators",
+    "run_minimal_governed_operational_loop_demo",
     "synthesize_continuity_report",
     "validate_envelope",
 ]
