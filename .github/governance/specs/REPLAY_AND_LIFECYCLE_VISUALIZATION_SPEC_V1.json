@@ -1,0 +1,72 @@
+{
+  "spec_id": "REPLAY_AND_LIFECYCLE_VISUALIZATION_SPEC_V1",
+  "status": "DRAFT_SPECIFICATION",
+  "scope": [
+    "Replay Timeline Visualization",
+    "Lifecycle Graph Visualization",
+    "Approval State Visualization",
+    "Governance Boundary Visualization",
+    "Replay Lineage Navigation",
+    "Constitutional Layer Visibility",
+    "Semantic Direction Visibility",
+    "Bounded Session Continuity Semantics"
+  ],
+  "non_goals": [
+    "orchestration",
+    "execution authority",
+    "semantic autonomy",
+    "autonomous planning",
+    "automatic dispatch",
+    "hidden execution",
+    "hidden networking",
+    "hidden persistence",
+    "browser scraping",
+    "background workers",
+    "governance artifact mutation"
+  ],
+  "governance_guarantees": {
+    "no_hidden_execution": true,
+    "no_automatic_dispatch": true,
+    "localhost_only_interaction": true,
+    "replay_safe_observability": true,
+    "append_only_lineage_visibility": true,
+    "explicit_approval_boundaries": true,
+    "read_only_inspection": true,
+    "fail_closed_unknown_states": true,
+    "cognition_governance_execution_separation": true
+  },
+  "observability_guarantees": {
+    "long_response_readability": true,
+    "replay_record_visibility": true,
+    "approval_state_visibility": true,
+    "boundary_state_visibility": true,
+    "lineage_reference_visibility": true,
+    "observability_triggers_execution": false,
+    "observability_mutates_lifecycle": false
+  },
+  "boundedness_guarantees": {
+    "ui_only": true,
+    "observability_only": true,
+    "active_session_in_memory_continuity_only": true,
+    "hidden_persistence": false,
+    "browser_scraping": false,
+    "approval_bypass": false,
+    "dispatch_bypass": false,
+    "validation_bypass": false,
+    "replay_bypass": false,
+    "lifecycle_bypass": false
+  },
+  "data_sources": [
+    "governed localhost runtime responses",
+    "AGOL Bridge replay artifacts",
+    "lifecycle artifacts",
+    "certification artifacts",
+    "explicit operator-selected context"
+  ],
+  "risks": [
+    "Operators may mistake visualization for authorization if approval labels are ambiguous.",
+    "Timeline views may imply deterministic semantic replay where only transport replay exists.",
+    "Alias navigation may obscure historical references if aliases are displayed as replacements.",
+    "Bounded in-memory continuity may be mistaken for durable replay if not labeled."
+  ]
+}
