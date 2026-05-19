@@ -1,0 +1,22 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "DETERMINISM_EVIDENCE",
+  "deterministic_properties": {
+    "same_input_same_output_tested": true,
+    "stable_report_identity_generation_tested": true,
+    "stable_status_precedence_tested": true,
+    "fail_closed_unknown_statuses_tested": true,
+    "explicit_missing_evidence_findings_tested": true,
+    "report_is_in_memory": true
+  },
+  "validation_statuses": [
+    "CONTINUITY_VALID",
+    "CONTINUITY_INCOMPLETE",
+    "CONTINUITY_BOUNDARY_VIOLATION",
+    "CONTINUITY_REPLAY_GAP",
+    "CONTINUITY_LIFECYCLE_GAP",
+    "CONTINUITY_NON_DETERMINISTIC",
+    "CONTINUITY_AUTHORITY_VIOLATION"
+  ],
+  "test_reference": "agol_bridge/tests/test_pure_function_continuity_report_synthesis.py"
+}

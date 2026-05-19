@@ -1,0 +1,21 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "AUTHORITY_GUARANTEES",
+  "authority_boundaries": {
+    "approval": false,
+    "dispatch": false,
+    "execution": false,
+    "lifecycle_transitions": false,
+    "replay_mutation": false,
+    "runtime_mutation": false,
+    "sidepanel_mutation": false,
+    "orchestration_behavior": false,
+    "autonomous_continuation": false,
+    "semantic_authority_creation": false
+  },
+  "positive_scope": [
+    "authority boundary visibility",
+    "authority violation reporting",
+    "report-only continuity recommendations"
+  ]
+}

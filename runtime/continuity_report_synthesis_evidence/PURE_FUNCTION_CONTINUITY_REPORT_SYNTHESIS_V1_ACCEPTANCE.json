@@ -1,0 +1,41 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "deterministic continuity report synthesis",
+    "stable report identity generation",
+    "stable status precedence",
+    "fail-closed unknown status handling",
+    "explicit input-only synthesis",
+    "replay visibility without replay mutation",
+    "lifecycle visibility without lifecycle mutation",
+    "lineage visibility without lineage mutation",
+    "semantic boundary visibility without semantic authority",
+    "authority boundary visibility without authority escalation",
+    "explicit missing-evidence findings"
+  ],
+  "accepted_exclusions": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "lifecycle_transitions": false,
+    "replay_mutation": false,
+    "lineage_mutation": false,
+    "runtime_mutation": false,
+    "sidepanel_mutation": false,
+    "orchestration_behavior": false,
+    "autonomous_continuation": false,
+    "hidden_persistence": false,
+    "semantic_authority_creation": false
+  },
+  "test_evidence": {
+    "focused_pytest_command": "python -B -m pytest agol_bridge/tests/test_pure_function_continuity_report_synthesis.py",
+    "bridge_pytest_command": "python -B -m pytest agol_bridge/tests",
+    "diff_check_command": "git diff --check"
+  }
+}

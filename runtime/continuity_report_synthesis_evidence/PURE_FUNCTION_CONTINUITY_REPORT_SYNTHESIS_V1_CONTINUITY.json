@@ -1,0 +1,14 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "CONTINUITY_GUARANTEES",
+  "continuity_boundaries": {
+    "explicit_input_only": true,
+    "read_only_synthesis": true,
+    "replay_visibility_without_replay_mutation": true,
+    "lifecycle_visibility_without_lifecycle_mutation": true,
+    "lineage_visibility_without_lineage_mutation": true,
+    "semantic_boundary_visibility_without_semantic_authority": true,
+    "authority_boundary_visibility_without_authority_escalation": true,
+    "recommendations_are_report_only": true
+  }
+}

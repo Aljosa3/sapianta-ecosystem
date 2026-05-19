@@ -1,0 +1,18 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "NO_IO_GUARANTEE",
+  "synthesis_scope": "pure function over explicit in-memory governance artifacts",
+  "io_boundaries": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "dynamic_loading": false,
+    "plugin_discovery": false,
+    "hidden_persistence": false,
+    "timers": false,
+    "background_threads": false
+  },
+  "source_guard_test": "test_no_filesystem_network_subprocess_provider_sidepanel_runtime_calls_are_introduced"
+}

@@ -1,0 +1,18 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "NO_MUTATION_GUARANTEE",
+  "mutation_boundaries": {
+    "input_mutation": false,
+    "synthesized_output_mutation_of_source_findings": false,
+    "synthesized_output_mutation_of_source_risks": false,
+    "lineage_mutation": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "runtime_mutation": false,
+    "sidepanel_mutation": false
+  },
+  "test_references": [
+    "test_no_input_mutation",
+    "test_no_synthesized_output_mutation_of_input_lists"
+  ]
+}

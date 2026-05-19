@@ -1,0 +1,13 @@
+{
+  "milestone": "PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1",
+  "evidence_type": "REPLAY_GUARANTEES",
+  "replay_boundaries": {
+    "replay_references_observed": true,
+    "replay_gaps_reported": true,
+    "append_replay_records": false,
+    "rewrite_replay_records": false,
+    "infer_missing_replay_records": false,
+    "repair_replay_history": false,
+    "hidden_replay_persistence": false
+  }
+}
