@@ -1,0 +1,23 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "evidence_type": "DETERMINISM_EVIDENCE",
+  "deterministic_properties": {
+    "declared_validator_order_preserved": true,
+    "duplicate_validator_detection": true,
+    "unknown_validator_detection": true,
+    "aggregate_report_determinism_tested": true,
+    "failure_precedence_deterministic": true,
+    "non_deterministic_validator_output_detection": true,
+    "composition_report_is_in_memory": true
+  },
+  "validation_statuses": [
+    "VALID",
+    "INVALID_COMPOSITION",
+    "UNKNOWN_VALIDATOR",
+    "DUPLICATE_VALIDATOR",
+    "VALIDATOR_FAILED",
+    "NON_DETERMINISTIC_REPORT",
+    "AUTHORITY_BOUNDARY_VIOLATION"
+  ],
+  "test_reference": "agol_bridge/tests/test_pure_function_validator_composition.py"
+}

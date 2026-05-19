@@ -1,0 +1,18 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "evidence_type": "NO_IO_GUARANTEE",
+  "composition_scope": "pure function over explicit in-memory inputs",
+  "io_boundaries": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "dynamic_loading": false,
+    "validator_auto_discovery": false,
+    "hidden_persistence": false,
+    "timers": false,
+    "background_threads": false
+  },
+  "source_guard_test": "test_no_filesystem_network_subprocess_provider_sidepanel_runtime_calls_are_introduced"
+}

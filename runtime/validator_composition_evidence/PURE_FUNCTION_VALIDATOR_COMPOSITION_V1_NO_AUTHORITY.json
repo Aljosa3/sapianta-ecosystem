@@ -1,0 +1,20 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "evidence_type": "NO_AUTHORITY_GUARANTEE",
+  "authority_boundaries": {
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "lifecycle_mutation": false,
+    "replay_mutation": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false,
+    "orchestration": false,
+    "semantic_autonomy": false
+  },
+  "positive_scope": [
+    "validator report aggregation",
+    "failure precedence calculation",
+    "authority boundary violation reporting"
+  ]
+}

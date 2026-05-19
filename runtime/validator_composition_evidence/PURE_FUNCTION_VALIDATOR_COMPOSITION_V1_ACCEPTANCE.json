@@ -1,0 +1,39 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "explicit in-memory validator registry",
+    "explicit ordered validator ids",
+    "declared order preservation",
+    "duplicate validator rejection",
+    "unknown validator rejection",
+    "deterministic aggregate reports",
+    "deterministic failure precedence",
+    "non-deterministic validator output detection",
+    "read-only aggregate reporting"
+  ],
+  "accepted_exclusions": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "lifecycle_mutation": false,
+    "replay_mutation": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false,
+    "dynamic_loading": false,
+    "validator_auto_discovery": false,
+    "hidden_persistence": false,
+    "orchestration": false,
+    "semantic_autonomy": false
+  },
+  "test_evidence": {
+    "focused_pytest_command": "python -B -m pytest agol_bridge/tests/test_pure_function_validator_composition.py",
+    "bridge_pytest_command": "python -B -m pytest agol_bridge/tests",
+    "diff_check_command": "git diff --check"
+  }
+}

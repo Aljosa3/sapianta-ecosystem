@@ -1,0 +1,81 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "finalize_artifact": "FINALIZE_PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    ".github/governance/specs/VALIDATOR_COMPOSITION_LAYER_V1.md",
+    ".github/governance/review/VALIDATOR_COMPOSITION_LAYER_IMPLEMENTATION_REVIEW_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_ENVELOPE_VALIDATOR_V1.md",
+    "agol_bridge/continuity/validator_composition.py",
+    "agol_bridge/tests/test_pure_function_validator_composition.py"
+  ],
+  "certified_components": [
+    "explicit in-memory validator registry",
+    "explicit ordered validator ids",
+    "declared order preservation",
+    "duplicate validator rejection",
+    "unknown validator rejection",
+    "deterministic aggregate reports",
+    "deterministic failure precedence",
+    "non-deterministic validator output detection",
+    "in-memory aggregate validation report",
+    "read-only composition over explicit inputs"
+  ],
+  "validation_statuses": [
+    "VALID",
+    "INVALID_COMPOSITION",
+    "UNKNOWN_VALIDATOR",
+    "DUPLICATE_VALIDATOR",
+    "VALIDATOR_FAILED",
+    "NON_DETERMINISTIC_REPORT",
+    "AUTHORITY_BOUNDARY_VIOLATION"
+  ],
+  "deterministic_guarantees": {
+    "explicit_validator_order": true,
+    "declared_order_preserved": true,
+    "duplicate_validator_rejection": true,
+    "unknown_validator_rejection": true,
+    "deterministic_aggregate_reports": true,
+    "deterministic_failure_precedence": true,
+    "non_deterministic_validator_output_detection": true
+  },
+  "no_io_guarantee": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "dynamic_loading": false,
+    "validator_auto_discovery": false,
+    "hidden_persistence": false,
+    "timers": false,
+    "background_threads": false
+  },
+  "no_authority_guarantee": {
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "lifecycle_mutation": false,
+    "replay_mutation": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false,
+    "orchestration": false,
+    "semantic_autonomy": false
+  },
+  "no_mutation_guarantee": {
+    "envelope_mutation": false,
+    "artifact_map_mutation": false,
+    "validator_output_mutation": false
+  },
+  "test_evidence": {
+    "focused_pytest_command": "python -B -m pytest agol_bridge/tests/test_pure_function_validator_composition.py",
+    "bridge_pytest_command": "python -B -m pytest agol_bridge/tests",
+    "diff_check_command": "git diff --check"
+  },
+  "risks_remaining": [
+    "The primitive invokes validators twice to detect non-deterministic output, so composed validators must remain pure and side-effect-free.",
+    "Any future persistent validator registry, loader, or sidepanel integration must be governed separately.",
+    "Aggregate VALID is validation success only and does not grant approval, dispatch, execution, or continuation authority."
+  ],
+  "constitutional_statement": "The pure-function validator composition primitive aggregates explicitly supplied validator reports without IO, authority, mutation, discovery, orchestration, hidden persistence, or semantic autonomy."
+}

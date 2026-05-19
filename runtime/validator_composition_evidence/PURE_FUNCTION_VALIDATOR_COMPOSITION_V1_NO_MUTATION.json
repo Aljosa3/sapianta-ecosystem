@@ -1,0 +1,14 @@
+{
+  "milestone": "PURE_FUNCTION_VALIDATOR_COMPOSITION_V1",
+  "evidence_type": "NO_MUTATION_GUARANTEE",
+  "mutation_boundaries": {
+    "envelope_mutation": false,
+    "artifact_map_mutation": false,
+    "validator_output_mutation": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "runtime_mutation": false,
+    "sidepanel_mutation": false
+  },
+  "test_reference": "test_inputs_and_validator_outputs_are_not_mutated"
+}
