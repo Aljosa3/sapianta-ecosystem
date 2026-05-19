@@ -1,0 +1,160 @@
+{
+  "spec_id": "VALIDATOR_COMPOSITION_LAYER_V1",
+  "status": "DRAFT_COMPOSITION_SPECIFICATION",
+  "references": [
+    ".github/governance/specs/READ_ONLY_ENVELOPE_VALIDATOR_PLAN_V1.md",
+    ".github/governance/review/READ_ONLY_ENVELOPE_VALIDATOR_IMPLEMENTATION_REVIEW_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_ENVELOPE_VALIDATOR_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_CONTRACT_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_PACKAGE_MAPPING_V1.md"
+  ],
+  "composition_model": {
+    "inputs": [
+      "envelope object",
+      "explicit artifact map",
+      "explicitly declared ordered validator list",
+      "optional read-only composition metadata"
+    ],
+    "outputs": [
+      "in-memory aggregate validation report",
+      "ordered per-validator validation reports",
+      "aggregate failure status",
+      "report-only recommended action"
+    ],
+    "model_summary": "Declared pure validators are invoked in deterministic order over explicit in-memory inputs and produce aggregate report-only validation output."
+  },
+  "validator_composition_contract": {
+    "required_validator_declaration_fields": [
+      "validator_id",
+      "validator_version",
+      "validator_purpose",
+      "validator_function_ref",
+      "input_contract",
+      "output_contract",
+      "failure_statuses",
+      "read_only_guarantee",
+      "authority_boundary_guarantee"
+    ],
+    "validator_requirements": [
+      "accept explicit in-memory inputs",
+      "return deterministic in-memory reports",
+      "avoid mutating inputs",
+      "avoid IO",
+      "avoid provider calls",
+      "avoid dispatch",
+      "avoid approval",
+      "avoid runtime side effects",
+      "expose failure semantics as report data"
+    ]
+  },
+  "validator_ordering_rules": [
+    "caller provides validator declaration list",
+    "declared order is preserved",
+    "duplicate validator_id values are invalid",
+    "missing validator declarations are invalid",
+    "unknown or undeclared validators are blocked",
+    "validators may not reorder themselves",
+    "validators may not request additional validators",
+    "auto-discovery is forbidden",
+    "dynamic loading is forbidden"
+  ],
+  "failure_aggregation_semantics": {
+    "all_valid_status": "VALID",
+    "invalid_schema_precedence": "INVALID_SCHEMA",
+    "missing_reference_status": "MISSING_REFERENCE",
+    "multiple_failure_rule": "first highest-precedence failure determines aggregate status",
+    "per_validator_reports_preserved": true,
+    "aggregate_recommendation_is_report_only": true,
+    "failure_does_not_trigger_mutation": true
+  },
+  "deterministic_reporting_semantics": {
+    "required_report_fields": [
+      "composition_id",
+      "composition_status",
+      "validator_order",
+      "validator_reports",
+      "aggregate_status",
+      "failure_summary",
+      "authority_findings",
+      "replay_findings",
+      "lifecycle_findings",
+      "semantic_findings",
+      "recommended_action"
+    ],
+    "same_input_same_output_required": true,
+    "identifier_sources": [
+      "canonical validation inputs",
+      "ordered validator results"
+    ],
+    "forbidden_identifier_sources": [
+      "wall-clock time",
+      "process state",
+      "filesystem state",
+      "random values",
+      "network state",
+      "hidden persistence"
+    ]
+  },
+  "validator_isolation_guarantees": {
+    "explicit_inputs_only": true,
+    "no_envelope_mutation": true,
+    "no_artifact_map_mutation": true,
+    "no_validator_mutation": true,
+    "independent_result_capture": true,
+    "failure_does_not_authorize_repair": true,
+    "no_hidden_mutable_shared_state": true
+  },
+  "bounded_composition_guarantees": {
+    "read_only_validation": true,
+    "deterministic_ordering": true,
+    "deterministic_aggregation": true,
+    "explicit_validator_declaration": true,
+    "explicit_artifact_map_input": true,
+    "replay_safe_report_construction": true,
+    "no_runtime_authority_expansion": true,
+    "no_semantic_autonomy_expansion": true
+  },
+  "composition_lifecycle_boundaries": {
+    "states": [
+      "DECLARED",
+      "VALIDATING",
+      "REPORTED",
+      "BLOCKED"
+    ],
+    "scope": "composition report lifecycle only",
+    "task_lifecycle_mutation_authorized": false,
+    "unknown_state_semantics": "fail closed as BLOCKED"
+  },
+  "composition_replay_guarantees": {
+    "validator_order_visible": true,
+    "validator_identifiers_visible": true,
+    "aggregate_status_reproducible": true,
+    "replay_references_observed_not_rewritten": true,
+    "persistent_report_writing_authorized": false
+  },
+  "composition_authority_guarantees": {
+    "approve_execution": false,
+    "dispatch_execution": false,
+    "execute_provider_work": false,
+    "create_runtime_authority": false,
+    "create_lifecycle_transitions": false,
+    "mutate_replay": false,
+    "mutate_task_or_result_packages": false,
+    "authoritative_semantic_interpretation": false,
+    "automatic_operational_loop_continuation": false
+  },
+  "forbidden_behaviors": [
+    "auto-discover validators",
+    "dynamically load validators",
+    "mutate envelopes",
+    "mutate artifact maps",
+    "dispatch execution",
+    "trigger approval",
+    "create lifecycle transitions",
+    "perform IO",
+    "call providers",
+    "create hidden persistence",
+    "create orchestration behavior"
+  ],
+  "recommended_next_step": "Prepare VALIDATOR_COMPOSITION_LAYER_IMPLEMENTATION_REVIEW_V1 before writing code, verifying that pure-function composition can be implemented without IO, dynamic loading, artifact discovery, authority expansion, orchestration, or persistence."
+}
