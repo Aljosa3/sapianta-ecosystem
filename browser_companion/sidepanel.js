@@ -5,7 +5,13 @@ const COCKPIT_IDS = {
   lifecycleView: "lifecycle-view",
   approvalVisibility: "approval-visibility",
   governanceBoundary: "governance-boundary",
-  semanticDirection: "semantic-direction"
+  semanticDirection: "semantic-direction",
+  continuityHumanRequest: "continuity-human-request",
+  envelopeValidationStatus: "envelope-validation-status",
+  validatorCompositionStatus: "validator-composition-status",
+  continuityStatus: "continuity-status",
+  lineageSummary: "lineage-summary",
+  continuityFindings: "continuity-findings"
 };
 
 function lifecycleStatus(summary) {
@@ -96,6 +102,78 @@ function semanticDirectionSummary(entry) {
   ].join("\n");
 }
 
+function continuityReport(entry) {
+  return entry.continuity_report || {};
+}
+
+function sidepanelContinuityRendering(entry) {
+  return entry.sidepanel_rendering || {};
+}
+
+function continuityHumanRequestSummary(entry) {
+  const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
+  const request = envelope.originating_human_request_ref || {};
+  return [
+    "label: Human Request - explicit local input only",
+    "authority: request context does not approve, dispatch, or execute",
+    `request_text: ${compactValue(request.request_text)}`,
+    `authority: ${compactValue(request.authority)}`
+  ].join("\n");
+}
+
+function envelopeValidationStatusSummary(entry) {
+  const report = entry.envelope_validation_report || {};
+  return [
+    "label: Envelope Validation Status - read-only report",
+    "authority: validation success is not approval",
+    `validation_id: ${compactValue(report.validation_id)}`,
+    `status: ${compactValue(report.status)}`
+  ].join("\n");
+}
+
+function validatorCompositionStatusSummary(entry) {
+  const report = entry.validator_composition_report || {};
+  return [
+    "label: Validator Composition Status - deterministic aggregation only",
+    "authority: aggregate valid is not dispatch",
+    `composition_id: ${compactValue(report.composition_id)}`,
+    `aggregate_status: ${compactValue(report.aggregate_status)}`,
+    `validator_order: ${compactValue(report.validator_order)}`
+  ].join("\n");
+}
+
+function continuityStatusSummary(entry) {
+  const report = continuityReport(entry);
+  return [
+    "label: Continuity Status - report validity only",
+    "authority: CONTINUITY_VALID is not approval, dispatch, execution, or continuation",
+    `continuity_report_id: ${compactValue(report.continuity_report_id)}`,
+    `aggregate_governance_status: ${compactValue(report.aggregate_governance_status)}`,
+    `recommendations: ${compactValue(report.continuity_recommendations)}`
+  ].join("\n");
+}
+
+function lineageSummary(entry) {
+  const rendering = sidepanelContinuityRendering(entry);
+  const report = continuityReport(entry);
+  return [
+    "label: Lineage Summary - visibility without mutation",
+    `lineage_summary: ${compactValue(rendering.lineage_summary || report.lineage_summary)}`,
+    "mutation: false"
+  ].join("\n");
+}
+
+function continuityFindingsSummary(entry) {
+  const report = continuityReport(entry);
+  return [
+    "label: Findings / Risks / Recommendations - report-only",
+    "continuation: no autonomous continuation",
+    `findings: ${compactValue(report.continuity_findings)}`,
+    `risks: ${compactValue(report.continuity_risks)}`,
+    `recommendations: ${compactValue(report.continuity_recommendations)}`
+  ].join("\n");
+}
+
 function renderReadOnlyCockpit() {
   const latest = lifecycleEntries[lifecycleEntries.length - 1] || {};
   setCockpitText(
@@ -106,6 +184,12 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.approvalVisibility, approvalSummary(latest));
   setCockpitText(COCKPIT_IDS.governanceBoundary, boundarySummary(latest));
   setCockpitText(COCKPIT_IDS.semanticDirection, semanticDirectionSummary(latest));
+  setCockpitText(COCKPIT_IDS.continuityHumanRequest, continuityHumanRequestSummary(latest));
+  setCockpitText(COCKPIT_IDS.envelopeValidationStatus, envelopeValidationStatusSummary(latest));
+  setCockpitText(COCKPIT_IDS.validatorCompositionStatus, validatorCompositionStatusSummary(latest));
+  setCockpitText(COCKPIT_IDS.continuityStatus, continuityStatusSummary(latest));
+  setCockpitText(COCKPIT_IDS.lineageSummary, lineageSummary(latest));
+  setCockpitText(COCKPIT_IDS.continuityFindings, continuityFindingsSummary(latest));
 }
 
 window.sidepanelRenderResult = function renderLifecycleResult(summary) {
