@@ -1,0 +1,95 @@
+{
+  "plan_id": "READ_ONLY_ENVELOPE_VALIDATOR_PLAN_V1",
+  "status": "DRAFT_VALIDATION_DESIGN",
+  "references": [
+    ".github/governance/fixtures/OPERATIONAL_LOOP_ENVELOPE_FIXTURE_V1.json",
+    ".github/governance/review/OPERATIONAL_LOOP_ENVELOPE_FIXTURE_REVIEW_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_PACKAGE_MAPPING_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_CONTRACT_V1.md",
+    ".github/governance/finalize/FINALIZE_AGOL_BRIDGE_RUNTIME_FOUNDATION_V1.md"
+  ],
+  "validator_purpose": [
+    "verify envelope references",
+    "verify package hashes",
+    "verify replay references",
+    "verify lifecycle references",
+    "verify authority boundary statement",
+    "verify semantic interpretation boundary",
+    "verify next-step reference is not approval",
+    "verify no referenced artifact is rewritten"
+  ],
+  "read_only_validation_scope": {
+    "may_read": [
+      "envelope fixture or envelope package",
+      "referenced task package",
+      "referenced result package",
+      "replay records",
+      "lifecycle evidence",
+      "finalize artifacts if referenced",
+      "evidence artifacts if referenced"
+    ],
+    "must_not": [
+      "write artifacts",
+      "mutate replay",
+      "mutate lifecycle",
+      "dispatch execution",
+      "approve execution",
+      "normalize results",
+      "call providers",
+      "update sidepanel state",
+      "create hidden persistence"
+    ]
+  },
+  "validation_checks": [
+    "required envelope fields present",
+    "deterministic envelope hash matches canonical content",
+    "referenced task package exists",
+    "referenced result package exists when declared",
+    "referenced replay records exist",
+    "task and result package hashes match referenced hashes",
+    "lifecycle references consistent with replay records and allowed states",
+    "authority boundary preserves cognition / governance / execution separation",
+    "semantic interpretation boundary states reasoning is non-deterministic and non-authoritative",
+    "next-step synthesis is not marked as approval",
+    "provider boundary confirms provider executes only through governed transport",
+    "referenced artifacts are read without rewrite or mutation"
+  ],
+  "failure_semantics": [
+    "VALID",
+    "INVALID_SCHEMA",
+    "MISSING_REFERENCE",
+    "HASH_MISMATCH",
+    "AUTHORITY_BOUNDARY_VIOLATION",
+    "REPLAY_REFERENCE_INVALID",
+    "LIFECYCLE_REFERENCE_INVALID",
+    "SEMANTIC_REPLAY_OVERCLAIM",
+    "NEXT_STEP_APPROVAL_CONFUSION"
+  ],
+  "output_contract": {
+    "validation_id": "stable validation report identity",
+    "envelope_id": "validated envelope identity",
+    "status": "one failure semantics value",
+    "checks": "ordered check outcomes",
+    "missing_references": "missing artifact references",
+    "hash_mismatches": "hash mismatch findings",
+    "authority_findings": "authority boundary findings",
+    "replay_findings": "replay reference findings",
+    "lifecycle_findings": "lifecycle reference findings",
+    "semantic_findings": "semantic replay and interpretation findings",
+    "recommended_action": "report-only recommendation"
+  },
+  "governance_guarantees": {
+    "no_mutation": true,
+    "no_execution": true,
+    "no_approval": true,
+    "no_dispatch": true,
+    "no_provider_calls": true,
+    "no_replay_rewrite": true,
+    "no_lifecycle_transition": true,
+    "no_hidden_persistence": true,
+    "no_sidepanel_mutation": true,
+    "no_schema_mutation": true,
+    "no_authority_expansion": true
+  },
+  "recommended_next_step": "Create a bounded implementation review for a pure function validator that accepts an envelope and explicit read-only artifact map, then returns an in-memory validation report without filesystem writes, runtime endpoints, or sidepanel integration."
+}
