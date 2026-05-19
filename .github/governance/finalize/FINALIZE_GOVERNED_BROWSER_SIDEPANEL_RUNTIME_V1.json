@@ -1,0 +1,62 @@
+{
+  "milestone": "GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1",
+  "finalize_artifact": "FINALIZE_GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "certified_components": [
+    "persistent governed sidepanel surface",
+    "sidepanel manifest entry",
+    "explicit popup sidepanel launcher",
+    "existing governed Browser Companion controls",
+    "scrollable lifecycle output container",
+    "append-only in-memory lifecycle rendering",
+    "replay-readable JSON response rendering",
+    "governed execution inspection visibility",
+    "localhost-only runtime interaction boundary",
+    "explicit confirmation-preserving workflow",
+    "fail-closed response validation",
+    "bounded in-memory continuity semantics"
+  ],
+  "governance_guarantees": {
+    "ux_layer_only": true,
+    "localhost_only_interaction": true,
+    "explicit_confirmation_preserved": true,
+    "fail_closed_validation_preserved": true,
+    "replay_visibility_supported": true,
+    "lifecycle_inspection_supported": true,
+    "observability_read_only": true
+  },
+  "mutation_boundaries": {
+    "new_governance_authority": false,
+    "runtime_mutation_authority": false,
+    "automatic_dispatch": false,
+    "hidden_execution_authority": false,
+    "hidden_networking": false,
+    "hidden_persistence": false,
+    "background_execution": false,
+    "worker_routing": false,
+    "orchestration_expansion": false
+  },
+  "replay_guarantees": {
+    "deterministic_json_rendering": true,
+    "active_session_lifecycle_append": true,
+    "replay_identity_visibility": true,
+    "hidden_response_loss_from_popup_close_avoided": true
+  },
+  "observability_guarantees": {
+    "long_response_visibility": true,
+    "execution_observability_visibility": true,
+    "inspection_triggers_execution": false
+  },
+  "continuity_semantics": {
+    "scope": "bounded in-memory continuity while sidepanel remains open",
+    "hidden_persistence": false,
+    "conversation_scraping": false
+  },
+  "test_evidence": [
+    "tests/test_browser_companion_sidepanel.py",
+    "tests/test_governed_browser_companion_runtime.py",
+    "tests/test_governed_chatgpt_interpretation_bridge_v2.py",
+    "tests/test_governed_intent_transfer_ingestion.py"
+  ],
+  "constitutional_statement": "The governed Browser Companion sidepanel runtime is a persistent localhost-only operational UX surface and does not create autonomous execution authority."
+}

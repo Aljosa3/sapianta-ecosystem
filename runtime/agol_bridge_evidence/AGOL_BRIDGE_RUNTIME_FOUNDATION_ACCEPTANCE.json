@@ -1,0 +1,34 @@
+{
+  "milestone": "AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "transport_spec_reference": "governance/bridge/AGOL_BRIDGE_TRANSPORT_SPEC_V1.md",
+  "bridge_pivot_reference": "governance/adr/ADR-00X-AGOL-BRIDGE-PIVOT.md",
+  "semantic_direction_governance_reference": "governance/adr/ADR-00X-SEMANTIC-DIRECTION-GOVERNANCE.md",
+  "accepted_guarantees": {
+    "replay_safe_transport": true,
+    "append_only_replay": true,
+    "lifecycle_boundaries": true,
+    "approval_gated_execution_transport": true,
+    "fail_closed_transport_semantics": true,
+    "deterministic_schema_validation": true,
+    "browser_sidepanel_observability": true,
+    "localhost_only_interaction": true,
+    "explicit_confirmation_preserved": true,
+    "no_hidden_execution_authority": true,
+    "no_hidden_persistence": true,
+    "no_hidden_networking": true,
+    "bounded_continuity": true
+  },
+  "non_goals_preserved": {
+    "semantic_autonomy_engine": false,
+    "domain_inference_runtime": false,
+    "autonomous_planning": false,
+    "hidden_orchestration": false,
+    "runtime_self_modification": false
+  },
+  "validation_commands": [
+    "python -B -m pytest agol_bridge/tests",
+    "python -m pytest tests/test_browser_companion_sidepanel.py tests/test_governed_browser_companion_runtime.py tests/test_governed_chatgpt_interpretation_bridge_v2.py tests/test_governed_intent_transfer_ingestion.py",
+    "git diff --check"
+  ]
+}

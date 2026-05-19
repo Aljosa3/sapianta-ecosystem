@@ -1,0 +1,12 @@
+{
+  "milestone": "AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "certification": "LIFECYCLE_GUARANTEE_CERTIFIED",
+  "bounded_lifecycle_state_model": true,
+  "approval_gated_dispatch": true,
+  "missing_approval_state": "WAITING_FOR_APPROVAL",
+  "invalid_schema_state": "QUARANTINED",
+  "unexpected_transition_state": "QUARANTINED",
+  "unknown_state_behavior": "BLOCK",
+  "immutable_dispatched_packages": true,
+  "automatic_dispatch_bypass": false
+}

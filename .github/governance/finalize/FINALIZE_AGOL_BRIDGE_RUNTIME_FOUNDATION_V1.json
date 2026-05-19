@@ -1,0 +1,66 @@
+{
+  "milestone": "AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "finalize_artifact": "FINALIZE_AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    "governance/bridge/AGOL_BRIDGE_TRANSPORT_SPEC_V1.md",
+    "governance/adr/ADR-00X-AGOL-BRIDGE-PIVOT.md",
+    "governance/adr/ADR-00X-SEMANTIC-DIRECTION-GOVERNANCE.md",
+    ".github/governance/finalize/FINALIZE_GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1.md"
+  ],
+  "certified_components": [
+    "filesystem governed transport runtime",
+    "task package schema validation",
+    "result package schema validation",
+    "deterministic lifecycle transitions",
+    "approval-gated dispatch",
+    "immutable dispatched package writes",
+    "quarantine behavior",
+    "append-only JSONL replay logging",
+    "SHA-256 package hashing",
+    "result package return",
+    "browser sidepanel observability continuity",
+    "localhost-only interaction boundary"
+  ],
+  "governance_guarantees": {
+    "semantic_cognition_layer": "ChatGPT / LLMs",
+    "semantic_direction_governance_layer": "AiGOL / AGOL Bridge",
+    "execution_layer": "Codex / workers",
+    "replay_safe_transport": true,
+    "append_only_replay": true,
+    "lifecycle_boundaries": true,
+    "approval_gated_execution_transport": true,
+    "fail_closed_transport_semantics": true,
+    "deterministic_schema_validation": true,
+    "browser_sidepanel_observability": true,
+    "localhost_only_interaction": true,
+    "explicit_confirmation_preserved": true
+  },
+  "mutation_boundaries": {
+    "semantic_autonomy_engine": false,
+    "domain_inference_runtime": false,
+    "autonomous_planning": false,
+    "hidden_orchestration": false,
+    "hidden_execution_authority": false,
+    "hidden_persistence": false,
+    "hidden_networking": false,
+    "self_modifying_governance": false,
+    "unrestricted_execution": false
+  },
+  "bounded_continuity": {
+    "filesystem_artifacts": true,
+    "append_only_replay_log": true,
+    "explicit_lifecycle_state": true,
+    "active_sidepanel_in_memory_visibility": true,
+    "hidden_browser_persistence": false,
+    "conversation_scraping": false
+  },
+  "test_evidence": [
+    "agol_bridge/tests",
+    "tests/test_browser_companion_sidepanel.py",
+    "tests/test_governed_browser_companion_runtime.py",
+    "tests/test_governed_chatgpt_interpretation_bridge_v2.py",
+    "tests/test_governed_intent_transfer_ingestion.py"
+  ],
+  "constitutional_statement": "AGOL Bridge Runtime Foundation v1 is a deterministic governed transport substrate, not an autonomous semantic runtime."
+}

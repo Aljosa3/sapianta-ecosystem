@@ -1,0 +1,11 @@
+{
+  "milestone": "AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "certification": "REPLAY_GUARANTEE_CERTIFIED",
+  "replay_format": "append-only JSONL",
+  "canonical_json": true,
+  "sha256_hashes": true,
+  "existing_records_overwritten": false,
+  "lifecycle_transitions_logged": true,
+  "package_hash_recorded": true,
+  "hidden_replay_mutation": false
+}

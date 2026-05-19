@@ -1,0 +1,45 @@
+{
+  "milestone": "GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "persistent governed sidepanel surface",
+    "localhost-only interaction boundary",
+    "replay-visible operational response rendering",
+    "lifecycle inspection support",
+    "explicit confirmation preservation",
+    "scrollable long-response visibility",
+    "bounded in-memory continuity for active sidepanel session"
+  ],
+  "governance_guarantees": {
+    "automatic_dispatch": false,
+    "hidden_execution_authority": false,
+    "hidden_networking": false,
+    "hidden_persistence": false,
+    "background_execution": false,
+    "new_governance_authority": false,
+    "explicit_confirmation_preserved": true,
+    "fail_closed_validation_preserved": true
+  },
+  "mutation_boundaries": {
+    "runtime_authority_expansion": false,
+    "browser_permission_expansion_beyond_sidepanel": false,
+    "localhost_boundary_changed": false,
+    "automatic_ingestion": false,
+    "conversation_scraping": false
+  },
+  "replay_guarantees": {
+    "operator_visible_json_output": true,
+    "active_session_append_only_lifecycle_log": true,
+    "replay_identity_visibility_preserved": true,
+    "deterministic_rendering": true
+  },
+  "observability_guarantees": {
+    "long_response_visibility": true,
+    "governed_execution_inspection_visibility": true,
+    "inspection_read_only": true
+  },
+  "test_evidence": {
+    "pytest_command": "python -m pytest tests/test_browser_companion_sidepanel.py tests/test_governed_browser_companion_runtime.py tests/test_governed_chatgpt_interpretation_bridge_v2.py tests/test_governed_intent_transfer_ingestion.py",
+    "diff_check_command": "git diff --check"
+  }
+}

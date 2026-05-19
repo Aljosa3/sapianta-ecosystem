@@ -1,0 +1,12 @@
+{
+  "milestone": "AGOL_BRIDGE_RUNTIME_FOUNDATION_V1",
+  "certification": "OBSERVABILITY_GUARANTEE_CERTIFIED",
+  "browser_sidepanel_observability": true,
+  "localhost_only_interaction": true,
+  "explicit_confirmation_preserved": true,
+  "long_response_visibility": true,
+  "active_session_lifecycle_visibility": true,
+  "observability_triggers_execution": false,
+  "hidden_networking": false,
+  "hidden_persistence": false
+}
