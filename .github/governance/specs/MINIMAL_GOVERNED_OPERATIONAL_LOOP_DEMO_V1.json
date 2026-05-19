@@ -1,0 +1,136 @@
+{
+  "spec_id": "MINIMAL_GOVERNED_OPERATIONAL_LOOP_DEMO_V1",
+  "status": "DRAFT_DEMONSTRATION_SPECIFICATION",
+  "demo_layer_statement": "This is a demonstration layer, not production orchestration, autonomous execution, approval automation, provider routing, semantic autonomy, an agent runtime, a provider mesh, or automatic continuation.",
+  "references": [
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_ENVELOPE_VALIDATOR_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_VALIDATOR_COMPOSITION_V1.md",
+    ".github/governance/finalize/FINALIZE_PURE_FUNCTION_CONTINUITY_REPORT_SYNTHESIS_V1.md",
+    ".github/governance/specs/REPLAY_AND_LIFECYCLE_VISUALIZATION_SPEC_V1.md",
+    ".github/governance/finalize/FINALIZE_BOUNDED_REPLAY_COCKPIT_IMPLEMENTATION_V1.md"
+  ],
+  "operational_flow": [
+    "Human Request",
+    "Envelope Validation",
+    "Validator Composition",
+    "Continuity Report Synthesis",
+    "Replay / Lifecycle Visibility",
+    "Sidepanel Observability"
+  ],
+  "artifact_flow": [
+    "human request reference enters the envelope as explicit context",
+    "envelope validation returns an in-memory validation report",
+    "validator composition consumes explicit validator declarations and returns an aggregate validation report",
+    "continuity report synthesis consumes explicit reports, replay references, lifecycle references, semantic boundaries, authority boundaries, lineage references, findings, and risks",
+    "continuity report is rendered or inspected as read-only observability evidence"
+  ],
+  "continuity_artifact_visibility": [
+    "envelope validation status",
+    "validator composition aggregate status",
+    "continuity report status",
+    "continuity findings",
+    "continuity risks",
+    "continuity recommendations",
+    "lineage summary",
+    "deterministic report identity"
+  ],
+  "replay_lifecycle_visibility": {
+    "replay_visibility": [
+      "replay reference count",
+      "replay gaps",
+      "append-only visibility labels",
+      "non-mutation labels"
+    ],
+    "lifecycle_visibility": [
+      "lifecycle reference count",
+      "lifecycle gaps",
+      "append-only visibility labels",
+      "non-mutation labels"
+    ],
+    "mutates_replay": false,
+    "mutates_lifecycle": false,
+    "creates_lifecycle_transitions": false
+  },
+  "sidepanel_observability_role": {
+    "role": "read-only observability",
+    "may_display": [
+      "envelope validation report",
+      "validator composition report",
+      "continuity report",
+      "replay visibility summary",
+      "lifecycle visibility summary",
+      "authority boundary summary",
+      "semantic boundary summary",
+      "deterministic identity labels"
+    ],
+    "must_not": [
+      "approve",
+      "dispatch",
+      "execute",
+      "mutate runtime state",
+      "mutate replay",
+      "mutate lifecycle",
+      "scrape browser content",
+      "create hidden persistence",
+      "continue automatically"
+    ]
+  },
+  "authority_boundaries": {
+    "human_request": "supplies intent context but does not silently authorize execution",
+    "chatgpt_llms": "semantic cognition context only",
+    "aigol_agol": "validates, composes, and synthesizes report-only continuity evidence",
+    "codex_providers": "not called by this demo",
+    "sidepanel": "read-only observability",
+    "valid_statuses_are_authority": false
+  },
+  "explicit_non_goals": [
+    "autonomous runtime",
+    "orchestration system",
+    "agent runtime",
+    "provider mesh",
+    "automatic continuation",
+    "dispatch authority",
+    "approval authority",
+    "execution authority",
+    "lifecycle mutation",
+    "replay mutation",
+    "provider calls",
+    "hidden persistence",
+    "semantic autonomy"
+  ],
+  "bounded_demo_guarantees": {
+    "read_only_observability_only": true,
+    "deterministic_primitive_use": true,
+    "explicit_artifact_flow": true,
+    "dispatch_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "lifecycle_mutation": false,
+    "replay_mutation": false,
+    "provider_calls": false,
+    "orchestration_behavior": false,
+    "autonomous_continuation": false,
+    "hidden_persistence": false,
+    "semantic_authority_creation": false
+  },
+  "operational_proving_goals": [
+    "implemented primitives can form a bounded continuity chain",
+    "envelope validation output can feed validator composition",
+    "validator composition output can feed continuity synthesis",
+    "replay and lifecycle visibility can be summarized without mutation",
+    "sidepanel observability can present continuity state without authority",
+    "deterministic governance evidence can support operator review",
+    "continuity validity remains separate from approval or execution"
+  ],
+  "bounded_acceptance_criteria": [
+    "deterministic flow from explicit human request context to continuity report",
+    "no provider calls",
+    "no dispatch or approval actions",
+    "no replay or lifecycle mutation",
+    "continuity report identity is stable for the same inputs",
+    "replay and lifecycle summaries remain visible",
+    "sidepanel labels preserve observability-only semantics",
+    "non-goals remain explicit"
+  ],
+  "recommended_next_step": "Prepare MINIMAL_GOVERNED_OPERATIONAL_LOOP_DEMO_IMPLEMENTATION_REVIEW_V1 before runnable demo code, verifying read-only, deterministic, explicit-input-only, observability-only behavior with no runtime authority, provider calls, orchestration, or hidden persistence."
+}
