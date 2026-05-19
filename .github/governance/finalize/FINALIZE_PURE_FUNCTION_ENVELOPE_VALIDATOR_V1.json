@@ -1,0 +1,86 @@
+{
+  "milestone": "PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "finalize_artifact": "FINALIZE_PURE_FUNCTION_ENVELOPE_VALIDATOR_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    ".github/governance/specs/READ_ONLY_ENVELOPE_VALIDATOR_PLAN_V1.md",
+    ".github/governance/review/READ_ONLY_ENVELOPE_VALIDATOR_IMPLEMENTATION_REVIEW_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_PACKAGE_MAPPING_V1.md",
+    ".github/governance/specs/OPERATIONAL_LOOP_CONTRACT_V1.md",
+    "agol_bridge/continuity/envelope_validator.py",
+    "agol_bridge/tests/test_pure_function_envelope_validator.py"
+  ],
+  "certified_components": [
+    "pure in-memory envelope validation",
+    "explicit artifact_map input",
+    "deterministic canonical JSON hashing",
+    "canonical envelope hashing excluding envelope_hash",
+    "deterministic validation reports",
+    "required envelope field validation",
+    "task package reference validation",
+    "result package reference validation",
+    "replay reference validation",
+    "lifecycle reference validation",
+    "authority boundary validation",
+    "semantic replay limitation validation",
+    "next-step approval-confusion validation",
+    "provider boundary validation"
+  ],
+  "validation_statuses": [
+    "VALID",
+    "INVALID_SCHEMA",
+    "MISSING_REFERENCE",
+    "HASH_MISMATCH",
+    "AUTHORITY_BOUNDARY_VIOLATION",
+    "REPLAY_REFERENCE_INVALID",
+    "LIFECYCLE_REFERENCE_INVALID",
+    "SEMANTIC_REPLAY_OVERCLAIM",
+    "NEXT_STEP_APPROVAL_CONFUSION",
+    "PROVIDER_BOUNDARY_VIOLATION"
+  ],
+  "deterministic_guarantees": {
+    "same_input_same_output": true,
+    "canonical_json_sorted_keys": true,
+    "canonical_json_compact_separators": true,
+    "envelope_hash_excludes_envelope_hash_field": true,
+    "deterministic_status_precedence": true,
+    "deterministic_report_identifier": true
+  },
+  "no_io_guarantee": {
+    "filesystem_reads": false,
+    "filesystem_writes": false,
+    "automatic_artifact_discovery": false,
+    "network_calls": false,
+    "subprocess_calls": false,
+    "provider_calls": false,
+    "timers": false,
+    "background_threads": false,
+    "hidden_persistence": false
+  },
+  "no_authority_guarantee": {
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "semantic_autonomy": false,
+    "sidepanel_mutation": false,
+    "runtime_mutation": false
+  },
+  "no_mutation_guarantee": {
+    "input_envelope_mutation": false,
+    "artifact_map_mutation": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false
+  },
+  "test_evidence": {
+    "focused_pytest_command": "python -B -m pytest agol_bridge/tests/test_pure_function_envelope_validator.py",
+    "bridge_pytest_command": "python -B -m pytest agol_bridge/tests",
+    "diff_check_command": "git diff --check"
+  },
+  "risks_remaining": [
+    "The validator only validates explicitly supplied in-memory artifacts.",
+    "The validator does not load, discover, or persist artifacts by design.",
+    "Future filesystem loaders or sidepanel integrations must remain separately governed."
+  ],
+  "constitutional_statement": "The pure-function envelope validator verifies semantic continuity references without creating IO, mutation, execution authority, orchestration, or semantic autonomy."
+}
