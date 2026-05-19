@@ -1,0 +1,83 @@
+{
+  "review_id": "READ_ONLY_ENVELOPE_VALIDATOR_IMPLEMENTATION_REVIEW_V1",
+  "review_decision": "VALIDATOR_IMPLEMENTATION_SAFE",
+  "implementation_model": {
+    "type": "pure_function_validator",
+    "description": "Accepts an envelope object and explicit read-only artifact map, then returns an in-memory validation report.",
+    "runtime_code_in_this_review": false,
+    "filesystem_discovery": false,
+    "side_effects": false
+  },
+  "allowed_inputs": [
+    "envelope object",
+    "explicit read-only artifact map"
+  ],
+  "allowed_outputs": [
+    "in-memory validation report"
+  ],
+  "forbidden_behaviors": [
+    "implicit filesystem reads",
+    "automatic artifact discovery",
+    "report writes to disk",
+    "envelope mutation",
+    "task package mutation",
+    "result package mutation",
+    "replay record mutation",
+    "lifecycle state mutation",
+    "provider calls",
+    "execution trigger",
+    "approval trigger",
+    "sidepanel state update",
+    "hidden persistence",
+    "API endpoint creation",
+    "orchestration behavior",
+    "semantic autonomy behavior"
+  ],
+  "validation_checks": [
+    "required envelope fields",
+    "deterministic envelope hash",
+    "referenced task package metadata",
+    "referenced result package metadata",
+    "replay references",
+    "lifecycle references",
+    "authority boundary statement",
+    "semantic replay limitation statement",
+    "next-step synthesis is not approval",
+    "provider boundary consistency"
+  ],
+  "determinism_requirements": {
+    "same_inputs_same_report": true,
+    "canonical_json_hashing": true,
+    "no_current_time_dependency": true,
+    "no_environment_dependency": true,
+    "no_network_dependency": true,
+    "no_filesystem_discovery_dependency": true,
+    "no_randomness": true,
+    "deterministic_report_ordering": true
+  },
+  "read_only_guarantees": {
+    "input_mutation": false,
+    "filesystem_writes": false,
+    "implicit_reads": false,
+    "provider_calls": false,
+    "lifecycle_transitions": false,
+    "replay_mutation": false,
+    "sidepanel_updates": false,
+    "runtime_mutation": false
+  },
+  "authority_boundary_guarantees": {
+    "validation_success_is_approval": false,
+    "validation_success_is_dispatch": false,
+    "validation_success_is_execution": false,
+    "boundary_violation_repair": false,
+    "provider_boundary_issue_calls_provider": false,
+    "approval_confusion_triggers_approval": false
+  },
+  "risks": [
+    "Future implementation could accidentally add filesystem reads for convenience.",
+    "Future implementation could write validation reports as a side effect.",
+    "Hash calculation could become non-deterministic if timestamps or environment values are included.",
+    "A future caller could mistake validation success for approval unless report labels remain clear."
+  ],
+  "recommended_next_step": "Implement the validator as a small pure function module with tests proving no input mutation, no filesystem/network/provider/sidepanel/runtime calls, deterministic reports, deterministic failure statuses, and no approval/dispatch/execution authority."
+}
