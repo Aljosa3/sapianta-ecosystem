@@ -1,4 +1,6 @@
 const lifecycleEntries = [];
+const replaySessionEntries = [];
+const REPLAY_SESSION_ID = "PERSISTENT_REPLAY_SESSION_V1";
 
 const COCKPIT_IDS = {
   replayTimeline: "replay-timeline",
@@ -19,7 +21,9 @@ const COCKPIT_IDS = {
   lifecycleSummaryArtifact: "inspection-lifecycle-summary-artifact",
   lineageSummaryArtifact: "inspection-lineage-summary-artifact",
   authorityBoundaryArtifact: "inspection-authority-boundary-artifact",
-  semanticBoundaryArtifact: "inspection-semantic-boundary-artifact"
+  semanticBoundaryArtifact: "inspection-semantic-boundary-artifact",
+  currentReplaySession: "current-replay-session",
+  replayEntryInspection: "replay-entry-inspection"
 };
 
 function deterministicId(prefix, value) {
@@ -254,6 +258,63 @@ function semanticBoundaryArtifact(entry) {
   };
 }
 
+function replaySessionEntry(summary, index) {
+  const entry = canonicalize(summary);
+  const report = continuityReport(entry);
+  const lineage = lineageSummaryArtifact(entry);
+  return canonicalize({
+    replay_entry_id: deterministicId("REPLAY-ENTRY", {
+      sequence: index + 1,
+      continuity_report_id: report.continuity_report_id || "unknown",
+      lineage_id: lineage.lineage_id
+    }),
+    sequence: index + 1,
+    status: statusValue(entry),
+    continuity_report: report,
+    replay_summary: replaySummaryArtifact(entry),
+    lifecycle_summary: lifecycleSummaryArtifact(entry),
+    lineage_summary: lineage,
+    authority_boundary_summary: authorityBoundaryArtifact(entry),
+    semantic_boundary_summary: semanticBoundaryArtifact(entry)
+  });
+}
+
+function replaySessionSummary() {
+  return artifactJson({
+    replay_session_id: REPLAY_SESSION_ID,
+    persistence_scope: "bounded in-memory session visibility",
+    durable_storage: false,
+    entry_count: replaySessionEntries.length,
+    serialization: "canonical JSON through canonicalize",
+    append_only: true,
+    rewrite: false,
+    repair: false,
+    explicit_load_required: true,
+    authority: "replay visibility creates no provider call, dispatch, approval, execution, or continuation"
+  });
+}
+
+function loadedReplayInspection() {
+  return artifactJson({
+    replay_session_id: REPLAY_SESSION_ID,
+    label: "Loaded Replay Entry Inspection - read-only",
+    entries: replaySessionEntries,
+    mutation: false,
+    rewrite: false,
+    repair: false,
+    durable_storage: false
+  });
+}
+
+function renderReplaySessionVisibility() {
+  setCockpitText(COCKPIT_IDS.currentReplaySession, replaySessionSummary());
+}
+
+function loadReplaySession() {
+  renderReplaySessionVisibility();
+  setCockpitText(COCKPIT_IDS.replayEntryInspection, loadedReplayInspection());
+}
+
 function demoReplayReferences() {
   return [
     { replay_id: "DEMO-REPLAY-ENVELOPE", reference_status: "REFERENCED_NOT_MUTATED" },
@@ -378,10 +439,13 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.lineageSummaryArtifact, artifactJson(lineageSummaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.authorityBoundaryArtifact, artifactJson(authorityBoundaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.semanticBoundaryArtifact, artifactJson(semanticBoundaryArtifact(latest)));
+  renderReplaySessionVisibility();
 }
 
 window.sidepanelRenderResult = function renderLifecycleResult(summary) {
+  const canonicalSummary = canonicalize(summary);
   lifecycleEntries.push(canonicalize(summary));
+  replaySessionEntries.push(replaySessionEntry(canonicalSummary, replaySessionEntries.length));
 
   const result = document.getElementById("result");
   const entry = document.createElement("article");
@@ -402,4 +466,9 @@ window.sidepanelRenderResult = function renderLifecycleResult(summary) {
 const governedDemoButton = document.getElementById("run-governed-demo");
 if (governedDemoButton) {
   governedDemoButton.onclick = runGovernedDemoFromSidepanel;
+}
+
+const loadReplayButton = document.getElementById("load-replay-session");
+if (loadReplayButton) {
+  loadReplayButton.onclick = loadReplaySession;
 }

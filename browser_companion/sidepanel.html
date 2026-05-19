@@ -74,7 +74,8 @@
         white-space: pre-wrap;
       }
 
-      .inspection-panel summary {
+      .inspection-panel summary,
+      .replay-session-panel summary {
         cursor: pointer;
         font-size: 12px;
         font-weight: 700;
@@ -224,6 +225,17 @@ Codex / workers: execution through governed transport only</pre>
             <p class="cockpit-label">Report-only continuity findings, risks, and recommendations. No autonomous continuation.</p>
             <pre id="continuity-findings" class="cockpit-output">No findings, risks, or recommendations rendered.</pre>
           </article>
+          <article class="cockpit-panel" aria-labelledby="replay-sessions-heading">
+            <h3 id="replay-sessions-heading">Replay Sessions</h3>
+            <p class="cockpit-label">Bounded in-memory append-only replay visibility. Explicit loading only; no durable storage, rewrite, repair, dispatch, or execution.</p>
+            <button id="load-replay-session" type="button">Load Replay</button>
+            <pre id="current-replay-session" class="cockpit-output">No replay session loaded.</pre>
+          </article>
+          <details class="cockpit-panel replay-session-panel">
+            <summary>Replay Entry Inspection</summary>
+            <p class="cockpit-label">Loaded replay entries render read-only continuity artifacts from the current in-memory session.</p>
+            <pre id="replay-entry-inspection" class="cockpit-output">No loaded replay entries rendered.</pre>
+          </details>
           <details class="cockpit-panel inspection-panel">
             <summary>Envelope Validation Artifact</summary>
             <p class="cockpit-label">Read-only artifact JSON. Validation status creates no approval authority.</p>
