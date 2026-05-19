@@ -7,6 +7,12 @@
     "default_title": "SAPIANTA Companion",
     "default_popup": "popup.html"
   },
+  "permissions": [
+    "sidePanel"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
   "host_permissions": [
     "http://127.0.0.1:8110/*"
   ]

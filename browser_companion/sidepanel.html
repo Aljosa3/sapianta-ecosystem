@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SAPIANTA Companion Side Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      body.sidepanel {
+        background: #f5f7fa;
+        min-width: 320px;
+        width: auto;
+      }
+
+      .sidepanel main {
+        grid-template-rows: auto auto auto auto 1fr;
+        min-height: 100vh;
+      }
+
+      .control-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .control-grid button {
+        min-height: 40px;
+      }
+
+      .lifecycle-shell {
+        display: grid;
+        gap: 8px;
+        min-height: 0;
+      }
+
+      .lifecycle-shell h2 {
+        font-size: 14px;
+        margin: 0;
+      }
+
+      #result {
+        background: #fff;
+        display: grid;
+        gap: 8px;
+        max-height: calc(100vh - 360px);
+        min-height: 220px;
+        overflow: auto;
+        padding: 10px;
+      }
+
+      .lifecycle-entry {
+        border: 1px solid #d4dbe3;
+        border-radius: 4px;
+        display: grid;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .lifecycle-entry.returned {
+        border-color: #2e7d32;
+      }
+
+      .lifecycle-entry.blocked {
+        border-color: #b3261e;
+      }
+
+      .lifecycle-entry h3 {
+        font-size: 12px;
+        margin: 0;
+      }
+
+      .lifecycle-entry pre {
+        margin: 0;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 420px) {
+        .control-grid {
+          grid-template-columns: 1fr;
+        }
+
+        #result {
+          max-height: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="sidepanel">
+    <main>
+      <h1>SAPIANTA</h1>
+      <label for="mode">Mode</label>
+      <select id="mode" name="mode">
+        <option value="artifact">Artifact</option>
+        <option value="intent">Natural Language Intent</option>
+        <option value="codex">Governed Codex Task</option>
+        <option value="conversation">Conversational governance request</option>
+      </select>
+      <label for="artifact">Artifact, intent, governed Codex task, or conversational request</label>
+      <input id="artifact" name="artifact" autocomplete="off" placeholder="TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1">
+      <section class="control-grid" aria-label="Governed runtime controls">
+        <button id="preview" type="button">Preview intent</button>
+        <button id="confirm" type="button">Confirm preview</button>
+        <button id="transfer-export" type="button">Export governed intent transfer package</button>
+        <button id="transfer-ingest" type="button">Ingest governed transfer package</button>
+        <button id="export" type="button">Export governed handoff package</button>
+        <button id="authorize" type="button">Request execution authorization</button>
+        <button id="consume" type="button">Run mock governed execution</button>
+        <button id="codex-execute" type="button">Run governed Codex execution</button>
+        <button id="observe" type="button">Inspect governed execution</button>
+        <button id="invoke" type="button">Invoke governed runtime</button>
+      </section>
+      <section class="lifecycle-shell" aria-label="Operational lifecycle output">
+        <h2>Operational lifecycle</h2>
+        <section id="result" aria-live="polite"></section>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

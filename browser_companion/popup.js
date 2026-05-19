@@ -115,9 +115,23 @@ function summarizeRuntimeResponse(response) {
 }
 
 function renderResult(summary) {
+  if (typeof window.sidepanelRenderResult === "function") {
+    window.sidepanelRenderResult(summary);
+    return;
+  }
   const result = document.getElementById("result");
   result.className = summary.status === "RETURNED" ? "returned" : "blocked";
   result.textContent = JSON.stringify(summary, null, 2);
+}
+
+function openPersistentSidePanel() {
+  chrome.windows.getCurrent((window) => {
+    if (chrome.runtime.lastError || !window || typeof window.id !== "number") {
+      renderResult({ status: "BLOCKED", error: "Persistent side panel could not be opened." });
+      return;
+    }
+    chrome.sidePanel.open({ windowId: window.id });
+  });
 }
 
 function validateInterpretation(response) {
@@ -652,6 +666,10 @@ async function invokeGovernedRuntime() {
   }
 }
 
+const openSidepanelButton = document.getElementById("open-sidepanel");
+if (openSidepanelButton) {
+  openSidepanelButton.addEventListener("click", openPersistentSidePanel);
+}
 document.getElementById("preview").addEventListener("click", previewIntent);
 document.getElementById("confirm").addEventListener("click", confirmIntentPreview);
 document.getElementById("transfer-export").addEventListener("click", exportGovernedIntentTransferPackage);

@@ -1,0 +1,9 @@
+{
+  "milestone": "BROWSER_COMPANION_SIDEPANEL_V1",
+  "certification_status": "PASS",
+  "ux_layer_only": true,
+  "persistent_panel_surface": true,
+  "governed_runtime_path_preserved": true,
+  "runtime_authority_added": false,
+  "explicit_user_action_required": true
+}

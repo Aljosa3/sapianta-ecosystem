@@ -17,7 +17,7 @@ def _popup_js():
 
 def test_manifest_uses_minimal_localhost_only_permissions():
     manifest = _manifest()
-    assert "permissions" not in manifest
+    assert manifest["permissions"] == ["sidePanel"]
     assert manifest["host_permissions"] == ["http://127.0.0.1:8110/*"]
     assert "<all_urls>" not in json.dumps(manifest)
 

@@ -1,3 +1,6 @@
+import http.client
+import json
+import threading
 from copy import deepcopy
 from pathlib import Path
 
@@ -7,6 +10,7 @@ from sapianta_system.runtime.intent_transfer_ingestion import (
     create_intent_transfer_ingestion_request,
     ingest_governed_intent_transfer,
 )
+from sapianta_system.runtime.preview.governed_local_preview_runtime import create_local_preview_server
 from sapianta_system.runtime.preview.governed_preview_runtime_validator import validate_preview_binding
 
 
@@ -112,6 +116,36 @@ def test_browser_companion_integration_and_localhost_only_endpoint():
     assert BOUNDARY_STATEMENT in source
     assert validate_preview_binding(host="127.0.0.1")["valid"] is True
     assert validate_preview_binding(host="0.0.0.0")["valid"] is False
+
+
+def test_local_runtime_ingestion_route_returns_preview_ready_response():
+    package = _package()
+    server = create_local_preview_server(host="127.0.0.1", port=0)
+    thread = threading.Thread(target=server.handle_request)
+    thread.start()
+    conn = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
+    body = json.dumps(
+        {
+            "transfer_package": package,
+            "replay_identity": package["replay_identity"],
+            "transfer_identity": package["transfer_identity"],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    conn.request(
+        "POST",
+        "/governed-intent-transfer-ingest",
+        body=body,
+        headers={"Content-Type": "application/json"},
+    )
+    response = conn.getresponse()
+    payload = json.loads(response.read().decode("utf-8"))
+    conn.close()
+    thread.join(timeout=5)
+    server.server_close()
+    assert response.status == 200
+    assert payload["ingestion_status"] == "INGESTED_PREVIEW_READY"
 
 
 def test_fail_closed_malformed_package_and_no_execution_path():

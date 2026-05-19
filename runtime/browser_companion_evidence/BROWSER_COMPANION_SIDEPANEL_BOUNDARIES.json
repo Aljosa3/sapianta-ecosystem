@@ -1,0 +1,14 @@
+{
+  "milestone": "BROWSER_COMPANION_SIDEPANEL_V1",
+  "host_permissions": [
+    "http://127.0.0.1:8110/*"
+  ],
+  "localhost_only": true,
+  "automatic_dispatch": false,
+  "background_execution": false,
+  "hidden_continuation": false,
+  "hidden_persistence": false,
+  "page_scraping": false,
+  "chatgpt_authority": false,
+  "runtime_mutation_authority": false
+}

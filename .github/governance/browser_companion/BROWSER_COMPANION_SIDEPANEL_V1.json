@@ -1,0 +1,14 @@
+{
+  "milestone": "BROWSER_COMPANION_SIDEPANEL_V1",
+  "surface": "persistent_chrome_side_panel",
+  "reuses_existing_governed_controls": true,
+  "localhost_only_runtime_interaction": true,
+  "explicit_confirmation_preserved": true,
+  "automatic_dispatch": false,
+  "background_execution": false,
+  "hidden_persistence": false,
+  "hidden_networking": false,
+  "runtime_authority_added": false,
+  "scrollable_lifecycle_output": true,
+  "session_response_continuity": "in_memory_while_panel_open"
+}

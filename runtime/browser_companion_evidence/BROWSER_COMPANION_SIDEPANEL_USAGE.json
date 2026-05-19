@@ -1,0 +1,14 @@
+{
+  "milestone": "BROWSER_COMPANION_SIDEPANEL_V1",
+  "extension_path": "browser_companion/",
+  "side_panel_entry": "manifest.side_panel.default_path",
+  "panel_path": "browser_companion/sidepanel.html",
+  "runtime_start": "create_local_preview_server(host=\"127.0.0.1\", port=8110)",
+  "operator_flow": [
+    "open Browser Companion side panel",
+    "enter artifact, intent, governed Codex task, or conversational request",
+    "use explicit governed control buttons",
+    "inspect lifecycle output in the persistent panel"
+  ],
+  "session_response_continuity": "in_memory_while_panel_open"
+}

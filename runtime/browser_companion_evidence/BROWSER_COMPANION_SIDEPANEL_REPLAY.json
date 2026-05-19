@@ -1,0 +1,9 @@
+{
+  "milestone": "BROWSER_COMPANION_SIDEPANEL_V1",
+  "existing_request_builder_reused": true,
+  "canonical_json_rendering": true,
+  "replay_identity_continuity_preserved": true,
+  "observability_display_read_only": true,
+  "lifecycle_output_append_only_in_session": true,
+  "hidden_persistence": false
+}
