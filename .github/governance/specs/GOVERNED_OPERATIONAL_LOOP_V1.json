@@ -1,0 +1,88 @@
+{
+  "spec_id": "GOVERNED_OPERATIONAL_LOOP_V1",
+  "status": "DRAFT_SPECIFICATION",
+  "operational_stages": [
+    "human request",
+    "semantic reasoning",
+    "governed task synthesis",
+    "admissibility and governance checks",
+    "execution dispatch",
+    "governed result package",
+    "replay and lifecycle update",
+    "semantic interpretation",
+    "next-step proposal"
+  ],
+  "constitutional_layers": {
+    "human": "initiates request, reviews direction, approves when required, retains final continuation authority",
+    "ChatGPT / LLMs": "semantic cognition and non-authoritative interpretation",
+    "AiGOL / AGOL": "semantic direction governance, task packaging, replay, lifecycle, approval gates, mutation boundaries, quarantine, and transport",
+    "execution providers": "bounded execution through governed transport only",
+    "observability": "read-only replay, lifecycle, approval, boundary, result, and semantic direction visibility"
+  },
+  "governance_guarantees": {
+    "constitutional_separation_of_concerns": true,
+    "replay_safe_governance": true,
+    "approval_boundaries": true,
+    "explicit_authority_separation": true,
+    "append_only_lineage_semantics": true,
+    "bounded_execution_semantics": true,
+    "semantic_cognition_model_native": true,
+    "governance_system_native": true
+  },
+  "replay_guarantees": {
+    "append_only_replay_updates": true,
+    "deterministic_package_hashes": true,
+    "lineage_references_across_task_and_result_packages": true,
+    "replay_records_rewritten": false,
+    "sidepanel_continuity_requires_replay_artifact_for_durability": true
+  },
+  "lifecycle_guarantees": {
+    "bounded_state_transitions": true,
+    "transition_visibility": true,
+    "dispatch_requires_admissibility": true,
+    "dispatch_requires_approval_when_required": true,
+    "post_dispatch_task_mutation": false,
+    "failure_semantics": "fail-closed"
+  },
+  "provider_boundaries": {
+    "first_provider": "Codex",
+    "providers_govern_themselves": false,
+    "providers_approve_tasks": false,
+    "providers_mutate_replay_history": false,
+    "providers_bypass_lifecycle": false,
+    "provider_output_shape": "governed result package"
+  },
+  "authority_boundaries": {
+    "ChatGPT_execution_authority": false,
+    "provider_governance_authority": false,
+    "observability_execution_authority": false,
+    "automatic_approval": false,
+    "hidden_dispatch": false,
+    "approval_bypass": false
+  },
+  "operational_risks": [
+    "semantic interpretation may be mistaken for execution authority",
+    "dispatch may be mistaken for unrestricted orchestration",
+    "sidepanel continuity may be mistaken for durable replay",
+    "future providers may blur execution and governance authority",
+    "next-step proposals may be mistaken for approved continuation"
+  ],
+  "recommended_implementation_sequence": [
+    "Define governed operational loop task and result package interfaces.",
+    "Bind loop state to existing AGOL Bridge lifecycle and replay artifacts.",
+    "Add read-only sidepanel visibility for loop stage and authority state.",
+    "Add explicit human approval checkpoints before dispatch.",
+    "Add provider adapter boundary tests for Codex without adding orchestration.",
+    "Add fail-closed tests for malformed packages, missing approval, and invalid transitions."
+  ],
+  "boundedness_guarantees": {
+    "no_runtime_implementation_in_this_spec": true,
+    "no_orchestration_runtime": true,
+    "no_automatic_execution": true,
+    "no_authority_expansion": true,
+    "no_hidden_persistence": true,
+    "no_semantic_autonomy_layer": true,
+    "no_replay_rewriting": true,
+    "no_silent_mutation": true
+  }
+}

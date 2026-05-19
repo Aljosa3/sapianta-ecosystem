@@ -1,0 +1,78 @@
+{
+  "plan_id": "GOVERNED_OPERATIONAL_LOOP_IMPLEMENTATION_PLAN_V1",
+  "status": "PLAN_ONLY",
+  "operational_stages": [
+    "human request",
+    "semantic reasoning",
+    "governed task synthesis",
+    "admissibility and governance checks",
+    "execution dispatch",
+    "governed result package",
+    "replay and lifecycle update",
+    "semantic interpretation",
+    "next-step proposal"
+  ],
+  "constitutional_layers": {
+    "ChatGPT / LLMs": "semantic cognition only",
+    "AiGOL / AGOL": "governance, replay, lifecycle, transport, admissibility",
+    "Codex / providers": "execution only through governed transport",
+    "sidepanel": "read-only observability"
+  },
+  "governance_guarantees": {
+    "explicit_approval_boundaries": true,
+    "authority_separation": true,
+    "provider_isolation": true,
+    "fail_closed_semantics": true,
+    "no_hidden_execution": true,
+    "no_automatic_dispatch": true
+  },
+  "replay_guarantees": {
+    "append_only_updates": true,
+    "no_replay_rewriting": true,
+    "lineage_references_required": true,
+    "task_and_result_replay_binding": true
+  },
+  "lifecycle_guarantees": {
+    "bounded_transitions": true,
+    "approval_before_dispatch": true,
+    "quarantine_for_invalid_state": true,
+    "visible_failure_state": true
+  },
+  "provider_boundaries": {
+    "first_provider": "Codex",
+    "future_provider_model": "isolated providers behind governed transport",
+    "provider_governance_authority": false,
+    "provider_replay_mutation_authority": false,
+    "provider_lifecycle_bypass": false
+  },
+  "authority_boundaries": {
+    "automatic_approval": false,
+    "hidden_dispatch": false,
+    "hidden_execution": false,
+    "semantic_autonomy_escalation": false,
+    "sidepanel_authority": false
+  },
+  "operational_risks": [
+    "next-step proposal may be mistaken for approved continuation",
+    "semantic interpretation may be mistaken for governance decision",
+    "provider dispatch may be mistaken for orchestration mesh",
+    "sidepanel loop visibility may be mistaken for runtime authority"
+  ],
+  "recommended_implementation_sequence": [
+    "Create loop contract artifact mapping stages to package fields and observability labels.",
+    "Map task and result package semantics to existing AGOL Bridge schemas.",
+    "Make approval checkpoints explicit before dispatch.",
+    "Bind Codex as the first provider through governed transport only.",
+    "Ensure replay and lifecycle updates are append-only and bounded.",
+    "Expose loop state in sidepanel as read-only observability.",
+    "Add fail-closed and no-authority-expansion tests."
+  ],
+  "boundedness_guarantees": {
+    "no_runtime_implementation_in_this_plan": true,
+    "no_orchestration_runtime": true,
+    "no_automatic_execution": true,
+    "no_authority_expansion": true,
+    "no_hidden_persistence": true,
+    "no_semantic_autonomy_layer": true
+  }
+}
