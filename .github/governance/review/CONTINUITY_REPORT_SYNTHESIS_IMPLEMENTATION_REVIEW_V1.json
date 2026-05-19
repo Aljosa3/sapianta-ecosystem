@@ -1,0 +1,105 @@
+{
+  "review_id": "CONTINUITY_REPORT_SYNTHESIS_IMPLEMENTATION_REVIEW_V1",
+  "review_decision": "SYNTHESIS_IMPLEMENTATION_SAFE",
+  "implementation_model": {
+    "type": "pure_function_continuity_report_synthesis_primitive",
+    "description": "Accepts explicit governance artifacts and returns a deterministic in-memory continuity report.",
+    "runtime_code_in_this_review": false,
+    "filesystem_discovery": false,
+    "side_effects": false,
+    "authority_creation": false
+  },
+  "allowed_inputs": [
+    "envelope validation report",
+    "validator composition report",
+    "replay references",
+    "lifecycle references",
+    "semantic boundary statements",
+    "authority boundary statements",
+    "lineage references",
+    "continuity findings",
+    "continuity risks"
+  ],
+  "allowed_outputs": [
+    "continuity_report_id",
+    "aggregate_governance_status",
+    "replay_visibility_summary",
+    "lifecycle_visibility_summary",
+    "authority_boundary_summary",
+    "semantic_boundary_summary",
+    "determinism_summary",
+    "continuity_findings",
+    "continuity_risks",
+    "continuity_recommendations",
+    "lineage_summary"
+  ],
+  "deterministic_requirements": {
+    "deterministic_report_generation": true,
+    "stable_status_precedence": true,
+    "stable_report_identity_derivation": true,
+    "stable_ordering_of_supplied_findings": true,
+    "stable_ordering_of_supplied_risks": true,
+    "missing_evidence_creates_findings": true,
+    "unknown_statuses_fail_closed": true,
+    "no_time_dependency": true,
+    "no_random_dependency": true,
+    "no_filesystem_dependency": true,
+    "no_environment_dependency": true,
+    "no_network_dependency": true,
+    "no_process_global_mutable_state": true,
+    "no_hidden_persistence": true
+  },
+  "continuity_guarantees": {
+    "explicit_input_semantics": true,
+    "read_only_synthesis": true,
+    "replay_safe_summary": true,
+    "replay_visibility_without_replay_mutation": true,
+    "lifecycle_visibility_without_lifecycle_mutation": true,
+    "lineage_visibility_without_lineage_mutation": true,
+    "semantic_boundary_visibility_without_semantic_authority": true,
+    "fail_closed_unknown_statuses": true
+  },
+  "authority_guarantees": {
+    "validation_success_is_approval": false,
+    "continuity_success_is_dispatch": false,
+    "continuity_success_is_execution": false,
+    "continuity_success_is_lifecycle_transition": false,
+    "continuity_success_is_autonomous_continuation": false,
+    "report_creates_semantic_authority": false,
+    "reports_observe_and_summarize_only": true
+  },
+  "forbidden_behaviors": [
+    "mutate inputs",
+    "mutate replay state",
+    "mutate lifecycle state",
+    "mutate lineage",
+    "dispatch execution",
+    "approve actions",
+    "create lifecycle transitions",
+    "perform IO",
+    "call providers",
+    "create orchestration behavior",
+    "create autonomous continuation",
+    "create hidden persistence",
+    "create semantic authority",
+    "update sidepanel state",
+    "mutate runtime state"
+  ],
+  "failure_semantics": [
+    "CONTINUITY_VALID",
+    "CONTINUITY_INCOMPLETE",
+    "CONTINUITY_BOUNDARY_VIOLATION",
+    "CONTINUITY_REPLAY_GAP",
+    "CONTINUITY_LIFECYCLE_GAP",
+    "CONTINUITY_NON_DETERMINISTIC",
+    "CONTINUITY_AUTHORITY_VIOLATION"
+  ],
+  "risks": [
+    "Future implementation could accidentally load missing artifacts for convenience.",
+    "Future implementation could persist continuity reports as a side effect.",
+    "A caller could mistake CONTINUITY_VALID for approval or continuation authority unless labels remain explicit.",
+    "Status precedence could drift if additional statuses are added without a governed migration.",
+    "Semantic boundary summaries could overclaim deterministic semantic replay if labels are weakened."
+  ],
+  "recommended_next_step": "Implement a small pure-function continuity synthesis primitive with tests proving deterministic output, stable status precedence, fail-closed unknown statuses, input immutability, explicit missing-evidence findings, and absence of filesystem/network/provider/dispatch/approval/execution/lifecycle/replay/sidepanel/orchestration/persistence/semantic-autonomy behavior."
+}
