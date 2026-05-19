@@ -1,0 +1,282 @@
+{
+  "contract_id": "OPERATIONAL_LOOP_CONTRACT_V1",
+  "status": "DRAFT_CONTRACT_SPECIFICATION",
+  "canonical_stages": [
+    "HUMAN_REQUEST",
+    "SEMANTIC_REASONING",
+    "GOVERNED_TASK_SYNTHESIS",
+    "GOVERNANCE_ADMISSIBILITY",
+    "EXECUTION_DISPATCH",
+    "EXECUTION_RESULT",
+    "GOVERNED_RESULT_NORMALIZATION",
+    "REPLAY_UPDATE",
+    "LIFECYCLE_UPDATE",
+    "SEMANTIC_INTERPRETATION",
+    "NEXT_STEP_SYNTHESIS"
+  ],
+  "stage_contracts": {
+    "HUMAN_REQUEST": {
+      "purpose": "capture operator request and intent boundary",
+      "allowed_actor": "human",
+      "allowed_mutations": ["explicit request artifact"],
+      "replay_references": ["request identity", "operator-visible context reference"],
+      "lifecycle_transitions": ["CREATED"],
+      "authority_boundaries": ["human retains continuation authority"],
+      "observability_visibility": "initial request context",
+      "failure_semantics": "absent or malformed request blocks task synthesis"
+    },
+    "SEMANTIC_REASONING": {
+      "purpose": "generate candidate meaning, task framing, and semantic direction",
+      "allowed_actor": "ChatGPT / LLMs",
+      "allowed_mutations": [],
+      "replay_references": ["semantic context reference"],
+      "lifecycle_transitions": [],
+      "authority_boundaries": ["no execution authority", "no approval authority", "no dispatch"],
+      "observability_visibility": "model-native semantic reasoning label",
+      "failure_semantics": "ambiguity requires human clarification or blocked task synthesis"
+    },
+    "GOVERNED_TASK_SYNTHESIS": {
+      "purpose": "convert proposed direction into deterministic governed task package",
+      "allowed_actor": "AiGOL / AGOL governance tooling",
+      "allowed_mutations": ["task package creation before dispatch"],
+      "replay_references": ["task id", "lineage id", "replay hash", "semantic context reference"],
+      "lifecycle_transitions": ["CREATED", "NORMALIZED"],
+      "authority_boundaries": ["does not dispatch", "does not approve execution"],
+      "observability_visibility": "task package summary and constraints",
+      "failure_semantics": "invalid package fails closed or quarantines"
+    },
+    "GOVERNANCE_ADMISSIBILITY": {
+      "purpose": "validate schema, approval requirements, lifecycle, replay continuity, mutation scope, and provider admissibility",
+      "allowed_actor": "AiGOL / AGOL",
+      "allowed_mutations": ["governed lifecycle state", "replay-visible validation result"],
+      "replay_references": ["validation event", "package hash"],
+      "lifecycle_transitions": ["NORMALIZED", "WAITING_FOR_APPROVAL", "APPROVED", "QUARANTINED"],
+      "authority_boundaries": ["may admit or block", "may not execute provider work"],
+      "observability_visibility": "admissibility status and boundary evidence",
+      "failure_semantics": "invalid or unknown state fails closed"
+    },
+    "EXECUTION_DISPATCH": {
+      "purpose": "hand off approved task package to isolated execution provider",
+      "allowed_actor": "AGOL Bridge after approval and admissibility",
+      "allowed_mutations": ["immutable dispatch artifact", "replay event"],
+      "replay_references": ["dispatch event", "task id", "package hash"],
+      "lifecycle_transitions": ["APPROVED -> DISPATCHED"],
+      "authority_boundaries": ["bounded transport only", "not orchestration mesh"],
+      "observability_visibility": "dispatch state",
+      "failure_semantics": "missing approval, invalid package, or duplicate dispatch blocks dispatch"
+    },
+    "EXECUTION_RESULT": {
+      "purpose": "receive provider output from bounded execution",
+      "allowed_actor": "execution provider",
+      "allowed_mutations": ["raw provider output artifact where allowed by transport"],
+      "replay_references": ["provider result reference"],
+      "lifecycle_transitions": ["RETURNED candidate", "FAILED candidate"],
+      "authority_boundaries": ["provider does not govern", "provider does not approve", "provider does not mutate replay history"],
+      "observability_visibility": "provider status",
+      "failure_semantics": "provider failure becomes visible failure output"
+    },
+    "GOVERNED_RESULT_NORMALIZATION": {
+      "purpose": "normalize provider output into deterministic governed result package",
+      "allowed_actor": "AiGOL / AGOL governance tooling",
+      "allowed_mutations": ["result package creation", "validation result"],
+      "replay_references": ["result id", "originating task id", "replay hash"],
+      "lifecycle_transitions": ["RETURNED", "FAILED", "QUARANTINED"],
+      "authority_boundaries": ["does not approve continuation"],
+      "observability_visibility": "result package summary",
+      "failure_semantics": "malformed result quarantines or requires human review"
+    },
+    "REPLAY_UPDATE": {
+      "purpose": "append replay event for task, lifecycle, dispatch, result, or failure",
+      "allowed_actor": "AGOL replay layer",
+      "allowed_mutations": ["append-only replay record"],
+      "replay_references": ["event id", "task id", "result id", "package hash"],
+      "lifecycle_transitions": [],
+      "authority_boundaries": ["evidence only", "not execution authority"],
+      "observability_visibility": "replay timeline",
+      "failure_semantics": "replay write failure blocks finalization"
+    },
+    "LIFECYCLE_UPDATE": {
+      "purpose": "record bounded lifecycle state transition",
+      "allowed_actor": "AGOL lifecycle layer",
+      "allowed_mutations": ["lifecycle state record", "append-only evidence"],
+      "replay_references": ["lifecycle event id", "package hash"],
+      "lifecycle_transitions": ["declared transitions only"],
+      "authority_boundaries": ["does not bypass approval or dispatch"],
+      "observability_visibility": "lifecycle state",
+      "failure_semantics": "unknown or forbidden transitions fail closed"
+    },
+    "SEMANTIC_INTERPRETATION": {
+      "purpose": "interpret governed result and propose meaning or explanation",
+      "allowed_actor": "ChatGPT / LLMs",
+      "allowed_mutations": [],
+      "replay_references": ["result context reference"],
+      "lifecycle_transitions": [],
+      "authority_boundaries": ["not approval", "not dispatch", "not execution"],
+      "observability_visibility": "non-authoritative semantic reasoning",
+      "failure_semantics": "ambiguity requires human review"
+    },
+    "NEXT_STEP_SYNTHESIS": {
+      "purpose": "propose follow-up direction for human review",
+      "allowed_actor": "ChatGPT / LLMs with AGOL packaging if continued",
+      "allowed_mutations": ["proposed next-step artifact only"],
+      "replay_references": ["originating result reference", "semantic context reference"],
+      "lifecycle_transitions": [],
+      "authority_boundaries": ["proposal is not approved continuation"],
+      "observability_visibility": "next-step proposal",
+      "failure_semantics": "unsafe or unclear proposal blocks continuation"
+    }
+  },
+  "task_package_contract": {
+    "canonical_fields": [
+      "task_id",
+      "lineage_id",
+      "replay_hash",
+      "semantic_context_reference",
+      "governance_state",
+      "approval_requirement",
+      "execution_provider",
+      "mutation_scope",
+      "replay_visibility",
+      "lifecycle_reference"
+    ],
+    "deterministic_serialization": true,
+    "stable_key_ordering": true,
+    "replay_safe_references": true,
+    "immutable_lineage_after_creation": true,
+    "dispatch_requires_valid_package": true,
+    "dispatch_requires_approval_when_required": true
+  },
+  "result_package_contract": {
+    "canonical_fields": [
+      "result_id",
+      "originating_task_id",
+      "replay_hash",
+      "execution_status",
+      "governance_status",
+      "lifecycle_state",
+      "replay_references",
+      "semantic_interpretation_boundary",
+      "next_step_reference"
+    ],
+    "normalization_semantics": "provider output is converted into deterministic governed result package",
+    "originating_task_lineage_preserved": true,
+    "append_only_replay_references": true,
+    "interpretation_separate_from_authority": true
+  },
+  "replay_contract": {
+    "append_only": true,
+    "visibility": "transport replay visible separately from semantic reasoning",
+    "immutability": "records must not be silently rewritten, deleted, or replaced by aliases",
+    "transport_replay_boundaries": [
+      "package movement",
+      "lifecycle",
+      "dispatch",
+      "result return",
+      "quarantine",
+      "finalization"
+    ],
+    "semantic_replay_limitations": "model reasoning remains non-deterministic and model-native"
+  },
+  "lifecycle_contract": {
+    "canonical_states": [
+      "CREATED",
+      "NORMALIZED",
+      "WAITING_FOR_APPROVAL",
+      "APPROVED",
+      "DISPATCHED",
+      "EXECUTING",
+      "RETURNED",
+      "VALIDATED",
+      "FINALIZED",
+      "QUARANTINED",
+      "FAILED"
+    ],
+    "transition_guarantees": [
+      "dispatch requires approval when required",
+      "dispatched task packages are immutable",
+      "returned results preserve originating task lineage",
+      "failed and quarantined states remain replay-visible"
+    ],
+    "forbidden_transitions": [
+      "unknown state to dispatch",
+      "waiting for approval to dispatch",
+      "finalized to mutation",
+      "quarantined to dispatch",
+      "provider result to approval without governance review"
+    ],
+    "bounded_failure_states": ["QUARANTINED", "FAILED"],
+    "quarantine_semantics": "invalid or unsafe state remains visible and cannot dispatch"
+  },
+  "observability_contract": {
+    "sidepanel_visibility_scope": [
+      "stage",
+      "replay reference",
+      "lifecycle state",
+      "approval state",
+      "governance boundary",
+      "constitutional layer",
+      "semantic direction",
+      "provider boundary",
+      "result package summary",
+      "next-step proposal"
+    ],
+    "read_only_guarantees": {
+      "approve": false,
+      "dispatch": false,
+      "execute": false,
+      "validate": false,
+      "mutate_lifecycle": false,
+      "write_runtime_state": false
+    },
+    "authority_labeling_required": true,
+    "replay_labeling_required": true,
+    "semantic_reasoning_disclaimers_required": true
+  },
+  "provider_contract": {
+    "first_provider": "Codex",
+    "provider_isolation": true,
+    "provider_capability_boundaries": [
+      "execute only dispatched governed task packages",
+      "return provider output for result normalization"
+    ],
+    "provider_governance_limitations": [
+      "does not approve tasks",
+      "does not govern admissibility",
+      "does not mutate replay history",
+      "does not rewrite lifecycle",
+      "does not dispatch follow-up tasks"
+    ],
+    "provider_replay_obligations": [
+      "preserve task identity in returned output",
+      "expose execution status",
+      "expose failure state",
+      "return output suitable for governed normalization"
+    ]
+  },
+  "constitutional_guarantees": {
+    "ChatGPT / LLMs": "semantic cognition only",
+    "AiGOL / AGOL": "governance, replay, lifecycle, admissibility",
+    "Codex / providers": "execution only",
+    "observability_surfaces": "read-only",
+    "authority_boundaries_explicit": true,
+    "execution_bounded": true,
+    "replay_lineage_append_only": true,
+    "deterministic_governance_system_native": true
+  },
+  "boundedness_guarantees": {
+    "no_runtime_changes": true,
+    "no_api_implementation": true,
+    "no_orchestration_runtime": true,
+    "no_automatic_execution": true,
+    "no_hidden_persistence": true,
+    "no_authority_expansion": true
+  },
+  "operational_risks": [
+    "Semantic interpretation may be mistaken for governance decision.",
+    "Next-step synthesis may be mistaken for approved continuation.",
+    "Provider dispatch may be mistaken for orchestration runtime.",
+    "Sidepanel observability may be mistaken for execution authority.",
+    "Transport replay may be mistaken for deterministic semantic replay."
+  ],
+  "recommended_followup": "Create a bounded implementation review that maps this contract onto existing AGOL Bridge package schemas and Browser Companion sidepanel labels before runtime code changes."
+}
