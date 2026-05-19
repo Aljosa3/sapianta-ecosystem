@@ -14,6 +14,16 @@ const COCKPIT_IDS = {
   continuityFindings: "continuity-findings"
 };
 
+function deterministicId(prefix, value) {
+  const text = JSON.stringify(canonicalize(value));
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${prefix}-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
 function lifecycleStatus(summary) {
   if (summary.status === "BLOCKED") {
     return "blocked";
@@ -174,6 +184,106 @@ function continuityFindingsSummary(entry) {
   ].join("\n");
 }
 
+function demoReplayReferences() {
+  return [
+    { replay_id: "DEMO-REPLAY-ENVELOPE", reference_status: "REFERENCED_NOT_MUTATED" },
+    { replay_id: "DEMO-REPLAY-COMPOSITION", reference_status: "REFERENCED_NOT_MUTATED" },
+    { replay_id: "DEMO-REPLAY-CONTINUITY", reference_status: "REFERENCED_NOT_MUTATED" }
+  ];
+}
+
+function demoLifecycleReferences() {
+  return [
+    { previous_state: "CREATED", next_state: "NORMALIZED", reference_status: "VISIBLE_APPEND_ONLY_REFERENCE" },
+    { previous_state: "NORMALIZED", next_state: "RETURNED", reference_status: "VISIBLE_APPEND_ONLY_REFERENCE" }
+  ];
+}
+
+function runMinimalGovernedOperationalLoopDemo(userRequest) {
+  const requestText = String(userRequest || "Show governed continuity without execution");
+  const lineageId = deterministicId("DEMO-LINEAGE", { request: requestText });
+  const continuityReportId = deterministicId("CONTINUITY", { request: requestText, lineage_id: lineageId });
+  const envelopeValidationId = deterministicId("VALIDATION", { request: requestText });
+  const compositionId = deterministicId("COMPOSITION", { request: requestText, validator_order: ["envelope_validation"] });
+
+  const replayRefs = demoReplayReferences();
+  const lifecycleRefs = demoLifecycleReferences();
+  const envelope = {
+    loop_id: "DEMO-LOOP-1",
+    originating_human_request_ref: { request_text: requestText, authority: "context_only" },
+    semantic_interpretation_boundary: {
+      statement: "Semantic direction is context only and remains non-authoritative.",
+      interpretation_status: "NON_AUTHORITATIVE",
+      semantic_replay_determinism: false,
+      semantic_authority: false
+    },
+    replay_refs: replayRefs,
+    lifecycle_refs: lifecycleRefs,
+    lineage_id: lineageId,
+    authority_boundary_statement: "VALID and CONTINUITY_VALID are not approval, dispatch, execution, or continuation authority."
+  };
+  const continuityReport = {
+    continuity_report_id: continuityReportId,
+    aggregate_governance_status: "CONTINUITY_VALID",
+    replay_visibility_summary: { visible: true, reference_count: replayRefs.length, gaps: [], mutated: false },
+    lifecycle_visibility_summary: { visible: true, reference_count: lifecycleRefs.length, gaps: [], mutated: false },
+    authority_boundary_summary: { visible: true, statement_count: 1, violations: [], authority_created: false },
+    semantic_boundary_summary: { visible: true, statement_count: 1, overclaims: [], semantic_authority_created: false },
+    determinism_summary: {
+      deterministic_report_generation: true,
+      stable_status_precedence: true,
+      unknown_statuses_fail_closed: true
+    },
+    continuity_findings: [],
+    continuity_risks: [],
+    continuity_recommendations: ["Continuity evidence is valid for read-only operational review."],
+    lineage_summary: { visible: true, reference_count: 1, mutated: false }
+  };
+
+  return {
+    demo_id: "MINIMAL_GOVERNED_OPERATIONAL_LOOP_RUNTIME_V1",
+    status: "RETURNED",
+    artifacts: { envelope },
+    envelope_validation_report: { validation_id: envelopeValidationId, status: "VALID" },
+    validator_composition_report: {
+      composition_id: compositionId,
+      aggregate_status: "VALID",
+      validator_order: ["envelope_validation"]
+    },
+    continuity_report: continuityReport,
+    sidepanel_rendering: {
+      continuity_findings: [],
+      replay_lifecycle_visibility: {
+        replay: continuityReport.replay_visibility_summary,
+        lifecycle: continuityReport.lifecycle_visibility_summary
+      },
+      authority_boundary_visibility: continuityReport.authority_boundary_summary,
+      semantic_boundary_visibility: continuityReport.semantic_boundary_summary,
+      lineage_summary: continuityReport.lineage_summary,
+      observability_label: "Read-only sidepanel observability; no provider calls, approval, execution, or continuation."
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  };
+}
+
+function runGovernedDemoFromSidepanel() {
+  const request = document.getElementById("governed-demo-request");
+  const artifactInput = document.getElementById("artifact");
+  const value = request && request.value ? request.value : artifactInput.value;
+  window.sidepanelRenderResult(runMinimalGovernedOperationalLoopDemo(value));
+}
+
 function renderReadOnlyCockpit() {
   const latest = lifecycleEntries[lifecycleEntries.length - 1] || {};
   setCockpitText(
@@ -210,3 +320,8 @@ window.sidepanelRenderResult = function renderLifecycleResult(summary) {
   result.scrollTop = result.scrollHeight;
   renderReadOnlyCockpit();
 };
+
+const governedDemoButton = document.getElementById("run-governed-demo");
+if (governedDemoButton) {
+  governedDemoButton.onclick = runGovernedDemoFromSidepanel;
+}
