@@ -1,0 +1,219 @@
+{
+  "review_id": "LOOP_CONTRACT_IMPLEMENTATION_REVIEW_V1",
+  "decision": "CONTRACT_IMPLEMENTATION_PARTIAL",
+  "contract_alignment_status": "PARTIAL_SAFE_ALIGNMENT",
+  "stage_coverage": {
+    "HUMAN_REQUEST": {
+      "existing_artifact_support": "Browser Companion input and governed preview requests",
+      "existing_schema_support": "partial via prompt/request fields",
+      "replay_support": "partial via downstream replay identity",
+      "lifecycle_support": "partial starts as task creation",
+      "sidepanel_visibility": "visible as sidepanel lifecycle entry",
+      "gaps": ["no canonical request artifact"]
+    },
+    "SEMANTIC_REASONING": {
+      "existing_artifact_support": "ChatGPT bridge and semantic direction labels",
+      "existing_schema_support": "partial through normalized request fields",
+      "replay_support": "semantic context is not replay-complete",
+      "lifecycle_support": "none expected",
+      "sidepanel_visibility": "semantic direction view labels model reasoning",
+      "gaps": ["semantic replay intentionally limited"]
+    },
+    "GOVERNED_TASK_SYNTHESIS": {
+      "existing_artifact_support": "AGOL Bridge task package and Codex synthesis artifacts",
+      "existing_schema_support": "partial current schema uses codex_prompt, metadata, approval_required",
+      "replay_support": "task replay events exist",
+      "lifecycle_support": "CREATED, WAITING_FOR_APPROVAL, APPROVED",
+      "sidepanel_visibility": "task data can appear in lifecycle entries",
+      "gaps": ["contract fields not fully represented"]
+    },
+    "GOVERNANCE_ADMISSIBILITY": {
+      "existing_artifact_support": "task schema validation, approval gating, quarantine",
+      "existing_schema_support": "partial through validator and metadata",
+      "replay_support": "validation outcomes indirectly replayed through lifecycle events",
+      "lifecycle_support": "aligned for approval and quarantine paths",
+      "sidepanel_visibility": "boundary and approval views visible",
+      "gaps": ["no standalone admissibility artifact"]
+    },
+    "EXECUTION_DISPATCH": {
+      "existing_artifact_support": "dispatch_task filesystem handoff",
+      "existing_schema_support": "aligned for approved task packages",
+      "replay_support": "dispatch replay event exists",
+      "lifecycle_support": "APPROVED -> DISPATCHED supported",
+      "sidepanel_visibility": "dispatch status can render if returned",
+      "gaps": ["provider dispatch is filesystem-only"]
+    },
+    "EXECUTION_RESULT": {
+      "existing_artifact_support": "result writer accepts provider result package",
+      "existing_schema_support": "partial provider raw output boundary is not explicit",
+      "replay_support": "result return replay event exists",
+      "lifecycle_support": "DISPATCHED -> RETURNED represented in replay event",
+      "sidepanel_visibility": "result status can render",
+      "gaps": ["raw provider output artifact model is minimal"]
+    },
+    "GOVERNED_RESULT_NORMALIZATION": {
+      "existing_artifact_support": "result schema validation and writer",
+      "existing_schema_support": "partial schema lacks originating_task_id and semantic boundary fields",
+      "replay_support": "result hash and event recorded",
+      "lifecycle_support": "returned and quarantine semantics supported",
+      "sidepanel_visibility": "result summary can render",
+      "gaps": ["semantic interpretation boundary missing"]
+    },
+    "REPLAY_UPDATE": {
+      "existing_artifact_support": "append_replay_event JSONL logger",
+      "existing_schema_support": "not schema-bound",
+      "replay_support": "aligned append-only JSONL",
+      "lifecycle_support": "state fields recorded in replay",
+      "sidepanel_visibility": "replay timeline view exists",
+      "gaps": ["replay record lacks explicit operational stage field"]
+    },
+    "LIFECYCLE_UPDATE": {
+      "existing_artifact_support": "lifecycle transition module",
+      "existing_schema_support": "aligned state set",
+      "replay_support": "replay events include prior and next states",
+      "lifecycle_support": "aligned for declared transitions",
+      "sidepanel_visibility": "lifecycle view exists",
+      "gaps": ["lifecycle event id is replay event id, not separate field"]
+    },
+    "SEMANTIC_INTERPRETATION": {
+      "existing_artifact_support": "ChatGPT and semantic direction sidepanel labeling",
+      "existing_schema_support": "partial through interpretation bridge artifacts",
+      "replay_support": "semantic reasoning not deterministic replay",
+      "lifecycle_support": "none expected",
+      "sidepanel_visibility": "semantic direction view exists",
+      "gaps": ["no governed result interpretation package"]
+    },
+    "NEXT_STEP_SYNTHESIS": {
+      "existing_artifact_support": "not implemented as loop artifact",
+      "existing_schema_support": "missing",
+      "replay_support": "missing",
+      "lifecycle_support": "none unless converted into new task",
+      "sidepanel_visibility": "not specifically visible",
+      "gaps": ["deferred pending loop contract implementation"]
+    }
+  },
+  "task_schema_mapping": {
+    "task_id": {"existing": "task_id", "classification": "exact"},
+    "lineage_id": {"existing": "metadata may carry lineage", "classification": "partial"},
+    "replay_hash": {"existing": "sha256_digest(package) and replay package_hash", "classification": "partial"},
+    "semantic_context_reference": {"existing": "metadata or prompt context only", "classification": "partial"},
+    "governance_state": {"existing": "metadata.lifecycle_state and governance_mode", "classification": "partial"},
+    "approval_requirement": {"existing": "approval_required", "classification": "naming_mismatch_aligned"},
+    "execution_provider": {"existing": "implied by codex_prompt", "classification": "missing"},
+    "mutation_scope": {"existing": "constraints and metadata conventions", "classification": "partial"},
+    "replay_visibility": {"existing": "replay event generation", "classification": "partial"},
+    "lifecycle_reference": {"existing": "metadata.lifecycle_state", "classification": "partial"}
+  },
+  "result_schema_mapping": {
+    "result_id": {"existing": "generated RESULT-<hash> by result writer", "classification": "partial"},
+    "originating_task_id": {"existing": null, "classification": "missing"},
+    "replay_hash": {"existing": "sha256_digest(result_package) and replay package_hash", "classification": "partial"},
+    "execution_status": {"existing": "status", "classification": "naming_mismatch_aligned"},
+    "governance_status": {"existing": null, "classification": "missing"},
+    "lifecycle_state": {"existing": "replay event uses RETURNED, package field absent", "classification": "partial"},
+    "replay_references": {"existing": "replay event returned by writer", "classification": "partial"},
+    "semantic_interpretation_boundary": {"existing": null, "classification": "missing"},
+    "next_step_reference": {"existing": null, "classification": "missing"}
+  },
+  "replay_lifecycle_mapping": {
+    "replay_status": "aligned",
+    "append_only_jsonl": true,
+    "canonical_json": true,
+    "sha256_package_hashes": true,
+    "quarantine_behavior": "aligned",
+    "immutable_dispatch": "aligned",
+    "forbidden_transitions": "aligned for current lifecycle module",
+    "ambiguities": [
+      "replay records do not include explicit operational contract stage",
+      "result return replay uses generated result id in task_id slot",
+      "lifecycle event identity is replay event id rather than distinct lifecycle reference"
+    ]
+  },
+  "sidepanel_mapping": {
+    "transport_replay": "visible and labeled",
+    "lifecycle_state": "visible and labeled",
+    "approval_visibility": "visible and labeled as not approval control",
+    "governance_boundary": "visible and labeled",
+    "constitutional_layer_separation": "visible",
+    "semantic_direction_visibility": "visible and labeled as not execution authority",
+    "read_only_status": "visible",
+    "no_execution_authority": "visible and tested",
+    "new_fetch_storage_dispatch_paths": false
+  },
+  "provider_boundary_mapping": {
+    "provider_executes_only": "partially represented",
+    "provider_does_not_govern": true,
+    "provider_does_not_approve": true,
+    "provider_does_not_mutate_replay_directly": true,
+    "provider_result_normalized_before_interpretation": "partial",
+    "gaps": [
+      "task schema lacks explicit execution_provider",
+      "result schema lacks explicit originating_task_id",
+      "provider raw-output-to-normalized-result boundary is not formalized",
+      "sidepanel does not yet present a dedicated provider boundary panel"
+    ]
+  },
+  "gaps": [
+    {
+      "id": "TASK_CONTRACT_FIELDS_INCOMPLETE",
+      "classification": "HIGH",
+      "description": "Existing task schema lacks several canonical operational loop contract fields."
+    },
+    {
+      "id": "RESULT_CONTRACT_FIELDS_INCOMPLETE",
+      "classification": "HIGH",
+      "description": "Existing result schema lacks originating task, governance status, semantic boundary, and next-step fields."
+    },
+    {
+      "id": "REPLAY_STAGE_FIELD_MISSING",
+      "classification": "MEDIUM",
+      "description": "Replay records lack explicit operational contract stage field."
+    },
+    {
+      "id": "ADMISSIBILITY_ARTIFACT_MISSING",
+      "classification": "MEDIUM",
+      "description": "Validation exists but no standalone governance admissibility artifact exists."
+    },
+    {
+      "id": "RESULT_INTERPRETATION_PACKAGE_MISSING",
+      "classification": "MEDIUM",
+      "description": "No governed result interpretation package exists for semantic interpretation continuity."
+    },
+    {
+      "id": "NEXT_STEP_SYNTHESIS_ARTIFACT_MISSING",
+      "classification": "MEDIUM",
+      "description": "Next-step synthesis is not represented as a loop artifact."
+    },
+    {
+      "id": "PROVIDER_BOUNDARY_PANEL_MISSING",
+      "classification": "LOW",
+      "description": "Sidepanel has no dedicated provider boundary panel."
+    },
+    {
+      "id": "CANONICAL_NAMING_MISMATCHES",
+      "classification": "LOW",
+      "description": "Existing schema names differ from canonical contract names but remain semantically safe."
+    }
+  ],
+  "risk_classification": {
+    "critical": [],
+    "high": [
+      "Task package contract fields incomplete.",
+      "Result package contract fields incomplete."
+    ],
+    "medium": [
+      "Replay lacks operational stage field.",
+      "Standalone admissibility artifact missing.",
+      "Governed result interpretation package missing.",
+      "Next-step synthesis artifact missing."
+    ],
+    "low": [
+      "Provider boundary panel missing.",
+      "Canonical naming mismatches."
+    ],
+    "deferred": [
+      "Semantic replay completeness remains intentionally deferred."
+    ]
+  },
+  "recommended_next_implementation": "Create OPERATIONAL_LOOP_PACKAGE_MAPPING_V1 as a narrow schema-mapping artifact, preferably as a separate loop envelope over existing AGOL Bridge task/result packages before any schema or runtime changes."
+}
