@@ -1,0 +1,46 @@
+{
+  "milestone": "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+  "acceptance_status": "ACCEPTED_FOR_FINALIZATION",
+  "accepted_capabilities": [
+    "explicit local semantic proposal import",
+    "human-mediated paste/import bridge",
+    "deterministic local proposal validation",
+    "required proposal field validation",
+    "bounded mode admission",
+    "unsafe mode rejection",
+    "semantic proposal artifact inspection",
+    "accepted proposal continuity cockpit rendering",
+    "rejected proposal blocked rendering"
+  ],
+  "accepted_bounded_modes": [
+    "READ_ONLY",
+    "REVIEW_ONLY",
+    "DEMO_ONLY"
+  ],
+  "rejected_unsafe_modes": [
+    "EXECUTE",
+    "AUTO_EXECUTE",
+    "AUTONOMOUS",
+    "PROVIDER_RUNTIME",
+    "ORCHESTRATION"
+  ],
+  "read_only_guarantees": {
+    "semantic_proposal_artifact_inspection": true,
+    "accepted_proposals_observability_only": true,
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "durable_persistence": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "hidden_authority": false
+  },
+  "test_evidence": {
+    "focused_pytest": "python -B -m pytest tests/test_chatgpt_semantic_proposal_import.py",
+    "full_pytest": "python -B -m pytest tests",
+    "diff_check": "git diff --check"
+  }
+}

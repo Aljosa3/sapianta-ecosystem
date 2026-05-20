@@ -1,0 +1,30 @@
+{
+  "milestone": "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+  "certification": "SEMANTIC_BRIDGE_AUTHORITY_BOUNDARIES",
+  "status": "CERTIFIED",
+  "semantic_bridge_scope": {
+    "explicit_local_json_only": true,
+    "human_mediated_import": true,
+    "sidepanel_local_rendering": true,
+    "in_memory_only": true,
+    "chatgpt_api_integration": false,
+    "backend_routes": false,
+    "durable_persistence": false
+  },
+  "authority_boundaries": {
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "hidden_authority": false
+  },
+  "constitutional_separation": {
+    "chatgpt_llms": "semantic cognition",
+    "aigol_agol": "semantic direction governance and continuity visibility",
+    "codex_providers": "not invoked by this bridge"
+  }
+}

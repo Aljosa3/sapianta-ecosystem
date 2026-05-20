@@ -1,0 +1,43 @@
+{
+  "milestone": "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+  "certification": "DETERMINISTIC_LOCAL_PROPOSAL_VALIDATION",
+  "status": "CERTIFIED",
+  "required_proposal_fields": [
+    "human_request",
+    "semantic_intent",
+    "proposed_mode",
+    "risk_class",
+    "authority_boundary_statement",
+    "semantic_boundary_statement",
+    "requested_action_type"
+  ],
+  "accepted_bounded_modes": [
+    "READ_ONLY",
+    "REVIEW_ONLY",
+    "DEMO_ONLY"
+  ],
+  "rejected_unsafe_modes": [
+    "EXECUTE",
+    "AUTO_EXECUTE",
+    "AUTONOMOUS",
+    "PROVIDER_RUNTIME",
+    "ORCHESTRATION"
+  ],
+  "rejection_guarantees": {
+    "invalid_json_rejected": true,
+    "missing_required_fields_rejected": true,
+    "unsupported_modes_rejected": true,
+    "unsafe_modes_rejected": true,
+    "implicit_execution_authority_claims_rejected": true,
+    "provider_execution_claims_rejected": true,
+    "orchestration_claims_rejected": true,
+    "continuation_authority_claims_rejected": true
+  },
+  "determinism_evidence": {
+    "proposal_id_generation": "deterministicId(\"SEMANTIC-PROPOSAL\", proposal)",
+    "canonicalization": "canonicalize(parsed.proposal)",
+    "time_dependency": false,
+    "randomness": false,
+    "environment_dependency": false
+  }
+}

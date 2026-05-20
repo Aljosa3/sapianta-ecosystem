@@ -1,0 +1,92 @@
+{
+  "milestone": "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+  "finalize_artifact": "FINALIZE_CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    ".github/governance/finalize/FINALIZE_GOVERNED_BROWSER_SIDEPANEL_RUNTIME_V1.md",
+    ".github/governance/finalize/FINALIZE_BOUNDED_REPLAY_COCKPIT_IMPLEMENTATION_V1.md",
+    ".github/governance/finalize/FINALIZE_PERSISTENT_REPLAY_SESSION_V1.md",
+    "browser_companion/sidepanel.html",
+    "browser_companion/sidepanel.js",
+    "tests/test_chatgpt_semantic_proposal_import.py"
+  ],
+  "certified_components": [
+    "explicit local semantic proposal import",
+    "human-mediated paste/import bridge",
+    "deterministic local proposal validation",
+    "required proposal fields validation",
+    "accepted bounded modes",
+    "rejected unsafe modes",
+    "semantic proposal artifact inspection",
+    "accepted proposal continuity cockpit rendering",
+    "rejected proposal blocked rendering",
+    "existing bounded replay and lifecycle visibility"
+  ],
+  "accepted_bounded_modes": [
+    "READ_ONLY",
+    "REVIEW_ONLY",
+    "DEMO_ONLY"
+  ],
+  "rejected_unsafe_modes": [
+    "EXECUTE",
+    "AUTO_EXECUTE",
+    "AUTONOMOUS",
+    "PROVIDER_RUNTIME",
+    "ORCHESTRATION"
+  ],
+  "required_proposal_fields": [
+    "human_request",
+    "semantic_intent",
+    "proposed_mode",
+    "risk_class",
+    "authority_boundary_statement",
+    "semantic_boundary_statement",
+    "requested_action_type"
+  ],
+  "semantic_bridge_guarantees": {
+    "explicit_local_json_only": true,
+    "human_mediated_import": true,
+    "chatgpt_api_integration": false,
+    "deterministic_local_validation": true,
+    "accepted_proposals_read_only": true,
+    "accepted_proposals_continuity_only": true,
+    "accepted_proposals_observability_only": true,
+    "semantic_proposal_artifact_inspection": true,
+    "accepted_proposals_feed_governed_continuity_cockpit": true
+  },
+  "validation_guarantees": {
+    "invalid_json_rejected": true,
+    "missing_required_fields_rejected": true,
+    "unsupported_modes_rejected": true,
+    "unsafe_modes_rejected": true,
+    "implicit_execution_authority_claims_rejected": true,
+    "provider_execution_claims_rejected": true,
+    "orchestration_claims_rejected": true,
+    "continuation_authority_claims_rejected": true
+  },
+  "authority_boundary_guarantees": {
+    "chatgpt_api_integration": false,
+    "provider_calls": false,
+    "backend_routes": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "durable_persistence": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "hidden_authority": false
+  },
+  "test_evidence": {
+    "focused_pytest": "python -B -m pytest tests/test_chatgpt_semantic_proposal_import.py",
+    "full_pytest": "python -B -m pytest tests",
+    "diff_check": "git diff --check"
+  },
+  "risks_remaining": [
+    "This is a human-mediated paste/import bridge only.",
+    "Semantic proposal content is validated locally for bounded governance shape, but semantic cognition remains model-native and non-deterministic.",
+    "The bridge is not durable, not connected to ChatGPT APIs, and not an approval or execution path."
+  ],
+  "constitutional_statement": "ChatGPT semantic proposal import v1 bridges semantic cognition into governed observability without creating provider, execution, approval, dispatch, persistence, orchestration, or autonomous authority."
+}
