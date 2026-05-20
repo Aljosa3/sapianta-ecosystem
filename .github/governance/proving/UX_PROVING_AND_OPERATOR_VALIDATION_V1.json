@@ -1,0 +1,155 @@
+{
+  "proving_id": "UX_PROVING_AND_OPERATOR_VALIDATION_V1",
+  "status": "OPERATIONAL_UX_PROVING_COMPLETE",
+  "purpose": "Validate whether the simplified AiGOL governance cockpit improves operator comprehension, trust clarity, replay understanding, authority understanding, and evidence navigation.",
+  "non_goals": [
+    "new runtime behavior",
+    "transport runtime",
+    "provider dispatch",
+    "execution runtime",
+    "orchestration",
+    "durable replay backend",
+    "localhost ingress",
+    "automated transport"
+  ],
+  "method": {
+    "type": "structured operator simulation",
+    "browser_automation": false,
+    "reviewed_surfaces": [
+      "Level 1 Compact Operator Summary",
+      "Level 2 Governance Findings / Risks / Recommendations",
+      "Level 3 Full Artifact Inspection",
+      "semantic proposal text import",
+      "semantic proposal file import",
+      "hash verification",
+      "replay session visibility",
+      "artifact inspection"
+    ]
+  },
+  "executive_governance_layer": {
+    "reviewed_states": [
+      "SAFE_REVIEW_ONLY",
+      "BLOCKED",
+      "INTEGRITY_VERIFIED",
+      "SESSION_REPLAY_ONLY",
+      "CONTINUITY_VISIBLE",
+      "SEMANTIC_TRANSPORT_ONLY"
+    ],
+    "clarity": "improved",
+    "confusion_risk": "residual integrity overtrust risk",
+    "trust_implications": "stronger because compact states are paired with non-authority language",
+    "interpretation_speed": "improved",
+    "assessment": "IMPROVED_WITH_RESIDUAL_INTEGRITY_OVERTRUST_RISK"
+  },
+  "evidence_hierarchy": {
+    "level_1": "compact operator summary",
+    "level_2": "governance findings",
+    "level_3": "full artifact inspection",
+    "reduces_overload": true,
+    "auditability_sufficient": true,
+    "evidence_discoverable": true,
+    "assessment": "HIERARCHY_REDUCES_OVERLOAD_WITH_AUDITABILITY_PRESERVED"
+  },
+  "replay_understanding": {
+    "label": "SESSION_REPLAY_ONLY",
+    "operator_understands": [
+      "session-local",
+      "read-only",
+      "visibility-only",
+      "non-durable"
+    ],
+    "ledger_confusion": "reduced_not_eliminated",
+    "persistence_confusion": "lower",
+    "replay_mutation_confusion": "low",
+    "assessment": "REPLAY_CLARITY_IMPROVED_WITH_LEDGER_CONFUSION_RISK_REMAINING"
+  },
+  "authority_understanding": {
+    "label": "SEMANTIC_TRANSPORT_ONLY",
+    "operator_understands": [
+      "no approval",
+      "no dispatch",
+      "no execution",
+      "no orchestration",
+      "no autonomous continuation"
+    ],
+    "approval_confusion": "reduced",
+    "execution_assumption": "reduced",
+    "semantic_authority_overtrust": "possible_but_mitigated",
+    "assessment": "AUTHORITY_UNDERSTANDING_STRONG"
+  },
+  "integrity_semantic_correctness_distinctions": {
+    "HASH_VERIFIED": "artifact integrity only, not semantic correctness",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION": "continuity-ingestion readiness, not approval",
+    "CONTINUITY_VISIBLE": "evidence visibility, not execution authorization",
+    "assessment": "CORE_CONFUSIONS_ACTIVELY_MITIGATED"
+  },
+  "operator_flow_simulation": [
+    {
+      "flow": "safe semantic proposal",
+      "expected_result": "accepted for read-only continuity rendering",
+      "usability": "improved",
+      "navigation_friction": "low_to_moderate",
+      "cognitive_overload": "reduced",
+      "governance_trust_clarity": "good"
+    },
+    {
+      "flow": "blocked unsafe proposal",
+      "expected_result": "blocked validation output",
+      "usability": "improved_but_needs_compact_rejection_reason",
+      "navigation_friction": "low_for_rejection_moderate_for_fixing_wording",
+      "cognitive_overload": "moderate",
+      "governance_trust_clarity": "strong"
+    },
+    {
+      "flow": "valid hash-verified file import",
+      "expected_result": "deterministic validation, HASH_VERIFIED, continuity cockpit rendering",
+      "usability": "strongest_current_flow",
+      "navigation_friction": "moderate",
+      "cognitive_overload": "reduced_by_file_artifact_and_compact_labels",
+      "governance_trust_clarity": "strong"
+    },
+    {
+      "flow": "replay session inspection",
+      "expected_result": "session-local replay entries visible and inspectable",
+      "usability": "improved",
+      "navigation_friction": "moderate_for_durable_replay_expectations",
+      "cognitive_overload": "reduced_by_SESSION_REPLAY_ONLY",
+      "governance_trust_clarity": "improved"
+    },
+    {
+      "flow": "artifact inspection drill-down",
+      "expected_result": "full artifact inspection remains available under Level 3",
+      "usability": "strong_for_audit_operators",
+      "navigation_friction": "acceptable",
+      "cognitive_overload": "moved_to_opt_in_inspection",
+      "governance_trust_clarity": "strong_for_technical_review"
+    }
+  ],
+  "scores": {
+    "executive_governance_comprehension": 8,
+    "evidence_hierarchy_usefulness": 8,
+    "replay_understanding": 8,
+    "authority_understanding": 9,
+    "integrity_vs_semantic_correctness_clarity": 8,
+    "overall_operator_cognition_improvement": 8
+  },
+  "remaining_cognition_risks": [
+    "Operators may still over-trust INTEGRITY_VERIFIED as semantic quality.",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION remains a long term requiring repeated explanation.",
+    "Session-local replay may still be confused with durable audit replay in enterprise contexts.",
+    "Blocked proposal output still needs a compact rejection reason above raw artifacts.",
+    "Real operator/browser proving is still needed."
+  ],
+  "readiness_assessment": {
+    "target": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_REVIEW_V1",
+    "decision": "READY_FOR_TRANSPORT_REVIEW",
+    "not_ready_for": [
+      "durable replay backend implementation",
+      "authenticated ingress implementation",
+      "provider dispatch implementation",
+      "orchestration implementation",
+      "autonomous continuation"
+    ]
+  },
+  "recommended_next_step": "Prepare LOCAL_GOVERNED_TRANSPORT_RUNTIME_REVIEW_V1 as a review-only milestone that evaluates local governed transport architecture while preserving the current sidepanel cognition hierarchy and non-authority labels."
+}
