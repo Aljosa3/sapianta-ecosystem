@@ -1,0 +1,34 @@
+{
+  "review_id": "SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_REVIEW_V1",
+  "status": "ACCEPTED_REVIEW",
+  "reviewed_artifacts": [
+    ".github/governance/specs/SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_V1.md",
+    ".github/governance/specs/SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_V1.json",
+    ".github/governance/fixtures/semantic_proposal_v1.json"
+  ],
+  "review_scope": "semantic proposal fixture certification semantics only",
+  "deterministic_structure_certified": true,
+  "replay_safe_semantics_certified": true,
+  "authority_separation_certified": true,
+  "continuity_safe_ingestion_certified": true,
+  "hidden_execution_semantics_detected": false,
+  "orchestration_semantics_detected": false,
+  "continuation_authority_detected": false,
+  "provider_dispatch_detected": false,
+  "approval_automation_detected": false,
+  "durable_persistence_detected": false,
+  "certification_decision": "CERTIFIED_FOR_CONTINUITY_INGESTION_FIXTURE",
+  "certification_does_not_mean": [
+    "approved",
+    "executable",
+    "dispatchable",
+    "autonomous",
+    "authoritative"
+  ],
+  "risks": [
+    "Hash verification is specified but not yet enforced by the sidepanel file import path.",
+    "Fixture certification could be misunderstood as approval unless labels keep certification distinct from approval.",
+    "Future localhost or extension import paths require separate security review."
+  ],
+  "recommended_next_implementation": "Add bounded hash verification for imported semantic_proposal.json files and fail closed on mismatch."
+}

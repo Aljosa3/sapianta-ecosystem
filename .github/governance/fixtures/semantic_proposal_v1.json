@@ -1,0 +1,44 @@
+{
+  "transport_artifact_id": "SEMANTIC-TRANSPORT-ARTIFACT-V1-0001",
+  "artifact_version": "SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_V1",
+  "proposal_id": "SEMANTIC-PROPOSAL-V1-0001",
+  "lineage_id": "SEMANTIC-LINEAGE-V1-0001",
+  "created_by": "human-mediated-local-semantic-transport",
+  "created_at": "1970-01-01T00:00:00Z",
+  "source_model_family": "CHATGPT_OR_CLAUDE",
+  "human_request": "Review this bounded semantic proposal through the AiGOL continuity cockpit without execution.",
+  "semantic_intent": "Demonstrate read-only governed semantic transport into continuity visibility.",
+  "proposed_mode": "REVIEW_ONLY",
+  "risk_class": "LOW",
+  "authority_boundary_statement": "ChatGPT and Claude provide semantic cognition only; AiGOL governs admissibility, continuity, replay visibility, lifecycle visibility, and boundaries; Codex and providers are not invoked; this proposal grants no approval, dispatch, execution, orchestration, or continuation authority.",
+  "semantic_boundary_statement": "Semantic reasoning is model-native, non-deterministic, and non-authoritative; this proposal may be reviewed for admissible semantic direction but does not create governance decisions or execution authority.",
+  "requested_action_type": "OBSERVE_CONTINUITY_ONLY",
+  "lineage_ref": {
+    "lineage_id": "SEMANTIC-LINEAGE-V1-0001",
+    "lineage_scope": "continuity_ingestion_fixture",
+    "mutation_authority": false,
+    "continuation_authority": false
+  },
+  "replay_identity": {
+    "replay_id": "SEMANTIC-REPLAY-REF-V1-0001",
+    "reference_status": "REFERENCED_FOR_VISIBILITY_ONLY",
+    "replay_write": false,
+    "replay_mutation": false
+  },
+  "certification": {
+    "validation_status": "VALID",
+    "certification_status": "CERTIFIED_FOR_CONTINUITY_INGESTION",
+    "structurally_valid": true,
+    "authority_bounded": true,
+    "replay_safe": true,
+    "continuity_safe": true,
+    "non_executable": true,
+    "non_orchestrating": true,
+    "approved": false,
+    "dispatchable": false,
+    "executable": false,
+    "autonomous": false,
+    "authoritative": false
+  },
+  "artifact_hash": "sha256:ef0a873c3ed97ddf712007ae0cbfe6005913c701b26acb8c7ba5451463697afe"
+}

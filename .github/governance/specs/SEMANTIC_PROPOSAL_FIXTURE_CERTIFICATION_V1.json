@@ -1,0 +1,126 @@
+{
+  "spec_id": "SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_V1",
+  "status": "DRAFT_CERTIFICATION_SPECIFICATION",
+  "purpose": "Define the first certified semantic proposal fixture model for AiGOL governed semantic transport.",
+  "non_goals": [
+    "provider dispatch",
+    "execution runtime",
+    "localhost ingress",
+    "orchestration",
+    "durable persistence",
+    "ChatGPT API integration",
+    "approval automation",
+    "autonomous continuation"
+  ],
+  "canonical_field_order": [
+    "transport_artifact_id",
+    "artifact_version",
+    "proposal_id",
+    "lineage_id",
+    "created_by",
+    "created_at",
+    "source_model_family",
+    "human_request",
+    "semantic_intent",
+    "proposed_mode",
+    "risk_class",
+    "authority_boundary_statement",
+    "semantic_boundary_statement",
+    "requested_action_type",
+    "lineage_ref",
+    "replay_identity",
+    "certification",
+    "artifact_hash"
+  ],
+  "required_fields": [
+    "transport_artifact_id",
+    "artifact_version",
+    "proposal_id",
+    "lineage_id",
+    "created_by",
+    "created_at",
+    "source_model_family",
+    "human_request",
+    "semantic_intent",
+    "proposed_mode",
+    "risk_class",
+    "authority_boundary_statement",
+    "semantic_boundary_statement",
+    "requested_action_type",
+    "lineage_ref",
+    "replay_identity",
+    "certification",
+    "artifact_hash"
+  ],
+  "accepted_proposed_modes": [
+    "READ_ONLY",
+    "REVIEW_ONLY",
+    "DEMO_ONLY"
+  ],
+  "rejected_proposed_modes": [
+    "EXECUTE",
+    "AUTO_EXECUTE",
+    "AUTONOMOUS",
+    "PROVIDER_RUNTIME",
+    "ORCHESTRATION"
+  ],
+  "deterministic_serialization": {
+    "json_object_only": true,
+    "utf8_encoding": true,
+    "stable_key_ordering_for_hash": true,
+    "compact_json_separators_for_hash": true,
+    "artifact_hash_excluded_from_hash_input": true,
+    "hash_algorithm": "sha256",
+    "hash_format": "sha256:<hex>",
+    "hash_repair_allowed": false
+  },
+  "proposal_identity": {
+    "proposal_id": "semantic proposal identity, not execution authority",
+    "lineage_id": "semantic continuity lineage identity, not continuation approval",
+    "transport_artifact_id": "local transport artifact identity",
+    "replay_identity": "replay-safe cockpit visibility reference, not durable replay mutation"
+  },
+  "certification_semantics": {
+    "VALID": "Proposal is structurally parseable and satisfies required field validation.",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION": [
+      "structurally valid",
+      "authority bounded",
+      "replay-safe",
+      "continuity-safe",
+      "non-executable",
+      "non-orchestrating",
+      "fit for read-only cockpit continuity rendering"
+    ],
+    "certification_does_not_mean": [
+      "approved",
+      "executable",
+      "dispatchable",
+      "autonomous",
+      "authoritative",
+      "provider-call eligible",
+      "lifecycle-mutation eligible",
+      "replay-mutation eligible"
+    ]
+  },
+  "authority_boundaries": {
+    "chatgpt_claude_llms": "semantic cognition only",
+    "aigol_agol": "admissibility, continuity, replay, lifecycle visibility, and boundary interpretation",
+    "codex_providers": "not invoked by this fixture",
+    "sidepanel": "read-only non-authoritative rendering",
+    "approval": false,
+    "dispatch": false,
+    "execution": false,
+    "orchestration": false,
+    "autonomous_continuation": false
+  },
+  "replay_guarantees": {
+    "deterministic_artifact_identity": true,
+    "replay_safe_identity_reference": true,
+    "read_only_replay_visibility": true,
+    "replay_write": false,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "replay_mutation": false
+  },
+  "recommended_next_implementation": "Use semantic_proposal_v1.json as the canonical positive file-import fixture, then add separate bounded hash verification after review."
+}
