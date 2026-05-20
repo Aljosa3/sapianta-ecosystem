@@ -1,6 +1,7 @@
 const lifecycleEntries = [];
 const replaySessionEntries = [];
 const REPLAY_SESSION_ID = "PERSISTENT_REPLAY_SESSION_V1";
+const LOCAL_GOVERNED_TRANSPORT_SESSION_ID = "LOCAL-GOVERNED-TRANSPORT-SESSION-V1";
 const REQUIRED_SEMANTIC_PROPOSAL_FIELDS = [
   "human_request",
   "semantic_intent",
@@ -11,6 +12,7 @@ const REQUIRED_SEMANTIC_PROPOSAL_FIELDS = [
   "requested_action_type"
 ];
 const ALLOWED_SEMANTIC_PROPOSAL_MODES = ["READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY"];
+const ALLOWED_LOCAL_TRANSPORT_ACTION_TYPES = ["READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY", "OBSERVE_ONLY", "OBSERVE_CONTINUITY_ONLY"];
 const REJECTED_SEMANTIC_PROPOSAL_MODES = [
   "EXECUTE",
   "AUTO_EXECUTE",
@@ -45,7 +47,8 @@ const COCKPIT_IDS = {
   replayEntryInspection: "replay-entry-inspection",
   semanticProposalValidationStatus: "semantic-proposal-validation-status",
   semanticProposalHashVerificationStatus: "semantic-proposal-hash-verification-status",
-  semanticProposalArtifact: "semantic-proposal-artifact"
+  semanticProposalArtifact: "semantic-proposal-artifact",
+  localTransportRuntimeStatus: "local-transport-runtime-status"
 };
 
 function deterministicId(prefix, value) {
@@ -348,6 +351,27 @@ function semanticProposalArtifact(entry) {
   };
 }
 
+function localTransportRuntimeSummary(entry) {
+  const report = entry.local_governed_transport_report || {};
+  const event = report.transport_event || {};
+  return [
+    "label: Local Governed Transport Runtime - explicit operator-trigger only",
+    "runtime: pure local handler invocation only",
+    "endpoint: none",
+    "server_listener: false",
+    `transport_status: ${compactValue(report.status)}`,
+    `replay_event_id: ${compactValue(report.replay_event_id || event.replay_event_id)}`,
+    `session_id: ${compactValue(report.session_id || event.session_id)}`,
+    `proposal_id: ${compactValue(report.proposal_id || event.proposal_id)}`,
+    `authority_label: ${compactValue(report.authority_label || event.authority_label)}`,
+    `hash_status: ${compactValue(report.hash_verification_status || event.hash_verification_status)}`,
+    `rejection_reason: ${compactValue(report.rejection_reason || event.rejection_reason)}`,
+    `compact_rejection: ${compactValue(report.compact_rejection)}`,
+    `append_candidate: ${compactValue(event.visibility_scope)}`,
+    `non_authority_guarantees: ${compactValue(report.non_authority_guarantees)}`
+  ].join("\n");
+}
+
 function semanticProposalValidationSummary(entry) {
   const validation = entry.semantic_proposal_validation || {};
   return [
@@ -527,6 +551,303 @@ async function verifySemanticProposalArtifactHash(proposal) {
   });
 }
 
+function localTransportRequiredEnvelopeFields() {
+  return [
+    "transport_id",
+    "session_id",
+    "proposal_id",
+    "artifact_hash",
+    "created_at_policy",
+    "source_label",
+    "semantic_proposal",
+    "authority_boundary_statement",
+    "replay_policy",
+    "lifecycle_policy"
+  ];
+}
+
+function compactLocalTransportRejection(status) {
+  const labels = {
+    TRANSPORT_REJECTED_SCHEMA: "SCHEMA_REJECTED",
+    TRANSPORT_REJECTED_HASH: "HASH_MISMATCH",
+    TRANSPORT_REJECTED_SESSION: "UNKNOWN_SESSION",
+    TRANSPORT_REJECTED_AUTHORITY: "AUTHORITY_REJECTED",
+    TRANSPORT_REJECTED_UNSAFE_MODE: "UNSAFE_MODE",
+    TRANSPORT_REJECTED_REPLAY_POLICY: "REPLAY_POLICY_REJECTED"
+  };
+  return labels[status] || "SCHEMA_REJECTED";
+}
+
+function localTransportRejectedReport(envelope, status, rejectionReason, hashStatus) {
+  const safeEnvelope = canonicalize(envelope || {});
+  const eventSeed = {
+    artifact_hash: safeEnvelope.artifact_hash || "UNKNOWN",
+    created_at_policy: safeEnvelope.created_at_policy || "UNKNOWN",
+    proposal_id: safeEnvelope.proposal_id || "UNKNOWN",
+    session_id: safeEnvelope.session_id || "UNKNOWN",
+    source_label: safeEnvelope.source_label || "UNKNOWN",
+    transport_id: safeEnvelope.transport_id || "UNKNOWN",
+    transport_status: status
+  };
+  const event = canonicalize({
+    replay_event_id: deterministicId("TRANSPORT-REPLAY", eventSeed),
+    event_type: "LOCAL_GOVERNED_SEMANTIC_TRANSPORT",
+    transport_status: status,
+    transport_id: safeEnvelope.transport_id || "UNKNOWN",
+    session_id: safeEnvelope.session_id || "UNKNOWN",
+    proposal_id: safeEnvelope.proposal_id || "UNKNOWN",
+    artifact_hash: safeEnvelope.artifact_hash || "UNKNOWN",
+    hash_verification_status: hashStatus || "HASH_NOT_VERIFIED",
+    source_label: safeEnvelope.source_label || "UNKNOWN",
+    authority_label: "SEMANTIC_TRANSPORT_ONLY",
+    rejection_reason: rejectionReason,
+    lineage_refs: {
+      transport_id: safeEnvelope.transport_id || "UNKNOWN",
+      session_id: safeEnvelope.session_id || "UNKNOWN",
+      proposal_id: safeEnvelope.proposal_id || "UNKNOWN",
+      artifact_hash: safeEnvelope.artifact_hash || "UNKNOWN"
+    },
+    visibility_scope: "SESSION_LOCAL_APPEND_CANDIDATE_ONLY",
+    created_at_policy: safeEnvelope.created_at_policy || "UNKNOWN"
+  });
+  return canonicalize({
+    status,
+    transport_id: event.transport_id,
+    session_id: event.session_id,
+    proposal_id: event.proposal_id,
+    replay_event_id: event.replay_event_id,
+    hash_verification_status: event.hash_verification_status,
+    authority_label: "SEMANTIC_TRANSPORT_ONLY",
+    rejection_reason: rejectionReason,
+    compact_rejection: compactLocalTransportRejection(status),
+    validation: { valid: false, errors: [rejectionReason] },
+    transport_event: event,
+    operator_visibility: {
+      transport_event_visible: true,
+      session_attachment_visible: event.session_id !== "UNKNOWN",
+      replay_event_id_visible: true,
+      hash_verification_visible: true,
+      authority_label_visible: true,
+      rejection_reason_visible: true
+    },
+    non_authority_guarantees: [
+      "SEMANTIC_TRANSPORT_ONLY",
+      "SESSION_REPLAY_ONLY",
+      "HASH_VERIFIED_IS_INTEGRITY_ONLY",
+      "CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL",
+      "CONTINUITY_VISIBLE_IS_NOT_EXECUTION_AUTHORIZATION"
+    ]
+  });
+}
+
+function localTransportSessionRegistry(sessionId) {
+  if (sessionId !== LOCAL_GOVERNED_TRANSPORT_SESSION_ID) {
+    return {};
+  }
+  return {
+    [LOCAL_GOVERNED_TRANSPORT_SESSION_ID]: {
+      operator_visible: true,
+      ambiguous: false,
+      continuation_requested: false,
+      cross_session_mutation: false
+    }
+  };
+}
+
+function buildLocalGovernedTransportEnvelope(entry, sessionId) {
+  const proposal = canonicalize(entry.semantic_proposal || {});
+  const validation = entry.semantic_proposal_validation || {};
+  const hashVerification = entry.semantic_proposal_hash_verification || {};
+  return canonicalize({
+    transport_id: deterministicId("LOCAL-TRANSPORT", {
+      session_id: sessionId,
+      proposal_id: validation.proposal_id || proposal.proposal_id || "UNKNOWN",
+      artifact_hash: hashVerification.artifact_hash || proposal.artifact_hash || "UNKNOWN"
+    }),
+    session_id: sessionId,
+    proposal_id: validation.proposal_id || proposal.proposal_id || "UNKNOWN",
+    artifact_hash: hashVerification.artifact_hash || proposal.artifact_hash || "UNKNOWN",
+    created_at_policy: "EXPLICIT_SIDE_PANEL_OPERATOR_TRIGGER",
+    source_label: "CHATGPT_LOCAL_ARTIFACT",
+    semantic_proposal: proposal,
+    authority_boundary_statement: "Semantic transport only; transport success is not approval, not dispatch, not execution, and not continuation authority.",
+    replay_policy: {
+      append_only: true,
+      visibility_only: true,
+      rewrite_allowed: false,
+      repair_allowed: false,
+      mutation_allowed: false,
+      inference_allowed: false,
+      durable_backend: false
+    },
+    lifecycle_policy: {
+      visibility_only: true,
+      execution_transition: false,
+      mutation_allowed: false
+    }
+  });
+}
+
+function localTransportEnvelopeSchemaError(envelope) {
+  const missing = localTransportRequiredEnvelopeFields().filter((field) => !(field in envelope));
+  if (missing.length) {
+    return `missing required fields: ${missing.join(", ")}`;
+  }
+  if (!envelope.semantic_proposal || typeof envelope.semantic_proposal !== "object") {
+    return "semantic_proposal must be an object";
+  }
+  return "";
+}
+
+function localTransportSessionError(sessionId, sessionRegistry) {
+  const session = sessionRegistry[sessionId];
+  if (!session) {
+    return "session_id is missing or unknown";
+  }
+  if (session.operator_visible !== true) {
+    return "session attachment is not operator-visible";
+  }
+  if (session.ambiguous === true || Array.isArray(session)) {
+    return "session_id is ambiguous";
+  }
+  if (session.continuation_requested === true || session.cross_session_mutation === true) {
+    return "session attachment violates bounded transport";
+  }
+  return "";
+}
+
+function localTransportUnsafeModeError(proposal) {
+  const mode = proposal.proposed_mode || "UNKNOWN";
+  if (!ALLOWED_SEMANTIC_PROPOSAL_MODES.includes(mode)) {
+    return `unsafe proposed_mode: ${mode}`;
+  }
+  return "";
+}
+
+function localTransportAuthorityError(envelope) {
+  const proposal = envelope.semantic_proposal || {};
+  const requestedAction = proposal.requested_action_type || "";
+  const authorityStatement = envelope.authority_boundary_statement || "";
+  const required = ["not approval", "not dispatch", "not execution", "not continuation"];
+  if (!required.every((token) => authorityStatement.toLowerCase().includes(token))) {
+    return "authority boundary statement is incomplete";
+  }
+  if (!ALLOWED_LOCAL_TRANSPORT_ACTION_TYPES.includes(requestedAction)) {
+    return "requested action type is outside semantic transport authority";
+  }
+  return "";
+}
+
+function localTransportReplayPolicyError(envelope) {
+  const replayPolicy = envelope.replay_policy || {};
+  const lifecyclePolicy = envelope.lifecycle_policy || {};
+  if (replayPolicy.append_only !== true || replayPolicy.visibility_only !== true) {
+    return "replay policy must be append-only visibility only";
+  }
+  if (
+    replayPolicy.rewrite_allowed ||
+    replayPolicy.repair_allowed ||
+    replayPolicy.mutation_allowed ||
+    replayPolicy.inference_allowed ||
+    replayPolicy.durable_backend
+  ) {
+    return "replay policy violates bounded transport";
+  }
+  if (lifecyclePolicy.visibility_only !== true || lifecyclePolicy.execution_transition || lifecyclePolicy.mutation_allowed) {
+    return "lifecycle policy violates bounded transport";
+  }
+  return "";
+}
+
+function handle_local_governed_transport({ envelope, session_registry }) {
+  const safeEnvelope = canonicalize(envelope || {});
+  const safeRegistry = canonicalize(session_registry || {});
+  const schemaError = localTransportEnvelopeSchemaError(safeEnvelope);
+  if (schemaError) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_SCHEMA", schemaError, "HASH_NOT_VERIFIED");
+  }
+  const sessionError = localTransportSessionError(safeEnvelope.session_id, safeRegistry);
+  if (sessionError) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_SESSION", sessionError, "HASH_PENDING");
+  }
+  const unsafeModeError = localTransportUnsafeModeError(safeEnvelope.semantic_proposal);
+  if (unsafeModeError) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_UNSAFE_MODE", unsafeModeError, "HASH_PENDING");
+  }
+  if (!/^sha256:[0-9a-f]{64}$/.test(safeEnvelope.artifact_hash)) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_HASH", "artifact_hash is missing or malformed", "HASH_INVALID");
+  }
+  if (safeEnvelope.artifact_hash !== safeEnvelope.semantic_proposal.artifact_hash) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_HASH", "artifact_hash mismatch", "HASH_MISMATCH");
+  }
+  const authorityError = localTransportAuthorityError(safeEnvelope);
+  if (authorityError) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_AUTHORITY", authorityError, "HASH_VERIFIED");
+  }
+  const replayPolicyError = localTransportReplayPolicyError(safeEnvelope);
+  if (replayPolicyError) {
+    return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_REPLAY_POLICY", replayPolicyError, "HASH_VERIFIED");
+  }
+  const eventSeed = {
+    artifact_hash: safeEnvelope.artifact_hash,
+    created_at_policy: safeEnvelope.created_at_policy,
+    proposal_id: safeEnvelope.proposal_id,
+    session_id: safeEnvelope.session_id,
+    source_label: safeEnvelope.source_label,
+    transport_id: safeEnvelope.transport_id,
+    transport_status: "TRANSPORT_ACCEPTED"
+  };
+  const event = canonicalize({
+    replay_event_id: deterministicId("TRANSPORT-REPLAY", eventSeed),
+    event_type: "LOCAL_GOVERNED_SEMANTIC_TRANSPORT",
+    transport_status: "TRANSPORT_ACCEPTED",
+    transport_id: safeEnvelope.transport_id,
+    session_id: safeEnvelope.session_id,
+    proposal_id: safeEnvelope.proposal_id,
+    artifact_hash: safeEnvelope.artifact_hash,
+    hash_verification_status: "HASH_VERIFIED",
+    source_label: safeEnvelope.source_label,
+    authority_label: "SEMANTIC_TRANSPORT_ONLY",
+    rejection_reason: "",
+    lineage_refs: {
+      transport_id: safeEnvelope.transport_id,
+      session_id: safeEnvelope.session_id,
+      proposal_id: safeEnvelope.proposal_id,
+      artifact_hash: safeEnvelope.artifact_hash
+    },
+    visibility_scope: "SESSION_LOCAL_APPEND_CANDIDATE_ONLY",
+    created_at_policy: safeEnvelope.created_at_policy
+  });
+  return canonicalize({
+    status: "TRANSPORT_ACCEPTED",
+    transport_id: safeEnvelope.transport_id,
+    session_id: safeEnvelope.session_id,
+    proposal_id: safeEnvelope.proposal_id,
+    replay_event_id: event.replay_event_id,
+    hash_verification_status: "HASH_VERIFIED",
+    authority_label: "SEMANTIC_TRANSPORT_ONLY",
+    rejection_reason: "",
+    compact_rejection: "",
+    validation: { valid: true, errors: [] },
+    transport_event: event,
+    operator_visibility: {
+      transport_event_visible: true,
+      session_attachment_visible: true,
+      replay_event_id_visible: true,
+      hash_verification_visible: true,
+      authority_label_visible: true,
+      rejection_reason_visible: false
+    },
+    non_authority_guarantees: [
+      "SEMANTIC_TRANSPORT_ONLY",
+      "SESSION_REPLAY_ONLY",
+      "HASH_VERIFIED_IS_INTEGRITY_ONLY",
+      "CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL",
+      "CONTINUITY_VISIBLE_IS_NOT_EXECUTION_AUTHORIZATION"
+    ]
+  });
+}
+
 async function localSemanticProposalFileValidation(rawText, fileName) {
   const validation = validateSemanticProposal(rawText);
   const errors = [...validation.errors];
@@ -680,6 +1001,57 @@ async function importSemanticProposalFileFromSidepanel() {
   const result = validation.status === "ACCEPTED"
     ? runSemanticProposalContinuityFlow(validation)
     : semanticProposalBlockedResult(validation);
+  window.sidepanelRenderResult(result);
+}
+
+function attachLocalGovernedTransportFromSidepanel() {
+  const latest = lifecycleEntries[lifecycleEntries.length - 1] || {};
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const sessionId = sessionInput && sessionInput.value ? sessionInput.value : "UNKNOWN";
+  const envelope = buildLocalGovernedTransportEnvelope(latest, sessionId);
+  const sessionRegistry = localTransportSessionRegistry(sessionId);
+  const transportReport = handle_local_governed_transport({
+    envelope,
+    session_registry: sessionRegistry
+  });
+  const result = canonicalize({
+    ...latest,
+    status: transportReport.status === "TRANSPORT_ACCEPTED" ? "RETURNED" : "BLOCKED",
+    local_governed_transport_report: transportReport,
+    transport_runtime_attachment: {
+      invocation: "explicit operator-triggered cockpit attach",
+      automatic_ingestion: false,
+      hidden_invocation: false,
+      background_attach: false,
+      http_endpoint: false,
+      server_listener: false,
+      provider_dispatch: false,
+      approval: false,
+      execution: false,
+      orchestration: false,
+      durable_persistence: false,
+      autonomous_continuation: false
+    },
+    boundary_guarantees: {
+      ...(latest.boundary_guarantees || {}),
+      automatic_dispatch: false,
+      hidden_execution: false,
+      hidden_persistence: false
+    },
+    authority_guarantees: {
+      ...(latest.authority_guarantees || {}),
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
   window.sidepanelRenderResult(result);
 }
 
@@ -869,6 +1241,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.semanticProposalValidationStatus, semanticProposalValidationSummary(latest));
   setCockpitText(COCKPIT_IDS.semanticProposalHashVerificationStatus, semanticProposalHashVerificationSummary(latest));
   setCockpitText(COCKPIT_IDS.semanticProposalArtifact, artifactJson(semanticProposalArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.localTransportRuntimeStatus, localTransportRuntimeSummary(latest));
   renderReplaySessionVisibility();
 }
 
@@ -911,4 +1284,9 @@ if (importSemanticProposalButton) {
 const importSemanticProposalFileButton = document.getElementById("import-semantic-proposal-file");
 if (importSemanticProposalFileButton) {
   importSemanticProposalFileButton.onclick = importSemanticProposalFileFromSidepanel;
+}
+
+const attachLocalGovernedTransportButton = document.getElementById("attach-local-governed-transport");
+if (attachLocalGovernedTransportButton) {
+  attachLocalGovernedTransportButton.onclick = attachLocalGovernedTransportFromSidepanel;
 }

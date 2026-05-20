@@ -49,6 +49,7 @@ REQUIRED_PROPOSAL_FIELDS = (
 )
 
 ALLOWED_PROPOSED_MODES = ("READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY")
+ALLOWED_REQUESTED_ACTION_TYPES = ("READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY", "OBSERVE_ONLY", "OBSERVE_CONTINUITY_ONLY")
 UNSAFE_PROPOSED_MODES = ("EXECUTE", "AUTO_EXECUTE", "AUTONOMOUS", "PROVIDER_RUNTIME", "ORCHESTRATION")
 AUTHORITY_FORBIDDEN_TERMS = (
     "approve",
@@ -261,6 +262,10 @@ def _contains_forbidden_authority_claim(value: Any) -> bool:
             f"non-{term}",
             f"without {term}",
             f"{term} is not",
+            f"grants no {term}",
+            f"grant no {term}",
+            "grants no approval, dispatch, execution",
+            "does not create governance decisions or execution authority",
         )
         if term in lowered and not any(negation in lowered for negation in allowed_negations):
             return True
@@ -273,7 +278,7 @@ def _authority_error(envelope: dict) -> str | None:
     if not all(term in statement for term in required):
         return "authority boundary statement is incomplete"
     requested_action = str(envelope["semantic_proposal"].get("requested_action_type", ""))
-    if requested_action not in ALLOWED_PROPOSED_MODES:
+    if requested_action not in ALLOWED_REQUESTED_ACTION_TYPES:
         return "requested action type is outside semantic transport authority"
     authority_values = {
         "envelope_authority_boundary_statement": envelope["authority_boundary_statement"],
@@ -372,6 +377,7 @@ def handle_local_governed_transport(*, envelope: dict, session_registry: dict) -
 
 __all__ = [
     "ALLOWED_PROPOSED_MODES",
+    "ALLOWED_REQUESTED_ACTION_TYPES",
     "TRANSPORT_ACCEPTED",
     "TRANSPORT_REJECTED_AUTHORITY",
     "TRANSPORT_REJECTED_HASH",
