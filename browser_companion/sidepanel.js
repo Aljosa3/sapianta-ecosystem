@@ -1,6 +1,23 @@
 const lifecycleEntries = [];
 const replaySessionEntries = [];
 const REPLAY_SESSION_ID = "PERSISTENT_REPLAY_SESSION_V1";
+const REQUIRED_SEMANTIC_PROPOSAL_FIELDS = [
+  "human_request",
+  "semantic_intent",
+  "proposed_mode",
+  "risk_class",
+  "authority_boundary_statement",
+  "semantic_boundary_statement",
+  "requested_action_type"
+];
+const ALLOWED_SEMANTIC_PROPOSAL_MODES = ["READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY"];
+const REJECTED_SEMANTIC_PROPOSAL_MODES = [
+  "EXECUTE",
+  "AUTO_EXECUTE",
+  "AUTONOMOUS",
+  "PROVIDER_RUNTIME",
+  "ORCHESTRATION"
+];
 
 const COCKPIT_IDS = {
   replayTimeline: "replay-timeline",
@@ -23,7 +40,9 @@ const COCKPIT_IDS = {
   authorityBoundaryArtifact: "inspection-authority-boundary-artifact",
   semanticBoundaryArtifact: "inspection-semantic-boundary-artifact",
   currentReplaySession: "current-replay-session",
-  replayEntryInspection: "replay-entry-inspection"
+  replayEntryInspection: "replay-entry-inspection",
+  semanticProposalValidationStatus: "semantic-proposal-validation-status",
+  semanticProposalArtifact: "semantic-proposal-artifact"
 };
 
 function deterministicId(prefix, value) {
@@ -114,10 +133,14 @@ function boundarySummary(entry) {
 }
 
 function semanticDirectionSummary(entry) {
+  const proposal = entry.semantic_proposal || {};
   return [
     "label: Semantic direction proposal - not execution authority",
     "semantic replay: model-native and non-deterministic",
     "continuity: In-memory sidepanel continuity - non-durable",
+    `semantic_intent: ${compactValue(proposal.semantic_intent)}`,
+    `proposed_mode: ${compactValue(proposal.proposed_mode)}`,
+    `risk_class: ${compactValue(proposal.risk_class)}`,
     `normalized_request: ${compactValue(entry.normalized_governed_request)}`,
     `governance_mode: ${compactValue(entry.governance_mode)}`,
     `codex_prompt_preview: ${compactValue(entry.codex_prompt_preview)}`
@@ -135,10 +158,11 @@ function sidepanelContinuityRendering(entry) {
 function continuityHumanRequestSummary(entry) {
   const envelope = (entry.artifacts && entry.artifacts.envelope) || {};
   const request = envelope.originating_human_request_ref || {};
+  const proposal = entry.semantic_proposal || {};
   return [
     "label: Human Request - explicit local input only",
     "authority: request context does not approve, dispatch, or execute",
-    `request_text: ${compactValue(request.request_text)}`,
+    `request_text: ${compactValue(proposal.human_request || request.request_text)}`,
     `authority: ${compactValue(request.authority)}`
   ].join("\n");
 }
@@ -256,6 +280,174 @@ function semanticBoundaryArtifact(entry) {
     semantic_interpretation_boundary: envelope.semantic_interpretation_boundary || {},
     semantic_boundary_summary: rendering.semantic_boundary_visibility || report.semantic_boundary_summary || {}
   };
+}
+
+function semanticProposalArtifact(entry) {
+  return {
+    label: "Semantic Proposal Artifact - read-only import",
+    proposal: entry.semantic_proposal || {},
+    validation: entry.semantic_proposal_validation || {},
+    authority: "proposal import creates no provider call, approval, dispatch, execution, or continuation authority",
+    persistence: "in-memory sidepanel-local only"
+  };
+}
+
+function semanticProposalValidationSummary(entry) {
+  const validation = entry.semantic_proposal_validation || {};
+  return [
+    "label: Semantic Proposal Validation Status - deterministic local validation",
+    "authority: accepted proposal is not approval, dispatch, execution, or continuation",
+    `status: ${compactValue(validation.status)}`,
+    `proposal_id: ${compactValue(validation.proposal_id)}`,
+    `errors: ${compactValue(validation.errors)}`,
+    `proposed_mode: ${compactValue(validation.proposed_mode)}`
+  ].join("\n");
+}
+
+function validateSemanticProposalShape(proposal) {
+  const errors = [];
+  if (!proposal || typeof proposal !== "object" || Array.isArray(proposal)) {
+    return ["proposal must be a JSON object"];
+  }
+  REQUIRED_SEMANTIC_PROPOSAL_FIELDS.forEach((field) => {
+    if (typeof proposal[field] !== "string" || proposal[field].trim() === "") {
+      errors.push(`missing required field: ${field}`);
+    }
+  });
+  return errors;
+}
+
+function containsClaim(text, token, denialTokens) {
+  return text.includes(token) && !denialTokens.some((denial) => text.includes(denial));
+}
+
+function validateSemanticProposalAuthority(proposal) {
+  const mode = String(proposal.proposed_mode || "").trim();
+  const claimText = [
+    proposal.requested_action_type,
+    proposal.authority_boundary_statement,
+    proposal.semantic_boundary_statement,
+    proposal.semantic_intent
+  ].join(" ").toLowerCase();
+  const errors = [];
+  if (!ALLOWED_SEMANTIC_PROPOSAL_MODES.includes(mode)) {
+    errors.push(`unsupported proposed_mode: ${mode || "unknown"}`);
+  }
+  if (REJECTED_SEMANTIC_PROPOSAL_MODES.includes(mode)) {
+    errors.push(`rejected proposed_mode: ${mode}`);
+  }
+  if (
+    containsClaim(claimText, "execute", ["no execute", "not execute", "without execution"]) ||
+    containsClaim(claimText, "execution authority", ["no execution authority", "not execution authority"])
+  ) {
+    errors.push("implicit execution authority claim rejected");
+  }
+  if (containsClaim(claimText, "provider", ["no provider", "without provider"]) || claimText.includes("codex dispatch")) {
+    errors.push("provider execution claim rejected");
+  }
+  if (containsClaim(claimText, "orchestration", ["no orchestration", "without orchestration"])) {
+    errors.push("orchestration claim rejected");
+  }
+  if (
+    containsClaim(claimText, "autonomous", ["no autonomous", "not autonomous", "without autonomous"]) ||
+    containsClaim(claimText, "continuation authority", ["no continuation authority", "not continuation authority"])
+  ) {
+    errors.push("continuation authority claim rejected");
+  }
+  return errors;
+}
+
+function parseSemanticProposal(rawText) {
+  try {
+    return { proposal: JSON.parse(rawText) };
+  } catch (error) {
+    return { errors: ["invalid JSON"] };
+  }
+}
+
+function validateSemanticProposal(rawText) {
+  const parsed = parseSemanticProposal(rawText);
+  if (parsed.errors) {
+    return { status: "REJECTED", errors: parsed.errors, proposal: {} };
+  }
+  const proposal = canonicalize(parsed.proposal);
+  const errors = validateSemanticProposalShape(proposal).concat(validateSemanticProposalAuthority(proposal));
+  const proposalId = deterministicId("SEMANTIC-PROPOSAL", proposal);
+  return {
+    status: errors.length ? "REJECTED" : "ACCEPTED",
+    proposal_id: proposalId,
+    proposed_mode: proposal.proposed_mode || "unknown",
+    errors,
+    proposal
+  };
+}
+
+function semanticProposalBlockedResult(validation) {
+  return {
+    demo_id: "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
+    status: "BLOCKED",
+    semantic_proposal_validation: canonicalize(validation),
+    semantic_proposal: validation.proposal || {},
+    boundary_guarantees: {
+      automatic_dispatch: false,
+      hidden_execution: false,
+      hidden_persistence: false
+    },
+    continuity_report: {
+      aggregate_governance_status: "CONTINUITY_BOUNDARY_VIOLATION",
+      continuity_findings: validation.errors || [],
+      continuity_risks: ["Semantic proposal rejected before continuity flow generation."],
+      continuity_recommendations: ["Revise proposal fields and keep mode READ_ONLY, REVIEW_ONLY, or DEMO_ONLY."]
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  };
+}
+
+function runSemanticProposalContinuityFlow(validation) {
+  const proposal = validation.proposal;
+  const result = runMinimalGovernedOperationalLoopDemo(proposal.human_request);
+  const envelope = result.artifacts.envelope;
+  envelope.semantic_proposal_ref = validation.proposal_id;
+  envelope.semantic_interpretation_boundary.statement = proposal.semantic_boundary_statement;
+  envelope.authority_boundary_statement = proposal.authority_boundary_statement;
+  result.demo_id = "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1";
+  result.semantic_proposal_validation = {
+    status: validation.status,
+    proposal_id: validation.proposal_id,
+    proposed_mode: validation.proposed_mode,
+    errors: []
+  };
+  result.semantic_proposal = proposal;
+  result.continuity_report.continuity_findings = [
+    `Semantic proposal accepted in ${proposal.proposed_mode} mode.`
+  ];
+  result.continuity_report.continuity_risks = [
+    "Semantic cognition remains non-deterministic and non-authoritative."
+  ];
+  result.continuity_report.continuity_recommendations = [
+    "Review continuity evidence before any separate governed action."
+  ];
+  return canonicalize(result);
+}
+
+function importSemanticProposalFromSidepanel() {
+  const proposalInput = document.getElementById("chatgpt-semantic-proposal");
+  const validation = validateSemanticProposal(proposalInput ? proposalInput.value : "");
+  const result = validation.status === "ACCEPTED"
+    ? runSemanticProposalContinuityFlow(validation)
+    : semanticProposalBlockedResult(validation);
+  window.sidepanelRenderResult(result);
 }
 
 function replaySessionEntry(summary, index) {
@@ -439,6 +631,8 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.lineageSummaryArtifact, artifactJson(lineageSummaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.authorityBoundaryArtifact, artifactJson(authorityBoundaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.semanticBoundaryArtifact, artifactJson(semanticBoundaryArtifact(latest)));
+  setCockpitText(COCKPIT_IDS.semanticProposalValidationStatus, semanticProposalValidationSummary(latest));
+  setCockpitText(COCKPIT_IDS.semanticProposalArtifact, artifactJson(semanticProposalArtifact(latest)));
   renderReplaySessionVisibility();
 }
 
@@ -471,4 +665,9 @@ if (governedDemoButton) {
 const loadReplayButton = document.getElementById("load-replay-session");
 if (loadReplayButton) {
   loadReplayButton.onclick = loadReplaySession;
+}
+
+const importSemanticProposalButton = document.getElementById("import-semantic-proposal");
+if (importSemanticProposalButton) {
+  importSemanticProposalButton.onclick = importSemanticProposalFromSidepanel;
 }
