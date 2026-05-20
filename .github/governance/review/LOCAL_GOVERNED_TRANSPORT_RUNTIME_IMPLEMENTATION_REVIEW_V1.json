@@ -1,0 +1,206 @@
+{
+  "review_id": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_IMPLEMENTATION_REVIEW_V1",
+  "status": "REVIEW_COMPLETE",
+  "review_decision": "READY_FOR_PURE_LOCAL_HANDLER_IMPLEMENTATION",
+  "reviewed_path": [
+    "pure local handler first",
+    "no endpoint unless separately approved",
+    "localhost endpoint deferred",
+    "explicit session_id required",
+    "deterministic transport envelope validation",
+    "semantic proposal hash verification",
+    "append-only in-memory transport event construction",
+    "cockpit-visible transport status",
+    "compact rejection rendering"
+  ],
+  "non_goals": [
+    "endpoint implementation",
+    "provider dispatch",
+    "execution",
+    "approval automation",
+    "orchestration",
+    "autonomous continuation",
+    "durable replay backend",
+    "distributed transport",
+    "hidden background import"
+  ],
+  "minimal_files_to_change": [
+    {
+      "path": "sapianta_system/runtime/semantic_transport.py",
+      "purpose": "pure local handler and deterministic helpers"
+    },
+    {
+      "path": "tests/test_local_governed_transport_runtime.py",
+      "purpose": "handler behavior and forbidden capability tests"
+    },
+    {
+      "path": "browser_companion/sidepanel.js",
+      "purpose": "optional read-only rendering helper for transport reports"
+    },
+    {
+      "path": "browser_companion/sidepanel.html",
+      "purpose": "optional minimal static container if needed"
+    }
+  ],
+  "endpoint_status": "DEFERRED",
+  "handler_function_shape": {
+    "name": "handle_local_governed_transport",
+    "inputs": {
+      "envelope": "dict",
+      "session_registry": "dict"
+    },
+    "output": "dict transport report",
+    "constraints": [
+      "pure deterministic function",
+      "no filesystem reads or writes",
+      "no network calls",
+      "no subprocess calls",
+      "no providers",
+      "no dispatch",
+      "no approval",
+      "no execution",
+      "no lifecycle mutation",
+      "no replay mutation outside returned in-memory event object",
+      "no global mutable state",
+      "no time random environment or browser state dependency",
+      "no endpoint binding"
+    ]
+  },
+  "input_envelope_shape": [
+    "transport_id",
+    "session_id",
+    "proposal_id",
+    "artifact_hash",
+    "created_at_policy",
+    "source_label",
+    "semantic_proposal",
+    "authority_boundary_statement",
+    "replay_policy",
+    "lifecycle_policy"
+  ],
+  "output_transport_report_shape": [
+    "status",
+    "transport_id",
+    "session_id",
+    "proposal_id",
+    "replay_event_id",
+    "hash_verification_status",
+    "authority_label",
+    "rejection_reason",
+    "validation",
+    "transport_event",
+    "operator_visibility",
+    "non_authority_guarantees"
+  ],
+  "session_binding_checks": [
+    "session_id exists in envelope",
+    "session_id exists in explicit session_registry",
+    "session is operator-visible",
+    "session is not ambiguous",
+    "session does not request continuation",
+    "session binding does not mutate another session",
+    "no implicit session source"
+  ],
+  "replay_event_construction": {
+    "fields": [
+      "replay_event_id",
+      "event_type",
+      "transport_status",
+      "transport_id",
+      "session_id",
+      "proposal_id",
+      "artifact_hash",
+      "hash_verification_status",
+      "source_label",
+      "authority_label",
+      "rejection_reason",
+      "lineage_refs",
+      "visibility_scope",
+      "created_at_policy"
+    ],
+    "rules": [
+      "canonical JSON input",
+      "deterministic replay_event_id",
+      "append-candidate only",
+      "no persistence",
+      "no replay rewrite",
+      "no replay repair",
+      "no inferred replay entries",
+      "no durable replay backend semantics"
+    ]
+  },
+  "failure_statuses": [
+    "TRANSPORT_ACCEPTED",
+    "TRANSPORT_REJECTED_SCHEMA",
+    "TRANSPORT_REJECTED_HASH",
+    "TRANSPORT_REJECTED_SESSION",
+    "TRANSPORT_REJECTED_AUTHORITY",
+    "TRANSPORT_REJECTED_UNSAFE_MODE",
+    "TRANSPORT_REJECTED_REPLAY_POLICY"
+  ],
+  "cockpit_visibility_requirements": [
+    "transport status",
+    "session attachment",
+    "replay event ID",
+    "hash verification status",
+    "authority label",
+    "compact rejection reason",
+    "source label",
+    "proposal ID",
+    "transport ID",
+    "non-authority labels"
+  ],
+  "mandatory_labels": [
+    "SEMANTIC_TRANSPORT_ONLY",
+    "SESSION_REPLAY_ONLY",
+    "HASH_VERIFIED_IS_INTEGRITY_ONLY",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL",
+    "CONTINUITY_VISIBLE_IS_NOT_EXECUTION_AUTHORIZATION"
+  ],
+  "test_requirements": [
+    "valid envelope returns TRANSPORT_ACCEPTED",
+    "missing fields return TRANSPORT_REJECTED_SCHEMA",
+    "malformed hash returns TRANSPORT_REJECTED_HASH",
+    "hash mismatch returns TRANSPORT_REJECTED_HASH",
+    "missing session returns TRANSPORT_REJECTED_SESSION",
+    "unknown session returns TRANSPORT_REJECTED_SESSION",
+    "non-visible session returns TRANSPORT_REJECTED_SESSION",
+    "unsafe mode returns TRANSPORT_REJECTED_UNSAFE_MODE",
+    "authority claims return TRANSPORT_REJECTED_AUTHORITY",
+    "replay rewrite repair inference hidden state or durable replay policy returns TRANSPORT_REJECTED_REPLAY_POLICY",
+    "deterministic output for identical inputs",
+    "deterministic replay_event_id",
+    "handler does not mutate envelope",
+    "handler does not mutate session_registry",
+    "no filesystem network subprocess provider sidepanel runtime replay or lifecycle calls",
+    "no dispatch approval execution orchestration or autonomous continuation"
+  ],
+  "rollback_boundary": [
+    "remove sapianta_system/runtime/semantic_transport.py if newly created",
+    "remove tests/test_local_governed_transport_runtime.py",
+    "remove optional sidepanel rendering hooks if added",
+    "retain semantic proposal file import",
+    "retain hash verification",
+    "retain continuity cockpit",
+    "retain replay session behavior",
+    "do not touch preview runtime endpoint code"
+  ],
+  "risks": [
+    "later pressure to add endpoint before session attachment semantics are proven",
+    "append-candidate event may be confused with durable replay",
+    "TRANSPORT_ACCEPTED may be over-trusted if non-authority labels are absent",
+    "future collapse from transport into dispatch unless provider calls remain forbidden"
+  ],
+  "final_guardrails": [
+    "pure local handler only",
+    "endpoint work deferred",
+    "deterministic",
+    "in-memory",
+    "explicit-input-only",
+    "non-authoritative",
+    "non-executing",
+    "non-persistent",
+    "side-effect free"
+  ],
+  "recommended_next_step": "Implement sapianta_system/runtime/semantic_transport.py and tests/test_local_governed_transport_runtime.py only, unless a later implementation request explicitly includes read-only sidepanel rendering."
+}
