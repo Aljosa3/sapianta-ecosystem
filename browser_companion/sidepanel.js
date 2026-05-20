@@ -20,6 +20,8 @@ const REJECTED_SEMANTIC_PROPOSAL_MODES = [
 ];
 
 const COCKPIT_IDS = {
+  executiveOperationalSummary: "executive-operational-summary",
+  operationalNarrative: "operational-narrative",
   replayTimeline: "replay-timeline",
   lifecycleView: "lifecycle-view",
   approvalVisibility: "approval-visibility",
@@ -217,6 +219,58 @@ function continuityFindingsSummary(entry) {
     `findings: ${compactValue(report.continuity_findings)}`,
     `risks: ${compactValue(report.continuity_risks)}`,
     `recommendations: ${compactValue(report.continuity_recommendations)}`
+  ].join("\n");
+}
+
+function riskLevel(entry) {
+  const report = continuityReport(entry);
+  const proposal = entry.semantic_proposal || {};
+  if (statusValue(entry) === "BLOCKED" || report.aggregate_governance_status === "CONTINUITY_BOUNDARY_VIOLATION") {
+    return "BOUNDARY_REVIEW";
+  }
+  if (proposal.risk_class) {
+    return String(proposal.risk_class).toUpperCase();
+  }
+  return "LOW";
+}
+
+function currentMode(entry) {
+  const proposal = entry.semantic_proposal || {};
+  if (proposal.proposed_mode) {
+    return proposal.proposed_mode;
+  }
+  return "READ_ONLY";
+}
+
+function executiveOperationalSummary(entry) {
+  const report = continuityReport(entry);
+  const continuityStatus = report.aggregate_governance_status === "CONTINUITY_BOUNDARY_VIOLATION"
+    ? "BOUNDARY_REVIEW"
+    : report.aggregate_governance_status ? "VALID" : "UNKNOWN";
+  return [
+    "SYSTEM STATUS: STABLE",
+    `CONTINUITY STATUS: ${continuityStatus}`,
+    "REPLAY STATUS: PRESERVED",
+    "LIFECYCLE STATUS: READ_ONLY",
+    "BOUNDARY STATUS: PRESERVED",
+    `RISK LEVEL: ${riskLevel(entry)}`,
+    `CURRENT MODE: ${currentMode(entry)}`,
+    "AUTHORITY: VISIBILITY_ONLY_NOT_APPROVAL_DISPATCH_EXECUTION_OR_CONTINUATION"
+  ].join("\n");
+}
+
+function operationalNarrative(entry) {
+  const report = continuityReport(entry);
+  const hasReport = Boolean(report.aggregate_governance_status);
+  const violations = ((report.authority_boundary_summary || {}).violations || []).length;
+  const replayVisible = (report.replay_visibility_summary || {}).visible === true;
+  const lifecycleVisible = (report.lifecycle_visibility_summary || {}).visible === true;
+  return [
+    hasReport ? "Governance continuity is stable." : "Governance continuity has not been rendered yet.",
+    replayVisible ? "Replay visibility is preserved." : "Replay visibility is awaiting an explicit local entry.",
+    violations ? "Authority findings require review." : "No authority violations detected.",
+    lifecycleVisible ? "Lifecycle visibility remains read-only." : "Lifecycle visibility remains read-only and awaits rendered evidence.",
+    "This summary is non-authoritative and never implies execution readiness."
   ].join("\n");
 }
 
@@ -609,6 +663,8 @@ function runGovernedDemoFromSidepanel() {
 
 function renderReadOnlyCockpit() {
   const latest = lifecycleEntries[lifecycleEntries.length - 1] || {};
+  setCockpitText(COCKPIT_IDS.executiveOperationalSummary, executiveOperationalSummary(latest));
+  setCockpitText(COCKPIT_IDS.operationalNarrative, operationalNarrative(latest));
   setCockpitText(
     COCKPIT_IDS.replayTimeline,
     lifecycleEntries.map(replaySummary).join("\n\n") || "No replay entries rendered."
