@@ -1,0 +1,145 @@
+{
+  "spec_id": "UX_SIMPLIFICATION_AND_EVIDENCE_CLARITY_V1",
+  "status": "DRAFT_SPECIFICATION",
+  "purpose": "Reduce operator cognition load while preserving governance evidence, replay visibility, continuity semantics, lineage visibility, and authority boundaries.",
+  "non_goals": [
+    "frontend redesign",
+    "visual polish",
+    "provider dispatch",
+    "execution runtime",
+    "orchestration",
+    "durable replay backend",
+    "semantic authority expansion"
+  ],
+  "design_principle": "Compress first. Inspect second. Never erase evidence.",
+  "executive_governance_layer": {
+    "preferred_compact_states": [
+      "SAFE_REVIEW_ONLY",
+      "BLOCKED",
+      "INTEGRITY_VERIFIED",
+      "SESSION_REPLAY_ONLY",
+      "CONTINUITY_VISIBLE"
+    ],
+    "operator_must_understand_within_seconds": [
+      "current safety state",
+      "artifact integrity state",
+      "replay scope",
+      "continuity visibility",
+      "authority scope"
+    ],
+    "must_not_imply": [
+      "approval",
+      "dispatch",
+      "execution",
+      "semantic correctness",
+      "durable replay",
+      "autonomous continuation"
+    ]
+  },
+  "evidence_hierarchy": {
+    "level_1_compact_operator_summary": [
+      "current governance state",
+      "hash/integrity state",
+      "replay scope",
+      "continuity visibility",
+      "authority statement",
+      "blocking reason when blocked"
+    ],
+    "level_2_governance_findings": [
+      "validation findings",
+      "hash verification findings",
+      "continuity findings",
+      "replay/lifecycle findings",
+      "authority findings",
+      "recommended operator next step"
+    ],
+    "level_3_full_artifact_inspection": [
+      "semantic proposal artifact",
+      "validation artifact",
+      "hash verification artifact",
+      "continuity report artifact",
+      "replay summary artifact",
+      "lifecycle summary artifact",
+      "lineage summary artifact",
+      "authority and semantic boundary artifacts"
+    ]
+  },
+  "semantic_clarification_rules": {
+    "HASH_VERIFIED": "artifact integrity only; not semantic correctness, truth, quality, safety, approval, or execution readiness",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION": "continuity-ingestion readiness only; not approval, dispatchability, execution authorization, semantic authority, or autonomous continuation",
+    "CONTINUITY_VALID": "continuity evidence visible and internally valid for review; not execution authorization, provider dispatch, approval, or next-step authorization",
+    "REPLAY_VISIBLE": "replay evidence visible; session-local unless a durable replay backend milestone explicitly exists"
+  },
+  "replay_simplification": {
+    "first_level_statement": "SESSION_REPLAY_ONLY",
+    "operator_meaning": [
+      "replay is session-local",
+      "replay is read-only",
+      "replay is visibility-only",
+      "replay is not durable",
+      "replay is not a ledger write",
+      "replay is not mutation",
+      "replay is not repair"
+    ],
+    "progressive_disclosure_targets": [
+      "replay timeline",
+      "replay session",
+      "replay artifact view"
+    ]
+  },
+  "authority_compression": {
+    "first_level_statement": "SEMANTIC_TRANSPORT_ONLY: no approval, no dispatch, no execution, no provider call, no orchestration, no autonomous continuation.",
+    "detailed_evidence_location": "expandable authority evidence below compact statement",
+    "goal": "reduce repeated authority labels without weakening authority boundaries"
+  },
+  "ux_safety_constraints": {
+    "preserve": [
+      "deterministic rendering",
+      "read-only rendering",
+      "replay-safe visibility",
+      "lineage visibility",
+      "artifact inspection",
+      "fail-closed semantics",
+      "explicit boundary labels",
+      "semantic cognition/governance/execution separation"
+    ],
+    "do_not_introduce": [
+      "hidden abstraction",
+      "authority ambiguity",
+      "evidence removal",
+      "silent behavior",
+      "automatic continuation",
+      "semantic inference",
+      "inferred approval",
+      "inferred replay durability",
+      "lifecycle mutation",
+      "replay mutation"
+    ]
+  },
+  "review_targets": [
+    "cockpit density",
+    "duplicated labels",
+    "cognitive overload",
+    "governance readability",
+    "operator trust clarity",
+    "evidence discoverability",
+    "compact states preserve underlying evidence",
+    "raw artifacts remain accessible",
+    "authority labels are clearer, not weaker"
+  ],
+  "governance_clarity_improvements": [
+    "faster operator orientation",
+    "fewer competing green-check concepts",
+    "clearer separation between integrity, certification, continuity, replay, and authority",
+    "less replay terminology overlap",
+    "one primary authority statement before expanded evidence",
+    "preserved audit-grade inspection path"
+  ],
+  "remaining_risks": [
+    "compact states may hide nuance if implemented without expandable evidence",
+    "operators may still over-trust INTEGRITY_VERIFIED",
+    "session-local replay requires persistent labeling until durable replay exists",
+    "too much compression could weaken constitutional visibility"
+  ],
+  "recommended_next_step": "Implement a sidepanel-only UX simplification pass that adds the executive governance layer and evidence hierarchy without removing raw artifact inspection or changing runtime behavior."
+}
