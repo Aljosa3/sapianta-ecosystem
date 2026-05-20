@@ -1,0 +1,170 @@
+{
+  "proving_id": "REAL_WORKFLOW_PROVING_V1",
+  "status": "OPERATIONAL_PROVING_COMPLETE",
+  "scope": [
+    "semantic proposal text import",
+    "semantic proposal file import",
+    "deterministic proposal validation",
+    "SHA-256 artifact hash verification",
+    "continuity cockpit rendering",
+    "replay visibility",
+    "lifecycle visibility",
+    "artifact inspection",
+    "authority boundary labels"
+  ],
+  "non_goals": [
+    "new feature development",
+    "provider dispatch",
+    "execution runtime",
+    "orchestration",
+    "durable backend",
+    "ChatGPT API integration"
+  ],
+  "proving_method": {
+    "method_type": "structured operator review",
+    "automation_status": "not an automated browser session",
+    "evidence_sources": [
+      "browser_companion/sidepanel.html",
+      "browser_companion/sidepanel.js",
+      ".github/governance/fixtures/semantic_proposal_v1.json",
+      "tests/test_chatgpt_semantic_proposal_import.py",
+      "tests/test_semantic_proposal_file_import.py",
+      "tests/test_semantic_proposal_hash_verification.py"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO_1",
+      "name": "ChatGPT semantic proposal for governance review",
+      "input_type": "text_paste_explicit_import",
+      "expected_result": "accepted bounded proposal rendered through continuity cockpit",
+      "operator_clarity": "good",
+      "authority_boundary_clarity": "strong",
+      "continuity_report_usefulness": "medium_high",
+      "replay_lifecycle_visibility_usefulness": "medium",
+      "artifact_inspection_usefulness": "high_for_audit_minded_operator",
+      "ux_friction": "moderate",
+      "confusing_labels": [
+        "continuity status versus semantic proposal validation status",
+        "session replay visibility versus durable replay"
+      ],
+      "duplicate_concepts": [
+        "replay timeline",
+        "replay sessions",
+        "replay artifact inspection",
+        "continuity status",
+        "validator composition status"
+      ],
+      "missing_evidence": [
+        "no automated browser interaction evidence for operator comprehension"
+      ],
+      "helped_or_added_noise": "helped, with moderate cockpit density",
+      "governance_clarity_score": 8,
+      "operational_usefulness_score": 7
+    },
+    {
+      "scenario_id": "SCENARIO_2",
+      "name": "ChatGPT semantic proposal with unsafe execution wording",
+      "input_type": "text_paste_explicit_import",
+      "expected_result": "blocked deterministic validation result",
+      "operator_clarity": "good",
+      "authority_boundary_clarity": "very_strong",
+      "continuity_report_usefulness": "medium",
+      "replay_lifecycle_visibility_usefulness": "low_to_medium",
+      "artifact_inspection_usefulness": "medium",
+      "ux_friction": "low_for_rejection_moderate_for_boundary_wording",
+      "confusing_labels": [
+        "CONTINUITY_BOUNDARY_VIOLATION may sound more severe than proposal rejection"
+      ],
+      "duplicate_concepts": [
+        "blocked lifecycle entry and continuity boundary violation"
+      ],
+      "missing_evidence": [
+        "compact rejection reason summary"
+      ],
+      "helped_or_added_noise": "helped by rejecting unsafe wording, with some report verbosity",
+      "governance_clarity_score": 9,
+      "operational_usefulness_score": 7
+    },
+    {
+      "scenario_id": "SCENARIO_3",
+      "name": "Valid semantic proposal imported from semantic_proposal.json with hash verification",
+      "input_type": "explicit_local_file_import",
+      "fixture": ".github/governance/fixtures/semantic_proposal_v1.json",
+      "expected_result": "accepted bounded proposal with HASH_VERIFIED integrity status",
+      "operator_clarity": "strong",
+      "authority_boundary_clarity": "strong",
+      "continuity_report_usefulness": "high",
+      "replay_lifecycle_visibility_usefulness": "medium_high",
+      "artifact_inspection_usefulness": "high",
+      "ux_friction": "moderate",
+      "confusing_labels": [
+        "HASH_VERIFIED could be overread as semantic correctness unless labeled carefully",
+        "CERTIFIED_FOR_CONTINUITY_INGESTION could be overread as approval"
+      ],
+      "duplicate_concepts": [
+        "artifact certification",
+        "hash verification",
+        "proposal validation",
+        "continuity validity"
+      ],
+      "missing_evidence": [
+        "browser automation evidence for actual selected file import"
+      ],
+      "helped_or_added_noise": "helped most of the three scenarios by making the proposal artifact tangible and verifiable",
+      "governance_clarity_score": 8,
+      "operational_usefulness_score": 8
+    }
+  ],
+  "cross_scenario_findings": [
+    "The cockpit helps operators verify acceptance, rejection, authority boundaries, artifact integrity, and replay/lifecycle visibility.",
+    "The cockpit adds noise when an operator needs a compact rejection reason or a single recommended next action.",
+    "The file-import plus hash-verification path is the strongest proving baseline for non-copy/paste semantic transport.",
+    "The sidepanel should separate execution-capable runtime controls from read-only proving controls before a local bridge is added."
+  ],
+  "ux_issues": [
+    "Runtime controls and read-only proving controls share the same control grid.",
+    "Authority boundary labels are correct but repetitive.",
+    "Replay Timeline, Replay Sessions, and replay artifact inspection are easy to confuse.",
+    "Several validation statuses compete for operator attention.",
+    "Hash verification needs a short explanation that integrity is not semantic truth, approval, or safety."
+  ],
+  "risks": [
+    "Operator may confuse CERTIFIED_FOR_CONTINUITY_INGESTION with approval.",
+    "Operator may over-trust HASH_VERIFIED as semantic correctness.",
+    "Current replay is session-local and could be mistaken for durable replay.",
+    "Current proving lacks browser automation for real file selection.",
+    "Cockpit density may reduce adoption if not consolidated before bridge implementation."
+  ],
+  "scores": {
+    "overall_governance_clarity_score": 8,
+    "overall_operational_usefulness_score": 7
+  },
+  "readiness_assessment_for_CHATGPT_AIGOL_LOCAL_BRIDGE_V1": {
+    "decision": "CONDITIONALLY_READY_FOR_BOUNDED_LOCAL_FILE_BRIDGE_REVIEW",
+    "ready_for": [
+      "explicit local file handoff planning",
+      "operator-selected import",
+      "hash-verified semantic proposal fixture use",
+      "read-only cockpit continuity rendering"
+    ],
+    "not_ready_for": [
+      "localhost ingress",
+      "background extension import",
+      "provider dispatch",
+      "durable replay backend",
+      "ChatGPT API integration",
+      "approval automation",
+      "orchestration"
+    ]
+  },
+  "recommended_fixes_before_bridge": [
+    "Add a compact Recommended Operator Path panel for semantic proposal import.",
+    "Add a short rejection summary above detailed artifacts.",
+    "Visually separate runtime execution controls from read-only proving controls.",
+    "Add an explicit top-level marker that replay is session-only and not durable.",
+    "Add browser automation or manual evidence for actual file import.",
+    "Keep localhost POST and extension background import deferred."
+  ],
+  "recommended_next_step": "Prepare CHATGPT_AIGOL_LOCAL_BRIDGE_V1 implementation review constrained to explicit local file handoff and operator-selected import."
+}
