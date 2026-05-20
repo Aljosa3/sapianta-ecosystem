@@ -1,0 +1,88 @@
+{
+  "freeze_id": "DEMO_RUNTIME_FREEZE_V1",
+  "status": "FROZEN",
+  "freeze_decision": "DEMO_RUNTIME_FROZEN",
+  "scope": [
+    "Browser Companion sidepanel",
+    "governed demo trigger flow",
+    "ChatGPT semantic proposal import",
+    "bounded in-memory replay session persistence",
+    "continuity artifact inspection",
+    "continuity report synthesis",
+    "validator composition",
+    "envelope validation",
+    "replay and lifecycle visibility",
+    "authority boundary labels"
+  ],
+  "certified_capabilities": {
+    "persistent_sidepanel_operational_cockpit": true,
+    "explicit_governed_demo_trigger": true,
+    "explicit_chatgpt_semantic_proposal_import": true,
+    "deterministic_semantic_proposal_validation": true,
+    "read_only_artifact_inspection": true,
+    "bounded_in_memory_replay_session_visibility": true,
+    "explicit_replay_loading": true,
+    "continuity_report_visibility": true,
+    "replay_lifecycle_lineage_visibility": true,
+    "authority_boundary_visibility": true,
+    "semantic_boundary_visibility": true
+  },
+  "certified_non_capabilities": {
+    "provider_calls": false,
+    "provider_dispatch": false,
+    "approval_automation": false,
+    "execution_runtime": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "durable_persistence": false,
+    "hidden_persistence": false,
+    "chatgpt_api_integration": false,
+    "backend_routes_for_semantic_import": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "hidden_authority": false
+  },
+  "chatgpt_semantic_proposal_import_boundary": {
+    "human_mediated": true,
+    "explicit_local_json_only": true,
+    "accepted_modes": [
+      "READ_ONLY",
+      "REVIEW_ONLY",
+      "DEMO_ONLY"
+    ],
+    "rejected_modes": [
+      "EXECUTE",
+      "AUTO_EXECUTE",
+      "AUTONOMOUS",
+      "PROVIDER_RUNTIME",
+      "ORCHESTRATION"
+    ],
+    "chatgpt_api_integration": false,
+    "provider_calls": false,
+    "backend_routes": false,
+    "execution_endpoints": false
+  },
+  "replay_lifecycle_semantics": {
+    "replay_session_scope": "active sidepanel runtime session only",
+    "append_only_in_memory_entries": true,
+    "deterministic_canonical_json_rendering": true,
+    "explicit_replay_loading_only": true,
+    "durable_replay_storage": false,
+    "lifecycle_rendering_read_only": true,
+    "lifecycle_transition_created_by_rendering": false
+  },
+  "test_evidence": {
+    "full_pytest": "python -B -m pytest tests",
+    "diff_check": "git diff --check",
+    "focused_tests": [
+      "tests/test_demo_trigger_flow.py",
+      "tests/test_sidepanel_continuity_runtime_rendering.py",
+      "tests/test_continuity_artifact_inspection.py",
+      "tests/test_persistent_replay_session.py",
+      "tests/test_chatgpt_semantic_proposal_import.py"
+    ]
+  },
+  "freeze_statement": "The demo runtime is frozen as bounded operational proving infrastructure and must not gain provider dispatch, execution, orchestration, durable persistence, or ChatGPT API integration without a separate governance milestone."
+}
