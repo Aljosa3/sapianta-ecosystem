@@ -210,6 +210,15 @@ Replay visibility is awaiting an explicit local entry.
 Lifecycle visibility remains read-only.
 No authority has been granted.</pre>
           </article>
+          <article class="cockpit-panel" aria-labelledby="local-bridge-heading">
+            <h3 id="local-bridge-heading">Local Bridge</h3>
+            <p class="cockpit-label">Explicit ChatGPT to AiGOL local file handoff. Operator-selected import only; no endpoint, background listener, provider call, approval, dispatch, execution, orchestration, or durable replay backend.</p>
+            <pre id="local-bridge-status" class="cockpit-output">BRIDGE MODE: LOCAL_FILE_HANDOFF
+BRIDGE AUTHORITY: SEMANTIC_TRANSPORT_ONLY
+INTEGRITY LABEL: HASH_VERIFIED_IS_INTEGRITY_ONLY
+CERTIFICATION LABEL: CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL
+REPLAY LABEL: SESSION_LOCAL_REPLAY_ONLY</pre>
+          </article>
           <fieldset class="cockpit-group" aria-label="Governance">
             <legend>Governance</legend>
             <article class="cockpit-panel" aria-labelledby="continuity-human-request-heading">
