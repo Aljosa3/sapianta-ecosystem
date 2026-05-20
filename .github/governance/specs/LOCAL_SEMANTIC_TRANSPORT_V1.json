@@ -1,0 +1,194 @@
+{
+  "spec_id": "LOCAL_SEMANTIC_TRANSPORT_V1",
+  "status": "DRAFT_TRANSPORT_SPECIFICATION",
+  "purpose": "Define the first non-copy/paste governed semantic transport between ChatGPT / Claude semantic proposals and the AiGOL operational cockpit.",
+  "operational_flow": [
+    "ChatGPT / Claude semantic proposal",
+    "local transport artifact",
+    "AiGOL proposal ingestion",
+    "deterministic validation",
+    "continuity cockpit rendering"
+  ],
+  "recommended_transport_path": {
+    "type": "local_file_drop",
+    "artifact_name": "semantic_proposal.json",
+    "decision": "RECOMMENDED_FOR_V1",
+    "rationale": [
+      "preserves explicit user-visible transfer",
+      "avoids ChatGPT / Claude API coupling",
+      "avoids browser extension background channels",
+      "creates tangible proposal artifact for hashing and replay reference",
+      "supports deterministic schema validation",
+      "keeps provider dispatch, approval, and execution outside the transport",
+      "keeps durable production persistence deferred"
+    ]
+  },
+  "rejected_or_deferred_transport_paths": {
+    "localhost_post_endpoint": {
+      "status": "DEFERRED",
+      "reason": "Introduces a network-facing ingestion surface requiring localhost boundary, CSRF, origin, and replay-write review."
+    },
+    "browser_extension_import_endpoint": {
+      "status": "DEFERRED",
+      "reason": "Risks hidden background behavior or implicit page coupling unless separately specified."
+    },
+    "clipboard_assisted_explicit_import": {
+      "status": "TRANSITIONAL_ALLOWED_NOT_CANONICAL",
+      "reason": "Reduces typing friction but remains close to copy/paste and provides weaker artifact identity than file-drop JSON."
+    }
+  },
+  "transport_artifact_schema": {
+    "artifact_name": "semantic_proposal.json",
+    "required_fields": [
+      "transport_artifact_id",
+      "artifact_version",
+      "created_by",
+      "created_at",
+      "source_model_family",
+      "human_request",
+      "semantic_intent",
+      "proposed_mode",
+      "risk_class",
+      "authority_boundary_statement",
+      "semantic_boundary_statement",
+      "requested_action_type",
+      "lineage_ref",
+      "replay_identity",
+      "artifact_hash"
+    ],
+    "accepted_proposed_modes": [
+      "READ_ONLY",
+      "REVIEW_ONLY",
+      "DEMO_ONLY"
+    ],
+    "rejected_proposed_modes": [
+      "EXECUTE",
+      "AUTO_EXECUTE",
+      "AUTONOMOUS",
+      "PROVIDER_RUNTIME",
+      "ORCHESTRATION"
+    ]
+  },
+  "deterministic_serialization": {
+    "canonical_json": true,
+    "stable_key_ordering": true,
+    "utf8_encoding": true,
+    "implicit_timestamps_added_during_import": false,
+    "hidden_fields_added_during_import": false,
+    "artifact_hash_excludes_artifact_hash_field": true,
+    "hash_repair_allowed": false
+  },
+  "aigol_proposal_ingestion": {
+    "allowed_behaviors": [
+      "read explicitly selected local artifact",
+      "parse JSON deterministically",
+      "validate required fields",
+      "validate bounded mode",
+      "validate authority boundary language",
+      "compute or verify replay-safe identity",
+      "render accepted proposals in continuity cockpit",
+      "render rejected proposals as blocked validation evidence"
+    ],
+    "forbidden_behaviors": [
+      "automatic file discovery",
+      "directory watching",
+      "provider calls",
+      "execution dispatch",
+      "approval actions",
+      "lifecycle transitions",
+      "replay rewriting",
+      "artifact hash repair",
+      "durable artifact persistence without separate milestone"
+    ]
+  },
+  "authority_boundaries": {
+    "chatgpt_claude": "semantic cognition only",
+    "aigol_agol": "proposal admissibility, validation, continuity, replay, and boundary visibility",
+    "codex_providers": "not invoked by this transport",
+    "sidepanel": "read-only cockpit rendering",
+    "successful_import_authorizes": "cockpit visibility only",
+    "approval": false,
+    "dispatch": false,
+    "execution": false,
+    "continuation_authority": false
+  },
+  "replay_guarantees": {
+    "stable_transport_artifact_id": true,
+    "stable_lineage_ref": true,
+    "stable_replay_identity": true,
+    "deterministic_artifact_hash": true,
+    "explicit_import_event_visibility": true,
+    "read_only_artifact_inspection": true,
+    "replay_rewrite": false,
+    "replay_repair": false,
+    "replay_delete": false,
+    "replay_inference": false
+  },
+  "lifecycle_guarantees": {
+    "execution_lifecycle_transitions_created": false,
+    "allowed_visibility_states": [
+      "IMPORTED_FOR_REVIEW",
+      "VALIDATED_FOR_COCKPIT",
+      "BLOCKED"
+    ],
+    "proposal_visibility_states_are_dispatch_states": false,
+    "approved_state_created": false,
+    "dispatched_state_created": false,
+    "executing_state_created": false,
+    "returned_state_created": false
+  },
+  "cockpit_rendering_guarantees": {
+    "proposal_validation_status": true,
+    "semantic_proposal_artifact": true,
+    "human_request": true,
+    "semantic_intent": true,
+    "proposed_mode": true,
+    "risk_class": true,
+    "authority_boundary": true,
+    "semantic_boundary": true,
+    "continuity_status": true,
+    "replay_visibility": true,
+    "lifecycle_visibility": true,
+    "lineage_visibility": true,
+    "findings_risks_recommendations": true,
+    "deterministic": true,
+    "read_only": true,
+    "in_memory": true,
+    "sidepanel_local": true,
+    "non_authoritative": true
+  },
+  "security_risks": [
+    "malformed JSON or oversized artifacts",
+    "unsafe modes disguised as bounded review",
+    "authority boundary statements that imply execution or continuation",
+    "model-provided content claiming approval",
+    "artifact hash mismatch",
+    "path traversal if file import later reads filesystem paths",
+    "localhost endpoint exposure if POST transport is added later",
+    "hidden background import if extension endpoint is added later",
+    "operator confusion between semantic proposal and governed approval"
+  ],
+  "governance_guarantees": {
+    "explicit_user_visible_transfer": true,
+    "deterministic_proposal_validation": true,
+    "replay_safe_artifact_identity": true,
+    "provider_calls": false,
+    "dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "hidden_persistence": false,
+    "autonomous_continuation": false,
+    "semantic_authority_expansion": false
+  },
+  "recommended_implementation_sequence": [
+    "Create a review-only fixture for semantic_proposal.json.",
+    "Define deterministic hash validation for proposal artifacts.",
+    "Add explicit sidepanel file selection for local JSON import.",
+    "Reuse existing semantic proposal validation rules.",
+    "Render accepted artifacts through the existing continuity cockpit.",
+    "Render rejected artifacts as blocked validation evidence.",
+    "Add tests proving no provider, dispatch, approval, execution, orchestration, durable persistence, replay mutation, or lifecycle mutation paths are introduced.",
+    "Review before considering localhost POST or browser extension import endpoint variants."
+  ]
+}
