@@ -1,0 +1,97 @@
+{
+  "freeze_id": "BRIDGE_RUNTIME_FREEZE_V1",
+  "status": "FROZEN",
+  "decision": "BRIDGE_RUNTIME_FROZEN",
+  "frozen_scope": [
+    "semantic proposal certification",
+    "deterministic hash verification",
+    "replay-safe artifact identity",
+    "continuity synthesis",
+    "lineage visibility",
+    "bounded replay session visibility",
+    "operational cockpit rendering",
+    "bounded ChatGPT <-> AiGOL local bridge",
+    "authority separation",
+    "explicit local semantic transport",
+    "non-authoritative continuity semantics"
+  ],
+  "frozen_bridge_model": [
+    "ChatGPT semantic proposal",
+    "semantic_proposal.json",
+    "operator-selected sidepanel import",
+    "deterministic validation",
+    "SHA-256 hash verification",
+    "continuity cockpit rendering",
+    "in-memory replay session visibility"
+  ],
+  "certified_capabilities": {
+    "explicit_local_semantic_artifact_handoff": true,
+    "operator_selected_import_only": true,
+    "deterministic_required_field_validation": true,
+    "bounded_mode_validation": true,
+    "unsafe_mode_rejection": true,
+    "deterministic_sha256_hash_verification": true,
+    "fail_closed_ingestion_integrity": true,
+    "read_only_continuity_cockpit_rendering": true,
+    "session_local_replay_visibility": true,
+    "lineage_visibility": true,
+    "authority_visibility": true,
+    "semantic_boundary_visibility": true,
+    "replay_lifecycle_visibility": true
+  },
+  "certified_non_capabilities": {
+    "provider_dispatch": false,
+    "execution_runtime": false,
+    "provider_integration": false,
+    "orchestration": false,
+    "localhost_ingress": false,
+    "authenticated_ingress": false,
+    "distributed_semantic_transport": false,
+    "durable_replay_backend": false,
+    "chatgpt_api_integration": false,
+    "approval_automation": false,
+    "autonomous_continuation": false,
+    "hidden_persistence": false,
+    "replay_mutation": false,
+    "lifecycle_mutation": false,
+    "artifact_rewriting": false,
+    "hash_repair": false
+  },
+  "authority_separation": {
+    "chatgpt_llms": "semantic cognition only",
+    "aigol_agol": "governance substrate for admissibility, continuity, replay, lifecycle visibility, and boundary interpretation",
+    "browser_companion": "operator-facing read-only cockpit",
+    "local_bridge": "semantic transport only",
+    "codex_providers": "not invoked",
+    "valid_is_approval": false,
+    "hash_verified_is_semantic_correctness": false,
+    "certified_for_continuity_ingestion_is_approval": false,
+    "continuity_valid_is_dispatch": false
+  },
+  "replay_lifecycle_freeze": {
+    "replay_scope": "active sidepanel session only",
+    "durable_replay_storage_certified": false,
+    "replay_visibility_only": true,
+    "lifecycle_visibility_only": true,
+    "lifecycle_transition_created": false
+  },
+  "freeze_evidence": [
+    ".github/governance/proving/REAL_WORKFLOW_PROVING_V1.md",
+    ".github/governance/review/CHATGPT_AIGOL_LOCAL_BRIDGE_V1_REVIEW.md",
+    ".github/governance/specs/SEMANTIC_PROPOSAL_FIXTURE_CERTIFICATION_V1.md",
+    ".github/governance/fixtures/semantic_proposal_v1.json",
+    "browser_companion/sidepanel.html",
+    "browser_companion/sidepanel.js",
+    "tests/test_chatgpt_aigol_local_bridge_v1.py",
+    "tests/test_semantic_proposal_file_import.py",
+    "tests/test_semantic_proposal_hash_verification.py"
+  ],
+  "future_work_requires_separate_governance_milestone": [
+    "durable replay backend",
+    "authenticated ingress",
+    "distributed transport",
+    "provider dispatch",
+    "orchestration",
+    "autonomous continuation"
+  ]
+}
