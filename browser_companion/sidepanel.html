@@ -92,11 +92,21 @@
         white-space: pre-wrap;
       }
 
+      .governance-chat-return {
+        min-height: 132px;
+        resize: vertical;
+      }
+
       .inspection-panel summary,
-      .replay-session-panel summary {
+      .replay-session-panel summary,
+      .audit-evidence summary {
         cursor: pointer;
         font-size: 12px;
         font-weight: 700;
+      }
+
+      .audit-evidence {
+        grid-column: 1 / -1;
       }
 
       #result {
@@ -278,7 +288,30 @@ REPLAY: append-candidate visibility only</pre>
 AUTHORITY: SEMANTIC_TRANSPORT_ONLY
 NOTE: no execution, no dispatch, no approval</pre>
           </article>
-          <fieldset class="cockpit-group" aria-label="Governance">
+          <article class="cockpit-panel" aria-labelledby="latest-action-result-card-heading">
+            <h3 id="latest-action-result-card-heading">Latest Action Result</h3>
+            <p class="cockpit-label">Operator-facing action result. This card is visibility only and does not approve, dispatch, execute, call providers, or continue autonomously.</p>
+            <pre id="latest-action-result-card" class="cockpit-output">No governed operator action has run.
+Authority: SEMANTIC_TRANSPORT_ONLY
+No execution occurred.</pre>
+          </article>
+          <article class="cockpit-panel" aria-labelledby="operator-event-stream-heading">
+            <h3 id="operator-event-stream-heading">Operator Event Stream</h3>
+            <p class="cockpit-label">Human-readable runtime narration, not raw replay. Events are deterministic operator-facing visibility only.</p>
+            <pre id="operator-event-stream" class="cockpit-output">001 INFO Awaiting explicit operator action.</pre>
+          </article>
+          <article class="cockpit-panel" aria-labelledby="governance-chat-return-heading">
+            <h3 id="governance-chat-return-heading">Governance Chat Return</h3>
+            <p class="cockpit-label">Copy-safe deterministic governance return for chat. It reports visibility outcomes only and never grants authority.</p>
+            <textarea id="governance-chat-return" class="cockpit-output governance-chat-return" readonly>Governed transport has not run.
+
+Authority: SEMANTIC_TRANSPORT_ONLY
+No execution occurred.
+No provider invoked.</textarea>
+          </article>
+          <details id="audit-evidence" class="audit-evidence">
+            <summary>Show audit evidence</summary>
+            <fieldset class="cockpit-group" aria-label="Governance">
             <legend>Governance</legend>
             <p class="cockpit-label">Level 2: Governance Findings / Risks / Recommendations</p>
             <article class="cockpit-panel" aria-labelledby="continuity-human-request-heading">
@@ -307,7 +340,7 @@ NOTE: no execution, no dispatch, no approval</pre>
               <pre id="continuity-findings" class="cockpit-output">No findings, risks, or recommendations rendered.</pre>
             </article>
           </fieldset>
-          <fieldset class="cockpit-group" aria-label="Replay">
+            <fieldset class="cockpit-group" aria-label="Replay">
             <legend>Replay</legend>
             <article class="cockpit-panel" aria-labelledby="session-replay-only-heading">
               <h3 id="session-replay-only-heading">SESSION_REPLAY_ONLY</h3>
@@ -331,7 +364,7 @@ NOTE: no execution, no dispatch, no approval</pre>
               <pre id="replay-entry-inspection" class="cockpit-output">No loaded replay entries rendered.</pre>
             </details>
           </fieldset>
-          <fieldset class="cockpit-group" aria-label="Lifecycle">
+            <fieldset class="cockpit-group" aria-label="Lifecycle">
             <legend>Lifecycle</legend>
             <article class="cockpit-panel" aria-labelledby="lifecycle-view-heading">
               <h3 id="lifecycle-view-heading">Lifecycle View</h3>
@@ -344,7 +377,7 @@ NOTE: no execution, no dispatch, no approval</pre>
               <pre id="lineage-summary" class="cockpit-output">No lineage summary rendered.</pre>
             </article>
           </fieldset>
-          <fieldset class="cockpit-group" aria-label="Semantic">
+            <fieldset class="cockpit-group" aria-label="Semantic">
             <legend>Semantic</legend>
             <article class="cockpit-panel" aria-labelledby="constitutional-layer-heading">
               <h3 id="constitutional-layer-heading">Constitutional Layer View</h3>
@@ -374,7 +407,7 @@ Codex / workers: execution through governed transport only</pre>
               <pre id="semantic-proposal-artifact" class="cockpit-output">No semantic proposal artifact rendered.</pre>
             </details>
           </fieldset>
-          <fieldset class="cockpit-group" aria-label="Authority">
+            <fieldset class="cockpit-group" aria-label="Authority">
             <legend>Authority</legend>
             <p class="cockpit-label">Authority Evidence expands the compact SEMANTIC_TRANSPORT_ONLY statement.</p>
             <article class="cockpit-panel" aria-labelledby="approval-visibility-heading">
@@ -388,7 +421,7 @@ Codex / workers: execution through governed transport only</pre>
               <pre id="governance-boundary" class="cockpit-output">Boundary evidence not yet rendered.</pre>
             </article>
           </fieldset>
-          <fieldset class="cockpit-group" aria-label="Inspection">
+            <fieldset class="cockpit-group" aria-label="Inspection">
             <legend>Inspection</legend>
             <p class="cockpit-label">Level 3: Full Artifact Inspection. Raw artifact evidence remains available and unchanged.</p>
             <details class="cockpit-panel inspection-panel">
@@ -432,6 +465,7 @@ Codex / workers: execution through governed transport only</pre>
               <pre id="inspection-semantic-boundary-artifact" class="cockpit-output">No semantic boundary artifact rendered.</pre>
             </details>
           </fieldset>
+          </details>
         </section>
         <section id="result" aria-live="polite"></section>
       </section>

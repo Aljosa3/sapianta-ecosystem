@@ -51,7 +51,10 @@ const COCKPIT_IDS = {
   semanticProposalHashVerificationStatus: "semantic-proposal-hash-verification-status",
   semanticProposalArtifact: "semantic-proposal-artifact",
   localTransportRuntimeStatus: "local-transport-runtime-status",
-  chatFirstResultCard: "chat-first-result-card"
+  chatFirstResultCard: "chat-first-result-card",
+  latestActionResultCard: "latest-action-result-card",
+  operatorEventStream: "operator-event-stream",
+  governanceChatReturn: "governance-chat-return"
 };
 
 function deterministicId(prefix, value) {
@@ -81,7 +84,11 @@ function statusValue(summary) {
 function setCockpitText(id, value) {
   const node = document.getElementById(id);
   if (node) {
-    node.textContent = value;
+    if ("value" in node) {
+      node.value = value;
+    } else {
+      node.textContent = value;
+    }
   }
 }
 
@@ -389,6 +396,150 @@ function chatFirstResultCardSummary(entry) {
     "authority_scope: SEMANTIC_TRANSPORT_ONLY",
     "note: no execution, no dispatch, no approval",
     `non_authority_guarantees: ${compactValue(report.non_authority_guarantees)}`
+  ].join("\n");
+}
+
+function latestTransportReport(entry) {
+  const flow = entry.chat_first_flow || {};
+  return entry.local_governed_transport_report || flow.transport_report || {};
+}
+
+function latestProposal(entry) {
+  return entry.semantic_proposal || {};
+}
+
+function latestActionAccepted(entry) {
+  return latestTransportReport(entry).status === "TRANSPORT_ACCEPTED";
+}
+
+function latestActionMode(entry) {
+  const flow = entry.chat_first_flow || {};
+  const proposal = latestProposal(entry);
+  return compactValue(flow.requested_mode || proposal.proposed_mode || "REVIEW_ONLY");
+}
+
+function latestActionReason(entry) {
+  const report = latestTransportReport(entry);
+  const flow = entry.chat_first_flow || {};
+  return compactValue(report.rejection_reason || flow.reason || "transport accepted for visibility");
+}
+
+function latestIntegrityStatus(entry) {
+  const report = latestTransportReport(entry);
+  const verification = entry.semantic_proposal_hash_verification || {};
+  return compactValue(report.hash_verification_status || verification.status || "not verified");
+}
+
+function latestReplayStatus(entry) {
+  const report = latestTransportReport(entry);
+  if (report.status === "TRANSPORT_ACCEPTED") {
+    return "SESSION_LOCAL_APPEND_CANDIDATE";
+  }
+  if (report.replay_event_id) {
+    return "SESSION_LOCAL_REJECTED_EVENT_VISIBLE";
+  }
+  return "SESSION_LOCAL_VISIBILITY_ONLY";
+}
+
+function latestActionResultCardSummary(entry) {
+  const report = latestTransportReport(entry);
+  if (!report.status) {
+    return [
+      "No governed operator action has run.",
+      "Authority: SEMANTIC_TRANSPORT_ONLY",
+      "No execution occurred."
+    ].join("\n");
+  }
+  if (latestActionAccepted(entry)) {
+    return [
+      "Governed transport accepted",
+      `Mode: ${latestActionMode(entry)}`,
+      `Integrity: ${latestIntegrityStatus(entry) === "HASH_VERIFIED" ? "VERIFIED" : latestIntegrityStatus(entry)}`,
+      `Replay: ${latestReplayStatus(entry)}`,
+      "Authority: SEMANTIC_TRANSPORT_ONLY",
+      "No execution occurred.",
+      "No provider invoked."
+    ].join("\n");
+  }
+  return [
+    "Governed transport rejected",
+    `Reason: ${latestActionReason(entry)}`,
+    `Mode: ${latestActionMode(entry)}`,
+    `Integrity: ${latestIntegrityStatus(entry)}`,
+    "Authority: SEMANTIC_TRANSPORT_ONLY",
+    "No execution occurred.",
+    "No provider invoked."
+  ].join("\n");
+}
+
+function operatorEventLine(sequence, status, label, reason) {
+  const suffix = reason ? ` - ${reason}` : "";
+  return `${String(sequence).padStart(3, "0")} ${status} ${label}${suffix}`;
+}
+
+function operatorEventStreamSummary(entry) {
+  const report = latestTransportReport(entry);
+  const flow = entry.chat_first_flow || {};
+  if (!report.status && !flow.status) {
+    return operatorEventLine(1, "INFO", "Awaiting explicit operator action.");
+  }
+  const accepted = report.status === "TRANSPORT_ACCEPTED";
+  const rejected = !accepted;
+  const reason = rejected ? latestActionReason(entry) : "";
+  const hashStatus = report.hash_verification_status || "HASH_NOT_VERIFIED";
+  const hashOk = hashStatus === "HASH_VERIFIED";
+  const validationOk = !rejected || !["TRANSPORT_REJECTED_SCHEMA", "TRANSPORT_REJECTED_UNSAFE_MODE", "TRANSPORT_REJECTED_AUTHORITY"].includes(report.status);
+  const envelopeOk = !rejected || !["TRANSPORT_REJECTED_SCHEMA"].includes(report.status);
+  const attachOk = accepted;
+  const replayOk = Boolean(report.replay_event_id);
+  const finalLabel = accepted ? "Governed transport accepted" : "Governed transport rejected";
+
+  return [
+    operatorEventLine(1, "INFO", "Human request received"),
+    operatorEventLine(2, flow.status === "REJECTED" ? "BLOCKED" : "SUCCESS", "Semantic proposal normalized", flow.status === "REJECTED" ? reason : ""),
+    operatorEventLine(3, validationOk ? "SUCCESS" : "REJECTED", "Semantic proposal validated", validationOk ? "" : reason),
+    operatorEventLine(4, hashOk ? "SUCCESS" : "BLOCKED", "Hash verified", hashOk ? "" : hashStatus),
+    operatorEventLine(5, envelopeOk ? "SUCCESS" : "BLOCKED", "Transport envelope prepared", envelopeOk ? "" : reason),
+    operatorEventLine(6, attachOk ? "SUCCESS" : "BLOCKED", "Governed transport attached", attachOk ? "" : reason),
+    operatorEventLine(7, replayOk ? "SUCCESS" : "BLOCKED", "Replay append candidate created", replayOk ? "" : "no append candidate"),
+    operatorEventLine(8, accepted ? "SUCCESS" : "REJECTED", finalLabel, accepted ? "" : reason)
+  ].join("\n");
+}
+
+function governanceChatReturnSummary(entry) {
+  const report = latestTransportReport(entry);
+  if (!report.status) {
+    return [
+      "Governed transport has not run.",
+      "",
+      "Authority: SEMANTIC_TRANSPORT_ONLY",
+      "No execution occurred.",
+      "No provider invoked."
+    ].join("\n");
+  }
+  if (latestActionAccepted(entry)) {
+    return [
+      "Governed transport accepted",
+      "",
+      `Mode: ${latestActionMode(entry)}`,
+      `Integrity: ${latestIntegrityStatus(entry) === "HASH_VERIFIED" ? "VERIFIED" : latestIntegrityStatus(entry)}`,
+      `Replay: ${latestReplayStatus(entry)}`,
+      "Authority: SEMANTIC_TRANSPORT_ONLY",
+      "",
+      "No execution occurred.",
+      "No provider invoked."
+    ].join("\n");
+  }
+  return [
+    "Governed transport rejected",
+    "",
+    `Reason: ${latestActionReason(entry)}`,
+    `Mode: ${latestActionMode(entry)}`,
+    `Integrity: ${latestIntegrityStatus(entry)}`,
+    "Authority: SEMANTIC_TRANSPORT_ONLY",
+    "",
+    "No execution occurred.",
+    "No provider invoked."
   ].join("\n");
 }
 
@@ -1477,6 +1628,9 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.semanticProposalArtifact, artifactJson(semanticProposalArtifact(latest)));
   setCockpitText(COCKPIT_IDS.localTransportRuntimeStatus, localTransportRuntimeSummary(latest));
   setCockpitText(COCKPIT_IDS.chatFirstResultCard, chatFirstResultCardSummary(latest));
+  setCockpitText(COCKPIT_IDS.latestActionResultCard, latestActionResultCardSummary(latest));
+  setCockpitText(COCKPIT_IDS.operatorEventStream, operatorEventStreamSummary(latest));
+  setCockpitText(COCKPIT_IDS.governanceChatReturn, governanceChatReturnSummary(latest));
   renderReplaySessionVisibility();
 }
 
