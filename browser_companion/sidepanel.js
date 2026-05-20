@@ -44,6 +44,7 @@ const COCKPIT_IDS = {
   currentReplaySession: "current-replay-session",
   replayEntryInspection: "replay-entry-inspection",
   semanticProposalValidationStatus: "semantic-proposal-validation-status",
+  semanticProposalHashVerificationStatus: "semantic-proposal-hash-verification-status",
   semanticProposalArtifact: "semantic-proposal-artifact"
 };
 
@@ -341,6 +342,7 @@ function semanticProposalArtifact(entry) {
     label: "Semantic Proposal Artifact - read-only import",
     proposal: entry.semantic_proposal || {},
     validation: entry.semantic_proposal_validation || {},
+    hash_verification: entry.semantic_proposal_hash_verification || {},
     authority: "proposal import creates no provider call, approval, dispatch, execution, or continuation authority",
     persistence: "in-memory sidepanel-local only"
   };
@@ -355,6 +357,19 @@ function semanticProposalValidationSummary(entry) {
     `proposal_id: ${compactValue(validation.proposal_id)}`,
     `errors: ${compactValue(validation.errors)}`,
     `proposed_mode: ${compactValue(validation.proposed_mode)}`
+  ].join("\n");
+}
+
+function semanticProposalHashVerificationSummary(entry) {
+  const verification = entry.semantic_proposal_hash_verification || {};
+  return [
+    "label: Semantic Proposal Hash Verification - replay-safe artifact integrity",
+    "authority: HASH VERIFIED is not approval, dispatch, execution, or continuation",
+    `status: ${compactValue(verification.status)}`,
+    `artifact_hash: ${compactValue(verification.artifact_hash)}`,
+    `computed_hash: ${compactValue(verification.computed_hash)}`,
+    `artifact_identity: ${compactValue(verification.artifact_identity)}`,
+    `errors: ${compactValue(verification.errors)}`
   ].join("\n");
 }
 
@@ -392,11 +407,19 @@ function validateSemanticProposalAuthority(proposal) {
   }
   if (
     containsClaim(claimText, "execute", ["no execute", "not execute", "without execution"]) ||
-    containsClaim(claimText, "execution authority", ["no execution authority", "not execution authority"])
+    containsClaim(claimText, "execution authority", [
+      "no execution authority",
+      "not execution authority",
+      "does not create governance decisions or execution authority",
+      "grants no approval, dispatch, execution"
+    ])
   ) {
     errors.push("implicit execution authority claim rejected");
   }
-  if (containsClaim(claimText, "provider", ["no provider", "without provider"]) || claimText.includes("codex dispatch")) {
+  if (
+    containsClaim(claimText, "provider", ["no provider", "without provider", "providers are not invoked", "provider calls: false"]) ||
+    claimText.includes("codex dispatch")
+  ) {
     errors.push("provider execution claim rejected");
   }
   if (containsClaim(claimText, "orchestration", ["no orchestration", "without orchestration"])) {
@@ -436,16 +459,89 @@ function validateSemanticProposal(rawText) {
   };
 }
 
-function localSemanticProposalFileValidation(rawText, fileName) {
+function semanticProposalHashInput(proposal) {
+  const canonicalProposal = canonicalize(proposal);
+  const { artifact_hash: artifactHash, ...hashInput } = canonicalProposal;
+  return hashInput;
+}
+
+async function semanticProposalArtifactHash(proposal) {
+  const bytes = new TextEncoder().encode(JSON.stringify(semanticProposalHashInput(proposal)));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return `sha256:${Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+async function verifySemanticProposalArtifactHash(proposal) {
+  if (!proposal || typeof proposal !== "object" || Array.isArray(proposal)) {
+    return canonicalize({
+      status: "HASH_INVALID",
+      errors: ["malformed canonical structure"],
+      artifact_hash: "unknown",
+      computed_hash: "not_computed",
+      artifact_identity: "unknown",
+      replay_safe_integrity: false
+    });
+  }
+  const artifactHash = proposal.artifact_hash;
+  const artifactIdentity = proposal.transport_artifact_id || proposal.proposal_id || "unknown";
+  if (typeof artifactHash !== "string" || artifactHash.trim() === "") {
+    return canonicalize({
+      status: "HASH_MISSING",
+      errors: ["missing artifact_hash"],
+      artifact_hash: "missing",
+      computed_hash: "not_computed",
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  if (!/^sha256:[0-9a-f]{64}$/.test(artifactHash)) {
+    return canonicalize({
+      status: "HASH_INVALID",
+      errors: ["malformed artifact_hash"],
+      artifact_hash: artifactHash,
+      computed_hash: "not_computed",
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  const computedHash = await semanticProposalArtifactHash(proposal);
+  if (computedHash !== artifactHash) {
+    return canonicalize({
+      status: "HASH_MISMATCH",
+      errors: ["artifact_hash mismatch"],
+      artifact_hash: artifactHash,
+      computed_hash: computedHash,
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  return canonicalize({
+    status: "HASH_VERIFIED",
+    errors: [],
+    artifact_hash: artifactHash,
+    computed_hash: computedHash,
+    artifact_identity: artifactIdentity,
+    replay_safe_integrity: true
+  });
+}
+
+async function localSemanticProposalFileValidation(rawText, fileName) {
   const validation = validateSemanticProposal(rawText);
   const errors = [...validation.errors];
   if (fileName !== "semantic_proposal.json") {
     errors.push("semantic proposal file must be named semantic_proposal.json");
   }
+  const hashVerification = await verifySemanticProposalArtifactHash(validation.proposal);
+  if (hashVerification.status !== "HASH_VERIFIED") {
+    errors.push(...hashVerification.errors);
+  }
   return canonicalize({
     ...validation,
     status: errors.length ? "REJECTED" : validation.status,
     errors,
+    hash_verification: hashVerification,
     import_source: "explicit local semantic_proposal.json file selection",
     file_name: fileName || "unknown",
     file_persisted: false,
@@ -459,6 +555,14 @@ function missingSemanticProposalFileValidation() {
     status: "REJECTED",
     errors: ["missing semantic_proposal.json file selection"],
     proposal: {},
+    hash_verification: {
+      status: "HASH_MISSING",
+      errors: ["missing semantic_proposal.json file selection"],
+      artifact_hash: "missing",
+      computed_hash: "not_computed",
+      artifact_identity: "unknown",
+      replay_safe_integrity: false
+    },
     import_source: "explicit local semantic_proposal.json file selection",
     file_name: "unknown",
     file_persisted: false,
@@ -472,6 +576,7 @@ function semanticProposalBlockedResult(validation) {
     demo_id: "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
     status: "BLOCKED",
     semantic_proposal_validation: canonicalize(validation),
+    semantic_proposal_hash_verification: canonicalize(validation.hash_verification || {}),
     semantic_proposal: validation.proposal || {},
     boundary_guarantees: {
       automatic_dispatch: false,
@@ -518,6 +623,7 @@ function runSemanticProposalContinuityFlow(validation) {
     durable_storage: false,
     hidden_persistence: false
   };
+  result.semantic_proposal_hash_verification = canonicalize(validation.hash_verification || {});
   result.semantic_proposal = proposal;
   result.continuity_report.continuity_findings = [
     `Semantic proposal accepted in ${proposal.proposed_mode} mode.`
@@ -550,12 +656,20 @@ async function importSemanticProposalFileFromSidepanel() {
   let validation;
   try {
     const rawText = await file.text();
-    validation = localSemanticProposalFileValidation(rawText, file.name);
+    validation = await localSemanticProposalFileValidation(rawText, file.name);
   } catch (error) {
     validation = canonicalize({
       status: "REJECTED",
       errors: ["semantic proposal file could not be read"],
       proposal: {},
+      hash_verification: {
+        status: "HASH_INVALID",
+        errors: ["semantic proposal file could not be read"],
+        artifact_hash: "unknown",
+        computed_hash: "not_computed",
+        artifact_identity: "unknown",
+        replay_safe_integrity: false
+      },
       import_source: "explicit local semantic_proposal.json file selection",
       file_name: file.name || "unknown",
       file_persisted: false,
@@ -753,6 +867,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.authorityBoundaryArtifact, artifactJson(authorityBoundaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.semanticBoundaryArtifact, artifactJson(semanticBoundaryArtifact(latest)));
   setCockpitText(COCKPIT_IDS.semanticProposalValidationStatus, semanticProposalValidationSummary(latest));
+  setCockpitText(COCKPIT_IDS.semanticProposalHashVerificationStatus, semanticProposalHashVerificationSummary(latest));
   setCockpitText(COCKPIT_IDS.semanticProposalArtifact, artifactJson(semanticProposalArtifact(latest)));
   renderReplaySessionVisibility();
 }
