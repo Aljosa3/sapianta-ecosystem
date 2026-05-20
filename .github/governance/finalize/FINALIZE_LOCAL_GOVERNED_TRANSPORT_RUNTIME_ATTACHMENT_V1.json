@@ -1,0 +1,113 @@
+{
+  "milestone": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_ATTACHMENT_V1",
+  "finalize_artifact": "FINALIZE_LOCAL_GOVERNED_TRANSPORT_RUNTIME_ATTACHMENT_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "references": [
+    ".github/governance/finalize/FINALIZE_LOCAL_GOVERNED_TRANSPORT_RUNTIME_V1.md",
+    ".github/governance/specs/LOCAL_GOVERNED_TRANSPORT_RUNTIME_CONTRACT_V1.md",
+    ".github/governance/plans/LOCAL_GOVERNED_TRANSPORT_RUNTIME_IMPLEMENTATION_PLAN_V1.md",
+    "agol_bridge/transport/local_governed_transport.py",
+    "browser_companion/sidepanel.html",
+    "browser_companion/sidepanel.js",
+    "tests/test_local_governed_transport_runtime_attachment.py"
+  ],
+  "certified_components": [
+    "explicit operator-triggered attachment",
+    "visible session binding",
+    "deterministic local transport invocation",
+    "cockpit-visible transport report",
+    "compact rejection rendering",
+    "append-candidate replay visibility only",
+    "session-scoped transport visibility",
+    "non-authority labels"
+  ],
+  "certified_operational_flow": [
+    "ChatGPT semantic proposal",
+    "operator-triggered cockpit attach",
+    "local governed transport runtime invocation",
+    "deterministic transport validation",
+    "append-candidate replay event creation",
+    "cockpit-visible transport report",
+    "session-scoped replay visibility"
+  ],
+  "cockpit_visible_transport_report": [
+    "transport status",
+    "replay_event_id",
+    "session_id",
+    "proposal_id",
+    "authority label",
+    "integrity / hash status",
+    "rejection reason",
+    "compact rejection label",
+    "append-candidate visibility",
+    "non-authority guarantees"
+  ],
+  "replay_visibility_guarantees": {
+    "append_candidate_only": true,
+    "session_scoped": true,
+    "durable_replay_write": false,
+    "replay_mutation": false,
+    "replay_repair": false,
+    "replay_inference": false,
+    "lifecycle_transition": false,
+    "approval_authority": false,
+    "dispatch_authority": false,
+    "execution_authority": false,
+    "continuation_authority": false
+  },
+  "authority_guarantees": {
+    "http_endpoint": false,
+    "server_or_listener": false,
+    "fetch": false,
+    "background_worker_or_listener": false,
+    "durable_browser_storage": false,
+    "provider_dispatch": false,
+    "approval": false,
+    "execution": false,
+    "orchestration": false,
+    "autonomous_continuation": false,
+    "hidden_persistence": false,
+    "automatic_ingestion": false
+  },
+  "compact_rejection_labels": [
+    "HASH_MISMATCH",
+    "UNKNOWN_SESSION",
+    "UNSAFE_MODE",
+    "AUTHORITY_REJECTED",
+    "REPLAY_POLICY_REJECTED",
+    "SCHEMA_REJECTED"
+  ],
+  "test_evidence": {
+    "focused_test_command": "python -B -m pytest tests/test_local_governed_transport_runtime_attachment.py",
+    "full_test_command": "python -B -m pytest tests",
+    "diff_check_command": "git diff --check",
+    "focused_test_assertions": [
+      "explicit operator-triggered invocation only",
+      "deterministic transport invocation",
+      "accepted transport rendering",
+      "rejected transport rendering",
+      "explicit session binding",
+      "replay append-candidate visibility",
+      "no automatic invocation",
+      "no provider execution orchestration behavior",
+      "no durable persistence",
+      "no hidden runtime behavior"
+    ]
+  },
+  "explicit_risks": [
+    "Browser Companion uses a JS-side deterministic invocation mirror, while Python primitive remains canonical.",
+    "Any future endpoint or interop bridge requires a separate governance gate."
+  ],
+  "not_certified": [
+    "HTTP endpoint behavior",
+    "server behavior",
+    "network transport",
+    "durable replay",
+    "provider dispatch",
+    "execution",
+    "approval",
+    "orchestration",
+    "autonomous continuation"
+  ],
+  "constitutional_statement": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_ATTACHMENT_V1 is finalized as an explicit, operator-triggered, sidepanel-local attachment layer for governed semantic transport visibility without endpoint, listener, provider, approval, execution, orchestration, durable persistence, or autonomous continuation authority."
+}
