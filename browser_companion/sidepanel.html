@@ -171,6 +171,8 @@
       <textarea id="governed-demo-request" name="governed-demo-request" rows="3" placeholder="Show governed continuity without execution"></textarea>
       <label for="chatgpt-semantic-proposal">ChatGPT Semantic Proposal</label>
       <textarea id="chatgpt-semantic-proposal" name="chatgpt-semantic-proposal" rows="6" placeholder='{"human_request":"Review this proposal","semantic_intent":"Observe governed continuity","proposed_mode":"REVIEW_ONLY","risk_class":"LOW","authority_boundary_statement":"No approval, dispatch, or execution authority is granted.","semantic_boundary_statement":"Semantic cognition remains non-authoritative.","requested_action_type":"OBSERVE_ONLY"}'></textarea>
+      <label for="semantic-proposal-file">Local semantic_proposal.json</label>
+      <input id="semantic-proposal-file" name="semantic-proposal-file" type="file" accept="application/json,.json">
       <section class="control-grid" aria-label="Governed runtime controls">
         <button id="preview" type="button">Preview intent</button>
         <button id="confirm" type="button">Confirm preview</button>
@@ -184,6 +186,7 @@
         <button id="invoke" type="button">Invoke governed runtime</button>
         <button id="run-governed-demo" type="button">Run Governed Demo</button>
         <button id="import-semantic-proposal" type="button">Import Semantic Proposal</button>
+        <button id="import-semantic-proposal-file" type="button">Import semantic_proposal.json</button>
       </section>
       <section class="lifecycle-shell" aria-label="Operational lifecycle output">
         <h2>Operational lifecycle</h2>

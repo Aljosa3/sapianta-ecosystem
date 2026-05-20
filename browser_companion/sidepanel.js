@@ -436,6 +436,37 @@ function validateSemanticProposal(rawText) {
   };
 }
 
+function localSemanticProposalFileValidation(rawText, fileName) {
+  const validation = validateSemanticProposal(rawText);
+  const errors = [...validation.errors];
+  if (fileName !== "semantic_proposal.json") {
+    errors.push("semantic proposal file must be named semantic_proposal.json");
+  }
+  return canonicalize({
+    ...validation,
+    status: errors.length ? "REJECTED" : validation.status,
+    errors,
+    import_source: "explicit local semantic_proposal.json file selection",
+    file_name: fileName || "unknown",
+    file_persisted: false,
+    durable_storage: false,
+    hidden_persistence: false
+  });
+}
+
+function missingSemanticProposalFileValidation() {
+  return canonicalize({
+    status: "REJECTED",
+    errors: ["missing semantic_proposal.json file selection"],
+    proposal: {},
+    import_source: "explicit local semantic_proposal.json file selection",
+    file_name: "unknown",
+    file_persisted: false,
+    durable_storage: false,
+    hidden_persistence: false
+  });
+}
+
 function semanticProposalBlockedResult(validation) {
   return {
     demo_id: "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1",
@@ -480,7 +511,12 @@ function runSemanticProposalContinuityFlow(validation) {
     status: validation.status,
     proposal_id: validation.proposal_id,
     proposed_mode: validation.proposed_mode,
-    errors: []
+    errors: [],
+    import_source: validation.import_source || "explicit local semantic proposal import",
+    file_name: validation.file_name || "not_applicable",
+    file_persisted: false,
+    durable_storage: false,
+    hidden_persistence: false
   };
   result.semantic_proposal = proposal;
   result.continuity_report.continuity_findings = [
@@ -498,6 +534,35 @@ function runSemanticProposalContinuityFlow(validation) {
 function importSemanticProposalFromSidepanel() {
   const proposalInput = document.getElementById("chatgpt-semantic-proposal");
   const validation = validateSemanticProposal(proposalInput ? proposalInput.value : "");
+  const result = validation.status === "ACCEPTED"
+    ? runSemanticProposalContinuityFlow(validation)
+    : semanticProposalBlockedResult(validation);
+  window.sidepanelRenderResult(result);
+}
+
+async function importSemanticProposalFileFromSidepanel() {
+  const fileInput = document.getElementById("semantic-proposal-file");
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+  if (!file) {
+    window.sidepanelRenderResult(semanticProposalBlockedResult(missingSemanticProposalFileValidation()));
+    return;
+  }
+  let validation;
+  try {
+    const rawText = await file.text();
+    validation = localSemanticProposalFileValidation(rawText, file.name);
+  } catch (error) {
+    validation = canonicalize({
+      status: "REJECTED",
+      errors: ["semantic proposal file could not be read"],
+      proposal: {},
+      import_source: "explicit local semantic_proposal.json file selection",
+      file_name: file.name || "unknown",
+      file_persisted: false,
+      durable_storage: false,
+      hidden_persistence: false
+    });
+  }
   const result = validation.status === "ACCEPTED"
     ? runSemanticProposalContinuityFlow(validation)
     : semanticProposalBlockedResult(validation);
@@ -726,4 +791,9 @@ if (loadReplayButton) {
 const importSemanticProposalButton = document.getElementById("import-semantic-proposal");
 if (importSemanticProposalButton) {
   importSemanticProposalButton.onclick = importSemanticProposalFromSidepanel;
+}
+
+const importSemanticProposalFileButton = document.getElementById("import-semantic-proposal-file");
+if (importSemanticProposalFileButton) {
+  importSemanticProposalFileButton.onclick = importSemanticProposalFileFromSidepanel;
 }
