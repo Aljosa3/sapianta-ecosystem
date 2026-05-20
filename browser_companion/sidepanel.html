@@ -175,6 +175,14 @@
       <input id="semantic-proposal-file" name="semantic-proposal-file" type="file" accept="application/json,.json">
       <label for="local-transport-session-id">Local governed transport session</label>
       <input id="local-transport-session-id" name="local-transport-session-id" autocomplete="off" value="LOCAL-GOVERNED-TRANSPORT-SESSION-V1">
+      <label for="chat-first-human-request">Chat-first Human Request</label>
+      <textarea id="chat-first-human-request" name="chat-first-human-request" rows="3" placeholder="Review this request through governed semantic transport"></textarea>
+      <label for="chat-first-requested-mode">Chat-first mode</label>
+      <select id="chat-first-requested-mode" name="chat-first-requested-mode">
+        <option value="REVIEW_ONLY">REVIEW_ONLY</option>
+        <option value="DEMO_ONLY">DEMO_ONLY</option>
+        <option value="READ_ONLY">READ_ONLY</option>
+      </select>
       <section class="control-grid" aria-label="Governed runtime controls">
         <button id="preview" type="button">Preview intent</button>
         <button id="confirm" type="button">Confirm preview</button>
@@ -190,6 +198,7 @@
         <button id="import-semantic-proposal" type="button">Import Semantic Proposal</button>
         <button id="import-semantic-proposal-file" type="button">Import semantic_proposal.json</button>
         <button id="attach-local-governed-transport" type="button">Attach Governed Transport</button>
+        <button id="run-chat-first-governed-flow" type="button">Run Chat-first Governed Flow</button>
       </section>
       <section class="lifecycle-shell" aria-label="Operational lifecycle output">
         <h2>Operational lifecycle</h2>
@@ -261,6 +270,13 @@ REPLAY LABEL: SESSION_LOCAL_REPLAY_ONLY</pre>
 SESSION: LOCAL-GOVERNED-TRANSPORT-SESSION-V1
 AUTHORITY: SEMANTIC_TRANSPORT_ONLY
 REPLAY: append-candidate visibility only</pre>
+          </article>
+          <article class="cockpit-panel" aria-labelledby="chat-first-result-card-heading">
+            <h3 id="chat-first-result-card-heading">Chat-first Result Card</h3>
+            <p class="cockpit-label">Compact governed result for local deterministic normalization. This is not approval, dispatch, execution, orchestration, or autonomous continuation.</p>
+            <pre id="chat-first-result-card" class="cockpit-output">RESULT: not run
+AUTHORITY: SEMANTIC_TRANSPORT_ONLY
+NOTE: no execution, no dispatch, no approval</pre>
           </article>
           <fieldset class="cockpit-group" aria-label="Governance">
             <legend>Governance</legend>

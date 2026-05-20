@@ -13,6 +13,8 @@ const REQUIRED_SEMANTIC_PROPOSAL_FIELDS = [
 ];
 const ALLOWED_SEMANTIC_PROPOSAL_MODES = ["READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY"];
 const ALLOWED_LOCAL_TRANSPORT_ACTION_TYPES = ["READ_ONLY", "REVIEW_ONLY", "DEMO_ONLY", "OBSERVE_ONLY", "OBSERVE_CONTINUITY_ONLY"];
+const CHAT_FIRST_AUTHORITY_BOUNDARY_STATEMENT = "SEMANTIC_TRANSPORT_ONLY_NO_APPROVAL_NO_DISPATCH_NO_EXECUTION; Chat-first normalization creates no provider calls, no approval, no dispatch, no execution, no orchestration, and no autonomous continuation.";
+const CHAT_FIRST_SEMANTIC_BOUNDARY_STATEMENT = "SEMANTIC_COGNITION_NON_AUTHORITATIVE; deterministic normalization preserves request text as bounded semantic context only and does not infer execution authority.";
 const REJECTED_SEMANTIC_PROPOSAL_MODES = [
   "EXECUTE",
   "AUTO_EXECUTE",
@@ -48,7 +50,8 @@ const COCKPIT_IDS = {
   semanticProposalValidationStatus: "semantic-proposal-validation-status",
   semanticProposalHashVerificationStatus: "semantic-proposal-hash-verification-status",
   semanticProposalArtifact: "semantic-proposal-artifact",
-  localTransportRuntimeStatus: "local-transport-runtime-status"
+  localTransportRuntimeStatus: "local-transport-runtime-status",
+  chatFirstResultCard: "chat-first-result-card"
 };
 
 function deterministicId(prefix, value) {
@@ -372,6 +375,23 @@ function localTransportRuntimeSummary(entry) {
   ].join("\n");
 }
 
+function chatFirstResultCardSummary(entry) {
+  const flow = entry.chat_first_flow || {};
+  const report = entry.local_governed_transport_report || flow.transport_report || {};
+  const accepted = report.status === "TRANSPORT_ACCEPTED";
+  return [
+    `RESULT: ${accepted ? "ACCEPTED" : flow.status || "not run"}`,
+    `reason: ${compactValue(report.rejection_reason || flow.reason || "transport accepted for visibility")}`,
+    `session_id: ${compactValue(report.session_id || flow.session_id)}`,
+    `proposal_id: ${compactValue(report.proposal_id || flow.proposal_id)}`,
+    `replay_event_id: ${compactValue(report.replay_event_id)}`,
+    `integrity_status: ${compactValue(report.hash_verification_status)}`,
+    "authority_scope: SEMANTIC_TRANSPORT_ONLY",
+    "note: no execution, no dispatch, no approval",
+    `non_authority_guarantees: ${compactValue(report.non_authority_guarantees)}`
+  ].join("\n");
+}
+
 function semanticProposalValidationSummary(entry) {
   const validation = entry.semantic_proposal_validation || {};
   return [
@@ -548,6 +568,84 @@ async function verifySemanticProposalArtifactHash(proposal) {
     computed_hash: computedHash,
     artifact_identity: artifactIdentity,
     replay_safe_integrity: true
+  });
+}
+
+function normalizeHumanRequestToSemanticProposal({ human_request, requested_mode = "REVIEW_ONLY", proposal_id = null, session_id = null }) {
+  const requestText = String(human_request || "").trim();
+  const mode = String(requested_mode || "").trim().toUpperCase();
+  if (!requestText) {
+    return { error: "human_request is required" };
+  }
+  if (!ALLOWED_SEMANTIC_PROPOSAL_MODES.includes(mode) || REJECTED_SEMANTIC_PROPOSAL_MODES.includes(mode)) {
+    return { error: `unsafe requested_mode: ${mode || "UNKNOWN"}` };
+  }
+  const generatedProposalId = proposal_id || deterministicId("CHAT-FIRST-PROPOSAL", {
+    human_request: requestText,
+    requested_mode: mode
+  });
+  const proposal = canonicalize({
+    human_request: requestText,
+    semantic_intent: `Review bounded semantic direction for: ${requestText}`,
+    proposed_mode: mode,
+    risk_class: "LOW",
+    authority_boundary_statement: CHAT_FIRST_AUTHORITY_BOUNDARY_STATEMENT,
+    semantic_boundary_statement: CHAT_FIRST_SEMANTIC_BOUNDARY_STATEMENT,
+    requested_action_type: mode,
+    proposal_id: generatedProposalId,
+    ...(session_id ? { session_id } : {})
+  });
+  return canonicalize({
+    ...proposal,
+    artifact_hash: deterministicChatFirstArtifactHash(proposal)
+  });
+}
+
+function deterministicChatFirstArtifactHash(proposal) {
+  return `sha256:${deterministicId("CHAT-FIRST-HASH", semanticProposalHashInput(proposal))
+    .slice("CHAT-FIRST-HASH-".length)
+    .padStart(64, "0")}`;
+}
+
+function prepareChatFirstTransportEnvelope({ human_request, session_id, requested_mode = "REVIEW_ONLY" }) {
+  const sessionText = String(session_id || "").trim();
+  if (!sessionText) {
+    return { error: "session_id is required" };
+  }
+  const proposal = normalizeHumanRequestToSemanticProposal({
+    human_request,
+    requested_mode,
+    session_id: sessionText
+  });
+  if (proposal.error) {
+    return { error: proposal.error };
+  }
+  return canonicalize({
+    transport_id: deterministicId("CHAT-FIRST-TRANSPORT", {
+      proposal_id: proposal.proposal_id,
+      session_id: sessionText
+    }),
+    session_id: sessionText,
+    proposal_id: proposal.proposal_id,
+    artifact_hash: proposal.artifact_hash,
+    created_at_policy: "DETERMINISTIC_CHAT_FIRST_NORMALIZATION",
+    source_label: "CHAT_FIRST_LOCAL_NORMALIZATION",
+    semantic_proposal: proposal,
+    authority_boundary_statement: "Semantic transport only; transport success is not approval, not dispatch, not execution, and not continuation authority.",
+    replay_policy: {
+      append_only: true,
+      visibility_only: true,
+      rewrite_allowed: false,
+      repair_allowed: false,
+      mutation_allowed: false,
+      inference_allowed: false,
+      durable_backend: false
+    },
+    lifecycle_policy: {
+      visibility_only: true,
+      execution_transition: false,
+      mutation_allowed: false
+    }
   });
 }
 
@@ -777,7 +875,10 @@ function handle_local_governed_transport({ envelope, session_registry }) {
   if (!/^sha256:[0-9a-f]{64}$/.test(safeEnvelope.artifact_hash)) {
     return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_HASH", "artifact_hash is missing or malformed", "HASH_INVALID");
   }
-  if (safeEnvelope.artifact_hash !== safeEnvelope.semantic_proposal.artifact_hash) {
+  const expectedHash = safeEnvelope.source_label === "CHAT_FIRST_LOCAL_NORMALIZATION"
+    ? deterministicChatFirstArtifactHash(safeEnvelope.semantic_proposal)
+    : safeEnvelope.semantic_proposal.artifact_hash;
+  if (safeEnvelope.artifact_hash !== expectedHash) {
     return localTransportRejectedReport(safeEnvelope, "TRANSPORT_REJECTED_HASH", "artifact_hash mismatch", "HASH_MISMATCH");
   }
   const authorityError = localTransportAuthorityError(safeEnvelope);
@@ -1055,6 +1156,139 @@ function attachLocalGovernedTransportFromSidepanel() {
   window.sidepanelRenderResult(result);
 }
 
+function chatFirstBlockedResult({ reason, sessionId, mode }) {
+  const transportReport = localTransportRejectedReport(
+    {
+      transport_id: "CHAT-FIRST-TRANSPORT-BLOCKED",
+      session_id: sessionId || "UNKNOWN",
+      proposal_id: "UNKNOWN",
+      artifact_hash: "UNKNOWN",
+      created_at_policy: "DETERMINISTIC_CHAT_FIRST_NORMALIZATION",
+      source_label: "CHAT_FIRST_LOCAL_NORMALIZATION"
+    },
+    reason === "human_request is required" ? "TRANSPORT_REJECTED_SCHEMA" : "TRANSPORT_REJECTED_UNSAFE_MODE",
+    reason,
+    "HASH_NOT_VERIFIED"
+  );
+  return canonicalize({
+    demo_id: "CHAT_FIRST_OPERATOR_FLOW_V1",
+    status: "BLOCKED",
+    chat_first_flow: {
+      status: "REJECTED",
+      reason,
+      session_id: sessionId || "UNKNOWN",
+      requested_mode: mode || "UNKNOWN",
+      local_deterministic_normalization: true
+    },
+    local_governed_transport_report: transportReport,
+    continuity_report: {
+      aggregate_governance_status: "CONTINUITY_BOUNDARY_VIOLATION",
+      continuity_findings: [reason],
+      continuity_risks: ["Chat-first request rejected before governed transport acceptance."],
+      continuity_recommendations: ["Use a non-empty request and REVIEW_ONLY, DEMO_ONLY, or READ_ONLY mode."]
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
+}
+
+function runChatFirstGovernedFlowFromSidepanel() {
+  const requestInput = document.getElementById("chat-first-human-request");
+  const modeInput = document.getElementById("chat-first-requested-mode");
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const humanRequest = requestInput ? requestInput.value : "";
+  const requestedMode = modeInput && modeInput.value ? modeInput.value : "REVIEW_ONLY";
+  const sessionId = sessionInput && sessionInput.value ? sessionInput.value : LOCAL_GOVERNED_TRANSPORT_SESSION_ID;
+  const envelope = prepareChatFirstTransportEnvelope({
+    human_request: humanRequest,
+    session_id: sessionId,
+    requested_mode: requestedMode
+  });
+  if (envelope.error) {
+    window.sidepanelRenderResult(chatFirstBlockedResult({
+      reason: envelope.error,
+      sessionId,
+      mode: requestedMode
+    }));
+    return;
+  }
+  const transportReport = handle_local_governed_transport({
+    envelope,
+    session_registry: localTransportSessionRegistry(sessionId)
+  });
+  const accepted = transportReport.status === "TRANSPORT_ACCEPTED";
+  const result = canonicalize({
+    demo_id: "CHAT_FIRST_OPERATOR_FLOW_V1",
+    status: accepted ? "RETURNED" : "BLOCKED",
+    semantic_proposal: envelope.semantic_proposal,
+    semantic_proposal_validation: {
+      status: accepted ? "ACCEPTED" : "REJECTED",
+      proposal_id: envelope.proposal_id,
+      proposed_mode: envelope.semantic_proposal.proposed_mode,
+      errors: accepted ? [] : [transportReport.rejection_reason],
+      import_source: "chat-first deterministic local normalization",
+      file_persisted: false,
+      durable_storage: false,
+      hidden_persistence: false
+    },
+    semantic_proposal_hash_verification: {
+      status: transportReport.hash_verification_status,
+      artifact_hash: envelope.artifact_hash,
+      computed_hash: envelope.artifact_hash,
+      artifact_identity: envelope.proposal_id,
+      replay_safe_integrity: accepted
+    },
+    local_governed_transport_report: transportReport,
+    chat_first_flow: {
+      status: accepted ? "ACCEPTED" : "REJECTED",
+      reason: transportReport.rejection_reason || "transport accepted for visibility",
+      session_id: envelope.session_id,
+      proposal_id: envelope.proposal_id,
+      requested_mode: requestedMode,
+      local_deterministic_normalization: true,
+      python_primitive_canonical: true,
+      browser_mirror: true
+    },
+    artifacts: {
+      chat_first_transport_envelope: envelope
+    },
+    continuity_report: {
+      aggregate_governance_status: accepted ? "CONTINUITY_VALID" : "CONTINUITY_BOUNDARY_VIOLATION",
+      replay_visibility_summary: { visible: accepted, reference_count: accepted ? 1 : 0, gaps: [], mutated: false },
+      lifecycle_visibility_summary: { visible: true, reference_count: 0, gaps: [], mutated: false },
+      authority_boundary_summary: { visible: true, statement_count: 1, violations: [], authority_created: false },
+      semantic_boundary_summary: { visible: true, statement_count: 1, overclaims: [], semantic_authority_created: false },
+      continuity_findings: [accepted ? "Chat-first request accepted for governed transport visibility." : transportReport.rejection_reason],
+      continuity_risks: ["Deterministic normalization is not semantic understanding."],
+      continuity_recommendations: ["Review transport report before any separate governed action."],
+      lineage_summary: { visible: true, reference_count: 1, mutated: false }
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
+  window.sidepanelRenderResult(result);
+}
+
 function replaySessionEntry(summary, index) {
   const entry = canonicalize(summary);
   const report = continuityReport(entry);
@@ -1242,6 +1476,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.semanticProposalHashVerificationStatus, semanticProposalHashVerificationSummary(latest));
   setCockpitText(COCKPIT_IDS.semanticProposalArtifact, artifactJson(semanticProposalArtifact(latest)));
   setCockpitText(COCKPIT_IDS.localTransportRuntimeStatus, localTransportRuntimeSummary(latest));
+  setCockpitText(COCKPIT_IDS.chatFirstResultCard, chatFirstResultCardSummary(latest));
   renderReplaySessionVisibility();
 }
 
@@ -1289,4 +1524,9 @@ if (importSemanticProposalFileButton) {
 const attachLocalGovernedTransportButton = document.getElementById("attach-local-governed-transport");
 if (attachLocalGovernedTransportButton) {
   attachLocalGovernedTransportButton.onclick = attachLocalGovernedTransportFromSidepanel;
+}
+
+const runChatFirstGovernedFlowButton = document.getElementById("run-chat-first-governed-flow");
+if (runChatFirstGovernedFlowButton) {
+  runChatFirstGovernedFlowButton.onclick = runChatFirstGovernedFlowFromSidepanel;
 }
