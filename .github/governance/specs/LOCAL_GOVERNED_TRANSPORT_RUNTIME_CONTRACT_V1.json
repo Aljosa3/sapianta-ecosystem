@@ -1,0 +1,208 @@
+{
+  "contract_id": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_CONTRACT_V1",
+  "status": "CONTRACT_V1",
+  "purpose": "Define the strict bounded contract for the first localhost-only governed semantic transport runtime before implementation.",
+  "non_goals": [
+    "implementation",
+    "provider dispatch",
+    "execution runtime",
+    "orchestration",
+    "autonomous continuation",
+    "durable replay backend",
+    "distributed transport",
+    "internet-exposed ingress"
+  ],
+  "transport_scope": {
+    "allowed": [
+      "localhost-only semantic proposal transport",
+      "deterministic transport envelope validation",
+      "explicit session binding",
+      "append-only visible transport replay event",
+      "continuity cockpit rendering"
+    ],
+    "forbidden": [
+      "provider dispatch",
+      "execution",
+      "approval",
+      "orchestration",
+      "autonomous continuation",
+      "distributed runtime behavior",
+      "durable replay backend behavior",
+      "internet-exposed ingress",
+      "hidden background import",
+      "semantic inference runtime"
+    ],
+    "success_semantics": "visibility and continuity-ingestion readiness only, not authorization"
+  },
+  "ingress_envelope": {
+    "required_fields": [
+      "transport_id",
+      "session_id",
+      "proposal_id",
+      "artifact_hash",
+      "created_at_policy",
+      "source_label",
+      "semantic_proposal",
+      "authority_boundary_statement",
+      "replay_policy",
+      "lifecycle_policy"
+    ],
+    "field_contract": {
+      "transport_id": "deterministic identifier for canonical envelope content",
+      "session_id": "explicit operator-visible local session attachment",
+      "proposal_id": "semantic proposal identifier",
+      "artifact_hash": "deterministic proposal artifact hash when artifact is present",
+      "created_at_policy": "external, deterministic fixture, or rejected timestamp policy; no implicit timestamp insertion",
+      "source_label": "semantic source class without authority",
+      "semantic_proposal": "bounded semantic proposal object preserving existing validation semantics",
+      "authority_boundary_statement": "transport-only non-approval non-dispatch non-execution non-continuation statement",
+      "replay_policy": "append-only visibility only",
+      "lifecycle_policy": "visibility-only lifecycle treatment with no execution lifecycle transition"
+    },
+    "unknown_fields_policy": "inspection-only if explicitly allowed; never authority-bearing"
+  },
+  "session_binding": {
+    "rules": [
+      "explicit session_id required",
+      "missing session_id fails closed",
+      "ambiguous session_id fails closed",
+      "unknown session_id fails closed",
+      "operator-visible session attachment required",
+      "no implicit session inheritance",
+      "no cross-session mutation",
+      "no automatic continuation",
+      "no automatic session escalation"
+    ],
+    "forbidden_inference_sources": [
+      "active browser tabs",
+      "recent import history",
+      "last active sidepanel state",
+      "cookies",
+      "browser page content",
+      "ambient runtime state"
+    ]
+  },
+  "replay_append_semantics": {
+    "requirements": [
+      "append-only transport event",
+      "immutable replay entry after append",
+      "deterministic replay_event_id",
+      "canonical JSON serialization",
+      "transport lineage reference",
+      "operator-visible replay event ID",
+      "operator-visible accepted or rejected transport status",
+      "no replay rewrite",
+      "no replay repair",
+      "no inferred replay entries",
+      "no deletion or replacement of prior replay entries"
+    ],
+    "lineage_fields": [
+      "transport_id",
+      "session_id",
+      "proposal_id",
+      "artifact_hash"
+    ],
+    "authority_limit": "visibility evidence only; not durable replay backend certification, execution evidence, approval evidence, or dispatch evidence"
+  },
+  "authority_boundaries": [
+    "transport success is not approval",
+    "transport success is not dispatch",
+    "transport success is not execution",
+    "transport success is not continuation authority",
+    "transport replay append is not lifecycle advancement",
+    "hash verification is integrity only, not semantic correctness",
+    "continuity ingestion is visibility only, not execution authorization",
+    "ChatGPT / LLMs remain semantic cognition only",
+    "AiGOL remains the governance substrate",
+    "providers are not invoked"
+  ],
+  "mandatory_operator_labels": [
+    "SEMANTIC_TRANSPORT_ONLY",
+    "SESSION_REPLAY_ONLY",
+    "HASH_VERIFIED_IS_INTEGRITY_ONLY",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL",
+    "CONTINUITY_VISIBLE_IS_NOT_EXECUTION_AUTHORIZATION"
+  ],
+  "failure_semantics": {
+    "statuses": [
+      "TRANSPORT_ACCEPTED",
+      "TRANSPORT_REJECTED_SCHEMA",
+      "TRANSPORT_REJECTED_HASH",
+      "TRANSPORT_REJECTED_SESSION",
+      "TRANSPORT_REJECTED_AUTHORITY",
+      "TRANSPORT_REJECTED_UNSAFE_MODE",
+      "TRANSPORT_REJECTED_REPLAY_POLICY"
+    ],
+    "status_meanings": {
+      "TRANSPORT_ACCEPTED": "envelope is structurally valid, hash-valid where required, session-bound, authority-bounded, replay-policy-bounded, and ready for continuity cockpit visibility",
+      "TRANSPORT_REJECTED_SCHEMA": "required fields are missing, malformed, or unsupported",
+      "TRANSPORT_REJECTED_HASH": "artifact_hash is missing, malformed, or does not match canonical proposal content",
+      "TRANSPORT_REJECTED_SESSION": "session_id is missing, ambiguous, unknown, or not operator-visible",
+      "TRANSPORT_REJECTED_AUTHORITY": "envelope or proposal implies approval, dispatch, execution, continuation, provider authority, orchestration, or semantic authority escalation",
+      "TRANSPORT_REJECTED_UNSAFE_MODE": "proposal requests EXECUTE, AUTO_EXECUTE, AUTONOMOUS, PROVIDER_RUNTIME, ORCHESTRATION, or unsupported mode",
+      "TRANSPORT_REJECTED_REPLAY_POLICY": "replay policy requests rewrite, repair, mutation, inference, durable replay backend behavior, hidden replay state, or omitted replay visibility"
+    },
+    "failure_requirements": [
+      "deterministic",
+      "fail-closed",
+      "operator-visible",
+      "compact rejection reason",
+      "detailed inspection evidence"
+    ]
+  },
+  "operator_visibility": [
+    "visible transport event",
+    "visible session attachment",
+    "visible replay event id",
+    "visible hash verification status",
+    "visible authority label",
+    "visible rejection reason",
+    "visible source label",
+    "visible proposal id",
+    "visible transport id",
+    "visible non-authority statements"
+  ],
+  "operator_distinctions": [
+    "localhost-only transport versus internet ingress",
+    "transport success versus approval",
+    "replay append versus durable replay backend",
+    "continuity visibility versus execution authorization",
+    "hash verification versus semantic correctness",
+    "session attachment versus autonomous continuation"
+  ],
+  "security_governance_risks": [
+    "hidden localhost ingress perception",
+    "CSRF or origin ambiguity for localhost requests",
+    "background injection",
+    "hidden background listener behavior",
+    "session confusion",
+    "replay over-trust",
+    "hash over-trust",
+    "certification over-trust",
+    "provider-dispatch collapse risk",
+    "semantic authority escalation through proposal wording",
+    "durable replay backend confusion",
+    "automatic continuation pressure"
+  ],
+  "required_controls": [
+    "localhost-only binding",
+    "explicit session binding",
+    "deterministic request identity",
+    "fail-closed malformed request handling",
+    "authority statement validation",
+    "unsafe mode rejection",
+    "append-only replay event constraints",
+    "operator-visible transport state",
+    "no provider, dispatch, approval, execution, orchestration, durable replay, or autonomous continuation behavior"
+  ],
+  "recommended_implementation_path": [
+    "define localhost binding behavior and rejection rules",
+    "define ingress envelope validation helpers",
+    "define deterministic identity and hash helpers",
+    "define explicit session registry or explicit session attachment input",
+    "define append-only session replay event schema",
+    "define cockpit-visible transport event rendering",
+    "define compact rejection reason rendering",
+    "test absence of provider calls, dispatch, approval, execution, orchestration, durable replay backend, internet ingress, hidden persistence, replay rewrite, lifecycle mutation, and autonomous continuation"
+  ]
+}
