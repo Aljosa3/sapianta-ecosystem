@@ -191,6 +191,38 @@
       <section class="lifecycle-shell" aria-label="Operational lifecycle output">
         <h2>Operational lifecycle</h2>
         <section class="cockpit-grid" aria-label="Read-only replay and lifecycle cockpit">
+          <fieldset class="cockpit-group" aria-label="Level 1 Compact Operator Summary">
+            <legend>Level 1: Compact Operator Summary</legend>
+            <article class="cockpit-panel" aria-labelledby="executive-governance-layer-heading">
+              <h3 id="executive-governance-layer-heading">Executive Governance Layer</h3>
+              <p class="cockpit-label">Operator-first governance state. Compact states are visibility labels only; they do not approve, dispatch, execute, persist replay, or judge semantic correctness.</p>
+              <p class="cockpit-label">State set: SAFE_REVIEW_ONLY, BLOCKED, INTEGRITY_VERIFIED, SESSION_REPLAY_ONLY, CONTINUITY_VISIBLE.</p>
+              <pre id="executive-governance-summary" class="cockpit-output">SAFETY: SAFE_REVIEW_ONLY
+INTEGRITY: INTEGRITY_VERIFIED
+REPLAY: SESSION_REPLAY_ONLY
+CONTINUITY: CONTINUITY_VISIBLE
+AUTHORITY: SEMANTIC_TRANSPORT_ONLY</pre>
+            </article>
+            <article class="cockpit-panel" aria-labelledby="semantic-clarity-heading">
+              <h3 id="semantic-clarity-heading">Semantic Clarification</h3>
+              <p class="cockpit-label">Compact operator labels that prevent authority and evidence confusion.</p>
+              <pre id="semantic-clarity-summary" class="cockpit-output">HASH_VERIFIED: artifact integrity only, not semantic correctness.
+CERTIFIED_FOR_CONTINUITY_INGESTION: continuity-ingestion readiness, not approval.
+CONTINUITY_VISIBLE: evidence visibility, not execution authorization.
+SESSION_REPLAY_ONLY: session-local visibility, not durable replay persistence.</pre>
+            </article>
+            <article class="cockpit-panel" aria-labelledby="compact-authority-heading">
+              <h3 id="compact-authority-heading">Compact Authority Statement</h3>
+              <p class="cockpit-label">First-level authority scope. Detailed authority evidence remains available below.</p>
+              <pre id="compact-authority-summary" class="cockpit-output">SEMANTIC_TRANSPORT_ONLY
+NO_APPROVAL
+NO_DISPATCH
+NO_EXECUTION
+NO_PROVIDER_CALLS
+NO_ORCHESTRATION
+NO_AUTONOMOUS_CONTINUATION</pre>
+            </article>
+          </fieldset>
           <article class="cockpit-panel" aria-labelledby="executive-operational-layer-heading">
             <h3 id="executive-operational-layer-heading">Executive Operational Layer</h3>
             <p class="cockpit-label">High-level deterministic summary. Visibility only; not approval, dispatch, execution, or continuation authority.</p>
@@ -221,6 +253,7 @@ REPLAY LABEL: SESSION_LOCAL_REPLAY_ONLY</pre>
           </article>
           <fieldset class="cockpit-group" aria-label="Governance">
             <legend>Governance</legend>
+            <p class="cockpit-label">Level 2: Governance Findings / Risks / Recommendations</p>
             <article class="cockpit-panel" aria-labelledby="continuity-human-request-heading">
               <h3 id="continuity-human-request-heading">Human Request</h3>
               <p class="cockpit-label">Explicit local request context only. This does not approve, dispatch, or execute.</p>
@@ -238,20 +271,30 @@ REPLAY LABEL: SESSION_LOCAL_REPLAY_ONLY</pre>
             </article>
             <article class="cockpit-panel" aria-labelledby="continuity-status-heading">
               <h3 id="continuity-status-heading">Continuity Status</h3>
-              <p class="cockpit-label">Continuity report status - visibility only. CONTINUITY_VALID is not approval, dispatch, execution, or continuation.</p>
+              <p class="cockpit-label">Continuity visibility only. CONTINUITY_VISIBLE and CONTINUITY_VALID are not approval, dispatch, execution, or continuation.</p>
               <pre id="continuity-status" class="cockpit-output">No continuity status rendered.</pre>
+            </article>
+            <article class="cockpit-panel" aria-labelledby="continuity-findings-heading">
+              <h3 id="continuity-findings-heading">Findings / Risks / Recommendations</h3>
+              <p class="cockpit-label">Report-only continuity findings, risks, and recommendations. No autonomous continuation.</p>
+              <pre id="continuity-findings" class="cockpit-output">No findings, risks, or recommendations rendered.</pre>
             </article>
           </fieldset>
           <fieldset class="cockpit-group" aria-label="Replay">
             <legend>Replay</legend>
+            <article class="cockpit-panel" aria-labelledby="session-replay-only-heading">
+              <h3 id="session-replay-only-heading">SESSION_REPLAY_ONLY</h3>
+              <p class="cockpit-label">Replay is session-local, read-only, visibility-only, not durable, not mutation, and not repair.</p>
+              <pre id="session-replay-only-summary" class="cockpit-output">SESSION_REPLAY_ONLY: current sidepanel session visibility only.</pre>
+            </article>
             <article class="cockpit-panel" aria-labelledby="replay-timeline-heading">
               <h3 id="replay-timeline-heading">Replay Timeline</h3>
-              <p class="cockpit-label">Transport replay - deterministic package movement evidence. Semantic reasoning is model-native and non-deterministic.</p>
+              <p class="cockpit-label">Expandable replay detail. Semantic reasoning is model-native and non-deterministic.</p>
               <pre id="replay-timeline" class="cockpit-output">No replay entries rendered.</pre>
             </article>
             <article class="cockpit-panel" aria-labelledby="replay-sessions-heading">
               <h3 id="replay-sessions-heading">Replay Sessions</h3>
-              <p class="cockpit-label">Bounded in-memory append-only replay visibility. Explicit loading only; no durable storage, rewrite, repair, dispatch, or execution.</p>
+              <p class="cockpit-label">Expandable replay session detail. Explicit loading only; no durable storage, rewrite, repair, dispatch, or execution.</p>
               <button id="load-replay-session" type="button">Load Replay</button>
               <pre id="current-replay-session" class="cockpit-output">No replay session loaded.</pre>
             </article>
@@ -306,6 +349,7 @@ Codex / workers: execution through governed transport only</pre>
           </fieldset>
           <fieldset class="cockpit-group" aria-label="Authority">
             <legend>Authority</legend>
+            <p class="cockpit-label">Authority Evidence expands the compact SEMANTIC_TRANSPORT_ONLY statement.</p>
             <article class="cockpit-panel" aria-labelledby="approval-visibility-heading">
               <h3 id="approval-visibility-heading">Approval Visibility</h3>
               <p class="cockpit-label">Approval state - visibility only. This is not an approval control and grants no execution authority.</p>
@@ -316,14 +360,10 @@ Codex / workers: execution through governed transport only</pre>
               <p class="cockpit-label">Observability only: no hidden execution, no automatic dispatch, no hidden persistence, localhost-only interaction.</p>
               <pre id="governance-boundary" class="cockpit-output">Boundary evidence not yet rendered.</pre>
             </article>
-            <article class="cockpit-panel" aria-labelledby="continuity-findings-heading">
-              <h3 id="continuity-findings-heading">Findings / Risks / Recommendations</h3>
-              <p class="cockpit-label">Report-only continuity findings, risks, and recommendations. No autonomous continuation.</p>
-              <pre id="continuity-findings" class="cockpit-output">No findings, risks, or recommendations rendered.</pre>
-            </article>
           </fieldset>
           <fieldset class="cockpit-group" aria-label="Inspection">
             <legend>Inspection</legend>
+            <p class="cockpit-label">Level 3: Full Artifact Inspection. Raw artifact evidence remains available and unchanged.</p>
             <details class="cockpit-panel inspection-panel">
               <summary>Envelope Validation Artifact</summary>
               <p class="cockpit-label">Read-only artifact JSON. Validation status creates no approval authority.</p>
