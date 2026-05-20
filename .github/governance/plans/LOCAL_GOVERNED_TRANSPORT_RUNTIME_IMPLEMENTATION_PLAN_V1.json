@@ -1,0 +1,222 @@
+{
+  "plan_id": "LOCAL_GOVERNED_TRANSPORT_RUNTIME_IMPLEMENTATION_PLAN_V1",
+  "status": "IMPLEMENTATION_PLAN_V1",
+  "readiness_decision": "READY_FOR_NARROW_IMPLEMENTATION_REVIEW",
+  "based_on": [
+    "LOCAL_GOVERNED_TRANSPORT_RUNTIME_CONTRACT_V1",
+    "LOCAL_GOVERNED_TRANSPORT_RUNTIME_REVIEW_V1",
+    "UX_PROVING_AND_OPERATOR_VALIDATION_V1"
+  ],
+  "scope": [
+    "localhost-only binding",
+    "semantic proposal transport only",
+    "explicit session_id",
+    "deterministic transport envelope validation",
+    "hash verification",
+    "append-only visible replay event",
+    "cockpit-visible transport event",
+    "compact rejection rendering"
+  ],
+  "forbidden": [
+    "provider dispatch",
+    "execution",
+    "approval automation",
+    "orchestration",
+    "autonomous continuation",
+    "durable replay backend",
+    "distributed transport",
+    "internet-exposed ingress",
+    "hidden background import",
+    "automatic ingestion",
+    "replay rewrite",
+    "lifecycle mutation"
+  ],
+  "minimal_files_to_change": [
+    {
+      "path": "sapianta_system/runtime/semantic_transport.py",
+      "purpose": "pure deterministic validation helpers, envelope validation, status selection, deterministic replay event construction"
+    },
+    {
+      "path": "sapianta_system/runtime/preview/governed_local_preview_runtime.py",
+      "purpose": "optional localhost-only route if HTTP preview transport endpoint is explicitly selected"
+    },
+    {
+      "path": "browser_companion/sidepanel.js",
+      "purpose": "render visible transport event status, compact rejection reason, session attachment, replay event id, hash status, and authority labels"
+    },
+    {
+      "path": "browser_companion/sidepanel.html",
+      "purpose": "smallest read-only transport visibility surface if current sections cannot host it"
+    },
+    {
+      "path": "tests/test_local_governed_transport_runtime.py",
+      "purpose": "deterministic transport contract tests"
+    },
+    {
+      "path": "tests/test_browser_companion_sidepanel.py",
+      "purpose": "cockpit rendering and no-authority checks if sidepanel rendering changes"
+    }
+  ],
+  "endpoint_shape": {
+    "endpoint_optional": true,
+    "method": "POST",
+    "path": "/governed-semantic-transport",
+    "bind": "127.0.0.1 only",
+    "content_type": "application/json",
+    "request_body": "governed transport ingress envelope",
+    "response_fields": [
+      "status",
+      "transport_id",
+      "session_id",
+      "proposal_id",
+      "replay_event_id",
+      "hash_verification_status",
+      "authority_label",
+      "rejection_reason",
+      "validation",
+      "transport_event"
+    ],
+    "forbidden_endpoint_behavior": [
+      "provider calls",
+      "dispatch execution",
+      "approve actions",
+      "create execution lifecycle transitions",
+      "read browser page content",
+      "discover files",
+      "persist durable replay",
+      "continue work after request returns"
+    ]
+  },
+  "ingress_envelope": {
+    "required_fields": [
+      "transport_id",
+      "session_id",
+      "proposal_id",
+      "artifact_hash",
+      "created_at_policy",
+      "source_label",
+      "semantic_proposal",
+      "authority_boundary_statement",
+      "replay_policy",
+      "lifecycle_policy"
+    ],
+    "validation_order": [
+      "parse JSON",
+      "validate required fields and field types",
+      "validate explicit session_id",
+      "validate semantic proposal mode and required proposal fields",
+      "verify artifact_hash against canonical semantic proposal content",
+      "validate authority boundary statement",
+      "validate replay policy is append-only visibility only",
+      "validate lifecycle policy is visibility-only and non-execution",
+      "compute deterministic transport status",
+      "construct deterministic transport event for rendering"
+    ]
+  },
+  "session_binding_checks": [
+    "session_id is present",
+    "session_id is unambiguous",
+    "session_id belongs to an operator-visible session attachment",
+    "transport event renders within selected session scope",
+    "no implicit session inheritance",
+    "no cross-session mutation",
+    "no automatic continuation"
+  ],
+  "replay_event_schema": [
+    "replay_event_id",
+    "event_type",
+    "transport_status",
+    "transport_id",
+    "session_id",
+    "proposal_id",
+    "artifact_hash",
+    "hash_verification_status",
+    "source_label",
+    "authority_label",
+    "rejection_reason",
+    "lineage_refs",
+    "visibility_scope",
+    "created_at_policy"
+  ],
+  "replay_event_semantics": [
+    "append-only",
+    "immutable after append",
+    "canonical JSON serialization",
+    "deterministic replay_event_id",
+    "no replay rewrite",
+    "no replay repair",
+    "no inferred replay entries",
+    "no durable replay backend semantics"
+  ],
+  "failure_statuses": [
+    "TRANSPORT_ACCEPTED",
+    "TRANSPORT_REJECTED_SCHEMA",
+    "TRANSPORT_REJECTED_HASH",
+    "TRANSPORT_REJECTED_SESSION",
+    "TRANSPORT_REJECTED_AUTHORITY",
+    "TRANSPORT_REJECTED_UNSAFE_MODE",
+    "TRANSPORT_REJECTED_REPLAY_POLICY"
+  ],
+  "operator_visibility": [
+    "transport event",
+    "session attachment",
+    "replay event ID",
+    "hash verification status",
+    "authority label",
+    "compact rejection reason",
+    "source label",
+    "proposal ID",
+    "transport ID",
+    "non-authority labels"
+  ],
+  "mandatory_labels": [
+    "SEMANTIC_TRANSPORT_ONLY",
+    "SESSION_REPLAY_ONLY",
+    "HASH_VERIFIED_IS_INTEGRITY_ONLY",
+    "CERTIFIED_FOR_CONTINUITY_INGESTION_IS_NOT_APPROVAL",
+    "CONTINUITY_VISIBLE_IS_NOT_EXECUTION_AUTHORIZATION"
+  ],
+  "tests_required": [
+    "valid transport envelope returns TRANSPORT_ACCEPTED",
+    "missing required fields return TRANSPORT_REJECTED_SCHEMA",
+    "mismatched artifact hash returns TRANSPORT_REJECTED_HASH",
+    "missing unknown or ambiguous session returns TRANSPORT_REJECTED_SESSION",
+    "unsafe mode returns TRANSPORT_REJECTED_UNSAFE_MODE",
+    "authority claims return TRANSPORT_REJECTED_AUTHORITY",
+    "replay rewrite or durable replay policy returns TRANSPORT_REJECTED_REPLAY_POLICY",
+    "deterministic replay event ID for identical input",
+    "append-only replay event construction",
+    "no replay rewrite or repair",
+    "no lifecycle mutation",
+    "no provider calls",
+    "no dispatch",
+    "no approval",
+    "no execution",
+    "no orchestration",
+    "no autonomous continuation",
+    "no hidden persistence",
+    "endpoint if added binds localhost only",
+    "cockpit renders compact rejection reason and non-authority labels"
+  ],
+  "rollback_plan": [
+    "remove optional /governed-semantic-transport route if added",
+    "remove transport rendering hooks from sidepanel",
+    "retain existing file import and semantic proposal validation behavior",
+    "retain existing replay session behavior",
+    "retain governance artifacts documenting deferred runtime",
+    "rerun relevant sidepanel and preview runtime tests",
+    "verify git diff --check"
+  ],
+  "readiness_gate": {
+    "required_before_implementation": [
+      "contract remains controlling scope",
+      "endpoint shape explicitly selected or deferred",
+      "session attachment source defined without ambient inference",
+      "replay event schema fixed before code",
+      "compact rejection rendering defined before code",
+      "tests written for all failure statuses",
+      "no durable replay backend provider dispatch execution approval orchestration internet ingress hidden background import or autonomous continuation"
+    ],
+    "decision": "READY_FOR_NARROW_IMPLEMENTATION_REVIEW"
+  }
+}
