@@ -21,7 +21,7 @@ def _sidepanel_js():
 def test_manifest_exposes_persistent_side_panel_entry_without_broadening_hosts():
     manifest = _manifest()
     assert manifest["side_panel"]["default_path"] == "sidepanel.html"
-    assert manifest["permissions"] == ["sidePanel"]
+    assert manifest["permissions"] == ["nativeMessaging", "sidePanel"]
     assert manifest["host_permissions"] == ["http://127.0.0.1:8110/*"]
 
 

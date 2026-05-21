@@ -17,7 +17,7 @@ def _popup_js():
 
 def test_manifest_uses_minimal_localhost_only_permissions():
     manifest = _manifest()
-    assert manifest["permissions"] == ["sidePanel"]
+    assert manifest["permissions"] == ["nativeMessaging", "sidePanel"]
     assert manifest["host_permissions"] == ["http://127.0.0.1:8110/*"]
     assert "<all_urls>" not in json.dumps(manifest)
 
@@ -66,7 +66,8 @@ def test_no_retry_fallback_or_hidden_automation_surface_exists():
     assert "fallback" not in lowered
     assert "content_scripts" not in lowered
     assert "cookies" not in lowered
-    assert "nativeMessaging" not in combined
+    assert combined.count("nativeMessaging") == 1
+    assert "runtime.onMessage" not in combined
 
 
 def test_explicit_user_action_is_required():

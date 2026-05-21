@@ -1,0 +1,9 @@
+{
+  "name": "com.sapianta.aigol_bridge",
+  "description": "SAPIANTA AiGOL local native messaging bridge",
+  "path": "/absolute/path/to/sapianta/agol_bridge/native/native_messaging_host.py",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://<EXTENSION_ID>/"
+  ]
+}

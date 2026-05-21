@@ -218,6 +218,7 @@
         <button id="attach-local-governed-transport" type="button">Attach Governed Transport</button>
         <button id="run-chat-first-governed-flow" type="button">Run Chat-first Governed Flow</button>
         <button id="run-minimal-end-to-end-bridge" type="button">Run End-to-End Bridge</button>
+        <button id="run-native-bridge" type="button">Run via Native Bridge</button>
       </section>
       <section class="lifecycle-shell" aria-label="Operational lifecycle output">
         <h2>Operational lifecycle</h2>
@@ -245,7 +246,11 @@ SESSION_REPLAY_ONLY: session-local visibility, not durable replay persistence.</
             <article class="cockpit-panel" aria-labelledby="compact-authority-heading">
               <h3 id="compact-authority-heading">Compact Authority Statement</h3>
               <p class="cockpit-label">First-level authority scope. Detailed authority evidence remains available below.</p>
-              <pre id="compact-authority-summary" class="cockpit-output">SEMANTIC_TRANSPORT_ONLY
+            <pre id="compact-authority-summary" class="cockpit-output">SEMANTIC_TRANSPORT_ONLY
+NATIVE_BRIDGE_LOCAL_ONLY
+OPERATOR_TRIGGERED
+CANONICAL_PYTHON_RUNTIME
+NO_REAL_CODEX_EXECUTION
 NO_APPROVAL
 NO_DISPATCH
 NO_EXECUTION
@@ -312,7 +317,7 @@ No execution occurred.</pre>
           <article class="cockpit-panel primary-operator-answer" aria-labelledby="governance-chat-return-heading">
             <h3 id="governance-chat-return-heading">Governance Chat Return</h3>
             <p class="cockpit-label">Primary operator answer. It reports visibility outcomes only and never grants authority.</p>
-            <p class="cockpit-label">Authority summary: ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NO REAL EXECUTION / MOCK CODEX ONLY.</p>
+            <p class="cockpit-label">Authority summary: ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NATIVE_BRIDGE_LOCAL_ONLY. OPERATOR_TRIGGERED. CANONICAL_PYTHON_RUNTIME. NO REAL EXECUTION / MOCK CODEX ONLY.</p>
             <textarea id="governance-chat-return" class="cockpit-output governance-chat-return" readonly>Governed transport has not run.
 
 Authority: SEMANTIC_TRANSPORT_ONLY

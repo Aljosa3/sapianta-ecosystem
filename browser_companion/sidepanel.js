@@ -25,6 +25,7 @@ const REJECTED_SEMANTIC_PROPOSAL_MODES = [
 const CANONICAL_BRIDGE_RESULT_ARTIFACT_TYPE = "MINIMAL_END_TO_END_BRIDGE_RESULT";
 const CANONICAL_BRIDGE_RESULT_SCHEMA_VERSION = 1;
 const CANONICAL_BRIDGE_RESULT_AUTHORITY = "NON_EXECUTING_NON_AUTHORITATIVE";
+const NATIVE_BRIDGE_HOST = "com.sapianta.aigol_bridge";
 
 const COCKPIT_IDS = {
   executiveOperationalSummary: "executive-operational-summary",
@@ -969,6 +970,14 @@ function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
       no_real_execution: true,
       mock_codex_only: true
     },
+    native_bridge: {
+      label: "NATIVE_BRIDGE_LOCAL_ONLY",
+      operator_triggered: true,
+      canonical_python_runtime: true,
+      no_real_codex_execution: true,
+      provider_calls: false,
+      autonomous_continuation: false
+    },
     end_to_end_bridge: {
       status: artifact.status,
       human_request: (artifact.mock_codex_result && artifact.mock_codex_result.summary) || "",
@@ -999,6 +1008,129 @@ function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
       autonomous_continuation: false,
       hidden_authority: false
     }
+  });
+}
+
+function nativeBridgeMessageFromSidepanel() {
+  const requestInput = document.getElementById("chat-first-human-request");
+  const artifactInput = document.getElementById("artifact");
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const humanRequest = requestInput && requestInput.value
+    ? requestInput.value
+    : artifactInput && artifactInput.value ? artifactInput.value : "";
+  const sessionId = sessionInput && sessionInput.value ? sessionInput.value : LOCAL_GOVERNED_TRANSPORT_SESSION_ID;
+  return canonicalize({
+    action: "RUN_MINIMAL_END_TO_END_BRIDGE",
+    request_id: deterministicId("NATIVE-BRIDGE-REQUEST", {
+      human_request: humanRequest,
+      session_id: sessionId
+    }),
+    human_request: humanRequest,
+    session_id: sessionId,
+    operator_triggered: true,
+    authority_boundary: "SEMANTIC_TRANSPORT_ONLY",
+    labels: [
+      "NATIVE_BRIDGE_LOCAL_ONLY",
+      "OPERATOR_TRIGGERED",
+      "CANONICAL_PYTHON_RUNTIME",
+      "NO_REAL_CODEX_EXECUTION",
+      "NO_PROVIDER_CALLS",
+      "NO_AUTONOMOUS_CONTINUATION"
+    ]
+  });
+}
+
+function nativeBridgeRejectedResult(reason) {
+  return canonicalize({
+    demo_id: "NATIVE_MESSAGING_LOCAL_BRIDGE_V1",
+    status: "BLOCKED",
+    bridge_result_artifact: {
+      source: "NATIVE_BRIDGE_LOCAL_ONLY",
+      imported: false,
+      validation_status: "REJECTED",
+      validation_errors: [reason],
+      authority: CANONICAL_BRIDGE_RESULT_AUTHORITY,
+      no_real_execution: true,
+      mock_codex_only: true
+    },
+    native_bridge: {
+      label: "NATIVE_BRIDGE_LOCAL_ONLY",
+      operator_triggered: true,
+      canonical_python_runtime: true,
+      no_real_codex_execution: true,
+      provider_calls: false,
+      autonomous_continuation: false,
+      rejection_reason: reason
+    },
+    governed_chat_return: {
+      status: "REJECTED",
+      reason,
+      replay_visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
+      next_recommended_step: "Check the Native Messaging host installation and rerun explicitly.",
+      non_authority_reminder: "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created."
+    },
+    result_validation: {
+      status: "RESULT_REJECTED",
+      valid: false,
+      errors: [reason]
+    },
+    replay_events: [],
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
+}
+
+async function renderNativeBridgeResponse(response) {
+  if (!response || response.status !== "NATIVE_BRIDGE_ACCEPTED" || !response.result_artifact) {
+    window.sidepanelRenderResult(nativeBridgeRejectedResult(
+      response && response.rejection_reason ? response.rejection_reason : "native bridge response rejected"
+    ));
+    return;
+  }
+  const artifact = canonicalize(response.result_artifact);
+  const schemaErrors = validateCanonicalBridgeResultArtifactSchema(artifact);
+  const hashVerification = await verifyCanonicalBridgeResultArtifactHash(artifact);
+  if (schemaErrors.length || hashVerification.status !== "HASH_VERIFIED") {
+    window.sidepanelRenderResult(canonicalBridgeResultBlockedResult({
+      validationErrors: schemaErrors.concat(hashVerification.errors || []),
+      hashVerification
+    }));
+    return;
+  }
+  const result = canonicalBridgeResultFromArtifact(artifact, hashVerification);
+  result.demo_id = "NATIVE_MESSAGING_LOCAL_BRIDGE_V1";
+  result.native_bridge = canonicalize({
+    ...(result.native_bridge || {}),
+    response_status: response.status,
+    request_id: response.request_id || "UNKNOWN",
+    labels: response.labels || []
+  });
+  window.sidepanelRenderResult(canonicalize(result));
+}
+
+function runNativeBridgeFromSidepanel() {
+  if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendNativeMessage) {
+    window.sidepanelRenderResult(nativeBridgeRejectedResult("Chrome Native Messaging is unavailable in this context."));
+    return;
+  }
+  const message = nativeBridgeMessageFromSidepanel();
+  chrome.runtime.sendNativeMessage(NATIVE_BRIDGE_HOST, message, (response) => {
+    const runtimeError = chrome.runtime.lastError;
+    if (runtimeError) {
+      window.sidepanelRenderResult(nativeBridgeRejectedResult(runtimeError.message || "native bridge invocation failed"));
+      return;
+    }
+    renderNativeBridgeResponse(response);
   });
 }
 
@@ -2390,4 +2522,9 @@ if (runChatFirstGovernedFlowButton) {
 const runMinimalEndToEndBridgeButton = document.getElementById("run-minimal-end-to-end-bridge");
 if (runMinimalEndToEndBridgeButton) {
   runMinimalEndToEndBridgeButton.onclick = runMinimalEndToEndBridgeFromSidepanel;
+}
+
+const runNativeBridgeButton = document.getElementById("run-native-bridge");
+if (runNativeBridgeButton) {
+  runNativeBridgeButton.onclick = runNativeBridgeFromSidepanel;
 }
