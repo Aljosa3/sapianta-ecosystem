@@ -54,7 +54,8 @@ const COCKPIT_IDS = {
   chatFirstResultCard: "chat-first-result-card",
   latestActionResultCard: "latest-action-result-card",
   operatorEventStream: "operator-event-stream",
-  governanceChatReturn: "governance-chat-return"
+  governanceChatReturn: "governance-chat-return",
+  endToEndBridgeLifecycle: "end-to-end-bridge-lifecycle"
 };
 
 function deterministicId(prefix, value) {
@@ -508,6 +509,18 @@ function operatorEventStreamSummary(entry) {
 
 function governanceChatReturnSummary(entry) {
   const report = latestTransportReport(entry);
+  if (entry.governed_chat_return && entry.demo_id === "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1") {
+    const bridgeReturn = entry.governed_chat_return;
+    return [
+      `Governed bridge ${String(bridgeReturn.status || "UNKNOWN").toLowerCase()}`,
+      "",
+      `Reason: ${compactValue(bridgeReturn.reason)}`,
+      `Replay: ${compactValue(bridgeReturn.replay_visibility)}`,
+      `Next: ${compactValue(bridgeReturn.next_recommended_step)}`,
+      "",
+      bridgeReturn.non_authority_reminder || "No execution occurred. No provider invoked."
+    ].join("\n");
+  }
   if (!report.status) {
     return [
       "Governed transport has not run.",
@@ -540,6 +553,34 @@ function governanceChatReturnSummary(entry) {
     "",
     "No execution occurred.",
     "No provider invoked."
+  ].join("\n");
+}
+
+function endToEndBridgeLifecycleSummary(entry) {
+  const bridge = entry.end_to_end_bridge || {};
+  const taskPackage = entry.task_package || {};
+  const mockResult = entry.mock_codex_result || {};
+  const resultValidation = entry.result_validation || {};
+  const governedReturn = entry.governed_chat_return || {};
+  const replayIds = (entry.replay_events || []).map((event) => event.replay_event_id).join(", ") || "none";
+  const proposal = latestProposal(entry);
+  return [
+    `STATUS: ${compactValue(bridge.status || entry.status)}`,
+    `HUMAN REQUEST: ${compactValue(proposal.human_request || bridge.human_request)}`,
+    `SEMANTIC PROPOSAL: ${compactValue(entry.proposal_id || proposal.proposal_id)}`,
+    `GOVERNED TRANSPORT STATUS: ${compactValue(entry.transport_status || latestTransportReport(entry).status)}`,
+    `GOVERNED TASK PACKAGE: ${compactValue(taskPackage.task_id)}`,
+    `MOCK CODEX RESULT: ${compactValue(mockResult.status)}`,
+    `RESULT VALIDATION: ${compactValue(resultValidation.status)}`,
+    `GOVERNED CHAT RETURN: ${compactValue(governedReturn.status)} - ${compactValue(governedReturn.reason)}`,
+    `RECOMMENDED NEXT STEP: ${compactValue(governedReturn.next_recommended_step)}`,
+    `SESSION: ${compactValue(entry.session_id || bridge.session_id)}`,
+    `REPLAY EVENT IDS: ${replayIds}`,
+    `REJECTION REASON: ${compactValue(governedReturn.status === "REJECTED" ? governedReturn.reason : "")}`,
+    "AUTHORITY: ChatGPT advisory cognition only; AiGOL governance authority; Codex mocked bounded provider only.",
+    "NO REAL EXECUTION",
+    "NO PROVIDER CALLS",
+    "NO AUTONOMOUS CONTINUATION"
   ].join("\n");
 }
 
@@ -1440,6 +1481,377 @@ function runChatFirstGovernedFlowFromSidepanel() {
   window.sidepanelRenderResult(result);
 }
 
+function bridgeReplayEvent({ event_type, status, session_id, proposal_id, payload }) {
+  const seed = { event_type, payload, proposal_id, session_id, status };
+  return canonicalize({
+    replay_event_id: deterministicId("BRIDGE-REPLAY", seed),
+    event_type,
+    status,
+    session_id,
+    proposal_id,
+    payload_hash: deterministicId("BRIDGE-PAYLOAD", payload),
+    visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
+    mutation: false,
+    durable_persistence: false
+  });
+}
+
+function bridgeTaskPackage({ proposal, sessionId, transportReport }) {
+  const taskId = deterministicId("BRIDGE-TASK", {
+    proposal_id: proposal.proposal_id,
+    session_id: sessionId,
+    transport_id: transportReport.transport_id
+  });
+  return canonicalize({
+    task_id: taskId,
+    governance_mode: "governed_execution_bridge_mock_only",
+    risk_class: proposal.risk_class || "LOW",
+    approval_required: false,
+    codex_prompt: `MOCK ONLY: summarize bounded review for proposal ${proposal.proposal_id}.`,
+    constraints: [
+      "mock Codex result only",
+      "no provider call",
+      "no dispatch",
+      "no approval",
+      "no execution authority",
+      "no orchestration",
+      "no autonomous continuation",
+      "session-local replay visibility only"
+    ],
+    expected_outputs: [
+      "mock bounded result artifact",
+      "result validation report",
+      "ChatGPT-facing governed return summary"
+    ],
+    metadata: {
+      session_id: sessionId,
+      proposal_id: proposal.proposal_id,
+      transport_status: transportReport.status,
+      transport_replay_event_id: transportReport.replay_event_id,
+      lifecycle_state: "TASK_PACKAGED",
+      approved: false,
+      execution_provider: "MOCK_CODEX_ONLY",
+      authority: "NO_EXECUTION_AUTHORITY"
+    }
+  });
+}
+
+function mockCodexBridgeResult({ taskPackage, proposal, sessionId }) {
+  const resultId = deterministicId("MOCK-CODEX-RESULT", {
+    proposal_id: proposal.proposal_id,
+    session_id: sessionId,
+    task_id: taskPackage.task_id
+  });
+  return canonicalize({
+    result_id: resultId,
+    task_id: taskPackage.task_id,
+    proposal_id: proposal.proposal_id,
+    session_id: sessionId,
+    status: "MOCK_CODEX_RESULT_RETURNED",
+    tests: [
+      {
+        name: "mock_bounded_codex_lifecycle",
+        status: "PASS",
+        execution: "MOCK_ONLY"
+      }
+    ],
+    files_changed: [],
+    artifacts: [
+      {
+        artifact_id: deterministicId("MOCK-ARTIFACT", { result_id: resultId }),
+        artifact_type: "bounded_mock_codex_summary",
+        proposal_id: proposal.proposal_id
+      }
+    ],
+    summary: `Mock bounded Codex result for: ${proposal.human_request}`,
+    requires_human_review: true,
+    provider_invoked: false,
+    execution_authority_created: false,
+    orchestration_created: false
+  });
+}
+
+function validateBridgeResult({ mockResult, taskPackage, sessionId, proposalId }) {
+  const errors = [];
+  if (mockResult.task_id !== taskPackage.task_id) {
+    errors.push("result task lineage mismatch");
+  }
+  if (mockResult.session_id !== sessionId) {
+    errors.push("result session mismatch");
+  }
+  if (mockResult.proposal_id !== proposalId) {
+    errors.push("result proposal mismatch");
+  }
+  if (mockResult.provider_invoked !== false) {
+    errors.push("provider invocation is forbidden");
+  }
+  if (mockResult.execution_authority_created !== false) {
+    errors.push("execution authority is forbidden");
+  }
+  if (mockResult.orchestration_created !== false) {
+    errors.push("orchestration is forbidden");
+  }
+  return canonicalize({
+    status: errors.length ? "RESULT_REJECTED" : "RESULT_VALIDATED",
+    valid: errors.length === 0,
+    errors,
+    checks: {
+      result_lineage: mockResult.task_id === taskPackage.task_id,
+      session_match: mockResult.session_id === sessionId,
+      proposal_linkage: mockResult.proposal_id === proposalId,
+      bounded_lifecycle: taskPackage.metadata.lifecycle_state === "TASK_PACKAGED",
+      replay_visibility: true,
+      non_authority_semantics: (
+        mockResult.provider_invoked === false
+        && mockResult.execution_authority_created === false
+        && mockResult.orchestration_created === false
+      )
+    }
+  });
+}
+
+function governedBridgeReturn({ accepted, reason, taskPackage }) {
+  return canonicalize({
+    status: accepted ? "ACCEPTED" : "REJECTED",
+    reason,
+    replay_visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
+    next_recommended_step: accepted
+      ? "Review the bounded task and mock result evidence before any separate governed action."
+      : "Revise the request or session binding and rerun the governed bridge.",
+    task_id: taskPackage && taskPackage.task_id ? taskPackage.task_id : "NONE",
+    non_authority_reminder: "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created."
+  });
+}
+
+function rejectedEndToEndBridgeResult({ sessionId, proposalId, transportStatus, reason, replayEvents }) {
+  return canonicalize({
+    demo_id: "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1",
+    status: "BLOCKED",
+    session_id: sessionId || "UNKNOWN",
+    proposal_id: proposalId || "UNKNOWN",
+    transport_status: transportStatus,
+    task_package: {},
+    mock_codex_result: {},
+    result_validation: { status: "RESULT_REJECTED", valid: false, errors: [reason] },
+    governed_chat_return: governedBridgeReturn({ accepted: false, reason, taskPackage: null }),
+    replay_events: replayEvents,
+    end_to_end_bridge: {
+      status: "BRIDGE_REJECTED",
+      human_request: "",
+      session_id: sessionId || "UNKNOWN"
+    },
+    operator_visibility: {
+      runtime_state_visible: true,
+      transport_status_visible: true,
+      task_package_visible: false,
+      mock_result_visible: false,
+      result_validation_visible: true,
+      chat_return_visible: true,
+      replay_visible: true
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    },
+    non_authority_guarantees: [
+      "CHATGPT_SEMANTIC_COGNITION_ADVISORY_ONLY",
+      "AIGOL_VALIDATION_REQUIRED",
+      "SEMANTIC_TRANSPORT_ONLY",
+      "MOCK_CODEX_ONLY_NO_PROVIDER_EXECUTION",
+      "NO_DISPATCH_AUTHORITY",
+      "NO_APPROVAL_AUTHORITY",
+      "NO_EXECUTION_AUTHORITY",
+      "NO_ORCHESTRATION",
+      "NO_AUTONOMOUS_CONTINUATION",
+      "NO_DURABLE_PERSISTENCE"
+    ]
+  });
+}
+
+function runMinimalEndToEndBridgeFromSidepanel() {
+  const requestInput = document.getElementById("chat-first-human-request");
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const humanRequest = requestInput ? requestInput.value : "";
+  const sessionId = sessionInput && sessionInput.value ? sessionInput.value : LOCAL_GOVERNED_TRANSPORT_SESSION_ID;
+  const replayEvents = [];
+  const envelope = prepareChatFirstTransportEnvelope({
+    human_request: humanRequest,
+    session_id: sessionId,
+    requested_mode: "REVIEW_ONLY"
+  });
+  if (envelope.error) {
+    replayEvents.push(bridgeReplayEvent({
+      event_type: "SEMANTIC_PROPOSAL_REJECTED",
+      status: "BRIDGE_REJECTED",
+      session_id: sessionId || "UNKNOWN",
+      proposal_id: "UNKNOWN",
+      payload: { reason: envelope.error }
+    }));
+    window.sidepanelRenderResult(rejectedEndToEndBridgeResult({
+      sessionId,
+      proposalId: "UNKNOWN",
+      transportStatus: "NOT_PREPARED",
+      reason: envelope.error,
+      replayEvents
+    }));
+    return;
+  }
+  const proposal = envelope.semantic_proposal;
+  replayEvents.push(bridgeReplayEvent({
+    event_type: "SEMANTIC_PROPOSAL_NORMALIZED",
+    status: "NORMALIZED",
+    session_id: sessionId,
+    proposal_id: proposal.proposal_id,
+    payload: proposal
+  }));
+  const transportReport = handle_local_governed_transport({
+    envelope,
+    session_registry: localTransportSessionRegistry(sessionId)
+  });
+  replayEvents.push(bridgeReplayEvent({
+    event_type: "LOCAL_GOVERNED_TRANSPORT_VALIDATED",
+    status: transportReport.status,
+    session_id: sessionId || "UNKNOWN",
+    proposal_id: proposal.proposal_id,
+    payload: transportReport
+  }));
+  if (transportReport.status !== "TRANSPORT_ACCEPTED") {
+    window.sidepanelRenderResult(rejectedEndToEndBridgeResult({
+      sessionId,
+      proposalId: proposal.proposal_id,
+      transportStatus: transportReport.status,
+      reason: transportReport.rejection_reason,
+      replayEvents
+    }));
+    return;
+  }
+  const taskPackage = bridgeTaskPackage({ proposal, sessionId, transportReport });
+  replayEvents.push(bridgeReplayEvent({
+    event_type: "GOVERNED_TASK_PACKAGE_CREATED",
+    status: "TASK_PACKAGE_VALID",
+    session_id: sessionId,
+    proposal_id: proposal.proposal_id,
+    payload: taskPackage
+  }));
+  const mockResult = mockCodexBridgeResult({ taskPackage, proposal, sessionId });
+  replayEvents.push(bridgeReplayEvent({
+    event_type: "MOCK_CODEX_RESULT_CREATED",
+    status: mockResult.status,
+    session_id: sessionId,
+    proposal_id: proposal.proposal_id,
+    payload: mockResult
+  }));
+  const resultValidation = validateBridgeResult({
+    mockResult,
+    taskPackage,
+    sessionId,
+    proposalId: proposal.proposal_id
+  });
+  replayEvents.push(bridgeReplayEvent({
+    event_type: "GOVERNED_RESULT_VALIDATED",
+    status: resultValidation.status,
+    session_id: sessionId,
+    proposal_id: proposal.proposal_id,
+    payload: resultValidation
+  }));
+  const accepted = resultValidation.valid === true;
+  const result = canonicalize({
+    demo_id: "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1",
+    status: accepted ? "RETURNED" : "BLOCKED",
+    session_id: sessionId,
+    proposal_id: proposal.proposal_id,
+    semantic_proposal: proposal,
+    semantic_proposal_validation: {
+      status: "ACCEPTED",
+      proposal_id: proposal.proposal_id,
+      proposed_mode: proposal.proposed_mode,
+      errors: [],
+      import_source: "minimal end-to-end bridge sidepanel attachment",
+      durable_storage: false,
+      hidden_persistence: false
+    },
+    semantic_proposal_hash_verification: {
+      status: transportReport.hash_verification_status,
+      artifact_hash: envelope.artifact_hash,
+      computed_hash: envelope.artifact_hash,
+      artifact_identity: envelope.proposal_id,
+      replay_safe_integrity: true
+    },
+    transport_status: transportReport.status,
+    local_governed_transport_report: transportReport,
+    task_package: taskPackage,
+    mock_codex_result: mockResult,
+    result_validation: resultValidation,
+    governed_chat_return: governedBridgeReturn({
+      accepted,
+      reason: accepted
+        ? "governed bridge lifecycle accepted with mocked bounded Codex result"
+        : "result validation failed",
+      taskPackage
+    }),
+    replay_events: replayEvents,
+    end_to_end_bridge: {
+      status: accepted ? "BRIDGE_ACCEPTED" : "BRIDGE_REJECTED",
+      human_request: proposal.human_request,
+      session_id: sessionId,
+      compact_runtime_narration: true
+    },
+    continuity_report: {
+      aggregate_governance_status: accepted ? "CONTINUITY_VALID" : "CONTINUITY_BOUNDARY_VIOLATION",
+      replay_visibility_summary: { visible: true, reference_count: replayEvents.length, gaps: [], mutated: false },
+      lifecycle_visibility_summary: { visible: true, reference_count: 5, gaps: [], mutated: false },
+      authority_boundary_summary: { visible: true, statement_count: 1, violations: [], authority_created: false },
+      semantic_boundary_summary: { visible: true, statement_count: 1, overclaims: [], semantic_authority_created: false },
+      continuity_findings: [accepted ? "Minimal end-to-end bridge lifecycle rendered with mocked bounded Codex result." : "Minimal bridge lifecycle rejected."],
+      continuity_risks: ["Sidepanel attachment mirrors the canonical Python runtime; no backend interop is added."],
+      continuity_recommendations: ["Review governed return and replay event IDs before any separate governed action."],
+      lineage_summary: { visible: true, reference_count: 1, mutated: false }
+    },
+    operator_visibility: {
+      runtime_state_visible: true,
+      transport_status_visible: true,
+      task_package_visible: true,
+      mock_result_visible: true,
+      result_validation_visible: true,
+      chat_return_visible: true,
+      replay_visible: true
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    },
+    non_authority_guarantees: [
+      "CHATGPT_SEMANTIC_COGNITION_ADVISORY_ONLY",
+      "AIGOL_VALIDATION_REQUIRED",
+      "SEMANTIC_TRANSPORT_ONLY",
+      "MOCK_CODEX_ONLY_NO_PROVIDER_EXECUTION",
+      "NO_DISPATCH_AUTHORITY",
+      "NO_APPROVAL_AUTHORITY",
+      "NO_EXECUTION_AUTHORITY",
+      "NO_ORCHESTRATION",
+      "NO_AUTONOMOUS_CONTINUATION",
+      "NO_DURABLE_PERSISTENCE"
+    ]
+  });
+  window.sidepanelRenderResult(result);
+}
+
 function replaySessionEntry(summary, index) {
   const entry = canonicalize(summary);
   const report = continuityReport(entry);
@@ -1631,6 +2043,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.latestActionResultCard, latestActionResultCardSummary(latest));
   setCockpitText(COCKPIT_IDS.operatorEventStream, operatorEventStreamSummary(latest));
   setCockpitText(COCKPIT_IDS.governanceChatReturn, governanceChatReturnSummary(latest));
+  setCockpitText(COCKPIT_IDS.endToEndBridgeLifecycle, endToEndBridgeLifecycleSummary(latest));
   renderReplaySessionVisibility();
 }
 
@@ -1683,4 +2096,9 @@ if (attachLocalGovernedTransportButton) {
 const runChatFirstGovernedFlowButton = document.getElementById("run-chat-first-governed-flow");
 if (runChatFirstGovernedFlowButton) {
   runChatFirstGovernedFlowButton.onclick = runChatFirstGovernedFlowFromSidepanel;
+}
+
+const runMinimalEndToEndBridgeButton = document.getElementById("run-minimal-end-to-end-bridge");
+if (runMinimalEndToEndBridgeButton) {
+  runMinimalEndToEndBridgeButton.onclick = runMinimalEndToEndBridgeFromSidepanel;
 }
