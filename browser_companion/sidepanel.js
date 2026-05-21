@@ -22,6 +22,9 @@ const REJECTED_SEMANTIC_PROPOSAL_MODES = [
   "PROVIDER_RUNTIME",
   "ORCHESTRATION"
 ];
+const CANONICAL_BRIDGE_RESULT_ARTIFACT_TYPE = "MINIMAL_END_TO_END_BRIDGE_RESULT";
+const CANONICAL_BRIDGE_RESULT_SCHEMA_VERSION = 1;
+const CANONICAL_BRIDGE_RESULT_AUTHORITY = "NON_EXECUTING_NON_AUTHORITATIVE";
 
 const COCKPIT_IDS = {
   executiveOperationalSummary: "executive-operational-summary",
@@ -55,7 +58,8 @@ const COCKPIT_IDS = {
   latestActionResultCard: "latest-action-result-card",
   operatorEventStream: "operator-event-stream",
   governanceChatReturn: "governance-chat-return",
-  endToEndBridgeLifecycle: "end-to-end-bridge-lifecycle"
+  endToEndBridgeLifecycle: "end-to-end-bridge-lifecycle",
+  canonicalBridgeResultArtifactStatus: "canonical-bridge-result-artifact-status"
 };
 
 function deterministicId(prefix, value) {
@@ -509,7 +513,13 @@ function operatorEventStreamSummary(entry) {
 
 function governanceChatReturnSummary(entry) {
   const report = latestTransportReport(entry);
-  if (entry.governed_chat_return && entry.demo_id === "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1") {
+  if (
+    entry.governed_chat_return
+    && (
+      entry.demo_id === "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1"
+      || entry.demo_id === "CANONICAL_BRIDGE_RESULT_ARTIFACT_EXPORT_IMPORT_V1"
+    )
+  ) {
     const bridgeReturn = entry.governed_chat_return;
     return [
       `Governed bridge ${String(bridgeReturn.status || "UNKNOWN").toLowerCase()}`,
@@ -558,6 +568,7 @@ function governanceChatReturnSummary(entry) {
 
 function endToEndBridgeLifecycleSummary(entry) {
   const bridge = entry.end_to_end_bridge || {};
+  const artifact = entry.bridge_result_artifact || {};
   const taskPackage = entry.task_package || {};
   const mockResult = entry.mock_codex_result || {};
   const resultValidation = entry.result_validation || {};
@@ -565,6 +576,7 @@ function endToEndBridgeLifecycleSummary(entry) {
   const replayIds = (entry.replay_events || []).map((event) => event.replay_event_id).join(", ") || "none";
   const proposal = latestProposal(entry);
   return [
+    artifact.imported ? "SOURCE: CANONICAL PYTHON RESULT ARTIFACT" : "SOURCE: sidepanel runtime visibility",
     `STATUS: ${compactValue(bridge.status || entry.status)}`,
     `HUMAN REQUEST: ${compactValue(proposal.human_request || bridge.human_request)}`,
     `SEMANTIC PROPOSAL: ${compactValue(entry.proposal_id || proposal.proposal_id)}`,
@@ -581,6 +593,22 @@ function endToEndBridgeLifecycleSummary(entry) {
     "NO REAL EXECUTION",
     "NO PROVIDER CALLS",
     "NO AUTONOMOUS CONTINUATION"
+  ].join("\n");
+}
+
+function canonicalBridgeResultArtifactStatusSummary(entry) {
+  const artifact = entry.bridge_result_artifact || {};
+  const verification = artifact.hash_verification || {};
+  return [
+    `CANONICAL PYTHON RESULT ARTIFACT: ${artifact.imported ? "imported" : entry.demo_id === "CANONICAL_BRIDGE_RESULT_ARTIFACT_EXPORT_IMPORT_V1" ? "rejected" : "not imported"}`,
+    `ARTIFACT TYPE: ${compactValue(artifact.artifact_type || CANONICAL_BRIDGE_RESULT_ARTIFACT_TYPE)}`,
+    `SCHEMA VERSION: ${compactValue(artifact.schema_version || CANONICAL_BRIDGE_RESULT_SCHEMA_VERSION)}`,
+    `HASH STATUS: ${compactValue(verification.status || "not verified")}`,
+    `ARTIFACT HASH: ${compactValue(artifact.artifact_hash || verification.artifact_hash)}`,
+    `AUTHORITY: ${compactValue(artifact.authority || CANONICAL_BRIDGE_RESULT_AUTHORITY)}`,
+    "HASH VERIFIED IS INTEGRITY ONLY",
+    "CANONICAL IMPORT DOES NOT APPROVE, DISPATCH, EXECUTE, OR PERSIST",
+    "NO REAL EXECUTION / MOCK CODEX ONLY"
   ].join("\n");
 }
 
@@ -760,6 +788,214 @@ async function verifySemanticProposalArtifactHash(proposal) {
     computed_hash: computedHash,
     artifact_identity: artifactIdentity,
     replay_safe_integrity: true
+  });
+}
+
+function canonicalBridgeResultArtifactHashInput(artifact) {
+  const canonicalArtifact = canonicalize(artifact || {});
+  const { artifact_hash: artifactHash, ...hashInput } = canonicalArtifact;
+  return hashInput;
+}
+
+async function canonicalBridgeResultArtifactHash(artifact) {
+  const bytes = new TextEncoder().encode(JSON.stringify(canonicalBridgeResultArtifactHashInput(artifact)));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return `sha256:${Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function validateCanonicalBridgeResultArtifactSchema(artifact) {
+  const required = [
+    "artifact_type",
+    "schema_version",
+    "authority",
+    "session_id",
+    "proposal_id",
+    "replay_events",
+    "task_package",
+    "mock_codex_result",
+    "result_validation",
+    "governed_chat_return",
+    "artifact_hash"
+  ];
+  const errors = [];
+  if (!artifact || typeof artifact !== "object" || Array.isArray(artifact)) {
+    return ["canonical bridge result artifact must be a JSON object"];
+  }
+  required.forEach((field) => {
+    if (!(field in artifact)) {
+      errors.push(`missing required field: ${field}`);
+    }
+  });
+  if (artifact.artifact_type !== CANONICAL_BRIDGE_RESULT_ARTIFACT_TYPE) {
+    errors.push("artifact_type must be MINIMAL_END_TO_END_BRIDGE_RESULT");
+  }
+  if (artifact.schema_version !== CANONICAL_BRIDGE_RESULT_SCHEMA_VERSION) {
+    errors.push("schema_version must be 1");
+  }
+  if (artifact.authority !== CANONICAL_BRIDGE_RESULT_AUTHORITY) {
+    errors.push("authority must be NON_EXECUTING_NON_AUTHORITATIVE");
+  }
+  if (!Array.isArray(artifact.replay_events)) {
+    errors.push("replay_events must be an array");
+  }
+  return errors;
+}
+
+async function verifyCanonicalBridgeResultArtifactHash(artifact) {
+  if (!artifact || typeof artifact !== "object" || Array.isArray(artifact)) {
+    return canonicalize({
+      status: "HASH_INVALID",
+      errors: ["malformed canonical bridge result artifact"],
+      artifact_hash: "unknown",
+      computed_hash: "not_computed",
+      artifact_identity: "unknown",
+      replay_safe_integrity: false
+    });
+  }
+  const artifactHash = artifact.artifact_hash;
+  const artifactIdentity = artifact.proposal_id || artifact.session_id || "unknown";
+  if (typeof artifactHash !== "string" || artifactHash.trim() === "") {
+    return canonicalize({
+      status: "HASH_MISSING",
+      errors: ["missing artifact_hash"],
+      artifact_hash: "missing",
+      computed_hash: "not_computed",
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  if (!/^sha256:[0-9a-f]{64}$/.test(artifactHash)) {
+    return canonicalize({
+      status: "HASH_INVALID",
+      errors: ["malformed artifact_hash"],
+      artifact_hash: artifactHash,
+      computed_hash: "not_computed",
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  const computedHash = await canonicalBridgeResultArtifactHash(artifact);
+  if (computedHash !== artifactHash) {
+    return canonicalize({
+      status: "HASH_MISMATCH",
+      errors: ["canonical bridge result artifact_hash mismatch"],
+      artifact_hash: artifactHash,
+      computed_hash: computedHash,
+      artifact_identity: artifactIdentity,
+      replay_safe_integrity: false
+    });
+  }
+  return canonicalize({
+    status: "HASH_VERIFIED",
+    errors: [],
+    artifact_hash: artifactHash,
+    computed_hash: computedHash,
+    artifact_identity: artifactIdentity,
+    replay_safe_integrity: true
+  });
+}
+
+function canonicalBridgeResultBlockedResult({ validationErrors, hashVerification }) {
+  const errors = validationErrors.concat((hashVerification && hashVerification.errors) || []);
+  return canonicalize({
+    demo_id: "CANONICAL_BRIDGE_RESULT_ARTIFACT_EXPORT_IMPORT_V1",
+    status: "BLOCKED",
+    bridge_result_artifact: {
+      source: "CANONICAL PYTHON RESULT ARTIFACT",
+      imported: false,
+      validation_status: "REJECTED",
+      validation_errors: errors,
+      hash_verification: hashVerification || {},
+      authority: CANONICAL_BRIDGE_RESULT_AUTHORITY,
+      no_real_execution: true,
+      mock_codex_only: true
+    },
+    governed_chat_return: {
+      status: "REJECTED",
+      reason: errors.join("; ") || "canonical bridge result artifact rejected",
+      replay_visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
+      next_recommended_step: "Export a fresh canonical Python bridge result artifact and import it explicitly.",
+      non_authority_reminder: "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created."
+    },
+    result_validation: {
+      status: "RESULT_REJECTED",
+      valid: false,
+      errors
+    },
+    replay_events: [],
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
+}
+
+function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
+  const accepted = artifact.status === "BRIDGE_ACCEPTED" && artifact.result_validation && artifact.result_validation.valid === true;
+  return canonicalize({
+    demo_id: "CANONICAL_BRIDGE_RESULT_ARTIFACT_EXPORT_IMPORT_V1",
+    status: accepted ? "RETURNED" : "BLOCKED",
+    session_id: artifact.session_id,
+    proposal_id: artifact.proposal_id,
+    transport_status: artifact.transport_status,
+    task_package: artifact.task_package || {},
+    mock_codex_result: artifact.mock_codex_result || {},
+    result_validation: artifact.result_validation || {},
+    governed_chat_return: artifact.governed_chat_return || {},
+    replay_events: artifact.replay_events || [],
+    operator_visibility: artifact.operator_visibility || {},
+    non_authority_guarantees: artifact.non_authority_guarantees || [],
+    bridge_result_artifact: {
+      source: "CANONICAL PYTHON RESULT ARTIFACT",
+      imported: true,
+      artifact_type: artifact.artifact_type,
+      schema_version: artifact.schema_version,
+      artifact_hash: artifact.artifact_hash,
+      hash_verification: hashVerification,
+      authority: artifact.authority,
+      no_real_execution: true,
+      mock_codex_only: true
+    },
+    end_to_end_bridge: {
+      status: artifact.status,
+      human_request: (artifact.mock_codex_result && artifact.mock_codex_result.summary) || "",
+      session_id: artifact.session_id,
+      canonical_python_result_artifact: true,
+      compact_runtime_narration: true
+    },
+    continuity_report: {
+      aggregate_governance_status: accepted ? "CONTINUITY_VALID" : "CONTINUITY_BOUNDARY_VIOLATION",
+      replay_visibility_summary: { visible: true, reference_count: (artifact.replay_events || []).length, gaps: [], mutated: false },
+      lifecycle_visibility_summary: { visible: true, reference_count: 5, gaps: [], mutated: false },
+      authority_boundary_summary: { visible: true, statement_count: 1, violations: [], authority_created: false },
+      semantic_boundary_summary: { visible: true, statement_count: 1, overclaims: [], semantic_authority_created: false },
+      continuity_findings: ["Canonical Python bridge result artifact imported and rendered read-only."],
+      continuity_risks: ["Artifact import verifies integrity only; it does not prove semantic correctness or grant authority."],
+      continuity_recommendations: ["Use the canonical artifact as the sidepanel runtime truth for review-only lifecycle visibility."],
+      lineage_summary: { visible: true, reference_count: 1, mutated: false }
+    },
+    authority_guarantees: {
+      provider_calls: false,
+      dispatch: false,
+      approval: false,
+      execution: false,
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
   });
 }
 
@@ -1294,6 +1530,50 @@ async function importSemanticProposalFileFromSidepanel() {
   const result = validation.status === "ACCEPTED"
     ? runSemanticProposalContinuityFlow(validation)
     : semanticProposalBlockedResult(validation);
+  window.sidepanelRenderResult(result);
+}
+
+async function importCanonicalBridgeResultFromSidepanel() {
+  const fileInput = document.getElementById("bridge-result-artifact-file");
+  const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+  if (!file) {
+    window.sidepanelRenderResult(canonicalBridgeResultBlockedResult({
+      validationErrors: ["missing bridge_result_artifact.json file selection"],
+      hashVerification: {
+        status: "HASH_MISSING",
+        errors: ["missing bridge_result_artifact.json file selection"],
+        artifact_hash: "missing",
+        computed_hash: "not_computed",
+        artifact_identity: "unknown",
+        replay_safe_integrity: false
+      }
+    }));
+    return;
+  }
+  let parsedArtifact = {};
+  let validationErrors = [];
+  let hashVerification = {};
+  try {
+    parsedArtifact = canonicalize(JSON.parse(await file.text()));
+    validationErrors = validateCanonicalBridgeResultArtifactSchema(parsedArtifact);
+    hashVerification = await verifyCanonicalBridgeResultArtifactHash(parsedArtifact);
+    if (hashVerification.status !== "HASH_VERIFIED") {
+      validationErrors = validationErrors.concat(hashVerification.errors);
+    }
+  } catch (error) {
+    validationErrors = ["invalid canonical bridge result artifact JSON"];
+    hashVerification = {
+      status: "HASH_INVALID",
+      errors: ["invalid canonical bridge result artifact JSON"],
+      artifact_hash: "unknown",
+      computed_hash: "not_computed",
+      artifact_identity: "unknown",
+      replay_safe_integrity: false
+    };
+  }
+  const result = validationErrors.length
+    ? canonicalBridgeResultBlockedResult({ validationErrors, hashVerification })
+    : canonicalBridgeResultFromArtifact(parsedArtifact, hashVerification);
   window.sidepanelRenderResult(result);
 }
 
@@ -2044,6 +2324,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.operatorEventStream, operatorEventStreamSummary(latest));
   setCockpitText(COCKPIT_IDS.governanceChatReturn, governanceChatReturnSummary(latest));
   setCockpitText(COCKPIT_IDS.endToEndBridgeLifecycle, endToEndBridgeLifecycleSummary(latest));
+  setCockpitText(COCKPIT_IDS.canonicalBridgeResultArtifactStatus, canonicalBridgeResultArtifactStatusSummary(latest));
   renderReplaySessionVisibility();
 }
 
@@ -2086,6 +2367,11 @@ if (importSemanticProposalButton) {
 const importSemanticProposalFileButton = document.getElementById("import-semantic-proposal-file");
 if (importSemanticProposalFileButton) {
   importSemanticProposalFileButton.onclick = importSemanticProposalFileFromSidepanel;
+}
+
+const importCanonicalBridgeResultButton = document.getElementById("import-canonical-bridge-result");
+if (importCanonicalBridgeResultButton) {
+  importCanonicalBridgeResultButton.onclick = importCanonicalBridgeResultFromSidepanel;
 }
 
 const attachLocalGovernedTransportButton = document.getElementById("attach-local-governed-transport");

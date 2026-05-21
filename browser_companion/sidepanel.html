@@ -183,6 +183,8 @@
       <textarea id="chatgpt-semantic-proposal" name="chatgpt-semantic-proposal" rows="6" placeholder='{"human_request":"Review this proposal","semantic_intent":"Observe governed continuity","proposed_mode":"REVIEW_ONLY","risk_class":"LOW","authority_boundary_statement":"No approval, dispatch, or execution authority is granted.","semantic_boundary_statement":"Semantic cognition remains non-authoritative.","requested_action_type":"OBSERVE_ONLY"}'></textarea>
       <label for="semantic-proposal-file">Local semantic_proposal.json</label>
       <input id="semantic-proposal-file" name="semantic-proposal-file" type="file" accept="application/json,.json">
+      <label for="bridge-result-artifact-file">Canonical bridge_result_artifact.json</label>
+      <input id="bridge-result-artifact-file" name="bridge-result-artifact-file" type="file" accept="application/json,.json">
       <label for="local-transport-session-id">Local governed transport session</label>
       <input id="local-transport-session-id" name="local-transport-session-id" autocomplete="off" value="LOCAL-GOVERNED-TRANSPORT-SESSION-V1">
       <label for="chat-first-human-request">Chat-first Human Request</label>
@@ -207,6 +209,7 @@
         <button id="run-governed-demo" type="button">Run Governed Demo</button>
         <button id="import-semantic-proposal" type="button">Import Semantic Proposal</button>
         <button id="import-semantic-proposal-file" type="button">Import semantic_proposal.json</button>
+        <button id="import-canonical-bridge-result" type="button">Import Canonical Bridge Result</button>
         <button id="attach-local-governed-transport" type="button">Attach Governed Transport</button>
         <button id="run-chat-first-governed-flow" type="button">Run Chat-first Governed Flow</button>
         <button id="run-minimal-end-to-end-bridge" type="button">Run End-to-End Bridge</button>
@@ -321,6 +324,13 @@ MOCK CODEX RESULT: not created
 RESULT VALIDATION: not run
 GOVERNED CHAT RETURN: not generated
 RECOMMENDED NEXT STEP: run explicit end-to-end bridge</pre>
+          </article>
+          <article class="cockpit-panel" aria-labelledby="canonical-bridge-result-artifact-heading">
+            <h3 id="canonical-bridge-result-artifact-heading">Canonical Bridge Result Artifact</h3>
+            <p class="cockpit-label">Operator-selected Python result artifact import only. Hash verification is integrity-only and does not approve, dispatch, execute, or persist anything.</p>
+            <pre id="canonical-bridge-result-artifact-status" class="cockpit-output">CANONICAL PYTHON RESULT ARTIFACT: not imported
+HASH STATUS: not verified
+NO REAL EXECUTION / MOCK CODEX ONLY</pre>
           </article>
           <details id="audit-evidence" class="audit-evidence">
             <summary>Show audit evidence</summary>

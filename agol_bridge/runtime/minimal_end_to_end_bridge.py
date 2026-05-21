@@ -23,6 +23,9 @@ MOCK_CODEX_RESULT_STATUS = "MOCK_CODEX_RESULT_RETURNED"
 RESULT_VALIDATED = "RESULT_VALIDATED"
 RESULT_REJECTED = "RESULT_REJECTED"
 SESSION_ID_MIN_LENGTH = 3
+BRIDGE_RESULT_ARTIFACT_TYPE = "MINIMAL_END_TO_END_BRIDGE_RESULT"
+BRIDGE_RESULT_ARTIFACT_SCHEMA_VERSION = 1
+BRIDGE_RESULT_ARTIFACT_AUTHORITY = "NON_EXECUTING_NON_AUTHORITATIVE"
 
 NON_AUTHORITY_GUARANTEES = (
     "CHATGPT_SEMANTIC_COGNITION_ADVISORY_ONLY",
@@ -261,6 +264,42 @@ def _governed_chat_return(*, accepted: bool, reason: str, task_package: dict | N
     }
 
 
+def _artifact_hash_input(artifact: dict) -> dict:
+    artifact_copy = _canonical_copy(artifact)
+    artifact_copy.pop("artifact_hash", None)
+    return artifact_copy
+
+
+def export_minimal_bridge_result_artifact(result: dict) -> dict:
+    """Create a canonical in-memory artifact for sidepanel import.
+
+    The helper performs no filesystem writes. The returned artifact is the
+    canonical Python runtime result handoff object; its hash excludes the
+    ``artifact_hash`` field itself.
+    """
+
+    result_copy = _canonical_copy(result or {})
+    artifact = {
+        "artifact_type": BRIDGE_RESULT_ARTIFACT_TYPE,
+        "schema_version": BRIDGE_RESULT_ARTIFACT_SCHEMA_VERSION,
+        "authority": BRIDGE_RESULT_ARTIFACT_AUTHORITY,
+        "canonical_source": "PYTHON_MINIMAL_END_TO_END_BRIDGE_RUNTIME_V1",
+        "status": result_copy.get("status", "UNKNOWN"),
+        "session_id": result_copy.get("session_id", "UNKNOWN"),
+        "proposal_id": result_copy.get("proposal_id", "UNKNOWN"),
+        "transport_status": result_copy.get("transport_status", "UNKNOWN"),
+        "replay_events": _canonical_copy(result_copy.get("replay_events", [])),
+        "task_package": _canonical_copy(result_copy.get("task_package", {})),
+        "mock_codex_result": _canonical_copy(result_copy.get("mock_codex_result", {})),
+        "result_validation": _canonical_copy(result_copy.get("result_validation", {})),
+        "governed_chat_return": _canonical_copy(result_copy.get("governed_chat_return", {})),
+        "operator_visibility": _canonical_copy(result_copy.get("operator_visibility", {})),
+        "non_authority_guarantees": _canonical_copy(result_copy.get("non_authority_guarantees", [])),
+    }
+    artifact["artifact_hash"] = canonical_hash(_artifact_hash_input(artifact))
+    return artifact
+
+
 def run_minimal_end_to_end_bridge(*, human_request: str, session_id: str) -> dict:
     """Run the first bounded local governed bridge lifecycle."""
 
@@ -432,8 +471,12 @@ def run_minimal_end_to_end_bridge(*, human_request: str, session_id: str) -> dic
 __all__ = [
     "BRIDGE_ACCEPTED",
     "BRIDGE_REJECTED",
+    "BRIDGE_RESULT_ARTIFACT_AUTHORITY",
+    "BRIDGE_RESULT_ARTIFACT_SCHEMA_VERSION",
+    "BRIDGE_RESULT_ARTIFACT_TYPE",
     "MOCK_CODEX_RESULT_STATUS",
     "RESULT_REJECTED",
     "RESULT_VALIDATED",
+    "export_minimal_bridge_result_artifact",
     "run_minimal_end_to_end_bridge",
 ]
