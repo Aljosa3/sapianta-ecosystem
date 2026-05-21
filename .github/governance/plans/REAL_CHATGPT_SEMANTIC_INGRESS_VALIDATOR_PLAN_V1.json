@@ -1,0 +1,236 @@
+{
+  "plan_id": "REAL_CHATGPT_SEMANTIC_INGRESS_VALIDATOR_PLAN_V1",
+  "status": "VALIDATOR_PLAN_V1",
+  "readiness_decision": "READY_FOR_PURE_FUNCTION_IMPLEMENTATION_REVIEW",
+  "based_on": [
+    "REAL_CHATGPT_SEMANTIC_INGRESS_CONTRACT_V1",
+    "REAL_CHATGPT_SEMANTIC_INGRESS_REVIEW_V1"
+  ],
+  "validator_signature": "validate_real_chatgpt_semantic_ingress(envelope: dict) -> dict",
+  "scope": [
+    "validate explicit in-memory semantic ingress envelope objects",
+    "required field checks",
+    "forbidden authority-bearing field checks",
+    "supported requested_mode checks",
+    "advisory-only created_by check",
+    "non_authority_statement check",
+    "uncertainty label handling",
+    "execution orchestration provider language rejection",
+    "lineage_refs validation",
+    "semantic_proposal presence",
+    "deterministic report shape",
+    "bounded refinement-loop preparation"
+  ],
+  "forbidden": [
+    "filesystem reads",
+    "filesystem writes",
+    "network calls",
+    "ChatGPT API calls",
+    "endpoint handling",
+    "provider calls",
+    "dispatch",
+    "approval",
+    "execution",
+    "orchestration",
+    "replay mutation",
+    "lifecycle mutation",
+    "durable persistence",
+    "hidden retries",
+    "automatic semantic refinement",
+    "autonomous continuation"
+  ],
+  "validation_order": [
+    "canonicalize input envelope into an internal copy",
+    "verify envelope is a JSON-like object",
+    "validate required fields",
+    "reject forbidden authority-bearing fields",
+    "validate requested_mode",
+    "validate created_by",
+    "validate authority_boundary_statement",
+    "validate semantic_boundary_statement",
+    "validate non_authority_statement",
+    "validate uncertainty_labels",
+    "reject execution orchestration provider approval dispatch replay mutation lifecycle mutation and continuation language",
+    "validate lineage_refs",
+    "validate semantic_proposal presence and object shape",
+    "select fail-closed semantic ingress status",
+    "build deterministic validation report"
+  ],
+  "required_fields": [
+    "semantic_ingress_id",
+    "session_id",
+    "proposal_id",
+    "semantic_intent",
+    "requested_mode",
+    "authority_boundary_statement",
+    "semantic_boundary_statement",
+    "uncertainty_labels",
+    "lineage_refs",
+    "created_by",
+    "non_authority_statement",
+    "semantic_proposal"
+  ],
+  "forbidden_authority_bearing_fields": [
+    "approval_token",
+    "dispatch_target",
+    "execution_command",
+    "provider_runtime",
+    "orchestration_plan",
+    "autonomous_continuation",
+    "replay_mutation",
+    "lifecycle_transition",
+    "hidden_persistence"
+  ],
+  "supported_requested_modes": [
+    "READ_ONLY",
+    "REVIEW_ONLY",
+    "DEMO_ONLY"
+  ],
+  "rejected_requested_modes": [
+    "EXECUTE",
+    "AUTO_EXECUTE",
+    "AUTONOMOUS",
+    "PROVIDER_RUNTIME",
+    "ORCHESTRATION"
+  ],
+  "created_by_check": {
+    "required_value": "CHATGPT_ADVISORY_COGNITION",
+    "failure_status": "SEMANTIC_INGRESS_REJECTED_AUTHORITY"
+  },
+  "non_authority_statement_requirements": [
+    "not approval",
+    "not execution authorization",
+    "not governance certification",
+    "not provider dispatch",
+    "not orchestration authority",
+    "not autonomous continuation authority"
+  ],
+  "uncertainty_label_handling": {
+    "allowed_labels": [
+      "LOW_CONFIDENCE_INTENT",
+      "AMBIGUOUS_EXECUTION_LANGUAGE",
+      "MULTIPLE_INTERPRETATIONS_PRESENT",
+      "AUTHORITY_INTENT_UNCLEAR",
+      "POSSIBLE_ORCHESTRATION_LANGUAGE",
+      "POSSIBLE_PROVIDER_EXECUTION_LANGUAGE",
+      "MISSING_BOUNDARY_CONTEXT"
+    ],
+    "rules": [
+      "unknown uncertainty labels return SEMANTIC_INGRESS_REJECTED_AMBIGUOUS",
+      "high-severity labels reject unless explicit boundary statements fully negate the risk",
+      "AUTHORITY_INTENT_UNCLEAR returns SEMANTIC_INGRESS_REJECTED_AUTHORITY",
+      "AMBIGUOUS_EXECUTION_LANGUAGE returns SEMANTIC_INGRESS_REJECTED_EXECUTION_LANGUAGE unless bounded",
+      "POSSIBLE_ORCHESTRATION_LANGUAGE returns SEMANTIC_INGRESS_REJECTED_ORCHESTRATION unless bounded",
+      "POSSIBLE_PROVIDER_EXECUTION_LANGUAGE returns SEMANTIC_INGRESS_REJECTED_EXECUTION_LANGUAGE unless bounded",
+      "MISSING_BOUNDARY_CONTEXT returns SEMANTIC_INGRESS_REJECTED_MISSING_BOUNDARY",
+      "accepted labels appear in uncertainty_findings"
+    ]
+  },
+  "language_rejection_checks": {
+    "scan_fields": [
+      "semantic_intent",
+      "requested_mode",
+      "authority_boundary_statement",
+      "semantic_boundary_statement",
+      "non_authority_statement",
+      "string content in semantic_proposal"
+    ],
+    "reject_language_implying": [
+      "approval",
+      "execution",
+      "dispatch",
+      "provider runtime",
+      "Codex execution",
+      "orchestration",
+      "autonomous continuation",
+      "replay mutation",
+      "lifecycle mutation",
+      "hidden persistence"
+    ],
+    "negation_policy": "Explicit negation may bound risky language only when requested mode is non-executing and all authority statements are complete."
+  },
+  "lineage_refs_validation": {
+    "required_shape": "array",
+    "allowed_items": [
+      "string replay-visible identifier",
+      "object with deterministic inspection fields such as ref_type ref_id relationship"
+    ],
+    "failure_status": "SEMANTIC_INGRESS_REJECTED_AMBIGUOUS",
+    "resolution_policy": "shape only; no disk or network resolution"
+  },
+  "semantic_proposal_presence": {
+    "required": true,
+    "required_shape": "JSON-like object",
+    "failure_status": "SEMANTIC_INGRESS_REJECTED_MISSING_BOUNDARY",
+    "mutation_policy": "do not normalize rewrite enrich or execute semantic proposal content"
+  },
+  "statuses": [
+    "SEMANTIC_INGRESS_ACCEPTED_FOR_VALIDATION",
+    "SEMANTIC_INGRESS_REJECTED_AMBIGUOUS",
+    "SEMANTIC_INGRESS_REJECTED_AUTHORITY",
+    "SEMANTIC_INGRESS_REJECTED_EXECUTION_LANGUAGE",
+    "SEMANTIC_INGRESS_REJECTED_ORCHESTRATION",
+    "SEMANTIC_INGRESS_REJECTED_UNSUPPORTED_MODE",
+    "SEMANTIC_INGRESS_REJECTED_MISSING_BOUNDARY"
+  ],
+  "status_precedence": [
+    "SEMANTIC_INGRESS_REJECTED_MISSING_BOUNDARY",
+    "SEMANTIC_INGRESS_REJECTED_AUTHORITY",
+    "SEMANTIC_INGRESS_REJECTED_EXECUTION_LANGUAGE",
+    "SEMANTIC_INGRESS_REJECTED_ORCHESTRATION",
+    "SEMANTIC_INGRESS_REJECTED_UNSUPPORTED_MODE",
+    "SEMANTIC_INGRESS_REJECTED_AMBIGUOUS",
+    "SEMANTIC_INGRESS_ACCEPTED_FOR_VALIDATION"
+  ],
+  "output_report_fields": [
+    "status",
+    "ingress_id",
+    "proposal_id",
+    "session_id",
+    "rejection_reason",
+    "uncertainty_findings",
+    "authority_findings",
+    "replay_visibility",
+    "lineage_refs",
+    "advisory_only_label",
+    "recommended_refinement_instruction"
+  ],
+  "deterministic_report_requirements": [
+    "deterministic key set",
+    "deterministic list ordering",
+    "no timestamps unless externally supplied by future contract",
+    "no random identifiers",
+    "no input envelope mutation",
+    "no hidden persistence",
+    "no filesystem network provider dispatch approval or execution behavior"
+  ],
+  "bounded_refinement_loop_preparation": {
+    "allowed": "recommended_refinement_instruction may suggest bounded human-visible refinement when rejected",
+    "requirements": [
+      "advisory only",
+      "deterministic",
+      "cite rejection reason",
+      "request boundary clarification instead of hidden repair",
+      "never approve dispatch execute orchestrate call providers mutate replay mutate lifecycle or continue autonomously"
+    ]
+  },
+  "tests_required_for_future_implementation": [
+    "valid envelope returns SEMANTIC_INGRESS_ACCEPTED_FOR_VALIDATION",
+    "missing required fields fail closed",
+    "forbidden authority-bearing fields are rejected",
+    "unsupported modes are rejected",
+    "non-CHATGPT_ADVISORY_COGNITION created_by is rejected",
+    "incomplete non-authority statements are rejected",
+    "unknown uncertainty labels are rejected",
+    "high-severity uncertainty labels fail closed",
+    "execution language is rejected",
+    "orchestration language is rejected",
+    "provider language is rejected",
+    "malformed lineage_refs are rejected",
+    "missing semantic_proposal is rejected",
+    "report shape is deterministic",
+    "input envelope is not mutated",
+    "no IO endpoint provider dispatch approval execution orchestration replay mutation lifecycle mutation or hidden persistence is introduced"
+  ],
+  "recommended_next_step": "Prepare REAL_CHATGPT_SEMANTIC_INGRESS_VALIDATOR_IMPLEMENTATION_REVIEW_V1 before implementation."
+}
