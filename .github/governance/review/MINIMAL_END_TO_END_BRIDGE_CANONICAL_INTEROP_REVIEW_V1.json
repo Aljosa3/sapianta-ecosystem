@@ -1,0 +1,82 @@
+{
+  "review_id": "MINIMAL_END_TO_END_BRIDGE_CANONICAL_INTEROP_REVIEW_V1",
+  "status": "REVIEW_COMPLETE",
+  "review_decision": "READY_FOR_CANONICAL_RESULT_ARTIFACT_IMPORT",
+  "current_problem": [
+    "sidepanel uses JS deterministic mirror",
+    "Python runtime is canonical",
+    "this creates two runtime truths"
+  ],
+  "desired_outcome": [
+    "one canonical runtime source",
+    "operator-triggered invocation or import only",
+    "visible lifecycle result",
+    "no hidden runtime behavior",
+    "sidepanel renders canonical results rather than redefining runtime behavior"
+  ],
+  "interop_candidates": {
+    "explicit_local_command_invocation": {
+      "assessment": "DEFER",
+      "reason": "browser-to-command invocation can create hidden execution or environment coupling unless separately gated"
+    },
+    "explicit_local_file_handoff": {
+      "assessment": "ACCEPTABLE",
+      "reason": "preserves user mediation and avoids endpoints, background listeners, and command invocation"
+    },
+    "explicit_localhost_call": {
+      "assessment": "DEFER",
+      "reason": "requires separate ingress contract and implementation gate because listeners can feel like hidden runtime behavior"
+    },
+    "python_generated_result_artifact_imported_by_sidepanel": {
+      "assessment": "RECOMMENDED",
+      "reason": "canonical Python runtime creates deterministic result artifact and sidepanel renders it read-only"
+    }
+  },
+  "recommended_interop_path": "PYTHON_GENERATED_RESULT_ARTIFACT_IMPORT",
+  "rejected_paths": [
+    "hidden background listener",
+    "automatic invocation",
+    "persistent daemon",
+    "execution provider coupling",
+    "direct ChatGPT API coupling",
+    "silent replay mutation",
+    "browser storage persistence",
+    "sidepanel-only canonical runtime logic",
+    "endpoint-to-execution path",
+    "autonomous continuation after import"
+  ],
+  "required_guarantees": [
+    "canonical Python runtime remains source of truth",
+    "sidepanel only renders canonical result",
+    "no execution authority",
+    "no provider calls",
+    "no hidden dispatch",
+    "no autonomous continuation",
+    "no hidden background listener",
+    "no persistent daemon",
+    "no durable persistence",
+    "replay remains session-visible unless separately upgraded",
+    "operator-visible non-authority labels remain attached to governed return"
+  ],
+  "risks": [
+    "file import adds an operator step and may feel less live than direct invocation",
+    "result artifact integrity will need deterministic hash or schema validation",
+    "operators may confuse canonical result import with approval",
+    "later localhost bridge could reintroduce hidden-runtime perception if not separately reviewed"
+  ],
+  "next_implementation_step": "CANONICAL_BRIDGE_RESULT_ARTIFACT_EXPORT_IMPORT_V1",
+  "next_implementation_scope": [
+    "Python canonical result artifact generation",
+    "sidepanel read-only artifact import",
+    "sidepanel rendering of canonical lifecycle result",
+    "no endpoint servers",
+    "no background listeners",
+    "no provider calls",
+    "no dispatch",
+    "no approval",
+    "no execution",
+    "no orchestration",
+    "no durable persistence",
+    "no autonomous continuation"
+  ]
+}
