@@ -1,0 +1,163 @@
+{
+  "proving_id": "REAL_OPERATOR_USAGE_AND_FRICTION_COLLECTION_V1",
+  "status": "OPERATIONAL_PROVING_COMPLETE",
+  "practical_usability_decision": "USABLE_WITH_SIMPLIFICATION_REQUIRED",
+  "purpose": "Collect real operator usability and friction evidence for the existing governed bridge runtime without adding a new architecture layer.",
+  "not_scope": [
+    "orchestration",
+    "autonomous continuation",
+    "provider execution",
+    "localhost servers",
+    "hidden listeners",
+    "durable replay backend",
+    "additional governance complexity",
+    "new transport protocols"
+  ],
+  "reviewed_runtime_surface": [
+    "minimal end-to-end bridge runtime",
+    "canonical result artifact export/import",
+    "Browser Companion sidepanel lifecycle rendering",
+    "governed chat return flow",
+    "replay event visibility",
+    "explicit non-authority labels",
+    "mock-only Codex result visibility"
+  ],
+  "operator_flow_clarity": {
+    "assessment": "MOSTLY_CLEAR",
+    "lifecycle_visible": true,
+    "flow_steps_visible": [
+      "human request",
+      "semantic proposal",
+      "governed transport",
+      "task package",
+      "mocked Codex result",
+      "result validation",
+      "governed return"
+    ],
+    "friction": [
+      "The same flow appears in multiple panels.",
+      "Operators may not know which panel is the primary result.",
+      "Canonical artifact import remains a technical concept."
+    ],
+    "recommended_simplification": "Treat governed chat return as the main operator-facing result and lifecycle rows as supporting evidence."
+  },
+  "governance_overload": {
+    "assessment": "MODERATE_OVERLOAD",
+    "overload_findings": [
+      "Non-authority labels are repeated across several panels.",
+      "Governance terms remain dense.",
+      "Integrity, certification, and continuity labels still require interpretation."
+    ],
+    "recommended_simplification": "Keep one first-level authority statement and move repeated evidence into expandable detail."
+  },
+  "replay_readability": {
+    "assessment": "USEFUL_BUT_NOISY",
+    "findings": [
+      "Replay event IDs help audit review.",
+      "Replay event IDs are noisy for first-pass operator review.",
+      "Operators may confuse session-local replay with durable replay persistence."
+    ],
+    "recommended_simplification": "Show first-level replay as visible in this session and move raw replay IDs behind details."
+  },
+  "governed_return_quality": {
+    "assessment": "GOOD",
+    "strengths": [
+      "Accepted or rejected status is visible.",
+      "Reason is included.",
+      "Replay visibility is included.",
+      "Next recommended step is included.",
+      "Non-authority reminder is included."
+    ],
+    "friction": [
+      "Rejection reasons may still be technical.",
+      "Accepted return may be mistaken for approval if separated from the non-authority reminder.",
+      "Next steps are useful but generic."
+    ],
+    "recommended_simplification": "Use governed return as the primary operator output and add rejection-specific repair hints later."
+  },
+  "operator_friction": {
+    "assessment": "MANUAL_BUT_ACCEPTABLE_FOR_PROVING",
+    "findings": [
+      "Manual file handoff is understandable but slow.",
+      "Many controls remain visible in the same sidepanel.",
+      "Artifact terminology may feel technical.",
+      "Import/export requires understanding canonical runtime source of truth."
+    ],
+    "recommended_simplification": "Group bridge-specific controls separately and caption artifact import as Python bridge result import."
+  },
+  "trust_and_safety_perception": {
+    "assessment": "STRONG_WITH_DENSITY_RISK",
+    "findings": [
+      "No real execution is obvious.",
+      "Mock Codex only is visible.",
+      "No provider calls is visible.",
+      "Canonical Python result artifact reduces two-runtime-truth confusion.",
+      "Hash verification is correctly framed as integrity-only."
+    ],
+    "risk": "The number of labels may make the system feel heavier than the task being reviewed."
+  },
+  "friction_findings": [
+    "Manual artifact handoff is clear but slower than a direct bridge.",
+    "The cockpit contains too many adjacent controls for a bridge-focused operator.",
+    "Replay IDs are audit-useful but noisy in compact operator view.",
+    "Artifact terminology may slow non-technical operators.",
+    "Rejection repair guidance is generic."
+  ],
+  "overload_findings": [
+    "Non-authority labels are repeated across several panels.",
+    "Replay, lifecycle, continuity, and artifact views overlap conceptually.",
+    "Operators may need guidance on which panel is primary.",
+    "Raw audit evidence should stay out of the default operator path."
+  ],
+  "lifecycle_clarity_findings": [
+    "The full lifecycle is visible and mostly understandable.",
+    "The mocked Codex boundary is clear.",
+    "Canonical artifact import improves trust in Python as source of truth.",
+    "The lifecycle should not gain additional first-level rows."
+  ],
+  "replay_usability_findings": [
+    "Replay supports audit confidence.",
+    "Replay event IDs are too detailed for first-pass operator review.",
+    "Session-local replay should be phrased in plain language.",
+    "Durable replay backend expectations must continue to be explicitly rejected."
+  ],
+  "operator_trust_findings": [
+    "No-real-execution clarity is strong.",
+    "Mock Codex visibility is strong.",
+    "Hash verification as integrity-only is clear when the label remains visible.",
+    "Accepted bridge lifecycle still needs the attached non-authority reminder."
+  ],
+  "recommended_simplifications": [
+    "Make the governed return the primary operator answer.",
+    "Keep lifecycle visible as compact supporting evidence.",
+    "Move replay IDs and raw artifact JSON deeper by default.",
+    "Group bridge-specific controls away from older runtime controls.",
+    "Add rejection-specific operator repair hints.",
+    "Avoid new governance abstractions until real operator friction is lower."
+  ],
+  "recommended_operational_priorities": [
+    "operator clarity",
+    "compact lifecycle visibility",
+    "controlled evidence disclosure",
+    "bridge control grouping",
+    "rejection repair guidance"
+  ],
+  "recommended_next_practical_milestone": {
+    "name": "BRIDGE_OPERATOR_SURFACE_SIMPLIFICATION_V1",
+    "scope": [
+      "rendering-only",
+      "operator-first bridge surface",
+      "governed return primary result",
+      "compact lifecycle supporting evidence",
+      "expandable replay and artifact details"
+    ],
+    "forbidden": [
+      "new runtime behavior",
+      "new transport protocol",
+      "endpoint",
+      "provider execution",
+      "orchestration",
+      "durable replay backend"
+    ]
+  }
+}
