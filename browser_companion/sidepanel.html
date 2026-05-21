@@ -97,6 +97,11 @@
         resize: vertical;
       }
 
+      .primary-operator-answer {
+        border-color: #2e7d32;
+        grid-column: 1 / -1;
+      }
+
       .inspection-panel summary,
       .replay-session-panel summary,
       .audit-evidence summary {
@@ -304,19 +309,24 @@ No execution occurred.</pre>
             <p class="cockpit-label">Human-readable runtime narration, not raw replay. Events are deterministic operator-facing visibility only.</p>
             <pre id="operator-event-stream" class="cockpit-output">001 INFO Awaiting explicit operator action.</pre>
           </article>
-          <article class="cockpit-panel" aria-labelledby="governance-chat-return-heading">
+          <article class="cockpit-panel primary-operator-answer" aria-labelledby="governance-chat-return-heading">
             <h3 id="governance-chat-return-heading">Governance Chat Return</h3>
-            <p class="cockpit-label">Copy-safe deterministic governance return for chat. It reports visibility outcomes only and never grants authority.</p>
+            <p class="cockpit-label">Primary operator answer. It reports visibility outcomes only and never grants authority.</p>
+            <p class="cockpit-label">Authority summary: ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NO REAL EXECUTION / MOCK CODEX ONLY.</p>
             <textarea id="governance-chat-return" class="cockpit-output governance-chat-return" readonly>Governed transport has not run.
 
 Authority: SEMANTIC_TRANSPORT_ONLY
 No execution occurred.
 No provider invoked.</textarea>
           </article>
-          <article class="cockpit-panel" aria-labelledby="end-to-end-bridge-lifecycle-heading">
-            <h3 id="end-to-end-bridge-lifecycle-heading">Minimal End-to-End Bridge Lifecycle</h3>
-            <p class="cockpit-label">Compact lifecycle visibility for the mocked governed bridge. ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NO REAL EXECUTION. NO PROVIDER CALLS. NO AUTONOMOUS CONTINUATION.</p>
-            <pre id="end-to-end-bridge-lifecycle" class="cockpit-output">HUMAN REQUEST: not run
+          <details id="audit-evidence" class="audit-evidence">
+            <summary>Show audit evidence</summary>
+            <fieldset class="cockpit-group" aria-label="Bridge lifecycle evidence">
+              <legend>Bridge Lifecycle Evidence</legend>
+              <article class="cockpit-panel" aria-labelledby="end-to-end-bridge-lifecycle-heading">
+                <h3 id="end-to-end-bridge-lifecycle-heading">Minimal End-to-End Bridge Lifecycle</h3>
+                <p class="cockpit-label">Compact lifecycle visibility for the mocked governed bridge. ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NO REAL EXECUTION. NO PROVIDER CALLS. NO AUTONOMOUS CONTINUATION.</p>
+                <pre id="end-to-end-bridge-lifecycle" class="cockpit-output">HUMAN REQUEST: not run
 SEMANTIC PROPOSAL: not created
 GOVERNED TRANSPORT STATUS: not invoked
 GOVERNED TASK PACKAGE: not created
@@ -324,16 +334,15 @@ MOCK CODEX RESULT: not created
 RESULT VALIDATION: not run
 GOVERNED CHAT RETURN: not generated
 RECOMMENDED NEXT STEP: run explicit end-to-end bridge</pre>
-          </article>
-          <article class="cockpit-panel" aria-labelledby="canonical-bridge-result-artifact-heading">
-            <h3 id="canonical-bridge-result-artifact-heading">Canonical Bridge Result Artifact</h3>
-            <p class="cockpit-label">Operator-selected Python result artifact import only. Hash verification is integrity-only and does not approve, dispatch, execute, or persist anything.</p>
-            <pre id="canonical-bridge-result-artifact-status" class="cockpit-output">CANONICAL PYTHON RESULT ARTIFACT: not imported
+              </article>
+              <article class="cockpit-panel" aria-labelledby="canonical-bridge-result-artifact-heading">
+                <h3 id="canonical-bridge-result-artifact-heading">Canonical Bridge Result Artifact</h3>
+                <p class="cockpit-label">Operator-selected Python result artifact import only. Hash verification is integrity-only and does not approve, dispatch, execute, or persist anything.</p>
+                <pre id="canonical-bridge-result-artifact-status" class="cockpit-output">CANONICAL PYTHON RESULT ARTIFACT: not imported
 HASH STATUS: not verified
 NO REAL EXECUTION / MOCK CODEX ONLY</pre>
-          </article>
-          <details id="audit-evidence" class="audit-evidence">
-            <summary>Show audit evidence</summary>
+              </article>
+            </fieldset>
             <fieldset class="cockpit-group" aria-label="Governance">
             <legend>Governance</legend>
             <p class="cockpit-label">Level 2: Governance Findings / Risks / Recommendations</p>

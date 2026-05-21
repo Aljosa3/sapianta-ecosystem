@@ -528,6 +528,9 @@ function governanceChatReturnSummary(entry) {
       `Replay: ${compactValue(bridgeReturn.replay_visibility)}`,
       `Next: ${compactValue(bridgeReturn.next_recommended_step)}`,
       "",
+      "Authority: ChatGPT = advisory cognition only; AiGOL = governance authority; Codex = mocked bounded provider only.",
+      "NO REAL EXECUTION / MOCK CODEX ONLY",
+      "",
       bridgeReturn.non_authority_reminder || "No execution occurred. No provider invoked."
     ].join("\n");
   }
