@@ -57,6 +57,8 @@ FORBIDDEN_FIELD_NAMES = (
     "authorization_token",
     "approval_token",
     "approved_for_execution",
+    "governance_approval",
+    "governance_approved",
     "autonomous_continuation",
     "continue_autonomously",
     "follow_up_tasks",
@@ -65,6 +67,8 @@ FORBIDDEN_FIELD_NAMES = (
 HIDDEN_AUTHORITY_PHRASES = (
     "approved for execution",
     "approval granted",
+    "governance approved",
+    "governance approval granted",
     "authorize execution",
     "execution authorized",
     "dispatch to codex",

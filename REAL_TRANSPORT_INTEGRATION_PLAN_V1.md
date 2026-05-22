@@ -85,6 +85,8 @@ AiGOL must still validate and may reject the artifact before task packaging.
 
 Only after the ingress artifact exists, add a governed adapter that imports live ChatGPT output into that artifact format.
 
+Prerequisite status: `CHATGPT_INGRESS_IMPORT_VALIDATION_V1` now provides import-only structural validation from ingress artifact to proposal/contract candidates and a governance report. It stops before runtime execution and does not add a live adapter.
+
 Safety constraints:
 
 - no direct Codex call from ChatGPT;
