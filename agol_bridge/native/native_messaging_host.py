@@ -3,8 +3,8 @@
 
 The host is intentionally one-shot: Chrome launches it, sends one explicit
 operator-triggered message, receives one governed response, and the process
-exits. It does not start a server, listener, provider call, or orchestration
-loop.
+exits. It does not start a server, listener, autonomous continuation, or
+orchestration loop.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import json
 import struct
 import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import BinaryIO
 
 from agol_bridge.runtime.minimal_end_to_end_bridge import (
@@ -32,11 +33,11 @@ def _authority_guarantees() -> dict:
         "native_bridge": "NATIVE_BRIDGE_LOCAL_ONLY",
         "operator_triggered": True,
         "canonical_python_runtime": True,
-        "provider_calls": False,
+        "provider_calls": "CODEX_CLI_ONLY",
         "dispatch": False,
         "approval": False,
-        "execution": False,
-        "real_codex_execution": False,
+        "execution": "BOUNDED_CODEX_CLI_ONLY",
+        "real_codex_execution": True,
         "orchestration": False,
         "autonomous_continuation": False,
         "durable_replay_backend": False,
@@ -56,14 +57,14 @@ def _reject(reason: str, *, message: dict | None = None) -> dict:
         "governed_return": {
             "status": "REJECTED",
             "reason": reason,
-            "non_authority_reminder": "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created.",
+            "non_authority_reminder": "No approval, dispatch, orchestration, retry, or autonomous continuation authority was created.",
         },
         "labels": [
             "NATIVE_BRIDGE_LOCAL_ONLY",
             "OPERATOR_TRIGGERED",
             "CANONICAL_PYTHON_RUNTIME",
-            "NO_REAL_CODEX_EXECUTION",
-            "NO_PROVIDER_CALLS",
+            "REAL_CODEX_EXECUTION",
+            "BOUNDED_CODEX_CLI_PROVIDER",
             "NO_AUTONOMOUS_CONTINUATION",
         ],
         "authority_guarantees": _authority_guarantees(),
@@ -97,6 +98,8 @@ def handle_native_message(message: dict) -> dict:
     bridge_result = run_minimal_end_to_end_bridge(
         human_request=safe_message["human_request"].strip(),
         session_id=safe_message["session_id"].strip(),
+        workspace_path=str(Path(safe_message.get("workspace_path") or Path.cwd()).expanduser().resolve()),
+        timeout_seconds=int(safe_message.get("timeout_seconds", 600)),
     )
     if bridge_result.get("status") != BRIDGE_ACCEPTED:
         return {
@@ -111,8 +114,8 @@ def handle_native_message(message: dict) -> dict:
                 "NATIVE_BRIDGE_LOCAL_ONLY",
                 "OPERATOR_TRIGGERED",
                 "CANONICAL_PYTHON_RUNTIME",
-                "NO_REAL_CODEX_EXECUTION",
-                "NO_PROVIDER_CALLS",
+                "REAL_CODEX_EXECUTION",
+                "BOUNDED_CODEX_CLI_PROVIDER",
                 "NO_AUTONOMOUS_CONTINUATION",
             ],
             "authority_guarantees": _authority_guarantees(),
@@ -131,8 +134,8 @@ def handle_native_message(message: dict) -> dict:
             "NATIVE_BRIDGE_LOCAL_ONLY",
             "OPERATOR_TRIGGERED",
             "CANONICAL_PYTHON_RUNTIME",
-            "NO_REAL_CODEX_EXECUTION",
-            "NO_PROVIDER_CALLS",
+            "REAL_CODEX_EXECUTION",
+            "BOUNDED_CODEX_CLI_PROVIDER",
             "NO_AUTONOMOUS_CONTINUATION",
         ],
         "authority_guarantees": _authority_guarantees(),

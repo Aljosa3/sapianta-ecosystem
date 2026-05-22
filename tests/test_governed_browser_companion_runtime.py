@@ -67,7 +67,8 @@ def test_no_retry_fallback_or_hidden_automation_surface_exists():
     assert "content_scripts" not in lowered
     assert "cookies" not in lowered
     assert combined.count("nativeMessaging") == 1
-    assert "runtime.onMessage" not in combined
+    assert combined.count("runtime.onMessage") == 1
+    assert "service_worker.js" in combined
 
 
 def test_explicit_user_action_is_required():

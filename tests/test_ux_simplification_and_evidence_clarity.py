@@ -57,8 +57,8 @@ def test_authority_compression_label_exists():
     for label in (
         "NO_APPROVAL",
         "NO_DISPATCH",
-        "NO_EXECUTION",
-        "NO_PROVIDER_CALLS",
+        "REAL_CODEX_EXECUTION",
+        "BOUNDED_CODEX_CLI_PROVIDER",
         "NO_ORCHESTRATION",
         "NO_AUTONOMOUS_CONTINUATION",
     ):

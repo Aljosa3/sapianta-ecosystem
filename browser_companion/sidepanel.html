@@ -102,6 +102,27 @@
         grid-column: 1 / -1;
       }
 
+      .observatory-group {
+        border-color: #6a7a8a;
+      }
+
+      .observatory-panel {
+        border-left: 4px solid #6a7a8a;
+      }
+
+      .observatory-panel.enforced {
+        border-left-color: #2e7d32;
+      }
+
+      .observatory-panel.structural-only {
+        border-left-color: #996500;
+      }
+
+      .observatory-panel.advisory-only,
+      .observatory-panel.ui-only {
+        border-left-color: #5e6ad2;
+      }
+
       .inspection-panel summary,
       .replay-session-panel summary,
       .audit-evidence summary {
@@ -173,57 +194,72 @@
   <body class="sidepanel">
     <main>
       <h1>SAPIANTA</h1>
-      <label for="mode">Mode</label>
-      <select id="mode" name="mode">
-        <option value="artifact">Artifact</option>
-        <option value="intent">Natural Language Intent</option>
-        <option value="codex">Governed Codex Task</option>
-        <option value="conversation">Conversational governance request</option>
-      </select>
-      <label for="artifact">Artifact, intent, governed Codex task, or conversational request</label>
-      <input id="artifact" name="artifact" autocomplete="off" placeholder="TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1">
-      <label for="governed-demo-request">Governed continuity demo request</label>
-      <textarea id="governed-demo-request" name="governed-demo-request" rows="3" placeholder="Show governed continuity without execution"></textarea>
-      <label for="chatgpt-semantic-proposal">ChatGPT Semantic Proposal</label>
-      <textarea id="chatgpt-semantic-proposal" name="chatgpt-semantic-proposal" rows="6" placeholder='{"human_request":"Review this proposal","semantic_intent":"Observe governed continuity","proposed_mode":"REVIEW_ONLY","risk_class":"LOW","authority_boundary_statement":"No approval, dispatch, or execution authority is granted.","semantic_boundary_statement":"Semantic cognition remains non-authoritative.","requested_action_type":"OBSERVE_ONLY"}'></textarea>
-      <label for="semantic-proposal-file">Local semantic_proposal.json</label>
-      <input id="semantic-proposal-file" name="semantic-proposal-file" type="file" accept="application/json,.json">
-      <label for="bridge-result-artifact-file">Canonical bridge_result_artifact.json</label>
-      <input id="bridge-result-artifact-file" name="bridge-result-artifact-file" type="file" accept="application/json,.json">
-      <label for="local-transport-session-id">Local governed transport session</label>
-      <input id="local-transport-session-id" name="local-transport-session-id" autocomplete="off" value="LOCAL-GOVERNED-TRANSPORT-SESSION-V1">
-      <label for="chat-first-human-request">Chat-first Human Request</label>
-      <textarea id="chat-first-human-request" name="chat-first-human-request" rows="3" placeholder="Review this request through governed semantic transport"></textarea>
-      <label for="chat-first-requested-mode">Chat-first mode</label>
-      <select id="chat-first-requested-mode" name="chat-first-requested-mode">
-        <option value="REVIEW_ONLY">REVIEW_ONLY</option>
-        <option value="DEMO_ONLY">DEMO_ONLY</option>
-        <option value="READ_ONLY">READ_ONLY</option>
-      </select>
-      <section class="control-grid" aria-label="Governed runtime controls">
-        <button id="preview" type="button">Preview intent</button>
-        <button id="confirm" type="button">Confirm preview</button>
-        <button id="transfer-export" type="button">Export governed intent transfer package</button>
-        <button id="transfer-ingest" type="button">Ingest governed transfer package</button>
-        <button id="export" type="button">Export governed handoff package</button>
-        <button id="authorize" type="button">Request execution authorization</button>
-        <button id="consume" type="button">Run mock governed execution</button>
-        <button id="codex-execute" type="button">Run governed Codex execution</button>
-        <button id="observe" type="button">Inspect governed execution</button>
-        <button id="invoke" type="button">Invoke governed runtime</button>
-        <button id="run-governed-demo" type="button">Run Governed Demo</button>
-        <button id="import-semantic-proposal" type="button">Import Semantic Proposal</button>
-        <button id="import-semantic-proposal-file" type="button">Import semantic_proposal.json</button>
-        <button id="import-canonical-bridge-result" type="button">Import Canonical Bridge Result</button>
-        <button id="attach-local-governed-transport" type="button">Attach Governed Transport</button>
-        <button id="run-chat-first-governed-flow" type="button">Run Chat-first Governed Flow</button>
-        <button id="run-minimal-end-to-end-bridge" type="button">Run End-to-End Bridge</button>
+      <section id="core-flow-controls" class="cockpit-panel primary-operator-answer" aria-label="Core Flow">
+        <h2>Core Flow</h2>
+        <p class="cockpit-label">Canonical daily path: Human Request -> Semantic Contract -> AiGOL Governance Gateway -> Canonical Task Package -> Codex Execution -> Structural Verification -> Governed Return.</p>
+        <label for="chat-first-human-request">Human Request</label>
+        <textarea id="chat-first-human-request" name="chat-first-human-request" rows="4" placeholder="Describe the governed development task"></textarea>
+        <label for="local-transport-session-id">Session</label>
+        <input id="local-transport-session-id" name="local-transport-session-id" autocomplete="off" value="LOCAL-GOVERNED-TRANSPORT-SESSION-V1">
         <button id="run-native-bridge" type="button">Run via Native Bridge</button>
       </section>
+      <details id="advanced-debug-controls" class="audit-evidence">
+        <summary>Advanced Debug</summary>
+        <section class="control-grid" aria-label="Advanced debug controls">
+          <label for="semantic-proposal-file">Local semantic_proposal.json</label>
+          <input id="semantic-proposal-file" name="semantic-proposal-file" type="file" accept="application/json,.json">
+          <button id="import-semantic-proposal-file" type="button">Import semantic_proposal.json</button>
+          <label for="bridge-result-artifact-file">Canonical bridge_result_artifact.json</label>
+          <input id="bridge-result-artifact-file" name="bridge-result-artifact-file" type="file" accept="application/json,.json">
+          <button id="import-canonical-bridge-result" type="button">Import Canonical Bridge Result</button>
+          <button id="attach-local-governed-transport" type="button">Attach Governed Transport</button>
+          <button id="run-chat-first-governed-flow" type="button">Run Chat-first Governed Flow</button>
+        </section>
+      </details>
+      <details id="legacy-experimental-controls" class="audit-evidence">
+        <summary>Legacy / Experimental - NON-CANONICAL</summary>
+        <p class="cockpit-label">Legacy, experimental, JS-only, preview, and mock surfaces. These do not replace the canonical Native Bridge core flow.</p>
+        <label for="mode">Legacy Mode</label>
+        <select id="mode" name="mode">
+          <option value="artifact">Artifact</option>
+          <option value="intent">Natural Language Intent</option>
+          <option value="codex">Governed Codex Task</option>
+          <option value="conversation">Conversational governance request</option>
+        </select>
+        <label for="artifact">Legacy artifact, intent, governed Codex task, or conversational request</label>
+        <input id="artifact" name="artifact" autocomplete="off" placeholder="TEST_REAL_OPERATIONAL_NO_COPY_PASTE_PROOF_V1">
+        <label for="governed-demo-request">Read-only continuity demo request</label>
+        <textarea id="governed-demo-request" name="governed-demo-request" rows="3" placeholder="Show governed continuity without execution"></textarea>
+        <label for="chatgpt-semantic-proposal">ChatGPT Semantic Proposal Artifact</label>
+        <textarea id="chatgpt-semantic-proposal" name="chatgpt-semantic-proposal" rows="6" placeholder='{"human_request":"Review this proposal","semantic_intent":"Observe governed continuity","proposed_mode":"REVIEW_ONLY","risk_class":"LOW","authority_boundary_statement":"No approval, dispatch, or execution authority is granted.","semantic_boundary_statement":"Semantic cognition remains non-authoritative.","requested_action_type":"OBSERVE_ONLY"}'></textarea>
+        <label for="chat-first-requested-mode">Legacy chat-first mode</label>
+        <select id="chat-first-requested-mode" name="chat-first-requested-mode">
+          <option value="REVIEW_ONLY">REVIEW_ONLY</option>
+          <option value="DEMO_ONLY">DEMO_ONLY</option>
+          <option value="READ_ONLY">READ_ONLY</option>
+        </select>
+        <section class="control-grid" aria-label="Legacy and experimental runtime controls">
+          <button id="preview" type="button">Preview intent</button>
+          <button id="confirm" type="button">Confirm preview</button>
+          <button id="transfer-export" type="button">Export governed intent transfer package</button>
+          <button id="transfer-ingest" type="button">Ingest governed transfer package</button>
+          <button id="export" type="button">Export governed handoff package</button>
+          <button id="authorize" type="button">Request execution authorization</button>
+          <button id="consume" type="button">Run mock governed execution</button>
+          <button id="codex-execute" type="button">Run governed Codex execution</button>
+          <button id="observe" type="button">Inspect governed execution</button>
+          <button id="invoke" type="button">Invoke governed runtime</button>
+          <button id="run-governed-demo" type="button">Run Governed Demo</button>
+          <button id="import-semantic-proposal" type="button">Import Semantic Proposal Artifact</button>
+          <button id="run-minimal-end-to-end-bridge" type="button">Run End-to-End Bridge (JS Demo Bridge)</button>
+        </section>
+      </details>
       <section class="lifecycle-shell" aria-label="Operational lifecycle output">
-        <h2>Operational lifecycle</h2>
-        <section class="cockpit-grid" aria-label="Read-only replay and lifecycle cockpit">
-          <fieldset class="cockpit-group" aria-label="Level 1 Compact Operator Summary">
+	        <h2>Operational lifecycle</h2>
+	        <section class="cockpit-grid" aria-label="Read-only replay and lifecycle cockpit">
+	          <details id="advanced-summary-cards" class="audit-evidence">
+	            <summary>Advanced Debug Summaries</summary>
+	          <fieldset class="cockpit-group" aria-label="Level 1 Compact Operator Summary">
             <legend>Level 1: Compact Operator Summary</legend>
             <article class="cockpit-panel" aria-labelledby="executive-governance-layer-heading">
               <h3 id="executive-governance-layer-heading">Executive Governance Layer</h3>
@@ -250,11 +286,10 @@ SESSION_REPLAY_ONLY: session-local visibility, not durable replay persistence.</
 NATIVE_BRIDGE_LOCAL_ONLY
 OPERATOR_TRIGGERED
 CANONICAL_PYTHON_RUNTIME
-NO_REAL_CODEX_EXECUTION
+REAL_CODEX_EXECUTION
 NO_APPROVAL
 NO_DISPATCH
-NO_EXECUTION
-NO_PROVIDER_CALLS
+BOUNDED_CODEX_CLI_PROVIDER
 NO_ORCHESTRATION
 NO_AUTONOMOUS_CONTINUATION</pre>
             </article>
@@ -309,33 +344,130 @@ NOTE: no execution, no dispatch, no approval</pre>
 Authority: SEMANTIC_TRANSPORT_ONLY
 No execution occurred.</pre>
           </article>
-          <article class="cockpit-panel" aria-labelledby="operator-event-stream-heading">
-            <h3 id="operator-event-stream-heading">Operator Event Stream</h3>
-            <p class="cockpit-label">Human-readable runtime narration, not raw replay. Events are deterministic operator-facing visibility only.</p>
-            <pre id="operator-event-stream" class="cockpit-output">001 INFO Awaiting explicit operator action.</pre>
-          </article>
-          <article class="cockpit-panel primary-operator-answer" aria-labelledby="governance-chat-return-heading">
+	          <article class="cockpit-panel" aria-labelledby="operator-event-stream-heading">
+	            <h3 id="operator-event-stream-heading">Operator Event Stream</h3>
+	            <p class="cockpit-label">Human-readable runtime narration, not raw replay. Events are deterministic operator-facing visibility only.</p>
+	            <pre id="operator-event-stream" class="cockpit-output">001 INFO Awaiting explicit operator action.</pre>
+	          </article>
+	          </details>
+	          <article class="cockpit-panel primary-operator-answer" aria-labelledby="governance-chat-return-heading">
             <h3 id="governance-chat-return-heading">Governance Chat Return</h3>
             <p class="cockpit-label">Primary operator answer. It reports visibility outcomes only and never grants authority.</p>
-            <p class="cockpit-label">Authority summary: ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NATIVE_BRIDGE_LOCAL_ONLY. OPERATOR_TRIGGERED. CANONICAL_PYTHON_RUNTIME. NO REAL EXECUTION / MOCK CODEX ONLY.</p>
-            <textarea id="governance-chat-return" class="cockpit-output governance-chat-return" readonly>Governed transport has not run.
+            <p class="cockpit-label">Authority summary: ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = bounded CLI provider only. NATIVE_BRIDGE_LOCAL_ONLY. OPERATOR_TRIGGERED. CANONICAL_PYTHON_RUNTIME. REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY.</p>
+	      <textarea id="governance-chat-return" class="cockpit-output governance-chat-return" readonly>Governed transport has not run.
 
-Authority: SEMANTIC_TRANSPORT_ONLY
-No execution occurred.
-No provider invoked.</textarea>
-          </article>
-          <details id="audit-evidence" class="audit-evidence">
-            <summary>Show audit evidence</summary>
+	Authority: SEMANTIC_TRANSPORT_ONLY
+	No execution occurred.
+	No provider invoked.</textarea>
+	          </article>
+	          <fieldset id="governed-execution-observatory" class="cockpit-group observatory-group" aria-label="Governed Execution Observatory">
+	            <legend>Governed Execution Observatory</legend>
+	            <article class="cockpit-panel observatory-panel ui-only" aria-labelledby="observatory-topology-heading">
+	              <h3 id="observatory-topology-heading">Execution Topology</h3>
+	              <p class="cockpit-label">Full runtime map. It separates real enforcement from descriptive sidepanel narration.</p>
+	              <pre id="observatory-topology" class="cockpit-output">Human -> local deterministic normalization -> AiGOL governance gateway -> Codex CLI provider -> AiGOL structural verification -> governed operator return</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel ui-only" aria-labelledby="observatory-classification-heading">
+	              <h3 id="observatory-classification-heading">Governance Classification Legend</h3>
+	              <p class="cockpit-label">Authority markers are deterministic observability labels; they do not change runtime behavior.</p>
+	              <pre id="observatory-classification-legend" class="cockpit-output">ENFORCED: runtime gate or provider boundary
+STRUCTURAL_ONLY: schema, lineage, hash, or flag verification
+ADVISORY_ONLY: semantic/return context without authority
+UI_ONLY: descriptive sidepanel narration</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel ui-only" aria-labelledby="observatory-human-request-heading">
+	              <h3 id="observatory-human-request-heading">1. Human Request</h3>
+	              <p class="cockpit-label">Shows what the operator entered or what the canonical artifact preserves.</p>
+	              <pre id="observatory-human-request" class="cockpit-output">INPUT: not received
+OUTPUT: no request rendered
+AUTHORITY: UI_ONLY
+BOUNDARY: request text alone grants no approval, dispatch, or execution
+STATUS: NOT_STARTED</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel advisory-only" aria-labelledby="observatory-semantic-reasoning-heading">
+	              <h3 id="observatory-semantic-reasoning-heading">2. Semantic Reasoning Layer</h3>
+	              <p class="cockpit-label">LOCAL DETERMINISTIC NORMALIZATION. NON-AUTHORITATIVE. SEMANTIC ONLY. No live ChatGPT invocation occurs here.</p>
+	              <pre id="observatory-semantic-reasoning" class="cockpit-output">INPUT: not normalized
+OUTPUT: no semantic proposal rendered
+AUTHORITY: ADVISORY_ONLY
+BOUNDARY: local normalization only; not ChatGPT cognition
+STATUS: NOT_STARTED</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel structural-only" aria-labelledby="observatory-semantic-contract-heading">
+	              <h3 id="observatory-semantic-contract-heading">Semantic Contract</h3>
+	              <p class="cockpit-label">STRUCTURED_SEMANTIC_CONTRACT. NON_EXECUTION_AUTHORITY. GOVERNANCE_MEDIATED. REPLAYABLE_SEMANTIC_CONTRACT.</p>
+	              <pre id="observatory-semantic-contract" class="cockpit-output">INPUT: no semantic proposal
+OUTPUT: no semantic contract rendered
+AUTHORITY: STRUCTURAL_ONLY
+BOUNDARY: semantic contract is input to governance, not execution authorization
+STATUS: NOT_STARTED</pre>
+	              <details class="replay-session-panel">
+	                <summary>Semantic Contract JSON</summary>
+	                <pre id="observatory-semantic-contract-json" class="cockpit-output">No semantic contract JSON rendered.</pre>
+	              </details>
+	            </article>
+	            <article class="cockpit-panel observatory-panel enforced" aria-labelledby="observatory-aigol-governance-heading">
+	              <h3 id="observatory-aigol-governance-heading">3. AiGOL Governance Gateway</h3>
+	              <p class="cockpit-label">REAL ENFORCEMENT only: transport validation, replay/lifecycle policy, authority boundary, session binding, and task package gate.</p>
+	              <pre id="observatory-aigol-governance" class="cockpit-output">INPUT: no transport envelope rendered
+OUTPUT: no governance report rendered
+AUTHORITY: ENFORCED
+BOUNDARY: governance gate only; not semantic correctness
+STATUS: NOT_STARTED</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel structural-only" aria-labelledby="observatory-task-package-heading">
+	              <h3 id="observatory-task-package-heading">4. Canonical Governed Task Package</h3>
+	              <p class="cockpit-label">WHAT CODEX ACTUALLY RECEIVES. Displays the bounded prompt, constraints, allowed paths, and package provenance.</p>
+	              <pre id="observatory-task-package" class="cockpit-output">INPUT: no validated transport report
+OUTPUT: no task package rendered
+AUTHORITY: STRUCTURAL_ONLY
+BOUNDARY: task package is bounded but not semantic proof
+STATUS: NOT_STARTED</pre>
+	              <details class="replay-session-panel">
+	                <summary>Task Package JSON</summary>
+	                <pre id="observatory-task-package-json" class="cockpit-output">No task package JSON rendered.</pre>
+	              </details>
+	            </article>
+	            <article class="cockpit-panel observatory-panel enforced" aria-labelledby="observatory-codex-execution-heading">
+	              <h3 id="observatory-codex-execution-heading">5. Codex Execution Layer</h3>
+	              <p class="cockpit-label">Shows whether Codex actually ran. REAL_CODEX_EXECUTION and MOCK_EXECUTION are explicit.</p>
+	              <pre id="observatory-codex-execution" class="cockpit-output">INPUT: no task package
+OUTPUT: no provider result
+AUTHORITY: ENFORCED
+BOUNDARY: no autonomous continuation, retries, approval, or orchestration
+STATUS: NOT_STARTED</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel structural-only" aria-labelledby="observatory-post-verification-heading">
+	              <h3 id="observatory-post-verification-heading">6. AiGOL Post-Execution Verification</h3>
+	              <p class="cockpit-label">STRUCTURAL VERIFICATION ONLY unless a future semantic verifier is explicitly added.</p>
+	              <pre id="observatory-post-verification" class="cockpit-output">INPUT: no Codex result
+OUTPUT: no validation report
+AUTHORITY: STRUCTURAL_ONLY
+BOUNDARY: not semantic correctness verification
+STATUS: NOT_STARTED</pre>
+	            </article>
+	            <article class="cockpit-panel observatory-panel advisory-only" aria-labelledby="observatory-governed-return-heading">
+	              <h3 id="observatory-governed-return-heading">7. Governed Return Layer</h3>
+	              <p class="cockpit-label">GOVERNED OPERATOR RETURN. NOT LIVE CHATGPT INTERPRETATION.</p>
+	              <pre id="observatory-governed-return" class="cockpit-output">INPUT: no validation report
+OUTPUT: no governed return
+AUTHORITY: ADVISORY_ONLY
+BOUNDARY: operator-facing summary only
+STATUS: NOT_STARTED</pre>
+	            </article>
+	          </fieldset>
+	          <details id="audit-evidence" class="audit-evidence">
+	            <summary>Show audit evidence</summary>
             <fieldset class="cockpit-group" aria-label="Bridge lifecycle evidence">
               <legend>Bridge Lifecycle Evidence</legend>
               <article class="cockpit-panel" aria-labelledby="end-to-end-bridge-lifecycle-heading">
                 <h3 id="end-to-end-bridge-lifecycle-heading">Minimal End-to-End Bridge Lifecycle</h3>
-                <p class="cockpit-label">Compact lifecycle visibility for the mocked governed bridge. ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = mocked bounded provider only. NO REAL EXECUTION. NO PROVIDER CALLS. NO AUTONOMOUS CONTINUATION.</p>
+                <p class="cockpit-label">Compact lifecycle visibility for the governed bridge. ChatGPT = advisory cognition only. AiGOL = governance authority. Codex = bounded CLI provider only. REAL_CODEX_EXECUTION. BOUNDED_CODEX_CLI_PROVIDER. NO AUTONOMOUS CONTINUATION.</p>
                 <pre id="end-to-end-bridge-lifecycle" class="cockpit-output">HUMAN REQUEST: not run
 SEMANTIC PROPOSAL: not created
 GOVERNED TRANSPORT STATUS: not invoked
 GOVERNED TASK PACKAGE: not created
-MOCK CODEX RESULT: not created
+CODEX CLI RESULT: not created
 RESULT VALIDATION: not run
 GOVERNED CHAT RETURN: not generated
 RECOMMENDED NEXT STEP: run explicit end-to-end bridge</pre>
@@ -345,7 +477,7 @@ RECOMMENDED NEXT STEP: run explicit end-to-end bridge</pre>
                 <p class="cockpit-label">Operator-selected Python result artifact import only. Hash verification is integrity-only and does not approve, dispatch, execute, or persist anything.</p>
                 <pre id="canonical-bridge-result-artifact-status" class="cockpit-output">CANONICAL PYTHON RESULT ARTIFACT: not imported
 HASH STATUS: not verified
-NO REAL EXECUTION / MOCK CODEX ONLY</pre>
+REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY</pre>
               </article>
             </fieldset>
             <fieldset class="cockpit-group" aria-label="Governance">

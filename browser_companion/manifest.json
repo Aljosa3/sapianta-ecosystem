@@ -11,6 +11,9 @@
     "nativeMessaging",
     "sidePanel"
   ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
   "side_panel": {
     "default_path": "sidepanel.html"
   },

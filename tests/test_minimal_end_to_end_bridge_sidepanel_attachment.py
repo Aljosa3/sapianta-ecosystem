@@ -28,7 +28,7 @@ def test_end_to_end_bridge_controls_and_lifecycle_panel_exist():
     assert "SEMANTIC PROPOSAL" in html
     assert "GOVERNED TRANSPORT STATUS" in html
     assert "GOVERNED TASK PACKAGE" in html
-    assert "MOCK CODEX RESULT" in html
+    assert "CODEX CLI RESULT" in html
     assert "RESULT VALIDATION" in html
     assert "GOVERNED CHAT RETURN" in html
     assert "RECOMMENDED NEXT STEP" in html
@@ -101,12 +101,11 @@ def test_authority_reminders_are_visible():
 
     assert "ChatGPT = advisory cognition only" in combined
     assert "AiGOL = governance authority" in combined
-    assert "Codex = mocked bounded provider only" in combined
-    assert "NO REAL EXECUTION" in combined
-    assert "NO PROVIDER CALLS" in combined
+    assert "Codex = bounded CLI provider only" in combined
+    assert "REAL_CODEX_EXECUTION" in combined
+    assert "BOUNDED_CODEX_CLI_PROVIDER" in combined
     assert "NO AUTONOMOUS CONTINUATION" in combined
-    assert "MOCK_CODEX_ONLY_NO_PROVIDER_EXECUTION" in combined
-    assert "NO_EXECUTION_AUTHORITY" in combined
+    assert "NO_AUTONOMOUS_CONTINUATION" in combined
     assert "NO_ORCHESTRATION" in combined
 
 
@@ -133,10 +132,10 @@ def test_no_execution_provider_or_orchestration_behavior_added():
     )
     for token in forbidden:
         assert token not in lowered
-    assert "provider_calls: false" in _js()
+    assert "provider_calls: \"CODEX_CLI_ONLY\"" in _js()
     assert "dispatch: false" in _js()
     assert "approval: false" in _js()
-    assert "execution: false" in _js()
+    assert "execution: \"BOUNDED_CODEX_CLI_ONLY\"" in _js()
     assert "orchestration: false" in _js()
     assert "autonomous_continuation: false" in _js()
 

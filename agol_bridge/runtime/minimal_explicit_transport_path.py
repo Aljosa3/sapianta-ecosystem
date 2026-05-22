@@ -1,8 +1,9 @@
 """Explicit file-based governed transport path for the minimal bridge.
 
 This module provides an operator-visible local handoff path only. It performs
-no networking, no provider calls, no orchestration, and no autonomous
-continuation.
+no networking, no orchestration, and no autonomous continuation. Execution,
+when accepted by the canonical bridge runtime, is bounded to the Codex CLI
+provider contract.
 """
 
 from __future__ import annotations
@@ -164,7 +165,7 @@ def run_minimal_explicit_governed_transport_path(*, request_artifact: dict) -> d
             "governed_return_artifact": {
                 "status": "REJECTED",
                 "reason": "; ".join(validation["errors"]),
-                "non_authority_reminder": "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created.",
+                "non_authority_reminder": "No approval, dispatch, orchestration, or autonomous continuation authority was created.",
             },
             "authority_guarantees": _authority_guarantees(),
         }
@@ -219,7 +220,7 @@ def run_minimal_explicit_governed_transport_path_file(*, input_path: str | Path,
             "governed_return_artifact": {
                 "status": "REJECTED",
                 "reason": "could not read governed request artifact",
-                "non_authority_reminder": "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created.",
+                "non_authority_reminder": "No approval, dispatch, orchestration, or autonomous continuation authority was created.",
             },
             "authority_guarantees": _authority_guarantees(),
         }
@@ -234,10 +235,10 @@ def run_minimal_explicit_governed_transport_path_file(*, input_path: str | Path,
 
 def _authority_guarantees() -> dict:
     return {
-        "provider_calls": False,
+        "provider_calls": "CODEX_CLI_ONLY",
         "dispatch": False,
         "approval": False,
-        "execution": False,
+        "execution": "BOUNDED_CODEX_CLI_ONLY",
         "endpoint": False,
         "server_listener": False,
         "orchestration": False,

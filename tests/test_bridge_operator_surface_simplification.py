@@ -74,21 +74,20 @@ def test_authority_labels_remain_visible():
 
     assert "ChatGPT = advisory cognition only" in primary_surface
     assert "AiGOL = governance authority" in primary_surface
-    assert "Codex = mocked bounded provider only" in primary_surface
-    assert "NO REAL EXECUTION / MOCK CODEX ONLY" in primary_surface
+    assert "Codex = bounded CLI provider only" in primary_surface
+    assert "REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY" in primary_surface
     assert "SEMANTIC_TRANSPORT_ONLY" in combined
     assert "NO_APPROVAL" in combined
     assert "NO_DISPATCH" in combined
-    assert "NO_EXECUTION" in combined
+    assert "BOUNDED_CODEX_CLI_PROVIDER" in combined
 
 
 def test_governed_return_rendering_carries_authority_summary():
     source = _js()
 
     assert "function governanceChatReturnSummary(entry)" in source
-    assert "Authority: ChatGPT = advisory cognition only; AiGOL = governance authority; Codex = mocked bounded provider only." in source
-    assert "NO REAL EXECUTION / MOCK CODEX ONLY" in source
-    assert "No execution occurred. No provider invoked." in source
+    assert "Authority: ChatGPT = advisory cognition only; AiGOL = governance authority; Codex = bounded CLI provider only." in source
+    assert "REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY" in source
 
 
 def test_no_execution_provider_or_orchestration_added():

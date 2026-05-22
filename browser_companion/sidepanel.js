@@ -25,7 +25,7 @@ const REJECTED_SEMANTIC_PROPOSAL_MODES = [
 const CANONICAL_BRIDGE_RESULT_ARTIFACT_TYPE = "MINIMAL_END_TO_END_BRIDGE_RESULT";
 const CANONICAL_BRIDGE_RESULT_SCHEMA_VERSION = 1;
 const CANONICAL_BRIDGE_RESULT_AUTHORITY = "NON_EXECUTING_NON_AUTHORITATIVE";
-const NATIVE_BRIDGE_HOST = "com.sapianta.aigol_bridge";
+const SERVICE_WORKER_NATIVE_BRIDGE_ACTION = "RUN_NATIVE_BRIDGE";
 
 const COCKPIT_IDS = {
   executiveOperationalSummary: "executive-operational-summary",
@@ -60,7 +60,19 @@ const COCKPIT_IDS = {
   operatorEventStream: "operator-event-stream",
   governanceChatReturn: "governance-chat-return",
   endToEndBridgeLifecycle: "end-to-end-bridge-lifecycle",
-  canonicalBridgeResultArtifactStatus: "canonical-bridge-result-artifact-status"
+  canonicalBridgeResultArtifactStatus: "canonical-bridge-result-artifact-status",
+  observatoryTopology: "observatory-topology",
+  observatoryClassificationLegend: "observatory-classification-legend",
+  observatoryHumanRequest: "observatory-human-request",
+  observatorySemanticReasoning: "observatory-semantic-reasoning",
+  observatorySemanticContract: "observatory-semantic-contract",
+  observatorySemanticContractJson: "observatory-semantic-contract-json",
+  observatoryAigolGovernance: "observatory-aigol-governance",
+  observatoryTaskPackage: "observatory-task-package",
+  observatoryTaskPackageJson: "observatory-task-package-json",
+  observatoryCodexExecution: "observatory-codex-execution",
+  observatoryPostVerification: "observatory-post-verification",
+  observatoryGovernedReturn: "observatory-governed-return"
 };
 
 function deterministicId(prefix, value) {
@@ -529,8 +541,8 @@ function governanceChatReturnSummary(entry) {
       `Replay: ${compactValue(bridgeReturn.replay_visibility)}`,
       `Next: ${compactValue(bridgeReturn.next_recommended_step)}`,
       "",
-      "Authority: ChatGPT = advisory cognition only; AiGOL = governance authority; Codex = mocked bounded provider only.",
-      "NO REAL EXECUTION / MOCK CODEX ONLY",
+      "Authority: ChatGPT = advisory cognition only; AiGOL = governance authority; Codex = bounded CLI provider only.",
+      "REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY",
       "",
       bridgeReturn.non_authority_reminder || "No execution occurred. No provider invoked."
     ].join("\n");
@@ -574,7 +586,7 @@ function endToEndBridgeLifecycleSummary(entry) {
   const bridge = entry.end_to_end_bridge || {};
   const artifact = entry.bridge_result_artifact || {};
   const taskPackage = entry.task_package || {};
-  const mockResult = entry.mock_codex_result || {};
+  const codexResult = entry.codex_cli_result || entry.mock_codex_result || {};
   const resultValidation = entry.result_validation || {};
   const governedReturn = entry.governed_chat_return || {};
   const replayIds = (entry.replay_events || []).map((event) => event.replay_event_id).join(", ") || "none";
@@ -586,16 +598,16 @@ function endToEndBridgeLifecycleSummary(entry) {
     `SEMANTIC PROPOSAL: ${compactValue(entry.proposal_id || proposal.proposal_id)}`,
     `GOVERNED TRANSPORT STATUS: ${compactValue(entry.transport_status || latestTransportReport(entry).status)}`,
     `GOVERNED TASK PACKAGE: ${compactValue(taskPackage.task_id)}`,
-    `MOCK CODEX RESULT: ${compactValue(mockResult.status)}`,
+    `CODEX CLI RESULT: ${compactValue(codexResult.bounded_execution_status || codexResult.status)}`,
     `RESULT VALIDATION: ${compactValue(resultValidation.status)}`,
     `GOVERNED CHAT RETURN: ${compactValue(governedReturn.status)} - ${compactValue(governedReturn.reason)}`,
     `RECOMMENDED NEXT STEP: ${compactValue(governedReturn.next_recommended_step)}`,
     `SESSION: ${compactValue(entry.session_id || bridge.session_id)}`,
     `REPLAY EVENT IDS: ${replayIds}`,
     `REJECTION REASON: ${compactValue(governedReturn.status === "REJECTED" ? governedReturn.reason : "")}`,
-    "AUTHORITY: ChatGPT advisory cognition only; AiGOL governance authority; Codex mocked bounded provider only.",
-    "NO REAL EXECUTION",
-    "NO PROVIDER CALLS",
+    "AUTHORITY: ChatGPT advisory cognition only; AiGOL governance authority; Codex bounded CLI provider only.",
+    "REAL_CODEX_EXECUTION",
+    "BOUNDED_CODEX_CLI_PROVIDER",
     "NO AUTONOMOUS CONTINUATION"
   ].join("\n");
 }
@@ -612,7 +624,293 @@ function canonicalBridgeResultArtifactStatusSummary(entry) {
     `AUTHORITY: ${compactValue(artifact.authority || CANONICAL_BRIDGE_RESULT_AUTHORITY)}`,
     "HASH VERIFIED IS INTEGRITY ONLY",
     "CANONICAL IMPORT DOES NOT APPROVE, DISPATCH, EXECUTE, OR PERSIST",
-    "NO REAL EXECUTION / MOCK CODEX ONLY"
+    "REAL CODEX EXECUTION / BOUNDED CODEX CLI ONLY"
+  ].join("\n");
+}
+
+function observatoryClassificationLegendSummary() {
+  return [
+    "ENFORCED: runtime gate or provider boundary",
+    "STRUCTURAL_ONLY: schema, lineage, hash, or flag verification",
+    "ADVISORY_ONLY: semantic/return context without authority",
+    "UI_ONLY: descriptive sidepanel narration",
+    "REAL governance markers identify runtime checks; DESCRIPTIVE markers identify labels and operator narration."
+  ].join("\n");
+}
+
+function isCanonicalPythonRuntimeEntry(entry) {
+  const artifact = entry.bridge_result_artifact || {};
+  const native = entry.native_bridge || {};
+  return artifact.imported === true || native.canonical_python_runtime === true || entry.demo_id === "NATIVE_MESSAGING_LOCAL_BRIDGE_V1";
+}
+
+function isJsOnlyBridgeEntry(entry) {
+  return entry.demo_id === "MINIMAL_END_TO_END_BRIDGE_SIDEPANEL_ATTACHMENT_V1" || Boolean(entry.mock_codex_result);
+}
+
+function observatoryRuntimeMarker(entry) {
+  if (isCanonicalPythonRuntimeEntry(entry)) {
+    return "CANONICAL_NATIVE_PYTHON_RUNTIME_PATH";
+  }
+  if (isJsOnlyBridgeEntry(entry)) {
+    return "JS_ONLY_DEMO_OR_MOCK_PATH";
+  }
+  if (entry.demo_id === "CHATGPT_SEMANTIC_PROPOSAL_IMPORT_V1") {
+    return "LOCAL_SEMANTIC_PROPOSAL_IMPORT_PATH";
+  }
+  if (entry.demo_id) {
+    return "SIDEPANEL_VISIBILITY_PATH";
+  }
+  return "NO_RUNTIME_PATH_RENDERED";
+}
+
+function observatoryProposal(entry) {
+  return entry.semantic_proposal || {};
+}
+
+function observatoryTransportReport(entry) {
+  const flow = entry.chat_first_flow || {};
+  return entry.local_governed_transport_report || flow.transport_report || {};
+}
+
+function observatoryTaskPackage(entry) {
+  return entry.task_package || {};
+}
+
+function observatorySemanticContract(entry) {
+  const task = observatoryTaskPackage(entry);
+  return task.semantic_contract || entry.semantic_contract || {};
+}
+
+function observatoryCodexResult(entry) {
+  return entry.codex_cli_result || entry.mock_codex_result || {};
+}
+
+function observatoryHumanRequestValue(entry) {
+  const proposal = observatoryProposal(entry);
+  const bridge = entry.end_to_end_bridge || {};
+  const task = observatoryTaskPackage(entry);
+  const metadata = task.metadata || {};
+  return proposal.human_request || metadata.human_request || bridge.human_request || "";
+}
+
+function observatoryHumanRequestSummary(entry) {
+  const requestText = observatoryHumanRequestValue(entry);
+  const sessionId = entry.session_id || (entry.end_to_end_bridge || {}).session_id || "unknown";
+  const status = entry.status === "BLOCKED" ? "BLOCKED" : requestText ? "RECEIVED" : "NOT_STARTED";
+  const requestId = requestText
+    ? deterministicId("OBSERVATORY-REQUEST", { human_request: requestText, session_id: sessionId })
+    : "unknown";
+  return [
+    `INPUT: ${compactValue(requestText)}`,
+    `OUTPUT: ${requestText ? "request context captured for governed flow" : "no request rendered"}`,
+    "AUTHORITY: UI_ONLY",
+    "BOUNDARY: human text alone grants no approval, dispatch, execution, orchestration, or continuation",
+    `STATUS: ${status}`,
+    `REQUEST_ID: ${requestId}`,
+    `SESSION_ID: ${compactValue(sessionId)}`,
+    `RUNTIME_PATH: ${observatoryRuntimeMarker(entry)}`
+  ].join("\n");
+}
+
+function observatorySemanticReasoningSummary(entry) {
+  const proposal = observatoryProposal(entry);
+  const requestText = observatoryHumanRequestValue(entry);
+  const hasProposal = Boolean(proposal.proposal_id || proposal.semantic_intent);
+  const constraints = [
+    "no approval",
+    "no dispatch",
+    "no autonomous continuation",
+    "semantic only"
+  ];
+  const ambiguities = hasProposal ? [] : ["semantic proposal not present in rendered artifact"];
+  return [
+    `INPUT: ${compactValue(requestText)}`,
+    `OUTPUT: ${compactValue(proposal.semantic_intent)}`,
+    "AUTHORITY: ADVISORY_ONLY",
+    "BOUNDARY: LOCAL DETERMINISTIC NORMALIZATION; NON-AUTHORITATIVE; SEMANTIC ONLY",
+    `STATUS: ${hasProposal ? "NORMALIZED" : "NOT_STARTED"}`,
+    `NORMALIZATION_SOURCE: ${compactValue(proposal.proposal_id ? "LOCAL DETERMINISTIC NORMALIZATION" : "not rendered")}`,
+    `inferred_intent: ${compactValue(proposal.semantic_intent)}`,
+    `detected_domain: ${requestText ? "software_governance_runtime" : "unknown"}`,
+    `constraints: ${compactValue(constraints)}`,
+    `semantic_ambiguities: ${compactValue(ambiguities)}`,
+    "REAL_OR_DESCRIPTIVE: ADVISORY_ONLY; not live ChatGPT cognition"
+  ].join("\n");
+}
+
+function observatoryAigolGovernanceSummary(entry) {
+  const transport = observatoryTransportReport(entry);
+  const task = observatoryTaskPackage(entry);
+  const proposal = observatoryProposal(entry);
+  const metadata = task.metadata || {};
+  const transportStatus = transport.status || entry.transport_status || "not invoked";
+  const blocked = String(transportStatus).includes("REJECTED") || entry.status === "BLOCKED";
+  const status = blocked ? "BLOCKED" : transportStatus === "TRANSPORT_ACCEPTED" ? "PASS" : "NOT_STARTED";
+  return [
+    `INPUT: ${compactValue(transport.transport_id || entry.transport_status || "transport envelope not rendered")}`,
+    `OUTPUT: ${compactValue(transportStatus)}`,
+    "AUTHORITY: ENFORCED",
+    "BOUNDARY: REAL ENFORCEMENT for shape, session, hash, authority text, replay/lifecycle policy, and task package gate",
+    `STATUS: ${status}`,
+    `allowed_mutation_zones: ${compactValue(metadata.allowed_workspace_root || metadata.allowed_workspace_roots || "workspace boundary not rendered")}`,
+    `replay_policy: ${compactValue((transport.transport_event || {}).visibility_scope || "session-local visibility")}`,
+    `lifecycle_policy: ${compactValue(metadata.lifecycle_state || "visibility only")}`,
+    `execution_scope: ${compactValue(metadata.authority || "bounded provider only after gateway")}`,
+    `risk_class: ${compactValue(task.risk_class || proposal.risk_class)}`,
+    `authority_boundary: ${compactValue(transport.authority_label || "SEMANTIC_TRANSPORT_ONLY")}`,
+    `approval_state: ${compactValue(task.approval_required === true ? "NEEDS_APPROVAL" : task.approval_required === false ? "NO_APPROVAL_TOKEN_PRESENT" : "unknown")}`,
+    `transport_validation_result: ${compactValue(transport.validation || transportStatus)}`,
+    "REAL_OR_DESCRIPTIVE: REAL ENFORCEMENT where transport report/task validation exists; UI labels are descriptive only"
+  ].join("\n");
+}
+
+function observatorySemanticContractSummary(entry) {
+  const proposal = observatoryProposal(entry);
+  const contract = observatorySemanticContract(entry);
+  const status = contract.contract_id ? "CONTRACT_READY_FOR_GOVERNANCE" : "NOT_STARTED";
+  return [
+    `INPUT: ${compactValue(proposal.proposal_id || proposal.semantic_intent)}`,
+    `OUTPUT: ${compactValue(contract.contract_id)}`,
+    "AUTHORITY: STRUCTURAL_ONLY",
+    "BOUNDARY: STRUCTURED_SEMANTIC_CONTRACT; NON_EXECUTION_AUTHORITY; input to governance, not execution authorization",
+    `STATUS: ${status}`,
+    "labels: STRUCTURED_SEMANTIC_CONTRACT, NON_EXECUTION_AUTHORITY, GOVERNANCE_MEDIATED, REPLAYABLE_SEMANTIC_CONTRACT",
+    `human_request: ${compactValue(contract.human_request)}`,
+    `semantic_intent: ${compactValue(contract.semantic_intent)}`,
+    `requested_operation: ${compactValue(contract.requested_operation)}`,
+    `allowed_scope: ${compactValue(contract.allowed_scope)}`,
+    `expected_artifacts: ${compactValue(contract.expected_artifacts)}`,
+    `expected_tests: ${compactValue(contract.expected_tests)}`,
+    `forbidden_operations: ${compactValue(contract.forbidden_operations)}`,
+    `completion_requirements: ${compactValue(contract.completion_requirements)}`,
+    `ambiguities: ${compactValue(contract.ambiguities)}`,
+    `authority_boundary: ${compactValue(contract.authority_boundary)}`,
+    `semantic_source: ${compactValue(contract.semantic_source)}`,
+    `contract_version: ${compactValue(contract.contract_version)}`,
+    `artifact_hash: ${compactValue(contract.artifact_hash)}`,
+    `provenance: ${compactValue(contract.provenance)}`
+  ].join("\n");
+}
+
+function observatoryTaskPackageHash(taskPackage) {
+  if (!taskPackage || !Object.keys(taskPackage).length) {
+    return "unknown";
+  }
+  return deterministicId("TASK-PACKAGE-CANONICAL-HASH", taskPackage);
+}
+
+function observatoryTaskPackageSummary(entry) {
+  const task = observatoryTaskPackage(entry);
+  const metadata = task.metadata || {};
+  const constraints = task.constraints || [];
+  const forbidden = constraints.filter((constraint) => String(constraint).toLowerCase().includes("no "));
+  const status = task.task_id ? "PACKAGED" : "NOT_STARTED";
+  return [
+    `INPUT: ${compactValue(entry.transport_status || observatoryTransportReport(entry).status || "validated transport not rendered")}`,
+    `OUTPUT: ${compactValue(task.task_id)}`,
+    "AUTHORITY: STRUCTURAL_ONLY",
+    "BOUNDARY: WHAT CODEX ACTUALLY RECEIVES; bounded package is not semantic correctness proof",
+    `STATUS: ${status}`,
+    `codex_prompt: ${compactValue(task.codex_prompt)}`,
+    `task_id: ${compactValue(task.task_id)}`,
+    `proposal_id: ${compactValue(metadata.proposal_id || entry.proposal_id)}`,
+    `allowed_paths: ${compactValue(metadata.allowed_workspace_root || metadata.allowed_workspace_roots)}`,
+    `forbidden_operations: ${compactValue(forbidden)}`,
+    `deterministic_constraints: ${compactValue(constraints)}`,
+    `execution_scope: ${compactValue(metadata.execution_provider || metadata.authority)}`,
+    `requested_mode: ${compactValue((observatoryProposal(entry) || {}).proposed_mode || task.requested_mode || "not rendered")}`,
+    `canonical_artifact_hash: ${observatoryTaskPackageHash(task)}`,
+    `provenance: ${isCanonicalPythonRuntimeEntry(entry) ? "CANONICAL_PYTHON_RUNTIME" : isJsOnlyBridgeEntry(entry) ? "JS_ONLY_DEMO_OR_MOCK_PATH" : "not rendered"}`
+  ].join("\n");
+}
+
+function observatoryExecutionMode(entry, codexResult) {
+  if (codexResult.provider_result || (codexResult.tests || []).some((test) => test.execution === "REAL_CODEX_CLI_BOUNDED")) {
+    return "REAL_CODEX_EXECUTION";
+  }
+  if (entry.mock_codex_result || codexResult.result_id && String(codexResult.result_id).includes("MOCK")) {
+    return "MOCK_EXECUTION";
+  }
+  if ((entry.native_bridge || {}).real_codex_execution === true || (entry.bridge_result_artifact || {}).real_codex_execution === true) {
+    return "REAL_CODEX_EXECUTION";
+  }
+  return "NOT_STARTED";
+}
+
+function observatoryCodexExecutionSummary(entry) {
+  const codexResult = observatoryCodexResult(entry);
+  const providerResult = codexResult.provider_result || {};
+  const executionMode = observatoryExecutionMode(entry, codexResult);
+  const status = providerResult.status || codexResult.bounded_execution_status || codexResult.status || "NOT_STARTED";
+  return [
+    `INPUT: ${compactValue((observatoryTaskPackage(entry) || {}).task_id)}`,
+    `OUTPUT: ${compactValue(codexResult.result_id || providerResult.task_package_id)}`,
+    `AUTHORITY: ${executionMode === "NOT_STARTED" ? "UI_ONLY" : "ENFORCED"}`,
+    "BOUNDARY: bounded provider invocation only; no autonomous continuation, retries, approval, or orchestration",
+    `STATUS: ${compactValue(status)}`,
+    `EXECUTION_KIND: ${executionMode}`,
+    `commands_executed: ${compactValue(providerResult.command || [])}`,
+    `files_touched: ${compactValue(codexResult.files_changed || [])}`,
+    `tests_executed: ${compactValue(codexResult.tests || [])}`,
+    `execution_duration: ${compactValue(providerResult.execution_duration || "not captured")}`,
+    `provider_status: ${compactValue(providerResult.status || "not captured")}`,
+    `timeout_state: ${status === "TIMEOUT" ? "TIMEOUT" : "not timed out"}`,
+    `stdout_summary: ${compactValue(providerResult.stdout || codexResult.summary)}`,
+    `stderr_summary: ${compactValue(providerResult.stderr)}`
+  ].join("\n");
+}
+
+function observatoryPostExecutionVerificationSummary(entry) {
+  const validation = entry.result_validation || {};
+  const checks = validation.checks || {};
+  const valid = validation.valid === true;
+  const hasValidation = Boolean(validation.status || Object.keys(checks).length);
+  const status = !hasValidation ? "NOT_STARTED" : valid ? "VERIFIED" : "REJECTED";
+  return [
+    `INPUT: ${compactValue((observatoryCodexResult(entry) || {}).result_id || (observatoryTaskPackage(entry) || {}).task_id)}`,
+    `OUTPUT: ${compactValue(validation.status)}`,
+    "AUTHORITY: STRUCTURAL_ONLY",
+    "BOUNDARY: STRUCTURAL VERIFICATION ONLY; semantic correctness is not verified",
+    `STATUS: ${status}`,
+    `lineage_verification: ${compactValue(checks.result_lineage)}`,
+    `replay_integrity: ${compactValue(checks.replay_visibility || "visible only")}`,
+    `result_schema_validation: ${compactValue(checks.schema_valid || validation.valid)}`,
+    `forbidden_authority_flag_detection: ${compactValue(checks.non_authority_semantics)}`,
+    `lifecycle_verification: ${compactValue(checks.bounded_lifecycle)}`,
+    `audit_verification: ${compactValue(validation.errors && validation.errors.length ? validation.errors : "no structural errors rendered")}`,
+    "REAL_OR_DESCRIPTIVE: REAL structural validation where result_validation is present"
+  ].join("\n");
+}
+
+function observatoryGovernedReturnSummary(entry) {
+  const governedReturn = entry.governed_chat_return || {};
+  const status = governedReturn.status || "NOT_STARTED";
+  return [
+    `INPUT: ${compactValue((entry.result_validation || {}).status)}`,
+    `OUTPUT: ${compactValue(governedReturn.status)}`,
+    "AUTHORITY: ADVISORY_ONLY",
+    "BOUNDARY: GOVERNED OPERATOR RETURN; NOT LIVE CHATGPT INTERPRETATION",
+    `STATUS: ${compactValue(status)}`,
+    `governed_summary: ${compactValue(governedReturn.reason)}`,
+    `detected_risks: ${compactValue((continuityReport(entry) || {}).continuity_risks || [])}`,
+    `recommended_next_step: ${compactValue(governedReturn.next_recommended_step)}`,
+    `authority_disclaimer: ${compactValue(governedReturn.non_authority_reminder || "No approval, dispatch, orchestration, repeated execution, or autonomous continuation authority was created.")}`,
+    "REAL_OR_DESCRIPTIVE: advisory return summary only; no live ChatGPT interpretation"
+  ].join("\n");
+}
+
+function observatoryTopologySummary(entry) {
+  return [
+    "TOPOLOGY: Human -> local deterministic normalization -> AiGOL governance gateway -> governed task package -> Codex execution layer -> AiGOL post-execution structural verification -> governed operator return",
+    `CANONICAL_NATIVE_RUNTIME_PATH: ${isCanonicalPythonRuntimeEntry(entry)}`,
+    `DEMO_OR_MOCK_PATH: ${isJsOnlyBridgeEntry(entry)}`,
+    `JS_ONLY_PATH: ${isJsOnlyBridgeEntry(entry) || observatoryRuntimeMarker(entry) === "SIDEPANEL_VISIBILITY_PATH"}`,
+    `CURRENT_PATH: ${observatoryRuntimeMarker(entry)}`,
+    "REAL_ENFORCEMENT: service worker, native host, Python runtime, local transport handler, task package validation, Codex CLI provider boundary, result lineage validation",
+    "DESCRIPTIVE_GOVERNANCE: sidepanel labels, operator narration, imported proposal headings, continuity summaries without canonical Python artifact",
+    "CHATGPT_STATUS: no live ChatGPT invocation in this runtime path",
+    "SEMANTIC_CORRECTNESS_STATUS: not verified"
   ].join("\n");
 }
 
@@ -818,7 +1116,7 @@ function validateCanonicalBridgeResultArtifactSchema(artifact) {
     "proposal_id",
     "replay_events",
     "task_package",
-    "mock_codex_result",
+    "codex_cli_result",
     "result_validation",
     "governed_chat_return",
     "artifact_hash"
@@ -913,8 +1211,8 @@ function canonicalBridgeResultBlockedResult({ validationErrors, hashVerification
       validation_errors: errors,
       hash_verification: hashVerification || {},
       authority: CANONICAL_BRIDGE_RESULT_AUTHORITY,
-      no_real_execution: true,
-      mock_codex_only: true
+      real_codex_execution: true,
+      bounded_codex_cli_only: true
     },
     governed_chat_return: {
       status: "REJECTED",
@@ -953,7 +1251,7 @@ function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
     proposal_id: artifact.proposal_id,
     transport_status: artifact.transport_status,
     task_package: artifact.task_package || {},
-    mock_codex_result: artifact.mock_codex_result || {},
+    codex_cli_result: artifact.codex_cli_result || artifact.mock_codex_result || {},
     result_validation: artifact.result_validation || {},
     governed_chat_return: artifact.governed_chat_return || {},
     replay_events: artifact.replay_events || [],
@@ -967,20 +1265,20 @@ function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
       artifact_hash: artifact.artifact_hash,
       hash_verification: hashVerification,
       authority: artifact.authority,
-      no_real_execution: true,
-      mock_codex_only: true
+      real_codex_execution: true,
+      bounded_codex_cli_only: true
     },
     native_bridge: {
       label: "NATIVE_BRIDGE_LOCAL_ONLY",
       operator_triggered: true,
       canonical_python_runtime: true,
-      no_real_codex_execution: true,
-      provider_calls: false,
+      real_codex_execution: true,
+      provider: "CODEX_CLI",
       autonomous_continuation: false
     },
     end_to_end_bridge: {
       status: artifact.status,
-      human_request: (artifact.mock_codex_result && artifact.mock_codex_result.summary) || "",
+      human_request: ((artifact.codex_cli_result || artifact.mock_codex_result || {}).summary) || "",
       session_id: artifact.session_id,
       canonical_python_result_artifact: true,
       compact_runtime_narration: true
@@ -997,10 +1295,10 @@ function canonicalBridgeResultFromArtifact(artifact, hashVerification) {
       lineage_summary: { visible: true, reference_count: 1, mutated: false }
     },
     authority_guarantees: {
-      provider_calls: false,
+      provider_calls: "CODEX_CLI_ONLY",
       dispatch: false,
       approval: false,
-      execution: false,
+      execution: "BOUNDED_CODEX_CLI_ONLY",
       lifecycle_mutation: false,
       replay_mutation: false,
       persistence: false,
@@ -1033,8 +1331,8 @@ function nativeBridgeMessageFromSidepanel() {
       "NATIVE_BRIDGE_LOCAL_ONLY",
       "OPERATOR_TRIGGERED",
       "CANONICAL_PYTHON_RUNTIME",
-      "NO_REAL_CODEX_EXECUTION",
-      "NO_PROVIDER_CALLS",
+      "REAL_CODEX_EXECUTION",
+      "BOUNDED_CODEX_CLI_PROVIDER",
       "NO_AUTONOMOUS_CONTINUATION"
     ]
   });
@@ -1050,15 +1348,15 @@ function nativeBridgeRejectedResult(reason) {
       validation_status: "REJECTED",
       validation_errors: [reason],
       authority: CANONICAL_BRIDGE_RESULT_AUTHORITY,
-      no_real_execution: true,
-      mock_codex_only: true
+      real_codex_execution: false,
+      bounded_codex_cli_only: true
     },
     native_bridge: {
       label: "NATIVE_BRIDGE_LOCAL_ONLY",
       operator_triggered: true,
       canonical_python_runtime: true,
-      no_real_codex_execution: true,
-      provider_calls: false,
+      real_codex_execution: false,
+      provider: "CODEX_CLI",
       autonomous_continuation: false,
       rejection_reason: reason
     },
@@ -1067,7 +1365,7 @@ function nativeBridgeRejectedResult(reason) {
       reason,
       replay_visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
       next_recommended_step: "Check the Native Messaging host installation and rerun explicitly.",
-      non_authority_reminder: "No execution occurred. No provider was invoked. No approval, dispatch, or continuation authority was created."
+      non_authority_reminder: "No approval, dispatch, orchestration, repeated execution, or autonomous continuation authority was created."
     },
     result_validation: {
       status: "RESULT_REJECTED",
@@ -1088,6 +1386,71 @@ function nativeBridgeRejectedResult(reason) {
       hidden_authority: false
     }
   });
+}
+
+function nativeBridgeLoadingResult() {
+  return canonicalize({
+    demo_id: "NATIVE_MESSAGING_SERVICE_WORKER_RUNTIME_FIX_V1",
+    status: "RUNNING",
+    bridge_result_artifact: {
+      source: "MV3_SERVICE_WORKER_NATIVE_BRIDGE",
+      imported: false,
+      validation_status: "PENDING",
+      validation_errors: [],
+      authority: CANONICAL_BRIDGE_RESULT_AUTHORITY,
+      real_codex_execution: false,
+      bounded_codex_cli_only: true
+    },
+    native_bridge: {
+      label: "NATIVE_BRIDGE_LOCAL_ONLY",
+      runtime_controller: "SERVICE_WORKER_RUNTIME_CONTROLLER",
+      operator_triggered: true,
+      loading: true,
+      autonomous_continuation: false
+    },
+    governed_chat_return: {
+      status: "RUNNING",
+      reason: "Native bridge request sent to MV3 service worker.",
+      replay_visibility: "SESSION_LOCAL_REPLAY_VISIBLE",
+      next_recommended_step: "Wait for the service worker to return the canonical Python runtime result.",
+      non_authority_reminder: "Operator-triggered only. No approval, dispatch, orchestration, or autonomous continuation authority is created."
+    },
+    result_validation: {
+      status: "PENDING",
+      valid: false,
+      errors: []
+    },
+    replay_events: [],
+    authority_guarantees: {
+      provider_calls: "CODEX_CLI_ONLY",
+      dispatch: false,
+      approval: false,
+      execution: "BOUNDED_CODEX_CLI_ONLY",
+      lifecycle_mutation: false,
+      replay_mutation: false,
+      persistence: false,
+      orchestration: false,
+      autonomous_continuation: false,
+      hidden_authority: false
+    }
+  });
+}
+
+function nativeBridgeRuntimeFailureResult(response) {
+  const error = response && response.error ? response.error : {};
+  const code = error.code || "SERVICE_WORKER_NATIVE_BRIDGE_ERROR";
+  const message = error.message || "Native bridge service worker failed.";
+  const result = nativeBridgeRejectedResult(`${code}: ${message}`);
+  result.demo_id = "NATIVE_MESSAGING_SERVICE_WORKER_RUNTIME_FIX_V1";
+  result.native_bridge = canonicalize({
+    ...(result.native_bridge || {}),
+    runtime_controller: "SERVICE_WORKER_RUNTIME_CONTROLLER",
+    runtime_failure_state: true,
+    error_code: code,
+    error_message: message
+  });
+  result.governed_chat_return.reason = `${code}: ${message}`;
+  return canonicalize(result);
 }
 
 async function renderNativeBridgeResponse(response) {
@@ -1119,18 +1482,42 @@ async function renderNativeBridgeResponse(response) {
 }
 
 function runNativeBridgeFromSidepanel() {
-  if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendNativeMessage) {
-    window.sidepanelRenderResult(nativeBridgeRejectedResult("Chrome Native Messaging is unavailable in this context."));
+  window.sidepanelRenderResult(nativeBridgeLoadingResult());
+  if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.sendMessage) {
+    window.sidepanelRenderResult(nativeBridgeRuntimeFailureResult({
+      error: {
+        code: "NATIVE_BRIDGE_UNAVAILABLE",
+        message: "Chrome runtime messaging is unavailable in this context."
+      }
+    }));
     return;
   }
   const message = nativeBridgeMessageFromSidepanel();
-  chrome.runtime.sendNativeMessage(NATIVE_BRIDGE_HOST, message, (response) => {
+  chrome.runtime.sendMessage({
+    action: SERVICE_WORKER_NATIVE_BRIDGE_ACTION,
+    operator_triggered: true,
+    native_message: message
+  }, (response) => {
     const runtimeError = chrome.runtime.lastError;
     if (runtimeError) {
-      window.sidepanelRenderResult(nativeBridgeRejectedResult(runtimeError.message || "native bridge invocation failed"));
+      window.sidepanelRenderResult(nativeBridgeRuntimeFailureResult({
+        error: {
+          code: "SERVICE_WORKER_UNAVAILABLE",
+          message: runtimeError.message || "service worker native bridge invocation failed"
+        }
+      }));
       return;
     }
-    renderNativeBridgeResponse(response);
+    if (!response || response.status !== "SERVICE_WORKER_NATIVE_BRIDGE_RETURNED") {
+      window.sidepanelRenderResult(nativeBridgeRuntimeFailureResult(response || {
+        error: {
+          code: "INVALID_RESPONSE",
+          message: "Service worker returned an invalid native bridge response."
+        }
+      }));
+      return;
+    }
+    renderNativeBridgeResponse(response.native_response);
   });
 }
 
@@ -2460,6 +2847,18 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.governanceChatReturn, governanceChatReturnSummary(latest));
   setCockpitText(COCKPIT_IDS.endToEndBridgeLifecycle, endToEndBridgeLifecycleSummary(latest));
   setCockpitText(COCKPIT_IDS.canonicalBridgeResultArtifactStatus, canonicalBridgeResultArtifactStatusSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryTopology, observatoryTopologySummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryClassificationLegend, observatoryClassificationLegendSummary());
+  setCockpitText(COCKPIT_IDS.observatoryHumanRequest, observatoryHumanRequestSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatorySemanticReasoning, observatorySemanticReasoningSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatorySemanticContract, observatorySemanticContractSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatorySemanticContractJson, artifactJson(observatorySemanticContract(latest)));
+  setCockpitText(COCKPIT_IDS.observatoryAigolGovernance, observatoryAigolGovernanceSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryTaskPackage, observatoryTaskPackageSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryTaskPackageJson, artifactJson(observatoryTaskPackage(latest)));
+  setCockpitText(COCKPIT_IDS.observatoryCodexExecution, observatoryCodexExecutionSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryPostVerification, observatoryPostExecutionVerificationSummary(latest));
+  setCockpitText(COCKPIT_IDS.observatoryGovernedReturn, observatoryGovernedReturnSummary(latest));
   renderReplaySessionVisibility();
 }
 

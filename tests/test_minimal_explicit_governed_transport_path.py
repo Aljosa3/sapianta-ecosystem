@@ -1,4 +1,5 @@
 import json
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 
@@ -35,7 +36,15 @@ def _valid_request() -> dict:
     )
 
 
-def test_valid_governed_request_artifact_creates_canonical_result_artifact(tmp_path):
+def _mock_codex(monkeypatch):
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, stdout="explicit bounded codex complete", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+
+def test_valid_governed_request_artifact_creates_canonical_result_artifact(monkeypatch, tmp_path):
+    _mock_codex(monkeypatch)
     input_path = tmp_path / "governed_request.json"
     output_path = tmp_path / "bridge_result_artifact.json"
     request = _valid_request()
@@ -107,7 +116,8 @@ def test_artifact_hash_mismatch_is_rejected():
     assert report["result_artifact"] == {}
 
 
-def test_output_artifact_is_deterministic(tmp_path):
+def test_output_artifact_is_deterministic(monkeypatch, tmp_path):
+    _mock_codex(monkeypatch)
     request = _valid_request()
     input_path = tmp_path / "governed_request.json"
     first_output = tmp_path / "first_bridge_result_artifact.json"
@@ -124,7 +134,8 @@ def test_output_artifact_is_deterministic(tmp_path):
     assert first["result_artifact"]["artifact_hash"] == canonical_hash(_hash_input(first["result_artifact"]))
 
 
-def test_no_provider_execution_dispatch_approval_or_orchestration_occurs(tmp_path):
+def test_bounded_provider_execution_without_dispatch_approval_or_orchestration(tmp_path, monkeypatch):
+    _mock_codex(monkeypatch)
     request = _valid_request()
     input_path = tmp_path / "governed_request.json"
     output_path = tmp_path / "bridge_result_artifact.json"
@@ -135,17 +146,17 @@ def test_no_provider_execution_dispatch_approval_or_orchestration_occurs(tmp_pat
         output_path=output_path,
     )
     guarantees = report["authority_guarantees"]
-    mock_result = report["result_artifact"]["mock_codex_result"]
+    codex_result = report["result_artifact"]["codex_cli_result"]
 
-    assert guarantees["provider_calls"] is False
+    assert guarantees["provider_calls"] == "CODEX_CLI_ONLY"
     assert guarantees["dispatch"] is False
     assert guarantees["approval"] is False
-    assert guarantees["execution"] is False
+    assert guarantees["execution"] == "BOUNDED_CODEX_CLI_ONLY"
     assert guarantees["orchestration"] is False
     assert guarantees["autonomous_continuation"] is False
-    assert mock_result["provider_invoked"] is False
-    assert mock_result["execution_authority_created"] is False
-    assert mock_result["orchestration_created"] is False
+    assert codex_result["provider_invoked"] is True
+    assert codex_result["execution_authority_created"] is False
+    assert codex_result["orchestration_created"] is False
 
 
 def test_source_has_no_endpoint_server_listener_or_hidden_transport():

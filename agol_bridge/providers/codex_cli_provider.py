@@ -111,10 +111,14 @@ def build_bounded_codex_prompt(*, task_package: dict) -> str:
     task_copy = _canonical_copy(task_package)
     task_hash = canonical_hash(task_copy)
     canonical_task = json.dumps(task_copy, sort_keys=True, separators=(",", ":"))
+    semantic_contract = task_copy.get("semantic_contract", {})
+    canonical_contract = json.dumps(semantic_contract, sort_keys=True, separators=(",", ":")) if isinstance(semantic_contract, dict) else "{}"
     return (
         "AGOL Bridge bounded Codex CLI task.\n"
-        "Execute only the governed task package below within the provided workspace.\n"
+        "Execute only the governed semantic contract inside the task package below within the provided workspace.\n"
         "Do not approve, dispatch, retry, orchestrate, or continue autonomously.\n"
+        "Use the semantic contract as structured intent, not as execution authority.\n"
+        f"Semantic contract JSON: {canonical_contract}\n"
         "Return a concise result summary with files changed, commands run, tests, errors, and residual risk.\n"
         f"Task package sha256: {task_hash}\n"
         f"Task package JSON: {canonical_task}\n"
