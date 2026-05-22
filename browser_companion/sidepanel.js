@@ -72,7 +72,13 @@ const COCKPIT_IDS = {
   observatoryTaskPackageJson: "observatory-task-package-json",
   observatoryCodexExecution: "observatory-codex-execution",
   observatoryPostVerification: "observatory-post-verification",
-  observatoryGovernedReturn: "observatory-governed-return"
+  observatoryGovernedReturn: "observatory-governed-return",
+  chatgptIngressArtifactPreview: "chatgpt-ingress-artifact-preview-card",
+  chatgptIngressImportValidation: "chatgpt-ingress-import-validation-card",
+  chatgptIngressProposalCandidate: "chatgpt-ingress-proposal-candidate-card",
+  chatgptIngressContractCandidate: "chatgpt-ingress-contract-candidate-card",
+  chatgptIngressGovernanceReport: "chatgpt-ingress-governance-report-card",
+  chatgptIngressStop: "chatgpt-ingress-stop-card"
 };
 
 function deterministicId(prefix, value) {
@@ -308,6 +314,225 @@ function operationalNarrative(entry) {
 
 function artifactJson(value) {
   return JSON.stringify(canonicalize(value || {}), null, 2);
+}
+
+function previewHash(prefix, value) {
+  return deterministicId(prefix, canonicalize(value));
+}
+
+function chatgptIngressPreviewArtifact() {
+  const humanRequest = "Preview ChatGPT ingress continuity without execution authority.";
+  const semanticOutput = "Model-produced semantic input proposes import-only structural continuity.";
+  const humanRequestHash = previewHash("PREVIEW-HUMAN-REQUEST-HASH", humanRequest);
+  const semanticOutputHash = previewHash("PREVIEW-SEMANTIC-OUTPUT-HASH", semanticOutput);
+  const replayIdentity = deterministicId("CHATGPT-INGRESS-PREVIEW-REPLAY", {
+    session_id: "CHATGPT-INGRESS-PREVIEW-SESSION",
+    human_request_hash: humanRequestHash,
+    semantic_output_hash: semanticOutputHash,
+    schema_version: "1.0"
+  });
+  const artifact = {
+    artifact_type: "CHATGPT_INGRESS_ARTIFACT_V1",
+    schema_version: "1.0",
+    source: "chatgpt",
+    created_at: "1970-01-01T00:00:00Z",
+    session_id: "CHATGPT-INGRESS-PREVIEW-SESSION",
+    human_request: humanRequest,
+    chatgpt_semantic_output: semanticOutput,
+    normalized_intent: "PREVIEW_SEMANTIC_INGRESS_CONTINUITY",
+    expected_artifacts: ["semantic proposal candidate", "semantic contract candidate", "governance acceptance report"],
+    constraints: ["preview only", "import visibility only", "no execution", "no Codex dispatch"],
+    forbidden_operations: ["execution authorization", "provider dispatch", "governance approval", "autonomous continuation"],
+    authority_boundary: {
+      chatgpt_authority: false,
+      execution_authority: false,
+      governance_authority: false,
+      approval_authority: false,
+      provider_dispatch_authority: false,
+      autonomous_continuation_authority: false,
+      boundary_statement: "ChatGPT output is semantic input only and cannot authorize execution."
+    },
+    provenance: {
+      preview_only: true,
+      live_chatgpt_invoked: false,
+      aigol_governance_required: true
+    },
+    replay_identity: replayIdentity,
+    hashes: {
+      human_request_hash: humanRequestHash,
+      semantic_output_hash: semanticOutputHash
+    },
+    validation_status: "ACCEPTED_AS_SEMANTIC_INPUT"
+  };
+  artifact.hashes.artifact_hash = previewHash("CHATGPT-INGRESS-ARTIFACT-HASH", artifact);
+  return canonicalize(artifact);
+}
+
+function chatgptIngressPreviewImport() {
+  const artifact = chatgptIngressPreviewArtifact();
+  const proposalCandidate = {
+    candidate_type: "CHATGPT_INGRESS_SEMANTIC_PROPOSAL_CANDIDATE_V1",
+    proposal_candidate_only: true,
+    classification: "ADVISORY_ONLY",
+    normalized_intent: artifact.normalized_intent,
+    expected_artifacts: artifact.expected_artifacts,
+    constraints: artifact.constraints,
+    forbidden_operations: artifact.forbidden_operations,
+    replay_identity: artifact.replay_identity,
+    hashes: {
+      ingress_artifact_hash: artifact.hashes.artifact_hash,
+      human_request_hash: artifact.hashes.human_request_hash,
+      semantic_output_hash: artifact.hashes.semantic_output_hash
+    },
+    provenance_lineage: artifact.provenance,
+    execution_authority: false,
+    governance_authority: false,
+    codex_dispatch_allowed: false,
+    autonomous_continuation_allowed: false
+  };
+  proposalCandidate.proposal_candidate_hash = previewHash("CHATGPT-INGRESS-PROPOSAL-CANDIDATE-HASH", proposalCandidate);
+
+  const contractCandidate = {
+    candidate_type: "CHATGPT_INGRESS_SEMANTIC_CONTRACT_CANDIDATE_V1",
+    contract_candidate_only: true,
+    classification: "STRUCTURAL_ONLY",
+    source_proposal_candidate_hash: proposalCandidate.proposal_candidate_hash,
+    normalized_intent: proposalCandidate.normalized_intent,
+    replay_identity: artifact.replay_identity,
+    hashes: proposalCandidate.hashes,
+    provenance_lineage: artifact.provenance,
+    semantic_correctness_verified: false,
+    governance_approved: false,
+    execution_authorized: false,
+    provider_dispatch_authorized: false
+  };
+  contractCandidate.contract_candidate_hash = previewHash("CHATGPT-INGRESS-CONTRACT-CANDIDATE-HASH", contractCandidate);
+
+  const governanceReport = {
+    report_type: "CHATGPT_INGRESS_IMPORT_VALIDATION_REPORT_V1",
+    status: "ACCEPTED_FOR_STRUCTURAL_IMPORT",
+    classification: "STRUCTURAL_ONLY",
+    import_only: true,
+    replay_identity: artifact.replay_identity,
+    ingress_artifact_hash: artifact.hashes.artifact_hash,
+    proposal_candidate_hash: proposalCandidate.proposal_candidate_hash,
+    contract_candidate_hash: contractCandidate.contract_candidate_hash,
+    provenance_lineage: artifact.provenance,
+    execution_performed: false,
+    codex_dispatch_performed: false,
+    governance_approved: false,
+    semantic_correctness_verified: false,
+    autonomous_continuation_performed: false
+  };
+  governanceReport.governance_report_hash = previewHash("CHATGPT-INGRESS-GOVERNANCE-REPORT-HASH", governanceReport);
+
+  return canonicalize({
+    artifact,
+    import_validation: {
+      status: "ACCEPTED_AS_SEMANTIC_INPUT",
+      classification: "STRUCTURAL_ONLY",
+      import_only: true,
+      errors: [],
+      replay_identity: artifact.replay_identity,
+      artifact_hash: artifact.hashes.artifact_hash,
+      execution_performed: false,
+      codex_dispatch_performed: false
+    },
+    proposal_candidate: proposalCandidate,
+    contract_candidate: contractCandidate,
+    governance_report: governanceReport
+  });
+}
+
+function chatgptIngressPreviewCard(name, classification, fields) {
+  return [
+    `${name}`,
+    `CLASSIFICATION: ${classification}`,
+    "PREVIEW_ONLY: true",
+    "IMPORT_ONLY: true",
+    ...fields,
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "governance_approved: false",
+    "semantic_correctness_verified: false",
+    "autonomous_continuation_performed: false"
+  ].join("\n");
+}
+
+function renderChatgptIngressPreview() {
+  const preview = chatgptIngressPreviewImport();
+  setCockpitText(COCKPIT_IDS.chatgptIngressArtifactPreview, chatgptIngressPreviewCard(
+    "CHATGPT_INGRESS_ARTIFACT_V1",
+    "STRUCTURAL_ONLY",
+    [
+      `replay_identity: ${preview.artifact.replay_identity}`,
+      `ingress_artifact_hash: ${preview.artifact.hashes.artifact_hash}`,
+      `semantic_output_hash: ${preview.artifact.hashes.semantic_output_hash}`,
+      "live_chatgpt_invoked: false",
+      "source: chatgpt artifact preview only"
+    ]
+  ));
+  setCockpitText(COCKPIT_IDS.chatgptIngressImportValidation, chatgptIngressPreviewCard(
+    "Import Validation",
+    "STRUCTURAL_ONLY",
+    [
+      `status: ${preview.import_validation.status}`,
+      `replay_identity: ${preview.import_validation.replay_identity}`,
+      `ingress_artifact_hash: ${preview.import_validation.artifact_hash}`,
+      "validation_scope: structural import validation only"
+    ]
+  ));
+  setCockpitText(COCKPIT_IDS.chatgptIngressProposalCandidate, chatgptIngressPreviewCard(
+    "Semantic Proposal Candidate",
+    "ADVISORY_ONLY",
+    [
+      "proposal_candidate_only: true",
+      `proposal_candidate_hash: ${preview.proposal_candidate.proposal_candidate_hash}`,
+      `replay_identity: ${preview.proposal_candidate.replay_identity}`,
+      `provenance_lineage: ${compactValue(preview.proposal_candidate.provenance_lineage)}`,
+      "execution_authority: false",
+      "codex_dispatch_allowed: false"
+    ]
+  ));
+  setCockpitText(COCKPIT_IDS.chatgptIngressContractCandidate, chatgptIngressPreviewCard(
+    "Semantic Contract Candidate",
+    "STRUCTURAL_ONLY",
+    [
+      "contract_candidate_only: true",
+      `contract_candidate_hash: ${preview.contract_candidate.contract_candidate_hash}`,
+      `source_proposal_candidate_hash: ${preview.contract_candidate.source_proposal_candidate_hash}`,
+      `replay_identity: ${preview.contract_candidate.replay_identity}`,
+      "provider_dispatch_authorized: false"
+    ]
+  ));
+  setCockpitText(COCKPIT_IDS.chatgptIngressGovernanceReport, chatgptIngressPreviewCard(
+    "Governance Acceptance Report",
+    "STRUCTURAL_ONLY",
+    [
+      `status: ${preview.governance_report.status}`,
+      `governance_report_hash: ${preview.governance_report.governance_report_hash}`,
+      `proposal_candidate_hash: ${preview.governance_report.proposal_candidate_hash}`,
+      `contract_candidate_hash: ${preview.governance_report.contract_candidate_hash}`,
+      `provenance_lineage: ${compactValue(preview.governance_report.provenance_lineage)}`
+    ]
+  ));
+  setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
+    "STOP (No Execution)",
+    "CLASSIFICATION: UI_ONLY",
+    "PREVIEW_ONLY: true",
+    "IMPORT_ONLY: true",
+    "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
+    `replay_identity: ${preview.artifact.replay_identity}`,
+    `ingress_artifact_hash: ${preview.artifact.hashes.artifact_hash}`,
+    `proposal_candidate_hash: ${preview.proposal_candidate.proposal_candidate_hash}`,
+    `contract_candidate_hash: ${preview.contract_candidate.contract_candidate_hash}`,
+    `governance_report_hash: ${preview.governance_report.governance_report_hash}`,
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "governance_approved: false",
+    "semantic_correctness_verified: false",
+    "autonomous_continuation_performed: false"
+  ].join("\n"));
 }
 
 function replaySummaryArtifact(entry) {
@@ -2859,6 +3084,7 @@ function renderReadOnlyCockpit() {
   setCockpitText(COCKPIT_IDS.observatoryCodexExecution, observatoryCodexExecutionSummary(latest));
   setCockpitText(COCKPIT_IDS.observatoryPostVerification, observatoryPostExecutionVerificationSummary(latest));
   setCockpitText(COCKPIT_IDS.observatoryGovernedReturn, observatoryGovernedReturnSummary(latest));
+  renderChatgptIngressPreview();
   renderReplaySessionVisibility();
 }
 
@@ -2927,3 +3153,5 @@ const runNativeBridgeButton = document.getElementById("run-native-bridge");
 if (runNativeBridgeButton) {
   runNativeBridgeButton.onclick = runNativeBridgeFromSidepanel;
 }
+
+renderChatgptIngressPreview();

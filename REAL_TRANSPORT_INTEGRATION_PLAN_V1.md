@@ -100,6 +100,8 @@ Safety constraints:
 
 If semantic continuity is improved, it must remain evidence continuity, not semantic truth. The system may track:
 
+Preview status: `CHATGPT_INGRESS_TO_SEMANTIC_CONTRACT_PREVIEW_V1` now exposes import-only ingress continuity in the cockpit as STRUCTURAL_ONLY / ADVISORY_ONLY observability. It does not connect execution, Codex dispatch, provider invocation, or governance approval.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;

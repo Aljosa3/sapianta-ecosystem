@@ -110,6 +110,24 @@
         border-left: 4px solid #6a7a8a;
       }
 
+      .ingress-preview-group {
+        background: #f9fbfd;
+        border-color: #4b6f8f;
+      }
+
+      .ingress-preview-panel {
+        background: #fbfdff;
+        border-left: 4px solid #4b6f8f;
+      }
+
+      .preview-status-badge {
+        color: #30485d;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
+        margin: 0;
+      }
+
       .observatory-panel.enforced {
         border-left-color: #2e7d32;
       }
@@ -360,6 +378,65 @@ No execution occurred.</pre>
 	No execution occurred.
 	No provider invoked.</textarea>
 	          </article>
+	          <fieldset id="chatgpt-ingress-preview" class="cockpit-group ingress-preview-group" aria-label="ChatGPT Ingress Preview Import-Only">
+	            <legend>ChatGPT Ingress Preview (Import-Only)</legend>
+	            <p class="cockpit-label">PREVIEW ONLY. IMPORT VISIBILITY ONLY. NON-EXECUTING. STRUCTURAL_ONLY / ADVISORY_ONLY. This preview is isolated from Native Messaging, Codex, governed task packages, and canonical execution runtime.</p>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-artifact-preview-heading">
+	              <h3 id="chatgpt-ingress-artifact-preview-heading">1. CHATGPT_INGRESS_ARTIFACT_V1</h3>
+	              <p class="preview-status-badge">STRUCTURAL_ONLY - import candidate artifact, not live ChatGPT cognition</p>
+	              <pre id="chatgpt-ingress-artifact-preview-card" class="cockpit-output">STRUCTURAL_ONLY
+STATUS: preview not rendered
+execution_performed: false
+codex_dispatch_performed: false
+governance_approved: false
+semantic_correctness_verified: false
+autonomous_continuation_performed: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-import-validation-heading">
+	              <h3 id="chatgpt-ingress-import-validation-heading">2. Import Validation</h3>
+	              <p class="preview-status-badge">STRUCTURAL_ONLY - validation report, not approval</p>
+	              <pre id="chatgpt-ingress-import-validation-card" class="cockpit-output">STRUCTURAL_ONLY
+STATUS: preview not rendered
+execution_performed: false
+codex_dispatch_performed: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-proposal-candidate-heading">
+	              <h3 id="chatgpt-ingress-proposal-candidate-heading">3. Semantic Proposal Candidate</h3>
+	              <p class="preview-status-badge">ADVISORY_ONLY - candidate only, not governance authority</p>
+	              <pre id="chatgpt-ingress-proposal-candidate-card" class="cockpit-output">ADVISORY_ONLY
+proposal_candidate_only: true
+codex_dispatch_allowed: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-contract-candidate-heading">
+	              <h3 id="chatgpt-ingress-contract-candidate-heading">4. Semantic Contract Candidate</h3>
+	              <p class="preview-status-badge">STRUCTURAL_ONLY - candidate state, not semantic correctness verification</p>
+	              <pre id="chatgpt-ingress-contract-candidate-card" class="cockpit-output">STRUCTURAL_ONLY
+contract_candidate_only: true
+semantic_correctness_verified: false
+provider_dispatch_authorized: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-governance-report-heading">
+	              <h3 id="chatgpt-ingress-governance-report-heading">5. Governance Acceptance Report</h3>
+	              <p class="preview-status-badge">STRUCTURAL_ONLY - acceptance for import visibility only</p>
+	              <pre id="chatgpt-ingress-governance-report-card" class="cockpit-output">STRUCTURAL_ONLY
+STATUS: preview not rendered
+import_only: true
+execution_performed: false
+codex_dispatch_performed: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
+	              <h3 id="chatgpt-ingress-stop-heading">6. STOP (No Execution)</h3>
+	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
+	              <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
+STOP: No Execution
+execution_performed: false
+codex_dispatch_performed: false
+governance_approved: false
+semantic_correctness_verified: false
+autonomous_continuation_performed: false
+runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider</pre>
+	            </article>
+	          </fieldset>
 	          <fieldset id="governed-execution-observatory" class="cockpit-group observatory-group" aria-label="Governed Execution Observatory">
 	            <legend>Governed Execution Observatory</legend>
 	            <article class="cockpit-panel observatory-panel ui-only" aria-labelledby="observatory-topology-heading">
