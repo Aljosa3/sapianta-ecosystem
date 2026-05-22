@@ -381,6 +381,21 @@ No execution occurred.</pre>
 	          <fieldset id="chatgpt-ingress-preview" class="cockpit-group ingress-preview-group" aria-label="ChatGPT Ingress Preview Import-Only">
 	            <legend>ChatGPT Ingress Preview (Import-Only)</legend>
 	            <p class="cockpit-label">PREVIEW ONLY. IMPORT VISIBILITY ONLY. NON-EXECUTING. STRUCTURAL_ONLY / ADVISORY_ONLY. This preview is isolated from Native Messaging, Codex, governed task packages, and canonical execution runtime.</p>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-native-import-heading">
+	              <h3 id="chatgpt-ingress-native-import-heading">CHATGPT_INGRESS_ARTIFACT_V1 JSON Import</h3>
+	              <p class="preview-status-badge">IMPORT ONLY - PREVIEW ONLY - NON-EXECUTING - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <label for="chatgpt-ingress-artifact-json">Paste CHATGPT_INGRESS_ARTIFACT_V1 JSON</label>
+	              <textarea id="chatgpt-ingress-artifact-json" name="chatgpt-ingress-artifact-json" rows="7" placeholder='{"artifact_type":"CHATGPT_INGRESS_ARTIFACT_V1","schema_version":"1.0","source":"chatgpt"}'></textarea>
+	              <button id="preview-chatgpt-ingress-import-only" type="button">Preview Import Only</button>
+	              <pre id="chatgpt-ingress-native-import-status" class="cockpit-output">IMPORT ONLY
+PREVIEW ONLY
+NON-EXECUTING
+execution performed: false
+Codex dispatch: false
+governance approved: false
+semantic correctness verified: false
+autonomous continuation: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-artifact-preview-heading">
 	              <h3 id="chatgpt-ingress-artifact-preview-heading">1. CHATGPT_INGRESS_ARTIFACT_V1</h3>
 	              <p class="preview-status-badge">STRUCTURAL_ONLY - import candidate artifact, not live ChatGPT cognition</p>
@@ -424,8 +439,22 @@ import_only: true
 execution_performed: false
 codex_dispatch_performed: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-acceptance-gate-heading">
+	              <h3 id="chatgpt-ingress-acceptance-gate-heading">Acceptance Gate</h3>
+	              <p class="preview-status-badge">GATE ONLY - NO EXECUTION - NO CODEX DISPATCH - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <pre id="chatgpt-ingress-acceptance-gate-card" class="cockpit-output">STRUCTURAL_ONLY
+GATE ONLY
+gate_status: not evaluated
+decision_hash: not generated
+execution_authorized: false
+codex_dispatch_authorized: false
+provider_dispatch_authorized: false
+semantic_correctness_verified: false
+governance_execution_approval: false
+autonomous_continuation_authorized: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">6. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">7. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
 	              <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution

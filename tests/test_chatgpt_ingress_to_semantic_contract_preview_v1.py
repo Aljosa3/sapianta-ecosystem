@@ -84,10 +84,15 @@ def test_preview_explicitly_states_codex_dispatch_not_performed():
 
 def test_preview_contains_no_execution_button():
     section = _preview_section().lower()
+    button_start = section.index('id="preview-chatgpt-ingress-import-only"')
+    button_fragment = section[button_start - 80 : button_start + 160]
 
-    assert "<button" not in section
+    assert "preview import only" in section
     assert "run via native bridge" not in section
     assert "run governed codex execution" not in section
+    assert "run" not in button_fragment
+    assert "execute" not in button_fragment
+    assert "dispatch" not in button_fragment
 
 
 def test_preview_path_never_invokes_native_messaging():

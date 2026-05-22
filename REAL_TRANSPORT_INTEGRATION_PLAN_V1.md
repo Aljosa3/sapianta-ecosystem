@@ -102,6 +102,10 @@ If semantic continuity is improved, it must remain evidence continuity, not sema
 
 Preview status: `CHATGPT_INGRESS_TO_SEMANTIC_CONTRACT_PREVIEW_V1` now exposes import-only ingress continuity in the cockpit as STRUCTURAL_ONLY / ADVISORY_ONLY observability. It does not connect execution, Codex dispatch, provider invocation, or governance approval.
 
+Import-preview status: `CHATGPT_INGRESS_NATIVE_IMPORT_PREVIEW_V1` lets the cockpit paste `CHATGPT_INGRESS_ARTIFACT_V1` JSON and render accepted/rejected import-only preview cards. It remains disconnected from Native Messaging, Codex, provider dispatch, execution envelopes, and governed task packages.
+
+Gate status: `CHATGPT_INGRESS_ACCEPTANCE_GATE_V1` now adds deterministic admissibility evidence after import validation. It can accept imported cognition for governed preview or reject it, but it does not approve execution, verify semantic correctness, dispatch Codex, or create governed task packages.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;
