@@ -79,9 +79,13 @@ const COCKPIT_IDS = {
   chatgptIngressContractCandidate: "chatgpt-ingress-contract-candidate-card",
   chatgptIngressGovernanceReport: "chatgpt-ingress-governance-report-card",
   chatgptIngressAcceptanceGate: "chatgpt-ingress-acceptance-gate-card",
+  governedTaskPackagePreview: "governed-task-package-preview-card",
+  humanApprovalGate: "human-approval-gate-card",
   chatgptIngressStop: "chatgpt-ingress-stop-card",
   chatgptIngressNativeImportStatus: "chatgpt-ingress-native-import-status"
 };
+
+let latestChatgptIngressTaskPackagePreview = null;
 
 function deterministicId(prefix, value) {
   const text = JSON.stringify(canonicalize(value));
@@ -733,8 +737,169 @@ function chatgptIngressAcceptanceGate(preview) {
   return canonicalize(evidence);
 }
 
+function governedTaskPackagePreview(preview, acceptanceGate) {
+  const report = preview.governance_report || {};
+  const contract = preview.contract_candidate || {};
+  const proposal = preview.proposal_candidate || {};
+  const ready = acceptanceGate.gate_status === "ACCEPTED_FOR_GOVERNED_PREVIEW";
+  const taskPreview = {
+    artifact_type: "GOVERNED_TASK_PACKAGE_PREVIEW_V1",
+    schema_version: "1.0",
+    replay_identity: acceptanceGate.replay_identity || report.replay_identity || "UNKNOWN",
+    provenance: {
+      source: "CHATGPT_INGRESS_ACCEPTANCE_GATE_V1",
+      provenance_lineage: report.provenance_lineage || {},
+      source_candidate_references: proposal.provenance_lineage || {}
+    },
+    source_ingress_artifact_hash: acceptanceGate.ingress_artifact_hash || report.ingress_artifact_hash || "UNKNOWN",
+    semantic_proposal_candidate_hash: acceptanceGate.proposal_candidate_hash || report.proposal_candidate_hash || "NONE",
+    semantic_contract_candidate_hash: acceptanceGate.contract_candidate_hash || report.contract_candidate_hash || "NONE",
+    admissibility_gate_hash: acceptanceGate.decision_hash || "NONE",
+    normalized_intent: contract.normalized_intent || proposal.normalized_intent || "",
+    expected_artifacts: contract.expected_artifacts || proposal.expected_artifacts || [],
+    constraints: contract.constraints || proposal.constraints || [],
+    forbidden_operations: [
+      "codex_dispatch",
+      "native_messaging_execution",
+      "provider_dispatch",
+      "governance_execution_approval",
+      "automatic_execution",
+      "autonomous_continuation",
+      "orchestration",
+      "retries",
+      "fallback_routing"
+    ],
+    execution_boundary_state: ready ? "READY_FOR_HUMAN_APPROVAL" : "PREVIEW_REJECTED",
+    human_approval_required: true,
+    governance_status: ready ? "READY_FOR_HUMAN_APPROVAL" : "PREVIEW_REJECTED",
+    preview_only: true,
+    executable: false,
+    dispatchable: false,
+    governance_finalized: false,
+    execution_authorized: false,
+    codex_dispatch_authorized: false,
+    provider_dispatch_authorized: false,
+    governance_execution_approved: false,
+    autonomous_continuation_authorized: false,
+    classification: ["STRUCTURAL_ONLY", "ADVISORY_ONLY"],
+    boundary_statement: "Execution boundary reached but not crossed; explicit future human approval is required."
+  };
+  taskPreview.preview_hash = previewHash("GOVERNED-TASK-PACKAGE-PREVIEW-HASH", {
+    source_ingress_artifact_hash: taskPreview.source_ingress_artifact_hash,
+    semantic_proposal_candidate_hash: taskPreview.semantic_proposal_candidate_hash,
+    semantic_contract_candidate_hash: taskPreview.semantic_contract_candidate_hash,
+    admissibility_gate_hash: taskPreview.admissibility_gate_hash,
+    replay_identity: taskPreview.replay_identity,
+    governance_status: taskPreview.governance_status,
+    execution_boundary_state: taskPreview.execution_boundary_state
+  });
+  return canonicalize(taskPreview);
+}
+
+function humanApprovalGate(taskPackagePreview, humanDecision) {
+  const approved = humanDecision === "APPROVE";
+  const sourceReady = taskPackagePreview.execution_boundary_state === "READY_FOR_HUMAN_APPROVAL"
+    && taskPackagePreview.governance_status === "READY_FOR_HUMAN_APPROVAL"
+    && taskPackagePreview.preview_hash
+    && taskPackagePreview.replay_identity
+    && taskPackagePreview.provenance
+    && taskPackagePreview.execution_authorized === false
+    && taskPackagePreview.codex_dispatch_authorized === false
+    && taskPackagePreview.provider_dispatch_authorized === false
+    && taskPackagePreview.governance_execution_approved === false
+    && taskPackagePreview.autonomous_continuation_authorized === false;
+  const approval = {
+    artifact_type: "HUMAN_APPROVAL_GATE_V1",
+    schema_version: "1.0",
+    replay_identity: taskPackagePreview.replay_identity || "UNKNOWN",
+    source_task_package_preview_hash: taskPackagePreview.preview_hash || "UNKNOWN",
+    human_decision: humanDecision,
+    approval_status: approved && sourceReady ? "APPROVED_FOR_GOVERNED_HANDOFF" : "REJECTED_BY_HUMAN",
+    approval_reason: approved && sourceReady
+      ? "Human explicitly approved preview for future governed handoff evidence."
+      : "Human explicitly rejected preview or source preview was not approval-ready.",
+    operator_label: "LOCAL_BROWSER_OPERATOR",
+    created_at: "1970-01-01T00:00:00Z",
+    provenance: {
+      source: "GOVERNED_TASK_PACKAGE_PREVIEW_V1",
+      source_state: taskPackagePreview.execution_boundary_state || "UNKNOWN",
+      source_governance_status: taskPackagePreview.governance_status || "UNKNOWN"
+    },
+    authority_boundary: {
+      human_authority: true,
+      execution_authority: false,
+      codex_dispatch_authority: false,
+      provider_dispatch_authority: false,
+      governance_execution_authority: false,
+      autonomous_continuation_authority: false,
+      semantic_correctness_authority: false
+    },
+    human_approved: approved && sourceReady,
+    execution_performed: false,
+    codex_dispatch_performed: false,
+    provider_dispatch_performed: false,
+    autonomous_continuation_performed: false,
+    semantic_correctness_verified: false,
+    approval_evidence_only: true
+  };
+  approval.approval_hash = previewHash("HUMAN-APPROVAL-GATE-HASH", {
+    replay_identity: approval.replay_identity,
+    source_task_package_preview_hash: approval.source_task_package_preview_hash,
+    human_decision: approval.human_decision,
+    approval_status: approval.approval_status,
+    approval_reason: approval.approval_reason,
+    authority_boundary: approval.authority_boundary,
+    provenance: approval.provenance
+  });
+  return canonicalize(approval);
+}
+
+function renderHumanApprovalGate(approval) {
+  setCockpitText(COCKPIT_IDS.humanApprovalGate, [
+    "Human Approval Gate",
+    "ARTIFACT_TYPE: HUMAN_APPROVAL_GATE_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "HUMAN APPROVAL ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "APPROVAL EVIDENCE ONLY",
+    `source_state: ${(approval.provenance || {}).source_state || "UNKNOWN"}`,
+    `approval_status: ${approval.approval_status}`,
+    `human_decision: ${approval.human_decision}`,
+    `human_approved: ${approval.human_approved}`,
+    `approval_reason: ${approval.approval_reason}`,
+    `operator_label: ${approval.operator_label}`,
+    `replay_identity: ${approval.replay_identity}`,
+    `source_task_package_preview_hash: ${approval.source_task_package_preview_hash}`,
+    `approval_hash: ${approval.approval_hash}`,
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "autonomous_continuation_performed: false",
+    "semantic_correctness_verified: false",
+    "STOP: Approval evidence created; execution boundary remains uncrossed"
+  ].join("\n"));
+  setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
+    "STOP (No Execution)",
+    "CLASSIFICATION: UI_ONLY",
+    "PREVIEW_ONLY: true",
+    "APPROVAL_EVIDENCE_ONLY: true",
+    "STOP boundary after READY_FOR_HUMAN_APPROVAL",
+    "STOP boundary after HUMAN APPROVAL GATE",
+    `approval_status: ${approval.approval_status}`,
+    `approval_hash: ${approval.approval_hash}`,
+    "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "autonomous_continuation_performed: false"
+  ].join("\n"));
+}
+
 function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
   const acceptanceGate = chatgptIngressAcceptanceGate(preview);
+  const taskPackagePreview = governedTaskPackagePreview(preview, acceptanceGate);
+  latestChatgptIngressTaskPackagePreview = taskPackagePreview;
   const accepted = preview.governance_report.status === "ACCEPTED_FOR_STRUCTURAL_IMPORT";
   const rejected = preview.governance_report.status === "REJECTED";
   setCockpitText(COCKPIT_IDS.chatgptIngressNativeImportStatus, [
@@ -842,13 +1007,64 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
       "autonomous_continuation_authorized: false"
     ]
   ));
+  setCockpitText(COCKPIT_IDS.governedTaskPackagePreview, [
+    "Governed Task Package Preview",
+    "ARTIFACT_TYPE: GOVERNED_TASK_PACKAGE_PREVIEW_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "PREVIEW ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "HUMAN APPROVAL REQUIRED",
+    `governance_status: ${taskPackagePreview.governance_status}`,
+    `execution_boundary_state: ${taskPackagePreview.execution_boundary_state}`,
+    `human_approval_required: ${taskPackagePreview.human_approval_required}`,
+    `replay_identity: ${taskPackagePreview.replay_identity}`,
+    `preview_hash: ${taskPackagePreview.preview_hash}`,
+    `source_ingress_artifact_hash: ${taskPackagePreview.source_ingress_artifact_hash}`,
+    `semantic_proposal_candidate_hash: ${taskPackagePreview.semantic_proposal_candidate_hash}`,
+    `semantic_contract_candidate_hash: ${taskPackagePreview.semantic_contract_candidate_hash}`,
+    `admissibility_gate_hash: ${taskPackagePreview.admissibility_gate_hash}`,
+    `provenance_lineage: ${compactValue(taskPackagePreview.provenance)}`,
+    "admissibility_continuity: visible",
+    "preview_only: true",
+    "executable: false",
+    "dispatchable: false",
+    "governance_finalized: false",
+    "execution_authorized: false",
+    "codex_dispatch_authorized: false",
+    "provider_dispatch_authorized: false",
+    "governance_execution_approved: false",
+    "autonomous_continuation_authorized: false",
+    "boundary: execution boundary reached but not crossed"
+  ].join("\n"));
+  setCockpitText(COCKPIT_IDS.humanApprovalGate, [
+    "Human Approval Gate",
+    "ARTIFACT_TYPE: HUMAN_APPROVAL_GATE_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "HUMAN APPROVAL ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "APPROVAL EVIDENCE ONLY",
+    `source_state: ${taskPackagePreview.execution_boundary_state}`,
+    "approval_status: not decided",
+    "human_decision: none",
+    "approval_hash: not generated",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "autonomous_continuation_performed: false"
+  ].join("\n"));
   setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
     "STOP (No Execution)",
     "CLASSIFICATION: UI_ONLY",
     "PREVIEW_ONLY: true",
     "IMPORT_ONLY: true",
+    "STOP boundary after READY_FOR_HUMAN_APPROVAL",
+    "STOP boundary after HUMAN APPROVAL GATE",
     "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
     `replay_identity: ${preview.artifact.replay_identity}`,
+    `task_package_preview_hash: ${taskPackagePreview.preview_hash}`,
+    `execution_boundary_state: ${taskPackagePreview.execution_boundary_state}`,
     `ingress_artifact_hash: ${(preview.artifact.hashes || {}).artifact_hash || "UNKNOWN"}`,
     `proposal_candidate_hash: ${preview.proposal_candidate.proposal_candidate_hash || "NONE"}`,
     `contract_candidate_hash: ${preview.contract_candidate.contract_candidate_hash || "NONE"}`,
@@ -3507,6 +3723,20 @@ if (runNativeBridgeButton) {
 const previewChatgptIngressImportOnlyButton = document.getElementById("preview-chatgpt-ingress-import-only");
 if (previewChatgptIngressImportOnlyButton) {
   previewChatgptIngressImportOnlyButton.onclick = previewImportedChatgptIngressArtifactFromSidepanel;
+}
+
+const approveTaskPackagePreviewButton = document.getElementById("approve-task-package-preview");
+if (approveTaskPackagePreviewButton) {
+  approveTaskPackagePreviewButton.onclick = function approveTaskPackagePreviewEvidenceOnly() {
+    renderHumanApprovalGate(humanApprovalGate(latestChatgptIngressTaskPackagePreview || {}, "APPROVE"));
+  };
+}
+
+const rejectTaskPackagePreviewButton = document.getElementById("reject-task-package-preview");
+if (rejectTaskPackagePreviewButton) {
+  rejectTaskPackagePreviewButton.onclick = function rejectTaskPackagePreviewEvidenceOnly() {
+    renderHumanApprovalGate(humanApprovalGate(latestChatgptIngressTaskPackagePreview || {}, "REJECT"));
+  };
 }
 
 renderChatgptIngressPreview();

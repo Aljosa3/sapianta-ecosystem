@@ -106,6 +106,10 @@ Import-preview status: `CHATGPT_INGRESS_NATIVE_IMPORT_PREVIEW_V1` lets the cockp
 
 Gate status: `CHATGPT_INGRESS_ACCEPTANCE_GATE_V1` now adds deterministic admissibility evidence after import validation. It can accept imported cognition for governed preview or reject it, but it does not approve execution, verify semantic correctness, dispatch Codex, or create governed task packages.
 
+Task-package-preview status: `GOVERNED_TASK_PACKAGE_PREVIEW_V1` now creates a replay-visible execution-boundary preview after acceptance. It reaches `READY_FOR_HUMAN_APPROVAL` and then stops. It is preview-only, non-executable, non-dispatchable, not governance-finalized, and does not call Native Messaging, Codex, or provider execution.
+
+Human-approval status: `HUMAN_APPROVAL_GATE_V1` now creates deterministic approval or rejection evidence after `READY_FOR_HUMAN_APPROVAL`. It can reach `APPROVED_FOR_GOVERNED_HANDOFF` or `REJECTED_BY_HUMAN`, but it remains approval-evidence-only and still does not execute, dispatch Codex, call Native Messaging, or connect provider execution.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;

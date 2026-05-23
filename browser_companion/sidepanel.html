@@ -453,11 +453,49 @@ semantic_correctness_verified: false
 governance_execution_approval: false
 autonomous_continuation_authorized: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="governed-task-package-preview-heading">
+	              <h3 id="governed-task-package-preview-heading">7. Governed Task Package Preview</h3>
+	              <p class="preview-status-badge">PREVIEW ONLY - NO EXECUTION - NO CODEX DISPATCH - HUMAN APPROVAL REQUIRED - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <pre id="governed-task-package-preview-card" class="cockpit-output">GOVERNED_TASK_PACKAGE_PREVIEW_V1
+STATUS: preview not rendered
+execution_boundary_state: READY_FOR_HUMAN_APPROVAL
+human_approval_required: true
+preview_only: true
+executable: false
+dispatchable: false
+execution_authorized: false
+codex_dispatch_authorized: false
+provider_dispatch_authorized: false
+governance_execution_approved: false
+autonomous_continuation_authorized: false</pre>
+	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="human-approval-gate-heading">
+	              <h3 id="human-approval-gate-heading">8. Human Approval Gate</h3>
+	              <p class="preview-status-badge">HUMAN APPROVAL ONLY - NO EXECUTION - NO CODEX DISPATCH - APPROVAL EVIDENCE ONLY - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <section class="control-grid" aria-label="Human approval evidence controls">
+	                <button id="approve-task-package-preview" type="button">Approve Preview</button>
+	                <button id="reject-task-package-preview" type="button">Reject Preview</button>
+	              </section>
+	              <pre id="human-approval-gate-card" class="cockpit-output">HUMAN_APPROVAL_GATE_V1
+HUMAN APPROVAL ONLY
+NO EXECUTION
+NO CODEX DISPATCH
+APPROVAL EVIDENCE ONLY
+source_state: READY_FOR_HUMAN_APPROVAL
+approval_status: not decided
+approval_hash: not generated
+execution_performed: false
+codex_dispatch_performed: false
+provider_dispatch_performed: false
+autonomous_continuation_performed: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">7. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">9. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
-	              <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
+<pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution
+STOP boundary after READY_FOR_HUMAN_APPROVAL
+STOP boundary after HUMAN APPROVAL GATE
 execution_performed: false
 codex_dispatch_performed: false
 governance_approved: false
