@@ -531,8 +531,27 @@ native_messaging_called: false
 executable: false
 dispatched: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="controlled-execution-continuity-preview-heading">
+	              <h3 id="controlled-execution-continuity-preview-heading">11. Controlled Execution Continuity Preview</h3>
+	              <p class="preview-status-badge">EXECUTION CONTINUITY PREVIEW ONLY - NO EXECUTION - NO CODEX DISPATCH - NATIVE MESSAGING NOT CALLED - PROVIDER NOT INVOKED - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <pre id="controlled-execution-continuity-preview-card" class="cockpit-output">CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1
+EXECUTION CONTINUITY PREVIEW ONLY
+NO EXECUTION
+NO CODEX DISPATCH
+NATIVE MESSAGING NOT CALLED
+PROVIDER NOT INVOKED
+execution_continuity_status: not generated
+continuity_preview_hash: not generated
+execution_path_candidate: sidepanel -> service_worker -> Native Messaging host -> Python runtime bridge -> bounded Codex CLI provider
+all_stages: PREVIEW_ONLY / NOT_CALLED
+execution_performed: false
+codex_dispatch_performed: false
+native_messaging_called: false
+provider_invoked: false
+service_worker_called: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">11. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">12. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
 <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution
@@ -540,6 +559,7 @@ STOP boundary after READY_FOR_HUMAN_APPROVAL
 STOP boundary after HUMAN APPROVAL GATE
 STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW
 STOP boundary after EXPLICIT DISPATCH AUTHORIZATION
+STOP boundary after CONTROLLED EXECUTION CONTINUITY PREVIEW
 execution_performed: false
 codex_dispatch_performed: false
 governance_approved: false

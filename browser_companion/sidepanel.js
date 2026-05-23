@@ -83,6 +83,7 @@ const COCKPIT_IDS = {
   humanApprovalGate: "human-approval-gate-card",
   governedHandoffPackagePreview: "governed-handoff-package-preview-card",
   explicitDispatchAuthorization: "explicit-dispatch-authorization-card",
+  controlledExecutionContinuityPreview: "controlled-execution-continuity-preview-card",
   chatgptIngressStop: "chatgpt-ingress-stop-card",
   chatgptIngressNativeImportStatus: "chatgpt-ingress-native-import-status"
 };
@@ -1054,6 +1055,7 @@ function explicitDispatchAuthorization(handoffPreview, dispatchDecision) {
 }
 
 function renderExplicitDispatchAuthorization(authorization) {
+  const continuityPreview = controlledExecutionContinuityPreview(authorization);
   setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
     "Explicit Dispatch Authorization",
     "ARTIFACT_TYPE: EXPLICIT_DISPATCH_AUTHORIZATION_V1",
@@ -1080,13 +1082,17 @@ function renderExplicitDispatchAuthorization(authorization) {
     "autonomous_continuation_performed: false",
     "STOP: dispatch authorization continuity reached without execution continuity"
   ].join("\n"));
+  renderControlledExecutionContinuityPreview(continuityPreview);
   setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
     "STOP (No Execution)",
     "CLASSIFICATION: UI_ONLY",
     "DISPATCH_AUTHORIZATION_ONLY: true",
     "STOP boundary after EXPLICIT DISPATCH AUTHORIZATION",
+    "STOP boundary after CONTROLLED EXECUTION CONTINUITY PREVIEW",
     `dispatch_authorization_status: ${authorization.dispatch_authorization_status}`,
     `dispatch_authorization_hash: ${authorization.dispatch_authorization_hash}`,
+    `execution_continuity_status: ${continuityPreview.execution_continuity_status}`,
+    `continuity_preview_hash: ${continuityPreview.continuity_preview_hash}`,
     `provider_boundary_state: ${authorization.provider_boundary_state}`,
     "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
     "execution_performed: false",
@@ -1094,6 +1100,120 @@ function renderExplicitDispatchAuthorization(authorization) {
     "provider_dispatch_performed: false",
     "native_messaging_called: false",
     "dispatched: false"
+  ].join("\n"));
+}
+
+function controlledExecutionContinuityPreview(authorization) {
+  const ready = authorization.dispatch_authorization_status === "DISPATCH_AUTHORIZED"
+    && authorization.dispatch_authorized === true
+    && authorization.replay_identity
+    && authorization.dispatch_authorization_hash
+    && authorization.provenance
+    && authorization.execution_performed === false
+    && authorization.codex_dispatch_performed === false
+    && authorization.provider_dispatch_performed === false
+    && authorization.native_messaging_called === false
+    && authorization.executable === false
+    && authorization.dispatched === false
+    && authorization.autonomous_continuation_performed === false;
+  const executionPathCandidate = {
+    path_type: "CONTROLLED_EXECUTION_CONTINUITY_PATH_CANDIDATE",
+    stages: [
+      { stage: "sidepanel", status: "PREVIEW_ONLY", called: false },
+      { stage: "service_worker", status: "NOT_CALLED", called: false },
+      { stage: "Native Messaging host", status: "NOT_CALLED", called: false },
+      { stage: "Python runtime bridge", status: "NOT_CALLED", called: false },
+      { stage: "bounded Codex CLI provider", status: "NOT_CALLED", called: false }
+    ]
+  };
+  const preview = {
+    artifact_type: "CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
+    schema_version: "1.0",
+    replay_identity: authorization.replay_identity || "UNKNOWN",
+    provenance: {
+      source: "EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+      dispatch_authorization_provenance: authorization.provenance || {},
+      dispatch_authorization_status: authorization.dispatch_authorization_status || "UNKNOWN"
+    },
+    source_dispatch_authorization_hash: authorization.dispatch_authorization_hash || "UNKNOWN",
+    source_handoff_preview_hash: authorization.source_handoff_preview_hash || "UNKNOWN",
+    human_approval_hash: authorization.human_approval_hash || "UNKNOWN",
+    governed_task_package_preview_hash: (authorization.provenance || {}).governed_task_package_preview_hash || "UNKNOWN",
+    semantic_contract_candidate_hash: (authorization.provenance || {}).semantic_contract_candidate_hash || "NONE",
+    admissibility_gate_hash: authorization.admissibility_gate_hash || "NONE",
+    execution_continuity_status: ready ? "READY_FOR_CONTROLLED_EXECUTION_HANDOFF" : "EXECUTION_CONTINUITY_PREVIEW_REJECTED",
+    execution_path_candidate: executionPathCandidate,
+    native_messaging_path_candidate: { stage: "Native Messaging host", status: "NOT_CALLED", called: false },
+    service_worker_path_candidate: { stage: "service_worker", status: "NOT_CALLED", called: false },
+    python_runtime_bridge_candidate: { stage: "Python runtime bridge", status: "NOT_CALLED", called: false },
+    codex_provider_candidate: { stage: "bounded Codex CLI provider", status: "NOT_CALLED", called: false },
+    workspace_scope_candidate: authorization.workspace_scope_preview || "UNKNOWN",
+    timeout_policy_candidate: authorization.timeout_policy_preview || "UNKNOWN",
+    authority_boundary: {
+      dispatch_authorized: ready,
+      execution_authorized: false,
+      execution_performed: false,
+      codex_dispatch_performed: false,
+      native_messaging_called: false,
+      provider_invoked: false,
+      autonomous_continuation_authorized: false
+    },
+    preview_only: true,
+    execution_performed: false,
+    codex_dispatch_performed: false,
+    native_messaging_called: false,
+    provider_invoked: false,
+    provider_dispatch_performed: false,
+    service_worker_called: false,
+    executable: false,
+    dispatched: false,
+    autonomous_continuation_performed: false,
+    classification: ["STRUCTURAL_ONLY", "ADVISORY_ONLY"]
+  };
+  preview.continuity_preview_hash = previewHash("CONTROLLED-EXECUTION-CONTINUITY-PREVIEW-HASH", {
+    replay_identity: preview.replay_identity,
+    source_dispatch_authorization_hash: preview.source_dispatch_authorization_hash,
+    source_handoff_preview_hash: preview.source_handoff_preview_hash,
+    human_approval_hash: preview.human_approval_hash,
+    governed_task_package_preview_hash: preview.governed_task_package_preview_hash,
+    semantic_contract_candidate_hash: preview.semantic_contract_candidate_hash,
+    admissibility_gate_hash: preview.admissibility_gate_hash,
+    execution_path_candidate: preview.execution_path_candidate,
+    authority_boundary: preview.authority_boundary,
+    execution_continuity_status: preview.execution_continuity_status
+  });
+  return canonicalize(preview);
+}
+
+function renderControlledExecutionContinuityPreview(preview) {
+  setCockpitText(COCKPIT_IDS.controlledExecutionContinuityPreview, [
+    "Controlled Execution Continuity Preview",
+    "ARTIFACT_TYPE: CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "EXECUTION CONTINUITY PREVIEW ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "NATIVE MESSAGING NOT CALLED",
+    "PROVIDER NOT INVOKED",
+    `execution_continuity_status: ${preview.execution_continuity_status}`,
+    `continuity_preview_hash: ${preview.continuity_preview_hash}`,
+    `execution_path_candidate: ${compactValue(preview.execution_path_candidate)}`,
+    `native_messaging_path_candidate: ${compactValue(preview.native_messaging_path_candidate)}`,
+    `service_worker_path_candidate: ${compactValue(preview.service_worker_path_candidate)}`,
+    `python_runtime_bridge_candidate: ${compactValue(preview.python_runtime_bridge_candidate)}`,
+    `codex_provider_candidate: ${compactValue(preview.codex_provider_candidate)}`,
+    `workspace_scope_candidate: ${preview.workspace_scope_candidate}`,
+    `timeout_policy_candidate: ${preview.timeout_policy_candidate}`,
+    "all_stages: PREVIEW_ONLY / NOT_CALLED",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "native_messaging_called: false",
+    "provider_invoked: false",
+    "provider_dispatch_performed: false",
+    "service_worker_called: false",
+    "executable: false",
+    "dispatched: false",
+    "STOP: execution path candidate visible but not used"
   ].join("\n"));
 }
 
@@ -1347,6 +1467,25 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "executable: false",
     "dispatched: false"
   ].join("\n"));
+  setCockpitText(COCKPIT_IDS.controlledExecutionContinuityPreview, [
+    "Controlled Execution Continuity Preview",
+    "ARTIFACT_TYPE: CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "EXECUTION CONTINUITY PREVIEW ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "NATIVE MESSAGING NOT CALLED",
+    "PROVIDER NOT INVOKED",
+    "execution_continuity_status: not generated",
+    "continuity_preview_hash: not generated",
+    "execution_path_candidate: sidepanel -> service_worker -> Native Messaging host -> Python runtime bridge -> bounded Codex CLI provider",
+    "all_stages: PREVIEW_ONLY / NOT_CALLED",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "native_messaging_called: false",
+    "provider_invoked: false",
+    "service_worker_called: false"
+  ].join("\n"));
   setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
     "STOP (No Execution)",
     "CLASSIFICATION: UI_ONLY",
@@ -1356,6 +1495,7 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "STOP boundary after HUMAN APPROVAL GATE",
     "STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW",
     "STOP boundary after EXPLICIT DISPATCH AUTHORIZATION",
+    "STOP boundary after CONTROLLED EXECUTION CONTINUITY PREVIEW",
     "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
     `replay_identity: ${preview.artifact.replay_identity}`,
     `task_package_preview_hash: ${taskPackagePreview.preview_hash}`,

@@ -114,6 +114,8 @@ Handoff-preview status: `GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1` now creates a seal
 
 Dispatch-authorization status: `EXPLICIT_DISPATCH_AUTHORIZATION_V1` now creates replay-visible dispatch authorization or rejection evidence after the handoff preview. It can reach `DISPATCH_AUTHORIZED` and `READY_FOR_CONTROLLED_EXECUTION_CONTINUITY`, but dispatch authorization is still not execution continuity; Codex, Native Messaging, provider execution, runnable provider tasks, and runtime execution remain disconnected.
 
+Continuity-preview status: `CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1` now shows the controlled execution path candidate after `DISPATCH_AUTHORIZED`. It can reach `READY_FOR_CONTROLLED_EXECUTION_HANDOFF`, but every path stage remains `PREVIEW_ONLY` or `NOT_CALLED`; Native Messaging, service worker execution, Python runtime bridge execution, Codex dispatch, and provider invocation remain disconnected.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;
