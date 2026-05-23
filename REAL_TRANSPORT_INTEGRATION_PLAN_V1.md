@@ -112,6 +112,8 @@ Human-approval status: `HUMAN_APPROVAL_GATE_V1` now creates deterministic approv
 
 Handoff-preview status: `GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1` now creates a sealed provider-boundary preview only after human approval reaches `APPROVED_FOR_GOVERNED_HANDOFF`. It reaches `READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION` and then stops. Human approval is not dispatch authorization; Codex, Native Messaging, provider dispatch, and runtime execution remain disconnected.
 
+Dispatch-authorization status: `EXPLICIT_DISPATCH_AUTHORIZATION_V1` now creates replay-visible dispatch authorization or rejection evidence after the handoff preview. It can reach `DISPATCH_AUTHORIZED` and `READY_FOR_CONTROLLED_EXECUTION_CONTINUITY`, but dispatch authorization is still not execution continuity; Codex, Native Messaging, provider execution, runnable provider tasks, and runtime execution remain disconnected.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;

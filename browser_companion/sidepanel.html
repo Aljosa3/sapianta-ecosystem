@@ -508,14 +508,38 @@ execution_performed: false
 codex_dispatch_performed: false
 provider_dispatch_performed: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="explicit-dispatch-authorization-heading">
+	              <h3 id="explicit-dispatch-authorization-heading">10. Explicit Dispatch Authorization</h3>
+	              <p class="preview-status-badge">DISPATCH AUTHORIZATION ONLY - NO EXECUTION - NO CODEX DISPATCH - NO PROVIDER EXECUTION - NATIVE MESSAGING NOT CALLED - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <section class="control-grid" aria-label="Dispatch authorization evidence controls">
+	                <button id="authorize-dispatch-preview" type="button">Authorize Dispatch Preview</button>
+	                <button id="reject-dispatch-preview" type="button">Reject Dispatch Preview</button>
+	              </section>
+	              <pre id="explicit-dispatch-authorization-card" class="cockpit-output">EXPLICIT_DISPATCH_AUTHORIZATION_V1
+DISPATCH AUTHORIZATION ONLY
+NO EXECUTION
+NO CODEX DISPATCH
+NO PROVIDER EXECUTION
+NATIVE MESSAGING NOT CALLED
+dispatch_authorization_status: DISPATCH_REJECTED
+provider_boundary_state: not authorized
+dispatch_authorization_hash: not generated
+execution_performed: false
+codex_dispatch_performed: false
+provider_dispatch_performed: false
+native_messaging_called: false
+executable: false
+dispatched: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">10. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">11. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
 <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution
 STOP boundary after READY_FOR_HUMAN_APPROVAL
 STOP boundary after HUMAN APPROVAL GATE
 STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW
+STOP boundary after EXPLICIT DISPATCH AUTHORIZATION
 execution_performed: false
 codex_dispatch_performed: false
 governance_approved: false

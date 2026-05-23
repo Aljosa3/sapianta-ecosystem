@@ -82,11 +82,13 @@ const COCKPIT_IDS = {
   governedTaskPackagePreview: "governed-task-package-preview-card",
   humanApprovalGate: "human-approval-gate-card",
   governedHandoffPackagePreview: "governed-handoff-package-preview-card",
+  explicitDispatchAuthorization: "explicit-dispatch-authorization-card",
   chatgptIngressStop: "chatgpt-ingress-stop-card",
   chatgptIngressNativeImportStatus: "chatgpt-ingress-native-import-status"
 };
 
 let latestChatgptIngressTaskPackagePreview = null;
+let latestGovernedHandoffPackagePreview = null;
 
 function deterministicId(prefix, value) {
   const text = JSON.stringify(canonicalize(value));
@@ -939,6 +941,7 @@ function governedHandoffPackagePreview(taskPackagePreview, approval) {
 }
 
 function renderGovernedHandoffPackagePreview(handoffPreview) {
+  latestGovernedHandoffPackagePreview = handoffPreview;
   setCockpitText(COCKPIT_IDS.governedHandoffPackagePreview, [
     "Governed Handoff Package Preview",
     "ARTIFACT_TYPE: GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1",
@@ -971,6 +974,126 @@ function renderGovernedHandoffPackagePreview(handoffPreview) {
     "provider_dispatch_performed: false",
     "autonomous_continuation_performed: false",
     "STOP: provider boundary preview reached but not crossed"
+  ].join("\n"));
+}
+
+function explicitDispatchAuthorization(handoffPreview, dispatchDecision) {
+  const authorized = dispatchDecision === "AUTHORIZE";
+  const handoffReady = handoffPreview.handoff_boundary_state === "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION"
+    && handoffPreview.handoff_preview_status === "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION"
+    && handoffPreview.handoff_preview_hash
+    && handoffPreview.replay_identity
+    && handoffPreview.provenance
+    && (handoffPreview.authority_boundary || {}).execution_authorized === false
+    && (handoffPreview.authority_boundary || {}).dispatch_authorized === false
+    && (handoffPreview.authority_boundary || {}).codex_dispatch_authorized === false
+    && (handoffPreview.authority_boundary || {}).provider_dispatch_authorized === false
+    && (handoffPreview.authority_boundary || {}).autonomous_continuation_authorized === false
+    && handoffPreview.execution_performed === false
+    && handoffPreview.codex_dispatch_performed === false
+    && handoffPreview.provider_dispatch_performed === false
+    && handoffPreview.executable === false
+    && handoffPreview.dispatchable === false;
+  const dispatchAuthorized = authorized && handoffReady;
+  const authorization = {
+    artifact_type: "EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+    schema_version: "1.0",
+    replay_identity: handoffPreview.replay_identity || "UNKNOWN",
+    provenance: {
+      source: "GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1",
+      source_ingress_artifact_hash: handoffPreview.source_ingress_artifact_hash || "UNKNOWN",
+      semantic_contract_candidate_hash: handoffPreview.semantic_contract_candidate_hash || "NONE",
+      governed_task_package_preview_hash: handoffPreview.governed_task_package_preview_hash || "UNKNOWN",
+      handoff_preview_provenance: handoffPreview.provenance || {}
+    },
+    source_handoff_preview_hash: handoffPreview.handoff_preview_hash || "UNKNOWN",
+    human_approval_hash: handoffPreview.human_approval_hash || "UNKNOWN",
+    admissibility_gate_hash: handoffPreview.admissibility_gate_hash || "NONE",
+    dispatch_authorization_status: dispatchAuthorized ? "DISPATCH_AUTHORIZED" : "DISPATCH_REJECTED",
+    dispatch_authorization_reason: dispatchAuthorized
+      ? "Explicit dispatch authorization evidence created; execution remains stopped."
+      : "Dispatch preview rejected or handoff preview was not authorization-ready.",
+    dispatch_authority_boundary: {
+      dispatch_authorized: dispatchAuthorized,
+      execution_authorized: false,
+      execution_performed: false,
+      codex_dispatch_performed: false,
+      provider_dispatch_performed: false,
+      native_messaging_called: false,
+      autonomous_continuation_authorized: false
+    },
+    allowed_provider_kind: handoffPreview.allowed_provider_kind || "UNKNOWN",
+    provider_boundary_state: dispatchAuthorized ? "READY_FOR_CONTROLLED_EXECUTION_CONTINUITY" : "DISPATCH_REJECTED",
+    workspace_scope_preview: handoffPreview.workspace_scope_preview || "UNKNOWN",
+    timeout_policy_preview: handoffPreview.timeout_policy_preview || "UNKNOWN",
+    constraints: handoffPreview.constraints || [],
+    forbidden_operations: handoffPreview.forbidden_operations || [],
+    dispatch_authorized: dispatchAuthorized,
+    execution_performed: false,
+    codex_dispatch_performed: false,
+    provider_dispatch_performed: false,
+    native_messaging_called: false,
+    executable: false,
+    dispatched: false,
+    autonomous_continuation_performed: false,
+    classification: ["STRUCTURAL_ONLY", "ADVISORY_ONLY"]
+  };
+  authorization.dispatch_authorization_hash = previewHash("EXPLICIT-DISPATCH-AUTHORIZATION-HASH", {
+    replay_identity: authorization.replay_identity,
+    source_ingress_artifact_hash: authorization.provenance.source_ingress_artifact_hash,
+    semantic_contract_candidate_hash: authorization.provenance.semantic_contract_candidate_hash,
+    admissibility_gate_hash: authorization.admissibility_gate_hash,
+    governed_task_package_preview_hash: authorization.provenance.governed_task_package_preview_hash,
+    human_approval_hash: authorization.human_approval_hash,
+    governed_handoff_preview_hash: authorization.source_handoff_preview_hash,
+    dispatch_authorization_status: authorization.dispatch_authorization_status,
+    provider_boundary_state: authorization.provider_boundary_state,
+    dispatch_authority_boundary: authorization.dispatch_authority_boundary
+  });
+  return canonicalize(authorization);
+}
+
+function renderExplicitDispatchAuthorization(authorization) {
+  setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
+    "Explicit Dispatch Authorization",
+    "ARTIFACT_TYPE: EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "DISPATCH AUTHORIZATION ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "NO PROVIDER EXECUTION",
+    "NATIVE MESSAGING NOT CALLED",
+    `dispatch_authorization_status: ${authorization.dispatch_authorization_status}`,
+    `provider_boundary_state: ${authorization.provider_boundary_state}`,
+    `dispatch_authorization_hash: ${authorization.dispatch_authorization_hash}`,
+    `allowed_provider_kind: ${authorization.allowed_provider_kind}`,
+    `workspace_scope_preview: ${authorization.workspace_scope_preview}`,
+    `timeout_policy_preview: ${authorization.timeout_policy_preview}`,
+    `authority_boundary_summary: ${compactValue(authorization.dispatch_authority_boundary)}`,
+    `dispatch_authorized: ${authorization.dispatch_authorized}`,
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "native_messaging_called: false",
+    "executable: false",
+    "dispatched: false",
+    "autonomous_continuation_performed: false",
+    "STOP: dispatch authorization continuity reached without execution continuity"
+  ].join("\n"));
+  setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
+    "STOP (No Execution)",
+    "CLASSIFICATION: UI_ONLY",
+    "DISPATCH_AUTHORIZATION_ONLY: true",
+    "STOP boundary after EXPLICIT DISPATCH AUTHORIZATION",
+    `dispatch_authorization_status: ${authorization.dispatch_authorization_status}`,
+    `dispatch_authorization_hash: ${authorization.dispatch_authorization_hash}`,
+    `provider_boundary_state: ${authorization.provider_boundary_state}`,
+    "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "native_messaging_called: false",
+    "dispatched: false"
   ].join("\n"));
 }
 
@@ -1009,6 +1132,7 @@ function renderHumanApprovalGate(approval) {
     "STOP boundary after READY_FOR_HUMAN_APPROVAL",
     "STOP boundary after HUMAN APPROVAL GATE",
     "STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW",
+    "STOP boundary after EXPLICIT DISPATCH AUTHORIZATION",
     `approval_status: ${approval.approval_status}`,
     `approval_hash: ${approval.approval_hash}`,
     `handoff_preview_status: ${handoffPreview.handoff_preview_status}`,
@@ -1203,6 +1327,26 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "provider_dispatch_performed: false",
     "explicit_dispatch_authorization_required: true"
   ].join("\n"));
+  setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
+    "Explicit Dispatch Authorization",
+    "ARTIFACT_TYPE: EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+    "DISPATCH AUTHORIZATION ONLY",
+    "NO EXECUTION",
+    "NO CODEX DISPATCH",
+    "NO PROVIDER EXECUTION",
+    "NATIVE MESSAGING NOT CALLED",
+    "dispatch_authorization_status: DISPATCH_REJECTED",
+    "provider_boundary_state: not authorized",
+    "dispatch_authorization_hash: not generated",
+    "dispatch_authorized: false",
+    "execution_performed: false",
+    "codex_dispatch_performed: false",
+    "provider_dispatch_performed: false",
+    "native_messaging_called: false",
+    "executable: false",
+    "dispatched: false"
+  ].join("\n"));
   setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
     "STOP (No Execution)",
     "CLASSIFICATION: UI_ONLY",
@@ -1211,6 +1355,7 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "STOP boundary after READY_FOR_HUMAN_APPROVAL",
     "STOP boundary after HUMAN APPROVAL GATE",
     "STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW",
+    "STOP boundary after EXPLICIT DISPATCH AUTHORIZATION",
     "runtime_boundary: no Native Messaging, no service worker execution path, no Python runtime execution, no Codex provider",
     `replay_identity: ${preview.artifact.replay_identity}`,
     `task_package_preview_hash: ${taskPackagePreview.preview_hash}`,
@@ -3886,6 +4031,20 @@ const rejectTaskPackagePreviewButton = document.getElementById("reject-task-pack
 if (rejectTaskPackagePreviewButton) {
   rejectTaskPackagePreviewButton.onclick = function rejectTaskPackagePreviewEvidenceOnly() {
     renderHumanApprovalGate(humanApprovalGate(latestChatgptIngressTaskPackagePreview || {}, "REJECT"));
+  };
+}
+
+const authorizeDispatchPreviewButton = document.getElementById("authorize-dispatch-preview");
+if (authorizeDispatchPreviewButton) {
+  authorizeDispatchPreviewButton.onclick = function authorizeDispatchPreviewEvidenceOnly() {
+    renderExplicitDispatchAuthorization(explicitDispatchAuthorization(latestGovernedHandoffPackagePreview || {}, "AUTHORIZE"));
+  };
+}
+
+const rejectDispatchPreviewButton = document.getElementById("reject-dispatch-preview");
+if (rejectDispatchPreviewButton) {
+  rejectDispatchPreviewButton.onclick = function rejectDispatchPreviewEvidenceOnly() {
+    renderExplicitDispatchAuthorization(explicitDispatchAuthorization(latestGovernedHandoffPackagePreview || {}, "REJECT"));
   };
 }
 

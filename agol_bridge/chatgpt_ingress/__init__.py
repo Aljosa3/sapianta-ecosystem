@@ -45,6 +45,13 @@ from .governed_handoff_package_preview import (
     create_governed_handoff_package_preview,
     validate_governed_handoff_package_preview,
 )
+from .explicit_dispatch_authorization import (
+    DISPATCH_AUTHORIZED,
+    DISPATCH_REJECTED,
+    READY_FOR_CONTROLLED_EXECUTION_CONTINUITY,
+    create_explicit_dispatch_authorization,
+    validate_explicit_dispatch_authorization,
+)
 
 __all__ = [
     "ACCEPTED_AS_SEMANTIC_INPUT",
@@ -54,9 +61,12 @@ __all__ = [
     "APPROVED_FOR_GOVERNED_HANDOFF",
     "ARTIFACT_TYPE",
     "BOUNDARY_STATEMENT",
+    "DISPATCH_AUTHORIZED",
+    "DISPATCH_REJECTED",
     "HANDOFF_PREVIEW_REJECTED",
     "PREVIEW_REJECTED",
     "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION",
+    "READY_FOR_CONTROLLED_EXECUTION_CONTINUITY",
     "READY_FOR_HUMAN_APPROVAL",
     "REJECTED",
     "REJECTED_BY_HUMAN",
@@ -67,6 +77,7 @@ __all__ = [
     "create_governed_task_package_preview_from_import_result",
     "create_governed_handoff_package_preview",
     "create_human_approval_gate",
+    "create_explicit_dispatch_authorization",
     "derive_semantic_contract_candidate",
     "derive_semantic_proposal_candidate",
     "generate_governance_acceptance_report",
@@ -78,4 +89,5 @@ __all__ = [
     "validate_governed_task_package_preview",
     "validate_governed_handoff_package_preview",
     "validate_human_approval_gate",
+    "validate_explicit_dispatch_authorization",
 ]
