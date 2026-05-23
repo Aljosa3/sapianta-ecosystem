@@ -1309,7 +1309,7 @@ function executeControlledHandoffFromSidepanel() {
     const artifact = nativeResponse.result_artifact || {};
     const codexResult = artifact.codex_cli_result || {};
     const providerResult = codexResult.provider_result || {};
-    const providerDiagnostics = providerResult.diagnostic_evidence || {};
+    const providerDiagnostics = providerResult.diagnostic_evidence || nativeDiagnostics.provider || serviceWorkerDiagnostics.provider || {};
     const executionStatus = nativeResponse.status === "NATIVE_BRIDGE_ACCEPTED" && codexResult.bounded_execution_status === "COMPLETED"
       ? "EXECUTION_COMPLETED"
       : "EXECUTION_FAILED";
@@ -1322,7 +1322,7 @@ function executeControlledHandoffFromSidepanel() {
       artifact_hash: artifact.artifact_hash || "",
       diagnostic_evidence: {
         service_worker: serviceWorkerDiagnostics,
-        native_bridge: nativeDiagnostics,
+        native_bridge: nativeDiagnostics.native_bridge || serviceWorkerDiagnostics.native_bridge || nativeDiagnostics,
         provider: providerDiagnostics
       }
     };
@@ -1339,7 +1339,7 @@ function executeControlledHandoffFromSidepanel() {
       execution_result_summary: resultSummary,
       diagnostic_evidence: {
         service_worker: serviceWorkerDiagnostics,
-        native_bridge: nativeDiagnostics,
+        native_bridge: nativeDiagnostics.native_bridge || serviceWorkerDiagnostics.native_bridge || nativeDiagnostics,
         provider: providerDiagnostics
       },
       execution_result_hash: previewHash("CONTROLLED-EXECUTION-RESULT-HASH", resultSummary),

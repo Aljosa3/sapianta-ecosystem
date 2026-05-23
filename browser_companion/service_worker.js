@@ -17,7 +17,14 @@ function nativeBridgeRuntimeError(code, message) {
       python_runtime_bridge_called: false,
       provider_invoked: false,
       subprocess_invoked: false,
-      response_serialization_ready: false
+      response_serialization_ready: false,
+      native_bridge: {
+        failing_layer: "service_worker_native_bridge_response_handling",
+        failing_function: "invokeNativeBridge",
+        failing_condition: message || code,
+        response_serialization_ready: false
+      },
+      provider: {}
     },
     labels: [
       "NATIVE_BRIDGE_LOCAL_ONLY",
@@ -76,7 +83,7 @@ function validateNativeBridgeResponse(response) {
   if (!response || typeof response !== "object" || Array.isArray(response)) {
     return "INVALID_RESPONSE: native bridge response must be an object";
   }
-  if (!["NATIVE_BRIDGE_ACCEPTED", "NATIVE_BRIDGE_REJECTED"].includes(response.status)) {
+  if (!["NATIVE_BRIDGE_ACCEPTED", "NATIVE_BRIDGE_REJECTED", "NATIVE_BRIDGE_ERROR"].includes(response.status)) {
     return "native bridge response has unsupported status";
   }
   if (response.status === "NATIVE_BRIDGE_ACCEPTED" && (!response.result_artifact || typeof response.result_artifact !== "object")) {
@@ -119,6 +126,7 @@ function invokeNativeBridge(nativeMessage, sendResponse) {
       return;
     }
 
+    const nativeDiagnostics = response.diagnostic_evidence || {};
     sendResponse({
       status: "SERVICE_WORKER_NATIVE_BRIDGE_RETURNED",
       native_response: response,
@@ -127,10 +135,12 @@ function invokeNativeBridge(nativeMessage, sendResponse) {
         failing_function: "",
         failing_condition: "",
         native_messaging_boundary_crossed: true,
-        python_runtime_bridge_called: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.python_runtime_bridge_called),
-        provider_invoked: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.provider_invoked),
-        subprocess_invoked: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.subprocess_invoked),
-        response_serialization_ready: true
+        python_runtime_bridge_called: Boolean(nativeDiagnostics.python_runtime_bridge_called),
+        provider_invoked: Boolean(nativeDiagnostics.provider_invoked),
+        subprocess_invoked: Boolean(nativeDiagnostics.subprocess_invoked),
+        response_serialization_ready: true,
+        native_bridge: nativeDiagnostics.native_bridge || nativeDiagnostics,
+        provider: nativeDiagnostics.provider || {}
       },
       labels: [
         "NATIVE_BRIDGE_LOCAL_ONLY",
