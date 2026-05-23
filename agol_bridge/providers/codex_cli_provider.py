@@ -11,6 +11,7 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 import json
+import shutil
 import subprocess
 from typing import Any
 
@@ -51,6 +52,7 @@ def _canonical_copy(value: Any) -> Any:
 
 
 def _reject(*, reason: str, task_package_id: str = "UNKNOWN", workspace_path: str = "") -> dict:
+    codex_executable = shutil.which(CODEX_EXECUTABLE)
     return {
         "provider": CODEX_CLI_PROVIDER,
         "status": STATUS_REJECTED,
@@ -72,6 +74,8 @@ def _reject(*, reason: str, task_package_id: str = "UNKNOWN", workspace_path: st
             "provider_invoked": False,
             "subprocess_invoked": False,
             "subprocess_returncode": None,
+            "codex_executable": codex_executable or "",
+            "codex_executable_found": codex_executable is not None,
             "response_serialization_ready": True,
         },
     }
@@ -161,6 +165,7 @@ def run_bounded_codex_cli_task(
         return _reject(reason="workspace_path is outside allowed root", task_package_id=task_id, workspace_path=str(workspace))
 
     bounded_prompt = build_bounded_codex_prompt(task_package=task_copy)
+    codex_executable = shutil.which(CODEX_EXECUTABLE)
     command = [CODEX_EXECUTABLE, "exec", bounded_prompt]
     try:
         completed = subprocess.run(
@@ -194,6 +199,8 @@ def run_bounded_codex_cli_task(
                 "provider_invoked": True,
                 "subprocess_invoked": True,
                 "subprocess_returncode": None,
+                "codex_executable": codex_executable or "",
+                "codex_executable_found": codex_executable is not None,
                 "response_serialization_ready": True,
             },
         }
@@ -219,6 +226,8 @@ def run_bounded_codex_cli_task(
                 "provider_invoked": True,
                 "subprocess_invoked": True,
                 "subprocess_returncode": None,
+                "codex_executable": codex_executable or "",
+                "codex_executable_found": codex_executable is not None,
                 "response_serialization_ready": True,
             },
         }
@@ -245,6 +254,8 @@ def run_bounded_codex_cli_task(
             "provider_invoked": True,
             "subprocess_invoked": True,
             "subprocess_returncode": completed.returncode,
+            "codex_executable": codex_executable or "",
+            "codex_executable_found": codex_executable is not None,
             "response_serialization_ready": True,
         },
     }

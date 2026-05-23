@@ -1264,6 +1264,7 @@ function renderControlledExecutionHandoff(summary) {
     `provider_invoked: ${summary.provider_invoked}`,
     `codex_provider_used: ${summary.codex_provider_used || ""}`,
     `execution_result_summary: ${compactValue(summary.execution_result_summary)}`,
+    `diagnostic_evidence: ${compactValue(summary.diagnostic_evidence || {})}`,
     `execution_result_hash: ${summary.execution_result_hash}`,
     `execution_governance_hash: ${summary.execution_governance_hash}`,
     `replay_identity: ${summary.replay_identity}`,
@@ -1303,9 +1304,12 @@ function executeControlledHandoffFromSidepanel() {
     }
   }, (response) => {
     const nativeResponse = response && response.native_response ? response.native_response : {};
+    const serviceWorkerDiagnostics = response && response.diagnostic_evidence ? response.diagnostic_evidence : {};
+    const nativeDiagnostics = nativeResponse.diagnostic_evidence || {};
     const artifact = nativeResponse.result_artifact || {};
     const codexResult = artifact.codex_cli_result || {};
     const providerResult = codexResult.provider_result || {};
+    const providerDiagnostics = providerResult.diagnostic_evidence || {};
     const executionStatus = nativeResponse.status === "NATIVE_BRIDGE_ACCEPTED" && codexResult.bounded_execution_status === "COMPLETED"
       ? "EXECUTION_COMPLETED"
       : "EXECUTION_FAILED";
@@ -1315,7 +1319,12 @@ function executeControlledHandoffFromSidepanel() {
       provider_status: codexResult.bounded_execution_status || providerResult.status || "UNKNOWN",
       governed_return_status: (nativeResponse.governed_return || {}).status || "UNKNOWN",
       summary: codexResult.summary || nativeResponse.rejection_reason || "",
-      artifact_hash: artifact.artifact_hash || ""
+      artifact_hash: artifact.artifact_hash || "",
+      diagnostic_evidence: {
+        service_worker: serviceWorkerDiagnostics,
+        native_bridge: nativeDiagnostics,
+        provider: providerDiagnostics
+      }
     };
     renderControlledExecutionHandoff({
       artifact_type: "CONTROLLED_EXECUTION_HANDOFF_V1",
@@ -1328,6 +1337,11 @@ function executeControlledHandoffFromSidepanel() {
       provider_invoked: codexResult.provider_invoked === true,
       codex_provider_used: codexResult.provider_invoked === true ? "BOUNDED_CODEX_CLI_PROVIDER" : "",
       execution_result_summary: resultSummary,
+      diagnostic_evidence: {
+        service_worker: serviceWorkerDiagnostics,
+        native_bridge: nativeDiagnostics,
+        provider: providerDiagnostics
+      },
       execution_result_hash: previewHash("CONTROLLED-EXECUTION-RESULT-HASH", resultSummary),
       execution_governance_hash: previewHash("CONTROLLED-EXECUTION-GOVERNANCE-HASH", {
         replay_identity: continuityPreview.replay_identity || "UNKNOWN",
