@@ -333,7 +333,98 @@ function previewHash(prefix, value) {
   return deterministicId(prefix, canonicalize(value));
 }
 
+function ingressPseudoSha(value) {
+  const seed = deterministicId("INGRESS-SHA", value).split("-").pop();
+  return `sha256:${(seed.repeat(8)).slice(0, 64)}`;
+}
+
+function normalizeIngressIntent(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 96) || "GOVERNED_SEMANTIC_INGRESS";
+}
+
+function generatedChatgptIngressArtifact({ humanRequest, semanticIntent, sessionId = null }) {
+  const requestText = String(humanRequest || "").trim() || "Echo hello world";
+  const intentText = String(semanticIntent || "").trim() || "Minimal governed execution continuity test";
+  const humanRequestHash = ingressPseudoSha(requestText);
+  const semanticOutput = `Bounded semantic ingress candidate: ${intentText}`;
+  const semanticOutputHash = ingressPseudoSha(semanticOutput);
+  const semanticIntentHash = ingressPseudoSha(intentText);
+  const generatedSessionId = sessionId || deterministicId("CHATGPT-INGRESS-GENERATED", {
+    human_request_hash: humanRequestHash,
+    semantic_intent_hash: semanticIntentHash
+  });
+  const replayIdentity = deterministicId("CHATGPT-INGRESS-REPLAY", {
+    session_id: generatedSessionId,
+    human_request_hash: humanRequestHash,
+    semantic_output_hash: semanticOutputHash,
+    schema_version: "1.0"
+  });
+  const artifact = {
+    artifact_type: "CHATGPT_INGRESS_ARTIFACT_V1",
+    schema_version: "1.0",
+    source: "chatgpt",
+    created_at: "1970-01-01T00:00:00Z",
+    session_id: generatedSessionId,
+    human_request: requestText,
+    chatgpt_semantic_output: semanticOutput,
+    semantic_intent: intentText,
+    normalized_intent: normalizeIngressIntent(intentText || requestText),
+    expected_artifacts: ["semantic proposal candidate", "semantic contract candidate", "governance acceptance report"],
+    constraints: ["structural candidate only", "fail closed if required fields or hashes are invalid", "no execution authority", "provider boundary remains closed", "no semantic correctness verification", "continuation boundary remains closed"],
+    forbidden_operations: ["execution authorization", "provider dispatch", "governance approval claim", "semantic correctness claim", "autonomous continuation", "Native Messaging call", "Codex provider invocation"],
+    authority_boundary: {
+      chatgpt_authority: false,
+      execution_authority: false,
+      governance_authority: false,
+      approval_authority: false,
+      provider_dispatch_authority: false,
+      autonomous_continuation_authority: false,
+      semantic_correctness_verified: false,
+      autonomous_continuation_authorized: false,
+      boundary_statement: "ChatGPT output is semantic input only and cannot authorize execution."
+    },
+    provenance: {
+      generation_milestone: "VALID_CHATGPT_INGRESS_ARTIFACT_GENERATION_V1",
+      generation_mode: "DETERMINISTIC_LOCAL_CANONICAL_GENERATION",
+      minimal_operator_input: true,
+      semantic_intent: intentText,
+      semantic_intent_hash: semanticIntentHash,
+      chatgpt_api_invoked_by_artifact: false,
+      live_chatgpt_invoked: false,
+      live_adapter_present: false,
+      aigol_governance_required: true,
+      execution_authority: false,
+      governance_authority: false,
+      provider_dispatch_authority: false,
+      semantic_correctness_verified: false,
+      autonomous_continuation_authorized: false,
+      native_messaging_called: false,
+      provider_invoked: false
+    },
+    replay_identity: replayIdentity,
+    hashes: {
+      human_request_hash: humanRequestHash,
+      semantic_output_hash: semanticOutputHash
+    },
+    validation_status: "STRUCTURAL_CANDIDATE_ONLY"
+  };
+  artifact.hashes.artifact_hash = ingressPseudoSha(canonicalize(artifact));
+  return canonicalize(artifact);
+}
+
 function chatgptIngressPreviewArtifact() {
+  return generatedChatgptIngressArtifact({
+    humanRequest: "Preview ChatGPT ingress continuity without execution authority.",
+    semanticIntent: "Model produced semantic input proposes import only structural continuity.",
+    sessionId: "CHATGPT-INGRESS-PREVIEW-SESSION"
+  });
+}
+
+function legacyChatgptIngressPreviewArtifact() {
   const humanRequest = "Preview ChatGPT ingress continuity without execution authority.";
   const semanticOutput = "Model-produced semantic input proposes import-only structural continuity.";
   const humanRequestHash = previewHash("PREVIEW-HUMAN-REQUEST-HASH", humanRequest);
@@ -471,8 +562,8 @@ function validateImportedChatgptIngressArtifact(artifact) {
   if (artifact.source !== "chatgpt") {
     errors.push("source must be chatgpt");
   }
-  if (artifact.validation_status !== "ACCEPTED_AS_SEMANTIC_INPUT") {
-    errors.push("validation_status must be ACCEPTED_AS_SEMANTIC_INPUT for preview import");
+  if (!["ACCEPTED_AS_SEMANTIC_INPUT", "STRUCTURAL_CANDIDATE_ONLY"].includes(artifact.validation_status)) {
+    errors.push("validation_status must be STRUCTURAL_CANDIDATE_ONLY or ACCEPTED_AS_SEMANTIC_INPUT for preview import");
   }
   const boundary = artifact.authority_boundary || {};
   CHATGPT_INGRESS_AUTHORITY_FLAGS.forEach((flag) => {
@@ -518,11 +609,27 @@ function validateImportedChatgptIngressArtifact(artifact) {
   });
   return {
     valid: errors.length === 0,
-    status: errors.length === 0 ? "ACCEPTED_AS_SEMANTIC_INPUT" : "REJECTED",
+    status: errors.length === 0 ? artifact.validation_status : "REJECTED",
     errors,
     replay_identity: artifact.replay_identity || "UNKNOWN",
     artifact_hash: hashes.artifact_hash || "UNKNOWN"
   };
+}
+
+function generateChatgptIngressArtifactFromSidepanel() {
+  const requestInput = document.getElementById("chat-first-human-request");
+  const semanticIntentInput = document.getElementById("chatgpt-ingress-semantic-intent");
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const artifactInput = document.getElementById("chatgpt-ingress-artifact-json");
+  const artifact = generatedChatgptIngressArtifact({
+    humanRequest: requestInput && requestInput.value ? requestInput.value : "Echo hello world",
+    semanticIntent: semanticIntentInput && semanticIntentInput.value ? semanticIntentInput.value : "Minimal governed execution continuity test",
+    sessionId: sessionInput && sessionInput.value ? sessionInput.value : null
+  });
+  if (artifactInput) {
+    artifactInput.value = artifactJson(artifact);
+  }
+  renderChatgptIngressPreview(chatgptIngressPreviewImport(artifact));
 }
 
 function rejectedChatgptIngressPreview({ reason, artifact = {} }) {
@@ -573,7 +680,7 @@ function chatgptIngressPreviewImport(artifactInput = null) {
     ? validateImportedChatgptIngressArtifact(artifact)
     : {
       valid: true,
-      status: "ACCEPTED_AS_SEMANTIC_INPUT",
+      status: "STRUCTURAL_CANDIDATE_ONLY",
       errors: [],
       replay_identity: artifact.replay_identity,
       artifact_hash: artifact.hashes.artifact_hash
@@ -4326,6 +4433,11 @@ if (runNativeBridgeButton) {
 const previewChatgptIngressImportOnlyButton = document.getElementById("preview-chatgpt-ingress-import-only");
 if (previewChatgptIngressImportOnlyButton) {
   previewChatgptIngressImportOnlyButton.onclick = previewImportedChatgptIngressArtifactFromSidepanel;
+}
+
+const generateChatgptIngressArtifactButton = document.getElementById("generate-chatgpt-ingress-artifact");
+if (generateChatgptIngressArtifactButton) {
+  generateChatgptIngressArtifactButton.onclick = generateChatgptIngressArtifactFromSidepanel;
 }
 
 const humanApprovalPreviewButton = document.getElementById("approve-task-package-preview");

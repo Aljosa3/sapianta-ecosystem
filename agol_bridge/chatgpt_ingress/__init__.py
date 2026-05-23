@@ -4,7 +4,9 @@ from .chatgpt_ingress_artifact import (
     ARTIFACT_TYPE,
     BOUNDARY_STATEMENT,
     SCHEMA_VERSION,
+    STRUCTURAL_CANDIDATE_ONLY,
     create_chatgpt_ingress_artifact,
+    generate_valid_chatgpt_ingress_artifact,
     replay_identity_for,
 )
 from .chatgpt_ingress_validator import (
@@ -90,7 +92,9 @@ __all__ = [
     "REJECTED_BY_HUMAN",
     "REJECTED_BY_GOVERNANCE_GATE",
     "SCHEMA_VERSION",
+    "STRUCTURAL_CANDIDATE_ONLY",
     "create_chatgpt_ingress_artifact",
+    "generate_valid_chatgpt_ingress_artifact",
     "create_governed_task_package_preview",
     "create_governed_task_package_preview_from_import_result",
     "create_governed_handoff_package_preview",
