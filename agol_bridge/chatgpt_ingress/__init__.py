@@ -58,6 +58,13 @@ from .controlled_execution_continuity_preview import (
     create_controlled_execution_continuity_preview,
     validate_controlled_execution_continuity_preview,
 )
+from .controlled_execution_handoff import (
+    EXECUTION_BLOCKED,
+    EXECUTION_COMPLETED,
+    EXECUTION_FAILED,
+    create_controlled_execution_handoff,
+    validate_controlled_execution_handoff,
+)
 
 __all__ = [
     "ACCEPTED_AS_SEMANTIC_INPUT",
@@ -70,6 +77,9 @@ __all__ = [
     "DISPATCH_AUTHORIZED",
     "DISPATCH_REJECTED",
     "EXECUTION_CONTINUITY_PREVIEW_REJECTED",
+    "EXECUTION_BLOCKED",
+    "EXECUTION_COMPLETED",
+    "EXECUTION_FAILED",
     "HANDOFF_PREVIEW_REJECTED",
     "PREVIEW_REJECTED",
     "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION",
@@ -87,6 +97,7 @@ __all__ = [
     "create_human_approval_gate",
     "create_explicit_dispatch_authorization",
     "create_controlled_execution_continuity_preview",
+    "create_controlled_execution_handoff",
     "derive_semantic_contract_candidate",
     "derive_semantic_proposal_candidate",
     "generate_governance_acceptance_report",
@@ -100,4 +111,5 @@ __all__ = [
     "validate_human_approval_gate",
     "validate_explicit_dispatch_authorization",
     "validate_controlled_execution_continuity_preview",
+    "validate_controlled_execution_handoff",
 ]

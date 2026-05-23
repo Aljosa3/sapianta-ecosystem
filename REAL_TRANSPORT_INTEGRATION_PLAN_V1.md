@@ -116,6 +116,8 @@ Dispatch-authorization status: `EXPLICIT_DISPATCH_AUTHORIZATION_V1` now creates 
 
 Continuity-preview status: `CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1` now shows the controlled execution path candidate after `DISPATCH_AUTHORIZED`. It can reach `READY_FOR_CONTROLLED_EXECUTION_HANDOFF`, but every path stage remains `PREVIEW_ONLY` or `NOT_CALLED`; Native Messaging, service worker execution, Python runtime bridge execution, Codex dispatch, and provider invocation remain disconnected.
 
+Controlled-execution-handoff status: `CONTROLLED_EXECUTION_HANDOFF_V1` connects the governed chain to the single canonical path: sidepanel -> service worker -> Native Messaging -> Python runtime bridge -> bounded Codex CLI provider. It is real governed execution, single-path, single-provider, fail-closed, replay-visible, and blocks retries, orchestration, and autonomous continuation.
+
 - raw request hash;
 - ChatGPT ingress artifact hash;
 - AiGOL-normalized proposal hash;

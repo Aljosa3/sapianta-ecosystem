@@ -550,8 +550,26 @@ native_messaging_called: false
 provider_invoked: false
 service_worker_called: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="controlled-execution-handoff-heading">
+	              <h3 id="controlled-execution-handoff-heading">12. Controlled Execution Handoff</h3>
+	              <p class="preview-status-badge">REAL GOVERNED EXECUTION - SINGLE PATH - SINGLE PROVIDER - FAIL-CLOSED - NO AUTONOMOUS CONTINUATION</p>
+	              <button id="execute-controlled-handoff" type="button">Execute Controlled Handoff</button>
+	              <pre id="controlled-execution-handoff-card" class="cockpit-output">CONTROLLED_EXECUTION_HANDOFF_V1
+REAL GOVERNED EXECUTION
+SINGLE PATH
+SINGLE PROVIDER
+FAIL-CLOSED
+NO AUTONOMOUS CONTINUATION
+execution_status: not run
+execution_path_used: sidepanel -> service_worker -> Native Messaging -> Python runtime bridge -> bounded Codex CLI provider
+native_messaging_called: false
+provider_invoked: false
+execution_result_summary: not generated
+execution_result_hash: not generated
+execution_governance_hash: not generated</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">12. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">13. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
 <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution

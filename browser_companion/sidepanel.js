@@ -84,6 +84,7 @@ const COCKPIT_IDS = {
   governedHandoffPackagePreview: "governed-handoff-package-preview-card",
   explicitDispatchAuthorization: "explicit-dispatch-authorization-card",
   controlledExecutionContinuityPreview: "controlled-execution-continuity-preview-card",
+  controlledExecutionHandoff: "controlled-execution-handoff-card",
   chatgptIngressStop: "chatgpt-ingress-stop-card",
   chatgptIngressNativeImportStatus: "chatgpt-ingress-native-import-status"
 };
@@ -1217,6 +1218,119 @@ function renderControlledExecutionContinuityPreview(preview) {
   ].join("\n"));
 }
 
+function controlledExecutionBlockedSummary(reason) {
+  const resultSummary = {
+    status: "EXECUTION_BLOCKED",
+    reason,
+    native_response_status: "NOT_CALLED",
+    provider_status: "NOT_INVOKED"
+  };
+  return {
+    artifact_type: "CONTROLLED_EXECUTION_HANDOFF_V1",
+    schema_version: "1.0",
+    replay_identity: (latestGovernedHandoffPackagePreview || {}).replay_identity || "UNKNOWN",
+    execution_status: "EXECUTION_BLOCKED",
+    execution_path_used: [],
+    native_messaging_called: false,
+    service_worker_called: false,
+    provider_invoked: false,
+    codex_provider_used: "",
+    execution_result_summary: resultSummary,
+    execution_result_hash: previewHash("CONTROLLED-EXECUTION-RESULT-HASH", resultSummary),
+    execution_governance_hash: previewHash("CONTROLLED-EXECUTION-GOVERNANCE-HASH", resultSummary),
+    execution_performed: false,
+    codex_dispatch_performed: false,
+    autonomous_continuation_performed: false
+  };
+}
+
+function renderControlledExecutionHandoff(summary) {
+  setCockpitText(COCKPIT_IDS.controlledExecutionHandoff, [
+    "Controlled Execution Handoff",
+    "ARTIFACT_TYPE: CONTROLLED_EXECUTION_HANDOFF_V1",
+    "REAL GOVERNED EXECUTION",
+    "SINGLE PATH",
+    "SINGLE PROVIDER",
+    "FAIL-CLOSED",
+    "NO AUTONOMOUS CONTINUATION",
+    `execution_status: ${summary.execution_status}`,
+    `execution_path_used: ${compactValue(summary.execution_path_used)}`,
+    `native_messaging_called: ${summary.native_messaging_called}`,
+    `service_worker_called: ${summary.service_worker_called}`,
+    `provider_invoked: ${summary.provider_invoked}`,
+    `codex_provider_used: ${summary.codex_provider_used || ""}`,
+    `execution_result_summary: ${compactValue(summary.execution_result_summary)}`,
+    `execution_result_hash: ${summary.execution_result_hash}`,
+    `execution_governance_hash: ${summary.execution_governance_hash}`,
+    `replay_identity: ${summary.replay_identity}`,
+    "STOP: controlled execution handoff completed or failed closed"
+  ].join("\n"));
+}
+
+function executeControlledHandoffFromSidepanel() {
+  if (!latestGovernedHandoffPackagePreview || latestGovernedHandoffPackagePreview.handoff_preview_status !== "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION") {
+    renderControlledExecutionHandoff(controlledExecutionBlockedSummary("valid continuity chain is required"));
+    return;
+  }
+  const requestInput = document.getElementById("chat-first-human-request");
+  const sessionInput = document.getElementById("local-transport-session-id");
+  const requestText = requestInput && requestInput.value ? requestInput.value.trim() : "Review controlled execution handoff through AiGOL.";
+  const sessionId = sessionInput && sessionInput.value ? sessionInput.value.trim() : LOCAL_GOVERNED_TRANSPORT_SESSION_ID;
+  chrome.runtime.sendMessage({
+    action: SERVICE_WORKER_NATIVE_BRIDGE_ACTION,
+    operator_triggered: true,
+    native_message: {
+      action: "RUN_MINIMAL_END_TO_END_BRIDGE",
+      request_id: deterministicId("CONTROLLED-HANDOFF-REQUEST", { requestText, sessionId }),
+      human_request: requestText,
+      session_id: sessionId,
+      operator_triggered: true,
+      authority_boundary: "SEMANTIC_TRANSPORT_ONLY"
+    }
+  }, (response) => {
+    const nativeResponse = response && response.native_response ? response.native_response : {};
+    const artifact = nativeResponse.result_artifact || {};
+    const codexResult = artifact.codex_cli_result || {};
+    const providerResult = codexResult.provider_result || {};
+    const executionStatus = nativeResponse.status === "NATIVE_BRIDGE_ACCEPTED" && codexResult.bounded_execution_status === "COMPLETED"
+      ? "EXECUTION_COMPLETED"
+      : "EXECUTION_FAILED";
+    const resultSummary = {
+      status: executionStatus,
+      native_response_status: nativeResponse.status || (response || {}).status || "UNKNOWN",
+      provider_status: codexResult.bounded_execution_status || providerResult.status || "UNKNOWN",
+      governed_return_status: (nativeResponse.governed_return || {}).status || "UNKNOWN",
+      summary: codexResult.summary || nativeResponse.rejection_reason || "",
+      artifact_hash: artifact.artifact_hash || ""
+    };
+    renderControlledExecutionHandoff({
+      artifact_type: "CONTROLLED_EXECUTION_HANDOFF_V1",
+      schema_version: "1.0",
+      replay_identity: (latestGovernedHandoffPackagePreview || {}).replay_identity || "UNKNOWN",
+      execution_status: executionStatus,
+      execution_path_used: ["sidepanel", "service_worker", "Native Messaging", "Python runtime bridge", "bounded Codex CLI provider"],
+      native_messaging_called: true,
+      service_worker_called: true,
+      provider_invoked: codexResult.provider_invoked === true,
+      codex_provider_used: codexResult.provider_invoked === true ? "BOUNDED_CODEX_CLI_PROVIDER" : "",
+      execution_result_summary: resultSummary,
+      execution_result_hash: previewHash("CONTROLLED-EXECUTION-RESULT-HASH", resultSummary),
+      execution_governance_hash: previewHash("CONTROLLED-EXECUTION-GOVERNANCE-HASH", {
+        replay_identity: (latestGovernedHandoffPackagePreview || {}).replay_identity || "UNKNOWN",
+        execution_path_used: ["sidepanel", "service_worker", "Native Messaging", "Python runtime bridge", "bounded Codex CLI provider"],
+        execution_status: executionStatus,
+        execution_result_summary: resultSummary,
+        single_path: true,
+        single_provider: true,
+        autonomous_continuation: false
+      }),
+      execution_performed: nativeResponse.status === "NATIVE_BRIDGE_ACCEPTED",
+      codex_dispatch_performed: codexResult.provider_invoked === true,
+      autonomous_continuation_performed: false
+    });
+  });
+}
+
 function renderHumanApprovalGate(approval) {
   const handoffPreview = governedHandoffPackagePreview(latestChatgptIngressTaskPackagePreview || {}, approval);
   setCockpitText(COCKPIT_IDS.humanApprovalGate, [
@@ -1485,6 +1599,22 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "native_messaging_called: false",
     "provider_invoked: false",
     "service_worker_called: false"
+  ].join("\n"));
+  setCockpitText(COCKPIT_IDS.controlledExecutionHandoff, [
+    "Controlled Execution Handoff",
+    "ARTIFACT_TYPE: CONTROLLED_EXECUTION_HANDOFF_V1",
+    "REAL GOVERNED EXECUTION",
+    "SINGLE PATH",
+    "SINGLE PROVIDER",
+    "FAIL-CLOSED",
+    "NO AUTONOMOUS CONTINUATION",
+    "execution_status: not run",
+    "execution_path_used: sidepanel -> service_worker -> Native Messaging -> Python runtime bridge -> bounded Codex CLI provider",
+    "native_messaging_called: false",
+    "provider_invoked: false",
+    "execution_result_summary: not generated",
+    "execution_result_hash: not generated",
+    "execution_governance_hash: not generated"
   ].join("\n"));
   setCockpitText(COCKPIT_IDS.chatgptIngressStop, [
     "STOP (No Execution)",
@@ -4186,6 +4316,11 @@ if (rejectDispatchPreviewButton) {
   rejectDispatchPreviewButton.onclick = function rejectDispatchPreviewEvidenceOnly() {
     renderExplicitDispatchAuthorization(explicitDispatchAuthorization(latestGovernedHandoffPackagePreview || {}, "REJECT"));
   };
+}
+
+const executeControlledHandoffButton = document.getElementById("execute-controlled-handoff");
+if (executeControlledHandoffButton) {
+  executeControlledHandoffButton.onclick = executeControlledHandoffFromSidepanel;
 }
 
 renderChatgptIngressPreview();
