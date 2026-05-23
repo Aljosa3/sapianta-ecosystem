@@ -489,13 +489,33 @@ codex_dispatch_performed: false
 provider_dispatch_performed: false
 autonomous_continuation_performed: false</pre>
 	            </article>
+	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="governed-handoff-package-preview-heading">
+	              <h3 id="governed-handoff-package-preview-heading">9. Governed Handoff Package Preview</h3>
+	              <p class="preview-status-badge">HANDOFF PREVIEW ONLY - NO EXECUTION - NO CODEX DISPATCH - NO PROVIDER DISPATCH - EXPLICIT DISPATCH AUTHORIZATION REQUIRED - STRUCTURAL_ONLY / ADVISORY_ONLY</p>
+	              <pre id="governed-handoff-package-preview-card" class="cockpit-output">GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1
+HANDOFF PREVIEW ONLY
+NO EXECUTION
+NO CODEX DISPATCH
+NO PROVIDER DISPATCH
+EXPLICIT DISPATCH AUTHORIZATION REQUIRED
+handoff_boundary_state: READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION
+handoff_preview_hash: not generated
+human_approval_hash: not generated
+preview_only: true
+executable: false
+dispatchable: false
+execution_performed: false
+codex_dispatch_performed: false
+provider_dispatch_performed: false</pre>
+	            </article>
 	            <article class="cockpit-panel ingress-preview-panel" aria-labelledby="chatgpt-ingress-stop-heading">
-	              <h3 id="chatgpt-ingress-stop-heading">9. STOP (No Execution)</h3>
+	              <h3 id="chatgpt-ingress-stop-heading">10. STOP (No Execution)</h3>
 	              <p class="preview-status-badge">UI_ONLY - terminal preview boundary</p>
 <pre id="chatgpt-ingress-stop-card" class="cockpit-output">UI_ONLY
 STOP: No Execution
 STOP boundary after READY_FOR_HUMAN_APPROVAL
 STOP boundary after HUMAN APPROVAL GATE
+STOP boundary after GOVERNED HANDOFF PACKAGE PREVIEW
 execution_performed: false
 codex_dispatch_performed: false
 governance_approved: false

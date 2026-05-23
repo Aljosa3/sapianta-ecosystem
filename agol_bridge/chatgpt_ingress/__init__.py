@@ -39,6 +39,12 @@ from .human_approval_gate import (
     create_human_approval_gate,
     validate_human_approval_gate,
 )
+from .governed_handoff_package_preview import (
+    HANDOFF_PREVIEW_REJECTED,
+    READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION,
+    create_governed_handoff_package_preview,
+    validate_governed_handoff_package_preview,
+)
 
 __all__ = [
     "ACCEPTED_AS_SEMANTIC_INPUT",
@@ -48,7 +54,9 @@ __all__ = [
     "APPROVED_FOR_GOVERNED_HANDOFF",
     "ARTIFACT_TYPE",
     "BOUNDARY_STATEMENT",
+    "HANDOFF_PREVIEW_REJECTED",
     "PREVIEW_REJECTED",
+    "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION",
     "READY_FOR_HUMAN_APPROVAL",
     "REJECTED",
     "REJECTED_BY_HUMAN",
@@ -57,6 +65,7 @@ __all__ = [
     "create_chatgpt_ingress_artifact",
     "create_governed_task_package_preview",
     "create_governed_task_package_preview_from_import_result",
+    "create_governed_handoff_package_preview",
     "create_human_approval_gate",
     "derive_semantic_contract_candidate",
     "derive_semantic_proposal_candidate",
@@ -67,5 +76,6 @@ __all__ = [
     "replay_identity_for",
     "validate_chatgpt_ingress_artifact",
     "validate_governed_task_package_preview",
+    "validate_governed_handoff_package_preview",
     "validate_human_approval_gate",
 ]
