@@ -16,6 +16,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import BinaryIO
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from agol_bridge.runtime.minimal_end_to_end_bridge import (
     BRIDGE_ACCEPTED,
     export_minimal_bridge_result_artifact,
@@ -68,6 +72,15 @@ def _reject(reason: str, *, message: dict | None = None) -> dict:
             "NO_AUTONOMOUS_CONTINUATION",
         ],
         "authority_guarantees": _authority_guarantees(),
+        "diagnostic_evidence": {
+            "failing_layer": "native_message_validation",
+            "failing_function": "handle_native_message",
+            "failing_condition": reason,
+            "python_runtime_bridge_called": False,
+            "provider_invoked": False,
+            "subprocess_invoked": False,
+            "response_serialization_ready": True,
+        },
     }
 
 
@@ -119,9 +132,28 @@ def handle_native_message(message: dict) -> dict:
                 "NO_AUTONOMOUS_CONTINUATION",
             ],
             "authority_guarantees": _authority_guarantees(),
+            "diagnostic_evidence": {
+                "failing_layer": "python_runtime_bridge",
+                "failing_function": "run_minimal_end_to_end_bridge",
+                "failing_condition": bridge_result.get("governed_chat_return", {}).get("reason", "canonical bridge runtime rejected request"),
+                "python_runtime_bridge_called": True,
+                "provider_invoked": bool(bridge_result.get("codex_cli_result", {}).get("provider_invoked")),
+                "subprocess_invoked": bool(
+                    bridge_result.get("codex_cli_result", {})
+                    .get("provider_result", {})
+                    .get("diagnostic_evidence", {})
+                    .get("subprocess_invoked")
+                ),
+                "response_serialization_ready": True,
+            },
         }
 
     artifact = export_minimal_bridge_result_artifact(bridge_result)
+    provider_diagnostics = (
+        artifact.get("codex_cli_result", {})
+        .get("provider_result", {})
+        .get("diagnostic_evidence", {})
+    )
     return {
         "status": NATIVE_BRIDGE_ACCEPTED,
         "rejection_reason": "",
@@ -139,6 +171,15 @@ def handle_native_message(message: dict) -> dict:
             "NO_AUTONOMOUS_CONTINUATION",
         ],
         "authority_guarantees": _authority_guarantees(),
+        "diagnostic_evidence": {
+            "failing_layer": "",
+            "failing_function": "",
+            "failing_condition": "",
+            "python_runtime_bridge_called": True,
+            "provider_invoked": bool(artifact.get("codex_cli_result", {}).get("provider_invoked")),
+            "subprocess_invoked": bool(provider_diagnostics.get("subprocess_invoked")),
+            "response_serialization_ready": True,
+        },
     }
 
 

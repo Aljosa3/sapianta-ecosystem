@@ -9,6 +9,16 @@ function nativeBridgeRuntimeError(code, message) {
       code,
       message: message || code
     },
+    diagnostic_evidence: {
+      failing_layer: "service_worker_native_bridge_response_handling",
+      failing_function: "invokeNativeBridge",
+      failing_condition: message || code,
+      native_messaging_boundary_crossed: code !== "MISSING_PERMISSIONS",
+      python_runtime_bridge_called: false,
+      provider_invoked: false,
+      subprocess_invoked: false,
+      response_serialization_ready: false
+    },
     labels: [
       "NATIVE_BRIDGE_LOCAL_ONLY",
       "OPERATOR_TRIGGERED",
@@ -112,6 +122,16 @@ function invokeNativeBridge(nativeMessage, sendResponse) {
     sendResponse({
       status: "SERVICE_WORKER_NATIVE_BRIDGE_RETURNED",
       native_response: response,
+      diagnostic_evidence: {
+        failing_layer: "",
+        failing_function: "",
+        failing_condition: "",
+        native_messaging_boundary_crossed: true,
+        python_runtime_bridge_called: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.python_runtime_bridge_called),
+        provider_invoked: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.provider_invoked),
+        subprocess_invoked: Boolean(response.diagnostic_evidence && response.diagnostic_evidence.subprocess_invoked),
+        response_serialization_ready: true
+      },
       labels: [
         "NATIVE_BRIDGE_LOCAL_ONLY",
         "OPERATOR_TRIGGERED",

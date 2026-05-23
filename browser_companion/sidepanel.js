@@ -91,6 +91,8 @@ const COCKPIT_IDS = {
 
 let latestChatgptIngressTaskPackagePreview = null;
 let latestGovernedHandoffPackagePreview = null;
+let latestExplicitDispatchAuthorization = null;
+let latestControlledExecutionContinuityPreview = null;
 
 function deterministicId(prefix, value) {
   const text = JSON.stringify(canonicalize(value));
@@ -1056,6 +1058,7 @@ function explicitDispatchAuthorization(handoffPreview, dispatchDecision) {
 }
 
 function renderExplicitDispatchAuthorization(authorization) {
+  latestExplicitDispatchAuthorization = canonicalize(authorization);
   const continuityPreview = controlledExecutionContinuityPreview(authorization);
   setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
     "Explicit Dispatch Authorization",
@@ -1187,6 +1190,7 @@ function controlledExecutionContinuityPreview(authorization) {
 }
 
 function renderControlledExecutionContinuityPreview(preview) {
+  latestControlledExecutionContinuityPreview = canonicalize(preview);
   setCockpitText(COCKPIT_IDS.controlledExecutionContinuityPreview, [
     "Controlled Execution Continuity Preview",
     "ARTIFACT_TYPE: CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
@@ -1268,7 +1272,17 @@ function renderControlledExecutionHandoff(summary) {
 }
 
 function executeControlledHandoffFromSidepanel() {
-  if (!latestGovernedHandoffPackagePreview || latestGovernedHandoffPackagePreview.handoff_preview_status !== "READY_FOR_EXPLICIT_DISPATCH_AUTHORIZATION") {
+  const continuityPreview = latestControlledExecutionContinuityPreview || {};
+  const continuityReady = continuityPreview.execution_continuity_status === "READY_FOR_CONTROLLED_EXECUTION_HANDOFF"
+    && (continuityPreview.authority_boundary || {}).dispatch_authorized === true
+    && continuityPreview.continuity_preview_hash
+    && continuityPreview.replay_identity
+    && continuityPreview.execution_performed === false
+    && continuityPreview.codex_dispatch_performed === false
+    && continuityPreview.native_messaging_called === false
+    && continuityPreview.provider_invoked === false
+    && continuityPreview.service_worker_called === false;
+  if (!continuityReady) {
     renderControlledExecutionHandoff(controlledExecutionBlockedSummary("valid continuity chain is required"));
     return;
   }
@@ -1306,7 +1320,7 @@ function executeControlledHandoffFromSidepanel() {
     renderControlledExecutionHandoff({
       artifact_type: "CONTROLLED_EXECUTION_HANDOFF_V1",
       schema_version: "1.0",
-      replay_identity: (latestGovernedHandoffPackagePreview || {}).replay_identity || "UNKNOWN",
+      replay_identity: continuityPreview.replay_identity || "UNKNOWN",
       execution_status: executionStatus,
       execution_path_used: ["sidepanel", "service_worker", "Native Messaging", "Python runtime bridge", "bounded Codex CLI provider"],
       native_messaging_called: true,
@@ -1316,7 +1330,9 @@ function executeControlledHandoffFromSidepanel() {
       execution_result_summary: resultSummary,
       execution_result_hash: previewHash("CONTROLLED-EXECUTION-RESULT-HASH", resultSummary),
       execution_governance_hash: previewHash("CONTROLLED-EXECUTION-GOVERNANCE-HASH", {
-        replay_identity: (latestGovernedHandoffPackagePreview || {}).replay_identity || "UNKNOWN",
+        replay_identity: continuityPreview.replay_identity || "UNKNOWN",
+        source_dispatch_authorization_hash: continuityPreview.source_dispatch_authorization_hash || "UNKNOWN",
+        source_continuity_preview_hash: continuityPreview.continuity_preview_hash || "UNKNOWN",
         execution_path_used: ["sidepanel", "service_worker", "Native Messaging", "Python runtime bridge", "bounded Codex CLI provider"],
         execution_status: executionStatus,
         execution_result_summary: resultSummary,
@@ -1561,45 +1577,53 @@ function renderChatgptIngressPreview(preview = chatgptIngressPreviewImport()) {
     "provider_dispatch_performed: false",
     "explicit_dispatch_authorization_required: true"
   ].join("\n"));
-  setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
-    "Explicit Dispatch Authorization",
-    "ARTIFACT_TYPE: EXPLICIT_DISPATCH_AUTHORIZATION_V1",
-    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
-    "DISPATCH AUTHORIZATION ONLY",
-    "NO EXECUTION",
-    "NO CODEX DISPATCH",
-    "NO PROVIDER EXECUTION",
-    "NATIVE MESSAGING NOT CALLED",
-    "dispatch_authorization_status: DISPATCH_REJECTED",
-    "provider_boundary_state: not authorized",
-    "dispatch_authorization_hash: not generated",
-    "dispatch_authorized: false",
-    "execution_performed: false",
-    "codex_dispatch_performed: false",
-    "provider_dispatch_performed: false",
-    "native_messaging_called: false",
-    "executable: false",
-    "dispatched: false"
-  ].join("\n"));
-  setCockpitText(COCKPIT_IDS.controlledExecutionContinuityPreview, [
-    "Controlled Execution Continuity Preview",
-    "ARTIFACT_TYPE: CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
-    "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
-    "EXECUTION CONTINUITY PREVIEW ONLY",
-    "NO EXECUTION",
-    "NO CODEX DISPATCH",
-    "NATIVE MESSAGING NOT CALLED",
-    "PROVIDER NOT INVOKED",
-    "execution_continuity_status: not generated",
-    "continuity_preview_hash: not generated",
-    "execution_path_candidate: sidepanel -> service_worker -> Native Messaging host -> Python runtime bridge -> bounded Codex CLI provider",
-    "all_stages: PREVIEW_ONLY / NOT_CALLED",
-    "execution_performed: false",
-    "codex_dispatch_performed: false",
-    "native_messaging_called: false",
-    "provider_invoked: false",
-    "service_worker_called: false"
-  ].join("\n"));
+  if (latestExplicitDispatchAuthorization) {
+    renderExplicitDispatchAuthorization(latestExplicitDispatchAuthorization);
+  } else {
+    setCockpitText(COCKPIT_IDS.explicitDispatchAuthorization, [
+      "Explicit Dispatch Authorization",
+      "ARTIFACT_TYPE: EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+      "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+      "DISPATCH AUTHORIZATION ONLY",
+      "NO EXECUTION",
+      "NO CODEX DISPATCH",
+      "NO PROVIDER EXECUTION",
+      "NATIVE MESSAGING NOT CALLED",
+      "dispatch_authorization_status: DISPATCH_REJECTED",
+      "provider_boundary_state: not authorized",
+      "dispatch_authorization_hash: not generated",
+      "dispatch_authorized: false",
+      "execution_performed: false",
+      "codex_dispatch_performed: false",
+      "provider_dispatch_performed: false",
+      "native_messaging_called: false",
+      "executable: false",
+      "dispatched: false"
+    ].join("\n"));
+  }
+  if (latestControlledExecutionContinuityPreview) {
+    renderControlledExecutionContinuityPreview(latestControlledExecutionContinuityPreview);
+  } else {
+    setCockpitText(COCKPIT_IDS.controlledExecutionContinuityPreview, [
+      "Controlled Execution Continuity Preview",
+      "ARTIFACT_TYPE: CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
+      "CLASSIFICATION: STRUCTURAL_ONLY / ADVISORY_ONLY",
+      "EXECUTION CONTINUITY PREVIEW ONLY",
+      "NO EXECUTION",
+      "NO CODEX DISPATCH",
+      "NATIVE MESSAGING NOT CALLED",
+      "PROVIDER NOT INVOKED",
+      "execution_continuity_status: not generated",
+      "continuity_preview_hash: not generated",
+      "execution_path_candidate: sidepanel -> service_worker -> Native Messaging host -> Python runtime bridge -> bounded Codex CLI provider",
+      "all_stages: PREVIEW_ONLY / NOT_CALLED",
+      "execution_performed: false",
+      "codex_dispatch_performed: false",
+      "native_messaging_called: false",
+      "provider_invoked: false",
+      "service_worker_called: false"
+    ].join("\n"));
+  }
   setCockpitText(COCKPIT_IDS.controlledExecutionHandoff, [
     "Controlled Execution Handoff",
     "ARTIFACT_TYPE: CONTROLLED_EXECUTION_HANDOFF_V1",
@@ -4290,16 +4314,16 @@ if (previewChatgptIngressImportOnlyButton) {
   previewChatgptIngressImportOnlyButton.onclick = previewImportedChatgptIngressArtifactFromSidepanel;
 }
 
-const approveTaskPackagePreviewButton = document.getElementById("approve-task-package-preview");
-if (approveTaskPackagePreviewButton) {
-  approveTaskPackagePreviewButton.onclick = function approveTaskPackagePreviewEvidenceOnly() {
+const humanApprovalPreviewButton = document.getElementById("approve-task-package-preview");
+if (humanApprovalPreviewButton) {
+  humanApprovalPreviewButton.onclick = function createHumanApprovalPreviewEvidenceOnly() {
     renderHumanApprovalGate(humanApprovalGate(latestChatgptIngressTaskPackagePreview || {}, "APPROVE"));
   };
 }
 
-const rejectTaskPackagePreviewButton = document.getElementById("reject-task-package-preview");
-if (rejectTaskPackagePreviewButton) {
-  rejectTaskPackagePreviewButton.onclick = function rejectTaskPackagePreviewEvidenceOnly() {
+const humanRejectionPreviewButton = document.getElementById("reject-task-package-preview");
+if (humanRejectionPreviewButton) {
+  humanRejectionPreviewButton.onclick = function createHumanRejectionPreviewEvidenceOnly() {
     renderHumanApprovalGate(humanApprovalGate(latestChatgptIngressTaskPackagePreview || {}, "REJECT"));
   };
 }

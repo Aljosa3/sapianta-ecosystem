@@ -65,6 +65,15 @@ def _reject(*, reason: str, task_package_id: str = "UNKNOWN", workspace_path: st
         "command": [],
         "bounded_prompt_hash": "",
         "retry_count": 0,
+        "diagnostic_evidence": {
+            "failing_layer": "bounded_codex_cli_provider_validation",
+            "failing_function": "run_bounded_codex_cli_task",
+            "failing_condition": reason,
+            "provider_invoked": False,
+            "subprocess_invoked": False,
+            "subprocess_returncode": None,
+            "response_serialization_ready": True,
+        },
     }
 
 
@@ -178,6 +187,15 @@ def run_bounded_codex_cli_task(
             "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
             "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
             "retry_count": 0,
+            "diagnostic_evidence": {
+                "failing_layer": "bounded_codex_cli_subprocess",
+                "failing_function": "subprocess.run",
+                "failing_condition": f"Codex CLI timed out after {timeout_seconds} seconds",
+                "provider_invoked": True,
+                "subprocess_invoked": True,
+                "subprocess_returncode": None,
+                "response_serialization_ready": True,
+            },
         }
     except OSError as exc:
         return {
@@ -194,6 +212,15 @@ def run_bounded_codex_cli_task(
             "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
             "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
             "retry_count": 0,
+            "diagnostic_evidence": {
+                "failing_layer": "bounded_codex_cli_subprocess",
+                "failing_function": "subprocess.run",
+                "failing_condition": str(exc),
+                "provider_invoked": True,
+                "subprocess_invoked": True,
+                "subprocess_returncode": None,
+                "response_serialization_ready": True,
+            },
         }
 
     status = STATUS_COMPLETED if completed.returncode == 0 else STATUS_FAILED
@@ -211,4 +238,13 @@ def run_bounded_codex_cli_task(
         "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
         "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
         "retry_count": 0,
+        "diagnostic_evidence": {
+            "failing_layer": "" if status == STATUS_COMPLETED else "bounded_codex_cli_subprocess",
+            "failing_function": "" if status == STATUS_COMPLETED else "subprocess.run",
+            "failing_condition": "" if status == STATUS_COMPLETED else "Codex CLI returned non-zero exit status",
+            "provider_invoked": True,
+            "subprocess_invoked": True,
+            "subprocess_returncode": completed.returncode,
+            "response_serialization_ready": True,
+        },
     }
