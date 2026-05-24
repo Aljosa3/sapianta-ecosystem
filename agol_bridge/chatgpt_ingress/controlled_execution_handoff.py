@@ -93,9 +93,9 @@ def _blocked(*, continuity_preview: dict | None, reason: str) -> dict:
     return artifact
 
 
-def _native_message(*, continuity_preview: dict, workspace_path: str, timeout_seconds: int) -> dict:
+def _native_message(*, continuity_preview: dict, workspace_path: str, timeout_seconds: int, provider_success_proof: bool = False) -> dict:
     replay_identity = continuity_preview["replay_identity"]
-    return {
+    message = {
         "action": NATIVE_BRIDGE_ACTION,
         "request_id": f"CONTROLLED-HANDOFF-{canonical_hash(replay_identity)[7:23]}",
         "human_request": f"Review controlled execution handoff for replay {replay_identity}.",
@@ -105,6 +105,9 @@ def _native_message(*, continuity_preview: dict, workspace_path: str, timeout_se
         "operator_triggered": True,
         "authority_boundary": "SEMANTIC_TRANSPORT_ONLY",
     }
+    if provider_success_proof:
+        message["provider_success_proof"] = True
+    return message
 
 
 def create_controlled_execution_handoff(
@@ -116,6 +119,7 @@ def create_controlled_execution_handoff(
     execution_completed_at: str = "1970-01-01T00:00:00Z",
     prior_execution_artifact: dict | None = None,
     native_message_handler: Callable[[dict], dict] = handle_native_message,
+    provider_success_proof: bool = False,
 ) -> dict:
     """Execute once through the existing service-worker/native/Python/Codex path."""
 
@@ -159,6 +163,7 @@ def create_controlled_execution_handoff(
         continuity_preview=continuity_preview,
         workspace_path=workspace_path or str(Path.cwd()),
         timeout_seconds=timeout_seconds,
+        provider_success_proof=provider_success_proof,
     )
     native_response = native_message_handler(message)
     accepted = native_response.get("status") == NATIVE_BRIDGE_ACCEPTED

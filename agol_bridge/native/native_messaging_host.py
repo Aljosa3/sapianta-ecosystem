@@ -212,6 +212,7 @@ def handle_native_message(message: dict, native_stages: dict | None = None) -> d
             session_id=safe_message["session_id"].strip(),
             workspace_path=str(Path(safe_message.get("workspace_path") or Path.cwd()).expanduser().resolve()),
             timeout_seconds=int(safe_message.get("timeout_seconds", 600)),
+            provider_success_proof=safe_message.get("provider_success_proof") is True,
         )
     except Exception as exc:  # noqa: BLE001 - Native Messaging must return structured errors.
         failure_stage = native_stages.get("stage_reached") if native_stages else NATIVE_STAGE_HANDLE_ENTERED

@@ -74,6 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
     execution_handoff.add_argument("--semantic-intent", default="Deterministic execution handoff")
     execution_handoff.add_argument("--workspace-path", default="")
     execution_handoff.add_argument("--timeout-seconds", type=int, default=600)
+    execution_handoff.add_argument("--full-codex-exec", action="store_true")
 
     diagnostics = subcommands.add_parser("diagnostics")
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
@@ -105,6 +106,7 @@ def run_command(args: argparse.Namespace) -> dict:
             ingress_artifact=_artifact_from_args(args),
             workspace_path=args.workspace_path or None,
             timeout_seconds=args.timeout_seconds,
+            provider_success_proof=not args.full_codex_exec,
         )
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
@@ -171,6 +173,8 @@ def render_command_result(result: dict) -> str:
                 f"  {result.get('execution_status')}",
                 "Provider:",
                 f"  {provider_state}",
+                "Command:",
+                f"  {diagnostics.get('provider_command')}",
                 "Replay:",
                 f"  {result.get('replay_identity')}",
                 "Governed Return:",

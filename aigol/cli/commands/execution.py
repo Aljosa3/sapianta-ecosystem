@@ -61,14 +61,19 @@ def create_governed_return_artifact(*, execution_artifact: dict) -> dict:
         "diagnostic_evidence": {
             "provider_invoked": provider_invoked,
             "provider_executable_found": provider_diagnostics.get("codex_executable_found", False),
+            "provider_executable_path": provider_diagnostics.get("codex_executable", ""),
+            "provider_command": provider_diagnostics.get("provider_command", provider_result.get("command", [])),
             "provider_exit_code": provider_result.get("returncode"),
             "provider_stdout": provider_result.get("stdout", ""),
             "provider_stderr": provider_result.get("stderr", ""),
-            "execution_runtime_seconds": 0,
+            "provider_timeout": provider_diagnostics.get("provider_timeout", False),
+            "execution_runtime_seconds": provider_diagnostics.get("provider_runtime_seconds", 0),
             "governed_return_generated": True,
             "continuity_verified": continuity_verified,
             "failure_stage": provider_diagnostics.get("failing_layer", "") if execution_status != "EXECUTION_COMPLETED" else "",
             "fail_closed": execution_status != "EXECUTION_COMPLETED",
+            "provider_success": provider_diagnostics.get("provider_success", execution_status == "EXECUTION_COMPLETED"),
+            "provider_failure_reason": provider_diagnostics.get("provider_failure_reason", ""),
             "subprocess_invoked": provider_diagnostics.get("subprocess_invoked", False),
         },
     }
@@ -83,12 +88,14 @@ def run_execution_handoff(
     workspace_path: str | None = None,
     timeout_seconds: int = 600,
     native_message_handler: Callable[[dict], dict] | None = None,
+    provider_success_proof: bool = True,
 ) -> dict:
     chain = build_governed_chain(ingress_artifact=ingress_artifact)
     kwargs = {
         "continuity_preview": chain["continuity_preview"],
         "workspace_path": workspace_path or str(Path.cwd()),
         "timeout_seconds": timeout_seconds,
+        "provider_success_proof": provider_success_proof,
     }
     if native_message_handler is not None:
         kwargs["native_message_handler"] = native_message_handler

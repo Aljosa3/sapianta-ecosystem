@@ -349,7 +349,14 @@ def export_minimal_bridge_result_artifact(result: dict) -> dict:
     return artifact
 
 
-def run_minimal_end_to_end_bridge(*, human_request: str, session_id: str, workspace_path: str | None = None, timeout_seconds: int = 600) -> dict:
+def run_minimal_end_to_end_bridge(
+    *,
+    human_request: str,
+    session_id: str,
+    workspace_path: str | None = None,
+    timeout_seconds: int = 600,
+    provider_success_proof: bool = False,
+) -> dict:
     """Run the first bounded local governed bridge lifecycle."""
 
     request_text = str(human_request or "").strip()
@@ -458,6 +465,7 @@ def run_minimal_end_to_end_bridge(*, human_request: str, session_id: str, worksp
         transport_report=transport_report,
     )
     task_package["metadata"]["allowed_workspace_root"] = str(Path(workspace_path or Path.cwd()).expanduser().resolve())
+    task_package["metadata"]["provider_success_proof"] = provider_success_proof is True
     task_validation = validate_task_package(task_package)
     replay_events.append(
         _replay_event(

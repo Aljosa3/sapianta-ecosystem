@@ -20,6 +20,7 @@ from agol_bridge.transport.local_governed_transport import canonical_hash
 CODEX_CLI_PROVIDER = "CODEX_CLI"
 CODEX_EXECUTABLE = "codex"
 CODEX_EXEC_CONTRACT = "codex exec <bounded_prompt>"
+CODEX_SUCCESS_PROOF_CONTRACT = "codex --version"
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED = "FAILED"
@@ -76,6 +77,11 @@ def _reject(*, reason: str, task_package_id: str = "UNKNOWN", workspace_path: st
             "subprocess_returncode": None,
             "codex_executable": codex_executable or "",
             "codex_executable_found": codex_executable is not None,
+            "provider_command": [],
+            "provider_timeout": False,
+            "provider_runtime_seconds": 0,
+            "provider_success": False,
+            "provider_failure_reason": reason,
             "response_serialization_ready": True,
         },
     }
@@ -116,6 +122,23 @@ def _validate_task_package(task_package: Any) -> list[str]:
     elif metadata.get("approved") is True:
         errors.append("task_package must not carry auto-approval")
     return errors
+
+
+def _provider_success_proof_requested(task_package: dict) -> bool:
+    metadata = task_package.get("metadata", {})
+    return isinstance(metadata, dict) and metadata.get("provider_success_proof") is True
+
+
+def _provider_command(*, task_package: dict, bounded_prompt: str) -> list[str]:
+    if _provider_success_proof_requested(task_package):
+        return [CODEX_EXECUTABLE, "--version"]
+    return [CODEX_EXECUTABLE, "exec", bounded_prompt]
+
+
+def _safe_command(command: list[str]) -> list[str]:
+    if command == [CODEX_EXECUTABLE, "--version"]:
+        return list(command)
+    return [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"]
 
 
 def build_bounded_codex_prompt(*, task_package: dict) -> str:
@@ -166,7 +189,8 @@ def run_bounded_codex_cli_task(
 
     bounded_prompt = build_bounded_codex_prompt(task_package=task_copy)
     codex_executable = shutil.which(CODEX_EXECUTABLE)
-    command = [CODEX_EXECUTABLE, "exec", bounded_prompt]
+    command = _provider_command(task_package=task_copy, bounded_prompt=bounded_prompt)
+    safe_command = _safe_command(command)
     try:
         completed = subprocess.run(
             command,
@@ -189,7 +213,7 @@ def run_bounded_codex_cli_task(
             "non_authority_guarantees": list(NON_AUTHORITY_GUARANTEES),
             "execution_boundary": _canonical_copy(EXECUTION_BOUNDARY),
             "errors": [f"Codex CLI timed out after {timeout_seconds} seconds"],
-            "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
+            "command": safe_command,
             "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
             "retry_count": 0,
             "diagnostic_evidence": {
@@ -201,6 +225,11 @@ def run_bounded_codex_cli_task(
                 "subprocess_returncode": None,
                 "codex_executable": codex_executable or "",
                 "codex_executable_found": codex_executable is not None,
+                "provider_command": safe_command,
+                "provider_timeout": True,
+                "provider_runtime_seconds": 0,
+                "provider_success": False,
+                "provider_failure_reason": f"Codex CLI timed out after {timeout_seconds} seconds",
                 "response_serialization_ready": True,
             },
         }
@@ -216,7 +245,7 @@ def run_bounded_codex_cli_task(
             "non_authority_guarantees": list(NON_AUTHORITY_GUARANTEES),
             "execution_boundary": _canonical_copy(EXECUTION_BOUNDARY),
             "errors": ["Codex CLI invocation failed"],
-            "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
+            "command": safe_command,
             "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
             "retry_count": 0,
             "diagnostic_evidence": {
@@ -228,11 +257,17 @@ def run_bounded_codex_cli_task(
                 "subprocess_returncode": None,
                 "codex_executable": codex_executable or "",
                 "codex_executable_found": codex_executable is not None,
+                "provider_command": safe_command,
+                "provider_timeout": False,
+                "provider_runtime_seconds": 0,
+                "provider_success": False,
+                "provider_failure_reason": str(exc),
                 "response_serialization_ready": True,
             },
         }
 
     status = STATUS_COMPLETED if completed.returncode == 0 else STATUS_FAILED
+    failure_reason = "" if status == STATUS_COMPLETED else "Codex CLI returned non-zero exit status"
     return {
         "provider": CODEX_CLI_PROVIDER,
         "status": status,
@@ -244,7 +279,7 @@ def run_bounded_codex_cli_task(
         "non_authority_guarantees": list(NON_AUTHORITY_GUARANTEES),
         "execution_boundary": _canonical_copy(EXECUTION_BOUNDARY),
         "errors": [] if status == STATUS_COMPLETED else ["Codex CLI returned non-zero exit status"],
-        "command": [CODEX_EXECUTABLE, "exec", "<bounded_prompt>"],
+        "command": safe_command,
         "bounded_prompt_hash": canonical_hash({"bounded_prompt": bounded_prompt}),
         "retry_count": 0,
         "diagnostic_evidence": {
@@ -256,6 +291,11 @@ def run_bounded_codex_cli_task(
             "subprocess_returncode": completed.returncode,
             "codex_executable": codex_executable or "",
             "codex_executable_found": codex_executable is not None,
+            "provider_command": safe_command,
+            "provider_timeout": False,
+            "provider_runtime_seconds": 0,
+            "provider_success": status == STATUS_COMPLETED,
+            "provider_failure_reason": failure_reason,
             "response_serialization_ready": True,
         },
     }
