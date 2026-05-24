@@ -6,6 +6,7 @@ import argparse
 import json
 from typing import Any
 
+from aigol.cli.commands.cognition import check_semantic_replay_continuity, inspect_cognition, inspect_registry
 from aigol.cli.commands.continuity import continuity_preview_summary
 from aigol.cli.commands.diagnostics import runtime_diagnostics
 from aigol.cli.commands.dispatch import authorize_dispatch
@@ -15,6 +16,9 @@ from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
+from aigol.cognition.registry import render_cognition_registry_summary
+from aigol.cognition.semantic_replay import render_semantic_replay_report
+from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
 
@@ -99,6 +103,21 @@ def build_parser() -> argparse.ArgumentParser:
     diagnostics_runtime = diagnostics_sub.add_parser("runtime")
     diagnostics_runtime.add_argument("--extension-id", default="")
 
+    cognition = subcommands.add_parser("cognition")
+    cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
+    cognition_inspect = cognition_sub.add_parser("inspect")
+    cognition_inspect.add_argument("--input", default="")
+    cognition_inspect.add_argument("--json", action="store_true")
+    cognition_inspect.add_argument("--output", default="")
+    cognition_continuity = cognition_sub.add_parser("continuity-check")
+    cognition_continuity.add_argument("--input", default="")
+    cognition_continuity.add_argument("--json", action="store_true")
+    cognition_continuity.add_argument("--output", default="")
+    cognition_registry = cognition_sub.add_parser("registry")
+    cognition_registry.add_argument("--input", default="")
+    cognition_registry.add_argument("--json", action="store_true")
+    cognition_registry.add_argument("--output", default="")
+
     return parser
 
 
@@ -135,6 +154,21 @@ def run_command(args: argparse.Namespace) -> dict:
         return verify_replay(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
+    if args.command == "cognition" and args.cognition_command == "inspect":
+        return inspect_cognition(
+            input_path=args.input or None,
+            output_path=args.output or None,
+        )
+    if args.command == "cognition" and args.cognition_command == "continuity-check":
+        return check_semantic_replay_continuity(
+            input_path=args.input or None,
+            output_path=args.output or None,
+        )
+    if args.command == "cognition" and args.cognition_command == "registry":
+        return inspect_registry(
+            input_path=args.input or None,
+            output_path=args.output or None,
+        )
     raise ValueError("unsupported command")
 
 
@@ -261,6 +295,25 @@ def render_command_result(result: dict) -> str:
                 f"failure_stage: {result.get('failure_stage')}",
             ],
         )
+    if command == "aigol cognition inspect":
+        envelope = result.get("cognition_state_envelope", {})
+        return render_card(
+            "AIGOL COGNITION INSPECT",
+            render_cognition_summary(envelope).splitlines(),
+        )
+    if command == "aigol cognition continuity-check":
+        check = result.get("semantic_replay_continuity_check", {})
+        return render_card(
+            "AIGOL COGNITION CONTINUITY CHECK",
+            render_semantic_replay_report(check).splitlines(),
+        )
+    if command == "aigol cognition registry":
+        registry = result.get("cognition_registry", {})
+        validation = result.get("registry_validation", {})
+        return render_card(
+            "AIGOL COGNITION REGISTRY",
+            render_cognition_registry_summary(registry, validation).splitlines(),
+        )
     return render_card("AIGOL", [_json(result)])
 
 
@@ -268,7 +321,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     result = run_command(args)
-    print(render_command_result(result))
+    if getattr(args, "json", False):
+        print(_json(result))
+    else:
+        print(render_command_result(result))
     return 0
 
 

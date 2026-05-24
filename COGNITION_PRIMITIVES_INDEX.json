@@ -1,0 +1,503 @@
+{
+  "artifact_type": "COGNITION_PRIMITIVES_INDEX",
+  "schema_version": "1.0",
+  "analysis_scope": "repository-wide bounded institutional cognition discovery",
+  "authority_statement": "This index is analysis-only and grants no execution, orchestration, planning, mutation, or governance authority.",
+  "cognition_definition": "bounded institutional reasoning inside deterministic governance",
+  "generated_for": "GOVERNED_COGNITION_FOUNDATION_ANALYSIS",
+  "primitives": [
+    {
+      "id": "CONSTITUTIONAL_ARCHITECTURE_SPEC_V1",
+      "source_files": [
+        "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md"
+      ],
+      "governance_role": "Defines distributed constitutional architecture, mutation authority, enforcement reality, and constitutional limits.",
+      "cognition_category": "constitutional_reasoning",
+      "maturity_level": "high_documented_partial_enforcement",
+      "replay_relevance": "high",
+      "authority_classification": "constitutional_interpretive_authority",
+      "execution_relevance": "constrains_execution"
+    },
+    {
+      "id": "CANONICAL_LAYER_MODEL",
+      "source_files": [
+        "docs/governance/CANONICAL_LAYER_MODEL.md"
+      ],
+      "governance_role": "Separates L0-L4 mutation layers from the historical safety authority model.",
+      "cognition_category": "authority_taxonomy",
+      "maturity_level": "high_documented",
+      "replay_relevance": "medium",
+      "authority_classification": "constitutional_interpretive_authority",
+      "execution_relevance": "constrains_mutation_before_execution"
+    },
+    {
+      "id": "CONSTITUTIONAL_INVARIANTS",
+      "source_files": [
+        "docs/governance/CONSTITUTIONAL_INVARIANTS.md"
+      ],
+      "governance_role": "Defines replay, layer, mutation, fail-closed, deterministic, certification, execution, and governance memory invariants.",
+      "cognition_category": "constitutional_constraints",
+      "maturity_level": "high_documented",
+      "replay_relevance": "high",
+      "authority_classification": "constitutional_constraint",
+      "execution_relevance": "blocks_unsafe_execution_semantics"
+    },
+    {
+      "id": "GOVERNANCE_ENFORCEMENT_HIERARCHY",
+      "source_files": [
+        "docs/governance/GOVERNANCE_ENFORCEMENT_HIERARCHY.md"
+      ],
+      "governance_role": "Defines precedence ordering across replay safety, constitutional layers, trust boundaries, mutation checks, promotion, governance review, certification, and research.",
+      "cognition_category": "precedence_reasoning",
+      "maturity_level": "high_documented_distributed_enforcement",
+      "replay_relevance": "high",
+      "authority_classification": "constitutional_interpretive_authority",
+      "execution_relevance": "pre_execution_precedence"
+    },
+    {
+      "id": "GOVERNANCE_LINEAGE_MODEL",
+      "source_files": [
+        "docs/governance/GOVERNANCE_LINEAGE_MODEL.md"
+      ],
+      "governance_role": "Defines distributed evidence chain and certification inheritance.",
+      "cognition_category": "lineage_memory",
+      "maturity_level": "high_documented",
+      "replay_relevance": "high",
+      "authority_classification": "lineage_authority",
+      "execution_relevance": "binds_execution_to_prior_evidence"
+    },
+    {
+      "id": "GOVERNANCE_CONFORMANCE_ENGINE",
+      "source_files": [
+        "runtime/governance/governance_conformance_engine.py",
+        "runtime/governance/conformance_rules.py",
+        "runtime/governance/conformance_models.py"
+      ],
+      "governance_role": "Read-only constitutional conformance verification.",
+      "cognition_category": "self_assessment",
+      "maturity_level": "medium_high_runtime_read_only",
+      "replay_relevance": "medium",
+      "authority_classification": "validator_no_mutation_authority",
+      "execution_relevance": "indirect_governance_validation"
+    },
+    {
+      "id": "AGOL_ADAPTIVE_INTENT_AWARENESS_V1",
+      "source_files": [
+        "runtime/governance/agol_adaptive_intent.py",
+        "docs/governance/AGOL_ADAPTIVE_INTENT_AWARENESS_V1.md"
+      ],
+      "governance_role": "Detects refinement stagnation and perceptual-impact mismatch as proposal-only guidance.",
+      "cognition_category": "intent_awareness",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "advisory_no_execution_authority",
+      "execution_relevance": "none"
+    },
+    {
+      "id": "AGOL_REFINEMENT_GUIDANCE_WORKFLOW_V1",
+      "source_files": [
+        "runtime/governance/agol_refinement_guidance.py",
+        "docs/governance/AGOL_REFINEMENT_GUIDANCE_WORKFLOW_V1.md"
+      ],
+      "governance_role": "Generates bounded refinement recommendations and prompt augmentations.",
+      "cognition_category": "advisory_guidance",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "advisory_no_mutation_authority",
+      "execution_relevance": "none"
+    },
+    {
+      "id": "AGOL_VISUAL_CONTINUITY_MEMORY_V1",
+      "source_files": [
+        "runtime/governance/agol_visual_continuity_memory.py",
+        "docs/governance/AGOL_VISUAL_CONTINUITY_MEMORY_V1.md"
+      ],
+      "governance_role": "Preserves replay-visible UX continuity signals without autonomous learning.",
+      "cognition_category": "bounded_memory",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "memory_advisory_no_runtime_authority",
+      "execution_relevance": "none"
+    },
+    {
+      "id": "AGOL_CONVERGENCE_AWARE_REFINEMENT_V1",
+      "source_files": [
+        "runtime/governance/agol_convergence_aware_refinement.py",
+        "docs/governance/AGOL_CONVERGENCE_AWARE_REFINEMENT_V1.md"
+      ],
+      "governance_role": "Detects bounded convergence and mutation pressure risk.",
+      "cognition_category": "meta_refinement_reasoning",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "proposal_only_no_freeze_authority",
+      "execution_relevance": "none"
+    },
+    {
+      "id": "PRIMITIVE_REPLAY_HELPERS",
+      "source_files": [
+        "runtime/governance/primitive_replay.py"
+      ],
+      "governance_role": "Provides canonical JSON, stable hashes, replay identities, and deterministic result hashes.",
+      "cognition_category": "replay_identity",
+      "maturity_level": "high_runtime_helper",
+      "replay_relevance": "high",
+      "authority_classification": "hashing_no_authority",
+      "execution_relevance": "supports_replay_continuity"
+    },
+    {
+      "id": "NL_INTENT_CLASSIFIER",
+      "source_files": [
+        "sapianta_bridge/nl_envelope/intent_classifier.py"
+      ],
+      "governance_role": "Classifies natural language intent and rejects ambiguity or forbidden authority phrases.",
+      "cognition_category": "semantic_classification",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "medium",
+      "authority_classification": "classifier_no_authority",
+      "execution_relevance": "pre_execution_intent_filter"
+    },
+    {
+      "id": "SEMANTIC_EVIDENCE",
+      "source_files": [
+        "sapianta_bridge/nl_envelope/semantic_evidence.py"
+      ],
+      "governance_role": "Extracts replay-safe semantic ingress evidence with execution authority false.",
+      "cognition_category": "semantic_evidence",
+      "maturity_level": "medium_runtime_helper",
+      "replay_relevance": "high",
+      "authority_classification": "evidence_no_authority",
+      "execution_relevance": "pre_execution_evidence"
+    },
+    {
+      "id": "CHATGPT_INGRESS_ARTIFACT_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/chatgpt_ingress_artifact.py"
+      ],
+      "governance_role": "Constructs canonical non-authoritative ChatGPT semantic ingress artifacts.",
+      "cognition_category": "semantic_ingress",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "semantic_input_no_authority",
+      "execution_relevance": "pre_execution_input"
+    },
+    {
+      "id": "CHATGPT_INGRESS_VALIDATOR",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/chatgpt_ingress_validator.py"
+      ],
+      "governance_role": "Fail-closed validation of untrusted semantic ingress artifacts.",
+      "cognition_category": "admissibility_validation",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "validator_no_execution_authority",
+      "execution_relevance": "blocks_invalid_ingress"
+    },
+    {
+      "id": "SEMANTIC_CONTRACT_SYNTHESIS",
+      "source_files": [
+        "agol_bridge/semantic_contract/semantic_contract_synthesis.py"
+      ],
+      "governance_role": "Synthesizes and validates non-execution semantic contracts.",
+      "cognition_category": "semantic_contract",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "semantic_contract_no_execution_authority",
+      "execution_relevance": "defines_governed_task_meaning"
+    },
+    {
+      "id": "CHATGPT_INGRESS_ACCEPTANCE_GATE_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/ingress_acceptance_gate.py"
+      ],
+      "governance_role": "Evaluates semantic ingress for admissibility into governed preview.",
+      "cognition_category": "admissibility_gate",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "gate_no_execution_authority",
+      "execution_relevance": "previews_only"
+    },
+    {
+      "id": "GOVERNED_TASK_PACKAGE_PREVIEW_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/governed_task_package_preview.py"
+      ],
+      "governance_role": "Creates execution-boundary preview state before human approval.",
+      "cognition_category": "boundary_state",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "preview_no_execution_authority",
+      "execution_relevance": "pre_execution_boundary"
+    },
+    {
+      "id": "HUMAN_APPROVAL_GATE_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/human_approval_gate.py"
+      ],
+      "governance_role": "Creates deterministic human approval or rejection evidence.",
+      "cognition_category": "human_authority",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "human_approval_evidence_not_execution",
+      "execution_relevance": "approval_boundary"
+    },
+    {
+      "id": "GOVERNED_HANDOFF_PACKAGE_PREVIEW_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/governed_handoff_package_preview.py"
+      ],
+      "governance_role": "Creates provider-boundary handoff preview after human approval.",
+      "cognition_category": "handoff_boundary",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "handoff_preview_no_dispatch_authority",
+      "execution_relevance": "provider_boundary_preview"
+    },
+    {
+      "id": "EXPLICIT_DISPATCH_AUTHORIZATION_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/explicit_dispatch_authorization.py"
+      ],
+      "governance_role": "Creates dispatch authorization or rejection evidence without execution.",
+      "cognition_category": "dispatch_authority",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "dispatch_authorization_not_execution",
+      "execution_relevance": "pre_execution_dispatch_boundary"
+    },
+    {
+      "id": "CONTROLLED_EXECUTION_CONTINUITY_PREVIEW_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/controlled_execution_continuity_preview.py"
+      ],
+      "governance_role": "Shows candidate execution path without calling it.",
+      "cognition_category": "execution_path_visibility",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "preview_no_execution_authority",
+      "execution_relevance": "execution_path_preview"
+    },
+    {
+      "id": "CONTROLLED_EXECUTION_HANDOFF_V1",
+      "source_files": [
+        "agol_bridge/chatgpt_ingress/controlled_execution_handoff.py"
+      ],
+      "governance_role": "Performs one governed single-path controlled execution handoff when continuity is valid.",
+      "cognition_category": "cognition_action_boundary",
+      "maturity_level": "high_runtime_operational",
+      "replay_relevance": "high",
+      "authority_classification": "bounded_execution_authority_when_gated",
+      "execution_relevance": "executes_single_path"
+    },
+    {
+      "id": "BOUNDED_CODEX_CLI_PROVIDER",
+      "source_files": [
+        "agol_bridge/providers/codex_cli_provider.py"
+      ],
+      "governance_role": "Invokes only the bounded Codex CLI provider contract and reports diagnostics.",
+      "cognition_category": "bounded_provider",
+      "maturity_level": "high_runtime_operational",
+      "replay_relevance": "high",
+      "authority_classification": "single_provider_bounded_execution",
+      "execution_relevance": "execution_provider"
+    },
+    {
+      "id": "AIGOL_CLI_GOVERNED_CHAIN",
+      "source_files": [
+        "aigol/cli/commands/continuity.py",
+        "aigol/cli/commands/execution.py"
+      ],
+      "governance_role": "Composes ingress, governance, dispatch, execution, and return continuity through deterministic CLI commands.",
+      "cognition_category": "operational_cognition_substrate",
+      "maturity_level": "high_runtime_operational",
+      "replay_relevance": "high",
+      "authority_classification": "operator_explicit_bounded_execution",
+      "execution_relevance": "cli_execution_continuity"
+    },
+    {
+      "id": "GOVERNED_RETURN_ARTIFACT_V1",
+      "source_files": [
+        "aigol/cli/commands/return_continuity.py"
+      ],
+      "governance_role": "Standardizes governed execution return artifacts, ledger append, evidence bundles, inspection, and replay verification.",
+      "cognition_category": "execution_memory",
+      "maturity_level": "high_runtime_persistent",
+      "replay_relevance": "high",
+      "authority_classification": "evidence_persistence_no_replay_mutation",
+      "execution_relevance": "post_execution_memory"
+    },
+    {
+      "id": "REFLECTION_ENGINE",
+      "source_files": [
+        "sapianta_bridge/reflection/reflection_engine.py"
+      ],
+      "governance_role": "Builds advisory reflection artifacts from replay evidence, summaries, transitions, risk, and capability deltas.",
+      "cognition_category": "meta_cognition",
+      "maturity_level": "medium_runtime_advisory",
+      "replay_relevance": "high",
+      "authority_classification": "advisory_no_execution_authority",
+      "execution_relevance": "post_execution_advisory"
+    },
+    {
+      "id": "GOVERNANCE_RISK_FROM_EVIDENCE",
+      "source_files": [
+        "sapianta_bridge/reflection/governance_risk.py"
+      ],
+      "governance_role": "Classifies governance risk from replay and transition evidence.",
+      "cognition_category": "risk_reasoning",
+      "maturity_level": "medium_runtime_advisory",
+      "replay_relevance": "high",
+      "authority_classification": "risk_advisory_no_execution",
+      "execution_relevance": "post_execution_review"
+    },
+    {
+      "id": "CAPABILITY_DELTA_FROM_EVIDENCE",
+      "source_files": [
+        "sapianta_bridge/reflection/capability_delta.py"
+      ],
+      "governance_role": "Derives conservative capability delta summaries from replay evidence.",
+      "cognition_category": "capability_reasoning",
+      "maturity_level": "medium_runtime_advisory",
+      "replay_relevance": "high",
+      "authority_classification": "capability_advisory_no_authority",
+      "execution_relevance": "post_execution_review"
+    },
+    {
+      "id": "ADVISORY_PROPOSALS_FROM_RISK",
+      "source_files": [
+        "sapianta_bridge/reflection/advisory_proposals.py"
+      ],
+      "governance_role": "Generates human-approval-required advisory proposals from risk classification.",
+      "cognition_category": "bounded_recommendation",
+      "maturity_level": "medium_runtime_advisory",
+      "replay_relevance": "medium",
+      "authority_classification": "requires_human_approval_no_auto_execution",
+      "execution_relevance": "advisory_only"
+    },
+    {
+      "id": "HUMAN_APPROVAL_QUEUE",
+      "source_files": [
+        "sapianta_bridge/approval/approval_queue.py",
+        "sapianta_bridge/approval/governance_decisions.py"
+      ],
+      "governance_role": "Queues advisory proposals for human decision and records approval or rejection.",
+      "cognition_category": "human_oversight",
+      "maturity_level": "medium_runtime_persistent",
+      "replay_relevance": "medium",
+      "authority_classification": "human_decision_surface",
+      "execution_relevance": "indirect_governance_boundary"
+    },
+    {
+      "id": "POLICY_ESCALATION",
+      "source_files": [
+        "sapianta_bridge/policy/escalation.py"
+      ],
+      "governance_role": "Classifies escalation class from admissibility, input type, rules, and blocked capabilities.",
+      "cognition_category": "risk_escalation",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "medium",
+      "authority_classification": "classifier_no_authority",
+      "execution_relevance": "pre_execution_review_routing"
+    },
+    {
+      "id": "PROTOCOL_VALIDATOR",
+      "source_files": [
+        "sapianta_bridge/protocol/validator.py"
+      ],
+      "governance_role": "Fail-closed validation of protocol artifacts, hashes, enums, and lineage.",
+      "cognition_category": "artifact_validation",
+      "maturity_level": "high_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "validator_no_execution_authority",
+      "execution_relevance": "artifact_admissibility"
+    },
+    {
+      "id": "GOVERNED_CAPABILITY_MEMORY_V1",
+      "source_files": [
+        "runtime/governance/capability_models.py",
+        "runtime/governance/capability_registry.py",
+        "docs/governance/GOVERNED_CAPABILITY_MEMORY_V1.md"
+      ],
+      "governance_role": "Defines capability scopes, approval semantics, replay visibility, revocation semantics, and escalation conditions.",
+      "cognition_category": "capability_memory",
+      "maturity_level": "medium_runtime_deterministic",
+      "replay_relevance": "high",
+      "authority_classification": "capability_scope_no_unbounded_authority",
+      "execution_relevance": "operational_scope_constraints"
+    },
+    {
+      "id": "GOVERNANCE_MEMORY_LAYER",
+      "source_files": [
+        "runtime/governance/master/SYSTEM_STATE.md",
+        "runtime/governance/master/CURRENT_FOCUS.md",
+        "runtime/governance/master/ROADMAP.md",
+        "runtime/governance/master/GOVERNANCE_MATURITY_MAP.md"
+      ],
+      "governance_role": "Dormant governance memory and maturity state.",
+      "cognition_category": "institutional_memory",
+      "maturity_level": "high_documented_dormant",
+      "replay_relevance": "high",
+      "authority_classification": "observational_memory_no_runtime_authority",
+      "execution_relevance": "future_interpretation_constraint"
+    },
+    {
+      "id": "CAL_CCS_ACCELERATION_SCAFFOLD",
+      "source_files": [
+        "runtime/governance/master/domains/explosion/CURRENT_STATUS.md",
+        "runtime/governance/master/domains/explosion/SYSTEM_STATE.md",
+        "runtime/development/ccs/cert_registry.json"
+      ],
+      "governance_role": "Documents deterministic task generation and certification scaffolding as dormant acceleration foundations.",
+      "cognition_category": "bounded_learning_scaffold",
+      "maturity_level": "partial_documented_scaffold",
+      "replay_relevance": "medium",
+      "authority_classification": "dormant_no_self_promotion",
+      "execution_relevance": "future_governed_learning_only"
+    },
+    {
+      "id": "GOVERNANCE_PRIMITIVE_CONTINUITY_MAP_V1",
+      "source_files": [
+        ".github/governance/evidence/GOVERNANCE_PRIMITIVE_CONTINUITY_MAP_V1.md"
+      ],
+      "governance_role": "Maps bounded primitive continuity across capability memory, preview runtime, and governed test execution.",
+      "cognition_category": "primitive_topology",
+      "maturity_level": "medium_documented",
+      "replay_relevance": "high",
+      "authority_classification": "evidence_only",
+      "execution_relevance": "non_execution_primitive_mapping"
+    },
+    {
+      "id": "AIGOL_CLI_GOVERNED_RUNTIME_FINALIZATION",
+      "source_files": [
+        ".github/governance/finalize/FINALIZE_AIGOL_CLI_GOVERNED_RUNTIME_EPOCH_V1.md",
+        ".github/governance/finalize/AIGOL_CLI_GOVERNED_RUNTIME_CERTIFICATION.json",
+        ".github/governance/finalize/AIGOL_CLI_GOVERNED_RUNTIME_REPLAY_CERTIFICATION.json"
+      ],
+      "governance_role": "Freezes and certifies the first stable CLI governed execution substrate.",
+      "cognition_category": "operational_epoch_memory",
+      "maturity_level": "high_certified_recent",
+      "replay_relevance": "high",
+      "authority_classification": "finalization_evidence_no_new_runtime_authority",
+      "execution_relevance": "certifies_existing_cli_execution_substrate"
+    }
+  ],
+  "summary": {
+    "primitive_count": 38,
+    "strongest_existing_categories": [
+      "constitutional_reasoning",
+      "semantic_ingress",
+      "replay_identity",
+      "execution_boundary",
+      "execution_memory",
+      "advisory_reflection",
+      "institutional_memory"
+    ],
+    "primary_missing_categories": [
+      "canonical_cognition_registry",
+      "bounded_cognition_state_envelope",
+      "semantic_replay_verification",
+      "central_authority_matrix",
+      "consented_context_ingestion"
+    ],
+    "final_assessment": "AiGOL/SAPIANTA already contains a substantial fragmented bounded institutional cognition substrate, but it needs consolidation before it should be called a formal cognition layer."
+  }
+}
