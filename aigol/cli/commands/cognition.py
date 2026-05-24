@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from aigol.cognition.integrity_summary import inspect_cognition_integrity
 from aigol.cognition.lifecycle_model import inspect_cognition_lifecycle
 from aigol.cognition.registry import inspect_cognition_registry
 from aigol.cognition.semantic_replay import inspect_semantic_replay_continuity
@@ -52,9 +53,19 @@ def inspect_lifecycle(
     return inspect_cognition_lifecycle(output_path=output_path, validate=validate)
 
 
+def inspect_integrity(
+    *,
+    input_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+    validate: bool = False,
+) -> dict[str, Any]:
+    return inspect_cognition_integrity(input_path=input_path, output_path=output_path, validate=validate)
+
+
 __all__ = [
     "check_semantic_replay_continuity",
     "inspect_cognition",
+    "inspect_integrity",
     "inspect_lifecycle",
     "inspect_registry",
     "inspect_topology",
