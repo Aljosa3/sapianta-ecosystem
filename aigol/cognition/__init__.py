@@ -1,5 +1,10 @@
 """Read-only bounded cognition consolidation helpers."""
 
+from .authority_propagation import (
+    build_authority_propagation_verifier,
+    inspect_authority_propagation,
+    validate_authority_propagation_verifier,
+)
 from .registry import (
     build_cognition_registry,
     inspect_cognition_registry,
@@ -30,6 +35,7 @@ from .topology_report import (
 __all__ = [
     "ARTIFACT_TYPE",
     "SCHEMA_VERSION",
+    "build_authority_propagation_verifier",
     "build_cognition_registry",
     "build_cognition_registry_topology_report",
     "build_cognition_integrity_summary",
@@ -40,8 +46,10 @@ __all__ = [
     "inspect_cognition_integrity",
     "inspect_cognition_topology",
     "inspect_cognition_lifecycle",
+    "inspect_authority_propagation",
     "render_cognition_summary",
     "validate_cognition_registry",
     "validate_cognition_integrity_summary",
     "validate_cognition_lifecycle_model",
+    "validate_authority_propagation_verifier",
 ]

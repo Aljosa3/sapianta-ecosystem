@@ -8,6 +8,7 @@ from typing import Any
 
 from aigol.cli.commands.cognition import (
     check_semantic_replay_continuity,
+    inspect_authority,
     inspect_cognition,
     inspect_integrity,
     inspect_lifecycle,
@@ -23,6 +24,7 @@ from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
+from aigol.cognition.authority_propagation import render_authority_propagation_summary
 from aigol.cognition.integrity_summary import render_cognition_integrity_summary
 from aigol.cognition.lifecycle_model import render_cognition_lifecycle_summary
 from aigol.cognition.registry import render_cognition_registry_summary
@@ -140,6 +142,11 @@ def build_parser() -> argparse.ArgumentParser:
     cognition_integrity.add_argument("--json", action="store_true")
     cognition_integrity.add_argument("--output", default="")
     cognition_integrity.add_argument("--validate", action="store_true")
+    cognition_authority = cognition_sub.add_parser("authority")
+    cognition_authority.add_argument("--input", default="")
+    cognition_authority.add_argument("--json", action="store_true")
+    cognition_authority.add_argument("--output", default="")
+    cognition_authority.add_argument("--validate", action="store_true")
 
     return parser
 
@@ -204,6 +211,12 @@ def run_command(args: argparse.Namespace) -> dict:
         )
     if args.command == "cognition" and args.cognition_command == "integrity":
         return inspect_integrity(
+            input_path=args.input or None,
+            output_path=args.output or None,
+            validate=args.validate,
+        )
+    if args.command == "cognition" and args.cognition_command == "authority":
+        return inspect_authority(
             input_path=args.input or None,
             output_path=args.output or None,
             validate=args.validate,
@@ -370,6 +383,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL COGNITION INTEGRITY",
             render_cognition_integrity_summary(summary).splitlines(),
+        )
+    if command == "aigol cognition authority":
+        artifact = result.get("authority_propagation_verifier", {})
+        return render_card(
+            "AIGOL COGNITION AUTHORITY",
+            render_authority_propagation_summary(artifact).splitlines(),
         )
     return render_card("AIGOL", [_json(result)])
 
