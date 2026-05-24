@@ -20,6 +20,11 @@ from .lifecycle_model import (
     inspect_cognition_lifecycle,
     validate_cognition_lifecycle_model,
 )
+from .semantic_context_state import (
+    build_semantic_context_state,
+    inspect_semantic_context,
+    validate_semantic_context_state,
+)
 from .state_envelope import (
     ARTIFACT_TYPE,
     SCHEMA_VERSION,
@@ -41,15 +46,18 @@ __all__ = [
     "build_cognition_integrity_summary",
     "build_cognition_lifecycle_model",
     "build_cognition_state_envelope",
+    "build_semantic_context_state",
     "inspect_cognition_registry",
     "inspect_cognition_input",
     "inspect_cognition_integrity",
     "inspect_cognition_topology",
     "inspect_cognition_lifecycle",
     "inspect_authority_propagation",
+    "inspect_semantic_context",
     "render_cognition_summary",
     "validate_cognition_registry",
     "validate_cognition_integrity_summary",
     "validate_cognition_lifecycle_model",
     "validate_authority_propagation_verifier",
+    "validate_semantic_context_state",
 ]
