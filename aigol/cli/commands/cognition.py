@@ -5,9 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from aigol.cognition.lifecycle_model import inspect_cognition_lifecycle
 from aigol.cognition.registry import inspect_cognition_registry
 from aigol.cognition.semantic_replay import inspect_semantic_replay_continuity
 from aigol.cognition.state_envelope import inspect_cognition_input
+from aigol.cognition.topology_report import inspect_cognition_topology
 
 
 def inspect_cognition(
@@ -34,4 +36,26 @@ def inspect_registry(
     return inspect_cognition_registry(input_path=input_path, output_path=output_path)
 
 
-__all__ = ["check_semantic_replay_continuity", "inspect_cognition", "inspect_registry"]
+def inspect_topology(
+    *,
+    input_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_cognition_topology(input_path=input_path, output_path=output_path)
+
+
+def inspect_lifecycle(
+    *,
+    output_path: str | Path | None = None,
+    validate: bool = False,
+) -> dict[str, Any]:
+    return inspect_cognition_lifecycle(output_path=output_path, validate=validate)
+
+
+__all__ = [
+    "check_semantic_replay_continuity",
+    "inspect_cognition",
+    "inspect_lifecycle",
+    "inspect_registry",
+    "inspect_topology",
+]

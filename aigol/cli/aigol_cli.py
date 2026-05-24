@@ -6,7 +6,13 @@ import argparse
 import json
 from typing import Any
 
-from aigol.cli.commands.cognition import check_semantic_replay_continuity, inspect_cognition, inspect_registry
+from aigol.cli.commands.cognition import (
+    check_semantic_replay_continuity,
+    inspect_cognition,
+    inspect_lifecycle,
+    inspect_registry,
+    inspect_topology,
+)
 from aigol.cli.commands.continuity import continuity_preview_summary
 from aigol.cli.commands.diagnostics import runtime_diagnostics
 from aigol.cli.commands.dispatch import authorize_dispatch
@@ -16,9 +22,11 @@ from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
+from aigol.cognition.lifecycle_model import render_cognition_lifecycle_summary
 from aigol.cognition.registry import render_cognition_registry_summary
 from aigol.cognition.semantic_replay import render_semantic_replay_report
 from aigol.cognition.state_envelope import render_cognition_summary
+from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
 
@@ -117,6 +125,14 @@ def build_parser() -> argparse.ArgumentParser:
     cognition_registry.add_argument("--input", default="")
     cognition_registry.add_argument("--json", action="store_true")
     cognition_registry.add_argument("--output", default="")
+    cognition_topology = cognition_sub.add_parser("topology")
+    cognition_topology.add_argument("--input", default="")
+    cognition_topology.add_argument("--json", action="store_true")
+    cognition_topology.add_argument("--output", default="")
+    cognition_lifecycle = cognition_sub.add_parser("lifecycle")
+    cognition_lifecycle.add_argument("--json", action="store_true")
+    cognition_lifecycle.add_argument("--output", default="")
+    cognition_lifecycle.add_argument("--validate", action="store_true")
 
     return parser
 
@@ -168,6 +184,16 @@ def run_command(args: argparse.Namespace) -> dict:
         return inspect_registry(
             input_path=args.input or None,
             output_path=args.output or None,
+        )
+    if args.command == "cognition" and args.cognition_command == "topology":
+        return inspect_topology(
+            input_path=args.input or None,
+            output_path=args.output or None,
+        )
+    if args.command == "cognition" and args.cognition_command == "lifecycle":
+        return inspect_lifecycle(
+            output_path=args.output or None,
+            validate=args.validate,
         )
     raise ValueError("unsupported command")
 
@@ -313,6 +339,18 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL COGNITION REGISTRY",
             render_cognition_registry_summary(registry, validation).splitlines(),
+        )
+    if command == "aigol cognition topology":
+        report = result.get("cognition_topology_report", {})
+        return render_card(
+            "AIGOL COGNITION TOPOLOGY",
+            render_cognition_topology_summary(report).splitlines(),
+        )
+    if command == "aigol cognition lifecycle":
+        model = result.get("cognition_lifecycle_model", {})
+        return render_card(
+            "AIGOL COGNITION LIFECYCLE",
+            render_cognition_lifecycle_summary(model).splitlines(),
         )
     return render_card("AIGOL", [_json(result)])
 
