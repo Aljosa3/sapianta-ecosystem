@@ -12,6 +12,8 @@ from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
+from aigol.cli.commands.replay import ledger_summary, verify_replay
+from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
@@ -75,6 +77,22 @@ def build_parser() -> argparse.ArgumentParser:
     execution_handoff.add_argument("--workspace-path", default="")
     execution_handoff.add_argument("--timeout-seconds", type=int, default=600)
     execution_handoff.add_argument("--full-codex-exec", action="store_true")
+    execution_handoff.add_argument("--runtime-root", default="")
+
+    return_cmd = subcommands.add_parser("return")
+    return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
+    return_inspect = return_sub.add_parser("inspect")
+    return_inspect.add_argument("--replay-identity", required=True)
+    return_inspect.add_argument("--runtime-root", default="")
+
+    replay = subcommands.add_parser("replay")
+    replay_sub = replay.add_subparsers(dest="replay_command", required=True)
+    replay_ledger = replay_sub.add_parser("ledger")
+    replay_ledger.add_argument("--runtime-root", default="")
+    replay_ledger.add_argument("--limit", type=int, default=10)
+    replay_verify = replay_sub.add_parser("verify")
+    replay_verify.add_argument("--replay-identity", required=True)
+    replay_verify.add_argument("--runtime-root", default="")
 
     diagnostics = subcommands.add_parser("diagnostics")
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
@@ -107,7 +125,14 @@ def run_command(args: argparse.Namespace) -> dict:
             workspace_path=args.workspace_path or None,
             timeout_seconds=args.timeout_seconds,
             provider_success_proof=not args.full_codex_exec,
+            runtime_root=args.runtime_root or None,
         )
+    if args.command == "return" and args.return_command == "inspect":
+        return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
+    if args.command == "replay" and args.replay_command == "ledger":
+        return ledger_summary(runtime_root=args.runtime_root or None, limit=args.limit)
+    if args.command == "replay" and args.replay_command == "verify":
+        return verify_replay(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
     raise ValueError("unsupported command")
@@ -189,6 +214,41 @@ def render_command_result(result: dict) -> str:
                 f"  provider_executable_found: {diagnostics.get('provider_executable_found')}",
                 f"  failure_stage: {diagnostics.get('failure_stage')}",
                 f"  fail_closed: {result.get('fail_closed')}",
+                f"  persistence: {result.get('persistence', {}).get('status')}",
+            ],
+        )
+    if command == "aigol return inspect":
+        return render_card(
+            "AIGOL RETURN INSPECT",
+            [
+                f"status: {result.get('status')}",
+                f"execution_status: {result.get('execution_status')}",
+                f"provider_invoked: {result.get('provider_invoked')}",
+                f"governed_return_hash: {result.get('governed_return_hash')}",
+                f"continuity_verified: {result.get('continuity_verified')}",
+                f"fail_closed: {result.get('fail_closed')}",
+                f"evidence_path: {result.get('evidence_path', '')}",
+            ],
+        )
+    if command == "aigol replay ledger":
+        lines = []
+        for entry in result.get("entries", []):
+            lines.append(
+                f"{entry.get('replay_identity')} | {entry.get('execution_status')} | {entry.get('governed_return_hash')}"
+            )
+        return render_card("AIGOL REPLAY LEDGER", lines or ["NO GOVERNED RETURNS"])
+    if command == "aigol replay verify":
+        return render_card(
+            "AIGOL REPLAY VERIFY",
+            [
+                f"status: {result.get('status')}",
+                f"replay_identity: {result.get('replay_identity')}",
+                f"governed_return_hash_valid: {result.get('governed_return_hash_valid')}",
+                f"execution_result_hash_present: {result.get('execution_result_hash_present')}",
+                f"evidence_files_exist: {result.get('evidence_files_exist')}",
+                f"ledger_entry_exists: {result.get('ledger_entry_exists')}",
+                f"lineage_continuity_exists: {result.get('lineage_continuity_exists')}",
+                f"fail_closed: {result.get('fail_closed')}",
             ],
         )
     if command == "aigol diagnostics runtime":

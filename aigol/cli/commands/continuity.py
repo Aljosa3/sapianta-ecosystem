@@ -38,6 +38,9 @@ def build_governed_chain(*, ingress_artifact: dict) -> dict:
         "replay_identity": continuity_preview.get("replay_identity", task_preview.get("replay_identity", "UNKNOWN")),
         "hash_continuity": {
             "ingress_artifact_hash": task_preview.get("source_ingress_artifact_hash", ""),
+            "proposal_candidate_hash": task_preview.get("semantic_proposal_candidate_hash", "UNKNOWN"),
+            "contract_candidate_hash": task_preview.get("semantic_contract_candidate_hash", "UNKNOWN"),
+            "acceptance_gate_hash": task_preview.get("admissibility_gate_hash", "UNKNOWN"),
             "task_preview_hash": task_preview.get("preview_hash", ""),
             "human_approval_hash": approval.get("approval_hash", ""),
             "handoff_preview_hash": handoff_preview.get("handoff_preview_hash", ""),
@@ -62,4 +65,3 @@ def continuity_preview_summary(*, ingress_artifact: dict) -> dict:
 
 
 __all__ = ["build_governed_chain", "continuity_preview_summary"]
-

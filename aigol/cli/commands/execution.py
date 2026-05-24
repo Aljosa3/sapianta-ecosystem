@@ -9,6 +9,10 @@ from agol_bridge.chatgpt_ingress.controlled_execution_handoff import create_cont
 from agol_bridge.transport.local_governed_transport import canonical_hash
 
 from aigol.cli.commands.continuity import build_governed_chain
+from aigol.cli.commands.return_continuity import (
+    generate_governed_return_artifact,
+    persist_governed_return_artifact,
+)
 
 ALLOWED_EXECUTION_STATUSES = ("EXECUTION_COMPLETED", "EXECUTION_FAILED", "EXECUTION_BLOCKED")
 
@@ -89,6 +93,8 @@ def run_execution_handoff(
     timeout_seconds: int = 600,
     native_message_handler: Callable[[dict], dict] | None = None,
     provider_success_proof: bool = True,
+    persist_return: bool = True,
+    runtime_root: str | Path | None = None,
 ) -> dict:
     chain = build_governed_chain(ingress_artifact=ingress_artifact)
     kwargs = {
@@ -101,10 +107,29 @@ def run_execution_handoff(
         kwargs["native_message_handler"] = native_message_handler
     artifact = create_controlled_execution_handoff(**kwargs)
     governed_return = create_governed_return_artifact(execution_artifact=artifact)
+    governed_return_artifact = generate_governed_return_artifact(
+        execution_artifact=artifact,
+        cli_governed_return=governed_return,
+        chain=chain,
+    )
+    if governed_return_artifact.get("governed_return_hash", "").startswith("sha256:"):
+        governed_return["governed_return_hash"] = governed_return_artifact["governed_return_hash"]
+        governed_return.setdefault("diagnostic_evidence", {})["governed_return_hash"] = governed_return_artifact["governed_return_hash"]
+    persistence = (
+        persist_governed_return_artifact(
+            artifact=governed_return_artifact,
+            provider_result=governed_return["provider_result"],
+            runtime_root=runtime_root,
+        )
+        if persist_return
+        else {"status": "NOT_PERSISTED", "fail_closed": False}
+    )
     return {
         "command": "aigol execution handoff",
         "execution_artifact": artifact,
         "governed_return": governed_return,
+        "governed_return_artifact": governed_return_artifact,
+        "persistence": persistence,
         "execution_status": artifact.get("execution_status", "UNKNOWN"),
         "provider_invoked": artifact.get("provider_invoked") is True,
         "provider_result": governed_return["provider_result"],
@@ -112,9 +137,9 @@ def run_execution_handoff(
         "replay_identity": artifact.get("replay_identity", "UNKNOWN"),
         "execution_governance_hash": artifact.get("execution_governance_hash", ""),
         "execution_result_hash": artifact.get("execution_result_hash", ""),
-        "governed_return_hash": governed_return["governed_return_hash"],
+        "governed_return_hash": governed_return_artifact.get("governed_return_hash", governed_return["governed_return_hash"]),
         "continuity_verified": governed_return["continuity_verified"],
-        "fail_closed": governed_return["fail_closed"],
+        "fail_closed": governed_return["fail_closed"] or persistence.get("status") == "PERSISTENCE_FAILED",
         "diagnostic_evidence": governed_return["diagnostic_evidence"],
     }
 
