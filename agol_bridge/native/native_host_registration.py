@@ -11,6 +11,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -18,21 +20,30 @@ NATIVE_HOST_NAME = "com.sapianta.aigol_bridge"
 NATIVE_HOST_DESCRIPTION = "SAPIANTA AiGOL local native messaging bridge"
 NATIVE_HOST_TYPE = "stdio"
 DEFAULT_CHROME_VARIANT = "google-chrome"
-_EXTENSION_ID_PATTERN = re.compile(r"^[a-p]{32}$")
+_EXTENSION_ID_PATTERN = re.compile(r"^[a-z]{32}$")
+_CHROME_EXTENSION_ORIGIN_PREFIX = "chrome-extension://"
 
 
 def repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def normalize_extension_id(extension_id: str) -> str:
+    value = str(extension_id or "").strip().lower()
+    if value.startswith(_CHROME_EXTENSION_ORIGIN_PREFIX):
+        value = value[len(_CHROME_EXTENSION_ORIGIN_PREFIX) :]
+    return value.rstrip("/")
+
+
 def validate_extension_id(extension_id: str) -> bool:
-    return bool(_EXTENSION_ID_PATTERN.fullmatch(str(extension_id or "")))
+    return bool(_EXTENSION_ID_PATTERN.fullmatch(normalize_extension_id(extension_id)))
 
 
 def allowed_origin_for_extension(extension_id: str) -> str:
-    if not validate_extension_id(extension_id):
-        raise ValueError("extension_id must be a 32-character Chrome extension id using letters a-p")
-    return f"chrome-extension://{extension_id}/"
+    normalized_extension_id = normalize_extension_id(extension_id)
+    if not validate_extension_id(normalized_extension_id):
+        raise ValueError("extension_id must normalize to a 32-character Chrome extension id using lowercase letters")
+    return f"chrome-extension://{normalized_extension_id}/"
 
 
 def native_host_executable_path(repo_root: str | Path | None = None) -> Path:
@@ -91,19 +102,57 @@ def manifest_to_canonical_json(manifest: dict[str, Any]) -> str:
     return json.dumps(manifest, sort_keys=True, separators=(",", ":"))
 
 
+def _file_mode(path: Path) -> str:
+    try:
+        return oct(stat.S_IMODE(path.stat().st_mode))
+    except OSError:
+        return ""
+
+
+def _file_owner(path: Path) -> dict[str, int | str]:
+    try:
+        stat_result = path.stat()
+        return {"uid": stat_result.st_uid, "gid": stat_result.st_gid}
+    except OSError:
+        return {"uid": "", "gid": ""}
+
+
+def _shebang_diagnostics(path: Path) -> dict[str, Any]:
+    try:
+        first_line = path.read_text(encoding="utf-8", errors="replace").splitlines()[0]
+    except (OSError, IndexError):
+        first_line = ""
+    shebang_valid = first_line.startswith("#!") and "python" in first_line.lower()
+    runtime_found = False
+    if shebang_valid:
+        parts = first_line[2:].strip().split()
+        if parts[:1] == ["/usr/bin/env"] and len(parts) > 1:
+            runtime_found = shutil.which(parts[1]) is not None
+        elif parts:
+            runtime_found = Path(parts[0]).is_file()
+    return {
+        "native_host_shebang": first_line,
+        "native_host_shebang_valid": shebang_valid,
+        "native_host_python_runtime_found": runtime_found,
+    }
+
+
 def validate_native_host_registration(
     *,
     extension_id: str,
     repo_root: str | Path | None = None,
     registration_dir: str | Path | None = None,
     manifest_path: str | Path | None = None,
+    chrome_profile_path: str | Path | None = None,
+    chrome_runtime_launch_attempted: bool = False,
     host_name: str = NATIVE_HOST_NAME,
 ) -> dict[str, Any]:
     errors: list[str] = []
-    extension_id_valid = validate_extension_id(extension_id)
+    normalized_extension_id = normalize_extension_id(extension_id)
+    extension_id_valid = validate_extension_id(normalized_extension_id)
     expected_origin = ""
     if extension_id_valid:
-        expected_origin = allowed_origin_for_extension(extension_id)
+        expected_origin = allowed_origin_for_extension(normalized_extension_id)
     else:
         errors.append("invalid extension id")
 
@@ -118,12 +167,21 @@ def validate_native_host_registration(
         else native_host_manifest_path(registration_dir=resolved_registration_dir, host_name=host_name)
     )
 
+    resolved_chrome_profile_path = (
+        Path(chrome_profile_path).expanduser().resolve()
+        if chrome_profile_path is not None
+        else resolved_registration_dir.parent
+    )
+    chrome_profile_detected = resolved_chrome_profile_path.is_dir()
     manifest_found = resolved_manifest_path.is_file()
+    manifest_readable_permission = manifest_found and os.access(resolved_manifest_path, os.R_OK)
+    manifest_json_valid = False
     manifest_readable = False
     manifest: dict[str, Any] = {}
     if manifest_found:
         try:
             loaded = json.loads(resolved_manifest_path.read_text(encoding="utf-8"))
+            manifest_json_valid = True
             if isinstance(loaded, dict):
                 manifest = loaded
                 manifest_readable = True
@@ -161,22 +219,39 @@ def validate_native_host_registration(
     except OSError:
         pass
     executable_found = executable_path.is_file()
+    executable_readable = executable_found and os.access(executable_path, os.R_OK)
     executable_executable = executable_found and os.access(executable_path, os.X_OK)
+    shebang = _shebang_diagnostics(executable_path) if executable_found else {
+        "native_host_shebang": "",
+        "native_host_shebang_valid": False,
+        "native_host_python_runtime_found": False,
+    }
     if manifest_readable and not executable_found:
         errors.append("native host executable missing")
     if manifest_readable and executable_found and not executable_executable:
         errors.append("native host executable is not executable")
+    if manifest_readable and executable_found and not shebang["native_host_shebang_valid"]:
+        errors.append("native host shebang is invalid")
+    if manifest_readable and executable_found and shebang["native_host_shebang_valid"] and not shebang["native_host_python_runtime_found"]:
+        errors.append("native host Python runtime was not found")
 
     registration_valid = bool(
         extension_id_valid
         and manifest_found
         and manifest_readable
+        and manifest_json_valid
         and manifest_name_match
         and manifest_type_match
         and allowed_origin_match
         and executable_found
+        and executable_readable
         and executable_executable
+        and shebang["native_host_shebang_valid"]
+        and shebang["native_host_python_runtime_found"]
     )
+    chrome_runtime_launch_allowed = registration_valid
+    chrome_runtime_launch_blocked = bool(chrome_runtime_launch_attempted and not chrome_runtime_launch_allowed)
+    chrome_runtime_launch_failure_reason = "; ".join(errors) if chrome_runtime_launch_blocked else ""
 
     try:
         manifest_preview = generate_native_host_manifest(extension_id=extension_id, repo_root=repo_root, host_name=host_name)
@@ -186,21 +261,39 @@ def validate_native_host_registration(
     return {
         "native_host_name": host_name,
         "extension_id": extension_id,
+        "normalized_extension_id": normalized_extension_id,
         "extension_id_valid": extension_id_valid,
+        "native_host_extension_id": normalized_extension_id,
         "expected_allowed_origin": expected_origin,
+        "native_host_manifest_exists": manifest_found,
         "native_host_manifest_found": manifest_found,
         "native_host_manifest_path": str(resolved_manifest_path),
+        "native_host_manifest_permissions": _file_mode(resolved_manifest_path),
+        "native_host_manifest_readable_permission": manifest_readable_permission,
         "native_host_manifest_readable": manifest_readable,
+        "native_host_manifest_json_valid": manifest_json_valid,
         "native_host_manifest_name_match": manifest_name_match,
         "native_host_manifest_type_match": manifest_type_match,
+        "native_host_allowed_origins": allowed_origins if isinstance(allowed_origins, list) else [],
         "native_host_allowed_origin_match": allowed_origin_match,
         "native_host_executable_path": str(executable_path),
+        "native_host_executable_exists": executable_found,
         "native_host_executable_found": executable_found,
+        "native_host_executable_readable": executable_readable,
         "native_host_executable_executable": executable_executable,
+        "native_host_executable_permissions": _file_mode(executable_path),
+        "native_host_executable_owner": _file_owner(executable_path),
+        **shebang,
+        "native_host_profile_path": str(resolved_chrome_profile_path),
+        "chrome_profile_detected": chrome_profile_detected,
         "native_host_registration_directory": str(resolved_registration_dir),
         "native_host_registration_directory_found": resolved_registration_dir.is_dir(),
         "native_host_registration_valid": registration_valid,
         "native_host_launch_ready": registration_valid,
+        "chrome_runtime_launch_allowed": chrome_runtime_launch_allowed,
+        "chrome_runtime_launch_attempted": chrome_runtime_launch_attempted,
+        "chrome_runtime_launch_blocked": chrome_runtime_launch_blocked,
+        "chrome_runtime_launch_failure_reason": chrome_runtime_launch_failure_reason,
         "generated_manifest_preview": manifest_preview,
         "errors": errors,
         "fail_closed": not registration_valid,
@@ -218,6 +311,7 @@ __all__ = [
     "manifest_to_canonical_json",
     "native_host_executable_path",
     "native_host_manifest_path",
+    "normalize_extension_id",
     "repository_root",
     "validate_extension_id",
     "validate_native_host_registration",

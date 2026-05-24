@@ -1356,6 +1356,9 @@ function controlledExecutionBlockedSummary(reason) {
 }
 
 function renderControlledExecutionHandoff(summary) {
+  const registration = (((summary.diagnostic_evidence || {}).service_worker || {}).native_host_registration)
+    || (((summary.diagnostic_evidence || {}).native_bridge || {}).native_host_registration)
+    || {};
   setCockpitText(COCKPIT_IDS.controlledExecutionHandoff, [
     "Controlled Execution Handoff",
     "ARTIFACT_TYPE: CONTROLLED_EXECUTION_HANDOFF_V1",
@@ -1370,6 +1373,24 @@ function renderControlledExecutionHandoff(summary) {
     `service_worker_called: ${summary.service_worker_called}`,
     `provider_invoked: ${summary.provider_invoked}`,
     `codex_provider_used: ${summary.codex_provider_used || ""}`,
+    `native_host_manifest_exists: ${registration.native_host_manifest_exists}`,
+    `native_host_manifest_readable: ${registration.native_host_manifest_readable}`,
+    `native_host_manifest_json_valid: ${registration.native_host_manifest_json_valid}`,
+    `native_host_manifest_permissions: ${registration.native_host_manifest_permissions || ""}`,
+    `native_host_manifest_path: ${registration.native_host_manifest_path || ""}`,
+    `native_host_executable_exists: ${registration.native_host_executable_exists}`,
+    `native_host_executable_readable: ${registration.native_host_executable_readable}`,
+    `native_host_executable_executable: ${registration.native_host_executable_executable}`,
+    `native_host_shebang_valid: ${registration.native_host_shebang_valid}`,
+    `native_host_python_runtime_found: ${registration.native_host_python_runtime_found}`,
+    `native_host_allowed_origin_match: ${registration.native_host_allowed_origin_match}`,
+    `native_host_extension_id: ${registration.native_host_extension_id || ""}`,
+    `native_host_profile_path: ${registration.native_host_profile_path || ""}`,
+    `chrome_profile_detected: ${registration.chrome_profile_detected}`,
+    `chrome_runtime_launch_allowed: ${registration.chrome_runtime_launch_allowed}`,
+    `chrome_runtime_launch_attempted: ${registration.chrome_runtime_launch_attempted}`,
+    `chrome_runtime_launch_blocked: ${registration.chrome_runtime_launch_blocked}`,
+    `chrome_runtime_launch_failure_reason: ${registration.chrome_runtime_launch_failure_reason || ""}`,
     `execution_result_summary: ${compactValue(summary.execution_result_summary)}`,
     `diagnostic_evidence: ${compactValue(summary.diagnostic_evidence || {})}`,
     `execution_result_hash: ${summary.execution_result_hash}`,

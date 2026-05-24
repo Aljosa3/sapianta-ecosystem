@@ -4,15 +4,33 @@ const NATIVE_BRIDGE_TIMEOUT_MS = 660000;
 
 function nativeHostRegistrationDiagnostics(code, message) {
   const hostNotFound = code === "NATIVE_HOST_NOT_FOUND";
+  const hostForbidden = code === "NATIVE_HOST_FORBIDDEN";
+  const launchBlocked = hostNotFound || hostForbidden;
   return {
     native_host_name: NATIVE_BRIDGE_HOST,
+    native_host_manifest_exists: hostNotFound ? false : null,
     native_host_manifest_found: hostNotFound ? false : null,
+    native_host_manifest_readable: hostForbidden ? null : false,
+    native_host_manifest_json_valid: hostForbidden ? null : false,
+    native_host_manifest_permissions: "",
     native_host_manifest_path: "",
+    native_host_executable_exists: hostNotFound ? false : null,
     native_host_executable_found: hostNotFound ? false : null,
-    native_host_executable_executable: hostNotFound ? false : null,
-    native_host_allowed_origin_match: hostNotFound ? false : null,
+    native_host_executable_readable: hostForbidden ? null : false,
+    native_host_executable_executable: hostForbidden ? null : false,
+    native_host_shebang_valid: hostForbidden ? null : false,
+    native_host_python_runtime_found: hostForbidden ? null : false,
+    native_host_allowed_origins: [],
+    native_host_allowed_origin_match: launchBlocked ? false : null,
+    native_host_extension_id: "",
+    native_host_profile_path: "",
+    chrome_profile_detected: null,
     native_host_registration_valid: false,
     native_host_launch_ready: false,
+    chrome_runtime_launch_allowed: false,
+    chrome_runtime_launch_attempted: true,
+    chrome_runtime_launch_blocked: launchBlocked,
+    chrome_runtime_launch_failure_reason: message || code,
     native_host_registration_failure: code,
     native_host_registration_message: message || code
   };
@@ -69,6 +87,9 @@ function classifyNativeRuntimeError(message) {
   const text = String(message || "").toLowerCase();
   if (text.includes("host not found") || text.includes("specified native messaging host not found")) {
     return "NATIVE_HOST_NOT_FOUND";
+  }
+  if (text.includes("forbidden") || text.includes("access to the specified native messaging host is forbidden")) {
+    return "NATIVE_HOST_FORBIDDEN";
   }
   if (text.includes("permission")) {
     return "MISSING_PERMISSIONS";
