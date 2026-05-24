@@ -2,7 +2,24 @@ const NATIVE_BRIDGE_HOST = "com.sapianta.aigol_bridge";
 const SERVICE_WORKER_NATIVE_BRIDGE_ACTION = "RUN_NATIVE_BRIDGE";
 const NATIVE_BRIDGE_TIMEOUT_MS = 660000;
 
+function nativeHostRegistrationDiagnostics(code, message) {
+  const hostNotFound = code === "NATIVE_HOST_NOT_FOUND";
+  return {
+    native_host_name: NATIVE_BRIDGE_HOST,
+    native_host_manifest_found: hostNotFound ? false : null,
+    native_host_manifest_path: "",
+    native_host_executable_found: hostNotFound ? false : null,
+    native_host_executable_executable: hostNotFound ? false : null,
+    native_host_allowed_origin_match: hostNotFound ? false : null,
+    native_host_registration_valid: false,
+    native_host_launch_ready: false,
+    native_host_registration_failure: code,
+    native_host_registration_message: message || code
+  };
+}
+
 function nativeBridgeRuntimeError(code, message) {
+  const registrationDiagnostics = nativeHostRegistrationDiagnostics(code, message);
   return {
     status: "SERVICE_WORKER_NATIVE_BRIDGE_FAILED",
     error: {
@@ -18,11 +35,13 @@ function nativeBridgeRuntimeError(code, message) {
       provider_invoked: false,
       subprocess_invoked: false,
       response_serialization_ready: false,
+      native_host_registration: registrationDiagnostics,
       native_bridge: {
         failing_layer: "service_worker_native_bridge_response_handling",
         failing_function: "invokeNativeBridge",
         failing_condition: message || code,
-        response_serialization_ready: false
+        response_serialization_ready: false,
+        native_host_registration: registrationDiagnostics
       },
       provider: {}
     },
