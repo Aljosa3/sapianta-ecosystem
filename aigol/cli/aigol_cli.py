@@ -160,14 +160,31 @@ def render_command_result(result: dict) -> str:
             ],
         )
     if command == "aigol execution handoff":
+        diagnostics = result.get("diagnostic_evidence", {})
+        provider_state = "INVOKED" if result.get("provider_invoked") else "NOT_INVOKED"
+        return_state = "GENERATED" if result.get("governed_return_hash") else "NOT_GENERATED"
+        continuity_state = "VERIFIED" if result.get("continuity_verified") else "NOT_VERIFIED"
         return render_card(
-            "AIGOL EXECUTION HANDOFF",
+            "AIGOL EXECUTION RESULT",
             [
-                f"execution_status: {result.get('execution_status')}",
-                f"provider_invoked: {result.get('provider_invoked')}",
-                f"replay_identity: {result.get('replay_identity')}",
-                f"execution_result_hash: {result.get('execution_result_hash')}",
-                f"execution_governance_hash: {result.get('execution_governance_hash')}",
+                "Execution:",
+                f"  {result.get('execution_status')}",
+                "Provider:",
+                f"  {provider_state}",
+                "Replay:",
+                f"  {result.get('replay_identity')}",
+                "Governed Return:",
+                f"  {return_state}",
+                "Return Hash:",
+                f"  {result.get('governed_return_hash')}",
+                "Exit Code:",
+                f"  {result.get('provider_exit_code')}",
+                "Continuity:",
+                f"  {continuity_state}",
+                "Diagnostics:",
+                f"  provider_executable_found: {diagnostics.get('provider_executable_found')}",
+                f"  failure_stage: {diagnostics.get('failure_stage')}",
+                f"  fail_closed: {result.get('fail_closed')}",
             ],
         )
     if command == "aigol diagnostics runtime":

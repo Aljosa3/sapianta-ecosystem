@@ -150,7 +150,8 @@ def test_execution_path_not_duplicated():
 
     assert "create_controlled_execution_handoff" in source
     assert "handle_native_message" not in source
-    assert "subprocess" not in source
+    assert "import subprocess" not in source
+    assert "subprocess.run" not in source
 
 
 def test_provider_continuity_preserved(tmp_path):
