@@ -1,0 +1,22 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_CONTINUITY_REPORT",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "continuity_report": {
+    "ingress_continuity": "CHATGPT_INGRESS_ARTIFACT_V1 is generated deterministically and replay-visible.",
+    "governance_continuity": "Governance mediation and admissibility continuity remain fail-closed.",
+    "execution_continuity": "Controlled execution handoff is explicit and bounded.",
+    "provider_continuity": "Bounded Codex provider continuity is single-path and provider-invoked.",
+    "governed_return_continuity": "GOVERNED_RETURN_ARTIFACT_V1 is generated with deterministic hash evidence.",
+    "replay_continuity": "Replay identity, execution hashes, return hash, ledger entry, and lineage are verifiable.",
+    "persistence_continuity": "Append-only ledger and per-replay evidence bundles persist operating records.",
+    "verification_continuity": "Replay verification reports VERIFY_PASSED for certified live evidence."
+  },
+  "live_runtime_evidence_summary": {
+    "execution_status": "EXECUTION_COMPLETED",
+    "provider_invoked": true,
+    "governed_return_generated": true,
+    "continuity_verified": true,
+    "verify_status": "VERIFY_PASSED"
+  }
+}

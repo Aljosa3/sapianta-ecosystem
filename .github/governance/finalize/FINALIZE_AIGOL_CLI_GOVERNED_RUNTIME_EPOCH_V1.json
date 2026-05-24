@@ -1,0 +1,41 @@
+{
+  "milestone": "FINALIZE_AIGOL_CLI_GOVERNED_RUNTIME_EPOCH_V1",
+  "status": "FROZEN_AND_CERTIFIED",
+  "epoch": "first stable AiGOL CLI governed execution substrate",
+  "certified_runtime_includes": [
+    "CLI ingress continuity",
+    "governance continuity",
+    "dispatch authorization continuity",
+    "controlled execution continuity",
+    "bounded Codex provider continuity",
+    "governed return continuity",
+    "replay verification continuity",
+    "evidence persistence continuity"
+  ],
+  "certification_confirms": [
+    "deterministic replay continuity",
+    "bounded provider continuity",
+    "governed return continuity",
+    "append-only replay ledger continuity",
+    "evidence persistence continuity",
+    "fail-closed execution continuity",
+    "governance authority separation",
+    "single provider path continuity",
+    "no orchestration",
+    "no retries",
+    "no autonomous continuation",
+    "no hidden execution topology",
+    "no governance bypass"
+  ],
+  "live_runtime_evidence": {
+    "replay_identity": "CHATGPT-INGRESS-REPLAY-43304e7a87ed8d77ecfdbf1e",
+    "execution_status": "EXECUTION_COMPLETED",
+    "provider_invoked": true,
+    "governed_return_generated": true,
+    "continuity_verified": true,
+    "replay_verify_status": "VERIFY_PASSED",
+    "governed_return_hash": "sha256:21f4c50afe6ec5ffcacbec540295b6227a9aab862d3c0ff413e7c6677c028ef8"
+  },
+  "runtime_topology_modified": false,
+  "finalization_only": true
+}

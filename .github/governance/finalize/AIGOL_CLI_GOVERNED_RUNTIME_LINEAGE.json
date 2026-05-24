@@ -1,0 +1,32 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_LINEAGE",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "lineage": [
+    "CHATGPT_INGRESS_ARTIFACT_V1",
+    "proposal candidate",
+    "semantic contract candidate",
+    "acceptance gate",
+    "governed task preview",
+    "human approval",
+    "governed handoff preview",
+    "dispatch authorization",
+    "controlled execution continuity",
+    "provider continuity",
+    "governed return artifact",
+    "replay verification"
+  ],
+  "required_hash_lineage": {
+    "ingress_artifact_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "proposal_candidate_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "contract_candidate_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "acceptance_gate_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "task_package_preview_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "human_approval_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "handoff_preview_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "dispatch_authorization_hash": "CERTIFIED_PRESENT_OR_UNKNOWN_RECORDED",
+    "execution_governance_hash": "CERTIFIED_PRESENT",
+    "governed_return_hash": "CERTIFIED_PRESENT"
+  },
+  "lineage_continuity_verified": true
+}

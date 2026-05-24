@@ -1,0 +1,24 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_REPLAY_CERTIFICATION",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "replay_guarantees": {
+    "replay_identity_preserved": true,
+    "execution_result_hash_present": true,
+    "execution_governance_hash_present": true,
+    "governed_return_hash_verifiable": true,
+    "ledger_entry_exists": true,
+    "evidence_files_exist": true,
+    "lineage_continuity_exists": true,
+    "append_only_ledger": true,
+    "replay_mutation": false
+  },
+  "live_verification": {
+    "replay_identity": "CHATGPT-INGRESS-REPLAY-43304e7a87ed8d77ecfdbf1e",
+    "verify_status": "VERIFY_PASSED",
+    "governed_return_hash_valid": true,
+    "ledger_entry_exists": true,
+    "evidence_files_exist": true,
+    "lineage_continuity_exists": true
+  }
+}

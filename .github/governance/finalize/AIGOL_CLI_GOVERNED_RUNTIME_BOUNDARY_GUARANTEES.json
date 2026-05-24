@@ -1,0 +1,18 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_BOUNDARY_GUARANTEES",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "boundary_guarantees": {
+    "execution_authority": "bounded",
+    "provider_path": "single",
+    "orchestration": false,
+    "retries": false,
+    "autonomous_continuation": false,
+    "hidden_execution": false,
+    "governance_bypass": false,
+    "replay_mutation": false,
+    "ledger_mutation": "append_only",
+    "alternate_providers": false,
+    "runtime_topology_modified_by_finalization": false
+  }
+}

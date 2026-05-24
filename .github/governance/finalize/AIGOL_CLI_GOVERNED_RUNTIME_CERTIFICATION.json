@@ -1,0 +1,32 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_CERTIFICATION",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "certifies": {
+    "deterministic_replay_continuity": true,
+    "bounded_provider_continuity": true,
+    "governed_return_continuity": true,
+    "append_only_replay_ledger_continuity": true,
+    "evidence_persistence_continuity": true,
+    "fail_closed_execution_continuity": true,
+    "governance_authority_separation": true,
+    "single_provider_path_continuity": true
+  },
+  "exclusions": {
+    "orchestration": false,
+    "retries": false,
+    "autonomous_continuation": false,
+    "hidden_execution_topology": false,
+    "governance_bypass": false,
+    "alternate_providers": false
+  },
+  "live_runtime_evidence": {
+    "replay_identity": "CHATGPT-INGRESS-REPLAY-43304e7a87ed8d77ecfdbf1e",
+    "execution_status": "EXECUTION_COMPLETED",
+    "provider_invoked": true,
+    "governed_return_generated": true,
+    "continuity_verified": true,
+    "replay_verify_status": "VERIFY_PASSED",
+    "governed_return_hash": "sha256:21f4c50afe6ec5ffcacbec540295b6227a9aab862d3c0ff413e7c6677c028ef8"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "artifact": "AIGOL_CLI_GOVERNED_RUNTIME_OPERATIONAL_FREEZE",
+  "version": "1.0",
+  "status": "FROZEN",
+  "freeze_statement": "This epoch certifies the first stable AiGOL CLI governed execution substrate.",
+  "certified_runtime_includes": [
+    "CLI ingress continuity",
+    "governance continuity",
+    "dispatch authorization continuity",
+    "controlled execution continuity",
+    "bounded Codex provider continuity",
+    "governed return continuity",
+    "replay verification continuity",
+    "evidence persistence continuity"
+  ],
+  "future_expansion_requires_new_milestone": true,
+  "finalization_adds_runtime_capability": false
+}
