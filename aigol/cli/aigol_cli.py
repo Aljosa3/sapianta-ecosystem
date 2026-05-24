@@ -14,6 +14,7 @@ from aigol.cli.commands.cognition import (
     inspect_lifecycle,
     inspect_registry,
     inspect_semantic_context_state,
+    inspect_semantic_relationship_index,
     inspect_topology,
 )
 from aigol.cli.commands.continuity import continuity_preview_summary
@@ -30,6 +31,7 @@ from aigol.cognition.integrity_summary import render_cognition_integrity_summary
 from aigol.cognition.lifecycle_model import render_cognition_lifecycle_summary
 from aigol.cognition.registry import render_cognition_registry_summary
 from aigol.cognition.semantic_context_state import render_semantic_context_summary
+from aigol.cognition.semantic_relationship_index import render_semantic_relationship_summary
 from aigol.cognition.semantic_replay import render_semantic_replay_report
 from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
@@ -154,6 +156,11 @@ def build_parser() -> argparse.ArgumentParser:
     cognition_semantic_context.add_argument("--json", action="store_true")
     cognition_semantic_context.add_argument("--output", default="")
     cognition_semantic_context.add_argument("--validate", action="store_true")
+    cognition_semantic_relationships = cognition_sub.add_parser("semantic-relationships")
+    cognition_semantic_relationships.add_argument("--input", default="")
+    cognition_semantic_relationships.add_argument("--json", action="store_true")
+    cognition_semantic_relationships.add_argument("--output", default="")
+    cognition_semantic_relationships.add_argument("--validate", action="store_true")
 
     return parser
 
@@ -230,6 +237,12 @@ def run_command(args: argparse.Namespace) -> dict:
         )
     if args.command == "cognition" and args.cognition_command == "semantic-context":
         return inspect_semantic_context_state(
+            input_path=args.input or None,
+            output_path=args.output or None,
+            validate=args.validate,
+        )
+    if args.command == "cognition" and args.cognition_command == "semantic-relationships":
+        return inspect_semantic_relationship_index(
             input_path=args.input or None,
             output_path=args.output or None,
             validate=args.validate,
@@ -408,6 +421,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL COGNITION SEMANTIC CONTEXT",
             render_semantic_context_summary(state).splitlines(),
+        )
+    if command == "aigol cognition semantic-relationships":
+        index = result.get("semantic_relationship_index", {})
+        return render_card(
+            "AIGOL COGNITION SEMANTIC RELATIONSHIPS",
+            render_semantic_relationship_summary(index).splitlines(),
         )
     return render_card("AIGOL", [_json(result)])
 
