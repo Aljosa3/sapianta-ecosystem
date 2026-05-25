@@ -10,6 +10,7 @@ from aigol.moc.advisory_contract_generation import inspect_advisory_contract_gen
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
+from aigol.moc.provider_execution_gate import inspect_provider_execution_gate
 from aigol.moc.proposal_ledger import inspect_proposal_ledger_append
 from aigol.moc.proposal_persistence import inspect_proposal_persistence
 from aigol.moc.dispatch_authorization import inspect_worker_dispatch_authorization
@@ -165,6 +166,17 @@ def runtime_dispatch_command(
     )
 
 
+def provider_execution_gate_command(
+    *,
+    runtime_dispatch_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_provider_execution_gate(
+        runtime_dispatch_path=runtime_dispatch_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "append_ledger_command",
     "approval_gate_command",
@@ -175,6 +187,7 @@ __all__ = [
     "generate_contract_command",
     "persist_proposal_command",
     "prepare_worker_command",
+    "provider_execution_gate_command",
     "runtime_dispatch_command",
     "validate_contract_command",
     "validate_proposal_command",
