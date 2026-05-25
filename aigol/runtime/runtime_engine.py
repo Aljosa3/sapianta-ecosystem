@@ -7,6 +7,7 @@ from copy import deepcopy
 from .capabilities import CapabilityExecutor, CapabilityRequest, CapabilityValidator
 from .continuity import ContinuationContract, RuntimeContinuityEngine
 from .goals import GoalContract, GoalContinuityEngine, GoalSequence
+from .memory import MemoryContract, MemoryRecord, MemoryStore, MemoryValidator, SemanticSummary
 from .models import (
     FailClosedRuntimeError,
     GovernedReturnArtifact,
@@ -95,10 +96,13 @@ class RuntimeEngine:
         sequence = GoalSequence.from_runtime_package(runtime_package, contract)
         result, validation = GoalContinuityEngine().evaluate(contract, sequence)
         if self.runtime_store is not None:
-            self.runtime_store.persist_goal_contract(runtime_package.runtime_id, contract.to_dict())
-            self.runtime_store.persist_goal_sequence(runtime_package.runtime_id, sequence.to_dict())
+            goal_contract = contract.to_dict()
+            goal_sequence = sequence.to_dict()
+            self.runtime_store.persist_goal_contract(runtime_package.runtime_id, goal_contract)
+            self.runtime_store.persist_goal_sequence(runtime_package.runtime_id, goal_sequence)
             self.runtime_store.persist_goal_validation(runtime_package.runtime_id, validation)
             self.runtime_store.persist_goal_result(runtime_package.runtime_id, result)
+            self._persist_semantic_memory(runtime_package, goal_contract, goal_sequence, result)
         return ProviderResponse(
             provider=runtime_package.provider,
             status="GOAL_CONTINUITY_EVALUATED",
@@ -198,6 +202,25 @@ class RuntimeEngine:
         result = self.runtime_store.load_result(runtime_id)
         snapshot = RuntimeSnapshot.from_artifacts(runtime_id, dispatch, result, self.runtime_store)
         self.runtime_store.persist_runtime_snapshot(runtime_id, snapshot.to_dict())
+
+    def _persist_semantic_memory(
+        self,
+        runtime_package: RuntimePackage,
+        goal_contract: dict,
+        goal_sequence: dict,
+        goal_result: dict,
+    ) -> None:
+        if self.runtime_store is None:
+            return
+        memory_store = MemoryStore(self.runtime_store.root)
+        semantic_summary = SemanticSummary.from_goal_artifacts(goal_contract, goal_sequence, goal_result).to_dict()
+        contract = MemoryContract.from_goal_contract(goal_contract)
+        record = MemoryRecord.from_contract(contract, semantic_summary)
+        validation = MemoryValidator().validate(contract, record)
+        memory_store.persist_summary(runtime_package.runtime_id, semantic_summary)
+        memory_store.persist_contract(runtime_package.runtime_id, contract.to_dict())
+        memory_store.persist_record(runtime_package.runtime_id, record.to_dict())
+        memory_store.persist_validation(runtime_package.runtime_id, validation)
 
     def _dispatch_artifact(
         self,
