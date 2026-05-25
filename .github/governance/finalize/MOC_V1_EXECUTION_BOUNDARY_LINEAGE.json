@@ -1,0 +1,59 @@
+{
+  "artifact_type": "MOC_V1_EXECUTION_BOUNDARY_LINEAGE",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE",
+  "status": "CERTIFIED",
+  "lineage_statement": "This lineage records the MOC V1 pre-runtime-dispatch boundary sequence and grants no runtime execution, provider activation, worker dispatch, orchestration, autonomous cognition, hidden continuation, or governance mutation authority.",
+  "lineage_sequence": [
+    "MOC_V1_FOUNDATION",
+    "MOC_V1_ADVISORY_CONTRACT_GENERATION_FOUNDATION",
+    "MOC_V1_ADVISORY_PROPOSAL_VALIDATION_FOUNDATION",
+    "MOC_V1_GOVERNED_PROPOSAL_CORRECTION_LOOP_FOUNDATION",
+    "MOC_V1_PROPOSAL_PERSISTENCE_FOUNDATION",
+    "MOC_V1_PROPOSAL_LEDGER_FOUNDATION",
+    "MOC_V1_APPROVAL_GATE_FOUNDATION",
+    "MOC_V1_WORKER_PREPARATION_FOUNDATION",
+    "MOC_V1_WORKER_DISPATCH_AUTHORIZATION_PREVIEW_FOUNDATION",
+    "MOC_V1_WORKER_DISPATCH_REQUEST_FOUNDATION",
+    "MOC_V1_WORKER_DISPATCH_AUTHORIZATION_FOUNDATION",
+    "MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE"
+  ],
+  "authority_transitions": {
+    "cognition_to_authority": false,
+    "proposal_to_execution": false,
+    "approval_to_dispatch": false,
+    "worker_preparation_to_dispatch": false,
+    "dispatch_request_to_dispatch": false,
+    "dispatch_authorization_to_execution": false,
+    "dispatch_authorization_to_provider_activation": false,
+    "dispatch_authorization_to_runtime_worker_execution": false
+  },
+  "required_future_runtime_dispatch_lineage": [
+    "explicit dispatch authorization artifact",
+    "explicit runtime dispatch milestone",
+    "explicit provider activation gate",
+    "explicit replay-visible runtime dispatch evidence",
+    "explicit lineage references",
+    "explicit approval references",
+    "explicit fail-closed validation"
+  ],
+  "lineage_requirements": {
+    "lineage_refs_required": true,
+    "approval_refs_required": true,
+    "replay_refs_required": true,
+    "hash_continuity_required": true,
+    "missing_evidence_visible": true,
+    "unknowns_visible": true,
+    "violations_visible": true,
+    "silent_inference_allowed": false,
+    "hidden_repair_allowed": false
+  },
+  "deterministic_scope_lock": {
+    "documentation_only": true,
+    "lineage_evidence_only": true,
+    "runtime_dispatch_introduced": false,
+    "runtime_execution_introduced": false,
+    "provider_activation_introduced": false,
+    "worker_dispatch_introduced": false
+  }
+}

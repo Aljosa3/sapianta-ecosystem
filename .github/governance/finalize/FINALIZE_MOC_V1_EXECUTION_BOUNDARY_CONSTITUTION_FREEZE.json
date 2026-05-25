@@ -1,0 +1,87 @@
+{
+  "artifact_type": "FINALIZE_MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE",
+  "status": "FINALIZED",
+  "scope": {
+    "created_documentation": "docs/governance/cognition/MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE.md",
+    "created_governance_evidence": [
+      ".github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_GUARANTEES.json",
+      ".github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_LINEAGE.json",
+      ".github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_REPLAY_CERTIFICATION.json"
+    ],
+    "purpose": "freeze MOC V1 constitutional execution boundary semantics before runtime worker dispatch",
+    "documentation_only": true,
+    "runtime_behavior_modified": false
+  },
+  "frozen_execution_boundary_principles": [
+    "cognition is not authority",
+    "proposal is not execution",
+    "approval is not dispatch",
+    "dispatch authorization is not execution",
+    "worker preparation is not dispatch",
+    "runtime dispatch must be separately introduced",
+    "provider activation must remain separately gated",
+    "execution must remain bounded, replay-visible, lineage-linked, and fail-closed"
+  ],
+  "authority_separation": {
+    "cognition_authority": false,
+    "proposal_execution": false,
+    "approval_dispatch": false,
+    "worker_preparation_dispatch": false,
+    "dispatch_authorization_execution": false,
+    "provider_activation_from_moc_artifacts": false,
+    "future_runtime_dispatch_requires_separate_milestone": true
+  },
+  "explicit_non_goals": [
+    "add runtime dispatch",
+    "execute workers",
+    "activate providers",
+    "add orchestration",
+    "add autonomous cognition",
+    "add hidden continuation",
+    "modify runtime behavior",
+    "refactor existing code",
+    "mutate governance semantics",
+    "create automatic execution",
+    "create runtime cognition loops",
+    "introduce semantic reasoning authority"
+  ],
+  "acceptance_criteria": [
+    "execution boundary principles documented",
+    "boundary guarantees recorded",
+    "lineage evidence recorded",
+    "replay certification recorded",
+    "all freeze JSON evidence validates",
+    "git diff whitespace check passes",
+    "no runtime files modified"
+  ],
+  "boundary_guarantees": {
+    "runtime_execution_added": false,
+    "provider_activation_added": false,
+    "worker_dispatch_added": false,
+    "autonomous_cognition_added": false,
+    "hidden_continuation_added": false,
+    "governance_mutation_added": false,
+    "orchestration_added": false
+  },
+  "validation_evidence": {
+    "finalize_json_tool": "passed: python -m json.tool .github/governance/finalize/FINALIZE_MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE.json",
+    "guarantees_json_tool": "passed: python -m json.tool .github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_GUARANTEES.json",
+    "lineage_json_tool": "passed: python -m json.tool .github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_LINEAGE.json",
+    "replay_certification_json_tool": "passed: python -m json.tool .github/governance/finalize/MOC_V1_EXECUTION_BOUNDARY_REPLAY_CERTIFICATION.json",
+    "git_diff_check": "passed: git diff --check"
+  },
+  "deterministic_scope_lock": {
+    "documentation_only": true,
+    "runtime_files_modified": false,
+    "code_files_modified": false,
+    "runtime_dispatch_introduced": false,
+    "provider_activation_introduced": false,
+    "worker_execution_introduced": false,
+    "orchestration_introduced": false,
+    "autonomous_cognition_introduced": false,
+    "hidden_continuation_introduced": false
+  },
+  "recommended_next_milestone": "MOC_V1_WORKER_RUNTIME_DISPATCH_FOUNDATION"
+}

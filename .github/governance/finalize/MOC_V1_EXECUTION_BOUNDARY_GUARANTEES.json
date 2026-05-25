@@ -1,0 +1,62 @@
+{
+  "artifact_type": "MOC_V1_EXECUTION_BOUNDARY_GUARANTEES",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE",
+  "status": "CERTIFIED",
+  "guarantee_scope": "constitutional execution boundary freeze before runtime worker dispatch",
+  "frozen_principles": {
+    "cognition_is_authority": false,
+    "proposal_is_execution": false,
+    "approval_is_dispatch": false,
+    "dispatch_authorization_is_execution": false,
+    "worker_preparation_is_dispatch": false,
+    "runtime_dispatch_requires_separate_milestone": true,
+    "provider_activation_separately_gated": true,
+    "execution_bounded_replay_visible_lineage_linked_fail_closed": true
+  },
+  "boundary_guarantees": {
+    "runtime_execution_added": false,
+    "provider_activation_added": false,
+    "worker_dispatch_added": false,
+    "autonomous_cognition_added": false,
+    "hidden_continuation_added": false,
+    "governance_mutation_added": false,
+    "orchestration_added": false,
+    "runtime_behavior_modified": false,
+    "runtime_dispatch_introduced": false,
+    "automatic_execution_added": false,
+    "semantic_reasoning_authority_added": false
+  },
+  "provider_activation_constraints": {
+    "moc_artifacts_activate_providers": false,
+    "provider_activation_requires_separate_gate": true,
+    "provider_activation_requires_replay_visible_evidence": true,
+    "provider_activation_requires_lineage_linkage": true,
+    "provider_activation_must_fail_closed": true
+  },
+  "worker_dispatch_constraints": {
+    "worker_preparation_dispatches_worker": false,
+    "dispatch_request_dispatches_worker": false,
+    "dispatch_authorization_dispatches_worker": false,
+    "runtime_worker_dispatch_requires_separate_milestone": true,
+    "runtime_worker_dispatch_must_be_bounded": true,
+    "runtime_worker_dispatch_must_be_replay_visible": true,
+    "runtime_worker_dispatch_must_be_lineage_linked": true,
+    "runtime_worker_dispatch_must_fail_closed": true
+  },
+  "runtime_execution_constraints": {
+    "runtime_execution_added_by_freeze": false,
+    "runtime_execution_requires_explicit_authority": true,
+    "runtime_execution_requires_provider_gate": true,
+    "runtime_execution_requires_replay_evidence": true,
+    "runtime_execution_requires_lineage_continuity": true,
+    "runtime_execution_must_fail_closed": true
+  },
+  "deterministic_scope_lock": {
+    "documentation_only": true,
+    "governance_evidence_only": true,
+    "runtime_files_modified": false,
+    "code_files_modified": false,
+    "runtime_behavior_modified": false
+  }
+}

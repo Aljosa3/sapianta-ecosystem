@@ -1,0 +1,52 @@
+{
+  "artifact_type": "MOC_V1_EXECUTION_BOUNDARY_REPLAY_CERTIFICATION",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_EXECUTION_BOUNDARY_CONSTITUTION_FREEZE",
+  "status": "CERTIFIED",
+  "certification_scope": "documentation-only replay certification for MOC V1 execution boundary freeze",
+  "replay_guarantees": {
+    "boundary_freeze_replay_visible": true,
+    "lineage_requirements_recorded": true,
+    "approval_requirements_recorded": true,
+    "replay_requirements_recorded": true,
+    "fail_closed_requirements_recorded": true,
+    "runtime_execution_added": false,
+    "provider_activation_added": false,
+    "worker_dispatch_added": false,
+    "autonomous_cognition_added": false,
+    "hidden_continuation_added": false,
+    "governance_mutation_added": false,
+    "orchestration_added": false,
+    "runtime_behavior_modified": false
+  },
+  "replay_requirements_for_future_runtime_dispatch": {
+    "explicit_source_artifacts_required": true,
+    "deterministic_artifact_hashes_required": true,
+    "lineage_refs_required": true,
+    "approval_refs_required": true,
+    "replay_refs_required": true,
+    "unknowns_must_remain_visible": true,
+    "violations_must_remain_visible": true,
+    "missing_evidence_must_fail_closed": true,
+    "invalid_evidence_must_fail_closed_or_be_rejected": true,
+    "authority_must_not_be_inferred_from_partial_evidence": true
+  },
+  "non_execution_certification": {
+    "executes_workers": false,
+    "performs_runtime_execution": false,
+    "activates_providers": false,
+    "dispatches_workers": false,
+    "creates_orchestration": false,
+    "creates_autonomous_cognition": false,
+    "creates_hidden_continuation": false,
+    "creates_runtime_cognition_loops": false,
+    "creates_automatic_execution": false
+  },
+  "deterministic_scope_lock": {
+    "documentation_only": true,
+    "replay_certification_only": true,
+    "runtime_files_modified": false,
+    "code_files_modified": false,
+    "runtime_dispatch_introduced": false
+  }
+}
