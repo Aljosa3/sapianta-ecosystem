@@ -30,6 +30,11 @@ from .semantic_boundary_propagation import (
     inspect_semantic_boundaries,
     validate_semantic_boundary_propagation,
 )
+from .semantic_context_audit_bundle import (
+    build_semantic_context_audit_bundle,
+    inspect_semantic_audit_bundle,
+    validate_semantic_context_audit_bundle,
+)
 from .semantic_context_diff import (
     build_semantic_context_diff,
     inspect_semantic_diff,
@@ -62,6 +67,7 @@ __all__ = [
     "build_cognition_lifecycle_model",
     "build_cognition_state_envelope",
     "build_semantic_boundary_propagation",
+    "build_semantic_context_audit_bundle",
     "build_semantic_context_diff",
     "build_semantic_context_state",
     "build_semantic_relationship_index",
@@ -72,6 +78,7 @@ __all__ = [
     "inspect_cognition_lifecycle",
     "inspect_authority_propagation",
     "inspect_semantic_boundaries",
+    "inspect_semantic_audit_bundle",
     "inspect_semantic_diff",
     "inspect_semantic_context",
     "inspect_semantic_relationships",
@@ -81,6 +88,7 @@ __all__ = [
     "validate_cognition_lifecycle_model",
     "validate_authority_propagation_verifier",
     "validate_semantic_boundary_propagation",
+    "validate_semantic_context_audit_bundle",
     "validate_semantic_context_diff",
     "validate_semantic_context_state",
     "validate_semantic_relationship_index",
