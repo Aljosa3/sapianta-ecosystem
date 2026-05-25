@@ -1,0 +1,92 @@
+{
+  "artifact_type": "FINALIZE_MOC_V1_WORKER_RUNTIME_DISPATCH_FOUNDATION",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_WORKER_RUNTIME_DISPATCH_FOUNDATION",
+  "scope": {
+    "created_artifact": "MOC_V1_RUNTIME_DISPATCH_EVENT",
+    "created_module": "aigol/moc/runtime_dispatch.py",
+    "created_cli_command": "aigol moc runtime-dispatch",
+    "purpose": "deterministic bounded runtime dispatch event recording"
+  },
+  "runtime_statuses": [
+    "RUNTIME_DISPATCH_PERFORMED",
+    "RUNTIME_DISPATCH_REJECTED",
+    "INVALID_DISPATCH_AUTHORIZATION",
+    "FAIL_CLOSED"
+  ],
+  "runtime_rules": [
+    "dispatch authorization status must be DISPATCH_AUTHORIZED",
+    "lineage refs must exist",
+    "replay refs must exist",
+    "approval refs must exist",
+    "execution_authority must remain false",
+    "provider_activation must remain false",
+    "dispatch must remain bounded_single_dispatch",
+    "no automatic retry allowed",
+    "no recursive dispatch allowed",
+    "invalid or missing evidence fails closed"
+  ],
+  "runtime_boundary_guarantees": {
+    "bounded_runtime_dispatch": true,
+    "single_dispatch_only": true,
+    "runtime_dispatch_recording_only": true,
+    "provider_activation_performed": false,
+    "external_provider_activation": false,
+    "execution_completed": false,
+    "execution_result_present": false,
+    "autonomous_continuation": false,
+    "orchestration_authority": false,
+    "recursive_orchestration": false,
+    "governance_mutation": false,
+    "automatic_retry": false,
+    "hidden_provider_routing": false,
+    "semantic_reasoning": false,
+    "uncontrolled_execution_loops": false
+  },
+  "replay_lineage_guarantees": {
+    "explicit_invocation_required": true,
+    "dispatch_authorization_hash_required": true,
+    "lineage_refs_required": true,
+    "approval_refs_required": true,
+    "replay_refs_required": true,
+    "runtime_dispatch_hash_deterministic": true,
+    "violations_visible": true,
+    "unknowns_visible": true,
+    "missing_evidence_fails_closed": true,
+    "invalid_evidence_fails_closed_or_rejected": true
+  },
+  "non_goals": [
+    "activate providers",
+    "execute external systems",
+    "complete provider execution",
+    "create execution result payloads",
+    "create autonomous runtime execution",
+    "create orchestration loops",
+    "create recursive dispatch",
+    "create automatic retries",
+    "create hidden provider routing",
+    "create hidden continuation",
+    "mutate governance",
+    "perform semantic reasoning"
+  ],
+  "validation_evidence": {
+    "py_compile": "passed: python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+    "pytest": "passed: python -m pytest tests/test_moc_v1_worker_runtime_dispatch_foundation.py",
+    "semantic_contract_schema_json_tool": "passed: python -m json.tool schemas/semantic_contract.schema.json",
+    "git_diff_check": "passed: git diff --check"
+  },
+  "deterministic_scope_lock": {
+    "explicit_invocation_only": true,
+    "read_only_inputs": true,
+    "output_artifact_only_when_explicitly_requested": true,
+    "source_artifact_mutation": false,
+    "provider_activation": false,
+    "external_system_execution": false,
+    "automatic_retry": false,
+    "recursive_dispatch": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "governance_mutation": false
+  },
+  "recommended_next_milestone": "MOC_V1_WORKER_PROVIDER_EXECUTION_GATE_FOUNDATION"
+}

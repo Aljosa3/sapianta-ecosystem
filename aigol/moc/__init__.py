@@ -70,6 +70,12 @@ from .dispatch_authorization import (
     inspect_worker_dispatch_authorization,
     render_worker_dispatch_authorization_summary,
 )
+from .runtime_dispatch import (
+    RUNTIME_DISPATCH_PERFORMED,
+    create_runtime_dispatch_event,
+    inspect_runtime_dispatch,
+    render_runtime_dispatch_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -105,6 +111,7 @@ __all__ = [
     "DISPATCH_PREVIEW_ELIGIBLE",
     "DISPATCH_AUTHORIZED",
     "DISPATCH_REQUEST_CREATED",
+    "RUNTIME_DISPATCH_PERFORMED",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
@@ -116,6 +123,7 @@ __all__ = [
     "build_dispatch_authorization_preview",
     "authorize_worker_dispatch",
     "build_worker_dispatch_request",
+    "create_runtime_dispatch_event",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
@@ -129,6 +137,7 @@ __all__ = [
     "inspect_dispatch_authorization_preview",
     "inspect_worker_dispatch_authorization",
     "inspect_worker_dispatch_request",
+    "inspect_runtime_dispatch",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_approval_gate_summary",
@@ -140,6 +149,7 @@ __all__ = [
     "render_dispatch_authorization_preview_summary",
     "render_worker_dispatch_authorization_summary",
     "render_worker_dispatch_request_summary",
+    "render_runtime_dispatch_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]
