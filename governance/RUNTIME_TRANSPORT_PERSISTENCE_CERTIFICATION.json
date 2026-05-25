@@ -1,0 +1,57 @@
+{
+  "artifact_type": "RUNTIME_TRANSPORT_PERSISTENCE_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_RUNTIME_TRANSPORT_PERSISTENCE_V1",
+  "certification_status": "CERTIFIED",
+  "runtime_transport_components": {
+    "runtime_store": "implemented",
+    "runtime_ledger": "implemented",
+    "runtime_replay_reconstruction": "implemented",
+    "canonical_serialization": "implemented",
+    "runtime_engine_store_integration": "implemented"
+  },
+  "artifact_directories": {
+    "runtime_dispatch": "runtime_dispatch/runtime_<id>.json",
+    "runtime_results": "runtime_results/runtime_<id>.json",
+    "runtime_replay": "runtime_replay/runtime_<id>_ledger.jsonl"
+  },
+  "authority_boundaries": {
+    "execution_authority": false,
+    "orchestration_authority": false,
+    "provider_authority": false,
+    "autonomous_runtime_behavior": false,
+    "governance_mutation": false,
+    "hidden_continuation": false
+  },
+  "execution_surface": {
+    "real_execution": false,
+    "shell_execution": false,
+    "docker_execution": false,
+    "external_api_calls": false,
+    "openai_integration": false,
+    "claude_integration": false,
+    "distributed_runtime": false
+  },
+  "append_only_certification": {
+    "dispatch_duplicate_blocked": true,
+    "result_overwrite_blocked": true,
+    "ledger_append_only": true,
+    "silent_overwrite_allowed": false
+  },
+  "replay_reconstruction_certification": {
+    "dispatch_reconstructable": true,
+    "result_reconstructable": true,
+    "ledger_reconstructable": true,
+    "lifecycle_history_reconstructable": true,
+    "missing_artifact_fails_closed": true,
+    "corrupted_replay_hash_fails_closed": true,
+    "hidden_state_reconstruction": false
+  },
+  "bounded_substrate_certification": {
+    "runtime_transport_is_not_orchestration": true,
+    "persistence_is_not_authority": true,
+    "runtime_continuity_is_replay_visible": true,
+    "bounded_runtime_semantics_preserved": true
+  },
+  "recommended_next_step": "Introduce provider execution persistence only through a separate governed milestone with explicit provider activation and execution-result boundaries."
+}

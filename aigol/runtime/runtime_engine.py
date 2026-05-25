@@ -13,14 +13,20 @@ from .models import (
     replay_hash,
 )
 from .provider_interface import ProviderInterface
+from .transport.runtime_store import RuntimeStore
 from .worker_lifecycle import CLOSED, DISPATCHED, PREPARED, RETURNED, RUNNING, WorkerLifecycle
 
 
 class RuntimeEngine:
     """Coordinates bounded mock execution after governance-visible dispatch."""
 
-    def __init__(self, providers: dict[str, ProviderInterface] | None = None) -> None:
+    def __init__(
+        self,
+        providers: dict[str, ProviderInterface] | None = None,
+        runtime_store: RuntimeStore | None = None,
+    ) -> None:
         self.providers = dict(providers or {})
+        self.runtime_store = runtime_store
 
     def register_provider(self, provider: ProviderInterface) -> None:
         self.providers[provider.provider_name()] = provider
@@ -35,6 +41,8 @@ class RuntimeEngine:
             lifecycle.transition_to(PREPARED)
             lifecycle.transition_to(DISPATCHED)
             dispatch_artifact = self._dispatch_artifact(runtime_package, lifecycle)
+            if self.runtime_store is not None:
+                self.runtime_store.persist_dispatch(runtime_package, dispatch_artifact)
             lifecycle.transition_to(RUNNING)
             response = provider.execute(runtime_package)
             if not isinstance(response, ProviderResponse):
@@ -43,7 +51,11 @@ class RuntimeEngine:
                 raise FailClosedRuntimeError("provider response identity mismatch")
             lifecycle.transition_to(RETURNED)
             lifecycle.transition_to(CLOSED)
-            return self._return_artifact(runtime_package, lifecycle, response, dispatch_artifact, "RETURNED")
+            return_artifact = self._return_artifact(runtime_package, lifecycle, response, dispatch_artifact, "RETURNED")
+            if self.runtime_store is not None:
+                self.runtime_store.persist_lifecycle_transitions(runtime_package.runtime_id, lifecycle.transitions)
+                self.runtime_store.persist_result(runtime_package, return_artifact)
+            return return_artifact
         except FailClosedRuntimeError as exc:
             dispatch_artifact = self._dispatch_artifact(runtime_package, lifecycle, fail_closed_reason=str(exc))
             return self._return_artifact(runtime_package, lifecycle, None, dispatch_artifact, "FAIL_CLOSED")

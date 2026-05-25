@@ -1,0 +1,87 @@
+{
+  "artifact_type": "FINALIZE_RUNTIME_TRANSPORT_PERSISTENCE_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_RUNTIME_TRANSPORT_PERSISTENCE_V1",
+  "status": "FINALIZED",
+  "scope": {
+    "runtime_dispatch_persistence": true,
+    "runtime_result_persistence": true,
+    "canonical_serialization": true,
+    "runtime_ledger": true,
+    "replay_reconstruction": true,
+    "duplicate_dispatch_prevention": true,
+    "runtime_engine_store_integration": true,
+    "real_execution": false,
+    "external_provider_integration": false,
+    "orchestration": false,
+    "autonomous_retries": false,
+    "recursive_workers": false,
+    "distributed_runtime": false
+  },
+  "explicit_statement": "Runtime transport persistence does not introduce execution authority, orchestration authority, or autonomous runtime behavior.",
+  "non_goals": [
+    "real execution",
+    "OpenAI integration",
+    "Claude integration",
+    "shell execution",
+    "Docker execution",
+    "orchestration",
+    "autonomous retries",
+    "recursive workers",
+    "distributed runtime",
+    "governance mutation",
+    "hidden continuation"
+  ],
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "utf8_encoding": true,
+    "sha256_replay_hash": true,
+    "no_randomness": true,
+    "reconstruction_blocks_on_missing_artifacts": true,
+    "reconstruction_blocks_on_corrupted_replay_hash": true
+  },
+  "append_only_guarantees": {
+    "dispatch_artifacts_immutable_after_write": true,
+    "result_artifacts_immutable_after_write": true,
+    "duplicate_runtime_dispatch_blocked": true,
+    "ledger_entries_append_only": true,
+    "existing_entries_not_mutated": true
+  },
+  "mutation_boundaries": {
+    "runtime_transport_substrate_added": true,
+    "runtime_engine_optional_store_integration_added": true,
+    "existing_execution_semantics_changed": false,
+    "provider_authority_added": false,
+    "governance_mutation_added": false,
+    "orchestration_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "deterministic_serialization_tested": true,
+    "replay_hash_stability_tested": true,
+    "dispatch_persistence_tested": true,
+    "result_persistence_tested": true,
+    "append_only_behavior_tested": true,
+    "duplicate_dispatch_blocking_tested": true,
+    "replay_reconstruction_tested": true,
+    "corruption_detection_tested": true,
+    "missing_artifact_fail_closed_tested": true,
+    "immutable_result_tested": true,
+    "ledger_ordering_tested": true
+  },
+  "runtime_continuity_guarantees": {
+    "runtime_transport_is_not_orchestration": true,
+    "persistence_is_not_authority": true,
+    "bounded_runtime_semantics_preserved": true,
+    "fail_closed_semantics_preserved": true,
+    "governance_visible_continuity": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/transport/__init__.py aigol/runtime/transport/runtime_store.py aigol/runtime/transport/replay.py aigol/runtime/transport/serialization.py aigol/runtime/transport/ledger.py",
+    "python -m pytest tests/test_runtime_transport_persistence_v1.py",
+    "python -m json.tool governance/FINALIZE_RUNTIME_TRANSPORT_PERSISTENCE_V1.json",
+    "python -m json.tool governance/RUNTIME_TRANSPORT_PERSISTENCE_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}
