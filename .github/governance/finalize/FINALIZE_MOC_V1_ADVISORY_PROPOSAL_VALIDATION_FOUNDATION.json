@@ -1,0 +1,72 @@
+{
+  "artifact": "FINALIZE_MOC_V1_ADVISORY_PROPOSAL_VALIDATION_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_ADVISORY_PROPOSAL_VALIDATION_FOUNDATION",
+  "classification": "proposal_validation_only",
+  "scope": [
+    "aigol/moc/advisory_proposal_validation.py",
+    "aigol/moc/advisory_contract_generation.py",
+    "aigol/moc/contract_validation.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc validate-proposal",
+    "docs/governance/cognition/MOC_V1_ADVISORY_PROPOSAL_VALIDATION_FOUNDATION.md",
+    "tests/test_moc_v1_advisory_proposal_validation_foundation.py"
+  ],
+  "validation_statuses": [
+    "VALID",
+    "INVALID_SCHEMA",
+    "INVALID_BOUNDARY",
+    "INVALID_CONTRACT_REFERENCE",
+    "UNKNOWN_INSUFFICIENT_EVIDENCE",
+    "FAIL_CLOSED"
+  ],
+  "validates": {
+    "proposal_structure": true,
+    "validated_contract_reference": true,
+    "linked_contract_hash_match": true,
+    "advisory_only_true": true,
+    "replay_safe_true": true,
+    "suggested_actions_within_allowed_actions": true,
+    "suggested_actions_not_forbidden": true,
+    "human_review_required": true,
+    "forbidden_authority_fields_absent": true,
+    "replay_visible_evidence": true
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "provider_activation": false,
+    "hidden_continuation": false,
+    "proposal_execution": false,
+    "semantic_reasoning_engine": false,
+    "hidden_inference": false,
+    "governance_mutation": false,
+    "proposal_auto_repair": false,
+    "runtime_cognition_loops": false
+  },
+  "boundary_guarantees": {
+    "advisory_only": true,
+    "deterministic": true,
+    "replay_visible": true,
+    "validation_only": true,
+    "governance_safe": true,
+    "non_executing": true,
+    "non_dispatching": true,
+    "proposal_mutation": false,
+    "contract_mutation": false,
+    "provider_activation": false,
+    "worker_task_created": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_advisory_proposal_validation_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 advisory proposal validation inspects explicit proposal and validated contract fields only. It does not execute, dispatch, activate providers, infer hidden meaning, mutate governance, repair proposals, or create autonomous cognition flows."
+}
