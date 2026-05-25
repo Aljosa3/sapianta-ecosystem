@@ -1,0 +1,74 @@
+{
+  "artifact_type": "FINALIZE_MOC_V1_WORKER_DISPATCH_AUTHORIZATION_FOUNDATION",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_WORKER_DISPATCH_AUTHORIZATION_FOUNDATION",
+  "scope": {
+    "created_artifact": "MOC_V1_WORKER_DISPATCH_AUTHORIZATION",
+    "created_module": "aigol/moc/dispatch_authorization.py",
+    "created_cli_command": "aigol moc dispatch-authorize",
+    "purpose": "deterministic authorization-only future runtime dispatch eligibility evidence"
+  },
+  "authorization_statuses": [
+    "DISPATCH_AUTHORIZED",
+    "DISPATCH_AUTHORIZATION_REJECTED",
+    "INVALID_DISPATCH_REQUEST",
+    "FAIL_CLOSED"
+  ],
+  "authorization_requirements": [
+    "dispatch request status must be DISPATCH_REQUEST_CREATED",
+    "dispatch request lineage refs must exist",
+    "dispatch request approval refs must exist",
+    "dispatch request replay refs must exist",
+    "dispatch_authority in request must remain false",
+    "execution_authority in request must remain false",
+    "provider_activation in request must remain false",
+    "worker_dispatch in request must remain false",
+    "request evidence must remain replay_safe",
+    "request evidence must remain advisory_only where applicable",
+    "invalid or missing evidence fails closed"
+  ],
+  "boundary_guarantees": {
+    "authorization_only": true,
+    "dispatch_authorization_is_execution": false,
+    "dispatch_authorization_is_runtime_execution": false,
+    "execution_authority": false,
+    "provider_activation": false,
+    "runtime_execution": false,
+    "worker_dispatch_performed": false,
+    "orchestration_authority": false,
+    "autonomous_continuation": false,
+    "hidden_continuation": false,
+    "automatic_execution": false,
+    "governance_mutation": false,
+    "semantic_reasoning": false
+  },
+  "non_goals": [
+    "execute workers",
+    "perform runtime execution",
+    "activate providers",
+    "dispatch workers at runtime",
+    "create orchestration",
+    "create autonomous cognition flows",
+    "create hidden continuation",
+    "mutate governance",
+    "mutate dispatch request artifacts",
+    "infer hidden meaning",
+    "trigger automatic execution"
+  ],
+  "validation_evidence": {
+    "py_compile": "passed: python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+    "pytest": "passed: python -m pytest tests/test_moc_v1_worker_dispatch_authorization_foundation.py",
+    "semantic_contract_schema_json_tool": "passed: python -m json.tool schemas/semantic_contract.schema.json",
+    "git_diff_check": "passed: git diff --check"
+  },
+  "deterministic_scope_lock": {
+    "read_only_inputs": true,
+    "output_artifact_only_when_explicitly_requested": true,
+    "source_artifact_mutation": false,
+    "provider_invocation": false,
+    "worker_dispatch_performed": false,
+    "runtime_execution": false,
+    "execution_authority": false
+  },
+  "recommended_next_milestone": "MOC_V1_WORKER_RUNTIME_DISPATCH_FOUNDATION"
+}

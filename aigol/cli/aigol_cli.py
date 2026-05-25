@@ -30,6 +30,7 @@ from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
     correction_feedback_command,
+    dispatch_authorize_command,
     dispatch_preview_command,
     dispatch_request_command,
     generate_contract_command,
@@ -59,6 +60,7 @@ from aigol.moc.approval_gate import render_approval_gate_summary
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
+from aigol.moc.dispatch_authorization import render_worker_dispatch_authorization_summary
 from aigol.moc.dispatch_authorization_preview import render_dispatch_authorization_preview_summary
 from aigol.moc.dispatch_request import render_worker_dispatch_request_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
@@ -199,6 +201,10 @@ def build_parser() -> argparse.ArgumentParser:
     moc_dispatch_request.add_argument("--request-evidence", required=True)
     moc_dispatch_request.add_argument("--json", action="store_true")
     moc_dispatch_request.add_argument("--output", default="")
+    moc_dispatch_authorize = moc_sub.add_parser("dispatch-authorize")
+    moc_dispatch_authorize.add_argument("--dispatch-request", required=True)
+    moc_dispatch_authorize.add_argument("--json", action="store_true")
+    moc_dispatch_authorize.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -353,6 +359,11 @@ def run_command(args: argparse.Namespace) -> dict:
         return dispatch_request_command(
             dispatch_preview_path=args.dispatch_preview,
             request_evidence_path=args.request_evidence,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "dispatch-authorize":
+        return dispatch_authorize_command(
+            dispatch_request_path=args.dispatch_request,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -608,6 +619,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC DISPATCH REQUEST",
             render_worker_dispatch_request_summary(request).splitlines(),
+        )
+    if command == "aigol moc dispatch-authorize":
+        authorization = result.get("worker_dispatch_authorization", {})
+        return render_card(
+            "AIGOL MOC DISPATCH AUTHORIZE",
+            render_worker_dispatch_authorization_summary(authorization).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

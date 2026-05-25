@@ -12,6 +12,7 @@ from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
 from aigol.moc.proposal_ledger import inspect_proposal_ledger_append
 from aigol.moc.proposal_persistence import inspect_proposal_persistence
+from aigol.moc.dispatch_authorization import inspect_worker_dispatch_authorization
 from aigol.moc.dispatch_authorization_preview import inspect_dispatch_authorization_preview
 from aigol.moc.dispatch_request import inspect_worker_dispatch_request
 from aigol.moc.worker_preparation import inspect_worker_preparation
@@ -141,10 +142,22 @@ def dispatch_request_command(
     )
 
 
+def dispatch_authorize_command(
+    *,
+    dispatch_request_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_worker_dispatch_authorization(
+        dispatch_request_path=dispatch_request_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "append_ledger_command",
     "approval_gate_command",
     "correction_feedback_command",
+    "dispatch_authorize_command",
     "dispatch_preview_command",
     "dispatch_request_command",
     "generate_contract_command",
