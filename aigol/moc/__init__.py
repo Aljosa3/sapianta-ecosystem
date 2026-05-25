@@ -82,6 +82,13 @@ from .provider_execution_gate import (
     inspect_provider_execution_gate,
     render_provider_execution_gate_summary,
 )
+from .governed_return_interpretation import (
+    DISPATCH_RECORDED_ONLY,
+    PROVIDER_GATE_ELIGIBLE_ONLY,
+    inspect_governed_return_interpretation,
+    interpret_governed_return,
+    render_governed_return_interpretation_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -119,6 +126,8 @@ __all__ = [
     "DISPATCH_REQUEST_CREATED",
     "RUNTIME_DISPATCH_PERFORMED",
     "PROVIDER_EXECUTION_ELIGIBLE",
+    "DISPATCH_RECORDED_ONLY",
+    "PROVIDER_GATE_ELIGIBLE_ONLY",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
@@ -127,6 +136,7 @@ __all__ = [
     "append_proposal_ledger_entry",
     "evaluate_approval_gate",
     "evaluate_provider_execution_gate",
+    "interpret_governed_return",
     "prepare_worker_package",
     "build_dispatch_authorization_preview",
     "authorize_worker_dispatch",
@@ -147,6 +157,7 @@ __all__ = [
     "inspect_worker_dispatch_request",
     "inspect_runtime_dispatch",
     "inspect_provider_execution_gate",
+    "inspect_governed_return_interpretation",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_approval_gate_summary",
@@ -160,6 +171,7 @@ __all__ = [
     "render_worker_dispatch_request_summary",
     "render_runtime_dispatch_summary",
     "render_provider_execution_gate_summary",
+    "render_governed_return_interpretation_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]

@@ -34,6 +34,7 @@ from aigol.cli.commands.moc import (
     dispatch_preview_command,
     dispatch_request_command,
     generate_contract_command,
+    interpret_return_command,
     persist_proposal_command,
     prepare_worker_command,
     provider_execution_gate_command,
@@ -65,6 +66,7 @@ from aigol.moc.contract_validation import render_contract_validation_summary
 from aigol.moc.dispatch_authorization import render_worker_dispatch_authorization_summary
 from aigol.moc.dispatch_authorization_preview import render_dispatch_authorization_preview_summary
 from aigol.moc.dispatch_request import render_worker_dispatch_request_summary
+from aigol.moc.governed_return_interpretation import render_governed_return_interpretation_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
 from aigol.moc.provider_execution_gate import render_provider_execution_gate_summary
 from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledger_summary
@@ -217,6 +219,12 @@ def build_parser() -> argparse.ArgumentParser:
     moc_provider_execution_gate.add_argument("--runtime-dispatch", required=True)
     moc_provider_execution_gate.add_argument("--json", action="store_true")
     moc_provider_execution_gate.add_argument("--output", default="")
+    moc_interpret_return = moc_sub.add_parser("interpret-return")
+    moc_interpret_return.add_argument("--runtime-dispatch", required=True)
+    moc_interpret_return.add_argument("--provider-gate", default="")
+    moc_interpret_return.add_argument("--return-evidence", default="")
+    moc_interpret_return.add_argument("--json", action="store_true")
+    moc_interpret_return.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -386,6 +394,13 @@ def run_command(args: argparse.Namespace) -> dict:
     if args.command == "moc" and args.moc_command == "provider-execution-gate":
         return provider_execution_gate_command(
             runtime_dispatch_path=args.runtime_dispatch,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "interpret-return":
+        return interpret_return_command(
+            runtime_dispatch_path=args.runtime_dispatch,
+            provider_gate_path=args.provider_gate or None,
+            return_evidence_path=args.return_evidence or None,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -659,6 +674,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC PROVIDER EXECUTION GATE",
             render_provider_execution_gate_summary(gate).splitlines(),
+        )
+    if command == "aigol moc interpret-return":
+        interpretation = result.get("governed_return_interpretation", {})
+        return render_card(
+            "AIGOL MOC INTERPRET RETURN",
+            render_governed_return_interpretation_summary(interpretation).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})
