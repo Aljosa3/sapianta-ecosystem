@@ -1,0 +1,67 @@
+{
+  "artifact": "FINALIZE_MOC_V1_CONTRACT_VALIDATION_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_CONTRACT_VALIDATION_FOUNDATION",
+  "classification": "validation_only",
+  "scope": [
+    "aigol/moc/contract_validation.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc validate-contract",
+    "schemas/semantic_contract.schema.json",
+    "docs/governance/cognition/MOC_V1_CONTRACT_VALIDATION_FOUNDATION.md",
+    "tests/test_moc_v1_contract_validation_foundation.py"
+  ],
+  "validation_statuses": [
+    "VALID",
+    "INVALID_SCHEMA",
+    "INVALID_BOUNDARY",
+    "UNKNOWN_INSUFFICIENT_EVIDENCE",
+    "FAIL_CLOSED"
+  ],
+  "validates": {
+    "schema_conformance": true,
+    "advisory_only_true": true,
+    "replay_safe_true": true,
+    "forbidden_authority_fields_absent": true,
+    "required_approvals_explicit": true,
+    "forbidden_actions_explicit": true,
+    "deterministic_constraints_present": true,
+    "risk_level_enum": true,
+    "mutation_classification_enum": true,
+    "replay_visible_evidence": true,
+    "invalid_contracts_fail_closed": true
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "planning": false,
+    "proposal_generation": false,
+    "worker_dispatch": false,
+    "provider_activation": false,
+    "semantic_reasoning": false,
+    "hidden_inference": false,
+    "governance_mutation": false,
+    "semantic_repair": false,
+    "contract_auto_correction": false,
+    "runtime_cognition_loops": false
+  },
+  "boundary_guarantees": {
+    "schema_bound": true,
+    "deterministic": true,
+    "fail_closed": true,
+    "replay_visible": true,
+    "validation_only": true,
+    "contract_mutation": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_contract_validation_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 contract validation validates explicit contract fields only and does not infer, repair, generate, dispatch, execute, or activate providers."
+}

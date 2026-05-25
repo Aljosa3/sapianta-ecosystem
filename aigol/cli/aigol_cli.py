@@ -26,6 +26,7 @@ from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
+from aigol.cli.commands.moc import validate_contract_command
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
@@ -43,6 +44,7 @@ from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
+from aigol.moc.contract_validation import render_contract_validation_summary
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -124,6 +126,13 @@ def build_parser() -> argparse.ArgumentParser:
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
     diagnostics_runtime = diagnostics_sub.add_parser("runtime")
     diagnostics_runtime.add_argument("--extension-id", default="")
+
+    moc = subcommands.add_parser("moc")
+    moc_sub = moc.add_subparsers(dest="moc_command", required=True)
+    moc_validate_contract = moc_sub.add_parser("validate-contract")
+    moc_validate_contract.add_argument("--input", required=True)
+    moc_validate_contract.add_argument("--json", action="store_true")
+    moc_validate_contract.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -220,6 +229,11 @@ def run_command(args: argparse.Namespace) -> dict:
         return verify_replay(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
+    if args.command == "moc" and args.moc_command == "validate-contract":
+        return validate_contract_command(
+            input_path=args.input,
+            output_path=args.output or None,
+        )
     if args.command == "cognition" and args.cognition_command == "inspect":
         return inspect_cognition(
             input_path=args.input or None,
@@ -413,6 +427,12 @@ def render_command_result(result: dict) -> str:
                 f"chrome_runtime_launch_allowed: {diagnostics.get('chrome_runtime_launch_allowed')}",
                 f"failure_stage: {result.get('failure_stage')}",
             ],
+        )
+    if command == "aigol moc validate-contract":
+        validation = result.get("contract_validation_result", {})
+        return render_card(
+            "AIGOL MOC VALIDATE CONTRACT",
+            render_contract_validation_summary(validation).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})
