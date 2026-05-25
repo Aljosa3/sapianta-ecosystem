@@ -46,6 +46,12 @@ from .proposal_ledger import (
     inspect_proposal_ledger_append,
     render_proposal_ledger_summary,
 )
+from .worker_preparation import (
+    NOT_APPROVED,
+    inspect_worker_preparation,
+    prepare_worker_package,
+    render_worker_preparation_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -77,6 +83,7 @@ __all__ = [
     "APPROVED_FOR_WORKER_PREPARATION",
     "APPENDED",
     "PREPARED_FOR_WORKER",
+    "NOT_APPROVED",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
@@ -84,6 +91,7 @@ __all__ = [
     "build_proposal_ledger_entry",
     "append_proposal_ledger_entry",
     "evaluate_approval_gate",
+    "prepare_worker_package",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
@@ -93,6 +101,7 @@ __all__ = [
     "inspect_proposal_correction_feedback",
     "inspect_proposal_persistence",
     "inspect_proposal_ledger_append",
+    "inspect_worker_preparation",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_approval_gate_summary",
@@ -100,6 +109,7 @@ __all__ = [
     "render_proposal_correction_feedback_summary",
     "render_proposal_persistence_summary",
     "render_proposal_ledger_summary",
+    "render_worker_preparation_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]

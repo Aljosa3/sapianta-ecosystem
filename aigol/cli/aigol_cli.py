@@ -32,6 +32,7 @@ from aigol.cli.commands.moc import (
     correction_feedback_command,
     generate_contract_command,
     persist_proposal_command,
+    prepare_worker_command,
     validate_contract_command,
     validate_proposal_command,
 )
@@ -59,6 +60,7 @@ from aigol.moc.contract_validation import render_contract_validation_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
 from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledger_summary
 from aigol.moc.proposal_persistence import render_proposal_persistence_summary
+from aigol.moc.worker_preparation import render_worker_preparation_summary
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -179,6 +181,11 @@ def build_parser() -> argparse.ArgumentParser:
     moc_approval_gate.add_argument("--approval-evidence", required=True)
     moc_approval_gate.add_argument("--json", action="store_true")
     moc_approval_gate.add_argument("--output", default="")
+    moc_prepare_worker = moc_sub.add_parser("prepare-worker")
+    moc_prepare_worker.add_argument("--proposal", required=True)
+    moc_prepare_worker.add_argument("--approval-gate", required=True)
+    moc_prepare_worker.add_argument("--json", action="store_true")
+    moc_prepare_worker.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -316,6 +323,12 @@ def run_command(args: argparse.Namespace) -> dict:
             proposal_path=args.proposal,
             ledger_entry_path=args.ledger_entry,
             approval_evidence_path=args.approval_evidence,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "prepare-worker":
+        return prepare_worker_command(
+            proposal_path=args.proposal,
+            approval_gate_path=args.approval_gate,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -553,6 +566,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC APPROVAL GATE",
             render_approval_gate_summary(approval).splitlines(),
+        )
+    if command == "aigol moc prepare-worker":
+        package = result.get("worker_preparation_package", {})
+        return render_card(
+            "AIGOL MOC PREPARE WORKER",
+            render_worker_preparation_summary(package).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

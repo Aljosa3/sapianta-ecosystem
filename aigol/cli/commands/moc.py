@@ -12,6 +12,7 @@ from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
 from aigol.moc.proposal_ledger import inspect_proposal_ledger_append
 from aigol.moc.proposal_persistence import inspect_proposal_persistence
+from aigol.moc.worker_preparation import inspect_worker_preparation
 
 
 def validate_contract_command(
@@ -101,12 +102,26 @@ def approval_gate_command(
     )
 
 
+def prepare_worker_command(
+    *,
+    proposal_path: str | Path | None = None,
+    approval_gate_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_worker_preparation(
+        proposal_path=proposal_path,
+        approval_gate_path=approval_gate_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "append_ledger_command",
     "approval_gate_command",
     "correction_feedback_command",
     "generate_contract_command",
     "persist_proposal_command",
+    "prepare_worker_command",
     "validate_contract_command",
     "validate_proposal_command",
 ]
