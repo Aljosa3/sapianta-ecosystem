@@ -1,0 +1,77 @@
+{
+  "artifact": "FINALIZE_MOC_V1_GOVERNED_PROPOSAL_CORRECTION_LOOP_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_GOVERNED_PROPOSAL_CORRECTION_LOOP_FOUNDATION",
+  "classification": "proposal_correction_feedback_only",
+  "scope": [
+    "aigol/moc/proposal_correction_loop.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc correction-feedback",
+    "docs/governance/cognition/MOC_V1_GOVERNED_PROPOSAL_CORRECTION_LOOP_FOUNDATION.md",
+    "tests/test_moc_v1_governed_proposal_correction_loop_foundation.py"
+  ],
+  "correction_statuses": [
+    "CORRECTION_REQUIRED",
+    "CORRECTION_LIMIT_REACHED",
+    "PROPOSAL_VALID",
+    "FAIL_CLOSED"
+  ],
+  "flow": [
+    "Human intent",
+    "LLM proposal",
+    "AiGOL proposal validation",
+    "AiGOL correction feedback if rejected",
+    "LLM revised proposal externally",
+    "AiGOL validates again",
+    "Valid proposal eligible for approval gate",
+    "Not execution"
+  ],
+  "max_attempts": {
+    "enforced_deterministically": true,
+    "unbounded_loop": false
+  },
+  "llm_instruction_payload": {
+    "contains_rejection_summary": true,
+    "contains_explicit_violations": true,
+    "contains_required_corrections": true,
+    "contains_forbidden_actions": true,
+    "reminds_advisory_only_true": true,
+    "reminds_replay_safe_true": true,
+    "reminds_proposal_not_execution": true,
+    "calls_llm": false
+  },
+  "non_goals": {
+    "execute_proposals": false,
+    "dispatch_workers": false,
+    "activate_providers": false,
+    "self_authorize": false,
+    "bypass_human_approval": false,
+    "mutate_governance": false,
+    "autonomous_execution": false,
+    "hidden_continuation": false,
+    "unbounded_loop": false,
+    "hidden_inference": false,
+    "repair_proposals_inside_aigol": false,
+    "llm_call": false
+  },
+  "boundary_guarantees": {
+    "bounded": true,
+    "replay_visible": true,
+    "correction_feedback_only": true,
+    "proposal_mutation": false,
+    "validation_result_mutation": false,
+    "corrected_proposal_generated": false,
+    "worker_task_created": false,
+    "execution_authority": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_governed_proposal_correction_loop_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "AiGOL emits deterministic proposal correction feedback from explicit validation evidence only. The LLM may prepare revised advisory proposals externally; AiGOL does not repair, execute, dispatch, call providers, call LLMs, mutate governance, or create hidden continuation."
+}

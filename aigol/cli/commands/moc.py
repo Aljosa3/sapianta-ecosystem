@@ -8,6 +8,7 @@ from typing import Any
 from aigol.moc.advisory_contract_generation import inspect_advisory_contract_generation
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
+from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
 
 
 def validate_contract_command(
@@ -39,4 +40,24 @@ def validate_proposal_command(
     )
 
 
-__all__ = ["generate_contract_command", "validate_contract_command", "validate_proposal_command"]
+def correction_feedback_command(
+    *,
+    validation_result_path: str | Path | None = None,
+    attempt_number: int | str = 1,
+    max_attempts: int | str = 3,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_proposal_correction_feedback(
+        validation_result_path=validation_result_path,
+        attempt_number=attempt_number,
+        max_attempts=max_attempts,
+        output_path=output_path,
+    )
+
+
+__all__ = [
+    "correction_feedback_command",
+    "generate_contract_command",
+    "validate_contract_command",
+    "validate_proposal_command",
+]

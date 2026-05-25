@@ -26,7 +26,12 @@ from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
-from aigol.cli.commands.moc import generate_contract_command, validate_contract_command, validate_proposal_command
+from aigol.cli.commands.moc import (
+    correction_feedback_command,
+    generate_contract_command,
+    validate_contract_command,
+    validate_proposal_command,
+)
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
@@ -47,6 +52,7 @@ from aigol.cli.render.terminal_cards import render_card
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
+from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -144,6 +150,12 @@ def build_parser() -> argparse.ArgumentParser:
     moc_validate_proposal.add_argument("--contract", required=True)
     moc_validate_proposal.add_argument("--json", action="store_true")
     moc_validate_proposal.add_argument("--output", default="")
+    moc_correction_feedback = moc_sub.add_parser("correction-feedback")
+    moc_correction_feedback.add_argument("--validation-result", required=True)
+    moc_correction_feedback.add_argument("--attempt", type=int, required=True)
+    moc_correction_feedback.add_argument("--max-attempts", type=int, required=True)
+    moc_correction_feedback.add_argument("--json", action="store_true")
+    moc_correction_feedback.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -254,6 +266,13 @@ def run_command(args: argparse.Namespace) -> dict:
         return validate_proposal_command(
             proposal_path=args.proposal,
             contract_path=args.contract,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "correction-feedback":
+        return correction_feedback_command(
+            validation_result_path=args.validation_result,
+            attempt_number=args.attempt,
+            max_attempts=args.max_attempts,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -467,6 +486,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC VALIDATE PROPOSAL",
             render_advisory_proposal_validation_summary(validation).splitlines(),
+        )
+    if command == "aigol moc correction-feedback":
+        feedback = result.get("proposal_correction_feedback", {})
+        return render_card(
+            "AIGOL MOC CORRECTION FEEDBACK",
+            render_proposal_correction_feedback_summary(feedback).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

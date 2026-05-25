@@ -13,6 +13,14 @@ from .advisory_proposal_validation import (
     render_advisory_proposal_validation_summary,
     validate_advisory_proposal,
 )
+from .proposal_correction_loop import (
+    CORRECTION_LIMIT_REACHED,
+    CORRECTION_REQUIRED,
+    PROPOSAL_VALID,
+    build_proposal_correction_feedback,
+    inspect_proposal_correction_feedback,
+    render_proposal_correction_feedback_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -27,6 +35,8 @@ from .contract_validation import (
 
 __all__ = [
     "ARTIFACT_TYPE",
+    "CORRECTION_LIMIT_REACHED",
+    "CORRECTION_REQUIRED",
     "FAIL_CLOSED",
     "GENERATED_INVALID",
     "GENERATED_VALID",
@@ -35,13 +45,17 @@ __all__ = [
     "INVALID_SCHEMA",
     "UNKNOWN_INSUFFICIENT_EVIDENCE",
     "VALID",
+    "PROPOSAL_VALID",
+    "build_proposal_correction_feedback",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
     "inspect_advisory_proposal_validation",
     "inspect_contract_validation",
+    "inspect_proposal_correction_feedback",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_contract_validation_summary",
+    "render_proposal_correction_feedback_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]
