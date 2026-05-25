@@ -1,0 +1,61 @@
+{
+  "artifact": "FINALIZE_MOC_V1_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_FOUNDATION",
+  "classification": "documentation_and_schema_only",
+  "created_artifacts": [
+    "docs/governance/cognition/MOC_V1_SPEC.md",
+    "schemas/semantic_contract.schema.json",
+    "docs/governance/cognition/MOC_V1_BOUNDARY_GUARANTEES.md",
+    "docs/governance/cognition/MOC_V1_ADVISORY_PROTOCOL.md",
+    "docs/governance/cognition/MOC_V1_SEQUENCE_FLOW.md"
+  ],
+  "core_principle": "Cognition does not equal authority.",
+  "moc_v1_may": [
+    "normalize intent",
+    "retrieve governance anchors",
+    "build semantic contracts",
+    "propose next steps",
+    "classify scope and risk",
+    "prepare bounded worker task proposals",
+    "interpret governed returns",
+    "propose governance artifacts"
+  ],
+  "moc_v1_must_not": [
+    "execute tasks",
+    "self-dispatch",
+    "mutate governance",
+    "bypass approval",
+    "create hidden continuations",
+    "spawn recursive orchestration",
+    "issue authority",
+    "activate providers",
+    "dispatch workers",
+    "refactor runtime"
+  ],
+  "canonical_sequence": [
+    "Human Intent",
+    "Intent Normalization",
+    "Governance Retrieval",
+    "Semantic Contract",
+    "Advisory Proposal",
+    "Human Approval",
+    "Worker Task",
+    "Governed Return",
+    "Return Interpretation"
+  ],
+  "boundary_guarantees": {
+    "runtime_behavior_modified": false,
+    "execution_authority": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "hidden_continuation": false,
+    "worker_dispatch": false,
+    "provider_activation": false,
+    "governance_mutation": false,
+    "semantic_repair": false,
+    "authority_issuance": false
+  },
+  "finalization_statement": "MOC V1 foundation is frozen as documentation and schema only. It defines bounded operational cognition without granting authority."
+}

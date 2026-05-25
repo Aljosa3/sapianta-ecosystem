@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sapianta.local/schemas/semantic_contract.schema.json",
+  "title": "MOC V1 Semantic Contract",
+  "description": "Advisory-only replay-safe semantic contract for Minimal Operational Cognition V1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "intent_id",
+    "intent_summary",
+    "scope",
+    "risk_level",
+    "mutation_classification",
+    "governance_anchors",
+    "allowed_actions",
+    "forbidden_actions",
+    "required_approvals",
+    "expected_outputs",
+    "advisory_only",
+    "replay_safe",
+    "deterministic_constraints"
+  ],
+  "properties": {
+    "intent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intent_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "mutation_classification": {
+      "type": "string",
+      "enum": [
+        "cosmetic",
+        "parametric",
+        "structural"
+      ]
+    },
+    "governance_anchors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "anchor_id",
+          "anchor_type",
+          "source_ref"
+        ],
+        "properties": {
+          "anchor_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "anchor_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required_approvals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "expected_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "advisory_only": {
+      "const": true
+    },
+    "replay_safe": {
+      "const": true
+    },
+    "deterministic_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_hidden_inference",
+        "no_self_dispatch",
+        "no_runtime_mutation",
+        "no_autonomous_continuation",
+        "no_provider_activation"
+      ],
+      "properties": {
+        "no_hidden_inference": {
+          "const": true
+        },
+        "no_self_dispatch": {
+          "const": true
+        },
+        "no_runtime_mutation": {
+          "const": true
+        },
+        "no_autonomous_continuation": {
+          "const": true
+        },
+        "no_provider_activation": {
+          "const": true
+        }
+      }
+    }
+  }
+}
