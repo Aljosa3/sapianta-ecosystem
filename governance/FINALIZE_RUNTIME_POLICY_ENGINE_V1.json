@@ -1,0 +1,116 @@
+{
+  "artifact_type": "FINALIZE_RUNTIME_POLICY_ENGINE_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_RUNTIME_POLICY_ENGINE_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Runtime policy engine introduces centralized constitutional runtime policy evaluation only. It does not introduce orchestration authority, unrestricted execution, autonomous runtime behavior, filesystem mutation, shell execution, subprocess execution, or dynamic governance mutation.",
+  "scope": {
+    "policy_contract": true,
+    "policy_registry": true,
+    "runtime_policy_engine": true,
+    "policy_validator": true,
+    "policy_result": true,
+    "policy_replay": true,
+    "policy_persistence": true,
+    "policy_aware_capability_governance": true,
+    "runtime_engine_policy_check": true,
+    "autonomous_policy_mutation": false,
+    "machine_learning_policy_adaptation": false,
+    "unrestricted_execution": false,
+    "shell_execution": false,
+    "subprocess_execution": false,
+    "filesystem_mutation": false,
+    "orchestration": false,
+    "autonomous_retries": false,
+    "distributed_policy_mesh": false,
+    "self_modifying_governance": false
+  },
+  "non_goals": [
+    "autonomous policy mutation",
+    "machine learning policy adaptation",
+    "unrestricted execution",
+    "shell execution",
+    "subprocess execution",
+    "filesystem mutation",
+    "orchestration",
+    "autonomous retries",
+    "distributed policy mesh",
+    "self-modifying governance"
+  ],
+  "architectural_principles": {
+    "policy_is_execution": false,
+    "policy_is_orchestration": false,
+    "capability_is_permission": false,
+    "governance_remains_authority_layer": true,
+    "policy_evaluation_replay_visible": true,
+    "denied_actions_fail_closed": true
+  },
+  "policy_scopes": [
+    "ANALYSIS_ONLY",
+    "PREVIEW_ONLY",
+    "READ_ONLY"
+  ],
+  "forbidden_policy_classes": [
+    "FILESYSTEM_WRITE",
+    "NETWORK_MUTATION",
+    "RECURSIVE_DISPATCH",
+    "SHELL_EXECUTION",
+    "SUBPROCESS_EXECUTION",
+    "WORKER_SPAWN"
+  ],
+  "policy_decisions": [
+    "ALLOW",
+    "DENY",
+    "BLOCKED"
+  ],
+  "policy_guarantees": {
+    "explicit_allowlist_only": true,
+    "immutable_registry": true,
+    "deterministic_evaluation": true,
+    "explicit_decision_reason": true,
+    "fail_closed_unknown_scope": true,
+    "fail_closed_forbidden_capability": true,
+    "fail_closed_invalid_replay_hash": true,
+    "capability_execution_requires_allow": true
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "policy_contract_persisted": true,
+    "policy_validation_persisted": true,
+    "policy_result_persisted": true,
+    "policy_decision_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "policy_engine_added": true,
+    "runtime_store_policy_methods_added": true,
+    "runtime_engine_policy_check_added": true,
+    "existing_governance_authority_changed": false,
+    "orchestration_added": false,
+    "unrestricted_execution_added": false,
+    "dynamic_governance_mutation_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_policy_evaluation_tested": true,
+    "forbidden_capability_blocked_tested": true,
+    "unauthorized_governance_state_blocked_tested": true,
+    "invalid_replay_hash_blocked_tested": true,
+    "unknown_policy_scope_blocked_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_policy_persistence_tested": true,
+    "policy_replay_reconstruction_tested": true,
+    "denied_capability_execution_blocked_tested": true,
+    "fail_closed_behavior_tested": true,
+    "immutable_policy_guarantees_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/policy/__init__.py aigol/runtime/policy/runtime_policy_engine.py aigol/runtime/policy/policy_contract.py aigol/runtime/policy/policy_result.py aigol/runtime/policy/policy_registry.py aigol/runtime/policy/policy_validator.py aigol/runtime/policy/policy_replay.py",
+    "python -m pytest tests/test_runtime_policy_engine_v1.py",
+    "python -m json.tool governance/FINALIZE_RUNTIME_POLICY_ENGINE_V1.json",
+    "python -m json.tool governance/RUNTIME_POLICY_ENGINE_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}

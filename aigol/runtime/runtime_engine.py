@@ -13,6 +13,7 @@ from .models import (
     boundary_guarantees,
     replay_hash,
 )
+from .policy import PolicyContract, RuntimePolicyEngine
 from .provider_interface import ProviderInterface
 from .sandbox import SandboxContext, SandboxExecutor, SandboxValidator
 from .transport.runtime_store import RuntimeStore
@@ -86,9 +87,16 @@ class RuntimeEngine:
         request = CapabilityRequest.from_runtime_package(runtime_package, context.sandbox_id)
         capability_validator = CapabilityValidator()
         capability_validation = capability_validator.validate(request, context)
+        policy_contract = PolicyContract.from_capability_request(request, context)
+        policy_result, policy_validation = RuntimePolicyEngine().evaluate(policy_contract, sandbox_context=context)
+        if policy_result.decision != "ALLOW":
+            raise FailClosedRuntimeError(f"capability blocked by runtime policy: {policy_result.decision_reason}")
         if self.runtime_store is not None:
             self.runtime_store.persist_sandbox_context(runtime_package.runtime_id, context.to_dict())
             self.runtime_store.persist_sandbox_validation(runtime_package.runtime_id, sandbox_validation)
+            self.runtime_store.persist_policy_contract(runtime_package.runtime_id, policy_contract.to_dict())
+            self.runtime_store.persist_policy_validation(runtime_package.runtime_id, policy_validation)
+            self.runtime_store.persist_policy_result(runtime_package.runtime_id, policy_result.to_dict())
             self.runtime_store.persist_capability_request(runtime_package.runtime_id, request.to_dict())
             self.runtime_store.persist_capability_validation(runtime_package.runtime_id, capability_validation)
         result = CapabilityExecutor(validator=capability_validator).execute(request, context)

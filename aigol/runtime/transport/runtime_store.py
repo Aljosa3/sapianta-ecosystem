@@ -25,6 +25,8 @@ class RuntimeStore:
         self.sandbox_result_dir = self.root / "runtime_sandbox_results"
         self.capability_request_dir = self.root / "runtime_capability_requests"
         self.capability_result_dir = self.root / "runtime_capability_results"
+        self.policy_contract_dir = self.root / "runtime_policy_contracts"
+        self.policy_result_dir = self.root / "runtime_policy_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -56,6 +58,15 @@ class RuntimeStore:
 
     def capability_result_path(self, runtime_id: str) -> Path:
         return self.capability_result_dir / f"runtime_{runtime_id}_capability_result.json"
+
+    def policy_contract_path(self, runtime_id: str) -> Path:
+        return self.policy_contract_dir / f"runtime_{runtime_id}_policy_contract.json"
+
+    def policy_validation_path(self, runtime_id: str) -> Path:
+        return self.policy_contract_dir / f"runtime_{runtime_id}_policy_validation.json"
+
+    def policy_result_path(self, runtime_id: str) -> Path:
+        return self.policy_result_dir / f"runtime_{runtime_id}_policy_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -267,5 +278,56 @@ class RuntimeStore:
 
     def load_capability_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.capability_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_policy_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.policy_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "POLICY_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.policy_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_policy_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.policy_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "POLICY_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.policy_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_policy_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.policy_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "POLICY_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.policy_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_policy_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.policy_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_policy_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.policy_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_policy_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.policy_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact
