@@ -1,0 +1,29 @@
+{
+  "artifact": "FINALIZE_COGNITION_OBSERVABILITY_EPOCH_V1",
+  "version": "1.0",
+  "status": "FROZEN",
+  "epoch": "COGNITION_OBSERVABILITY_EPOCH_V1",
+  "scope": [
+    "COGNITION_STATE_ENVELOPE_V1",
+    "COGNITION_OBSERVABILITY_V1",
+    "SEMANTIC_REPLAY_CONTINUITY_CHECK_V1",
+    "COGNITION_REGISTRY_V1",
+    "COGNITION_REGISTRY_TOPOLOGY_REPORT_V1",
+    "COGNITION_LIFECYCLE_MODEL_V1",
+    "COGNITION_INTEGRITY_SUMMARY_V1",
+    "COGNITION_AUTHORITY_PROPAGATION_VERIFIER_V1",
+    "SEMANTIC_CONTEXT_STATE_V1",
+    "BOUNDED_SEMANTIC_RELATIONSHIP_INDEX_V1",
+    "SEMANTIC_BOUNDARY_PROPAGATION_V1",
+    "SEMANTIC_CONTEXT_DIFF_V1",
+    "SEMANTIC_CONTEXT_AUDIT_BUNDLE_V1"
+  ],
+  "epoch_classification": {
+    "read_only": true,
+    "observability_only": true,
+    "audit_only": true,
+    "runtime_behavior_modified": false,
+    "cognition_modules_refactored": false
+  },
+  "finalization_statement": "This epoch freezes the completed bounded cognition observability and semantic audit substrate as read-only governance evidence."
+}

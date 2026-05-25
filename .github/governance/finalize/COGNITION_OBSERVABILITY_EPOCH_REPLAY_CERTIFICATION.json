@@ -1,0 +1,31 @@
+{
+  "artifact": "COGNITION_OBSERVABILITY_EPOCH_REPLAY_CERTIFICATION",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "epoch": "COGNITION_OBSERVABILITY_EPOCH_V1",
+  "replay_certifies": {
+    "state_envelope_replay_visibility": true,
+    "semantic_continuity_replay_visibility": true,
+    "registry_replay_visibility": true,
+    "topology_replay_visibility": true,
+    "lifecycle_replay_visibility": true,
+    "integrity_replay_visibility": true,
+    "authority_propagation_replay_visibility": true,
+    "semantic_context_replay_visibility": true,
+    "semantic_relationship_replay_visibility": true,
+    "semantic_boundary_replay_visibility": true,
+    "semantic_diff_replay_visibility": true,
+    "semantic_audit_bundle_replay_visibility": true,
+    "deterministic_hashing": true,
+    "unknown_evidence_preserved_as_unknown": true
+  },
+  "replay_boundaries": {
+    "replay_repair": false,
+    "lineage_rewrite": false,
+    "hidden_context_ingestion": false,
+    "semantic_truth_certification": false,
+    "runtime_mutation": false,
+    "execution_triggered_by_replay": false
+  },
+  "replay_statement": "The cognition observability epoch preserves replay-visible audit evidence and deterministic artifact hashing without replay mutation or semantic repair."
+}

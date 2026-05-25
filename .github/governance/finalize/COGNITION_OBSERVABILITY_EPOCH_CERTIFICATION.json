@@ -1,0 +1,34 @@
+{
+  "artifact": "COGNITION_OBSERVABILITY_EPOCH_CERTIFICATION",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "epoch": "COGNITION_OBSERVABILITY_EPOCH_V1",
+  "certifies": {
+    "bounded_cognition_state_visibility": true,
+    "cognition_observability": true,
+    "semantic_replay_continuity_visibility": true,
+    "cognition_registry_visibility": true,
+    "cognition_topology_visibility": true,
+    "cognition_lifecycle_visibility": true,
+    "cognition_integrity_summary_visibility": true,
+    "authority_propagation_verification": true,
+    "semantic_context_visibility": true,
+    "semantic_relationship_visibility": true,
+    "semantic_boundary_propagation_visibility": true,
+    "semantic_context_diff_visibility": true,
+    "semantic_context_audit_bundle_export": true,
+    "replay_visible_auditability": true,
+    "deterministic_artifact_generation": true
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "semantic_reasoning_engine": false,
+    "hidden_inference": false,
+    "provider_activation": false,
+    "runtime_mutation": false,
+    "semantic_repair": false
+  },
+  "certification_statement": "The cognition observability epoch is certified as a read-only bounded cognition visibility and semantic audit substrate."
+}

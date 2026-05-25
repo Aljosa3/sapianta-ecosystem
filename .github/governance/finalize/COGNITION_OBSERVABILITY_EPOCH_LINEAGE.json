@@ -1,0 +1,74 @@
+{
+  "artifact": "COGNITION_OBSERVABILITY_EPOCH_LINEAGE",
+  "version": "1.0",
+  "status": "CERTIFIED",
+  "epoch": "COGNITION_OBSERVABILITY_EPOCH_V1",
+  "lineage": [
+    {
+      "stage": "bounded_cognition_state",
+      "artifact": "COGNITION_STATE_ENVELOPE_V1",
+      "role": "read-only cognition state consolidation"
+    },
+    {
+      "stage": "cognition_observability",
+      "artifact": "COGNITION_OBSERVABILITY_V1",
+      "role": "CLI-visible cognition inspection"
+    },
+    {
+      "stage": "semantic_continuity",
+      "artifact": "SEMANTIC_REPLAY_CONTINUITY_CHECK_V1",
+      "role": "read-only semantic continuity verification"
+    },
+    {
+      "stage": "primitive_registry",
+      "artifact": "COGNITION_REGISTRY_V1",
+      "role": "read-only cognition primitive indexing"
+    },
+    {
+      "stage": "topology_visibility",
+      "artifact": "COGNITION_REGISTRY_TOPOLOGY_REPORT_V1",
+      "role": "read-only subsystem relationship visibility"
+    },
+    {
+      "stage": "lifecycle_visibility",
+      "artifact": "COGNITION_LIFECYCLE_MODEL_V1",
+      "role": "read-only lifecycle phase and transition visibility"
+    },
+    {
+      "stage": "integrity_rollup",
+      "artifact": "COGNITION_INTEGRITY_SUMMARY_V1",
+      "role": "read-only cognition integrity summary"
+    },
+    {
+      "stage": "authority_propagation",
+      "artifact": "COGNITION_AUTHORITY_PROPAGATION_VERIFIER_V1",
+      "role": "read-only authority continuity verification"
+    },
+    {
+      "stage": "semantic_context",
+      "artifact": "SEMANTIC_CONTEXT_STATE_V1",
+      "role": "read-only bounded semantic context visibility"
+    },
+    {
+      "stage": "semantic_relationships",
+      "artifact": "BOUNDED_SEMANTIC_RELATIONSHIP_INDEX_V1",
+      "role": "read-only explicit semantic relationship indexing"
+    },
+    {
+      "stage": "semantic_boundary_propagation",
+      "artifact": "SEMANTIC_BOUNDARY_PROPAGATION_V1",
+      "role": "read-only semantic boundary propagation visibility"
+    },
+    {
+      "stage": "semantic_diff",
+      "artifact": "SEMANTIC_CONTEXT_DIFF_V1",
+      "role": "read-only deterministic semantic context delta visibility"
+    },
+    {
+      "stage": "semantic_audit_bundle",
+      "artifact": "SEMANTIC_CONTEXT_AUDIT_BUNDLE_V1",
+      "role": "read-only deterministic semantic cognition audit export"
+    }
+  ],
+  "lineage_statement": "The epoch lineage is observability and audit lineage only; it grants no execution, dispatch, orchestration, provider, mutation, repair, or semantic reasoning authority."
+}
