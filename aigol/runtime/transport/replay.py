@@ -66,3 +66,25 @@ def reconstruct_sandbox_execution(runtime_id: str, root: Path | str) -> dict[str
             *[entry["entry_hash"] for entry in ledger_entries],
         ],
     }
+
+
+def reconstruct_capability_execution(runtime_id: str, root: Path | str) -> dict[str, Any]:
+    store = RuntimeStore(root)
+    request = store.load_capability_request(runtime_id)
+    validation = store.load_capability_validation(runtime_id)
+    result = store.load_capability_result(runtime_id)
+    ledger_entries = store.ledger.read(runtime_id)
+    return {
+        "status": "CAPABILITY_EXECUTION_RECONSTRUCTED",
+        "runtime_id": runtime_id,
+        "capability_request": request,
+        "capability_validation": validation,
+        "capability_result": result,
+        "ledger_entries": ledger_entries,
+        "replay_chain": [
+            request["replay_hash"],
+            validation["replay_hash"],
+            result["replay_hash"],
+            *[entry["entry_hash"] for entry in ledger_entries],
+        ],
+    }

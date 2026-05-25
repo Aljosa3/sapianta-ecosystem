@@ -23,6 +23,8 @@ class RuntimeStore:
         self.provider_invocation_dir = self.root / "runtime_provider_invocations"
         self.sandbox_dir = self.root / "runtime_sandboxes"
         self.sandbox_result_dir = self.root / "runtime_sandbox_results"
+        self.capability_request_dir = self.root / "runtime_capability_requests"
+        self.capability_result_dir = self.root / "runtime_capability_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -45,6 +47,15 @@ class RuntimeStore:
 
     def sandbox_result_path(self, runtime_id: str) -> Path:
         return self.sandbox_result_dir / f"runtime_{runtime_id}_sandbox_result.json"
+
+    def capability_request_path(self, runtime_id: str) -> Path:
+        return self.capability_request_dir / f"runtime_{runtime_id}_capability_request.json"
+
+    def capability_validation_path(self, runtime_id: str) -> Path:
+        return self.capability_request_dir / f"runtime_{runtime_id}_capability_validation.json"
+
+    def capability_result_path(self, runtime_id: str) -> Path:
+        return self.capability_result_dir / f"runtime_{runtime_id}_capability_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -205,5 +216,56 @@ class RuntimeStore:
 
     def load_sandbox_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.sandbox_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_capability_request(self, runtime_id: str, request: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.capability_request_path(runtime_id), request)
+        self.ledger.append(
+            runtime_id,
+            "CAPABILITY_REQUEST_PERSISTED",
+            {
+                "artifact_ref": str(self.capability_request_path(runtime_id)),
+                "replay_hash": request["replay_hash"],
+            },
+        )
+        return request
+
+    def persist_capability_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.capability_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "CAPABILITY_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.capability_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_capability_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.capability_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "CAPABILITY_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.capability_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_capability_request(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.capability_request_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_capability_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.capability_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_capability_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.capability_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

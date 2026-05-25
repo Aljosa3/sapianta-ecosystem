@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from .capabilities import CapabilityExecutor, CapabilityRequest, CapabilityValidator
 from .models import (
     FailClosedRuntimeError,
     GovernedReturnArtifact,
@@ -45,7 +46,9 @@ class RuntimeEngine:
             if self.runtime_store is not None:
                 self.runtime_store.persist_dispatch(runtime_package, dispatch_artifact)
             lifecycle.transition_to(RUNNING)
-            if self._requires_sandbox(runtime_package):
+            if self._requires_capability(runtime_package):
+                response = self._execute_capability(runtime_package)
+            elif self._requires_sandbox(runtime_package):
                 response = self._execute_sandbox(runtime_package)
             elif hasattr(provider, "execute_governed"):
                 response = provider.execute_governed(
@@ -72,6 +75,41 @@ class RuntimeEngine:
 
     def _requires_sandbox(self, runtime_package: RuntimePackage) -> bool:
         return isinstance(runtime_package.payload, dict) and bool(runtime_package.payload.get("requires_sandbox"))
+
+    def _requires_capability(self, runtime_package: RuntimePackage) -> bool:
+        return isinstance(runtime_package.payload, dict) and isinstance(runtime_package.payload.get("capability_request"), dict)
+
+    def _execute_capability(self, runtime_package: RuntimePackage) -> ProviderResponse:
+        context = SandboxContext.from_runtime_package(runtime_package)
+        sandbox_validator = SandboxValidator()
+        sandbox_validation = sandbox_validator.validate(context)
+        request = CapabilityRequest.from_runtime_package(runtime_package, context.sandbox_id)
+        capability_validator = CapabilityValidator()
+        capability_validation = capability_validator.validate(request, context)
+        if self.runtime_store is not None:
+            self.runtime_store.persist_sandbox_context(runtime_package.runtime_id, context.to_dict())
+            self.runtime_store.persist_sandbox_validation(runtime_package.runtime_id, sandbox_validation)
+            self.runtime_store.persist_capability_request(runtime_package.runtime_id, request.to_dict())
+            self.runtime_store.persist_capability_validation(runtime_package.runtime_id, capability_validation)
+        result = CapabilityExecutor(validator=capability_validator).execute(request, context)
+        result_dict = result.to_dict()
+        if self.runtime_store is not None:
+            self.runtime_store.persist_capability_result(runtime_package.runtime_id, result_dict)
+        return ProviderResponse(
+            provider=runtime_package.provider,
+            status="CAPABILITY_RETURNED",
+            output=result_dict,
+            metadata={
+                "capability_request_id": request.capability_request_id,
+                "capability_replay_hash": result_dict["replay_hash"],
+                "shell_execution": False,
+                "subprocess_execution": False,
+                "filesystem_mutation": False,
+                "unrestricted_network": False,
+                "worker_spawn": False,
+                "orchestration": False,
+            },
+        )
 
     def _execute_sandbox(self, runtime_package: RuntimePackage) -> ProviderResponse:
         context = SandboxContext.from_runtime_package(runtime_package)

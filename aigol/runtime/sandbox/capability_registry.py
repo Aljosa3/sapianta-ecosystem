@@ -5,7 +5,7 @@ from __future__ import annotations
 from aigol.runtime.models import FailClosedRuntimeError
 
 
-SUPPORTED_CAPABILITIES = frozenset({"read_text", "analyze_text", "inspect_json", "mock_execute"})
+SUPPORTED_CAPABILITIES = frozenset({"read_text", "analyze_text", "inspect_json", "mock_execute", "mock_write_preview"})
 FORBIDDEN_CAPABILITIES = frozenset(
     {
         "shell_execution",

@@ -1,0 +1,68 @@
+{
+  "artifact_type": "GOVERNED_TOOL_CAPABILITY_LAYER_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_GOVERNED_TOOL_CAPABILITY_LAYER_V1",
+  "certification_status": "CERTIFIED",
+  "capability_components": {
+    "capability_registry": "implemented",
+    "capability_request": "implemented",
+    "capability_policy": "implemented",
+    "capability_validator": "implemented",
+    "capability_executor": "implemented",
+    "capability_result": "implemented",
+    "capability_persistence": "implemented",
+    "capability_replay_reconstruction": "implemented"
+  },
+  "capability_execution_scope": {
+    "bounded_capability_execution": true,
+    "sandbox_bound": true,
+    "governance_gated": true,
+    "replay_visible": true,
+    "fail_closed": true,
+    "non_orchestrating": true,
+    "non_autonomous": true,
+    "unrestricted_tool_execution": false
+  },
+  "execution_surface": {
+    "shell_execution": false,
+    "subprocess_execution": false,
+    "filesystem_mutation": false,
+    "unrestricted_network": false,
+    "docker_kubernetes_execution": false,
+    "git_operations": false,
+    "worker_spawn": false,
+    "recursive_dispatch": false,
+    "orchestration": false
+  },
+  "capability_certification": {
+    "explicit_allowlist_only": true,
+    "immutable_registry": true,
+    "unknown_capability_fails_closed": true,
+    "forbidden_capability_fails_closed": true,
+    "sandbox_mismatch_fails_closed": true,
+    "dynamic_capability_mutation": false,
+    "wildcard_permissions": false
+  },
+  "replay_certification": {
+    "capability_request_replay_hash": true,
+    "capability_validation_replay_hash": true,
+    "capability_result_replay_hash": true,
+    "capability_request_persistence": true,
+    "capability_validation_persistence": true,
+    "capability_result_persistence": true,
+    "capability_reconstruction": true,
+    "append_only_compatible": true
+  },
+  "runtime_boundary_certification": {
+    "capability_is_authority": false,
+    "provider_is_executor": false,
+    "cognition_is_execution": false,
+    "runtime_engine_remains_authority_layer": true,
+    "sandbox_boundary_preserved": true,
+    "bounded": true,
+    "replay_visible": true,
+    "non_orchestrating": true,
+    "non_autonomous": true
+  },
+  "recommended_next_step": "Introduce governed capability audit aggregation or capability result interpretation through a separate replay-visible milestone."
+}
