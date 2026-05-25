@@ -1,5 +1,12 @@
 """Minimal Operational Cognition validation helpers."""
 
+from .approval_gate import (
+    APPROVAL_REJECTED,
+    APPROVED_FOR_WORKER_PREPARATION,
+    evaluate_approval_gate,
+    inspect_approval_gate,
+    render_approval_gate_summary,
+)
 from .advisory_contract_generation import (
     GENERATED_INVALID,
     GENERATED_VALID,
@@ -65,7 +72,9 @@ __all__ = [
     "VALID",
     "PROPOSAL_VALID",
     "APPROVAL_PENDING",
+    "APPROVAL_REJECTED",
     "APPROVED",
+    "APPROVED_FOR_WORKER_PREPARATION",
     "APPENDED",
     "PREPARED_FOR_WORKER",
     "PROPOSED",
@@ -74,16 +83,19 @@ __all__ = [
     "build_proposal_correction_feedback",
     "build_proposal_ledger_entry",
     "append_proposal_ledger_entry",
+    "evaluate_approval_gate",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
     "inspect_advisory_proposal_validation",
+    "inspect_approval_gate",
     "inspect_contract_validation",
     "inspect_proposal_correction_feedback",
     "inspect_proposal_persistence",
     "inspect_proposal_ledger_append",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
+    "render_approval_gate_summary",
     "render_contract_validation_summary",
     "render_proposal_correction_feedback_summary",
     "render_proposal_persistence_summary",

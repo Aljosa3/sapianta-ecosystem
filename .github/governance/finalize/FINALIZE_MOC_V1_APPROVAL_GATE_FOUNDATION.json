@@ -1,0 +1,73 @@
+{
+  "artifact": "FINALIZE_MOC_V1_APPROVAL_GATE_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_APPROVAL_GATE_FOUNDATION",
+  "classification": "approval_boundary_only",
+  "scope": [
+    "aigol/moc/approval_gate.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc approval-gate",
+    "docs/governance/cognition/MOC_V1_APPROVAL_GATE_FOUNDATION.md",
+    "tests/test_moc_v1_approval_gate_foundation.py"
+  ],
+  "approval_statuses": [
+    "APPROVED_FOR_WORKER_PREPARATION",
+    "APPROVAL_REJECTED",
+    "APPROVAL_PENDING",
+    "INVALID_APPROVAL_EVIDENCE",
+    "FAIL_CLOSED"
+  ],
+  "approval_rules": {
+    "proposal_already_validated": true,
+    "proposal_lineage_exists": true,
+    "proposal_exists_in_ledger": true,
+    "replay_safe_true": true,
+    "advisory_only_true": true,
+    "human_review_required": true,
+    "correction_loop_resolved": true,
+    "forbidden_authority_fields_absent": true,
+    "hidden_continuation_absent": true,
+    "missing_evidence_fails_closed": true
+  },
+  "grants": {
+    "worker_preparation_eligibility": true,
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "provider_activation": false
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "provider_activation": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "hidden_continuation": false,
+    "runtime_cognition_loops": false,
+    "semantic_reasoning": false,
+    "governance_mutation": false,
+    "automatic_execution": false,
+    "autonomous_approval": false,
+    "proposal_repair": false
+  },
+  "boundary_guarantees": {
+    "advisory_governed": true,
+    "deterministic": true,
+    "replay_visible": true,
+    "governance_safe": true,
+    "approval_only": true,
+    "proposal_mutation": false,
+    "ledger_mutation": false,
+    "approval_auto_triggered": false,
+    "worker_preparation_auto_triggered": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_approval_gate_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 approval gate grants only eligibility for worker preparation. It does not execute proposals, dispatch workers, activate providers, create autonomous cognition flows, or create hidden continuation."
+}

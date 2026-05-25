@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from aigol.moc.approval_gate import inspect_approval_gate
 from aigol.moc.advisory_contract_generation import inspect_advisory_contract_generation
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
@@ -85,8 +86,24 @@ def append_ledger_command(
     )
 
 
+def approval_gate_command(
+    *,
+    proposal_path: str | Path | None = None,
+    ledger_entry_path: str | Path | None = None,
+    approval_evidence_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_approval_gate(
+        proposal_path=proposal_path,
+        ledger_entry_path=ledger_entry_path,
+        approval_evidence_path=approval_evidence_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "append_ledger_command",
+    "approval_gate_command",
     "correction_feedback_command",
     "generate_contract_command",
     "persist_proposal_command",

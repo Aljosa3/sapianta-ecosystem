@@ -28,6 +28,7 @@ from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.moc import (
     append_ledger_command,
+    approval_gate_command,
     correction_feedback_command,
     generate_contract_command,
     persist_proposal_command,
@@ -51,6 +52,7 @@ from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
+from aigol.moc.approval_gate import render_approval_gate_summary
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
@@ -171,6 +173,12 @@ def build_parser() -> argparse.ArgumentParser:
     moc_append_ledger.add_argument("--ledger-path", default=DEFAULT_LEDGER_PATH)
     moc_append_ledger.add_argument("--json", action="store_true")
     moc_append_ledger.add_argument("--output", default="")
+    moc_approval_gate = moc_sub.add_parser("approval-gate")
+    moc_approval_gate.add_argument("--proposal", required=True)
+    moc_approval_gate.add_argument("--ledger-entry", required=True)
+    moc_approval_gate.add_argument("--approval-evidence", required=True)
+    moc_approval_gate.add_argument("--json", action="store_true")
+    moc_approval_gate.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -301,6 +309,13 @@ def run_command(args: argparse.Namespace) -> dict:
         return append_ledger_command(
             persistence_record_path=args.persistence_record,
             ledger_path=args.ledger_path,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "approval-gate":
+        return approval_gate_command(
+            proposal_path=args.proposal,
+            ledger_entry_path=args.ledger_entry,
+            approval_evidence_path=args.approval_evidence,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -532,6 +547,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC APPEND LEDGER",
             render_proposal_ledger_summary(entry).splitlines(),
+        )
+    if command == "aigol moc approval-gate":
+        approval = result.get("approval_gate_result", {})
+        return render_card(
+            "AIGOL MOC APPROVAL GATE",
+            render_approval_gate_summary(approval).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})
