@@ -58,6 +58,12 @@ from .dispatch_authorization_preview import (
     inspect_dispatch_authorization_preview,
     render_dispatch_authorization_preview_summary,
 )
+from .dispatch_request import (
+    DISPATCH_REQUEST_CREATED,
+    build_worker_dispatch_request,
+    inspect_worker_dispatch_request,
+    render_worker_dispatch_request_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -91,6 +97,7 @@ __all__ = [
     "PREPARED_FOR_WORKER",
     "NOT_APPROVED",
     "DISPATCH_PREVIEW_ELIGIBLE",
+    "DISPATCH_REQUEST_CREATED",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
@@ -100,6 +107,7 @@ __all__ = [
     "evaluate_approval_gate",
     "prepare_worker_package",
     "build_dispatch_authorization_preview",
+    "build_worker_dispatch_request",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
@@ -111,6 +119,7 @@ __all__ = [
     "inspect_proposal_ledger_append",
     "inspect_worker_preparation",
     "inspect_dispatch_authorization_preview",
+    "inspect_worker_dispatch_request",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_approval_gate_summary",
@@ -120,6 +129,7 @@ __all__ = [
     "render_proposal_ledger_summary",
     "render_worker_preparation_summary",
     "render_dispatch_authorization_preview_summary",
+    "render_worker_dispatch_request_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]
