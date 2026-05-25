@@ -29,6 +29,7 @@ class RuntimeStore:
         self.policy_result_dir = self.root / "runtime_policy_results"
         self.continuity_contract_dir = self.root / "runtime_continuity_contracts"
         self.continuity_result_dir = self.root / "runtime_continuity_results"
+        self.snapshot_dir = self.root / "runtime_snapshots"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -78,6 +79,9 @@ class RuntimeStore:
 
     def continuity_result_path(self, runtime_id: str) -> Path:
         return self.continuity_result_dir / f"runtime_{runtime_id}_continuity_result.json"
+
+    def runtime_snapshot_path(self, runtime_id: str) -> Path:
+        return self.snapshot_dir / f"runtime_{runtime_id}_snapshot.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -391,5 +395,22 @@ class RuntimeStore:
 
     def load_continuity_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.continuity_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_runtime_snapshot(self, runtime_id: str, snapshot: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.runtime_snapshot_path(runtime_id), snapshot)
+        self.ledger.append(
+            runtime_id,
+            "RUNTIME_SNAPSHOT_PERSISTED",
+            {
+                "artifact_ref": str(self.runtime_snapshot_path(runtime_id)),
+                "replay_hash": snapshot["replay_hash"],
+            },
+        )
+        return snapshot
+
+    def load_runtime_snapshot(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.runtime_snapshot_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

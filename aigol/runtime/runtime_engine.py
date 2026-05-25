@@ -14,6 +14,7 @@ from .models import (
     boundary_guarantees,
     replay_hash,
 )
+from .observability import RuntimeSnapshot
 from .policy import PolicyContract, RuntimePolicyEngine
 from .provider_interface import ProviderInterface
 from .sandbox import SandboxContext, SandboxExecutor, SandboxValidator
@@ -71,6 +72,7 @@ class RuntimeEngine:
                 self.runtime_store.persist_lifecycle_transitions(runtime_package.runtime_id, lifecycle.transitions)
                 self.runtime_store.persist_result(runtime_package, return_artifact)
                 self._evaluate_continuity(runtime_package, return_artifact)
+                self._persist_runtime_snapshot(runtime_package.runtime_id)
             return return_artifact
         except FailClosedRuntimeError as exc:
             dispatch_artifact = self._dispatch_artifact(runtime_package, lifecycle, fail_closed_reason=str(exc))
@@ -159,6 +161,14 @@ class RuntimeEngine:
         self.runtime_store.persist_continuity_contract(runtime_package.runtime_id, contract.to_dict())
         self.runtime_store.persist_retry_evaluation(runtime_package.runtime_id, retry_evaluation)
         self.runtime_store.persist_continuity_result(runtime_package.runtime_id, result.to_dict())
+
+    def _persist_runtime_snapshot(self, runtime_id: str) -> None:
+        if self.runtime_store is None:
+            return
+        dispatch = self.runtime_store.load_dispatch(runtime_id)
+        result = self.runtime_store.load_result(runtime_id)
+        snapshot = RuntimeSnapshot.from_artifacts(runtime_id, dispatch, result, self.runtime_store)
+        self.runtime_store.persist_runtime_snapshot(runtime_id, snapshot.to_dict())
 
     def _dispatch_artifact(
         self,
