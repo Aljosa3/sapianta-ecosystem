@@ -9,6 +9,7 @@ from aigol.moc.advisory_contract_generation import inspect_advisory_contract_gen
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
+from aigol.moc.proposal_ledger import inspect_proposal_ledger_append
 from aigol.moc.proposal_persistence import inspect_proposal_persistence
 
 
@@ -71,7 +72,21 @@ def persist_proposal_command(
     )
 
 
+def append_ledger_command(
+    *,
+    persistence_record_path: str | Path | None = None,
+    ledger_path: str | Path,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_proposal_ledger_append(
+        persistence_record_path=persistence_record_path,
+        ledger_path=ledger_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
+    "append_ledger_command",
     "correction_feedback_command",
     "generate_contract_command",
     "persist_proposal_command",

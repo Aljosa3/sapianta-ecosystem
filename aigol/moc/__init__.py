@@ -32,6 +32,13 @@ from .proposal_persistence import (
     inspect_proposal_persistence,
     render_proposal_persistence_summary,
 )
+from .proposal_ledger import (
+    APPENDED,
+    append_proposal_ledger_entry,
+    build_proposal_ledger_entry,
+    inspect_proposal_ledger_append,
+    render_proposal_ledger_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -59,11 +66,14 @@ __all__ = [
     "PROPOSAL_VALID",
     "APPROVAL_PENDING",
     "APPROVED",
+    "APPENDED",
     "PREPARED_FOR_WORKER",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
     "build_proposal_correction_feedback",
+    "build_proposal_ledger_entry",
+    "append_proposal_ledger_entry",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
     "inspect_advisory_contract_generation",
@@ -71,11 +81,13 @@ __all__ = [
     "inspect_contract_validation",
     "inspect_proposal_correction_feedback",
     "inspect_proposal_persistence",
+    "inspect_proposal_ledger_append",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_contract_validation_summary",
     "render_proposal_correction_feedback_summary",
     "render_proposal_persistence_summary",
+    "render_proposal_ledger_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]

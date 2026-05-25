@@ -27,6 +27,7 @@ from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
 from aigol.cli.commands.moc import (
+    append_ledger_command,
     correction_feedback_command,
     generate_contract_command,
     persist_proposal_command,
@@ -54,6 +55,7 @@ from aigol.moc.advisory_contract_generation import render_advisory_contract_gene
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
+from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledger_summary
 from aigol.moc.proposal_persistence import render_proposal_persistence_summary
 
 
@@ -164,6 +166,11 @@ def build_parser() -> argparse.ArgumentParser:
     moc_persist_proposal.add_argument("--previous-state", required=True)
     moc_persist_proposal.add_argument("--json", action="store_true")
     moc_persist_proposal.add_argument("--output", default="")
+    moc_append_ledger = moc_sub.add_parser("append-ledger")
+    moc_append_ledger.add_argument("--persistence-record", required=True)
+    moc_append_ledger.add_argument("--ledger-path", default=DEFAULT_LEDGER_PATH)
+    moc_append_ledger.add_argument("--json", action="store_true")
+    moc_append_ledger.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -288,6 +295,12 @@ def run_command(args: argparse.Namespace) -> dict:
             proposal_path=args.proposal,
             proposal_state=args.state,
             previous_state=args.previous_state,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "append-ledger":
+        return append_ledger_command(
+            persistence_record_path=args.persistence_record,
+            ledger_path=args.ledger_path,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -513,6 +526,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC PERSIST PROPOSAL",
             render_proposal_persistence_summary(record).splitlines(),
+        )
+    if command == "aigol moc append-ledger":
+        entry = result.get("proposal_ledger_entry", {})
+        return render_card(
+            "AIGOL MOC APPEND LEDGER",
+            render_proposal_ledger_summary(entry).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

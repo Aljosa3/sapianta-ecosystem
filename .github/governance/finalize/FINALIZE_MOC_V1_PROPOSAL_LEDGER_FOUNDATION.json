@@ -1,0 +1,71 @@
+{
+  "artifact": "FINALIZE_MOC_V1_PROPOSAL_LEDGER_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_PROPOSAL_LEDGER_FOUNDATION",
+  "classification": "append_only_proposal_lifecycle_ledger",
+  "scope": [
+    "aigol/moc/proposal_ledger.py",
+    "aigol/moc/proposal_persistence.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc append-ledger",
+    "docs/governance/cognition/MOC_V1_PROPOSAL_LEDGER_FOUNDATION.md",
+    "tests/test_moc_v1_proposal_ledger_foundation.py"
+  ],
+  "ledger_storage": {
+    "format": "jsonl",
+    "default_path": ".runtime/aigol/moc/proposal_ledger.jsonl",
+    "append_only": true,
+    "prior_entry_mutation": false
+  },
+  "establishes": {
+    "immutable_proposal_lifecycle_history": true,
+    "append_only_operational_cognition_memory": true,
+    "replay_visible_proposal_chronology": true,
+    "deterministic_proposal_lineage_continuity": true,
+    "governance_safe_operational_persistence": true
+  },
+  "fail_closed_conditions": [
+    "missing persistence record",
+    "invalid persistence artifact type",
+    "missing persistence hash",
+    "invalid persistence transition",
+    "FAIL_CLOSED persistence state",
+    "missing lineage refs",
+    "malformed existing ledger line"
+  ],
+  "non_goals": {
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "orchestration": false,
+    "provider_activation": false,
+    "autonomous_cognition": false,
+    "hidden_continuation": false,
+    "runtime_cognition_loops": false,
+    "semantic_reasoning": false,
+    "governance_mutation": false,
+    "proposal_repair": false,
+    "automatic_approval": false,
+    "execution_states": false
+  },
+  "boundary_guarantees": {
+    "advisory_only": true,
+    "deterministic": true,
+    "append_only": true,
+    "replay_visible": true,
+    "governance_safe": true,
+    "persistence_only": true,
+    "prior_entries_mutated": false,
+    "worker_task_created": false,
+    "approval_auto_triggered": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_proposal_ledger_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 proposal ledger appends immutable proposal lifecycle records only. It does not approve proposals, execute proposals, dispatch workers, activate providers, or create autonomous cognition flows."
+}
