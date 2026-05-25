@@ -1,0 +1,76 @@
+{
+  "artifact_type": "RUNTIME_ENGINE_FOUNDATION_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_RUNTIME_ENGINE_FOUNDATION_V1",
+  "certification_status": "CERTIFIED",
+  "runtime_foundation": {
+    "runtime_engine": "implemented",
+    "runtime_package": "implemented",
+    "worker_lifecycle": "implemented",
+    "governed_return_artifact": "implemented",
+    "provider_interface": "implemented",
+    "mock_provider": "implemented"
+  },
+  "authority_separation": {
+    "provider_is_authority": false,
+    "worker_is_agent": false,
+    "runtime_dispatch_is_autonomous_execution": false,
+    "provider_response_can_grant_authority": false,
+    "runtime_engine_is_bounded_coordinator": true
+  },
+  "execution_surface": {
+    "real_execution": false,
+    "shell_execution": false,
+    "docker_execution": false,
+    "external_api_calls": false,
+    "openai_integration": false,
+    "claude_integration": false,
+    "provider_activation": false,
+    "unrestricted_provider_execution": false
+  },
+  "bounded_lifecycle": {
+    "states": [
+      "CREATED",
+      "PREPARED",
+      "DISPATCHED",
+      "RUNNING",
+      "RETURNED",
+      "CLOSED",
+      "BLOCKED"
+    ],
+    "allowed_transitions": [
+      "CREATED -> PREPARED",
+      "PREPARED -> DISPATCHED",
+      "DISPATCHED -> RUNNING",
+      "RUNNING -> RETURNED",
+      "RETURNED -> CLOSED"
+    ],
+    "invalid_transition_fails_closed": true
+  },
+  "replay_certification": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256": true,
+    "same_input_same_hash": true,
+    "runtime_dispatch_artifact_visible": true,
+    "governed_return_artifact_visible": true
+  },
+  "fail_closed_certification": {
+    "missing_required_fields_fail_closed": true,
+    "invalid_governance_state_fails_closed": true,
+    "missing_lineage_refs_fail_closed": true,
+    "unregistered_provider_fails_closed": true,
+    "invalid_provider_response_fails_closed": true,
+    "invalid_lifecycle_transition_fails_closed": true
+  },
+  "governance_guarantees": {
+    "governance_mutation": false,
+    "hidden_continuation": false,
+    "orchestration": false,
+    "autonomous_retries": false,
+    "recursive_workers": false,
+    "semantic_reasoning_engine": false
+  },
+  "recommended_next_step": "Introduce real provider execution only through a separate governed milestone with explicit provider activation gates."
+}

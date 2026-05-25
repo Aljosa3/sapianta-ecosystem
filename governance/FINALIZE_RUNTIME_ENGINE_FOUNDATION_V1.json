@@ -1,0 +1,86 @@
+{
+  "artifact_type": "FINALIZE_RUNTIME_ENGINE_FOUNDATION_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_RUNTIME_ENGINE_FOUNDATION_V1",
+  "status": "FINALIZED",
+  "scope": {
+    "runtime_engine": true,
+    "runtime_package": true,
+    "worker_lifecycle": true,
+    "governed_return_artifact": true,
+    "provider_interface": true,
+    "mock_provider": true,
+    "real_execution": false,
+    "external_provider_integration": false,
+    "orchestration": false,
+    "autonomous_retries": false,
+    "recursive_workers": false
+  },
+  "constitutional_rules": {
+    "provider_is_not_authority": true,
+    "worker_is_not_agent": true,
+    "runtime_dispatch_is_not_autonomous_execution": true,
+    "runtime_engine_coordinates_bounded_mock_execution_only": true
+  },
+  "boundary_guarantees": {
+    "real_execution": false,
+    "autonomous_execution": false,
+    "provider_authority": false,
+    "orchestration": false,
+    "hidden_continuation": false,
+    "governance_mutation": false,
+    "shell_execution": false,
+    "docker_execution": false,
+    "external_api_calls": false,
+    "unrestricted_provider_execution": false
+  },
+  "non_goals": [
+    "real execution",
+    "OpenAI integration",
+    "Claude integration",
+    "Docker execution",
+    "shell execution",
+    "orchestration",
+    "autonomous retries",
+    "recursive workers",
+    "governance mutation",
+    "hidden continuation",
+    "unrestricted provider execution"
+  ],
+  "deterministic_acceptance_evidence": {
+    "canonical_json_hashing": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "same_input_same_replay_hash": true,
+    "invalid_package_fails_closed": true,
+    "invalid_lifecycle_transition_blocked": true,
+    "provider_authority_bypass_blocked": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/*.py",
+    "python -m pytest tests/test_runtime_engine_foundation_v1.py",
+    "git diff --check"
+  ],
+  "mutation_boundary": {
+    "new_runtime_foundation_files_only": true,
+    "existing_runtime_semantics_changed": false,
+    "existing_moc_semantics_changed": false,
+    "governance_mutation_added": false
+  },
+  "replay_certification": {
+    "replay_visible_runtime_dispatch": true,
+    "governed_return_replay_hash": true,
+    "lineage_refs_required": true,
+    "hidden_state_reconstruction": false
+  },
+  "milestone_certification": {
+    "bounded": true,
+    "deterministic": true,
+    "replay_visible": true,
+    "fail_closed": true,
+    "mock_first": true,
+    "non_autonomous": true,
+    "non_orchestrating": true
+  }
+}
