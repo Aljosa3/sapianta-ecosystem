@@ -19,6 +19,7 @@ from .models import (
 from .observability import RuntimeSnapshot
 from .policy import PolicyContract, RuntimePolicyEngine
 from .provider_interface import ProviderInterface
+from .routing import RoutingContract, RoutingEngine
 from .sandbox import SandboxContext, SandboxExecutor, SandboxValidator
 from .transport.runtime_store import RuntimeStore
 from .worker_lifecycle import CLOSED, DISPATCHED, PREPARED, RETURNED, RUNNING, WorkerLifecycle
@@ -122,6 +123,9 @@ class RuntimeEngine:
         sandbox_validator = SandboxValidator()
         sandbox_validation = sandbox_validator.validate(context)
         request = CapabilityRequest.from_runtime_package(runtime_package, context.sandbox_id)
+        routing_contract = RoutingContract.from_runtime_package(runtime_package, request.to_dict())
+        route, routing_result, routing_validation = RoutingEngine().evaluate(routing_contract)
+        self._enforce_route(route)
         capability_validator = CapabilityValidator()
         capability_validation = capability_validator.validate(request, context)
         policy_contract = PolicyContract.from_capability_request(request, context)
@@ -129,6 +133,10 @@ class RuntimeEngine:
         if policy_result.decision != "ALLOW":
             raise FailClosedRuntimeError(f"capability blocked by runtime policy: {policy_result.decision_reason}")
         if self.runtime_store is not None:
+            self.runtime_store.persist_routing_contract(runtime_package.runtime_id, routing_contract.to_dict())
+            self.runtime_store.persist_capability_route(runtime_package.runtime_id, route.to_dict())
+            self.runtime_store.persist_routing_validation(runtime_package.runtime_id, routing_validation)
+            self.runtime_store.persist_routing_result(runtime_package.runtime_id, routing_result.to_dict())
             self.runtime_store.persist_sandbox_context(runtime_package.runtime_id, context.to_dict())
             self.runtime_store.persist_sandbox_validation(runtime_package.runtime_id, sandbox_validation)
             self.runtime_store.persist_policy_contract(runtime_package.runtime_id, policy_contract.to_dict())
@@ -155,6 +163,12 @@ class RuntimeEngine:
                 "orchestration": False,
             },
         )
+
+    def _enforce_route(self, route) -> None:
+        if route.execution_surface not in {"LOCAL_READ", "SANDBOX_ONLY", "HUMAN_APPROVAL_REQUIRED", "GOVERNED_PROVIDER"}:
+            raise FailClosedRuntimeError("routing execution surface is not enforceable")
+        if route.approval_required and route.execution_surface != "HUMAN_APPROVAL_REQUIRED":
+            raise FailClosedRuntimeError("approval-required route must use HUMAN_APPROVAL_REQUIRED surface")
 
     def _execute_sandbox(self, runtime_package: RuntimePackage) -> ProviderResponse:
         context = SandboxContext.from_runtime_package(runtime_package)

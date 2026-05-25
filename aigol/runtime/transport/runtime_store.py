@@ -32,6 +32,8 @@ class RuntimeStore:
         self.snapshot_dir = self.root / "runtime_snapshots"
         self.goal_dir = self.root / "runtime_goals"
         self.goal_sequence_dir = self.root / "runtime_goal_sequences"
+        self.routing_dir = self.root / "runtime_routing"
+        self.routing_result_dir = self.root / "runtime_routing_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -96,6 +98,18 @@ class RuntimeStore:
 
     def goal_sequence_path(self, runtime_id: str) -> Path:
         return self.goal_sequence_dir / f"runtime_{runtime_id}_goal_sequence.json"
+
+    def routing_contract_path(self, runtime_id: str) -> Path:
+        return self.routing_dir / f"runtime_{runtime_id}_routing_contract.json"
+
+    def capability_route_path(self, runtime_id: str) -> Path:
+        return self.routing_dir / f"runtime_{runtime_id}_capability_route.json"
+
+    def routing_validation_path(self, runtime_id: str) -> Path:
+        return self.routing_dir / f"runtime_{runtime_id}_routing_validation.json"
+
+    def routing_result_path(self, runtime_id: str) -> Path:
+        return self.routing_result_dir / f"runtime_{runtime_id}_routing_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -494,5 +508,73 @@ class RuntimeStore:
 
     def load_goal_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.goal_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_routing_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.routing_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "ROUTING_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.routing_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_capability_route(self, runtime_id: str, route: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.capability_route_path(runtime_id), route)
+        self.ledger.append(
+            runtime_id,
+            "CAPABILITY_ROUTE_PERSISTED",
+            {
+                "artifact_ref": str(self.capability_route_path(runtime_id)),
+                "replay_hash": route["replay_hash"],
+            },
+        )
+        return route
+
+    def persist_routing_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.routing_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "ROUTING_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.routing_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_routing_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.routing_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "ROUTING_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.routing_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_routing_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.routing_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_capability_route(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.capability_route_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_routing_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.routing_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_routing_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.routing_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

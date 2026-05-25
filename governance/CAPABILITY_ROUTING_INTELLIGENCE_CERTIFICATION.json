@@ -1,0 +1,54 @@
+{
+  "artifact_type": "CAPABILITY_ROUTING_INTELLIGENCE_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_CAPABILITY_ROUTING_INTELLIGENCE_V1",
+  "certification_status": "CERTIFIED",
+  "routing_components": {
+    "capability_route": "implemented",
+    "routing_contract": "implemented",
+    "routing_result": "implemented",
+    "routing_registry": "implemented",
+    "routing_validator": "implemented",
+    "routing_engine": "implemented",
+    "routing_replay": "implemented",
+    "routing_persistence": "implemented"
+  },
+  "routing_scope": {
+    "capability_routing_intelligence": true,
+    "capability_classification": true,
+    "execution_surface_routing": true,
+    "sandbox_aware_capability_routing": true,
+    "approval_aware_routing_semantics": true,
+    "autonomous_execution_routing": false,
+    "orchestration": false,
+    "automatic_execution_escalation": false,
+    "hidden_routing_logic": false
+  },
+  "fail_closed_certification": {
+    "unknown_capability_fails_closed": true,
+    "malformed_contract_fails_closed": true,
+    "invalid_replay_hash_fails_closed": true,
+    "unauthorized_governance_state_fails_closed": true,
+    "missing_lineage_fails_closed": true,
+    "invalid_execution_surface_fails_closed": true
+  },
+  "replay_certification": {
+    "routing_contract_replay_hash": true,
+    "capability_route_replay_hash": true,
+    "routing_validation_replay_hash": true,
+    "routing_result_replay_hash": true,
+    "routing_decision_reconstruction": true,
+    "append_only_compatible": true
+  },
+  "runtime_boundary_certification": {
+    "routing_is_execution": false,
+    "routing_is_orchestration": false,
+    "runtime_engine_remains_authority_layer": true,
+    "bounded": true,
+    "replay_visible": true,
+    "deterministic": true,
+    "fail_closed": true,
+    "non_orchestrating": true
+  },
+  "recommended_next_step": "Introduce governed routing observability or route audit reporting through a separate read-only replay-visible milestone."
+}

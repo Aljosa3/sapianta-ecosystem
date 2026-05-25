@@ -1,0 +1,100 @@
+{
+  "artifact_type": "FINALIZE_CAPABILITY_ROUTING_INTELLIGENCE_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_CAPABILITY_ROUTING_INTELLIGENCE_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Capability routing intelligence introduces deterministic replay-visible capability classification and routing only. It does not introduce orchestration authority, unrestricted autonomous execution, hidden routing logic, or automatic execution escalation.",
+  "scope": {
+    "capability_route": true,
+    "routing_contract": true,
+    "routing_result": true,
+    "routing_registry": true,
+    "routing_validator": true,
+    "routing_engine": true,
+    "routing_replay": true,
+    "routing_persistence": true,
+    "runtime_engine_routing_check": true,
+    "autonomous_execution_routing": false,
+    "dynamic_self_modifying_routing": false,
+    "unrestricted_orchestration": false,
+    "distributed_routing_mesh": false,
+    "automatic_execution_escalation": false,
+    "hidden_routing_logic": false
+  },
+  "non_goals": [
+    "autonomous execution routing",
+    "dynamic self-modifying routing",
+    "unrestricted orchestration",
+    "distributed routing mesh",
+    "automatic execution escalation",
+    "hidden routing logic"
+  ],
+  "architectural_principles": {
+    "routing_is_execution": false,
+    "routing_is_orchestration": false,
+    "routing_replay_visible": true,
+    "capability_classification_deterministic": true,
+    "routing_decisions_fail_closed": true
+  },
+  "capability_classes": [
+    "ANALYSIS",
+    "PREVIEW",
+    "READ_ONLY",
+    "RESTRICTED"
+  ],
+  "execution_surfaces": [
+    "GOVERNED_PROVIDER",
+    "HUMAN_APPROVAL_REQUIRED",
+    "LOCAL_READ",
+    "SANDBOX_ONLY"
+  ],
+  "routing_guarantees": {
+    "explicit_allowlist_only": true,
+    "immutable_registry": true,
+    "deterministic_lookup": true,
+    "unknown_capability_fails_closed": true,
+    "approval_required_can_be_classified": true,
+    "approval_can_be_granted_by_routing": false,
+    "automatic_execution_escalation": false
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "routing_contract_persisted": true,
+    "capability_route_persisted": true,
+    "routing_validation_persisted": true,
+    "routing_result_persisted": true,
+    "routing_decision_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "routing_layer_added": true,
+    "runtime_store_routing_methods_added": true,
+    "runtime_engine_routing_check_added": true,
+    "existing_governance_authority_changed": false,
+    "orchestration_added": false,
+    "automatic_escalation_added": false,
+    "hidden_routing_logic_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_routing_evaluation_tested": true,
+    "unknown_capability_blocked_tested": true,
+    "replay_hash_validation_tested": true,
+    "execution_surface_assignment_tested": true,
+    "approval_required_routing_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_routing_persistence_tested": true,
+    "routing_replay_reconstruction_tested": true,
+    "immutable_routing_guarantees_tested": true,
+    "fail_closed_validation_behavior_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/routing/__init__.py aigol/runtime/routing/capability_route.py aigol/runtime/routing/routing_contract.py aigol/runtime/routing/routing_result.py aigol/runtime/routing/routing_registry.py aigol/runtime/routing/routing_validator.py aigol/runtime/routing/routing_engine.py aigol/runtime/routing/routing_replay.py",
+    "python -m pytest tests/test_capability_routing_intelligence_v1.py",
+    "python -m json.tool governance/FINALIZE_CAPABILITY_ROUTING_INTELLIGENCE_V1.json",
+    "python -m json.tool governance/CAPABILITY_ROUTING_INTELLIGENCE_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}
