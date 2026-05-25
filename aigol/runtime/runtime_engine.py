@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 from .capabilities import CapabilityExecutor, CapabilityRequest, CapabilityValidator
+from .continuity import ContinuationContract, RuntimeContinuityEngine
 from .models import (
     FailClosedRuntimeError,
     GovernedReturnArtifact,
@@ -69,6 +70,7 @@ class RuntimeEngine:
             if self.runtime_store is not None:
                 self.runtime_store.persist_lifecycle_transitions(runtime_package.runtime_id, lifecycle.transitions)
                 self.runtime_store.persist_result(runtime_package, return_artifact)
+                self._evaluate_continuity(runtime_package, return_artifact)
             return return_artifact
         except FailClosedRuntimeError as exc:
             dispatch_artifact = self._dispatch_artifact(runtime_package, lifecycle, fail_closed_reason=str(exc))
@@ -144,6 +146,19 @@ class RuntimeEngine:
                 "worker_spawn": False,
             },
         )
+
+    def _evaluate_continuity(
+        self,
+        runtime_package: RuntimePackage,
+        return_artifact: GovernedReturnArtifact,
+    ) -> None:
+        if self.runtime_store is None:
+            return
+        contract = ContinuationContract.from_runtime_return(runtime_package, return_artifact)
+        result, validation, retry_evaluation = RuntimeContinuityEngine().evaluate(contract)
+        self.runtime_store.persist_continuity_contract(runtime_package.runtime_id, contract.to_dict())
+        self.runtime_store.persist_retry_evaluation(runtime_package.runtime_id, retry_evaluation)
+        self.runtime_store.persist_continuity_result(runtime_package.runtime_id, result.to_dict())
 
     def _dispatch_artifact(
         self,

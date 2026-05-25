@@ -27,6 +27,8 @@ class RuntimeStore:
         self.capability_result_dir = self.root / "runtime_capability_results"
         self.policy_contract_dir = self.root / "runtime_policy_contracts"
         self.policy_result_dir = self.root / "runtime_policy_results"
+        self.continuity_contract_dir = self.root / "runtime_continuity_contracts"
+        self.continuity_result_dir = self.root / "runtime_continuity_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -67,6 +69,15 @@ class RuntimeStore:
 
     def policy_result_path(self, runtime_id: str) -> Path:
         return self.policy_result_dir / f"runtime_{runtime_id}_policy_result.json"
+
+    def continuity_contract_path(self, runtime_id: str) -> Path:
+        return self.continuity_contract_dir / f"runtime_{runtime_id}_continuity_contract.json"
+
+    def retry_evaluation_path(self, runtime_id: str) -> Path:
+        return self.continuity_contract_dir / f"runtime_{runtime_id}_retry_evaluation.json"
+
+    def continuity_result_path(self, runtime_id: str) -> Path:
+        return self.continuity_result_dir / f"runtime_{runtime_id}_continuity_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -329,5 +340,56 @@ class RuntimeStore:
 
     def load_policy_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.policy_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_continuity_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.continuity_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "CONTINUITY_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.continuity_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_retry_evaluation(self, runtime_id: str, retry_evaluation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.retry_evaluation_path(runtime_id), retry_evaluation)
+        self.ledger.append(
+            runtime_id,
+            "RETRY_EVALUATION_PERSISTED",
+            {
+                "artifact_ref": str(self.retry_evaluation_path(runtime_id)),
+                "replay_hash": retry_evaluation["replay_hash"],
+            },
+        )
+        return retry_evaluation
+
+    def persist_continuity_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.continuity_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "CONTINUITY_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.continuity_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_continuity_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.continuity_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_retry_evaluation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.retry_evaluation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_continuity_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.continuity_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

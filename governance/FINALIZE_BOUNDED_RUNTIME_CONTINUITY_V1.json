@@ -1,0 +1,105 @@
+{
+  "artifact_type": "FINALIZE_BOUNDED_RUNTIME_CONTINUITY_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_BOUNDED_RUNTIME_CONTINUITY_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Bounded runtime continuity introduces replay-visible continuation evaluation only. It does not introduce orchestration authority, unrestricted autonomous execution, recursive runtime execution, hidden continuation, or unbounded retry behavior.",
+  "scope": {
+    "continuation_contract": true,
+    "retry_policy": true,
+    "runtime_continuity_engine": true,
+    "continuation_validator": true,
+    "continuation_result": true,
+    "continuity_replay": true,
+    "continuity_persistence": true,
+    "post_return_continuity_evaluation": true,
+    "autonomous_long_running_agents": false,
+    "unrestricted_retry_loops": false,
+    "recursive_execution_chains": false,
+    "orchestration_runtime": false,
+    "self_directed_planning": false,
+    "hidden_continuation": false,
+    "distributed_execution_mesh": false,
+    "autonomous_governance_mutation": false,
+    "unrestricted_autonomy": false
+  },
+  "non_goals": [
+    "autonomous long-running agents",
+    "unrestricted retry loops",
+    "recursive execution chains",
+    "orchestration runtime",
+    "self-directed planning",
+    "hidden continuation",
+    "distributed execution mesh",
+    "autonomous governance mutation",
+    "unrestricted autonomy"
+  ],
+  "architectural_principles": {
+    "continuity_is_autonomy": false,
+    "retry_is_orchestration": false,
+    "continuation_governance_visible": true,
+    "continuation_decisions_replay_visible": true,
+    "retry_chains_bounded": true,
+    "continuation_fails_closed": true
+  },
+  "retry_guarantees": {
+    "bounded_retries": true,
+    "explicit_retry_limit_required": true,
+    "default_max_retry": 3,
+    "unbounded_retries_allowed": false,
+    "automatic_retry_launch": false,
+    "recursive_dispatch": false
+  },
+  "continuity_decisions": [
+    "BLOCKED",
+    "CONTINUE",
+    "STOP"
+  ],
+  "retry_classes": [
+    "CONTINUATION_BLOCKED",
+    "RETRY_ALLOWED",
+    "RETRY_DENIED"
+  ],
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "continuation_contract_persisted": true,
+    "retry_evaluation_persisted": true,
+    "continuation_result_persisted": true,
+    "continuity_decision_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "continuity_engine_added": true,
+    "runtime_store_continuity_methods_added": true,
+    "runtime_engine_post_return_evaluation_added": true,
+    "existing_governance_authority_changed": false,
+    "orchestration_added": false,
+    "automatic_recursive_execution_added": false,
+    "hidden_continuation_added": false,
+    "unbounded_retry_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_continuation_evaluation_tested": true,
+    "retry_limit_enforcement_tested": true,
+    "unauthorized_continuation_blocked_tested": true,
+    "invalid_replay_hash_blocked_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_continuity_persistence_tested": true,
+    "continuity_replay_reconstruction_tested": true,
+    "bounded_retry_semantics_tested": true,
+    "continuation_stop_decisions_tested": true,
+    "fail_closed_validation_behavior_tested": true,
+    "immutable_continuity_guarantees_tested": true,
+    "no_automatic_recursive_execution_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/continuity/__init__.py aigol/runtime/continuity/runtime_continuity_engine.py aigol/runtime/continuity/continuation_contract.py aigol/runtime/continuity/continuation_result.py aigol/runtime/continuity/retry_policy.py aigol/runtime/continuity/continuation_validator.py aigol/runtime/continuity/continuity_replay.py",
+    "python -m pytest tests/test_bounded_runtime_continuity_v1.py",
+    "python -m json.tool governance/FINALIZE_BOUNDED_RUNTIME_CONTINUITY_V1.json",
+    "python -m json.tool governance/BOUNDED_RUNTIME_CONTINUITY_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}
