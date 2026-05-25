@@ -13,6 +13,7 @@ from .models import (
     replay_hash,
 )
 from .provider_interface import ProviderInterface
+from .sandbox import SandboxContext, SandboxExecutor, SandboxValidator
 from .transport.runtime_store import RuntimeStore
 from .worker_lifecycle import CLOSED, DISPATCHED, PREPARED, RETURNED, RUNNING, WorkerLifecycle
 
@@ -44,7 +45,9 @@ class RuntimeEngine:
             if self.runtime_store is not None:
                 self.runtime_store.persist_dispatch(runtime_package, dispatch_artifact)
             lifecycle.transition_to(RUNNING)
-            if hasattr(provider, "execute_governed"):
+            if self._requires_sandbox(runtime_package):
+                response = self._execute_sandbox(runtime_package)
+            elif hasattr(provider, "execute_governed"):
                 response = provider.execute_governed(
                     runtime_package,
                     runtime_store=self.runtime_store,
@@ -66,6 +69,35 @@ class RuntimeEngine:
         except FailClosedRuntimeError as exc:
             dispatch_artifact = self._dispatch_artifact(runtime_package, lifecycle, fail_closed_reason=str(exc))
             return self._return_artifact(runtime_package, lifecycle, None, dispatch_artifact, "FAIL_CLOSED")
+
+    def _requires_sandbox(self, runtime_package: RuntimePackage) -> bool:
+        return isinstance(runtime_package.payload, dict) and bool(runtime_package.payload.get("requires_sandbox"))
+
+    def _execute_sandbox(self, runtime_package: RuntimePackage) -> ProviderResponse:
+        context = SandboxContext.from_runtime_package(runtime_package)
+        validator = SandboxValidator()
+        validation = validator.validate(context)
+        if self.runtime_store is not None:
+            self.runtime_store.persist_sandbox_context(runtime_package.runtime_id, context.to_dict())
+            self.runtime_store.persist_sandbox_validation(runtime_package.runtime_id, validation)
+        result = SandboxExecutor(validator=validator).execute(context, runtime_package.payload)
+        result_dict = result.to_dict()
+        if self.runtime_store is not None:
+            self.runtime_store.persist_sandbox_result(runtime_package.runtime_id, result_dict)
+        return ProviderResponse(
+            provider=runtime_package.provider,
+            status="SANDBOX_RETURNED",
+            output=result_dict,
+            metadata={
+                "sandbox_id": context.sandbox_id,
+                "sandbox_replay_hash": result_dict["replay_hash"],
+                "shell_execution": False,
+                "subprocess_execution": False,
+                "filesystem_write": False,
+                "unrestricted_network": False,
+                "worker_spawn": False,
+            },
+        )
 
     def _dispatch_artifact(
         self,

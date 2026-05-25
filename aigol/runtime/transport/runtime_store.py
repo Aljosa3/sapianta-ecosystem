@@ -21,6 +21,8 @@ class RuntimeStore:
         self.result_dir = self.root / "runtime_results"
         self.replay_dir = self.root / "runtime_replay"
         self.provider_invocation_dir = self.root / "runtime_provider_invocations"
+        self.sandbox_dir = self.root / "runtime_sandboxes"
+        self.sandbox_result_dir = self.root / "runtime_sandbox_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -34,6 +36,15 @@ class RuntimeStore:
 
     def provider_response_path(self, runtime_id: str) -> Path:
         return self.provider_invocation_dir / f"runtime_{runtime_id}_response.json"
+
+    def sandbox_context_path(self, runtime_id: str) -> Path:
+        return self.sandbox_dir / f"runtime_{runtime_id}_sandbox.json"
+
+    def sandbox_validation_path(self, runtime_id: str) -> Path:
+        return self.sandbox_dir / f"runtime_{runtime_id}_validation.json"
+
+    def sandbox_result_path(self, runtime_id: str) -> Path:
+        return self.sandbox_result_dir / f"runtime_{runtime_id}_sandbox_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -143,5 +154,56 @@ class RuntimeStore:
 
     def load_provider_response(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.provider_response_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_sandbox_context(self, runtime_id: str, context: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.sandbox_context_path(runtime_id), context)
+        self.ledger.append(
+            runtime_id,
+            "SANDBOX_CONTEXT_PERSISTED",
+            {
+                "artifact_ref": str(self.sandbox_context_path(runtime_id)),
+                "replay_hash": context["replay_hash"],
+            },
+        )
+        return context
+
+    def persist_sandbox_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.sandbox_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "SANDBOX_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.sandbox_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_sandbox_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.sandbox_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "SANDBOX_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.sandbox_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_sandbox_context(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.sandbox_context_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_sandbox_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.sandbox_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_sandbox_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.sandbox_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

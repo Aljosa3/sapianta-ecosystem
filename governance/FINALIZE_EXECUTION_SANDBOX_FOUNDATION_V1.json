@@ -1,0 +1,132 @@
+{
+  "artifact_type": "FINALIZE_EXECUTION_SANDBOX_FOUNDATION_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_EXECUTION_SANDBOX_FOUNDATION_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Execution sandbox foundation introduces bounded execution isolation primitives only. It does not introduce unrestricted execution, orchestration authority, autonomous runtime behavior, shell execution, filesystem mutation, or unrestricted capability activation.",
+  "scope": {
+    "sandbox_context": true,
+    "capability_registry": true,
+    "sandbox_policy": true,
+    "sandbox_validator": true,
+    "sandbox_executor": true,
+    "sandbox_result": true,
+    "sandbox_persistence": true,
+    "sandbox_replay_reconstruction": true,
+    "runtime_engine_explicit_sandbox_branch": true,
+    "unrestricted_shell_execution": false,
+    "unrestricted_filesystem_access": false,
+    "docker_runtime": false,
+    "kubernetes": false,
+    "orchestration": false,
+    "autonomous_execution_loops": false,
+    "background_processes": false,
+    "multi_worker_execution": false,
+    "distributed_execution": false,
+    "recursive_execution": false,
+    "unrestricted_network_access": false,
+    "unrestricted_subprocess_execution": false,
+    "self_modifying_governance": false
+  },
+  "non_goals": [
+    "unrestricted shell execution",
+    "unrestricted filesystem access",
+    "Docker runtime",
+    "Kubernetes",
+    "orchestration",
+    "autonomous execution loops",
+    "background processes",
+    "multi-worker execution",
+    "distributed execution",
+    "recursive execution",
+    "unrestricted network access",
+    "unrestricted subprocess execution",
+    "self-modifying governance"
+  ],
+  "architectural_principles": {
+    "execution_is_authority": false,
+    "sandbox_is_orchestration": false,
+    "capability_is_permission": false,
+    "provider_output_remains_untrusted": true,
+    "execution_governance_visible": true,
+    "sandbox_replay_visible": true,
+    "sandbox_boundaries_fail_closed": true
+  },
+  "allowed_execution_modes": [
+    "ANALYSIS_ONLY",
+    "MOCK_EXECUTION",
+    "READ_ONLY"
+  ],
+  "capability_guarantees": {
+    "supported_capabilities": [
+      "analyze_text",
+      "inspect_json",
+      "mock_execute",
+      "read_text"
+    ],
+    "forbidden_capabilities": [
+      "filesystem_write",
+      "recursive_dispatch",
+      "shell_execution",
+      "subprocess_spawn",
+      "unrestricted_network",
+      "worker_spawn"
+    ],
+    "wildcard_permissions_allowed": false,
+    "unknown_capability_fails_closed": true,
+    "forbidden_capability_fails_closed": true
+  },
+  "sandbox_boundary_guarantees": {
+    "shell_execution": false,
+    "subprocess_execution": false,
+    "filesystem_write": false,
+    "unrestricted_network": false,
+    "worker_spawn": false,
+    "orchestration": false,
+    "autonomous_execution": false
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "sandbox_context_persisted": true,
+    "sandbox_validation_persisted": true,
+    "sandbox_result_persisted": true,
+    "sandbox_execution_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "sandbox_substrate_added": true,
+    "runtime_store_sandbox_methods_added": true,
+    "runtime_engine_explicit_sandbox_branch_added": true,
+    "existing_provider_authority_changed": false,
+    "existing_governance_semantics_changed": false,
+    "orchestration_added": false,
+    "unrestricted_execution_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_sandbox_creation_tested": true,
+    "invalid_capability_blocked_tested": true,
+    "forbidden_capability_blocked_tested": true,
+    "malformed_sandbox_blocked_tested": true,
+    "invalid_ttl_blocked_tested": true,
+    "invalid_resource_limits_blocked_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_sandbox_persistence_tested": true,
+    "sandbox_replay_reconstruction_tested": true,
+    "subprocess_prevention_tested": true,
+    "filesystem_mutation_prevention_tested": true,
+    "network_access_prevention_tested": true,
+    "worker_spawn_prevention_tested": true,
+    "fail_closed_validation_tested": true,
+    "immutable_sandbox_result_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/sandbox/__init__.py aigol/runtime/sandbox/sandbox_policy.py aigol/runtime/sandbox/sandbox_context.py aigol/runtime/sandbox/sandbox_validator.py aigol/runtime/sandbox/sandbox_executor.py aigol/runtime/sandbox/sandbox_result.py aigol/runtime/sandbox/capability_registry.py",
+    "python -m pytest tests/test_execution_sandbox_foundation_v1.py",
+    "python -m json.tool governance/FINALIZE_EXECUTION_SANDBOX_FOUNDATION_V1.json",
+    "python -m json.tool governance/EXECUTION_SANDBOX_FOUNDATION_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}

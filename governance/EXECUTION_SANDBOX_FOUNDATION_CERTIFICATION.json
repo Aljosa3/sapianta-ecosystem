@@ -1,0 +1,67 @@
+{
+  "artifact_type": "EXECUTION_SANDBOX_FOUNDATION_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_EXECUTION_SANDBOX_FOUNDATION_V1",
+  "certification_status": "CERTIFIED",
+  "sandbox_components": {
+    "sandbox_context": "implemented",
+    "capability_registry": "implemented",
+    "sandbox_policy": "implemented",
+    "sandbox_validator": "implemented",
+    "sandbox_executor": "implemented",
+    "sandbox_result": "implemented",
+    "sandbox_persistence": "implemented",
+    "sandbox_replay_reconstruction": "implemented"
+  },
+  "execution_isolation_scope": {
+    "bounded_execution_isolation_primitives": true,
+    "simulation_only_executor": true,
+    "unrestricted_execution": false,
+    "shell_execution": false,
+    "subprocess_execution": false,
+    "filesystem_write": false,
+    "unrestricted_network": false,
+    "docker_runtime": false,
+    "worker_spawn": false,
+    "orchestration": false,
+    "autonomous_execution": false
+  },
+  "capability_certification": {
+    "explicit_allowlist_only": true,
+    "unknown_capability_fails_closed": true,
+    "forbidden_capability_fails_closed": true,
+    "wildcard_permissions": false,
+    "dynamic_policy_mutation": false
+  },
+  "fail_closed_certification": {
+    "missing_runtime_id_fails_closed": true,
+    "missing_lineage_fails_closed": true,
+    "invalid_capability_fails_closed": true,
+    "forbidden_capability_fails_closed": true,
+    "malformed_context_fails_closed": true,
+    "invalid_resource_limit_fails_closed": true,
+    "invalid_ttl_fails_closed": true
+  },
+  "replay_certification": {
+    "sandbox_context_replay_hash": true,
+    "sandbox_validation_replay_hash": true,
+    "sandbox_result_replay_hash": true,
+    "sandbox_context_persistence": true,
+    "sandbox_validation_persistence": true,
+    "sandbox_result_persistence": true,
+    "sandbox_reconstruction": true,
+    "append_only_compatible": true
+  },
+  "runtime_boundary_certification": {
+    "execution_is_authority": false,
+    "sandbox_is_orchestration": false,
+    "capability_is_permission": false,
+    "provider_output_is_untrusted": true,
+    "runtime_engine_remains_authority_layer": true,
+    "bounded": true,
+    "replay_visible": true,
+    "non_orchestrating": true,
+    "non_autonomous": true
+  },
+  "recommended_next_step": "Introduce governed sandbox audit/reporting or sandboxed artifact interpretation only through a separate replay-visible milestone."
+}
