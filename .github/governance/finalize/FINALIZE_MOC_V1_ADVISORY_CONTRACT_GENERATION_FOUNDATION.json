@@ -1,0 +1,68 @@
+{
+  "artifact": "FINALIZE_MOC_V1_ADVISORY_CONTRACT_GENERATION_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_ADVISORY_CONTRACT_GENERATION_FOUNDATION",
+  "classification": "advisory_generation_only",
+  "scope": [
+    "aigol/moc/advisory_contract_generation.py",
+    "aigol/moc/contract_validation.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc generate-contract",
+    "schemas/semantic_contract.schema.json",
+    "docs/governance/cognition/MOC_V1_ADVISORY_CONTRACT_GENERATION_FOUNDATION.md",
+    "tests/test_moc_v1_advisory_contract_generation_foundation.py"
+  ],
+  "generation_statuses": [
+    "GENERATED_VALID",
+    "GENERATED_INVALID",
+    "INVALID_INPUT",
+    "FAIL_CLOSED"
+  ],
+  "generates": {
+    "semantic_contract_draft": true,
+    "advisory_only_true": true,
+    "replay_safe_true": true,
+    "deterministic_intent_id": true,
+    "default_forbidden_actions": true,
+    "default_human_review_required": true,
+    "immediate_contract_validation": true,
+    "replay_visible_generation_result": true
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "provider_activation": false,
+    "orchestration": false,
+    "autonomous_cognition": false,
+    "autonomous_planning": false,
+    "hidden_continuation": false,
+    "semantic_reasoning_engine": false,
+    "hidden_inference": false,
+    "governance_mutation": false,
+    "contract_auto_repair": false,
+    "runtime_cognition_loops": false,
+    "task_execution": false
+  },
+  "boundary_guarantees": {
+    "advisory_only": true,
+    "schema_bound": true,
+    "deterministic": true,
+    "validation_gated": true,
+    "replay_visible": true,
+    "non_executing": true,
+    "non_dispatching": true,
+    "contract_mutation": false,
+    "governance_mutation": false,
+    "worker_task_created": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_advisory_contract_generation_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 advisory contract generation uses explicit input only, validates immediately, and does not infer, repair, dispatch, execute, activate providers, or create worker tasks."
+}

@@ -26,7 +26,7 @@ from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
-from aigol.cli.commands.moc import validate_contract_command
+from aigol.cli.commands.moc import generate_contract_command, validate_contract_command
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.status import status_summary
@@ -44,6 +44,7 @@ from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
+from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
 
 
@@ -133,6 +134,10 @@ def build_parser() -> argparse.ArgumentParser:
     moc_validate_contract.add_argument("--input", required=True)
     moc_validate_contract.add_argument("--json", action="store_true")
     moc_validate_contract.add_argument("--output", default="")
+    moc_generate_contract = moc_sub.add_parser("generate-contract")
+    moc_generate_contract.add_argument("--input", required=True)
+    moc_generate_contract.add_argument("--json", action="store_true")
+    moc_generate_contract.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -231,6 +236,11 @@ def run_command(args: argparse.Namespace) -> dict:
         return runtime_diagnostics(extension_id=args.extension_id)
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
+            input_path=args.input,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "generate-contract":
+        return generate_contract_command(
             input_path=args.input,
             output_path=args.output or None,
         )
@@ -433,6 +443,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC VALIDATE CONTRACT",
             render_contract_validation_summary(validation).splitlines(),
+        )
+    if command == "aigol moc generate-contract":
+        generation = result.get("advisory_contract_generation_result", {})
+        return render_card(
+            "AIGOL MOC GENERATE CONTRACT",
+            render_advisory_contract_generation_summary(generation).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})
