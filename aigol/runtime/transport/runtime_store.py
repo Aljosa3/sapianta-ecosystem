@@ -30,6 +30,8 @@ class RuntimeStore:
         self.continuity_contract_dir = self.root / "runtime_continuity_contracts"
         self.continuity_result_dir = self.root / "runtime_continuity_results"
         self.snapshot_dir = self.root / "runtime_snapshots"
+        self.goal_dir = self.root / "runtime_goals"
+        self.goal_sequence_dir = self.root / "runtime_goal_sequences"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -82,6 +84,18 @@ class RuntimeStore:
 
     def runtime_snapshot_path(self, runtime_id: str) -> Path:
         return self.snapshot_dir / f"runtime_{runtime_id}_snapshot.json"
+
+    def goal_contract_path(self, runtime_id: str) -> Path:
+        return self.goal_dir / f"runtime_{runtime_id}_goal_contract.json"
+
+    def goal_validation_path(self, runtime_id: str) -> Path:
+        return self.goal_dir / f"runtime_{runtime_id}_goal_validation.json"
+
+    def goal_result_path(self, runtime_id: str) -> Path:
+        return self.goal_dir / f"runtime_{runtime_id}_goal_result.json"
+
+    def goal_sequence_path(self, runtime_id: str) -> Path:
+        return self.goal_sequence_dir / f"runtime_{runtime_id}_goal_sequence.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -412,5 +426,73 @@ class RuntimeStore:
 
     def load_runtime_snapshot(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.runtime_snapshot_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_goal_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.goal_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "GOAL_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.goal_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_goal_sequence(self, runtime_id: str, sequence: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.goal_sequence_path(runtime_id), sequence)
+        self.ledger.append(
+            runtime_id,
+            "GOAL_SEQUENCE_PERSISTED",
+            {
+                "artifact_ref": str(self.goal_sequence_path(runtime_id)),
+                "replay_hash": sequence["replay_hash"],
+            },
+        )
+        return sequence
+
+    def persist_goal_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.goal_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "GOAL_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.goal_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_goal_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.goal_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "GOAL_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.goal_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_goal_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.goal_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_goal_sequence(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.goal_sequence_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_goal_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.goal_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_goal_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.goal_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

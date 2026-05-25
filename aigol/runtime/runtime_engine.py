@@ -6,6 +6,7 @@ from copy import deepcopy
 
 from .capabilities import CapabilityExecutor, CapabilityRequest, CapabilityValidator
 from .continuity import ContinuationContract, RuntimeContinuityEngine
+from .goals import GoalContract, GoalContinuityEngine, GoalSequence
 from .models import (
     FailClosedRuntimeError,
     GovernedReturnArtifact,
@@ -49,7 +50,9 @@ class RuntimeEngine:
             if self.runtime_store is not None:
                 self.runtime_store.persist_dispatch(runtime_package, dispatch_artifact)
             lifecycle.transition_to(RUNNING)
-            if self._requires_capability(runtime_package):
+            if self._requires_goal_sequence(runtime_package):
+                response = self._evaluate_goal_sequence(runtime_package)
+            elif self._requires_capability(runtime_package):
                 response = self._execute_capability(runtime_package)
             elif self._requires_sandbox(runtime_package):
                 response = self._execute_sandbox(runtime_package)
@@ -83,6 +86,32 @@ class RuntimeEngine:
 
     def _requires_capability(self, runtime_package: RuntimePackage) -> bool:
         return isinstance(runtime_package.payload, dict) and isinstance(runtime_package.payload.get("capability_request"), dict)
+
+    def _requires_goal_sequence(self, runtime_package: RuntimePackage) -> bool:
+        return isinstance(runtime_package.payload, dict) and isinstance(runtime_package.payload.get("goal_sequence"), dict)
+
+    def _evaluate_goal_sequence(self, runtime_package: RuntimePackage) -> ProviderResponse:
+        contract = GoalContract.from_runtime_package(runtime_package)
+        sequence = GoalSequence.from_runtime_package(runtime_package, contract)
+        result, validation = GoalContinuityEngine().evaluate(contract, sequence)
+        if self.runtime_store is not None:
+            self.runtime_store.persist_goal_contract(runtime_package.runtime_id, contract.to_dict())
+            self.runtime_store.persist_goal_sequence(runtime_package.runtime_id, sequence.to_dict())
+            self.runtime_store.persist_goal_validation(runtime_package.runtime_id, validation)
+            self.runtime_store.persist_goal_result(runtime_package.runtime_id, result)
+        return ProviderResponse(
+            provider=runtime_package.provider,
+            status="GOAL_CONTINUITY_EVALUATED",
+            output=result,
+            metadata={
+                "goal_id": contract.goal_id,
+                "goal_replay_hash": result["replay_hash"],
+                "sequencing_only": True,
+                "orchestration": False,
+                "recursive_execution": False,
+                "hidden_continuation": False,
+            },
+        )
 
     def _execute_capability(self, runtime_package: RuntimePackage) -> ProviderResponse:
         context = SandboxContext.from_runtime_package(runtime_package)
