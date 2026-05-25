@@ -10,6 +10,7 @@ from aigol.moc.advisory_contract_generation import inspect_advisory_contract_gen
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.governed_return_interpretation import inspect_governed_return_interpretation
+from aigol.moc.operational_lineage import inspect_operational_lineage
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
 from aigol.moc.provider_execution_gate import inspect_provider_execution_gate
 from aigol.moc.proposal_ledger import inspect_proposal_ledger_append
@@ -193,6 +194,27 @@ def interpret_return_command(
     )
 
 
+def operational_lineage_command(
+    *,
+    contract_path: str | Path | None = None,
+    proposal_path: str | Path | None = None,
+    approval_path: str | Path | None = None,
+    runtime_dispatch_path: str | Path | None = None,
+    governed_return_path: str | Path | None = None,
+    provider_gate_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_operational_lineage(
+        contract_path=contract_path,
+        proposal_path=proposal_path,
+        approval_path=approval_path,
+        runtime_dispatch_path=runtime_dispatch_path,
+        governed_return_path=governed_return_path,
+        provider_gate_path=provider_gate_path,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "append_ledger_command",
     "approval_gate_command",
@@ -202,6 +224,7 @@ __all__ = [
     "dispatch_request_command",
     "generate_contract_command",
     "interpret_return_command",
+    "operational_lineage_command",
     "persist_proposal_command",
     "prepare_worker_command",
     "provider_execution_gate_command",

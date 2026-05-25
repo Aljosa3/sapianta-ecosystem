@@ -1,0 +1,95 @@
+{
+  "artifact_type": "FINALIZE_MOC_V1_OPERATIONAL_LINEAGE_FOUNDATION",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_OPERATIONAL_LINEAGE_FOUNDATION",
+  "scope": {
+    "created_artifact": "MOC_V1_OPERATIONAL_LINEAGE",
+    "created_module": "aigol/moc/operational_lineage.py",
+    "created_cli_command": "aigol moc operational-lineage",
+    "purpose": "deterministic lineage-only operational lifecycle closure evidence"
+  },
+  "lineage_statuses": [
+    "LINEAGE_COMPLETE",
+    "LINEAGE_COMPLETE_WITH_WARNINGS",
+    "LINEAGE_INCOMPLETE",
+    "INVALID_LINEAGE",
+    "FAIL_CLOSED"
+  ],
+  "lineage_rules": [
+    "all lineage refs must be explicit",
+    "missing lineage refs must be reported explicitly",
+    "no hidden lineage inference allowed",
+    "replay_reconstructable true only if all critical refs exist",
+    "lineage_complete true only if operational chain is fully connected",
+    "invalid or missing evidence fails closed or produces incomplete lineage",
+    "source artifacts are not mutated",
+    "missing lineage is not automatically repaired",
+    "hidden state is not reconstructed",
+    "semantic truth is not inferred"
+  ],
+  "lineage_chain_refs": [
+    "contract_ref",
+    "proposal_ref",
+    "validation_ref",
+    "correction_ref",
+    "persistence_ref",
+    "ledger_ref",
+    "approval_ref",
+    "worker_preparation_ref",
+    "dispatch_preview_ref",
+    "dispatch_request_ref",
+    "dispatch_authorization_ref",
+    "runtime_dispatch_ref",
+    "provider_gate_ref",
+    "governed_return_ref"
+  ],
+  "boundary_guarantees": {
+    "lineage_only": true,
+    "execution_authority": false,
+    "provider_activation": false,
+    "runtime_execution": false,
+    "automatic_retry": false,
+    "automatic_next_task": false,
+    "lineage_repair": false,
+    "orchestration_authority": false,
+    "autonomous_continuation": false,
+    "hidden_continuation": false,
+    "governance_mutation": false,
+    "semantic_reasoning": false
+  },
+  "non_goals": [
+    "execute workers",
+    "activate providers",
+    "retry operations",
+    "create new tasks",
+    "orchestrate flows",
+    "mutate governance",
+    "infer hidden meaning",
+    "perform semantic reasoning",
+    "repair lineage",
+    "reconstruct hidden state",
+    "create autonomous cognition flows"
+  ],
+  "validation_evidence": {
+    "py_compile": "passed: python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+    "pytest": "passed: python -m pytest tests/test_moc_v1_operational_lineage_foundation.py",
+    "semantic_contract_schema_json_tool": "passed: python -m json.tool schemas/semantic_contract.schema.json",
+    "git_diff_check": "passed: git diff --check"
+  },
+  "deterministic_scope_lock": {
+    "lineage_only": true,
+    "explicit_evidence_only": true,
+    "read_only_inputs": true,
+    "source_artifact_mutation": false,
+    "execution_authority": false,
+    "provider_activation": false,
+    "runtime_execution": false,
+    "automatic_retry": false,
+    "automatic_next_task": false,
+    "lineage_repair": false,
+    "orchestration_runtime": false,
+    "autonomous_continuation": false,
+    "governance_mutation": false
+  },
+  "recommended_next_milestone": "FINALIZE_MOC_V1_OPERATIONAL_FOUNDATION"
+}

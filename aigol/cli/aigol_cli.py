@@ -35,6 +35,7 @@ from aigol.cli.commands.moc import (
     dispatch_request_command,
     generate_contract_command,
     interpret_return_command,
+    operational_lineage_command,
     persist_proposal_command,
     prepare_worker_command,
     provider_execution_gate_command,
@@ -67,6 +68,7 @@ from aigol.moc.dispatch_authorization import render_worker_dispatch_authorizatio
 from aigol.moc.dispatch_authorization_preview import render_dispatch_authorization_preview_summary
 from aigol.moc.dispatch_request import render_worker_dispatch_request_summary
 from aigol.moc.governed_return_interpretation import render_governed_return_interpretation_summary
+from aigol.moc.operational_lineage import render_operational_lineage_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
 from aigol.moc.provider_execution_gate import render_provider_execution_gate_summary
 from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledger_summary
@@ -225,6 +227,15 @@ def build_parser() -> argparse.ArgumentParser:
     moc_interpret_return.add_argument("--return-evidence", default="")
     moc_interpret_return.add_argument("--json", action="store_true")
     moc_interpret_return.add_argument("--output", default="")
+    moc_operational_lineage = moc_sub.add_parser("operational-lineage")
+    moc_operational_lineage.add_argument("--contract", required=True)
+    moc_operational_lineage.add_argument("--proposal", required=True)
+    moc_operational_lineage.add_argument("--approval", required=True)
+    moc_operational_lineage.add_argument("--runtime-dispatch", required=True)
+    moc_operational_lineage.add_argument("--governed-return", required=True)
+    moc_operational_lineage.add_argument("--provider-gate", default="")
+    moc_operational_lineage.add_argument("--json", action="store_true")
+    moc_operational_lineage.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -401,6 +412,16 @@ def run_command(args: argparse.Namespace) -> dict:
             runtime_dispatch_path=args.runtime_dispatch,
             provider_gate_path=args.provider_gate or None,
             return_evidence_path=args.return_evidence or None,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "operational-lineage":
+        return operational_lineage_command(
+            contract_path=args.contract,
+            proposal_path=args.proposal,
+            approval_path=args.approval,
+            runtime_dispatch_path=args.runtime_dispatch,
+            governed_return_path=args.governed_return,
+            provider_gate_path=args.provider_gate or None,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -680,6 +701,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC INTERPRET RETURN",
             render_governed_return_interpretation_summary(interpretation).splitlines(),
+        )
+    if command == "aigol moc operational-lineage":
+        lineage = result.get("operational_lineage", {})
+        return render_card(
+            "AIGOL MOC OPERATIONAL LINEAGE",
+            render_operational_lineage_summary(lineage).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

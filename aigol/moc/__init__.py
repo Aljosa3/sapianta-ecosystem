@@ -89,6 +89,12 @@ from .governed_return_interpretation import (
     interpret_governed_return,
     render_governed_return_interpretation_summary,
 )
+from .operational_lineage import (
+    LINEAGE_COMPLETE,
+    build_operational_lineage,
+    inspect_operational_lineage,
+    render_operational_lineage_summary,
+)
 from .contract_validation import (
     ARTIFACT_TYPE,
     FAIL_CLOSED,
@@ -128,6 +134,7 @@ __all__ = [
     "PROVIDER_EXECUTION_ELIGIBLE",
     "DISPATCH_RECORDED_ONLY",
     "PROVIDER_GATE_ELIGIBLE_ONLY",
+    "LINEAGE_COMPLETE",
     "PROPOSED",
     "REJECTED",
     "VALIDATED",
@@ -141,6 +148,7 @@ __all__ = [
     "build_dispatch_authorization_preview",
     "authorize_worker_dispatch",
     "build_worker_dispatch_request",
+    "build_operational_lineage",
     "create_runtime_dispatch_event",
     "create_proposal_persistence_record",
     "generate_advisory_contract",
@@ -158,6 +166,7 @@ __all__ = [
     "inspect_runtime_dispatch",
     "inspect_provider_execution_gate",
     "inspect_governed_return_interpretation",
+    "inspect_operational_lineage",
     "render_advisory_contract_generation_summary",
     "render_advisory_proposal_validation_summary",
     "render_approval_gate_summary",
@@ -172,6 +181,7 @@ __all__ = [
     "render_runtime_dispatch_summary",
     "render_provider_execution_gate_summary",
     "render_governed_return_interpretation_summary",
+    "render_operational_lineage_summary",
     "validate_advisory_proposal",
     "validate_semantic_contract",
 ]
