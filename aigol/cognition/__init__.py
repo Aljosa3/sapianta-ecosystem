@@ -25,6 +25,11 @@ from .semantic_context_state import (
     inspect_semantic_context,
     validate_semantic_context_state,
 )
+from .semantic_boundary_propagation import (
+    build_semantic_boundary_propagation,
+    inspect_semantic_boundaries,
+    validate_semantic_boundary_propagation,
+)
 from .semantic_relationship_index import (
     build_semantic_relationship_index,
     inspect_semantic_relationships,
@@ -51,6 +56,7 @@ __all__ = [
     "build_cognition_integrity_summary",
     "build_cognition_lifecycle_model",
     "build_cognition_state_envelope",
+    "build_semantic_boundary_propagation",
     "build_semantic_context_state",
     "build_semantic_relationship_index",
     "inspect_cognition_registry",
@@ -59,6 +65,7 @@ __all__ = [
     "inspect_cognition_topology",
     "inspect_cognition_lifecycle",
     "inspect_authority_propagation",
+    "inspect_semantic_boundaries",
     "inspect_semantic_context",
     "inspect_semantic_relationships",
     "render_cognition_summary",
@@ -66,6 +73,7 @@ __all__ = [
     "validate_cognition_integrity_summary",
     "validate_cognition_lifecycle_model",
     "validate_authority_propagation_verifier",
+    "validate_semantic_boundary_propagation",
     "validate_semantic_context_state",
     "validate_semantic_relationship_index",
 ]

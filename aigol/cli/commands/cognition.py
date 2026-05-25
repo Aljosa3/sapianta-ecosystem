@@ -9,6 +9,7 @@ from aigol.cognition.authority_propagation import inspect_authority_propagation
 from aigol.cognition.integrity_summary import inspect_cognition_integrity
 from aigol.cognition.lifecycle_model import inspect_cognition_lifecycle
 from aigol.cognition.registry import inspect_cognition_registry
+from aigol.cognition.semantic_boundary_propagation import inspect_semantic_boundaries
 from aigol.cognition.semantic_context_state import inspect_semantic_context
 from aigol.cognition.semantic_relationship_index import inspect_semantic_relationships
 from aigol.cognition.semantic_replay import inspect_semantic_replay_continuity
@@ -92,6 +93,15 @@ def inspect_semantic_relationship_index(
     return inspect_semantic_relationships(input_path=input_path, output_path=output_path, validate=validate)
 
 
+def inspect_semantic_boundary_propagation(
+    *,
+    input_path: str | Path | None = None,
+    output_path: str | Path | None = None,
+    validate: bool = False,
+) -> dict[str, Any]:
+    return inspect_semantic_boundaries(input_path=input_path, output_path=output_path, validate=validate)
+
+
 __all__ = [
     "check_semantic_replay_continuity",
     "inspect_authority",
@@ -99,6 +109,7 @@ __all__ = [
     "inspect_integrity",
     "inspect_lifecycle",
     "inspect_registry",
+    "inspect_semantic_boundary_propagation",
     "inspect_semantic_context_state",
     "inspect_semantic_relationship_index",
     "inspect_topology",
