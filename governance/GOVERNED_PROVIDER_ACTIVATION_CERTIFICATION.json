@@ -1,0 +1,58 @@
+{
+  "artifact_type": "GOVERNED_PROVIDER_ACTIVATION_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "FINALIZE_GOVERNED_PROVIDER_ACTIVATION_V1",
+  "certification_status": "CERTIFIED",
+  "provider_activation_components": {
+    "provider_envelope": "implemented",
+    "provider_activation_gate": "implemented",
+    "provider_config": "implemented",
+    "openai_provider": "implemented",
+    "provider_invocation_persistence": "implemented",
+    "provider_invocation_replay_reconstruction": "implemented"
+  },
+  "provider_connectivity_scope": {
+    "cognition_provider_connectivity": true,
+    "prompt_to_response_only": true,
+    "tool_execution": false,
+    "shell_execution": false,
+    "filesystem_mutation": false,
+    "worker_spawn": false,
+    "recursive_runtime_dispatch": false,
+    "multi_provider_planning": false
+  },
+  "authority_certification": {
+    "provider_is_authority": false,
+    "cognition_is_execution": false,
+    "provider_output_is_untrusted_evidence": true,
+    "runtime_engine_remains_authority_layer": true,
+    "provider_cannot_grant_authority": true,
+    "provider_activation_requires_governance_gate": true
+  },
+  "fail_closed_certification": {
+    "missing_api_key_fails_closed": true,
+    "unknown_provider_fails_closed": true,
+    "unauthorized_governance_state_fails_closed": true,
+    "malformed_envelope_fails_closed": true,
+    "missing_lineage_fails_closed": true,
+    "invalid_invocation_type_fails_closed": true
+  },
+  "replay_certification": {
+    "provider_envelope_replay_hash": true,
+    "provider_response_replay_hash": true,
+    "provider_invocation_persistence": true,
+    "provider_invocation_reconstruction": true,
+    "append_only_compatible": true,
+    "hidden_invocation_state": false
+  },
+  "runtime_boundary_certification": {
+    "bounded": true,
+    "replay_safe": true,
+    "governance_visible": true,
+    "fail_closed": true,
+    "non_orchestrating": true,
+    "non_autonomous": true,
+    "unrestricted_runtime_behavior": false
+  },
+  "recommended_next_step": "Introduce governed provider result interpretation or provider execution auditing only through a separate milestone that preserves authority separation and replay visibility."
+}

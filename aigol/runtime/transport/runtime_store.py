@@ -20,6 +20,7 @@ class RuntimeStore:
         self.dispatch_dir = self.root / "runtime_dispatch"
         self.result_dir = self.root / "runtime_results"
         self.replay_dir = self.root / "runtime_replay"
+        self.provider_invocation_dir = self.root / "runtime_provider_invocations"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -27,6 +28,12 @@ class RuntimeStore:
 
     def result_path(self, runtime_id: str) -> Path:
         return self.result_dir / f"runtime_{runtime_id}.json"
+
+    def provider_envelope_path(self, runtime_id: str) -> Path:
+        return self.provider_invocation_dir / f"runtime_{runtime_id}_envelope.json"
+
+    def provider_response_path(self, runtime_id: str) -> Path:
+        return self.provider_invocation_dir / f"runtime_{runtime_id}_response.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -102,5 +109,39 @@ class RuntimeStore:
 
     def load_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_provider_envelope(self, runtime_id: str, envelope: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.provider_envelope_path(runtime_id), envelope)
+        self.ledger.append(
+            runtime_id,
+            "PROVIDER_ENVELOPE_PERSISTED",
+            {
+                "artifact_ref": str(self.provider_envelope_path(runtime_id)),
+                "replay_hash": envelope["replay_hash"],
+            },
+        )
+        return envelope
+
+    def persist_provider_response(self, runtime_id: str, response: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.provider_response_path(runtime_id), response)
+        self.ledger.append(
+            runtime_id,
+            "PROVIDER_RESPONSE_PERSISTED",
+            {
+                "artifact_ref": str(self.provider_response_path(runtime_id)),
+                "replay_hash": response["replay_hash"],
+            },
+        )
+        return response
+
+    def load_provider_envelope(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.provider_envelope_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_provider_response(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.provider_response_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

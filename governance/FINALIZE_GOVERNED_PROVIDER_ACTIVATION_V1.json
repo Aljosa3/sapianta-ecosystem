@@ -1,0 +1,113 @@
+{
+  "artifact_type": "FINALIZE_GOVERNED_PROVIDER_ACTIVATION_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_GOVERNED_PROVIDER_ACTIVATION_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Governed provider activation introduces cognition-provider connectivity only. It does not introduce execution authority, orchestration authority, autonomous execution, or unrestricted runtime behavior.",
+  "scope": {
+    "provider_envelope": true,
+    "provider_activation_gate": true,
+    "openai_provider_adapter": true,
+    "provider_invocation_persistence": true,
+    "provider_invocation_replay_reconstruction": true,
+    "runtime_engine_governed_provider_path": true,
+    "shell_execution": false,
+    "docker_execution": false,
+    "filesystem_mutation": false,
+    "autonomous_retries": false,
+    "recursive_workers": false,
+    "orchestration": false,
+    "tool_execution": false,
+    "multi_provider_planning": false,
+    "distributed_runtime": false,
+    "governance_mutation": false
+  },
+  "non_goals": [
+    "shell execution",
+    "Docker execution",
+    "filesystem mutation",
+    "autonomous retries",
+    "recursive workers",
+    "orchestration",
+    "tool execution",
+    "multi-provider planning",
+    "runtime mutation",
+    "self-modifying governance",
+    "hidden continuation",
+    "distributed runtime",
+    "autonomous task generation"
+  ],
+  "authority_separation": {
+    "provider_is_authority": false,
+    "cognition_is_execution": false,
+    "provider_output_is_trusted_authority": false,
+    "runtime_engine_remains_authority_layer": true,
+    "provider_activation_is_governance_gated": true
+  },
+  "provider_boundary_guarantees": {
+    "tool_execution": false,
+    "shell_execution": false,
+    "filesystem_authority": false,
+    "orchestration": false,
+    "autonomous_execution": false,
+    "provider_authority": false,
+    "governance_mutation": false
+  },
+  "bounded_execution_guarantees": {
+    "no_tool_execution": true,
+    "no_shell_execution": true,
+    "no_filesystem_execution": true,
+    "no_worker_spawn": true,
+    "no_recursive_runtime_dispatch": true
+  },
+  "activation_gate_requirements": {
+    "governance_state_authorized": true,
+    "explicit_provider_registration": true,
+    "allowed_invocation_type": true,
+    "runtime_id_required": true,
+    "lineage_refs_required": true,
+    "request_payload_required": true,
+    "malformed_envelope_fails_closed": true,
+    "unknown_provider_fails_closed": true
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "provider_envelope_persisted": true,
+    "provider_response_persisted": true,
+    "provider_invocation_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "provider_activation_layer_added": true,
+    "runtime_store_provider_invocation_methods_added": true,
+    "runtime_engine_governed_provider_path_added": true,
+    "existing_mock_provider_semantics_changed": false,
+    "existing_execution_authority_changed": false,
+    "governance_mutation_added": false,
+    "orchestration_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "provider_activation_success_tested": true,
+    "unknown_provider_blocked_tested": true,
+    "unauthorized_governance_state_blocked_tested": true,
+    "malformed_provider_envelope_blocked_tested": true,
+    "missing_api_key_blocked_tested": true,
+    "replay_visible_invocation_persistence_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "provider_response_persistence_tested": true,
+    "fail_closed_provider_validation_tested": true,
+    "provider_authority_bypass_prevented_tested": true,
+    "execution_prevention_tested": true,
+    "provider_invocation_replay_reconstruction_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/providers/__init__.py aigol/runtime/providers/openai_provider.py aigol/runtime/providers/provider_gate.py aigol/runtime/providers/provider_config.py aigol/runtime/providers/provider_envelope.py",
+    "python -m pytest tests/test_governed_provider_activation_v1.py",
+    "python -m json.tool governance/FINALIZE_GOVERNED_PROVIDER_ACTIVATION_V1.json",
+    "python -m json.tool governance/GOVERNED_PROVIDER_ACTIVATION_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}

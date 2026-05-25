@@ -25,3 +25,22 @@ def reconstruct_runtime_lineage(runtime_id: str, root: Path | str) -> dict[str, 
             result["replay_hash"],
         ],
     }
+
+
+def reconstruct_provider_invocation(runtime_id: str, root: Path | str) -> dict[str, Any]:
+    store = RuntimeStore(root)
+    envelope = store.load_provider_envelope(runtime_id)
+    response = store.load_provider_response(runtime_id)
+    ledger_entries = store.ledger.read(runtime_id)
+    return {
+        "status": "PROVIDER_INVOCATION_RECONSTRUCTED",
+        "runtime_id": runtime_id,
+        "provider_envelope": envelope,
+        "provider_response": response,
+        "ledger_entries": ledger_entries,
+        "replay_chain": [
+            envelope["replay_hash"],
+            response["replay_hash"],
+            *[entry["entry_hash"] for entry in ledger_entries],
+        ],
+    }

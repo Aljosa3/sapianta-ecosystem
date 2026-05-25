@@ -44,7 +44,14 @@ class RuntimeEngine:
             if self.runtime_store is not None:
                 self.runtime_store.persist_dispatch(runtime_package, dispatch_artifact)
             lifecycle.transition_to(RUNNING)
-            response = provider.execute(runtime_package)
+            if hasattr(provider, "execute_governed"):
+                response = provider.execute_governed(
+                    runtime_package,
+                    runtime_store=self.runtime_store,
+                    registered_providers=set(self.providers),
+                )
+            else:
+                response = provider.execute(runtime_package)
             if not isinstance(response, ProviderResponse):
                 raise FailClosedRuntimeError("provider must return ProviderResponse")
             if response.provider != provider.provider_name():
