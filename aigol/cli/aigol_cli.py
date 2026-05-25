@@ -14,6 +14,7 @@ from aigol.cli.commands.cognition import (
     inspect_lifecycle,
     inspect_registry,
     inspect_semantic_boundary_propagation,
+    inspect_semantic_context_diff,
     inspect_semantic_context_state,
     inspect_semantic_relationship_index,
     inspect_topology,
@@ -32,6 +33,7 @@ from aigol.cognition.integrity_summary import render_cognition_integrity_summary
 from aigol.cognition.lifecycle_model import render_cognition_lifecycle_summary
 from aigol.cognition.registry import render_cognition_registry_summary
 from aigol.cognition.semantic_boundary_propagation import render_semantic_boundary_summary
+from aigol.cognition.semantic_context_diff import render_semantic_diff_summary
 from aigol.cognition.semantic_context_state import render_semantic_context_summary
 from aigol.cognition.semantic_relationship_index import render_semantic_relationship_summary
 from aigol.cognition.semantic_replay import render_semantic_replay_report
@@ -168,6 +170,12 @@ def build_parser() -> argparse.ArgumentParser:
     cognition_semantic_boundaries.add_argument("--json", action="store_true")
     cognition_semantic_boundaries.add_argument("--output", default="")
     cognition_semantic_boundaries.add_argument("--validate", action="store_true")
+    cognition_semantic_diff = cognition_sub.add_parser("semantic-diff")
+    cognition_semantic_diff.add_argument("--source", default="")
+    cognition_semantic_diff.add_argument("--target", default="")
+    cognition_semantic_diff.add_argument("--json", action="store_true")
+    cognition_semantic_diff.add_argument("--output", default="")
+    cognition_semantic_diff.add_argument("--validate", action="store_true")
 
     return parser
 
@@ -257,6 +265,13 @@ def run_command(args: argparse.Namespace) -> dict:
     if args.command == "cognition" and args.cognition_command == "semantic-boundaries":
         return inspect_semantic_boundary_propagation(
             input_path=args.input or None,
+            output_path=args.output or None,
+            validate=args.validate,
+        )
+    if args.command == "cognition" and args.cognition_command == "semantic-diff":
+        return inspect_semantic_context_diff(
+            source_path=args.source or None,
+            target_path=args.target or None,
             output_path=args.output or None,
             validate=args.validate,
         )
@@ -446,6 +461,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL COGNITION SEMANTIC BOUNDARIES",
             render_semantic_boundary_summary(propagation).splitlines(),
+        )
+    if command == "aigol cognition semantic-diff":
+        diff = result.get("semantic_context_diff", {})
+        return render_card(
+            "AIGOL COGNITION SEMANTIC DIFF",
+            render_semantic_diff_summary(diff).splitlines(),
         )
     return render_card("AIGOL", [_json(result)])
 
