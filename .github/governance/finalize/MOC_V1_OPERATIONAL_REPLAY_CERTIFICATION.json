@@ -1,0 +1,43 @@
+{
+  "artifact_type": "MOC_V1_OPERATIONAL_REPLAY_CERTIFICATION",
+  "schema_version": "1.0",
+  "status": "CERTIFIED",
+  "milestone": "FINALIZE_MOC_V1_OPERATIONAL_FOUNDATION",
+  "replay_certification_statement": "MOC V1 operational replay is certified as deterministic, explicit, lineage-linked, and fail-closed.",
+  "replay_guarantees": {
+    "deterministic_replay_visibility": true,
+    "operational_lineage_reconstruction": true,
+    "append_only_lifecycle_continuity": true,
+    "explicit_lineage_references": true,
+    "fail_closed_replay_gaps": true,
+    "no_hidden_state_reconstruction": true,
+    "visible_unknowns": true,
+    "visible_warnings": true,
+    "visible_violations": true
+  },
+  "replay_non_goals": {
+    "hidden_inference": false,
+    "silent_repair": false,
+    "semantic_truth_certification": false,
+    "execution_replay": false,
+    "provider_activation_replay": false,
+    "autonomous_continuation": false
+  },
+  "certified_validation_chain": [
+    "contract validation",
+    "advisory contract generation",
+    "proposal validation",
+    "correction feedback",
+    "proposal persistence",
+    "proposal ledger",
+    "approval gate",
+    "worker preparation",
+    "dispatch preview",
+    "dispatch request",
+    "dispatch authorization",
+    "runtime dispatch",
+    "provider execution gate",
+    "governed return interpretation",
+    "operational lineage"
+  ]
+}

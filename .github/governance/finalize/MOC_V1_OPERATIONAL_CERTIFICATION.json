@@ -1,0 +1,48 @@
+{
+  "artifact_type": "MOC_V1_OPERATIONAL_CERTIFICATION",
+  "schema_version": "1.0",
+  "status": "CERTIFIED",
+  "milestone": "FINALIZE_MOC_V1_OPERATIONAL_FOUNDATION",
+  "certification_statement": "MOC V1 is certified as the first complete bounded operational AiGOL cognition-governance runtime foundation.",
+  "moc_v1_provides": [
+    "bounded operational cognition runtime",
+    "replay-visible governance lifecycle",
+    "deterministic operational lineage",
+    "fail-closed operational boundaries",
+    "governance-safe dispatch semantics",
+    "bounded runtime dispatch recording",
+    "governed return interpretation",
+    "operational replay reconstruction"
+  ],
+  "moc_v1_does_not_provide": [
+    "autonomous cognition",
+    "orchestration runtime",
+    "autonomous retries",
+    "hidden continuation",
+    "unrestricted execution",
+    "semantic reasoning engine",
+    "governance mutation",
+    "self-directed execution",
+    "recursive runtime orchestration",
+    "unrestricted provider execution"
+  ],
+  "operational_readiness_scope": {
+    "governance_artifacts": true,
+    "deterministic_lineage": true,
+    "replay_visible_lifecycle": true,
+    "fail_closed_boundaries": true,
+    "provider_execution_runtime": false,
+    "autonomous_orchestration_runtime": false,
+    "unrestricted_execution_runtime": false
+  },
+  "certification_constraints": {
+    "documentation_evidence_only": true,
+    "runtime_behavior_modified": false,
+    "execution_authority_added": false,
+    "provider_activation_added": false,
+    "orchestration_added": false,
+    "autonomous_cognition_added": false,
+    "hidden_continuation_added": false,
+    "governance_mutation_added": false
+  }
+}

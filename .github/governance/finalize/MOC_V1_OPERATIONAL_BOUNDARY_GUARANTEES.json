@@ -1,0 +1,48 @@
+{
+  "artifact_type": "MOC_V1_OPERATIONAL_BOUNDARY_GUARANTEES",
+  "schema_version": "1.0",
+  "status": "CERTIFIED",
+  "milestone": "FINALIZE_MOC_V1_OPERATIONAL_FOUNDATION",
+  "constitutional_boundary_guarantees": {
+    "cognition_is_authority": false,
+    "proposal_is_execution": false,
+    "approval_is_dispatch": false,
+    "dispatch_is_execution": false,
+    "provider_gate_is_provider_execution": false,
+    "runtime_dispatch_is_autonomous_execution": false
+  },
+  "authority_separation_guarantees": {
+    "execution_authority": false,
+    "provider_activation": false,
+    "runtime_execution": false,
+    "orchestration_authority": false,
+    "autonomous_continuation": false,
+    "automatic_retry": false,
+    "automatic_next_task": false,
+    "governance_mutation": false,
+    "semantic_repair": false,
+    "semantic_reasoning": false
+  },
+  "dispatch_guarantees": {
+    "dispatch_preview_is_authorization": false,
+    "dispatch_request_is_authorization": false,
+    "dispatch_authorization_is_execution": false,
+    "runtime_dispatch_is_provider_execution": false,
+    "runtime_dispatch_is_bounded_single_recording": true
+  },
+  "provider_execution_guarantees": {
+    "provider_gate_only": true,
+    "provider_execution_performed": false,
+    "external_api_called": false,
+    "shell_command_executed": false,
+    "external_system_activation": false
+  },
+  "human_approval_guarantees": {
+    "approval_required": true,
+    "approval_is_bounded": true,
+    "approval_grants_worker_preparation_only": true,
+    "approval_grants_dispatch": false,
+    "approval_grants_execution": false,
+    "approval_grants_provider_activation": false
+  }
+}

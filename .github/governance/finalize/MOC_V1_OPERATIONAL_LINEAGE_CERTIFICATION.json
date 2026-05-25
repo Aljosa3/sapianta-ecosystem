@@ -1,0 +1,44 @@
+{
+  "artifact_type": "MOC_V1_OPERATIONAL_LINEAGE_CERTIFICATION",
+  "schema_version": "1.0",
+  "status": "CERTIFIED",
+  "milestone": "FINALIZE_MOC_V1_OPERATIONAL_FOUNDATION",
+  "lineage_certification_statement": "MOC V1 operational lineage is certified as deterministic, explicit, replay-visible, and non-executing.",
+  "certified_lineage_chain": [
+    "semantic_contract",
+    "advisory_proposal",
+    "proposal_validation",
+    "correction_feedback",
+    "proposal_persistence",
+    "proposal_ledger",
+    "approval_gate",
+    "worker_preparation",
+    "dispatch_preview",
+    "dispatch_request",
+    "dispatch_authorization",
+    "runtime_dispatch",
+    "provider_execution_gate",
+    "governed_return_interpretation",
+    "operational_lineage"
+  ],
+  "lineage_guarantees": {
+    "deterministic_operational_lineage": true,
+    "explicit_lineage_references": true,
+    "operational_lineage_reconstruction": true,
+    "missing_refs_visible": true,
+    "lineage_violations_visible": true,
+    "no_hidden_lineage_inference": true,
+    "no_lineage_repair": true,
+    "no_hidden_state_reconstruction": true,
+    "no_semantic_truth_inference": true
+  },
+  "boundary_guarantees": {
+    "lineage_only": true,
+    "execution_authority": false,
+    "provider_activation": false,
+    "runtime_execution": false,
+    "orchestration_authority": false,
+    "autonomous_continuation": false,
+    "governance_mutation": false
+  }
+}
