@@ -1,0 +1,78 @@
+{
+  "artifact": "FINALIZE_MOC_V1_PROPOSAL_PERSISTENCE_FOUNDATION",
+  "version": "1.0",
+  "status": "FROZEN",
+  "milestone": "MOC_V1_PROPOSAL_PERSISTENCE_FOUNDATION",
+  "classification": "proposal_lifecycle_persistence_only",
+  "scope": [
+    "aigol/moc/proposal_persistence.py",
+    "aigol/cli/commands/moc.py",
+    "aigol moc persist-proposal",
+    "docs/governance/cognition/MOC_V1_PROPOSAL_PERSISTENCE_FOUNDATION.md",
+    "tests/test_moc_v1_proposal_persistence_foundation.py"
+  ],
+  "proposal_states": [
+    "PROPOSED",
+    "REJECTED",
+    "CORRECTION_REQUIRED",
+    "CORRECTED",
+    "VALIDATED",
+    "APPROVAL_PENDING",
+    "APPROVED",
+    "PREPARED_FOR_WORKER",
+    "FAIL_CLOSED"
+  ],
+  "valid_transitions": [
+    "PROPOSED -> VALIDATED",
+    "PROPOSED -> REJECTED",
+    "REJECTED -> CORRECTION_REQUIRED",
+    "CORRECTION_REQUIRED -> CORRECTED",
+    "CORRECTED -> VALIDATED",
+    "VALIDATED -> APPROVAL_PENDING",
+    "APPROVAL_PENDING -> APPROVED",
+    "APPROVED -> PREPARED_FOR_WORKER"
+  ],
+  "persists": {
+    "proposal_identity": true,
+    "proposal_lineage": true,
+    "proposal_lifecycle_state": true,
+    "proposal_replay_persistence": true,
+    "correction_chain_linkage": true,
+    "validation_references": true,
+    "approval_references": true,
+    "deterministic_persistence_hash": true
+  },
+  "non_goals": {
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "orchestration": false,
+    "provider_activation": false,
+    "autonomous_cognition": false,
+    "proposal_execution": false,
+    "hidden_continuation": false,
+    "runtime_cognition_loops": false,
+    "semantic_reasoning": false,
+    "governance_mutation": false,
+    "proposal_auto_repair": false
+  },
+  "boundary_guarantees": {
+    "advisory_only": true,
+    "deterministic": true,
+    "replay_visible": true,
+    "governance_safe": true,
+    "persistence_only": true,
+    "execution_state_present": false,
+    "approval_auto_triggered": false,
+    "proposal_mutation": false,
+    "worker_task_created": false
+  },
+  "validation_evidence": {
+    "required_commands": [
+      "python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+      "python -m pytest tests/test_moc_v1_proposal_persistence_foundation.py",
+      "python -m json.tool schemas/semantic_contract.schema.json",
+      "git diff --check"
+    ]
+  },
+  "deterministic_scope_lock": "MOC V1 proposal persistence records explicit advisory proposal lifecycle transitions only. It does not execute proposals, dispatch workers, activate providers, create autonomous cognition flows, or create hidden continuation."
+}

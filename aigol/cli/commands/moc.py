@@ -9,6 +9,7 @@ from aigol.moc.advisory_contract_generation import inspect_advisory_contract_gen
 from aigol.moc.advisory_proposal_validation import inspect_advisory_proposal_validation
 from aigol.moc.contract_validation import inspect_contract_validation
 from aigol.moc.proposal_correction_loop import inspect_proposal_correction_feedback
+from aigol.moc.proposal_persistence import inspect_proposal_persistence
 
 
 def validate_contract_command(
@@ -55,9 +56,25 @@ def correction_feedback_command(
     )
 
 
+def persist_proposal_command(
+    *,
+    proposal_path: str | Path | None = None,
+    proposal_state: str,
+    previous_state: str,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    return inspect_proposal_persistence(
+        proposal_path=proposal_path,
+        proposal_state=proposal_state,
+        previous_state=previous_state,
+        output_path=output_path,
+    )
+
+
 __all__ = [
     "correction_feedback_command",
     "generate_contract_command",
+    "persist_proposal_command",
     "validate_contract_command",
     "validate_proposal_command",
 ]
