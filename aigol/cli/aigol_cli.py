@@ -30,6 +30,7 @@ from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
     correction_feedback_command,
+    dispatch_preview_command,
     generate_contract_command,
     persist_proposal_command,
     prepare_worker_command,
@@ -57,6 +58,7 @@ from aigol.moc.approval_gate import render_approval_gate_summary
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
 from aigol.moc.contract_validation import render_contract_validation_summary
+from aigol.moc.dispatch_authorization_preview import render_dispatch_authorization_preview_summary
 from aigol.moc.proposal_correction_loop import render_proposal_correction_feedback_summary
 from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledger_summary
 from aigol.moc.proposal_persistence import render_proposal_persistence_summary
@@ -186,6 +188,10 @@ def build_parser() -> argparse.ArgumentParser:
     moc_prepare_worker.add_argument("--approval-gate", required=True)
     moc_prepare_worker.add_argument("--json", action="store_true")
     moc_prepare_worker.add_argument("--output", default="")
+    moc_dispatch_preview = moc_sub.add_parser("dispatch-preview")
+    moc_dispatch_preview.add_argument("--worker-package", required=True)
+    moc_dispatch_preview.add_argument("--json", action="store_true")
+    moc_dispatch_preview.add_argument("--output", default="")
 
     cognition = subcommands.add_parser("cognition")
     cognition_sub = cognition.add_subparsers(dest="cognition_command", required=True)
@@ -329,6 +335,11 @@ def run_command(args: argparse.Namespace) -> dict:
         return prepare_worker_command(
             proposal_path=args.proposal,
             approval_gate_path=args.approval_gate,
+            output_path=args.output or None,
+        )
+    if args.command == "moc" and args.moc_command == "dispatch-preview":
+        return dispatch_preview_command(
+            worker_package_path=args.worker_package,
             output_path=args.output or None,
         )
     if args.command == "cognition" and args.cognition_command == "inspect":
@@ -572,6 +583,12 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL MOC PREPARE WORKER",
             render_worker_preparation_summary(package).splitlines(),
+        )
+    if command == "aigol moc dispatch-preview":
+        preview = result.get("dispatch_authorization_preview", {})
+        return render_card(
+            "AIGOL MOC DISPATCH PREVIEW",
+            render_dispatch_authorization_preview_summary(preview).splitlines(),
         )
     if command == "aigol cognition inspect":
         envelope = result.get("cognition_state_envelope", {})

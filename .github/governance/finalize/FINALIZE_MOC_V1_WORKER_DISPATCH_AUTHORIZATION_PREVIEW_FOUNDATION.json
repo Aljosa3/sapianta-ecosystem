@@ -1,0 +1,74 @@
+{
+  "artifact_type": "FINALIZE_MOC_V1_WORKER_DISPATCH_AUTHORIZATION_PREVIEW_FOUNDATION",
+  "schema_version": "1.0",
+  "milestone": "MOC_V1_WORKER_DISPATCH_AUTHORIZATION_PREVIEW_FOUNDATION",
+  "scope": {
+    "created_artifact": "MOC_V1_WORKER_DISPATCH_AUTHORIZATION_PREVIEW",
+    "created_module": "aigol/moc/dispatch_authorization_preview.py",
+    "created_cli_command": "aigol moc dispatch-preview",
+    "purpose": "deterministic preview-only worker dispatch eligibility evidence"
+  },
+  "preview_statuses": [
+    "DISPATCH_PREVIEW_ELIGIBLE",
+    "DISPATCH_PREVIEW_REJECTED",
+    "INVALID_WORKER_PREPARATION",
+    "FAIL_CLOSED"
+  ],
+  "eligibility_requirements": [
+    "worker preparation package must be PREPARED_FOR_WORKER",
+    "ready_for_dispatch must remain false",
+    "dispatch_authority must remain false",
+    "execution_authority must remain false",
+    "provider_activation must remain false",
+    "worker_dispatch must remain false",
+    "lineage refs must exist",
+    "approval refs must exist",
+    "replay refs must exist",
+    "allowed_worker_actions must be explicit and non-empty",
+    "forbidden_worker_actions must not overlap allowed_worker_actions"
+  ],
+  "boundary_guarantees": {
+    "preview_only": true,
+    "dispatch_preview_is_dispatch": false,
+    "dispatch_preview_is_execution": false,
+    "actual_dispatch_authorization": false,
+    "ready_for_actual_dispatch": false,
+    "dispatch_authority": false,
+    "execution_authority": false,
+    "worker_dispatch": false,
+    "provider_activation": false,
+    "orchestration_authority": false,
+    "autonomous_continuation": false,
+    "hidden_continuation": false,
+    "automatic_execution": false,
+    "governance_mutation": false,
+    "semantic_reasoning": false
+  },
+  "non_goals": [
+    "dispatch workers",
+    "execute tasks",
+    "activate providers",
+    "create actual dispatch authorization",
+    "create orchestration",
+    "create autonomous cognition flows",
+    "create hidden continuation",
+    "mutate governance",
+    "mutate worker packages",
+    "infer hidden meaning",
+    "trigger automatic execution"
+  ],
+  "validation_evidence": {
+    "py_compile": "passed: python -m py_compile aigol/moc/*.py aigol/cli/*.py aigol/cli/commands/*.py",
+    "pytest": "passed: python -m pytest tests/test_moc_v1_worker_dispatch_authorization_preview_foundation.py",
+    "semantic_contract_schema_json_tool": "passed: python -m json.tool schemas/semantic_contract.schema.json",
+    "git_diff_check": "passed: git diff --check"
+  },
+  "deterministic_scope_lock": {
+    "read_only_inputs": true,
+    "output_artifact_only_when_explicitly_requested": true,
+    "source_artifact_mutation": false,
+    "provider_invocation": false,
+    "worker_dispatch": false,
+    "execution": false
+  }
+}
