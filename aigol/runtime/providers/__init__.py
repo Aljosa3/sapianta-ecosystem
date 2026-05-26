@@ -1,6 +1,7 @@
 """Governed runtime provider activation layer."""
 
 from .openai_provider import OpenAIProvider
+from .metadata_inspection_provider import MetadataInspectionProvider
 from .provider_config import ProviderConfig
 from .provider_envelope import ProviderEnvelope, provider_boundary_guarantees
 from .provider_gate import ProviderActivationGate
@@ -9,6 +10,7 @@ from .readonly_http_get_provider import HttpTransportResponse, ReadOnlyHttpGetPr
 
 __all__ = [
     "HttpTransportResponse",
+    "MetadataInspectionProvider",
     "OpenAIProvider",
     "ProviderActivationGate",
     "ProviderConfig",

@@ -1,0 +1,38 @@
+{
+  "artifact_type": "REAL_METADATA_INSPECTION_PROVIDER_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "REAL_METADATA_INSPECTION_PROVIDER_V1",
+  "certification_status": "CERTIFIED",
+  "provider_components": {
+    "metadata_inspection_provider": "implemented",
+    "inspect_runtime": "implemented",
+    "inspect_environment": "implemented",
+    "inspect_process": "implemented"
+  },
+  "boundary_certification": {
+    "bounded_metadata_exposure_only": true,
+    "replay_visible_inspection_evidence": true,
+    "fail_closed_unavailable_metadata": true,
+    "no_mutation_capability_introduced": true,
+    "no_secret_exposure_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_persistent_monitoring_introduced": true,
+    "no_observability_framework_introduced": true,
+    "no_metrics_pipeline_introduced": true,
+    "no_telemetry_system_introduced": true,
+    "no_daemon_or_background_service_introduced": true,
+    "no_subprocess_introduced": true,
+    "no_shell_execution_introduced": true,
+    "no_network_scanning_introduced": true
+  },
+  "validation_scope": {
+    "runtime_inspection_success_tested": true,
+    "environment_inspection_success_tested": true,
+    "process_inspection_success_tested": true,
+    "secret_filtering_enforcement_tested": true,
+    "fail_closed_unavailable_metadata_tested": true,
+    "deterministic_evidence_structure_tested": true,
+    "blocked_unsafe_fields_tested": true
+  },
+  "commit_message": "feat(runtime): add real metadata inspection provider v1"
+}
