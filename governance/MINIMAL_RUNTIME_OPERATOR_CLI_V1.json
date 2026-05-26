@@ -1,0 +1,42 @@
+{
+  "artifact_type": "MINIMAL_RUNTIME_OPERATOR_CLI_V1",
+  "schema_version": "1.0",
+  "milestone": "MINIMAL_RUNTIME_OPERATOR_CLI_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "This milestone introduces minimal read-only runtime operator observability only. It does not introduce orchestration controls, runtime mutation, execution management, or operational control planes.",
+  "scope": {
+    "runtime_summary": true,
+    "runtime_query": true,
+    "runtime_report": true,
+    "local_cli": true,
+    "runtime_state_visibility": true,
+    "replay_lineage_visibility": true,
+    "approval_checkpoint_visibility": true,
+    "retry_state_visibility": true,
+    "goal_continuity_visibility": true,
+    "routing_decision_visibility": true,
+    "read_only": true,
+    "runtime_mutation": false,
+    "execution_control": false,
+    "orchestration_controls": false,
+    "dashboard_framework": false,
+    "websocket_infrastructure": false
+  },
+  "cli_commands": [
+    "python -m aigol.runtime.operator.runtime_cli summary <runtime_id>",
+    "python -m aigol.runtime.operator.runtime_cli goal <goal_id>",
+    "python -m aigol.runtime.operator.runtime_cli retry <runtime_id>"
+  ],
+  "replay_guarantees": {
+    "replay_backed_queries": true,
+    "deterministic_output": true,
+    "read_only_artifact_access": true,
+    "fail_closed_missing_artifacts": true,
+    "no_ledger_mutation": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/operator/__init__.py aigol/runtime/operator/runtime_cli.py aigol/runtime/operator/runtime_summary.py aigol/runtime/operator/runtime_query.py aigol/runtime/operator/runtime_report.py",
+    "python -m pytest tests/test_minimal_runtime_operator_cli_v1.py",
+    "git diff --check"
+  ]
+}

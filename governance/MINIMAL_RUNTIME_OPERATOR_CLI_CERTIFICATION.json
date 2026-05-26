@@ -1,0 +1,34 @@
+{
+  "artifact_type": "MINIMAL_RUNTIME_OPERATOR_CLI_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "MINIMAL_RUNTIME_OPERATOR_CLI_V1",
+  "certification_status": "CERTIFIED",
+  "operator_components": {
+    "runtime_summary": "implemented",
+    "runtime_query": "implemented",
+    "runtime_report": "implemented",
+    "runtime_cli": "implemented"
+  },
+  "observability_scope": {
+    "runtime_state": true,
+    "replay_lineage": true,
+    "approval_checkpoints": true,
+    "retry_state": true,
+    "goal_continuity": true,
+    "routing_decisions": true
+  },
+  "boundary_certification": {
+    "local_only": true,
+    "read_only": true,
+    "deterministic": true,
+    "replay_visible": true,
+    "fail_closed": true,
+    "runtime_mutation": false,
+    "execution_control_api": false,
+    "orchestration_control": false,
+    "auto_repair": false,
+    "runtime_editing": false,
+    "dashboard_framework": false
+  },
+  "recommended_next_step": "Proceed to Phase 3 real tool/API integration only through separate governed activation milestones."
+}
