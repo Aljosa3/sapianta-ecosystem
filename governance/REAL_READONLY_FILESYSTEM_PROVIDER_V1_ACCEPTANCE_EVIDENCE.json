@@ -1,0 +1,20 @@
+{
+  "milestone_name": "REAL_READONLY_FILESYSTEM_PROVIDER_V1",
+  "read_only_only": true,
+  "bounded_access_only": true,
+  "allowlist_enforced": true,
+  "fail_closed_validation": true,
+  "symlink_traversal_rejected": true,
+  "path_traversal_rejected": true,
+  "outside_allowlist_rejected": true,
+  "bounded_file_reads": true,
+  "non_recursive_directory_listing": true,
+  "replay_visible_evidence": true,
+  "deterministic_evidence": true,
+  "mutation_capability_introduced": false,
+  "subprocess_usage_introduced": false,
+  "shell_usage_introduced": false,
+  "recursive_crawling_introduced": false,
+  "orchestration_introduced": false,
+  "autonomous_planning_introduced": false
+}

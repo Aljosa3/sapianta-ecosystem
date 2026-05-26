@@ -1,0 +1,37 @@
+{
+  "artifact_type": "REAL_READONLY_FILESYSTEM_PROVIDER_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "REAL_READONLY_FILESYSTEM_PROVIDER_V1",
+  "certification_status": "CERTIFIED",
+  "provider_components": {
+    "readonly_filesystem_provider": "implemented",
+    "inspect_metadata": "implemented",
+    "read_file": "implemented",
+    "list_allowed_directory": "implemented"
+  },
+  "boundary_certification": {
+    "read_only_only": true,
+    "bounded_access_only": true,
+    "allowlist_enforced": true,
+    "fail_closed_validation": true,
+    "replay_visible_evidence": true,
+    "no_mutation_capability_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_subprocess_introduced": true,
+    "no_shell_execution_introduced": true,
+    "no_recursive_crawling_introduced": true,
+    "no_unrestricted_filesystem_access": true
+  },
+  "validation_scope": {
+    "allowed_metadata_inspection_tested": true,
+    "bounded_file_read_tested": true,
+    "non_recursive_directory_listing_tested": true,
+    "path_traversal_rejection_tested": true,
+    "symlink_rejection_tested": true,
+    "outside_allowlist_rejection_tested": true,
+    "missing_allowlist_fail_closed_tested": true,
+    "max_bytes_enforcement_tested": true,
+    "deterministic_evidence_tested": true
+  },
+  "commit_message": "feat(runtime): add real read-only filesystem provider v1"
+}
