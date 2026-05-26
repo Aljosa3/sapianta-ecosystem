@@ -1,0 +1,57 @@
+{
+  "artifact_type": "GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1_FINALIZE_MANIFEST",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1",
+  "scope": {
+    "documentation_only": true,
+    "constitutional_runtime_authority_model": true,
+    "runtime_identity_fields_defined": true,
+    "authority_classes_defined": true,
+    "runtime_scope_model_defined": true,
+    "capability_entitlement_model_defined": true,
+    "approval_authority_model_defined": true,
+    "replay_visibility_model_defined": true,
+    "retention_authority_defined": true,
+    "identity_resolution_flow_defined": true
+  },
+  "created_artifacts": [
+    "governance/GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1.md",
+    "governance/GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1_ADR.md",
+    "governance/GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1_CERTIFICATION.json",
+    "governance/GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1_FINALIZE_MANIFEST.json"
+  ],
+  "locked_boundaries": {
+    "runtime_code_modified": false,
+    "authentication_implementation_added": false,
+    "api_endpoints_added": false,
+    "architecture_refactor": false,
+    "new_enforcement_activated": false,
+    "capability_execution_behavior_changed": false,
+    "provider_behavior_changed": false,
+    "llm_can_grant_authority": false,
+    "codex_can_grant_authority": false,
+    "approval_authority_is_automatic_approval": false,
+    "capability_entitlement_is_execution": false,
+    "replay_visibility_is_mutation_authority": false
+  },
+  "downstream_dependencies": [
+    "SEMANTIC_EXPOSURE_MODEL_V1",
+    "CAPABILITY_GOVERNANCE_MATRIX_V1",
+    "LOCAL_NODE_ARCHITECTURE_V1",
+    "SOVEREIGN_REPLAY_ARCHITECTURE_V1"
+  ],
+  "acceptance_criteria": {
+    "governance_documents_exist": true,
+    "adr_exists": true,
+    "evidence_json_exists": true,
+    "certification_json_exists": true,
+    "finalize_manifest_exists": true,
+    "no_runtime_code_changed": true,
+    "no_execution_path_modified": true,
+    "no_provider_capability_behavior_changed": true,
+    "future_semantic_exposure_governance_supported": true,
+    "future_replay_visibility_partitioning_supported": true,
+    "future_monetization_supported_by_scope_and_entitlement": true
+  }
+}

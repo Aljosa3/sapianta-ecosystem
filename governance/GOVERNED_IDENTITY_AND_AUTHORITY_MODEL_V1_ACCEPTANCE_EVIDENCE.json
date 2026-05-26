@@ -1,0 +1,20 @@
+{
+  "milestone_name": "FINALIZE_GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1",
+  "documentation_only": true,
+  "runtime_mutation": false,
+  "api_change": false,
+  "execution_behavior_change": false,
+  "fail_closed_defined": true,
+  "llm_non_authoritative_preserved": true,
+  "human_approval_boundary_preserved": true,
+  "codex_execution_authority_bounded_and_governed": true,
+  "replay_visibility_partitioning_defined": true,
+  "capability_entitlement_defined": true,
+  "semantic_exposure_dependency_declared": true,
+  "future_monetization_supported_by_governance_scope": true,
+  "future_monetization_supported_by_capability_entitlement": true,
+  "authentication_implementation_added": false,
+  "frontend_rbac_added": false,
+  "provider_behavior_changed": false,
+  "capability_behavior_changed": false
+}
