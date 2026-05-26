@@ -1,0 +1,19 @@
+{
+  "milestone_name": "FINALIZE_LOCAL_NODE_ARCHITECTURE_V1",
+  "documentation_only": true,
+  "runtime_mutation": false,
+  "api_change": false,
+  "execution_behavior_change": false,
+  "local_execution_governance_defined": true,
+  "local_semantic_processing_defined": true,
+  "local_memory_governance_defined": true,
+  "local_replay_governance_defined": true,
+  "governance_metadata_export_defined": true,
+  "organization_sovereignty_defined": true,
+  "fail_closed_local_governance_defined": true,
+  "identity_dependency_declared": true,
+  "semantic_exposure_dependency_declared": true,
+  "capability_governance_dependency_declared": true,
+  "llm_non_authoritative_preserved": true,
+  "human_governance_boundary_preserved": true
+}

@@ -1,0 +1,64 @@
+{
+  "artifact_type": "LOCAL_NODE_ARCHITECTURE_V1_FINALIZE_MANIFEST",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_LOCAL_NODE_ARCHITECTURE_V1",
+  "scope": {
+    "documentation_only": true,
+    "constitutional_local_node_architecture": true,
+    "sovereign_local_execution_governance_defined": true,
+    "local_payload_sovereignty_defined": true,
+    "local_replay_partitioning_defined": true,
+    "local_capability_execution_governance_defined": true,
+    "local_semantic_processing_governance_defined": true,
+    "local_governance_persistence_defined": true,
+    "local_cloud_execution_separation_defined": true,
+    "fail_closed_local_governance_defined": true
+  },
+  "created_artifacts": [
+    "governance/LOCAL_NODE_ARCHITECTURE_V1.md",
+    "governance/LOCAL_NODE_ARCHITECTURE_V1_ADR.md",
+    "governance/LOCAL_NODE_ARCHITECTURE_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/LOCAL_NODE_ARCHITECTURE_V1_CERTIFICATION.json",
+    "governance/LOCAL_NODE_ARCHITECTURE_V1_FINALIZE_MANIFEST.json"
+  ],
+  "locked_boundaries": {
+    "no_runtime_execution_mutation": true,
+    "no_local_runtime_implementation": true,
+    "no_replay_implementation_mutation": true,
+    "no_provider_federation_implementation": true,
+    "no_local_model_implementation": true,
+    "no_confidential_computing_implementation": true,
+    "no_execution_engine_implementation": true,
+    "no_api_endpoints_added": true,
+    "llm_can_elevate_local_authority": false,
+    "codex_can_elevate_local_authority": false,
+    "local_execution_is_unrestricted_execution_authority": false,
+    "local_payload_visibility_is_export_authority": false,
+    "replay_synchronization_is_raw_payload_synchronization": false
+  },
+  "upstream_dependencies": [
+    "GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1",
+    "SEMANTIC_EXPOSURE_MODEL_V1",
+    "CAPABILITY_GOVERNANCE_MATRIX_V1"
+  ],
+  "downstream_dependencies": [
+    "SOVEREIGN_REPLAY_ARCHITECTURE_V1",
+    "PROVIDER_FEDERATION_GOVERNANCE_V1",
+    "EXECUTION_POLICY_ENGINE_V1",
+    "CONFIDENTIAL_EXECUTION_GOVERNANCE_V1"
+  ],
+  "acceptance_criteria": {
+    "governance_document_exists": true,
+    "adr_exists": true,
+    "acceptance_evidence_exists": true,
+    "certification_exists": true,
+    "finalize_manifest_exists": true,
+    "no_runtime_behavior_changed": true,
+    "no_local_execution_implementation_added": true,
+    "no_replay_implementation_changed": true,
+    "no_provider_execution_modified": true,
+    "upstream_dependencies_explicitly_declared": true,
+    "local_governance_partitioned_from_execution_authority": true,
+    "fail_closed_local_governance_explicitly_defined": true
+  }
+}
