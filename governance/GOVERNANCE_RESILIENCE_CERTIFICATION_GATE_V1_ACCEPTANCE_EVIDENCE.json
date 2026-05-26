@@ -1,0 +1,41 @@
+{
+  "milestone_name": "GOVERNANCE_RESILIENCE_CERTIFICATION_GATE_V1",
+  "deterministic_resilience_gating_only": true,
+  "resilience_evidence_bound_to_governance_changes": true,
+  "replay_visible_resilience_certification_evidence": true,
+  "fail_closed_governance_promotion_discipline": true,
+  "append_only_certification_lineage": true,
+  "automatic_promotion_introduced": false,
+  "certification_statuses": [
+    "CERTIFIED",
+    "REJECTED"
+  ],
+  "certification_components": {
+    "governance_resilience_certification_result": "implemented",
+    "certify_governance_resilience": "implemented",
+    "reconstruct_certification_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_resilience_certification_tested": true,
+    "missing_resilience_evidence_rejection_tested": true,
+    "malformed_certification_rejection_tested": true,
+    "incomplete_simulation_coverage_rejection_tested": true,
+    "replay_visible_certification_evidence_tested": true,
+    "deterministic_certification_lineage_tested": true,
+    "append_only_certification_semantics_tested": true,
+    "fail_closed_certification_gating_tested": true
+  },
+  "prohibited_capabilities": {
+    "provider_execution_introduced": false,
+    "governance_state_mutation_introduced": false,
+    "autonomous_governance_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "llm_integration_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "runtime_self_healing_introduced": false,
+    "runtime_self_modification_introduced": false,
+    "workflow_execution_introduced": false
+  },
+  "commit_message": "feat(runtime): add governance resilience certification gate v1"
+}
