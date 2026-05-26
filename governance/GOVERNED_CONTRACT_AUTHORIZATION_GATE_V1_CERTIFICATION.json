@@ -1,0 +1,51 @@
+{
+  "artifact_type": "GOVERNED_CONTRACT_AUTHORIZATION_GATE_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNED_CONTRACT_AUTHORIZATION_GATE_V1",
+  "certification_status": "CERTIFIED",
+  "authorization_components": {
+    "governed_contract_authorization_gate": "implemented",
+    "authorize_governed_execution_contract": "implemented",
+    "reconstruct_authorization_lineage": "implemented",
+    "contract_authorization_result": "implemented"
+  },
+  "boundary_certification": {
+    "authorization_validation_only": true,
+    "no_execution_authority_introduced": true,
+    "deterministic_authorization_validation": true,
+    "replay_visible_authorization_evidence": true,
+    "fail_closed_capability_authorization": true,
+    "immutable_authorization_lineage": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_runtime_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_provider_state_mutation_introduced": true,
+    "no_network_operations_introduced": true,
+    "no_semantic_reasoning_introduced": true,
+    "no_llm_integration_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_workflow_planning_introduced": true,
+    "no_policy_learning_introduced": true
+  },
+  "architectural_constraint": {
+    "intent_to_authorization_boundary": true,
+    "authorization_to_execution_boundary": true,
+    "deterministic": true,
+    "bounded": true,
+    "local_only": true,
+    "replay_visible": true,
+    "cognition_introduced": false
+  },
+  "validation_scope": {
+    "valid_authorization_tested": true,
+    "unauthorized_provider_rejection_tested": true,
+    "malformed_contract_rejection_tested": true,
+    "closed_session_rejection_tested": true,
+    "duplicate_authorization_rejection_tested": true,
+    "deterministic_provider_ordering_tested": true,
+    "immutable_authorization_evidence_tested": true,
+    "replay_reconstruction_validation_tested": true,
+    "fail_closed_invalid_authorization_tested": true
+  },
+  "commit_message": "feat(runtime): add governed contract authorization gate v1"
+}

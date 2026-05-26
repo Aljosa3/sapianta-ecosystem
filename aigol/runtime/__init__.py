@@ -1,6 +1,11 @@
 """AiGOL mock-first runtime engine foundation."""
 
 from .mock_provider import MockProvider
+from .governed_contract_authorization_gate import (
+    ContractAuthorizationResult,
+    authorize_governed_execution_contract,
+    reconstruct_authorization_lineage,
+)
 from .governed_execution_contract import GovernedExecutionContract, create_governed_execution_contract, reconstruct_contract_lineage
 from .governed_execution_session import GovernedExecutionSession, create_governed_execution_session, reconstruct_session_lineage
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
@@ -12,6 +17,7 @@ from .worker_lifecycle import BLOCKED, CLOSED, CREATED, DISPATCHED, PREPARED, RE
 __all__ = [
     "BLOCKED",
     "CLOSED",
+    "ContractAuthorizationResult",
     "CREATED",
     "DISPATCHED",
     "FailClosedRuntimeError",
@@ -27,8 +33,10 @@ __all__ = [
     "RuntimeEngine",
     "RuntimePackage",
     "WorkerLifecycle",
+    "authorize_governed_execution_contract",
     "create_governed_execution_contract",
     "create_governed_execution_session",
+    "reconstruct_authorization_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_session_lineage",
     "replay_hash",
