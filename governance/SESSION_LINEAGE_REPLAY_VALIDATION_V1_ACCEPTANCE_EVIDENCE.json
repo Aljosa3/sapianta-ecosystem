@@ -1,0 +1,44 @@
+{
+  "milestone_name": "SESSION_LINEAGE_REPLAY_VALIDATION_V1",
+  "replay_reconstruction_only": true,
+  "session_lineage_reconstruction_implemented": true,
+  "deterministic_operation_ordering_validation": true,
+  "append_only_lineage_continuity_validation": true,
+  "immutable_attached_evidence_verification": true,
+  "terminal_closure_integrity_validation": true,
+  "deterministic_replay_validation_evidence": true,
+  "allowed_replay_statuses": [
+    "VALID",
+    "INVALID"
+  ],
+  "validation_evidence": {
+    "valid_replay_reconstruction_tested": true,
+    "deterministic_ordering_validation_tested": true,
+    "append_only_validation_tested": true,
+    "duplicate_operation_detection_tested": true,
+    "mutated_evidence_detection_tested": true,
+    "invalid_closure_detection_tested": true,
+    "missing_closure_detection_tested": true,
+    "attach_after_close_invalidation_tested": true,
+    "immutable_evidence_validation_tested": true,
+    "deterministic_replay_evidence_generation_tested": true,
+    "no_provider_execution_tested": true,
+    "no_mutation_tested": true,
+    "no_async_behavior_tested": true
+  },
+  "prohibited_capabilities": {
+    "execution_replay_introduced": false,
+    "provider_reexecution_introduced": false,
+    "orchestration_introduced": false,
+    "autonomous_execution_introduced": false,
+    "autonomous_runtime_introduced": false,
+    "async_runtime_introduced": false,
+    "workflow_engine_introduced": false,
+    "scheduling_introduced": false,
+    "distributed_execution_introduced": false,
+    "semantic_interpretation_introduced": false,
+    "llm_reasoning_introduced": false,
+    "background_processing_introduced": false
+  },
+  "commit_message": "feat(runtime): add session lineage replay validation v1"
+}

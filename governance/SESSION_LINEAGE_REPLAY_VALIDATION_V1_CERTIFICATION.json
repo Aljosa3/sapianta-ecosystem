@@ -1,0 +1,53 @@
+{
+  "artifact_type": "SESSION_LINEAGE_REPLAY_VALIDATION_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "SESSION_LINEAGE_REPLAY_VALIDATION_V1",
+  "certification_status": "CERTIFIED",
+  "validation_components": {
+    "session_lineage_replay_validator": "implemented",
+    "validate_session_lineage_replay": "implemented"
+  },
+  "boundary_certification": {
+    "replay_reconstruction_only": true,
+    "no_execution_introduced": true,
+    "append_only_lineage_validation": true,
+    "deterministic_ordering_validation": true,
+    "immutable_evidence_verification": true,
+    "fail_closed_replay_validation": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_runtime_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_workflow_engine_introduced": true,
+    "no_scheduling_introduced": true,
+    "no_distributed_execution_introduced": true,
+    "no_semantic_planning_introduced": true
+  },
+  "replay_model": {
+    "local_only": true,
+    "deterministic": true,
+    "append_only": true,
+    "immutable": true,
+    "replay_visible": true,
+    "may_reconstruct": true,
+    "may_verify": true,
+    "may_validate": true,
+    "may_execute": false
+  },
+  "validation_scope": {
+    "valid_replay_reconstruction_tested": true,
+    "deterministic_ordering_validation_tested": true,
+    "append_only_validation_tested": true,
+    "duplicate_operation_detection_tested": true,
+    "mutated_evidence_detection_tested": true,
+    "invalid_closure_detection_tested": true,
+    "missing_closure_detection_tested": true,
+    "attach_after_close_invalidation_tested": true,
+    "immutable_evidence_validation_tested": true,
+    "deterministic_replay_evidence_generation_tested": true,
+    "no_provider_execution_tested": true,
+    "no_mutation_tested": true,
+    "no_async_behavior_tested": true
+  },
+  "commit_message": "feat(runtime): add session lineage replay validation v1"
+}
