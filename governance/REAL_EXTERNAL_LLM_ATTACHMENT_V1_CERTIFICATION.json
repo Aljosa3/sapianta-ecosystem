@@ -1,0 +1,46 @@
+{
+  "artifact_type": "REAL_EXTERNAL_LLM_ATTACHMENT_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "REAL_EXTERNAL_LLM_ATTACHMENT_V1",
+  "certification_status": "CERTIFIED",
+  "attachment_components": {
+    "attach_external_llm_response": "implemented",
+    "external_model_response_hash": "implemented",
+    "reconstruct_external_llm_proposal_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "external_llm_attachment_only": true,
+    "no_execution_authority_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_cognition_lineage": true,
+    "deterministic_fail_closed_normalization": true,
+    "governance_authority_separation_preserved": true,
+    "no_provider_execution_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_external_llm_api_invocation_introduced": true,
+    "no_governance_review_bypass_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_autonomous_retries_introduced": true,
+    "no_autonomous_cognition_introduced": true
+  },
+  "architectural_constraint": {
+    "attaches_real_external_cognition_inference_output": true,
+    "autonomous_execution_cognition": false,
+    "provider_invocation": false,
+    "execution_authorization": false,
+    "governance_bypass": false,
+    "runtime_mutation": false,
+    "workflow_planning": false
+  },
+  "validation_scope": {
+    "valid_external_proposal_normalization_tested": true,
+    "malformed_model_output_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "response_hash_mismatch_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_cognition_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_normalization_validation_tested": true
+  },
+  "commit_message": "feat(runtime): add real external llm attachment v1"
+}

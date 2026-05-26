@@ -45,6 +45,11 @@ from .production_isolation_foundation import (
     validate_production_isolation,
 )
 from .provider_interface import ProviderInterface
+from .real_external_llm_attachment import (
+    attach_external_llm_response,
+    external_model_response_hash,
+    reconstruct_external_llm_proposal_lineage,
+)
 from .real_governed_execution_resilience_suite import (
     RealGovernedExecutionResilienceEvidence,
     reconstruct_real_governed_execution_resilience_lineage,
@@ -94,6 +99,7 @@ __all__ = [
     "RuntimePackage",
     "SyntheticCognitionPressureArtifact",
     "WorkerLifecycle",
+    "attach_external_llm_response",
     "authorize_governed_execution_contract",
     "classify_governance_failure",
     "certify_governance_resilience",
@@ -102,6 +108,7 @@ __all__ = [
     "create_governed_execution_session",
     "evaluate_governance_promotion",
     "execute_minimal_governed_path",
+    "external_model_response_hash",
     "generate_ambiguous_contract",
     "generate_authority_drift_attempt",
     "generate_long_chain_entropy_sequence",
@@ -113,6 +120,7 @@ __all__ = [
     "reconstruct_certification_lineage",
     "reconstruct_cognition_lineage",
     "reconstruct_cognition_review_lineage",
+    "reconstruct_external_llm_proposal_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
     "reconstruct_governed_return_lineage",

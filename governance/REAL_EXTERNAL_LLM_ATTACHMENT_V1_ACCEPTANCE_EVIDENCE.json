@@ -1,0 +1,43 @@
+{
+  "milestone_name": "REAL_EXTERNAL_LLM_ATTACHMENT_V1",
+  "external_llm_attachment_only": true,
+  "external_inference_output_accepted": true,
+  "external_llm_api_invocation_introduced": false,
+  "execution_authority_introduced": false,
+  "orchestration_introduced": false,
+  "replay_visible_cognition_lineage": true,
+  "deterministic_fail_closed_normalization": true,
+  "governance_authority_separation_preserved": true,
+  "attachment_components": {
+    "attach_external_llm_response": "implemented",
+    "external_model_response_hash": "implemented",
+    "reconstruct_external_llm_proposal_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_external_proposal_normalization_tested": true,
+    "malformed_model_output_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "response_hash_mismatch_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_cognition_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_normalization_validation_tested": true
+  },
+  "prohibited_capabilities": {
+    "provider_execution_introduced": false,
+    "execution_authorization_introduced": false,
+    "governance_review_bypass_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "autonomous_retries_introduced": false,
+    "autonomous_cognition_introduced": false,
+    "workflow_planning_introduced": false,
+    "provider_mutation_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "runtime_autonomy_introduced": false,
+    "self_modifying_governance_introduced": false,
+    "multi_agent_coordination_introduced": false
+  },
+  "commit_message": "feat(runtime): add real external llm attachment v1"
+}
