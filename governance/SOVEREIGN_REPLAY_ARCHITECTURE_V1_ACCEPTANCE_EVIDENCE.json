@@ -1,0 +1,20 @@
+{
+  "milestone_name": "FINALIZE_SOVEREIGN_REPLAY_ARCHITECTURE_V1",
+  "documentation_only": true,
+  "runtime_mutation": false,
+  "api_change": false,
+  "execution_behavior_change": false,
+  "replay_partitioning_defined": true,
+  "replay_visibility_governance_defined": true,
+  "replay_export_governance_defined": true,
+  "replay_retention_governance_defined": true,
+  "replay_synchronization_governance_defined": true,
+  "replay_lineage_integrity_defined": true,
+  "fail_closed_replay_governance_defined": true,
+  "identity_dependency_declared": true,
+  "semantic_exposure_dependency_declared": true,
+  "capability_governance_dependency_declared": true,
+  "local_node_dependency_declared": true,
+  "llm_non_authoritative_preserved": true,
+  "human_governance_boundary_preserved": true
+}
