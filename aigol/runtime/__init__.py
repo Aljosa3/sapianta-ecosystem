@@ -35,6 +35,11 @@ from .minimal_governed_execution_path import (
     reconstruct_minimal_governed_execution_lineage,
 )
 from .provider_interface import ProviderInterface
+from .real_governed_execution_resilience_suite import (
+    RealGovernedExecutionResilienceEvidence,
+    reconstruct_real_governed_execution_resilience_lineage,
+    run_real_governed_execution_resilience_suite,
+)
 from .runtime_engine import RuntimeEngine
 from .session_lineage_replay_validator import validate_session_lineage_replay
 from .synthetic_cognition_pressure_simulator import (
@@ -70,6 +75,7 @@ __all__ = [
     "PREPARED",
     "ProviderInterface",
     "ProviderResponse",
+    "RealGovernedExecutionResilienceEvidence",
     "RETURNED",
     "RUNNING",
     "RuntimeEngine",
@@ -99,6 +105,7 @@ __all__ = [
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",
+    "reconstruct_real_governed_execution_resilience_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",
@@ -106,6 +113,7 @@ __all__ = [
     "replay_hash",
     "route_authorized_contract",
     "review_translated_cognition_candidate",
+    "run_real_governed_execution_resilience_suite",
     "translate_bounded_proposal",
     "validate_session_lineage_replay",
 ]
