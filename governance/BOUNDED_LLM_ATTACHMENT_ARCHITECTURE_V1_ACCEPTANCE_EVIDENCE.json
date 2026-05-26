@@ -1,0 +1,46 @@
+{
+  "milestone_name": "BOUNDED_LLM_ATTACHMENT_ARCHITECTURE_V1",
+  "bounded_cognition_attachment_only": true,
+  "proposal_only": true,
+  "execution_authority_introduced": false,
+  "autonomous_cognition_introduced": false,
+  "replay_visible_cognition_lineage": true,
+  "deterministic_cognition_boundary_validation": true,
+  "governance_authority_separation_preserved": true,
+  "proposal_types": [
+    "CONTRACT_PROPOSAL",
+    "ROUTING_PROPOSAL",
+    "GOVERNANCE_QUERY"
+  ],
+  "attachment_components": {
+    "bounded_cognition_proposal": "implemented",
+    "create_bounded_cognition_proposal": "implemented",
+    "reconstruct_cognition_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_proposal_creation_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_proposal_rejection_tested": true,
+    "invalid_contract_translation_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_cognition_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_cognition_boundary_validation_tested": true
+  },
+  "prohibited_capabilities": {
+    "real_llm_execution_introduced": false,
+    "provider_execution_introduced": false,
+    "execution_authorization_introduced": false,
+    "direct_contract_attachment_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "autonomous_retries_introduced": false,
+    "governance_gate_bypass_introduced": false,
+    "semantic_planning_introduced": false,
+    "workflow_execution_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "self_modifying_governance_introduced": false
+  },
+  "commit_message": "feat(runtime): add bounded llm attachment architecture v1"
+}

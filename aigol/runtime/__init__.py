@@ -1,6 +1,7 @@
 """AiGOL mock-first runtime engine foundation."""
 
 from .mock_provider import MockProvider
+from .bounded_llm_attachment_architecture import BoundedCognitionProposal, create_bounded_cognition_proposal, reconstruct_cognition_lineage
 from .governed_contract_authorization_gate import (
     ContractAuthorizationResult,
     authorize_governed_execution_contract,
@@ -33,6 +34,7 @@ from .worker_lifecycle import BLOCKED, CLOSED, CREATED, DISPATCHED, PREPARED, RE
 
 __all__ = [
     "BLOCKED",
+    "BoundedCognitionProposal",
     "CLOSED",
     "ContractAuthorizationResult",
     "ContractRoutingResult",
@@ -58,6 +60,7 @@ __all__ = [
     "authorize_governed_execution_contract",
     "classify_governance_failure",
     "certify_governance_resilience",
+    "create_bounded_cognition_proposal",
     "create_governed_execution_contract",
     "create_governed_execution_session",
     "evaluate_governance_promotion",
@@ -68,6 +71,7 @@ __all__ = [
     "generate_replay_corruption_attempt",
     "reconstruct_authorization_lineage",
     "reconstruct_certification_lineage",
+    "reconstruct_cognition_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
     "reconstruct_promotion_lineage",
