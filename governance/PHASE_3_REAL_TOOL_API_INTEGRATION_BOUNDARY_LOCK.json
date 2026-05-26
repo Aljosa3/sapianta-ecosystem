@@ -1,0 +1,55 @@
+{
+  "artifact_type": "PHASE_3_REAL_TOOL_API_INTEGRATION_BOUNDARY_LOCK",
+  "schema_version": "1.0",
+  "locks": "PHASE_3_REAL_TOOL_API_INTEGRATION_FINALIZATION_V1",
+  "scope_status": "LOCKED",
+  "locked_provider_set": [
+    "REAL_READONLY_FILESYSTEM_PROVIDER_V1",
+    "REAL_READONLY_HTTP_GET_PROVIDER_V1",
+    "REAL_METADATA_INSPECTION_PROVIDER_V1"
+  ],
+  "allowed_public_provider_operations": {
+    "REAL_READONLY_FILESYSTEM_PROVIDER_V1": [
+      "inspect_metadata",
+      "read_file",
+      "list_allowed_directory"
+    ],
+    "REAL_READONLY_HTTP_GET_PROVIDER_V1": [
+      "fetch"
+    ],
+    "REAL_METADATA_INSPECTION_PROVIDER_V1": [
+      "inspect_runtime",
+      "inspect_environment",
+      "inspect_process"
+    ]
+  },
+  "locked_guarantees": {
+    "read_only_filesystem_boundary_exists": true,
+    "read_only_http_get_boundary_exists": true,
+    "metadata_inspection_boundary_exists": true,
+    "bounded_provider_set_only": true,
+    "replay_visible_evidence_required": true,
+    "fail_closed_behavior_required": true,
+    "deterministic_structured_evidence_required": true
+  },
+  "prohibited_expansions": {
+    "new_provider": true,
+    "new_runtime_capability": true,
+    "mutation_capability": true,
+    "orchestration": true,
+    "shell_execution": true,
+    "subprocess_execution": true,
+    "autonomous_planning": true,
+    "monitoring_framework": true,
+    "metrics_pipeline": true,
+    "telemetry_streaming": true,
+    "daemon_or_background_service": true,
+    "persistent_collector": true,
+    "secret_exposure": true,
+    "environment_variable_dumping": true,
+    "unbounded_filesystem_access": true,
+    "unbounded_network_access": true
+  },
+  "future_change_requirement": "Any change that expands the locked provider set, public operation set, authority boundary, mutation capability, orchestration capability, monitoring behavior, shell access, subprocess access, or autonomous planning behavior requires a separate governed milestone and explicit review.",
+  "finalization_adds_runtime_capability": false
+}

@@ -1,0 +1,55 @@
+{
+  "artifact_type": "PHASE_3_REAL_TOOL_API_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "schema_version": "1.0",
+  "milestone_name": "PHASE_3_REAL_TOOL_API_INTEGRATION_FINALIZATION_V1",
+  "phase": "Phase 3 - Real Tool/API Integration",
+  "provider_set": {
+    "real_readonly_filesystem_provider_v1": {
+      "implemented": true,
+      "read_only_filesystem_boundary_exists": true,
+      "bounded": true,
+      "replay_visible": true,
+      "fail_closed": true
+    },
+    "real_readonly_http_get_provider_v1": {
+      "implemented": true,
+      "read_only_http_get_boundary_exists": true,
+      "bounded": true,
+      "replay_visible": true,
+      "fail_closed": true
+    },
+    "real_metadata_inspection_provider_v1": {
+      "implemented": true,
+      "metadata_inspection_boundary_exists": true,
+      "bounded": true,
+      "replay_visible": true,
+      "fail_closed": true
+    }
+  },
+  "acceptance_criteria": {
+    "targeted_phase_3_provider_tests_required": true,
+    "provider_files_compile_required": true,
+    "governance_json_artifacts_valid_required": true,
+    "no_new_provider_added": true,
+    "no_new_capability_added": true,
+    "phase_3_scope_explicitly_locked": true
+  },
+  "boundary_evidence": {
+    "all_three_providers_bounded": true,
+    "all_three_providers_replay_visible": true,
+    "all_three_providers_fail_closed": true,
+    "mutation_capability_introduced": false,
+    "orchestration_introduced": false,
+    "shell_execution_introduced": false,
+    "subprocess_execution_introduced": false,
+    "autonomous_planning_introduced": false,
+    "monitoring_framework_introduced": false
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_real_readonly_filesystem_provider_v1.py tests/test_real_readonly_http_get_provider_v1.py tests/test_real_metadata_inspection_provider_v1.py",
+    "python -m py_compile aigol/runtime/providers/readonly_filesystem_provider.py aigol/runtime/providers/readonly_http_get_provider.py aigol/runtime/providers/metadata_inspection_provider.py aigol/runtime/providers/__init__.py",
+    "git diff --check"
+  ],
+  "full_pytest_scope": "out_of_scope_for_this_milestone",
+  "commit_message": "docs(governance): finalize phase 3 real tool api integration"
+}

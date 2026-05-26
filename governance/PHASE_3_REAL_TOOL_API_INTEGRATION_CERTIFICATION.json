@@ -1,0 +1,64 @@
+{
+  "artifact_type": "PHASE_3_REAL_TOOL_API_INTEGRATION_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "PHASE_3_REAL_TOOL_API_INTEGRATION_FINALIZATION_V1",
+  "certification_status": "CERTIFIED",
+  "certification_scope": "documentation_evidence_certification_and_scope_locking_only",
+  "certified_provider_boundaries": {
+    "read_only_filesystem_boundary_exists": true,
+    "read_only_http_get_boundary_exists": true,
+    "metadata_inspection_boundary_exists": true
+  },
+  "provider_certifications": {
+    "REAL_READONLY_FILESYSTEM_PROVIDER_V1": {
+      "bounded": true,
+      "read_only": true,
+      "replay_visible": true,
+      "fail_closed": true,
+      "mutation_capability": false,
+      "orchestration": false,
+      "shell_execution": false,
+      "subprocess_execution": false,
+      "autonomous_planning": false,
+      "monitoring_framework": false
+    },
+    "REAL_READONLY_HTTP_GET_PROVIDER_V1": {
+      "bounded": true,
+      "read_only": true,
+      "replay_visible": true,
+      "fail_closed": true,
+      "mutation_capability": false,
+      "orchestration": false,
+      "shell_execution": false,
+      "subprocess_execution": false,
+      "autonomous_planning": false,
+      "monitoring_framework": false
+    },
+    "REAL_METADATA_INSPECTION_PROVIDER_V1": {
+      "bounded": true,
+      "read_only": true,
+      "replay_visible": true,
+      "fail_closed": true,
+      "mutation_capability": false,
+      "orchestration": false,
+      "shell_execution": false,
+      "subprocess_execution": false,
+      "autonomous_planning": false,
+      "monitoring_framework": false
+    }
+  },
+  "phase_3_certification": {
+    "all_three_providers_bounded": true,
+    "all_three_providers_replay_visible": true,
+    "all_three_providers_fail_closed": true,
+    "no_new_provider_added_by_finalization": true,
+    "no_new_runtime_capability_added_by_finalization": true,
+    "no_mutation_capability_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_shell_or_subprocess_execution_introduced": true,
+    "no_autonomous_planning_introduced": true,
+    "no_monitoring_framework_introduced": true
+  },
+  "known_scope_limit": "This certification closes Phase 3 provider integration only and does not certify unrelated repo-wide tests or unrelated product/runtime surfaces.",
+  "commit_message": "docs(governance): finalize phase 3 real tool api integration"
+}
