@@ -27,6 +27,11 @@ from .governance_resilience_certification_gate import (
     certify_governance_resilience,
     reconstruct_certification_lineage,
 )
+from .governed_return_interpretation import (
+    GovernedReturnInterpretationArtifact,
+    interpret_governed_execution_return,
+    reconstruct_governed_return_lineage,
+)
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
 from .minimal_real_llm_proposal_flow import normalize_real_llm_proposal_input, reconstruct_real_llm_proposal_lineage
 from .minimal_governed_execution_path import (
@@ -72,6 +77,7 @@ __all__ = [
     "GovernedExecutionSession",
     "GovernedCognitionReviewResult",
     "GovernedProposalTranslationResult",
+    "GovernedReturnInterpretationArtifact",
     "GovernanceFailureEvidence",
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
@@ -101,6 +107,7 @@ __all__ = [
     "generate_long_chain_entropy_sequence",
     "generate_provider_escalation_attempt",
     "generate_replay_corruption_attempt",
+    "interpret_governed_execution_return",
     "normalize_real_llm_proposal_input",
     "reconstruct_authorization_lineage",
     "reconstruct_certification_lineage",
@@ -108,6 +115,7 @@ __all__ = [
     "reconstruct_cognition_review_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
+    "reconstruct_governed_return_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",

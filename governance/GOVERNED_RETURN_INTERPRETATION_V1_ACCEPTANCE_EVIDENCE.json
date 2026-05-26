@@ -1,0 +1,42 @@
+{
+  "milestone_name": "GOVERNED_RETURN_INTERPRETATION_V1",
+  "governed_return_normalization_only": true,
+  "replay_visible_return_evidence": true,
+  "deterministic_fail_closed_interpretation": true,
+  "append_only_return_lineage": true,
+  "governance_authority_separation_preserved": true,
+  "return_statuses": [
+    "ACCEPTED",
+    "REJECTED"
+  ],
+  "return_components": {
+    "governed_return_interpretation_artifact": "implemented",
+    "interpret_governed_execution_return": "implemented",
+    "reconstruct_governed_return_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_governed_return_normalization_tested": true,
+    "malformed_execution_evidence_rejection_tested": true,
+    "invalid_lineage_rejection_tested": true,
+    "unauthorized_provider_return_rejection_tested": true,
+    "deterministic_return_ordering_tested": true,
+    "replay_visible_return_evidence_tested": true,
+    "append_only_return_lineage_tested": true
+  },
+  "prohibited_capabilities": {
+    "provider_invocation_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "retries_introduced": false,
+    "autonomous_cognition_introduced": false,
+    "workflow_execution_introduced": false,
+    "semantic_planning_introduced": false,
+    "provider_mutation_introduced": false,
+    "adaptive_cognition_introduced": false,
+    "runtime_autonomy_introduced": false,
+    "self_modifying_governance_introduced": false,
+    "multi_agent_coordination_introduced": false
+  },
+  "commit_message": "feat(runtime): add governed return interpretation v1"
+}

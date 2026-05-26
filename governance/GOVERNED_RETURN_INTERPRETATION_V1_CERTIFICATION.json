@@ -1,0 +1,45 @@
+{
+  "artifact_type": "GOVERNED_RETURN_INTERPRETATION_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNED_RETURN_INTERPRETATION_V1",
+  "certification_status": "CERTIFIED",
+  "return_components": {
+    "governed_return_interpretation_artifact": "implemented",
+    "interpret_governed_execution_return": "implemented",
+    "reconstruct_governed_return_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "governed_return_normalization_only": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_cognition_introduced": true,
+    "replay_visible_return_evidence": true,
+    "deterministic_fail_closed_interpretation": true,
+    "governance_authority_separation_preserved": true,
+    "append_only_return_lineage": true,
+    "no_provider_execution_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_retries_introduced": true,
+    "no_workflow_execution_introduced": true,
+    "no_semantic_planning_introduced": true,
+    "no_adaptive_cognition_introduced": true
+  },
+  "architectural_constraint": {
+    "governs_execution_return_interpretation": true,
+    "general_autonomous_cognition_reasoning": false,
+    "provider_invocation": false,
+    "runtime_mutation": false,
+    "workflow_engine": false,
+    "semantic_planning": false
+  },
+  "validation_scope": {
+    "valid_governed_return_normalization_tested": true,
+    "malformed_execution_evidence_rejection_tested": true,
+    "invalid_lineage_rejection_tested": true,
+    "unauthorized_provider_return_rejection_tested": true,
+    "deterministic_return_ordering_tested": true,
+    "replay_visible_return_evidence_tested": true,
+    "append_only_return_lineage_tested": true
+  },
+  "commit_message": "feat(runtime): add governed return interpretation v1"
+}
