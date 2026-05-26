@@ -1,0 +1,18 @@
+{
+  "milestone_name": "FINALIZE_CAPABILITY_GOVERNANCE_MATRIX_V1",
+  "documentation_only": true,
+  "runtime_mutation": false,
+  "api_change": false,
+  "execution_behavior_change": false,
+  "capability_governance_defined": true,
+  "payload_aware_capability_governance_defined": true,
+  "exposure_aware_capability_governance_defined": true,
+  "routing_governance_defined": true,
+  "approval_aware_capability_governance_defined": true,
+  "replay_aware_capability_governance_defined": true,
+  "fail_closed_capability_resolution_defined": true,
+  "identity_dependency_declared": true,
+  "semantic_exposure_dependency_declared": true,
+  "llm_non_authoritative_preserved": true,
+  "human_governance_boundary_preserved": true
+}

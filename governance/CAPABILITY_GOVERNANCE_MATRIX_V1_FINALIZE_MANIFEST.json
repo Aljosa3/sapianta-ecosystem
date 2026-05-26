@@ -1,0 +1,64 @@
+{
+  "artifact_type": "CAPABILITY_GOVERNANCE_MATRIX_V1_FINALIZE_MANIFEST",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_CAPABILITY_GOVERNANCE_MATRIX_V1",
+  "scope": {
+    "documentation_only": true,
+    "constitutional_capability_governance_matrix": true,
+    "runtime_capability_eligibility_defined": true,
+    "authority_scoped_capability_access_defined": true,
+    "payload_aware_capability_governance_defined": true,
+    "semantic_exposure_aware_routing_defined": true,
+    "approval_aware_capability_execution_defined": true,
+    "replay_aware_capability_visibility_defined": true,
+    "local_vs_cloud_capability_constraints_defined": true,
+    "fail_closed_capability_resolution_defined": true
+  },
+  "created_artifacts": [
+    "governance/CAPABILITY_GOVERNANCE_MATRIX_V1.md",
+    "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_ADR.md",
+    "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_CERTIFICATION.json",
+    "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_FINALIZE_MANIFEST.json"
+  ],
+  "locked_boundaries": {
+    "no_runtime_execution_mutation": true,
+    "no_replay_implementation_mutation": true,
+    "no_capability_execution_implementation": true,
+    "no_provider_execution_implementation": true,
+    "no_routing_implementation": true,
+    "no_local_execution_implementation": true,
+    "no_policy_engine_implementation": true,
+    "no_api_endpoints_added": true,
+    "llm_can_elevate_capability_authority": false,
+    "codex_can_elevate_capability_authority": false,
+    "capability_eligibility_is_execution_authority": false,
+    "approval_eligibility_is_automatic_execution_approval": false,
+    "replay_visibility_is_replay_export_authority": false
+  },
+  "upstream_dependencies": [
+    "GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1",
+    "SEMANTIC_EXPOSURE_MODEL_V1"
+  ],
+  "downstream_dependencies": [
+    "LOCAL_NODE_ARCHITECTURE_V1",
+    "SOVEREIGN_REPLAY_ARCHITECTURE_V1",
+    "PROVIDER_FEDERATION_GOVERNANCE_V1",
+    "EXECUTION_POLICY_ENGINE_V1"
+  ],
+  "acceptance_criteria": {
+    "governance_document_exists": true,
+    "adr_exists": true,
+    "acceptance_evidence_exists": true,
+    "certification_exists": true,
+    "finalize_manifest_exists": true,
+    "no_runtime_behavior_changed": true,
+    "no_capability_execution_implementation_added": true,
+    "no_replay_implementation_changed": true,
+    "no_provider_execution_modified": true,
+    "identity_dependency_explicitly_declared": true,
+    "semantic_exposure_dependency_explicitly_declared": true,
+    "capability_governance_partitioned_from_execution_authority": true,
+    "fail_closed_capability_governance_explicitly_defined": true
+  }
+}
