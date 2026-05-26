@@ -14,6 +14,15 @@ from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResp
 from .provider_interface import ProviderInterface
 from .runtime_engine import RuntimeEngine
 from .session_lineage_replay_validator import validate_session_lineage_replay
+from .synthetic_cognition_pressure_simulator import (
+    SyntheticCognitionPressureArtifact,
+    generate_ambiguous_contract,
+    generate_authority_drift_attempt,
+    generate_long_chain_entropy_sequence,
+    generate_provider_escalation_attempt,
+    generate_replay_corruption_attempt,
+    reconstruct_simulation_lineage,
+)
 from .worker_lifecycle import BLOCKED, CLOSED, CREATED, DISPATCHED, PREPARED, RETURNED, RUNNING, WorkerLifecycle
 
 __all__ = [
@@ -36,16 +45,23 @@ __all__ = [
     "RUNNING",
     "RuntimeEngine",
     "RuntimePackage",
+    "SyntheticCognitionPressureArtifact",
     "WorkerLifecycle",
     "authorize_governed_execution_contract",
     "classify_governance_failure",
     "create_governed_execution_contract",
     "create_governed_execution_session",
+    "generate_ambiguous_contract",
+    "generate_authority_drift_attempt",
+    "generate_long_chain_entropy_sequence",
+    "generate_provider_escalation_attempt",
+    "generate_replay_corruption_attempt",
     "reconstruct_authorization_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
+    "reconstruct_simulation_lineage",
     "replay_hash",
     "route_authorized_contract",
     "validate_session_lineage_replay",
