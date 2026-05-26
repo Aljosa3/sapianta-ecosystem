@@ -1,0 +1,44 @@
+{
+  "artifact_type": "GOVERNED_CONTRACT_ROUTING_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNED_CONTRACT_ROUTING_V1",
+  "certification_status": "CERTIFIED",
+  "routing_components": {
+    "governed_contract_router": "implemented",
+    "route_authorized_contract": "implemented",
+    "contract_routing_result": "implemented",
+    "reconstruct_routing_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "routing_only": true,
+    "no_provider_execution_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_runtime_introduced": true,
+    "no_llm_integration_introduced": true,
+    "deterministic_contract_to_authorization_to_session_lineage_binding": true,
+    "fail_closed_routing_validation": true,
+    "replay_visible_routing_evidence": true,
+    "no_execution_authority_added": true,
+    "no_new_provider_capability_added": true
+  },
+  "architectural_constraint": {
+    "contract_to_authorization_to_lineage_attachment_to_session_continuity": true,
+    "authorization_issuance": false,
+    "provider_invocation": false,
+    "workflow_creation": false,
+    "semantic_inference": false
+  },
+  "validation_scope": {
+    "valid_authorized_contract_routing_tested": true,
+    "unauthorized_contract_rejection_tested": true,
+    "mismatched_contract_id_rejection_tested": true,
+    "mismatched_session_id_rejection_tested": true,
+    "closed_session_rejection_tested": true,
+    "duplicate_routing_rejection_tested": true,
+    "mutated_contract_hash_rejection_tested": true,
+    "mutated_authorization_hash_rejection_tested": true,
+    "deterministic_routing_evidence_tested": true,
+    "no_provider_execution_during_routing_tested": true
+  },
+  "commit_message": "feat(runtime): add governed contract routing v1"
+}

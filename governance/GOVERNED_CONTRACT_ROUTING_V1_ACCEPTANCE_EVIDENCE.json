@@ -1,0 +1,42 @@
+{
+  "milestone_name": "GOVERNED_CONTRACT_ROUTING_V1",
+  "routing_only": true,
+  "router_public_surface": [
+    "route_authorized_contract"
+  ],
+  "deterministic_contract_authorization_session_binding": true,
+  "replay_visible_routing_evidence": true,
+  "fail_closed_routing_validation": true,
+  "allowed_statuses": [
+    "ROUTED",
+    "REJECTED"
+  ],
+  "validation_evidence": {
+    "valid_authorized_contract_routing_tested": true,
+    "unauthorized_contract_rejection_tested": true,
+    "mismatched_contract_id_rejection_tested": true,
+    "mismatched_session_id_rejection_tested": true,
+    "closed_session_rejection_tested": true,
+    "duplicate_routing_rejection_tested": true,
+    "mutated_contract_hash_rejection_tested": true,
+    "mutated_authorization_hash_rejection_tested": true,
+    "deterministic_routing_evidence_tested": true,
+    "no_provider_execution_tested": true,
+    "no_orchestration_async_runtime_autonomy_tested": true
+  },
+  "prohibited_capabilities": {
+    "execution_authority_added": false,
+    "new_provider_capability_added": false,
+    "provider_execution_introduced": false,
+    "provider_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "autonomous_runtime_introduced": false,
+    "workflow_engine_introduced": false,
+    "llm_integration_introduced": false,
+    "semantic_reasoning_introduced": false,
+    "planning_system_introduced": false,
+    "async_runtime_introduced": false,
+    "retries_introduced": false
+  },
+  "commit_message": "feat(runtime): add governed contract routing v1"
+}

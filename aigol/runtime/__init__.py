@@ -6,6 +6,7 @@ from .governed_contract_authorization_gate import (
     authorize_governed_execution_contract,
     reconstruct_authorization_lineage,
 )
+from .governed_contract_router import ContractRoutingResult, reconstruct_routing_lineage, route_authorized_contract
 from .governed_execution_contract import GovernedExecutionContract, create_governed_execution_contract, reconstruct_contract_lineage
 from .governed_execution_session import GovernedExecutionSession, create_governed_execution_session, reconstruct_session_lineage
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
@@ -18,6 +19,7 @@ __all__ = [
     "BLOCKED",
     "CLOSED",
     "ContractAuthorizationResult",
+    "ContractRoutingResult",
     "CREATED",
     "DISPATCHED",
     "FailClosedRuntimeError",
@@ -38,7 +40,9 @@ __all__ = [
     "create_governed_execution_session",
     "reconstruct_authorization_lineage",
     "reconstruct_contract_lineage",
+    "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "replay_hash",
+    "route_authorized_contract",
     "validate_session_lineage_replay",
 ]
