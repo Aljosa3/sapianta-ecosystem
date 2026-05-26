@@ -1,0 +1,46 @@
+{
+  "artifact_type": "MINIMAL_PROVIDER_HARNESS_REVIEW_V1",
+  "schema_version": "1.0",
+  "milestone": "MINIMAL_PROVIDER_HARNESS_REVIEW_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "This milestone introduces minimal operational provider activation readiness review only. It does not introduce orchestration, provider federation, autonomous execution, or runtime scaling abstractions.",
+  "scope": {
+    "provider_registration_readiness": true,
+    "routing_compatibility": true,
+    "approval_compatibility": true,
+    "replay_persistence_compatibility": true,
+    "sandbox_compatibility": true,
+    "policy_compatibility": true,
+    "read_only_review": true,
+    "provider_execution": false,
+    "orchestration": false,
+    "provider_federation": false,
+    "runtime_scaling_abstractions": false,
+    "agent_runtime": false
+  },
+  "readiness_states": [
+    "READY",
+    "NOT_READY",
+    "BLOCKED"
+  ],
+  "fail_closed_checks": {
+    "provider_missing_blocks": true,
+    "routing_incompatible_blocks": true,
+    "approval_unresolved_blocks": true,
+    "replay_persistence_unavailable_blocks": true,
+    "sandbox_unresolved_blocks": true
+  },
+  "replay_guarantees": {
+    "review_contract_replay_hash": true,
+    "review_result_replay_hash": true,
+    "deterministic": true,
+    "immutable": true,
+    "provider_invocation": false,
+    "execution_performed": false
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/review/__init__.py aigol/runtime/review/provider_harness_review.py aigol/runtime/review/review_contract.py aigol/runtime/review/review_result.py aigol/runtime/review/review_validator.py",
+    "python -m pytest tests/test_minimal_provider_harness_review_v1.py",
+    "git diff --check"
+  ]
+}
