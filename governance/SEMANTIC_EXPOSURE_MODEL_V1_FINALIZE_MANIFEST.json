@@ -1,0 +1,63 @@
+{
+  "artifact_type": "SEMANTIC_EXPOSURE_MODEL_V1_FINALIZE_MANIFEST",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_SEMANTIC_EXPOSURE_MODEL_V1",
+  "scope": {
+    "documentation_only": true,
+    "constitutional_semantic_exposure_model": true,
+    "payload_sovereignty_defined": true,
+    "payload_classification_model_defined": true,
+    "exposure_level_model_defined": true,
+    "semantic_routing_model_defined": true,
+    "semantic_abstraction_contract_defined": true,
+    "redaction_governance_defined": true,
+    "replay_payload_governance_defined": true,
+    "exposure_approval_authority_defined": true,
+    "organization_policy_overlays_defined": true,
+    "fail_closed_semantic_resolution_defined": true
+  },
+  "created_artifacts": [
+    "governance/SEMANTIC_EXPOSURE_MODEL_V1.md",
+    "governance/SEMANTIC_EXPOSURE_MODEL_V1_ADR.md",
+    "governance/SEMANTIC_EXPOSURE_MODEL_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/SEMANTIC_EXPOSURE_MODEL_V1_CERTIFICATION.json",
+    "governance/SEMANTIC_EXPOSURE_MODEL_V1_FINALIZE_MANIFEST.json"
+  ],
+  "locked_boundaries": {
+    "no_runtime_execution_mutation": true,
+    "no_replay_implementation_mutation": true,
+    "no_capability_execution_mutation": true,
+    "no_provider_behavior_mutation": true,
+    "no_semantic_processing_implementation": true,
+    "no_local_model_implementation": true,
+    "no_redaction_engine_implementation": true,
+    "no_api_endpoints_added": true,
+    "no_authentication_implementation": true,
+    "llm_can_elevate_exposure": false,
+    "codex_can_elevate_payload_authority": false,
+    "semantic_visibility_is_execution_authority": false,
+    "replay_visibility_is_export_authority": false
+  },
+  "upstream_dependencies": [
+    "GOVERNED_IDENTITY_AND_AUTHORITY_MODEL_V1"
+  ],
+  "downstream_dependencies": [
+    "CAPABILITY_GOVERNANCE_MATRIX_V1",
+    "LOCAL_NODE_ARCHITECTURE_V1",
+    "SOVEREIGN_REPLAY_ARCHITECTURE_V1"
+  ],
+  "acceptance_criteria": {
+    "governance_document_exists": true,
+    "adr_exists": true,
+    "acceptance_evidence_exists": true,
+    "certification_exists": true,
+    "finalize_manifest_exists": true,
+    "no_runtime_behavior_changed": true,
+    "no_payload_processing_implemented": true,
+    "no_replay_implementation_changed": true,
+    "no_provider_execution_modified": true,
+    "identity_dependency_explicitly_declared": true,
+    "exposure_governance_partitioned_from_execution_authority": true,
+    "fail_closed_semantic_governance_explicitly_defined": true
+  }
+}

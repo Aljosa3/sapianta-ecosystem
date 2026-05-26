@@ -1,0 +1,17 @@
+{
+  "milestone_name": "FINALIZE_SEMANTIC_EXPOSURE_MODEL_V1",
+  "documentation_only": true,
+  "runtime_mutation": false,
+  "api_change": false,
+  "execution_behavior_change": false,
+  "payload_governance_defined": true,
+  "payload_classification_defined": true,
+  "exposure_levels_defined": true,
+  "semantic_routing_defined": true,
+  "replay_payload_governance_defined": true,
+  "redaction_governance_defined": true,
+  "fail_closed_semantic_resolution_defined": true,
+  "identity_dependency_declared": true,
+  "llm_non_authoritative_preserved": true,
+  "human_governance_boundary_preserved": true
+}
