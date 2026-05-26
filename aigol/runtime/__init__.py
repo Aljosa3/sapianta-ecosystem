@@ -5,6 +5,7 @@ from .governed_execution_session import GovernedExecutionSession, create_governe
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
 from .provider_interface import ProviderInterface
 from .runtime_engine import RuntimeEngine
+from .session_lineage_replay_validator import validate_session_lineage_replay
 from .worker_lifecycle import BLOCKED, CLOSED, CREATED, DISPATCHED, PREPARED, RETURNED, RUNNING, WorkerLifecycle
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "create_governed_execution_session",
     "reconstruct_session_lineage",
     "replay_hash",
+    "validate_session_lineage_replay",
 ]
