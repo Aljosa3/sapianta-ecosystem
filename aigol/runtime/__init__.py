@@ -34,6 +34,11 @@ from .minimal_governed_execution_path import (
     execute_minimal_governed_path,
     reconstruct_minimal_governed_execution_lineage,
 )
+from .production_isolation_foundation import (
+    ProductionIsolationEvidence,
+    reconstruct_production_isolation_lineage,
+    validate_production_isolation,
+)
 from .provider_interface import ProviderInterface
 from .real_governed_execution_resilience_suite import (
     RealGovernedExecutionResilienceEvidence,
@@ -75,6 +80,7 @@ __all__ = [
     "PREPARED",
     "ProviderInterface",
     "ProviderResponse",
+    "ProductionIsolationEvidence",
     "RealGovernedExecutionResilienceEvidence",
     "RETURNED",
     "RUNNING",
@@ -105,6 +111,7 @@ __all__ = [
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",
+    "reconstruct_production_isolation_lineage",
     "reconstruct_real_governed_execution_resilience_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
@@ -115,5 +122,6 @@ __all__ = [
     "review_translated_cognition_candidate",
     "run_real_governed_execution_resilience_suite",
     "translate_bounded_proposal",
+    "validate_production_isolation",
     "validate_session_lineage_replay",
 ]
