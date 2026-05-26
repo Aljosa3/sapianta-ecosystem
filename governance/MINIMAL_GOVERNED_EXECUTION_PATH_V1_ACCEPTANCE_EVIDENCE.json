@@ -1,0 +1,45 @@
+{
+  "milestone_name": "MINIMAL_GOVERNED_EXECUTION_PATH_V1",
+  "bounded_readonly_execution_only": true,
+  "deterministic_end_to_end_execution_flow": true,
+  "replay_visible_execution_lineage": true,
+  "governance_authority_separation_preserved": true,
+  "allowed_provider_surface": [
+    "metadata_inspection_provider"
+  ],
+  "allowed_operation": [
+    "inspect_runtime"
+  ],
+  "execution_components": {
+    "minimal_governed_execution_path_result": "implemented",
+    "execute_minimal_governed_path": "implemented",
+    "reconstruct_minimal_governed_execution_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_end_to_end_governed_execution_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "invalid_lineage_rejection_tested": true,
+    "replay_visible_execution_evidence_tested": true,
+    "deterministic_execution_ordering_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_execution_validation_tested": true
+  },
+  "prohibited_capabilities": {
+    "autonomous_execution_introduced": false,
+    "orchestration_introduced": false,
+    "workflow_execution_introduced": false,
+    "provider_mutation_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "runtime_autonomy_introduced": false,
+    "self_modifying_governance_introduced": false,
+    "multi_agent_coordination_introduced": false,
+    "unauthorized_provider_execution_introduced": false,
+    "governance_review_bypass_introduced": false,
+    "authorization_routing_bypass_introduced": false,
+    "async_runtime_introduced": false,
+    "retries_introduced": false
+  },
+  "commit_message": "feat(runtime): add minimal governed execution path v1"
+}

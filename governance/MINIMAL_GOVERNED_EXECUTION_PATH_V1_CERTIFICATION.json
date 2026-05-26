@@ -1,0 +1,48 @@
+{
+  "artifact_type": "MINIMAL_GOVERNED_EXECUTION_PATH_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "MINIMAL_GOVERNED_EXECUTION_PATH_V1",
+  "certification_status": "CERTIFIED",
+  "execution_components": {
+    "minimal_governed_execution_path_result": "implemented",
+    "execute_minimal_governed_path": "implemented",
+    "reconstruct_minimal_governed_execution_lineage": "implemented",
+    "readonly_metadata_inspect_runtime_invocation": "implemented"
+  },
+  "boundary_certification": {
+    "bounded_readonly_execution_only": true,
+    "no_autonomous_execution_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_execution_lineage": true,
+    "governance_authority_separation_preserved": true,
+    "deterministic_end_to_end_execution_flow": true,
+    "no_provider_mutation_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_unauthorized_provider_execution_introduced": true,
+    "no_governance_review_bypass_introduced": true,
+    "no_authorization_routing_bypass_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_retries_introduced": true
+  },
+  "architectural_constraint": {
+    "real_governed_cognition_to_execution_flow": true,
+    "single_readonly_capability": true,
+    "single_bounded_provider": true,
+    "general_autonomous_execution_runtime": false,
+    "workflow_engine": false,
+    "provider_mutation": false,
+    "runtime_autonomy": false,
+    "multi_agent_coordination": false
+  },
+  "validation_scope": {
+    "valid_end_to_end_governed_execution_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "invalid_lineage_rejection_tested": true,
+    "replay_visible_execution_evidence_tested": true,
+    "deterministic_execution_ordering_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_execution_validation_tested": true
+  },
+  "commit_message": "feat(runtime): add minimal governed execution path v1"
+}

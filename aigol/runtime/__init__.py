@@ -29,6 +29,11 @@ from .governance_resilience_certification_gate import (
 )
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
 from .minimal_real_llm_proposal_flow import normalize_real_llm_proposal_input, reconstruct_real_llm_proposal_lineage
+from .minimal_governed_execution_path import (
+    MinimalGovernedExecutionPathResult,
+    execute_minimal_governed_path,
+    reconstruct_minimal_governed_execution_lineage,
+)
 from .provider_interface import ProviderInterface
 from .runtime_engine import RuntimeEngine
 from .session_lineage_replay_validator import validate_session_lineage_replay
@@ -61,6 +66,7 @@ __all__ = [
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
     "MockProvider",
+    "MinimalGovernedExecutionPathResult",
     "PREPARED",
     "ProviderInterface",
     "ProviderResponse",
@@ -77,6 +83,7 @@ __all__ = [
     "create_governed_execution_contract",
     "create_governed_execution_session",
     "evaluate_governance_promotion",
+    "execute_minimal_governed_path",
     "generate_ambiguous_contract",
     "generate_authority_drift_attempt",
     "generate_long_chain_entropy_sequence",
@@ -91,6 +98,7 @@ __all__ = [
     "reconstruct_failure_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
+    "reconstruct_minimal_governed_execution_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",
