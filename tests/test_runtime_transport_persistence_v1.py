@@ -136,6 +136,10 @@ def test_ledger_ordering_is_deterministic(tmp_path) -> None:
         "CONTINUITY_CONTRACT_PERSISTED",
         "RETRY_EVALUATION_PERSISTED",
         "CONTINUITY_RESULT_PERSISTED",
+        "RETRY_CONTRACT_PERSISTED",
+        "RETRY_REQUEST_PERSISTED",
+        "RETRY_VALIDATION_PERSISTED",
+        "RETRY_RESULT_PERSISTED",
         "RUNTIME_SNAPSHOT_PERSISTED",
     ]
-    assert [entry["sequence"] for entry in entries] == list(range(12))
+    assert [entry["sequence"] for entry in entries] == list(range(16))

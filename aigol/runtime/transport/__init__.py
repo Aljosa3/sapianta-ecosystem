@@ -4,6 +4,7 @@ from .ledger import RuntimeLedger
 from .replay import (
     reconstruct_capability_execution,
     reconstruct_provider_invocation,
+    reconstruct_retry_execution,
     reconstruct_runtime_lineage,
     reconstruct_sandbox_execution,
 )
@@ -17,6 +18,7 @@ __all__ = [
     "load_json",
     "reconstruct_capability_execution",
     "reconstruct_provider_invocation",
+    "reconstruct_retry_execution",
     "reconstruct_runtime_lineage",
     "reconstruct_sandbox_execution",
     "replay_hash",

@@ -36,6 +36,8 @@ class RuntimeStore:
         self.routing_result_dir = self.root / "runtime_routing_results"
         self.approval_dir = self.root / "runtime_approval"
         self.approval_result_dir = self.root / "runtime_approval_results"
+        self.retry_dir = self.root / "runtime_retry"
+        self.retry_result_dir = self.root / "runtime_retry_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -124,6 +126,18 @@ class RuntimeStore:
 
     def approval_result_path(self, runtime_id: str) -> Path:
         return self.approval_result_dir / f"runtime_{runtime_id}_approval_result.json"
+
+    def retry_contract_path(self, runtime_id: str) -> Path:
+        return self.retry_dir / f"runtime_{runtime_id}_retry_contract.json"
+
+    def retry_request_path(self, runtime_id: str) -> Path:
+        return self.retry_dir / f"runtime_{runtime_id}_retry_request.json"
+
+    def retry_validation_path(self, runtime_id: str) -> Path:
+        return self.retry_dir / f"runtime_{runtime_id}_retry_validation.json"
+
+    def retry_result_path(self, runtime_id: str) -> Path:
+        return self.retry_result_dir / f"runtime_{runtime_id}_retry_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -658,5 +672,73 @@ class RuntimeStore:
 
     def load_approval_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.approval_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_retry_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.retry_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "RETRY_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.retry_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_retry_request(self, runtime_id: str, request: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.retry_request_path(runtime_id), request)
+        self.ledger.append(
+            runtime_id,
+            "RETRY_REQUEST_PERSISTED",
+            {
+                "artifact_ref": str(self.retry_request_path(runtime_id)),
+                "replay_hash": request["replay_hash"],
+            },
+        )
+        return request
+
+    def persist_retry_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.retry_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "RETRY_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.retry_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_retry_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.retry_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "RETRY_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.retry_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_retry_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.retry_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_retry_request(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.retry_request_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_retry_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.retry_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_retry_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.retry_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

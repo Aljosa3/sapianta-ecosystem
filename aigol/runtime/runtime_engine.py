@@ -20,6 +20,7 @@ from .models import (
 from .observability import RuntimeSnapshot
 from .policy import PolicyContract, RuntimePolicyEngine
 from .provider_interface import ProviderInterface
+from .retry import RetryContract, RetryEngine
 from .routing import RoutingContract, RoutingEngine
 from .sandbox import SandboxContext, SandboxExecutor, SandboxValidator
 from .transport.runtime_store import RuntimeStore
@@ -78,6 +79,7 @@ class RuntimeEngine:
                 self.runtime_store.persist_lifecycle_transitions(runtime_package.runtime_id, lifecycle.transitions)
                 self.runtime_store.persist_result(runtime_package, return_artifact)
                 self._evaluate_continuity(runtime_package, return_artifact)
+                self._evaluate_retry(runtime_package)
                 self._persist_runtime_snapshot(runtime_package.runtime_id)
             return return_artifact
         except FailClosedRuntimeError as exc:
@@ -224,6 +226,33 @@ class RuntimeEngine:
         self.runtime_store.persist_continuity_contract(runtime_package.runtime_id, contract.to_dict())
         self.runtime_store.persist_retry_evaluation(runtime_package.runtime_id, retry_evaluation)
         self.runtime_store.persist_continuity_result(runtime_package.runtime_id, result.to_dict())
+
+    def _evaluate_retry(self, runtime_package: RuntimePackage) -> None:
+        if self.runtime_store is None:
+            return
+        continuity_result = self.runtime_store.load_continuity_result(runtime_package.runtime_id)
+        contract = RetryContract.from_runtime_package(
+            runtime_package,
+            continuation_result=type(
+                "ContinuationResultView",
+                (),
+                {"retry_allowed": continuity_result.get("retry_allowed", False)},
+            )(),
+        )
+        payload = runtime_package.payload if isinstance(runtime_package.payload, dict) else {}
+        capability_request = payload.get("capability_request", {}) if isinstance(payload.get("capability_request", {}), dict) else {}
+        retry_payload = payload.get("retry", {}) if isinstance(payload.get("retry", {}), dict) else {}
+        requested_capability = retry_payload.get("requested_capability", capability_request.get("capability", runtime_package.task_type))
+        approval_state = retry_payload.get("approval_state", "APPROVED")
+        request, result, validation = RetryEngine().evaluate(
+            contract,
+            requested_capability=requested_capability,
+            approval_state=approval_state,
+        )
+        self.runtime_store.persist_retry_contract(runtime_package.runtime_id, contract.to_dict())
+        self.runtime_store.persist_retry_request(runtime_package.runtime_id, request.to_dict())
+        self.runtime_store.persist_retry_validation(runtime_package.runtime_id, validation)
+        self.runtime_store.persist_retry_result(runtime_package.runtime_id, result.to_dict())
 
     def _persist_runtime_snapshot(self, runtime_id: str) -> None:
         if self.runtime_store is None:

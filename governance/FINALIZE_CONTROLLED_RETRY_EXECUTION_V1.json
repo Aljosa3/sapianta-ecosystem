@@ -1,0 +1,78 @@
+{
+  "artifact_type": "FINALIZE_CONTROLLED_RETRY_EXECUTION_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_CONTROLLED_RETRY_EXECUTION_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Controlled retry execution introduces bounded replay-visible governed retry execution only. It does not introduce orchestration authority, recursive autonomous agents, hidden retry loops, unrestricted runtime continuation, or autonomous execution escalation.",
+  "scope": {
+    "retry_contract": true,
+    "retry_request": true,
+    "retry_result": true,
+    "retry_policy": true,
+    "retry_validator": true,
+    "retry_engine": true,
+    "retry_replay": true,
+    "retry_persistence": true,
+    "runtime_engine_post_continuity_retry_hook": true,
+    "recursive_autonomous_agents": false,
+    "hidden_retry_loops": false,
+    "unlimited_retries": false,
+    "orchestration_runtime": false,
+    "autonomous_retry_escalation": false,
+    "distributed_retry_mesh": false,
+    "self_directed_runtime_recursion": false
+  },
+  "retry_guarantees": {
+    "bounded": true,
+    "default_max_retry": 3,
+    "approval_aware": true,
+    "replay_visible": true,
+    "deterministic": true,
+    "fail_closed": true,
+    "local_only": true,
+    "provider_reexecution": false,
+    "recursive_dispatch": false,
+    "orchestration": false
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "retry_contract_persisted": true,
+    "retry_request_persisted": true,
+    "retry_validation_persisted": true,
+    "retry_result_persisted": true,
+    "retry_execution_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "retry_layer_added": true,
+    "runtime_store_retry_methods_added": true,
+    "runtime_engine_post_continuity_hook_added": true,
+    "orchestration_added": false,
+    "autonomous_recursion_added": false,
+    "unbounded_retry_loop_added": false,
+    "provider_reexecution_added": false,
+    "governance_mutation_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_retry_execution_tested": true,
+    "retry_limit_enforcement_tested": true,
+    "approval_aware_retry_blocking_tested": true,
+    "invalid_replay_hash_blocked_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_retry_persistence_tested": true,
+    "retry_replay_reconstruction_tested": true,
+    "immutable_retry_guarantees_tested": true,
+    "fail_closed_validation_behavior_tested": true,
+    "bounded_retry_execution_semantics_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/retry/__init__.py aigol/runtime/retry/retry_contract.py aigol/runtime/retry/retry_request.py aigol/runtime/retry/retry_result.py aigol/runtime/retry/retry_policy.py aigol/runtime/retry/retry_validator.py aigol/runtime/retry/retry_engine.py aigol/runtime/retry/retry_replay.py",
+    "python -m pytest tests/test_controlled_retry_execution_v1.py",
+    "python -m json.tool governance/FINALIZE_CONTROLLED_RETRY_EXECUTION_V1.json",
+    "python -m json.tool governance/CONTROLLED_RETRY_EXECUTION_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}
