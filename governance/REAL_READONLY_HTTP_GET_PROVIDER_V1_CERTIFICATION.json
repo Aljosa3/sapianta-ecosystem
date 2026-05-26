@@ -1,0 +1,35 @@
+{
+  "artifact_type": "REAL_READONLY_HTTP_GET_PROVIDER_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "REAL_READONLY_HTTP_GET_PROVIDER_V1",
+  "certification_status": "CERTIFIED",
+  "provider_components": {
+    "readonly_http_get_provider": "implemented",
+    "fetch": "implemented"
+  },
+  "boundary_certification": {
+    "get_only": true,
+    "bounded_outbound_access": true,
+    "allowlist_enforced": true,
+    "replay_visible_evidence": true,
+    "fail_closed_transport_validation": true,
+    "no_mutation_capability_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_retry_system_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_crawling_behavior_introduced": true,
+    "no_subprocess_introduced": true,
+    "no_shell_execution_introduced": true
+  },
+  "validation_scope": {
+    "allowed_https_request_tested": true,
+    "blocked_non_https_request_tested": true,
+    "blocked_non_allowlisted_host_tested": true,
+    "timeout_enforcement_tested": true,
+    "max_bytes_enforcement_tested": true,
+    "redirect_rejection_tested": true,
+    "deterministic_evidence_tested": true,
+    "invalid_url_fail_closed_tested": true
+  },
+  "commit_message": "feat(runtime): add real read-only http get provider v1"
+}

@@ -1,0 +1,23 @@
+{
+  "milestone_name": "REAL_READONLY_HTTP_GET_PROVIDER_V1",
+  "get_only": true,
+  "bounded_outbound_access": true,
+  "https_only": true,
+  "domain_allowlist_enforced": true,
+  "redirects_rejected": true,
+  "max_bytes_enforced": true,
+  "timeout_enforced": true,
+  "replay_visible_evidence": true,
+  "deterministic_evidence": true,
+  "fail_closed_transport_validation": true,
+  "mutation_capability_introduced": false,
+  "auth_flow_introduced": false,
+  "cookies_or_sessions_introduced": false,
+  "streaming_introduced": false,
+  "websocket_support_introduced": false,
+  "retry_system_introduced": false,
+  "async_orchestration_introduced": false,
+  "crawling_introduced": false,
+  "subprocess_usage_introduced": false,
+  "shell_usage_introduced": false
+}
