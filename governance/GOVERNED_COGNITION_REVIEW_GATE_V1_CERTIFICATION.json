@@ -1,0 +1,47 @@
+{
+  "artifact_type": "GOVERNED_COGNITION_REVIEW_GATE_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNED_COGNITION_REVIEW_GATE_V1",
+  "certification_status": "CERTIFIED",
+  "review_components": {
+    "governed_cognition_review_result": "implemented",
+    "review_translated_cognition_candidate": "implemented",
+    "reconstruct_cognition_review_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "deterministic_cognition_review_only": true,
+    "no_execution_authority_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_cognition_review_evidence": true,
+    "governance_authority_separation_preserved": true,
+    "no_autonomous_cognition_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_contract_authorization_introduced": true,
+    "no_contract_routing_introduced": true,
+    "no_direct_contract_attachment_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_real_llm_execution_introduced": true
+  },
+  "architectural_constraint": {
+    "cognition_generated_candidates_may_become_eligible_for_governance_authorization_review": true,
+    "cognition_may_execute_runtime_actions": false,
+    "review_may_authorize": false,
+    "review_may_route": false,
+    "review_may_attach_contracts": false,
+    "governance_authority_remains_deterministic": true,
+    "governance_authority_remains_bounded": true,
+    "governance_authority_remains_replay_visible": true,
+    "governance_authority_remains_fail_closed": true
+  },
+  "validation_scope": {
+    "valid_cognition_review_tested": true,
+    "malformed_lineage_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "deterministic_review_lineage_tested": true,
+    "replay_visible_review_evidence_tested": true,
+    "cognition_risk_classification_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_cognition_review_validation_tested": true
+  },
+  "commit_message": "feat(runtime): add governed cognition review gate v1"
+}
