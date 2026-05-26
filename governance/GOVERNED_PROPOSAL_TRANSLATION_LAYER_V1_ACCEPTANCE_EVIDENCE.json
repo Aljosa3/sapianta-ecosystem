@@ -1,0 +1,45 @@
+{
+  "milestone_name": "GOVERNED_PROPOSAL_TRANSLATION_LAYER_V1",
+  "deterministic_proposal_translation_only": true,
+  "contract_candidates_only": true,
+  "execution_authority_introduced": false,
+  "orchestration_introduced": false,
+  "autonomous_cognition_introduced": false,
+  "replay_visible_translation_evidence": true,
+  "governance_authority_separation_preserved": true,
+  "translation_statuses": [
+    "TRANSLATED",
+    "REJECTED"
+  ],
+  "translation_components": {
+    "governed_proposal_translation_result": "implemented",
+    "translate_bounded_proposal": "implemented",
+    "reconstruct_translation_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_proposal_translation_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "governance_query_rejection_tested": true,
+    "deterministic_translation_lineage_tested": true,
+    "replay_visible_translation_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_translation_validation_tested": true
+  },
+  "prohibited_capabilities": {
+    "real_llm_execution_introduced": false,
+    "contract_authorization_introduced": false,
+    "contract_routing_introduced": false,
+    "provider_execution_introduced": false,
+    "direct_contract_attachment_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "autonomous_retries_introduced": false,
+    "semantic_planning_introduced": false,
+    "workflow_execution_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "self_modifying_governance_introduced": false
+  },
+  "commit_message": "feat(runtime): add governed proposal translation layer v1"
+}

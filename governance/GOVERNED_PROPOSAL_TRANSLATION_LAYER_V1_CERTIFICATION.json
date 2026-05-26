@@ -1,0 +1,48 @@
+{
+  "artifact_type": "GOVERNED_PROPOSAL_TRANSLATION_LAYER_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNED_PROPOSAL_TRANSLATION_LAYER_V1",
+  "certification_status": "CERTIFIED",
+  "translation_components": {
+    "governed_proposal_translation_result": "implemented",
+    "translate_bounded_proposal": "implemented",
+    "reconstruct_translation_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "deterministic_proposal_translation_only": true,
+    "contract_candidates_only": true,
+    "no_execution_authority_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_translation_evidence": true,
+    "governance_authority_separation_preserved": true,
+    "no_autonomous_cognition_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_contract_authorization_introduced": true,
+    "no_contract_routing_introduced": true,
+    "no_direct_contract_attachment_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_real_llm_execution_introduced": true
+  },
+  "architectural_constraint": {
+    "cognition_proposals_may_become_contract_candidates": true,
+    "cognition_may_execute_runtime_actions": false,
+    "translation_may_authorize": false,
+    "translation_may_route": false,
+    "translation_may_attach_contracts": false,
+    "governance_authority_remains_deterministic": true,
+    "governance_authority_remains_bounded": true,
+    "governance_authority_remains_replay_visible": true,
+    "governance_authority_remains_fail_closed": true
+  },
+  "validation_scope": {
+    "valid_proposal_translation_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "governance_query_rejection_tested": true,
+    "deterministic_translation_lineage_tested": true,
+    "replay_visible_translation_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_translation_validation_tested": true
+  },
+  "commit_message": "feat(runtime): add governed proposal translation layer v1"
+}

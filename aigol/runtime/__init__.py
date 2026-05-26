@@ -10,6 +10,11 @@ from .governed_contract_authorization_gate import (
 from .governed_contract_router import ContractRoutingResult, reconstruct_routing_lineage, route_authorized_contract
 from .governed_execution_contract import GovernedExecutionContract, create_governed_execution_contract, reconstruct_contract_lineage
 from .governed_execution_session import GovernedExecutionSession, create_governed_execution_session, reconstruct_session_lineage
+from .governed_proposal_translation_layer import (
+    GovernedProposalTranslationResult,
+    reconstruct_translation_lineage,
+    translate_bounded_proposal,
+)
 from .governance_failure_semantics import GovernanceFailureEvidence, classify_governance_failure, reconstruct_failure_lineage
 from .governance_promotion_discipline import GovernancePromotionResult, evaluate_governance_promotion, reconstruct_promotion_lineage
 from .governance_resilience_certification_gate import (
@@ -44,6 +49,7 @@ __all__ = [
     "GovernedReturnArtifact",
     "GovernedExecutionContract",
     "GovernedExecutionSession",
+    "GovernedProposalTranslationResult",
     "GovernanceFailureEvidence",
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
@@ -78,7 +84,9 @@ __all__ = [
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",
+    "reconstruct_translation_lineage",
     "replay_hash",
     "route_authorized_contract",
+    "translate_bounded_proposal",
     "validate_session_lineage_replay",
 ]
