@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from .approval import ApprovalContract, ApprovalEngine
 from .capabilities import CapabilityExecutor, CapabilityRequest, CapabilityValidator
 from .continuity import ContinuationContract, RuntimeContinuityEngine
 from .goals import GoalContract, GoalContinuityEngine, GoalSequence
@@ -126,6 +127,12 @@ class RuntimeEngine:
         routing_contract = RoutingContract.from_runtime_package(runtime_package, request.to_dict())
         route, routing_result, routing_validation = RoutingEngine().evaluate(routing_contract)
         self._enforce_route(route)
+        approval_contract = ApprovalContract.from_routing(routing_contract, route)
+        approval_request, approval_result, approval_validation = ApprovalEngine().evaluate(approval_contract)
+        if approval_result.approval_state != "APPROVED":
+            if self.runtime_store is not None:
+                self._persist_approval(runtime_package.runtime_id, approval_contract, approval_request, approval_result, approval_validation)
+            raise FailClosedRuntimeError(f"capability blocked by approval checkpoint: {approval_result.approval_state}")
         capability_validator = CapabilityValidator()
         capability_validation = capability_validator.validate(request, context)
         policy_contract = PolicyContract.from_capability_request(request, context)
@@ -137,6 +144,7 @@ class RuntimeEngine:
             self.runtime_store.persist_capability_route(runtime_package.runtime_id, route.to_dict())
             self.runtime_store.persist_routing_validation(runtime_package.runtime_id, routing_validation)
             self.runtime_store.persist_routing_result(runtime_package.runtime_id, routing_result.to_dict())
+            self._persist_approval(runtime_package.runtime_id, approval_contract, approval_request, approval_result, approval_validation)
             self.runtime_store.persist_sandbox_context(runtime_package.runtime_id, context.to_dict())
             self.runtime_store.persist_sandbox_validation(runtime_package.runtime_id, sandbox_validation)
             self.runtime_store.persist_policy_contract(runtime_package.runtime_id, policy_contract.to_dict())
@@ -169,6 +177,14 @@ class RuntimeEngine:
             raise FailClosedRuntimeError("routing execution surface is not enforceable")
         if route.approval_required and route.execution_surface != "HUMAN_APPROVAL_REQUIRED":
             raise FailClosedRuntimeError("approval-required route must use HUMAN_APPROVAL_REQUIRED surface")
+
+    def _persist_approval(self, runtime_id: str, contract, request, result, validation) -> None:
+        if self.runtime_store is None:
+            return
+        self.runtime_store.persist_approval_contract(runtime_id, contract.to_dict())
+        self.runtime_store.persist_approval_request(runtime_id, request.to_dict())
+        self.runtime_store.persist_approval_validation(runtime_id, validation)
+        self.runtime_store.persist_approval_result(runtime_id, result.to_dict())
 
     def _execute_sandbox(self, runtime_package: RuntimePackage) -> ProviderResponse:
         context = SandboxContext.from_runtime_package(runtime_package)

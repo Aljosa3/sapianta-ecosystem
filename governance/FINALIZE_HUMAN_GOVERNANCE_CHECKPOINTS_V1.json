@@ -1,0 +1,104 @@
+{
+  "artifact_type": "FINALIZE_HUMAN_GOVERNANCE_CHECKPOINTS_V1",
+  "schema_version": "1.0",
+  "milestone": "FINALIZE_HUMAN_GOVERNANCE_CHECKPOINTS_V1",
+  "status": "FINALIZED",
+  "explicit_statement": "Human governance checkpoints introduce replay-visible human approval boundaries only. They do not introduce automatic execution authority, autonomous approval escalation, hidden approval bypass, or unrestricted execution authorization.",
+  "scope": {
+    "approval_contract": true,
+    "approval_request": true,
+    "approval_result": true,
+    "approval_registry": true,
+    "approval_validator": true,
+    "approval_engine": true,
+    "approval_replay": true,
+    "approval_persistence": true,
+    "runtime_engine_approval_checkpoint": true,
+    "automatic_self_approval": false,
+    "hidden_approval_bypass": false,
+    "autonomous_escalation": false,
+    "unrestricted_execution_authority": false,
+    "distributed_approval_mesh": false,
+    "approval_orchestration_swarm": false
+  },
+  "non_goals": [
+    "automatic self-approval",
+    "hidden approval bypass",
+    "autonomous escalation",
+    "unrestricted execution authority",
+    "distributed approval mesh",
+    "approval orchestration swarm"
+  ],
+  "architectural_principles": {
+    "approval_is_execution": false,
+    "approval_is_orchestration": false,
+    "approval_replay_visible": true,
+    "human_authority_external": true,
+    "approval_failures_fail_closed": true
+  },
+  "approval_scopes": [
+    "HUMAN_APPROVAL_REQUIRED",
+    "READ_ONLY_AUTO_ALLOWED",
+    "RESTRICTED_BLOCKED"
+  ],
+  "risk_classes": [
+    "HIGH_RISK",
+    "LOW_RISK",
+    "MODERATE_RISK",
+    "RESTRICTED"
+  ],
+  "approval_states": [
+    "APPROVED",
+    "BLOCKED",
+    "PENDING_HUMAN_APPROVAL"
+  ],
+  "approval_guarantees": {
+    "no_human_approval_simulation": true,
+    "approval_required_blocks_execution": true,
+    "restricted_scope_blocks_execution": true,
+    "read_only_auto_allowed_low_risk": true,
+    "automatic_execution_escalation": false,
+    "approval_bypass": false
+  },
+  "replay_guarantees": {
+    "canonical_json": true,
+    "sorted_keys": true,
+    "stable_separators": true,
+    "sha256_replay_hash": true,
+    "approval_contract_persisted": true,
+    "approval_request_persisted": true,
+    "approval_validation_persisted": true,
+    "approval_result_persisted": true,
+    "approval_decision_reconstructable": true,
+    "append_only_compatible": true
+  },
+  "mutation_boundaries": {
+    "approval_layer_added": true,
+    "runtime_store_approval_methods_added": true,
+    "runtime_engine_approval_checkpoint_added": true,
+    "existing_governance_authority_changed": false,
+    "self_approval_added": false,
+    "approval_bypass_added": false,
+    "orchestration_added": false,
+    "unrestricted_execution_authority_added": false
+  },
+  "deterministic_acceptance_evidence": {
+    "valid_approval_evaluation_tested": true,
+    "approval_required_routing_tested": true,
+    "blocked_restricted_execution_tested": true,
+    "invalid_replay_hash_blocked_tested": true,
+    "unknown_approval_scope_blocked_tested": true,
+    "deterministic_replay_hashing_tested": true,
+    "append_only_approval_persistence_tested": true,
+    "approval_replay_reconstruction_tested": true,
+    "immutable_approval_guarantees_tested": true,
+    "fail_closed_validation_behavior_tested": true
+  },
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/approval/__init__.py aigol/runtime/approval/approval_contract.py aigol/runtime/approval/approval_request.py aigol/runtime/approval/approval_result.py aigol/runtime/approval/approval_registry.py aigol/runtime/approval/approval_validator.py aigol/runtime/approval/approval_engine.py aigol/runtime/approval/approval_replay.py",
+    "python -m pytest tests/test_human_governance_checkpoints_v1.py",
+    "python -m json.tool governance/FINALIZE_HUMAN_GOVERNANCE_CHECKPOINTS_V1.json",
+    "python -m json.tool governance/HUMAN_GOVERNANCE_CHECKPOINTS_CERTIFICATION.json",
+    "git diff --check"
+  ]
+}

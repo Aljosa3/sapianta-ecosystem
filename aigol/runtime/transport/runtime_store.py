@@ -34,6 +34,8 @@ class RuntimeStore:
         self.goal_sequence_dir = self.root / "runtime_goal_sequences"
         self.routing_dir = self.root / "runtime_routing"
         self.routing_result_dir = self.root / "runtime_routing_results"
+        self.approval_dir = self.root / "runtime_approval"
+        self.approval_result_dir = self.root / "runtime_approval_results"
         self.ledger = RuntimeLedger(self.root)
 
     def dispatch_path(self, runtime_id: str) -> Path:
@@ -110,6 +112,18 @@ class RuntimeStore:
 
     def routing_result_path(self, runtime_id: str) -> Path:
         return self.routing_result_dir / f"runtime_{runtime_id}_routing_result.json"
+
+    def approval_contract_path(self, runtime_id: str) -> Path:
+        return self.approval_dir / f"runtime_{runtime_id}_approval_contract.json"
+
+    def approval_request_path(self, runtime_id: str) -> Path:
+        return self.approval_dir / f"runtime_{runtime_id}_approval_request.json"
+
+    def approval_validation_path(self, runtime_id: str) -> Path:
+        return self.approval_dir / f"runtime_{runtime_id}_approval_validation.json"
+
+    def approval_result_path(self, runtime_id: str) -> Path:
+        return self.approval_result_dir / f"runtime_{runtime_id}_approval_result.json"
 
     def persist_dispatch(self, runtime_package: RuntimePackage, dispatch_artifact: dict[str, Any]) -> dict[str, Any]:
         artifact = with_replay_hash(
@@ -576,5 +590,73 @@ class RuntimeStore:
 
     def load_routing_result(self, runtime_id: str) -> dict[str, Any]:
         artifact = load_json(self.routing_result_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def persist_approval_contract(self, runtime_id: str, contract: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.approval_contract_path(runtime_id), contract)
+        self.ledger.append(
+            runtime_id,
+            "APPROVAL_CONTRACT_PERSISTED",
+            {
+                "artifact_ref": str(self.approval_contract_path(runtime_id)),
+                "replay_hash": contract["replay_hash"],
+            },
+        )
+        return contract
+
+    def persist_approval_request(self, runtime_id: str, request: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.approval_request_path(runtime_id), request)
+        self.ledger.append(
+            runtime_id,
+            "APPROVAL_REQUEST_PERSISTED",
+            {
+                "artifact_ref": str(self.approval_request_path(runtime_id)),
+                "replay_hash": request["replay_hash"],
+            },
+        )
+        return request
+
+    def persist_approval_validation(self, runtime_id: str, validation: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.approval_validation_path(runtime_id), validation)
+        self.ledger.append(
+            runtime_id,
+            "APPROVAL_VALIDATION_PERSISTED",
+            {
+                "artifact_ref": str(self.approval_validation_path(runtime_id)),
+                "replay_hash": validation["replay_hash"],
+            },
+        )
+        return validation
+
+    def persist_approval_result(self, runtime_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        write_json_immutable(self.approval_result_path(runtime_id), result)
+        self.ledger.append(
+            runtime_id,
+            "APPROVAL_RESULT_PERSISTED",
+            {
+                "artifact_ref": str(self.approval_result_path(runtime_id)),
+                "replay_hash": result["replay_hash"],
+            },
+        )
+        return result
+
+    def load_approval_contract(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.approval_contract_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_approval_request(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.approval_request_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_approval_validation(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.approval_validation_path(runtime_id))
+        verify_replay_hash(artifact)
+        return artifact
+
+    def load_approval_result(self, runtime_id: str) -> dict[str, Any]:
+        artifact = load_json(self.approval_result_path(runtime_id))
         verify_replay_hash(artifact)
         return artifact

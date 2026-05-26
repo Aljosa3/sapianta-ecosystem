@@ -202,7 +202,8 @@ def test_mock_write_preview_performs_no_write(tmp_path) -> None:
 
     artifact = _engine().dispatch(_package(payload=payload)).to_dict()
 
-    assert artifact["provider_response"]["output"]["execution_summary"]["filesystem_mutation"] is False
+    assert artifact["status"] == "FAIL_CLOSED"
+    assert artifact["provider_response"] is None
     assert not target.exists()
 
 
