@@ -1,0 +1,44 @@
+{
+  "artifact_type": "GOVERNANCE_FAILURE_SEMANTICS_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNANCE_FAILURE_SEMANTICS_V1",
+  "certification_status": "CERTIFIED",
+  "failure_semantics_components": {
+    "governance_failure_semantics": "implemented",
+    "governance_failure_evidence": "implemented",
+    "classify_governance_failure": "implemented",
+    "reconstruct_failure_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "failure_semantics_only": true,
+    "no_recovery_automation_introduced": true,
+    "deterministic_failure_classification": true,
+    "replay_visible_failure_evidence": true,
+    "append_only_failure_lineage": true,
+    "immutable_failure_evidence": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_runtime_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_llm_integration_introduced": true,
+    "no_runtime_healing_introduced": true,
+    "no_process_termination_introduced": true
+  },
+  "architectural_constraint": {
+    "defines_what_governance_failure_means": true,
+    "recovery_logic": false,
+    "execution_autonomy": false,
+    "automatic_mitigation": false,
+    "provider_invocation": false
+  },
+  "validation_scope": {
+    "valid_failure_classification_tested": true,
+    "invalid_failure_type_rejection_tested": true,
+    "invalid_severity_rejection_tested": true,
+    "deterministic_failure_evidence_tested": true,
+    "immutable_failure_evidence_tested": true,
+    "append_only_failure_lineage_tested": true,
+    "replay_visible_failure_reconstruction_tested": true,
+    "fail_closed_malformed_failure_state_tested": true
+  },
+  "commit_message": "feat(runtime): add governance failure semantics v1"
+}

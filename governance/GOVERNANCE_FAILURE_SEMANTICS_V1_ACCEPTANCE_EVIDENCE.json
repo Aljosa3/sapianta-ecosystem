@@ -1,0 +1,47 @@
+{
+  "milestone_name": "GOVERNANCE_FAILURE_SEMANTICS_V1",
+  "failure_semantics_only": true,
+  "deterministic_failure_classification": true,
+  "replay_visible_failure_evidence": true,
+  "append_only_failure_lineage": true,
+  "immutable_failure_evidence": true,
+  "allowed_failure_semantics": [
+    "FAIL_CLOSED",
+    "REJECT",
+    "INVALIDATE_LINEAGE",
+    "TERMINATE_SESSION",
+    "QUARANTINE_REQUIRED"
+  ],
+  "allowed_severity_levels": [
+    "LOW",
+    "MEDIUM",
+    "HIGH",
+    "CRITICAL"
+  ],
+  "validation_evidence": {
+    "valid_failure_classification_tested": true,
+    "invalid_failure_type_rejection_tested": true,
+    "invalid_severity_rejection_tested": true,
+    "deterministic_failure_evidence_tested": true,
+    "immutable_failure_evidence_tested": true,
+    "append_only_failure_lineage_tested": true,
+    "replay_visible_failure_reconstruction_tested": true,
+    "fail_closed_malformed_failure_state_tested": true,
+    "mutated_failure_evidence_rejection_tested": true
+  },
+  "prohibited_capabilities": {
+    "recovery_automation_introduced": false,
+    "retries_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "workflow_systems_introduced": false,
+    "policy_learning_introduced": false,
+    "autonomous_mitigation_introduced": false,
+    "autonomous_runtime_introduced": false,
+    "semantic_reasoning_introduced": false,
+    "llm_integration_introduced": false,
+    "provider_execution_introduced": false,
+    "process_termination_introduced": false
+  },
+  "commit_message": "feat(runtime): add governance failure semantics v1"
+}
