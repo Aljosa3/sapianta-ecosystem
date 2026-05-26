@@ -1,0 +1,43 @@
+{
+  "artifact_type": "MINIMAL_GOVERNED_EXECUTION_SESSION_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "MINIMAL_GOVERNED_EXECUTION_SESSION_V1",
+  "certification_status": "CERTIFIED",
+  "session_components": {
+    "governed_execution_session": "implemented",
+    "create_governed_execution_session": "implemented",
+    "attach_provider_evidence": "implemented",
+    "close_session": "implemented",
+    "reconstruct_session_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "bounded_local_session_lifecycle_only": true,
+    "replay_linked_execution_lineage": true,
+    "append_only_operation_semantics": true,
+    "fail_closed_session_transitions": true,
+    "single_session_local_only": true,
+    "allowed_providers_only": true,
+    "allowed_provider_operations_only": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_planning_introduced": true,
+    "no_agent_runtime_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_concurrent_execution_introduced": true,
+    "no_background_workers_introduced": true,
+    "no_scheduling_introduced": true,
+    "no_distributed_execution_introduced": true,
+    "no_retries_introduced": true,
+    "no_execution_delegation_introduced": true
+  },
+  "validation_scope": {
+    "session_creation_tested": true,
+    "operation_attachment_tested": true,
+    "deterministic_operation_ordering_tested": true,
+    "replay_lineage_reconstruction_tested": true,
+    "invalid_transition_rejection_tested": true,
+    "duplicate_closure_rejection_tested": true,
+    "attach_after_close_rejection_tested": true,
+    "fail_closed_invalid_states_tested": true
+  },
+  "commit_message": "feat(runtime): add minimal governed execution session v1"
+}

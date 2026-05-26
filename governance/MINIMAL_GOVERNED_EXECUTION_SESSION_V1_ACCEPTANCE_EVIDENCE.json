@@ -1,0 +1,63 @@
+{
+  "milestone_name": "MINIMAL_GOVERNED_EXECUTION_SESSION_V1",
+  "bounded_local_session_lifecycle_only": true,
+  "session_creation_implemented": true,
+  "provider_evidence_attachment_implemented": true,
+  "deterministic_append_only_operation_tracking": true,
+  "replay_lineage_reconstruction_implemented": true,
+  "explicit_close_session_implemented": true,
+  "allowed_statuses": [
+    "CREATED",
+    "ACTIVE",
+    "CLOSED",
+    "FAILED"
+  ],
+  "allowed_providers": [
+    "readonly_filesystem_provider",
+    "readonly_http_get_provider",
+    "metadata_inspection_provider"
+  ],
+  "allowed_provider_operations_locked": {
+    "readonly_filesystem_provider": [
+      "inspect_metadata",
+      "read_file",
+      "list_allowed_directory"
+    ],
+    "readonly_http_get_provider": [
+      "fetch"
+    ],
+    "metadata_inspection_provider": [
+      "inspect_runtime",
+      "inspect_environment",
+      "inspect_process"
+    ]
+  },
+  "validation_evidence": {
+    "session_creation_tested": true,
+    "operation_attachment_tested": true,
+    "deterministic_operation_ordering_tested": true,
+    "replay_lineage_reconstruction_tested": true,
+    "invalid_transition_rejection_tested": true,
+    "duplicate_closure_rejection_tested": true,
+    "attach_after_close_rejection_tested": true,
+    "fail_closed_invalid_states_tested": true,
+    "disallowed_provider_operation_rejection_tested": true,
+    "operation_evidence_immutability_tested": true
+  },
+  "prohibited_capabilities": {
+    "orchestration_introduced": false,
+    "autonomous_execution_introduced": false,
+    "autonomous_planning_introduced": false,
+    "agent_runtime_introduced": false,
+    "async_runtime_introduced": false,
+    "concurrent_execution_introduced": false,
+    "background_workers_introduced": false,
+    "scheduling_introduced": false,
+    "distributed_execution_introduced": false,
+    "retries_introduced": false,
+    "vector_memory_introduced": false,
+    "semantic_reasoning_introduced": false,
+    "execution_delegation_introduced": false
+  },
+  "commit_message": "feat(runtime): add minimal governed execution session v1"
+}
