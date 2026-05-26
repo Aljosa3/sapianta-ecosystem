@@ -1,0 +1,51 @@
+{
+  "milestone_name": "GOVERNED_EXECUTION_CONTRACT_V1",
+  "execution_contract_only": true,
+  "bounded_execution_intent_structure": true,
+  "deterministic_provider_authorization": true,
+  "session_lineage_binding": true,
+  "replay_visible_contract_evidence": true,
+  "immutable_attachment_semantics": true,
+  "allowed_statuses": [
+    "CREATED",
+    "VALIDATED",
+    "REJECTED",
+    "ATTACHED"
+  ],
+  "allowed_providers": [
+    "readonly_filesystem_provider",
+    "readonly_http_get_provider",
+    "metadata_inspection_provider"
+  ],
+  "validation_evidence": {
+    "valid_contract_creation_tested": true,
+    "valid_provider_authorization_tested": true,
+    "invalid_provider_rejection_tested": true,
+    "malformed_contract_rejection_tested": true,
+    "unsupported_operation_rejection_tested": true,
+    "deterministic_operation_ordering_tested": true,
+    "immutable_attached_contract_tested": true,
+    "replay_visible_contract_evidence_tested": true,
+    "attach_to_session_validation_tested": true,
+    "duplicate_attach_rejection_tested": true,
+    "attach_to_closed_session_rejection_tested": true,
+    "mutated_contract_rejection_tested": true,
+    "deterministic_replay_reconstruction_tested": true,
+    "no_provider_execution_tested": true
+  },
+  "prohibited_capabilities": {
+    "execution_authority_introduced": false,
+    "provider_execution_introduced": false,
+    "orchestration_introduced": false,
+    "autonomous_execution_introduced": false,
+    "autonomous_runtime_introduced": false,
+    "semantic_reasoning_introduced": false,
+    "llm_integration_introduced": false,
+    "async_runtime_introduced": false,
+    "workflow_engine_introduced": false,
+    "tool_autonomy_introduced": false,
+    "retries_introduced": false,
+    "execution_scheduling_introduced": false
+  },
+  "commit_message": "feat(runtime): add governed execution contract v1"
+}
