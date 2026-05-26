@@ -1,0 +1,42 @@
+{
+  "milestone_name": "MINIMAL_REAL_LLM_PROPOSAL_FLOW_V1",
+  "bounded_llm_proposal_flow_only": true,
+  "llm_provider_execution_introduced": false,
+  "execution_authority_introduced": false,
+  "orchestration_introduced": false,
+  "autonomous_cognition_introduced": false,
+  "replay_visible_proposal_lineage": true,
+  "governance_authority_separation_preserved": true,
+  "deterministic_proposal_normalization": true,
+  "flow_components": {
+    "normalize_real_llm_proposal_input": "implemented",
+    "reconstruct_real_llm_proposal_lineage": "implemented",
+    "bounded_cognition_proposal_output": "implemented"
+  },
+  "validation_evidence": {
+    "valid_bounded_proposal_normalization_tested": true,
+    "malformed_proposal_rejection_tested": true,
+    "unauthorized_capability_proposal_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_llm_proposal_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_proposal_normalization_validation_tested": true
+  },
+  "prohibited_capabilities": {
+    "execution_authorization_introduced": false,
+    "provider_execution_introduced": false,
+    "direct_contract_attachment_introduced": false,
+    "governance_review_bypass_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "orchestration_introduced": false,
+    "async_runtime_introduced": false,
+    "autonomous_retries_introduced": false,
+    "semantic_planning_introduced": false,
+    "workflow_execution_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "runtime_autonomy_introduced": false,
+    "self_modifying_governance_introduced": false,
+    "multi_agent_coordination_introduced": false
+  },
+  "commit_message": "feat(runtime): add minimal real llm proposal flow v1"
+}
