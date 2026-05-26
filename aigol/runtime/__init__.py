@@ -10,6 +10,7 @@ from .governed_contract_router import ContractRoutingResult, reconstruct_routing
 from .governed_execution_contract import GovernedExecutionContract, create_governed_execution_contract, reconstruct_contract_lineage
 from .governed_execution_session import GovernedExecutionSession, create_governed_execution_session, reconstruct_session_lineage
 from .governance_failure_semantics import GovernanceFailureEvidence, classify_governance_failure, reconstruct_failure_lineage
+from .governance_promotion_discipline import GovernancePromotionResult, evaluate_governance_promotion, reconstruct_promotion_lineage
 from .governance_resilience_certification_gate import (
     GovernanceResilienceCertificationResult,
     certify_governance_resilience,
@@ -42,6 +43,7 @@ __all__ = [
     "GovernedExecutionContract",
     "GovernedExecutionSession",
     "GovernanceFailureEvidence",
+    "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
     "MockProvider",
     "PREPARED",
@@ -58,6 +60,7 @@ __all__ = [
     "certify_governance_resilience",
     "create_governed_execution_contract",
     "create_governed_execution_session",
+    "evaluate_governance_promotion",
     "generate_ambiguous_contract",
     "generate_authority_drift_attempt",
     "generate_long_chain_entropy_sequence",
@@ -67,6 +70,7 @@ __all__ = [
     "reconstruct_certification_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
+    "reconstruct_promotion_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",

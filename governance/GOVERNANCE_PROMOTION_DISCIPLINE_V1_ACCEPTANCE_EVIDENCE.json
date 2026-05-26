@@ -1,0 +1,42 @@
+{
+  "milestone_name": "GOVERNANCE_PROMOTION_DISCIPLINE_V1",
+  "deterministic_promotion_discipline_only": true,
+  "certification_required_before_promotion_eligibility": true,
+  "replay_visible_promotion_evidence": true,
+  "fail_closed_promotion_blocking": true,
+  "append_only_promotion_lineage": true,
+  "promotion_statuses": [
+    "ELIGIBLE",
+    "BLOCKED"
+  ],
+  "promotion_components": {
+    "governance_promotion_result": "implemented",
+    "evaluate_governance_promotion": "implemented",
+    "reconstruct_promotion_lineage": "implemented"
+  },
+  "validation_evidence": {
+    "valid_promotion_eligibility_tested": true,
+    "missing_certification_rejection_tested": true,
+    "invalid_certification_rejection_tested": true,
+    "malformed_promotion_rejection_tested": true,
+    "deterministic_promotion_evidence_tested": true,
+    "append_only_promotion_lineage_tested": true,
+    "replay_visible_promotion_reconstruction_tested": true,
+    "fail_closed_promotion_blocking_tested": true
+  },
+  "prohibited_capabilities": {
+    "automatic_promotion_introduced": false,
+    "deployment_automation_introduced": false,
+    "runtime_state_mutation_introduced": false,
+    "autonomous_governance_introduced": false,
+    "orchestration_introduced": false,
+    "provider_execution_introduced": false,
+    "async_runtime_introduced": false,
+    "llm_integration_introduced": false,
+    "adaptive_policy_learning_introduced": false,
+    "runtime_self_healing_introduced": false,
+    "self_modifying_governance_introduced": false,
+    "workflow_execution_introduced": false
+  },
+  "commit_message": "feat(runtime): add governance promotion discipline v1"
+}

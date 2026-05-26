@@ -1,0 +1,47 @@
+{
+  "artifact_type": "GOVERNANCE_PROMOTION_DISCIPLINE_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "GOVERNANCE_PROMOTION_DISCIPLINE_V1",
+  "certification_status": "CERTIFIED",
+  "promotion_components": {
+    "governance_promotion_result": "implemented",
+    "evaluate_governance_promotion": "implemented",
+    "reconstruct_promotion_lineage": "implemented"
+  },
+  "boundary_certification": {
+    "deterministic_promotion_discipline_only": true,
+    "no_autonomous_governance_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_promotion_evidence": true,
+    "fail_closed_promotion_blocking": true,
+    "append_only_promotion_lineage": true,
+    "no_automatic_promotion_introduced": true,
+    "no_deployment_automation_introduced": true,
+    "no_provider_execution_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_adaptive_policy_learning_introduced": true,
+    "no_runtime_self_healing_introduced": true,
+    "no_self_modifying_governance_introduced": true,
+    "no_llm_integration_introduced": true
+  },
+  "architectural_constraint": {
+    "governance_change_to_resilience_certification_to_promotion_eligibility": true,
+    "promotion_execution": false,
+    "deployment_action": false,
+    "provider_invocation": false,
+    "runtime_state_mutation": false,
+    "governance_self_modification": false,
+    "policy_learning": false
+  },
+  "validation_scope": {
+    "valid_promotion_eligibility_tested": true,
+    "missing_certification_rejection_tested": true,
+    "invalid_certification_rejection_tested": true,
+    "malformed_promotion_rejection_tested": true,
+    "deterministic_promotion_evidence_tested": true,
+    "append_only_promotion_lineage_tested": true,
+    "replay_visible_promotion_reconstruction_tested": true,
+    "fail_closed_promotion_blocking_tested": true
+  },
+  "commit_message": "feat(runtime): add governance promotion discipline v1"
+}
