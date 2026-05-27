@@ -32,6 +32,11 @@ from .governed_return_interpretation import (
     interpret_governed_execution_return,
     reconstruct_governed_return_lineage,
 )
+from .live_external_llm_provider import (
+    LiveExternalLLMInferenceEvidence,
+    invoke_live_external_llm_provider,
+    reconstruct_live_external_llm_inference_lineage,
+)
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
 from .minimal_real_llm_proposal_flow import normalize_real_llm_proposal_input, reconstruct_real_llm_proposal_lineage
 from .minimal_governed_execution_path import (
@@ -86,6 +91,7 @@ __all__ = [
     "GovernanceFailureEvidence",
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
+    "LiveExternalLLMInferenceEvidence",
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
     "PREPARED",
@@ -115,6 +121,7 @@ __all__ = [
     "generate_provider_escalation_attempt",
     "generate_replay_corruption_attempt",
     "interpret_governed_execution_return",
+    "invoke_live_external_llm_provider",
     "normalize_real_llm_proposal_input",
     "reconstruct_authorization_lineage",
     "reconstruct_certification_lineage",
@@ -124,6 +131,7 @@ __all__ = [
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
     "reconstruct_governed_return_lineage",
+    "reconstruct_live_external_llm_inference_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",

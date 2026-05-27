@@ -1,0 +1,47 @@
+{
+  "artifact_type": "LIVE_EXTERNAL_LLM_PROVIDER_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "LIVE_EXTERNAL_LLM_PROVIDER_V1",
+  "certification_status": "CERTIFIED",
+  "provider_components": {
+    "invoke_live_external_llm_provider": "implemented",
+    "reconstruct_live_external_llm_inference_lineage": "implemented",
+    "LiveExternalLLMInferenceEvidence": "implemented"
+  },
+  "boundary_certification": {
+    "live_external_inference_only": true,
+    "no_execution_authority_introduced": true,
+    "no_orchestration_introduced": true,
+    "replay_visible_inference_lineage": true,
+    "deterministic_fail_closed_normalization": true,
+    "governance_authority_separation_preserved": true,
+    "no_provider_execution_authority_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_governance_review_bypass_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_autonomous_cognition_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "no_streaming_introduced": true,
+    "no_retries_introduced": true,
+    "no_memory_persistence_introduced": true
+  },
+  "architectural_constraint": {
+    "attaches_real_live_cognition_inference": true,
+    "autonomous_cognition_execution": false,
+    "direct_provider_execution": false,
+    "execution_authorization": false,
+    "governance_bypass": false,
+    "runtime_mutation": false,
+    "workflow_planning": false
+  },
+  "validation_scope": {
+    "valid_live_inference_normalization_tested": true,
+    "malformed_response_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_inference_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_normalization_validation_tested": true
+  },
+  "commit_message": "feat(runtime): add live external llm provider v1"
+}
