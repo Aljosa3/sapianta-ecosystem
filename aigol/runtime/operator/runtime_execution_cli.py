@@ -42,6 +42,7 @@ VERIFY_REPLAY_COMMAND = "verify-replay"
 LIST_REPLAYS_COMMAND = "list-replays"
 LATEST_REPLAY_COMMAND = "latest-replay"
 SHOW_RUNTIME_SESSION_COMMAND = "show-runtime-session"
+RUNTIME_SUMMARY_COMMAND = "runtime-summary"
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -513,6 +514,102 @@ def render_runtime_session(result: dict[str, Any]) -> str:
     )
 
 
+def runtime_continuity_summary(*, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """Summarize operational replay continuity without executing or persisting."""
+
+    try:
+        references = _operational_ledger_references(runtime_root=runtime_root)
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return {
+            "governance": "blocked",
+            "continuity": "invalid",
+            "replay_count": 0,
+            "latest_replay": "unknown",
+            "evidence_available": False,
+            "verification_health": "failed",
+            "malformed_replay_count": 1,
+            "verified": 0,
+            "failed": 1,
+            "missing_evidence": 0,
+            "malformed": 1,
+            "fail_closed": True,
+        }
+
+    if not references:
+        return {
+            "governance": "inactive",
+            "continuity": "empty",
+            "replay_count": 0,
+            "latest_replay": "none",
+            "evidence_available": False,
+            "verification_health": "empty",
+            "malformed_replay_count": 0,
+            "verified": 0,
+            "failed": 0,
+            "missing_evidence": 0,
+            "malformed": 0,
+            "fail_closed": False,
+        }
+
+    verified = 0
+    failed = 0
+    missing_evidence = 0
+    malformed = 0
+    for replay_reference in references:
+        try:
+            verification = verify_governed_return(replay_identity=replay_reference, runtime_root=runtime_root)
+            inspection = run_replay_inspection(replay_reference=replay_reference, runtime_root=runtime_root)
+            if verification.get("status") == "VERIFY_PASSED" and inspection["fail_closed"] is False:
+                verified += 1
+                continue
+            failed += 1
+            if verification.get("missing_evidence"):
+                missing_evidence += 1
+            else:
+                malformed += 1
+        except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+            failed += 1
+            malformed += 1
+
+    healthy = failed == 0
+    latest = latest_runtime_replay(runtime_root=runtime_root) if healthy else None
+    return {
+        "governance": "active" if healthy else "blocked",
+        "continuity": "valid" if healthy else "invalid",
+        "replay_count": len(references),
+        "latest_replay": latest["replay_reference"] if latest is not None else references[-1],
+        "evidence_available": healthy,
+        "verification_health": "healthy" if healthy else "failed",
+        "malformed_replay_count": malformed,
+        "verified": verified,
+        "failed": failed,
+        "missing_evidence": missing_evidence,
+        "malformed": malformed,
+        "fail_closed": not healthy,
+    }
+
+
+def render_runtime_continuity_summary(result: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "[RUNTIME SUMMARY]",
+            f"governance: {result['governance']}",
+            f"continuity: {result['continuity']}",
+            f"replay_count: {result['replay_count']}",
+            f"latest_replay: {result['latest_replay']}",
+            f"evidence_available: {str(result['evidence_available']).lower()}",
+            f"verification_health: {result['verification_health']}",
+            f"malformed_replay_count: {result['malformed_replay_count']}",
+            "",
+            "[REPLAY HEALTH]",
+            f"verified: {result['verified']}",
+            f"failed: {result['failed']}",
+            f"missing_evidence: {result['missing_evidence']}",
+            f"malformed: {result['malformed']}",
+        ]
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Readonly governed operational execution")
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
@@ -528,6 +625,7 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands.add_parser(LATEST_REPLAY_COMMAND, help="show the latest persisted operational runtime replay")
     show_session = subcommands.add_parser(SHOW_RUNTIME_SESSION_COMMAND, help="show one persisted operational runtime session")
     show_session.add_argument("replay_reference")
+    subcommands.add_parser(RUNTIME_SUMMARY_COMMAND, help="summarize operational runtime replay continuity")
     return parser
 
 
@@ -558,12 +656,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == LATEST_REPLAY_COMMAND:
         result = latest_runtime_replay(runtime_root=args.runtime_root or None)
         print(render_latest_replay(result))
-    else:
+    elif args.command == SHOW_RUNTIME_SESSION_COMMAND:
         result = show_runtime_session(
             replay_reference=args.replay_reference,
             runtime_root=args.runtime_root or None,
         )
         print(render_runtime_session(result))
+    else:
+        result = runtime_continuity_summary(runtime_root=args.runtime_root or None)
+        print(render_runtime_continuity_summary(result))
     return 0 if result["fail_closed"] is False else 2
 
 
@@ -578,6 +679,7 @@ __all__ = [
     "LATEST_REPLAY_COMMAND",
     "LIST_REPLAYS_COMMAND",
     "OPERATION_TYPE",
+    "RUNTIME_SUMMARY_COMMAND",
     "SHOW_RUNTIME_SESSION_COMMAND",
     "VERIFY_REPLAY_COMMAND",
     "latest_runtime_replay",
@@ -588,9 +690,11 @@ __all__ = [
     "render_replay_inspection",
     "render_replay_verification",
     "render_runtime_session",
+    "render_runtime_continuity_summary",
     "render_runtime_inspection",
     "run_replay_inspection",
     "run_replay_verification",
     "run_runtime_inspection",
+    "runtime_continuity_summary",
     "show_runtime_session",
 ]
