@@ -1,0 +1,53 @@
+{
+  "milestone_name": "FIRST_REAL_OPERATOR_USAGE_V1",
+  "operational_operator_usage_only": true,
+  "minimal_operator_request_runner": true,
+  "real_readonly_operational_request_flow": true,
+  "replay_visible_operator_evidence": true,
+  "governed_readonly_return_handling": true,
+  "fail_closed_malformed_cognition_handling": true,
+  "existing_real_runtime_activation_reused": true,
+  "existing_real_openai_api_invocation_reused": true,
+  "existing_governed_cognition_runtime_reused": true,
+  "existing_readonly_provider_reused": true,
+  "new_providers_added": false,
+  "new_runtime_architecture_introduced": false,
+  "capability_expansion_introduced": false,
+  "orchestration_introduced": false,
+  "autonomous_execution_introduced": false,
+  "runtime_mutation_introduced": false,
+  "provider_mutation_introduced": false,
+  "write_capability_introduced": false,
+  "replay_visible_operational_continuity_preserved": true,
+  "deterministic_fail_closed_containment_preserved": true,
+  "readonly_bounded_runtime_preserved": true,
+  "operator_usage_components": {
+    "run_first_real_operator_usage": "implemented",
+    "reconstruct_first_real_operator_usage_lineage": "implemented",
+    "FirstRealOperatorUsageEvidence": "implemented"
+  },
+  "validation_evidence": {
+    "successful_readonly_operator_request_tested": true,
+    "malformed_cognition_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "replay_continuity_preservation_tested": true,
+    "deterministic_evidence_generation_tested": true,
+    "fail_closed_execution_behavior_tested": true,
+    "external_network_calls_required_by_tests": false
+  },
+  "prohibited_capabilities": {
+    "orchestration_introduced": false,
+    "autonomous_execution_introduced": false,
+    "retries_introduced": false,
+    "async_runtime_introduced": false,
+    "write_execution_introduced": false,
+    "shell_execution_introduced": false,
+    "subprocess_execution_introduced": false,
+    "workflow_planning_introduced": false,
+    "multi_agent_behavior_introduced": false,
+    "adaptive_learning_introduced": false,
+    "runtime_mutation_introduced": false,
+    "provider_mutation_introduced": false
+  },
+  "commit_message": "feat(runtime): add first real operator usage v1"
+}

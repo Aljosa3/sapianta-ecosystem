@@ -37,6 +37,11 @@ from .first_readonly_domain_experiment import (
     reconstruct_readonly_domain_experiment_lineage,
     run_governance_runtime_inspector_experiment,
 )
+from .first_real_operator_usage import (
+    FirstRealOperatorUsageEvidence,
+    reconstruct_first_real_operator_usage_lineage,
+    run_first_real_operator_usage,
+)
 from .live_external_llm_provider import (
     LiveExternalLLMInferenceEvidence,
     invoke_live_external_llm_provider,
@@ -125,6 +130,7 @@ __all__ = [
     "CREATED",
     "DISPATCHED",
     "FailClosedRuntimeError",
+    "FirstRealOperatorUsageEvidence",
     "GovernedReturnArtifact",
     "GovernedExecutionContract",
     "GovernedExecutionSession",
@@ -186,6 +192,7 @@ __all__ = [
     "reconstruct_cognition_lineage",
     "reconstruct_cognition_review_lineage",
     "reconstruct_external_llm_proposal_lineage",
+    "reconstruct_first_real_operator_usage_lineage",
     "reconstruct_contract_lineage",
     "reconstruct_failure_lineage",
     "reconstruct_governed_return_lineage",
@@ -213,6 +220,7 @@ __all__ = [
     "run_real_governed_execution_resilience_suite",
     "run_minimal_real_runtime_demo",
     "run_governance_runtime_inspector_experiment",
+    "run_first_real_operator_usage",
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",
