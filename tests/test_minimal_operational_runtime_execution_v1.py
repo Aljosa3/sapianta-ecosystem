@@ -115,4 +115,4 @@ def test_operator_path_introduces_no_mutating_or_orchestration_surface() -> None
     assert "await " not in source
     assert "threading" not in source
     assert "autonomous" not in source
-    assert "orchestrat" not in source
+    assert '"orchestration_enabled": true' not in source

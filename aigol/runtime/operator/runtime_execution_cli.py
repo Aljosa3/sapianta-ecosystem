@@ -43,6 +43,17 @@ LIST_REPLAYS_COMMAND = "list-replays"
 LATEST_REPLAY_COMMAND = "latest-replay"
 SHOW_RUNTIME_SESSION_COMMAND = "show-runtime-session"
 RUNTIME_SUMMARY_COMMAND = "runtime-summary"
+INSPECT_RUNTIME_CONTRACT_COMMAND = "inspect-runtime-contract"
+RUNTIME_CONTRACT_COMMANDS = (
+    OPERATION_TYPE,
+    INSPECT_REPLAY_COMMAND,
+    VERIFY_REPLAY_COMMAND,
+    LIST_REPLAYS_COMMAND,
+    LATEST_REPLAY_COMMAND,
+    SHOW_RUNTIME_SESSION_COMMAND,
+    RUNTIME_SUMMARY_COMMAND,
+    INSPECT_RUNTIME_CONTRACT_COMMAND,
+)
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -610,6 +621,106 @@ def render_runtime_continuity_summary(result: dict[str, Any]) -> str:
     )
 
 
+def _failed_runtime_contract() -> dict[str, Any]:
+    return {
+        "runtime_surface": "invalid",
+        "governance": "blocked",
+        "readonly_runtime": False,
+        "fail_closed_enforced": False,
+        "governed_return_schema": "invalid",
+        "replay_contract_version": "invalid",
+        "verification_contract": "missing",
+        "continuity_validation": "disabled",
+        "evidence_validation": "disabled",
+        "commands": [],
+        "readonly_operations_only": False,
+        "runtime_mutation_allowed": False,
+        "replay_execution_allowed": False,
+        "orchestration_enabled": False,
+        "fail_closed": True,
+    }
+
+
+def _runtime_contract_state() -> dict[str, Any]:
+    return {
+        "runtime_surface": "operational",
+        "governance": "active",
+        "readonly_runtime": True,
+        "fail_closed_enforced": True,
+        "governed_return_schema": SCHEMA_VERSION,
+        "replay_contract_version": SCHEMA_VERSION,
+        "verification_contract": "active" if callable(verify_governed_return) else "missing",
+        "continuity_validation": "enabled",
+        "evidence_validation": "enabled",
+        "commands": list(RUNTIME_CONTRACT_COMMANDS),
+        "readonly_operations_only": True,
+        "runtime_mutation_allowed": False,
+        "replay_execution_allowed": False,
+        "orchestration_enabled": False,
+    }
+
+
+def _validate_runtime_contract_state(state: dict[str, Any]) -> dict[str, Any]:
+    expected = {
+        "runtime_surface": "operational",
+        "governance": "active",
+        "readonly_runtime": True,
+        "fail_closed_enforced": True,
+        "governed_return_schema": SCHEMA_VERSION,
+        "replay_contract_version": SCHEMA_VERSION,
+        "verification_contract": "active",
+        "continuity_validation": "enabled",
+        "evidence_validation": "enabled",
+        "commands": list(RUNTIME_CONTRACT_COMMANDS),
+        "readonly_operations_only": True,
+        "runtime_mutation_allowed": False,
+        "replay_execution_allowed": False,
+        "orchestration_enabled": False,
+    }
+    if not callable(verify_governed_return) or not isinstance(state, dict) or state != expected:
+        return _failed_runtime_contract()
+    return {**state, "fail_closed": False}
+
+
+def inspect_runtime_contract() -> dict[str, Any]:
+    """Describe the active readonly runtime contract without executing or persisting."""
+
+    return _validate_runtime_contract_state(_runtime_contract_state())
+
+
+def render_runtime_contract(result: dict[str, Any]) -> str:
+    lines = [
+        "[RUNTIME CONTRACT]",
+        f"runtime_surface: {result['runtime_surface']}",
+        f"governance: {result['governance']}",
+        f"readonly_runtime: {str(result['readonly_runtime']).lower()}",
+        f"fail_closed: {str(result['fail_closed_enforced']).lower()}",
+        "",
+        "[SCHEMA]",
+        f"governed_return_schema: {result['governed_return_schema']}",
+        f"replay_contract_version: {result['replay_contract_version']}",
+        "",
+        "[VERIFICATION]",
+        f"verification_contract: {result['verification_contract']}",
+        f"continuity_validation: {result['continuity_validation']}",
+        f"evidence_validation: {result['evidence_validation']}",
+        "",
+        "[COMMANDS]",
+    ]
+    lines.extend(result["commands"])
+    lines.extend(
+        [
+            "",
+            "[GUARANTEES]",
+            f"readonly_operations_only: {str(result['readonly_operations_only']).lower()}",
+            f"runtime_mutation_allowed: {str(result['runtime_mutation_allowed']).lower()}",
+            f"replay_execution_allowed: {str(result['replay_execution_allowed']).lower()}",
+            f"orchestration_enabled: {str(result['orchestration_enabled']).lower()}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Readonly governed operational execution")
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
@@ -626,6 +737,7 @@ def build_parser() -> argparse.ArgumentParser:
     show_session = subcommands.add_parser(SHOW_RUNTIME_SESSION_COMMAND, help="show one persisted operational runtime session")
     show_session.add_argument("replay_reference")
     subcommands.add_parser(RUNTIME_SUMMARY_COMMAND, help="summarize operational runtime replay continuity")
+    subcommands.add_parser(INSPECT_RUNTIME_CONTRACT_COMMAND, help="show the readonly runtime contract surface")
     return parser
 
 
@@ -662,9 +774,14 @@ def main(argv: list[str] | None = None) -> int:
             runtime_root=args.runtime_root or None,
         )
         print(render_runtime_session(result))
-    else:
+    elif args.command == RUNTIME_SUMMARY_COMMAND:
         result = runtime_continuity_summary(runtime_root=args.runtime_root or None)
         print(render_runtime_continuity_summary(result))
+    elif args.command == INSPECT_RUNTIME_CONTRACT_COMMAND:
+        result = inspect_runtime_contract()
+        print(render_runtime_contract(result))
+    else:
+        return 2
     return 0 if result["fail_closed"] is False else 2
 
 
@@ -675,21 +792,25 @@ if __name__ == "__main__":
 __all__ = [
     "DEFAULT_OPERATION_ID",
     "DEFAULT_TIMESTAMP",
+    "INSPECT_RUNTIME_CONTRACT_COMMAND",
     "INSPECT_REPLAY_COMMAND",
     "LATEST_REPLAY_COMMAND",
     "LIST_REPLAYS_COMMAND",
     "OPERATION_TYPE",
     "RUNTIME_SUMMARY_COMMAND",
+    "RUNTIME_CONTRACT_COMMANDS",
     "SHOW_RUNTIME_SESSION_COMMAND",
     "VERIFY_REPLAY_COMMAND",
     "latest_runtime_replay",
     "list_runtime_replays",
+    "inspect_runtime_contract",
     "main",
     "render_latest_replay",
     "render_replay_listing",
     "render_replay_inspection",
     "render_replay_verification",
     "render_runtime_session",
+    "render_runtime_contract",
     "render_runtime_continuity_summary",
     "render_runtime_inspection",
     "run_replay_inspection",
