@@ -37,6 +37,11 @@ from .live_external_llm_provider import (
     invoke_live_external_llm_provider,
     reconstruct_live_external_llm_inference_lineage,
 )
+from .live_semantic_pressure_validation import (
+    LiveSemanticPressureValidationEvidence,
+    reconstruct_live_semantic_pressure_lineage,
+    validate_live_semantic_pressure,
+)
 from .models import FailClosedRuntimeError, GovernedReturnArtifact, ProviderResponse, RuntimePackage, replay_hash
 from .minimal_real_llm_proposal_flow import normalize_real_llm_proposal_input, reconstruct_real_llm_proposal_lineage
 from .minimal_governed_execution_path import (
@@ -92,6 +97,7 @@ __all__ = [
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
     "LiveExternalLLMInferenceEvidence",
+    "LiveSemanticPressureValidationEvidence",
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
     "PREPARED",
@@ -132,6 +138,7 @@ __all__ = [
     "reconstruct_failure_lineage",
     "reconstruct_governed_return_lineage",
     "reconstruct_live_external_llm_inference_lineage",
+    "reconstruct_live_semantic_pressure_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",
@@ -147,5 +154,6 @@ __all__ = [
     "run_real_governed_execution_resilience_suite",
     "translate_bounded_proposal",
     "validate_production_isolation",
+    "validate_live_semantic_pressure",
     "validate_session_lineage_replay",
 ]
