@@ -108,6 +108,11 @@ from .real_openai_api_invocation import (
     invoke_real_openai_api,
     reconstruct_real_openai_api_invocation_lineage,
 )
+from .real_operator_runtime_experiments import (
+    RealOperatorRuntimeExperimentsEvidence,
+    reconstruct_real_operator_runtime_experiments_lineage,
+    run_real_operator_runtime_experiments,
+)
 from .real_runtime_activation import (
     RealRuntimeActivationEvidence,
     activate_real_runtime,
@@ -165,6 +170,7 @@ __all__ = [
     "ProductionIsolationEvidence",
     "ReadonlyDomainExperimentEvidence",
     "RealGovernedExecutionResilienceEvidence",
+    "RealOperatorRuntimeExperimentsEvidence",
     "RealRuntimeActivationEvidence",
     "RETURNED",
     "RUNNING",
@@ -216,6 +222,7 @@ __all__ = [
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_real_openai_api_invocation_lineage",
+    "reconstruct_real_operator_runtime_experiments_lineage",
     "reconstruct_real_runtime_activation_lineage",
     "reconstruct_minimal_governed_execution_lineage",
     "reconstruct_minimal_real_runtime_demo_lineage",
@@ -236,6 +243,7 @@ __all__ = [
     "run_governance_runtime_inspector_experiment",
     "run_first_real_operator_usage",
     "run_operator_interaction_loop",
+    "run_real_operator_runtime_experiments",
     "run_runtime_operator_cli",
     "translate_bounded_proposal",
     "validate_production_isolation",

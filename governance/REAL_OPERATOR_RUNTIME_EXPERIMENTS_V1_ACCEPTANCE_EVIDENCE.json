@@ -1,0 +1,49 @@
+{
+  "artifact": "REAL_OPERATOR_RUNTIME_EXPERIMENTS_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "created_at": "2026-05-27T00:24:00+00:00",
+  "scope": "readonly operator runtime experimentation over existing governed CLI",
+  "implemented_files": [
+    "aigol/runtime/real_operator_runtime_experiments.py",
+    "aigol/runtime/__init__.py",
+    "tests/test_real_operator_runtime_experiments_v1.py",
+    "governance/REAL_OPERATOR_RUNTIME_EXPERIMENTS_V1.md",
+    "governance/REAL_OPERATOR_RUNTIME_EXPERIMENTS_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/REAL_OPERATOR_RUNTIME_EXPERIMENTS_V1_CERTIFICATION.json"
+  ],
+  "runtime_surface": {
+    "entrypoint": "run_real_operator_runtime_experiments",
+    "reuses": [
+      "run_runtime_operator_cli",
+      "reconstruct_runtime_operator_cli_lineage",
+      "existing governed cognition runtime",
+      "existing readonly providers"
+    ],
+    "allowed_capabilities": [
+      "runtime metadata inspection",
+      "readonly filesystem inspection",
+      "readonly HTTP GET"
+    ],
+    "new_providers_added": false,
+    "new_capabilities_added": false
+  },
+  "acceptance_checks": {
+    "repeated_readonly_operator_experiments": true,
+    "replay_continuity_preservation": true,
+    "malformed_cognition_rejection": true,
+    "unauthorized_capability_rejection": true,
+    "deterministic_evidence_generation": true,
+    "fail_closed_execution_behavior": true,
+    "append_only_experiment_lineage": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_provider_mutation_introduced": true,
+    "no_write_capability_introduced": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_runtime_operator_cli_v1.py tests/test_real_operator_runtime_experiments_v1.py",
+    "python -m py_compile aigol/runtime/operator_cli.py aigol/runtime/real_operator_runtime_experiments.py aigol/runtime/__init__.py",
+    "git diff --check"
+  ]
+}
