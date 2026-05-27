@@ -1,0 +1,47 @@
+{
+  "artifact": "RUNTIME_OPERATOR_CLI_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "created_at": "2026-05-27T00:23:00+00:00",
+  "scope": "minimal operator CLI for existing readonly governed runtime",
+  "implemented_files": [
+    "aigol/runtime/operator_cli.py",
+    "aigol/runtime/__init__.py",
+    "tests/test_runtime_operator_cli_v1.py",
+    "governance/RUNTIME_OPERATOR_CLI_V1.md",
+    "governance/RUNTIME_OPERATOR_CLI_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/RUNTIME_OPERATOR_CLI_V1_CERTIFICATION.json"
+  ],
+  "runtime_surface": {
+    "entrypoint": "python -m aigol.runtime.operator_cli",
+    "public_api": [
+      "RuntimeOperatorCLIEvidence",
+      "run_runtime_operator_cli",
+      "reconstruct_runtime_operator_cli_lineage"
+    ],
+    "allowed_capabilities": [
+      "runtime metadata inspection",
+      "readonly filesystem inspection",
+      "readonly HTTP GET"
+    ],
+    "new_providers_added": false,
+    "new_capabilities_added": false
+  },
+  "acceptance_checks": {
+    "successful_readonly_operator_cli_request": true,
+    "malformed_cognition_rejection": true,
+    "unauthorized_capability_rejection": true,
+    "replay_continuity_preservation": true,
+    "deterministic_evidence_generation": true,
+    "fail_closed_execution_behavior": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_provider_mutation_introduced": true,
+    "no_write_capability_introduced": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_operator_interaction_loop_v1.py tests/test_runtime_operator_cli_v1.py",
+    "python -m py_compile aigol/runtime/operator_interaction_loop.py aigol/runtime/operator_cli.py aigol/runtime/__init__.py",
+    "git diff --check"
+  ]
+}

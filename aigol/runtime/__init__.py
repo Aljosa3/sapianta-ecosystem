@@ -87,6 +87,11 @@ from .operator_interaction_loop import (
     reconstruct_operator_interaction_loop_lineage,
     run_operator_interaction_loop,
 )
+from .operator_cli import (
+    RuntimeOperatorCLIEvidence,
+    reconstruct_runtime_operator_cli_lineage,
+    run_runtime_operator_cli,
+)
 from .production_isolation_foundation import (
     ProductionIsolationEvidence,
     reconstruct_production_isolation_lineage,
@@ -165,6 +170,7 @@ __all__ = [
     "RUNNING",
     "RuntimeEngine",
     "RuntimePackage",
+    "RuntimeOperatorCLIEvidence",
     "RealOpenAIAPIInvocationEvidence",
     "SyntheticCognitionPressureArtifact",
     "WorkerLifecycle",
@@ -218,6 +224,7 @@ __all__ = [
     "reconstruct_real_governed_execution_resilience_lineage",
     "reconstruct_readonly_domain_experiment_lineage",
     "reconstruct_routing_lineage",
+    "reconstruct_runtime_operator_cli_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",
     "reconstruct_translation_lineage",
@@ -229,6 +236,7 @@ __all__ = [
     "run_governance_runtime_inspector_experiment",
     "run_first_real_operator_usage",
     "run_operator_interaction_loop",
+    "run_runtime_operator_cli",
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",

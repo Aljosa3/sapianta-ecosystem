@@ -1,0 +1,32 @@
+{
+  "artifact": "RUNTIME_OPERATOR_CLI_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "created_at": "2026-05-27T00:23:00+00:00",
+  "certifies": {
+    "minimal_operator_cli_only": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "replay_visible_operational_continuity_preserved": true,
+    "deterministic_fail_closed_containment_preserved": true,
+    "readonly_bounded_runtime_preserved": true,
+    "governance_authority_separation_preserved": true,
+    "no_new_provider_added": true,
+    "no_write_capability_introduced": true,
+    "no_shell_or_subprocess_execution_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_retry_behavior_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_provider_mutation_introduced": true
+  },
+  "evidence": {
+    "cli_evidence_model": "RuntimeOperatorCLIEvidence",
+    "allowed_statuses": [
+      "COMPLETED",
+      "REJECTED"
+    ],
+    "lineage_reconstruction": "reconstruct_runtime_operator_cli_lineage",
+    "runtime_invocation": "run_runtime_operator_cli",
+    "cli_entrypoint": "python -m aigol.runtime.operator_cli"
+  },
+  "boundary_statement": "RUNTIME_OPERATOR_CLI_V1 exposes a minimal operator command line surface over the existing readonly governed runtime and does not introduce new runtime architecture or execution authority."
+}
