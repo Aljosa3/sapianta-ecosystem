@@ -9,7 +9,7 @@ import sys
 from types import SimpleNamespace
 
 from aigol.runtime.operator_cli import (
-    CLI_COMPLETED,
+    CLI_SUCCESS,
     CLI_REJECTED,
     RuntimeOperatorCLIEvidence,
     main,
@@ -100,7 +100,7 @@ def test_successful_readonly_operator_cli_request(monkeypatch, capsys) -> None:
     output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "status=COMPLETED" in output
+    assert "status=SUCCESS" in output
     assert "return=operation=inspect_runtime" in output
     assert "cli_evidence_hash=sha256:" in output
     assert "operator_usage_evidence_hash=sha256:" in output
@@ -157,7 +157,7 @@ def test_deterministic_evidence_generation(monkeypatch) -> None:
     artifact = result["cli_evidence"].to_dict()
     reconstructed = RuntimeOperatorCLIEvidence.from_dict(artifact).to_dict()
 
-    assert result["cli_evidence"].cli_status == CLI_COMPLETED
+    assert result["cli_evidence"].cli_status == CLI_SUCCESS
     assert artifact == reconstructed
     without_hash = deepcopy(artifact)
     evidence_hash = without_hash.pop("evidence_hash")

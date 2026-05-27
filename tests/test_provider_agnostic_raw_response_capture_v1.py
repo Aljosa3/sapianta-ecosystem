@@ -20,7 +20,7 @@ from aigol.runtime.live_openai_runtime_connector import (
 from aigol.runtime.live_runtime_usage_validation import validate_live_runtime_usage
 from aigol.runtime.live_cognition_rejection_analysis import (
     STAGE_NONE,
-    STAGE_PROPOSAL_NORMALIZATION,
+    STAGE_BOUNDED_EXTRACTION,
     analyze_live_cognition_rejection,
 )
 from aigol.runtime.models import FailClosedRuntimeError
@@ -315,7 +315,7 @@ def test_rejection_analysis_surfaces_raw_response_on_failed_normalization(monkey
     )
     evidence = analysis["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
+    assert evidence.rejection_stage == STAGE_BOUNDED_EXTRACTION
     assert evidence.raw_provider_response_present is True
     assert evidence.raw_provider_response_provider_name == "openai"
     assert evidence.raw_provider_response_model_name == "gpt-5.5"

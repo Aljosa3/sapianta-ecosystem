@@ -12,7 +12,7 @@ from aigol.runtime.live_cognition_rejection_analysis import (
     ANALYSIS_MODE,
     LiveCognitionRejectionAnalysisEvidence,
     STAGE_NONE,
-    STAGE_PROPOSAL_NORMALIZATION,
+    STAGE_BOUNDED_EXTRACTION,
     STAGE_USAGE_INPUT,
     analyze_live_cognition_rejection,
     reconstruct_live_cognition_rejection_analysis_lineage,
@@ -110,7 +110,7 @@ def test_malformed_cognition_rejection_is_attributed_to_normalization_stage(monk
     result = _analyze(monkeypatch, ["not-json"])
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
+    assert evidence.rejection_stage == STAGE_BOUNDED_EXTRACTION
     assert evidence.usage_status == "REJECTED"
     assert evidence.provider_connector_status == "REJECTED"
     assert evidence.raw_provider_response_present is True
@@ -129,7 +129,7 @@ def test_unauthorized_capability_rejection_is_attributed_to_normalization_stage(
     )
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
+    assert evidence.rejection_stage == STAGE_BOUNDED_EXTRACTION
     assert evidence.usage_status == "REJECTED"
     assert evidence.provider_connector_status == "REJECTED"
     assert evidence.raw_provider_response_present is True
@@ -143,7 +143,7 @@ def test_invalid_contract_reference_is_attributed_to_normalization_stage(monkeyp
     )
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
+    assert evidence.rejection_stage == STAGE_BOUNDED_EXTRACTION
     assert evidence.usage_status == "REJECTED"
     assert evidence.provider_connector_status == "REJECTED"
     assert evidence.raw_provider_response_present is True
@@ -201,7 +201,7 @@ def test_rendered_summary_surfaces_inspection_fields(monkeypatch) -> None:
     result = _analyze(monkeypatch, ["not-json"])
     summary = render_rejection_analysis_summary(result["analysis_evidence"])
 
-    assert "rejection_stage=PROPOSAL_NORMALIZATION" in summary
+    assert "rejection_stage=BOUNDED_EXTRACTION" in summary
     assert "provider_connector_status=REJECTED" in summary
     assert "raw_provider_response_present=True" in summary
     assert "raw_provider_response_provider_name=openai" in summary
@@ -225,9 +225,9 @@ def test_cli_surface_runs_inspection_for_rejected_prompt(monkeypatch) -> None:
     evidence = result["analysis"]["analysis_evidence"]
 
     assert result["exit_code"] == 1
-    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
+    assert evidence.rejection_stage == STAGE_BOUNDED_EXTRACTION
     assert evidence.analysis_mode == ANALYSIS_MODE
-    assert "rejection_stage=PROPOSAL_NORMALIZATION" in result["rendered_output"]
+    assert "rejection_stage=BOUNDED_EXTRACTION" in result["rendered_output"]
     assert "raw_provider_response_present=True" in result["rendered_output"]
 
 

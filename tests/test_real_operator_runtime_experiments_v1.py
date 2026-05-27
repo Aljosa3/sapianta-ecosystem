@@ -105,7 +105,7 @@ def test_repeated_readonly_operator_experiments(monkeypatch) -> None:
     assert evidence.completed_count == 4
     assert evidence.rejected_count == 0
     assert len(captured["calls"]) == 4
-    assert all(record["cli_evidence"].cli_status == "COMPLETED" for record in result["cli_records"])
+    assert all(record["cli_evidence"].cli_status == "SUCCESS" for record in result["cli_records"])
 
 
 def test_replay_continuity_preservation(monkeypatch) -> None:

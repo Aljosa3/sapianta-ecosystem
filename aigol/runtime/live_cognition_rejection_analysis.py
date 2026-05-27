@@ -12,6 +12,12 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
+from aigol.runtime.bounded_extraction_layer import (
+    BoundedExtractionEvidence,
+    NORMALIZATION_FAILURE_NONE,
+    NORMALIZED as EXTRACTION_NORMALIZED,
+    SCHEMA_FAILURE_NONE,
+)
 from aigol.runtime.bounded_llm_attachment_architecture import BoundedCognitionProposal
 from aigol.runtime.governed_cognition_review_gate import (
     REVIEWED,
@@ -45,6 +51,7 @@ from aigol.runtime.transport.serialization import canonical_serialize, replay_ha
 ANALYSIS_MODE = "READONLY_REJECTION_INSPECTION"
 STAGE_NONE = "NONE"
 STAGE_RAW_PROVIDER_RESPONSE = "RAW_PROVIDER_RESPONSE"
+STAGE_BOUNDED_EXTRACTION = "BOUNDED_EXTRACTION"
 STAGE_PROPOSAL_NORMALIZATION = "PROPOSAL_NORMALIZATION"
 STAGE_OPENAI_INVOCATION = STAGE_PROPOSAL_NORMALIZATION  # alias kept only for incoming evidence diffs
 STAGE_GOVERNED_EXECUTION = "GOVERNED_EXECUTION"
@@ -60,6 +67,7 @@ ALLOWED_REJECTION_STAGES = frozenset(
         STAGE_NONE,
         STAGE_USAGE_INPUT,
         STAGE_RAW_PROVIDER_RESPONSE,
+        STAGE_BOUNDED_EXTRACTION,
         STAGE_PROPOSAL_NORMALIZATION,
         STAGE_GOVERNED_EXECUTION,
         STAGE_COGNITION_REVIEW,
@@ -108,6 +116,12 @@ def _analysis_hash_input(evidence: "LiveCognitionRejectionAnalysisEvidence") -> 
         "raw_provider_response_evidence_hash": evidence.raw_provider_response_evidence_hash,
         "raw_provider_response_normalization_status": evidence.raw_provider_response_normalization_status,
         "raw_provider_response_normalization_reason": evidence.raw_provider_response_normalization_reason,
+        "bounded_extraction_status": evidence.bounded_extraction_status,
+        "bounded_extraction_stage": evidence.bounded_extraction_stage,
+        "bounded_extraction_reason": evidence.bounded_extraction_reason,
+        "bounded_extraction_evidence_hash": evidence.bounded_extraction_evidence_hash,
+        "normalization_failure_type": evidence.normalization_failure_type,
+        "schema_failure_type": evidence.schema_failure_type,
         "normalized_proposal_present": evidence.normalized_proposal_present,
         "normalized_proposal_hash": evidence.normalized_proposal_hash,
         "cognition_review_decision": _plain(evidence.cognition_review_decision),
@@ -139,6 +153,12 @@ class LiveCognitionRejectionAnalysisEvidence:
     raw_provider_response_evidence_hash: str
     raw_provider_response_normalization_status: str
     raw_provider_response_normalization_reason: str
+    bounded_extraction_status: str
+    bounded_extraction_stage: str
+    bounded_extraction_reason: str
+    bounded_extraction_evidence_hash: str
+    normalization_failure_type: str
+    schema_failure_type: str
     normalized_proposal_present: bool
     normalized_proposal_hash: str
     cognition_review_decision: MappingProxyType | dict[str, Any]
@@ -156,6 +176,11 @@ class LiveCognitionRejectionAnalysisEvidence:
         _require_string(self.analysis_mode, "analysis_mode")
         _require_string(self.rejection_reason, "rejection_reason")
         _require_string(self.provider_connector_status, "provider_connector_status")
+        _require_string(self.bounded_extraction_status, "bounded_extraction_status")
+        _require_string(self.bounded_extraction_stage, "bounded_extraction_stage")
+        _require_string(self.bounded_extraction_reason, "bounded_extraction_reason")
+        _require_string(self.normalization_failure_type, "normalization_failure_type")
+        _require_string(self.schema_failure_type, "schema_failure_type")
         _require_string(self.created_at, "created_at")
         if self.analysis_mode != ANALYSIS_MODE:
             raise FailClosedRuntimeError("rejection analysis mode is not allowed")
@@ -203,6 +228,12 @@ class LiveCognitionRejectionAnalysisEvidence:
             "raw_provider_response_evidence_hash": self.raw_provider_response_evidence_hash,
             "raw_provider_response_normalization_status": self.raw_provider_response_normalization_status,
             "raw_provider_response_normalization_reason": self.raw_provider_response_normalization_reason,
+            "bounded_extraction_status": self.bounded_extraction_status,
+            "bounded_extraction_stage": self.bounded_extraction_stage,
+            "bounded_extraction_reason": self.bounded_extraction_reason,
+            "bounded_extraction_evidence_hash": self.bounded_extraction_evidence_hash,
+            "normalization_failure_type": self.normalization_failure_type,
+            "schema_failure_type": self.schema_failure_type,
             "normalized_proposal_present": self.normalized_proposal_present,
             "normalized_proposal_hash": self.normalized_proposal_hash,
             "cognition_review_decision": _plain(self.cognition_review_decision),
@@ -235,6 +266,12 @@ class LiveCognitionRejectionAnalysisEvidence:
             "raw_provider_response_evidence_hash",
             "raw_provider_response_normalization_status",
             "raw_provider_response_normalization_reason",
+            "bounded_extraction_status",
+            "bounded_extraction_stage",
+            "bounded_extraction_reason",
+            "bounded_extraction_evidence_hash",
+            "normalization_failure_type",
+            "schema_failure_type",
             "normalized_proposal_present",
             "normalized_proposal_hash",
             "cognition_review_decision",
@@ -272,6 +309,7 @@ def analyze_live_cognition_rejection(
             return _fail_closed_analysis(analysis_id, created_at, "usage_record usage_status is not allowed")
         connector_status, connector_reason = _connector_view(usage_record)
         raw_view = _raw_provider_response_view(usage_record)
+        extraction_view = _bounded_extraction_view(usage_record)
         normalized_proposal = _normalized_proposal(usage_record)
         review_view = _review_view(usage_record)
         authorization_view = _authorization_view(usage_record)
@@ -284,6 +322,7 @@ def analyze_live_cognition_rejection(
             connector_status=connector_status,
             connector_reason=connector_reason,
             raw_view=raw_view,
+            extraction_view=extraction_view,
             review_view=review_view,
             authorization_view=authorization_view,
             routing_view=routing_view,
@@ -307,6 +346,12 @@ def analyze_live_cognition_rejection(
             raw_provider_response_evidence_hash=raw_view["evidence_hash"],
             raw_provider_response_normalization_status=raw_view["normalization_status"],
             raw_provider_response_normalization_reason=raw_view["normalization_reason"],
+            bounded_extraction_status=extraction_view["status"],
+            bounded_extraction_stage=extraction_view["stage"],
+            bounded_extraction_reason=extraction_view["reason"],
+            bounded_extraction_evidence_hash=extraction_view["evidence_hash"],
+            normalization_failure_type=extraction_view["normalization_failure_type"],
+            schema_failure_type=extraction_view["schema_failure_type"],
             normalized_proposal_present=normalized_proposal is not None,
             normalized_proposal_hash=replay_hash(normalized_proposal) if normalized_proposal is not None else "",
             cognition_review_decision=review_view,
@@ -320,6 +365,7 @@ def analyze_live_cognition_rejection(
         return {
             "analysis_evidence": evidence,
             "raw_provider_response_evidence": raw_view["evidence_object"],
+            "bounded_extraction_evidence": extraction_view["evidence_object"],
             "normalized_proposal": normalized_proposal,
             "analysis_lineage": reconstruct_live_cognition_rejection_analysis_lineage([evidence]),
             "governance_authority_separated": True,
@@ -401,6 +447,12 @@ def render_rejection_analysis_summary(evidence: LiveCognitionRejectionAnalysisEv
         f"raw_provider_response_evidence_hash={evidence.raw_provider_response_evidence_hash}",
         f"raw_provider_response_normalization_status={evidence.raw_provider_response_normalization_status}",
         f"raw_provider_response_normalization_reason={evidence.raw_provider_response_normalization_reason}",
+        f"bounded_extraction_status={evidence.bounded_extraction_status}",
+        f"bounded_extraction_stage={evidence.bounded_extraction_stage}",
+        f"bounded_extraction_reason={evidence.bounded_extraction_reason}",
+        f"bounded_extraction_evidence_hash={evidence.bounded_extraction_evidence_hash}",
+        f"normalization_failure_type={evidence.normalization_failure_type}",
+        f"schema_failure_type={evidence.schema_failure_type}",
         f"normalized_proposal_present={evidence.normalized_proposal_present}",
         f"normalized_proposal_hash={evidence.normalized_proposal_hash}",
         f"cognition_review_status={review.get('status', 'ABSENT')}",
@@ -438,6 +490,12 @@ def _fail_closed_analysis(analysis_id: str, created_at: str, reason: str) -> dic
         raw_provider_response_evidence_hash="",
         raw_provider_response_normalization_status="ABSENT",
         raw_provider_response_normalization_reason="",
+        bounded_extraction_status="ABSENT",
+        bounded_extraction_stage="ABSENT",
+        bounded_extraction_reason="bounded extraction evidence absent",
+        bounded_extraction_evidence_hash="",
+        normalization_failure_type="ABSENT",
+        schema_failure_type="ABSENT",
         normalized_proposal_present=False,
         normalized_proposal_hash="",
         cognition_review_decision={},
@@ -451,6 +509,7 @@ def _fail_closed_analysis(analysis_id: str, created_at: str, reason: str) -> dic
     return {
         "analysis_evidence": evidence,
         "raw_provider_response_evidence": None,
+        "bounded_extraction_evidence": None,
         "normalized_proposal": None,
         "analysis_lineage": reconstruct_live_cognition_rejection_analysis_lineage([evidence]),
         "governance_authority_separated": True,
@@ -507,6 +566,39 @@ def _raw_provider_response_view(usage_record: dict[str, Any]) -> dict[str, Any]:
         "normalization_status": artifact["normalization_status"],
         "normalization_reason": artifact["normalization_reason"],
         "evidence_object": raw_evidence,
+    }
+
+
+def _bounded_extraction_view(usage_record: dict[str, Any]) -> dict[str, Any]:
+    invocation = usage_record.get("invocation")
+    extraction_evidence: BoundedExtractionEvidence | None = None
+    if isinstance(invocation, dict):
+        connector = invocation.get("connector")
+        if isinstance(connector, dict):
+            bounded_extraction = connector.get("bounded_extraction")
+            if isinstance(bounded_extraction, dict):
+                candidate = bounded_extraction.get("extraction_evidence")
+                if isinstance(candidate, BoundedExtractionEvidence):
+                    extraction_evidence = candidate
+    if extraction_evidence is None:
+        return {
+            "status": "ABSENT",
+            "stage": "ABSENT",
+            "reason": "bounded extraction evidence absent",
+            "evidence_hash": "",
+            "normalization_failure_type": "ABSENT",
+            "schema_failure_type": "ABSENT",
+            "evidence_object": None,
+        }
+    artifact = extraction_evidence.to_dict()
+    return {
+        "status": artifact["extraction_status"],
+        "stage": artifact["extraction_stage"],
+        "reason": artifact["extraction_reason"],
+        "evidence_hash": artifact["evidence_hash"],
+        "normalization_failure_type": artifact["normalization_failure_type"],
+        "schema_failure_type": artifact["schema_failure_type"],
+        "evidence_object": extraction_evidence,
     }
 
 
@@ -615,6 +707,7 @@ def _resolve_rejection(
     connector_status: str,
     connector_reason: str,
     raw_view: dict[str, Any],
+    extraction_view: dict[str, Any],
     review_view: dict[str, Any],
     authorization_view: dict[str, Any],
     routing_view: dict[str, Any],
@@ -629,6 +722,13 @@ def _resolve_rejection(
             STAGE_RAW_PROVIDER_RESPONSE,
             raw_view["normalization_reason"] or connector_reason or "raw provider response absent",
         )
+    extraction_status = extraction_view["status"]
+    if extraction_status != EXTRACTION_NORMALIZED:
+        if extraction_view["normalization_failure_type"] not in (NORMALIZATION_FAILURE_NONE, "ABSENT"):
+            return STAGE_BOUNDED_EXTRACTION, extraction_view["reason"]
+        if extraction_view["schema_failure_type"] not in (SCHEMA_FAILURE_NONE, "ABSENT"):
+            return STAGE_BOUNDED_EXTRACTION, extraction_view["reason"]
+        return STAGE_PROPOSAL_NORMALIZATION, extraction_view["reason"] or connector_reason or "proposal normalization failed closed"
     if raw_view["normalization_status"] != RAW_NORMALIZED:
         return (
             STAGE_PROPOSAL_NORMALIZATION,

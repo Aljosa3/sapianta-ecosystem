@@ -11,14 +11,14 @@ from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
-CLI_COMPLETED = "COMPLETED"
+CLI_SUCCESS = "SUCCESS"
 CLI_REJECTED = "REJECTED"
 CLI_MODE = "MINIMAL_READONLY_OPERATOR_CLI"
 DEFAULT_CREATED_AT = "1970-01-01T00:00:00+00:00"
 DEFAULT_OPERATOR_ID = "operator-cli"
 DEFAULT_CLI_INVOCATION_ID = "RUNTIME-OPERATOR-CLI-1"
 
-ALLOWED_CLI_STATUSES = frozenset({CLI_COMPLETED, CLI_REJECTED})
+ALLOWED_CLI_STATUSES = frozenset({CLI_SUCCESS, CLI_REJECTED})
 
 
 def _require_string(value: Any, field_name: str) -> str:
@@ -136,7 +136,7 @@ def run_runtime_operator_cli(
             timeout_seconds=timeout_seconds,
         )
         usage_evidence = operator_usage["operator_usage_evidence"]
-        cli_status = CLI_COMPLETED if usage_evidence.operator_usage_status == OPERATOR_COMPLETED else CLI_REJECTED
+        cli_status = CLI_SUCCESS if usage_evidence.operator_usage_status == OPERATOR_COMPLETED else CLI_REJECTED
         rendered_return = operator_usage["operator_return"]
         evidence = RuntimeOperatorCLIEvidence(
             cli_invocation_id=cli_invocation_id,
@@ -149,7 +149,7 @@ def run_runtime_operator_cli(
             cli_status=cli_status,
             cli_reason=(
                 "operator CLI request completed"
-                if cli_status == CLI_COMPLETED
+                if cli_status == CLI_SUCCESS
                 else "operator CLI request failed closed"
             ),
             created_at=created_at,
@@ -159,7 +159,7 @@ def run_runtime_operator_cli(
             "cli_evidence": evidence,
             "operator_usage": operator_usage,
             "rendered_output": rendered_output,
-            "exit_code": 0 if cli_status == CLI_COMPLETED else 1,
+            "exit_code": 0 if cli_status == CLI_SUCCESS else 1,
             "cli_lineage": reconstruct_runtime_operator_cli_lineage([evidence]),
             "governance_authority_separated": True,
         }

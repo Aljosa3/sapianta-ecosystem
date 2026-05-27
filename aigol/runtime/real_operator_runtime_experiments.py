@@ -7,7 +7,7 @@ from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.operator_cli import (
-    CLI_COMPLETED,
+    CLI_SUCCESS,
     RuntimeOperatorCLIEvidence,
     reconstruct_runtime_operator_cli_lineage,
     run_runtime_operator_cli,
@@ -154,7 +154,7 @@ def run_real_operator_runtime_experiments(
             cli_records.append(cli_result)
             cli_evidence.append(cli_result["cli_evidence"])
         cli_lineage = reconstruct_runtime_operator_cli_lineage(cli_evidence)
-        completed_count = sum(1 for cli_result in cli_records if cli_result["cli_evidence"].cli_status == CLI_COMPLETED)
+        completed_count = sum(1 for cli_result in cli_records if cli_result["cli_evidence"].cli_status == CLI_SUCCESS)
         rejected_count = len(cli_records) - completed_count
         replay_continuity_valid = (
             cli_lineage["append_only_valid"] is True
@@ -264,7 +264,7 @@ def _returns_are_consistent(cli_records: list[dict[str, Any]], completed_count: 
     if completed_count == 0:
         return False
     completed_records = [
-        cli_result for cli_result in cli_records if cli_result["cli_evidence"].cli_status == CLI_COMPLETED
+        cli_result for cli_result in cli_records if cli_result["cli_evidence"].cli_status == CLI_SUCCESS
     ]
     if len(completed_records) != completed_count:
         return False
