@@ -55,6 +55,11 @@ from .live_runtime_observation_phase import (
     observe_replay_continuity,
     reconstruct_live_runtime_observation_lineage,
 )
+from .live_runtime_usage_validation import (
+    LiveRuntimeUsageValidationEvidence,
+    reconstruct_live_runtime_usage_validation_lineage,
+    validate_live_runtime_usage,
+)
 from .live_semantic_pressure_validation import (
     LiveSemanticPressureValidationEvidence,
     reconstruct_live_semantic_pressure_lineage,
@@ -127,6 +132,7 @@ __all__ = [
     "LiveExternalLLMInferenceEvidence",
     "LiveOpenAIRuntimeConnectorEvidence",
     "LiveRuntimeObservationArtifact",
+    "LiveRuntimeUsageValidationEvidence",
     "LiveSemanticPressureValidationEvidence",
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
@@ -179,6 +185,7 @@ __all__ = [
     "reconstruct_live_external_llm_inference_lineage",
     "reconstruct_live_openai_runtime_lineage",
     "reconstruct_live_runtime_observation_lineage",
+    "reconstruct_live_runtime_usage_validation_lineage",
     "reconstruct_live_semantic_pressure_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
@@ -201,5 +208,6 @@ __all__ = [
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",
+    "validate_live_runtime_usage",
     "validate_session_lineage_replay",
 ]
