@@ -12,7 +12,7 @@ from aigol.runtime.live_cognition_rejection_analysis import (
     ANALYSIS_MODE,
     LiveCognitionRejectionAnalysisEvidence,
     STAGE_NONE,
-    STAGE_OPENAI_INVOCATION,
+    STAGE_PROPOSAL_NORMALIZATION,
     STAGE_USAGE_INPUT,
     analyze_live_cognition_rejection,
     reconstruct_live_cognition_rejection_analysis_lineage,
@@ -93,10 +93,11 @@ def test_valid_request_emits_no_rejection(monkeypatch) -> None:
 
     assert evidence.rejection_stage == STAGE_NONE
     assert evidence.usage_status == "VALIDATED"
-    assert evidence.openai_connector_status == "NORMALIZED"
-    assert evidence.raw_openai_output_present is True
+    assert evidence.provider_connector_status == "NORMALIZED"
+    assert evidence.raw_provider_response_present is True
+    assert evidence.raw_provider_response_provider_name == "openai"
+    assert evidence.raw_provider_response_normalization_status == "NORMALIZED"
     assert evidence.normalized_proposal_present is True
-    assert result["raw_openai_output"]["proposed_contract_reference"].startswith("contract:")
     assert result["normalized_proposal"]["proposal_type"] == "CONTRACT_PROPOSAL"
     assert evidence.cognition_review_decision["status"] == "REVIEWED"
     assert evidence.authorization_decision["status"] == "AUTHORIZED"
@@ -105,44 +106,48 @@ def test_valid_request_emits_no_rejection(monkeypatch) -> None:
     assert evidence.governed_return_decision["status"] == "ACCEPTED"
 
 
-def test_malformed_cognition_rejection_is_attributed_to_openai_stage(monkeypatch) -> None:
+def test_malformed_cognition_rejection_is_attributed_to_normalization_stage(monkeypatch) -> None:
     result = _analyze(monkeypatch, ["not-json"])
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_OPENAI_INVOCATION
+    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
     assert evidence.usage_status == "REJECTED"
-    assert evidence.openai_connector_status == "REJECTED"
-    assert evidence.openai_connector_reason
-    assert evidence.raw_openai_output_present is False
+    assert evidence.provider_connector_status == "REJECTED"
+    assert evidence.raw_provider_response_present is True
+    assert evidence.raw_provider_response_normalization_status == "REJECTED"
+    assert evidence.raw_provider_response_hash.startswith("sha256:")
     assert evidence.normalized_proposal_present is False
     assert evidence.cognition_review_decision == {}
     assert evidence.authorization_decision == {}
     assert evidence.routing_decision == {}
 
 
-def test_unauthorized_capability_rejection_is_attributed_to_openai_stage(monkeypatch) -> None:
+def test_unauthorized_capability_rejection_is_attributed_to_normalization_stage(monkeypatch) -> None:
     result = _analyze(
         monkeypatch,
         [_model_output(1, requested_capabilities=["readonly_http_get_provider"])],
     )
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_OPENAI_INVOCATION
+    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
     assert evidence.usage_status == "REJECTED"
-    assert evidence.openai_connector_status == "REJECTED"
-    assert evidence.raw_openai_output_present is False
+    assert evidence.provider_connector_status == "REJECTED"
+    assert evidence.raw_provider_response_present is True
+    assert evidence.raw_provider_response_normalization_status == "REJECTED"
 
 
-def test_invalid_contract_reference_is_attributed_to_openai_stage(monkeypatch) -> None:
+def test_invalid_contract_reference_is_attributed_to_normalization_stage(monkeypatch) -> None:
     result = _analyze(
         monkeypatch,
         [_model_output(1, proposed_contract_reference="MISSING-PREFIX")],
     )
     evidence = result["analysis_evidence"]
 
-    assert evidence.rejection_stage == STAGE_OPENAI_INVOCATION
+    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
     assert evidence.usage_status == "REJECTED"
-    assert evidence.openai_connector_status == "REJECTED"
+    assert evidence.provider_connector_status == "REJECTED"
+    assert evidence.raw_provider_response_present is True
+    assert evidence.raw_provider_response_normalization_status == "REJECTED"
 
 
 def test_missing_usage_record_fails_closed() -> None:
@@ -156,6 +161,8 @@ def test_missing_usage_record_fails_closed() -> None:
     assert evidence.rejection_stage == STAGE_USAGE_INPUT
     assert evidence.usage_status == "REJECTED"
     assert evidence.usage_id == "USAGE-INVALID"
+    assert evidence.raw_provider_response_present is False
+    assert evidence.raw_provider_response_normalization_status == "ABSENT"
 
 
 def test_deterministic_evidence_generation(monkeypatch) -> None:
@@ -194,9 +201,11 @@ def test_rendered_summary_surfaces_inspection_fields(monkeypatch) -> None:
     result = _analyze(monkeypatch, ["not-json"])
     summary = render_rejection_analysis_summary(result["analysis_evidence"])
 
-    assert "rejection_stage=OPENAI_INVOCATION" in summary
-    assert "openai_connector_status=REJECTED" in summary
-    assert "raw_openai_output_present=False" in summary
+    assert "rejection_stage=PROPOSAL_NORMALIZATION" in summary
+    assert "provider_connector_status=REJECTED" in summary
+    assert "raw_provider_response_present=True" in summary
+    assert "raw_provider_response_provider_name=openai" in summary
+    assert "raw_provider_response_normalization_status=REJECTED" in summary
     assert "normalized_proposal_present=False" in summary
     assert "cognition_review_status=ABSENT" in summary
     assert "authorization_status=ABSENT" in summary
@@ -216,9 +225,10 @@ def test_cli_surface_runs_inspection_for_rejected_prompt(monkeypatch) -> None:
     evidence = result["analysis"]["analysis_evidence"]
 
     assert result["exit_code"] == 1
-    assert evidence.rejection_stage == STAGE_OPENAI_INVOCATION
+    assert evidence.rejection_stage == STAGE_PROPOSAL_NORMALIZATION
     assert evidence.analysis_mode == ANALYSIS_MODE
-    assert "rejection_stage=OPENAI_INVOCATION" in result["rendered_output"]
+    assert "rejection_stage=PROPOSAL_NORMALIZATION" in result["rendered_output"]
+    assert "raw_provider_response_present=True" in result["rendered_output"]
 
 
 def test_cli_surface_runs_inspection_for_completed_prompt(monkeypatch) -> None:
@@ -233,7 +243,7 @@ def test_cli_surface_runs_inspection_for_completed_prompt(monkeypatch) -> None:
 
     assert result["exit_code"] == 0
     assert evidence.rejection_stage == STAGE_NONE
-    assert evidence.openai_connector_status == "NORMALIZED"
+    assert evidence.provider_connector_status == "NORMALIZED"
 
 
 def test_no_unbounded_runtime_surface() -> None:

@@ -10,6 +10,12 @@ from typing import Any, Callable
 
 from aigol.runtime.bounded_llm_attachment_architecture import BoundedCognitionProposal
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.raw_provider_response_capture import (
+    NORMALIZED as RAW_NORMALIZED,
+    REJECTED as RAW_REJECTED,
+    RawProviderResponseEvidence,
+    capture_raw_provider_response,
+)
 from aigol.runtime.real_external_llm_attachment import (
     attach_external_llm_response,
     external_model_response_hash,
@@ -38,6 +44,12 @@ OPENAI_MODEL_OUTPUT_FIELDS = frozenset(
         "created_at",
     }
 )
+
+NORMALIZATION_NORMALIZED_REASON = "OpenAI output normalized into bounded proposal evidence"
+NORMALIZATION_REJECTED_REASON = "OpenAI output normalization failed closed"
+CONNECTOR_NORMALIZED_REASON = "OpenAI inference normalized into bounded proposal evidence"
+CONNECTOR_REJECTED_REASON = "OpenAI inference normalization failed closed"
+DEFAULT_CREATED_AT = "1970-01-01T00:00:00+00:00"
 
 
 def _immutable(value: Any) -> Any:
@@ -68,6 +80,7 @@ def _connector_hash_input(evidence: "LiveOpenAIRuntimeConnectorEvidence") -> dic
         "openai_provider": evidence.openai_provider,
         "model_identifier": evidence.model_identifier,
         "normalized_request": _plain(evidence.normalized_request),
+        "raw_response_evidence_hash": evidence.raw_response_evidence_hash,
         "response_hash": evidence.response_hash,
         "proposal_evidence_hash": evidence.proposal_evidence_hash,
         "connector_status": evidence.connector_status,
@@ -84,6 +97,7 @@ class LiveOpenAIRuntimeConnectorEvidence:
     openai_provider: str
     model_identifier: str
     normalized_request: MappingProxyType
+    raw_response_evidence_hash: str
     response_hash: str
     proposal_evidence_hash: str
     connector_status: str
@@ -97,6 +111,7 @@ class LiveOpenAIRuntimeConnectorEvidence:
         _require_string(self.model_identifier, "model_identifier")
         _require_string(self.reason, "reason")
         _require_string(self.created_at, "created_at")
+        _require_string(self.raw_response_evidence_hash, "raw_response_evidence_hash")
         if self.openai_provider != OPENAI_PROVIDER:
             raise FailClosedRuntimeError("OpenAI connector provider is not allowed")
         if self.model_identifier != OPENAI_MODEL_IDENTIFIER:
@@ -119,6 +134,7 @@ class LiveOpenAIRuntimeConnectorEvidence:
             "openai_provider": self.openai_provider,
             "model_identifier": self.model_identifier,
             "normalized_request": _plain(self.normalized_request),
+            "raw_response_evidence_hash": self.raw_response_evidence_hash,
             "response_hash": self.response_hash,
             "proposal_evidence_hash": self.proposal_evidence_hash,
             "connector_status": self.connector_status,
@@ -136,6 +152,7 @@ class LiveOpenAIRuntimeConnectorEvidence:
             "openai_provider",
             "model_identifier",
             "normalized_request",
+            "raw_response_evidence_hash",
             "response_hash",
             "proposal_evidence_hash",
             "connector_status",
@@ -155,10 +172,23 @@ def invoke_live_openai_runtime_connector(
     openai_call: Callable[[dict[str, Any]], Any],
     created_at: str,
 ) -> dict[str, Any]:
-    """Invoke one synchronous OpenAI call surface and normalize bounded proposal output."""
+    """Invoke one synchronous OpenAI call surface and normalize bounded proposal output.
+
+    Provider adapter boundary: captures the raw provider response text into
+    replay-visible RawProviderResponseEvidence before attempting normalization
+    so the raw response is preserved even when normalization fails closed.
+    """
 
     normalized_request: dict[str, Any] = {}
     created = created_at
+    inference_identifier = inference_id if isinstance(inference_id, str) and inference_id else "OPENAI-INFERENCE-INVALID"
+    raw_text: str | None = None
+    external_response: dict[str, Any] | None = None
+    proposal: BoundedCognitionProposal | None = None
+    proposal_lineage: dict[str, Any] | None = None
+    normalization_status = RAW_REJECTED
+    normalization_reason = NORMALIZATION_REJECTED_REASON
+
     try:
         _require_string(inference_id, "inference_id")
         _require_string(created, "created_at")
@@ -166,7 +196,10 @@ def invoke_live_openai_runtime_connector(
             raise FailClosedRuntimeError("openai_call must be callable")
         normalized_request = _normalize_openai_request(inference_id, prompt, created)
         raw_response = openai_call(deepcopy(normalized_request))
-        model_output = _extract_openai_model_output(raw_response)
+        raw_text = _extract_raw_response_text(raw_response)
+        if raw_text is None:
+            raise FailClosedRuntimeError("OpenAI response did not contain output_text")
+        model_output = _parse_raw_response_text(raw_text)
         _validate_openai_model_output(model_output)
         external_response = {
             "model_response_id": f"{inference_id}:OPENAI_RESPONSE",
@@ -178,43 +211,50 @@ def invoke_live_openai_runtime_connector(
         external_response["response_hash"] = external_model_response_hash(external_response)
         proposal = attach_external_llm_response(external_response)
         proposal_lineage = reconstruct_external_llm_proposal_lineage([proposal])
-        evidence = LiveOpenAIRuntimeConnectorEvidence(
-            inference_id=inference_id,
-            openai_provider=OPENAI_PROVIDER,
-            model_identifier=OPENAI_MODEL_IDENTIFIER,
-            normalized_request=normalized_request,
-            response_hash=external_response["response_hash"],
-            proposal_evidence_hash=proposal.evidence_hash,
-            connector_status=NORMALIZED,
-            reason="OpenAI inference normalized into bounded proposal evidence",
-            created_at=created,
-        )
-        return {
-            "connector_evidence": evidence,
-            "external_model_response": external_response,
-            "proposal": proposal,
-            "proposal_lineage": proposal_lineage,
-            "governance_authority_separated": True,
-        }
+        normalization_status = RAW_NORMALIZED
+        normalization_reason = NORMALIZATION_NORMALIZED_REASON
     except Exception:
-        evidence = LiveOpenAIRuntimeConnectorEvidence(
-            inference_id=inference_id if isinstance(inference_id, str) and inference_id else "OPENAI-INFERENCE-INVALID",
-            openai_provider=OPENAI_PROVIDER,
-            model_identifier=OPENAI_MODEL_IDENTIFIER,
-            normalized_request=normalized_request,
-            response_hash="",
-            proposal_evidence_hash="",
-            connector_status=REJECTED,
-            reason="OpenAI inference normalization failed closed",
-            created_at=created if isinstance(created, str) and created else "1970-01-01T00:00:00+00:00",
-        )
-        return {
-            "connector_evidence": evidence,
-            "external_model_response": None,
-            "proposal": None,
-            "proposal_lineage": None,
-            "governance_authority_separated": True,
-        }
+        external_response = None
+        proposal = None
+        proposal_lineage = None
+        normalization_status = RAW_REJECTED
+        normalization_reason = NORMALIZATION_REJECTED_REASON
+
+    raw_evidence_created_at = created if isinstance(created, str) and created else DEFAULT_CREATED_AT
+    raw_evidence = capture_raw_provider_response(
+        raw_response_id=f"{inference_identifier}:RAW_PROVIDER_RESPONSE",
+        provider_name=OPENAI_PROVIDER,
+        model_name=OPENAI_MODEL_IDENTIFIER,
+        raw_response_text=raw_text,
+        normalization_status=normalization_status,
+        normalization_reason=normalization_reason,
+        created_at=raw_evidence_created_at,
+    )
+
+    connector_status = NORMALIZED if normalization_status == RAW_NORMALIZED else REJECTED
+    connector_reason = (
+        CONNECTOR_NORMALIZED_REASON if connector_status == NORMALIZED else CONNECTOR_REJECTED_REASON
+    )
+    evidence = LiveOpenAIRuntimeConnectorEvidence(
+        inference_id=inference_identifier,
+        openai_provider=OPENAI_PROVIDER,
+        model_identifier=OPENAI_MODEL_IDENTIFIER,
+        normalized_request=normalized_request,
+        raw_response_evidence_hash=raw_evidence.evidence_hash,
+        response_hash=external_response["response_hash"] if external_response else "",
+        proposal_evidence_hash=proposal.evidence_hash if proposal else "",
+        connector_status=connector_status,
+        reason=connector_reason,
+        created_at=raw_evidence_created_at,
+    )
+    return {
+        "connector_evidence": evidence,
+        "raw_provider_response": raw_evidence,
+        "external_model_response": external_response,
+        "proposal": proposal,
+        "proposal_lineage": proposal_lineage,
+        "governance_authority_separated": True,
+    }
 
 
 def reconstruct_live_openai_runtime_lineage(
@@ -276,15 +316,24 @@ def _normalize_openai_request(inference_id: str, prompt: str, created_at: str) -
     }
 
 
-def _extract_openai_model_output(raw_response: Any) -> dict[str, Any]:
-    output_text = ""
-    if isinstance(raw_response, dict):
-        output_text = raw_response.get("output_text", "")
-    else:
-        output_text = getattr(raw_response, "output_text", "")
-    output_text = _require_string(output_text, "output_text")
+def _extract_raw_response_text(raw_response: Any) -> str | None:
+    """Provider-agnostic raw text extraction — returns string or None, does not raise."""
+
     try:
-        output = json.loads(output_text)
+        if isinstance(raw_response, dict):
+            output_text = raw_response.get("output_text", "")
+        else:
+            output_text = getattr(raw_response, "output_text", "")
+    except Exception:
+        return None
+    if not isinstance(output_text, str) or not output_text:
+        return None
+    return output_text
+
+
+def _parse_raw_response_text(raw_text: str) -> dict[str, Any]:
+    try:
+        output = json.loads(raw_text)
     except json.JSONDecodeError as exc:
         raise FailClosedRuntimeError("OpenAI output_text must contain JSON") from exc
     if not isinstance(output, dict):

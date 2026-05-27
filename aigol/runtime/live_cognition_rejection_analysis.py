@@ -1,4 +1,9 @@
-"""Readonly inspection of why a live governed cognition request was rejected."""
+"""Readonly inspection of why a live governed cognition request was rejected.
+
+AiGOL core (provider-agnostic): consumes only normalized BoundedCognitionProposal
+artifacts and the generic RawProviderResponseEvidence captured by the provider
+adapter. No provider-specific extraction logic lives in this module.
+"""
 
 from __future__ import annotations
 
@@ -24,24 +29,24 @@ from aigol.runtime.governed_return_interpretation import (
     ACCEPTED,
     GovernedReturnInterpretationArtifact,
 )
-from aigol.runtime.live_openai_runtime_connector import (
-    NORMALIZED,
-    LiveOpenAIRuntimeConnectorEvidence,
-)
 from aigol.runtime.live_runtime_usage_validation import REJECTED as USAGE_REJECTED, VALIDATED
-from aigol.runtime.minimal_governed_execution_path import EXECUTED
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.production_isolation_foundation import (
     ISOLATED,
     ProductionIsolationEvidence,
 )
-from aigol.runtime.real_openai_api_invocation import INVOKED
+from aigol.runtime.raw_provider_response_capture import (
+    NORMALIZED as RAW_NORMALIZED,
+    RawProviderResponseEvidence,
+)
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
 ANALYSIS_MODE = "READONLY_REJECTION_INSPECTION"
 STAGE_NONE = "NONE"
-STAGE_OPENAI_INVOCATION = "OPENAI_INVOCATION"
+STAGE_RAW_PROVIDER_RESPONSE = "RAW_PROVIDER_RESPONSE"
+STAGE_PROPOSAL_NORMALIZATION = "PROPOSAL_NORMALIZATION"
+STAGE_OPENAI_INVOCATION = STAGE_PROPOSAL_NORMALIZATION  # alias kept only for incoming evidence diffs
 STAGE_GOVERNED_EXECUTION = "GOVERNED_EXECUTION"
 STAGE_COGNITION_REVIEW = "COGNITION_REVIEW"
 STAGE_CONTRACT_AUTHORIZATION = "CONTRACT_AUTHORIZATION"
@@ -54,7 +59,8 @@ ALLOWED_REJECTION_STAGES = frozenset(
     {
         STAGE_NONE,
         STAGE_USAGE_INPUT,
-        STAGE_OPENAI_INVOCATION,
+        STAGE_RAW_PROVIDER_RESPONSE,
+        STAGE_PROPOSAL_NORMALIZATION,
         STAGE_GOVERNED_EXECUTION,
         STAGE_COGNITION_REVIEW,
         STAGE_CONTRACT_AUTHORIZATION,
@@ -93,10 +99,15 @@ def _analysis_hash_input(evidence: "LiveCognitionRejectionAnalysisEvidence") -> 
         "analysis_mode": evidence.analysis_mode,
         "rejection_stage": evidence.rejection_stage,
         "rejection_reason": evidence.rejection_reason,
-        "openai_connector_status": evidence.openai_connector_status,
-        "openai_connector_reason": evidence.openai_connector_reason,
-        "raw_openai_output_present": evidence.raw_openai_output_present,
-        "raw_openai_output_hash": evidence.raw_openai_output_hash,
+        "provider_connector_status": evidence.provider_connector_status,
+        "provider_connector_reason": evidence.provider_connector_reason,
+        "raw_provider_response_provider_name": evidence.raw_provider_response_provider_name,
+        "raw_provider_response_model_name": evidence.raw_provider_response_model_name,
+        "raw_provider_response_present": evidence.raw_provider_response_present,
+        "raw_provider_response_hash": evidence.raw_provider_response_hash,
+        "raw_provider_response_evidence_hash": evidence.raw_provider_response_evidence_hash,
+        "raw_provider_response_normalization_status": evidence.raw_provider_response_normalization_status,
+        "raw_provider_response_normalization_reason": evidence.raw_provider_response_normalization_reason,
         "normalized_proposal_present": evidence.normalized_proposal_present,
         "normalized_proposal_hash": evidence.normalized_proposal_hash,
         "cognition_review_decision": _plain(evidence.cognition_review_decision),
@@ -119,10 +130,15 @@ class LiveCognitionRejectionAnalysisEvidence:
     analysis_mode: str
     rejection_stage: str
     rejection_reason: str
-    openai_connector_status: str
-    openai_connector_reason: str
-    raw_openai_output_present: bool
-    raw_openai_output_hash: str
+    provider_connector_status: str
+    provider_connector_reason: str
+    raw_provider_response_provider_name: str
+    raw_provider_response_model_name: str
+    raw_provider_response_present: bool
+    raw_provider_response_hash: str
+    raw_provider_response_evidence_hash: str
+    raw_provider_response_normalization_status: str
+    raw_provider_response_normalization_reason: str
     normalized_proposal_present: bool
     normalized_proposal_hash: str
     cognition_review_decision: MappingProxyType | dict[str, Any]
@@ -139,7 +155,7 @@ class LiveCognitionRejectionAnalysisEvidence:
         _require_string(self.usage_id, "usage_id")
         _require_string(self.analysis_mode, "analysis_mode")
         _require_string(self.rejection_reason, "rejection_reason")
-        _require_string(self.openai_connector_status, "openai_connector_status")
+        _require_string(self.provider_connector_status, "provider_connector_status")
         _require_string(self.created_at, "created_at")
         if self.analysis_mode != ANALYSIS_MODE:
             raise FailClosedRuntimeError("rejection analysis mode is not allowed")
@@ -148,7 +164,7 @@ class LiveCognitionRejectionAnalysisEvidence:
         if self.rejection_stage not in ALLOWED_REJECTION_STAGES:
             raise FailClosedRuntimeError("rejection analysis stage is not allowed")
         for boolean_field in (
-            "raw_openai_output_present",
+            "raw_provider_response_present",
             "normalized_proposal_present",
             "governance_authority_separated",
         ):
@@ -178,10 +194,15 @@ class LiveCognitionRejectionAnalysisEvidence:
             "analysis_mode": self.analysis_mode,
             "rejection_stage": self.rejection_stage,
             "rejection_reason": self.rejection_reason,
-            "openai_connector_status": self.openai_connector_status,
-            "openai_connector_reason": self.openai_connector_reason,
-            "raw_openai_output_present": self.raw_openai_output_present,
-            "raw_openai_output_hash": self.raw_openai_output_hash,
+            "provider_connector_status": self.provider_connector_status,
+            "provider_connector_reason": self.provider_connector_reason,
+            "raw_provider_response_provider_name": self.raw_provider_response_provider_name,
+            "raw_provider_response_model_name": self.raw_provider_response_model_name,
+            "raw_provider_response_present": self.raw_provider_response_present,
+            "raw_provider_response_hash": self.raw_provider_response_hash,
+            "raw_provider_response_evidence_hash": self.raw_provider_response_evidence_hash,
+            "raw_provider_response_normalization_status": self.raw_provider_response_normalization_status,
+            "raw_provider_response_normalization_reason": self.raw_provider_response_normalization_reason,
             "normalized_proposal_present": self.normalized_proposal_present,
             "normalized_proposal_hash": self.normalized_proposal_hash,
             "cognition_review_decision": _plain(self.cognition_review_decision),
@@ -205,10 +226,15 @@ class LiveCognitionRejectionAnalysisEvidence:
             "analysis_mode",
             "rejection_stage",
             "rejection_reason",
-            "openai_connector_status",
-            "openai_connector_reason",
-            "raw_openai_output_present",
-            "raw_openai_output_hash",
+            "provider_connector_status",
+            "provider_connector_reason",
+            "raw_provider_response_provider_name",
+            "raw_provider_response_model_name",
+            "raw_provider_response_present",
+            "raw_provider_response_hash",
+            "raw_provider_response_evidence_hash",
+            "raw_provider_response_normalization_status",
+            "raw_provider_response_normalization_reason",
             "normalized_proposal_present",
             "normalized_proposal_hash",
             "cognition_review_decision",
@@ -245,7 +271,7 @@ def analyze_live_cognition_rejection(
         if usage_status not in ALLOWED_USAGE_STATUSES:
             return _fail_closed_analysis(analysis_id, created_at, "usage_record usage_status is not allowed")
         connector_status, connector_reason = _connector_view(usage_record)
-        raw_openai_output = _raw_openai_output(usage_record)
+        raw_view = _raw_provider_response_view(usage_record)
         normalized_proposal = _normalized_proposal(usage_record)
         review_view = _review_view(usage_record)
         authorization_view = _authorization_view(usage_record)
@@ -257,6 +283,7 @@ def analyze_live_cognition_rejection(
             usage_reason=usage_record.get("usage_reason", ""),
             connector_status=connector_status,
             connector_reason=connector_reason,
+            raw_view=raw_view,
             review_view=review_view,
             authorization_view=authorization_view,
             routing_view=routing_view,
@@ -271,10 +298,15 @@ def analyze_live_cognition_rejection(
             analysis_mode=ANALYSIS_MODE,
             rejection_stage=rejection_stage,
             rejection_reason=rejection_reason,
-            openai_connector_status=connector_status,
-            openai_connector_reason=connector_reason,
-            raw_openai_output_present=raw_openai_output is not None,
-            raw_openai_output_hash=replay_hash(raw_openai_output) if raw_openai_output is not None else "",
+            provider_connector_status=connector_status,
+            provider_connector_reason=connector_reason,
+            raw_provider_response_provider_name=raw_view["provider_name"],
+            raw_provider_response_model_name=raw_view["model_name"],
+            raw_provider_response_present=raw_view["present"],
+            raw_provider_response_hash=raw_view["raw_response_hash"],
+            raw_provider_response_evidence_hash=raw_view["evidence_hash"],
+            raw_provider_response_normalization_status=raw_view["normalization_status"],
+            raw_provider_response_normalization_reason=raw_view["normalization_reason"],
             normalized_proposal_present=normalized_proposal is not None,
             normalized_proposal_hash=replay_hash(normalized_proposal) if normalized_proposal is not None else "",
             cognition_review_decision=review_view,
@@ -287,7 +319,7 @@ def analyze_live_cognition_rejection(
         )
         return {
             "analysis_evidence": evidence,
-            "raw_openai_output": raw_openai_output,
+            "raw_provider_response_evidence": raw_view["evidence_object"],
             "normalized_proposal": normalized_proposal,
             "analysis_lineage": reconstruct_live_cognition_rejection_analysis_lineage([evidence]),
             "governance_authority_separated": True,
@@ -360,10 +392,15 @@ def render_rejection_analysis_summary(evidence: LiveCognitionRejectionAnalysisEv
         f"usage_status={evidence.usage_status}",
         f"rejection_stage={evidence.rejection_stage}",
         f"rejection_reason={evidence.rejection_reason}",
-        f"openai_connector_status={evidence.openai_connector_status}",
-        f"openai_connector_reason={evidence.openai_connector_reason}",
-        f"raw_openai_output_present={evidence.raw_openai_output_present}",
-        f"raw_openai_output_hash={evidence.raw_openai_output_hash}",
+        f"provider_connector_status={evidence.provider_connector_status}",
+        f"provider_connector_reason={evidence.provider_connector_reason}",
+        f"raw_provider_response_provider_name={evidence.raw_provider_response_provider_name}",
+        f"raw_provider_response_model_name={evidence.raw_provider_response_model_name}",
+        f"raw_provider_response_present={evidence.raw_provider_response_present}",
+        f"raw_provider_response_hash={evidence.raw_provider_response_hash}",
+        f"raw_provider_response_evidence_hash={evidence.raw_provider_response_evidence_hash}",
+        f"raw_provider_response_normalization_status={evidence.raw_provider_response_normalization_status}",
+        f"raw_provider_response_normalization_reason={evidence.raw_provider_response_normalization_reason}",
         f"normalized_proposal_present={evidence.normalized_proposal_present}",
         f"normalized_proposal_hash={evidence.normalized_proposal_hash}",
         f"cognition_review_status={review.get('status', 'ABSENT')}",
@@ -392,10 +429,15 @@ def _fail_closed_analysis(analysis_id: str, created_at: str, reason: str) -> dic
         analysis_mode=ANALYSIS_MODE,
         rejection_stage=STAGE_USAGE_INPUT,
         rejection_reason=reason,
-        openai_connector_status="ABSENT",
-        openai_connector_reason="",
-        raw_openai_output_present=False,
-        raw_openai_output_hash="",
+        provider_connector_status="ABSENT",
+        provider_connector_reason="",
+        raw_provider_response_provider_name="",
+        raw_provider_response_model_name="",
+        raw_provider_response_present=False,
+        raw_provider_response_hash="",
+        raw_provider_response_evidence_hash="",
+        raw_provider_response_normalization_status="ABSENT",
+        raw_provider_response_normalization_reason="",
         normalized_proposal_present=False,
         normalized_proposal_hash="",
         cognition_review_decision={},
@@ -408,7 +450,7 @@ def _fail_closed_analysis(analysis_id: str, created_at: str, reason: str) -> dic
     )
     return {
         "analysis_evidence": evidence,
-        "raw_openai_output": None,
+        "raw_provider_response_evidence": None,
         "normalized_proposal": None,
         "analysis_lineage": reconstruct_live_cognition_rejection_analysis_lineage([evidence]),
         "governance_authority_separated": True,
@@ -422,29 +464,50 @@ def _connector_view(usage_record: dict[str, Any]) -> tuple[str, str]:
     connector = invocation.get("connector")
     if connector is None:
         invocation_evidence = invocation.get("invocation_evidence")
-        if invocation_evidence is not None and getattr(invocation_evidence, "invocation_status", None) != INVOKED:
+        if invocation_evidence is not None and getattr(invocation_evidence, "invocation_status", None) != "INVOKED":
             return "REJECTED", getattr(invocation_evidence, "reason", "")
         return "ABSENT", ""
     connector_evidence = connector.get("connector_evidence")
-    if not isinstance(connector_evidence, LiveOpenAIRuntimeConnectorEvidence):
+    status = getattr(connector_evidence, "connector_status", None)
+    reason = getattr(connector_evidence, "reason", "")
+    if not isinstance(status, str) or not status:
         return "ABSENT", ""
-    return connector_evidence.connector_status, connector_evidence.reason
+    if not isinstance(reason, str):
+        reason = ""
+    return status, reason
 
 
-def _raw_openai_output(usage_record: dict[str, Any]) -> dict[str, Any] | None:
+def _raw_provider_response_view(usage_record: dict[str, Any]) -> dict[str, Any]:
     invocation = usage_record.get("invocation")
-    if not isinstance(invocation, dict):
-        return None
-    connector = invocation.get("connector")
-    if not isinstance(connector, dict):
-        return None
-    external_model_response = connector.get("external_model_response")
-    if not isinstance(external_model_response, dict):
-        return None
-    proposal_payload = external_model_response.get("proposal_payload")
-    if not isinstance(proposal_payload, dict):
-        return None
-    return _plain(proposal_payload)
+    raw_evidence: RawProviderResponseEvidence | None = None
+    if isinstance(invocation, dict):
+        connector = invocation.get("connector")
+        if isinstance(connector, dict):
+            candidate = connector.get("raw_provider_response")
+            if isinstance(candidate, RawProviderResponseEvidence):
+                raw_evidence = candidate
+    if raw_evidence is None:
+        return {
+            "provider_name": "",
+            "model_name": "",
+            "present": False,
+            "raw_response_hash": "",
+            "evidence_hash": "",
+            "normalization_status": "ABSENT",
+            "normalization_reason": "",
+            "evidence_object": None,
+        }
+    artifact = raw_evidence.to_dict()
+    return {
+        "provider_name": artifact["provider_name"],
+        "model_name": artifact["model_name"],
+        "present": artifact["raw_response_present"],
+        "raw_response_hash": artifact["raw_response_hash"],
+        "evidence_hash": artifact["evidence_hash"],
+        "normalization_status": artifact["normalization_status"],
+        "normalization_reason": artifact["normalization_reason"],
+        "evidence_object": raw_evidence,
+    }
 
 
 def _normalized_proposal(usage_record: dict[str, Any]) -> dict[str, Any] | None:
@@ -551,6 +614,7 @@ def _resolve_rejection(
     usage_reason: Any,
     connector_status: str,
     connector_reason: str,
+    raw_view: dict[str, Any],
     review_view: dict[str, Any],
     authorization_view: dict[str, Any],
     routing_view: dict[str, Any],
@@ -560,8 +624,18 @@ def _resolve_rejection(
 ) -> tuple[str, str]:
     if usage_status == VALIDATED:
         return STAGE_NONE, "live runtime usage validated"
-    if connector_status != NORMALIZED:
-        return STAGE_OPENAI_INVOCATION, connector_reason or "OpenAI connector did not normalize"
+    if not raw_view["present"]:
+        return (
+            STAGE_RAW_PROVIDER_RESPONSE,
+            raw_view["normalization_reason"] or connector_reason or "raw provider response absent",
+        )
+    if raw_view["normalization_status"] != RAW_NORMALIZED:
+        return (
+            STAGE_PROPOSAL_NORMALIZATION,
+            raw_view["normalization_reason"] or connector_reason or "proposal normalization failed closed",
+        )
+    if connector_status != "NORMALIZED":
+        return STAGE_PROPOSAL_NORMALIZATION, connector_reason or "provider adapter did not normalize"
     if not execution_present:
         return STAGE_GOVERNED_EXECUTION, _coerce_reason(usage_reason, "governed execution evidence absent")
     review_status = review_view.get("status")
