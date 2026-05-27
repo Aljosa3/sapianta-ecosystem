@@ -1,0 +1,50 @@
+{
+  "artifact_type": "REAL_OPENAI_API_INVOCATION_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "REAL_OPENAI_API_INVOCATION_V1",
+  "certification_status": "CERTIFIED",
+  "invocation_components": {
+    "invoke_real_openai_api": "implemented",
+    "reconstruct_real_openai_api_invocation_lineage": "implemented",
+    "RealOpenAIAPIInvocationEvidence": "implemented"
+  },
+  "boundary_certification": {
+    "real_openai_api_invocation_only": true,
+    "no_orchestration_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "replay_visible_inference_lineage": true,
+    "deterministic_fail_closed_normalization": true,
+    "governance_authority_separation_preserved": true,
+    "readonly_bounded_cognition_runtime_preserved": true,
+    "no_runtime_mutation_introduced": true,
+    "no_provider_mutation_introduced": true,
+    "no_write_execution_introduced": true,
+    "no_shell_execution_introduced": true,
+    "no_subprocess_execution_introduced": true,
+    "no_streaming_introduced": true,
+    "no_retries_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_workflow_planning_introduced": true
+  },
+  "architectural_constraint": {
+    "attaches_real_live_openai_inference": true,
+    "autonomous_cognition_execution": false,
+    "provider_execution_outside_governance": false,
+    "governance_bypass": false,
+    "runtime_mutation": false,
+    "workflow_planning": false,
+    "write_execution": false
+  },
+  "validation_scope": {
+    "valid_live_openai_inference_normalization_tested": true,
+    "missing_api_key_rejection_tested": true,
+    "malformed_response_rejection_tested": true,
+    "unauthorized_capability_rejection_tested": true,
+    "deterministic_proposal_lineage_tested": true,
+    "replay_visible_inference_evidence_tested": true,
+    "governance_authority_separation_tested": true,
+    "fail_closed_normalization_validation_tested": true,
+    "real_network_calls_required_by_tests": false
+  },
+  "commit_message": "feat(runtime): add real openai api invocation v1"
+}

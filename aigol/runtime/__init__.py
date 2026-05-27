@@ -83,6 +83,11 @@ from .real_external_llm_attachment import (
     external_model_response_hash,
     reconstruct_external_llm_proposal_lineage,
 )
+from .real_openai_api_invocation import (
+    RealOpenAIAPIInvocationEvidence,
+    invoke_real_openai_api,
+    reconstruct_real_openai_api_invocation_lineage,
+)
 from .real_governed_execution_resilience_suite import (
     RealGovernedExecutionResilienceEvidence,
     reconstruct_real_governed_execution_resilience_lineage,
@@ -136,6 +141,7 @@ __all__ = [
     "RUNNING",
     "RuntimeEngine",
     "RuntimePackage",
+    "RealOpenAIAPIInvocationEvidence",
     "SyntheticCognitionPressureArtifact",
     "WorkerLifecycle",
     "attach_external_llm_response",
@@ -156,6 +162,7 @@ __all__ = [
     "interpret_governed_execution_return",
     "invoke_live_external_llm_provider",
     "invoke_live_openai_runtime_connector",
+    "invoke_real_openai_api",
     "normalize_real_llm_proposal_input",
     "observe_ambiguity_telemetry",
     "observe_cognition_drift",
@@ -175,6 +182,7 @@ __all__ = [
     "reconstruct_live_semantic_pressure_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
+    "reconstruct_real_openai_api_invocation_lineage",
     "reconstruct_minimal_governed_execution_lineage",
     "reconstruct_minimal_real_runtime_demo_lineage",
     "reconstruct_production_isolation_lineage",
