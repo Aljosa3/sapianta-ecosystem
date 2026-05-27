@@ -93,6 +93,11 @@ from .real_openai_api_invocation import (
     invoke_real_openai_api,
     reconstruct_real_openai_api_invocation_lineage,
 )
+from .real_runtime_activation import (
+    RealRuntimeActivationEvidence,
+    activate_real_runtime,
+    reconstruct_real_runtime_activation_lineage,
+)
 from .real_governed_execution_resilience_suite import (
     RealGovernedExecutionResilienceEvidence,
     reconstruct_real_governed_execution_resilience_lineage,
@@ -143,6 +148,7 @@ __all__ = [
     "ProductionIsolationEvidence",
     "ReadonlyDomainExperimentEvidence",
     "RealGovernedExecutionResilienceEvidence",
+    "RealRuntimeActivationEvidence",
     "RETURNED",
     "RUNNING",
     "RuntimeEngine",
@@ -151,6 +157,7 @@ __all__ = [
     "SyntheticCognitionPressureArtifact",
     "WorkerLifecycle",
     "attach_external_llm_response",
+    "activate_real_runtime",
     "authorize_governed_execution_contract",
     "classify_governance_failure",
     "certify_governance_resilience",
@@ -190,6 +197,7 @@ __all__ = [
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_real_openai_api_invocation_lineage",
+    "reconstruct_real_runtime_activation_lineage",
     "reconstruct_minimal_governed_execution_lineage",
     "reconstruct_minimal_real_runtime_demo_lineage",
     "reconstruct_production_isolation_lineage",
