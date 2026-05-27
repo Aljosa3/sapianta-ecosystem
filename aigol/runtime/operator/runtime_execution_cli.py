@@ -39,6 +39,8 @@ DEFAULT_TIMESTAMP = "1970-01-01T00:00:00Z"
 OPERATION_TYPE = "inspect-runtime"
 INSPECT_REPLAY_COMMAND = "inspect-replay"
 VERIFY_REPLAY_COMMAND = "verify-replay"
+LIST_REPLAYS_COMMAND = "list-replays"
+LATEST_REPLAY_COMMAND = "latest-replay"
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -341,6 +343,112 @@ def render_replay_verification(result: dict[str, Any]) -> str:
     )
 
 
+def _operational_ledger_references(*, runtime_root: str | Path | None) -> list[str]:
+    entries = read_ledger_entries(runtime_root=runtime_root, limit=100000)
+    references: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("governed return ledger entry must be an object")
+        if entry.get("artifact_type") != ARTIFACT_TYPE or entry.get("schema_version") != SCHEMA_VERSION:
+            raise ValueError("governed return ledger schema mismatch")
+        replay_reference = entry.get("replay_identity")
+        if not isinstance(replay_reference, str) or not replay_reference.strip() or replay_reference == "UNKNOWN":
+            raise ValueError("governed return replay identity is invalid")
+        diagnostics = entry.get("diagnostic_evidence")
+        if not isinstance(diagnostics, dict):
+            raise ValueError("governed return diagnostic evidence is invalid")
+        if "runtime_operation" in diagnostics:
+            references.append(replay_reference)
+    return references
+
+
+def list_runtime_replays(*, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """List persisted operational runtime inspections, newest first, without writes."""
+
+    try:
+        references = _operational_ledger_references(runtime_root=runtime_root)
+        replays = []
+        for replay_reference in reversed(references):
+            replay = run_replay_inspection(replay_reference=replay_reference, runtime_root=runtime_root)
+            if replay["fail_closed"]:
+                raise ValueError("operational replay validation failed")
+            replays.append(replay)
+        return {
+            "replays": replays,
+            "count": len(replays),
+            "status": "persisted" if replays else "empty",
+            "fail_closed": False,
+        }
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return {
+            "replays": [],
+            "count": 0,
+            "status": "failed_closed",
+            "fail_closed": True,
+        }
+
+
+def latest_runtime_replay(*, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """Return the newest persisted operational runtime inspection without writes."""
+
+    listed = list_runtime_replays(runtime_root=runtime_root)
+    if listed["fail_closed"]:
+        return {
+            "status": "failed_closed",
+            "replay_reference": "unknown",
+            "operation": {},
+            "verification_available": False,
+            "fail_closed": True,
+        }
+    if not listed["replays"]:
+        return {
+            "status": "empty",
+            "replay_reference": "none",
+            "operation": {},
+            "verification_available": False,
+            "fail_closed": False,
+        }
+    replay = listed["replays"][0]
+    return {
+        "status": "persisted",
+        "replay_reference": replay["replay_reference"],
+        "operation": replay["operation"],
+        "verification_available": replay["verification_available"],
+        "fail_closed": False,
+    }
+
+
+def render_replay_listing(result: dict[str, Any]) -> str:
+    lines = ["[REPLAYS]", f"count: {result['count']}", f"status: {result['status']}"]
+    for index, replay in enumerate(result["replays"], start=1):
+        operation = replay["operation"]
+        lines.extend(
+            [
+                "",
+                f"{index}.",
+                f"replay_reference: {replay['replay_reference']}",
+                f"operation: {operation['operation_type']}",
+                f"provider: {operation['provider']}",
+                f"status: {replay['status']}",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def render_latest_replay(result: dict[str, Any]) -> str:
+    operation = result["operation"]
+    return "\n".join(
+        [
+            "[LATEST]",
+            f"status: {result['status']}",
+            f"replay_reference: {result['replay_reference']}",
+            f"operation: {operation.get('operation_type', 'none')}",
+            f"provider: {operation.get('provider', 'none')}",
+            f"verification_available: {str(result['verification_available']).lower()}",
+        ]
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Readonly governed operational execution")
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
@@ -352,6 +460,8 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_replay.add_argument("replay_reference")
     verify_replay = subcommands.add_parser(VERIFY_REPLAY_COMMAND, help="verify existing runtime replay evidence")
     verify_replay.add_argument("replay_reference")
+    subcommands.add_parser(LIST_REPLAYS_COMMAND, help="list persisted operational runtime replays")
+    subcommands.add_parser(LATEST_REPLAY_COMMAND, help="show the latest persisted operational runtime replay")
     return parser
 
 
@@ -370,12 +480,18 @@ def main(argv: list[str] | None = None) -> int:
             runtime_root=args.runtime_root or None,
         )
         print(render_replay_inspection(result))
-    else:
+    elif args.command == VERIFY_REPLAY_COMMAND:
         result = run_replay_verification(
             replay_reference=args.replay_reference,
             runtime_root=args.runtime_root or None,
         )
         print(render_replay_verification(result))
+    elif args.command == LIST_REPLAYS_COMMAND:
+        result = list_runtime_replays(runtime_root=args.runtime_root or None)
+        print(render_replay_listing(result))
+    else:
+        result = latest_runtime_replay(runtime_root=args.runtime_root or None)
+        print(render_latest_replay(result))
     return 0 if result["fail_closed"] is False else 2
 
 
@@ -387,9 +503,15 @@ __all__ = [
     "DEFAULT_OPERATION_ID",
     "DEFAULT_TIMESTAMP",
     "INSPECT_REPLAY_COMMAND",
+    "LATEST_REPLAY_COMMAND",
+    "LIST_REPLAYS_COMMAND",
     "OPERATION_TYPE",
     "VERIFY_REPLAY_COMMAND",
+    "latest_runtime_replay",
+    "list_runtime_replays",
     "main",
+    "render_latest_replay",
+    "render_replay_listing",
     "render_replay_inspection",
     "render_replay_verification",
     "render_runtime_inspection",
