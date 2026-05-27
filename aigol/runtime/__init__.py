@@ -82,6 +82,11 @@ from .minimal_real_runtime_demo import (
     reconstruct_minimal_real_runtime_demo_lineage,
     run_minimal_real_runtime_demo,
 )
+from .operator_interaction_loop import (
+    OperatorInteractionLoopEvidence,
+    reconstruct_operator_interaction_loop_lineage,
+    run_operator_interaction_loop,
+)
 from .production_isolation_foundation import (
     ProductionIsolationEvidence,
     reconstruct_production_isolation_lineage,
@@ -148,6 +153,7 @@ __all__ = [
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
     "MinimalRealRuntimeDemoEvidence",
+    "OperatorInteractionLoopEvidence",
     "PREPARED",
     "ProviderInterface",
     "ProviderResponse",
@@ -207,6 +213,7 @@ __all__ = [
     "reconstruct_real_runtime_activation_lineage",
     "reconstruct_minimal_governed_execution_lineage",
     "reconstruct_minimal_real_runtime_demo_lineage",
+    "reconstruct_operator_interaction_loop_lineage",
     "reconstruct_production_isolation_lineage",
     "reconstruct_real_governed_execution_resilience_lineage",
     "reconstruct_readonly_domain_experiment_lineage",
@@ -221,6 +228,7 @@ __all__ = [
     "run_minimal_real_runtime_demo",
     "run_governance_runtime_inspector_experiment",
     "run_first_real_operator_usage",
+    "run_operator_interaction_loop",
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",
