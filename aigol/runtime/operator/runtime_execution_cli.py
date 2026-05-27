@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import json
 from pathlib import Path
 from typing import Any
 
 from aigol.cli.commands.return_continuity import (
+    ARTIFACT_TYPE,
+    DEFAULT_RUNTIME_ROOT,
+    SCHEMA_VERSION,
     generate_governed_return_artifact,
+    inspect_governed_return,
     persist_governed_return_artifact,
     read_ledger_entries,
     verify_governed_return,
@@ -32,6 +37,8 @@ from aigol.runtime.production_isolation_foundation import (
 DEFAULT_OPERATION_ID = "RUNTIME-INSPECTION-001"
 DEFAULT_TIMESTAMP = "1970-01-01T00:00:00Z"
 OPERATION_TYPE = "inspect-runtime"
+INSPECT_REPLAY_COMMAND = "inspect-replay"
+VERIFY_REPLAY_COMMAND = "verify-replay"
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -213,6 +220,127 @@ def render_runtime_inspection(result: dict[str, Any]) -> str:
     )
 
 
+def _governed_return_path(*, replay_reference: str, runtime_root: str | Path | None) -> Path:
+    root = Path(runtime_root) if runtime_root is not None else DEFAULT_RUNTIME_ROOT
+    return root / "evidence" / replay_reference / "governed_return.json"
+
+
+def _load_operational_replay_artifact(*, replay_reference: str, runtime_root: str | Path | None) -> dict[str, Any]:
+    artifact_path = _governed_return_path(replay_reference=replay_reference, runtime_root=runtime_root)
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if not isinstance(artifact, dict):
+        raise ValueError("governed return artifact must be an object")
+    if artifact.get("artifact_type") != ARTIFACT_TYPE or artifact.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("governed return schema mismatch")
+    if artifact.get("replay_identity") != replay_reference:
+        raise ValueError("governed return replay identity mismatch")
+    return artifact
+
+
+def run_replay_verification(*, replay_reference: str, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """Verify one persisted replay through the existing governed-return verifier."""
+
+    try:
+        verification = verify_governed_return(replay_identity=replay_reference, runtime_root=runtime_root)
+        if verification.get("status") != "VERIFY_PASSED":
+            raise ValueError("existing replay verification failed")
+        artifact = _load_operational_replay_artifact(replay_reference=replay_reference, runtime_root=runtime_root)
+        return {
+            "replay_reference": replay_reference,
+            "schema_version": artifact["schema_version"],
+            "verification": "verify_passed",
+            "continuity": "valid",
+            "evidence": "present",
+            "governed_return_present": True,
+            "fail_closed": False,
+        }
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return {
+            "replay_reference": replay_reference,
+            "schema_version": "unknown",
+            "verification": "verify_failed",
+            "continuity": "invalid",
+            "evidence": "missing_or_invalid",
+            "governed_return_present": False,
+            "fail_closed": True,
+        }
+
+
+def run_replay_inspection(*, replay_reference: str, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """Read one persisted runtime inspection replay without executing or writing."""
+
+    verification = run_replay_verification(replay_reference=replay_reference, runtime_root=runtime_root)
+    try:
+        inspected = inspect_governed_return(replay_identity=replay_reference, runtime_root=runtime_root)
+        if inspected.get("status") != "FOUND" or verification["fail_closed"]:
+            raise ValueError("replay inspection cannot accept unverified evidence")
+        artifact = _load_operational_replay_artifact(replay_reference=replay_reference, runtime_root=runtime_root)
+        operation = artifact.get("diagnostic_evidence", {}).get("runtime_operation")
+        if not isinstance(operation, dict):
+            raise ValueError("runtime operation evidence is absent")
+        if operation.get("replay_reference") != replay_reference:
+            raise ValueError("runtime operation replay reference mismatch")
+        if operation.get("operation_type") != OPERATION_TYPE or operation.get("provider") != ALLOWED_PROVIDER:
+            raise ValueError("runtime operation boundary mismatch")
+        if operation.get("readonly") is not True:
+            raise ValueError("runtime operation is not readonly")
+        return {
+            "replay_reference": replay_reference,
+            "schema_version": artifact["schema_version"],
+            "status": "persisted",
+            "operation": operation,
+            "verification_available": True,
+            "governed_return_present": True,
+            "evidence_present": True,
+            "fail_closed": False,
+        }
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return {
+            "replay_reference": replay_reference,
+            "schema_version": "unknown",
+            "status": "failed_closed",
+            "operation": {},
+            "verification_available": True,
+            "governed_return_present": False,
+            "evidence_present": False,
+            "fail_closed": True,
+        }
+
+
+def render_replay_inspection(result: dict[str, Any]) -> str:
+    operation = result["operation"]
+    return "\n".join(
+        [
+            "[REPLAY]",
+            f"replay_reference: {result['replay_reference']}",
+            f"schema_version: {result['schema_version']}",
+            f"status: {result['status']}",
+            "",
+            "[OPERATION]",
+            f"operation: {operation.get('operation_type', 'unknown')}",
+            f"provider: {operation.get('provider', 'unknown')}",
+            f"readonly: {str(operation.get('readonly', False)).lower()}",
+            "",
+            "[VERIFICATION]",
+            f"verification_available: {str(result['verification_available']).lower()}",
+            f"governed_return_present: {str(result['governed_return_present']).lower()}",
+            f"evidence_present: {str(result['evidence_present']).lower()}",
+        ]
+    )
+
+
+def render_replay_verification(result: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "[VERIFY]",
+            f"replay_reference: {result['replay_reference']}",
+            f"verification: {result['verification']}",
+            f"continuity: {result['continuity']}",
+            f"evidence: {result['evidence']}",
+        ]
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Readonly governed operational execution")
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
@@ -220,17 +348,34 @@ def build_parser() -> argparse.ArgumentParser:
     inspect = subcommands.add_parser(OPERATION_TYPE, help="inspect runtime through the readonly governed path")
     inspect.add_argument("--operation-id", default=DEFAULT_OPERATION_ID)
     inspect.add_argument("--timestamp", default=DEFAULT_TIMESTAMP)
+    inspect_replay = subcommands.add_parser(INSPECT_REPLAY_COMMAND, help="inspect existing runtime replay evidence")
+    inspect_replay.add_argument("replay_reference")
+    verify_replay = subcommands.add_parser(VERIFY_REPLAY_COMMAND, help="verify existing runtime replay evidence")
+    verify_replay.add_argument("replay_reference")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    result = run_runtime_inspection(
-        operation_id=args.operation_id,
-        created_at=args.timestamp,
-        runtime_root=args.runtime_root or None,
-    )
-    print(render_runtime_inspection(result))
+    if args.command == OPERATION_TYPE:
+        result = run_runtime_inspection(
+            operation_id=args.operation_id,
+            created_at=args.timestamp,
+            runtime_root=args.runtime_root or None,
+        )
+        print(render_runtime_inspection(result))
+    elif args.command == INSPECT_REPLAY_COMMAND:
+        result = run_replay_inspection(
+            replay_reference=args.replay_reference,
+            runtime_root=args.runtime_root or None,
+        )
+        print(render_replay_inspection(result))
+    else:
+        result = run_replay_verification(
+            replay_reference=args.replay_reference,
+            runtime_root=args.runtime_root or None,
+        )
+        print(render_replay_verification(result))
     return 0 if result["fail_closed"] is False else 2
 
 
@@ -241,8 +386,14 @@ if __name__ == "__main__":
 __all__ = [
     "DEFAULT_OPERATION_ID",
     "DEFAULT_TIMESTAMP",
+    "INSPECT_REPLAY_COMMAND",
     "OPERATION_TYPE",
+    "VERIFY_REPLAY_COMMAND",
     "main",
+    "render_replay_inspection",
+    "render_replay_verification",
     "render_runtime_inspection",
+    "run_replay_inspection",
+    "run_replay_verification",
     "run_runtime_inspection",
 ]

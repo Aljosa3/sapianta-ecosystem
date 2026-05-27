@@ -223,21 +223,40 @@ def verify_governed_return(*, replay_identity: str, runtime_root: str | Path | N
             "fail_closed": True,
         }
     artifact = json.loads((paths["evidence_dir"] / "governed_return.json").read_text(encoding="utf-8"))
+    schema_valid = artifact.get("artifact_type") == ARTIFACT_TYPE and artifact.get("schema_version") == SCHEMA_VERSION
     expected_hash = canonical_hash(_hash_input(artifact))
     hash_valid = artifact.get("governed_return_hash") == expected_hash
     ledger_hash_valid = any(entry.get("governed_return_hash") == artifact.get("governed_return_hash") for entry in ledger_matches)
     lineage = json.loads((paths["evidence_dir"] / "lineage.json").read_text(encoding="utf-8"))
-    lineage_valid = lineage.get("governed_return_hash") == artifact.get("governed_return_hash")
-    verified = hash_valid and ledger_hash_valid and lineage_valid
+    diagnostics = json.loads((paths["evidence_dir"] / "diagnostic_evidence.json").read_text(encoding="utf-8"))
+    lineage_valid = lineage == artifact.get("lineage") and lineage.get("governed_return_hash") == artifact.get("governed_return_hash")
+    diagnostics_valid = diagnostics == artifact.get("diagnostic_evidence")
+    stdout_valid = artifact.get("provider_stdout_hash") == _sha_text((paths["evidence_dir"] / "provider_stdout.txt").read_text(encoding="utf-8"))
+    stderr_valid = artifact.get("provider_stderr_hash") == _sha_text((paths["evidence_dir"] / "provider_stderr.txt").read_text(encoding="utf-8"))
+    execution_result_hash_present = str(artifact.get("execution_result_hash", "")).startswith("sha256:")
+    verified = (
+        schema_valid
+        and hash_valid
+        and ledger_hash_valid
+        and lineage_valid
+        and diagnostics_valid
+        and stdout_valid
+        and stderr_valid
+        and execution_result_hash_present
+    )
     return {
         "command": "aigol replay verify",
         "status": "VERIFY_PASSED" if verified else "VERIFY_FAILED",
         "replay_identity": replay_identity,
+        "schema_valid": schema_valid,
         "governed_return_hash_valid": hash_valid,
-        "execution_result_hash_present": str(artifact.get("execution_result_hash", "")).startswith("sha256:"),
+        "execution_result_hash_present": execution_result_hash_present,
         "evidence_files_exist": not missing,
         "ledger_entry_exists": bool(ledger_matches),
         "lineage_continuity_exists": lineage_valid,
+        "diagnostic_evidence_valid": diagnostics_valid,
+        "provider_stdout_hash_valid": stdout_valid,
+        "provider_stderr_hash_valid": stderr_valid,
         "fail_closed": not verified,
     }
 
