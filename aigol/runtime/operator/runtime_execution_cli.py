@@ -41,6 +41,7 @@ INSPECT_REPLAY_COMMAND = "inspect-replay"
 VERIFY_REPLAY_COMMAND = "verify-replay"
 LIST_REPLAYS_COMMAND = "list-replays"
 LATEST_REPLAY_COMMAND = "latest-replay"
+SHOW_RUNTIME_SESSION_COMMAND = "show-runtime-session"
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -449,6 +450,69 @@ def render_latest_replay(result: dict[str, Any]) -> str:
     )
 
 
+def show_runtime_session(*, replay_reference: str, runtime_root: str | Path | None = None) -> dict[str, Any]:
+    """Display one verified operational replay as a readonly session view."""
+
+    replay = run_replay_inspection(replay_reference=replay_reference, runtime_root=runtime_root)
+    verification = run_replay_verification(replay_reference=replay_reference, runtime_root=runtime_root)
+    if replay["fail_closed"] or verification["fail_closed"]:
+        return {
+            "replay_reference": replay_reference,
+            "status": "failed_closed",
+            "schema_version": "unknown",
+            "operation": {},
+            "continuity": "invalid",
+            "verification": "verify_failed",
+            "governance": "blocked",
+            "governed_return_present": False,
+            "evidence_present": False,
+            "evidence_reference": replay_reference,
+            "fail_closed": True,
+        }
+    return {
+        "replay_reference": replay["replay_reference"],
+        "status": replay["status"],
+        "schema_version": replay["schema_version"],
+        "operation": replay["operation"],
+        "continuity": verification["continuity"],
+        "verification": verification["verification"],
+        "governance": "active",
+        "governed_return_present": replay["governed_return_present"],
+        "evidence_present": replay["evidence_present"],
+        "evidence_reference": replay["replay_reference"],
+        "fail_closed": False,
+    }
+
+
+def render_runtime_session(result: dict[str, Any]) -> str:
+    operation = result["operation"]
+    return "\n".join(
+        [
+            "[SESSION]",
+            f"replay_reference: {result['replay_reference']}",
+            f"status: {result['status']}",
+            f"schema_version: {result['schema_version']}",
+            "",
+            "[OPERATION]",
+            f"operation: {operation.get('operation_type', 'unknown')}",
+            f"provider: {operation.get('provider', 'unknown')}",
+            f"readonly: {str(operation.get('readonly', False)).lower()}",
+            "",
+            "[LINEAGE]",
+            f"continuity: {result['continuity']}",
+            f"verification: {result['verification']}",
+            "",
+            "[GOVERNANCE]",
+            f"governance: {result['governance']}",
+            f"governed_return_present: {str(result['governed_return_present']).lower()}",
+            "",
+            "[EVIDENCE]",
+            f"evidence_present: {str(result['evidence_present']).lower()}",
+            f"evidence_reference: {result['evidence_reference']}",
+        ]
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Readonly governed operational execution")
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
@@ -462,6 +526,8 @@ def build_parser() -> argparse.ArgumentParser:
     verify_replay.add_argument("replay_reference")
     subcommands.add_parser(LIST_REPLAYS_COMMAND, help="list persisted operational runtime replays")
     subcommands.add_parser(LATEST_REPLAY_COMMAND, help="show the latest persisted operational runtime replay")
+    show_session = subcommands.add_parser(SHOW_RUNTIME_SESSION_COMMAND, help="show one persisted operational runtime session")
+    show_session.add_argument("replay_reference")
     return parser
 
 
@@ -489,9 +555,15 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == LIST_REPLAYS_COMMAND:
         result = list_runtime_replays(runtime_root=args.runtime_root or None)
         print(render_replay_listing(result))
-    else:
+    elif args.command == LATEST_REPLAY_COMMAND:
         result = latest_runtime_replay(runtime_root=args.runtime_root or None)
         print(render_latest_replay(result))
+    else:
+        result = show_runtime_session(
+            replay_reference=args.replay_reference,
+            runtime_root=args.runtime_root or None,
+        )
+        print(render_runtime_session(result))
     return 0 if result["fail_closed"] is False else 2
 
 
@@ -506,6 +578,7 @@ __all__ = [
     "LATEST_REPLAY_COMMAND",
     "LIST_REPLAYS_COMMAND",
     "OPERATION_TYPE",
+    "SHOW_RUNTIME_SESSION_COMMAND",
     "VERIFY_REPLAY_COMMAND",
     "latest_runtime_replay",
     "list_runtime_replays",
@@ -514,8 +587,10 @@ __all__ = [
     "render_replay_listing",
     "render_replay_inspection",
     "render_replay_verification",
+    "render_runtime_session",
     "render_runtime_inspection",
     "run_replay_inspection",
     "run_replay_verification",
     "run_runtime_inspection",
+    "show_runtime_session",
 ]
