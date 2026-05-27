@@ -37,6 +37,11 @@ from .live_external_llm_provider import (
     invoke_live_external_llm_provider,
     reconstruct_live_external_llm_inference_lineage,
 )
+from .live_openai_runtime_connector import (
+    LiveOpenAIRuntimeConnectorEvidence,
+    invoke_live_openai_runtime_connector,
+    reconstruct_live_openai_runtime_lineage,
+)
 from .live_semantic_pressure_validation import (
     LiveSemanticPressureValidationEvidence,
     reconstruct_live_semantic_pressure_lineage,
@@ -97,6 +102,7 @@ __all__ = [
     "GovernancePromotionResult",
     "GovernanceResilienceCertificationResult",
     "LiveExternalLLMInferenceEvidence",
+    "LiveOpenAIRuntimeConnectorEvidence",
     "LiveSemanticPressureValidationEvidence",
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
@@ -128,6 +134,7 @@ __all__ = [
     "generate_replay_corruption_attempt",
     "interpret_governed_execution_return",
     "invoke_live_external_llm_provider",
+    "invoke_live_openai_runtime_connector",
     "normalize_real_llm_proposal_input",
     "reconstruct_authorization_lineage",
     "reconstruct_certification_lineage",
@@ -138,6 +145,7 @@ __all__ = [
     "reconstruct_failure_lineage",
     "reconstruct_governed_return_lineage",
     "reconstruct_live_external_llm_inference_lineage",
+    "reconstruct_live_openai_runtime_lineage",
     "reconstruct_live_semantic_pressure_lineage",
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
