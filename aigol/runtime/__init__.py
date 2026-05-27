@@ -32,6 +32,11 @@ from .governed_return_interpretation import (
     interpret_governed_execution_return,
     reconstruct_governed_return_lineage,
 )
+from .first_readonly_domain_experiment import (
+    ReadonlyDomainExperimentEvidence,
+    reconstruct_readonly_domain_experiment_lineage,
+    run_governance_runtime_inspector_experiment,
+)
 from .live_external_llm_provider import (
     LiveExternalLLMInferenceEvidence,
     invoke_live_external_llm_provider,
@@ -125,6 +130,7 @@ __all__ = [
     "ProviderInterface",
     "ProviderResponse",
     "ProductionIsolationEvidence",
+    "ReadonlyDomainExperimentEvidence",
     "RealGovernedExecutionResilienceEvidence",
     "RETURNED",
     "RUNNING",
@@ -173,6 +179,7 @@ __all__ = [
     "reconstruct_minimal_real_runtime_demo_lineage",
     "reconstruct_production_isolation_lineage",
     "reconstruct_real_governed_execution_resilience_lineage",
+    "reconstruct_readonly_domain_experiment_lineage",
     "reconstruct_routing_lineage",
     "reconstruct_session_lineage",
     "reconstruct_simulation_lineage",
@@ -182,6 +189,7 @@ __all__ = [
     "review_translated_cognition_candidate",
     "run_real_governed_execution_resilience_suite",
     "run_minimal_real_runtime_demo",
+    "run_governance_runtime_inspector_experiment",
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",
