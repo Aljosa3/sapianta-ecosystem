@@ -62,6 +62,11 @@ from .minimal_governed_execution_path import (
     execute_minimal_governed_path,
     reconstruct_minimal_governed_execution_lineage,
 )
+from .minimal_real_runtime_demo import (
+    MinimalRealRuntimeDemoEvidence,
+    reconstruct_minimal_real_runtime_demo_lineage,
+    run_minimal_real_runtime_demo,
+)
 from .production_isolation_foundation import (
     ProductionIsolationEvidence,
     reconstruct_production_isolation_lineage,
@@ -115,6 +120,7 @@ __all__ = [
     "LiveSemanticPressureValidationEvidence",
     "MockProvider",
     "MinimalGovernedExecutionPathResult",
+    "MinimalRealRuntimeDemoEvidence",
     "PREPARED",
     "ProviderInterface",
     "ProviderResponse",
@@ -164,6 +170,7 @@ __all__ = [
     "reconstruct_promotion_lineage",
     "reconstruct_real_llm_proposal_lineage",
     "reconstruct_minimal_governed_execution_lineage",
+    "reconstruct_minimal_real_runtime_demo_lineage",
     "reconstruct_production_isolation_lineage",
     "reconstruct_real_governed_execution_resilience_lineage",
     "reconstruct_routing_lineage",
@@ -174,6 +181,7 @@ __all__ = [
     "route_authorized_contract",
     "review_translated_cognition_candidate",
     "run_real_governed_execution_resilience_suite",
+    "run_minimal_real_runtime_demo",
     "translate_bounded_proposal",
     "validate_production_isolation",
     "validate_live_semantic_pressure",
