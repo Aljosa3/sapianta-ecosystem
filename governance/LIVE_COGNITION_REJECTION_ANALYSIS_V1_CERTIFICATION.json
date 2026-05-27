@@ -1,0 +1,79 @@
+{
+  "artifact_type": "LIVE_COGNITION_REJECTION_ANALYSIS_V1_CERTIFICATION",
+  "schema_version": "1.0",
+  "certifies": "LIVE_COGNITION_REJECTION_ANALYSIS_V1",
+  "certification_status": "CERTIFIED",
+  "analyzer_components": {
+    "analyze_live_cognition_rejection": "implemented",
+    "reconstruct_live_cognition_rejection_analysis_lineage": "implemented",
+    "render_rejection_analysis_summary": "implemented",
+    "LiveCognitionRejectionAnalysisEvidence": "implemented",
+    "run_live_cognition_rejection_analysis_cli": "implemented"
+  },
+  "boundary_certification": {
+    "readonly_inspection_only": true,
+    "fail_closed_on_malformed_usage_record": true,
+    "replay_visible_lineage_preserved": true,
+    "deterministic_evidence_preserved": true,
+    "governance_authority_separated": true,
+    "no_new_execution_authority_introduced": true,
+    "no_new_runtime_architecture_introduced": true,
+    "no_new_capability_layers_introduced": true,
+    "no_orchestration_introduced": true,
+    "no_retries_introduced": true,
+    "no_async_runtime_introduced": true,
+    "no_runtime_mutation_introduced": true,
+    "no_provider_mutation_introduced": true,
+    "no_new_telemetry_platform_introduced": true,
+    "no_autonomous_execution_introduced": true,
+    "no_write_capability_introduced": true,
+    "no_shell_execution_introduced": true,
+    "no_subprocess_execution_introduced": true,
+    "no_workflow_planning_introduced": true,
+    "no_capability_expansion_introduced": true
+  },
+  "architectural_constraint": {
+    "debugging_stabilization_milestone_only": true,
+    "new_runtime_architecture": false,
+    "autonomous_execution": false,
+    "provider_mutation": false,
+    "runtime_mutation": false,
+    "write_execution": false,
+    "capability_expansion": false,
+    "new_telemetry_platform": false
+  },
+  "inspection_visibility": {
+    "raw_openai_output": "exposed",
+    "normalized_cognition_proposal": "exposed",
+    "cognition_review_decision": "exposed",
+    "authorization_decision": "exposed",
+    "routing_decision": "exposed",
+    "exact_rejection_reason": "exposed"
+  },
+  "rejection_stages": [
+    "NONE",
+    "USAGE_INPUT",
+    "OPENAI_INVOCATION",
+    "GOVERNED_EXECUTION",
+    "COGNITION_REVIEW",
+    "CONTRACT_AUTHORIZATION",
+    "CONTRACT_ROUTING",
+    "PRODUCTION_ISOLATION",
+    "GOVERNED_RETURN"
+  ],
+  "validation_scope": {
+    "valid_request_no_rejection_tested": true,
+    "malformed_cognition_openai_stage_attribution_tested": true,
+    "unauthorized_capability_openai_stage_attribution_tested": true,
+    "invalid_contract_reference_openai_stage_attribution_tested": true,
+    "missing_usage_record_fail_closed_tested": true,
+    "deterministic_evidence_generation_tested": true,
+    "append_only_analysis_lineage_tested": true,
+    "rendered_summary_inspection_fields_tested": true,
+    "cli_rejected_prompt_tested": true,
+    "cli_completed_prompt_tested": true,
+    "no_unbounded_runtime_surface_tested": true,
+    "real_network_calls_required_by_tests": false
+  },
+  "commit_message": "feat(runtime): add live cognition rejection analysis v1"
+}
