@@ -1,0 +1,37 @@
+{
+  "artifact_type": "constitutional_acceptance_evidence",
+  "schema_version": "1.0",
+  "milestone": "ARCHITECTURAL_MINIMALISM_AND_BOUNDED_REFINEMENT_PRINCIPLES_V1",
+  "status": "accepted",
+  "scope": "governance_only_constitutional_anti_overengineering_foundation",
+  "documentation_only": true,
+  "freeze_only": true,
+  "runtime_restriction_engine_added": false,
+  "orchestration_logic_added": false,
+  "mutation_engine_added": false,
+  "architectural_scoring_system_added": false,
+  "autonomous_pruning_added": false,
+  "subsystem_deletion_logic_added": false,
+  "runtime_enforcement_engine_added": false,
+  "runtime_expansion_authority_enabled": false,
+  "adaptive_architecture_mutation_enabled": false,
+  "governance_authority_expanded": false,
+  "certifies": {
+    "refinement_preferred_before_expansion": true,
+    "semantic_correction_preferred_before_redesign": true,
+    "bounded_systems_preferred_before_orchestration_growth": true,
+    "architectural_expansion_requires_justification": true,
+    "replay_safe_governance_boundaries_preserved": true,
+    "stabilization_before_expansion_preserved": true,
+    "operational_boundary_and_freeze_v1_preserved": true
+  },
+  "required_artifacts": [
+    "ARCHITECTURAL_MINIMALISM_AND_BOUNDED_REFINEMENT_PRINCIPLES_V1.md",
+    "ANTI_OVERENGINEERING_FOUNDATION_V1.md",
+    "BOUNDED_REFINEMENT_DISCIPLINE_V1.md",
+    "ARCHITECTURE_EXPANSION_CRITERIA_V1.md",
+    "COMPLEXITY_ESCALATION_RISK_MODEL_V1.md",
+    "ARCHITECTURAL_MINIMALISM_CERTIFICATION.json",
+    "ARCHITECTURAL_MINIMALISM_FREEZE_MANIFEST.json"
+  ]
+}

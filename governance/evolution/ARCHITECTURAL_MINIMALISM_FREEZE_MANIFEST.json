@@ -1,0 +1,21 @@
+{
+  "milestone": "ARCHITECTURAL_MINIMALISM_AND_BOUNDED_REFINEMENT_PRINCIPLES_V1",
+  "type": "constitutional_anti_overengineering_foundation",
+  "governance_only": true,
+  "constitutional_only": true,
+  "anti_overengineering_only": true,
+  "documentation_evidence_only": true,
+  "freeze_only": true,
+  "refinement_preferred_before_expansion": true,
+  "semantic_correction_preferred_before_redesign": true,
+  "stabilization_precedes_capability_multiplication": true,
+  "runtime_restriction_engine_added": false,
+  "orchestration_logic_added": false,
+  "mutation_engine_added": false,
+  "architectural_scoring_system_added": false,
+  "autonomous_pruning_added": false,
+  "runtime_enforcement_engine_added": false,
+  "runtime_expansion_authority_enabled": false,
+  "adaptive_architecture_mutation_enabled": false,
+  "governance_authority_expanded": false
+}
