@@ -1,0 +1,29 @@
+{
+  "milestone": "CONSTITUTIONAL_FREEZE_REVIEW_V1",
+  "type": "constitutional_freeze_review_manifest",
+  "created_artifacts": [
+    "governance/CONSTITUTIONAL_FREEZE_REVIEW_V1.md",
+    "governance/CONSTITUTIONAL_BASELINE_FREEZE_READINESS_V1.md",
+    "governance/REPLAY_CENTRALITY_FREEZE_VALIDATION_V1.md",
+    "governance/FREEZE_STABILITY_FINDINGS_V1.md",
+    "governance/CONSTITUTIONAL_FREEZE_REVIEW_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_FREEZE_REVIEW_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_FREEZE_REVIEW_MANIFEST.json"
+  ],
+  "scope": {
+    "constitutional_freeze_review": true,
+    "baseline_stabilization": true,
+    "replay_centric_freeze_validation": true,
+    "semantic_stability_validation": true,
+    "boundedness_freeze_verification": true,
+    "capability_expansion": false
+  },
+  "freeze_determination": "READY_FOR_FIRST_CONSTITUTIONAL_FREEZE_BASELINE",
+  "non_goals": {
+    "orchestration_runtime": false,
+    "execution_dispatch": false,
+    "adaptive_cognition": false,
+    "governance_growth": false,
+    "new_semantic_domains": false
+  }
+}
