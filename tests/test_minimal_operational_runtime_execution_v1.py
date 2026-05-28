@@ -28,13 +28,13 @@ def test_inspect_runtime_executes_existing_readonly_governed_path_and_persists_r
 
     operation = result["operation"]
     assert operation == {
-        "operation_id": "RUNTIME-INSPECTION-001",
+        "operation_id": "RUNTIME-INSPECTION-000001",
         "operation_type": "inspect-runtime",
         "timestamp": DEFAULT_TIMESTAMP,
         "provider": "metadata_inspection_provider",
         "readonly": True,
         "status": "success",
-        "replay_reference": "RUNTIME-INSPECTION-001",
+        "replay_reference": "RUNTIME-INSPECTION-000001",
     }
     assert result["execution"]["execution_result"].execution_status == "EXECUTED"
     assert result["governed_return"].return_status == "ACCEPTED"
@@ -57,7 +57,7 @@ def test_runtime_inspection_enforces_readonly_isolation(tmp_path) -> None:
 
 def test_runtime_inspection_fails_closed_and_persists_blocked_evidence(tmp_path) -> None:
     result = run_runtime_inspection(
-        operation_id="RUNTIME-INSPECTION-BLOCKED",
+        operation_id="RUNTIME-INSPECTION-000001",
         runtime_root=tmp_path / "runtime",
         proposal_input=_invalid_proposal(),
     )

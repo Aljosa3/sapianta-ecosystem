@@ -14,7 +14,7 @@ from aigol.runtime.operator.runtime_execution_cli import (
 )
 
 
-REPLAY_REFERENCE = "RUNTIME-INSPECTION-001"
+REPLAY_REFERENCE = "RUNTIME-INSPECTION-000001"
 
 
 def _persist_runtime_inspection(tmp_path):

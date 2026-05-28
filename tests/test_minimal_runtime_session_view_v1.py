@@ -12,7 +12,7 @@ from aigol.runtime.operator.runtime_execution_cli import (
 )
 
 
-REPLAY_REFERENCE = "RUNTIME-INSPECTION-001"
+REPLAY_REFERENCE = "RUNTIME-INSPECTION-000001"
 
 
 def _persist(tmp_path):
@@ -51,7 +51,7 @@ def test_runtime_session_output_is_deterministic(tmp_path) -> None:
     second = render_runtime_session(show_runtime_session(replay_reference=REPLAY_REFERENCE, runtime_root=second_root))
 
     assert first == second
-    assert "[SESSION]\nreplay_reference: RUNTIME-INSPECTION-001\nstatus: persisted" in first
+    assert "[SESSION]\nreplay_reference: RUNTIME-INSPECTION-000001\nstatus: persisted" in first
     assert "verification: verify_passed" in first
 
 

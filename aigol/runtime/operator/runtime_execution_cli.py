@@ -6,6 +6,7 @@ import argparse
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.cli.commands.return_continuity import (
@@ -34,7 +35,7 @@ from aigol.runtime.production_isolation_foundation import (
 )
 
 
-DEFAULT_OPERATION_ID = "RUNTIME-INSPECTION-001"
+DEFAULT_OPERATION_ID = "RUNTIME-INSPECTION-000001"
 DEFAULT_TIMESTAMP = "1970-01-01T00:00:00Z"
 OPERATION_TYPE = "inspect-runtime"
 INSPECT_REPLAY_COMMAND = "inspect-replay"
@@ -54,6 +55,7 @@ RUNTIME_CONTRACT_COMMANDS = (
     RUNTIME_SUMMARY_COMMAND,
     INSPECT_RUNTIME_CONTRACT_COMMAND,
 )
+OPERATIONAL_REPLAY_ID_PATTERN = re.compile(r"^RUNTIME-INSPECTION-(\d{6})$")
 
 
 def _readonly_proposal(*, operation_id: str, created_at: str) -> dict[str, Any]:
@@ -79,15 +81,69 @@ def _operation(*, operation_id: str, created_at: str, status: str) -> dict[str, 
     }
 
 
+def _failed_replay_identity_result(*, operation_id: str, created_at: str) -> dict[str, Any]:
+    operation = _operation(operation_id=operation_id, created_at=created_at, status="failed_closed")
+    return {
+        "operation": operation,
+        "execution": {},
+        "isolation": None,
+        "governed_return": None,
+        "governed_return_artifact": {},
+        "persistence": {"status": "NOT_PERSISTED", "fail_closed": True},
+        "verification": {"status": "VERIFY_FAILED", "fail_closed": True},
+        "runtime_summary": {
+            "replay_entries": 0,
+            "latest_operation_id": "NONE",
+            "governance": "blocked",
+            "replay_available": False,
+        },
+        "fail_closed": True,
+    }
+
+
+def _operation_sequence(replay_reference: str) -> int:
+    match = OPERATIONAL_REPLAY_ID_PATTERN.fullmatch(replay_reference)
+    if match is None:
+        raise ValueError("operational replay identity is malformed")
+    sequence = int(match.group(1))
+    if sequence < 1:
+        raise ValueError("operational replay identity sequence is invalid")
+    return sequence
+
+
+def _resolve_operation_id(*, operation_id: str | None, runtime_root: str | Path | None) -> str:
+    references = _operational_ledger_references(runtime_root=runtime_root)
+    for replay_reference in references:
+        if run_replay_inspection(replay_reference=replay_reference, runtime_root=runtime_root)["fail_closed"]:
+            raise ValueError("existing operational replay continuity is invalid")
+    latest_sequence = _operation_sequence(references[-1]) if references else 0
+    selected = operation_id.strip() if isinstance(operation_id, str) and operation_id.strip() else (
+        f"RUNTIME-INSPECTION-{latest_sequence + 1:06d}"
+    )
+    selected_sequence = _operation_sequence(selected)
+    if selected_sequence <= latest_sequence:
+        raise ValueError("operational replay identity is not monotonic")
+    if _governed_return_path(replay_reference=selected, runtime_root=runtime_root).exists():
+        raise ValueError("operational replay identity evidence already exists")
+    return selected
+
+
 def run_runtime_inspection(
     *,
-    operation_id: str = DEFAULT_OPERATION_ID,
+    operation_id: str | None = None,
     created_at: str = DEFAULT_TIMESTAMP,
     runtime_root: str | Path | None = None,
     proposal_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute and persist one readonly runtime inspection through existing gates."""
 
+    try:
+        operation_id = _resolve_operation_id(operation_id=operation_id, runtime_root=runtime_root)
+    except (OSError, TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return _failed_replay_identity_result(
+            operation_id=operation_id or "RUNTIME-INSPECTION-UNRESOLVED",
+            created_at=created_at,
+        )
     operation = _operation(operation_id=operation_id, created_at=created_at, status="pending")
     proposal = deepcopy(proposal_input) if proposal_input is not None else _readonly_proposal(
         operation_id=operation_id,
@@ -372,6 +428,14 @@ def _operational_ledger_references(*, runtime_root: str | Path | None) -> list[s
             raise ValueError("governed return diagnostic evidence is invalid")
         if "runtime_operation" in diagnostics:
             references.append(replay_reference)
+    prior_sequence = 0
+    seen: set[str] = set()
+    for replay_reference in references:
+        sequence = _operation_sequence(replay_reference)
+        if replay_reference in seen or sequence <= prior_sequence:
+            raise ValueError("operational replay identity continuity is invalid")
+        seen.add(replay_reference)
+        prior_sequence = sequence
     return references
 
 
@@ -726,7 +790,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime-root", default="", help="governed return persistence root")
     subcommands = parser.add_subparsers(dest="command", required=True)
     inspect = subcommands.add_parser(OPERATION_TYPE, help="inspect runtime through the readonly governed path")
-    inspect.add_argument("--operation-id", default=DEFAULT_OPERATION_ID)
+    inspect.add_argument("--operation-id", default="")
     inspect.add_argument("--timestamp", default=DEFAULT_TIMESTAMP)
     inspect_replay = subcommands.add_parser(INSPECT_REPLAY_COMMAND, help="inspect existing runtime replay evidence")
     inspect_replay.add_argument("replay_reference")
@@ -745,7 +809,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == OPERATION_TYPE:
         result = run_runtime_inspection(
-            operation_id=args.operation_id,
+            operation_id=args.operation_id or None,
             created_at=args.timestamp,
             runtime_root=args.runtime_root or None,
         )

@@ -21,8 +21,8 @@ def _record(runtime_root, operation_id: str, timestamp: str) -> None:
 
 def test_successful_runtime_summary_reports_verified_continuity_and_is_readonly(tmp_path) -> None:
     runtime_root = tmp_path / "runtime"
-    _record(runtime_root, "RUNTIME-INSPECTION-001", "2026-05-27T00:00:01Z")
-    _record(runtime_root, "RUNTIME-INSPECTION-002", "2026-05-27T00:00:02Z")
+    _record(runtime_root, "RUNTIME-INSPECTION-000001", "2026-05-27T00:00:01Z")
+    _record(runtime_root, "RUNTIME-INSPECTION-000002", "2026-05-27T00:00:02Z")
     ledger_path = runtime_root / "ledger" / "governed_returns.jsonl"
     before = ledger_path.read_text(encoding="utf-8")
 
@@ -32,7 +32,7 @@ def test_successful_runtime_summary_reports_verified_continuity_and_is_readonly(
         "governance": "active",
         "continuity": "valid",
         "replay_count": 2,
-        "latest_replay": "RUNTIME-INSPECTION-002",
+        "latest_replay": "RUNTIME-INSPECTION-000002",
         "evidence_available": True,
         "verification_health": "healthy",
         "malformed_replay_count": 0,
@@ -76,14 +76,14 @@ def test_malformed_ledger_reports_failed_closed_summary(tmp_path) -> None:
 
 def test_corrupted_evidence_is_counted_and_reported(tmp_path) -> None:
     runtime_root = tmp_path / "runtime"
-    _record(runtime_root, "RUNTIME-INSPECTION-001", "2026-05-27T00:00:01Z")
-    _record(runtime_root, "RUNTIME-INSPECTION-002", "2026-05-27T00:00:02Z")
-    (runtime_root / "evidence" / "RUNTIME-INSPECTION-002" / "provider_stdout.txt").write_text("corrupted", encoding="utf-8")
+    _record(runtime_root, "RUNTIME-INSPECTION-000001", "2026-05-27T00:00:01Z")
+    _record(runtime_root, "RUNTIME-INSPECTION-000002", "2026-05-27T00:00:02Z")
+    (runtime_root / "evidence" / "RUNTIME-INSPECTION-000002" / "provider_stdout.txt").write_text("corrupted", encoding="utf-8")
 
     result = runtime_continuity_summary(runtime_root=runtime_root)
 
     assert result["replay_count"] == 2
-    assert result["latest_replay"] == "RUNTIME-INSPECTION-002"
+    assert result["latest_replay"] == "RUNTIME-INSPECTION-000002"
     assert result["verified"] == 1
     assert result["failed"] == 1
     assert result["malformed"] == 1
@@ -93,8 +93,8 @@ def test_corrupted_evidence_is_counted_and_reported(tmp_path) -> None:
 
 def test_missing_evidence_is_reported_separately(tmp_path) -> None:
     runtime_root = tmp_path / "runtime"
-    _record(runtime_root, "RUNTIME-INSPECTION-001", "2026-05-27T00:00:01Z")
-    (runtime_root / "evidence" / "RUNTIME-INSPECTION-001" / "lineage.json").unlink()
+    _record(runtime_root, "RUNTIME-INSPECTION-000001", "2026-05-27T00:00:01Z")
+    (runtime_root / "evidence" / "RUNTIME-INSPECTION-000001" / "lineage.json").unlink()
 
     result = runtime_continuity_summary(runtime_root=runtime_root)
 
@@ -108,8 +108,8 @@ def test_runtime_summary_rendering_is_deterministic(tmp_path) -> None:
     first_root = tmp_path / "first"
     second_root = tmp_path / "second"
     for root in (first_root, second_root):
-        _record(root, "RUNTIME-INSPECTION-001", "2026-05-27T00:00:01Z")
-        _record(root, "RUNTIME-INSPECTION-002", "2026-05-27T00:00:02Z")
+        _record(root, "RUNTIME-INSPECTION-000001", "2026-05-27T00:00:01Z")
+        _record(root, "RUNTIME-INSPECTION-000002", "2026-05-27T00:00:02Z")
 
     first = render_runtime_continuity_summary(runtime_continuity_summary(runtime_root=first_root))
     second = render_runtime_continuity_summary(runtime_continuity_summary(runtime_root=second_root))
@@ -121,7 +121,7 @@ def test_runtime_summary_rendering_is_deterministic(tmp_path) -> None:
 
 def test_cli_exposes_runtime_summary_and_returns_nonzero_on_failure(tmp_path, capsys) -> None:
     healthy_root = tmp_path / "healthy"
-    _record(healthy_root, "RUNTIME-INSPECTION-001", "2026-05-27T00:00:01Z")
+    _record(healthy_root, "RUNTIME-INSPECTION-000001", "2026-05-27T00:00:01Z")
 
     assert main(["--runtime-root", str(healthy_root), "runtime-summary"]) == 0
     assert "verification_health: healthy" in capsys.readouterr().out
