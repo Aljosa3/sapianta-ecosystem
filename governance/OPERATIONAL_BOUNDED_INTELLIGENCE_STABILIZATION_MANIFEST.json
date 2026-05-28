@@ -1,0 +1,39 @@
+{
+  "milestone": "OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_REVIEW_V1",
+  "type": "governance_stabilization_review_manifest",
+  "created_artifacts": [
+    "governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_REVIEW_V1.md",
+    "governance/OPERATIONAL_BOUNDED_INTELLIGENCE_REVIEW_FINDINGS_V1.md",
+    "governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_ACCEPTANCE.json",
+    "governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_CERTIFICATION.json",
+    "governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_MANIFEST.json"
+  ],
+  "reviewed_layers": [
+    "governance/MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1.md",
+    "governance/BOUNDED_RUNTIME_PRESSURE_VALIDATION_V1.md",
+    "governance/CONSTITUTIONAL_RUNTIME_ISOLATION_V1.md",
+    "governance/CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_V1.md"
+  ],
+  "validation_commands": [
+    "python -m json.tool governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_ACCEPTANCE.json",
+    "python -m json.tool governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_CERTIFICATION.json",
+    "python -m json.tool governance/OPERATIONAL_BOUNDED_INTELLIGENCE_STABILIZATION_MANIFEST.json",
+    "python -m pytest tests/test_minimal_executable_real_llm_session_v1.py tests/test_bounded_runtime_pressure_validation_v1.py tests/test_constitutional_runtime_isolation_v1.py tests/test_constitutional_runtime_identity_continuity_v1.py",
+    "git diff --check"
+  ],
+  "runtime_files_added": [],
+  "test_files_added": [],
+  "capability_expansion": false,
+  "freeze_recommendation": "SAFE_TO_FREEZE_BEFORE_ORCHESTRATION_DISCUSSION",
+  "non_goals": {
+    "orchestration": false,
+    "agents": false,
+    "workers": false,
+    "adaptive_cognition": false,
+    "persistent_memory": false,
+    "autonomous_planning": false,
+    "recursive_runtime": false,
+    "execution_authority": false,
+    "capability_expansion": false
+  }
+}
