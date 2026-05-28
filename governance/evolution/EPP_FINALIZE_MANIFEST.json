@@ -1,0 +1,10 @@
+{
+  "milestone": "EPP_FOUNDATION_V1",
+  "type": "governance_foundation",
+  "runtime_authority_added": false,
+  "autonomous_mutation_enabled": false,
+  "replay_required": true,
+  "rollback_required": true,
+  "proposal_only_layer": true,
+  "protected_layers_mutable": false
+}
