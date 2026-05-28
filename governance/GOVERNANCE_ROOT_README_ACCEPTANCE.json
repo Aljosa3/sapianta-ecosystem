@@ -1,0 +1,32 @@
+{
+  "artifact_type": "governance_root_readme_acceptance",
+  "schema_version": "1.0",
+  "milestone": "GOVERNANCE_ROOT_README_V1",
+  "status": "accepted",
+  "scope": "canonical_human_governance_entrypoint_only",
+  "governance_only": true,
+  "human_entrypoint_only": true,
+  "documentation_only": true,
+  "constitutional_guidance_only": true,
+  "freeze_only": true,
+  "governance_orientation_deterministic": true,
+  "governance_continuity_bounded": true,
+  "replay_safe_references_preserved": true,
+  "runtime_governance_authority_enabled": false,
+  "adaptive_governance_interpretation_enabled": false,
+  "orchestration_runtime_governance_systems_introduced": false,
+  "runtime_behavior_added": false,
+  "governance_engine_added": false,
+  "semantic_navigation_added": false,
+  "adaptive_indexing_added": false,
+  "governance_reasoning_runtime_added": false,
+  "mutation_authority_added": false,
+  "runtime_governance_memory_added": false,
+  "required_artifacts": [
+    "README.md",
+    "GOVERNANCE_READING_ORDER_V1.md",
+    "GOVERNANCE_ENTRYPOINT_ORIENTATION_V1.md",
+    "GOVERNANCE_BOUNDARY_WARNINGS_V1.md",
+    "GOVERNANCE_ROOT_README_CERTIFICATION.json"
+  ]
+}
