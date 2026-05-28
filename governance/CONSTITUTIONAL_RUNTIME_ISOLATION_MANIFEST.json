@@ -1,0 +1,42 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_ISOLATION_V1",
+  "type": "constitutional_runtime_isolation",
+  "runtime_files": [
+    "aigol/runtime/constitutional_runtime_isolation.py"
+  ],
+  "test_files": [
+    "tests/test_constitutional_runtime_isolation_v1.py"
+  ],
+  "governance_files": [
+    "governance/CONSTITUTIONAL_RUNTIME_ISOLATION_V1.md",
+    "governance/CONSTITUTIONAL_ISOLATION_BOUNDARIES_V1.md",
+    "governance/RUNTIME_SANDBOX_ENFORCEMENT_V1.md",
+    "governance/REPLAY_ISOLATION_GUARANTEES_V1.md",
+    "governance/CONSTITUTIONAL_RUNTIME_ISOLATION_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_RUNTIME_ISOLATION_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_RUNTIME_ISOLATION_MANIFEST.json"
+  ],
+  "required_tests": [
+    "constitutional_mutation_blocking",
+    "replay_contamination_prevention",
+    "cross_session_isolation",
+    "hidden_state_prevention",
+    "sandbox_containment",
+    "replay_lineage_isolation",
+    "immutable_governance_enforcement"
+  ],
+  "non_expansion": {
+    "orchestration_added": false,
+    "workers_added": false,
+    "recursive_cognition_added": false,
+    "autonomous_retries_added": false,
+    "adaptive_runtime_added": false,
+    "hidden_memory_added": false,
+    "cross_session_cognition_added": false,
+    "persistent_intelligence_state_added": false,
+    "execution_authority_added": false,
+    "governance_mutation_added": false,
+    "runtime_self_modification_added": false,
+    "semantic_planners_added": false
+  }
+}

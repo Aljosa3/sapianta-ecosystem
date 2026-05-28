@@ -1,0 +1,34 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_ISOLATION_V1",
+  "certification": "constitutional_runtime_isolation_certified",
+  "certifies": {
+    "runtime_remained_constitutionally_isolated": true,
+    "immutable_governance_substrate_preserved": true,
+    "hidden_runtime_continuity_prevented": true,
+    "replay_contamination_prevented": true,
+    "replay_lineage_isolation_preserved": true,
+    "runtime_sandbox_boundaries_enforced": true,
+    "isolation_violations_fail_closed": true,
+    "bounded_intelligence_has_no_constitutional_authority": true
+  },
+  "architectural_model": {
+    "intelligence_runtime": "USERSPACE",
+    "constitutional_substrate": "KERNEL",
+    "constitutional_substrate_authoritative": true,
+    "bounded_cognition_runtime_non_authoritative": true
+  },
+  "explicit_prohibitions": {
+    "orchestration": true,
+    "workers": true,
+    "recursive_cognition": true,
+    "autonomous_retries": true,
+    "adaptive_runtime": true,
+    "hidden_memory": true,
+    "cross_session_cognition": true,
+    "persistent_intelligence_state": true,
+    "execution_authority": true,
+    "governance_mutation": true,
+    "runtime_self_modification": true,
+    "semantic_planners": true
+  }
+}

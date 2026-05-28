@@ -1,0 +1,32 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_ISOLATION_V1",
+  "type": "post_pressure_survivability_isolation",
+  "runtime_containment": true,
+  "constitutional_isolation": true,
+  "cognition_sandboxing": true,
+  "replay_isolated_participation": true,
+  "immutable_substrate_enforcement": true,
+  "acceptance": {
+    "constitutional_mutation_blocking_validated": true,
+    "replay_contamination_prevention_validated": true,
+    "cross_session_isolation_validated": true,
+    "hidden_state_prevention_validated": true,
+    "sandbox_containment_validated": true,
+    "replay_lineage_isolation_validated": true,
+    "immutable_governance_enforcement_validated": true
+  },
+  "non_expansion": {
+    "orchestration_added": false,
+    "workers_added": false,
+    "recursive_cognition_added": false,
+    "autonomous_retries_added": false,
+    "adaptive_runtime_added": false,
+    "hidden_memory_added": false,
+    "cross_session_cognition_added": false,
+    "persistent_intelligence_state_added": false,
+    "execution_authority_added": false,
+    "governance_mutation_added": false,
+    "runtime_self_modification_added": false,
+    "semantic_planners_added": false
+  }
+}
