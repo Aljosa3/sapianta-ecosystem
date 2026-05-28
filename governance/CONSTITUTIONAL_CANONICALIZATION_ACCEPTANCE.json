@@ -1,0 +1,28 @@
+{
+  "milestone": "CONSTITUTIONAL_CANONICALIZATION_V1",
+  "type": "constitutional_language_canonicalization",
+  "capability_expansion": false,
+  "acceptance": {
+    "canonical_replay_language_defined": true,
+    "canonical_authority_model_defined": true,
+    "canonical_boundedness_language_defined": true,
+    "canonical_lifecycle_semantics_defined": true,
+    "semantic_duplication_reduction_defined": true,
+    "replay_centrality_preserved": true,
+    "governance_inflation_avoided": true
+  },
+  "canonicalization_targets": {
+    "replay_language": true,
+    "authority_language": true,
+    "boundedness_language": true,
+    "lifecycle_language": true
+  },
+  "non_goals_preserved": {
+    "capability_expansion": true,
+    "orchestration_runtime": true,
+    "new_governance_domains": true,
+    "additional_lifecycle_systems": true,
+    "semantic_feature_growth": true
+  },
+  "recommendation": "USE_CANONICAL_TERMS_BEFORE_CREATING_NEW_GOVERNANCE_LANGUAGE"
+}

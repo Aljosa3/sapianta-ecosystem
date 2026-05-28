@@ -1,0 +1,34 @@
+{
+  "milestone": "CONSTITUTIONAL_CANONICALIZATION_V1",
+  "type": "canonical_language_manifest",
+  "created_artifacts": [
+    "governance/CONSTITUTIONAL_CANONICALIZATION_V1.md",
+    "governance/CANONICAL_REPLAY_LANGUAGE_V1.md",
+    "governance/CANONICAL_AUTHORITY_MODEL_V1.md",
+    "governance/CANONICAL_BOUNDEDNESS_LANGUAGE_V1.md",
+    "governance/CANONICAL_LIFECYCLE_SEMANTICS_V1.md",
+    "governance/CONSTITUTIONAL_CANONICALIZATION_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_CANONICALIZATION_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_CANONICALIZATION_MANIFEST.json"
+  ],
+  "scope": {
+    "terminology_canonicalization": true,
+    "replay_centric_semantic_unification": true,
+    "authority_language_consolidation": true,
+    "boundary_definition_normalization": true,
+    "constitutional_vocabulary_stabilization": true,
+    "capability_expansion": false
+  },
+  "canonical_targets": [
+    "replay_language",
+    "authority_language",
+    "boundedness_language",
+    "lifecycle_language"
+  ],
+  "non_goals": {
+    "orchestration_runtime": false,
+    "new_governance_domains": false,
+    "additional_lifecycle_systems": false,
+    "semantic_feature_growth": false
+  }
+}
