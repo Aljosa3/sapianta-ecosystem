@@ -1,0 +1,40 @@
+{
+  "milestone": "STABILIZATION_EPOCH_FREEZE_V1",
+  "type": "constitutional_stabilization_epoch_closure",
+  "governance_only": true,
+  "freeze_only": true,
+  "certification_only": true,
+  "stabilization_closure_only": true,
+  "documentation_evidence_only": true,
+  "substrate_status": {
+    "replay_substrate": "STABILIZED",
+    "governance_substrate": "STABILIZED",
+    "continuity_substrate": "STABILIZED",
+    "visibility_substrate": "STABILIZED"
+  },
+  "not_yet_activated": {
+    "cognition_runtime": true,
+    "semantic_continuity_runtime": true,
+    "adaptive_orchestration": true,
+    "autonomous_governance_mutation": true,
+    "goal_continuity_runtime": true,
+    "semantic_planning_runtime": true
+  },
+  "certified_invariants": {
+    "replay_continuity_append_only": true,
+    "continuity_ambiguity_fails_closed": true,
+    "governance_continuity_deterministic": true,
+    "session_continuity_replay_safe": true,
+    "refinement_precedes_expansion": true,
+    "stabilization_precedes_semantic_amplification": true,
+    "governance_memory_is_not_runtime_cognition": true
+  },
+  "runtime_authority_added": false,
+  "cognition_runtime_activated": false,
+  "orchestration_activated": false,
+  "adaptive_runtime_behavior_activated": false,
+  "semantic_reasoning_runtime_activated": false,
+  "governance_execution_runtime_activated": false,
+  "mutation_authority_added": false,
+  "governance_authority_expanded": false
+}
