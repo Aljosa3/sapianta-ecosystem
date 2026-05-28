@@ -1,0 +1,30 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_V1",
+  "certification": "constitutional_runtime_identity_continuity_certified",
+  "certifies": {
+    "deterministic_identity_continuity_preserved": true,
+    "hidden_identity_persistence_prevented": true,
+    "replay_identity_contamination_prevented": true,
+    "authority_boundaries_preserved": true,
+    "immutable_identity_lineage_enforced": true,
+    "identity_ambiguity_fails_closed": true,
+    "implicit_authority_persistence_prevented": true
+  },
+  "identity_states": {
+    "session_identity": "deterministic_replay_scoped_isolated_immutable",
+    "replay_identity": "replay_visible_lineage_bound_append_only_deterministic",
+    "authority_identity": "constitutionally_scoped_immutable_non_transferable"
+  },
+  "explicit_prohibitions": {
+    "orchestration": true,
+    "workers": true,
+    "recursive_cognition": true,
+    "adaptive_memory": true,
+    "hidden_persistence": true,
+    "semantic_identity_inference": true,
+    "autonomous_identity_continuation": true,
+    "runtime_authority_escalation": true,
+    "cross_session_cognition_merge": true,
+    "self_modifying_identity_state": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_V1",
+  "type": "post_runtime_isolation_identity_continuity",
+  "identity_continuity_stabilization": true,
+  "replay_identity_integrity": true,
+  "authority_preserving_lineage_continuity": true,
+  "bounded_runtime_identity_enforcement": true,
+  "fail_closed_identity_transition_control": true,
+  "acceptance": {
+    "hidden_identity_carryover_validated": true,
+    "replay_identity_contamination_validated": true,
+    "authority_drift_validated": true,
+    "session_resurrection_prevention_validated": true,
+    "replay_identity_immutability_validated": true,
+    "deterministic_identity_continuity_validated": true,
+    "fail_close_identity_transitions_validated": true
+  },
+  "non_expansion": {
+    "orchestration_added": false,
+    "workers_added": false,
+    "recursive_cognition_added": false,
+    "adaptive_memory_added": false,
+    "hidden_persistence_added": false,
+    "semantic_identity_inference_added": false,
+    "autonomous_identity_continuation_added": false,
+    "runtime_authority_escalation_added": false,
+    "cross_session_cognition_merge_added": false,
+    "self_modifying_identity_state_added": false
+  }
+}

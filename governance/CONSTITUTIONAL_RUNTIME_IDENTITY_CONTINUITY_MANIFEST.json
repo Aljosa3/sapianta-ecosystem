@@ -1,0 +1,40 @@
+{
+  "milestone": "CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_V1",
+  "type": "constitutional_runtime_identity_continuity",
+  "runtime_files": [
+    "aigol/runtime/constitutional_runtime_identity_continuity.py"
+  ],
+  "test_files": [
+    "tests/test_constitutional_runtime_identity_continuity_v1.py"
+  ],
+  "governance_files": [
+    "governance/CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_V1.md",
+    "governance/RUNTIME_IDENTITY_CONTINUITY_GUARANTEES_V1.md",
+    "governance/REPLAY_IDENTITY_INTEGRITY_V1.md",
+    "governance/AUTHORITY_IDENTITY_BOUNDARIES_V1.md",
+    "governance/CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_RUNTIME_IDENTITY_CONTINUITY_MANIFEST.json"
+  ],
+  "required_tests": [
+    "hidden_identity_carryover",
+    "replay_identity_contamination",
+    "authority_drift",
+    "session_resurrection_prevention",
+    "replay_identity_immutability",
+    "deterministic_identity_continuity",
+    "fail_close_identity_transitions"
+  ],
+  "non_expansion": {
+    "orchestration_added": false,
+    "workers_added": false,
+    "recursive_cognition_added": false,
+    "adaptive_memory_added": false,
+    "hidden_persistence_added": false,
+    "semantic_identity_inference_added": false,
+    "autonomous_identity_continuation_added": false,
+    "runtime_authority_escalation_added": false,
+    "cross_session_cognition_merge_added": false,
+    "self_modifying_identity_state_added": false
+  }
+}
