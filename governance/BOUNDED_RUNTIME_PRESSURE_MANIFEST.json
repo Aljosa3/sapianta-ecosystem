@@ -1,0 +1,41 @@
+{
+  "milestone": "BOUNDED_RUNTIME_PRESSURE_VALIDATION_V1",
+  "type": "pressure_survivability_validation",
+  "target": "MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1",
+  "test_files": [
+    "tests/test_bounded_runtime_pressure_validation_v1.py"
+  ],
+  "governance_files": [
+    "governance/BOUNDED_RUNTIME_PRESSURE_VALIDATION_V1.md",
+    "governance/RUNTIME_PRESSURE_BOUNDARY_GUARANTEES_V1.md",
+    "governance/REPLAY_PRESSURE_VALIDATION_V1.md",
+    "governance/AMBIGUITY_FAIL_CLOSED_PRESSURE_RULES_V1.md",
+    "governance/BOUNDED_RUNTIME_PRESSURE_ACCEPTANCE.json",
+    "governance/BOUNDED_RUNTIME_PRESSURE_CERTIFICATION.json",
+    "governance/BOUNDED_RUNTIME_PRESSURE_MANIFEST.json"
+  ],
+  "pressure_tests": [
+    "malformed_contributions",
+    "authority_escalation_attempts",
+    "replay_corruption_attempts",
+    "ambiguity_handling",
+    "continuity_interruption",
+    "deterministic_failed_replay_states",
+    "append_only_replay_guarantees",
+    "replay_ordering_preservation",
+    "stress_repetition"
+  ],
+  "non_expansion": {
+    "orchestration_added": false,
+    "agents_added": false,
+    "recursive_cognition_added": false,
+    "autonomous_retries_added": false,
+    "adaptive_runtime_added": false,
+    "multi_session_coordination_added": false,
+    "execution_authority_added": false,
+    "hidden_recovery_added": false,
+    "self_healing_orchestration_added": false,
+    "capability_expansion_added": false,
+    "semantic_planners_added": false
+  }
+}

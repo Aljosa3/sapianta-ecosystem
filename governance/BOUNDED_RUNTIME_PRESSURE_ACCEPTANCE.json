@@ -1,0 +1,27 @@
+{
+  "milestone": "BOUNDED_RUNTIME_PRESSURE_VALIDATION_V1",
+  "type": "post_operational_stabilization_pressure_validation",
+  "validation_only": true,
+  "capability_expansion": false,
+  "acceptance": {
+    "malformed_contribution_tests_defined": true,
+    "authority_escalation_tests_defined": true,
+    "replay_corruption_tests_defined": true,
+    "ambiguity_pressure_tests_defined": true,
+    "continuity_interruption_tests_defined": true,
+    "stress_repetition_tests_defined": true,
+    "deterministic_failed_replay_states_validated": true,
+    "append_only_replay_guarantees_validated": true,
+    "replay_ordering_preservation_validated": true
+  },
+  "success_condition": {
+    "failed_closed_correctly": true,
+    "replay_continuity_preserved": true,
+    "boundedness_preserved": true,
+    "lineage_integrity_preserved": true,
+    "constitutional_constraints_preserved": true,
+    "hidden_continuation_avoided": true,
+    "authority_escalation_avoided": true,
+    "operational_determinism_preserved": true
+  }
+}
