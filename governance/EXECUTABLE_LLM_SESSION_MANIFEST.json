@@ -1,0 +1,50 @@
+{
+  "milestone": "MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1",
+  "type": "first_executable_bounded_intelligence_participation",
+  "runtime_files": [
+    "aigol/runtime/minimal_executable_real_llm_session.py"
+  ],
+  "test_files": [
+    "tests/test_minimal_executable_real_llm_session_v1.py"
+  ],
+  "governance_files": [
+    "governance/MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1.md",
+    "governance/EXECUTABLE_LLM_SESSION_RUNTIME_BOUNDARY_V1.md",
+    "governance/REPLAY_VISIBLE_LLM_SESSION_RUNTIME_V1.md",
+    "governance/EXECUTABLE_LLM_SESSION_FAIL_CLOSED_RULES_V1.md",
+    "governance/EXECUTABLE_LLM_SESSION_ACCEPTANCE.json",
+    "governance/EXECUTABLE_LLM_SESSION_CERTIFICATION.json",
+    "governance/EXECUTABLE_LLM_SESSION_MANIFEST.json"
+  ],
+  "session_flow": [
+    "human",
+    "aigol_ingress",
+    "bounded_external_llm_contribution",
+    "replay_safe_lineage_capture",
+    "continuity_validation",
+    "governed_egress"
+  ],
+  "runtime_scope": {
+    "minimal_session_runtime": true,
+    "bounded_ingress": true,
+    "bounded_egress": true,
+    "replay_capture": true,
+    "continuity_validation": true,
+    "normalization": true,
+    "fail_close_handling": true
+  },
+  "non_activation": {
+    "orchestration_added": false,
+    "workers_added": false,
+    "autonomous_retries_added": false,
+    "recursive_execution_added": false,
+    "adaptive_cognition_added": false,
+    "capability_expansion_added": false,
+    "automatic_continuation_added": false,
+    "multi_session_coordination_added": false,
+    "hidden_memory_mutation_added": false,
+    "background_processing_added": false,
+    "multi_agent_logic_added": false,
+    "runtime_execution_authority_added": false
+  }
+}

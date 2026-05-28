@@ -1,0 +1,31 @@
+{
+  "milestone": "MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1",
+  "type": "operational_bounded_interaction_milestone",
+  "single_interaction_path": true,
+  "single_lineage_flow": true,
+  "single_replay_chain": true,
+  "explicit_ingress": true,
+  "explicit_egress": true,
+  "replay_visible_contribution": true,
+  "fail_closed_ambiguity_handling": true,
+  "bounded_session_lifecycle": true,
+  "deterministic_artifact_recording": true,
+  "acceptance": {
+    "deterministic_replay_artifact_creation_validated": true,
+    "lineage_continuity_correctness_validated": true,
+    "fail_close_interruption_behavior_validated": true,
+    "append_only_replay_capture_validated": true,
+    "bounded_lifecycle_completion_validated": true,
+    "malformed_contribution_rejection_validated": true,
+    "authority_escalation_rejection_validated": true
+  },
+  "non_activation": {
+    "orchestration_activated": false,
+    "autonomous_cognition_activated": false,
+    "recursive_planning_activated": false,
+    "execution_authority_activated": false,
+    "adaptive_governance_activated": false,
+    "hidden_continuation_activated": false,
+    "autonomous_runtime_expansion_activated": false
+  }
+}

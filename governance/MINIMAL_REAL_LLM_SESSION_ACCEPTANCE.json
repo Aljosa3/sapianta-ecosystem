@@ -1,0 +1,32 @@
+{
+  "milestone": "MINIMAL_REAL_LLM_SESSION_V1",
+  "type": "first_controlled_bounded_real_llm_interaction_session",
+  "governance_only": true,
+  "single_bounded_interaction": true,
+  "replay_visible": true,
+  "continuity_safe": true,
+  "fail_closed": true,
+  "governance_bounded": true,
+  "non_agentic": true,
+  "non_orchestrating": true,
+  "documentation_evidence_only": true,
+  "acceptance": {
+    "human_bounded_request_defined": true,
+    "aigol_ingress_reference_defined": true,
+    "bounded_llm_contribution_defined": true,
+    "replay_safe_lineage_capture_defined": true,
+    "continuity_visibility_validation_defined": true,
+    "governed_egress_visibility_defined": true,
+    "fail_closed_session_rules_defined": true
+  },
+  "non_activation": {
+    "orchestration_activated": false,
+    "adaptive_cognition_activated": false,
+    "execution_authority_activated": false,
+    "autonomous_execution_activated": false,
+    "planning_runtime_activated": false,
+    "agents_activated": false,
+    "hidden_memory_activated": false,
+    "governance_authority_delegated": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "milestone": "MINIMAL_EXECUTABLE_REAL_LLM_SESSION_V1",
+  "certification": "first_executable_bounded_intelligence_participation_certified",
+  "certifies": {
+    "bounded_intelligence_participation_preserves_constitutional_continuity": true,
+    "replay_integrity_preserved": true,
+    "governance_boundaries_preserved": true,
+    "real_interaction_pressure_is_fail_closed": true,
+    "single_chain_lineage_preserved": true,
+    "external_llm_output_is_untrusted_contribution": true,
+    "governed_egress_is_deterministic": true
+  },
+  "explicit_prohibitions": {
+    "orchestration_systems": true,
+    "worker_systems": true,
+    "autonomous_retries": true,
+    "recursive_execution": true,
+    "adaptive_cognition": true,
+    "capability_expansion": true,
+    "automatic_continuation": true,
+    "multi_session_coordination": true,
+    "hidden_memory_mutation": true,
+    "background_processing": true,
+    "multi_agent_logic": true,
+    "runtime_execution_authority": true
+  },
+  "preserves": {
+    "stabilization": true,
+    "boundedness": true,
+    "replayability": true,
+    "governance_visibility": true,
+    "fail_closed_semantics": true
+  }
+}
