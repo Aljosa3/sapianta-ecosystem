@@ -1,0 +1,39 @@
+{
+  "milestone": "MINIMAL_GOVERNED_ORCHESTRATION_BOUNDARY_V1",
+  "type": "governance_boundary_manifest",
+  "created_artifacts": [
+    "governance/MINIMAL_GOVERNED_ORCHESTRATION_BOUNDARY_V1.md",
+    "governance/ORCHESTRATION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/REPLAY_VISIBLE_ORCHESTRATION_SEMANTICS_V1.md",
+    "governance/ORCHESTRATION_FAIL_CLOSED_RULES_V1.md",
+    "governance/MINIMAL_GOVERNED_ORCHESTRATION_ACCEPTANCE.json",
+    "governance/MINIMAL_GOVERNED_ORCHESTRATION_CERTIFICATION.json",
+    "governance/MINIMAL_GOVERNED_ORCHESTRATION_MANIFEST.json"
+  ],
+  "scope": {
+    "governance_only": true,
+    "boundary_definition_only": true,
+    "documentation_evidence_only": true,
+    "runtime_implementation": false,
+    "capability_expansion": false
+  },
+  "defined_models": [
+    "orchestration_request",
+    "orchestration_governance",
+    "orchestration_lineage",
+    "orchestration_termination",
+    "orchestration_fail_closed_rules"
+  ],
+  "non_goals": {
+    "real_orchestration_runtime": false,
+    "agents": false,
+    "worker_systems": false,
+    "autonomous_dispatch": false,
+    "adaptive_coordination": false,
+    "recursive_orchestration": false,
+    "execution_authority": false,
+    "hidden_retries": false,
+    "implicit_continuation": false,
+    "orchestration_memory": false
+  }
+}

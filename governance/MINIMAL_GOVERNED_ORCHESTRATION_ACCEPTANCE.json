@@ -1,0 +1,34 @@
+{
+  "milestone": "MINIMAL_GOVERNED_ORCHESTRATION_BOUNDARY_V1",
+  "type": "constitutional_orchestration_boundary_definition",
+  "runtime_implementation": false,
+  "acceptance": {
+    "orchestration_defined_as_bounded_constitutional_coordination_concept": true,
+    "orchestration_remains_non_authoritative": true,
+    "orchestration_remains_replay_visible": true,
+    "orchestration_remains_bounded": true,
+    "orchestration_requires_explicit_termination": true,
+    "hidden_continuation_prohibited": true,
+    "recursive_autonomy_prohibited": true,
+    "fail_closed_orchestration_governance_defined": true
+  },
+  "review_questions": {
+    "can_orchestration_remain_non_authoritative": true,
+    "can_orchestration_remain_replay_visible": true,
+    "can_orchestration_remain_bounded": true,
+    "can_orchestration_remain_explicitly_terminated": true,
+    "can_orchestration_avoid_hidden_continuation": true,
+    "can_orchestration_avoid_recursive_autonomy": true
+  },
+  "non_goals_preserved": {
+    "orchestration_runtime": true,
+    "agents": true,
+    "workers": true,
+    "autonomous_planning": true,
+    "adaptive_orchestration": true,
+    "execution_coordination": true,
+    "hidden_retries": true,
+    "implicit_continuation": true,
+    "orchestration_memory": true
+  }
+}
