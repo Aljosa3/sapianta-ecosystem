@@ -1,0 +1,29 @@
+{
+  "artifact_type": "constitutional_governance_index_acceptance",
+  "schema_version": "1.0",
+  "milestone": "EVOLUTION_GOVERNANCE_INDEX_V1",
+  "status": "accepted",
+  "scope": "deterministic_constitutional_governance_discovery_foundation",
+  "governance_discovery_deterministic": true,
+  "governance_lookup_bounded": true,
+  "governance_lineage_append_only": true,
+  "replay_safe_references_preserved": true,
+  "runtime_governance_authority_enabled": false,
+  "adaptive_governance_interpretation_enabled": false,
+  "orchestration_runtime_governance_systems_introduced": false,
+  "governance_engine_introduced": false,
+  "semantic_search_introduced": false,
+  "runtime_governance_memory_introduced": false,
+  "governance_routing_system_introduced": false,
+  "graph_query_engine_introduced": false,
+  "mutation_authority_introduced": false,
+  "required_artifacts": [
+    "EVOLUTION_GOVERNANCE_INDEX_V1.md",
+    "GOVERNANCE_TOPOLOGY_MAP_V1.md",
+    "GOVERNANCE_DISCOVERY_STRUCTURE_V1.md",
+    "GOVERNANCE_NAMESPACE_CLASSIFICATION_V1.md",
+    "GOVERNANCE_ARTIFACT_LINEAGE_MAP_V1.md",
+    "EVOLUTION_GOVERNANCE_INDEX_MANIFEST_V1.json",
+    "EVOLUTION_GOVERNANCE_INDEX_CERTIFICATION.json"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "artifact_type": "constitutional_governance_index_manifest",
+  "schema_version": "1.0",
+  "milestone": "EVOLUTION_GOVERNANCE_INDEX_V1",
+  "scope": "deterministic_constitutional_governance_map_only",
+  "governance_only": true,
+  "constitutional_map_only": true,
+  "deterministic_lookup_only": true,
+  "documentation_evidence_only": true,
+  "freeze_only": true,
+  "runtime_governance_behavior_added": false,
+  "governance_engine_added": false,
+  "orchestration_added": false,
+  "semantic_search_added": false,
+  "adaptive_indexing_added": false,
+  "runtime_governance_memory_added": false,
+  "autonomous_governance_interpretation_added": false,
+  "replay_execution_logic_added": false,
+  "mutation_authority_added": false,
+  "governance_routing_system_added": false,
+  "graph_query_engine_added": false,
+  "topology_namespaces": [
+    "EVOLUTION",
+    "CONSTITUTIONAL",
+    "REPLAY",
+    "PROMOTION",
+    "OPERATIONAL",
+    "STABILIZATION",
+    "BOUNDARY_PRESERVATION",
+    "SEMANTIC_HARDENING"
+  ],
+  "topology_paths": [
+    "governance/evolution/",
+    "governance/constitutional/",
+    "governance/constitutional/gep/",
+    "governance/constitutional/replay/",
+    "governance/constitutional/promotion/",
+    "governance/operational/"
+  ],
+  "lineage_order": [
+    "EPP_FOUNDATION_V1",
+    "GEP_FOUNDATION_SPEC_V1",
+    "GOVERNANCE_REPLAY_EVIDENCE_SCHEMA_V1",
+    "CONSTITUTIONAL_PROMOTION_GATE_MODEL_V1",
+    "OPERATIONAL_BOUNDARY_AND_FREEZE_V1",
+    "REPLAY_IDENTITY_CONTINUITY_REFINEMENT_V1",
+    "REPLAY_CHAIN_INTEGRITY_VALIDATION_V1",
+    "REPLAY_CHAIN_FAILURE_MODE_GOVERNANCE_NOTE_V1",
+    "ARCHITECTURAL_MINIMALISM_AND_BOUNDED_REFINEMENT_PRINCIPLES_V1",
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_V1",
+    "EVOLUTION_GOVERNANCE_INDEX_V1"
+  ]
+}
