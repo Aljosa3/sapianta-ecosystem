@@ -1,0 +1,42 @@
+{
+  "artifact_type": "operational_governance_acceptance_evidence",
+  "schema_version": "1.0",
+  "milestone": "REPLAY_CHAIN_FAILURE_MODE_GOVERNANCE_NOTE_V1",
+  "status": "accepted",
+  "scope": "governance_evidence_and_operational_semantics_documentation_only",
+  "documentation_only": true,
+  "governance_note_only": true,
+  "operational_evidence_only": true,
+  "replay_semantics_only": true,
+  "non_runtime": true,
+  "non_operational": true,
+  "runtime_behavior_modified": false,
+  "replay_persistence_modified": false,
+  "replay_validation_logic_modified": false,
+  "orchestration_introduced": false,
+  "adaptive_replay_runtime_introduced": false,
+  "new_replay_system_introduced": false,
+  "runtime_authority_added": false,
+  "governance_authority_expanded": false,
+  "governance_mutation_introduced": false,
+  "documented_replay_identity_reuse": true,
+  "documented_replay_continuity_ambiguity": true,
+  "documented_chain_integrity_risks": true,
+  "documented_bounded_semantic_corrections": true,
+  "documented_fail_closed_expectations": true,
+  "documented_stabilization_window_lessons": true,
+  "preserves_operational_boundary_and_freeze_v1": true,
+  "references": [
+    "REPLAY_IDENTITY_CONTINUITY_REFINEMENT_V1",
+    "REPLAY_CHAIN_INTEGRITY_VALIDATION_V1",
+    "OPERATIONAL_BOUNDARY_AND_FREEZE_V1"
+  ],
+  "acceptance_criteria": {
+    "failure_mode_discovery_documented": true,
+    "operational_interpretation_documented": true,
+    "bounded_semantic_correction_documented": true,
+    "fail_closed_expectations_documented": true,
+    "stabilization_window_lessons_documented": true,
+    "architectural_non_activation_documented": true
+  }
+}
