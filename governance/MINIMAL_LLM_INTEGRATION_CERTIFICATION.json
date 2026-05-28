@@ -1,0 +1,28 @@
+{
+  "milestone": "MINIMAL_LLM_INTEGRATION_BOUNDARY_V1",
+  "certification": "minimal_governed_external_llm_integration_boundary_certified",
+  "certifies": {
+    "external_llm_interaction_is_not_execution_authority": true,
+    "external_llm_interaction_is_not_orchestration": true,
+    "external_llm_interaction_is_not_cognition_runtime": true,
+    "external_llm_interaction_is_not_planning_runtime": true,
+    "external_llm_interaction_is_not_governance_mutation_authority": true,
+    "external_llm_output_is_non_authoritative": true,
+    "external_llm_ambiguity_fails_closed": true,
+    "external_llm_visibility_remains_replay_safe": true
+  },
+  "explicit_prohibitions": {
+    "hidden_authority_escalation": true,
+    "autonomous_orchestration": true,
+    "adaptive_external_reasoning_execution": true,
+    "hidden_persistent_runtime_cognition": true,
+    "recursive_autonomous_interaction_loops": true
+  },
+  "preserves": {
+    "stabilization_invariants": true,
+    "bounded_refinement_philosophy": true,
+    "bounded_llm_participation": true,
+    "replay_safe_governance_continuity": true,
+    "governance_authority_separation": true
+  }
+}

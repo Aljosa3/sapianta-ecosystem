@@ -1,0 +1,29 @@
+{
+  "milestone": "MINIMAL_LLM_INTEGRATION_BOUNDARY_V1",
+  "type": "minimal_governed_external_llm_integration_boundary",
+  "governance_only": true,
+  "integration_boundary_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "anti_agentic": true,
+  "documentation_evidence_only": true,
+  "acceptance": {
+    "minimal_external_llm_interaction_boundaries_defined": true,
+    "replay_safe_llm_ingress_visibility_defined": true,
+    "replay_safe_llm_egress_visibility_defined": true,
+    "governed_contribution_flow_semantics_defined": true,
+    "deterministic_external_interaction_lineage_defined": true,
+    "fail_closed_external_ambiguity_defined": true,
+    "non_autonomous_external_llm_rules_defined": true
+  },
+  "non_activation": {
+    "orchestration_activated": false,
+    "adaptive_cognition_activated": false,
+    "autonomous_llm_runtime_activated": false,
+    "execution_authority_activated": false,
+    "runtime_planning_activated": false,
+    "agents_activated": false,
+    "hidden_runtime_memory_activated": false,
+    "governance_authority_delegated": false
+  }
+}
