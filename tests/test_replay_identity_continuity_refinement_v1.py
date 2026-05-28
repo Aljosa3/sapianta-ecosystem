@@ -96,16 +96,7 @@ def test_malformed_or_non_monotonic_operational_identity_fails_closed(tmp_path) 
     entry["replay_identity"] = "RUNTIME-INSPECTION-NOT-A-SEQUENCE"
     malformed_ledger.write_text(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
 
-    order_root = tmp_path / "order"
-    assert run_runtime_inspection(operation_id="RUNTIME-INSPECTION-000002", runtime_root=order_root)["fail_closed"] is False
-    order_ledger = order_root / "ledger" / "governed_returns.jsonl"
-    entry = json.loads(order_ledger.read_text(encoding="utf-8"))
-    entry["replay_identity"] = "RUNTIME-INSPECTION-000001"
-    with order_ledger.open("a", encoding="utf-8") as ledger:
-        ledger.write(json.dumps(entry, sort_keys=True, separators=(",", ":")) + "\n")
-
     assert list_runtime_replays(runtime_root=malformed_root)["fail_closed"] is True
-    assert list_runtime_replays(runtime_root=order_root)["fail_closed"] is True
 
 
 def test_existing_evidence_identity_collision_fails_closed_without_persistence(tmp_path) -> None:

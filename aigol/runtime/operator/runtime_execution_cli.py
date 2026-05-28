@@ -121,8 +121,8 @@ def _resolve_operation_id(*, operation_id: str | None, runtime_root: str | Path 
         f"RUNTIME-INSPECTION-{latest_sequence + 1:06d}"
     )
     selected_sequence = _operation_sequence(selected)
-    if selected_sequence <= latest_sequence:
-        raise ValueError("operational replay identity is not monotonic")
+    if selected_sequence != latest_sequence + 1:
+        raise ValueError("operational replay identity is not the next chain entry")
     if _governed_return_path(replay_reference=selected, runtime_root=runtime_root).exists():
         raise ValueError("operational replay identity evidence already exists")
     return selected
@@ -432,8 +432,8 @@ def _operational_ledger_references(*, runtime_root: str | Path | None) -> list[s
     seen: set[str] = set()
     for replay_reference in references:
         sequence = _operation_sequence(replay_reference)
-        if replay_reference in seen or sequence <= prior_sequence:
-            raise ValueError("operational replay identity continuity is invalid")
+        if replay_reference in seen or sequence != prior_sequence + 1:
+            raise ValueError("operational replay chain continuity is invalid")
         seen.add(replay_reference)
         prior_sequence = sequence
     return references
