@@ -1,0 +1,37 @@
+{
+  "milestone": "GOVERNED_REASONING_CONTINUITY_V1",
+  "type": "bounded_reasoning_continuity_substrate",
+  "governance_only": true,
+  "continuity_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "cognition_adjacent": true,
+  "documentation_evidence_only": true,
+  "non_runtime": true,
+  "establishes": {
+    "reasoning_continuity_semantics": true,
+    "reasoning_lineage_continuity": true,
+    "replay_safe_reasoning_visibility": true,
+    "bounded_reasoning_progression": true,
+    "fail_closed_reasoning_ambiguity_handling": true,
+    "deterministic_reasoning_continuity_structure": true
+  },
+  "preserves": {
+    "stabilization_invariants": true,
+    "bounded_refinement_philosophy": true,
+    "replay_safe_semantic_continuity": true,
+    "non_cognitive_semantic_discipline": true,
+    "governance_authority_boundaries": true
+  },
+  "cognition_runtime_activated": false,
+  "orchestration_activated": false,
+  "adaptive_reasoning_activated": false,
+  "semantic_planning_runtime_activated": false,
+  "runtime_semantic_memory_added": false,
+  "autonomous_cognition_added": false,
+  "runtime_thinking_system_added": false,
+  "execution_reasoning_added": false,
+  "self_modifying_reasoning_system_added": false,
+  "agents_added": false,
+  "governance_authority_expanded": false
+}
