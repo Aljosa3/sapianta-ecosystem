@@ -1,0 +1,39 @@
+{
+  "milestone": "FIRST_CONSTITUTIONAL_BASELINE_FREEZE_V1",
+  "type": "constitutional_baseline_freeze",
+  "baseline_status": "FROZEN",
+  "capability_expansion": false,
+  "freeze_scope": [
+    "governance_foundation",
+    "replay_continuity",
+    "semantic_continuity",
+    "bounded_cognition",
+    "bounded_llm_participation",
+    "executable_bounded_interaction",
+    "pressure_survivability",
+    "constitutional_runtime_isolation",
+    "runtime_identity_continuity",
+    "governed_orchestration_boundary",
+    "governed_orchestration_lifecycle",
+    "canonical_replay_language",
+    "canonical_authority_model",
+    "canonical_boundedness_semantics",
+    "canonical_lifecycle_semantics"
+  ],
+  "acceptance": {
+    "replay_centrality_frozen": true,
+    "canonical_semantics_frozen": true,
+    "boundedness_guarantees_frozen": true,
+    "authority_separation_frozen": true,
+    "orchestration_containment_frozen": true,
+    "constitutional_isolation_frozen": true
+  },
+  "non_goals_preserved": {
+    "capability_expansion": true,
+    "orchestration_runtime": true,
+    "execution_runtime": true,
+    "governance_growth": true,
+    "adaptive_cognition": true,
+    "new_semantic_domains": true
+  }
+}

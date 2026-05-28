@@ -1,0 +1,53 @@
+{
+  "milestone": "FIRST_CONSTITUTIONAL_BASELINE_FREEZE_V1",
+  "type": "constitutional_baseline_freeze_manifest",
+  "created_artifacts": [
+    "governance/FIRST_CONSTITUTIONAL_BASELINE_FREEZE_V1.md",
+    "governance/CONSTITUTIONAL_BASELINE_FREEZE_GUARANTEES_V1.md",
+    "governance/REPLAY_BASELINE_FREEZE_V1.md",
+    "governance/BOUNDEDNESS_BASELINE_FREEZE_V1.md",
+    "governance/FIRST_CONSTITUTIONAL_BASELINE_FREEZE_ACCEPTANCE.json",
+    "governance/FIRST_CONSTITUTIONAL_BASELINE_FREEZE_CERTIFICATION.json",
+    "governance/FIRST_CONSTITUTIONAL_BASELINE_FREEZE_MANIFEST.json"
+  ],
+  "freeze_scope": [
+    "governance_foundation",
+    "replay_continuity",
+    "semantic_continuity",
+    "bounded_cognition",
+    "bounded_llm_participation",
+    "executable_bounded_interaction",
+    "pressure_survivability",
+    "constitutional_runtime_isolation",
+    "runtime_identity_continuity",
+    "governed_orchestration_boundary",
+    "governed_orchestration_lifecycle",
+    "canonical_replay_language",
+    "canonical_authority_model",
+    "canonical_boundedness_semantics",
+    "canonical_lifecycle_semantics"
+  ],
+  "frozen_guarantees": [
+    "replay_centrality",
+    "canonical_semantics",
+    "boundedness_guarantees",
+    "authority_separation",
+    "orchestration_containment",
+    "constitutional_isolation"
+  ],
+  "scope": {
+    "constitutional_baseline_freeze": true,
+    "replay_centric_baseline_stabilization": true,
+    "canonical_semantics_freeze": true,
+    "boundedness_baseline_preservation": true,
+    "orchestration_containment_freeze": true,
+    "capability_expansion": false
+  },
+  "non_goals": {
+    "orchestration_runtime": false,
+    "execution_runtime": false,
+    "governance_growth": false,
+    "adaptive_cognition": false,
+    "new_semantic_domains": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "milestone": "FIRST_CONSTITUTIONAL_BASELINE_FREEZE_V1",
+  "certification": "first_constitutional_baseline_freeze_certified",
+  "baseline_status": "FROZEN",
+  "certifies": {
+    "replay_remains_constitutional_source_of_truth": true,
+    "replay_remains_canonical_lineage_substrate": true,
+    "replay_remains_authoritative_continuity_layer": true,
+    "boundedness_remains_canonical_fail_closed_and_replay_visible": true,
+    "authority_separation_preserved": true,
+    "intelligence_participation_remains_non_authoritative": true,
+    "orchestration_remains_contained_non_runtime_and_non_autonomous": true,
+    "canonical_terminology_remains_unified": true,
+    "constitutional_isolation_preserved": true
+  },
+  "future_evolution_must_preserve": [
+    "replay_centrality",
+    "canonical_semantics",
+    "boundedness_guarantees",
+    "authority_separation",
+    "orchestration_containment",
+    "constitutional_isolation"
+  ],
+  "certifies_not_activated": {
+    "capability_expansion": true,
+    "orchestration_runtime": true,
+    "execution_runtime": true,
+    "governance_growth": true,
+    "adaptive_cognition": true,
+    "new_semantic_domains": true
+  }
+}
