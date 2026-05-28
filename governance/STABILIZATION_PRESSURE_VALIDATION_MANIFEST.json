@@ -1,0 +1,32 @@
+{
+  "milestone": "STABILIZATION_PRESSURE_VALIDATION_EPOCH_V1",
+  "type": "pressure_testing_stabilization_invariants_only",
+  "governance_only": true,
+  "validation_only": true,
+  "pressure_testing_only": true,
+  "invariant_testing_only": true,
+  "documentation_evidence_only": true,
+  "freeze_safe": true,
+  "validated_semantic_surfaces": {
+    "replay_continuity_resilience": true,
+    "governance_continuity_resilience": true,
+    "session_continuity_resilience": true,
+    "bounded_refinement_resilience": true,
+    "fail_closed_resilience": true
+  },
+  "not_yet_validated": {
+    "cognition_runtime_resilience": true,
+    "orchestration_resilience": true,
+    "adaptive_runtime_resilience": true,
+    "semantic_continuity_resilience": true,
+    "autonomous_governance_mutation_resilience": true
+  },
+  "runtime_authority_added": false,
+  "cognition_runtime_activated": false,
+  "orchestration_activated": false,
+  "adaptive_runtime_behavior_activated": false,
+  "semantic_reasoning_runtime_activated": false,
+  "governance_execution_runtime_activated": false,
+  "mutation_authority_added": false,
+  "governance_authority_expanded": false
+}
