@@ -1,0 +1,23 @@
+{
+  "milestone": "GEP_FOUNDATION_SPEC_V1",
+  "type": "constitutional_governance_foundation",
+  "status": "FOUNDATIONAL_CONSTITUTIONAL_FREEZE_ONLY",
+  "governance_only": true,
+  "documentation_evidence_only": true,
+  "freeze_only": true,
+  "runtime_authority_added": false,
+  "autonomous_mutation_enabled": false,
+  "governance_activation_enabled": false,
+  "runtime_governance_engine_added": false,
+  "active_orchestration_added": false,
+  "mutation_execution_pipeline_added": false,
+  "constitutional_auto_promotion_enabled": false,
+  "llm_authority_enabled": false,
+  "llm_role": "NON_AUTHORITATIVE_ADVISORY_SYSTEM",
+  "replay_required": true,
+  "evidence_required": true,
+  "rollback_required": true,
+  "approval_required_for_governance_mutation": true,
+  "protected_constitutional_layers_runtime_mutable": false,
+  "acceptance_principle": "Constitution before cognition explosion."
+}
