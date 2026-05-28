@@ -1,0 +1,37 @@
+{
+  "milestone": "CONSTITUTIONAL_GOAL_CONTINUITY_MODEL_V1",
+  "type": "bounded_semantic_continuity_foundation",
+  "governance_only": true,
+  "semantic_continuity_only": true,
+  "continuity_foundation_only": true,
+  "cognition_adjacent_only": true,
+  "documentation_evidence_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "establishes": {
+    "goal_identity_semantics": true,
+    "goal_lineage_semantics": true,
+    "intent_continuity_semantics": true,
+    "milestone_continuity_semantics": true,
+    "bounded_semantic_progression_rules": true,
+    "replay_safe_semantic_continuity": true,
+    "constitutional_semantic_boundaries": true
+  },
+  "preserves": {
+    "non_cognitive_runtime_status": true,
+    "non_agentic_architecture_status": true,
+    "replay_safe_bounded_continuity": true,
+    "stabilization_before_amplification_discipline": true,
+    "bounded_refinement_philosophy": true,
+    "governance_authority_boundaries": true
+  },
+  "cognition_runtime_activated": false,
+  "orchestration_activated": false,
+  "adaptive_semantic_reasoning_activated": false,
+  "autonomous_planning_activated": false,
+  "governance_execution_runtime_activated": false,
+  "semantic_mutation_authority_added": false,
+  "runtime_goal_execution_added": false,
+  "agentic_autonomy_added": false,
+  "governance_authority_expanded": false
+}
