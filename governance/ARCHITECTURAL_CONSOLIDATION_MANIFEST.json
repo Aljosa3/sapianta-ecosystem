@@ -1,0 +1,31 @@
+{
+  "milestone": "ARCHITECTURAL_CONSOLIDATION_REVIEW_V1",
+  "type": "governance_consolidation_manifest",
+  "created_artifacts": [
+    "governance/ARCHITECTURAL_CONSOLIDATION_REVIEW_V1.md",
+    "governance/ANTI_OVERENGINEERING_FINDINGS_V1.md",
+    "governance/REPLAY_CENTRALITY_REVIEW_V1.md",
+    "governance/ARCHITECTURAL_SIMPLIFICATION_RECOMMENDATIONS_V1.md",
+    "governance/ARCHITECTURAL_CONSOLIDATION_ACCEPTANCE.json",
+    "governance/ARCHITECTURAL_CONSOLIDATION_CERTIFICATION.json",
+    "governance/ARCHITECTURAL_CONSOLIDATION_MANIFEST.json"
+  ],
+  "scope": {
+    "review_only": true,
+    "architectural_consolidation": true,
+    "anti_overengineering_review": true,
+    "governance_deduplication_review": true,
+    "semantic_simplification_review": true,
+    "replay_centric_consistency_validation": true,
+    "capability_expansion": false
+  },
+  "non_goals": {
+    "orchestration_runtime": false,
+    "agents": false,
+    "workers": false,
+    "execution_dispatch": false,
+    "adaptive_cognition": false,
+    "recursive_orchestration": false
+  },
+  "recommendation": "SAFE_TO_CONTINUE_WITH_CONSOLIDATION_DISCIPLINE"
+}
