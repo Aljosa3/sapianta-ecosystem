@@ -1,0 +1,40 @@
+{
+  "milestone": "GOVERNED_ORCHESTRATION_LIFECYCLE_MODEL_V1",
+  "type": "governance_lifecycle_manifest",
+  "created_artifacts": [
+    "governance/GOVERNED_ORCHESTRATION_LIFECYCLE_MODEL_V1.md",
+    "governance/ORCHESTRATION_LIFECYCLE_TRANSITIONS_V1.md",
+    "governance/REPLAY_VISIBLE_ORCHESTRATION_LIFECYCLE_V1.md",
+    "governance/ORCHESTRATION_TERMINATION_GUARANTEES_V1.md",
+    "governance/GOVERNED_ORCHESTRATION_LIFECYCLE_ACCEPTANCE.json",
+    "governance/GOVERNED_ORCHESTRATION_LIFECYCLE_CERTIFICATION.json",
+    "governance/GOVERNED_ORCHESTRATION_LIFECYCLE_MANIFEST.json"
+  ],
+  "scope": {
+    "governance_only": true,
+    "lifecycle_definition_only": true,
+    "replay_visibility_only": true,
+    "runtime_implementation": false,
+    "capability_expansion": false
+  },
+  "defined_lifecycle_states": [
+    "REQUESTED",
+    "GOVERNANCE_VALIDATED",
+    "AUTHORIZED",
+    "ACTIVE",
+    "TERMINATED",
+    "FAILED"
+  ],
+  "terminal_states": [
+    "TERMINATED",
+    "FAILED"
+  ],
+  "non_goals": {
+    "orchestration_runtime": false,
+    "worker_dispatch": false,
+    "execution_coordination": false,
+    "autonomous_orchestration": false,
+    "recursive_orchestration": false,
+    "orchestration_intelligence": false
+  }
+}

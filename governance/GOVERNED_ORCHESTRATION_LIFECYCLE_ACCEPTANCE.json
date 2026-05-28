@@ -1,0 +1,38 @@
+{
+  "milestone": "GOVERNED_ORCHESTRATION_LIFECYCLE_MODEL_V1",
+  "type": "replay_visible_orchestration_lifecycle_model",
+  "runtime_implementation": false,
+  "lifecycle_states": [
+    "REQUESTED",
+    "GOVERNANCE_VALIDATED",
+    "AUTHORIZED",
+    "ACTIVE",
+    "TERMINATED",
+    "FAILED"
+  ],
+  "acceptance": {
+    "deterministic_transitions_defined": true,
+    "replay_visible_transitions_defined": true,
+    "append_only_lineage_required": true,
+    "invalid_transitions_fail_closed": true,
+    "terminal_states_explicit": true,
+    "resurrection_after_termination_prohibited": true,
+    "authority_inheritance_drift_prohibited": true
+  },
+  "validation_questions": {
+    "can_orchestration_transitions_remain_replay_visible": true,
+    "can_orchestration_terminate_deterministically": true,
+    "can_orchestration_avoid_recursive_continuation": true,
+    "can_orchestration_remain_bounded_across_lifecycle_transitions": true,
+    "can_orchestration_prevent_hidden_resurrection": true,
+    "can_orchestration_preserve_authority_separation": true
+  },
+  "non_goals_preserved": {
+    "orchestration_runtime": true,
+    "worker_dispatch": true,
+    "execution_coordination": true,
+    "autonomous_orchestration": true,
+    "recursive_orchestration": true,
+    "orchestration_intelligence": true
+  }
+}
