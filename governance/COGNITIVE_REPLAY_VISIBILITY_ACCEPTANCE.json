@@ -1,0 +1,30 @@
+{
+  "milestone": "COGNITIVE_REPLAY_VISIBILITY_V1",
+  "type": "replay_safe_cognition_visibility_substrate",
+  "governance_only": true,
+  "replay_visibility_only": true,
+  "cognition_visibility_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "anti_agentic": true,
+  "documentation_evidence_only": true,
+  "acceptance": {
+    "cognition_replay_visibility_defined": true,
+    "cognition_lineage_visibility_defined": true,
+    "replay_safe_cognition_references_defined": true,
+    "deterministic_cognition_ancestry_defined": true,
+    "fail_closed_cognition_replay_ambiguity_defined": true,
+    "non_executing_visibility_rules_defined": true
+  },
+  "non_activation": {
+    "cognition_runtime_activated": false,
+    "orchestration_activated": false,
+    "adaptive_cognition_activated": false,
+    "planning_runtime_activated": false,
+    "autonomous_reasoning_activated": false,
+    "execution_cognition_activated": false,
+    "runtime_semantic_memory_activated": false,
+    "agents_activated": false,
+    "governance_authority_expanded": false
+  }
+}

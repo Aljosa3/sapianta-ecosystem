@@ -1,0 +1,27 @@
+{
+  "milestone": "COGNITIVE_REPLAY_VISIBILITY_V1",
+  "certification": "replay_safe_cognition_visibility_foundation_certified",
+  "certifies": {
+    "cognition_replay_visibility_is_not_cognition_runtime": true,
+    "cognition_lineage_is_not_cognition_execution": true,
+    "replay_visibility_is_not_autonomous_cognition": true,
+    "cognition_continuity_is_not_planning_runtime": true,
+    "cognition_replay_ambiguity_fails_closed": true,
+    "visibility_remains_non_executing": true,
+    "lineage_remains_governance_bounded": true
+  },
+  "explicit_prohibitions": {
+    "hidden_cognition_activation": true,
+    "adaptive_cognition_replay_mutation": true,
+    "runtime_cognition_replay_engines": true,
+    "autonomous_cognition_continuity": true,
+    "orchestration_driven_cognition_replay": true
+  },
+  "preserves": {
+    "stabilization_invariants": true,
+    "bounded_refinement_philosophy": true,
+    "cognition_boundary_model": true,
+    "anti_agentic_guarantees": true,
+    "replay_safe_governance_continuity": true
+  }
+}
