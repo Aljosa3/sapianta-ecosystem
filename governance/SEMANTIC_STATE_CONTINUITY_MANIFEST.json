@@ -1,0 +1,36 @@
+{
+  "milestone": "SEMANTIC_STATE_CONTINUITY_MODEL_V1",
+  "type": "bounded_semantic_state_continuity_foundation",
+  "governance_only": true,
+  "semantic_state_foundation_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "continuity_oriented": true,
+  "documentation_evidence_only": true,
+  "cognition_adjacent_only": true,
+  "establishes": {
+    "semantic_state_continuity_semantics": true,
+    "semantic_state_transition_semantics": true,
+    "semantic_continuity_snapshot_semantics": true,
+    "replay_safe_semantic_persistence_rules": true,
+    "bounded_semantic_progression_visibility": true,
+    "semantic_continuity_lineage_foundations": true
+  },
+  "preserves": {
+    "replay_safe_continuity": true,
+    "deterministic_semantic_lineage": true,
+    "bounded_semantic_progression": true,
+    "fail_closed_ambiguity_handling": true,
+    "stabilization_compatibility": true,
+    "governance_bounded_semantic_continuity": true
+  },
+  "cognition_runtime_activated": false,
+  "orchestration_activated": false,
+  "adaptive_semantic_reasoning_activated": false,
+  "semantic_planning_runtime_activated": false,
+  "runtime_semantic_memory_added": false,
+  "autonomous_semantic_mutation_added": false,
+  "semantic_execution_engine_added": false,
+  "self_modifying_semantic_system_added": false,
+  "governance_authority_expanded": false
+}
