@@ -1,0 +1,30 @@
+{
+  "milestone": "BOUNDED_LLM_PARTICIPATION_MODEL_V1",
+  "type": "bounded_governed_llm_participation_substrate",
+  "governance_only": true,
+  "participation_only": true,
+  "replay_safe": true,
+  "bounded": true,
+  "anti_agentic": true,
+  "documentation_evidence_only": true,
+  "acceptance": {
+    "bounded_llm_participation_semantics_defined": true,
+    "governed_llm_contribution_rules_defined": true,
+    "replay_safe_llm_visibility_defined": true,
+    "deterministic_llm_lineage_visibility_defined": true,
+    "llm_contribution_transitions_defined": true,
+    "llm_participation_snapshots_defined": true,
+    "fail_closed_llm_ambiguity_defined": true,
+    "non_autonomous_llm_rules_defined": true
+  },
+  "non_activation": {
+    "autonomous_llm_runtime_activated": false,
+    "orchestration_activated": false,
+    "adaptive_cognition_activated": false,
+    "planning_runtime_activated": false,
+    "execution_authority_activated": false,
+    "autonomous_agents_activated": false,
+    "runtime_semantic_memory_activated": false,
+    "llm_governance_authority_granted": false
+  }
+}

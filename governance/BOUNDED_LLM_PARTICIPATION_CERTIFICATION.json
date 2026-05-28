@@ -1,0 +1,28 @@
+{
+  "milestone": "BOUNDED_LLM_PARTICIPATION_MODEL_V1",
+  "certification": "bounded_governed_llm_participation_foundation_certified",
+  "certifies": {
+    "llm_participation_is_not_execution_authority": true,
+    "llm_participation_is_not_orchestration": true,
+    "llm_participation_is_not_cognition_runtime": true,
+    "llm_participation_is_not_autonomous_planning": true,
+    "llm_participation_is_not_governance_mutation_authority": true,
+    "llm_output_is_non_authoritative": true,
+    "llm_ambiguity_fails_closed": true,
+    "llm_visibility_remains_replay_safe": true
+  },
+  "explicit_prohibitions": {
+    "hidden_llm_authority_escalation": true,
+    "autonomous_llm_orchestration": true,
+    "adaptive_self_directed_llm_behavior": true,
+    "recursive_autonomous_llm_reasoning": true,
+    "hidden_runtime_llm_memory_activation": true
+  },
+  "preserves": {
+    "stabilization_invariants": true,
+    "bounded_refinement_philosophy": true,
+    "cognition_boundary_model": true,
+    "cognitive_replay_visibility": true,
+    "governance_authority_separation": true
+  }
+}
