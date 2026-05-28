@@ -1,0 +1,31 @@
+{
+  "artifact_type": "operational_governance_evidence_index_acceptance",
+  "schema_version": "1.0",
+  "milestone": "OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_V1",
+  "status": "accepted",
+  "scope": "deterministic_governance_evidence_lookup_surface_only",
+  "governance_only": true,
+  "evidence_index_only": true,
+  "deterministic_lookup_only": true,
+  "documentation_evidence_only": true,
+  "freeze_only": true,
+  "operational_governance_evidence_deterministic": true,
+  "governance_evidence_lookup_bounded": true,
+  "stabilization_evidence_append_only": true,
+  "replay_safe_references_preserved": true,
+  "runtime_governance_authority_enabled": false,
+  "adaptive_evidence_interpretation_enabled": false,
+  "semantic_search_introduced": false,
+  "runtime_memory_system_introduced": false,
+  "governance_engine_introduced": false,
+  "orchestration_introduced": false,
+  "mutation_authority_introduced": false,
+  "required_artifacts": [
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_V1.md",
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_MANIFEST_V1.json",
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_CLASSIFICATION_V1.md",
+    "OPERATIONAL_STABILIZATION_EVIDENCE_INDEX_V1.md",
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_LOOKUP_RULES_V1.md",
+    "OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_CERTIFICATION.json"
+  ]
+}

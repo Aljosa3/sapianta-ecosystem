@@ -1,0 +1,47 @@
+{
+  "artifact_type": "operational_governance_evidence_manifest",
+  "schema_version": "1.0",
+  "milestone": "OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_V1",
+  "scope": "deterministic_governance_evidence_lookup_only",
+  "governance_only": true,
+  "evidence_index_only": true,
+  "deterministic_lookup_only": true,
+  "documentation_evidence_only": true,
+  "freeze_only": true,
+  "runtime_memory_engine_added": false,
+  "governance_engine_added": false,
+  "orchestration_added": false,
+  "semantic_search_added": false,
+  "adaptive_indexing_added": false,
+  "replay_analysis_runtime_added": false,
+  "mutation_authority_added": false,
+  "autonomous_evidence_interpretation_added": false,
+  "evidence_ordering": "deterministic_filename_order",
+  "indexed_evidence": [
+    {
+      "artifact": "REPLAY_CHAIN_FAILURE_MODE_ACCEPTANCE_EVIDENCE.json",
+      "classification": "STABILIZATION_DISCOVERY",
+      "replay_relevance": "documents acceptance of replay failure-mode evidence"
+    },
+    {
+      "artifact": "REPLAY_CHAIN_FAILURE_MODE_ANALYSIS_V1.md",
+      "classification": "REPLAY_CHAIN_INTEGRITY",
+      "replay_relevance": "documents replay identity reuse and chain integrity risk analysis"
+    },
+    {
+      "artifact": "REPLAY_CHAIN_FAILURE_MODE_CERTIFICATION.json",
+      "classification": "BOUNDARY_PRESERVATION",
+      "replay_relevance": "certifies no runtime authority or replay architecture expansion"
+    },
+    {
+      "artifact": "REPLAY_CHAIN_FAILURE_MODE_GOVERNANCE_NOTE_V1.md",
+      "classification": "SEMANTIC_HARDENING",
+      "replay_relevance": "documents bounded replay semantic correction"
+    },
+    {
+      "artifact": "REPLAY_CHAIN_FAIL_CLOSED_EXPECTATIONS_V1.md",
+      "classification": "FAIL_CLOSED_EXPECTATIONS",
+      "replay_relevance": "documents fail-closed replay chain expectations"
+    }
+  ]
+}
