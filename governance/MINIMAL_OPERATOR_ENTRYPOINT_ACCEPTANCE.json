@@ -1,0 +1,27 @@
+{
+  "milestone": "MINIMAL_OPERATOR_ENTRYPOINT_V1",
+  "type": "minimal_operator_entrypoint_acceptance",
+  "acceptance": {
+    "operator_invocation_boundary_created": true,
+    "human_can_submit_one_request": true,
+    "governed_processing_invoked": true,
+    "governed_result_summary_returned": true,
+    "replay_preserved": true,
+    "authorization_preserved": true,
+    "governance_preserved": true,
+    "proposal_only_cognition_preserved": true,
+    "worker_only_execution_preserved": true
+  },
+  "supported_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "non_goals_preserved": {
+    "orchestration": true,
+    "agent_runtime": true,
+    "new_capability": true,
+    "capability_expansion": true,
+    "memory": true,
+    "routing": true
+  }
+}

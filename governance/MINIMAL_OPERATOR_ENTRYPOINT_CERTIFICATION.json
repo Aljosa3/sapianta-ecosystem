@@ -1,0 +1,27 @@
+{
+  "milestone": "MINIMAL_OPERATOR_ENTRYPOINT_V1",
+  "certification": "minimal_operator_entrypoint_certified",
+  "certifies": {
+    "first_practical_operator_invocation_exists": true,
+    "human_request_to_governed_result_path_exists": true,
+    "operator_summary_is_returned": true,
+    "replay_location_is_visible": true,
+    "replay_verification_status_is_visible": true,
+    "llm_proposes_only": true,
+    "aigol_governs": true,
+    "worker_executes_only_after_authorization": true,
+    "replay_records": true
+  },
+  "certifies_not_introduced": {
+    "orchestration": true,
+    "agent_runtime": true,
+    "new_capability": true,
+    "capability_expansion": true,
+    "memory": true,
+    "routing": true,
+    "filesystem_mutation": true,
+    "network_execution": true,
+    "shell_execution": true
+  },
+  "status": "FIRST_USEFUL_OPERATOR_ENTRYPOINT_ESTABLISHED"
+}

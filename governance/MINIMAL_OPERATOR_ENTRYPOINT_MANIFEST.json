@@ -1,0 +1,31 @@
+{
+  "milestone": "MINIMAL_OPERATOR_ENTRYPOINT_V1",
+  "type": "minimal_operator_entrypoint_manifest",
+  "created_artifacts": [
+    "aigol/runtime/minimal_operator_entrypoint.py",
+    "tests/test_minimal_operator_entrypoint_v1.py",
+    "governance/MINIMAL_OPERATOR_ENTRYPOINT_V1.md",
+    "governance/OPERATOR_INVOCATION_MODEL_V1.md",
+    "governance/FIRST_USEFUL_OPERATOR_FLOW_V1.md",
+    "governance/MINIMAL_OPERATOR_ENTRYPOINT_ACCEPTANCE.json",
+    "governance/MINIMAL_OPERATOR_ENTRYPOINT_CERTIFICATION.json",
+    "governance/MINIMAL_OPERATOR_ENTRYPOINT_MANIFEST.json"
+  ],
+  "operator_flow": [
+    "human_submit_request",
+    "governed_processing",
+    "governed_result_summary"
+  ],
+  "supported_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "preserved_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "runtime_orchestration": false,
+  "capability_expansion": false
+}
