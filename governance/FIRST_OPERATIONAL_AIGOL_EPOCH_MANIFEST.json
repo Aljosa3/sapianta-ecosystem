@@ -1,0 +1,34 @@
+{
+  "milestone": "FIRST_OPERATIONAL_AIGOL_EPOCH_FREEZE_V1",
+  "type": "first_operational_aigol_epoch_freeze_manifest",
+  "created_artifacts": [
+    "governance/FIRST_OPERATIONAL_AIGOL_EPOCH_FREEZE_V1.md",
+    "governance/OPERATIONAL_EPOCH_GUARANTEES_V1.md",
+    "governance/FIRST_OPERATIONAL_EPOCH_BASELINE_V1.md",
+    "governance/FIRST_OPERATIONAL_AIGOL_EPOCH_ACCEPTANCE.json",
+    "governance/FIRST_OPERATIONAL_AIGOL_EPOCH_CERTIFICATION.json",
+    "governance/FIRST_OPERATIONAL_AIGOL_EPOCH_MANIFEST.json"
+  ],
+  "freeze_target": [
+    "human",
+    "llm_proposal",
+    "aigol_governance",
+    "authorization",
+    "worker_execution",
+    "replay",
+    "governed_result"
+  ],
+  "frozen_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "frozen_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "baseline_status": "FROZEN_BEFORE_CAPABILITY_EXPANSION",
+  "runtime_change": false,
+  "capability_expansion": false
+}

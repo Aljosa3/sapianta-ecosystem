@@ -1,0 +1,25 @@
+{
+  "milestone": "FIRST_OPERATIONAL_AIGOL_EPOCH_FREEZE_V1",
+  "type": "first_operational_aigol_epoch_acceptance",
+  "acceptance": {
+    "llm_remains_proposal_only": true,
+    "aigol_remains_governance_authority": true,
+    "worker_remains_execution_only": true,
+    "replay_remains_mandatory": true,
+    "authorization_remains_mandatory": true,
+    "read_only_capability_boundaries_remain_intact": true,
+    "no_hidden_authority_escalation_exists": true,
+    "first_operational_architecture_frozen_before_expansion": true
+  },
+  "frozen_lifecycle": [
+    "human",
+    "llm_proposal",
+    "aigol_governance",
+    "authorization",
+    "worker_execution",
+    "replay",
+    "governed_result"
+  ],
+  "capability_expansion": false,
+  "runtime_change": false
+}
