@@ -1,0 +1,34 @@
+{
+  "artifact": "REAL_ATTACHMENT_IMPLEMENTATION_PLAN_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "REAL_ATTACHMENT_IMPLEMENTATION_PLAN_V1",
+  "certified_recommendations": {
+    "first_llm_attachment": "provider_agnostic_supplied_external_llm_response",
+    "first_worker_attachment": "runtime_inspection_worker",
+    "minimal_sequence_defined": true,
+    "blockers_classified": true,
+    "readiness_classified": true
+  },
+  "certified_readiness": {
+    "REAL_LLM_ATTACHMENT_IMPLEMENTATION_READY": "READY_WITH_CONSTRAINTS",
+    "REAL_WORKER_ATTACHMENT_IMPLEMENTATION_READY": "MOSTLY_READY_WITH_CONSTRAINTS"
+  },
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_absences": {
+    "real_llm_attachment": false,
+    "real_worker_attachment": false,
+    "provider_integration": false,
+    "worker_integration": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "runtime_mutation": false
+  },
+  "future_constraint": "first implementation must attach supplied LLM responses before attaching a runtime-inspection-only worker"
+}

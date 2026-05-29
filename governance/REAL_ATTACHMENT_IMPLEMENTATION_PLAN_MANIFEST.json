@@ -1,0 +1,42 @@
+{
+  "artifact": "REAL_ATTACHMENT_IMPLEMENTATION_PLAN_MANIFEST",
+  "version": "V1",
+  "status": "PLAN_DEFINED",
+  "created_artifacts": [
+    "governance/REAL_ATTACHMENT_IMPLEMENTATION_PLAN_V1.md",
+    "governance/FIRST_REAL_LLM_RECOMMENDATION_V1.md",
+    "governance/FIRST_REAL_WORKER_RECOMMENDATION_V1.md",
+    "governance/ATTACHMENT_IMPLEMENTATION_SEQUENCE_V1.md",
+    "governance/ATTACHMENT_IMPLEMENTATION_BLOCKERS_V1.md",
+    "governance/REAL_ATTACHMENT_IMPLEMENTATION_PLAN_ACCEPTANCE.json",
+    "governance/REAL_ATTACHMENT_IMPLEMENTATION_PLAN_CERTIFICATION.json",
+    "governance/REAL_ATTACHMENT_IMPLEMENTATION_PLAN_MANIFEST.json"
+  ],
+  "references": [
+    "governance/REAL_LLM_ATTACHMENT_MODEL_V1.md",
+    "governance/REAL_WORKER_ATTACHMENT_MODEL_V1.md",
+    "governance/REAL_ATTACHMENT_GAP_ANALYSIS_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md"
+  ],
+  "recommended_first_llm_attachment": "provider_agnostic_supplied_external_llm_response",
+  "recommended_first_worker_attachment": "runtime_inspection_worker",
+  "implementation_sequence": [
+    "REAL_LLM_ATTACHMENT_V1",
+    "LLM_ATTACHMENT_PRESSURE_VALIDATION",
+    "REAL_WORKER_ATTACHMENT_V1"
+  ],
+  "readiness_classification": {
+    "REAL_LLM_ATTACHMENT_IMPLEMENTATION_READY": "READY_WITH_CONSTRAINTS",
+    "REAL_WORKER_ATTACHMENT_IMPLEMENTATION_READY": "MOSTLY_READY_WITH_CONSTRAINTS"
+  },
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "attachments_implemented": false,
+    "providers_added": false,
+    "workers_added": false,
+    "orchestration_added": false,
+    "memory_added": false,
+    "capability_expansion_added": false
+  },
+  "success_condition": "shortest safe implementation path defined without implementation"
+}

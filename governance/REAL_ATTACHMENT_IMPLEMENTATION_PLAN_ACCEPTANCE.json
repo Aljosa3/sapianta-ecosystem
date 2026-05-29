@@ -1,0 +1,32 @@
+{
+  "artifact": "REAL_ATTACHMENT_IMPLEMENTATION_PLAN_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "planning_only": true,
+  "recommended_first_llm_attachment": "provider_agnostic_supplied_external_llm_response",
+  "recommended_first_worker_attachment": "runtime_inspection_worker",
+  "readiness_classification": {
+    "REAL_LLM_ATTACHMENT_IMPLEMENTATION_READY": "READY_WITH_CONSTRAINTS",
+    "REAL_WORKER_ATTACHMENT_IMPLEMENTATION_READY": "MOSTLY_READY_WITH_CONSTRAINTS"
+  },
+  "accepted_sequence": [
+    "REAL_LLM_ATTACHMENT_V1",
+    "LLM_ATTACHMENT_PRESSURE_VALIDATION",
+    "REAL_WORKER_ATTACHMENT_V1"
+  ],
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "non_goals_preserved": {
+    "attachments_implemented": false,
+    "providers_added": false,
+    "workers_added": false,
+    "orchestration_added": false,
+    "memory_added": false,
+    "capability_expansion_added": false
+  },
+  "success_condition": "shortest safe path from attachment models to first real attachment implementation defined"
+}
