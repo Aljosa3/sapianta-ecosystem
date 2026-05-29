@@ -1,0 +1,25 @@
+{
+  "milestone": "GOVERNED_RESULT_SUMMARY_V1",
+  "type": "governed_result_summary_acceptance",
+  "acceptance": {
+    "standard_summary_format_created": true,
+    "status_field_present": true,
+    "reason_field_present": true,
+    "capability_used_field_present": true,
+    "replay_reference_field_present": true,
+    "replay_verification_status_field_present": true,
+    "authority_boundary_reminder_field_present": true,
+    "evidence_summary_field_present": true,
+    "recommended_next_action_field_present": true,
+    "summary_is_replay_derived": true,
+    "summary_is_deterministic": true,
+    "summary_is_human_readable": true
+  },
+  "non_goals_preserved": {
+    "new_authority": true,
+    "new_capability": true,
+    "replay_bypass": true,
+    "execution_runtime_expansion": true,
+    "orchestration": true
+  }
+}

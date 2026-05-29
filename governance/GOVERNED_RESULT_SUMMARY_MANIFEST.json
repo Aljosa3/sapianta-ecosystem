@@ -1,0 +1,31 @@
+{
+  "milestone": "GOVERNED_RESULT_SUMMARY_V1",
+  "type": "governed_result_summary_manifest",
+  "created_artifacts": [
+    "aigol/runtime/governed_result_summary.py",
+    "tests/test_governed_result_summary_v1.py",
+    "governance/GOVERNED_RESULT_SUMMARY_V1.md",
+    "governance/OPERATOR_RESULT_PRESENTATION_MODEL_V1.md",
+    "governance/GOVERNED_RESULT_SUMMARY_ACCEPTANCE.json",
+    "governance/GOVERNED_RESULT_SUMMARY_CERTIFICATION.json",
+    "governance/GOVERNED_RESULT_SUMMARY_MANIFEST.json"
+  ],
+  "summary_fields": [
+    "status",
+    "reason",
+    "capability_used",
+    "replay_reference",
+    "replay_verification_status",
+    "authority_boundary_reminder",
+    "evidence_summary",
+    "recommended_next_action"
+  ],
+  "preserved_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "runtime_capability_expansion": false,
+  "replay_bypass": false
+}

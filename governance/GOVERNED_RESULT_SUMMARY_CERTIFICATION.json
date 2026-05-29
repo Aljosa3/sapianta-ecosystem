@@ -1,0 +1,23 @@
+{
+  "milestone": "GOVERNED_RESULT_SUMMARY_V1",
+  "certification": "governed_result_summary_certified",
+  "certifies": {
+    "governed_results_are_operator_readable": true,
+    "summary_is_replay_derived": true,
+    "summary_contains_replay_reference": true,
+    "summary_contains_replay_verification_status": true,
+    "summary_contains_authority_boundary_reminder": true,
+    "summary_contains_evidence_summary": true,
+    "summary_contains_recommended_next_action": true,
+    "raw_replay_remains_authoritative": true
+  },
+  "certifies_not_introduced": {
+    "new_authority": true,
+    "new_capability": true,
+    "replay_bypass": true,
+    "runtime_execution_expansion": true,
+    "orchestration": true,
+    "agent_runtime": true
+  },
+  "status": "OPERATOR_FACING_GOVERNED_RESULT_SUMMARY_ESTABLISHED"
+}
