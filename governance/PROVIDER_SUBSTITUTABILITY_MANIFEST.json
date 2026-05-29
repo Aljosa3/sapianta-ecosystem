@@ -1,0 +1,38 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTABILITY_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "governance/PROVIDER_SUBSTITUTABILITY_REVIEW_V1.md",
+    "governance/PROVIDER_POSITION_RECONSTRUCTION_V1.md",
+    "governance/PROVIDER_AUTHORITY_ANALYSIS_V1.md",
+    "governance/PROVIDER_REPLACEABILITY_ANALYSIS_V1.md",
+    "governance/PROVIDER_ECOSYSTEM_GAPS_V1.md",
+    "governance/PROVIDER_DUPLICATION_RISKS_V1.md",
+    "governance/PROVIDER_SUBSTITUTABILITY_ACCEPTANCE.json",
+    "governance/PROVIDER_SUBSTITUTABILITY_CERTIFICATION.json",
+    "governance/PROVIDER_SUBSTITUTABILITY_MANIFEST.json"
+  ],
+  "reviewed_surfaces": [
+    "REAL_LLM_ATTACHMENT_MODEL_V1",
+    "LLM_PROVIDER_IDENTITY_MODEL_V1",
+    "EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1",
+    "EXTERNAL_LLM_ATTACHMENT_PRESSURE_VALIDATION_V1",
+    "REAL_PROVIDER_ATTACHMENT_V1",
+    "PROVIDER_ATTACHMENT_BOUNDARY_V1",
+    "PROVIDER_REPLAY_MODEL_V1",
+    "PROVIDER_AUTHORITY_SEPARATION_V1",
+    "REAL_PROVIDER_INTEGRATION_READINESS_REVIEW_V1",
+    "OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_V1",
+    "PROVIDER_AGNOSTIC_RAW_RESPONSE_CAPTURE_V1",
+    "FINALIZE_GOVERNED_PROVIDER_ACTIVATION_V1",
+    "FIRST_USEFUL_AIGOL_V1_FREEZE"
+  ],
+  "classification_summary": {
+    "provider_position_status": "MOSTLY_COMPLETE",
+    "provider_ecosystem_status": "PARTIALLY_DEFINED",
+    "openai_constitutional_privilege_found": false,
+    "provider_substitutability_present_at_boundary": true
+  },
+  "commit_message": "docs(governance): review provider substitutability"
+}

@@ -1,0 +1,38 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTABILITY_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": {
+    "aigol_provider_independence_at_constitutional_boundary": true,
+    "provider_identity_replay_visibility": true,
+    "provider_authority_absence": true,
+    "provider_replay_compatibility": true,
+    "openai_not_constitutionally_privileged": true,
+    "multi_provider_ecosystem_not_complete": true
+  },
+  "classifications": {
+    "PROVIDER_POSITION_STATUS": "MOSTLY_COMPLETE",
+    "PROVIDER_ECOSYSTEM_STATUS": "PARTIALLY_DEFINED",
+    "PROVIDER_IDENTITY": "COMPLETE",
+    "PROVIDER_REPLACEABILITY": "PARTIAL",
+    "PROVIDER_AUTHORITY": "ABSENT",
+    "REPLAY_COMPATIBILITY": "COMPLETE",
+    "PROVIDER_SELECTION": "UNDEFINED"
+  },
+  "frozen_invariant_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "non_goals_preserved": {
+    "openai_integration_implemented_by_this_review": false,
+    "claude_integration_implemented": false,
+    "codex_integration_implemented": false,
+    "provider_registry_implemented_by_this_review": false,
+    "provider_discovery_implemented": false,
+    "provider_routing_implemented": false,
+    "provider_orchestration_implemented": false
+  },
+  "recommendation": "Provider-specific adapters may proceed as explicit proposal-source-only adapters; multi-provider ecosystem work should wait until a genuine operational need is proven."
+}

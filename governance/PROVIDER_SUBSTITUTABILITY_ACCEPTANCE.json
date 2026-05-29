@@ -1,0 +1,47 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTABILITY_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "review_only": true,
+  "provider_position_status": "MOSTLY_COMPLETE",
+  "provider_ecosystem_status": "PARTIALLY_DEFINED",
+  "provider_identity": {
+    "classification": "COMPLETE",
+    "modeled": true,
+    "replay_visible": true,
+    "provider_agnostic": true
+  },
+  "provider_replaceability": {
+    "classification": "PARTIAL",
+    "constitutional_substitutability_present": true,
+    "adapter_specific_code_still_required": true,
+    "constitutional_modification_required": false
+  },
+  "provider_authority": {
+    "classification": "ABSENT",
+    "execution_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "replay_compatibility": {
+    "classification": "COMPLETE",
+    "multiple_provider_identities_supported": true,
+    "provider_to_proposal_reconstruction_supported": true,
+    "append_only_replay_required": true
+  },
+  "provider_selection": {
+    "classification": "UNDEFINED",
+    "dynamic_selection_present": false,
+    "routing_present": false,
+    "intentionally_out_of_scope": true
+  },
+  "openai_privilege_review": {
+    "architecturally_privileged": false,
+    "governance_privileged": false,
+    "replay_privileged": false,
+    "implementation_present": true,
+    "adapter_local_gravity_risk": true
+  },
+  "success_condition_met": true
+}
