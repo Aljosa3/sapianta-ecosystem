@@ -1,0 +1,23 @@
+{
+  "milestone": "COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1",
+  "certification": "proposal_only_cognition_invariant_hardened",
+  "certifies": {
+    "llm_proposes_only": true,
+    "aigol_governs_validates_authorizes_rejects_records_and_enforces": true,
+    "worker_executes_only_bounded_authorized_tasks": true,
+    "llm_to_direct_execution_is_prohibited": true,
+    "proposal_to_execution_request_bridge_is_governance_mediated": true,
+    "authorization_is_aigol_governed": true,
+    "replay_visible_lifecycle_control_is_mandatory": true
+  },
+  "certifies_not_introduced": {
+    "llm_execution": true,
+    "autonomous_execution": true,
+    "agent_runtime": true,
+    "direct_cognition_to_execution_authority": true,
+    "cognition_authority": true,
+    "worker_autonomy": true,
+    "capability_expansion": true
+  },
+  "status": "PERMANENT_PROPOSAL_ONLY_COGNITION_INVARIANT_ESTABLISHED"
+}

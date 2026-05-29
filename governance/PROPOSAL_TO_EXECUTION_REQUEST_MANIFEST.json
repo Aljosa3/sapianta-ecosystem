@@ -1,0 +1,39 @@
+{
+  "milestone": "COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1",
+  "type": "proposal_to_execution_request_bridge_manifest",
+  "created_artifacts": [
+    "governance/COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1.md",
+    "governance/LLM_PROPOSAL_ONLY_INVARIANT_V1.md",
+    "governance/WORKER_EXECUTION_ONLY_INVARIANT_V1.md",
+    "governance/AIGOL_GOVERNANCE_AUTHORITY_INVARIANT_V1.md",
+    "governance/PROPOSAL_TO_EXECUTION_REQUEST_ACCEPTANCE.json",
+    "governance/PROPOSAL_TO_EXECUTION_REQUEST_CERTIFICATION.json",
+    "governance/PROPOSAL_TO_EXECUTION_REQUEST_MANIFEST.json"
+  ],
+  "canonical_flow": [
+    "human_prompt",
+    "llm_cognition_proposal",
+    "aigol_proposal_normalization",
+    "aigol_constitutional_validation",
+    "aigol_layer_0_4_governance_checks",
+    "aigol_authorization_or_rejection",
+    "governed_execution_request",
+    "worker_deterministic_execution_runtime",
+    "replay_visible_result",
+    "governed_return"
+  ],
+  "permanent_invariant": {
+    "llm": "proposes_only",
+    "aigol": "governs_validates_authorizes_rejects_records_enforces",
+    "worker": "executes_only_after_authorization",
+    "replay": "records_lineage_and_evidence"
+  },
+  "non_goals": {
+    "llm_execution": false,
+    "autonomous_execution": false,
+    "agent_runtime": false,
+    "direct_cognition_to_execution": false,
+    "cognition_authority": false,
+    "worker_autonomy": false
+  }
+}

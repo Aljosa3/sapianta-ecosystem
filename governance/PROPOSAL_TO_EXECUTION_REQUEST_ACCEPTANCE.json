@@ -1,0 +1,21 @@
+{
+  "milestone": "COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1",
+  "type": "proposal_to_execution_request_invariant_acceptance",
+  "acceptance": {
+    "llm_output_treated_as_untrusted_proposal_input": true,
+    "llm_cannot_authorize_execution": true,
+    "llm_cannot_execute_directly": true,
+    "worker_cannot_self_authorize": true,
+    "aigol_remains_governance_authority": true,
+    "execution_occurs_only_after_validation_and_authorization": true,
+    "replay_and_lineage_remain_mandatory": true
+  },
+  "canonical_invariant": {
+    "llm": "PROPOSER_ONLY",
+    "aigol": "GOVERNANCE_AUTHORITY_VALIDATOR_AUTHORIZER_RECORDER",
+    "worker_runtime": "EXECUTOR_ONLY_AFTER_AUTHORIZATION",
+    "replay": "MANDATORY_LINEAGE_AND_EVIDENCE_RECORD"
+  },
+  "capability_expansion": false,
+  "runtime_change": false
+}
