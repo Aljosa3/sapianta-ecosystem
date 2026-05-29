@@ -1,0 +1,38 @@
+{
+  "milestone": "EXECUTION_AUTHORIZATION_MODEL_V1",
+  "type": "execution_authorization_model_manifest",
+  "created_artifacts": [
+    "governance/EXECUTION_AUTHORIZATION_MODEL_V1.md",
+    "governance/AUTHORIZATION_AUTHORITY_BOUNDARIES_V1.md",
+    "governance/REPLAY_VISIBLE_AUTHORIZATION_LINEAGE_V1.md",
+    "governance/AUTHORIZATION_FAIL_CLOSED_RULES_V1.md",
+    "governance/EXECUTION_AUTHORIZATION_ACCEPTANCE.json",
+    "governance/EXECUTION_AUTHORIZATION_CERTIFICATION.json",
+    "governance/EXECUTION_AUTHORIZATION_MANIFEST.json"
+  ],
+  "scope": {
+    "execution_authorization_semantics": true,
+    "authority_validation": true,
+    "replay_visible_authorization_lineage": true,
+    "bounded_authorization_participation": true,
+    "fail_closed_authorization_governance": true,
+    "runtime_implementation": false,
+    "capability_expansion": false
+  },
+  "authorization_states": [
+    "REQUESTED",
+    "VALIDATED",
+    "AUTHORIZED",
+    "REJECTED",
+    "FAILED",
+    "TERMINATED"
+  ],
+  "non_goals": {
+    "working_execution": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false,
+    "filesystem_execution": false,
+    "network_execution": false,
+    "autonomous_authorization": false
+  }
+}

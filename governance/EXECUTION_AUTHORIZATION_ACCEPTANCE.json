@@ -1,0 +1,43 @@
+{
+  "milestone": "EXECUTION_AUTHORIZATION_MODEL_V1",
+  "type": "constitutional_execution_authorization_model",
+  "runtime_implementation": false,
+  "capability_expansion": false,
+  "authorization_states": [
+    "REQUESTED",
+    "VALIDATED",
+    "AUTHORIZED",
+    "REJECTED",
+    "FAILED",
+    "TERMINATED"
+  ],
+  "acceptance": {
+    "execution_authorization_semantics_defined": true,
+    "authority_validation_defined": true,
+    "replay_visible_authorization_lineage_defined": true,
+    "bounded_authorization_participation_defined": true,
+    "fail_closed_authorization_governance_defined": true
+  },
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "authority_separation_preserved": true,
+    "constitutional_baseline_preserved": true,
+    "boundedness_preserved": true,
+    "orchestration_containment_preserved": true
+  },
+  "prohibitions": {
+    "self_authorization": true,
+    "recursive_authorization": true,
+    "hidden_authority_chains": true,
+    "governance_bypass": true,
+    "autonomous_authorization": true
+  },
+  "non_goals_preserved": {
+    "working_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "filesystem_execution": true,
+    "network_execution": true,
+    "autonomous_authorization": true
+  }
+}

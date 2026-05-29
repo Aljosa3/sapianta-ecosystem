@@ -1,0 +1,34 @@
+{
+  "milestone": "EXECUTION_AUTHORIZATION_MODEL_V1",
+  "certification": "execution_authorization_model_certified",
+  "certifies": {
+    "authorization_is_explicit_replay_visible_and_bounded": true,
+    "authorization_preserves_replay_centrality": true,
+    "authorization_preserves_authority_separation": true,
+    "authorization_preserves_constitutional_baseline": true,
+    "authorization_preserves_boundedness": true,
+    "authorization_preserves_orchestration_containment": true,
+    "authorization_rejects_inadmissible_requests": true,
+    "authorization_fails_closed_on_ambiguity": true
+  },
+  "certifies_not_delegated": {
+    "constitutional_mutation_authority": true,
+    "governance_authority": true,
+    "replay_mutation_authority": true,
+    "orchestration_runtime_authority": true,
+    "agent_authority": true,
+    "worker_dispatch_authority": true,
+    "filesystem_execution_authority": true,
+    "network_execution_authority": true,
+    "autonomous_authorization_authority": true
+  },
+  "certifies_not_activated": {
+    "working_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "filesystem_execution": true,
+    "network_execution": true,
+    "autonomous_authorization": true
+  },
+  "status": "AUTHORIZATION_MODEL_DEFINED_WORKING_EXECUTION_NOT_ACTIVATED"
+}
