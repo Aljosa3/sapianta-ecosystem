@@ -1,0 +1,26 @@
+{
+  "milestone": "MINIMAL_GOVERNED_EXECUTION_RUNTIME_V1",
+  "certification": "minimal_governed_execution_runtime_model_certified",
+  "certifies": {
+    "execution_is_constitutional_participant_not_constitutional_authority": true,
+    "execution_lifecycle_is_replay_visible": true,
+    "execution_lifecycle_is_bounded": true,
+    "execution_lifecycle_fails_closed_on_ambiguity": true,
+    "execution_model_is_compatible_with_frozen_baseline": true,
+    "replay_centrality_preserved": true,
+    "authority_separation_preserved": true,
+    "orchestration_containment_preserved": true,
+    "constitutional_isolation_preserved": true
+  },
+  "certifies_not_activated": {
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "worker_execution": true,
+    "filesystem_execution": true,
+    "network_execution": true,
+    "autonomous_planning": true,
+    "adaptive_execution": true,
+    "constitutional_baseline_mutation": true
+  },
+  "status": "EXECUTION_MODEL_DEFINED_WORKING_EXECUTION_NOT_ACTIVATED"
+}

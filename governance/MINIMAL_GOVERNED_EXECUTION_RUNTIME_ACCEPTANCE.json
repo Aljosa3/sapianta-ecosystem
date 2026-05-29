@@ -1,0 +1,46 @@
+{
+  "milestone": "MINIMAL_GOVERNED_EXECUTION_RUNTIME_V1",
+  "type": "post_freeze_execution_model",
+  "runtime_implementation": false,
+  "capability_expansion": false,
+  "execution_states": [
+    "REQUESTED",
+    "VALIDATED",
+    "AUTHORIZED",
+    "EXECUTED",
+    "FAILED",
+    "TERMINATED"
+  ],
+  "acceptance": {
+    "execution_request_model_defined": true,
+    "execution_lifecycle_model_defined": true,
+    "replay_visible_execution_semantics_defined": true,
+    "bounded_execution_participation_defined": true,
+    "fail_closed_execution_governance_defined": true,
+    "freeze_compatibility_preserved": true
+  },
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "authority_separation_preserved": true,
+    "boundedness_guarantees_preserved": true,
+    "orchestration_containment_preserved": true,
+    "constitutional_isolation_preserved": true
+  },
+  "fail_closed_conditions": {
+    "ambiguous_execution_request": true,
+    "invalid_lifecycle_transition": true,
+    "authority_escalation_attempt": true,
+    "replay_discontinuity": true,
+    "hidden_continuation": true,
+    "invalid_execution_lineage": true
+  },
+  "non_goals_preserved": {
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "worker_execution": true,
+    "filesystem_execution": true,
+    "network_execution": true,
+    "autonomous_planning": true,
+    "adaptive_execution": true
+  }
+}
