@@ -1,0 +1,42 @@
+{
+  "artifact": "EXTERNAL_LLM_ATTACHMENT_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "implemented_runtime": "aigol/runtime/external_llm_response_attachment.py",
+  "implemented_tests": "tests/test_external_llm_response_attachment_v1.py",
+  "accepted_behavior": {
+    "raw_response_capture": true,
+    "replay_visible_raw_artifact": true,
+    "normalized_proposal_artifact": true,
+    "provider_identity_preserved": true,
+    "existing_aigol_governance_path_used": true,
+    "authorization_model_preserved": true,
+    "replay_model_preserved": true,
+    "fail_closed_rejection_artifacts": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "non_authority": {
+    "external_response_is_execution_authority": false,
+    "external_response_is_authorization_authority": false,
+    "external_response_is_governance_authority": false,
+    "external_response_can_bypass_replay": false
+  },
+  "non_goals_preserved": {
+    "openai_api_integration": false,
+    "claude_api_integration": false,
+    "codex_api_integration": false,
+    "network_access": false,
+    "provider_sdks": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_expansion": false,
+    "worker_changes": false
+  },
+  "success_condition": "external LLM response becomes proposal artifact and enters AiGOL governance without authority escalation"
+}

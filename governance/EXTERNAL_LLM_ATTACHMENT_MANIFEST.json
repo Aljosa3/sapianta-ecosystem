@@ -1,0 +1,45 @@
+{
+  "artifact": "EXTERNAL_LLM_ATTACHMENT_MANIFEST",
+  "version": "V1",
+  "status": "IMPLEMENTED",
+  "created_files": [
+    "aigol/runtime/external_llm_response_attachment.py",
+    "tests/test_external_llm_response_attachment_v1.py",
+    "governance/EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_BOUNDARY_V1.md",
+    "governance/RAW_EXTERNAL_RESPONSE_REPLAY_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_ACCEPTANCE.json",
+    "governance/EXTERNAL_LLM_ATTACHMENT_CERTIFICATION.json",
+    "governance/EXTERNAL_LLM_ATTACHMENT_MANIFEST.json"
+  ],
+  "references": [
+    "governance/REAL_LLM_ATTACHMENT_MODEL_V1.md",
+    "governance/REAL_ATTACHMENT_IMPLEMENTATION_PLAN_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md"
+  ],
+  "runtime_behavior": {
+    "external_response_ingestion": true,
+    "provider_api_integration": false,
+    "network_access": false,
+    "provider_sdk": false,
+    "new_capability": false,
+    "worker_change": false
+  },
+  "replay_artifacts": [
+    "000_raw_external_response.json",
+    "001_normalized_proposal.json",
+    "002_proposal_validation.json",
+    "003_governed_result.json"
+  ],
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "validation_commands": [
+    "python -m py_compile aigol/runtime/external_llm_response_attachment.py",
+    "python -m pytest tests/test_external_llm_response_attachment_v1.py"
+  ],
+  "success_condition": "external supplied LLM response attaches as untrusted proposal input without authority escalation"
+}
