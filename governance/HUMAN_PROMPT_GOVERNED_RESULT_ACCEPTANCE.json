@@ -1,0 +1,28 @@
+{
+  "milestone": "HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1",
+  "type": "human_prompt_governed_readonly_result_acceptance",
+  "acceptance": {
+    "human_prompt_to_cognition_proposal_flow_created": true,
+    "proposal_to_governed_execution_request_bridge_used": true,
+    "aigol_validation_required": true,
+    "aigol_authorization_required": true,
+    "deterministic_worker_runtime_execution_used": true,
+    "read_only_capability_result_returned": true,
+    "replay_visible_evidence_created": true,
+    "governed_return_created": true
+  },
+  "supported_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "non_goals_preserved": {
+    "llm_execution": true,
+    "worker_self_authorization": true,
+    "filesystem_mutation": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "new_capabilities": true
+  }
+}

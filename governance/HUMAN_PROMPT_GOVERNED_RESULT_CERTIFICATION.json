@@ -1,0 +1,24 @@
+{
+  "milestone": "HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1",
+  "certification": "human_prompt_to_governed_readonly_result_certified",
+  "certifies": {
+    "llm_proposes_only": true,
+    "aigol_governs": true,
+    "worker_executes_only_after_authorization": true,
+    "replay_records": true,
+    "end_to_end_readonly_flow_exists": true,
+    "existing_readonly_capabilities_only": true,
+    "fail_closed_rejection_preserved": true
+  },
+  "certifies_not_introduced": {
+    "llm_execution": true,
+    "worker_self_authorization": true,
+    "filesystem_mutation": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "new_capabilities": true
+  },
+  "status": "FIRST_HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_FLOW_ESTABLISHED"
+}

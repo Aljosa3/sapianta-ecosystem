@@ -1,0 +1,38 @@
+{
+  "milestone": "HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1",
+  "type": "human_prompt_governed_readonly_result_manifest",
+  "created_artifacts": [
+    "aigol/runtime/human_prompt_to_governed_readonly_result.py",
+    "tests/test_human_prompt_to_governed_readonly_result_v1.py",
+    "governance/HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1.md",
+    "governance/END_TO_END_OPERATOR_FLOW_REPLAY_V1.md",
+    "governance/GOVERNED_READONLY_RESULT_GUARANTEES_V1.md",
+    "governance/HUMAN_PROMPT_GOVERNED_RESULT_ACCEPTANCE.json",
+    "governance/HUMAN_PROMPT_GOVERNED_RESULT_CERTIFICATION.json",
+    "governance/HUMAN_PROMPT_GOVERNED_RESULT_MANIFEST.json"
+  ],
+  "flow": [
+    "human_prompt",
+    "cognition_proposal",
+    "aigol_proposal_normalization",
+    "aigol_validation",
+    "aigol_authorization",
+    "governed_execution_request",
+    "deterministic_worker_runtime_execution",
+    "read_only_capability_result",
+    "replay_visible_evidence",
+    "governed_return"
+  ],
+  "supported_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "permanent_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "capability_expansion": false,
+  "runtime_orchestration": false
+}
