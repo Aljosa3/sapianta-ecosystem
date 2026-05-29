@@ -1,0 +1,39 @@
+{
+  "milestone": "OPERATIONAL_EPOCH_GAP_ANALYSIS_V1",
+  "type": "operational_epoch_gap_analysis_manifest",
+  "created_artifacts": [
+    "governance/OPERATIONAL_EPOCH_GAP_ANALYSIS_V1.md",
+    "governance/CRITICAL_GAPS_V1.md",
+    "governance/IMPORTANT_GAPS_V1.md",
+    "governance/OPTIONAL_GAPS_V1.md",
+    "governance/OVERENGINEERING_RISKS_V1.md",
+    "governance/OPERATIONAL_EPOCH_GAP_ANALYSIS_ACCEPTANCE.json",
+    "governance/OPERATIONAL_EPOCH_GAP_ANALYSIS_CERTIFICATION.json",
+    "governance/OPERATIONAL_EPOCH_GAP_ANALYSIS_MANIFEST.json"
+  ],
+  "critical_gaps": [
+    "operator_invocation_boundary",
+    "governed_result_readability",
+    "replay_evidence_retrieval",
+    "frozen_epoch_pressure_validation",
+    "minimal_usage_documentation"
+  ],
+  "shortest_path_to_first_useful_aigol": [
+    "minimal_operator_cli_or_invocation_wrapper",
+    "governed_result_summary",
+    "replay_summary_command",
+    "frozen_epoch_pressure_tests",
+    "short_operator_usage_guide"
+  ],
+  "deferred_expansions": [
+    "write_capability",
+    "shell_capability",
+    "network_capability",
+    "orchestration_runtime",
+    "persistent_memory",
+    "semantic_routing",
+    "agents"
+  ],
+  "runtime_change": false,
+  "capability_expansion": false
+}
