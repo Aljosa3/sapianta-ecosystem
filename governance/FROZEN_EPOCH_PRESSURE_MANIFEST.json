@@ -1,0 +1,33 @@
+{
+  "milestone": "FROZEN_EPOCH_PRESSURE_VALIDATION_V1",
+  "type": "frozen_epoch_pressure_manifest",
+  "created_artifacts": [
+    "tests/test_frozen_epoch_pressure_validation_v1.py",
+    "governance/FROZEN_EPOCH_PRESSURE_VALIDATION_V1.md",
+    "governance/FROZEN_EPOCH_PRESSURE_FINDINGS_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_STABILITY_REPORT_V1.md",
+    "governance/FROZEN_EPOCH_PRESSURE_ACCEPTANCE.json",
+    "governance/FROZEN_EPOCH_PRESSURE_CERTIFICATION.json",
+    "governance/FROZEN_EPOCH_PRESSURE_MANIFEST.json"
+  ],
+  "pressure_cases": [
+    "malformed_operator_requests",
+    "unsupported_capability_requests",
+    "replay_corruption_attempts",
+    "authorization_failures",
+    "invalid_cognition_proposal_structures",
+    "replay_ordering_violations",
+    "repeated_successful_runs",
+    "repeated_failed_runs",
+    "replay_reconstruction_pressure",
+    "filesystem_boundary_pressure"
+  ],
+  "preserved_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "runtime_change": false,
+  "capability_expansion": false
+}

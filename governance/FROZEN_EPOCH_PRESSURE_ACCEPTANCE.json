@@ -1,0 +1,24 @@
+{
+  "milestone": "FROZEN_EPOCH_PRESSURE_VALIDATION_V1",
+  "type": "frozen_epoch_pressure_acceptance",
+  "acceptance": {
+    "operator_entrypoint_validated": true,
+    "proposal_bridge_validated": true,
+    "execution_runtime_validated": true,
+    "read_only_capabilities_validated": true,
+    "governed_result_summary_validated": true,
+    "replay_summary_validated": true,
+    "replay_verification_validated": true,
+    "malformed_operator_requests_validated": true,
+    "unsupported_capability_requests_validated": true,
+    "replay_corruption_attempts_validated": true,
+    "authorization_failures_validated": true,
+    "invalid_cognition_proposal_structures_validated": true,
+    "replay_ordering_violations_validated": true,
+    "repeated_successful_runs_validated": true,
+    "repeated_failed_runs_validated": true,
+    "replay_reconstruction_pressure_validated": true
+  },
+  "runtime_change": false,
+  "capability_expansion": false
+}
