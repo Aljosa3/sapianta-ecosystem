@@ -1,0 +1,43 @@
+{
+  "artifact": "OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_V1",
+  "real_provider_integration_status": "READY_WITH_CONSTRAINTS",
+  "blocker_certification": {
+    "constitutional_blocker": "NO_BLOCKER",
+    "authority_separation_blocker": "NO_BLOCKER",
+    "replay_blocker": "NO_BLOCKER",
+    "worker_blocker": "NO_BLOCKER",
+    "runtime_blocker": "NO_BLOCKER",
+    "provider_blocker": "NO_BLOCKER",
+    "no_blockers_found": true
+  },
+  "certified_ready_targets": {
+    "OPENAI_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CLAUDE_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CODEX_PROVIDER_ADAPTER_V1": "NOT_READY"
+  },
+  "certified_constraints": {
+    "proposal_source_only": true,
+    "raw_response_replay_before_normalization": true,
+    "deterministic_fail_closed_provider_errors": true,
+    "no_provider_authority": true,
+    "no_automatic_retry": true,
+    "no_streaming": true,
+    "no_memory": true,
+    "no_orchestration": true
+  },
+  "certified_absences": {
+    "provider_adapter_implemented": false,
+    "provider_sdk_added": false,
+    "network_transport_added": false,
+    "api_credentials_added": false,
+    "worker_ecosystem_added": false,
+    "memory_added": false,
+    "orchestration_added": false,
+    "capability_expansion_added": false,
+    "execution_expansion_added": false
+  },
+  "future_constraint": "first real provider adapter must be OpenAI or Claude, proposal-source-only, and routed through REAL_PROVIDER_ATTACHMENT_V1"
+}

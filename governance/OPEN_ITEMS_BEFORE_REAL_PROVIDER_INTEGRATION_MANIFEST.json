@@ -1,0 +1,43 @@
+{
+  "artifact": "OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_MANIFEST",
+  "version": "V1",
+  "status": "FINAL_REVIEW_COMPLETE",
+  "created_files": [
+    "governance/OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_V1.md",
+    "governance/REAL_PROVIDER_INTEGRATION_BLOCKER_REVIEW_V1.md",
+    "governance/PROVIDER_INTEGRATION_FINAL_READINESS_V1.md",
+    "governance/OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_ACCEPTANCE.json",
+    "governance/OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_CERTIFICATION.json",
+    "governance/OPEN_ITEMS_BEFORE_REAL_PROVIDER_INTEGRATION_MANIFEST.json"
+  ],
+  "reviewed_references": [
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md",
+    "governance/EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_VALIDATION_V1.md",
+    "governance/REAL_PROVIDER_ATTACHMENT_V1.md",
+    "governance/REAL_PROVIDER_INTEGRATION_READINESS_REVIEW_V1.md",
+    "governance/CURRENT_WORKER_POSITION_REVIEW_V1.md",
+    "governance/WORKER_ECOSYSTEM_READINESS_REVIEW_V1.md"
+  ],
+  "real_provider_integration_status": "READY_WITH_CONSTRAINTS",
+  "blocker_result": "NO_BLOCKERS_FOUND",
+  "ready_targets": [
+    "OPENAI_PROVIDER_ADAPTER_V1",
+    "CLAUDE_PROVIDER_ADAPTER_V1"
+  ],
+  "blocked_targets": [
+    "CODEX_PROVIDER_ADAPTER_V1"
+  ],
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "openai_integration_implemented": false,
+    "claude_integration_implemented": false,
+    "provider_sdk_added": false,
+    "worker_ecosystem_added": false,
+    "memory_added": false,
+    "orchestration_added": false,
+    "capability_expansion_added": false,
+    "execution_expansion_added": false
+  },
+  "success_condition": "open items reviewed and no blockers found for first OpenAI or Claude provider adapter under constraints"
+}
