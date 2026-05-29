@@ -1,0 +1,34 @@
+{
+  "artifact": "CURRENT_HUMAN_REQUEST_POSITION_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "governance/CURRENT_HUMAN_REQUEST_POSITION_REVIEW_V1.md",
+    "governance/HUMAN_REQUEST_RECONSTRUCTION_V1.md",
+    "governance/HUMAN_REQUEST_AUTHORITY_ANALYSIS_V1.md",
+    "governance/HUMAN_REQUEST_NORMALIZATION_ANALYSIS_V1.md",
+    "governance/HUMAN_REQUEST_PROVIDER_INDEPENDENCE_V1.md",
+    "governance/HUMAN_REQUEST_GAPS_V1.md",
+    "governance/HUMAN_REQUEST_DUPLICATION_RISKS_V1.md",
+    "governance/CURRENT_HUMAN_REQUEST_POSITION_ACCEPTANCE.json",
+    "governance/CURRENT_HUMAN_REQUEST_POSITION_CERTIFICATION.json",
+    "governance/CURRENT_HUMAN_REQUEST_POSITION_MANIFEST.json"
+  ],
+  "reviewed_surfaces": [
+    "HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1",
+    "MINIMAL_OPERATOR_ENTRYPOINT_V1",
+    "FIRST_USEFUL_OPERATOR_FLOW_V1",
+    "OPERATOR_INVOCATION_MODEL_V1",
+    "COGNITION_EXECUTION_REQUEST_MODEL_V1",
+    "EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1",
+    "REAL_PROVIDER_ATTACHMENT_V1",
+    "OPENAI_PROVIDER_ADAPTER_V1",
+    "PROVIDER_SUBSTITUTABILITY_REVIEW_V1"
+  ],
+  "classification_summary": {
+    "human_request_position_status": "MOSTLY_COMPLETE",
+    "request_adaptation_status": "NOT_REQUIRED",
+    "provider_specific_request_adaptation_required": false
+  },
+  "commit_message": "docs(governance): review current human request position"
+}

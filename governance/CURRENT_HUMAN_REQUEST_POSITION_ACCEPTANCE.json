@@ -1,0 +1,38 @@
+{
+  "artifact": "CURRENT_HUMAN_REQUEST_POSITION_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "review_only": true,
+  "human_request_position_status": "MOSTLY_COMPLETE",
+  "request_adaptation_status": "NOT_REQUIRED",
+  "human_request_identity": {
+    "classification": "PARTIAL",
+    "replay_visible": true,
+    "first_class_in_operator_flow": true,
+    "standalone_identity_model": false
+  },
+  "human_request_authority": {
+    "execution_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "must_pass_through_aigol_governance": true
+  },
+  "human_request_lifecycle": {
+    "classification": "PARTIAL",
+    "first_useful_operator_flow_defined": true,
+    "generalized_multi_provider_lifecycle_defined": false
+  },
+  "human_request_normalization": {
+    "classification": "PARTIAL",
+    "operator_request_normalization_exists": true,
+    "proposal_normalization_exists": true,
+    "provider_specific_request_templates_exist": false
+  },
+  "provider_independence": {
+    "classification": "PARTIAL",
+    "constitutional_modification_required_for_provider_substitution": false,
+    "adapter_local_formatting_may_be_required": true
+  },
+  "success_condition_met": true
+}
