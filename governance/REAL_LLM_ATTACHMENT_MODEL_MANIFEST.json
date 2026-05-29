@@ -1,0 +1,45 @@
+{
+  "artifact": "REAL_LLM_ATTACHMENT_MODEL_MANIFEST",
+  "version": "V1",
+  "status": "MODEL_DEFINED",
+  "created_artifacts": [
+    "governance/REAL_LLM_ATTACHMENT_MODEL_V1.md",
+    "governance/LLM_PROVIDER_IDENTITY_MODEL_V1.md",
+    "governance/RAW_LLM_RESPONSE_CAPTURE_V1.md",
+    "governance/PROPOSAL_NORMALIZATION_MODEL_V1.md",
+    "governance/LLM_ATTACHMENT_FAIL_CLOSED_RULES_V1.md",
+    "governance/REAL_LLM_ATTACHMENT_MODEL_ACCEPTANCE.json",
+    "governance/REAL_LLM_ATTACHMENT_MODEL_CERTIFICATION.json",
+    "governance/REAL_LLM_ATTACHMENT_MODEL_MANIFEST.json"
+  ],
+  "references": [
+    "governance/REAL_ATTACHMENT_GAP_ANALYSIS_V1.md",
+    "governance/REAL_LLM_ATTACHMENT_GAPS_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md",
+    "governance/REAL_EXTERNAL_LLM_ATTACHMENT_V1.md",
+    "governance/PROVIDER_AGNOSTIC_RAW_RESPONSE_CAPTURE_V1.md"
+  ],
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "defined_models": {
+    "provider_identity": true,
+    "raw_response_capture": true,
+    "proposal_normalization": true,
+    "llm_governance_boundary": true,
+    "fail_closed_rules": true
+  },
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "real_provider_integration": false,
+    "api_calling": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_expansion": false
+  },
+  "success_condition": "real external LLM attachment model defined before implementation"
+}

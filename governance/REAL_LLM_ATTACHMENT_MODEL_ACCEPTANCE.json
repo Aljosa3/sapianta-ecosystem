@@ -1,0 +1,38 @@
+{
+  "artifact": "REAL_LLM_ATTACHMENT_MODEL_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "model_only": true,
+  "accepted_scope": {
+    "provider_identity_model": true,
+    "raw_response_capture_model": true,
+    "proposal_normalization_model": true,
+    "governance_boundary_model": true,
+    "fail_closed_failure_modes": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "accepted_boundaries": {
+    "llm_is_execution_authority": false,
+    "llm_can_authorize": false,
+    "llm_can_execute": false,
+    "llm_can_bypass_replay": false,
+    "llm_only_proposes": true,
+    "proposal_artifact_is_untrusted_input": true
+  },
+  "non_goals_preserved": {
+    "real_provider_integration_implemented": false,
+    "openai_integration_implemented": false,
+    "claude_integration_implemented": false,
+    "codex_integration_implemented": false,
+    "api_calls_implemented": false,
+    "orchestration_implemented": false,
+    "memory_implemented": false,
+    "capability_expansion_implemented": false
+  },
+  "success_condition": "real external LLM attachment model defined without violating proposal-governance-worker-replay invariant"
+}
