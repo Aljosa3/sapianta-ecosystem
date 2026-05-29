@@ -1,0 +1,53 @@
+{
+  "artifact": "FIRST_USEFUL_AIGOL_V1_MANIFEST",
+  "version": "V1",
+  "status": "FROZEN_BASELINE",
+  "created_artifacts": [
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_GUARANTEES.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_BASELINE.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_ACCEPTANCE.json",
+    "governance/FIRST_USEFUL_AIGOL_V1_CERTIFICATION.json",
+    "governance/FIRST_USEFUL_AIGOL_V1_MANIFEST.json"
+  ],
+  "frozen_runtime_surface": [
+    "aigol/runtime/minimal_operator_entrypoint.py",
+    "aigol/runtime/human_prompt_to_governed_readonly_result.py",
+    "aigol/runtime/minimal_cognition_to_execution_bridge.py",
+    "aigol/runtime/minimal_execution_runtime_prototype.py",
+    "aigol/runtime/read_only_capability_attachment.py",
+    "aigol/runtime/filesystem_read_only_capability.py",
+    "aigol/runtime/governed_result_summary.py",
+    "aigol/runtime/replay_summary_command.py"
+  ],
+  "frozen_governance_references": [
+    "governance/FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1.md",
+    "governance/FROZEN_EPOCH_PRESSURE_VALIDATION_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_STABILITY_REPORT_V1.md",
+    "governance/MINIMAL_OPERATOR_ENTRYPOINT_V1.md",
+    "governance/HUMAN_PROMPT_TO_GOVERNED_READONLY_RESULT_V1.md",
+    "governance/COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1.md",
+    "governance/GOVERNED_RESULT_SUMMARY_V1.md",
+    "governance/REPLAY_SUMMARY_COMMAND_V1.md"
+  ],
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "frozen_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "capability_expansion": false,
+    "domain_expansion": false,
+    "memory_expansion": false,
+    "orchestration_expansion": false,
+    "autonomy_expansion": false,
+    "governance_authority_expansion": false
+  },
+  "success_condition": "FIRST_USEFUL_AIGOL_V1 is frozen as a stable reference baseline for future evolution"
+}

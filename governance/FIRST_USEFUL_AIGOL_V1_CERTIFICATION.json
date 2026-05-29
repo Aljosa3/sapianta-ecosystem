@@ -1,0 +1,37 @@
+{
+  "artifact": "FIRST_USEFUL_AIGOL_V1_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "baseline": "FIRST_USEFUL_AIGOL_V1",
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_guarantees": {
+    "llm_remains_proposal_only": true,
+    "aigol_remains_governance_authority": true,
+    "worker_remains_execution_only": true,
+    "replay_remains_mandatory": true,
+    "authorization_remains_mandatory": true,
+    "read_only_capability_boundaries_remain_intact": true,
+    "governed_result_summary_remains_replay_derived": true,
+    "replay_summary_remains_read_only": true,
+    "pressure_validation_remains_evidence_reference": true,
+    "usage_guide_remains_operator_guidance_reference": true
+  },
+  "certified_absences": {
+    "new_capability": false,
+    "filesystem_mutation": false,
+    "shell_execution": false,
+    "network_execution": false,
+    "api_execution": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false,
+    "persistent_memory": false,
+    "autonomous_continuation": false,
+    "governance_authority_delegation": false
+  },
+  "future_evolution_constraint": "future work must preserve the frozen invariant, replay centrality, authority separation, authorization, and fail-closed boundaries"
+}

@@ -1,0 +1,44 @@
+{
+  "artifact": "FIRST_USEFUL_AIGOL_V1_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "baseline": "FIRST_USEFUL_AIGOL_V1",
+  "acceptance_scope": {
+    "operator_entrypoint_reviewed": true,
+    "proposal_bridge_reviewed": true,
+    "governance_reviewed": true,
+    "authorization_reviewed": true,
+    "execution_runtime_reviewed": true,
+    "read_only_capabilities_reviewed": true,
+    "governed_result_summary_reviewed": true,
+    "replay_summary_reviewed": true,
+    "pressure_validation_reviewed": true,
+    "usage_guide_reviewed": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "accepted_properties": {
+    "stable_reference_baseline_established": true,
+    "proposal_only_cognition_preserved": true,
+    "aigol_governance_authority_preserved": true,
+    "worker_execution_only_preserved": true,
+    "replay_mandatory_preserved": true,
+    "authorization_mandatory_preserved": true,
+    "read_only_boundaries_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "operator_usability_surface_preserved": true
+  },
+  "non_expansion": {
+    "new_capabilities_added": false,
+    "domain_expansion_added": false,
+    "memory_expansion_added": false,
+    "orchestration_added": false,
+    "autonomy_added": false,
+    "governance_authority_expanded": false
+  },
+  "success_condition": "stable reference baseline established for all future evolution"
+}
