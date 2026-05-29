@@ -1,0 +1,32 @@
+{
+  "artifact": "CURRENT_WORKER_POSITION_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "CURRENT_WORKER_POSITION_REVIEW_V1",
+  "worker_position_status": "MOSTLY_COMPLETE",
+  "certified_current_position": {
+    "worker_definition": "execution-only participant",
+    "worker_identity": "deterministic replay-visible invocation-scoped identity",
+    "worker_authority": "bounded execution participation only after AiGOL authorization",
+    "worker_relationship_to_aigol": "AiGOL validates, authorizes, governs, records; Worker executes",
+    "worker_relationship_to_llm": "LLM proposes; Worker never receives raw LLM authority",
+    "worker_relationship_to_replay": "Worker evidence must be append-only and replay-visible"
+  },
+  "certified_gaps": {
+    "worker_registration": "undefined",
+    "worker_discovery": "undefined",
+    "worker_replaceability": "not canonical",
+    "worker_specialization": "undefined",
+    "external_worker_lifecycle": "not implemented",
+    "worker_sandbox_runtime": "not implemented"
+  },
+  "certified_absences": {
+    "new_worker_architecture": false,
+    "worker_authority_expansion": false,
+    "worker_runtime": false,
+    "worker_orchestration": false,
+    "worker_memory": false,
+    "worker_autonomy": false
+  },
+  "future_constraint": "future Worker work must implement or consolidate existing execution-only semantics before creating new Worker concepts"
+}
