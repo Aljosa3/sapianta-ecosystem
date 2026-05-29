@@ -44,10 +44,10 @@ def test_minimal_operator_entrypoint_accepts_runtime_inspection(tmp_path) -> Non
     summary = result["operator_result_summary"]
 
     assert summary["status"] == "ACCEPTED"
-    assert summary["capability"] == READ_ONLY_RUNTIME_INSPECTION
-    assert summary["replay_verified"] is True
-    assert summary["bridge_final_status"] == "RETURNED"
-    assert "LLM proposes" in summary["authority_boundary"]
+    assert summary["capability_used"] == READ_ONLY_RUNTIME_INSPECTION
+    assert summary["replay_verification_status"] == "VERIFIED"
+    assert summary["source"]["bridge_final_status"] == "RETURNED"
+    assert "LLM proposes" in summary["authority_boundary_reminder"]
     assert result["llm_proposes_only"] is True
     assert result["aigol_governs"] is True
     assert result["worker_executes_only_after_authorization"] is True
@@ -68,7 +68,7 @@ def test_minimal_operator_entrypoint_accepts_filesystem_inspection(tmp_path) -> 
     )
 
     assert result["operator_result_summary"]["status"] == "ACCEPTED"
-    assert result["operator_result_summary"]["capability"] == FILESYSTEM_READ_ONLY_INSPECTION
+    assert result["operator_result_summary"]["capability_used"] == FILESYSTEM_READ_ONLY_INSPECTION
     assert result["flow"]["bridge_capture"]["bridge_capture"]["execution"]["capability_result"]["execution"]["execution_evidence"]["metadata"][
         "text_preview"
     ] == "entrypoint visible content"
@@ -79,10 +79,10 @@ def test_entrypoint_rejects_unsupported_capability(tmp_path) -> None:
     summary = result["operator_result_summary"]
 
     assert summary["status"] == "REJECTED"
-    assert "unsupported operator capability" in summary["failure_reason"]
+    assert "unsupported operator capability" in summary["reason"]
     assert result["flow"] is None
-    assert summary["llm_execution"] is False
-    assert summary["worker_self_authorization"] is False
+    assert summary["non_authority"]["llm_execution"] is False
+    assert summary["non_authority"]["worker_self_authorization"] is False
 
 
 def test_entrypoint_rejects_unsafe_prompt_through_governed_flow(tmp_path) -> None:
@@ -90,8 +90,8 @@ def test_entrypoint_rejects_unsafe_prompt_through_governed_flow(tmp_path) -> Non
     summary = result["operator_result_summary"]
 
     assert summary["status"] == "REJECTED"
-    assert summary["replay_verified"] is True
-    assert "hidden continuation" in summary["failure_reason"]
+    assert summary["replay_verification_status"] == "VERIFIED"
+    assert "hidden continuation" in summary["reason"]
     assert result["replay_summary"]["final_status"] == "FAILED"
 
 
@@ -100,8 +100,8 @@ def test_entrypoint_rejects_unauthorized_flow(tmp_path) -> None:
     summary = result["operator_result_summary"]
 
     assert summary["status"] == "REJECTED"
-    assert summary["replay_verified"] is True
-    assert summary["bridge_final_status"] == "FAILED"
+    assert summary["replay_verification_status"] == "VERIFIED"
+    assert summary["source"]["bridge_final_status"] == "FAILED"
     assert result["flow"]["governed_result"]["final_status"] == "FAILED"
 
 
@@ -109,7 +109,7 @@ def test_entrypoint_preserves_replay_path(tmp_path) -> None:
     replay_dir = tmp_path / "chosen_replay"
     result = _run_runtime(tmp_path, replay_dir=replay_dir)
 
-    assert result["operator_result_summary"]["replay_dir"] == str(replay_dir)
+    assert result["operator_result_summary"]["replay_reference"] == str(replay_dir)
     assert (replay_dir / "000_human_prompt.json").exists()
     assert (replay_dir / "bridge_replay" / "000_contribution.json").exists()
 
@@ -120,10 +120,12 @@ def test_entrypoint_summary_hash_is_deterministic(tmp_path) -> None:
 
     first_summary = dict(first["operator_result_summary"])
     second_summary = dict(second["operator_result_summary"])
-    first_summary.pop("replay_dir")
+    first_summary.pop("replay_reference")
     first_summary.pop("summary_hash")
-    second_summary.pop("replay_dir")
+    first_summary.pop("source")
+    second_summary.pop("replay_reference")
     second_summary.pop("summary_hash")
+    second_summary.pop("source")
     assert first_summary == second_summary
 
 

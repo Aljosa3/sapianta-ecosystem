@@ -15,6 +15,10 @@ from aigol.runtime.human_prompt_to_governed_readonly_result import (
     run_human_prompt_to_governed_readonly_result,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.governed_result_summary import (
+    create_governed_failure_summary,
+    create_governed_result_summary,
+)
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -110,28 +114,14 @@ def create_operator_result_summary(
     if final_status not in {OPERATOR_COMPLETED, OPERATOR_FAILED}:
         raise FailClosedRuntimeError("operator result final status is invalid")
     accepted = final_status == OPERATOR_COMPLETED
-    summary = {
-        "operator_flow_id": _require_string(operator_flow_id, "operator_flow_id"),
-        "status": "ACCEPTED" if accepted else "REJECTED",
-        "capability": _normalize_capability(target_capability),
-        "human_request": _normalize_text(human_request, "human_request"),
-        "replay_dir": str(Path(replay_dir)),
-        "replay_verified": replay_summary.get("append_only_valid") is True,
-        "replay_artifact_count": replay_summary.get("replay_artifact_count"),
-        "bridge_final_status": (
-            replay_summary.get("bridge_replay", {}).get("final_status")
-            if isinstance(replay_summary.get("bridge_replay"), dict)
-            else None
-        ),
-        "result_summary": governed_result.get("governed_return", "governed result unavailable"),
-        "failure_reason": governed_result.get("failure_reason") if not accepted else None,
-        "authority_boundary": "LLM proposes; AiGOL governs; worker executes after authorization; replay records.",
-        "llm_execution": False,
-        "worker_self_authorization": False,
-        "new_capability_created": False,
-    }
-    summary["summary_hash"] = replay_hash(summary)
-    return summary
+    return create_governed_result_summary(
+        operator_flow_id=_require_string(operator_flow_id, "operator_flow_id"),
+        human_request=_normalize_text(human_request, "human_request"),
+        capability_used=_normalize_capability(target_capability),
+        replay_reference=replay_dir,
+        governed_result=governed_result,
+        replay_summary=replay_summary,
+    )
 
 
 def create_operator_failure_summary(
@@ -144,24 +134,13 @@ def create_operator_failure_summary(
 ) -> dict[str, Any]:
     """Create operator-facing rejection summary when entrypoint validation fails."""
 
-    summary = {
-        "operator_flow_id": _require_string(operator_flow_id, "operator_flow_id"),
-        "status": "REJECTED",
-        "capability": _require_string(target_capability, "target_capability"),
-        "human_request": _require_string(human_request, "human_request"),
-        "replay_dir": str(Path(replay_dir)),
-        "replay_verified": False,
-        "replay_artifact_count": 0,
-        "bridge_final_status": None,
-        "result_summary": "operator request rejected before governed runtime completion",
-        "failure_reason": _require_string(failure_reason, "failure_reason"),
-        "authority_boundary": "LLM proposes; AiGOL governs; worker executes after authorization; replay records.",
-        "llm_execution": False,
-        "worker_self_authorization": False,
-        "new_capability_created": False,
-    }
-    summary["summary_hash"] = replay_hash(summary)
-    return summary
+    return create_governed_failure_summary(
+        operator_flow_id=_require_string(operator_flow_id, "operator_flow_id"),
+        human_request=_require_string(human_request, "human_request"),
+        capability_used=_require_string(target_capability, "target_capability"),
+        replay_reference=replay_dir,
+        failure_reason=_require_string(failure_reason, "failure_reason"),
+    )
 
 
 def _normalize_capability(value: Any) -> str:
