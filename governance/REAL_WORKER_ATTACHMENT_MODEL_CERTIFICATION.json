@@ -1,0 +1,37 @@
+{
+  "artifact": "REAL_WORKER_ATTACHMENT_MODEL_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "REAL_WORKER_ATTACHMENT_MODEL_V1",
+  "readiness_input": {
+    "REAL_WORKER_ATTACHMENT_READINESS": "PARTIALLY_READY",
+    "source": "REAL_ATTACHMENT_GAP_ANALYSIS_V1"
+  },
+  "certified_model_components": {
+    "worker_identity_model": true,
+    "worker_attachment_boundary": true,
+    "capability_binding_model": true,
+    "worker_replay_mapping": true,
+    "worker_isolation_model": true,
+    "fail_closed_rules": true
+  },
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_absences": {
+    "real_worker": false,
+    "filesystem_mutation": false,
+    "shell_execution": false,
+    "api_execution": false,
+    "network_execution": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_authority_expansion": false,
+    "governance_authority_expansion": false
+  },
+  "future_constraint": "REAL_WORKER_ATTACHMENT_V1 must accept only AiGOL-authorized execution requests and must emit replay-visible worker evidence without self-authorization"
+}

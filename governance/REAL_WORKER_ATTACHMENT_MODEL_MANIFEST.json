@@ -1,0 +1,49 @@
+{
+  "artifact": "REAL_WORKER_ATTACHMENT_MODEL_MANIFEST",
+  "version": "V1",
+  "status": "MODEL_DEFINED",
+  "created_artifacts": [
+    "governance/REAL_WORKER_ATTACHMENT_MODEL_V1.md",
+    "governance/WORKER_IDENTITY_MODEL_V1.md",
+    "governance/WORKER_ATTACHMENT_BOUNDARY_V1.md",
+    "governance/WORKER_REPLAY_MAPPING_V1.md",
+    "governance/WORKER_ATTACHMENT_FAIL_CLOSED_RULES_V1.md",
+    "governance/REAL_WORKER_ATTACHMENT_MODEL_ACCEPTANCE.json",
+    "governance/REAL_WORKER_ATTACHMENT_MODEL_CERTIFICATION.json",
+    "governance/REAL_WORKER_ATTACHMENT_MODEL_MANIFEST.json"
+  ],
+  "references": [
+    "governance/REAL_ATTACHMENT_GAP_ANALYSIS_V1.md",
+    "governance/REAL_WORKER_ATTACHMENT_GAPS_V1.md",
+    "governance/ATTACHMENT_READINESS_ASSESSMENT_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md",
+    "governance/EXECUTION_AUTHORIZATION_MODEL_V1.md",
+    "governance/EXECUTION_BOUNDARY_ENFORCEMENT_V1.md"
+  ],
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "defined_models": {
+    "worker_identity": true,
+    "worker_attachment_boundary": true,
+    "capability_binding": true,
+    "worker_replay_mapping": true,
+    "worker_isolation": true,
+    "fail_closed_rules": true
+  },
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "real_worker_implementation": false,
+    "filesystem_mutation": false,
+    "shell_execution": false,
+    "api_execution": false,
+    "network_execution": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false
+  },
+  "success_condition": "real worker attachment model defined before implementation"
+}

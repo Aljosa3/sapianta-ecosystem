@@ -1,0 +1,39 @@
+{
+  "artifact": "REAL_WORKER_ATTACHMENT_MODEL_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "model_only": true,
+  "accepted_scope": {
+    "worker_identity_model": true,
+    "worker_attachment_boundary": true,
+    "capability_binding_model": true,
+    "worker_replay_mapping": true,
+    "isolation_model": true,
+    "fail_closed_failure_modes": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "accepted_boundaries": {
+    "worker_receives_only_authorized_requests": true,
+    "worker_can_self_authorize": false,
+    "worker_can_bypass_governance": false,
+    "worker_can_mutate_replay": false,
+    "worker_can_expand_capabilities": false,
+    "worker_executes_only": true
+  },
+  "non_goals_preserved": {
+    "real_worker_implemented": false,
+    "filesystem_mutation_implemented": false,
+    "shell_execution_implemented": false,
+    "api_execution_implemented": false,
+    "network_execution_implemented": false,
+    "orchestration_implemented": false,
+    "memory_implemented": false,
+    "capability_expansion_implemented": false
+  },
+  "success_condition": "real worker attachment model defined without violating proposal-governance-worker-replay invariant"
+}
