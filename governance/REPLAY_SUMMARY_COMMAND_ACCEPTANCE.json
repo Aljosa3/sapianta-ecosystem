@@ -1,0 +1,24 @@
+{
+  "milestone": "REPLAY_SUMMARY_COMMAND_V1",
+  "type": "replay_summary_command_acceptance",
+  "acceptance": {
+    "operator_replay_summary_command_created": true,
+    "replay_id_field_present": true,
+    "status_field_present": true,
+    "capability_field_present": true,
+    "authorization_status_field_present": true,
+    "verification_status_field_present": true,
+    "result_summary_field_present": true,
+    "timestamp_ordering_information_present": true,
+    "summary_is_deterministic": true,
+    "summary_is_read_only": true
+  },
+  "non_goals_preserved": {
+    "new_capability": true,
+    "execution_power": true,
+    "orchestration": true,
+    "memory": true,
+    "agents": true,
+    "replay_mutation": true
+  }
+}

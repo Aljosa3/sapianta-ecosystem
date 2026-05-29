@@ -1,0 +1,28 @@
+{
+  "milestone": "REPLAY_SUMMARY_COMMAND_V1",
+  "type": "replay_summary_command_manifest",
+  "created_artifacts": [
+    "aigol/runtime/replay_summary_command.py",
+    "tests/test_replay_summary_command_v1.py",
+    "governance/REPLAY_SUMMARY_COMMAND_V1.md",
+    "governance/OPERATOR_REPLAY_VIEW_MODEL_V1.md",
+    "governance/REPLAY_SUMMARY_COMMAND_ACCEPTANCE.json",
+    "governance/REPLAY_SUMMARY_COMMAND_CERTIFICATION.json",
+    "governance/REPLAY_SUMMARY_COMMAND_MANIFEST.json"
+  ],
+  "summary_fields": [
+    "replay_id",
+    "status",
+    "capability",
+    "authorization_status",
+    "verification_status",
+    "result_summary",
+    "timestamp_ordering"
+  ],
+  "operator_visibility_only": true,
+  "runtime_capability_expansion": false,
+  "execution_power_added": false,
+  "orchestration_added": false,
+  "memory_added": false,
+  "agents_added": false
+}

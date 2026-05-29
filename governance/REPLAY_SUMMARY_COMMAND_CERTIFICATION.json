@@ -1,0 +1,23 @@
+{
+  "milestone": "REPLAY_SUMMARY_COMMAND_V1",
+  "certification": "replay_summary_command_certified",
+  "certifies": {
+    "operator_can_understand_replay_outcome_from_single_view": true,
+    "replay_summary_is_read_only": true,
+    "replay_summary_is_replay_derived": true,
+    "authorization_outcome_is_visible": true,
+    "capability_used_is_visible": true,
+    "verification_status_is_visible": true,
+    "timestamp_ordering_information_is_visible": true
+  },
+  "certifies_not_introduced": {
+    "new_capability": true,
+    "execution_power": true,
+    "orchestration": true,
+    "memory": true,
+    "agents": true,
+    "replay_bypass": true,
+    "replay_mutation": true
+  },
+  "status": "OPERATOR_REPLAY_SUMMARY_VIEW_ESTABLISHED"
+}
