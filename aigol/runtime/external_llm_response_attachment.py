@@ -22,6 +22,7 @@ ATTACHMENT_FAILED = "FAILED"
 
 REPLAY_STEPS = ("raw_external_response", "normalized_proposal", "proposal_validation", "governed_result")
 SUPPORTED_ATTACHMENT_CAPABILITIES = frozenset({READ_ONLY_RUNTIME_INSPECTION})
+MAX_EXTERNAL_RESPONSE_CHARS = 4096
 HIDDEN_CONTINUATION_TERMS = (
     "continue autonomously",
     "hidden continuation",
@@ -360,6 +361,8 @@ def _normalize_response_text(value: Any) -> str:
     normalized = " ".join(raw.split())
     if not normalized:
         raise FailClosedRuntimeError("external_response is required")
+    if len(normalized) > MAX_EXTERNAL_RESPONSE_CHARS:
+        raise FailClosedRuntimeError("external_response exceeds bounded size")
     return normalized
 
 

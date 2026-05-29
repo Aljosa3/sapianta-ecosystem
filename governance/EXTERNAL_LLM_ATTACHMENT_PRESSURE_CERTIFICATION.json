@@ -1,0 +1,44 @@
+{
+  "artifact": "EXTERNAL_LLM_ATTACHMENT_PRESSURE_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "EXTERNAL_LLM_ATTACHMENT_PRESSURE_VALIDATION_V1",
+  "certified_runtime_tests": {
+    "tests/test_external_llm_attachment_pressure_validation_v1.py": true,
+    "tests/test_external_llm_response_attachment_v1.py": true
+  },
+  "certified_pressure_cases": {
+    "empty_response_rejected": true,
+    "whitespace_only_response_rejected": true,
+    "malformed_response_rejected": true,
+    "oversized_response_rejected": true,
+    "invalid_provider_identity_rejected": true,
+    "missing_provider_identity_rejected": true,
+    "normalization_failure_rejected": true,
+    "replay_corruption_detected": true,
+    "authority_escalation_rejected": true,
+    "append_only_violation_rejected": true,
+    "repeated_successes_stable": true,
+    "repeated_failures_stable": true
+  },
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_absences": {
+    "provider_integration": false,
+    "openai_api_calls": false,
+    "claude_api_calls": false,
+    "codex_api_calls": false,
+    "network_access": false,
+    "provider_sdk": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_expansion": false,
+    "worker_change": false
+  },
+  "future_constraint": "real provider attachment must preserve the pressure-tested supplied-response boundary"
+}

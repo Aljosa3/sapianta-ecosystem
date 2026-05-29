@@ -1,0 +1,45 @@
+{
+  "artifact": "EXTERNAL_LLM_ATTACHMENT_PRESSURE_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "pressure_validation": true,
+  "validated_cases": {
+    "empty_responses": true,
+    "whitespace_only_responses": true,
+    "malformed_responses": true,
+    "oversized_responses": true,
+    "invalid_provider_identity": true,
+    "missing_provider_identity": true,
+    "proposal_normalization_failures": true,
+    "replay_corruption_attempts": true,
+    "authority_escalation_attempts": true,
+    "append_only_violations": true,
+    "repeated_successful_attachments": true,
+    "repeated_failed_attachments": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "accepted_result": {
+    "attachment_stable_under_pressure": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_visibility_preserved": true,
+    "proposal_only_boundary_preserved": true,
+    "authority_separation_preserved": true
+  },
+  "non_goals_preserved": {
+    "provider_integration": false,
+    "api_calls": false,
+    "network_access": false,
+    "provider_sdks": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_expansion": false,
+    "worker_changes": false
+  },
+  "success_condition": "external LLM attachment remains stable under pressure while preserving proposal-governance-worker-replay invariant"
+}

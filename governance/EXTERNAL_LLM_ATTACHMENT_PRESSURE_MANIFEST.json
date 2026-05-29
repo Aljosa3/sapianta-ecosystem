@@ -1,0 +1,56 @@
+{
+  "artifact": "EXTERNAL_LLM_ATTACHMENT_PRESSURE_MANIFEST",
+  "version": "V1",
+  "status": "PRESSURE_VALIDATED",
+  "created_files": [
+    "tests/test_external_llm_attachment_pressure_validation_v1.py",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_VALIDATION_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_FINDINGS_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_STABILITY_REPORT_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_ACCEPTANCE.json",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_CERTIFICATION.json",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_MANIFEST.json"
+  ],
+  "updated_files": [
+    "aigol/runtime/external_llm_response_attachment.py"
+  ],
+  "references": [
+    "governance/EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1.md",
+    "governance/REAL_LLM_ATTACHMENT_MODEL_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md"
+  ],
+  "pressure_cases": [
+    "empty_responses",
+    "whitespace_only_responses",
+    "malformed_responses",
+    "oversized_responses",
+    "invalid_provider_identity",
+    "missing_provider_identity",
+    "proposal_normalization_failures",
+    "replay_corruption_attempts",
+    "authority_escalation_attempts",
+    "append_only_violations",
+    "repeated_successful_attachments",
+    "repeated_failed_attachments"
+  ],
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_external_llm_attachment_pressure_validation_v1.py tests/test_external_llm_response_attachment_v1.py"
+  ],
+  "non_expansion_certification": {
+    "provider_integration": false,
+    "api_calls": false,
+    "network_access": false,
+    "provider_sdks": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "execution_expansion": false,
+    "worker_changes": false
+  }
+}
