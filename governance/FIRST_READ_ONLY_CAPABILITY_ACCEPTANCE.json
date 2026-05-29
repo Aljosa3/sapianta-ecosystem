@@ -1,0 +1,37 @@
+{
+  "milestone": "FIRST_READ_ONLY_CAPABILITY_ATTACHMENT_V1",
+  "type": "read_only_capability_attachment",
+  "runtime_implementation": true,
+  "capability_id": "READ_ONLY_RUNTIME_INSPECTION",
+  "acceptance": {
+    "read_only_capability_attached": true,
+    "replay_visible_capability_execution_defined": true,
+    "bounded_capability_participation_preserved": true,
+    "constitutional_capability_validation_defined": true,
+    "authorization_required": true,
+    "fail_closed_conditions_implemented": true
+  },
+  "execution_flow": [
+    "REQUESTED",
+    "VALIDATED",
+    "AUTHORIZED",
+    "EXECUTED",
+    "TERMINATED"
+  ],
+  "required_guarantees": {
+    "read_only": true,
+    "replay_visible": true,
+    "authorized": true,
+    "bounded": true,
+    "fail_closed": true,
+    "freeze_compatible": true
+  },
+  "non_goals_preserved": {
+    "filesystem_write": true,
+    "filesystem_mutation": true,
+    "network_mutation": true,
+    "shell_mutation": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true
+  }
+}

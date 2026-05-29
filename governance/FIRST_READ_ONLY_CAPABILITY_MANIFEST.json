@@ -1,0 +1,35 @@
+{
+  "milestone": "FIRST_READ_ONLY_CAPABILITY_ATTACHMENT_V1",
+  "type": "read_only_capability_attachment_manifest",
+  "created_artifacts": [
+    "aigol/runtime/read_only_capability_attachment.py",
+    "tests/test_read_only_capability_attachment_v1.py",
+    "governance/FIRST_READ_ONLY_CAPABILITY_ATTACHMENT_V1.md",
+    "governance/READ_ONLY_CAPABILITY_GUARANTEES_V1.md",
+    "governance/CAPABILITY_EXECUTION_REPLAY_V1.md",
+    "governance/FIRST_READ_ONLY_CAPABILITY_ACCEPTANCE.json",
+    "governance/FIRST_READ_ONLY_CAPABILITY_CERTIFICATION.json",
+    "governance/FIRST_READ_ONLY_CAPABILITY_MANIFEST.json"
+  ],
+  "capability": {
+    "capability_id": "READ_ONLY_RUNTIME_INSPECTION",
+    "surface": "RUNTIME_INSPECTION",
+    "classification": "READ_ONLY",
+    "general_execution_enabled": false
+  },
+  "replay_steps": [
+    "request",
+    "validation",
+    "authorization",
+    "execution",
+    "termination"
+  ],
+  "non_goals": {
+    "filesystem_write": false,
+    "filesystem_mutation": false,
+    "network_mutation": false,
+    "shell_mutation": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false
+  }
+}
