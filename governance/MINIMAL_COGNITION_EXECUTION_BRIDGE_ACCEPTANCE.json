@@ -1,0 +1,35 @@
+{
+  "milestone": "MINIMAL_COGNITION_TO_EXECUTION_BRIDGE_V1",
+  "type": "cognition_to_execution_bridge",
+  "runtime_implementation": true,
+  "capability_expansion": false,
+  "supported_capabilities": [
+    "READ_ONLY_RUNTIME_INSPECTION",
+    "FILESYSTEM_READ_ONLY_INSPECTION"
+  ],
+  "acceptance": {
+    "bounded_cognition_to_execution_request_translation_defined": true,
+    "replay_visible_execution_request_creation_defined": true,
+    "deterministic_validation_of_cognition_output_defined": true,
+    "fail_closed_bridge_semantics_defined": true,
+    "existing_read_only_capabilities_only": true
+  },
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "authority_separation_preserved": true,
+    "boundedness_preserved": true,
+    "authorization_preserved": true,
+    "execution_boundary_enforcement_preserved": true,
+    "constitutional_freeze_compatibility_preserved": true
+  },
+  "non_goals_preserved": {
+    "autonomous_execution": true,
+    "agent_runtime": true,
+    "orchestration_runtime": true,
+    "self_directed_planning": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "filesystem_mutation": true,
+    "capability_expansion": true
+  }
+}

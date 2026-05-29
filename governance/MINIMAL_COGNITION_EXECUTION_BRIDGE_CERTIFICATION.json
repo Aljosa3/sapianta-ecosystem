@@ -1,0 +1,24 @@
+{
+  "milestone": "MINIMAL_COGNITION_TO_EXECUTION_BRIDGE_V1",
+  "certification": "minimal_cognition_execution_bridge_certified",
+  "certifies": {
+    "cognition_output_treated_as_untrusted_execution_request_input": true,
+    "bridge_normalizes_execution_request_deterministically": true,
+    "bridge_requires_validation": true,
+    "bridge_requires_authorization": true,
+    "bridge_targets_existing_read_only_capabilities_only": true,
+    "bridge_execution_is_replay_visible": true,
+    "bridge_fails_closed_on_ambiguity": true
+  },
+  "certifies_not_activated": {
+    "autonomous_execution": true,
+    "agent_runtime": true,
+    "orchestration_runtime": true,
+    "self_directed_planning": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "filesystem_mutation": true,
+    "capability_expansion": true
+  },
+  "status": "COGNITION_TO_EXECUTION_BRIDGE_ACTIVE_READ_ONLY_CAPABILITIES_ONLY"
+}
