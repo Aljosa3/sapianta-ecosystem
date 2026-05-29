@@ -1,0 +1,35 @@
+{
+  "milestone": "EXECUTION_BOUNDARY_ENFORCEMENT_V1",
+  "certification": "execution_boundary_model_certified",
+  "certifies": {
+    "execution_boundaries_are_replay_visible": true,
+    "execution_boundaries_are_bounded": true,
+    "execution_boundaries_are_constitutional": true,
+    "execution_boundaries_are_freeze_compatible": true,
+    "execution_boundaries_fail_closed_on_ambiguity": true,
+    "capability_classification_defined": true,
+    "authorization_bypass_prohibited": true,
+    "constitutional_baseline_mutation_prohibited": true
+  },
+  "certifies_not_activated": {
+    "working_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "filesystem_runtime": true,
+    "network_runtime": true,
+    "shell_runtime": true,
+    "tool_execution": true
+  },
+  "denied_by_default": [
+    "filesystem_write",
+    "filesystem_move",
+    "filesystem_delete",
+    "network_inbound",
+    "cli_mutating",
+    "cli_privileged",
+    "api_create",
+    "api_update",
+    "api_delete"
+  ],
+  "status": "EXECUTION_BOUNDARIES_DEFINED_WORKING_EXECUTION_NOT_ACTIVATED"
+}

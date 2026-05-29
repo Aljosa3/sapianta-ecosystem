@@ -1,0 +1,56 @@
+{
+  "milestone": "EXECUTION_BOUNDARY_ENFORCEMENT_V1",
+  "type": "constitutional_execution_boundary_model",
+  "runtime_implementation": false,
+  "capability_expansion": false,
+  "boundary_states": [
+    "ALLOWED",
+    "RESTRICTED",
+    "DENIED"
+  ],
+  "surfaces": {
+    "filesystem": {
+      "READ": "RESTRICTED",
+      "WRITE": "DENIED",
+      "MOVE": "DENIED",
+      "DELETE": "DENIED"
+    },
+    "network": {
+      "INBOUND": "DENIED",
+      "OUTBOUND": "RESTRICTED"
+    },
+    "cli": {
+      "READ_ONLY": "RESTRICTED",
+      "MUTATING": "DENIED",
+      "PRIVILEGED": "DENIED"
+    },
+    "api": {
+      "QUERY": "RESTRICTED",
+      "CREATE": "DENIED",
+      "UPDATE": "DENIED",
+      "DELETE": "DENIED"
+    }
+  },
+  "acceptance": {
+    "execution_surface_modeling_defined": true,
+    "execution_containment_defined": true,
+    "replay_visible_execution_boundaries_defined": true,
+    "bounded_capability_classification_defined": true,
+    "fail_closed_execution_enforcement_defined": true
+  },
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "authority_separation_preserved": true,
+    "boundedness_preserved": true,
+    "constitutional_isolation_preserved": true
+  },
+  "non_goals_preserved": {
+    "working_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "filesystem_runtime": true,
+    "network_runtime": true,
+    "shell_runtime": true,
+    "tool_execution": true
+  }
+}

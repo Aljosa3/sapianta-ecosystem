@@ -1,0 +1,37 @@
+{
+  "milestone": "EXECUTION_BOUNDARY_ENFORCEMENT_V1",
+  "type": "execution_boundary_model_manifest",
+  "created_artifacts": [
+    "governance/EXECUTION_BOUNDARY_ENFORCEMENT_V1.md",
+    "governance/FILESYSTEM_BOUNDARY_MODEL_V1.md",
+    "governance/NETWORK_BOUNDARY_MODEL_V1.md",
+    "governance/CLI_BOUNDARY_MODEL_V1.md",
+    "governance/API_BOUNDARY_MODEL_V1.md",
+    "governance/EXECUTION_BOUNDARY_ACCEPTANCE.json",
+    "governance/EXECUTION_BOUNDARY_CERTIFICATION.json",
+    "governance/EXECUTION_BOUNDARY_MANIFEST.json"
+  ],
+  "scope": {
+    "execution_surface_modeling": true,
+    "execution_containment": true,
+    "replay_visible_execution_boundaries": true,
+    "bounded_capability_classification": true,
+    "fail_closed_execution_enforcement": true,
+    "runtime_implementation": false,
+    "capability_expansion": false
+  },
+  "boundary_states": [
+    "ALLOWED",
+    "RESTRICTED",
+    "DENIED"
+  ],
+  "non_goals": {
+    "working_execution": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false,
+    "filesystem_runtime": false,
+    "network_runtime": false,
+    "shell_runtime": false,
+    "tool_execution": false
+  }
+}
