@@ -78,7 +78,7 @@ def run_minimal_operator_entrypoint(
     except Exception as exc:
         summary = create_operator_failure_summary(
             operator_flow_id=operator_flow_id if isinstance(operator_flow_id, str) and operator_flow_id else "OPERATOR-FLOW-INVALID",
-            human_request=human_request if isinstance(human_request, str) and human_request else "REQUEST-INVALID",
+            human_request=human_request if isinstance(human_request, str) and human_request.strip() else "REQUEST-INVALID",
             target_capability=target_capability if isinstance(target_capability, str) and target_capability else "CAPABILITY-INVALID",
             replay_dir=Path(replay_dir),
             failure_reason=_failure_reason(exc),
