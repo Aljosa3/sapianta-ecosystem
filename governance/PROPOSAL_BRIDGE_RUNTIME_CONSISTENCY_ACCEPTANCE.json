@@ -1,0 +1,29 @@
+{
+  "milestone": "PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_REVIEW_V1",
+  "type": "proposal_bridge_runtime_consistency_acceptance",
+  "review_scope": [
+    "aigol/runtime/minimal_cognition_to_execution_bridge.py",
+    "tests/test_minimal_cognition_to_execution_bridge_v1.py",
+    "governance/MINIMAL_COGNITION_TO_EXECUTION_BRIDGE_V1.md",
+    "governance/COGNITION_EXECUTION_REQUEST_MODEL_V1.md",
+    "governance/REPLAY_VISIBLE_COGNITION_EXECUTION_BRIDGE_V1.md",
+    "governance/COGNITION_EXECUTION_FAIL_CLOSED_RULES_V1.md"
+  ],
+  "acceptance": {
+    "cognition_output_treated_as_untrusted_proposal_input": true,
+    "cognition_never_authorizes_execution": true,
+    "cognition_never_executes_directly": true,
+    "execution_occurs_only_through_deterministic_runtime": true,
+    "worker_capability_cannot_self_authorize": true,
+    "aigol_remains_governance_authority": true,
+    "replay_records_every_transition": true,
+    "terminology_does_not_grant_llm_execution_authority": true
+  },
+  "terminology_findings": {
+    "legacy_cognition_to_execution_wording_present": true,
+    "runtime_semantics_remain_proposal_only": true,
+    "future_preferred_term": "proposal-to-execution-request bridge"
+  },
+  "runtime_change": false,
+  "capability_expansion": false
+}

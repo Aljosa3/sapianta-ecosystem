@@ -1,0 +1,30 @@
+{
+  "milestone": "PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_REVIEW_V1",
+  "type": "proposal_bridge_runtime_consistency_manifest",
+  "created_artifacts": [
+    "governance/PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_REVIEW_V1.md",
+    "governance/PROPOSAL_BRIDGE_TERMINOLOGY_FINDINGS_V1.md",
+    "governance/PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_ACCEPTANCE.json",
+    "governance/PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_CERTIFICATION.json",
+    "governance/PROPOSAL_BRIDGE_RUNTIME_CONSISTENCY_MANIFEST.json"
+  ],
+  "reviewed_runtime_artifacts": [
+    "aigol/runtime/minimal_cognition_to_execution_bridge.py",
+    "tests/test_minimal_cognition_to_execution_bridge_v1.py"
+  ],
+  "reviewed_governance_artifacts": [
+    "governance/MINIMAL_COGNITION_TO_EXECUTION_BRIDGE_V1.md",
+    "governance/COGNITION_EXECUTION_REQUEST_MODEL_V1.md",
+    "governance/REPLAY_VISIBLE_COGNITION_EXECUTION_BRIDGE_V1.md",
+    "governance/COGNITION_EXECUTION_FAIL_CLOSED_RULES_V1.md"
+  ],
+  "canonical_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "review_result": "CONSISTENT_WITH_PROPOSAL_ONLY_INVARIANT",
+  "runtime_change": false,
+  "capability_expansion": false
+}
