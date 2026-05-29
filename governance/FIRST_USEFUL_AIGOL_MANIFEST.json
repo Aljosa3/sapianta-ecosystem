@@ -1,0 +1,36 @@
+{
+  "milestone": "FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1",
+  "type": "first_useful_aigol_usage_guide_manifest",
+  "created_artifacts": [
+    "governance/FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1.md",
+    "governance/OPERATOR_QUICKSTART_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_ACCEPTANCE.json",
+    "governance/FIRST_USEFUL_AIGOL_CERTIFICATION.json",
+    "governance/FIRST_USEFUL_AIGOL_MANIFEST.json"
+  ],
+  "guide_sections": [
+    "what_aigol_is",
+    "what_aigol_is_not",
+    "architecture_overview",
+    "core_invariant",
+    "typical_operator_flow",
+    "filesystem_read_only_example",
+    "governed_result_interpretation",
+    "replay_inspection",
+    "evidence_interpretation",
+    "known_boundaries"
+  ],
+  "operator_entrypoints": [
+    "run_minimal_operator_entrypoint",
+    "summarize_operator_replay",
+    "render_replay_summary"
+  ],
+  "preserved_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "runtime_change": false,
+  "capability_expansion": false
+}

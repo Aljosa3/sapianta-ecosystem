@@ -1,0 +1,26 @@
+{
+  "milestone": "FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1",
+  "type": "first_useful_aigol_usage_guide_acceptance",
+  "acceptance": {
+    "operator_guide_created": true,
+    "quickstart_created": true,
+    "architecture_overview_included": true,
+    "core_invariant_included": true,
+    "typical_operator_flow_included": true,
+    "replay_inspection_included": true,
+    "evidence_interpretation_included": true,
+    "known_boundaries_included": true,
+    "new_operator_can_understand_basic_usage": true
+  },
+  "covered_topics": [
+    "what_aigol_is",
+    "what_aigol_is_not",
+    "how_operator_submits_request",
+    "how_governed_processing_occurs",
+    "how_results_are_interpreted",
+    "how_replay_is_inspected",
+    "how_evidence_is_inspected"
+  ],
+  "runtime_change": false,
+  "capability_expansion": false
+}

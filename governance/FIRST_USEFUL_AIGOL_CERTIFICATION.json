@@ -1,0 +1,25 @@
+{
+  "milestone": "FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1",
+  "certification": "first_useful_aigol_usage_guide_certified",
+  "certifies": {
+    "operator_can_use_first_useful_aigol_without_architecture_docs": true,
+    "usage_guide_explains_architecture_overview": true,
+    "usage_guide_explains_core_invariant": true,
+    "usage_guide_explains_operator_entrypoint": true,
+    "usage_guide_explains_governed_result_summary": true,
+    "usage_guide_explains_replay_summary": true,
+    "usage_guide_explains_evidence_interpretation": true,
+    "usage_guide_explains_known_boundaries": true
+  },
+  "certifies_not_introduced": {
+    "new_runtime_behavior": true,
+    "new_capability": true,
+    "orchestration": true,
+    "agent_runtime": true,
+    "memory": true,
+    "mutation": true,
+    "network_execution": true,
+    "shell_execution": true
+  },
+  "status": "FIRST_USEFUL_AIGOL_OPERATOR_GUIDANCE_ESTABLISHED"
+}
