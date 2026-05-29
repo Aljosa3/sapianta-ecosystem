@@ -1,0 +1,36 @@
+{
+  "artifact": "REAL_PROVIDER_INTEGRATION_READINESS_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "REAL_PROVIDER_INTEGRATION_READINESS_REVIEW_V1",
+  "certified_readiness": {
+    "OPENAI_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CLAUDE_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CODEX_PROVIDER_ADAPTER_V1": "NOT_READY"
+  },
+  "certified_findings": {
+    "remaining_blockers_identified": true,
+    "hidden_risks_identified": true,
+    "missing_replay_requirements_identified": true,
+    "missing_fail_closed_paths_identified": true
+  },
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_absences": {
+    "openai_adapter": false,
+    "claude_adapter": false,
+    "codex_adapter": false,
+    "sdk": false,
+    "network_transport": false,
+    "api_credentials": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "worker_expansion": false
+  },
+  "future_constraint": "first provider adapter must remain proposal-source-only and must forward provider output through REAL_PROVIDER_ATTACHMENT_V1"
+}

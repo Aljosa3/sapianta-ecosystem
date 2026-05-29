@@ -1,0 +1,42 @@
+{
+  "artifact": "REAL_PROVIDER_INTEGRATION_READINESS_MANIFEST",
+  "version": "V1",
+  "status": "READINESS_REVIEW_COMPLETE",
+  "created_files": [
+    "governance/REAL_PROVIDER_INTEGRATION_READINESS_REVIEW_V1.md",
+    "governance/PROVIDER_INTEGRATION_BLOCKERS_V1.md",
+    "governance/PROVIDER_INTEGRATION_RISKS_V1.md",
+    "governance/REAL_PROVIDER_INTEGRATION_READINESS_ACCEPTANCE.json",
+    "governance/REAL_PROVIDER_INTEGRATION_READINESS_CERTIFICATION.json",
+    "governance/REAL_PROVIDER_INTEGRATION_READINESS_MANIFEST.json"
+  ],
+  "references": [
+    "governance/REAL_PROVIDER_ATTACHMENT_V1.md",
+    "governance/PROVIDER_AUTHORITY_SEPARATION_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_CERTIFICATION.json",
+    "governance/LLM_PROVIDER_IDENTITY_MODEL_V1.md"
+  ],
+  "readiness_classification": {
+    "OPENAI_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CLAUDE_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CODEX_PROVIDER_ADAPTER_V1": "NOT_READY"
+  },
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "non_expansion_certification": {
+    "runtime_behavior_changed": false,
+    "provider_adapter_implemented": false,
+    "sdk_added": false,
+    "network_transport_added": false,
+    "api_credentials_added": false,
+    "orchestration_added": false,
+    "memory_added": false,
+    "capability_expansion_added": false,
+    "worker_expansion_added": false
+  },
+  "success_condition": "readiness determined before first real provider integration"
+}

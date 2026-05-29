@@ -1,0 +1,47 @@
+{
+  "artifact": "REAL_PROVIDER_INTEGRATION_READINESS_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "review_only": true,
+  "readiness_classification": {
+    "OPENAI_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CLAUDE_PROVIDER_ADAPTER_V1": "READY_WITH_CONSTRAINTS",
+    "CODEX_PROVIDER_ADAPTER_V1": "NOT_READY"
+  },
+  "reviewed_surfaces": {
+    "provider_boundary": true,
+    "external_attachment": true,
+    "proposal_normalization": true,
+    "replay_model": true,
+    "authority_separation": true,
+    "pressure_validation": true,
+    "provider_identity_model": true
+  },
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "accepted_result": {
+    "first_provider_integration_can_begin_safely": true,
+    "safe_initial_provider_classes": [
+      "OPENAI_PROVIDER_ADAPTER_V1",
+      "CLAUDE_PROVIDER_ADAPTER_V1"
+    ],
+    "blocked_provider_classes": [
+      "CODEX_PROVIDER_ADAPTER_V1"
+    ]
+  },
+  "non_goals_preserved": {
+    "provider_adapter_implemented": false,
+    "sdk_added": false,
+    "network_transport_added": false,
+    "api_credentials_added": false,
+    "orchestration_added": false,
+    "memory_added": false,
+    "capability_expansion_added": false,
+    "worker_expansion_added": false
+  },
+  "success_condition": "provider integration readiness classified before real provider connection"
+}
