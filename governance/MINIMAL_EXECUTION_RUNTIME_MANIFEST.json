@@ -1,0 +1,36 @@
+{
+  "milestone": "MINIMAL_EXECUTION_RUNTIME_PROTOTYPE_V1",
+  "type": "minimal_execution_runtime_prototype_manifest",
+  "created_artifacts": [
+    "aigol/runtime/minimal_execution_runtime_prototype.py",
+    "tests/test_minimal_execution_runtime_prototype_v1.py",
+    "governance/MINIMAL_EXECUTION_RUNTIME_PROTOTYPE_V1.md",
+    "governance/EXECUTION_RUNTIME_REPLAY_MODEL_V1.md",
+    "governance/EXECUTION_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/MINIMAL_EXECUTION_RUNTIME_ACCEPTANCE.json",
+    "governance/MINIMAL_EXECUTION_RUNTIME_CERTIFICATION.json",
+    "governance/MINIMAL_EXECUTION_RUNTIME_MANIFEST.json"
+  ],
+  "runtime_scope": {
+    "execution_runtime_skeleton": true,
+    "execution_lifecycle_artifact": true,
+    "replay_visible_execution_instance": true,
+    "bounded_runtime_participation": true,
+    "real_execution_enabled": false
+  },
+  "replay_steps": [
+    "request",
+    "validation",
+    "authorization",
+    "outcome",
+    "termination"
+  ],
+  "non_goals": {
+    "filesystem_execution": false,
+    "network_execution": false,
+    "shell_execution": false,
+    "api_execution": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false
+  }
+}

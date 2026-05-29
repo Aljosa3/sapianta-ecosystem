@@ -1,0 +1,37 @@
+{
+  "milestone": "MINIMAL_EXECUTION_RUNTIME_PROTOTYPE_V1",
+  "type": "minimal_execution_runtime_prototype",
+  "runtime_implementation": true,
+  "real_execution_enabled": false,
+  "acceptance": {
+    "execution_runtime_skeleton_created": true,
+    "execution_lifecycle_artifact_created": true,
+    "replay_visible_execution_instance_created": true,
+    "bounded_runtime_participation_preserved": true,
+    "append_only_replay_artifacts_created": true,
+    "fail_closed_conditions_implemented": true
+  },
+  "lifecycle_states": [
+    "REQUESTED",
+    "VALIDATED",
+    "AUTHORIZED",
+    "EXECUTED",
+    "TERMINATED",
+    "FAILED"
+  ],
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "constitutional_freeze_preserved": true,
+    "authority_separation_preserved": true,
+    "execution_boundaries_preserved": true,
+    "hidden_state_not_created": true
+  },
+  "non_goals_preserved": {
+    "filesystem_execution": true,
+    "network_execution": true,
+    "shell_execution": true,
+    "api_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true
+  }
+}

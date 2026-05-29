@@ -1,0 +1,24 @@
+{
+  "milestone": "MINIMAL_EXECUTION_RUNTIME_PROTOTYPE_V1",
+  "certification": "minimal_execution_runtime_prototype_certified",
+  "certifies": {
+    "runtime_object_moves_through_deterministic_lifecycle": true,
+    "runtime_replay_artifacts_are_append_only": true,
+    "runtime_replay_reconstruction_is_fail_closed": true,
+    "missing_authorization_fails_closed": true,
+    "boundary_violation_fails_closed": true,
+    "authority_escalation_fails_closed": true,
+    "constitutional_freeze_preserved": true,
+    "execution_boundaries_preserved": true
+  },
+  "certifies_not_activated": {
+    "filesystem_execution": true,
+    "network_execution": true,
+    "shell_execution": true,
+    "api_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "hidden_state": true
+  },
+  "status": "MINIMAL_EXECUTION_RUNTIME_PROTOTYPE_ACTIVE_REAL_EXECUTION_NOT_ACTIVATED"
+}
