@@ -2,39 +2,35 @@
   "artifact": "FIRST_EXTERNAL_WORKER_ATTACHMENT_ACCEPTANCE",
   "version": "V1",
   "status": "ACCEPTED",
-  "review_only": true,
-  "first_external_worker_attachment_status": "READY_WITH_CONSTRAINTS",
-  "external_worker_architecture_impact": "MINOR_ADJUSTMENTS_REQUIRED",
-  "compatibility": {
-    "constitutional_compatibility": "COMPATIBLE",
-    "worker_boundary_compatibility": "COMPATIBLE",
-    "replay_compatibility": "COMPATIBLE",
-    "authorization_compatibility": "COMPATIBLE",
-    "capability_compatibility": "COMPATIBLE",
-    "runtime_compatibility": "MINOR_ADJUSTMENTS_REQUIRED",
-    "pressure_validation_reusability": "REUSABLE"
-  },
-  "required_constraints": {
+  "implementation": true,
+  "worker_identity": "EXTERNAL_RUNTIME_INSPECTION_WORKER",
+  "worker_type": "READ_ONLY_INSPECTION_WORKER",
+  "scope": {
+    "read_only": true,
+    "inspection_only": true,
+    "capability": "READ_ONLY_RUNTIME_INSPECTION",
     "authorized_requests_only": true,
-    "read_only_inspection_only": true,
-    "worker_identity_required": true,
-    "capability_binding_required": true,
-    "worker_termination_required": true,
-    "append_only_replay_required": true,
-    "fail_closed_required": true
+    "no_direct_provider_to_worker_path": true,
+    "no_direct_human_to_worker_path": true
   },
-  "not_allowed": {
-    "worker_self_authorization": true,
+  "invariant_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "not_introduced": {
     "worker_registry": true,
     "worker_discovery": true,
     "worker_selection": true,
     "worker_orchestration": true,
     "worker_memory": true,
     "worker_autonomy": true,
-    "mutation_execution": true,
+    "filesystem_mutation": true,
     "shell_execution": true,
     "network_execution": true,
-    "api_execution": true
+    "api_execution": true,
+    "capability_expansion": true
   },
   "success_condition_met": true
 }

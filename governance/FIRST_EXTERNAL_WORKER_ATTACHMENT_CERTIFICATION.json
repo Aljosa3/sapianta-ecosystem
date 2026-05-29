@@ -2,46 +2,33 @@
   "artifact": "FIRST_EXTERNAL_WORKER_ATTACHMENT_CERTIFICATION",
   "version": "V1",
   "certification_status": "CERTIFIED",
-  "classifications": {
-    "FIRST_EXTERNAL_WORKER_ATTACHMENT_STATUS": "READY_WITH_CONSTRAINTS",
-    "EXTERNAL_WORKER_ARCHITECTURE_IMPACT": "MINOR_ADJUSTMENTS_REQUIRED",
-    "CONSTITUTIONAL_COMPATIBILITY": "COMPATIBLE",
-    "WORKER_BOUNDARY_COMPATIBILITY": "COMPATIBLE",
-    "REPLAY_COMPATIBILITY": "COMPATIBLE",
-    "AUTHORIZATION_COMPATIBILITY": "COMPATIBLE",
-    "CAPABILITY_COMPATIBILITY": "COMPATIBLE",
-    "PRESSURE_VALIDATION_REUSABILITY": "REUSABLE"
-  },
   "certifies": {
-    "external_worker_can_attach_without_constitutional_modification": true,
-    "external_worker_requires_adapter_mechanics_only": true,
-    "external_worker_must_receive_authorized_requests_only": true,
-    "external_worker_can_use_existing_read_only_inspection_capabilities": true,
-    "external_worker_would_strengthen_worker_substitutability_evidence": true
+    "worker_substitutability_implementation_evidence": true,
+    "external_worker_execution_only": true,
+    "aigol_authorization_required": true,
+    "append_only_worker_replay": true,
+    "fail_closed_worker_boundary": true,
+    "read_only_inspection_boundary": true
   },
-  "frozen_invariant_preserved": {
-    "llm_proposes": true,
-    "aigol_governs": true,
-    "worker_executes": true,
-    "replay_records": true
+  "authority_absence": {
+    "proposal_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "capability_expansion_authority": false,
+    "orchestration_authority": false
   },
-  "non_goals_preserved": {
-    "worker_runtime_implemented": false,
-    "worker_sandbox_implemented": false,
-    "worker_registry_implemented": false,
-    "worker_discovery_implemented": false,
-    "worker_orchestration_implemented": false,
-    "worker_marketplace_implemented": false,
-    "worker_memory_implemented": false,
-    "worker_autonomy_implemented": false,
-    "filesystem_mutation_implemented": false,
-    "shell_execution_implemented": false,
-    "network_execution_implemented": false,
-    "api_execution_implemented": false,
-    "multi_worker_routing_implemented": false,
-    "worker_replacement_implemented": false,
-    "worker_selection_implemented": false,
-    "domain_workers_implemented": false
+  "validation_cases": {
+    "successful_execution": "PASS",
+    "authorization_failure": "PASS",
+    "identity_corruption": "PASS",
+    "capability_mismatch": "PASS",
+    "replay_reconstruction": "PASS",
+    "append_only_replay": "PASS",
+    "boundary_violations": "PASS",
+    "repeated_successful_runs": "PASS",
+    "repeated_failed_runs": "PASS",
+    "mixed_operation_sequences": "PASS"
   },
-  "commit_message": "docs(governance): review first external worker attachment readiness"
+  "final_classification": "WORKER_SUBSTITUTABILITY_IMPLEMENTED"
 }
