@@ -1,0 +1,30 @@
+{
+  "milestone": "FIRST_OPERATOR_RUNTIME_REVIEW_V1",
+  "type": "first_operator_runtime_review_manifest",
+  "created_artifacts": [
+    "governance/FIRST_OPERATOR_RUNTIME_REVIEW_V1.md",
+    "governance/OPERATOR_RUNTIME_FINDINGS_V1.md",
+    "governance/RUNTIME_SIMPLIFICATION_RECOMMENDATIONS_V1.md",
+    "governance/FIRST_OPERATOR_RUNTIME_REVIEW_ACCEPTANCE.json",
+    "governance/FIRST_OPERATOR_RUNTIME_REVIEW_CERTIFICATION.json",
+    "governance/FIRST_OPERATOR_RUNTIME_REVIEW_MANIFEST.json"
+  ],
+  "review_questions": {
+    "runtime_preserves_core_invariant": true,
+    "replay_still_central": true,
+    "authorization_boundaries_preserved": true,
+    "execution_still_bounded": true,
+    "component_redundancy_reviewed": true,
+    "overengineering_reviewed": true,
+    "hidden_authority_escalation_reviewed": true
+  },
+  "canonical_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "runtime_change": false,
+  "capability_expansion": false,
+  "review_result": "CONFIDENCE_ESTABLISHED_BEFORE_EXPANSION"
+}
