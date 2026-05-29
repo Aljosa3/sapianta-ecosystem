@@ -1,0 +1,38 @@
+{
+  "artifact": "WORKER_ECOSYSTEM_READINESS_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "WORKER_ECOSYSTEM_READINESS_REVIEW_V1",
+  "worker_ecosystem_status": "PARTIALLY_DEFINED",
+  "certified_current_state": {
+    "worker_identity": "defined",
+    "worker_attachment": "defined",
+    "worker_authority": "execution-only and bounded",
+    "worker_replay": "defined",
+    "worker_fail_closed": "defined",
+    "worker_registry": "partial",
+    "worker_discovery": "undefined",
+    "worker_selection": "partial",
+    "worker_taxonomy": "partial",
+    "worker_lifecycle": "partial"
+  },
+  "certified_gaps": {
+    "worker_registration_process": "undefined",
+    "worker_discovery_mechanism": "undefined",
+    "worker_enumeration": "undefined",
+    "multi_worker_selection": "undefined",
+    "worker_replacement_path": "undefined",
+    "worker_upgrade_path": "undefined",
+    "domain_specific_worker_taxonomy": "undefined"
+  },
+  "certified_absences": {
+    "worker_registry": false,
+    "worker_discovery": false,
+    "worker_selection_runtime": false,
+    "worker_orchestration": false,
+    "worker_autonomy": false,
+    "worker_marketplace": false,
+    "worker_memory": false
+  },
+  "future_constraint": "future Worker ecosystem work must follow one real Worker attachment and pressure validation before registry, discovery, or selection infrastructure"
+}
