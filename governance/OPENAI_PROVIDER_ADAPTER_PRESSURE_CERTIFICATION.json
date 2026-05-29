@@ -1,0 +1,42 @@
+{
+  "artifact": "OPENAI_PROVIDER_ADAPTER_PRESSURE_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "openai_provider_attachment_status": "STABLE_WITH_FINDINGS",
+  "certifies": {
+    "openai_provider_path_withstands_bounded_pressure": true,
+    "provider_authority_absent": true,
+    "aigol_governance_authority_preserved": true,
+    "worker_execution_only_preserved": true,
+    "replay_records_preserved": true,
+    "nested_replay_integrity_preserved": true,
+    "append_only_replay_preserved": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "frozen_invariant_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "non_goals_preserved": {
+    "claude_adapter_implemented": false,
+    "gemini_adapter_implemented": false,
+    "multi_provider_routing_implemented": false,
+    "provider_registry_implemented_by_this_milestone": false,
+    "provider_discovery_implemented": false,
+    "provider_selection_implemented": false,
+    "memory_implemented": false,
+    "orchestration_implemented": false,
+    "tool_calling_implemented": false,
+    "function_calling_implemented": false,
+    "streaming_implemented": false,
+    "automatic_retries_implemented": false,
+    "worker_expansion_implemented": false
+  },
+  "certification_answer": {
+    "can_first_real_provider_path_withstand_operational_pressure": true,
+    "is_openai_provider_attachment_stable_enough_to_certify": true
+  },
+  "commit_message": "test(runtime): validate openai provider adapter under pressure"
+}

@@ -1,0 +1,50 @@
+{
+  "artifact": "OPENAI_PROVIDER_ADAPTER_PRESSURE_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "openai_provider_attachment_status": "STABLE_WITH_FINDINGS",
+  "pressure_validation_only": true,
+  "runtime_expansion": false,
+  "capability_expansion": false,
+  "validated_pressure_cases": {
+    "valid_response": true,
+    "empty_response": true,
+    "whitespace_only_response": true,
+    "malformed_response": true,
+    "oversized_response": true,
+    "unexpected_structure": true,
+    "invalid_content_type": true,
+    "missing_provider_identity": true,
+    "invalid_provider_identity": true,
+    "corrupted_provider_identity": true,
+    "replay_provider_mismatch": true,
+    "missing_credentials": true,
+    "invalid_credentials": true,
+    "authentication_failure": true,
+    "authorization_failure": true,
+    "timeout": true,
+    "provider_unavailable": true,
+    "provider_error": true,
+    "provider_interruption": true,
+    "network_exception": true,
+    "replay_reconstruction": true,
+    "append_only_verification": true,
+    "replay_ordering": true,
+    "nested_replay_integrity": true,
+    "provider_replay_integrity": true,
+    "authority_escalation_rejection": true,
+    "repeated_successful_operations": true,
+    "repeated_failed_operations": true,
+    "mixed_success_failure_sequences": true,
+    "boundary_preservation": true
+  },
+  "finding_remediated": {
+    "shared_escalation_vocabulary_gap": true,
+    "added_forbidden_terms": [
+      "governance",
+      "worker",
+      "replay"
+    ]
+  },
+  "success_condition_met": true
+}

@@ -1,0 +1,28 @@
+{
+  "artifact": "OPENAI_PROVIDER_ADAPTER_PRESSURE_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "tests/test_openai_provider_adapter_pressure_validation_v1.py",
+    "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_VALIDATION_V1.md",
+    "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_FINDINGS_V1.md",
+    "governance/OPENAI_PROVIDER_ATTACHMENT_STABILITY_REPORT_V1.md",
+    "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_ACCEPTANCE.json",
+    "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_CERTIFICATION.json",
+    "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_MANIFEST.json"
+  ],
+  "hardened_existing_file": "aigol/runtime/external_llm_response_attachment.py",
+  "validation_commands": [
+    "python -m pytest tests/test_openai_provider_adapter_pressure_validation_v1.py",
+    "python -m pytest tests/test_openai_provider_adapter_v1.py tests/test_real_provider_attachment_v1.py tests/test_external_llm_response_attachment_v1.py tests/test_external_llm_attachment_pressure_validation_v1.py",
+    "python -m json.tool governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_ACCEPTANCE.json",
+    "python -m json.tool governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_CERTIFICATION.json",
+    "python -m json.tool governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_MANIFEST.json",
+    "git diff --check"
+  ],
+  "final_classification": {
+    "OPENAI_PROVIDER_ATTACHMENT_STATUS": "STABLE_WITH_FINDINGS"
+  },
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "commit_message": "test(runtime): validate openai provider adapter under pressure"
+}

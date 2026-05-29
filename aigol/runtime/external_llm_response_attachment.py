@@ -41,6 +41,9 @@ FORBIDDEN_RESPONSE_TERMS = (
     "api",
     "mutate",
     "authorize",
+    "governance",
+    "worker",
+    "replay",
     "execute directly",
 )
 
