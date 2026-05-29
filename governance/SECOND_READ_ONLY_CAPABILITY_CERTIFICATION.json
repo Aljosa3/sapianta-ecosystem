@@ -1,0 +1,25 @@
+{
+  "milestone": "SECOND_READ_ONLY_CAPABILITY_ATTACHMENT_V1",
+  "certification": "second_read_only_capability_attachment_certified",
+  "certifies": {
+    "filesystem_read_only_inspection_attached": true,
+    "capability_uses_read_only_inspection_classification": true,
+    "capability_remains_low_risk": true,
+    "capability_requires_explicit_allowed_paths": true,
+    "capability_execution_is_replay_visible": true,
+    "capability_execution_requires_authorization": true,
+    "path_ambiguity_fails_closed": true,
+    "forbidden_path_access_fails_closed": true
+  },
+  "certifies_not_activated": {
+    "general_filesystem_access": true,
+    "filesystem_write": true,
+    "filesystem_mutation": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "api_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true
+  },
+  "status": "FILESYSTEM_READ_ONLY_CAPABILITY_ATTACHED_GENERAL_FILESYSTEM_ACCESS_NOT_ACTIVATED"
+}

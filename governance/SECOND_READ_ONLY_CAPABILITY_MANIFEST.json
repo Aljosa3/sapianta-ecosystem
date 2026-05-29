@@ -1,0 +1,37 @@
+{
+  "milestone": "SECOND_READ_ONLY_CAPABILITY_ATTACHMENT_V1",
+  "type": "filesystem_read_only_capability_attachment_manifest",
+  "created_artifacts": [
+    "aigol/runtime/filesystem_read_only_capability.py",
+    "tests/test_filesystem_read_only_capability_v1.py",
+    "governance/SECOND_READ_ONLY_CAPABILITY_ATTACHMENT_V1.md",
+    "governance/FILESYSTEM_READ_ONLY_CAPABILITY_GUARANTEES_V1.md",
+    "governance/FILESYSTEM_CAPABILITY_REPLAY_V1.md",
+    "governance/SECOND_READ_ONLY_CAPABILITY_ACCEPTANCE.json",
+    "governance/SECOND_READ_ONLY_CAPABILITY_CERTIFICATION.json",
+    "governance/SECOND_READ_ONLY_CAPABILITY_MANIFEST.json"
+  ],
+  "capability": {
+    "capability_id": "FILESYSTEM_READ_ONLY_INSPECTION",
+    "surface": "FILESYSTEM",
+    "classification": "READ_ONLY_INSPECTION",
+    "risk_level": "LOW",
+    "general_filesystem_access_enabled": false
+  },
+  "replay_steps": [
+    "request",
+    "validation",
+    "authorization",
+    "execution",
+    "termination"
+  ],
+  "non_goals": {
+    "filesystem_write": false,
+    "filesystem_mutation": false,
+    "shell_execution": false,
+    "network_execution": false,
+    "api_execution": false,
+    "orchestration_runtime": false,
+    "agent_runtime": false
+  }
+}

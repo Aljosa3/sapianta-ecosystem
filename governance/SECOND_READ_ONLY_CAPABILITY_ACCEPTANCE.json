@@ -1,0 +1,35 @@
+{
+  "milestone": "SECOND_READ_ONLY_CAPABILITY_ATTACHMENT_V1",
+  "type": "filesystem_read_only_capability_attachment",
+  "runtime_implementation": true,
+  "capability_id": "FILESYSTEM_READ_ONLY_INSPECTION",
+  "capability_class": [
+    "READ_ONLY",
+    "INSPECTION"
+  ],
+  "risk_level": "LOW",
+  "acceptance": {
+    "filesystem_read_only_capability_attached": true,
+    "explicit_allowed_paths_required": true,
+    "replay_visible_capability_execution_defined": true,
+    "classification_compatible_capability_attachment_defined": true,
+    "fail_closed_filesystem_boundary_validation_defined": true
+  },
+  "required_guarantees": {
+    "read_only_inspection": true,
+    "low_risk": true,
+    "replay_lineage_preserved": true,
+    "authorization_evidence_preserved": true,
+    "execution_boundary_enforcement_preserved": true,
+    "forbidden_path_access_fails_closed": true
+  },
+  "non_goals_preserved": {
+    "filesystem_write": true,
+    "filesystem_mutation": true,
+    "shell_execution": true,
+    "network_execution": true,
+    "api_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true
+  }
+}
