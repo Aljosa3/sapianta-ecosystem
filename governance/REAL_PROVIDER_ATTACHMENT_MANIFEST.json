@@ -1,0 +1,47 @@
+{
+  "artifact": "REAL_PROVIDER_ATTACHMENT_MANIFEST",
+  "version": "V1",
+  "status": "IMPLEMENTED",
+  "created_files": [
+    "aigol/runtime/provider_attachment.py",
+    "tests/test_real_provider_attachment_v1.py",
+    "governance/REAL_PROVIDER_ATTACHMENT_V1.md",
+    "governance/PROVIDER_ATTACHMENT_BOUNDARY_V1.md",
+    "governance/PROVIDER_REPLAY_MODEL_V1.md",
+    "governance/PROVIDER_AUTHORITY_SEPARATION_V1.md",
+    "governance/REAL_PROVIDER_ATTACHMENT_ACCEPTANCE.json",
+    "governance/REAL_PROVIDER_ATTACHMENT_CERTIFICATION.json",
+    "governance/REAL_PROVIDER_ATTACHMENT_MANIFEST.json"
+  ],
+  "references": [
+    "governance/EXTERNAL_LLM_RESPONSE_ATTACHMENT_V1.md",
+    "governance/EXTERNAL_LLM_ATTACHMENT_PRESSURE_VALIDATION_V1.md",
+    "governance/REAL_LLM_ATTACHMENT_MODEL_V1.md",
+    "governance/FIRST_USEFUL_AIGOL_V1_FREEZE.md"
+  ],
+  "provider_replay_artifacts": [
+    "000_provider_identity.json",
+    "001_raw_provider_response.json",
+    "002_provider_attachment_record.json",
+    "003_governed_result.json"
+  ],
+  "runtime_behavior": {
+    "provider_boundary": true,
+    "provider_specific_integration": false,
+    "network_transport": false,
+    "api_credentials": false,
+    "provider_sdk": false,
+    "new_capability": false,
+    "worker_change": false
+  },
+  "frozen_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_real_provider_attachment_v1.py tests/test_external_llm_response_attachment_v1.py tests/test_external_llm_attachment_pressure_validation_v1.py"
+  ],
+  "success_condition": "provider boundary attaches provider output as proposal-source-only input without authority escalation"
+}

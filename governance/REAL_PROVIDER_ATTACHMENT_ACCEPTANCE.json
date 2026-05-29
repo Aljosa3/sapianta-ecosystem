@@ -1,0 +1,48 @@
+{
+  "artifact": "REAL_PROVIDER_ATTACHMENT_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "implemented_runtime": "aigol/runtime/provider_attachment.py",
+  "implemented_tests": "tests/test_real_provider_attachment_v1.py",
+  "accepted_behavior": {
+    "provider_identity_validation": true,
+    "raw_provider_response_capture": true,
+    "replay_visible_provider_artifacts": true,
+    "provider_lineage_preserved": true,
+    "external_response_attachment_used": true,
+    "fail_closed_behavior_preserved": true,
+    "authority_separation_preserved": true
+  },
+  "accepted_replay_artifacts": [
+    "provider_identity",
+    "raw_provider_response",
+    "provider_attachment_record",
+    "normalized_proposal",
+    "governed_result"
+  ],
+  "accepted_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "non_authority": {
+    "provider_is_execution_authority": false,
+    "provider_is_authorization_authority": false,
+    "provider_is_governance_authority": false,
+    "provider_is_replay_authority": false
+  },
+  "non_goals_preserved": {
+    "openai_sdk": false,
+    "anthropic_sdk": false,
+    "codex_sdk": false,
+    "network_transport": false,
+    "api_credentials": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "worker_expansion": false,
+    "autonomous_execution": false
+  },
+  "success_condition": "provider boundary forwards provider output into external response attachment without authority escalation"
+}

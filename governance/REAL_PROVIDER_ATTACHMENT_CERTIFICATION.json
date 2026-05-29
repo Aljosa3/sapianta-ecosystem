@@ -1,0 +1,43 @@
+{
+  "artifact": "REAL_PROVIDER_ATTACHMENT_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": "REAL_PROVIDER_ATTACHMENT_V1",
+  "certified_runtime": {
+    "module": "aigol/runtime/provider_attachment.py",
+    "tests": "tests/test_real_provider_attachment_v1.py",
+    "focused_tests_passed": true
+  },
+  "certified_cases": {
+    "valid_provider_response": true,
+    "provider_identity_preservation": true,
+    "invalid_provider_identity_rejected": true,
+    "missing_provider_identity_rejected": true,
+    "empty_provider_response_rejected": true,
+    "replay_visibility": true,
+    "replay_determinism": true,
+    "repeated_successful_runs": true,
+    "repeated_failed_runs": true,
+    "authority_separation_preservation": true
+  },
+  "certified_invariant": {
+    "llm_role": "proposes",
+    "aigol_role": "governs",
+    "worker_role": "executes",
+    "replay_role": "records"
+  },
+  "certified_absences": {
+    "openai_sdk": false,
+    "anthropic_sdk": false,
+    "codex_sdk": false,
+    "network_transport": false,
+    "api_credentials": false,
+    "orchestration": false,
+    "memory": false,
+    "capability_expansion": false,
+    "worker_expansion": false,
+    "autonomous_execution": false,
+    "provider_authority_expansion": false
+  },
+  "future_constraint": "provider-specific integrations must preserve provider proposal-source-only semantics"
+}
