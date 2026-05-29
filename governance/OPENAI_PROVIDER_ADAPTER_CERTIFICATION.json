@@ -1,0 +1,45 @@
+{
+  "artifact": "OPENAI_PROVIDER_ADAPTER_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": {
+    "openai_as_proposal_source_only": true,
+    "openai_execution_authority": false,
+    "openai_authorization_authority": false,
+    "openai_governance_authority": false,
+    "openai_replay_authority": false,
+    "openai_worker_authority": false,
+    "aigol_governance_authority_preserved": true,
+    "worker_execution_after_authorization_only": true,
+    "replay_records": true,
+    "real_provider_attachment_path_preserved": true
+  },
+  "forbidden_surfaces": {
+    "tool_use": false,
+    "function_calling": false,
+    "assistant_actions": false,
+    "code_execution": false,
+    "browser_execution": false,
+    "streaming": false,
+    "automatic_retries": false,
+    "memory": false,
+    "orchestration": false,
+    "agent_runtime": false,
+    "capability_expansion": false,
+    "filesystem_mutation": false,
+    "shell_execution": false
+  },
+  "frozen_invariant_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "failure_behavior": {
+    "fail_closed": true,
+    "replay_visible_failure": true,
+    "no_silent_recovery": true,
+    "no_automatic_retry": true
+  },
+  "commit_message": "feat(runtime): add openai provider adapter"
+}

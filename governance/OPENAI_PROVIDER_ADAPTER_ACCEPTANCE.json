@@ -1,0 +1,42 @@
+{
+  "artifact": "OPENAI_PROVIDER_ADAPTER_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_surface": "aigol/runtime/openai_provider_adapter.py",
+  "test_surface": "tests/test_openai_provider_adapter_v1.py",
+  "provider_identity": "OPENAI",
+  "normalized_provider_identity": "openai",
+  "proposal_source_only": true,
+  "routes_through_real_provider_attachment_v1": true,
+  "routes_through_external_llm_response_attachment_v1": true,
+  "replay_model": {
+    "provider_request_metadata": true,
+    "raw_provider_response": true,
+    "provider_attachment_capture": true,
+    "governed_result": true,
+    "append_only": true,
+    "hash_verified": true
+  },
+  "constraints": {
+    "single_request": true,
+    "single_response": true,
+    "streaming": false,
+    "automatic_retries": false,
+    "tool_use": false,
+    "function_calling": false,
+    "memory": false,
+    "orchestration": false
+  },
+  "validated_cases": {
+    "valid_provider_response": true,
+    "empty_response": true,
+    "provider_failure": true,
+    "invalid_credentials": true,
+    "malformed_response": true,
+    "oversized_response": true,
+    "replay_reconstruction": true,
+    "authority_separation": true,
+    "append_only_replay": true
+  },
+  "success_condition_met": true
+}
