@@ -1,0 +1,40 @@
+{
+  "milestone": "MULTI_CAPABILITY_CLASSIFICATION_V1",
+  "type": "capability_taxonomy",
+  "capability_expansion": false,
+  "capability_classes": [
+    "READ_ONLY",
+    "INSPECTION",
+    "QUERY",
+    "MUTATION",
+    "DESTRUCTIVE",
+    "PRIVILEGED"
+  ],
+  "risk_levels": [
+    "LOW",
+    "MEDIUM",
+    "HIGH",
+    "CRITICAL"
+  ],
+  "acceptance": {
+    "capability_classification_defined": true,
+    "capability_risk_model_defined": true,
+    "capability_authorization_mapping_defined": true,
+    "replay_visible_capability_taxonomy_defined": true,
+    "capability_sprawl_prevention_defined": true
+  },
+  "required_guarantees": {
+    "replay_centrality_preserved": true,
+    "boundedness_preserved": true,
+    "authority_separation_preserved": true,
+    "constitutional_freeze_preserved": true
+  },
+  "non_goals_preserved": {
+    "new_execution_powers": true,
+    "filesystem_write": true,
+    "network_execution": true,
+    "shell_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true
+  }
+}

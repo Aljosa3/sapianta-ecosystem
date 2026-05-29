@@ -1,0 +1,25 @@
+{
+  "milestone": "MULTI_CAPABILITY_CLASSIFICATION_V1",
+  "certification": "multi_capability_classification_certified",
+  "certifies": {
+    "constitutional_capability_taxonomy_defined": true,
+    "future_capability_attachments_must_classify_class_and_risk": true,
+    "capability_classification_does_not_grant_execution_power": true,
+    "read_only_and_inspection_remain_low_risk_but_authorized": true,
+    "query_remains_medium_risk_and_restricted": true,
+    "mutation_remains_high_risk_and_denied": true,
+    "destructive_and_privileged_remain_critical_and_denied": true,
+    "capability_escalation_fails_closed": true
+  },
+  "certifies_not_activated": {
+    "new_execution_powers": true,
+    "filesystem_write": true,
+    "network_execution": true,
+    "shell_execution": true,
+    "orchestration_runtime": true,
+    "agent_runtime": true,
+    "hidden_authority": true,
+    "capability_escalation": true
+  },
+  "status": "CAPABILITY_TAXONOMY_DEFINED_NO_NEW_CAPABILITIES_ATTACHED"
+}
