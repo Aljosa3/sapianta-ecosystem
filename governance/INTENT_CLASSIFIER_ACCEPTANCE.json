@@ -1,0 +1,39 @@
+{
+  "artifact": "INTENT_CLASSIFIER_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "model_only": true,
+  "accepted_findings": {
+    "intent_classifier_identity": "DEFINED",
+    "intent_classification_artifact_required": true,
+    "classification_replay_visibility": "MANDATORY",
+    "authority_preservation": "PRESERVABLE",
+    "memory_relationship": "PARTIALLY_SUPPORTED",
+    "provider_invocation": "FORBIDDEN",
+    "worker_invocation": "FORBIDDEN"
+  },
+  "accepted_outputs": [
+    "CONVERSATION",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION",
+    "PROVIDER_PROPOSAL",
+    "EXECUTION_REQUEST",
+    "FAILED_CLOSED"
+  ],
+  "accepted_non_goals": {
+    "classifier_runtime": false,
+    "classifier_engine": false,
+    "classifier_worker": false,
+    "classifier_orchestration": false,
+    "autonomous_routing": false,
+    "automatic_execution": false,
+    "automatic_provider_invocation": false,
+    "automatic_worker_invocation": false,
+    "correction_loops": false
+  },
+  "final_classifications": {
+    "intent_classifier_model_status": "READY_WITH_GAPS",
+    "intent_classifier_authority_impact": "LOW",
+    "intent_classifier_replay_visibility": "MANDATORY"
+  }
+}
+
