@@ -1,0 +1,30 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_RETRIEVAL_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certifies": {
+    "retrieval_model_defined": true,
+    "retrieval_boundary_defined": true,
+    "citation_model_defined": true,
+    "replay_visibility_defined": true,
+    "authority_guarantees_defined": true,
+    "fail_closed_retrieval_defined": true,
+    "future_compatibility_reviewed": true,
+    "retrieval_gaps_identified": true,
+    "duplication_risks_identified": true
+  },
+  "final_classifications": {
+    "constitutional_memory_retrieval_status": "READY_WITH_CONSTRAINTS",
+    "constitutional_memory_citation_requirement": "MANDATORY",
+    "constitutional_memory_replay_visibility": "MANDATORY"
+  },
+  "authority_absence": {
+    "authorization_authority": false,
+    "governance_authority": false,
+    "execution_authority": false,
+    "proposal_authority": false,
+    "replay_mutation_authority": false,
+    "memory_mutation_authority": false
+  },
+  "recommended_next_step": "Define a replay-visible consultation artifact schema before implementing retrieval."
+}

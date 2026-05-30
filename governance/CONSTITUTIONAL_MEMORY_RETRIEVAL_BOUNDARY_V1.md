@@ -1,56 +1,39 @@
 # Constitutional Memory Retrieval Boundary V1
 
-Status: retrieval boundary review.
+Status: retrieval trigger and scope boundary.
 
-## Recommended Retrieval Trigger
+## Retrieval Trigger Model
 
-First implementation review should prefer:
-
-```text
-operator-triggered retrieval
-```
-
-and:
-
-```text
-governance-mediated retrieval
-```
-
-This preserves explicit intent and avoids hidden memory consultation.
-
-## Trigger Classification
-
-| Trigger | Classification | Rationale |
+| Requesting Entity | Classification | Evidence |
 | --- | --- | --- |
-| Manual reading | `RECOMMENDED` | Already safe and current. |
-| Operator-triggered | `RECOMMENDED` | Explicit, auditable, bounded. |
-| Governance-triggered | `RECOMMENDED_WITH_SCOPE` | Useful for review and validation if replay-visible. |
-| Runtime-triggered | `CONDITIONAL` | Acceptable only inside an explicit governance step. |
-| Provider-triggered | `OUT_OF_SCOPE` | Risks granting proposal source implicit memory access. |
-| Worker-triggered | `OUT_OF_SCOPE` | Risks granting execution participant implicit memory access. |
-| Autonomous retrieval | `FORBIDDEN` | Violates reference-only and no hidden continuation expectations. |
+| Human | `ALLOWED` | Human authority may request review or explanation, but retrieval remains reference-only. |
+| Operator | `ALLOWED` | Operator-triggered retrieval is the recommended first runtime access shape. |
+| AiGOL Governance | `ALLOWED` | Governance may consult memory as reference evidence for review. |
+| Runtime validation step | `CONDITIONAL` | Allowed only inside explicit governance-mediated validation and replay-visible consultation. |
+| Provider | `FORBIDDEN` | Provider is proposal source only; provider-triggered memory access risks implicit authority. |
+| Worker | `FORBIDDEN` | Worker executes only authorized requests; worker-triggered memory access risks execution-role expansion. |
+| Autonomous background process | `FORBIDDEN` | Hidden retrieval violates replay visibility and reference-only constraints. |
 
-## Retrieval Scope Classification
+## Retrieval Scope Model
 
-| Memory Layer | Retrieval Classification |
-| --- | --- |
-| Constitutional invariants | `RETRIEVABLE` |
-| Authority invariants | `RETRIEVABLE` |
-| Canonical replay language | `RETRIEVABLE` |
-| Freeze manifests | `RETRIEVABLE` |
-| Baseline guarantees | `RETRIEVABLE` |
-| Certifications | `RETRIEVABLE` |
-| Acceptance evidence | `RETRIEVABLE` |
-| Governance reviews | `RETRIEVABLE` |
-| Operational baselines | `RETRIEVABLE` |
-| Replay lineage | `CONDITIONAL` |
-| `.runtime/` evidence | `CONDITIONAL` |
-| Derived summaries | `CONDITIONAL` |
-| Hidden runtime state | `OUT_OF_SCOPE` |
-| Provider conversation memory | `OUT_OF_SCOPE` |
-| Worker memory | `OUT_OF_SCOPE` |
+| Memory Scope | Classification | Evidence |
+| --- | --- | --- |
+| Constitutional invariants | `RETRIEVABLE` | Core constitutional source. |
+| Authority invariants | `RETRIEVABLE` | Required for preserving authority separation. |
+| Freeze manifests | `RETRIEVABLE` | Canonical baseline memory. |
+| Baseline guarantees | `RETRIEVABLE` | Canonical preservation targets. |
+| Certifications | `RETRIEVABLE` | Supporting validation evidence. |
+| Acceptance evidence | `RETRIEVABLE` | Supporting milestone evidence. |
+| Governance reviews | `RETRIEVABLE` | Reconstruction and readiness evidence. |
+| Operational baselines | `RETRIEVABLE` | Frozen operational reference. |
+| Replay lineage | `CONDITIONAL` | May be retrieved as evidence view, not canonical override. |
+| `.runtime/` evidence | `CONDITIONAL` | May be retrieved only as operational evidence. |
+| Derived summaries | `CONDITIONAL` | May support operator understanding, not authority. |
+| Hidden runtime state | `OUT_OF_SCOPE` | Not Constitutional Memory. |
+| Provider memory | `OUT_OF_SCOPE` | Provider remains proposal source only. |
+| Worker memory | `OUT_OF_SCOPE` | Worker remains execution-only. |
 
-## Conditional Retrieval Rule
+## Boundary Rule
 
-Replay lineage, `.runtime/` evidence, and derived summaries may be retrieved only as evidence views and must not supersede canonical sources.
+Retrieval is admissible only when the request, scope, and output all remain replay-visible and reference-only.
 

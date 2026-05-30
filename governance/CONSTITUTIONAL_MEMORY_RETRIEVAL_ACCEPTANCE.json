@@ -1,0 +1,31 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_RETRIEVAL_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "model_only": true,
+  "constitutional_memory_retrieval_status": "READY_WITH_CONSTRAINTS",
+  "constitutional_memory_citation_requirement": "MANDATORY",
+  "constitutional_memory_replay_visibility": "MANDATORY",
+  "trigger_classifications": {
+    "human": "ALLOWED",
+    "operator": "ALLOWED",
+    "aigol_governance": "ALLOWED",
+    "runtime_validation_step": "CONDITIONAL",
+    "provider": "FORBIDDEN",
+    "worker": "FORBIDDEN"
+  },
+  "future_compatibility": {
+    "memory_based_answering": "PARTIALLY_SUPPORTED",
+    "conversation_vs_execution_classification": "PARTIALLY_SUPPORTED",
+    "bounded_proposal_correction_loop": "PARTIALLY_SUPPORTED"
+  },
+  "accepted_constraints": {
+    "reference_only": true,
+    "citation_required": true,
+    "replay_visible": true,
+    "fail_closed_required": true,
+    "memory_authority": false,
+    "retrieval_runtime_implemented": false
+  },
+  "success_condition_met": true
+}

@@ -1,0 +1,35 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_RETRIEVAL_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_MODEL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_BOUNDARY_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CITATION_MODEL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_REPLAY_VISIBILITY_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_AUTHORITY_GUARANTEES_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_FAIL_CLOSED_RETRIEVAL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_FUTURE_RETRIEVAL_COMPATIBILITY_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_GAPS_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_DUPLICATION_RISKS_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_MEMORY_RETRIEVAL_MANIFEST.json"
+  ],
+  "final_classifications": {
+    "constitutional_memory_retrieval_status": "READY_WITH_CONSTRAINTS",
+    "constitutional_memory_citation_requirement": "MANDATORY",
+    "constitutional_memory_replay_visibility": "MANDATORY"
+  },
+  "non_goals_preserved": {
+    "retrieval_runtime": false,
+    "retrieval_engine": false,
+    "semantic_search": false,
+    "vector_memory": false,
+    "memory_cache": false,
+    "autonomous_memory_updates": false,
+    "memory_authority": false,
+    "governance_mutation": false
+  },
+  "commit_message": "docs(governance): define constitutional memory retrieval model"
+}
