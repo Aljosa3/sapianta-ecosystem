@@ -1,0 +1,30 @@
+{
+  "artifact": "MEMORY_BASED_RESPONSE_MANIFEST",
+  "version": "V1",
+  "status": "FINAL",
+  "scope": "review_only",
+  "runtime": [],
+  "tests": [],
+  "governance": [
+    "governance/MEMORY_BASED_RESPONSE_REVIEW_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_MODEL_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_INPUTS_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_OUTPUT_MODEL_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_REPLAY_MODEL_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_AUTHORITY_GUARANTEES_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_FAIL_CLOSED_RULES_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_GAPS_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_DUPLICATION_RISKS_V1.md",
+    "governance/MEMORY_BASED_RESPONSE_ACCEPTANCE.json",
+    "governance/MEMORY_BASED_RESPONSE_CERTIFICATION.json",
+    "governance/MEMORY_BASED_RESPONSE_MANIFEST.json"
+  ],
+  "depends_on": [
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1",
+    "CONSTITUTIONAL_MEMORY_ACCESS_PATH_V1"
+  ],
+  "success_condition": "Defines how Citation Bundle can become a governed, replay-visible, non-authoritative response without implementing response runtime.",
+  "commit_message": "docs(governance): review memory based response model"
+}
