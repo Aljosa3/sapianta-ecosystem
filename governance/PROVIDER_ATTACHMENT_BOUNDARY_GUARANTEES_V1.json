@@ -1,0 +1,38 @@
+{
+  "artifact": "PROVIDER_ATTACHMENT_BOUNDARY_GUARANTEES_V1",
+  "version": "V1",
+  "provider_attachment_status": "READY_FOR_IMPLEMENTATION",
+  "proposal_only_boundary": true,
+  "provider_may": [
+    "receive_bounded_input",
+    "return_proposal",
+    "expose_identity",
+    "expose_version",
+    "fail_closed"
+  ],
+  "provider_may_not": [
+    "execute",
+    "authorize",
+    "govern",
+    "dispatch",
+    "mutate_replay",
+    "mutate_memory",
+    "invoke_worker",
+    "bypass_governance"
+  ],
+  "authority_guarantees": {
+    "execution_authority": false,
+    "governance_authority": false,
+    "authorization_authority": false,
+    "provider_authority": false,
+    "worker_authority": false
+  },
+  "scope_lock": {
+    "runtime_mutation": "FORBIDDEN",
+    "provider_runtime_implementation": "FORBIDDEN_IN_THIS_MILESTONE",
+    "provider_execution": "FORBIDDEN",
+    "orchestration": "FORBIDDEN",
+    "planning": "FORBIDDEN",
+    "reflection": "FORBIDDEN"
+  }
+}

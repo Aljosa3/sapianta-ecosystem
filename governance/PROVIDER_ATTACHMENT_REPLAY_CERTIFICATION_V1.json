@@ -1,0 +1,33 @@
+{
+  "artifact": "PROVIDER_ATTACHMENT_REPLAY_CERTIFICATION_V1",
+  "version": "V1",
+  "replay_certification_status": "CERTIFIED",
+  "provider_attachment_status": "READY_FOR_IMPLEMENTATION",
+  "mandatory_provider_replay_fields": [
+    "provider_id",
+    "provider_type",
+    "provider_version",
+    "request_reference",
+    "response_reference",
+    "request_timestamp",
+    "response_timestamp",
+    "proposal_hash",
+    "provider_lifecycle_state",
+    "failure_status"
+  ],
+  "reconstruction_guarantees": {
+    "what_provider_returned": true,
+    "provider_identity_reconstructable": true,
+    "provider_version_reconstructable": true,
+    "proposal_hash_reconstructable": true,
+    "provider_failure_reconstructable": true,
+    "authority_not_granted_by_replay": true
+  },
+  "replay_must_not": [
+    "authorize_provider_output",
+    "execute_provider_output",
+    "mutate_provider_output",
+    "convert_provider_response_into_governance_decision",
+    "hide_provider_identity"
+  ]
+}
