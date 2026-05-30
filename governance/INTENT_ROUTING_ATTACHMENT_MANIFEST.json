@@ -1,0 +1,37 @@
+{
+  "artifact": "INTENT_ROUTING_ATTACHMENT_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "aigol/runtime/intent_routing_attachment.py",
+    "tests/test_intent_routing_attachment_v1.py",
+    "governance/INTENT_ROUTING_ATTACHMENT_V1.md",
+    "governance/INTENT_ROUTING_ATTACHMENT_BOUNDARY_GUARANTEES_V1.md",
+    "governance/INTENT_ROUTING_ATTACHMENT_REPLAY_MODEL_V1.md",
+    "governance/INTENT_ROUTING_ATTACHMENT_FAIL_CLOSED_RULES_V1.md",
+    "governance/INTENT_ROUTING_ATTACHMENT_ACCEPTANCE.json",
+    "governance/INTENT_ROUTING_ATTACHMENT_CERTIFICATION.json",
+    "governance/INTENT_ROUTING_ATTACHMENT_MANIFEST.json"
+  ],
+  "runtime_entrypoints": [
+    "attach_intent_routing",
+    "reconstruct_intent_routing_replay"
+  ],
+  "supported_destinations": [
+    "CONVERSATION",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION",
+    "PROVIDER_PROPOSAL",
+    "EXECUTION_REQUEST"
+  ],
+  "replay_artifacts": [
+    "000_intent_routing_attachment_record.json",
+    "001_intent_routing_attachment_replay.json"
+  ],
+  "final_classifications": {
+    "intent_routing_attachment_status": "READY_WITH_CONSTRAINTS",
+    "intent_routing_attachment_authority_status": "PRESERVED",
+    "intent_routing_attachment_replay_status": "READY"
+  },
+  "commit_message": "feat(runtime): add intent routing attachment"
+}
+

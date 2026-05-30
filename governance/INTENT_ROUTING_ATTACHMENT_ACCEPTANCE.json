@@ -1,0 +1,48 @@
+{
+  "artifact": "INTENT_ROUTING_ATTACHMENT_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/intent_routing_attachment.py",
+    "tests/test_intent_routing_attachment_v1.py"
+  ],
+  "accepted_capabilities": {
+    "conversation_routing_evidence": true,
+    "memory_routing_evidence": true,
+    "provider_routing_evidence": true,
+    "execution_routing_evidence": true,
+    "artifact_linkage": true,
+    "replay_generation": true,
+    "replay_reconstruction": true,
+    "append_only_replay": true,
+    "fail_closed_rejection": true
+  },
+  "accepted_boundaries": {
+    "routing_engine": false,
+    "provider_calls": false,
+    "worker_calls": false,
+    "execution": false,
+    "memory_retrieval": false,
+    "conversation_handling": false,
+    "correction_loops": false,
+    "orchestration": false
+  },
+  "validation_targets": [
+    "conversation routing evidence",
+    "memory routing evidence",
+    "provider routing evidence",
+    "execution routing evidence",
+    "artifact linkage",
+    "replay reconstruction",
+    "append-only replay",
+    "corruption detection",
+    "invalid artifact rejection",
+    "ambiguous artifact rejection"
+  ],
+  "final_classifications": {
+    "intent_routing_attachment_status": "READY_WITH_CONSTRAINTS",
+    "intent_routing_attachment_authority_status": "PRESERVED",
+    "intent_routing_attachment_replay_status": "READY"
+  }
+}
+
