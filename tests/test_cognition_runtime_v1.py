@@ -73,6 +73,22 @@ def test_replay_reconstruction_succeeds(tmp_path) -> None:
     assert reconstructed["conversation_response_id"]
 
 
+def test_provider_proposal_path_runs_through_cognition_runtime(tmp_path) -> None:
+    capture = _run(tmp_path, human_prompt="Ask provider for a proposal.")
+    state = capture["cognition_runtime_state"]
+    terminal = capture["cognition_session_terminal"]
+    reconstructed = reconstruct_cognition_replay(tmp_path / "cognition")
+
+    assert state["cognition_status"] == COMPLETED
+    assert state["intent_destination"] == "PROVIDER_PROPOSAL"
+    assert state["provider_proposal_id"] == "COGNITION-SESSION-000001:PROVIDER_PROPOSAL"
+    assert state["conversation_response_id"] is None
+    assert terminal["reconstruction_metadata"]["provider_proposal_reconstructable"] is True
+    assert terminal["reconstruction_metadata"]["provider_invoked"] is False
+    assert reconstructed["provider_proposal_id"] == "COGNITION-SESSION-000001:PROVIDER_PROPOSAL"
+    assert reconstructed["provider_invoked"] is False
+
+
 def test_nested_conversation_replay_is_recorded(tmp_path) -> None:
     _run(tmp_path)
 
@@ -88,7 +104,7 @@ def test_dependency_failure_fails_cognition_runtime(tmp_path) -> None:
     terminal = capture["cognition_session_terminal"]
 
     assert state["cognition_status"] == FAILED_CLOSED
-    assert "conversation dependency failed" in state["failure_reason"]
+    assert "unsupported cognition intent" in state["failure_reason"]
     assert terminal["event_type"] == FAILED
     assert terminal["cognition_status"] == FAILED_CLOSED
     assert terminal["reconstruction_metadata"]["response_reconstructable"] is False

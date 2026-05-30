@@ -1,0 +1,39 @@
+{
+  "artifact": "PROVIDER_PROPOSAL_RUNTIME_V1_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "scope_lock": {
+    "only_surface": "provider_proposal_artifact_creation",
+    "provider_invocation": "FORBIDDEN",
+    "provider_execution": "FORBIDDEN",
+    "provider_orchestration": "FORBIDDEN",
+    "worker_execution": "FORBIDDEN",
+    "authorization": "FORBIDDEN",
+    "governance_decisions": "FORBIDDEN",
+    "planning": "FORBIDDEN",
+    "multi_provider_selection": "FORBIDDEN"
+  },
+  "mutation_boundary": {
+    "runtime_mutation": "DENIED",
+    "provider_state_mutation": "DENIED",
+    "worker_state_mutation": "DENIED",
+    "replay_mutation": "DENIED",
+    "append_only_replay": "REQUIRED"
+  },
+  "proposal_boundary": {
+    "artifact_type": "PROVIDER_PROPOSAL_V1",
+    "authority": false,
+    "execution_capable": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "fail_closed_conditions": [
+    "proposal_creation_failure",
+    "invalid_intent",
+    "corrupt_intent",
+    "missing_provider_type",
+    "missing_reason",
+    "append_only_violation",
+    "replay_corruption"
+  ]
+}

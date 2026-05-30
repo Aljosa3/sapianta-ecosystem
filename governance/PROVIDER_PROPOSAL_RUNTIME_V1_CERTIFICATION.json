@@ -1,0 +1,39 @@
+{
+  "artifact": "PROVIDER_PROPOSAL_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certified_flow": [
+    "human_prompt",
+    "cognition_runtime",
+    "intent_classification",
+    "provider_proposal_runtime",
+    "provider_proposal_artifact",
+    "replay"
+  ],
+  "certified_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "authority_absence": {
+    "execution_authority": false,
+    "governance_authority": false,
+    "authorization_authority": false,
+    "provider_authority": false,
+    "worker_authority": false
+  },
+  "runtime_guarantees": {
+    "advisory_only": true,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_dispatch": false,
+    "authorization_creation": false,
+    "governance_decision_creation": false,
+    "planning": false,
+    "multi_provider_selection": false,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "certification_result": "PROVIDER_PROPOSAL_RUNTIME_V1_READY"
+}

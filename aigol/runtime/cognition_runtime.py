@@ -8,7 +8,10 @@ from typing import Any
 
 from aigol.runtime.conversation_runtime import CREATED as CONVERSATION_CREATED
 from aigol.runtime.conversation_runtime import run_conversation
+from aigol.runtime.intent_classifier import CONVERSATION, PROVIDER_PROPOSAL, classify_intent
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.provider_proposal_runtime import CREATED as PROVIDER_PROPOSAL_CREATED
+from aigol.runtime.provider_proposal_runtime import create_provider_proposal
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -44,6 +47,7 @@ def run_cognition(
     replay_dir: str | Path,
     retrieval_scope: str = "CONSTITUTIONAL_INVARIANTS",
     artifact_query: str = "CONSTITUTIONAL_INVARIANTS",
+    provider_type: str = "EXTERNAL_LLM",
 ) -> dict[str, Any]:
     """Run the canonical cognition entrypoint over the bounded conversation path."""
 
@@ -59,23 +63,57 @@ def run_cognition(
         )
         _persist_step(replay_path, 0, REPLAY_STEPS[0], started)
 
-        conversation = run_conversation(
-            conversation_id=f"{cognition_session_id}:CONVERSATION",
-            prompt_id=prompt_id,
+        intent_capture = classify_intent(
+            artifact_id=f"{cognition_session_id}:INTENT",
+            human_request_reference=prompt_id,
             human_prompt=human_prompt,
-            created_at=created_at,
-            replay_dir=replay_path / "conversation_runtime",
-            retrieval_scope=retrieval_scope,
-            artifact_query=artifact_query,
+            classification_timestamp=created_at,
+            replay_reference=f"{cognition_session_id}:INTENT_REPLAY",
+            replay_dir=replay_path / "intent_classification",
         )
-        conversation_response = conversation["conversation_response_artifact"]
-        if conversation_response.get("conversation_status") != CONVERSATION_CREATED:
-            raise FailClosedRuntimeError("cognition runtime failed closed: conversation dependency failed")
+        intent_artifact = intent_capture["intent_classification_artifact"]
+        if intent_artifact.get("classification_status") != "CLASSIFIED":
+            raise FailClosedRuntimeError("cognition runtime failed closed: intent classification failed")
+
+        conversation_response: dict[str, Any] | None = None
+        provider_proposal: dict[str, Any] | None = None
+        destination = intent_artifact.get("classification_destination")
+        if destination == CONVERSATION:
+            conversation = run_conversation(
+                conversation_id=f"{cognition_session_id}:CONVERSATION",
+                prompt_id=prompt_id,
+                human_prompt=human_prompt,
+                created_at=created_at,
+                replay_dir=replay_path / "conversation_runtime",
+                retrieval_scope=retrieval_scope,
+                artifact_query=artifact_query,
+            )
+            conversation_response = conversation["conversation_response_artifact"]
+            if conversation_response.get("conversation_status") != CONVERSATION_CREATED:
+                raise FailClosedRuntimeError("cognition runtime failed closed: conversation dependency failed")
+        elif destination == PROVIDER_PROPOSAL:
+            proposal_capture = create_provider_proposal(
+                proposal_id=f"{cognition_session_id}:PROVIDER_PROPOSAL",
+                prompt_id=prompt_id,
+                human_prompt=human_prompt,
+                provider_type=provider_type,
+                reason="Provider proposal intent identified by deterministic cognition runtime.",
+                created_at=created_at,
+                replay_dir=replay_path / "provider_proposal_runtime",
+                intent_classification_artifact=intent_artifact,
+            )
+            provider_proposal = proposal_capture["provider_proposal"]
+            if provider_proposal.get("proposal_status") != PROVIDER_PROPOSAL_CREATED:
+                raise FailClosedRuntimeError("cognition runtime failed closed: provider proposal dependency failed")
+        else:
+            raise FailClosedRuntimeError("cognition runtime failed closed: unsupported cognition intent")
 
         state = _runtime_state(
             cognition_session_id=cognition_session_id,
             prompt_id=prompt_id,
+            intent_artifact=intent_artifact,
             conversation_response=conversation_response,
+            provider_proposal=provider_proposal,
             created_at=created_at,
             state_status=COMPLETED,
             failure_reason=None,
@@ -88,6 +126,7 @@ def run_cognition(
             started=started,
             state=state,
             conversation_response=conversation_response,
+            provider_proposal=provider_proposal,
             created_at=created_at,
             failure_reason=None,
         )
@@ -117,6 +156,7 @@ def run_cognition(
             started=started,
             state=state,
             conversation_response=None,
+            provider_proposal=None,
             created_at=created_at,
             failure_reason=state["failure_reason"],
         )
@@ -158,6 +198,7 @@ def reconstruct_cognition_replay(replay_dir: str | Path) -> dict[str, Any]:
         "memory_consultation_id": state["memory_consultation_id"],
         "response_id": state["response_id"],
         "conversation_response_id": state["conversation_response_id"],
+        "provider_proposal_id": state["provider_proposal_id"],
         "cognition_status": state["cognition_status"],
         "terminal_event": terminal["event_type"],
         "replay_visible": True,
@@ -225,21 +266,39 @@ def _runtime_state(
     *,
     cognition_session_id: str,
     prompt_id: str,
-    conversation_response: dict[str, Any],
+    intent_artifact: dict[str, Any],
+    conversation_response: dict[str, Any] | None,
+    provider_proposal: dict[str, Any] | None,
     created_at: str,
     state_status: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
-    _verify_artifact_hash(conversation_response, "conversation response artifact")
+    _verify_artifact_hash(intent_artifact, "intent classification artifact")
+    if conversation_response is None and provider_proposal is None:
+        raise FailClosedRuntimeError("cognition runtime failed closed: cognition result missing")
+    if conversation_response is not None:
+        _verify_artifact_hash(conversation_response, "conversation response artifact")
+    if provider_proposal is not None:
+        _verify_artifact_hash(provider_proposal, "provider proposal artifact")
+    response_id = (
+        conversation_response.get("response_id")
+        if conversation_response is not None
+        else provider_proposal.get("proposal_id")
+    )
     artifact = {
         "event_type": STATE,
         "cognition_session_id": _require_string(cognition_session_id, "cognition_session_id"),
         "prompt_id": _require_string(prompt_id, "prompt_id"),
-        "intent_id": _require_string(conversation_response.get("intent_id"), "intent_id"),
-        "memory_consultation_id": f"{cognition_session_id}:CONVERSATION:MEMORY_CONSULTATION",
-        "response_id": _require_string(conversation_response.get("response_id"), "response_id"),
-        "conversation_response_id": _require_string(conversation_response.get("response_id"), "response_id"),
-        "conversation_response_hash": conversation_response["artifact_hash"],
+        "intent_id": _require_string(intent_artifact.get("artifact_id"), "intent_id"),
+        "intent_destination": _require_string(intent_artifact.get("classification_destination"), "intent_destination"),
+        "memory_consultation_id": (
+            f"{cognition_session_id}:CONVERSATION:MEMORY_CONSULTATION" if conversation_response is not None else None
+        ),
+        "response_id": _require_string(response_id, "response_id"),
+        "conversation_response_id": conversation_response.get("response_id") if conversation_response is not None else None,
+        "conversation_response_hash": conversation_response.get("artifact_hash") if conversation_response is not None else None,
+        "provider_proposal_id": provider_proposal.get("proposal_id") if provider_proposal is not None else None,
+        "provider_proposal_hash": provider_proposal.get("artifact_hash") if provider_proposal is not None else None,
         "cognition_status": state_status,
         "created_at": _require_string(created_at, "created_at"),
         "replay_visible": True,
@@ -266,10 +325,13 @@ def _failed_runtime_state(
         ),
         "prompt_id": prompt_id if isinstance(prompt_id, str) and prompt_id.strip() else "INVALID_PROMPT_ID",
         "intent_id": None,
+        "intent_destination": None,
         "memory_consultation_id": None,
         "response_id": None,
         "conversation_response_id": None,
         "conversation_response_hash": None,
+        "provider_proposal_id": None,
+        "provider_proposal_hash": None,
         "cognition_status": FAILED_CLOSED,
         "created_at": created_at if isinstance(created_at, str) and created_at.strip() else "INVALID_TIMESTAMP",
         "replay_visible": True,
@@ -291,6 +353,7 @@ def _session_terminal(
     started: dict[str, Any],
     state: dict[str, Any],
     conversation_response: dict[str, Any] | None,
+    provider_proposal: dict[str, Any] | None,
     created_at: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
@@ -305,16 +368,20 @@ def _session_terminal(
         "conversation_response_hash": (
             conversation_response.get("artifact_hash") if isinstance(conversation_response, dict) else None
         ),
+        "provider_proposal_hash": (
+            provider_proposal.get("artifact_hash") if isinstance(provider_proposal, dict) else None
+        ),
         "cognition_status": COMPLETED if event_type == COMPLETED else FAILED_CLOSED,
         "created_at": created_at,
         "replay_visible": True,
         "authority": False,
         "reconstruction_metadata": {
             "prompt_reconstructable": True,
-            "intent_reconstructable": conversation_response is not None,
+            "intent_reconstructable": conversation_response is not None or provider_proposal is not None,
             "memory_consultation_reconstructable": conversation_response is not None,
-            "response_reconstructable": conversation_response is not None,
+            "response_reconstructable": conversation_response is not None or provider_proposal is not None,
             "conversation_result_reconstructable": conversation_response is not None,
+            "provider_proposal_reconstructable": provider_proposal is not None,
             "provider_invoked": False,
             "worker_invoked": False,
             "execution_requested": False,
@@ -375,8 +442,10 @@ def _validate_state(state: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("cognition runtime failed closed: authority-bearing state")
     status = state.get("cognition_status")
     if status == COMPLETED:
-        for field in ("intent_id", "memory_consultation_id", "response_id", "conversation_response_id"):
+        for field in ("intent_id", "intent_destination", "response_id"):
             _require_string(state.get(field), field)
+        if not state.get("conversation_response_id") and not state.get("provider_proposal_id"):
+            raise FailClosedRuntimeError("cognition runtime failed closed: cognition result missing")
     elif status != FAILED_CLOSED:
         raise FailClosedRuntimeError("cognition runtime failed closed: invalid state status")
 

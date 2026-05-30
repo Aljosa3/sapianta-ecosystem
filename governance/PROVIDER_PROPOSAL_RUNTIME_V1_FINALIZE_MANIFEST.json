@@ -1,0 +1,32 @@
+{
+  "artifact": "PROVIDER_PROPOSAL_RUNTIME_V1_FINALIZE_MANIFEST",
+  "version": "V1",
+  "status": "FINALIZED",
+  "runtime": [
+    "aigol/runtime/provider_proposal_runtime.py",
+    "aigol/runtime/cognition_runtime.py"
+  ],
+  "tests": [
+    "tests/test_provider_proposal_runtime_v1.py",
+    "tests/test_cognition_runtime_v1.py"
+  ],
+  "governance": [
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1.md",
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1_ADR.md",
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1_CERTIFICATION.json",
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1_BOUNDARY_GUARANTEES.json",
+    "governance/PROVIDER_PROPOSAL_RUNTIME_V1_FINALIZE_MANIFEST.json"
+  ],
+  "depends_on": [
+    "COGNITION_RUNTIME_V1",
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1"
+  ],
+  "scope_locked": true,
+  "mutation_boundary_defined": true,
+  "deterministic_acceptance_evidence": true,
+  "replay_safe_validation_evidence": true,
+  "success_condition": "Human prompt can create replay-visible advisory Provider Proposal through Cognition Runtime without provider invocation, worker invocation, execution, authorization, governance decision, planning, or multi-provider selection.",
+  "commit_message": "feat(runtime): add provider proposal runtime"
+}
