@@ -1,53 +1,44 @@
 # Intent Classifier Fail-Closed Rules V1
 
-Status: fail-closed rules for Intent Classifier.
+Status: fail-closed rules for implemented Intent Classifier V1.
 
-## Required Fail-Closed Conditions
+## Fail-Closed Conditions
 
-The classifier must fail closed on:
+The classifier fails closed on:
 
 - unknown intent
 - ambiguous intent
-- multiple valid intents
-- missing destination
+- multiple destination matches
+- missing prompt
 - invalid destination
-- classification failure
-- missing prompt reference
-- hidden context
-- non-replay-visible input
-- authority-bearing output
-- execution-bearing output
+- missing destination
+- artifact corruption
+- replay corruption
+- append-only replay collision
+- replay ordering mismatch
 
-## Ambiguity
+## Failure Artifact
 
-Ambiguity must not be resolved by guessing.
+Failure emits an `INTENT_CLASSIFICATION_ARTIFACT` with:
 
-Ambiguity produces:
+- `classification_status`: `FAILED_CLOSED`
+- `classification_destination`: null
+- failure reason
+- classifier version
+- replay reference
+- artifact hash
 
-- `FAILED_CLOSED`
-- ambiguity evidence
-- no destination action
-- no provider invocation
-- no memory retrieval
-- no execution request
-- no authorization
+## No Fallback
 
-## Multiple Valid Intents
+The classifier does not:
 
-If a prompt could classify into multiple destinations and no deterministic tie-breaker exists, the classifier must fail closed.
+- default unknown prompts to conversation
+- guess between destinations
+- retry automatically
+- route after failure
+- invoke downstream destinations after failure
 
-## No Silent Fallback
+## Invalid Output Protection
 
-The classifier must not silently fallback to:
-
-- conversation
-- provider proposal
-- memory consultation
-- execution request
-
-## No Correction Loop
-
-Classifier failure does not introduce correction loops.
-
-A correction loop requires a separate governed model.
+Artifacts containing authority-bearing or execution-bearing fields are invalid and fail closed during validation.
 

@@ -2,38 +2,48 @@
   "artifact": "INTENT_CLASSIFIER_ACCEPTANCE",
   "version": "V1",
   "status": "ACCEPTED",
-  "model_only": true,
-  "accepted_findings": {
-    "intent_classifier_identity": "DEFINED",
-    "intent_classification_artifact_required": true,
-    "classification_replay_visibility": "MANDATORY",
-    "authority_preservation": "PRESERVABLE",
-    "memory_relationship": "PARTIALLY_SUPPORTED",
-    "provider_invocation": "FORBIDDEN",
-    "worker_invocation": "FORBIDDEN"
-  },
-  "accepted_outputs": [
-    "CONVERSATION",
-    "CONSTITUTIONAL_MEMORY_CONSULTATION",
-    "PROVIDER_PROPOSAL",
-    "EXECUTION_REQUEST",
-    "FAILED_CLOSED"
+  "runtime_files": [
+    "aigol/runtime/intent_classifier.py",
+    "tests/test_intent_classifier_v1.py"
   ],
-  "accepted_non_goals": {
-    "classifier_runtime": false,
-    "classifier_engine": false,
-    "classifier_worker": false,
-    "classifier_orchestration": false,
-    "autonomous_routing": false,
-    "automatic_execution": false,
-    "automatic_provider_invocation": false,
-    "automatic_worker_invocation": false,
-    "correction_loops": false
+  "accepted_capabilities": {
+    "conversation_classification": true,
+    "memory_consultation_classification": true,
+    "provider_proposal_classification": true,
+    "execution_request_classification": true,
+    "intent_classification_artifact_generation": true,
+    "replay_generation": true,
+    "replay_reconstruction": true,
+    "append_only_replay": true,
+    "fail_closed_rejection": true
   },
+  "accepted_boundaries": {
+    "routing": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution": false,
+    "memory_retrieval": false,
+    "governance_decision": false,
+    "authorization_decision": false,
+    "llm_classification": false
+  },
+  "validation_targets": [
+    "conversation classification",
+    "memory consultation classification",
+    "provider proposal classification",
+    "execution request classification",
+    "ambiguous prompt rejection",
+    "unknown prompt rejection",
+    "artifact generation",
+    "replay generation",
+    "replay reconstruction",
+    "append-only replay behavior",
+    "replay corruption detection"
+  ],
   "final_classifications": {
-    "intent_classifier_model_status": "READY_WITH_GAPS",
-    "intent_classifier_authority_impact": "LOW",
-    "intent_classifier_replay_visibility": "MANDATORY"
+    "intent_classifier_status": "READY_WITH_CONSTRAINTS",
+    "intent_classifier_authority_status": "PRESERVED",
+    "intent_classifier_replay_status": "READY"
   }
 }
 

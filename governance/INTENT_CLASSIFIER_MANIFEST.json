@@ -3,33 +3,35 @@
   "version": "V1",
   "status": "COMPLETE",
   "created_files": [
-    "governance/INTENT_CLASSIFIER_MODEL_V1.md",
-    "governance/INTENT_CLASSIFICATION_ARTIFACT_MODEL_V1.md",
-    "governance/INTENT_CLASSIFIER_INPUT_MODEL_V1.md",
-    "governance/INTENT_CLASSIFIER_OUTPUT_MODEL_V1.md",
+    "aigol/runtime/intent_classifier.py",
+    "tests/test_intent_classifier_v1.py",
+    "governance/INTENT_CLASSIFIER_V1.md",
+    "governance/INTENT_CLASSIFIER_BOUNDARY_GUARANTEES_V1.md",
     "governance/INTENT_CLASSIFIER_REPLAY_MODEL_V1.md",
-    "governance/INTENT_CLASSIFIER_AUTHORITY_GUARANTEES_V1.md",
     "governance/INTENT_CLASSIFIER_FAIL_CLOSED_RULES_V1.md",
-    "governance/INTENT_CLASSIFIER_MEMORY_RELATIONSHIP_V1.md",
-    "governance/INTENT_CLASSIFIER_GAPS_V1.md",
-    "governance/INTENT_CLASSIFIER_DUPLICATION_RISKS_V1.md",
     "governance/INTENT_CLASSIFIER_ACCEPTANCE.json",
     "governance/INTENT_CLASSIFIER_CERTIFICATION.json",
     "governance/INTENT_CLASSIFIER_MANIFEST.json"
   ],
-  "reviewed_domains": [
-    "human_request",
-    "intent_routing",
-    "constitutional_memory",
-    "provider_layer",
-    "execution_layer",
-    "governance_layer"
+  "runtime_entrypoints": [
+    "classify_intent",
+    "reconstruct_intent_classification_replay"
+  ],
+  "supported_destinations": [
+    "CONVERSATION",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION",
+    "PROVIDER_PROPOSAL",
+    "EXECUTION_REQUEST"
+  ],
+  "replay_artifacts": [
+    "000_intent_classification_artifact.json",
+    "001_intent_classification_replay.json"
   ],
   "final_classifications": {
-    "intent_classifier_model_status": "READY_WITH_GAPS",
-    "intent_classifier_authority_impact": "LOW",
-    "intent_classifier_replay_visibility": "MANDATORY"
+    "intent_classifier_status": "READY_WITH_CONSTRAINTS",
+    "intent_classifier_authority_status": "PRESERVED",
+    "intent_classifier_replay_status": "READY"
   },
-  "commit_message": "docs(governance): define intent classifier model"
+  "commit_message": "feat(runtime): add minimal intent classifier"
 }
 

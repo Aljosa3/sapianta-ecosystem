@@ -1,45 +1,50 @@
 # Intent Classifier Replay Model V1
 
-Status: replay model for Intent Classifier.
+Status: replay model for implemented Intent Classifier V1.
 
-## Replay Visibility Classification
+## Replay Visibility
 
-`INTENT_CLASSIFIER_REPLAY_VISIBILITY`: `MANDATORY`
+`INTENT_CLASSIFIER_REPLAY_STATUS`: `READY`
 
-## Replay Requirement
+Replay visibility is mandatory for every classification attempt.
 
-Every classification attempt must be replay-visible.
+## Replay Files
 
-Replay must include:
-
-- classifier input reference
-- normalized request reference when present
-- optional cited memory context references
-- candidate destination
-- classification status
-- ambiguity status
-- failure reason when failed
-- artifact hash
-- lineage to routing artifact
-
-## Replay Sequence
-
-Future sequence:
+The implemented replay chain is:
 
 ```text
-Human Prompt Evidence
--> Intent Classification Artifact
--> Intent Routing Artifact
--> Destination Boundary
+000_intent_classification_artifact.json
+001_intent_classification_replay.json
 ```
 
-## Replay Failure
+## Replay Contents
 
-If classification replay is missing, corrupted, ambiguous, or unordered, downstream routing must fail closed.
+Replay records include:
 
-## Replay Boundary
+- human request reference
+- destination
+- artifact reference
+- classifier version
+- classification status
+- ambiguity status
+- classification artifact hash
+- replay reference
 
-Replay is evidence.
+## Reconstruction
 
-Replay does not authorize, govern, execute, or select the destination by itself.
+Runtime reconstruction validates:
+
+- replay ordering
+- replay step identity
+- wrapper hash integrity
+- artifact hash integrity
+- artifact reference linkage
+- classification artifact hash linkage
+- valid destination/status semantics
+
+## Failure Behavior
+
+Replay corruption, artifact corruption, replay ordering mismatch, and replay linkage mismatch fail closed.
+
+Replay does not authorize, govern, route, execute, invoke providers, invoke workers, or retrieve memory.
 

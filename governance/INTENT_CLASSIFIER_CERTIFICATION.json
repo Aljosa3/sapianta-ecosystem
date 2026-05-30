@@ -3,26 +3,26 @@
   "version": "V1",
   "status": "CERTIFIED",
   "certification": {
-    "model_defined": true,
-    "classification_artifact_model_defined": true,
-    "input_model_defined": true,
-    "output_model_defined": true,
-    "replay_model_defined": true,
-    "fail_closed_rules_defined": true,
-    "no_classifier_runtime_implemented": true,
-    "no_routing_runtime_implemented": true,
+    "minimal_intent_classifier_implemented": true,
+    "classification_artifact_generated": true,
+    "replay_evidence_generated": true,
+    "replay_reconstruction_supported": true,
+    "fail_closed_behavior_supported": true,
+    "deterministic_bounded_rules_only": true,
+    "no_routing_runtime_introduced": true,
     "no_provider_invocation_introduced": true,
     "no_worker_invocation_introduced": true,
-    "no_execution_path_introduced": true
+    "no_execution_introduced": true,
+    "no_memory_retrieval_introduced": true
   },
   "authority_certification": {
+    "classifier_routes": false,
     "classifier_governs": false,
     "classifier_authorizes": false,
     "classifier_executes": false,
     "classifier_invokes_provider": false,
     "classifier_invokes_worker": false,
-    "classifier_retrieves_memory_directly": false,
-    "classifier_mutates_replay": false
+    "classifier_retrieves_memory": false
   },
   "invariant_preservation": {
     "llm_proposes": true,
@@ -31,9 +31,9 @@
     "replay_records": true
   },
   "final_classifications": {
-    "intent_classifier_model_status": "READY_WITH_GAPS",
-    "intent_classifier_authority_impact": "LOW",
-    "intent_classifier_replay_visibility": "MANDATORY"
+    "intent_classifier_status": "READY_WITH_CONSTRAINTS",
+    "intent_classifier_authority_status": "PRESERVED",
+    "intent_classifier_replay_status": "READY"
   }
 }
 
