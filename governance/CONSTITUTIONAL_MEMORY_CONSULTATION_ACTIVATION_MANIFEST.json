@@ -1,0 +1,28 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_MANIFEST",
+  "version": "V1",
+  "status": "FINAL",
+  "runtime": [
+    "aigol/runtime/constitutional_memory_consultation_activation.py"
+  ],
+  "tests": [
+    "tests/test_constitutional_memory_consultation_activation_v1.py"
+  ],
+  "governance": [
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_REPLAY_MODEL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_FAIL_CLOSED_RULES_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_MANIFEST.json"
+  ],
+  "depends_on": [
+    "CONSTITUTIONAL_MEMORY_ACCESS_PATH_V1",
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_REVIEW_V1"
+  ],
+  "success_condition": "Intent-routed Constitutional Memory Consultation returns citation evidence and replay without authority expansion.",
+  "commit_message": "feat(runtime): add constitutional memory consultation activation"
+}

@@ -1,0 +1,31 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certified_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "certified_properties": {
+    "reference_only": true,
+    "citation_bound": true,
+    "replay_visible": true,
+    "append_only": true,
+    "fail_closed": true,
+    "authority_preserved": true
+  },
+  "authority_absence": {
+    "authorization_authority": false,
+    "governance_authority": false,
+    "execution_authority": false,
+    "provider_authority": false,
+    "worker_authority": false,
+    "memory_mutation_authority": false
+  },
+  "validation": {
+    "pytest": "python -m pytest tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_constitutional_memory_access_v1.py tests/test_intent_classifier_v1.py",
+    "result": "70 passed"
+  }
+}

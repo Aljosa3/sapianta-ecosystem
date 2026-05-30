@@ -1,0 +1,38 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "accepted_runtime_files": [
+    "aigol/runtime/constitutional_memory_consultation_activation.py"
+  ],
+  "accepted_test_files": [
+    "tests/test_constitutional_memory_consultation_activation_v1.py"
+  ],
+  "accepted_governance_artifacts": [
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_REPLAY_MODEL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_FAIL_CLOSED_RULES_V1.md"
+  ],
+  "accepted_flow": [
+    "intent_routing_attachment_record",
+    "constitutional_memory_consultation_activation",
+    "constitutional_memory_access_path",
+    "citation_bundle",
+    "replay_record"
+  ],
+  "non_goals_preserved": [
+    "no_provider_invocation",
+    "no_worker_invocation",
+    "no_execution",
+    "no_conversation_generation",
+    "no_memory_mutation",
+    "no_governance_authority",
+    "no_authorization_authority"
+  ],
+  "final_classification": {
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_STATUS": "READY_WITH_CONSTRAINTS",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_AUTHORITY_STATUS": "PRESERVED",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_REPLAY_STATUS": "READY"
+  }
+}
