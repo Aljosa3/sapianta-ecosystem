@@ -19,6 +19,7 @@
     "memory_consultation_reconstructable": true,
     "response_reconstructable": true,
     "conversation_result_reconstructable": true,
+    "provider_proposal_path_reconstructable": true,
     "no_provider_invocation": true,
     "no_worker_invocation": true,
     "no_execution_request": true,
@@ -27,8 +28,8 @@
     "replay_corruption_detected": true
   },
   "validation": {
-    "command": "python -m pytest tests/test_cognition_runtime_v1.py tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
-    "result": "85 passed"
+    "command": "python -m pytest tests/test_provider_proposal_runtime_v1.py tests/test_cognition_runtime_v1.py tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "97 passed"
   },
   "deterministic_acceptance": true,
   "replay_safe_validation": true

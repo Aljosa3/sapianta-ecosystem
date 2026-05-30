@@ -10,6 +10,8 @@
     "memory_consultation",
     "memory_based_response",
     "conversation_response",
+    "provider_proposal_runtime",
+    "provider_proposal_artifact",
     "replay"
   ],
   "certified_invariant": {
@@ -27,6 +29,7 @@
   },
   "runtime_guarantees": {
     "canonical_cognition_entrypoint": true,
+    "provider_proposal_supported": true,
     "provider_invocation": false,
     "worker_invocation": false,
     "execution_request_creation": false,

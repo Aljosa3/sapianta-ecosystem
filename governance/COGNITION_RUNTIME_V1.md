@@ -7,11 +7,10 @@ This milestone implements:
 ```text
 Human Prompt
 -> Cognition Runtime
--> Conversation Runtime
 -> Intent Classification
--> Memory Consultation
--> Memory-Based Response
--> Conversation Response
+-> Conversation Runtime or Provider Proposal Runtime
+-> Memory-Based Response or Provider Proposal
+-> Conversation Response or Provider Proposal Artifact
 -> Replay
 ```
 
@@ -51,6 +50,15 @@ Cognition Runtime may not:
 - authorize execution
 - perform governance decisions
 - dispatch execution
+
+## Supported Paths
+
+V1 supports:
+
+- `CONVERSATION -> CONVERSATION_RUNTIME_V1`
+- `PROVIDER_PROPOSAL -> PROVIDER_PROPOSAL_RUNTIME_V1`
+
+Unsupported intents fail closed.
 
 ## Final Status
 

@@ -21,12 +21,13 @@
     "INTENT_ROUTING_ATTACHMENT_V1",
     "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1",
     "MEMORY_BASED_RESPONSE_RUNTIME_V1",
-    "CONVERSATION_RUNTIME_V1"
+    "CONVERSATION_RUNTIME_V1",
+    "PROVIDER_PROPOSAL_RUNTIME_V1"
   ],
   "scope_locked": true,
   "mutation_boundary_defined": true,
   "deterministic_acceptance_evidence": true,
   "replay_safe_validation_evidence": true,
-  "success_condition": "Human prompt enters canonical Cognition Runtime and deterministically reaches replay-visible conversation result without provider, worker, execution, planning, orchestration, or multi-turn memory.",
+  "success_condition": "Human prompt enters canonical Cognition Runtime and deterministically reaches replay-visible conversation or advisory provider proposal result without provider invocation, worker invocation, execution, planning, orchestration, or multi-turn memory.",
   "commit_message": "feat(runtime): add cognition runtime"
 }

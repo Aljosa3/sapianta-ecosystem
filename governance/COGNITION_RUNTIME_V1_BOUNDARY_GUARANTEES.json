@@ -3,7 +3,10 @@
   "version": "V1",
   "scope_lock": {
     "canonical_entrypoint": "COGNITION_RUNTIME_V1",
-    "only_supported_path": "COGNITION_TO_CONVERSATION_RUNTIME",
+    "supported_paths": [
+      "COGNITION_TO_CONVERSATION_RUNTIME",
+      "COGNITION_TO_PROVIDER_PROPOSAL_RUNTIME"
+    ],
     "provider_invocation": "FORBIDDEN",
     "worker_invocation": "FORBIDDEN",
     "execution_requests": "FORBIDDEN",
@@ -33,6 +36,7 @@
     "memory_failure",
     "response_failure",
     "conversation_failure",
+    "provider_proposal_failure",
     "append_only_violation",
     "replay_corruption"
   ]

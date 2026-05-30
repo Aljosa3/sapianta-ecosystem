@@ -23,14 +23,15 @@ The missing surface was a single cognition session lifecycle above these compone
 The runtime:
 
 - records `COGNITION_SESSION_STARTED`
-- invokes Conversation Runtime as the only supported cognition path
+- invokes Conversation Runtime for `CONVERSATION`
+- invokes Provider Proposal Runtime for `PROVIDER_PROPOSAL`
 - records `COGNITION_RUNTIME_STATE`
 - records `COGNITION_SESSION_COMPLETED` or `COGNITION_SESSION_FAILED`
 - preserves deterministic replay
 
 ## Rejected Alternatives
 
-Provider invocation: rejected because V1 is not provider orchestration.
+Provider invocation: rejected because Provider Proposal is advisory only.
 
 Worker invocation: rejected because V1 is not execution.
 
