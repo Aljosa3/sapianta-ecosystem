@@ -1,0 +1,31 @@
+{
+  "artifact": "COGNITION_FOUNDATION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "replay_status": "CERTIFIED",
+  "certified_replay_surfaces": [
+    "intent_classification_replay",
+    "intent_routing_attachment_replay",
+    "constitutional_memory_consultation_replay",
+    "memory_based_response_replay",
+    "conversation_runtime_replay",
+    "provider_proposal_replay",
+    "cognition_runtime_replay"
+  ],
+  "replay_guarantees": {
+    "prompt_reconstructable": true,
+    "intent_reconstructable": true,
+    "memory_consultation_reconstructable": true,
+    "citation_bundle_reconstructable": true,
+    "memory_based_response_reconstructable": true,
+    "conversation_result_reconstructable": true,
+    "provider_proposal_reconstructable": true,
+    "cognition_state_reconstructable": true,
+    "append_only": true,
+    "corruption_detection": true,
+    "fail_closed": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_provider_proposal_runtime_v1.py tests/test_cognition_runtime_v1.py tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "97 passed"
+  }
+}

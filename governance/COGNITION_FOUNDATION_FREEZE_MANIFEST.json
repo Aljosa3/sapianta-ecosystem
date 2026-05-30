@@ -1,0 +1,37 @@
+{
+  "artifact": "COGNITION_FOUNDATION_FREEZE_MANIFEST",
+  "version": "V1",
+  "status": "FROZEN",
+  "foundation": "GOVERNED_COGNITION_FOUNDATION",
+  "foundation_status": "READY_FOR_PROVIDER_ATTACHMENT",
+  "governance": [
+    "governance/COGNITION_FOUNDATION_FREEZE_V1.md",
+    "governance/COGNITION_FOUNDATION_FREEZE_V1_ADR.md",
+    "governance/COGNITION_FOUNDATION_CERTIFICATION.json",
+    "governance/COGNITION_FOUNDATION_BOUNDARY_GUARANTEES.json",
+    "governance/COGNITION_FOUNDATION_REPLAY_CERTIFICATION.json",
+    "governance/COGNITION_FOUNDATION_ACCEPTANCE_EVIDENCE.json",
+    "governance/COGNITION_FOUNDATION_FREEZE_MANIFEST.json"
+  ],
+  "frozen_components": [
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1",
+    "MEMORY_BASED_RESPONSE_RUNTIME_V1",
+    "CONVERSATION_RUNTIME_V1",
+    "PROVIDER_PROPOSAL_RUNTIME_V1",
+    "COGNITION_RUNTIME_V1"
+  ],
+  "scope_lock": {
+    "provider_execution": "FORBIDDEN",
+    "worker_execution": "FORBIDDEN",
+    "orchestration": "FORBIDDEN",
+    "planning": "FORBIDDEN",
+    "reflection": "FORBIDDEN",
+    "autonomous_dispatch": "FORBIDDEN",
+    "runtime_mutation": "FORBIDDEN",
+    "new_cognition_components": "FORBIDDEN"
+  },
+  "success_condition": "Governed Cognition Foundation is frozen and certified as READY_FOR_PROVIDER_ATTACHMENT without adding runtime behavior.",
+  "commit_message": "docs(governance): freeze cognition foundation"
+}

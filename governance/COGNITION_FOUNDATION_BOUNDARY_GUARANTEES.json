@@ -1,0 +1,42 @@
+{
+  "artifact": "COGNITION_FOUNDATION_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "foundation": "GOVERNED_COGNITION_FOUNDATION",
+  "boundary_status": "FROZEN",
+  "allowed_surfaces": [
+    "intent_classification",
+    "intent_routing_evidence",
+    "constitutional_memory_consultation",
+    "memory_based_response",
+    "conversation_response",
+    "advisory_provider_proposal",
+    "cognition_runtime_state",
+    "replay_recording"
+  ],
+  "forbidden_surfaces": [
+    "provider_execution",
+    "worker_execution",
+    "execution_requests",
+    "authorization_decisions",
+    "governance_decisions",
+    "orchestration",
+    "planning",
+    "reflection",
+    "autonomous_dispatch",
+    "runtime_mutation",
+    "multi_turn_memory"
+  ],
+  "authority_guarantees": {
+    "execution_authority": false,
+    "governance_authority": false,
+    "authorization_authority": false,
+    "provider_authority": false,
+    "worker_authority": false
+  },
+  "mutation_boundary": {
+    "foundation_mutation": "DENIED_WITHOUT_NEW_GOVERNANCE_MILESTONE",
+    "runtime_mutation": "DENIED",
+    "replay_mutation": "DENIED",
+    "append_only_replay": "REQUIRED"
+  }
+}

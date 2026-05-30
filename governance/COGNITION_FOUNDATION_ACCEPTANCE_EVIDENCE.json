@@ -1,0 +1,37 @@
+{
+  "artifact": "COGNITION_FOUNDATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "foundation_status": "READY_FOR_PROVIDER_ATTACHMENT",
+  "accepted_components": {
+    "intent_classification": true,
+    "intent_routing": true,
+    "memory_consultation": true,
+    "memory_based_response": true,
+    "conversation_runtime": true,
+    "provider_proposal_runtime": true,
+    "cognition_runtime": true,
+    "replay_visibility": true,
+    "authority_boundaries": true
+  },
+  "accepted_absences": {
+    "execution_authority": true,
+    "governance_authority": true,
+    "authorization_authority": true,
+    "provider_authority": true,
+    "worker_authority": true,
+    "provider_execution": true,
+    "worker_execution": true,
+    "orchestration": true,
+    "planning": true,
+    "reflection": true,
+    "autonomous_dispatch": true,
+    "runtime_mutation": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_provider_proposal_runtime_v1.py tests/test_cognition_runtime_v1.py tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "97 passed"
+  },
+  "deterministic_acceptance": true,
+  "replay_safe_validation": true
+}

@@ -1,0 +1,39 @@
+{
+  "artifact": "COGNITION_FOUNDATION_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "foundation": "GOVERNED_COGNITION_FOUNDATION",
+  "foundation_status": "READY_FOR_PROVIDER_ATTACHMENT",
+  "certified_components": [
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1",
+    "MEMORY_BASED_RESPONSE_RUNTIME_V1",
+    "CONVERSATION_RUNTIME_V1",
+    "PROVIDER_PROPOSAL_RUNTIME_V1",
+    "COGNITION_RUNTIME_V1"
+  ],
+  "certified_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "authority_absence": {
+    "execution_authority": false,
+    "governance_authority": false,
+    "authorization_authority": false,
+    "provider_authority": false,
+    "worker_authority": false
+  },
+  "forbidden_expansion": {
+    "provider_execution": false,
+    "worker_execution": false,
+    "orchestration": false,
+    "planning": false,
+    "reflection": false,
+    "autonomous_dispatch": false,
+    "runtime_mutation": false,
+    "new_cognition_components": false
+  }
+}
