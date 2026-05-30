@@ -1,0 +1,38 @@
+{
+  "artifact": "MEMORY_BASED_RESPONSE_RUNTIME_V1_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "scope_lock": {
+    "only_surface": "citation_bundle_to_memory_based_response",
+    "provider_calls": "FORBIDDEN",
+    "llm_calls": "FORBIDDEN",
+    "execution_requests": "FORBIDDEN",
+    "worker_dispatch": "FORBIDDEN",
+    "governance_decisions": "FORBIDDEN",
+    "authorization_decisions": "FORBIDDEN",
+    "routing_changes": "FORBIDDEN",
+    "correction_loops": "FORBIDDEN",
+    "conversation_runtime": "FORBIDDEN"
+  },
+  "mutation_boundary": {
+    "runtime_mutation": "DENIED",
+    "memory_mutation": "DENIED",
+    "citation_bundle_mutation": "DENIED",
+    "replay_mutation": "DENIED",
+    "append_only_replay": "REQUIRED"
+  },
+  "response_boundary": {
+    "response_type": "MEMORY_BASED_RESPONSE",
+    "authority": false,
+    "execution_capable": false,
+    "replay_visible": true,
+    "evidence_source": "citation_bundle_only"
+  },
+  "fail_closed_conditions": [
+    "citation_bundle_missing",
+    "citation_bundle_corrupt",
+    "citation_bundle_empty",
+    "evidence_unavailable",
+    "append_only_violation",
+    "replay_corruption"
+  ]
+}

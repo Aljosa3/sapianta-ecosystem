@@ -1,0 +1,31 @@
+{
+  "artifact": "MEMORY_BASED_RESPONSE_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/memory_based_response.py"
+  ],
+  "test_files": [
+    "tests/test_memory_based_response_runtime_v1.py"
+  ],
+  "accepted_cases": {
+    "valid_citation_bundle_response_created": true,
+    "missing_citation_bundle_fail_closed": true,
+    "corrupt_citation_bundle_fail_closed": true,
+    "empty_citation_bundle_fail_closed": true,
+    "evidence_unavailable_fail_closed": true,
+    "replay_reconstruction_succeeds": true,
+    "response_contains_only_cited_evidence": true,
+    "no_provider_invoked": true,
+    "no_worker_invoked": true,
+    "no_authority_introduced": true,
+    "append_only_replay_enforced": true,
+    "replay_corruption_detected": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "61 passed"
+  },
+  "deterministic_acceptance": true,
+  "replay_safe_validation": true
+}
