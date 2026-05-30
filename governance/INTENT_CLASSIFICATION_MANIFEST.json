@@ -1,0 +1,34 @@
+{
+  "artifact": "INTENT_CLASSIFICATION_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "governance/INTENT_CLASSIFICATION_POSITION_REVIEW_V1.md",
+    "governance/INTENT_CLASSIFICATION_RECONSTRUCTION_V1.md",
+    "governance/INTENT_CLASSIFICATION_HUMAN_REQUEST_ANALYSIS_V1.md",
+    "governance/INTENT_CLASSIFICATION_MEMORY_CONSULTATION_ANALYSIS_V1.md",
+    "governance/INTENT_CLASSIFICATION_PROVIDER_PROPOSAL_ANALYSIS_V1.md",
+    "governance/INTENT_CLASSIFICATION_EXECUTION_REQUEST_ANALYSIS_V1.md",
+    "governance/INTENT_CLASSIFICATION_ROUTING_READINESS_V1.md",
+    "governance/INTENT_CLASSIFICATION_DUPLICATION_RISKS_V1.md",
+    "governance/INTENT_CLASSIFICATION_ACCEPTANCE.json",
+    "governance/INTENT_CLASSIFICATION_CERTIFICATION.json",
+    "governance/INTENT_CLASSIFICATION_MANIFEST.json"
+  ],
+  "reviewed_domains": [
+    "human_request_position",
+    "constitutional_memory_access",
+    "provider_proposal_path",
+    "execution_request_path",
+    "governance_authorization",
+    "replay_visibility",
+    "fail_closed_boundaries"
+  ],
+  "final_classifications": {
+    "intent_classification_position_status": "PARTIALLY_DEFINED",
+    "intent_routing_readiness": "READY_WITH_GAPS",
+    "intent_classification_authority_impact": "LOW"
+  },
+  "commit_message": "docs(governance): review intent classification position"
+}
+

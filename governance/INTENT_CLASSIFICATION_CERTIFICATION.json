@@ -1,0 +1,34 @@
+{
+  "artifact": "INTENT_CLASSIFICATION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certification": {
+    "review_completed": true,
+    "no_runtime_intent_classifier_introduced": true,
+    "no_routing_runtime_introduced": true,
+    "no_new_execution_path_introduced": true,
+    "no_authority_expansion_introduced": true,
+    "foundations_identified": true,
+    "gaps_identified": true
+  },
+  "invariant_preservation": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "future_constraints": {
+    "classification_must_be_replay_visible": true,
+    "classification_must_fail_closed_on_ambiguity": true,
+    "classification_must_remain_non_authoritative": true,
+    "classification_must_not_execute": true,
+    "classification_must_not_authorize": true,
+    "classification_must_not_bypass_destination_boundaries": true
+  },
+  "final_classifications": {
+    "intent_classification_position_status": "PARTIALLY_DEFINED",
+    "intent_routing_readiness": "READY_WITH_GAPS",
+    "intent_classification_authority_impact": "LOW"
+  }
+}
+
