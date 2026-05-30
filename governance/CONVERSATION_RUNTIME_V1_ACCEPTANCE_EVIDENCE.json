@@ -1,0 +1,28 @@
+{
+  "artifact": "CONVERSATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/conversation_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_conversation_runtime_v1.py"
+  ],
+  "accepted_cases": {
+    "conversation_starts_successfully": true,
+    "response_returned_successfully": true,
+    "replay_reconstruction_succeeds": true,
+    "fail_closed_behavior_verified": true,
+    "no_provider_invocation": true,
+    "no_worker_invocation": true,
+    "no_authority_introduced": true,
+    "append_only_replay_enforced": true,
+    "replay_corruption_detected": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "73 passed"
+  },
+  "deterministic_acceptance": true,
+  "replay_safe_validation": true
+}

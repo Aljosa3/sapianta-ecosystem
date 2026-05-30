@@ -1,0 +1,31 @@
+{
+  "artifact": "CONVERSATION_RUNTIME_V1_FINALIZE_MANIFEST",
+  "version": "V1",
+  "status": "FINALIZED",
+  "runtime": [
+    "aigol/runtime/conversation_runtime.py"
+  ],
+  "tests": [
+    "tests/test_conversation_runtime_v1.py"
+  ],
+  "governance": [
+    "governance/CONVERSATION_RUNTIME_V1.md",
+    "governance/CONVERSATION_RUNTIME_V1_ADR.md",
+    "governance/CONVERSATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/CONVERSATION_RUNTIME_V1_CERTIFICATION.json",
+    "governance/CONVERSATION_RUNTIME_V1_BOUNDARY_GUARANTEES.json",
+    "governance/CONVERSATION_RUNTIME_V1_FINALIZE_MANIFEST.json"
+  ],
+  "depends_on": [
+    "INTENT_CLASSIFIER_V1",
+    "INTENT_ROUTING_ATTACHMENT_V1",
+    "CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_V1",
+    "MEMORY_BASED_RESPONSE_RUNTIME_V1"
+  ],
+  "scope_locked": true,
+  "mutation_boundary_defined": true,
+  "deterministic_acceptance_evidence": true,
+  "replay_safe_validation_evidence": true,
+  "success_condition": "Human conversational prompt deterministically returns replay-visible Conversation Response Artifact through Memory-Based Response only.",
+  "commit_message": "feat(runtime): add conversation runtime"
+}

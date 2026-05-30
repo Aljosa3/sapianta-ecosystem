@@ -1,0 +1,39 @@
+{
+  "artifact": "CONVERSATION_RUNTIME_V1_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "scope_lock": {
+    "only_supported_path": "CONVERSATION_TO_MEMORY_BASED_RESPONSE",
+    "provider_calls": "FORBIDDEN",
+    "worker_calls": "FORBIDDEN",
+    "execution_requests": "FORBIDDEN",
+    "governance_decisions": "FORBIDDEN",
+    "authorization_decisions": "FORBIDDEN",
+    "routing_changes": "FORBIDDEN",
+    "correction_loops": "FORBIDDEN",
+    "multi_turn_memory": "FORBIDDEN",
+    "autonomous_planning": "FORBIDDEN"
+  },
+  "mutation_boundary": {
+    "runtime_mutation": "DENIED",
+    "memory_mutation": "DENIED",
+    "conversation_memory_mutation": "DENIED",
+    "replay_mutation": "DENIED",
+    "append_only_replay": "REQUIRED"
+  },
+  "response_boundary": {
+    "artifact_type": "CONVERSATION_RESPONSE_ARTIFACT_V1",
+    "response_type": "CONVERSATION_RESPONSE",
+    "authority": false,
+    "replay_visible": true,
+    "evidence_source": "memory_based_response_only"
+  },
+  "fail_closed_conditions": [
+    "intent_classification_failure",
+    "non_conversation_intent",
+    "memory_consultation_failure",
+    "citation_bundle_failure",
+    "memory_based_response_failure",
+    "append_only_violation",
+    "replay_corruption"
+  ]
+}
