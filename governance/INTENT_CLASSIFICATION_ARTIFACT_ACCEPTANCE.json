@@ -1,0 +1,32 @@
+{
+  "artifact": "INTENT_CLASSIFICATION_ARTIFACT_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "review_only": true,
+  "accepted_identity": {
+    "artifact_position": "classification evidence",
+    "artifact_identity": "DEFINED",
+    "artifact_is_authority": false
+  },
+  "accepted_structure": {
+    "single_destination_only": true,
+    "classification_reason_required": true,
+    "classification_version_required": true,
+    "replay_reference_required": true,
+    "reconstruction_metadata_required": true,
+    "authority_outputs_forbidden": true
+  },
+  "accepted_behavior": {
+    "replay_visible": true,
+    "reconstructable": true,
+    "fail_closed": true,
+    "non_authoritative": true,
+    "memory_references": "PARTIALLY_SUPPORTED"
+  },
+  "final_classifications": {
+    "intent_classification_artifact_status": "READY_WITH_GAPS",
+    "intent_classification_artifact_authority_impact": "LOW",
+    "intent_classification_artifact_replay_readiness": "READY_WITH_GAPS"
+  }
+}
+

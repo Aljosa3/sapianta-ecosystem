@@ -1,0 +1,37 @@
+{
+  "artifact": "INTENT_CLASSIFICATION_ARTIFACT_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certification": {
+    "implementation_review_completed": true,
+    "runtime_artifact_not_implemented": true,
+    "classifier_runtime_not_implemented": true,
+    "routing_runtime_not_implemented": true,
+    "structure_reviewed": true,
+    "replay_model_reviewed": true,
+    "reconstruction_model_reviewed": true,
+    "fail_closed_model_reviewed": true,
+    "authority_guarantees_reviewed": true
+  },
+  "authority_certification": {
+    "artifact_routes": false,
+    "artifact_governs": false,
+    "artifact_authorizes": false,
+    "artifact_executes": false,
+    "artifact_invokes_provider": false,
+    "artifact_invokes_worker": false,
+    "artifact_retrieves_memory": false
+  },
+  "invariant_preservation": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "final_classifications": {
+    "intent_classification_artifact_status": "READY_WITH_GAPS",
+    "intent_classification_artifact_authority_impact": "LOW",
+    "intent_classification_artifact_replay_readiness": "READY_WITH_GAPS"
+  }
+}
+
