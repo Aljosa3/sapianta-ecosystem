@@ -1,0 +1,38 @@
+{
+  "artifact": "INTENT_ROUTING_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certification": {
+    "routing_model_defined": true,
+    "valid_destinations_defined": true,
+    "transition_rules_defined": true,
+    "routing_artifact_model_defined": true,
+    "replay_requirements_defined": true,
+    "fail_closed_rules_defined": true,
+    "no_classifier_implemented": true,
+    "no_routing_runtime_implemented": true,
+    "no_automatic_execution_introduced": true,
+    "no_automatic_provider_invocation_introduced": true,
+    "no_automatic_worker_invocation_introduced": true
+  },
+  "authority_certification": {
+    "routing_governs": false,
+    "routing_authorizes": false,
+    "routing_executes": false,
+    "routing_commands_provider": false,
+    "routing_commands_worker": false,
+    "routing_mutates_replay": false
+  },
+  "invariant_preservation": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "final_classifications": {
+    "intent_routing_model_status": "READY_WITH_GAPS",
+    "intent_routing_authority_preservation": "PRESERVABLE",
+    "intent_routing_replay_visibility": "MANDATORY"
+  }
+}
+

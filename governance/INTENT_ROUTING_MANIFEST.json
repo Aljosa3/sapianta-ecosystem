@@ -1,0 +1,37 @@
+{
+  "artifact": "INTENT_ROUTING_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "governance/INTENT_ROUTING_MODEL_V1.md",
+    "governance/INTENT_ROUTING_DESTINATIONS_V1.md",
+    "governance/INTENT_ROUTING_TRANSITIONS_V1.md",
+    "governance/INTENT_ROUTING_ARTIFACT_MODEL_V1.md",
+    "governance/INTENT_ROUTING_AUTHORITY_GUARANTEES_V1.md",
+    "governance/INTENT_ROUTING_REPLAY_REQUIREMENTS_V1.md",
+    "governance/INTENT_ROUTING_FAIL_CLOSED_RULES_V1.md",
+    "governance/INTENT_ROUTING_FUTURE_COMPATIBILITY_V1.md",
+    "governance/INTENT_ROUTING_GAPS_V1.md",
+    "governance/INTENT_ROUTING_DUPLICATION_RISKS_V1.md",
+    "governance/INTENT_ROUTING_ACCEPTANCE.json",
+    "governance/INTENT_ROUTING_CERTIFICATION.json",
+    "governance/INTENT_ROUTING_MANIFEST.json"
+  ],
+  "non_goals_preserved": {
+    "intent_classifier": false,
+    "routing_engine": false,
+    "routing_runtime": false,
+    "autonomous_prompt_handling": false,
+    "automatic_execution": false,
+    "automatic_provider_invocation": false,
+    "automatic_worker_invocation": false,
+    "correction_loops": false
+  },
+  "final_classifications": {
+    "intent_routing_model_status": "READY_WITH_GAPS",
+    "intent_routing_authority_preservation": "PRESERVABLE",
+    "intent_routing_replay_visibility": "MANDATORY"
+  },
+  "commit_message": "docs(governance): define intent routing model"
+}
+

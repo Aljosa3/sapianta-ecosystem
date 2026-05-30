@@ -1,0 +1,32 @@
+{
+  "artifact": "INTENT_ROUTING_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "model_only": true,
+  "accepted_destinations": {
+    "conversation": "PARTIAL",
+    "constitutional_memory_consultation": "VALID",
+    "provider_proposal": "VALID",
+    "execution_request": "VALID"
+  },
+  "accepted_transitions": {
+    "human_prompt_to_conversation": "CONDITIONAL",
+    "human_prompt_to_constitutional_memory_consultation": "ALLOWED",
+    "human_prompt_to_provider_proposal": "ALLOWED",
+    "human_prompt_to_execution_request": "CONDITIONAL"
+  },
+  "accepted_requirements": {
+    "routing_artifact_required_before_implementation": true,
+    "replay_visibility": "MANDATORY",
+    "fail_closed_on_ambiguity": true,
+    "authority_preservation": "PRESERVABLE",
+    "no_runtime_implemented": true,
+    "no_classifier_implemented": true
+  },
+  "final_classifications": {
+    "intent_routing_model_status": "READY_WITH_GAPS",
+    "intent_routing_authority_preservation": "PRESERVABLE",
+    "intent_routing_replay_visibility": "MANDATORY"
+  }
+}
+
