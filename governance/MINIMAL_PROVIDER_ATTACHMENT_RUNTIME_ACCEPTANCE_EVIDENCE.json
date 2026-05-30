@@ -1,0 +1,30 @@
+{
+  "artifact": "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "provider_attachment_runtime_status": "READY",
+  "validation": {
+    "command": "python -m pytest tests/test_minimal_provider_attachment_runtime_v1.py",
+    "result": "12 passed"
+  },
+  "accepted_cases": [
+    "valid provider response creates replay-visible proposal envelope",
+    "registry remains metadata-only and deterministic",
+    "provider proposal envelope contains no authority metadata",
+    "unknown provider fails closed",
+    "unavailable provider fails closed",
+    "missing provider metadata fails closed",
+    "malformed empty provider response fails closed",
+    "invalid proposal envelope fails closed",
+    "authority-bearing request fails closed",
+    "replay corruption is detected",
+    "append-only replay violation fails closed",
+    "OpenAI, Claude, Codex, Gemini, and local LLM identities use the same adapter contract"
+  ],
+  "deterministic_acceptance_evidence": {
+    "proposal_hash": "computed from canonical serialized proposal envelope",
+    "provider_identity_hash": "computed from canonical serialized provider metadata",
+    "replay_hash": "computed from canonical serialized replay wrapper",
+    "reconstruction": "provider identity, provider version, request, response, timestamp, and proposal hash reconstruct from replay"
+  }
+}

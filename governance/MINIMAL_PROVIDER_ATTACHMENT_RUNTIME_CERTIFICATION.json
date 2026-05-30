@@ -1,0 +1,46 @@
+{
+  "artifact": "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "provider_attachment_runtime_status": "READY",
+  "certifies": {
+    "provider_is_external_proposal_producer": true,
+    "provider_execution_authority": false,
+    "provider_authorization_authority": false,
+    "provider_governance_authority": false,
+    "provider_dispatch_authority": false,
+    "provider_replay_authority": false,
+    "provider_memory_authority": false,
+    "provider_substitutability_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_visibility_preserved": true
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "runtime_components": [
+    "aigol/provider/provider_registry.py",
+    "aigol/provider/provider_adapter.py",
+    "aigol/provider/provider_proposal_envelope.py",
+    "aigol/provider/provider_runtime.py"
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "provider_execution",
+    "worker_execution",
+    "authorization",
+    "governance_decision",
+    "planning",
+    "reflection",
+    "orchestration",
+    "task_dispatch",
+    "memory_mutation",
+    "replay_mutation",
+    "agent_autonomy",
+    "multi_provider_coordination",
+    "provider_ranking",
+    "provider_selection_intelligence"
+  ]
+}

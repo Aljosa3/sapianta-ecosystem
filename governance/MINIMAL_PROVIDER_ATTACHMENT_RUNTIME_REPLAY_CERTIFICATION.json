@@ -1,0 +1,47 @@
+{
+  "artifact": "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "REPLAY_CERTIFIED",
+  "replay_visibility": "MANDATORY",
+  "append_only": true,
+  "replay_events": [
+    "PROVIDER_PROPOSAL_CREATED",
+    "PROVIDER_PROPOSAL_RETURNED",
+    "FAILED_CLOSED"
+  ],
+  "replay_must_contain": [
+    "provider_id",
+    "provider_type",
+    "provider_version",
+    "provider_status",
+    "request",
+    "response",
+    "timestamp",
+    "proposal_id",
+    "proposal_hash",
+    "provider_identity_hash"
+  ],
+  "reconstruction_answers": [
+    "What exactly did the provider return?",
+    "Which provider identity produced the response?",
+    "Which provider version produced the response?",
+    "Which request was provided to the provider?",
+    "Which deterministic proposal hash binds the proposal envelope?"
+  ],
+  "replay_does_not_grant": [
+    "execution_authority",
+    "authorization_authority",
+    "governance_authority",
+    "dispatch_authority",
+    "replay_mutation_authority",
+    "memory_mutation_authority"
+  ],
+  "corruption_detection": [
+    "replay hash mismatch",
+    "artifact hash mismatch",
+    "proposal hash mismatch",
+    "created hash mismatch",
+    "replay ordering mismatch",
+    "append-only artifact already exists"
+  ]
+}

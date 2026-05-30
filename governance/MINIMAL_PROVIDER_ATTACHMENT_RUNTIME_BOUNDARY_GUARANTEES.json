@@ -1,0 +1,51 @@
+{
+  "artifact": "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "provider_may": [
+    "receive_request",
+    "return_proposal",
+    "produce_provider_proposal_envelope"
+  ],
+  "provider_may_not": [
+    "execute",
+    "authorize",
+    "govern",
+    "dispatch",
+    "mutate_replay",
+    "mutate_memory",
+    "invoke_worker",
+    "create_execution_request",
+    "create_governance_decision",
+    "create_authorization_decision"
+  ],
+  "runtime_may": [
+    "lookup_provider_metadata",
+    "verify_provider_state",
+    "call_adapter_generate_proposal",
+    "validate_provider_proposal_envelope",
+    "record_replay_evidence",
+    "return_proposal_envelope"
+  ],
+  "runtime_may_not": [
+    "interpret_proposal",
+    "execute_proposal",
+    "authorize_proposal",
+    "dispatch_task",
+    "invoke_worker",
+    "mutate_memory",
+    "mutate_existing_replay_artifact",
+    "rank_providers",
+    "select_provider_intelligently",
+    "coordinate_multiple_providers"
+  ],
+  "authority_preservation": {
+    "execution_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "dispatch_authority": false,
+    "worker_authority": false,
+    "replay_authority": false,
+    "memory_authority": false
+  }
+}
