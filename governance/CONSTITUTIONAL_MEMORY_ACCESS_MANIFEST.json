@@ -1,0 +1,31 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_ACCESS_MANIFEST",
+  "version": "V1",
+  "status": "COMPLETE",
+  "created_files": [
+    "aigol/runtime/constitutional_memory_access.py",
+    "tests/test_constitutional_memory_access_v1.py",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_PATH_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_BOUNDARY_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_REPLAY_MODEL_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_FAIL_CLOSED_RULES_V1.md",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_ACCEPTANCE.json",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_CERTIFICATION.json",
+    "governance/CONSTITUTIONAL_MEMORY_ACCESS_MANIFEST.json"
+  ],
+  "runtime_entrypoints": [
+    "retrieve_constitutional_memory",
+    "reconstruct_constitutional_memory_retrieval_replay"
+  ],
+  "replay_artifacts": [
+    "000_retrieval_request.json",
+    "001_citation_bundle.json",
+    "002_retrieval_result.json"
+  ],
+  "final_classifications": {
+    "constitutional_memory_access_status": "READY_WITH_CONSTRAINTS",
+    "constitutional_memory_reference_only_status": "PRESERVED"
+  },
+  "commit_message": "feat(runtime): add constitutional memory access path"
+}
+

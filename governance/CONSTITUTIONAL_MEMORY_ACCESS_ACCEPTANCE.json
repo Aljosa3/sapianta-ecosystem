@@ -1,0 +1,45 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_ACCESS_ACCEPTANCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/constitutional_memory_access.py",
+    "tests/test_constitutional_memory_access_v1.py"
+  ],
+  "accepted_capabilities": {
+    "reference_access": true,
+    "citation_bundle_generation": true,
+    "artifact_reference_return": true,
+    "retrieval_metadata_return": true,
+    "replay_visible_retrieval": true,
+    "fail_closed_rejection": true
+  },
+  "accepted_boundaries": {
+    "reference_only": true,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "execution_authority": false,
+    "proposal_authority": false,
+    "memory_mutation_authority": false,
+    "semantic_search": false,
+    "vector_memory": false,
+    "autonomous_memory_updates": false
+  },
+  "validation_targets": [
+    "successful retrieval",
+    "multiple retrievals",
+    "citation generation",
+    "replay generation",
+    "missing artifact rejection",
+    "ambiguous artifact rejection",
+    "invalid artifact rejection",
+    "authority request rejection",
+    "execution request rejection",
+    "replay reconstruction"
+  ],
+  "final_classifications": {
+    "constitutional_memory_access_status": "READY_WITH_CONSTRAINTS",
+    "constitutional_memory_reference_only_status": "PRESERVED"
+  }
+}
+
