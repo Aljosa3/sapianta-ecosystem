@@ -1,0 +1,39 @@
+{
+  "artifact": "COGNITION_RUNTIME_V1_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "scope_lock": {
+    "canonical_entrypoint": "COGNITION_RUNTIME_V1",
+    "only_supported_path": "COGNITION_TO_CONVERSATION_RUNTIME",
+    "provider_invocation": "FORBIDDEN",
+    "worker_invocation": "FORBIDDEN",
+    "execution_requests": "FORBIDDEN",
+    "planning": "FORBIDDEN",
+    "orchestration": "FORBIDDEN",
+    "multi_turn_memory": "FORBIDDEN",
+    "governance_decisions": "FORBIDDEN",
+    "authorization_decisions": "FORBIDDEN"
+  },
+  "mutation_boundary": {
+    "runtime_mutation": "DENIED",
+    "memory_mutation": "DENIED",
+    "cognition_memory_mutation": "DENIED",
+    "replay_mutation": "DENIED",
+    "append_only_replay": "REQUIRED"
+  },
+  "state_boundary": {
+    "state_artifact": "COGNITION_RUNTIME_STATE",
+    "authority": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "replay_visible": true
+  },
+  "fail_closed_conditions": [
+    "intent_failure",
+    "memory_failure",
+    "response_failure",
+    "conversation_failure",
+    "append_only_violation",
+    "replay_corruption"
+  ]
+}

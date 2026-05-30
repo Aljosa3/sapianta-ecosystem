@@ -1,0 +1,42 @@
+{
+  "artifact": "COGNITION_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certification_status": "CERTIFIED",
+  "certified_flow": [
+    "human_prompt",
+    "cognition_runtime",
+    "conversation_runtime",
+    "intent_classification",
+    "memory_consultation",
+    "memory_based_response",
+    "conversation_response",
+    "replay"
+  ],
+  "certified_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "authority_absence": {
+    "execution_authority": false,
+    "governance_authority": false,
+    "authorization_authority": false,
+    "provider_authority": false,
+    "worker_authority": false
+  },
+  "runtime_guarantees": {
+    "canonical_cognition_entrypoint": true,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_request_creation": false,
+    "authorization_creation": false,
+    "governance_decision_creation": false,
+    "planning": false,
+    "orchestration": false,
+    "multi_turn_memory": false,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "certification_result": "COGNITION_RUNTIME_V1_READY"
+}

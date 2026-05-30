@@ -1,0 +1,35 @@
+{
+  "artifact": "COGNITION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/cognition_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_cognition_runtime_v1.py"
+  ],
+  "accepted_cases": {
+    "cognition_session_started": true,
+    "cognition_session_completed": true,
+    "cognition_runtime_state_created": true,
+    "dependency_failure_fails_closed": true,
+    "replay_reconstruction_succeeds": true,
+    "prompt_reconstructable": true,
+    "intent_reconstructable": true,
+    "memory_consultation_reconstructable": true,
+    "response_reconstructable": true,
+    "conversation_result_reconstructable": true,
+    "no_provider_invocation": true,
+    "no_worker_invocation": true,
+    "no_execution_request": true,
+    "no_authority_introduced": true,
+    "append_only_replay_enforced": true,
+    "replay_corruption_detected": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_cognition_runtime_v1.py tests/test_conversation_runtime_v1.py tests/test_memory_based_response_runtime_v1.py tests/test_constitutional_memory_consultation_activation_v1.py tests/test_intent_routing_attachment_v1.py tests/test_intent_classifier_v1.py",
+    "result": "85 passed"
+  },
+  "deterministic_acceptance": true,
+  "replay_safe_validation": true
+}
