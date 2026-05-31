@@ -1,0 +1,30 @@
+{
+  "artifact": "FIRST_END_TO_END_GOVERNED_OPERATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operation": {
+    "human_request": "Create test.txt with FIRST_END_TO_END_GOVERNED_OPERATION_V1",
+    "provider": "openai",
+    "proposal_runtime": "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_V1",
+    "authorization_runtime": "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_V1",
+    "worker": "FILESYSTEM_CREATE_WORKER",
+    "authorized_scope": "FILESYSTEM_CREATE_FILE",
+    "result": "test.txt created with deterministic content"
+  },
+  "authority_certification": {
+    "provider_can_execute": false,
+    "provider_can_authorize": false,
+    "provider_can_govern": false,
+    "provider_can_dispatch": false,
+    "proposal_can_execute": false,
+    "proposal_can_authorize": false,
+    "authorization_runtime_executes_worker": false,
+    "worker_self_authorizes": false,
+    "worker_executes_only_authorized_request": true
+  },
+  "final_classification": {
+    "FIRST_END_TO_END_GOVERNED_OPERATION_STATUS": "READY"
+  }
+}

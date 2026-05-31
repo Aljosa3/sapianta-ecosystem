@@ -1,0 +1,36 @@
+{
+  "artifact": "FIRST_END_TO_END_GOVERNED_OPERATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "validation_command": "python -m pytest tests/test_first_end_to_end_governed_operation_v1.py",
+  "validation_result": "10 passed",
+  "acceptance_criteria": {
+    "human_to_provider_to_proposal": "PASSED",
+    "proposal_to_governed_authorization": "PASSED",
+    "authorization_to_authorized_worker_request": "PASSED",
+    "authorized_worker_request_to_filesystem_worker": "PASSED",
+    "successful_file_creation": "PASSED",
+    "full_replay_reconstruction": "PASSED",
+    "missing_proposal_fail_closed": "PASSED",
+    "missing_authorization_fail_closed": "PASSED",
+    "invalid_request_fail_closed": "PASSED",
+    "unknown_worker_fail_closed": "PASSED",
+    "scope_mismatch_fail_closed": "PASSED",
+    "append_only_replay_violation_fail_closed": "PASSED",
+    "replay_corruption_detection": "PASSED"
+  },
+  "created_file": {
+    "path": "test.txt",
+    "content": "FIRST_END_TO_END_GOVERNED_OPERATION_V1"
+  },
+  "forbidden_behavior_absent": {
+    "autonomous_planning": true,
+    "orchestration": true,
+    "reflection": true,
+    "multi_step_execution": true,
+    "retries": true,
+    "self_modification": true,
+    "multi_worker_execution": true
+  }
+}

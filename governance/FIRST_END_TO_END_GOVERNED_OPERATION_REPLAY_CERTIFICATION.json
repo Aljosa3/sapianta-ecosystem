@@ -1,0 +1,31 @@
+{
+  "artifact": "FIRST_END_TO_END_GOVERNED_OPERATION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "replay_chain": [
+    "provider_proposal_created",
+    "provider_proposal_returned",
+    "authorization_created",
+    "authorization_returned",
+    "authorized_worker_request",
+    "filesystem_worker_execution"
+  ],
+  "reconstructable_evidence": {
+    "human_request": true,
+    "provider_identity": true,
+    "proposal": true,
+    "governed_authorization": true,
+    "authorized_worker_request": true,
+    "worker_execution": true,
+    "execution_result": true
+  },
+  "replay_guarantees": {
+    "append_only": true,
+    "deterministic_hashes": true,
+    "corruption_detection": true,
+    "raw_provider_output_not_sent_to_worker": true,
+    "raw_authorization_artifact_not_sent_to_worker": true,
+    "worker_receives_only_authorized_worker_request": true
+  }
+}

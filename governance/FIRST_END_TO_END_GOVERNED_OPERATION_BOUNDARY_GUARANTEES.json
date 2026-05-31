@@ -1,0 +1,35 @@
+{
+  "artifact": "FIRST_END_TO_END_GOVERNED_OPERATION_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certified_on": "2026-05-31",
+  "scope_lock": {
+    "operation_count": 1,
+    "worker_count": 1,
+    "worker_id": "FILESYSTEM_CREATE_WORKER",
+    "operation": "CREATE_FILE",
+    "file_path_policy": "single_relative_filename_only",
+    "retries": false,
+    "orchestration": false,
+    "planning": false,
+    "reflection": false,
+    "multi_worker_execution": false
+  },
+  "authority_boundaries": {
+    "provider_authority": "ABSENT",
+    "proposal_authority": "ABSENT",
+    "authorization_authority": "GOVERNED_ONLY",
+    "authorized_worker_request_authority": "BOUNDED",
+    "worker_authority": "EXECUTION_ONLY_AFTER_AUTHORIZATION",
+    "replay_authority": "ABSENT"
+  },
+  "fail_closed_boundaries": {
+    "missing_proposal": "FAIL_CLOSED",
+    "missing_authorization": "FAIL_CLOSED",
+    "invalid_request": "FAIL_CLOSED",
+    "unknown_worker": "FAIL_CLOSED",
+    "scope_mismatch": "FAIL_CLOSED",
+    "append_only_violation": "FAIL_CLOSED",
+    "replay_corruption": "FAIL_CLOSED"
+  }
+}
