@@ -19,3 +19,6 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+
+# Daily usage runtime artifacts
+.aigol_daily_usage_runtime/
