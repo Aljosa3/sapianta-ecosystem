@@ -1,0 +1,52 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "provider_substitution_status": "CERTIFIED",
+  "certifies": {
+    "same_adapter_contract": true,
+    "same_proposal_envelope": true,
+    "same_replay_visibility": true,
+    "same_failure_model": true,
+    "same_authority_restrictions": true,
+    "same_governance_boundary": true,
+    "same_runtime_interface": true,
+    "governance_changes_required": false,
+    "replay_changes_required": false,
+    "authority_model_changes_required": false,
+    "execution_model_changes_required": false
+  },
+  "provider_classes_reviewed": [
+    "OpenAI",
+    "Claude",
+    "Codex",
+    "Gemini",
+    "Local LLM",
+    "Future Provider"
+  ],
+  "certification_answers": {
+    "openai_can_be_replaced_by_claude": true,
+    "claude_can_be_replaced_by_codex": true,
+    "codex_can_be_replaced_by_gemini": true,
+    "local_llm_can_replace_all": true,
+    "replay_can_remain_unchanged": true,
+    "governance_can_remain_unchanged": true,
+    "authority_can_remain_unchanged": true
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "provider_execution",
+    "worker_execution",
+    "governance_changes",
+    "authority_changes",
+    "orchestration",
+    "planning",
+    "reflection",
+    "dispatch"
+  ]
+}

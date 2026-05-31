@@ -1,0 +1,51 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTION_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "provider_substitution_status": "CERTIFIED",
+  "provider_may": [
+    "implement_same_adapter_contract",
+    "receive_request",
+    "return_provider_proposal_envelope",
+    "emit_replay_visible_proposal_evidence"
+  ],
+  "provider_may_not": [
+    "execute",
+    "authorize",
+    "govern",
+    "dispatch",
+    "invoke_worker",
+    "mutate_replay",
+    "mutate_memory",
+    "change_governance",
+    "change_execution_model",
+    "change_authority_model"
+  ],
+  "substitution_may": [
+    "replace_provider_identity",
+    "replace_provider_version",
+    "replace_provider_specific_response_parser",
+    "preserve_adapter_contract",
+    "preserve_proposal_envelope",
+    "preserve_replay_model"
+  ],
+  "substitution_may_not": [
+    "alter_governance_boundary",
+    "alter_authority_boundary",
+    "alter_worker_execution_boundary",
+    "bypass_replay",
+    "introduce_orchestration",
+    "introduce_dispatch",
+    "introduce_planning",
+    "introduce_reflection"
+  ],
+  "authority_status": {
+    "provider_execution_authority": false,
+    "provider_authorization_authority": false,
+    "provider_governance_authority": false,
+    "provider_dispatch_authority": false,
+    "provider_worker_authority": false,
+    "provider_replay_authority": false,
+    "provider_memory_authority": false
+  }
+}

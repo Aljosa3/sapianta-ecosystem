@@ -1,0 +1,52 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "REPLAY_CERTIFIED",
+  "provider_substitution_status": "CERTIFIED",
+  "replay_model": "UNCHANGED",
+  "replay_events": [
+    "PROVIDER_PROPOSAL_CREATED",
+    "PROVIDER_PROPOSAL_RETURNED",
+    "FAILED_CLOSED"
+  ],
+  "replay_fields_preserved": [
+    "provider_id",
+    "provider_type",
+    "provider_version",
+    "provider_status",
+    "provider_metadata",
+    "request",
+    "response",
+    "timestamp",
+    "proposal_id",
+    "proposal_hash",
+    "provider_identity_hash"
+  ],
+  "replay_reconstruction_preserved": [
+    "provider identity",
+    "provider version",
+    "provider metadata",
+    "request",
+    "response",
+    "timestamp",
+    "proposal hash",
+    "append-only ordering",
+    "failure state"
+  ],
+  "provider_classes": [
+    "OpenAI",
+    "Claude",
+    "Codex",
+    "Gemini",
+    "Local LLM",
+    "Future Provider"
+  ],
+  "replay_does_not_grant": [
+    "execution_authority",
+    "authorization_authority",
+    "governance_authority",
+    "dispatch_authority",
+    "worker_authority",
+    "memory_authority"
+  ]
+}

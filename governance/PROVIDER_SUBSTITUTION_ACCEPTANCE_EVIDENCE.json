@@ -1,0 +1,46 @@
+{
+  "artifact": "PROVIDER_SUBSTITUTION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "provider_substitution_status": "CERTIFIED",
+  "runtime_evidence": {
+    "test": "tests/test_minimal_provider_attachment_runtime_v1.py::test_provider_substitutability_uses_same_contract",
+    "providers_exercised": [
+      "openai",
+      "claude",
+      "codex",
+      "gemini",
+      "local_llm"
+    ],
+    "evidence": "Each provider identity used the same ProviderRegistry, ProviderAdapter contract, ProviderProposalEnvelope, run_provider_attachment runtime, and reconstruct_provider_attachment_replay function."
+  },
+  "real_provider_evidence": {
+    "implemented_provider": "OpenAI",
+    "artifact": "governance/FIRST_REAL_PROVIDER_ATTACHMENT_V1.md",
+    "status": "FIRST_REAL_PROVIDER_ATTACHMENT_STATUS = READY"
+  },
+  "metadata_evidence": {
+    "artifact": "governance/MINIMAL_PROVIDER_WORKER_METADATA_V1.md",
+    "metadata_authority_impact": "NONE",
+    "runtime_behavior_change": "NONE"
+  },
+  "boundary_evidence": [
+    "governance/MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_V1.md",
+    "governance/FIRST_REAL_PROVIDER_ATTACHMENT_V1.md",
+    "governance/PROVIDER_SUBSTITUTABILITY_REVIEW_V1.md",
+    "governance/PROVIDER_ATTACHMENT_ARCHITECTURE_REVIEW_V1.md"
+  ],
+  "accepted_conditions": [
+    "same adapter contract",
+    "same proposal envelope",
+    "same replay visibility",
+    "same failure model",
+    "same authority restrictions",
+    "same governance boundary",
+    "same runtime interface",
+    "no governance changes",
+    "no replay changes",
+    "no authority model changes",
+    "no execution model changes"
+  ]
+}
