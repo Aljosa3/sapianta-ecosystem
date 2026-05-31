@@ -1,0 +1,32 @@
+{
+  "artifact": "PROVIDER_WORKER_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "provider_worker_compatibility_status": "CERTIFIED",
+  "evidence_sources": [
+    "governance/PROVIDER_SUBSTITUTION_PROOF_V1.md",
+    "governance/FIRST_EXTERNAL_WORKER_ATTACHMENT_V1.md",
+    "governance/WORKER_ATTACHMENT_BOUNDARY_V1.md",
+    "governance/COGNITION_PROPOSAL_TO_EXECUTION_REQUEST_BRIDGE_V1.md",
+    "governance/EXECUTION_AUTHORIZATION_MODEL_V1.md",
+    "governance/AUTHORIZATION_AUTHORITY_BOUNDARIES_V1.md",
+    "governance/AUTHORIZATION_FAIL_CLOSED_RULES_V1.md",
+    "governance/CAPABILITY_AUTHORIZATION_MAPPING_V1.md",
+    "governance/WORKER_REPLAY_MAPPING_V1.md",
+    "governance/EXTERNAL_WORKER_REPLAY_MODEL_V1.md"
+  ],
+  "accepted_findings": [
+    "Provider proposals are proposal evidence only.",
+    "Provider proposals cannot directly invoke workers.",
+    "Provider proposals cannot dispatch work.",
+    "Provider proposals cannot mutate worker state.",
+    "Governance may interpret proposal evidence.",
+    "Governance may determine admissibility.",
+    "Authorization is required before worker execution.",
+    "Workers receive only authorized execution requests.",
+    "Replay must reconstruct proposal, governance, authorization, worker request, worker result, and governed result.",
+    "All unresolved boundary states fail closed."
+  ],
+  "review_only": true,
+  "runtime_modified": false
+}

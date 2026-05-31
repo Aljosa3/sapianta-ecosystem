@@ -1,0 +1,46 @@
+{
+  "artifact": "PROVIDER_WORKER_COMPATIBILITY_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "provider_worker_compatibility_status": "CERTIFIED",
+  "certifies": {
+    "provider_proposal_directly_invokes_worker": false,
+    "provider_proposal_directly_dispatches_work": false,
+    "provider_proposal_directly_mutates_worker_state": false,
+    "provider_proposal_can_be_interpreted_by_governance": true,
+    "governance_can_determine_admissibility": true,
+    "worker_executes_only_after_governance_approval": true,
+    "provider_authority_becomes_worker_authority": false,
+    "provider_authority": false,
+    "proposal_authority": false,
+    "replay_authority": false,
+    "memory_authority": false,
+    "worker_authority_downstream_only": true
+  },
+  "reviewed_worker_domains": [
+    "Filesystem Worker",
+    "API Worker",
+    "Database Worker",
+    "Local Tool Worker",
+    "Remote Tool Worker",
+    "Future Domain Worker"
+  ],
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "worker_runtime",
+    "execution_engine",
+    "authorization_engine",
+    "governance_activation",
+    "orchestration",
+    "planning",
+    "reflection",
+    "dispatch",
+    "autonomous_execution",
+    "runtime_mutation"
+  ]
+}

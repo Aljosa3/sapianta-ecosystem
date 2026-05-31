@@ -1,0 +1,47 @@
+{
+  "artifact": "PROVIDER_WORKER_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "provider_may": [
+    "produce_proposal",
+    "emit_replay_visible_provider_evidence",
+    "approach_governance_as_untrusted_proposal"
+  ],
+  "provider_may_not": [
+    "invoke_worker",
+    "dispatch_work",
+    "mutate_worker_state",
+    "authorize_worker_execution",
+    "govern_worker_admissibility",
+    "obtain_worker_authority",
+    "bypass_governance",
+    "bypass_authorization",
+    "bypass_replay"
+  ],
+  "governance_may": [
+    "interpret_proposal",
+    "review_admissibility",
+    "reject_proposal",
+    "authorize_bounded_execution_when_valid"
+  ],
+  "worker_may": [
+    "execute_authorized_request",
+    "emit_worker_result_evidence",
+    "emit_termination_evidence"
+  ],
+  "worker_may_not": [
+    "trust_raw_provider_proposal",
+    "accept_raw_provider_authority",
+    "accept_raw_cognition_authority",
+    "self_authorize",
+    "bypass_replay",
+    "mutate_governance"
+  ],
+  "authority_status": {
+    "provider_authority": false,
+    "proposal_authority": false,
+    "replay_authority": false,
+    "memory_authority": false,
+    "worker_authority_downstream_governed_only": true
+  }
+}

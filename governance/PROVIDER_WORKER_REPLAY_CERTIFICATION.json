@@ -1,0 +1,41 @@
+{
+  "artifact": "PROVIDER_WORKER_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "REPLAY_CERTIFIED",
+  "provider_worker_compatibility_status": "CERTIFIED",
+  "replay_must_reconstruct": [
+    "who_proposed",
+    "who_governed",
+    "who_authorized",
+    "who_executed",
+    "what_result_occurred"
+  ],
+  "required_replay_chain": [
+    "proposal_creation",
+    "proposal_review",
+    "governance_decision",
+    "authorization_decision",
+    "worker_request",
+    "worker_result",
+    "governed_result"
+  ],
+  "failure_replay_required_for": [
+    "unknown_proposal",
+    "malformed_proposal",
+    "missing_proposal_metadata",
+    "missing_governance_review",
+    "missing_authorization",
+    "unknown_worker",
+    "worker_unavailable",
+    "worker_domain_mismatch",
+    "worker_capability_mismatch"
+  ],
+  "replay_does_not_grant": [
+    "provider_authority",
+    "proposal_authority",
+    "authorization_authority",
+    "governance_authority",
+    "worker_authority",
+    "memory_authority"
+  ]
+}
