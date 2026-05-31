@@ -1,0 +1,41 @@
+{
+  "artifact": "AIGOL_OPERATOR_INTERFACE_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "evidence_sources": [
+    "aigol/cli/aigol_cli.py",
+    "aigol/runtime/operator/runtime_execution_cli.py",
+    "aigol/runtime/operator/runtime_cli.py",
+    "aigol/runtime/operator_cli.py",
+    "aigol/runtime/minimal_operator_entrypoint.py",
+    "aigol/runtime/replay_summary_command.py",
+    "aigol/provider/provider_runtime.py",
+    "aigol/authorization/authorization_runtime.py",
+    "aigol/workers/filesystem_worker.py",
+    "aigol/workers/github_worker.py",
+    "tests/test_aigol_cli_foundation_v1.py",
+    "tests/test_minimal_runtime_operator_cli_v1.py",
+    "tests/test_minimal_runtime_contract_inspection_v1.py",
+    "tests/test_replay_summary_command_v1.py",
+    "tests/test_first_real_domain_worker_v1.py"
+  ],
+  "accepted_findings": {
+    "existing_cli_commands_reviewed": true,
+    "existing_runtime_inspection_reviewed": true,
+    "existing_replay_tooling_reviewed": true,
+    "existing_provider_interfaces_reviewed": true,
+    "existing_worker_interfaces_reviewed": true,
+    "existing_authorization_interfaces_reviewed": true,
+    "operator_gap_analysis_completed": true,
+    "duplication_analysis_completed": true
+  },
+  "final_answers": {
+    "can_aigol_already_be_operated_today": "YES",
+    "is_new_standalone_operator_cli_required": "NO",
+    "smallest_next_step": "extend existing operator CLI surface for provider-authorization-domain-worker operation"
+  },
+  "classification": {
+    "AIGOL_OPERATOR_INTERFACE_STATUS": "READY_FOR_EXTENSION"
+  }
+}
