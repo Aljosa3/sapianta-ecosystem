@@ -1,0 +1,39 @@
+{
+  "artifact": "FIRST_USEFUL_AIGOL_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "selected_domain": "configuration_management_repository_marker",
+  "source_runtime_proof": "FIRST_END_TO_END_GOVERNED_OPERATION_V1",
+  "validation_command": "python -m pytest tests/test_first_end_to_end_governed_operation_v1.py",
+  "validation_result": "10 passed",
+  "usefulness_evidence": {
+    "real_user_request_defined": true,
+    "provider_alone_comparison_defined": true,
+    "governance_value_demonstrated": true,
+    "authorization_value_demonstrated": true,
+    "replay_value_demonstrated": true,
+    "worker_value_demonstrated": true,
+    "audit_evidence_value_demonstrated": true
+  },
+  "measurable_value": {
+    "provider_proposal_recorded": true,
+    "governed_authorization_recorded": true,
+    "authorized_worker_request_recorded": true,
+    "worker_execution_recorded": true,
+    "execution_result_recorded": true,
+    "full_replay_reconstruction": true,
+    "fail_closed_cases_validated": 7,
+    "focused_tests_passed": 10
+  },
+  "direct_provider_gap": {
+    "governed_authorization": "missing",
+    "authorized_worker_request": "missing",
+    "worker_boundary_enforcement": "missing",
+    "append_only_replay": "missing",
+    "execution_result_audit_chain": "missing"
+  },
+  "final_classification": {
+    "FIRST_USEFUL_AIGOL_STATUS": "READY"
+  }
+}

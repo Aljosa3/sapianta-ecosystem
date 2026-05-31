@@ -1,25 +1,38 @@
 {
-  "milestone": "FIRST_USEFUL_AIGOL_USAGE_GUIDE_V1",
-  "certification": "first_useful_aigol_usage_guide_certified",
-  "certifies": {
-    "operator_can_use_first_useful_aigol_without_architecture_docs": true,
-    "usage_guide_explains_architecture_overview": true,
-    "usage_guide_explains_core_invariant": true,
-    "usage_guide_explains_operator_entrypoint": true,
-    "usage_guide_explains_governed_result_summary": true,
-    "usage_guide_explains_replay_summary": true,
-    "usage_guide_explains_evidence_interpretation": true,
-    "usage_guide_explains_known_boundaries": true
+  "artifact": "FIRST_USEFUL_AIGOL_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "certifies": "FIRST_USEFUL_AIGOL_V1",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "selected_domain": "Configuration Management / Repository Operations",
+  "selected_operation": "governed creation of one replay-certified marker file",
+  "certification_basis": {
+    "first_end_to_end_governed_operation_status": "READY",
+    "provider_proposal_runtime_available": true,
+    "governed_authorization_runtime_available": true,
+    "authorized_worker_request_available": true,
+    "filesystem_worker_available": true,
+    "full_replay_reconstruction_validated": true
   },
-  "certifies_not_introduced": {
-    "new_runtime_behavior": true,
-    "new_capability": true,
-    "orchestration": true,
-    "agent_runtime": true,
-    "memory": true,
-    "mutation": true,
-    "network_execution": true,
-    "shell_execution": true
+  "value_certification": {
+    "more_valuable_than_direct_provider_call": true,
+    "governance_value": "explicit governed authorization before mutation",
+    "authorization_value": "worker receives only authorized worker request",
+    "replay_value": "full path reconstructable with deterministic hashes",
+    "worker_value": "bounded execution of a single permitted filesystem operation",
+    "evidence_value": "audit chain proves proposal, authorization, request, execution, and result"
   },
-  "status": "FIRST_USEFUL_AIGOL_OPERATOR_GUIDANCE_ESTABLISHED"
+  "scope_boundaries": {
+    "provider_execution": false,
+    "worker_orchestration": false,
+    "shell_execution": false,
+    "api_invocation": false,
+    "autonomous_planning": false,
+    "multi_worker_execution": false,
+    "unbounded_filesystem_mutation": false
+  },
+  "final_classification": {
+    "FIRST_USEFUL_AIGOL_STATUS": "READY"
+  }
 }
