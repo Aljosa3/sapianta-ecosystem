@@ -1,0 +1,49 @@
+{
+  "artifact": "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "REPLAY_CERTIFIED",
+  "minimal_governed_worker_authorization_runtime_status": "READY",
+  "replay_visibility": "MANDATORY",
+  "append_only": true,
+  "replay_events": [
+    "AUTHORIZATION_CREATED",
+    "AUTHORIZATION_RETURNED",
+    "FAILED_CLOSED"
+  ],
+  "replay_must_reconstruct": [
+    "who_proposed",
+    "who_reviewed",
+    "which_worker_was_targeted",
+    "what_scope_was_authorized",
+    "when_authorization_was_granted"
+  ],
+  "replay_must_capture": [
+    "authorization_id",
+    "proposal_id",
+    "proposal_lineage",
+    "governance_review",
+    "worker_id",
+    "worker_target",
+    "authorization_scope",
+    "authorization_timestamp",
+    "authorization_status",
+    "authorization_hash"
+  ],
+  "replay_does_not_grant": [
+    "provider_authority",
+    "proposal_authority",
+    "cognition_authority",
+    "replay_authority",
+    "worker_self_authorization",
+    "execution_authority"
+  ],
+  "failure_replay_required_for": [
+    "missing_proposal",
+    "unknown_worker",
+    "missing_scope",
+    "malformed_authorization",
+    "invalid_evidence",
+    "replay_corruption",
+    "append_only_violation"
+  ]
+}

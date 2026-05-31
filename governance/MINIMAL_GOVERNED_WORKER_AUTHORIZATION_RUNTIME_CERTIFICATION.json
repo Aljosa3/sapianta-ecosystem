@@ -1,0 +1,40 @@
+{
+  "artifact": "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "minimal_governed_worker_authorization_runtime_status": "READY",
+  "certifies": {
+    "authorization_record_created": true,
+    "authorization_record_validated": true,
+    "authorization_hash_deterministic": true,
+    "authorization_replay_visible": true,
+    "proposal_lineage_validated": true,
+    "worker_identity_validated": true,
+    "scope_integrity_validated": true,
+    "required_evidence_validated": true,
+    "worker_execution_performed": false,
+    "worker_dispatch_performed": false,
+    "worker_invoked": false,
+    "provider_can_authorize": false,
+    "proposal_can_authorize": false,
+    "cognition_can_authorize": false,
+    "replay_can_authorize": false,
+    "worker_can_self_authorize": false
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "worker_execution",
+    "dispatch_runtime",
+    "orchestration",
+    "planning",
+    "reflection",
+    "autonomous_behavior",
+    "execution_engine",
+    "worker_mutation"
+  ]
+}

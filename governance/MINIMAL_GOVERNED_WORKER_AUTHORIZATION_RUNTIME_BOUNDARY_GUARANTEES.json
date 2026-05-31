@@ -1,0 +1,44 @@
+{
+  "artifact": "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "authorization_runtime_may": [
+    "validate_proposal_lineage",
+    "validate_worker_identity",
+    "validate_scope_integrity",
+    "create_authorization_record",
+    "validate_authorization_record",
+    "record_replay_evidence",
+    "return_authorization_artifact"
+  ],
+  "authorization_runtime_may_not": [
+    "execute_worker",
+    "dispatch_worker",
+    "invoke_worker",
+    "orchestrate",
+    "plan",
+    "reflect",
+    "act_autonomously",
+    "mutate_worker",
+    "mutate_replay",
+    "infer_missing_authority"
+  ],
+  "non_authorizing_sources": [
+    "provider",
+    "proposal",
+    "cognition",
+    "replay",
+    "worker"
+  ],
+  "authority_status": {
+    "provider_can_authorize": false,
+    "proposal_can_authorize": false,
+    "cognition_can_authorize": false,
+    "replay_can_authorize": false,
+    "worker_can_self_authorize": false,
+    "authorization_runtime_records_governed_authorization_only": true,
+    "worker_invoked": false,
+    "dispatch_performed": false,
+    "execution_performed": false
+  }
+}

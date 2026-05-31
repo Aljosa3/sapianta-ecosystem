@@ -1,0 +1,33 @@
+{
+  "artifact": "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "minimal_governed_worker_authorization_runtime_status": "READY",
+  "validation": {
+    "command": "python -m pytest tests/test_minimal_governed_worker_authorization_runtime_v1.py",
+    "result": "10 passed"
+  },
+  "accepted_cases": [
+    "valid authorization record created",
+    "authorization record is replay-visible",
+    "replay reconstructs proposal, reviewer, worker target, scope, and timestamp",
+    "authorization runtime does not execute",
+    "authorization runtime does not dispatch",
+    "authorization runtime does not invoke worker",
+    "missing proposal fails closed",
+    "unknown worker fails closed",
+    "missing scope fails closed",
+    "invalid evidence fails closed",
+    "malformed authorization fails closed",
+    "replay corruption is detected",
+    "append-only replay violation fails closed"
+  ],
+  "replay_evidence": {
+    "who_proposed_reconstructable": true,
+    "who_reviewed_reconstructable": true,
+    "worker_target_reconstructable": true,
+    "authorized_scope_reconstructable": true,
+    "authorization_timestamp_reconstructable": true,
+    "append_only_replay_preserved": true
+  }
+}
