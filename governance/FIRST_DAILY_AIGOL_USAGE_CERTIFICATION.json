@@ -1,0 +1,43 @@
+{
+  "artifact": "FIRST_DAILY_AIGOL_USAGE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operations": {
+    "governed_operations_attempted": 2,
+    "successful_operations": 1,
+    "failed_operations": 1,
+    "fail_closed_operations": 1,
+    "unexpected_failures": 0
+  },
+  "observed_success": {
+    "operation_id": "FIRST_DAILY_AIGOL_USAGE_V1_OPERATION_001",
+    "status": "SUCCEEDED",
+    "execution_status": "SUCCEEDED",
+    "proposal_id": "FIRST_DAILY_AIGOL_USAGE_V1_OPERATION_001:PROPOSAL",
+    "authorization_id": "FIRST_DAILY_AIGOL_USAGE_V1_OPERATION_001:AUTHORIZATION",
+    "replay_reference": ".aigol_daily_usage_runtime/FIRST_DAILY_AIGOL_USAGE_V1_OPERATION_001",
+    "target": "/tmp/first_daily_aigol_usage_v1.txt"
+  },
+  "observed_failure": {
+    "operation_id": "FIRST_DAILY_AIGOL_USAGE_V1_OPERATION_002",
+    "status": "FAILED_CLOSED",
+    "execution_status": "FAILED_CLOSED",
+    "failure_reason": "unknown worker"
+  },
+  "certifies": {
+    "operator_can_submit_governed_operation": true,
+    "replay_evidence_created": true,
+    "authorization_visible": true,
+    "worker_result_visible": true,
+    "fail_closed_behavior_observed": true,
+    "new_architecture_introduced": false,
+    "orchestration_introduced": false,
+    "planning_introduced": false,
+    "autonomous_behavior_introduced": false
+  },
+  "final_classification": {
+    "FIRST_DAILY_AIGOL_USAGE_STATUS": "READY"
+  }
+}
