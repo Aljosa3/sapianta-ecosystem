@@ -1,0 +1,26 @@
+{
+  "artifact": "AUTHORIZED_WORKER_REQUEST_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "authorized_worker_request_status": "CERTIFIED",
+  "evidence_sources": [
+    "governance/MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_V1.md",
+    "governance/GOVERNED_WORKER_AUTHORIZATION_MODEL_V1.md",
+    "governance/WORKER_ATTACHMENT_BOUNDARY_V1.md",
+    "governance/WORKER_AUTHORIZATION_REQUIREMENTS_V1.md",
+    "governance/AUTHORIZATION_REPLAY_MODEL_V1.md",
+    "governance/MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_REPLAY_CERTIFICATION.json"
+  ],
+  "accepted_findings": [
+    "Authorization artifact does not execute work.",
+    "Authorized worker request does not execute work.",
+    "Worker must not receive raw proposal.",
+    "Worker must not receive raw authorization artifact.",
+    "Worker may receive only authorized worker request.",
+    "Authorized request cannot exceed authorization scope.",
+    "Replay must reconstruct proposal, authorization, authorized request, worker target, scope, and lineage.",
+    "All unresolved request states fail closed."
+  ],
+  "review_only": true,
+  "runtime_modified": false
+}

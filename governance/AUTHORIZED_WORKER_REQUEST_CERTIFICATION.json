@@ -1,0 +1,47 @@
+{
+  "artifact": "AUTHORIZED_WORKER_REQUEST_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "authorized_worker_request_status": "CERTIFIED",
+  "certifies": {
+    "authorization_artifact_can_execute_work": false,
+    "authorized_worker_request_can_execute_work": false,
+    "worker_can_receive_raw_proposal": false,
+    "worker_can_receive_raw_authorization_artifact": false,
+    "worker_can_receive_only_authorized_worker_request": true,
+    "authorized_request_can_exceed_authorization_scope": false,
+    "provider_authority": false,
+    "proposal_authority": false,
+    "authorization_authority": "BOUNDED",
+    "authorized_request_authority": "BOUNDED",
+    "worker_authority": "EXECUTION_ONLY"
+  },
+  "required_fields": [
+    "request_id",
+    "authorization_id",
+    "worker_id",
+    "authorized_scope",
+    "request_timestamp",
+    "request_hash"
+  ],
+  "required_lineage": [
+    "proposal_reference",
+    "authorization_hash",
+    "capability_binding",
+    "replay_reference"
+  ],
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "worker_execution",
+    "execution_runtime",
+    "dispatch_runtime",
+    "orchestration",
+    "planning",
+    "reflection"
+  ]
+}
