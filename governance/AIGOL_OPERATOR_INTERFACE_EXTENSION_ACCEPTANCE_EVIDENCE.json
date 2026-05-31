@@ -1,0 +1,30 @@
+{
+  "artifact": "AIGOL_OPERATOR_INTERFACE_EXTENSION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "validation_commands": [
+    "python -m pytest tests/test_aigol_operator_interface_extension_v1.py",
+    "python -m pytest tests/test_aigol_operator_interface_extension_v1.py tests/test_aigol_cli_foundation_v1.py tests/test_first_end_to_end_governed_operation_v1.py tests/test_first_real_domain_worker_v1.py"
+  ],
+  "validation_results": [
+    "9 passed",
+    "46 passed"
+  ],
+  "acceptance_criteria": {
+    "operator_can_submit_governed_operation": "PASSED",
+    "proposal_id_returned": "PASSED",
+    "authorization_id_returned": "PASSED",
+    "worker_result_returned": "PASSED",
+    "replay_id_returned": "PASSED",
+    "execution_status_returned": "PASSED",
+    "unknown_worker_fails_closed": "PASSED",
+    "missing_authorization_fails_closed": "PASSED",
+    "invalid_proposal_fails_closed": "PASSED",
+    "worker_scope_mismatch_fails_closed": "PASSED",
+    "append_only_replay_violation_fails_closed": "PASSED"
+  },
+  "final_classification": {
+    "AIGOL_OPERATOR_INTERFACE_EXTENSION_STATUS": "READY"
+  }
+}

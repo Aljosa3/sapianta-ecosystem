@@ -1,0 +1,34 @@
+{
+  "artifact": "AIGOL_OPERATOR_INTERFACE_EXTENSION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "extension_target": "aigol.cli.aigol_cli",
+  "command": "run-governed",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "existing_cli_extended": true,
+    "new_cli_framework_created": false,
+    "provider_runtime_reused": true,
+    "authorization_runtime_reused": true,
+    "filesystem_worker_reused": true,
+    "replay_reconstruction_reused": true,
+    "operator_receives_proposal_id": true,
+    "operator_receives_authorization_id": true,
+    "operator_receives_worker_result": true,
+    "operator_receives_replay_id": true,
+    "operator_receives_execution_status": true
+  },
+  "scope": {
+    "supported_worker": "filesystem",
+    "supported_operation": "create-file",
+    "multi_step_execution": false,
+    "orchestration": false,
+    "planning": false,
+    "reflection": false,
+    "autonomous_agents": false
+  },
+  "final_classification": {
+    "AIGOL_OPERATOR_INTERFACE_EXTENSION_STATUS": "READY"
+  }
+}

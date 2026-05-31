@@ -45,6 +45,7 @@ from aigol.cli.commands.moc import (
 )
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
+from aigol.cli.commands.run_governed import run_governed_operation_command
 from aigol.cli.commands.status import status_summary
 from aigol.cognition.authority_propagation import render_authority_propagation_summary
 from aigol.cognition.integrity_summary import render_cognition_integrity_summary
@@ -156,6 +157,16 @@ def build_parser() -> argparse.ArgumentParser:
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
     diagnostics_runtime = diagnostics_sub.add_parser("runtime")
     diagnostics_runtime.add_argument("--extension-id", default="")
+
+    run_governed = subcommands.add_parser("run-governed")
+    run_governed.add_argument("--worker", required=True)
+    run_governed.add_argument("--operation", required=True)
+    run_governed.add_argument("--target", required=True)
+    run_governed.add_argument("--content", default="FIRST_END_TO_END_GOVERNED_OPERATION_V1")
+    run_governed.add_argument("--operation-id", default="AIGOL-RUN-GOVERNED-000001")
+    run_governed.add_argument("--created-at", default="2026-05-31T00:00:00Z")
+    run_governed.add_argument("--runtime-root", default=".aigol_operator_runtime")
+    run_governed.add_argument("--workspace", default=".")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -332,6 +343,17 @@ def run_command(args: argparse.Namespace) -> dict:
         return verify_replay(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
+    if args.command == "run-governed":
+        return run_governed_operation_command(
+            worker=args.worker,
+            operation=args.operation,
+            target=args.target,
+            content=args.content,
+            operation_id=args.operation_id,
+            created_at=args.created_at,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+        )
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
             input_path=args.input,
@@ -616,6 +638,23 @@ def render_command_result(result: dict) -> str:
                 f"native_host_launch_ready: {diagnostics.get('native_host_launch_ready')}",
                 f"chrome_runtime_launch_allowed: {diagnostics.get('chrome_runtime_launch_allowed')}",
                 f"failure_stage: {result.get('failure_stage')}",
+            ],
+        )
+    if command == "aigol run-governed":
+        return render_card(
+            "AIGOL RUN GOVERNED",
+            [
+                f"status: {result.get('status')}",
+                f"execution_status: {result.get('execution_status')}",
+                f"proposal_id: {result.get('proposal_id')}",
+                f"authorization_id: {result.get('authorization_id')}",
+                f"worker_id: {result.get('worker_id')}",
+                f"worker_result: {_json(result.get('worker_result', {}))}",
+                f"replay_id: {result.get('replay_id')}",
+                f"replay_reference: {result.get('replay_reference')}",
+                f"target: {result.get('target')}",
+                f"fail_closed: {result.get('fail_closed')}",
+                f"failure_reason: {result.get('failure_reason', '')}",
             ],
         )
     if command == "aigol moc validate-contract":

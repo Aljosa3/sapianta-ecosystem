@@ -1,0 +1,30 @@
+{
+  "artifact": "AIGOL_OPERATOR_INTERFACE_EXTENSION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "replay_root_shape": "runtime_root / operation_id / {provider, authorization, worker}",
+  "replay_chain": [
+    "provider_proposal_created",
+    "provider_proposal_returned",
+    "authorization_created",
+    "authorization_returned",
+    "authorized_worker_request",
+    "filesystem_worker_execution"
+  ],
+  "operator_visible_fields": {
+    "proposal_id": true,
+    "authorization_id": true,
+    "worker_result": true,
+    "replay_id": true,
+    "execution_status": true
+  },
+  "replay_guarantees": {
+    "append_only": true,
+    "deterministic_hashes": true,
+    "provider_replay_reconstructable": true,
+    "authorization_replay_reconstructable": true,
+    "worker_replay_reconstructable": true,
+    "replay_bypass_absent": true
+  }
+}

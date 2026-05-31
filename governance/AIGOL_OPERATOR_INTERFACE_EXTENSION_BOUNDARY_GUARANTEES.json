@@ -1,0 +1,30 @@
+{
+  "artifact": "AIGOL_OPERATOR_INTERFACE_EXTENSION_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certified_on": "2026-05-31",
+  "forbidden_expansion_absent": {
+    "new_cli_framework": true,
+    "autonomous_agents": true,
+    "orchestration": true,
+    "planning": true,
+    "reflection": true,
+    "self_improvement": true,
+    "multi_step_execution": true
+  },
+  "fail_closed_boundaries": {
+    "unknown_worker": "FAIL_CLOSED",
+    "missing_authorization": "FAIL_CLOSED",
+    "invalid_proposal": "FAIL_CLOSED",
+    "worker_scope_mismatch": "FAIL_CLOSED",
+    "append_only_violation": "FAIL_CLOSED"
+  },
+  "authority_boundaries": {
+    "provider_authority": "ABSENT",
+    "proposal_authority": "ABSENT",
+    "authorization_authority": "GOVERNED_ONLY",
+    "worker_authority": "BOUNDED_CREATE_FILE_AFTER_AUTHORIZATION",
+    "operator_cli_authority": "NONE",
+    "replay_authority": "ABSENT"
+  }
+}
