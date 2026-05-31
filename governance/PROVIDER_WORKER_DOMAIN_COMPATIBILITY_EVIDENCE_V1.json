@@ -1,0 +1,125 @@
+{
+  "artifact": "PROVIDER_WORKER_DOMAIN_COMPATIBILITY_EVIDENCE",
+  "version": "V1",
+  "status": "REVIEW_COMPLETE",
+  "scope": "governance_only_architectural_review",
+  "non_goals_preserved": {
+    "provider_runtime_modified": false,
+    "worker_runtime_modified": false,
+    "schemas_modified": false,
+    "replay_modified": false,
+    "cognition_modified": false,
+    "governance_modified": false,
+    "coordinators_introduced": false,
+    "orchestration_introduced": false,
+    "domain_routing_introduced": false
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "provider_readiness": {
+    "status": "OPTIONAL_NOW",
+    "metadata": {
+      "domain": "OPTIONAL_NOW",
+      "capability": "OPTIONAL_NOW",
+      "resource_type": "OPTIONAL_NOW"
+    },
+    "evidence": [
+      "governance/MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_V1.md",
+      "governance/FIRST_REAL_PROVIDER_ATTACHMENT_V1.md",
+      "governance/PROVIDER_SUBSTITUTABILITY_REVIEW_V1.md",
+      "governance/CROSS_DOMAIN_READINESS_REVIEW_V1.md"
+    ],
+    "finding": "Provider metadata is sufficient for first attachment; minimal domain metadata should be added before large-scale provider expansion."
+  },
+  "worker_readiness": {
+    "status": "OPTIONAL_NOW",
+    "metadata": {
+      "domain": "OPTIONAL_NOW",
+      "capability": "REQUIRED_NOW",
+      "resource_type": "OPTIONAL_NOW"
+    },
+    "evidence": [
+      "governance/FIRST_EXTERNAL_WORKER_ATTACHMENT_V1.md",
+      "governance/WORKER_ECOSYSTEM_READINESS_REVIEW_V1.md",
+      "governance/WORKER_TAXONOMY_ANALYSIS_V1.md",
+      "governance/CAPABILITY_CLASS_MODEL_V1.md"
+    ],
+    "finding": "Worker capability metadata matters before worker expansion because workers are execution participants; domain and resource_type are useful descriptive metadata."
+  },
+  "replay_compatibility": {
+    "status": "PARTIAL",
+    "benefits_from": [
+      "domain visibility",
+      "capability visibility",
+      "resource visibility"
+    ],
+    "evidence": [
+      "governance/CROSS_DOMAIN_READINESS_REVIEW_V1.md",
+      "governance/COGNITION_FOUNDATION_REPLAY_CERTIFICATION.json",
+      "governance/MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_REPLAY_CERTIFICATION.json",
+      "governance/FIRST_REAL_PROVIDER_ATTACHMENT_REPLAY_CERTIFICATION.json",
+      "governance/EXTERNAL_WORKER_REPLAY_MODEL_V1.md"
+    ],
+    "finding": "Replay can reconstruct current component-local behavior, but future cross-domain analysis would be harder without domain/capability/resource visibility."
+  },
+  "cognition_compatibility": {
+    "status": "BENEFICIAL",
+    "future_needs": [
+      "domain awareness",
+      "capability awareness",
+      "resource awareness"
+    ],
+    "evidence": [
+      "governance/COGNITION_FOUNDATION_FREEZE_V1.md",
+      "governance/INTENT_ROUTING_MODEL_V1.md",
+      "governance/CROSS_DOMAIN_READINESS_REVIEW_V1.md"
+    ],
+    "finding": "Future cognition can use metadata for proposal evidence and dependency reasoning without gaining authority."
+  },
+  "cross_domain_compatibility": {
+    "domain": {
+      "classification": "CRITICAL",
+      "finding": "Domain identity is essential for multi-domain reasoning and replay grouping."
+    },
+    "capability": {
+      "classification": "CRITICAL",
+      "finding": "Capability is already canonical and is the safest bridge to future coordination."
+    },
+    "resource_type": {
+      "classification": "USEFUL",
+      "finding": "Resource type reduces future ambiguity across providers, workers, artifacts, and capabilities."
+    }
+  },
+  "technical_debt_analysis": {
+    "option_a_add_metadata_now": {
+      "migration_effort": "LOW",
+      "replay_impact": "POSITIVE",
+      "governance_impact": "LOW_IF_DESCRIPTIVE_ONLY",
+      "future_compatibility": "HIGH",
+      "risk": "over_specifying_domain_values_before_ontology",
+      "mitigation": "keep_fields_minimal_descriptive_optional_and_non_authoritative"
+    },
+    "option_b_add_metadata_later": {
+      "migration_effort": "HIGH_AFTER_SCALE",
+      "replay_impact": "VERSIONED_BACKFILL_OR_INFERENCE_REQUIRED",
+      "governance_impact": "HISTORICAL_RECORDS_WITHOUT_METADATA_REQUIRE_EXCEPTIONS",
+      "future_compatibility": "REDUCED",
+      "risk": "technical_debt_accumulates_as_attachments_multiply"
+    }
+  },
+  "final_assessment": {
+    "provider_compatibility_score": 78,
+    "worker_compatibility_score": 72,
+    "future_coordination_compatibility_score": 84,
+    "architectural_recommendation": "ADD_MINIMAL_METADATA_NOW",
+    "go_no_go_decision": {
+      "provider_worker_attachment": "GO",
+      "minimal_metadata_before_large_scale_expansion": "GO",
+      "metadata_as_authority": "NO_GO"
+    }
+  }
+}

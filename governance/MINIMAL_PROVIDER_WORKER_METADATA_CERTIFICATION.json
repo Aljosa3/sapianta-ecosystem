@@ -1,0 +1,44 @@
+{
+  "artifact": "MINIMAL_PROVIDER_WORKER_METADATA_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "minimal_provider_worker_metadata_status": "READY",
+  "metadata_authority_impact": "NONE",
+  "runtime_behavior_change": "NONE",
+  "certifies": {
+    "provider_metadata_supported": true,
+    "worker_metadata_supported": true,
+    "metadata_optional": true,
+    "safe_defaults_supported": true,
+    "provider_metadata_replay_visible": true,
+    "worker_metadata_replay_visible": true,
+    "metadata_authority": false,
+    "metadata_routing_authority": false,
+    "metadata_selection_authority": false,
+    "metadata_execution_authority": false,
+    "metadata_governance_authority": false,
+    "runtime_branching_on_metadata": false
+  },
+  "metadata_fields": [
+    "domain",
+    "capability",
+    "resource_type"
+  ],
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "routing",
+    "authority",
+    "execution_decisions",
+    "orchestration_behavior",
+    "autonomous_selection",
+    "provider_selection",
+    "worker_selection",
+    "governance_decision_influence",
+    "authorization_influence"
+  ]
+}

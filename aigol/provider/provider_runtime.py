@@ -107,6 +107,7 @@ def reconstruct_provider_attachment_replay(replay_dir: str | Path) -> dict[str, 
         "timestamp": created["timestamp"],
         "proposal_hash": created["proposal_hash"],
         "provider_status": created["provider_status"],
+        "provider_metadata": deepcopy(created.get("provider_metadata", _default_provider_metadata())),
         "provider_invoked": created["provider_invoked"],
         "authority": False,
         "execution_capable": False,
@@ -125,6 +126,7 @@ def _created_replay(*, provider: dict[str, Any], envelope: dict[str, Any], times
         "provider_type": provider["provider_type"],
         "provider_version": provider["provider_version"],
         "provider_status": provider["provider_status"],
+        "provider_metadata": _provider_metadata(provider),
         "request": deepcopy(envelope["request"]),
         "response": deepcopy(envelope["response"]),
         "timestamp": timestamp,
@@ -155,6 +157,7 @@ def _returned_replay(
         "provider_id": provider["provider_id"],
         "provider_type": provider["provider_type"],
         "provider_version": provider["provider_version"],
+        "provider_metadata": _provider_metadata(provider),
         "proposal_id": envelope["proposal_id"],
         "proposal_hash": envelope["proposal_hash"],
         "created_hash": created["artifact_hash"],
@@ -177,6 +180,7 @@ def _failed_envelope(*, provider_id: Any, request: Any, proposal_id: Any, timest
         "provider_type": "UNKNOWN",
         "provider_version": "UNKNOWN",
         "provider_status": "FAILED_CLOSED",
+        "provider_metadata": _default_provider_metadata(),
         "request": deepcopy(request) if _is_json_serializable(request) else "INVALID_REQUEST",
         "response": None,
         "timestamp": timestamp if isinstance(timestamp, str) and timestamp.strip() else "INVALID_TIMESTAMP",
@@ -201,6 +205,7 @@ def _failed_returned(*, envelope: dict[str, Any], failure_reason: str) -> dict[s
         "provider_id": envelope["provider_id"],
         "provider_type": envelope["provider_type"],
         "provider_version": envelope["provider_version"],
+        "provider_metadata": deepcopy(envelope.get("provider_metadata", _default_provider_metadata())),
         "proposal_id": envelope["proposal_id"],
         "proposal_hash": envelope["proposal_hash"],
         "created_hash": envelope["artifact_hash"],
@@ -223,6 +228,30 @@ def _capture(envelope: dict[str, Any], created: dict[str, Any], returned: dict[s
     }
     capture["provider_attachment_runtime_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _provider_metadata(provider: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "domain": provider.get("domain", "unspecified"),
+        "capability": provider.get("capability", "proposal_generation"),
+        "resource_type": provider.get("resource_type", "provider"),
+        "metadata_authority": False,
+        "metadata_routing_enabled": False,
+        "metadata_selection_enabled": False,
+        "metadata_execution_enabled": False,
+    }
+
+
+def _default_provider_metadata() -> dict[str, Any]:
+    return {
+        "domain": "unspecified",
+        "capability": "proposal_generation",
+        "resource_type": "provider",
+        "metadata_authority": False,
+        "metadata_routing_enabled": False,
+        "metadata_selection_enabled": False,
+        "metadata_execution_enabled": False,
+    }
 
 
 def _ensure_provider_replay_available(replay_path: Path) -> None:

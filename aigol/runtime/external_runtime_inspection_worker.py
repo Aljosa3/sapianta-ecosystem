@@ -19,6 +19,9 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 EXTERNAL_RUNTIME_INSPECTION_WORKER = "EXTERNAL_RUNTIME_INSPECTION_WORKER"
 WORKER_TYPE = "READ_ONLY_INSPECTION_WORKER"
 WORKER_VERSION = "V1"
+DEFAULT_WORKER_DOMAIN = "infrastructure"
+DEFAULT_WORKER_CAPABILITY = "read_only_runtime_inspection"
+DEFAULT_WORKER_RESOURCE_TYPE = "runtime_metadata"
 
 WORKER_IDENTITY_CAPTURED = "WORKER_IDENTITY_CAPTURED"
 EXECUTION_REQUEST_REFERENCED = "EXECUTION_REQUEST_REFERENCED"
@@ -98,6 +101,9 @@ def execute_external_runtime_inspection_worker(
     created_at: str,
     replay_dir: str | Path,
     worker_id: str = EXTERNAL_RUNTIME_INSPECTION_WORKER,
+    domain: str = DEFAULT_WORKER_DOMAIN,
+    capability: str = DEFAULT_WORKER_CAPABILITY,
+    resource_type: str = DEFAULT_WORKER_RESOURCE_TYPE,
     provider: MetadataInspectionProvider | None = None,
 ) -> dict[str, Any]:
     """Execute one authorized request through an external read-only worker."""
@@ -109,6 +115,9 @@ def execute_external_runtime_inspection_worker(
             worker_attachment_id=worker_attachment_id,
             worker_id=worker_id,
             created_at=created_at,
+            domain=domain,
+            capability=capability,
+            resource_type=resource_type,
         )
         _persist_step(replay_path, 0, "worker_identity", identity)
         reference = create_execution_request_reference(
@@ -132,6 +141,9 @@ def execute_external_runtime_inspection_worker(
                 worker_attachment_id=worker_attachment_id,
                 worker_id=worker_id,
                 created_at=created_at,
+                domain=domain,
+                capability=capability,
+                resource_type=resource_type,
                 failure_reason=_failure_reason(exc),
             )
         if not (replay_path / "000_worker_identity.json").exists():
@@ -141,7 +153,15 @@ def execute_external_runtime_inspection_worker(
         return _capture(identity, None, None, None, failure)
 
 
-def create_worker_identity(*, worker_attachment_id: str, worker_id: str, created_at: str) -> dict[str, Any]:
+def create_worker_identity(
+    *,
+    worker_attachment_id: str,
+    worker_id: str,
+    created_at: str,
+    domain: str = DEFAULT_WORKER_DOMAIN,
+    capability: str = DEFAULT_WORKER_CAPABILITY,
+    resource_type: str = DEFAULT_WORKER_RESOURCE_TYPE,
+) -> dict[str, Any]:
     """Create explicit external worker identity evidence."""
 
     normalized_worker_id = _normalize_token(worker_id, "worker_id")
@@ -152,6 +172,11 @@ def create_worker_identity(*, worker_attachment_id: str, worker_id: str, created
         "worker_identity": normalized_worker_id,
         "worker_type": WORKER_TYPE,
         "worker_version": WORKER_VERSION,
+        "worker_metadata": _worker_metadata(
+            domain=domain,
+            capability=capability,
+            resource_type=resource_type,
+        ),
         "state": WORKER_IDENTITY_CAPTURED,
         "created_at": _require_string(created_at, "created_at"),
         "worker_role": "EXECUTION_PARTICIPANT_ONLY",
@@ -185,6 +210,7 @@ def create_execution_request_reference(
         "state": EXECUTION_REQUEST_REFERENCED,
         "previous_state": WORKER_IDENTITY_CAPTURED,
         "worker_identity_hash": identity["artifact_hash"],
+        "worker_metadata": deepcopy(identity.get("worker_metadata", _default_worker_metadata())),
         "execution_id": _require_string(authorized_execution_request["execution_id"], "execution_id"),
         "request_id": _require_string(authorized_execution_request["request_id"], "request_id"),
         "target_capability": _normalize_token(
@@ -224,6 +250,7 @@ def execute_authorized_external_worker_request(
     execution_evidence = {
         "worker_attachment_id": reference["worker_attachment_id"],
         "worker_identity": reference["worker_identity"],
+        "worker_metadata": deepcopy(reference.get("worker_metadata", _default_worker_metadata())),
         "execution_id": reference["execution_id"],
         "request_id": reference["request_id"],
         "target_capability": reference["target_capability"],
@@ -269,6 +296,7 @@ def create_worker_result(
     result = {
         "worker_attachment_id": identity["worker_attachment_id"],
         "worker_identity": identity["worker_identity"],
+        "worker_metadata": deepcopy(identity.get("worker_metadata", _default_worker_metadata())),
         "execution_id": reference["execution_id"],
         "request_id": reference["request_id"],
         "target_capability": reference["target_capability"],
@@ -302,6 +330,7 @@ def terminate_external_worker(result: dict[str, Any]) -> dict[str, Any]:
     termination = {
         "worker_attachment_id": result["worker_attachment_id"],
         "worker_identity": result["worker_identity"],
+        "worker_metadata": deepcopy(result.get("worker_metadata", _default_worker_metadata())),
         "execution_id": result["execution_id"],
         "request_id": result["request_id"],
         "target_capability": result["target_capability"],
@@ -346,6 +375,7 @@ def reconstruct_external_runtime_inspection_worker_replay(replay_dir: str | Path
     identity_artifact = wrappers[0]["artifact"]
     return {
         "worker_identity": identity_artifact["worker_identity"],
+        "worker_metadata": deepcopy(identity_artifact.get("worker_metadata", _default_worker_metadata())),
         "execution_id": final_artifact["execution_id"],
         "request_id": final_artifact["request_id"],
         "target_capability": final_artifact["target_capability"],
@@ -427,6 +457,7 @@ def _failure_artifact(*, identity: dict[str, Any], failure_reason: str) -> dict[
     artifact = {
         "worker_attachment_id": identity["worker_attachment_id"],
         "worker_identity": identity["worker_identity"],
+        "worker_metadata": deepcopy(identity.get("worker_metadata", _default_worker_metadata())),
         "execution_id": "UNAVAILABLE",
         "request_id": "UNAVAILABLE",
         "target_capability": "UNAVAILABLE",
@@ -454,6 +485,9 @@ def _identity_failure_artifact(
     worker_attachment_id: str,
     worker_id: str,
     created_at: str,
+    domain: str,
+    capability: str,
+    resource_type: str,
     failure_reason: str,
 ) -> dict[str, Any]:
     artifact = {
@@ -461,6 +495,11 @@ def _identity_failure_artifact(
         "worker_identity": worker_id if isinstance(worker_id, str) and worker_id.strip() else "UNAVAILABLE",
         "worker_type": WORKER_TYPE,
         "worker_version": WORKER_VERSION,
+        "worker_metadata": _worker_metadata(
+            domain=domain,
+            capability=capability,
+            resource_type=resource_type,
+        ),
         "state": FAILED,
         "created_at": created_at if isinstance(created_at, str) else "UNAVAILABLE",
         "failure_reason": failure_reason,
@@ -499,6 +538,30 @@ def _capture(
     }
     capture["external_worker_attachment_hash"] = replay_hash(capture)
     return capture
+
+
+def _worker_metadata(*, domain: str, capability: str, resource_type: str) -> dict[str, Any]:
+    return {
+        "domain": _normalize_metadata(domain, "domain"),
+        "capability": _normalize_metadata(capability, "capability"),
+        "resource_type": _normalize_metadata(resource_type, "resource_type"),
+        "metadata_authority": False,
+        "metadata_routing_enabled": False,
+        "metadata_selection_enabled": False,
+        "metadata_execution_enabled": False,
+    }
+
+
+def _default_worker_metadata() -> dict[str, Any]:
+    return {
+        "domain": DEFAULT_WORKER_DOMAIN,
+        "capability": DEFAULT_WORKER_CAPABILITY,
+        "resource_type": DEFAULT_WORKER_RESOURCE_TYPE,
+        "metadata_authority": False,
+        "metadata_routing_enabled": False,
+        "metadata_selection_enabled": False,
+        "metadata_execution_enabled": False,
+    }
 
 
 def _validate_reconstructed_states(states: list[str]) -> None:
@@ -558,6 +621,10 @@ def _failure_reason(exc: Exception) -> str:
 
 def _normalize_token(value: Any, field_name: str) -> str:
     return _require_string(value, field_name).strip().upper().replace("-", "_")
+
+
+def _normalize_metadata(value: Any, field_name: str) -> str:
+    return _require_string(value, field_name).strip().lower().replace("-", "_").replace(" ", "_")
 
 
 def _require_string(value: Any, field_name: str) -> str:

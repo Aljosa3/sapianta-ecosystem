@@ -1,0 +1,41 @@
+{
+  "artifact": "FIRST_REAL_PROVIDER_ATTACHMENT_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "provider": "openai",
+  "provider_may": [
+    "receive_request",
+    "perform_single_provider_call_when_configured",
+    "return_response",
+    "create_provider_proposal_envelope"
+  ],
+  "provider_may_not": [
+    "execute",
+    "authorize",
+    "govern",
+    "dispatch",
+    "invoke_worker",
+    "mutate_replay",
+    "mutate_memory",
+    "rank_providers",
+    "select_providers",
+    "orchestrate_providers"
+  ],
+  "runtime_boundary": {
+    "routes_through_existing_provider_runtime": true,
+    "uses_provider_registry": true,
+    "requires_available_provider_state": true,
+    "validates_provider_proposal_envelope": true,
+    "records_replay": true,
+    "enforces_append_only_replay": true
+  },
+  "authority_status": {
+    "execution_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "dispatch_authority": false,
+    "worker_authority": false,
+    "replay_authority": false,
+    "memory_authority": false
+  }
+}

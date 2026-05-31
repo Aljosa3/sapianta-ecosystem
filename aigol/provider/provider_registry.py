@@ -23,6 +23,9 @@ class ProviderMetadata:
     provider_type: str
     provider_version: str
     provider_status: str
+    domain: str = "unspecified"
+    capability: str = "proposal_generation"
+    resource_type: str = "provider"
 
     def to_dict(self) -> dict[str, Any]:
         provider = {
@@ -30,6 +33,9 @@ class ProviderMetadata:
             "provider_type": _normalize_token(self.provider_type, "provider_type"),
             "provider_version": _require_string(self.provider_version, "provider_version"),
             "provider_status": _normalize_token(self.provider_status, "provider_status"),
+            "domain": _normalize_metadata(self.domain, "domain"),
+            "capability": _normalize_metadata(self.capability, "capability"),
+            "resource_type": _normalize_metadata(self.resource_type, "resource_type"),
             "execution_capable": False,
             "dispatch_capable": False,
             "authority": False,
@@ -67,8 +73,29 @@ class ProviderRegistry:
 
 
 def _metadata_to_dict(metadata: ProviderMetadata | dict[str, Any]) -> dict[str, Any]:
-    provider = metadata.to_dict() if isinstance(metadata, ProviderMetadata) else deepcopy(metadata)
+    provider = metadata.to_dict() if isinstance(metadata, ProviderMetadata) else _canonicalize_metadata_dict(metadata)
     _validate_provider_metadata(provider)
+    return provider
+
+
+def _canonicalize_metadata_dict(metadata: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(metadata, dict):
+        raise FailClosedRuntimeError("provider metadata must be a JSON object")
+    provider = deepcopy(metadata)
+    existing_hash = provider.pop("provider_identity_hash", None)
+    provider["provider_id"] = _normalize_identifier(provider.get("provider_id"), "provider_id")
+    provider["provider_type"] = _normalize_token(provider.get("provider_type"), "provider_type")
+    provider["provider_version"] = _require_string(provider.get("provider_version"), "provider_version")
+    provider["provider_status"] = _normalize_token(provider.get("provider_status"), "provider_status")
+    provider["domain"] = _normalize_metadata(provider.get("domain", "unspecified"), "domain")
+    provider["capability"] = _normalize_metadata(provider.get("capability", "proposal_generation"), "capability")
+    provider["resource_type"] = _normalize_metadata(provider.get("resource_type", "provider"), "resource_type")
+    provider["execution_capable"] = provider.get("execution_capable", False)
+    provider["dispatch_capable"] = provider.get("dispatch_capable", False)
+    provider["authority"] = provider.get("authority", False)
+    provider["provider_identity_hash"] = replay_hash(provider)
+    if existing_hash is not None and existing_hash != provider["provider_identity_hash"]:
+        raise FailClosedRuntimeError("provider identity hash mismatch")
     return provider
 
 
@@ -84,6 +111,9 @@ def _validate_provider_metadata(provider: dict[str, Any]) -> None:
     _normalize_identifier(provider.get("provider_id"), "provider_id")
     _normalize_token(provider.get("provider_type"), "provider_type")
     _require_string(provider.get("provider_version"), "provider_version")
+    _normalize_metadata(provider.get("domain", "unspecified"), "domain")
+    _normalize_metadata(provider.get("capability", "proposal_generation"), "capability")
+    _normalize_metadata(provider.get("resource_type", "provider"), "resource_type")
     status = _normalize_token(provider.get("provider_status"), "provider_status")
     if status not in VALID_PROVIDER_STATUSES:
         raise FailClosedRuntimeError("provider status is invalid")
@@ -102,8 +132,11 @@ def _normalize_token(value: Any, field_name: str) -> str:
     return _require_string(value, field_name).strip().upper().replace("-", "_")
 
 
+def _normalize_metadata(value: Any, field_name: str) -> str:
+    return _require_string(value, field_name).strip().lower().replace("-", "_").replace(" ", "_")
+
+
 def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"{field_name} is required")
     return value
-

@@ -1,0 +1,48 @@
+{
+  "artifact": "MINIMAL_PROVIDER_WORKER_METADATA_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "metadata_may": [
+    "describe_domain",
+    "describe_capability",
+    "describe_resource_type",
+    "appear_in_replay",
+    "support_governance_inspection",
+    "support_future_compatibility_review"
+  ],
+  "metadata_may_not": [
+    "grant_authority",
+    "influence_authorization",
+    "influence_governance_decisions",
+    "influence_execution_permission",
+    "influence_worker_selection",
+    "influence_provider_selection",
+    "route_requests",
+    "orchestrate_runtime",
+    "activate_autonomous_behavior"
+  ],
+  "provider_defaults": {
+    "domain": "unspecified",
+    "capability": "proposal_generation",
+    "resource_type": "provider"
+  },
+  "worker_defaults": {
+    "domain": "infrastructure",
+    "capability": "read_only_runtime_inspection",
+    "resource_type": "runtime_metadata"
+  },
+  "authority_status": {
+    "metadata_authority": false,
+    "routing_authority": false,
+    "execution_authority": false,
+    "authorization_authority": false,
+    "governance_authority": false,
+    "provider_selection_authority": false,
+    "worker_selection_authority": false
+  },
+  "final_classification": {
+    "minimal_provider_worker_metadata_status": "READY",
+    "metadata_authority_impact": "NONE",
+    "runtime_behavior_change": "NONE"
+  }
+}

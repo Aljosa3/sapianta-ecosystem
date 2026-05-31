@@ -1,0 +1,52 @@
+{
+  "artifact": "PROVIDER_WORKER_DOMAIN_COMPATIBILITY_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "provider_compatibility_score": 78,
+  "worker_compatibility_score": 72,
+  "future_coordination_compatibility_score": 84,
+  "architectural_recommendation": "ADD_MINIMAL_METADATA_NOW",
+  "certifies": {
+    "review_only": true,
+    "runtime_modified": false,
+    "schemas_modified": false,
+    "replay_modified": false,
+    "cognition_modified": false,
+    "governance_modified": false,
+    "execution_authority_introduced": false,
+    "autonomous_coordination_introduced": false,
+    "hidden_state_introduced": false,
+    "dynamic_routing_authority_introduced": false,
+    "governance_authority_transferred": false
+  },
+  "metadata_recommendation": {
+    "domain": {
+      "necessity": "ADD_BEFORE_SCALE",
+      "authority": "NONE",
+      "replay_visibility": "RECOMMENDED"
+    },
+    "capability": {
+      "necessity": "ADD_BEFORE_SCALE",
+      "authority": "NONE",
+      "replay_visibility": "RECOMMENDED"
+    },
+    "resource_type": {
+      "necessity": "ADD_BEFORE_SCALE",
+      "authority": "NONE",
+      "replay_visibility": "RECOMMENDED"
+    }
+  },
+  "go_no_go": {
+    "before_next_single_provider_attachment": "GO",
+    "before_next_single_worker_attachment": "GO_WITH_CAPABILITY_METADATA_CAUTION",
+    "before_large_scale_provider_worker_expansion": "ADD_MINIMAL_METADATA_FIRST",
+    "metadata_based_routing_or_authority": "NO_GO"
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "final_finding": "Minimal domain, capability, and resource_type metadata are a low-cost compatibility investment before provider and worker expansion, but they must remain descriptive, replay-visible, optional during transition, and non-authoritative."
+}

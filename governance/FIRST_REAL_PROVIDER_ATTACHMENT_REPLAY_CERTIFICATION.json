@@ -1,0 +1,44 @@
+{
+  "artifact": "FIRST_REAL_PROVIDER_ATTACHMENT_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "REPLAY_CERTIFIED",
+  "provider": "openai",
+  "replay_visibility": "MANDATORY",
+  "append_only": true,
+  "replay_events": [
+    "PROVIDER_PROPOSAL_CREATED",
+    "PROVIDER_PROPOSAL_RETURNED",
+    "FAILED_CLOSED"
+  ],
+  "replay_must_capture": [
+    "provider_id",
+    "provider_version",
+    "request",
+    "response",
+    "timestamp",
+    "proposal_hash"
+  ],
+  "replay_reconstructs": [
+    "What exactly did the provider return?",
+    "Which provider version returned it?",
+    "Which request was sent?",
+    "Which proposal hash binds the envelope?"
+  ],
+  "failure_replay": [
+    "missing API key",
+    "provider unavailable",
+    "malformed response",
+    "empty response",
+    "authority-bearing response",
+    "unknown provider",
+    "replay corruption"
+  ],
+  "replay_does_not_grant": [
+    "execution_authority",
+    "authorization_authority",
+    "governance_authority",
+    "dispatch_authority",
+    "worker_authority",
+    "memory_authority"
+  ]
+}

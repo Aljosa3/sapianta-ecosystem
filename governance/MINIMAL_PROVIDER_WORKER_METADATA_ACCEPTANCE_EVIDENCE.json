@@ -1,0 +1,32 @@
+{
+  "artifact": "MINIMAL_PROVIDER_WORKER_METADATA_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "minimal_provider_worker_metadata_status": "READY",
+  "metadata_authority_impact": "NONE",
+  "runtime_behavior_change": "NONE",
+  "validation": {
+    "command": "python -m pytest tests/test_minimal_provider_worker_metadata_v1.py tests/test_minimal_provider_attachment_runtime_v1.py tests/test_first_real_provider_attachment_v1.py tests/test_external_runtime_inspection_worker_v1.py",
+    "result": "50 passed"
+  },
+  "accepted_cases": [
+    "provider metadata is optional",
+    "provider metadata uses safe defaults when absent",
+    "provider metadata is stored correctly",
+    "provider metadata is replay-visible",
+    "provider metadata does not affect runtime behavior",
+    "worker metadata is optional",
+    "worker metadata uses safe defaults when absent",
+    "worker metadata is stored correctly",
+    "worker metadata is replay-visible",
+    "worker metadata does not affect execution",
+    "worker metadata does not affect governance decisions",
+    "metadata does not introduce authority"
+  ],
+  "replay_evidence": {
+    "provider_metadata_reconstructable": true,
+    "worker_metadata_reconstructable": true,
+    "metadata_hash_bound": true,
+    "append_only_replay_preserved": true
+  }
+}

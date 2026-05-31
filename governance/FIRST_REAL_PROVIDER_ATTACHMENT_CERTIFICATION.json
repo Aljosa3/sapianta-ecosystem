@@ -1,0 +1,46 @@
+{
+  "artifact": "FIRST_REAL_PROVIDER_ATTACHMENT_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "first_real_provider_attachment_status": "READY",
+  "provider": {
+    "provider_id": "openai",
+    "provider_type": "llm",
+    "provider_version": "openai-responses-v1",
+    "adapter": "aigol/provider/providers/openai_provider.py"
+  },
+  "certifies": {
+    "provider_is_proposal_only": true,
+    "provider_execution_authority": false,
+    "provider_authorization_authority": false,
+    "provider_governance_authority": false,
+    "provider_dispatch_authority": false,
+    "provider_worker_authority": false,
+    "provider_replay_authority": false,
+    "provider_memory_authority": false,
+    "provider_runtime_boundary_preserved": true,
+    "provider_replay_visibility_preserved": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "forbidden_capabilities_not_introduced": [
+    "provider_execution",
+    "worker_execution",
+    "authorization",
+    "governance_decisions",
+    "planning",
+    "reflection",
+    "orchestration",
+    "autonomous_dispatch",
+    "multi_provider_routing",
+    "provider_ranking",
+    "provider_selection_intelligence",
+    "memory_mutation",
+    "replay_mutation"
+  ]
+}

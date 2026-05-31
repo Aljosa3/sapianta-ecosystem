@@ -1,0 +1,34 @@
+{
+  "artifact": "FIRST_REAL_PROVIDER_ATTACHMENT_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "first_real_provider_attachment_status": "READY",
+  "validation": {
+    "command": "python -m pytest tests/test_first_real_provider_attachment_v1.py",
+    "result": "10 passed"
+  },
+  "accepted_cases": [
+    "OpenAI provider attaches through existing provider runtime",
+    "OpenAI output_text response shape is accepted",
+    "OpenAI output list response shape is accepted",
+    "missing API key fails closed before provider call",
+    "provider unavailable fails closed",
+    "malformed response fails closed",
+    "empty response fails closed",
+    "authority-bearing provider response fails closed",
+    "unknown provider fails closed",
+    "provider remains non-authoritative",
+    "replay corruption is detected"
+  ],
+  "deterministic_acceptance_evidence": {
+    "proposal_hash": "computed from canonical serialized ProviderProposalEnvelope",
+    "replay_hash": "computed from canonical serialized replay wrapper",
+    "reconstruction": "provider identity, provider version, request, response, timestamp, and proposal hash reconstruct from replay"
+  },
+  "live_provider_boundary": {
+    "real_provider": "OpenAI",
+    "test_provider_mode": "injected deterministic OpenAI client",
+    "credential_capture": false,
+    "network_required_for_tests": false
+  }
+}
