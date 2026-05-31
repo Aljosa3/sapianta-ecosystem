@@ -1,0 +1,38 @@
+{
+  "artifact": "GOVERNED_WORKER_AUTHORIZATION_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "BOUNDARIES_CERTIFIED",
+  "authorization_may": [
+    "grant_bounded_worker_execution_permission",
+    "bind_worker_target",
+    "bind_execution_scope",
+    "bind_target_capability",
+    "emit_replay_visible_authorization_evidence"
+  ],
+  "authorization_may_not": [
+    "grant_governance_authority",
+    "grant_replay_mutation_authority",
+    "grant_orchestration_authority",
+    "grant_recursive_authorization",
+    "grant_hidden_continuation",
+    "repair_missing_evidence",
+    "infer_missing_approval"
+  ],
+  "non_authorizing_sources": [
+    "provider",
+    "proposal",
+    "cognition",
+    "replay",
+    "memory_response",
+    "worker"
+  ],
+  "authority_status": {
+    "provider_authority": false,
+    "proposal_authority": false,
+    "cognition_authority": false,
+    "replay_authority": false,
+    "authorization_authority_inside_governance_only": true,
+    "worker_authority_after_authorization_only": true,
+    "authority_leakage_permitted": false
+  }
+}

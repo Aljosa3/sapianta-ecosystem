@@ -1,0 +1,30 @@
+{
+  "artifact": "GOVERNED_WORKER_AUTHORIZATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "governed_worker_authorization_status": "CERTIFIED",
+  "evidence_sources": [
+    "governance/PROVIDER_WORKER_DOMAIN_COMPATIBILITY_V1.md",
+    "governance/PROPOSAL_TO_WORKER_TRANSITIONS_V1.md",
+    "governance/WORKER_AUTHORIZATION_REQUIREMENTS_V1.md",
+    "governance/EXECUTION_AUTHORIZATION_MODEL_V1.md",
+    "governance/AUTHORIZATION_AUTHORITY_BOUNDARIES_V1.md",
+    "governance/AUTHORIZATION_FAIL_CLOSED_RULES_V1.md",
+    "governance/REPLAY_VISIBLE_AUTHORIZATION_LINEAGE_V1.md",
+    "governance/CAPABILITY_AUTHORIZATION_MAPPING_V1.md",
+    "governance/EXTERNAL_WORKER_REPLAY_MODEL_V1.md"
+  ],
+  "accepted_findings": [
+    "Provider cannot authorize execution.",
+    "Proposal cannot authorize execution.",
+    "Cognition cannot authorize execution.",
+    "Replay cannot authorize execution.",
+    "Governance can authorize execution.",
+    "Worker cannot self-authorize.",
+    "Authorization cannot occur without replay evidence.",
+    "Worker execution may begin only after AUTHORIZED governed evidence exists.",
+    "All unresolved authorization states fail closed."
+  ],
+  "review_only": true,
+  "runtime_modified": false
+}
