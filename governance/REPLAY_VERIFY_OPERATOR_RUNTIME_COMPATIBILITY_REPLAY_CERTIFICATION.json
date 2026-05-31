@@ -1,0 +1,38 @@
+{
+  "artifact": "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "supported_operator_runtime_layout": {
+    "root": "<runtime_root>/<operation_id>",
+    "provider": "provider/",
+    "authorization": "authorization/",
+    "worker": "worker/"
+  },
+  "required_evidence": [
+    "provider/000_provider_proposal_created.json",
+    "provider/001_provider_proposal_returned.json",
+    "authorization/000_authorization_created.json",
+    "authorization/001_authorization_returned.json",
+    "worker/000_authorized_worker_request.json",
+    "worker/001_filesystem_worker_execution.json"
+  ],
+  "verified_properties": {
+    "provider_replay_hash_present": true,
+    "authorization_replay_hash_present": true,
+    "worker_replay_hash_present": true,
+    "lineage_reconstructable": true,
+    "execution_status_reconstructable": true,
+    "replay_operation_compatible": true,
+    "legacy_verify_fallback_preserved": true
+  },
+  "fail_closed_cases": {
+    "missing_replay": "VERIFY_FAILED",
+    "missing_evidence": "VERIFY_FAILED",
+    "corrupt_evidence": "VERIFY_FAILED",
+    "broken_lineage": "VERIFY_FAILED"
+  },
+  "final_classification": {
+    "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_REPLAY_STATUS": "READY"
+  }
+}

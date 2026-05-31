@@ -1,0 +1,25 @@
+{
+  "artifact": "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "operator_runtime_replay_supported_by_replay_verify": true,
+    "replay_operation_and_replay_verify_agree": true,
+    "legacy_governed_return_verify_preserved": true,
+    "missing_replay_fails_closed": true,
+    "missing_evidence_fails_closed": true,
+    "broken_replay_structure_fails_closed": true,
+    "new_replay_architecture_added": false,
+    "new_replay_model_added": false,
+    "new_governance_layer_added": false,
+    "new_authority_concept_added": false,
+    "worker_changes_added": false,
+    "provider_changes_added": false,
+    "authorization_changes_added": false
+  },
+  "final_classification": {
+    "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_STATUS": "READY"
+  }
+}

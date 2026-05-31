@@ -1,0 +1,25 @@
+{
+  "artifact": "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "validation_commands": [
+    "python -m pytest tests/test_replay_verify_operator_runtime_compatibility_v1.py",
+    "python -m pytest tests/test_replay_verify_operator_runtime_compatibility_v1.py tests/test_governed_return_continuity_hardening_v1.py"
+  ],
+  "validation_results": [
+    "5 passed",
+    "28 passed"
+  ],
+  "acceptance_criteria": {
+    "run_governed_replay_operation_and_replay_verify_succeed_for_same_replay": "PASSED",
+    "cli_replay_verify_supports_operator_runtime_replay": "PASSED",
+    "missing_replay_fails_closed": "PASSED",
+    "missing_evidence_fails_closed": "PASSED",
+    "broken_replay_structure_fails_closed": "PASSED",
+    "legacy_governed_return_verification_preserved": "PASSED"
+  },
+  "final_classification": {
+    "REPLAY_VERIFY_OPERATOR_RUNTIME_COMPATIBILITY_STATUS": "READY"
+  }
+}
