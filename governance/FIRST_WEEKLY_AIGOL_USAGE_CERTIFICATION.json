@@ -1,0 +1,54 @@
+{
+  "artifact": "FIRST_WEEKLY_AIGOL_USAGE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "usage_window": {
+    "operator_attempts": 15,
+    "successful_governed_operations": 12,
+    "fail_closed_attempts": 3,
+    "unexpected_failures": 0,
+    "success_rate": "80%",
+    "fail_closed_rate": "20%"
+  },
+  "replay_evidence": {
+    "successful_replay_chains": 12,
+    "successful_replay_files": 72,
+    "events_per_successful_operation": 6,
+    "sample_operation_id": "AIGOL-RUN-GOVERNED-BE27CB9FA018",
+    "sample_replay_status": "SUCCEEDED"
+  },
+  "observed_fail_closed_cases": [
+    {
+      "case": "unknown worker",
+      "status": "FAILED_CLOSED"
+    },
+    {
+      "case": "unknown operation",
+      "status": "FAILED_CLOSED"
+    },
+    {
+      "case": "invalid workspace",
+      "status": "FAILED_CLOSED"
+    }
+  ],
+  "next_priority": {
+    "area": "Replay and operator usage visibility",
+    "recommended_milestone": "OPERATION_REPLAY_LEDGER_V1",
+    "reason": "Weekly usage required manual counting and early fail-closed attempts were not preserved as full operation replay chains."
+  },
+  "certifies": {
+    "usage_target_met": true,
+    "governed_operations_repeated": true,
+    "replay_usefulness_observed": true,
+    "fail_closed_behavior_observed": true,
+    "authorization_friction_low": true,
+    "worker_expansion_not_yet_evidence_supported": true,
+    "provider_expansion_not_yet_evidence_supported": true,
+    "architecture_expansion_not_performed": true
+  },
+  "final_classification": {
+    "FIRST_WEEKLY_AIGOL_USAGE_STATUS": "READY"
+  }
+}
