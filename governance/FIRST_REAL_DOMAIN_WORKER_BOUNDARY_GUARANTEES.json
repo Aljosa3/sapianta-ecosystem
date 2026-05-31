@@ -1,0 +1,37 @@
+{
+  "artifact": "FIRST_REAL_DOMAIN_WORKER_BOUNDARY_GUARANTEES",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certified_on": "2026-05-31",
+  "scope_lock": {
+    "worker_id": "GITHUB_ISSUE_DRAFT_WORKER",
+    "domain": "github",
+    "operation": "CREATE_ISSUE_DRAFT",
+    "live_github_issue_creation": false,
+    "github_api_calls": false,
+    "repository_mutation": false,
+    "branch_creation": false,
+    "pull_request_creation": false,
+    "autonomous_coding": false,
+    "orchestration": false
+  },
+  "fail_closed_boundaries": {
+    "missing_authorization": "FAIL_CLOSED",
+    "scope_mismatch": "FAIL_CLOSED",
+    "unknown_repository": "FAIL_CLOSED",
+    "worker_unavailable": "FAIL_CLOSED",
+    "invalid_request": "FAIL_CLOSED",
+    "authority_bearing_request": "FAIL_CLOSED",
+    "append_only_violation": "FAIL_CLOSED",
+    "replay_corruption": "FAIL_CLOSED"
+  },
+  "authority_boundaries": {
+    "provider_authority": "ABSENT",
+    "proposal_authority": "ABSENT",
+    "authorization_authority": "GOVERNED_ONLY",
+    "worker_authority": "BOUNDED_ISSUE_DRAFT_ARTIFACT_CREATION",
+    "github_api_authority": "ABSENT",
+    "repository_mutation_authority": "ABSENT",
+    "replay_authority": "ABSENT"
+  }
+}

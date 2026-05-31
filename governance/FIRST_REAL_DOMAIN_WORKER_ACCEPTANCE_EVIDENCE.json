@@ -1,0 +1,30 @@
+{
+  "artifact": "FIRST_REAL_DOMAIN_WORKER_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "validation_command": "python -m pytest tests/test_first_real_domain_worker_v1.py",
+  "validation_result": "10 passed",
+  "acceptance_criteria": {
+    "domain_worker_creates_issue_draft": "PASSED",
+    "full_replay_reconstruction": "PASSED",
+    "missing_authorization_fails_closed": "PASSED",
+    "scope_mismatch_fails_closed": "PASSED",
+    "unknown_repository_fails_closed": "PASSED",
+    "worker_unavailable_fails_closed": "PASSED",
+    "invalid_request_fails_closed": "PASSED",
+    "authority_bearing_request_rejected": "PASSED",
+    "append_only_replay_violation_fails_closed": "PASSED",
+    "replay_corruption_detection": "PASSED"
+  },
+  "domain_value": {
+    "selected_domain": "github",
+    "created_artifact_type": "GITHUB_ISSUE_DRAFT_V1",
+    "useful_beyond_file_creation": true,
+    "human_review_ready": true,
+    "api_execution_required": false
+  },
+  "final_classification": {
+    "FIRST_REAL_DOMAIN_WORKER_STATUS": "READY"
+  }
+}

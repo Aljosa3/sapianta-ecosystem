@@ -1,0 +1,31 @@
+{
+  "artifact": "FIRST_REAL_DOMAIN_WORKER_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "replay_chain": [
+    "provider_proposal_created",
+    "provider_proposal_returned",
+    "authorization_created",
+    "authorization_returned",
+    "github_worker_request",
+    "github_worker_result"
+  ],
+  "reconstructable_evidence": {
+    "proposal": true,
+    "authorization": true,
+    "authorized_request": true,
+    "worker_action": true,
+    "worker_result": true,
+    "target_repository": true,
+    "issue_draft_artifact": true
+  },
+  "replay_guarantees": {
+    "append_only": true,
+    "deterministic_hashes": true,
+    "corruption_detection": true,
+    "github_api_invocation_visible_as_false": true,
+    "repository_mutation_visible_as_false": true,
+    "worker_receives_only_authorized_worker_request": true
+  }
+}

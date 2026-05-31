@@ -1,0 +1,35 @@
+{
+  "artifact": "FIRST_REAL_DOMAIN_WORKER_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "worker": {
+    "worker_id": "GITHUB_ISSUE_DRAFT_WORKER",
+    "domain": "github",
+    "capability": "create_issue_draft",
+    "authorized_scope": "GITHUB_CREATE_ISSUE_DRAFT",
+    "operation": "CREATE_ISSUE_DRAFT"
+  },
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "accepts_authorized_worker_request_only": true,
+    "validates_authorization": true,
+    "validates_scope": true,
+    "executes_bounded_domain_operation": true,
+    "records_replay_evidence": true,
+    "fails_closed_on_invalid_requests": true,
+    "does_not_call_github_api": true,
+    "does_not_mutate_repository": true
+  },
+  "authority_boundaries": {
+    "provider_can_execute": false,
+    "provider_can_authorize": false,
+    "proposal_can_execute": false,
+    "worker_can_self_authorize": false,
+    "github_api_authority": false,
+    "repository_mutation_authority": false
+  },
+  "final_classification": {
+    "FIRST_REAL_DOMAIN_WORKER_STATUS": "READY"
+  }
+}
