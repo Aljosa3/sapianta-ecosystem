@@ -37,6 +37,7 @@ DEFAULT_OPERATION_ID = "AIGOL-RUN-GOVERNED-000001"
 DEFAULT_CREATED_AT = "2026-05-31T00:00:00Z"
 FAILED_CLOSED = "FAILED_CLOSED"
 SUCCEEDED = "SUCCEEDED"
+OPERATOR_HARDENING_VERSION = "OPERATOR_EXPERIENCE_HARDENING_V1"
 
 
 class OperatorCLIProviderAdapter(ProviderAdapter):
@@ -85,11 +86,18 @@ def run_governed_operation_command(
             raise FailClosedRuntimeError("unknown worker")
         if normalized_operation != SUPPORTED_OPERATION:
             raise FailClosedRuntimeError("unknown operation")
-        operation_id = _require_string(operation_id, "operation_id")
         created_at = _require_string(created_at, "created_at")
         target = _require_string(target, "target")
         content = _require_string(content, "content")
         root = Path(runtime_root)
+        operation_id = _resolve_operation_id(
+            operation_id=operation_id,
+            worker=normalized_worker,
+            operation=normalized_operation,
+            target=target,
+            content=content,
+            runtime_root=root,
+        )
         workspace_path = Path(workspace)
         if not workspace_path.exists() or not workspace_path.is_dir():
             raise FailClosedRuntimeError("workspace is invalid")
@@ -206,6 +214,7 @@ def _success_result(
         "command": COMMAND_NAME,
         "operation_id": operation_id,
         "status": SUCCEEDED,
+        "operator_status": "READY",
         "execution_status": worker_result["execution_status"],
         "proposal_id": proposal["proposal_id"],
         "authorization_id": authorization["authorization_id"],
@@ -217,6 +226,11 @@ def _success_result(
         "provider_replay_hash": provider_replay["replay_hash"],
         "authorization_replay_hash": authorization_replay["replay_hash"],
         "worker_replay_hash": worker_replay["replay_hash"],
+        "replay_summary": _replay_summary(
+            provider_replay=provider_replay,
+            authorization_replay=authorization_replay,
+            worker_replay=worker_replay,
+        ),
         "fail_closed": False,
         "authority": False,
         "orchestration_performed": False,
@@ -240,6 +254,7 @@ def _failure_result(
         "command": COMMAND_NAME,
         "operation_id": operation_id,
         "status": FAILED_CLOSED,
+        "operator_status": FAILED_CLOSED,
         "execution_status": FAILED_CLOSED,
         "proposal_id": "UNAVAILABLE",
         "authorization_id": "UNAVAILABLE",
@@ -262,6 +277,79 @@ def _failure_result(
     return result
 
 
+def summarize_governed_operation_replay(
+    *,
+    operation_id: str,
+    runtime_root: str | Path = ".aigol_operator_runtime",
+) -> dict[str, Any]:
+    """Return a replay-only summary for a governed operation id."""
+
+    try:
+        operation_id = _require_string(operation_id, "operation_id")
+        replay_root = Path(runtime_root) / operation_id
+        provider_replay = reconstruct_provider_attachment_replay(replay_root / "provider")
+        authorization_replay = reconstruct_authorization_replay(replay_root / "authorization")
+        worker_replay = reconstruct_filesystem_worker_replay(replay_root / "worker")
+        worker_result = worker_replay.get("execution_result", {})
+        proposal_reference = worker_replay.get("proposal_reference", {})
+        result = {
+            "command": "aigol replay operation",
+            "operation_id": operation_id,
+            "status": SUCCEEDED,
+            "operator_status": "READY",
+            "execution_status": worker_replay.get("execution_status"),
+            "proposal_id": proposal_reference.get("proposal_id", authorization_replay.get("who_proposed")),
+            "authorization_id": worker_replay.get("authorization_id"),
+            "worker_id": worker_replay.get("worker_id"),
+            "target": worker_result.get("path"),
+            "worker_result": deepcopy(worker_result),
+            "replay_id": operation_id,
+            "replay_reference": str(replay_root),
+            "provider_replay_hash": provider_replay["replay_hash"],
+            "authorization_replay_hash": authorization_replay["replay_hash"],
+            "worker_replay_hash": worker_replay["replay_hash"],
+            "replay_summary": _replay_summary(
+                provider_replay=provider_replay,
+                authorization_replay=authorization_replay,
+                worker_replay=worker_replay,
+            ),
+            "fail_closed": False,
+            "authority": False,
+            "orchestration_performed": False,
+            "planning_performed": False,
+            "multi_step_execution": False,
+        }
+        result["result_hash"] = replay_hash(result)
+        return result
+    except Exception as exc:
+        result = {
+            "command": "aigol replay operation",
+            "operation_id": operation_id if isinstance(operation_id, str) and operation_id.strip() else "INVALID_OPERATION_ID",
+            "status": FAILED_CLOSED,
+            "operator_status": FAILED_CLOSED,
+            "execution_status": FAILED_CLOSED,
+            "proposal_id": "UNAVAILABLE",
+            "authorization_id": "UNAVAILABLE",
+            "worker_id": "UNAVAILABLE",
+            "target": "UNAVAILABLE",
+            "worker_result": {"created": False, "path": None, "content_hash": FAILED_CLOSED},
+            "replay_id": operation_id if isinstance(operation_id, str) and operation_id.strip() else "INVALID_OPERATION_ID",
+            "replay_reference": str(Path(runtime_root) / operation_id) if isinstance(runtime_root, str | Path) else "UNAVAILABLE",
+            "provider_replay_hash": FAILED_CLOSED,
+            "authorization_replay_hash": FAILED_CLOSED,
+            "worker_replay_hash": FAILED_CLOSED,
+            "replay_summary": {"events": [], "event_count": 0},
+            "fail_closed": True,
+            "failure_reason": _failure_reason(exc),
+            "authority": False,
+            "orchestration_performed": False,
+            "planning_performed": False,
+            "multi_step_execution": False,
+        }
+        result["result_hash"] = replay_hash(result)
+        return result
+
+
 def _proposal_for_authorization(envelope: dict[str, Any]) -> dict[str, Any]:
     if envelope.get("event_type") == FAILED_CLOSED:
         raise FailClosedRuntimeError(envelope.get("failure_reason") or "invalid proposal")
@@ -281,6 +369,61 @@ def _proposal_for_authorization(envelope: dict[str, Any]) -> dict[str, Any]:
             "proposal_hash": envelope["proposal_hash"],
         },
         "governance_review": "AIGOL_OPERATOR_INTERFACE_EXTENSION_V1",
+    }
+
+
+def _resolve_operation_id(
+    *,
+    operation_id: str,
+    worker: str,
+    operation: str,
+    target: str,
+    content: str,
+    runtime_root: Path,
+) -> str:
+    if operation_id != DEFAULT_OPERATION_ID:
+        return _require_string(operation_id, "operation_id")
+    generated = generate_default_operation_id(
+        worker=worker,
+        operation=operation,
+        target=target,
+        content=content,
+    )
+    candidate = generated
+    suffix = 1
+    while (runtime_root / candidate).exists():
+        suffix += 1
+        candidate = f"{generated}-{suffix:04d}"
+    return candidate
+
+
+def generate_default_operation_id(*, worker: str, operation: str, target: str, content: str) -> str:
+    seed = {
+        "content": content,
+        "operation": operation,
+        "target": target,
+        "version": OPERATOR_HARDENING_VERSION,
+        "worker": worker,
+    }
+    return f"AIGOL-RUN-GOVERNED-{replay_hash(seed).split(':', 1)[1][:12].upper()}"
+
+
+def _replay_summary(
+    *,
+    provider_replay: dict[str, Any],
+    authorization_replay: dict[str, Any],
+    worker_replay: dict[str, Any],
+) -> dict[str, Any]:
+    events: list[str] = []
+    if provider_replay.get("replay_artifact_count"):
+        events.extend(["PROVIDER_PROPOSAL_CREATED", "PROVIDER_PROPOSAL_RETURNED"])
+    if authorization_replay.get("replay_visible"):
+        events.extend(["AUTHORIZATION_CREATED", "AUTHORIZATION_RETURNED"])
+    if worker_replay.get("replay_artifact_count"):
+        events.extend(["AUTHORIZED_WORKER_REQUEST_CREATED", "FILESYSTEM_WORKER_EXECUTED"])
+    return {
+        "event_count": len(events),
+        "events": events,
     }
 
 

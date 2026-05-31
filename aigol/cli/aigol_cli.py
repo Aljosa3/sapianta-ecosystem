@@ -45,7 +45,7 @@ from aigol.cli.commands.moc import (
 )
 from aigol.cli.commands.replay import ledger_summary, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
-from aigol.cli.commands.run_governed import run_governed_operation_command
+from aigol.cli.commands.run_governed import run_governed_operation_command, summarize_governed_operation_replay
 from aigol.cli.commands.status import status_summary
 from aigol.cognition.authority_propagation import render_authority_propagation_summary
 from aigol.cognition.integrity_summary import render_cognition_integrity_summary
@@ -152,6 +152,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay_verify = replay_sub.add_parser("verify")
     replay_verify.add_argument("--replay-identity", required=True)
     replay_verify.add_argument("--runtime-root", default="")
+    replay_operation = replay_sub.add_parser("operation")
+    replay_operation.add_argument("--operation-id", required=True)
+    replay_operation.add_argument("--runtime-root", default=".aigol_operator_runtime")
 
     diagnostics = subcommands.add_parser("diagnostics")
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
@@ -341,6 +344,11 @@ def run_command(args: argparse.Namespace) -> dict:
         return ledger_summary(runtime_root=args.runtime_root or None, limit=args.limit)
     if args.command == "replay" and args.replay_command == "verify":
         return verify_replay(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
+    if args.command == "replay" and args.replay_command == "operation":
+        return summarize_governed_operation_replay(
+            operation_id=args.operation_id,
+            runtime_root=args.runtime_root,
+        )
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
     if args.command == "run-governed":
@@ -630,6 +638,25 @@ def render_command_result(result: dict) -> str:
                 f"fail_closed: {result.get('fail_closed')}",
             ],
         )
+    if command == "aigol replay operation":
+        return render_card(
+            "AIGOL REPLAY OPERATION",
+            [
+                f"status: {result.get('status')}",
+                f"operator_status: {result.get('operator_status')}",
+                f"execution_status: {result.get('execution_status')}",
+                f"operation_id: {result.get('operation_id')}",
+                f"proposal_id: {result.get('proposal_id')}",
+                f"authorization_id: {result.get('authorization_id')}",
+                f"worker_id: {result.get('worker_id')}",
+                f"worker_result: {_json(result.get('worker_result', {}))}",
+                f"replay_id: {result.get('replay_id')}",
+                f"replay_reference: {result.get('replay_reference')}",
+                f"replay_summary: {_json(result.get('replay_summary', {}))}",
+                f"fail_closed: {result.get('fail_closed')}",
+                f"failure_reason: {result.get('failure_reason', '')}",
+            ],
+        )
     if command == "aigol diagnostics runtime":
         diagnostics = result.get("runtime_diagnostics", {})
         return render_card(
@@ -645,6 +672,7 @@ def render_command_result(result: dict) -> str:
             "AIGOL RUN GOVERNED",
             [
                 f"status: {result.get('status')}",
+                f"operator_status: {result.get('operator_status')}",
                 f"execution_status: {result.get('execution_status')}",
                 f"proposal_id: {result.get('proposal_id')}",
                 f"authorization_id: {result.get('authorization_id')}",
@@ -652,6 +680,7 @@ def render_command_result(result: dict) -> str:
                 f"worker_result: {_json(result.get('worker_result', {}))}",
                 f"replay_id: {result.get('replay_id')}",
                 f"replay_reference: {result.get('replay_reference')}",
+                f"replay_summary: {_json(result.get('replay_summary', {}))}",
                 f"target: {result.get('target')}",
                 f"fail_closed: {result.get('fail_closed')}",
                 f"failure_reason: {result.get('failure_reason', '')}",

@@ -1,0 +1,29 @@
+{
+  "artifact": "OPERATOR_EXPERIENCE_HARDENING_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-05-31",
+  "validation_commands": [
+    "python -m pytest tests/test_aigol_operator_interface_extension_v1.py",
+    "python -m aigol.cli.aigol_cli run-governed --worker filesystem --operation create-file --target operator_hardening_v1.txt --content OPERATOR_EXPERIENCE_HARDENING_V1 --runtime-root /tmp/aigol_operator_hardening_runtime --workspace /tmp",
+    "python -m aigol.cli.aigol_cli replay operation --operation-id AIGOL-RUN-GOVERNED-D2D51A86DB89 --runtime-root /tmp/aigol_operator_hardening_runtime"
+  ],
+  "validation_results": [
+    "13 passed",
+    "status=SUCCEEDED; operator_status=READY; execution_status=SUCCEEDED; operation_id=AIGOL-RUN-GOVERNED-D2D51A86DB89",
+    "status=SUCCEEDED; operator_status=READY; execution_status=SUCCEEDED; replay_summary.event_count=6"
+  ],
+  "acceptance_criteria": {
+    "default_operation_id_generated": "PASSED",
+    "operation_id_collision_advanced_deterministically": "PASSED",
+    "replay_summary_returned_by_run": "PASSED",
+    "replay_lookup_by_operation_id": "PASSED",
+    "operator_status_visible": "PASSED",
+    "execution_status_visible": "PASSED",
+    "missing_replay_lookup_fails_closed": "PASSED",
+    "authority_expansion_absent": "PASSED"
+  },
+  "final_classification": {
+    "OPERATOR_EXPERIENCE_HARDENING_STATUS": "READY"
+  }
+}

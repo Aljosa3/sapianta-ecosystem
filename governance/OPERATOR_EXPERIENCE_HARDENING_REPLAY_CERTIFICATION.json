@@ -1,0 +1,30 @@
+{
+  "artifact": "OPERATOR_EXPERIENCE_HARDENING_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-05-31",
+  "replay_lookup_command": "aigol replay operation",
+  "lookup_key": "operation_id",
+  "certifies": {
+    "provider_replay_hash_visible": true,
+    "authorization_replay_hash_visible": true,
+    "worker_replay_hash_visible": true,
+    "replay_summary_visible": true,
+    "replay_event_count_visible": true,
+    "operation_replay_lookup_supported": true,
+    "missing_operation_fails_closed": true,
+    "replay_mutation_added": false,
+    "replay_authority_added": false
+  },
+  "expected_replay_events": [
+    "PROVIDER_PROPOSAL_CREATED",
+    "PROVIDER_PROPOSAL_RETURNED",
+    "AUTHORIZATION_CREATED",
+    "AUTHORIZATION_RETURNED",
+    "AUTHORIZED_WORKER_REQUEST_CREATED",
+    "FILESYSTEM_WORKER_EXECUTED"
+  ],
+  "final_classification": {
+    "OPERATOR_EXPERIENCE_HARDENING_REPLAY_STATUS": "READY"
+  }
+}

@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 from aigol.cli.aigol_cli import build_parser, render_command_result, run_command
-from aigol.cli.commands.run_governed import run_governed_operation_command
+from aigol.cli.commands.run_governed import generate_default_operation_id, run_governed_operation_command
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -71,9 +71,104 @@ def test_run_governed_parser_and_renderer(tmp_path):
 
     assert result["status"] == "SUCCEEDED"
     assert "AIGOL RUN GOVERNED" in rendered
+    assert "operator_status: READY" in rendered
     assert "proposal_id: AIGOL-OPERATOR-EXTENSION-000001:PROPOSAL" in rendered
     assert "authorization_id: AIGOL-OPERATOR-EXTENSION-000001:AUTHORIZATION" in rendered
     assert "execution_status: SUCCEEDED" in rendered
+    assert "replay_summary:" in rendered
+
+
+def test_run_governed_generates_default_operation_id(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    result = run_governed_operation_command(
+        worker="filesystem",
+        operation="create-file",
+        target="default-id.txt",
+        content="AIGOL_OPERATOR_INTERFACE_EXTENSION_V1",
+        runtime_root=tmp_path / "runtime",
+        workspace=workspace,
+    )
+
+    expected = generate_default_operation_id(
+        worker="filesystem",
+        operation="create-file",
+        target="default-id.txt",
+        content="AIGOL_OPERATOR_INTERFACE_EXTENSION_V1",
+    )
+
+    assert result["status"] == "SUCCEEDED"
+    assert result["operation_id"] == expected
+    assert result["proposal_id"] == f"{expected}:PROPOSAL"
+    assert result["replay_summary"]["event_count"] == 6
+
+
+def test_default_operation_id_advances_when_replay_exists(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    args = {
+        "worker": "filesystem",
+        "operation": "create-file",
+        "target": "default-id.txt",
+        "content": "AIGOL_OPERATOR_INTERFACE_EXTENSION_V1",
+        "runtime_root": tmp_path / "runtime",
+        "workspace": workspace,
+    }
+
+    first = run_governed_operation_command(**args)
+    second = run_governed_operation_command(**args)
+
+    assert first["status"] == "SUCCEEDED"
+    assert second["status"] == "FAILED_CLOSED"
+    assert second["operation_id"].endswith("-0002")
+    assert "filesystem worker target already exists" in second["failure_reason"]
+
+
+def test_replay_operation_summary_by_operation_id(tmp_path):
+    result = _run(tmp_path)
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "replay",
+            "operation",
+            "--operation-id",
+            result["operation_id"],
+            "--runtime-root",
+            str(tmp_path / "runtime"),
+        ]
+    )
+
+    summary = run_command(args)
+    rendered = render_command_result(summary)
+
+    assert summary["command"] == "aigol replay operation"
+    assert summary["status"] == "SUCCEEDED"
+    assert summary["execution_status"] == "SUCCEEDED"
+    assert summary["proposal_id"] == result["proposal_id"]
+    assert summary["authorization_id"] == result["authorization_id"]
+    assert summary["replay_summary"]["event_count"] == 6
+    assert "AIGOL REPLAY OPERATION" in rendered
+    assert f"operation_id: {result['operation_id']}" in rendered
+
+
+def test_replay_operation_missing_id_fails_closed(tmp_path):
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "replay",
+            "operation",
+            "--operation-id",
+            "MISSING-OPERATION",
+            "--runtime-root",
+            str(tmp_path / "runtime"),
+        ]
+    )
+
+    summary = run_command(args)
+
+    assert summary["status"] == "FAILED_CLOSED"
+    assert summary["fail_closed"] is True
+    assert summary["execution_status"] == "FAILED_CLOSED"
 
 
 def test_run_governed_cli_entrypoint(tmp_path):
