@@ -1,0 +1,75 @@
+{
+  "artifact": "PROMPT_EVIDENCE_CONTINUITY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "scope": {
+    "source_epoch": "FOURTH_REAL_CONVERSATIONAL_USAGE_EPOCH_V1",
+    "runtime_root": "/tmp/aigol_fourth_conversation_epoch",
+    "failed_or_non_conversation_outcomes_analyzed": 34,
+    "analysis_only": true,
+    "runtime_modified": false,
+    "providers_modified": false,
+    "governance_modified": false,
+    "replay_modified": false
+  },
+  "continuity_counts": {
+    "human_prompt_created_in_human_prompt_artifact": 34,
+    "human_prompt_stored_in_conversation_started_artifact": 33,
+    "classification_failures_with_prompt_in_openai_payload_input": 29,
+    "classification_failures_with_structured_human_prompt_in_provider_envelope_request": 0,
+    "missing_prompt_reconstructable_from_existing_replay": 34
+  },
+  "loss_point_taxonomy": {
+    "openai_adapter_request_envelope_lost_structured_human_prompt": {
+      "count": 29,
+      "category": "provider request construction / adapter request transformation",
+      "primary_evidence": "provider-assisted conversation failed closed: human_prompt is required"
+    },
+    "provider_unavailable_before_response": {
+      "count": 3,
+      "category": "provider availability",
+      "primary_evidence": "OpenAI provider unavailable"
+    },
+    "no_prompt_loss_authority_validation": {
+      "count": 1,
+      "category": "conversation response validation",
+      "primary_evidence": "provider conversation response contains authority-bearing text"
+    },
+    "no_prompt_loss_non_conversation_route": {
+      "count": 1,
+      "category": "routing",
+      "primary_evidence": "CONSTITUTIONAL_MEMORY_CONSULTATION"
+    }
+  },
+  "reconstructability": {
+    "can_reconstruct_missing_prompt_from_human_prompt_artifact": true,
+    "can_reconstruct_missing_prompt_from_conversation_started_artifact_when_present": true,
+    "can_reconstruct_missing_prompt_from_openai_payload_input_for_dominant_failures": true,
+    "requires_provider_authority_change": false,
+    "requires_governance_authority_change": false,
+    "requires_replay_authority_change": false
+  },
+  "evidence_references": {
+    "fourth_epoch_certification": "governance/FOURTH_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "case_6_human_prompt_artifact": "/tmp/aigol_fourth_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/000_human_prompt_artifact.json",
+    "case_6_conversation_started": "/tmp/aigol_fourth_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/000_provider_assisted_conversation_started.json",
+    "case_6_provider_proposal": "/tmp/aigol_fourth_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/provider_semantic_assistance/000_provider_proposal_created.json",
+    "case_6_validation_failure": "/tmp/aigol_fourth_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/000_provider_intent_governance_validation.json",
+    "openai_adapter_source": "aigol/provider/providers/openai_provider.py",
+    "classification_normalization_source": "aigol/runtime/provider_assisted_intent_classification.py"
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "provider_routing_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_visibility_preserved": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "PROMPT_EVIDENCE_CONTINUITY_STATUS": "READY_WITH_GAPS"
+  }
+}
