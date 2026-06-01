@@ -1,0 +1,135 @@
+{
+  "artifact": "WORKER_INVOCATION_RUNTIME_CERTIFICATION_V1",
+  "status": "READY_WITH_GAPS",
+  "classification": "WORKER_INVOCATION_RUNTIME_FOUNDATION_STATUS = READY_WITH_GAPS",
+  "scope": "Review-only worker invocation governance boundary between DISPATCHED and future Worker Execution.",
+  "created_artifacts": [
+    "governance/WORKER_INVOCATION_RUNTIME_FOUNDATION_V1.md",
+    "governance/WORKER_INVOCATION_RUNTIME_MODEL_V1.md",
+    "governance/WORKER_INVOCATION_RUNTIME_TRANSITIONS_V1.md",
+    "governance/WORKER_INVOCATION_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/WORKER_INVOCATION_RUNTIME_ADR_V1.md",
+    "governance/WORKER_INVOCATION_RUNTIME_CERTIFICATION.json"
+  ],
+  "invocation_artifact": "WORKER_INVOCATION_ARTIFACT_V1",
+  "defined_states": [
+    "DISPATCHED",
+    "INVOKED",
+    "FAILED_INVOCATION",
+    "CANCELLED",
+    "EXPIRED"
+  ],
+  "positive_transition": {
+    "from": "DISPATCHED",
+    "to": "INVOKED",
+    "authorized_actor": "AiGOL"
+  },
+  "required_conditions": [
+    "Dispatch artifact exists",
+    "Dispatch artifact is well formed",
+    "Dispatch status is DISPATCHED",
+    "Dispatch was created by AiGOL",
+    "Dispatch replay is reconstructable",
+    "Worker assignment artifact exists",
+    "Worker assignment status is ASSIGNED",
+    "Worker identity matches dispatch evidence",
+    "Worker capability binding matches dispatch evidence",
+    "Readiness evidence is stable",
+    "Execution request lineage is stable",
+    "Invocation parameters are bounded",
+    "Invocation parameters are hashable",
+    "Invocation parameters match approved request scope",
+    "No cancellation exists before invocation",
+    "No expiry exists before invocation",
+    "No duplicate invocation event exists",
+    "No execution exists before invocation",
+    "No completion exists before invocation",
+    "Replay reconstruction succeeds"
+  ],
+  "authorized_invocation_actor": [
+    "AiGOL"
+  ],
+  "forbidden_invocation_actors": [
+    "Human acting directly outside AiGOL governance",
+    "Provider",
+    "Worker acting on itself",
+    "Replay",
+    "Proposal Runtime",
+    "Approval Runtime",
+    "Execution Request Runtime",
+    "Ready For Dispatch Runtime",
+    "Worker Runtime assignment artifact",
+    "Dispatch artifact",
+    "CLI transport alone",
+    "Automatic retry logic"
+  ],
+  "required_replay_evidence": [
+    "PROPOSAL_CREATED",
+    "APPROVAL_DECISION(APPROVED)",
+    "EXECUTION_REQUEST_CREATED",
+    "READY_FOR_DISPATCH_VALIDATED",
+    "WORKER_REGISTERED",
+    "WORKER_ASSIGNED",
+    "DISPATCH_VALIDATED",
+    "DISPATCH_RETURNED",
+    "WORKER_INVOCATION_VALIDATED",
+    "WORKER_INVOCATION_RETURNED"
+  ],
+  "worker_identity_verification": [
+    "worker_id",
+    "worker_type",
+    "worker_hash",
+    "worker_assignment_reference",
+    "worker_assignment_hash",
+    "dispatch_worker_reference",
+    "dispatch_worker_hash",
+    "capability_id",
+    "supported_request_type",
+    "trust_boundary",
+    "worker_registration_replay"
+  ],
+  "invocation_parameter_validation": [
+    "Parameters are explicit",
+    "Parameters are bounded",
+    "Parameters are JSON-serializable",
+    "Parameters are hashable",
+    "Parameters are derived from approved execution request payload",
+    "Parameters are compatible with assigned worker capability",
+    "Parameters contain no provider commands",
+    "Parameters contain no credentials or secrets",
+    "Parameters contain no scope expansion"
+  ],
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "worker_self_invoked": false,
+    "execution_started": false,
+    "execution_performed": false,
+    "completion_recorded": false,
+    "automatic_authorization": false,
+    "scope_expansion": false,
+    "replay_records": true,
+    "aigol_governs": true
+  },
+  "not_implemented": [
+    "Invocation runtime code",
+    "Invocation runtime tests",
+    "Dispatch runtime code",
+    "Worker execution",
+    "Execution completion",
+    "Worker result persistence",
+    "Worker termination evidence"
+  ],
+  "known_gaps": [
+    "Foundation defines invocation but does not enforce it in runtime",
+    "Dispatch Runtime remains foundation-only",
+    "Future execution runtime must reject worker activity without replay-valid invocation evidence",
+    "Execution, completion, result, and termination boundaries remain future work"
+  ],
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "future execution boundary only",
+    "replay_records": true
+  },
+  "final_classification": "READY_WITH_GAPS"
+}
