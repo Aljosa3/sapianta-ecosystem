@@ -1,0 +1,99 @@
+{
+  "artifact": "SOURCE_OF_TRUTH_ROUTER_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "runtime_file": "aigol/runtime/source_of_truth_router_runtime.py",
+  "test_file": "tests/test_source_of_truth_router_runtime_v1.py",
+  "certified_scope": "minimal replay-visible deterministic source-of-truth selection runtime",
+  "implemented": {
+    "source_selection_artifact": true,
+    "canonical_priority_selection": true,
+    "replay_visible_selection_event": true,
+    "replay_visible_return_event": true,
+    "replay_reconstruction": true,
+    "fail_closed_validation": true
+  },
+  "not_implemented": {
+    "source_resolver_dispatch": true,
+    "response_generation": true,
+    "provider_invocation": true,
+    "worker_runtime": true,
+    "execution": true,
+    "dispatch": true
+  },
+  "supported_sources": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "source_priority": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "runtime_artifact": "SOURCE_OF_TRUTH_ROUTER_SELECTION_ARTIFACT_V1",
+  "runtime_events": [
+    "SOURCE_OF_TRUTH_ROUTER_SELECTED",
+    "SOURCE_OF_TRUTH_ROUTER_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "missing router id",
+    "missing human prompt reference",
+    "missing prompt",
+    "missing creation timestamp",
+    "invalid source",
+    "ambiguous routing",
+    "missing evidence references",
+    "duplicate replay artifacts",
+    "corrupt router artifact",
+    "corrupt replay wrapper",
+    "replay ordering corruption",
+    "router reference mismatch"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_selected_event": true,
+    "requires_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_router_reference": true,
+    "verifies_router_hash": true,
+    "verifies_selected_source_in_candidates": true,
+    "verifies_source_priority": true,
+    "read_only": true
+  },
+  "boundary_certification": {
+    "provider_used": false,
+    "worker_required": false,
+    "execution_required": false,
+    "proposal_lifecycle_required": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "worker_invoked": false,
+    "provider_authority": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "focused_command": "python -m pytest tests/test_source_of_truth_router_runtime_v1.py",
+    "focused_passed": 26,
+    "focused_failed": 0,
+    "broader_command": "python -m pytest tests/test_source_of_truth_router_runtime_v1.py tests/test_resolution_strategy_runtime_v1.py tests/test_replay_resolution_strategy_v1.py tests/test_constitutional_memory_resolution_strategy_v1.py tests/test_governance_resolution_strategy_v1.py",
+    "broader_passed": 93,
+    "broader_failed": 0
+  },
+  "final_classification": {
+    "SOURCE_OF_TRUTH_ROUTER_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "artifact": "SOURCE_OF_TRUTH_ROUTER_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/source_of_truth_router_runtime.py",
+  "test_file": "tests/test_source_of_truth_router_runtime_v1.py",
+  "implemented_scope": {
+    "deterministic_source_selection": true,
+    "router_selection_artifact": "SOURCE_OF_TRUTH_ROUTER_SELECTION_ARTIFACT_V1",
+    "replay_visible_routing_records": true,
+    "replay_reconstruction": true,
+    "source_resolver_dispatch_implemented": false,
+    "provider_invocation_implemented": false,
+    "worker_runtime_implemented": false,
+    "execution_implemented": false,
+    "dispatch_implemented": false
+  },
+  "supported_sources": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "source_priority": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "required_fields": [
+    "router_id",
+    "selected_source",
+    "selection_reason",
+    "human_prompt_reference",
+    "created_at"
+  ],
+  "runtime_events": [
+    "SOURCE_OF_TRUTH_ROUTER_SELECTED",
+    "SOURCE_OF_TRUTH_ROUTER_RETURNED"
+  ],
+  "acceptance_checks": {
+    "replay_source_selected": "PASSED",
+    "governance_source_selected": "PASSED",
+    "constitutional_memory_source_selected": "PASSED",
+    "self_resolution_source_selected": "PASSED",
+    "provider_source_selected": "PASSED",
+    "canonical_priority_applied": "PASSED",
+    "routing_record_persisted": "PASSED",
+    "router_return_record_persisted": "PASSED",
+    "replay_reconstruction_supported": "PASSED",
+    "invalid_source_fails_closed": "PASSED",
+    "ambiguous_routing_fails_closed": "PASSED",
+    "missing_references_fail_closed": "PASSED",
+    "corrupt_artifacts_fail_closed": "PASSED",
+    "reference_mismatch_fails_closed": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "focused_command": "python -m pytest tests/test_source_of_truth_router_runtime_v1.py",
+    "focused_passed": 26,
+    "focused_failed": 0,
+    "broader_command": "python -m pytest tests/test_source_of_truth_router_runtime_v1.py tests/test_resolution_strategy_runtime_v1.py tests/test_replay_resolution_strategy_v1.py tests/test_constitutional_memory_resolution_strategy_v1.py tests/test_governance_resolution_strategy_v1.py",
+    "broader_passed": 93,
+    "broader_failed": 0
+  },
+  "boundary_evidence": {
+    "provider_used": false,
+    "worker_required": false,
+    "execution_required": false,
+    "proposal_lifecycle_required": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "worker_invoked": false,
+    "provider_authority": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "SOURCE_OF_TRUTH_ROUTER_RUNTIME_STATUS": "CERTIFIED"
+  }
+}
