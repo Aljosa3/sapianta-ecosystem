@@ -1,0 +1,33 @@
+{
+  "artifact": "HUMAN_PROMPT_PROVIDER_GOVERNANCE_ALIGNMENT_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "aigol_first_resolution_model": "CERTIFIED",
+    "provider_assisted_semantics_model": "CERTIFIED_WITH_GAPS",
+    "provider_assisted_intent_classification": "COMPATIBLE_WITH_GAPS",
+    "provider_assisted_response": "COMPATIBLE_WITH_GAPS",
+    "provider_selection_governed_by_aigol": true,
+    "provider_non_authority_preserved": true,
+    "worker_isolation_preserved": true,
+    "provider_substitutability_preserved": true,
+    "replay_reconstruction_preservable": true,
+    "runtime_changed": false,
+    "provider_changed": false,
+    "worker_changed": false,
+    "governance_activation_changed": false
+  },
+  "required_future_gaps": [
+    "provider semantic assistance artifact",
+    "self-resolution evidence model",
+    "provider-assisted classification validation",
+    "provider-assisted response validation",
+    "semantic assistance replay reconstruction",
+    "fail-closed handling for malformed or ambiguous semantic suggestions"
+  ],
+  "final_classification": {
+    "HUMAN_PROMPT_PROVIDER_GOVERNANCE_ALIGNMENT_STATUS": "CERTIFIED"
+  }
+}
