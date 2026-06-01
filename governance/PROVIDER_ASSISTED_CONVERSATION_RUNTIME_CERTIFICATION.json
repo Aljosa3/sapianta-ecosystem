@@ -1,0 +1,32 @@
+{
+  "artifact": "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "conversation_intent_required": true,
+    "provider_assisted_intent_classification_used": true,
+    "self_resolution_attempted_first": true,
+    "provider_response_requested_only_when_self_resolution_unresolved": true,
+    "provider_response_non_authoritative": true,
+    "aigol_validates_response": true,
+    "final_response_artifact_created_by_aigol": true,
+    "replay_visible": true,
+    "provider_unavailable_fails_closed": true,
+    "invalid_provider_response_fails_closed": true,
+    "authority_bearing_response_fails_closed": true,
+    "ambiguous_response_fails_closed": true,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "governance_model_changed": false
+  },
+  "runtime_surface": {
+    "module": "aigol/runtime/provider_assisted_conversation_runtime.py",
+    "function": "run_provider_assisted_conversation"
+  },
+  "final_classification": {
+    "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_STATUS": "READY"
+  }
+}

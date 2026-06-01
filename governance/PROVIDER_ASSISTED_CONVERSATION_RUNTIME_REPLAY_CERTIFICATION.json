@@ -1,0 +1,49 @@
+{
+  "artifact": "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_root": "<runtime_root>/<conversation_replay>",
+  "required_replay_sources": [
+    "intent_classification/deterministic_intent_classification/000_intent_classification_artifact.json",
+    "intent_classification/deterministic_intent_classification/001_intent_classification_replay.json",
+    "intent_classification/000_provider_intent_governance_validation.json",
+    "intent_classification/001_provider_assisted_intent_classification_artifact.json",
+    "intent_classification/002_provider_assisted_intent_classification_replay.json",
+    "000_provider_assisted_conversation_started.json",
+    "001_conversation_self_resolution_attempted.json",
+    "002_provider_conversation_response_validation.json",
+    "003_provider_assisted_conversation_response_created.json",
+    "004_provider_assisted_conversation_response_returned.json"
+  ],
+  "conditional_replay_sources_when_provider_response_required": [
+    "provider_conversation_response/000_provider_proposal_created.json",
+    "provider_conversation_response/001_provider_proposal_returned.json"
+  ],
+  "reconstructs": {
+    "prompt": true,
+    "intent_classification": true,
+    "self_resolution_attempt": true,
+    "provider_request": true,
+    "provider_response": true,
+    "validation_result": true,
+    "final_response": true
+  },
+  "fail_closed_cases": {
+    "provider_unavailable": "FAILED_CLOSED",
+    "invalid_provider_response": "FAILED_CLOSED",
+    "authority_bearing_response": "FAILED_CLOSED",
+    "ambiguous_response": "FAILED_CLOSED",
+    "non_conversation_intent": "FAILED_CLOSED",
+    "corrupt_replay": "RECONSTRUCTION_FAILED"
+  },
+  "authority_certification": {
+    "provider_response_authority": false,
+    "execution_requested": false,
+    "worker_invoked": false,
+    "authorization_created": false
+  },
+  "final_classification": {
+    "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_REPLAY_STATUS": "READY"
+  }
+}

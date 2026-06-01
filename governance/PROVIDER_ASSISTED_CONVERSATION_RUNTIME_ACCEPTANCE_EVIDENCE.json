@@ -1,0 +1,40 @@
+{
+  "artifact": "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_provider_assisted_conversation_runtime_v1.py tests/test_provider_assisted_intent_classification_v1.py tests/test_minimal_provider_attachment_runtime_v1.py tests/test_intent_routing_attachment_v1.py",
+    "python -m py_compile aigol/runtime/provider_assisted_conversation_runtime.py"
+  ],
+  "validation_results": [
+    "46 passed",
+    "py_compile passed"
+  ],
+  "acceptance_criteria": {
+    "deterministic_self_resolution_returns_response_without_provider_response": "PASSED",
+    "slovenian_prompt_returns_provider_assisted_response": "PASSED",
+    "provider_response_validated_by_aigol": "PASSED",
+    "provider_unavailable_fails_closed": "PASSED",
+    "invalid_provider_response_fails_closed": "PASSED",
+    "authority_bearing_response_fails_closed": "PASSED",
+    "ambiguous_response_fails_closed": "PASSED",
+    "non_conversation_intent_fails_closed": "PASSED",
+    "replay_corruption_detected": "PASSED"
+  },
+  "demonstrated_prompts": [
+    {
+      "prompt": "what is aigol",
+      "provider_assistance_required": false,
+      "conversation_status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    },
+    {
+      "prompt": "Kaj je namen AiGOL?",
+      "provider_assistance_required": true,
+      "conversation_status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    }
+  ],
+  "final_classification": {
+    "PROVIDER_ASSISTED_CONVERSATION_RUNTIME_STATUS": "READY"
+  }
+}
