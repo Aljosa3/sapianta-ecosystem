@@ -1,0 +1,82 @@
+{
+  "artifact": "PROPOSAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/proposal_runtime.py",
+  "test_file": "tests/test_proposal_runtime_v1.py",
+  "implemented_scope": {
+    "proposal_creation": true,
+    "proposal_runtime_artifact": "PROPOSAL_RUNTIME_ARTIFACT_V1",
+    "created_status_only": true,
+    "approval_implemented": false,
+    "execution_implemented": false,
+    "worker_dispatch_implemented": false,
+    "provider_authority_implemented": false,
+    "proposal_mutation_implemented": false
+  },
+  "mandatory_fields": {
+    "proposal_id": true,
+    "proposal_type": true,
+    "proposal_source": true,
+    "proposal_text": true,
+    "created_at": true,
+    "created_by": true,
+    "status": true,
+    "replay_reference": true
+  },
+  "runtime_events": [
+    "PROPOSAL_RUNTIME_CREATED",
+    "PROPOSAL_RUNTIME_RETURNED"
+  ],
+  "supported_values": {
+    "proposal_types": [
+      "CAPABILITY_PROPOSAL"
+    ],
+    "proposal_sources": [
+      "CONVERSATION",
+      "RESOLUTION_STRATEGY",
+      "PROVIDER_EVIDENCE",
+      "REPLAY_EVIDENCE",
+      "GOVERNANCE_EVIDENCE",
+      "HUMAN_PROMPT",
+      "COMBINED"
+    ],
+    "statuses": [
+      "CREATED"
+    ],
+    "created_by": [
+      "AIGOL"
+    ]
+  },
+  "acceptance_checks": {
+    "deterministic_proposal_artifact_created": "PASSED",
+    "proposal_artifact_persisted": "PASSED",
+    "proposal_creation_event_created": "PASSED",
+    "proposal_return_event_created": "PASSED",
+    "replay_reconstruction_supported": "PASSED",
+    "missing_fields_fail_closed": "PASSED",
+    "invalid_status_fails_closed": "PASSED",
+    "duplicate_ids_fail_closed": "PASSED",
+    "corrupt_artifacts_fail_closed": "PASSED",
+    "authority_fields_absent_or_false": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_proposal_runtime_v1.py",
+    "passed": 17,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "authority": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "provider_authority": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "PROPOSAL_RUNTIME_STATUS": "CERTIFIED"
+  }
+}
