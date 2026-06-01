@@ -1,0 +1,102 @@
+{
+  "artifact": "READY_FOR_DISPATCH_RUNTIME_CERTIFICATION_V1",
+  "status": "READY_WITH_GAPS",
+  "classification": "READY_FOR_DISPATCH_RUNTIME_FOUNDATION_STATUS = READY_WITH_GAPS",
+  "scope": "Review-only readiness governance boundary between Execution Request Runtime and future Worker Runtime.",
+  "created_artifacts": [
+    "governance/READY_FOR_DISPATCH_RUNTIME_FOUNDATION_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_MODEL_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_TRANSITIONS_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_ADR_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_CERTIFICATION.json"
+  ],
+  "readiness_artifact": "READY_FOR_DISPATCH_ARTIFACT_V1",
+  "defined_states": [
+    "CREATED",
+    "READY_FOR_DISPATCH",
+    "CANCELLED",
+    "EXPIRED"
+  ],
+  "positive_transition": {
+    "from": "CREATED",
+    "to": "READY_FOR_DISPATCH",
+    "authorized_actor": "AiGOL"
+  },
+  "required_conditions": [
+    "Execution request artifact exists",
+    "Execution request artifact is well formed",
+    "Execution request status is CREATED",
+    "Proposal lineage exists",
+    "Proposal lineage is replay-reconstructable",
+    "Approval lineage exists",
+    "Approval status is APPROVED",
+    "Execution request references the approved proposal lineage",
+    "Request type is recognized",
+    "Request payload is bounded and hashable",
+    "Payload hash matches readiness evidence",
+    "No cancellation exists before readiness",
+    "No expiry exists before readiness",
+    "No duplicate readiness event exists",
+    "No worker assignment exists before readiness",
+    "No dispatch exists before readiness",
+    "No execution exists before readiness",
+    "Replay reconstruction succeeds"
+  ],
+  "authorized_readiness_actor": [
+    "AiGOL"
+  ],
+  "forbidden_readiness_actors": [
+    "Human acting directly outside AiGOL governance",
+    "Provider",
+    "Worker",
+    "Replay",
+    "Proposal Runtime",
+    "Approval Runtime",
+    "Execution Request artifact",
+    "CLI transport alone",
+    "Automatic retry logic"
+  ],
+  "required_replay_evidence": [
+    "PROPOSAL_CREATED",
+    "APPROVAL_DECISION(APPROVED)",
+    "EXECUTION_REQUEST_CREATED",
+    "EXECUTION_REQUEST_RETURNED",
+    "READY_FOR_DISPATCH_VALIDATED",
+    "READY_FOR_DISPATCH_RETURNED"
+  ],
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "approval_created": false,
+    "automatic_authorization": false,
+    "replay_records": true,
+    "aigol_governs": true
+  },
+  "not_implemented": [
+    "Readiness runtime code",
+    "Readiness runtime tests",
+    "Worker assignment",
+    "Dispatch",
+    "Worker execution",
+    "Execution completion",
+    "Worker capability registry",
+    "Expiration runtime"
+  ],
+  "known_gaps": [
+    "Foundation defines readiness but does not enforce it in runtime",
+    "Worker capability compatibility is defined as required evidence but no registry exists yet",
+    "Current execution request runtime remains creation-only",
+    "Future Worker Runtime must reject requests without replay-valid READY_FOR_DISPATCH evidence"
+  ],
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "future boundary only",
+    "replay_records": true
+  },
+  "final_classification": "READY_WITH_GAPS"
+}
