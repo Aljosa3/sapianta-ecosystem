@@ -1,0 +1,48 @@
+{
+  "artifact": "PROVIDER_FALLBACK_ACTIVATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "review_scope": {
+    "runtime_changes": false,
+    "provider_changes": false,
+    "worker_changes": false,
+    "governance_layer_changes": false
+  },
+  "answers": {
+    "why_provider_used_was_zero": "successful responses were self-resolution only; provider fallback attempts failed closed before validated provider-assisted response",
+    "provider_fallback_reached": true,
+    "why_provider_not_invoked_successfully": "OpenAI provider unavailable",
+    "provider_configured": "PARTIAL_DEFAULT_OPENAI_ADAPTER_CONFIGURED",
+    "provider_available": false,
+    "gated_by_impossible_condition": false,
+    "connected_to_human_prompt_flow": true,
+    "unclassified_prompt_can_trigger_provider_fallback": true
+  },
+  "evidence": {
+    "self_resolution_prompt": "What is AiGOL?",
+    "self_resolution_result": "provider skipped correctly",
+    "conversation_fallback_prompt": "Explain worker execution.",
+    "conversation_fallback_result": "OpenAI provider unavailable",
+    "unclassified_prompt": "Kaj je namen AiGOL?",
+    "unclassified_prompt_result": "provider-assisted conversation failed closed: OpenAI provider unavailable"
+  },
+  "gaps": [
+    "real provider unavailable in current runtime environment",
+    "top-level output does not expose provider_fallback_attempted",
+    "top-level output does not expose provider_replay_reference for failed fallback",
+    "provider configuration readiness is not surfaced before prompt usage"
+  ],
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "fail_closed_preserved": true,
+    "replay_visibility_preserved": true
+  },
+  "final_classification": {
+    "PROVIDER_FALLBACK_ACTIVATION_STATUS": "READY_WITH_GAPS"
+  }
+}

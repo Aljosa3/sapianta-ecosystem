@@ -1,0 +1,99 @@
+{
+  "artifact": "CONVERSATIONAL_COVERAGE_CERTIFICATION",
+  "version": "CONVERSATIONAL_COVERAGE_ANALYSIS_V1",
+  "status": "READY_WITH_GAPS",
+  "final_classification": "CONVERSATIONAL_COVERAGE_STATUS = READY_WITH_GAPS",
+  "scope": "Evidence-based conversational coverage analysis for SECOND_REAL_CONVERSATIONAL_USAGE_EPOCH_V1",
+  "evidence_sources": {
+    "epoch": "governance/SECOND_REAL_CONVERSATIONAL_USAGE_EPOCH_V1.md",
+    "log": "governance/SECOND_REAL_CONVERSATIONAL_USAGE_LOG_V1.md",
+    "certification": "governance/SECOND_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "replay_root": "/tmp/aigol_second_conversation_epoch",
+    "connectivity_proof": "governance/REAL_OPENAI_CONNECTIVITY_PROOF_V1.md"
+  },
+  "aggregate_results": {
+    "prompts_submitted": 50,
+    "responses_created": 6,
+    "fail_closed_responses": 44,
+    "success_rate": "12%",
+    "fail_closed_rate": "88%"
+  },
+  "flow_counts": {
+    "classified_successfully": 20,
+    "classified_unsuccessfully": 30,
+    "routed_successfully": 20,
+    "routed_unsuccessfully": 30,
+    "provider_proposal_artifacts_created": 10,
+    "provider_invoked": 0,
+    "provider_not_invoked": 50,
+    "provider_response_received": 0,
+    "failed_before_provider_response": 44
+  },
+  "stop_points": {
+    "success_self_resolution": {
+      "count": 6,
+      "percent_of_all_prompts": "12.0%"
+    },
+    "intent_classification": {
+      "count": 30,
+      "percent_of_all_prompts": "60.0%",
+      "percent_of_failures": "68.2%"
+    },
+    "provider_activation": {
+      "count": 10,
+      "percent_of_all_prompts": "20.0%",
+      "percent_of_failures": "22.7%"
+    },
+    "provider_response_validation": {
+      "count": 3,
+      "percent_of_all_prompts": "6.0%",
+      "percent_of_failures": "6.8%"
+    },
+    "non_conversation_intent": {
+      "count": 1,
+      "percent_of_all_prompts": "2.0%",
+      "percent_of_failures": "2.3%"
+    }
+  },
+  "successful_categories": {
+    "simple_aigol_identity": ["case_1", "case_2"],
+    "simple_replay_explanation": ["case_3", "case_21"],
+    "simple_governance_explanation": ["case_4", "case_19"]
+  },
+  "failed_categories": {
+    "intent_classification_provider_unavailable": {
+      "count": 30,
+      "evidence": "provider-assisted conversation failed closed: OpenAI provider unavailable"
+    },
+    "provider_activation_unavailable": {
+      "count": 10,
+      "evidence": "provider_event FAILED_CLOSED; provider_invoked false; provider_failure OpenAI provider unavailable"
+    },
+    "response_validation_over_block": {
+      "count": 3,
+      "evidence": "conversation response validation failed closed: authority-bearing response"
+    },
+    "non_conversation_intent": {
+      "count": 1,
+      "evidence": "case_36 classified as CONSTITUTIONAL_MEMORY_CONSULTATION"
+    }
+  },
+  "post_connectivity_gap": {
+    "real_openai_connectivity_status": "READY",
+    "same_50_prompt_suite_rerun_after_connectivity_proof": false,
+    "post_connectivity_coverage_rate_proven": false,
+    "reason": "The 50-prompt epoch recorded zero provider invocations and zero provider responses; the later OpenAI connectivity proof is real but separate."
+  },
+  "highest_impact_next_step": {
+    "recommendation": "Rerun the same 50-prompt conversational epoch with live OpenAI available and compare stop-point distribution.",
+    "basis": "40 of 44 failures in the measured epoch cite OpenAI provider unavailable."
+  },
+  "boundary_preservation": {
+    "architecture_changes": false,
+    "governance_changes": false,
+    "provider_redesign": false,
+    "replay_redesign": false,
+    "worker_invoked": false,
+    "execution_requested": false
+  }
+}

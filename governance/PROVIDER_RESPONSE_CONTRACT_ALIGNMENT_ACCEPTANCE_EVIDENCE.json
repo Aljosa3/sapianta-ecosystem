@@ -1,0 +1,39 @@
+{
+  "artifact": "PROVIDER_RESPONSE_CONTRACT_ALIGNMENT_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "commands": [
+    "python -m pytest tests/test_provider_assisted_conversation_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py tests/test_first_real_provider_attachment_v1.py",
+    "python -m aigol.cli.aigol_cli prompt submit --prompt \"Explain provider boundaries.\" --runtime-root /tmp/aigol_provider_response_contract_alignment/explain_provider_boundaries"
+  ],
+  "test_results": {
+    "total_tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "valid_provider_response_alignment": "PASSED",
+    "missing_fields_fail_closed": "PASSED",
+    "invalid_confidence_fail_closed": "PASSED",
+    "malformed_response_fail_closed": "PASSED",
+    "replay_reconstruction": "PASSED",
+    "provider_attachment_regression": "PASSED",
+    "prompt_to_conversation_regression": "PASSED"
+  },
+  "live_provider_result": {
+    "provider": "OpenAI",
+    "response_status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+    "response_source": "PROVIDER_ASSISTED",
+    "provider_used": true,
+    "provider_invoked": true,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "fail_closed": false
+  },
+  "authority_results": {
+    "provider_authority_introduced": false,
+    "governance_authority_changed": false,
+    "authorization_created": false,
+    "worker_invoked": false,
+    "execution_requested": false
+  }
+}

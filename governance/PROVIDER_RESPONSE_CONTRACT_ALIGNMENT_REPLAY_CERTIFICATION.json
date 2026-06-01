@@ -1,0 +1,36 @@
+{
+  "artifact": "PROVIDER_RESPONSE_CONTRACT_ALIGNMENT_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "live_replay_reference": "/tmp/aigol_provider_response_contract_alignment/explain_provider_boundaries/AIGOL-HUMAN-PROMPT-8987B3838E74",
+  "conversation_replay_reference": "/tmp/aigol_provider_response_contract_alignment/explain_provider_boundaries/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response",
+  "reconstruction_result": {
+    "response_status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+    "response_source": "PROVIDER_ASSISTED",
+    "provider_used": true,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "replay_visible": true
+  },
+  "replay_evidence": {
+    "prompt_replay_visible": true,
+    "intent_classification_replay_visible": true,
+    "intent_routing_replay_visible": true,
+    "provider_request_replay_visible": true,
+    "provider_response_replay_visible": true,
+    "contract_alignment_validation_replay_visible": true,
+    "conversation_response_replay_visible": true
+  },
+  "fail_closed_replay": {
+    "corrupt_response_artifact_detected": true,
+    "broken_hash_detected": true,
+    "missing_or_malformed_provider_response_fails_closed": true
+  },
+  "authority_replay": {
+    "provider_authority": false,
+    "response_authority": false,
+    "worker_invoked": false,
+    "execution_requested": false
+  }
+}

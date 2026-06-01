@@ -31,6 +31,8 @@ VALIDATED = "PROVIDER_CONVERSATION_RESPONSE_VALIDATED"
 CREATED = "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
 RETURNED = "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_RETURNED"
 FAILED_CLOSED = "FAILED_CLOSED"
+NORMALIZED_CONFIDENCE = "PROVIDER_TEXT_NORMALIZED"
+VALID_CONFIDENCE_VALUES = frozenset({"LOW", "MEDIUM", "HIGH", "DETERMINISTIC", NORMALIZED_CONFIDENCE})
 
 REPLAY_STEPS = (
     "provider_assisted_conversation_started",
@@ -450,14 +452,37 @@ def _extract_provider_response_suggestion(provider_capture: dict[str, Any]) -> d
         raise FailClosedRuntimeError("provider conversation response contains authority-bearing field")
     if isinstance(response.get("alternate_responses"), list) and response["alternate_responses"]:
         raise FailClosedRuntimeError("provider conversation response is ambiguous")
-    suggestion = {
-        "suggested_response_text": _require_string(response.get("suggested_response_text"), "suggested_response_text"),
-        "response_reasoning": _require_string(response.get("response_reasoning"), "response_reasoning"),
-        "confidence": _require_string(response.get("confidence"), "confidence"),
-    }
+    suggestion = _aligned_provider_response_contract(response)
     if _looks_authority_bearing(suggestion["suggested_response_text"]):
         raise FailClosedRuntimeError("provider conversation response contains authority-bearing text")
     return suggestion
+
+
+def _aligned_provider_response_contract(response: dict[str, Any]) -> dict[str, str]:
+    """Normalize provider output into the existing conversation response contract.
+
+    Real providers may return a generic proposal envelope with `response_text`.
+    AiGOL treats that as provider evidence only and deterministically aligns it
+    into the already-required conversation suggestion fields before validation.
+    """
+
+    has_structured_fields = any(
+        key in response for key in ("suggested_response_text", "response_reasoning", "confidence")
+    )
+    if has_structured_fields:
+        suggestion = {
+            "suggested_response_text": _require_string(response.get("suggested_response_text"), "suggested_response_text"),
+            "response_reasoning": _require_string(response.get("response_reasoning"), "response_reasoning"),
+            "confidence": _require_confidence(response.get("confidence")),
+        }
+        return suggestion
+
+    response_text = _require_string(response.get("response_text"), "response_text")
+    return {
+        "suggested_response_text": response_text,
+        "response_reasoning": "deterministically aligned from provider response_text",
+        "confidence": NORMALIZED_CONFIDENCE,
+    }
 
 
 def _validation_artifact(
@@ -789,6 +814,13 @@ def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"{field_name} is required")
     return value.strip()
+
+
+def _require_confidence(value: Any) -> str:
+    confidence = _require_string(value, "confidence")
+    if confidence not in VALID_CONFIDENCE_VALUES:
+        raise FailClosedRuntimeError("provider conversation response confidence is invalid")
+    return confidence
 
 
 def _failure_reason(exc: Exception) -> str:

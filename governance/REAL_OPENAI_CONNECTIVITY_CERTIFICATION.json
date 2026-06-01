@@ -1,0 +1,75 @@
+{
+  "artifact": "REAL_OPENAI_CONNECTIVITY_CERTIFICATION",
+  "version": "REAL_OPENAI_CONNECTIVITY_PROOF_V1",
+  "status": "READY",
+  "final_classification": "REAL_OPENAI_CONNECTIVITY_STATUS = READY",
+  "scope": "factual proof of observable OpenAI API connectivity for AiGOL",
+  "proof_run": {
+    "timestamp": "2026-06-01T00:00:00Z",
+    "replay_dir": "/tmp/real_openai_connectivity_sfnhm8np",
+    "provider_id": "openai",
+    "provider_version": "openai-responses-v1",
+    "model_requested": "gpt-5.1",
+    "model_resolved": "gpt-5.1-2025-11-13",
+    "endpoint": "https://api.openai.com/v1/responses",
+    "raw_response_id": "resp_02aefc54f17190e6006a1d499ad4dc819cbfde31d6905b008f",
+    "raw_response_hash": "sha256:492da3c498308e821b4d51f1051070a5384bbcaa5377e1f0631069072c8ee92a",
+    "proposal_hash": "sha256:08e2fa75977f035182242578df5408ade0748906f05ce42c4dc0522c6b1a7c44",
+    "provider_invoked": true,
+    "response_text_present": true,
+    "api_key_captured": false,
+    "failure_reason": null
+  },
+  "required_evidence": {
+    "OPENAI_API_KEY_PRESENT": {
+      "status": "TRUE",
+      "evidence": "Environment probe returned OPENAI_API_KEY_PRESENT=TRUE and OPENAI_API_KEY_LENGTH=164."
+    },
+    "OPENAI_PROVIDER_INITIALIZED": {
+      "status": "TRUE",
+      "evidence": "Live run constructed OpenAIProviderAdapter(timeout_seconds=20), registered openai_provider_metadata(), and recorded provider_status AVAILABLE."
+    },
+    "REAL_REQUEST_SENT": {
+      "status": "TRUE",
+      "evidence": "Replay recorded endpoint https://api.openai.com/v1/responses, model gpt-5.1, stream false, and proof prompt payload."
+    },
+    "REAL_RESPONSE_RECEIVED": {
+      "status": "TRUE",
+      "evidence": "Replay recorded raw OpenAI response id resp_02aefc54f17190e6006a1d499ad4dc819cbfde31d6905b008f, object response, status completed, model gpt-5.1-2025-11-13, and usage total_tokens 61."
+    },
+    "REPLAY_RECORDED": {
+      "status": "TRUE",
+      "evidence": "Replay files 000_provider_proposal_created.json and 001_provider_proposal_returned.json were written with replay hashes."
+    },
+    "REPLAY_RECONSTRUCTABLE": {
+      "status": "TRUE",
+      "evidence": "reconstruct_provider_attachment_replay returned provider_invoked true and replay_artifact_count 2."
+    }
+  },
+  "distinguishable_from_mocks": {
+    "status": "TRUE",
+    "evidence": [
+      "No client argument was injected into OpenAIProviderAdapter during the proof run.",
+      "The adapter defaulted to OpenAIHTTPClient.",
+      "OpenAIHTTPClient posts to https://api.openai.com/v1/responses.",
+      "Replay contains live OpenAI response metadata including response id, object=response, status=completed, resolved dated model, billing metadata, and token usage."
+    ]
+  },
+  "secret_handling": {
+    "api_key_origin": "environment variable OPENAI_API_KEY",
+    "api_key_value_captured": false,
+    "api_key_length_recorded": true
+  },
+  "fail_closed_rule": {
+    "applied": true,
+    "all_required_proofs_present": true,
+    "not_proven_returned": false
+  },
+  "non_goals": {
+    "architecture_review": false,
+    "provider_normalization_review": false,
+    "simulation_review": false,
+    "provider_redesign": false,
+    "governance_change": false
+  }
+}

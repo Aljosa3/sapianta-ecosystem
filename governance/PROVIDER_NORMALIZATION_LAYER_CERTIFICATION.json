@@ -1,0 +1,67 @@
+{
+  "artifact": "PROVIDER_NORMALIZATION_LAYER_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "review_scope": {
+    "runtime_changes": false,
+    "provider_changes": false,
+    "worker_changes": false,
+    "governance_changes": false,
+    "replay_changes": false,
+    "review_only": true
+  },
+  "normalization_boundary": {
+    "provider_generic": true,
+    "openai_specific": false,
+    "input_boundary": "ProviderProposalEnvelope.response",
+    "accepted_generic_field": "response_text",
+    "accepted_structured_fields": [
+      "suggested_response_text",
+      "response_reasoning",
+      "confidence"
+    ],
+    "normalized_confidence": "PROVIDER_TEXT_NORMALIZED"
+  },
+  "substitution_verification": {
+    "openai": {
+      "simulated": true,
+      "status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+      "confidence": "PROVIDER_TEXT_NORMALIZED"
+    },
+    "claude": {
+      "simulated": true,
+      "status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+      "confidence": "PROVIDER_TEXT_NORMALIZED"
+    },
+    "gemini": {
+      "simulated": true,
+      "status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+      "confidence": "PROVIDER_TEXT_NORMALIZED"
+    },
+    "local_provider": {
+      "simulated": true,
+      "status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+      "confidence": "PROVIDER_TEXT_NORMALIZED"
+    }
+  },
+  "certification_questions": {
+    "can_another_provider_produce_same_contract": true,
+    "provider_substitution_without_governance_change": true,
+    "provider_substitution_without_conversation_runtime_change": true,
+    "provider_substitution_without_replay_change": true,
+    "provider_substitution_requires_adapter_specific_extraction": true
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "governance_authority_changed": false,
+    "authorization_authority_changed": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "replay_visibility_preserved": true
+  },
+  "final_classification": {
+    "PROVIDER_NORMALIZATION_LAYER_STATUS": "CERTIFIED"
+  }
+}

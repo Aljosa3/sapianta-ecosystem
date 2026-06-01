@@ -1,0 +1,119 @@
+{
+  "artifact": "PROVIDER_CONTEXT_CONSTRUCTION_CERTIFICATION",
+  "version": "PROVIDER_CONTEXT_CONSTRUCTION_ANALYSIS_V1",
+  "status": "READY_WITH_GAPS",
+  "final_classification": "PROVIDER_CONTEXT_CONSTRUCTION_STATUS = READY_WITH_GAPS",
+  "scope": "Analysis of how AiGOL human prompts are transformed into OpenAI provider prompts",
+  "evidence_sources": {
+    "conversation_runtime": "aigol/runtime/provider_assisted_conversation_runtime.py",
+    "intent_classification_runtime": "aigol/runtime/provider_assisted_intent_classification.py",
+    "openai_adapter": "aigol/provider/providers/openai_provider.py",
+    "second_epoch_replay_root": "/tmp/aigol_second_conversation_epoch",
+    "connectivity_replay_root": "/tmp/real_openai_connectivity_sfnhm8np",
+    "operator_platform_log_observation": "Human Prompt and Provider Prompt both observed as 'Explain provider boundaries.'"
+  },
+  "transformation_rule": {
+    "adapter_extracts": [
+      "prompt",
+      "human_prompt",
+      "request"
+    ],
+    "openai_payload_shape": {
+      "model": "gpt-5.1",
+      "input": "extracted prompt string",
+      "stream": false
+    },
+    "structured_request_fields_forwarded_to_openai": false
+  },
+  "context_survival": {
+    "human_prompt_text": "FULL_CONTEXT",
+    "prompt_id": "NO_CONTEXT",
+    "replay_reference": "NO_CONTEXT",
+    "semantic_task": "NO_CONTEXT",
+    "intent_destination": "NO_CONTEXT",
+    "allowed_destinations": "NO_CONTEXT",
+    "self_resolution_status": "NO_CONTEXT",
+    "self_resolution_reason": "NO_CONTEXT",
+    "provider_authority_flags": "NO_CONTEXT",
+    "aigol_identity": "NO_CONTEXT_UNLESS_IN_PROMPT",
+    "governance_purpose": "NO_CONTEXT_UNLESS_IN_PROMPT",
+    "replay_purpose": "NO_CONTEXT_UNLESS_IN_PROMPT",
+    "constitutional_constraints": "NO_CONTEXT",
+    "worker_authority_boundaries": "NO_CONTEXT_UNLESS_IN_PROMPT",
+    "project_domain_context": "NO_CONTEXT_UNLESS_IN_PROMPT"
+  },
+  "analyzed_flows": {
+    "explain_provider_boundaries": {
+      "human_prompt": "Explain provider boundaries.",
+      "intent_classification": "CONVERSATION",
+      "routing_destination": "CONVERSATION",
+      "aigol_provider_request_contains_metadata": true,
+      "provider_prompt": "Explain provider boundaries.",
+      "repository_provider_response": "UNKNOWN_NOT_IN_REPLAY_FOR_SUCCESSFUL_POST_CONNECTIVITY_CALL",
+      "operator_observed_provider_response": "professional/healthcare provider-boundary explanation",
+      "normalized_response": "UNKNOWN",
+      "final_aigol_response": "FAILED_CLOSED in second epoch; UNKNOWN for operator-observed platform log call",
+      "context_classification": "MINIMAL_CONTEXT"
+    },
+    "what_can_aigol_do_today": {
+      "human_prompt": "What can AiGOL do today?",
+      "intent_classification": "FAILED_CLOSED",
+      "routing_destination": null,
+      "provider_prompt_if_invoked": "What can AiGOL do today?",
+      "provider_response": null,
+      "final_aigol_response": "FAILED_CLOSED",
+      "context_classification": "MINIMAL_CONTEXT"
+    },
+    "connectivity_proof": {
+      "human_prompt": "For connectivity proof, reply with one short sentence that includes SAPIANTA_OPENAI_CONNECTIVITY_PROOF.",
+      "intent_classification": "NOT_APPLICABLE",
+      "routing_destination": "NOT_APPLICABLE",
+      "provider_prompt": "For connectivity proof, reply with one short sentence that includes SAPIANTA_OPENAI_CONNECTIVITY_PROOF.",
+      "provider_response_received": true,
+      "normalized_response": "response_text copied into provider proposal envelope",
+      "final_aigol_response": "provider proposal returned; no conversation runtime final response",
+      "context_classification": "MINIMAL_CONTEXT"
+    }
+  },
+  "failure_coverage": {
+    "CONTEXT_LOSS": {
+      "count": 0,
+      "scope": "second 50-prompt epoch replay",
+      "note": "No provider responses were received in the epoch, so context loss did not produce a replayed final failure there."
+    },
+    "PROMPT_AMBIGUITY": {
+      "count": 1,
+      "scope": "operator-supplied platform log observation",
+      "note": "Explain provider boundaries is ambiguous without AiGOL context."
+    },
+    "CLASSIFICATION_FAILURE": {
+      "count": 30,
+      "scope": "second 50-prompt epoch replay"
+    },
+    "ROUTING_FAILURE": {
+      "count": 0,
+      "scope": "primary measured cause"
+    },
+    "PROVIDER_FAILURE": {
+      "count": 40,
+      "scope": "second 50-prompt epoch replay"
+    },
+    "NORMALIZATION_FAILURE": {
+      "count": 3,
+      "scope": "second 50-prompt epoch replay"
+    }
+  },
+  "primary_bottleneck_assessment": {
+    "second_epoch_primary_bottleneck": "PROVIDER_FAILURE",
+    "post_connectivity_provider_quality_risk": "CONTEXT_LOSS",
+    "context_construction_primary_bottleneck_proven": false,
+    "reason": "Context loss is proven in the transformation path, but a post-connectivity conversational replay suite is not yet recorded."
+  },
+  "boundary_preservation": {
+    "architecture_changes": false,
+    "governance_changes": false,
+    "provider_redesign": false,
+    "replay_redesign": false,
+    "worker_changes": false
+  }
+}

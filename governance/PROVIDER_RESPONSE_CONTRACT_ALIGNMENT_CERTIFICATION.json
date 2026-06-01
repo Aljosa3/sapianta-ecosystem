@@ -1,0 +1,66 @@
+{
+  "artifact": "PROVIDER_RESPONSE_CONTRACT_ALIGNMENT_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "implementation": {
+    "runtime_file": "aigol/runtime/provider_assisted_conversation_runtime.py",
+    "test_file": "tests/test_provider_assisted_conversation_runtime_v1.py",
+    "alignment_boundary": "provider-assisted conversation response extraction",
+    "architecture_redesigned": false,
+    "governance_redesigned": false,
+    "replay_redesigned": false,
+    "provider_runtime_redesigned": false
+  },
+  "contract_alignment": {
+    "generic_provider_field": "response_text",
+    "validated_contract_fields": [
+      "suggested_response_text",
+      "response_reasoning",
+      "confidence"
+    ],
+    "normalized_confidence": "PROVIDER_TEXT_NORMALIZED",
+    "provider_authority_introduced": false,
+    "response_validation_preserved": true
+  },
+  "live_provider_verification": {
+    "provider": "OpenAI",
+    "prompt": "Explain provider boundaries.",
+    "runtime_root": "/tmp/aigol_provider_response_contract_alignment/explain_provider_boundaries",
+    "provider_reached": true,
+    "provider_response_received": true,
+    "conversation_response_created": true,
+    "response_status": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+    "response_source": "PROVIDER_ASSISTED",
+    "provider_used": true,
+    "provider_invoked": true,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "fail_closed": false,
+    "replay_visible": true,
+    "replay_reconstructable": true
+  },
+  "fail_closed_certification": {
+    "missing_fields": "FAIL_CLOSED",
+    "invalid_confidence": "FAIL_CLOSED",
+    "malformed_response": "FAIL_CLOSED",
+    "ambiguous_response": "FAIL_CLOSED",
+    "authority_bearing_response": "FAIL_CLOSED",
+    "replay_corruption": "FAIL_CLOSED"
+  },
+  "boundary_certification": {
+    "provider_can_authorize": false,
+    "provider_can_govern": false,
+    "provider_can_execute": false,
+    "provider_can_dispatch": false,
+    "provider_can_invoke_worker": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "authority_preserved": true
+  },
+  "final_classification": {
+    "PROVIDER_RESPONSE_CONTRACT_ALIGNMENT_STATUS": "READY",
+    "FIRST_REAL_PROVIDER_OPERATION_STATUS": "READY"
+  }
+}

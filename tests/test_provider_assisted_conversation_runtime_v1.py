@@ -6,6 +6,7 @@ import pytest
 
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, UNAVAILABLE, ProviderMetadata, ProviderRegistry
+from aigol.provider.providers.openai_provider import OPENAI_PROVIDER_VERSION, OpenAIProviderAdapter
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.provider_assisted_conversation_runtime import (
     run_provider_assisted_conversation,
@@ -58,6 +59,26 @@ class SemanticConversationProviderAdapter:
         )
 
 
+class FakeOpenAIClient:
+    def __init__(self, response=None) -> None:
+        self.response = response if response is not None else {
+            "id": "resp_contract_alignment",
+            "output_text": "Provider boundaries keep providers proposal-only and non-authoritative.",
+        }
+        self.calls: list[dict] = []
+
+    def __call__(self, payload, *, api_key: str, endpoint: str, timeout_seconds: int):
+        self.calls.append(
+            {
+                "payload": payload,
+                "api_key_seen": bool(api_key),
+                "endpoint": endpoint,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        return self.response
+
+
 def _registry(*, status: str = AVAILABLE) -> ProviderRegistry:
     registry = ProviderRegistry()
     registry.register_provider(
@@ -65,6 +86,19 @@ def _registry(*, status: str = AVAILABLE) -> ProviderRegistry:
             provider_id="openai",
             provider_type="llm",
             provider_version="conversation-v1",
+            provider_status=status,
+        )
+    )
+    return registry
+
+
+def _openai_registry(*, status: str = AVAILABLE) -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(
+        ProviderMetadata(
+            provider_id="openai",
+            provider_type="llm",
+            provider_version=OPENAI_PROVIDER_VERSION,
             provider_status=status,
         )
     )
@@ -112,6 +146,29 @@ def test_provider_assisted_conversation_returns_validated_response_for_slovenian
     assert reconstructed["provider_response_authority"] is False
 
 
+def test_openai_response_text_is_aligned_to_conversation_contract(tmp_path):
+    client = FakeOpenAIClient()
+    adapter = OpenAIProviderAdapter(api_key="test-openai-key", client=client)
+    capture = _run(
+        tmp_path,
+        "Explain provider boundaries.",
+        adapter=adapter,
+        registry=_openai_registry(),
+    )
+    reconstructed = reconstruct_provider_assisted_conversation_replay(tmp_path / "conversation")
+
+    assert capture["conversation_status"] == "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    assert capture["provider_assistance_required"] is True
+    assert "proposal-only" in capture["response_text"]
+    assert capture["provider_conversation_response_validation"]["response_reasoning"] == (
+        "deterministically aligned from provider response_text"
+    )
+    assert capture["provider_conversation_response_validation"]["confidence"] == "PROVIDER_TEXT_NORMALIZED"
+    assert reconstructed["response_text"] == capture["response_text"]
+    assert reconstructed["provider_response_replay"]["response"]["response_text"] == capture["response_text"]
+    assert len(client.calls) == 1
+
+
 def test_provider_unavailable_fails_closed(tmp_path):
     capture = _run(tmp_path, "Kaj je namen AiGOL?", registry=_registry(status=UNAVAILABLE))
 
@@ -126,6 +183,28 @@ def test_invalid_provider_response_fails_closed(tmp_path):
 
     assert capture["conversation_status"] == "FAILED_CLOSED"
     assert "response is required" in capture["failure_reason"]
+
+
+def test_invalid_provider_confidence_fails_closed(tmp_path):
+    adapter = SemanticConversationProviderAdapter(
+        conversation_response={
+            "suggested_response_text": "AiGOL preserves replay evidence.",
+            "response_reasoning": "Prompt asks about AiGOL.",
+            "confidence": "CERTAIN",
+        }
+    )
+    capture = _run(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+
+    assert capture["conversation_status"] == "FAILED_CLOSED"
+    assert "confidence is invalid" in capture["failure_reason"]
+
+
+def test_malformed_provider_response_shape_fails_closed(tmp_path):
+    adapter = SemanticConversationProviderAdapter(conversation_response=["not", "an", "object"])
+    capture = _run(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+
+    assert capture["conversation_status"] == "FAILED_CLOSED"
+    assert "must be a JSON object" in capture["failure_reason"]
 
 
 def test_authority_bearing_provider_response_fails_closed(tmp_path):
