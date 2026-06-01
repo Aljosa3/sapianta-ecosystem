@@ -91,6 +91,74 @@ def operator_operation_report(*, runtime_root: str | Path = ".aigol_operator_run
         return result
 
 
+def explain_operator_operation(*, operation_id: str, runtime_root: str | Path = ".aigol_operator_runtime") -> dict[str, Any]:
+    """Produce a human-readable explanation from operator replay evidence only."""
+
+    root = Path(runtime_root)
+    try:
+        operation_id = _require_string(operation_id, "operation_id")
+        operation_dir = root / operation_id
+        if not operation_dir.exists() or not operation_dir.is_dir():
+            raise FailClosedRuntimeError("operator operation replay is missing")
+        verification = _verify_operator_runtime_replay(replay_identity=operation_id, runtime_root=root)
+        if verification is None:
+            raise FailClosedRuntimeError("operator operation replay is missing")
+        if verification.get("status") != "VERIFY_PASSED":
+            raise FailClosedRuntimeError(verification.get("failure_reason") or "operator operation replay verification failed")
+        summary = summarize_governed_operation_replay(operation_id=operation_id, runtime_root=root)
+        if summary.get("status") != "SUCCEEDED":
+            raise FailClosedRuntimeError(summary.get("failure_reason") or "operator operation replay cannot be explained")
+        metadata = _operation_metadata(operation_dir)
+        evidence = _explanation_evidence(operation_dir=operation_dir, summary=summary, verification=verification)
+        explanation_lines = _success_explanation_lines(
+            operation_id=operation_id,
+            metadata=metadata,
+            summary=summary,
+            verification=verification,
+        )
+        result = {
+            "command": "aigol replay explain",
+            "status": "EXPLANATION_READY",
+            "operation_id": operation_id,
+            "runtime_root": str(root),
+            "explanation_type": "SUCCESSFUL_OPERATION",
+            "what_happened": explanation_lines["what_happened"],
+            "why_it_happened": explanation_lines["why_it_happened"],
+            "why_authorized": explanation_lines["why_authorized"],
+            "trust_explanation": explanation_lines["trust_explanation"],
+            "human_readable_explanation": "\n".join(explanation_lines.values()),
+            "evidence": evidence,
+            "replay_backed": True,
+            "authority": False,
+            "fail_closed": False,
+        }
+        result["explanation_hash"] = replay_hash(result)
+        return result
+    except Exception as exc:
+        result = {
+            "command": "aigol replay explain",
+            "status": "EXPLANATION_UNAVAILABLE",
+            "operation_id": operation_id if isinstance(operation_id, str) and operation_id.strip() else "INVALID_OPERATION_ID",
+            "runtime_root": str(root),
+            "explanation_type": "UNAVAILABLE",
+            "what_happened": "Explanation is unavailable because replay evidence could not be trusted.",
+            "why_it_happened": "No replay-backed reason can be stated.",
+            "why_authorized": "No replay-backed authorization explanation can be stated.",
+            "trust_explanation": "The result should not be trusted from this explanation because required replay evidence was missing, corrupt, or failed verification.",
+            "human_readable_explanation": "EXPLANATION_UNAVAILABLE: replay-backed explanation could not be generated.",
+            "evidence": {
+                "missing_evidence": _missing_operator_evidence(root / operation_id) if isinstance(operation_id, str) else [],
+                "failure_reason": _failure_reason(exc),
+            },
+            "replay_backed": False,
+            "authority": False,
+            "fail_closed": True,
+            "failure_reason": _failure_reason(exc),
+        }
+        result["explanation_hash"] = replay_hash(result)
+        return result
+
+
 def _verify_operator_runtime_replay(*, replay_identity: str, runtime_root: str | Path | None) -> dict | None:
     if runtime_root is None:
         root = Path(".aigol_operator_runtime")
@@ -207,6 +275,69 @@ def _operation_metadata(operation_dir: Path) -> dict[str, str]:
     return metadata
 
 
+def _explanation_evidence(*, operation_dir: Path, summary: dict[str, Any], verification: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "proposal_id": summary.get("proposal_id"),
+        "authorization_id": summary.get("authorization_id"),
+        "worker_id": summary.get("worker_id"),
+        "worker_result": summary.get("worker_result", {}),
+        "replay_reference": summary.get("replay_reference"),
+        "replay_summary": summary.get("replay_summary", {}),
+        "replay_verify_status": verification.get("status"),
+        "provider_replay_hash_valid": verification.get("provider_replay_hash_valid"),
+        "authorization_replay_hash_valid": verification.get("authorization_replay_hash_valid"),
+        "worker_replay_hash_valid": verification.get("worker_replay_hash_valid"),
+        "lineage_continuity_exists": verification.get("lineage_continuity_exists"),
+        "supporting_files": [
+            str(operation_dir / name)
+            for name in [
+                "provider/000_provider_proposal_created.json",
+                "provider/001_provider_proposal_returned.json",
+                "authorization/000_authorization_created.json",
+                "authorization/001_authorization_returned.json",
+                "worker/000_authorized_worker_request.json",
+                "worker/001_filesystem_worker_execution.json",
+            ]
+        ],
+    }
+
+
+def _success_explanation_lines(
+    *,
+    operation_id: str,
+    metadata: dict[str, str],
+    summary: dict[str, Any],
+    verification: dict[str, Any],
+) -> dict[str, str]:
+    worker_result = summary.get("worker_result", {})
+    target = worker_result.get("path", summary.get("target", "UNKNOWN"))
+    content_hash = worker_result.get("content_hash", "UNKNOWN")
+    proposal_id = summary.get("proposal_id", "UNKNOWN")
+    authorization_id = summary.get("authorization_id", "UNKNOWN")
+    worker_id = summary.get("worker_id", metadata.get("worker", "UNKNOWN"))
+    operation = metadata.get("operation", "UNKNOWN")
+    event_count = summary.get("replay_summary", {}).get("event_count", 0)
+    return {
+        "what_happened": (
+            f"What happened: operation {operation_id} completed a governed {operation} operation. "
+            f"Worker {worker_id} produced {target} with content hash {content_hash}."
+        ),
+        "why_it_happened": (
+            f"Why it happened: replay shows proposal {proposal_id} was returned by the provider boundary "
+            "as a filesystem create-file proposal."
+        ),
+        "why_authorized": (
+            f"Why it was authorized: replay shows authorization {authorization_id} was created before worker execution, "
+            "and the worker received an authorized worker request rather than raw provider output."
+        ),
+        "trust_explanation": (
+            f"Why to trust it: replay verification returned {verification.get('status')}; "
+            f"{event_count} replay events support provider, authorization, and worker evidence; "
+            "provider, authorization, and worker replay hashes are present and lineage continuity exists."
+        ),
+    }
+
+
 def _operation_statistics(entries: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(entries)
     successes = sum(1 for entry in entries if entry.get("status") == "SUCCEEDED")
@@ -252,10 +383,16 @@ def _rate(count: int, total: int) -> str:
     return f"{(count / total) * 100:.2f}%"
 
 
+def _require_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise FailClosedRuntimeError(f"{field_name} is required")
+    return value.strip()
+
+
 def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "operator replay report failed closed"
 
 
-__all__ = ["ledger_summary", "operator_operation_report", "replay_summary", "verify_replay"]
+__all__ = ["explain_operator_operation", "ledger_summary", "operator_operation_report", "replay_summary", "verify_replay"]

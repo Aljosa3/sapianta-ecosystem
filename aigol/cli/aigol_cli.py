@@ -43,7 +43,7 @@ from aigol.cli.commands.moc import (
     validate_contract_command,
     validate_proposal_command,
 )
-from aigol.cli.commands.replay import ledger_summary, operator_operation_report, verify_replay
+from aigol.cli.commands.replay import explain_operator_operation, ledger_summary, operator_operation_report, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.run_governed import run_governed_operation_command, summarize_governed_operation_replay
 from aigol.cli.commands.status import status_summary
@@ -158,6 +158,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay_report = replay_sub.add_parser("report")
     replay_report.add_argument("--runtime-root", default=".aigol_operator_runtime")
     replay_report.add_argument("--limit", type=int, default=100)
+    replay_explain = replay_sub.add_parser("explain")
+    replay_explain.add_argument("--operation-id", required=True)
+    replay_explain.add_argument("--runtime-root", default=".aigol_operator_runtime")
 
     diagnostics = subcommands.add_parser("diagnostics")
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
@@ -354,6 +357,8 @@ def run_command(args: argparse.Namespace) -> dict:
         )
     if args.command == "replay" and args.replay_command == "report":
         return operator_operation_report(runtime_root=args.runtime_root, limit=args.limit)
+    if args.command == "replay" and args.replay_command == "explain":
+        return explain_operator_operation(operation_id=args.operation_id, runtime_root=args.runtime_root)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
     if args.command == "run-governed":
@@ -691,6 +696,22 @@ def render_command_result(result: dict) -> str:
                 f"{entry.get('replay_status')}"
             )
         return render_card("AIGOL REPLAY REPORT", lines)
+    if command == "aigol replay explain":
+        return render_card(
+            "AIGOL REPLAY EXPLAIN",
+            [
+                f"status: {result.get('status')}",
+                f"operation_id: {result.get('operation_id')}",
+                f"explanation_type: {result.get('explanation_type')}",
+                f"what_happened: {result.get('what_happened')}",
+                f"why_it_happened: {result.get('why_it_happened')}",
+                f"why_authorized: {result.get('why_authorized')}",
+                f"trust_explanation: {result.get('trust_explanation')}",
+                f"replay_backed: {result.get('replay_backed')}",
+                f"fail_closed: {result.get('fail_closed')}",
+                f"failure_reason: {result.get('failure_reason', '')}",
+            ],
+        )
     if command == "aigol diagnostics runtime":
         diagnostics = result.get("runtime_diagnostics", {})
         return render_card(

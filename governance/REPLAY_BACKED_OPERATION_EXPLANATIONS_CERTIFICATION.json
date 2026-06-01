@@ -1,0 +1,27 @@
+{
+  "artifact": "REPLAY_BACKED_OPERATION_EXPLANATIONS_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "replay_backed_explanation_available": true,
+    "what_happened_explained": true,
+    "why_it_happened_explained": true,
+    "why_authorized_explained": true,
+    "trust_explanation_available": true,
+    "missing_replay_fails_closed": true,
+    "broken_replay_fails_closed": true,
+    "verification_failure_blocks_explanation": true,
+    "new_provider_introduced": false,
+    "new_worker_introduced": false,
+    "new_authorization_model_introduced": false,
+    "new_replay_model_introduced": false,
+    "human_prompt_cli_introduced": false,
+    "orchestration_introduced": false,
+    "planning_introduced": false
+  },
+  "final_classification": {
+    "REPLAY_BACKED_OPERATION_EXPLANATIONS_STATUS": "READY"
+  }
+}

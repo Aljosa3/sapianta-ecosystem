@@ -1,0 +1,34 @@
+{
+  "artifact": "REPLAY_BACKED_OPERATION_EXPLANATIONS_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_command": "aigol replay explain",
+  "required_replay_sources": [
+    "provider replay evidence",
+    "authorization replay evidence",
+    "worker replay evidence",
+    "replay verification evidence",
+    "operation replay summary"
+  ],
+  "traceability_fields": [
+    "proposal_id",
+    "authorization_id",
+    "worker_id",
+    "worker_result",
+    "replay_reference",
+    "replay_summary",
+    "replay_verify_status",
+    "supporting_files"
+  ],
+  "fail_closed_cases": {
+    "missing_replay": "EXPLANATION_UNAVAILABLE",
+    "missing_evidence": "EXPLANATION_UNAVAILABLE",
+    "corrupt_replay": "EXPLANATION_UNAVAILABLE",
+    "broken_lineage": "EXPLANATION_UNAVAILABLE",
+    "verification_failure": "EXPLANATION_UNAVAILABLE"
+  },
+  "final_classification": {
+    "REPLAY_BACKED_OPERATION_EXPLANATIONS_REPLAY_STATUS": "READY"
+  }
+}

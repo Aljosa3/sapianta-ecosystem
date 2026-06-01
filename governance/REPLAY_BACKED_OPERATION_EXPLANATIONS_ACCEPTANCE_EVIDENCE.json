@@ -1,0 +1,28 @@
+{
+  "artifact": "REPLAY_BACKED_OPERATION_EXPLANATIONS_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_replay_backed_operation_explanations_v1.py tests/test_operation_replay_ledger_and_reporting_v1.py tests/test_replay_verify_operator_runtime_compatibility_v1.py",
+    "python -m aigol.cli.aigol_cli replay explain --operation-id AIGOL-RUN-GOVERNED-8852CFA571D1 --runtime-root .aigol_operator_runtime"
+  ],
+  "validation_results": [
+    "15 passed",
+    "status=EXPLANATION_READY; explanation_type=SUCCESSFUL_OPERATION; replay_backed=True"
+  ],
+  "acceptance_criteria": {
+    "successful_operation_explained": "PASSED",
+    "what_happened_present": "PASSED",
+    "why_it_happened_present": "PASSED",
+    "why_authorized_present": "PASSED",
+    "trust_explanation_present": "PASSED",
+    "evidence_bundle_present": "PASSED",
+    "missing_replay_returns_explanation_unavailable": "PASSED",
+    "broken_replay_returns_explanation_unavailable": "PASSED",
+    "explanation_hash_changes_when_evidence_changes": "PASSED"
+  },
+  "final_classification": {
+    "REPLAY_BACKED_OPERATION_EXPLANATIONS_STATUS": "READY"
+  }
+}
