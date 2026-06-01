@@ -1,0 +1,42 @@
+{
+  "artifact": "OPERATION_REPLAY_LEDGER_AND_REPORTING_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_command": "aigol replay report",
+  "replay_source": "<runtime_root>/<operation_id>/{provider,authorization,worker}",
+  "operation_entry_fields": [
+    "operation_id",
+    "status",
+    "worker",
+    "operation",
+    "timestamp",
+    "replay_status",
+    "proposal_id",
+    "authorization_id",
+    "replay_reference",
+    "missing_evidence",
+    "evidence"
+  ],
+  "aggregate_fields": [
+    "total_operations",
+    "successful_operations",
+    "fail_closed_operations",
+    "verification_failures",
+    "success_rate",
+    "fail_closed_rate",
+    "worker_usage",
+    "operation_type_usage"
+  ],
+  "verified_properties": {
+    "each_operation_uses_existing_replay_verify": true,
+    "corrupt_operation_not_silently_omitted": true,
+    "missing_evidence_visible": true,
+    "statistics_derive_from_entries": true,
+    "report_is_replay_backed": true,
+    "report_grants_authority": false
+  },
+  "final_classification": {
+    "OPERATION_REPLAY_LEDGER_AND_REPORTING_REPLAY_STATUS": "READY"
+  }
+}

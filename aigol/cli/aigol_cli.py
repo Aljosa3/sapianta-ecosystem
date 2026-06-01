@@ -43,7 +43,7 @@ from aigol.cli.commands.moc import (
     validate_contract_command,
     validate_proposal_command,
 )
-from aigol.cli.commands.replay import ledger_summary, verify_replay
+from aigol.cli.commands.replay import ledger_summary, operator_operation_report, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.run_governed import run_governed_operation_command, summarize_governed_operation_replay
 from aigol.cli.commands.status import status_summary
@@ -155,6 +155,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay_operation = replay_sub.add_parser("operation")
     replay_operation.add_argument("--operation-id", required=True)
     replay_operation.add_argument("--runtime-root", default=".aigol_operator_runtime")
+    replay_report = replay_sub.add_parser("report")
+    replay_report.add_argument("--runtime-root", default=".aigol_operator_runtime")
+    replay_report.add_argument("--limit", type=int, default=100)
 
     diagnostics = subcommands.add_parser("diagnostics")
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
@@ -349,6 +352,8 @@ def run_command(args: argparse.Namespace) -> dict:
             operation_id=args.operation_id,
             runtime_root=args.runtime_root,
         )
+    if args.command == "replay" and args.replay_command == "report":
+        return operator_operation_report(runtime_root=args.runtime_root, limit=args.limit)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
     if args.command == "run-governed":
@@ -657,6 +662,35 @@ def render_command_result(result: dict) -> str:
                 f"failure_reason: {result.get('failure_reason', '')}",
             ],
         )
+    if command == "aigol replay report":
+        stats = result.get("statistics", {})
+        lines = [
+            f"status: {result.get('status')}",
+            f"runtime_root: {result.get('runtime_root')}",
+            f"operation_count: {result.get('operation_count')}",
+            f"total_operations: {stats.get('total_operations')}",
+            f"successful_operations: {stats.get('successful_operations')}",
+            f"fail_closed_operations: {stats.get('fail_closed_operations')}",
+            f"verification_failures: {stats.get('verification_failures')}",
+            f"success_rate: {stats.get('success_rate')}",
+            f"fail_closed_rate: {stats.get('fail_closed_rate')}",
+            f"worker_usage: {_json(stats.get('worker_usage', {}))}",
+            f"operation_type_usage: {_json(stats.get('operation_type_usage', {}))}",
+            f"weekly_usage_summary: {result.get('weekly_usage_summary')}",
+            f"replay_backed: {result.get('replay_backed')}",
+            f"fail_closed: {result.get('fail_closed')}",
+            f"failure_reason: {result.get('failure_reason', '')}",
+        ]
+        for entry in result.get("entries", []):
+            lines.append(
+                "operation: "
+                f"{entry.get('operation_id')} | "
+                f"{entry.get('status')} | "
+                f"{entry.get('worker')} | "
+                f"{entry.get('operation')} | "
+                f"{entry.get('replay_status')}"
+            )
+        return render_card("AIGOL REPLAY REPORT", lines)
     if command == "aigol diagnostics runtime":
         diagnostics = result.get("runtime_diagnostics", {})
         return render_card(

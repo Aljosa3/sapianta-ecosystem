@@ -1,0 +1,28 @@
+{
+  "artifact": "OPERATION_REPLAY_LEDGER_AND_REPORTING_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_operation_replay_ledger_and_reporting_v1.py tests/test_replay_verify_operator_runtime_compatibility_v1.py tests/test_aigol_operator_interface_extension_v1.py tests/test_governed_return_continuity_hardening_v1.py",
+    "python -m aigol.cli.aigol_cli replay report --runtime-root .aigol_operator_runtime"
+  ],
+  "validation_results": [
+    "46 passed",
+    "status=REPORT_READY; operation_count=1; successful_operations=1; verification_failures=0"
+  ],
+  "acceptance_criteria": {
+    "operations_listed_from_runtime_root": "PASSED",
+    "operation_id_status_worker_timestamp_replay_status_visible": "PASSED",
+    "aggregate_statistics_visible": "PASSED",
+    "weekly_summary_visible": "PASSED",
+    "broken_replay_structure_reported_as_verification_failure": "PASSED",
+    "missing_runtime_root_fails_closed": "PASSED",
+    "empty_runtime_root_fails_closed": "PASSED",
+    "existing_operator_replay_verification_preserved": "PASSED",
+    "existing_run_governed_path_preserved": "PASSED"
+  },
+  "final_classification": {
+    "OPERATION_REPLAY_LEDGER_AND_REPORTING_STATUS": "READY"
+  }
+}

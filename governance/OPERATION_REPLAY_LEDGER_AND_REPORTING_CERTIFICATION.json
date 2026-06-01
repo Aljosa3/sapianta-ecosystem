@@ -1,0 +1,26 @@
+{
+  "artifact": "OPERATION_REPLAY_LEDGER_AND_REPORTING_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "evidence_source": "FIRST_REAL_WORKFLOW_DISCOVERY_V1",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "operation_replay_ledger_available": true,
+    "aggregate_statistics_available": true,
+    "weekly_usage_summary_available": true,
+    "replay_backed_explanation_available": true,
+    "broken_replay_chains_reported_as_verification_failures": true,
+    "missing_runtime_root_fails_closed": true,
+    "empty_runtime_root_fails_closed": true,
+    "new_architecture_introduced": false,
+    "new_provider_introduced": false,
+    "new_worker_introduced": false,
+    "new_authority_model_introduced": false,
+    "orchestration_introduced": false,
+    "planning_introduced": false
+  },
+  "final_classification": {
+    "OPERATION_REPLAY_LEDGER_AND_REPORTING_STATUS": "READY"
+  }
+}
