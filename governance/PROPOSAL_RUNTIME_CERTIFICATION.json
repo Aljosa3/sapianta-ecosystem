@@ -1,0 +1,119 @@
+{
+  "artifact": "PROPOSAL_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "review_type": "foundation_design_only",
+  "runtime_code_implemented": false,
+  "workers_implemented": false,
+  "execution_implemented": false,
+  "governance_modified": false,
+  "certified_scope": "minimal replay-safe proposal runtime architecture",
+  "runtime_artifact": "PROPOSAL_RUNTIME_ARTIFACT_V1",
+  "proposal_creation": {
+    "created_by": "AIGOL",
+    "provider_can_create": false,
+    "worker_can_create": false,
+    "replay_can_create": false,
+    "human_prompt_creates_authority": false,
+    "creation_status": "CREATED"
+  },
+  "mandatory_fields": [
+    "proposal_id",
+    "proposal_type",
+    "proposal_source",
+    "proposal_text",
+    "created_at",
+    "created_by",
+    "status",
+    "replay_reference",
+    "source_prompt_id",
+    "source_conversation_id",
+    "source_strategy_id",
+    "source_provider_event_id",
+    "artifact_hash"
+  ],
+  "runtime_valid_states": [
+    "CREATED",
+    "INSPECTED",
+    "APPROVED",
+    "REJECTED",
+    "EXPIRED",
+    "EXECUTED"
+  ],
+  "foundation_runtime_creates_only": [
+    "CREATED"
+  ],
+  "replay_visibility": {
+    "proposal_creation_event_required": true,
+    "proposal_return_event_required": true,
+    "source_prompt_reference_required": true,
+    "strategy_reference_supported": true,
+    "provider_event_reference_supported": true,
+    "artifact_hash_required": true,
+    "replay_reconstruction_required": true
+  },
+  "integration": {
+    "conversational_runtime": "may surface future action candidate but cannot approve or execute proposal",
+    "resolution_strategy": "may require proposal lifecycle but cannot create approved proposal state",
+    "replay": "records and reconstructs proposal creation evidence without mutation authority",
+    "proposal_lifecycle": "owns future inspection, approval, rejection, expiration, and execution-compatible transitions"
+  },
+  "illegal_transition_prevention": {
+    "actor_identity_required": true,
+    "source_state_required": true,
+    "target_state_required": true,
+    "replay_reference_required": true,
+    "artifact_hash_required": true,
+    "provider_state_transition_rejected": true,
+    "worker_approval_rejected": true,
+    "created_to_executed_rejected": true,
+    "execution_without_governed_request_rejected": true,
+    "fail_closed_on_invalid_transition": true
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "provider_execution_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "approval_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_mutation_authority_introduced": false
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "certification_criteria": {
+    "proposal_creation_defined": "READY",
+    "runtime_artifact_defined": "READY",
+    "mandatory_fields_defined": "READY",
+    "replay_visibility_defined": "READY",
+    "conversational_runtime_integration_defined": "READY",
+    "resolution_strategy_integration_defined": "READY",
+    "replay_integration_defined": "READY",
+    "runtime_valid_states_defined": "READY",
+    "illegal_transition_prevention_defined": "READY",
+    "constitutional_invariant_preserved": "READY",
+    "runtime_code": "NOT_IMPLEMENTED",
+    "state_transition_runtime": "NOT_IMPLEMENTED",
+    "workers": "NOT_IMPLEMENTED",
+    "execution": "NOT_IMPLEMENTED",
+    "tests": "NOT_IMPLEMENTED"
+  },
+  "remaining_gaps": [
+    "No runtime code is implemented by this review.",
+    "No proposal runtime schema is enforced by this review.",
+    "No state transition runtime is implemented by this review.",
+    "No inspection, approval, rejection, expiration, or execution transition code is implemented by this review.",
+    "No worker integration is implemented by this review.",
+    "No execution request derivation is implemented by this review.",
+    "No tests are introduced by this review."
+  ],
+  "final_classification": {
+    "PROPOSAL_RUNTIME_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
