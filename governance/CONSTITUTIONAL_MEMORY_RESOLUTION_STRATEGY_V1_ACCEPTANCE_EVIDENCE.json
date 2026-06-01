@@ -1,0 +1,88 @@
+{
+  "artifact": "CONSTITUTIONAL_MEMORY_RESOLUTION_STRATEGY_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/constitutional_memory_resolution_strategy.py",
+  "updated_runtime_file": "aigol/runtime/resolution_strategy_runtime.py",
+  "test_files": [
+    "tests/test_constitutional_memory_resolution_strategy_v1.py",
+    "tests/test_resolution_strategy_runtime_v1.py"
+  ],
+  "implemented_scope": {
+    "constitutional_memory_strategy": true,
+    "constitutional_prompt_detection": true,
+    "citation_bound_answer_resolution": true,
+    "strategy_selection_replay": true,
+    "constitutional_memory_access_replay": true,
+    "resolution_replay": true,
+    "deterministic_reconstruction": true,
+    "execution_implemented": false,
+    "worker_runtime_implemented": false,
+    "provider_authority_implemented": false,
+    "approval_changes_implemented": false,
+    "governance_mutation_implemented": false
+  },
+  "supported_questions": [
+    "What is AiGOL?",
+    "What is replay?",
+    "What are provider boundaries?",
+    "What are worker boundaries?",
+    "What is proposal approval?",
+    "What is the purpose of governance?",
+    "What are constitutional guarantees?"
+  ],
+  "runtime_artifact": "CONSTITUTIONAL_MEMORY_RESOLUTION_ARTIFACT_V1",
+  "runtime_events": [
+    "CONSTITUTIONAL_MEMORY_RESOLUTION_CREATED",
+    "CONSTITUTIONAL_MEMORY_RESOLUTION_RETURNED"
+  ],
+  "nested_replay_evidence": {
+    "strategy_selection": [
+      "RESOLUTION_STRATEGY_SELECTED",
+      "RESOLUTION_STRATEGY_RETURNED"
+    ],
+    "constitutional_memory_access": [
+      "retrieval_request",
+      "citation_bundle",
+      "retrieval_result"
+    ]
+  },
+  "acceptance_checks": {
+    "constitutional_memory_strategy_supported": "PASSED",
+    "constitutional_prompts_detected": "PASSED",
+    "constitutional_memory_selected": "PASSED",
+    "citation_bound_answer_recorded": "PASSED",
+    "strategy_replay_recorded": "PASSED",
+    "constitutional_memory_retrieval_replay_recorded": "PASSED",
+    "resolution_replay_recorded": "PASSED",
+    "deterministic_reconstruction_supported": "PASSED",
+    "missing_constitutional_evidence_fails_closed": "PASSED",
+    "invalid_references_fail_closed": "PASSED",
+    "corrupt_constitutional_artifacts_fail_closed": "PASSED",
+    "non_constitutional_prompt_fails_closed": "PASSED",
+    "no_provider_authority": "PASSED",
+    "no_worker_invocation": "PASSED",
+    "no_execution_request": "PASSED",
+    "no_approval_change": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py tests/test_constitutional_memory_resolution_strategy_v1.py",
+    "passed": 32,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "reference_only": true,
+    "authority": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "provider_authority": false,
+    "provider_used": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "CONSTITUTIONAL_MEMORY_RESOLUTION_STRATEGY_STATUS": "CERTIFIED"
+  }
+}
