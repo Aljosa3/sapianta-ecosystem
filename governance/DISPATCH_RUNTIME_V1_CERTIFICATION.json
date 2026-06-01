@@ -1,0 +1,85 @@
+{
+  "artifact": "DISPATCH_RUNTIME_V1_CERTIFICATION",
+  "runtime": "DISPATCH_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "classification": "DISPATCH_RUNTIME_STATUS = CERTIFIED",
+  "implemented_artifacts": [
+    "aigol/runtime/dispatch_runtime.py",
+    "tests/test_dispatch_runtime_v1.py",
+    "governance/DISPATCH_RUNTIME_V1.md",
+    "governance/DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/DISPATCH_RUNTIME_V1_CERTIFICATION.json"
+  ],
+  "compatibility_update": [
+    "aigol/runtime/worker_runtime.py"
+  ],
+  "implemented_capability": {
+    "name": "deterministic dispatch validation",
+    "transition": "WORKER_ASSIGNMENT -> DISPATCHED",
+    "artifact_type": "DISPATCH_ARTIFACT_V1",
+    "mutation_model": "append-only dispatch artifact; worker assignment artifact is not mutated"
+  },
+  "canonical_chain_continuity": {
+    "required": true,
+    "source": "worker assignment evidence",
+    "failure_on_missing_or_mismatch": true
+  },
+  "replay_guarantees": {
+    "dispatch_events_persisted": true,
+    "ordered_reconstruction": true,
+    "artifact_hash_verified": true,
+    "wrapper_hash_verified": true,
+    "worker_assignment_reference_integrity_verified": true,
+    "readiness_reference_integrity_verified": true,
+    "canonical_chain_id_verified": true,
+    "duplicate_dispatch_rejected": true
+  },
+  "fail_closed_guarantees": {
+    "invalid_assignment": true,
+    "worker_unavailable": true,
+    "duplicate_dispatch": true,
+    "reference_corruption": true,
+    "chain_mismatch": true,
+    "missing_chain_id": true,
+    "invalid_readiness_evidence": true,
+    "corrupt_replay": true,
+    "provider_authority": true,
+    "worker_self_dispatch": true,
+    "worker_invocation": true,
+    "execution_performed": true,
+    "completion_recorded": true
+  },
+  "boundaries": {
+    "worker_invocation_implemented": false,
+    "execution_implemented": false,
+    "completion_implemented": false,
+    "result_persistence_implemented": false,
+    "provider_authority_granted": false,
+    "worker_self_authority_granted": false,
+    "automatic_authorization_granted": false
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_dispatch_runtime_v1.py",
+      "result": "14 passed"
+    },
+    "chain_tests": {
+      "command": "python -m pytest tests/test_proposal_runtime_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py",
+      "result": "111 passed"
+    }
+  },
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "not implemented in this runtime",
+    "replay_records": true
+  },
+  "known_gaps": [
+    "Worker invocation remains future work",
+    "Worker execution remains future work",
+    "Execution completion remains future work",
+    "Worker result persistence remains future work",
+    "Canonical chain id runtime creation remains future work"
+  ],
+  "final_classification": "CERTIFIED"
+}

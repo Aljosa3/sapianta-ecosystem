@@ -78,6 +78,7 @@ def assign_worker(
     assigned_at: str,
     replay_reference: str,
     replay_dir: str | Path,
+    canonical_chain_id: str | None = None,
 ) -> dict[str, Any]:
     """Assign an AVAILABLE worker to a READY_FOR_DISPATCH request without dispatching work."""
 
@@ -94,6 +95,7 @@ def assign_worker(
         assigned_by=assigned_by,
         assigned_at=assigned_at,
         replay_reference=replay_reference,
+        canonical_chain_id=canonical_chain_id,
     )
     _persist_step(replay_path, 0, ASSIGNMENT_REPLAY_STEPS, WORKER_ASSIGNED, assignment)
     returned = _worker_assignment_returned(assignment)
@@ -159,6 +161,7 @@ def reconstruct_worker_assignment_replay(replay_dir: str | Path) -> dict[str, An
         "assigned_at": assignment["assigned_at"],
         "assignment_status": assignment["assignment_status"],
         "worker_state_after": assignment["worker_state_after"],
+        "canonical_chain_id": assignment.get("canonical_chain_id"),
         "replay_reference": assignment["replay_reference"],
         "provider_authority": False,
         "worker_self_assigned": False,
@@ -250,6 +253,7 @@ def _worker_assignment_artifact(
     assigned_by: str,
     assigned_at: str,
     replay_reference: str,
+    canonical_chain_id: str | None,
 ) -> dict[str, Any]:
     if readiness["request_type"] not in worker["supported_request_types"]:
         raise FailClosedRuntimeError("worker runtime failed closed: unsupported request type")
@@ -281,6 +285,8 @@ def _worker_assignment_artifact(
         "completion_recorded": False,
         "automatic_authorization": False,
     }
+    if canonical_chain_id is not None:
+        artifact["canonical_chain_id"] = _require_string(canonical_chain_id, "canonical_chain_id")
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_worker_assignment_artifact(artifact)
     return artifact
@@ -298,6 +304,7 @@ def _worker_assignment_returned(assignment: dict[str, Any]) -> dict[str, Any]:
         "readiness_hash": assignment["readiness_hash"],
         "execution_request_reference": assignment["execution_request_reference"],
         "assignment_status": assignment["assignment_status"],
+        "canonical_chain_id": assignment.get("canonical_chain_id"),
         "replay_reference": assignment["replay_reference"],
         "replay_visible": True,
         "provider_authority": False,

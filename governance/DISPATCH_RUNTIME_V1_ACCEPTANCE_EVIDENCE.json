@@ -1,0 +1,88 @@
+{
+  "artifact": "DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "runtime": "DISPATCH_RUNTIME_V1",
+  "status": "ACCEPTED",
+  "implementation": {
+    "module": "aigol/runtime/dispatch_runtime.py",
+    "tests": "tests/test_dispatch_runtime_v1.py",
+    "artifact_type": "DISPATCH_ARTIFACT_V1",
+    "supported_transition": "WORKER_ASSIGNMENT -> DISPATCHED"
+  },
+  "compatibility_update": {
+    "module": "aigol/runtime/worker_runtime.py",
+    "change": "assign_worker accepts optional canonical_chain_id and records it in assignment evidence when provided",
+    "backwards_compatible": true
+  },
+  "runtime_entrypoints": [
+    "dispatch_worker",
+    "reconstruct_dispatch_replay"
+  ],
+  "replay_events": [
+    "DISPATCH_VALIDATED",
+    "DISPATCH_RETURNED"
+  ],
+  "required_inputs": [
+    "dispatch_id",
+    "worker_assignment_artifact",
+    "worker_assignment_replay",
+    "readiness_artifact",
+    "canonical_chain_id",
+    "dispatched_by",
+    "dispatched_at",
+    "replay_reference",
+    "replay_dir"
+  ],
+  "validation_evidence": [
+    "Worker assignment artifact must be valid",
+    "Worker assignment status must be ASSIGNED",
+    "Worker was available before assignment",
+    "Worker state after assignment must be ASSIGNED",
+    "Worker assignment replay must match assignment artifact",
+    "Readiness artifact must be valid",
+    "Readiness status must be READY_FOR_DISPATCH",
+    "Readiness reference and hash must match assignment",
+    "Execution request reference must match readiness and assignment",
+    "Canonical chain id must match assignment",
+    "Provider authority must remain false",
+    "Worker self-dispatch must remain false",
+    "Worker invocation must remain false",
+    "Execution performed must remain false",
+    "Completion recorded must remain false"
+  ],
+  "fail_closed_cases_tested": [
+    "Missing worker assignment",
+    "Invalid assignment status",
+    "Worker unavailable",
+    "Duplicate dispatch",
+    "Reference corruption",
+    "Chain mismatch",
+    "Assignment without chain id",
+    "Corrupt readiness",
+    "Corrupt dispatch replay artifact",
+    "Corrupt dispatch replay ordering",
+    "Corrupt dispatch replay chain continuity"
+  ],
+  "boundary_evidence": {
+    "provider_authority": false,
+    "worker_self_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "completion_recorded": false,
+    "automatic_authorization": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_dispatch_runtime_v1.py",
+      "result": "14 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py",
+      "result": "37 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_proposal_runtime_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py",
+      "result": "111 passed"
+    }
+  ],
+  "final_classification": "CERTIFIED"
+}
