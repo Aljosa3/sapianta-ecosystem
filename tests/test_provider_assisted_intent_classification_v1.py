@@ -6,6 +6,7 @@ import pytest
 
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, UNAVAILABLE, ProviderMetadata, ProviderRegistry
+from aigol.provider.providers.openai_provider import OPENAI_PROVIDER_VERSION, OpenAIProviderAdapter, openai_provider_metadata
 from aigol.runtime.intent_classifier import CONVERSATION, CONSTITUTIONAL_MEMORY_CONSULTATION
 from aigol.runtime.intent_routing_attachment import attach_intent_routing
 from aigol.runtime.models import FailClosedRuntimeError
@@ -59,6 +60,12 @@ def _registry(*, status: str = AVAILABLE) -> ProviderRegistry:
     return registry
 
 
+def _openai_registry(*, status: str = AVAILABLE) -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(openai_provider_metadata(status=status))
+    return registry
+
+
 def _classify(tmp_path, prompt: str, *, adapter=None, registry=None):
     return classify_intent_with_provider_assistance(
         artifact_id="intent-0001",
@@ -71,6 +78,16 @@ def _classify(tmp_path, prompt: str, *, adapter=None, registry=None):
         registry=registry or _registry(),
         adapter=adapter or StaticSemanticProviderAdapter(),
     )
+
+
+class FakeOpenAIClient:
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.calls: list[dict] = []
+
+    def __call__(self, payload, *, api_key: str, endpoint: str, timeout_seconds: int):
+        self.calls.append({"payload": payload, "api_key_seen": bool(api_key), "endpoint": endpoint})
+        return {"id": "resp_prompt_continuity", "output_text": self.text}
 
 
 def test_deterministic_success_does_not_invoke_provider(tmp_path):
@@ -122,6 +139,26 @@ def test_provider_explanatory_text_normalizes_clear_conversation_destination(tmp
     assert capture["governance_validation"]["provider_suggestion_authority"] is False
     assert reconstructed["classification_destination"] == CONVERSATION
     assert reconstructed["provider_assistance_required"] is True
+
+
+def test_openai_provider_path_preserves_human_prompt_for_text_normalization(tmp_path):
+    client = FakeOpenAIClient("This is a conversational question about AiGOL and should be CONVERSATION.")
+    adapter = OpenAIProviderAdapter(api_key="test-openai-key", client=client)
+    capture = _classify(
+        tmp_path,
+        "Kaj zna AiGOL?",
+        adapter=adapter,
+        registry=_openai_registry(),
+    )
+    reconstructed = reconstruct_provider_assisted_intent_classification_replay(tmp_path / "intent_replay")
+    provider_replay = reconstructed["provider_assistance_replay"]
+
+    assert capture["classification_status"] == "CLASSIFIED"
+    assert capture["classification_destination"] == CONVERSATION
+    assert provider_replay["provider_version"] == OPENAI_PROVIDER_VERSION
+    assert provider_replay["request"]["human_prompt"] == "Kaj zna AiGOL?"
+    assert provider_replay["request"]["original_request"]["human_prompt"] == "Kaj zna AiGOL?"
+    assert "Human prompt:\nKaj zna AiGOL?" in provider_replay["request"]["payload"]["input"]
 
 
 def test_provider_assisted_artifact_can_feed_routing_attachment(tmp_path):

@@ -1,0 +1,35 @@
+{
+  "artifact": "PROMPT_EVIDENCE_CONTINUITY_RESTORATION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_scope": {
+    "provider_attachment_replay": true,
+    "provider_assisted_intent_classification_replay": true,
+    "provider_assisted_conversation_replay": true,
+    "prompt_to_conversation_replay": true,
+    "replay_architecture_changed": false
+  },
+  "replay_checks": {
+    "provider_attachment_reconstructs_human_prompt": true,
+    "provider_attachment_reconstructs_original_request": true,
+    "provider_attachment_reconstructs_adapter_payload": true,
+    "provider_assisted_classification_reconstructs_prompt_continuity": true,
+    "provider_assisted_conversation_reconstructs_prompt_continuity": true,
+    "corrupt_replay_still_fails_closed": true,
+    "api_key_not_captured": true
+  },
+  "evidence": {
+    "provider_attachment_reconstruction": "tests/test_first_real_provider_attachment_v1.py::test_openai_provider_preserves_structured_prompt_evidence",
+    "provider_assisted_classification_reconstruction": "tests/test_provider_assisted_intent_classification_v1.py::test_openai_provider_path_preserves_human_prompt_for_text_normalization",
+    "provider_assisted_conversation_reconstruction": "tests/test_provider_assisted_conversation_runtime_v1.py::test_openai_provider_fallback_preserves_prompt_continuity_through_replay",
+    "corrupt_provider_attachment_replay": "tests/test_first_real_provider_attachment_v1.py::test_replay_corruption_detection",
+    "corrupt_prompt_to_conversation_replay": "tests/test_prompt_to_conversation_integration_v1.py::test_reconstruct_detects_corrupt_conversation_response"
+  },
+  "boundary_certification": {
+    "append_only_replay_preserved": true,
+    "provider_replay_authority": false,
+    "worker_invoked_by_replay": false,
+    "execution_requested_by_replay": false
+  }
+}

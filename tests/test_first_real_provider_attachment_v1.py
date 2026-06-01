@@ -79,13 +79,52 @@ def test_openai_provider_attaches_through_existing_provider_runtime(tmp_path):
         "input": "Explain provider attachment boundaries.",
         "stream": False,
     }
+    assert envelope["request"]["human_prompt"] == "Explain provider attachment boundaries."
+    assert envelope["request"]["original_request"] == REQUEST
     assert envelope["request"]["api_key_captured"] is False
     assert len(client.calls) == 1
 
     assert replay["provider_id"] == OPENAI_PROVIDER_ID
     assert replay["provider_version"] == OPENAI_PROVIDER_VERSION
+    assert replay["request"]["human_prompt"] == "Explain provider attachment boundaries."
     assert replay["response"] == envelope["response"]
     assert replay["proposal_hash"] == envelope["proposal_hash"]
+
+
+def test_openai_provider_preserves_structured_prompt_evidence(tmp_path):
+    structured_request = {
+        "semantic_task": "intent_classification_suggestion",
+        "human_prompt": "Kaj zna AiGOL?",
+        "prompt": "AiGOL context:\nHuman prompt:\nKaj zna AiGOL?",
+        "allowed_destinations": ["CONVERSATION"],
+        "context_capsule": {"provider_neutral": True, "authority_transfer": False},
+    }
+    capture = _run(tmp_path, request=structured_request)
+    replay = reconstruct_provider_attachment_replay(tmp_path)
+    request = capture["provider_proposal_envelope"]["request"]
+
+    assert request["human_prompt"] == "Kaj zna AiGOL?"
+    assert request["original_request"] == structured_request
+    assert request["payload"]["input"] == structured_request["prompt"]
+    assert replay["request"]["human_prompt"] == "Kaj zna AiGOL?"
+    assert replay["request"]["original_request"]["semantic_task"] == "intent_classification_suggestion"
+
+
+def test_openai_provider_redacts_secret_fields_from_original_request(tmp_path):
+    capture = _run(
+        tmp_path,
+        request={
+            "human_prompt": "Explain AiGOL.",
+            "prompt": "Explain AiGOL.",
+            "api_key": "must-not-persist",
+            "nested": {"token": "must-not-persist"},
+        },
+    )
+    original = capture["provider_proposal_envelope"]["request"]["original_request"]
+
+    assert original["api_key"] == "REDACTED"
+    assert original["nested"]["token"] == "REDACTED"
+    assert "must-not-persist" not in json.dumps(capture)
 
 
 def test_openai_output_list_shape_is_supported(tmp_path):

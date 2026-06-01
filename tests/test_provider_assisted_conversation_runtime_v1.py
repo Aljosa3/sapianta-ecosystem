@@ -79,6 +79,23 @@ class FakeOpenAIClient:
         return self.response
 
 
+class SequencedOpenAIClient:
+    def __init__(self, responses) -> None:
+        self.responses = list(responses)
+        self.calls: list[dict] = []
+
+    def __call__(self, payload, *, api_key: str, endpoint: str, timeout_seconds: int):
+        self.calls.append(
+            {
+                "payload": payload,
+                "api_key_seen": bool(api_key),
+                "endpoint": endpoint,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        return self.responses.pop(0)
+
+
 class ContextSensitiveOpenAIClient:
     def __init__(self) -> None:
         self.calls: list[dict] = []
@@ -255,6 +272,40 @@ def test_openai_response_text_is_aligned_to_conversation_contract(tmp_path):
     assert reconstructed["response_text"] == capture["response_text"]
     assert reconstructed["provider_response_replay"]["response"]["response_text"] == capture["response_text"]
     assert len(client.calls) == 1
+
+
+def test_openai_provider_fallback_preserves_prompt_continuity_through_replay(tmp_path):
+    client = SequencedOpenAIClient(
+        [
+            {
+                "id": "resp_intent",
+                "output_text": "This is a conversational question about AiGOL and should be CONVERSATION.",
+            },
+            {
+                "id": "resp_conversation",
+                "output_text": "AiGOL can explain its governance role while providers remain proposal-only.",
+            },
+        ]
+    )
+    adapter = OpenAIProviderAdapter(api_key="test-openai-key", client=client)
+    capture = _run(
+        tmp_path,
+        "Kaj je namen AiGOL?",
+        adapter=adapter,
+        registry=_openai_registry(),
+    )
+    reconstructed = reconstruct_provider_assisted_conversation_replay(tmp_path / "conversation")
+    intent_provider = reconstructed["intent_classification"]["provider_assistance_replay"]
+    response_provider = reconstructed["provider_response_replay"]
+
+    assert capture["conversation_status"] == "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    assert capture["provider_assistance_required"] is True
+    assert intent_provider["request"]["human_prompt"] == "Kaj je namen AiGOL?"
+    assert intent_provider["request"]["original_request"]["human_prompt"] == "Kaj je namen AiGOL?"
+    assert response_provider["request"]["human_prompt"] == "Kaj je namen AiGOL?"
+    assert response_provider["request"]["original_request"]["human_prompt"] == "Kaj je namen AiGOL?"
+    assert reconstructed["response_text"] == "AiGOL can explain its governance role while providers remain proposal-only."
+    assert len(client.calls) == 2
 
 
 def test_minimal_context_capsule_improves_ambiguous_provider_boundary_prompt(tmp_path):

@@ -1,0 +1,49 @@
+{
+  "artifact": "PROMPT_EVIDENCE_CONTINUITY_RESTORATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "READY",
+  "validated_on": "2026-06-01",
+  "acceptance_checks": {
+    "openai_provider_envelope_retains_human_prompt": {
+      "status": "PASSED",
+      "evidence": "tests/test_first_real_provider_attachment_v1.py::test_openai_provider_preserves_structured_prompt_evidence"
+    },
+    "openai_provider_envelope_retains_original_structured_request": {
+      "status": "PASSED",
+      "evidence": "tests/test_first_real_provider_attachment_v1.py::test_openai_provider_preserves_structured_prompt_evidence"
+    },
+    "adapter_specific_payload_preserved": {
+      "status": "PASSED",
+      "evidence": "tests/test_first_real_provider_attachment_v1.py::test_openai_provider_attaches_through_existing_provider_runtime"
+    },
+    "secret_like_fields_redacted": {
+      "status": "PASSED",
+      "evidence": "tests/test_first_real_provider_attachment_v1.py::test_openai_provider_redacts_secret_fields_from_original_request"
+    },
+    "provider_assisted_classification_normalizes_openai_text": {
+      "status": "PASSED",
+      "evidence": "tests/test_provider_assisted_intent_classification_v1.py::test_openai_provider_path_preserves_human_prompt_for_text_normalization"
+    },
+    "provider_fallback_conversation_preserves_prompt_continuity": {
+      "status": "PASSED",
+      "evidence": "tests/test_provider_assisted_conversation_runtime_v1.py::test_openai_provider_fallback_preserves_prompt_continuity_through_replay"
+    },
+    "corrupt_replay_fails_closed": {
+      "status": "PASSED",
+      "evidence": "tests/test_first_real_provider_attachment_v1.py::test_replay_corruption_detection and existing provider-assisted replay corruption tests"
+    }
+  },
+  "validation_command": "python -m pytest tests/test_first_real_provider_attachment_v1.py tests/test_provider_assisted_intent_classification_v1.py tests/test_provider_assisted_conversation_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py tests/test_openai_provider_adapter_v1.py tests/test_openai_provider_adapter_pressure_validation_v1.py",
+  "validation_result": {
+    "passed": 90,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "provider_authority_added": false,
+    "provider_routing_authority_added": false,
+    "provider_execution_authority_added": false,
+    "worker_authority_added": false,
+    "api_key_captured": false,
+    "fail_closed_preserved": true
+  }
+}

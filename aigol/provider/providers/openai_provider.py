@@ -68,6 +68,7 @@ class OpenAIProviderAdapter:
     def generate_proposal(self, request: Any, *, proposal_id: str, timestamp: str) -> ProviderProposalEnvelope:
         api_key = _resolve_api_key(self._api_key)
         prompt = _extract_prompt(request)
+        human_prompt = _extract_human_prompt(request, fallback=prompt)
         payload = _create_openai_payload(model=self.model, prompt=prompt)
         raw_response = self._call_openai(payload=payload, api_key=api_key)
         response_text = _extract_response_text(raw_response)
@@ -91,6 +92,8 @@ class OpenAIProviderAdapter:
                 "provider": OPENAI_PROVIDER_ID,
                 "model": self.model,
                 "endpoint": self.endpoint,
+                "human_prompt": human_prompt,
+                "original_request": _sanitize_original_request(request),
                 "payload": payload,
                 "api_key_captured": False,
                 "single_request": True,
@@ -179,6 +182,28 @@ def _extract_prompt(value: Any) -> str:
             if isinstance(candidate, str) and candidate.strip():
                 return candidate.strip()
     raise FailClosedRuntimeError("OpenAI provider request prompt is required")
+
+
+def _extract_human_prompt(value: Any, *, fallback: str) -> str:
+    if isinstance(value, dict):
+        candidate = value.get("human_prompt")
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return _require_string(fallback, "human_prompt")
+
+
+def _sanitize_original_request(value: Any) -> Any:
+    if isinstance(value, dict):
+        sanitized = {}
+        for key, nested in value.items():
+            if key.lower() in {"api_key", "authorization", "token", "secret"}:
+                sanitized[key] = "REDACTED"
+            else:
+                sanitized[key] = _sanitize_original_request(nested)
+        return sanitized
+    if isinstance(value, list):
+        return [_sanitize_original_request(nested) for nested in value]
+    return deepcopy(value)
 
 
 def _extract_response_text(raw_response: Any) -> str:

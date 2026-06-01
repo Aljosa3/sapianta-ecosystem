@@ -1,0 +1,45 @@
+{
+  "artifact": "PROMPT_EVIDENCE_CONTINUITY_RESTORATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "implementation_scope": {
+    "openai_provider_envelope_preserves_structured_human_prompt": true,
+    "openai_provider_envelope_preserves_original_structured_request": true,
+    "openai_provider_envelope_preserves_adapter_payload": true,
+    "replay_reconstruction_preserves_human_prompt_continuity": true,
+    "authorization_changed": false,
+    "worker_execution_changed": false,
+    "provider_authority_changed": false,
+    "routing_authority_changed": false,
+    "governance_model_changed": false,
+    "replay_model_changed": false
+  },
+  "acceptance": {
+    "openai_provider_path_tested": true,
+    "provider_fallback_path_tested": true,
+    "prompt_continuity_preservation_tested": true,
+    "replay_reconstruction_tested": true,
+    "fail_closed_corruption_cases_tested": true,
+    "secret_redaction_tested": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_first_real_provider_attachment_v1.py tests/test_provider_assisted_intent_classification_v1.py tests/test_provider_assisted_conversation_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py tests/test_openai_provider_adapter_v1.py tests/test_openai_provider_adapter_pressure_validation_v1.py",
+    "passed": 90,
+    "failed": 0
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "provider_routing_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "provider_output_remains_proposal_evidence_only": true,
+    "aigol_still_validates_final_artifact": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "PROMPT_EVIDENCE_CONTINUITY_RESTORATION_STATUS": "READY"
+  }
+}
