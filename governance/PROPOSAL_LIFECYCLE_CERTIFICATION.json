@@ -1,0 +1,152 @@
+{
+  "artifact": "PROPOSAL_LIFECYCLE_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "review_type": "foundation_review_only",
+  "runtime_implemented": false,
+  "workers_implemented": false,
+  "execution_implemented": false,
+  "providers_modified": false,
+  "governance_modified": false,
+  "certified_scope": "minimal replay-safe proposal lifecycle foundation",
+  "bridge": [
+    "conversation",
+    "governance",
+    "future_worker_execution"
+  ],
+  "proposal_definition": {
+    "summary": "A replay-visible, non-authoritative candidate for future governed action.",
+    "authoritative": false,
+    "execution_capable": false,
+    "provider_created_authority": false
+  },
+  "distinctions": {
+    "conversation_response": "Human-readable response; no execution authority.",
+    "proposal": "Candidate future action; no authority until inspected and approved through governance.",
+    "execution_request": "Governed request derived from an approved proposal.",
+    "worker_task": "Deterministic work performed only after authorization.",
+    "governance_artifact": "Constitutional or evidentiary control artifact."
+  },
+  "lifecycle_states": [
+    "CREATED",
+    "INSPECTED",
+    "APPROVED",
+    "REJECTED",
+    "EXPIRED",
+    "EXECUTED",
+    "REPLAY_RECONSTRUCTED"
+  ],
+  "actor_authority": {
+    "human": [
+      "approve inspected proposal",
+      "reject inspected proposal"
+    ],
+    "aigol": [
+      "create proposal artifact",
+      "inspect proposal",
+      "reject invalid proposal",
+      "expire proposal",
+      "derive governed execution request candidate"
+    ],
+    "provider": [
+      "contribute proposal evidence only"
+    ],
+    "worker": [
+      "execute authorized downstream execution request only"
+    ],
+    "replay": [
+      "record lifecycle evidence",
+      "reconstruct lifecycle history read-only"
+    ]
+  },
+  "human_approval_required_for": [
+    "INSPECTED -> APPROVED",
+    "future execution request derivation where worker execution, write effects, external effects, or governance-sensitive actions are possible"
+  ],
+  "provider_boundary": {
+    "provider_transition_authority": false,
+    "provider_approval_authority": false,
+    "provider_execution_authority": false,
+    "provider_governance_authority": false,
+    "provider_replay_mutation_authority": false
+  },
+  "worker_boundary": {
+    "worker_self_authorization": false,
+    "worker_proposal_approval_authority": false,
+    "worker_scope_expansion_authority": false,
+    "worker_execution_requires_authorized_request": true
+  },
+  "replay_reconstruction": {
+    "append_only_required": true,
+    "read_only_reconstruction": true,
+    "mutation_authority": false,
+    "required_reconstruction_fields": [
+      "proposal_id",
+      "source_prompt_id",
+      "source_conversation_id",
+      "source_provider_event_id",
+      "state_history",
+      "inspection_result",
+      "human_approval_id",
+      "rejection_or_expiry_reason",
+      "execution_request_id",
+      "worker_result_id",
+      "artifact_hashes"
+    ]
+  },
+  "minimal_model_fields": [
+    "proposal_id",
+    "proposal_version",
+    "source_prompt_id",
+    "source_conversation_id",
+    "source_provider_event_id",
+    "created_by",
+    "proposal_type",
+    "capability_target",
+    "proposed_operation",
+    "proposed_arguments",
+    "constraints",
+    "risk_class",
+    "state",
+    "inspection_result",
+    "human_approval_id",
+    "execution_request_id",
+    "worker_result_id",
+    "created_at",
+    "expires_at",
+    "replay_refs",
+    "artifact_hash"
+  ],
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "certification_criteria": {
+    "proposal_defined": "READY",
+    "proposal_distinctions_defined": "READY",
+    "lifecycle_states_defined": "READY",
+    "actor_transitions_defined": "READY",
+    "human_approval_boundary_defined": "READY",
+    "replay_reconstruction_defined": "READY",
+    "constitutional_invariant_preserved": "READY",
+    "future_worker_execution_minimal_model_defined": "READY",
+    "runtime_implementation": "NOT_IMPLEMENTED",
+    "worker_integration": "NOT_IMPLEMENTED",
+    "schema_and_tests": "NOT_IMPLEMENTED"
+  },
+  "remaining_gaps": [
+    "No proposal lifecycle runtime is implemented by this review.",
+    "No proposal schema is enforced by this review.",
+    "No worker execution integration is implemented by this review.",
+    "No approval UI or CLI approval command is implemented by this review.",
+    "No runtime tests are introduced by this review.",
+    "Execution request derivation remains future governed work."
+  ],
+  "final_classification": {
+    "PROPOSAL_LIFECYCLE_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
