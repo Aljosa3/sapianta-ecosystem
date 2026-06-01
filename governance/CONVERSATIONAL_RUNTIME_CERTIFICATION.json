@@ -1,0 +1,108 @@
+{
+  "artifact": "CONVERSATIONAL_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED_WITH_GAPS",
+  "certification_review_only": true,
+  "runtime_modified": false,
+  "providers_modified": false,
+  "governance_modified": false,
+  "workers_modified": false,
+  "certified_as": "Operational Human Conversational Entry Point",
+  "certified_entry_point": "aigol prompt submit",
+  "observed_entry_point": "python -m aigol.cli.aigol_cli prompt submit",
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records"
+  },
+  "certification_questions": {
+    "human_can_interact_without_chatgpt_copy_paste_mediation": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "majority_conversational_prompts_classified_routed_governed_and_answered": {
+      "answer": true,
+      "classification": "CERTIFIED_WITH_GAPS",
+      "evidence": "41 / 50 = 82%"
+    },
+    "provider_boundaries_preserved": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "governance_boundaries_preserved": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "replay_guarantees_preserved": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "conversational_operation_remains_fail_closed": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "constitutional_invariant_preserved": {
+      "answer": true,
+      "classification": "CERTIFIED"
+    },
+    "remaining_gaps_prevent_full_certification": {
+      "answer": true,
+      "classification": "FULL_CERTIFICATION_BLOCKED"
+    }
+  },
+  "fifth_epoch_results": {
+    "prompts_submitted": 50,
+    "responses_created": 41,
+    "fail_closed_or_non_conversation_outcomes": 9,
+    "success_rate": "82%",
+    "conversation_classifications": 43,
+    "unclassified_prompts": 5,
+    "provider_assisted_final_responses": 27,
+    "self_resolution_responses": 14,
+    "replay_visible_provider_responses": 40,
+    "conversation_stage_provider_responses": 28,
+    "worker_invocations": 0,
+    "execution_requests": 0,
+    "human_prompt_required_failures": 0
+  },
+  "certification_criteria": {
+    "human_entry_capability": "CERTIFIED",
+    "conversational_coverage": "CERTIFIED_WITH_GAPS",
+    "provider_isolation": "CERTIFIED",
+    "governance_preservation": "CERTIFIED",
+    "replay_integrity": "CERTIFIED",
+    "fail_closed_guarantees": "CERTIFIED",
+    "operational_stability": "CERTIFIED_WITH_GAPS",
+    "constitutional_compliance": "CERTIFIED"
+  },
+  "remaining_gaps": [
+    "9 of 50 prompts did not produce successful conversational responses.",
+    "5 classification failures remain.",
+    "1 provider response normalization failure remains.",
+    "1 provider availability failure remains.",
+    "2 non-conversation outcomes remain.",
+    "Response validation remains sensitive to provider wording.",
+    "Future provider availability is not guaranteed.",
+    "Multi-turn conversational memory is not certified.",
+    "Worker execution through the conversational entry point is not certified."
+  ],
+  "permitted_claims": [
+    "AiGOL CLI is an Operational Human Conversational Entry Point for the current runtime.",
+    "AiGOL conversational runtime achieved majority observed coverage in the fifth epoch.",
+    "Provider-assisted conversational responses are operational within AiGOL governance boundaries."
+  ],
+  "prohibited_claims": [
+    "Full conversational coverage.",
+    "Unrestricted autonomous operation.",
+    "Provider execution authority.",
+    "Provider governance authority.",
+    "Guaranteed provider availability.",
+    "Worker execution through this conversational certification.",
+    "Perfect safety or guaranteed compliance."
+  ],
+  "final_classification": {
+    "CONVERSATIONAL_RUNTIME_STATUS": "CERTIFIED_WITH_GAPS"
+  }
+}

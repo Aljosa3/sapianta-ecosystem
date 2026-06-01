@@ -1,0 +1,111 @@
+{
+  "artifact": "CONVERSATIONAL_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED_WITH_GAPS",
+  "accepted_on": "2026-06-01",
+  "review_type": "certification_review_only",
+  "runtime_modified": false,
+  "providers_modified": false,
+  "governance_modified": false,
+  "workers_modified": false,
+  "fixes_implemented": false,
+  "certified_entry_point": "aigol prompt submit",
+  "observed_entry_point": "python -m aigol.cli.aigol_cli prompt submit",
+  "certified_identity": "Operational Human Conversational Entry Point",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "reviewed_evidence": {
+    "fifth_epoch_certification": "governance/FIFTH_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "fifth_epoch_findings": "governance/FIFTH_REAL_CONVERSATIONAL_USAGE_FINDINGS_V1.md",
+    "real_openai_connectivity_proof": "governance/REAL_OPENAI_CONNECTIVITY_PROOF_V1.md",
+    "real_openai_connectivity_adr": "governance/REAL_OPENAI_CONNECTIVITY_ADR_V1.md",
+    "provider_normalization_evidence": "governance/LIVE_PROVIDER_NORMALIZATION_SUCCESS_V1_ACCEPTANCE_EVIDENCE.json",
+    "provider_response_acceptance_evidence": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_ACCEPTANCE_EVIDENCE.json",
+    "prompt_continuity_evidence": "governance/PROMPT_EVIDENCE_CONTINUITY_RESTORATION_CERTIFICATION.json",
+    "provider_assisted_replay_evidence": "governance/PROVIDER_ASSISTED_CONVERSATION_RUNTIME_REPLAY_CERTIFICATION.json",
+    "provider_boundary_guarantees": "governance/PROVIDER_BOUNDARY_GUARANTEES_V1.md",
+    "fail_closed_rules": "governance/ORCHESTRATION_FAIL_CLOSED_RULES_V1.md"
+  },
+  "epoch_progression": {
+    "second_epoch": {
+      "responses_created": 6,
+      "prompts_submitted": 50,
+      "success_rate": "12%"
+    },
+    "third_epoch": {
+      "responses_created": 6,
+      "prompts_submitted": 50,
+      "success_rate": "12%"
+    },
+    "fourth_epoch": {
+      "responses_created": 16,
+      "prompts_submitted": 50,
+      "success_rate": "32%"
+    },
+    "fifth_epoch": {
+      "responses_created": 41,
+      "prompts_submitted": 50,
+      "success_rate": "82%"
+    }
+  },
+  "acceptance_criteria": {
+    "human_entry_capability": {
+      "accepted": true,
+      "evidence": "50 prompts submitted through the CLI prompt submission path in the fifth epoch."
+    },
+    "conversational_coverage": {
+      "accepted": true,
+      "with_gaps": true,
+      "evidence": "41 of 50 prompts produced responses in the fifth epoch."
+    },
+    "provider_isolation": {
+      "accepted": true,
+      "evidence": "provider_response_authority=false, worker_invoked=false, execution_requested=false"
+    },
+    "governance_preservation": {
+      "accepted": true,
+      "evidence": "AiGOL validation and fail-closed acceptance remained authoritative."
+    },
+    "replay_integrity": {
+      "accepted": true,
+      "evidence": "40 replay-visible provider responses and replay-visible accepted provider-assisted response stages."
+    },
+    "fail_closed_guarantees": {
+      "accepted": true,
+      "evidence": "9 unsuccessful outcomes remained failed-closed or non-conversation outcomes without execution."
+    },
+    "operational_stability": {
+      "accepted": true,
+      "with_gaps": true,
+      "evidence": "Majority operation observed, but classification, normalization, and provider availability gaps remain."
+    },
+    "constitutional_compliance": {
+      "accepted": true,
+      "evidence": "LLM proposes, AiGOL governs, Worker executes, Replay records preserved with no worker invocation in scope."
+    }
+  },
+  "remaining_gaps": {
+    "unsuccessful_outcomes": 9,
+    "classification_failures": 5,
+    "normalization_failures": 1,
+    "provider_failures": 1,
+    "other_non_conversation_outcomes": 2,
+    "multi_turn_conversation_certified": false,
+    "worker_execution_certified_through_conversation": false,
+    "future_provider_availability_guaranteed": false
+  },
+  "boundary_evidence": {
+    "provider_authority_introduced": false,
+    "provider_routing_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "worker_invocations": 0,
+    "execution_requests": 0,
+    "replay_visibility_preserved": true,
+    "fail_closed_preserved": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "CONVERSATIONAL_RUNTIME_STATUS": "CERTIFIED_WITH_GAPS"
+  }
+}
