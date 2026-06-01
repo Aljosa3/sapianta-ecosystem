@@ -1,0 +1,131 @@
+{
+  "artifact": "WORKER_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "classification": {
+    "WORKER_RUNTIME_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": "foundation review for Worker Runtime boundary",
+  "created_artifacts": [
+    "governance/WORKER_RUNTIME_FOUNDATION_V1.md",
+    "governance/WORKER_RUNTIME_MODEL_V1.md",
+    "governance/WORKER_RUNTIME_TRANSITIONS_V1.md",
+    "governance/WORKER_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/WORKER_RUNTIME_ADR_V1.md",
+    "governance/WORKER_RUNTIME_CERTIFICATION.json"
+  ],
+  "worker_definition": {
+    "execution_only": true,
+    "capability_bound": true,
+    "identity_bound": true,
+    "request_scoped": true,
+    "replay_visible": true,
+    "non_authoritative": true
+  },
+  "worker_states": [
+    "AVAILABLE",
+    "ASSIGNED",
+    "EXECUTING",
+    "COMPLETED",
+    "FAILED"
+  ],
+  "required_future_artifacts": [
+    "WORKER_IDENTITY_ENVELOPE_V1",
+    "WORKER_CAPABILITY_BINDING_V1",
+    "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "WORKER_RESULT_ARTIFACT_V1",
+    "WORKER_TERMINATION_ARTIFACT_V1"
+  ],
+  "execution_request_eligibility": {
+    "required_artifact": "EXECUTION_REQUEST_ARTIFACT_V1",
+    "required_status": "READY_FOR_DISPATCH",
+    "current_execution_request_runtime_status": "CREATED",
+    "current_requests_worker_eligible": false,
+    "requires_replay_reconstruction": true,
+    "requires_approval_lineage": true,
+    "requires_capability_binding": true,
+    "requires_worker_identity": true
+  },
+  "forbidden_worker_inputs": [
+    "execution_request.status = CREATED",
+    "execution_request.status = CANCELLED",
+    "execution_request.status = COMPLETED",
+    "execution_request.status = FAILED",
+    "missing approval lineage",
+    "missing proposal lineage",
+    "unsupported request type",
+    "provider command",
+    "worker self-assignment",
+    "scope expansion",
+    "corrupt replay"
+  ],
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "provider_command_path": false,
+    "worker_self_assigned": false,
+    "self_authorization": false,
+    "proposal_authority": false,
+    "approval_authority": false,
+    "governance_authority": false,
+    "replay_mutation_authority": false,
+    "scope_expansion": false,
+    "hidden_continuation": false
+  },
+  "replay_requirements": [
+    "execution request evidence",
+    "dispatch validation evidence",
+    "worker identity envelope",
+    "capability binding evidence",
+    "worker assignment evidence",
+    "worker result evidence",
+    "worker termination evidence",
+    "governed return linkage"
+  ],
+  "fail_closed_cases": [
+    "missing dispatch-ready execution request",
+    "corrupt execution request replay",
+    "missing approval lineage",
+    "missing worker identity",
+    "missing capability binding",
+    "unsupported request type",
+    "provider command",
+    "worker self-assignment",
+    "scope expansion",
+    "missing result evidence",
+    "missing termination evidence",
+    "replay corruption",
+    "duplicate terminal results",
+    "hidden continuation"
+  ],
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "not_implemented": {
+    "worker_runtime": true,
+    "dispatch": true,
+    "execution": true,
+    "provider_authority": true,
+    "worker_identity_envelope": true,
+    "capability_binding_runtime": true,
+    "worker_result_replay": true,
+    "worker_termination_replay": true
+  },
+  "known_gaps": [
+    "Worker Runtime is not implemented.",
+    "Dispatch is not implemented.",
+    "Execution request readiness is not implemented.",
+    "Current Execution Request Runtime creates only CREATED requests, which are not worker-eligible.",
+    "Worker identity envelope is not implemented.",
+    "Capability binding runtime is not implemented.",
+    "Worker result replay is not implemented.",
+    "Worker termination replay is not implemented."
+  ],
+  "final_classification": {
+    "WORKER_RUNTIME_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
