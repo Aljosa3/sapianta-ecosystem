@@ -1,0 +1,130 @@
+{
+  "artifact": "SOURCE_OF_TRUTH_END_TO_END_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "classification": {
+    "SOURCE_OF_TRUTH_END_TO_END_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": "validation review for Human Prompt -> Resolution Strategy -> Source of Truth -> Response",
+  "created_artifacts": [
+    "governance/SOURCE_OF_TRUTH_END_TO_END_VALIDATION_V1.md",
+    "governance/SOURCE_OF_TRUTH_END_TO_END_FINDINGS_V1.md",
+    "governance/SOURCE_OF_TRUTH_END_TO_END_GAP_ANALYSIS_V1.md",
+    "governance/SOURCE_OF_TRUTH_END_TO_END_RECOMMENDATIONS_V1.md",
+    "governance/SOURCE_OF_TRUTH_END_TO_END_CERTIFICATION.json"
+  ],
+  "supported_sources_reviewed": [
+    "SELF_RESOLUTION",
+    "PROVIDER",
+    "REPLAY",
+    "CONSTITUTIONAL_MEMORY",
+    "GOVERNANCE"
+  ],
+  "representative_prompt_suite": [
+    {
+      "prompt": "Hello",
+      "expected_strategy": "SELF_RESOLUTION_OR_PROVIDER",
+      "component_status": "PARTIAL",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "Explain simply",
+      "expected_strategy": "PROVIDER",
+      "component_status": "PARTIAL",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "What is AiGOL?",
+      "expected_strategy": "CONSTITUTIONAL_MEMORY_OR_SELF_RESOLUTION",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "Explain worker boundaries",
+      "expected_strategy": "CONSTITUTIONAL_MEMORY",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "What was certified recently?",
+      "expected_strategy": "GOVERNANCE",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "What governance exists?",
+      "expected_strategy": "GOVERNANCE",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "What happened recently?",
+      "expected_strategy": "REPLAY",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "Show latest proposal",
+      "expected_strategy": "REPLAY",
+      "component_status": "SUPPORTED",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "Explain AI alignment",
+      "expected_strategy": "PROVIDER",
+      "component_status": "SUPPORTED_WITH_PROVIDER_DEPENDENCY",
+      "end_to_end_status": "GAP"
+    },
+    {
+      "prompt": "Write a poem",
+      "expected_strategy": "PROVIDER",
+      "component_status": "SUPPORTED_WITH_PROVIDER_DEPENDENCY",
+      "end_to_end_status": "GAP"
+    }
+  ],
+  "measurement": {
+    "strategy_selection_supported": true,
+    "source_specific_resolvers_supported": true,
+    "response_success_supported_per_component": true,
+    "replay_visibility_supported_per_component": true,
+    "fail_closed_behavior_supported_per_component": true,
+    "unified_source_router_exists": false,
+    "all_sources_integrated_into_conversational_runtime": false,
+    "cli_epoch_for_all_sources_completed": false
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py tests/test_replay_resolution_strategy_v1.py tests/test_constitutional_memory_resolution_strategy_v1.py tests/test_governance_resolution_strategy_v1.py tests/test_provider_assisted_conversation_runtime_v1.py tests/test_conversation_runtime_v1.py",
+    "passed": 95,
+    "failed": 0
+  },
+  "findings": {
+    "resolution_strategy_runtime": "PASS",
+    "replay_source": "PASS",
+    "constitutional_memory_source": "PASS",
+    "governance_source": "PASS",
+    "provider_source": "PASS_WITH_DEPENDENCY",
+    "self_resolution_source": "PASS",
+    "unified_conversational_source_router": "GAP",
+    "source_precedence": "GAP",
+    "cli_end_to_end_all_sources": "GAP"
+  },
+  "boundary_evidence": {
+    "provider_authority": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "approval_created": false,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "required_next_steps": [
+    "Implement SOURCE_OF_TRUTH_ROUTER_V1.",
+    "Canonicalize source precedence.",
+    "Normalize response envelope across sources.",
+    "Connect router to conversational entry path.",
+    "Run a new CLI validation epoch through aigol prompt submit."
+  ],
+  "final_classification": {
+    "SOURCE_OF_TRUTH_END_TO_END_STATUS": "READY_WITH_GAPS"
+  }
+}
