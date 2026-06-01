@@ -1,0 +1,88 @@
+{
+  "artifact": "WORKER_INVOCATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "runtime": "WORKER_INVOCATION_RUNTIME_V1",
+  "status": "ACCEPTED",
+  "implementation": {
+    "module": "aigol/runtime/worker_invocation_runtime.py",
+    "tests": "tests/test_worker_invocation_runtime_v1.py",
+    "artifact_type": "WORKER_INVOCATION_ARTIFACT_V1",
+    "supported_transition": "DISPATCHED -> INVOKED"
+  },
+  "runtime_entrypoints": [
+    "invoke_worker",
+    "reconstruct_worker_invocation_replay"
+  ],
+  "replay_events": [
+    "WORKER_INVOCATION_VALIDATED",
+    "WORKER_INVOCATION_RETURNED"
+  ],
+  "required_inputs": [
+    "worker_invocation_id",
+    "dispatch_artifact",
+    "dispatch_replay",
+    "worker_assignment_artifact",
+    "canonical_chain_id",
+    "invocation_parameters",
+    "invoked_by",
+    "invoked_at",
+    "replay_reference",
+    "replay_dir"
+  ],
+  "validation_evidence": [
+    "Dispatch artifact must be valid",
+    "Dispatch status must be DISPATCHED",
+    "Dispatch replay must match dispatch artifact",
+    "Worker assignment artifact must be valid",
+    "Worker identity must match dispatch evidence",
+    "Worker assignment status must be ASSIGNED",
+    "Worker availability lineage must be valid",
+    "Canonical chain id must match dispatch and assignment evidence",
+    "Invocation parameters must be present",
+    "Invocation parameters must match execution request reference",
+    "Invocation parameters must match request type and capability",
+    "Invocation parameters must not contain authority-bearing fields",
+    "Provider authority must remain false",
+    "Worker self-invocation must remain false",
+    "Execution started must remain false",
+    "Execution performed must remain false",
+    "Completion recorded must remain false"
+  ],
+  "fail_closed_cases_tested": [
+    "Invalid dispatch",
+    "Worker mismatch",
+    "Worker unavailable",
+    "Duplicate invocation",
+    "Chain mismatch",
+    "Missing invocation parameters",
+    "Authority-bearing invocation parameters",
+    "Invocation parameter validation failure",
+    "Corrupt dispatch replay reference",
+    "Corrupt invocation replay artifact",
+    "Corrupt invocation replay ordering",
+    "Corrupt invocation replay chain continuity"
+  ],
+  "boundary_evidence": {
+    "provider_authority": false,
+    "worker_self_invoked": false,
+    "execution_started": false,
+    "execution_performed": false,
+    "completion_recorded": false,
+    "automatic_authorization": false,
+    "scope_expansion": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py",
+      "result": "15 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_dispatch_runtime_v1.py tests/test_worker_invocation_runtime_v1.py",
+      "result": "29 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_proposal_runtime_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_invocation_runtime_v1.py",
+      "result": "126 passed"
+    }
+  ],
+  "final_classification": "CERTIFIED"
+}
