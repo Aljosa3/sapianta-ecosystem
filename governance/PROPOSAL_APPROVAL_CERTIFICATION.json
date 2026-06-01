@@ -1,0 +1,141 @@
+{
+  "artifact": "PROPOSAL_APPROVAL_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "review_type": "foundation_review_only",
+  "runtime_implemented": false,
+  "execution_implemented": false,
+  "workers_implemented": false,
+  "governance_modified": false,
+  "certified_scope": "minimal human-only proposal approval architecture",
+  "who_can_approve": [
+    "human_operator"
+  ],
+  "who_can_never_approve": [
+    "provider",
+    "worker",
+    "replay",
+    "conversation_response",
+    "resolution_strategy_selection",
+    "proposal_artifact_itself",
+    "constitutional_memory_citation",
+    "execution_request",
+    "automated_fallback_path"
+  ],
+  "provider_can_approve": false,
+  "worker_can_approve": false,
+  "approval_states": [
+    "PENDING_APPROVAL",
+    "APPROVED",
+    "REJECTED",
+    "EXPIRED"
+  ],
+  "approval_artifact": "PROPOSAL_APPROVAL_ARTIFACT_V1",
+  "required_replay_evidence_before_approval": [
+    "proposal_runtime_artifact",
+    "proposal_status_CREATED_or_INSPECTED_lineage",
+    "proposal_source_evidence",
+    "prompt_lineage",
+    "conversation_lineage_when_present",
+    "resolution_strategy_lineage_when_present",
+    "provider_contribution_lineage_when_present",
+    "aigol_inspection_artifact",
+    "inspection_result_permitting_approval_consideration",
+    "proposal_artifact_hash",
+    "non_authority_boundary_evidence",
+    "absence_of_execution"
+  ],
+  "approval_recording": {
+    "events": [
+      "PROPOSAL_APPROVAL_PENDING",
+      "PROPOSAL_APPROVED",
+      "PROPOSAL_REJECTED",
+      "PROPOSAL_APPROVAL_EXPIRED"
+    ],
+    "required_fields": [
+      "approval_id",
+      "proposal_id",
+      "proposal_artifact_hash",
+      "inspection_artifact_ref",
+      "inspection_artifact_hash",
+      "human_decision",
+      "approval_status",
+      "approval_reason",
+      "operator_label",
+      "created_at",
+      "replay_reference",
+      "non_execution_flags",
+      "artifact_hash"
+    ]
+  },
+  "approval_reconstruction": {
+    "append_only_required": true,
+    "deterministic_event_order_required": true,
+    "may_prove_approval": true,
+    "may_prove_rejection": true,
+    "may_prove_expiry": true,
+    "may_infer_missing_approval": false,
+    "may_repair_missing_approval": false,
+    "may_create_approval": false
+  },
+  "lifecycle_integration": {
+    "pending_approval_from": "INSPECTED",
+    "approved_maps_to_lifecycle_transition": "INSPECTED -> APPROVED",
+    "rejected_maps_to_lifecycle_transition": "INSPECTED -> REJECTED",
+    "expired_maps_to_lifecycle_transition": "INSPECTED -> EXPIRED",
+    "approval_creates_execution_request": false,
+    "approval_dispatches_worker": false
+  },
+  "non_execution_flags_required": {
+    "execution_performed": false,
+    "worker_dispatched": false,
+    "provider_dispatched": false,
+    "execution_request_created": false,
+    "autonomous_continuation_performed": false,
+    "governance_mutation_performed": false
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "approval_authority_automated": false,
+    "governance_authority_changed": false,
+    "replay_mutation_authority_introduced": false
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "certification_criteria": {
+    "approval_actor_defined": "READY",
+    "non_approvers_defined": "READY",
+    "provider_non_approval_defined": "READY",
+    "worker_non_approval_defined": "READY",
+    "replay_evidence_defined": "READY",
+    "approval_recording_defined": "READY",
+    "approval_reconstruction_defined": "READY",
+    "constitutional_invariant_preserved": "READY",
+    "approval_states_defined": "READY",
+    "proposal_lifecycle_integration_defined": "READY",
+    "runtime_implementation": "NOT_IMPLEMENTED",
+    "execution_implementation": "NOT_IMPLEMENTED",
+    "worker_implementation": "NOT_IMPLEMENTED",
+    "tests": "NOT_IMPLEMENTED"
+  },
+  "remaining_gaps": [
+    "No approval runtime is implemented by this review.",
+    "No approval UI or CLI command is implemented by this review.",
+    "No approval artifact schema is enforced by this review.",
+    "No proposal inspection runtime is implemented by this review.",
+    "No execution request derivation is implemented by this review.",
+    "No worker integration is implemented by this review.",
+    "No tests are introduced by this review."
+  ],
+  "final_classification": {
+    "PROPOSAL_APPROVAL_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
