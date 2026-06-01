@@ -1,0 +1,111 @@
+{
+  "artifact": "EXECUTION_REQUEST_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "classification": {
+    "EXECUTION_REQUEST_RUNTIME_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": "foundation review for execution request runtime boundary",
+  "created_artifacts": [
+    "governance/EXECUTION_REQUEST_RUNTIME_FOUNDATION_V1.md",
+    "governance/EXECUTION_REQUEST_RUNTIME_MODEL_V1.md",
+    "governance/EXECUTION_REQUEST_RUNTIME_TRANSITIONS_V1.md",
+    "governance/EXECUTION_REQUEST_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/EXECUTION_REQUEST_RUNTIME_ADR_V1.md",
+    "governance/EXECUTION_REQUEST_RUNTIME_CERTIFICATION.json"
+  ],
+  "defined_runtime_artifact": "EXECUTION_REQUEST_ARTIFACT_V1",
+  "mandatory_fields": [
+    "execution_request_id",
+    "proposal_reference",
+    "proposal_hash",
+    "approval_reference",
+    "approval_hash",
+    "requested_by",
+    "created_at",
+    "request_type",
+    "request_payload",
+    "status",
+    "replay_reference",
+    "artifact_hash"
+  ],
+  "valid_states": [
+    "CREATED",
+    "READY_FOR_DISPATCH",
+    "CANCELLED"
+  ],
+  "creation_preconditions": {
+    "proposal_required": true,
+    "proposal_status_required": "APPROVED",
+    "approval_artifact_required": true,
+    "approval_status_required": "APPROVED",
+    "proposal_hash_match_required": true,
+    "approval_hash_match_required": true,
+    "created_by_aigol_only": true,
+    "replay_visible": true
+  },
+  "forbidden_creation_sources": [
+    "CREATED",
+    "INSPECTED",
+    "REJECTED",
+    "EXPIRED",
+    "EXECUTED",
+    "REPLAY_RECONSTRUCTED"
+  ],
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "provider_invoked": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "approval_created": false,
+    "automatic_authorization": false,
+    "replay_visible": true
+  },
+  "fail_closed_cases": [
+    "missing proposal evidence",
+    "missing approval evidence",
+    "proposal not approved",
+    "approval not approved",
+    "proposal hash mismatch",
+    "approval hash mismatch",
+    "invalid actor",
+    "invalid request type",
+    "malformed payload",
+    "payload outside approved scope",
+    "duplicate request id",
+    "duplicate derivation for same approval lineage",
+    "corrupt artifacts",
+    "corrupt replay",
+    "implied worker dispatch",
+    "implied execution"
+  ],
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "not_implemented": {
+    "runtime_code": true,
+    "tests": true,
+    "worker_runtime": true,
+    "dispatch": true,
+    "execution": true,
+    "provider_authority": true,
+    "approval_changes": true
+  },
+  "known_gaps": [
+    "Runtime implementation is absent.",
+    "Tests are absent.",
+    "Worker authorization integration is absent.",
+    "Dispatch semantics are absent.",
+    "Duplicate request derivation policy is not implemented.",
+    "Current Proposal Approval Runtime supports CREATED -> APPROVED, while earlier foundation documents prefer inspection before approval."
+  ],
+  "final_classification": {
+    "EXECUTION_REQUEST_RUNTIME_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
