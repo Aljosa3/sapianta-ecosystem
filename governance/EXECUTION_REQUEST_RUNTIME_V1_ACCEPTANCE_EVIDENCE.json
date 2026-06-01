@@ -1,0 +1,88 @@
+{
+  "artifact": "EXECUTION_REQUEST_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/execution_request_runtime.py",
+  "test_file": "tests/test_execution_request_runtime_v1.py",
+  "implemented_scope": {
+    "execution_request_creation": true,
+    "execution_request_artifact": "EXECUTION_REQUEST_ARTIFACT_V1",
+    "created_status_only": true,
+    "approved_proposal_evidence_required": true,
+    "dispatch_implemented": false,
+    "worker_runtime_implemented": false,
+    "execution_implemented": false,
+    "completion_implemented": false,
+    "provider_authority_implemented": false,
+    "approval_changes_implemented": false
+  },
+  "mandatory_fields": {
+    "execution_request_id": true,
+    "proposal_reference": true,
+    "requested_by": true,
+    "created_at": true,
+    "request_type": true,
+    "request_payload": true,
+    "status": true,
+    "replay_reference": true
+  },
+  "lineage_fields": {
+    "proposal_hash": true,
+    "approval_reference": true,
+    "approval_hash": true,
+    "request_payload_hash": true
+  },
+  "runtime_events": [
+    "EXECUTION_REQUEST_CREATED",
+    "EXECUTION_REQUEST_RETURNED"
+  ],
+  "supported_values": {
+    "request_types": [
+      "CAPABILITY_EXECUTION_REQUEST"
+    ],
+    "statuses": [
+      "CREATED"
+    ],
+    "requested_by": [
+      "AIGOL"
+    ]
+  },
+  "acceptance_checks": {
+    "deterministic_execution_request_artifact_created": "PASSED",
+    "approved_proposal_evidence_required": "PASSED",
+    "created_proposal_without_approval_fails_closed": "PASSED",
+    "rejected_proposal_fails_closed": "PASSED",
+    "expired_proposal_fails_closed": "PASSED",
+    "execution_request_artifact_persisted": "PASSED",
+    "execution_request_creation_event_created": "PASSED",
+    "execution_request_return_event_created": "PASSED",
+    "replay_reconstruction_supported": "PASSED",
+    "missing_proposal_fails_closed": "PASSED",
+    "missing_fields_fail_closed": "PASSED",
+    "invalid_proposal_state_fails_closed": "PASSED",
+    "duplicate_request_ids_fail_closed": "PASSED",
+    "corrupt_artifacts_fail_closed": "PASSED",
+    "reference_mismatch_fails_closed": "PASSED",
+    "authority_bearing_payload_fails_closed": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_proposal_runtime_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py",
+    "passed": 56,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "provider_authority": false,
+    "provider_invoked": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "approval_created": false,
+    "automatic_authorization": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "EXECUTION_REQUEST_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

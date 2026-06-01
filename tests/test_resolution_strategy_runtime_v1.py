@@ -9,6 +9,8 @@ import pytest
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.resolution_strategy_runtime import (
+    CONSTITUTIONAL_MEMORY,
+    GOVERNANCE,
     PROVIDER,
     REPLAY,
     RESOLUTION_STRATEGY_RETURNED,
@@ -38,15 +40,21 @@ def _strategy(tmp_path, **overrides) -> dict:
 
 
 @pytest.mark.parametrize(
-    ("selected_strategy", "provider_required"),
+    ("selected_strategy", "provider_required", "constitutional_memory_required", "governance_required"),
     [
-        (SELF_RESOLUTION, False),
-        (PROVIDER, True),
-        (REPLAY, False),
+        (SELF_RESOLUTION, False, False, False),
+        (PROVIDER, True, False, False),
+        (REPLAY, False, False, False),
+        (CONSTITUTIONAL_MEMORY, False, True, False),
+        (GOVERNANCE, False, False, True),
     ],
 )
 def test_resolution_strategy_selection_records_supported_strategy(
-    tmp_path, selected_strategy: str, provider_required: bool
+    tmp_path,
+    selected_strategy: str,
+    provider_required: bool,
+    constitutional_memory_required: bool,
+    governance_required: bool,
 ) -> None:
     capture = _strategy(tmp_path, selected_strategy=selected_strategy)
     artifact = capture["resolution_strategy_artifact"]
@@ -57,6 +65,8 @@ def test_resolution_strategy_selection_records_supported_strategy(
     assert artifact["strategy_id"] == "STRATEGY-000001"
     assert artifact["selected_strategy"] == selected_strategy
     assert artifact["provider_required"] is provider_required
+    assert artifact["constitutional_memory_required"] is constitutional_memory_required
+    assert artifact["governance_required"] is governance_required
     assert artifact["provider_used"] is False
     assert artifact["worker_required"] is False
     assert artifact["approval_created"] is False
@@ -66,6 +76,8 @@ def test_resolution_strategy_selection_records_supported_strategy(
     assert reconstructed["selected_strategy"] == selected_strategy
     assert reconstructed["provider_required"] is provider_required
     assert reconstructed["replay_required"] is (selected_strategy == REPLAY)
+    assert reconstructed["constitutional_memory_required"] is constitutional_memory_required
+    assert reconstructed["governance_required"] is governance_required
 
 
 def test_resolution_strategy_persists_replay_events(tmp_path) -> None:

@@ -17,14 +17,14 @@ Implemented strategies:
 ```text
 SELF_RESOLUTION
 REPLAY
+CONSTITUTIONAL_MEMORY
+GOVERNANCE
 PROVIDER
 ```
 
 Future strategies remain foundation-defined but are not implemented in V1:
 
 ```text
-CONSTITUTIONAL_MEMORY
-GOVERNANCE
 WORKER
 COMBINED
 ```
@@ -96,6 +96,10 @@ Replay reconstructs:
 `SELF_RESOLUTION` means AiGOL will attempt deterministic local resolution before provider response generation.
 
 `REPLAY` means replay-backed operational evidence is required.
+
+`CONSTITUTIONAL_MEMORY` means citation-bound constitutional memory is required.
+
+`GOVERNANCE` means governance artifact evidence is required.
 
 `PROVIDER` means provider assistance is required for a later bounded provider-assisted path.
 
@@ -172,12 +176,12 @@ python -m pytest tests/test_resolution_strategy_runtime_v1.py
 Result:
 
 ```text
-16 passed
+18 passed
 ```
 
 ## Final Result
 
-AiGOL can explicitly choose and record `SELF_RESOLUTION`, `REPLAY`, or `PROVIDER` before response generation.
+AiGOL can explicitly choose and record `SELF_RESOLUTION`, `REPLAY`, `CONSTITUTIONAL_MEMORY`, `GOVERNANCE`, or `PROVIDER` before response generation.
 
 ```text
 RESOLUTION_STRATEGY_RUNTIME_STATUS = CERTIFIED

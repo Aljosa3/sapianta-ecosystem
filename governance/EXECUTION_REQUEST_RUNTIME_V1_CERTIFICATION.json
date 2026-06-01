@@ -1,0 +1,102 @@
+{
+  "artifact": "EXECUTION_REQUEST_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "runtime_file": "aigol/runtime/execution_request_runtime.py",
+  "test_file": "tests/test_execution_request_runtime_v1.py",
+  "certified_scope": "minimal replay-visible execution request creation runtime",
+  "implemented": {
+    "execution_request_artifact": true,
+    "approved_proposal_evidence_validation": true,
+    "created_status_only": true,
+    "replay_visible_creation_event": true,
+    "replay_visible_return_event": true,
+    "replay_reconstruction": true,
+    "fail_closed_validation": true
+  },
+  "not_implemented": {
+    "dispatch": true,
+    "worker_runtime": true,
+    "execution": true,
+    "completion": true,
+    "provider_authority": true,
+    "approval_changes": true
+  },
+  "execution_request_artifact": "EXECUTION_REQUEST_ARTIFACT_V1",
+  "required_inputs": [
+    "valid PROPOSAL_RUNTIME_ARTIFACT_V1",
+    "matching PROPOSAL_APPROVAL_ARTIFACT_V1",
+    "approval_status = APPROVED"
+  ],
+  "mandatory_fields": [
+    "execution_request_id",
+    "proposal_reference",
+    "requested_by",
+    "created_at",
+    "request_type",
+    "request_payload",
+    "status",
+    "replay_reference"
+  ],
+  "runtime_events": [
+    "EXECUTION_REQUEST_CREATED",
+    "EXECUTION_REQUEST_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "missing proposal",
+    "missing approval",
+    "invalid proposal artifact",
+    "corrupt proposal artifact",
+    "corrupt approval artifact",
+    "approval status REJECTED",
+    "approval status EXPIRED",
+    "proposal reference mismatch",
+    "proposal hash mismatch",
+    "missing execution request fields",
+    "invalid request type",
+    "invalid status",
+    "authority-bearing payload",
+    "duplicate append-only replay artifacts",
+    "corrupt execution request artifact",
+    "corrupt replay wrapper",
+    "replay ordering corruption",
+    "execution request reference mismatch"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_created_event": true,
+    "requires_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_execution_request_reference": true,
+    "verifies_execution_request_hash": true,
+    "verifies_proposal_reference": true,
+    "verifies_payload_hash": true
+  },
+  "boundary_certification": {
+    "provider_authority": false,
+    "provider_invoked": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "approval_created": false,
+    "automatic_authorization": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_proposal_runtime_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py",
+    "passed": 56,
+    "failed": 0
+  },
+  "final_classification": {
+    "EXECUTION_REQUEST_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

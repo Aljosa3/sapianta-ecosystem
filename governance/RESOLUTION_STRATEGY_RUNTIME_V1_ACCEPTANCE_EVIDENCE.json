@@ -10,8 +10,8 @@
     "self_resolution_strategy": true,
     "replay_strategy": true,
     "provider_strategy": true,
-    "constitutional_memory_runtime": false,
-    "governance_runtime": false,
+    "constitutional_memory_runtime": true,
+    "governance_runtime": true,
     "replay_runtime": true,
     "worker_runtime": false,
     "combined_strategy_runtime": false,
@@ -23,6 +23,8 @@
   "supported_strategies": [
     "SELF_RESOLUTION",
     "REPLAY",
+    "CONSTITUTIONAL_MEMORY",
+    "GOVERNANCE",
     "PROVIDER"
   ],
   "required_fields": [
@@ -39,6 +41,8 @@
   "acceptance_checks": {
     "self_resolution_selection_recorded": "PASSED",
     "replay_selection_recorded": "PASSED",
+    "constitutional_memory_selection_recorded": "PASSED",
+    "governance_selection_recorded": "PASSED",
     "provider_selection_recorded": "PASSED",
     "strategy_selection_artifact_persisted": "PASSED",
     "strategy_return_artifact_persisted": "PASSED",
@@ -53,7 +57,7 @@
   },
   "validation": {
     "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py",
-    "passed": 16,
+    "passed": 18,
     "failed": 0
   },
   "boundary_evidence": {
@@ -63,6 +67,8 @@
     "provider_authority": false,
     "provider_used": false,
     "replay_required_supported": true,
+    "constitutional_memory_required_supported": true,
+    "governance_required_supported": true,
     "worker_required": false,
     "worker_invoked": false,
     "proposal_lifecycle_required": false,
