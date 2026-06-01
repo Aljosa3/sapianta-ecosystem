@@ -79,6 +79,74 @@ class FakeOpenAIClient:
         return self.response
 
 
+class ContextSensitiveOpenAIClient:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def __call__(self, payload, *, api_key: str, endpoint: str, timeout_seconds: int):
+        self.calls.append(
+            {
+                "payload": payload,
+                "api_key_seen": bool(api_key),
+                "endpoint": endpoint,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        prompt = payload["input"]
+        if "AiGOL context:" in prompt and "LLM providers are proposal-only sources" in prompt:
+            return {
+                "id": "resp_context_capsule",
+                "output_text": "AiGOL provider boundaries keep LLM providers proposal-only and non-authoritative while replay records evidence.",
+            }
+        return {
+            "id": "resp_raw_prompt",
+            "output_text": "Professional provider boundaries define appropriate relationships with patients and clients.",
+        }
+
+
+class ContextSensitiveConversationProviderAdapter:
+    provider_id = "openai"
+    provider_version = "conversation-v1"
+
+    def __init__(self) -> None:
+        self.requests: list[dict] = []
+
+    def classify_raw_prompt_quality(self, prompt: str) -> str:
+        return "AIGOL_SPECIFIC" if "AiGOL context:" in prompt else "GENERIC"
+
+    def generate_proposal(self, request, *, proposal_id: str, timestamp: str):
+        self.requests.append(request)
+        if request.get("semantic_task") == "intent_classification_suggestion":
+            response = {
+                "suggested_destination": "CONVERSATION",
+                "classification_reasoning": "The capsule frames the prompt as an AiGOL conversational question.",
+                "confidence": "HIGH",
+            }
+        elif self.classify_raw_prompt_quality(request["prompt"]) == "AIGOL_SPECIFIC":
+            response = {
+                "suggested_response_text": (
+                    "AiGOL provider boundaries keep LLM providers proposal-only while AiGOL validates suggestions, "
+                    "workers act only after governed approval, and replay records evidence."
+                ),
+                "response_reasoning": "The minimal context capsule disambiguates provider boundaries as AiGOL boundaries.",
+                "confidence": "HIGH",
+            }
+        else:
+            response = {
+                "suggested_response_text": "Professional provider boundaries describe relationships with patients and clients.",
+                "response_reasoning": "The raw prompt does not identify AiGOL as the domain.",
+                "confidence": "MEDIUM",
+            }
+        return create_provider_proposal_envelope(
+            proposal_id=proposal_id,
+            provider_id=self.provider_id,
+            provider_version=self.provider_version,
+            request=request,
+            response=response,
+            timestamp=timestamp,
+        )
+
+
 def _registry(*, status: str = AVAILABLE) -> ProviderRegistry:
     registry = ProviderRegistry()
     registry.register_provider(
@@ -146,6 +214,26 @@ def test_provider_assisted_conversation_returns_validated_response_for_slovenian
     assert reconstructed["provider_response_authority"] is False
 
 
+def test_provider_requests_include_minimal_context_capsule(tmp_path):
+    adapter = SemanticConversationProviderAdapter()
+    _run(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+
+    assert [request["semantic_task"] for request in adapter.requests] == [
+        "intent_classification_suggestion",
+        "conversation_response_suggestion",
+    ]
+    for request in adapter.requests:
+        capsule = request["context_capsule"]
+        assert capsule["context_capsule_version"] == "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1"
+        assert capsule["provider_neutral"] is True
+        assert capsule["authority_transfer"] is False
+        assert "AiGOL context:" in request["prompt"]
+        assert "LLM providers are proposal-only sources" in request["prompt"]
+        assert f"Human prompt:\n{request['human_prompt']}" in request["prompt"]
+        assert request["provider_authority"] is False
+        assert request["execution_authority"] is False
+
+
 def test_openai_response_text_is_aligned_to_conversation_contract(tmp_path):
     client = FakeOpenAIClient()
     adapter = OpenAIProviderAdapter(api_key="test-openai-key", client=client)
@@ -167,6 +255,71 @@ def test_openai_response_text_is_aligned_to_conversation_contract(tmp_path):
     assert reconstructed["response_text"] == capture["response_text"]
     assert reconstructed["provider_response_replay"]["response"]["response_text"] == capture["response_text"]
     assert len(client.calls) == 1
+
+
+def test_minimal_context_capsule_improves_ambiguous_provider_boundary_prompt(tmp_path):
+    client = ContextSensitiveOpenAIClient()
+    raw_response = client(
+        {"input": "Explain provider boundaries."},
+        api_key="test-openai-key",
+        endpoint="https://api.openai.com/v1/responses",
+        timeout_seconds=20,
+    )
+    adapter = OpenAIProviderAdapter(api_key="test-openai-key", client=client)
+    capture = _run(
+        tmp_path,
+        "Explain provider boundaries.",
+        adapter=adapter,
+        registry=_openai_registry(),
+    )
+    reconstructed = reconstruct_provider_assisted_conversation_replay(tmp_path / "conversation")
+    provider_payload = client.calls[1]["payload"]
+
+    assert raw_response["output_text"].startswith("Professional provider boundaries")
+    assert capture["conversation_status"] == "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    assert "AiGOL provider boundaries" in capture["response_text"]
+    assert "professional" not in capture["response_text"].lower()
+    assert "AiGOL context:" in provider_payload["input"]
+    assert "LLM providers are proposal-only sources" in provider_payload["input"]
+    assert "Human prompt:\nExplain provider boundaries." in provider_payload["input"]
+    assert reconstructed["provider_response_replay"]["request"]["payload"]["input"] == provider_payload["input"]
+
+
+def test_minimal_context_capsule_improves_same_prompt_set(tmp_path):
+    prompts = [
+        "Explain provider boundaries.",
+        "Explain worker execution.",
+        "Explain authorization.",
+        "Explain fail closed behavior.",
+        "Summarize operation history.",
+        "Explain AiGOL in Slovenian.",
+    ]
+    without_context_quality = []
+    with_context_successes = 0
+
+    for index, prompt in enumerate(prompts):
+        adapter = ContextSensitiveConversationProviderAdapter()
+        without_context_quality.append(adapter.classify_raw_prompt_quality(prompt))
+        capture = run_provider_assisted_conversation(
+            conversation_id=f"conversation-{index}",
+            prompt_id=f"prompt-{index}",
+            human_prompt=prompt,
+            created_at=TIMESTAMP,
+            provider_id="openai",
+            registry=_registry(),
+            adapter=adapter,
+            replay_dir=tmp_path / f"conversation-{index}",
+        )
+
+        assert capture["conversation_status"] == "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+        assert capture["provider_assistance_required"] is True
+        assert "AiGOL provider boundaries" in capture["response_text"]
+        assert "professional" not in capture["response_text"].lower()
+        assert adapter.requests[-1]["context_capsule"]["context_capsule_version"] == "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1"
+        with_context_successes += 1
+
+    assert without_context_quality == ["GENERIC"] * len(prompts)
+    assert with_context_successes == len(prompts)
 
 
 def test_provider_unavailable_fails_closed(tmp_path):

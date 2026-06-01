@@ -33,6 +33,14 @@ RETURNED = "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_RETURNED"
 FAILED_CLOSED = "FAILED_CLOSED"
 NORMALIZED_CONFIDENCE = "PROVIDER_TEXT_NORMALIZED"
 VALID_CONFIDENCE_VALUES = frozenset({"LOW", "MEDIUM", "HIGH", "DETERMINISTIC", NORMALIZED_CONFIDENCE})
+MINIMAL_PROVIDER_CONTEXT_CAPSULE_VERSION = "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1"
+MINIMAL_PROVIDER_CONTEXT_CAPSULE_LINES = (
+    "AiGOL is a constitutional AI execution governance system.",
+    "LLM providers are proposal-only sources; they do not govern, authorize, execute, mutate replay, or invoke workers.",
+    "AiGOL governs; workers execute only after governed authorization; replay records evidence.",
+    "Answer in the AiGOL/SAPIANTA governance domain unless the user explicitly asks for another domain.",
+    "Use the human prompt as the question; provide explanatory text only.",
+)
 
 REPLAY_STEPS = (
     "provider_assisted_conversation_started",
@@ -422,10 +430,13 @@ def _provider_response_request(
     intent_artifact: dict[str, Any],
     self_resolution: dict[str, Any],
 ) -> dict[str, Any]:
+    prompt = _normalize_text(human_prompt, "human_prompt")
     return {
         "semantic_task": "conversation_response_suggestion",
         "prompt_id": _require_string(prompt_id, "prompt_id"),
-        "human_prompt": _normalize_text(human_prompt, "human_prompt"),
+        "human_prompt": prompt,
+        "prompt": _provider_prompt_with_context(prompt),
+        "context_capsule": _minimal_provider_context_capsule(),
         "intent_destination": intent_artifact["classification_destination"],
         "self_resolution_status": self_resolution["self_resolution_status"],
         "self_resolution_reason": self_resolution["resolution_reason"],
@@ -433,6 +444,33 @@ def _provider_response_request(
         "response_authority": False,
         "execution_authority": False,
     }
+
+
+def _minimal_provider_context_capsule() -> dict[str, Any]:
+    return {
+        "context_capsule_version": MINIMAL_PROVIDER_CONTEXT_CAPSULE_VERSION,
+        "context_type": "PROVIDER_NEUTRAL_AIGOL_IDENTITY_CAPSULE",
+        "aigol_identity": "AiGOL is a constitutional AI execution governance system.",
+        "governance_role": "AiGOL governs provider suggestions and downstream execution admissibility.",
+        "provider_authority_boundaries": "LLM providers are proposal-only sources and do not govern, authorize, execute, mutate replay, or invoke workers.",
+        "worker_authority_boundaries": "Workers execute only after governed authorization and do not receive authority from providers.",
+        "replay_purpose": "Replay records prompts, provider evidence, validation, decisions, and results for reconstruction.",
+        "provider_neutral": True,
+        "authority_transfer": False,
+    }
+
+
+def _provider_prompt_with_context(human_prompt: str) -> str:
+    prompt = _normalize_text(human_prompt, "human_prompt")
+    return "\n".join(
+        (
+            "AiGOL context:",
+            *MINIMAL_PROVIDER_CONTEXT_CAPSULE_LINES,
+            "",
+            "Human prompt:",
+            prompt,
+        )
+    )
 
 
 def _extract_provider_response_suggestion(provider_capture: dict[str, Any]) -> dict[str, str]:

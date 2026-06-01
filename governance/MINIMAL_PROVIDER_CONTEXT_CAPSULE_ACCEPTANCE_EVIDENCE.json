@@ -1,0 +1,74 @@
+{
+  "artifact": "MINIMAL_PROVIDER_CONTEXT_CAPSULE_ACCEPTANCE_EVIDENCE",
+  "version": "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1",
+  "status": "READY_WITH_GAPS",
+  "implementation": {
+    "provider_assisted_intent_classification_capsule": true,
+    "provider_assisted_conversation_response_capsule": true,
+    "provider_neutral": true,
+    "openai_specific_behavior_added": false,
+    "provider_selection_changed": false,
+    "authorization_model_changed": false,
+    "worker_architecture_changed": false,
+    "replay_architecture_changed": false,
+    "governance_architecture_changed": false
+  },
+  "capsule_fields": {
+    "aigol_identity": true,
+    "provider_authority_boundaries": true,
+    "worker_authority_boundaries": true,
+    "replay_purpose": true,
+    "governance_role": true,
+    "authority_transfer": false
+  },
+  "controlled_comparison": {
+    "prompt_set": [
+      "Explain provider boundaries.",
+      "Explain worker execution.",
+      "Explain authorization.",
+      "Explain fail closed behavior.",
+      "Summarize operation history.",
+      "Explain AiGOL in Slovenian."
+    ],
+    "prompt_set_size": 6,
+    "without_context_capsule": {
+      "generic_interpretations": 6,
+      "aigol_specific_interpretations": 0
+    },
+    "with_context_capsule": {
+      "classification_success": 6,
+      "provider_assisted_success": 6,
+      "aigol_specific_interpretations": 6,
+      "generic_interpretations": 0,
+      "conversational_coverage": "6/6"
+    },
+    "material_improvement_observed": true,
+    "measurement_type": "controlled deterministic provider harness"
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_provider_assisted_conversation_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py",
+      "result": "20 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_assisted_intent_classification_v1.py tests/test_first_real_provider_attachment_v1.py tests/test_openai_provider_adapter_v1.py",
+      "result": "31 passed"
+    }
+  ],
+  "constitutional_guarantees": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true,
+    "provider_authority_introduced": false,
+    "worker_invoked_by_capsule": false,
+    "execution_requested_by_capsule": false,
+    "replay_mutation_authority_introduced": false
+  },
+  "known_gaps": {
+    "live_openai_ab_replay_completed": false,
+    "full_50_prompt_epoch_rerun_completed": false,
+    "cross_provider_measurement_completed": false
+  }
+}
+

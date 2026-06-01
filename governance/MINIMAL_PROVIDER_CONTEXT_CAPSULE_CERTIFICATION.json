@@ -1,0 +1,55 @@
+{
+  "artifact": "MINIMAL_PROVIDER_CONTEXT_CAPSULE_CERTIFICATION",
+  "version": "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1",
+  "status": "READY_WITH_GAPS",
+  "final_classification": "MINIMAL_PROVIDER_CONTEXT_CAPSULE_STATUS = READY_WITH_GAPS",
+  "summary": "Minimal provider-neutral AiGOL context capsule implemented on existing provider-assisted request paths.",
+  "touched_runtime_surfaces": [
+    "aigol/runtime/provider_assisted_intent_classification.py",
+    "aigol/runtime/provider_assisted_conversation_runtime.py"
+  ],
+  "touched_test_surfaces": [
+    "tests/test_provider_assisted_conversation_runtime_v1.py"
+  ],
+  "capsule_scope": {
+    "aigol_identity": true,
+    "provider_authority_boundaries": true,
+    "worker_authority_boundaries": true,
+    "replay_purpose": true,
+    "governance_role": true
+  },
+  "forbidden_changes": {
+    "replay_architecture_modified": false,
+    "governance_architecture_modified": false,
+    "worker_architecture_modified": false,
+    "provider_selection_modified": false,
+    "authorization_model_modified": false,
+    "provider_specific_behavior_added": false
+  },
+  "controlled_validation": {
+    "same_prompt_set_compared": true,
+    "prompt_set_size": 6,
+    "without_context_generic_interpretations": 6,
+    "with_context_aigol_specific_interpretations": 6,
+    "with_context_provider_assisted_success": 6,
+    "explanation_quality_improved": true,
+    "conversational_coverage_improved_in_controlled_harness": true
+  },
+    "validation": {
+        "focused_conversation_tests": "20 passed",
+        "provider_and_adapter_tests": "31 passed",
+        "git_diff_check": "passed"
+    },
+  "known_gaps": [
+    "Live OpenAI same-prompt A/B replay has not been run.",
+    "The full 50-prompt conversational epoch has not been rerun with the capsule.",
+    "Cross-provider measurement has not been performed."
+  ],
+  "constitutional_certification": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": true,
+    "replay_records": true,
+    "authority_transfer": false
+  }
+}
