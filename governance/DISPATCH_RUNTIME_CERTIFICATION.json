@@ -1,0 +1,103 @@
+{
+  "artifact": "DISPATCH_RUNTIME_CERTIFICATION_V1",
+  "status": "READY_WITH_GAPS",
+  "classification": "DISPATCH_RUNTIME_FOUNDATION_STATUS = READY_WITH_GAPS",
+  "scope": "Review-only dispatch governance boundary between Worker Assignment and future Worker Invocation.",
+  "created_artifacts": [
+    "governance/DISPATCH_RUNTIME_FOUNDATION_V1.md",
+    "governance/DISPATCH_RUNTIME_MODEL_V1.md",
+    "governance/DISPATCH_RUNTIME_TRANSITIONS_V1.md",
+    "governance/DISPATCH_RUNTIME_BOUNDARY_GUARANTEES_V1.md",
+    "governance/DISPATCH_RUNTIME_ADR_V1.md",
+    "governance/DISPATCH_RUNTIME_CERTIFICATION.json"
+  ],
+  "dispatch_artifact": "DISPATCH_ARTIFACT_V1",
+  "defined_states": [
+    "ASSIGNED",
+    "DISPATCHED",
+    "CANCELLED",
+    "EXPIRED"
+  ],
+  "positive_transition": {
+    "from": "ASSIGNED",
+    "to": "DISPATCHED",
+    "authorized_actor": "AiGOL"
+  },
+  "required_conditions": [
+    "Worker assignment artifact exists",
+    "Worker assignment artifact is well formed",
+    "Assignment status is ASSIGNED",
+    "Worker state after assignment is ASSIGNED",
+    "Assignment was created by AiGOL",
+    "Assignment replay is reconstructable",
+    "Worker identity reference is stable",
+    "Readiness artifact reference is stable",
+    "Readiness status is READY_FOR_DISPATCH",
+    "Execution request reference is stable",
+    "Request type is supported by assigned worker capability",
+    "No cancellation exists before dispatch",
+    "No expiry exists before dispatch",
+    "No duplicate dispatch event exists",
+    "No worker invocation exists before dispatch",
+    "No execution exists before dispatch",
+    "No completion exists before dispatch",
+    "Replay reconstruction succeeds"
+  ],
+  "authorized_dispatch_actor": [
+    "AiGOL"
+  ],
+  "forbidden_dispatch_actors": [
+    "Human acting directly outside AiGOL governance",
+    "Provider",
+    "Worker",
+    "Replay",
+    "Proposal Runtime",
+    "Approval Runtime",
+    "Execution Request Runtime",
+    "Ready For Dispatch Runtime",
+    "Worker Assignment artifact",
+    "CLI transport alone",
+    "Automatic retry logic"
+  ],
+  "required_replay_evidence": [
+    "PROPOSAL_CREATED",
+    "APPROVAL_DECISION(APPROVED)",
+    "EXECUTION_REQUEST_CREATED",
+    "READY_FOR_DISPATCH_VALIDATED",
+    "WORKER_REGISTERED",
+    "WORKER_ASSIGNED",
+    "DISPATCH_VALIDATED",
+    "DISPATCH_RETURNED"
+  ],
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "worker_self_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "completion_recorded": false,
+    "automatic_authorization": false,
+    "replay_records": true,
+    "aigol_governs": true
+  },
+  "not_implemented": [
+    "Dispatch runtime code",
+    "Dispatch runtime tests",
+    "Worker invocation",
+    "Worker execution",
+    "Execution completion",
+    "Worker result persistence"
+  ],
+  "known_gaps": [
+    "Foundation defines dispatch but does not enforce it in runtime",
+    "Current Worker Runtime remains assignment-only",
+    "Future invocation runtime must reject assignments without replay-valid DISPATCHED evidence",
+    "Execution and completion boundaries remain undefined as runtime implementations"
+  ],
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "future invocation and execution boundary only",
+    "replay_records": true
+  },
+  "final_classification": "READY_WITH_GAPS"
+}
