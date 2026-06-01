@@ -1,0 +1,32 @@
+{
+  "artifact": "FIRST_REAL_WORKFLOW_DISCOVERY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "workflow_count": 16,
+  "current_high_value_high_explanation_candidates": [
+    "governed milestone marker file",
+    "governance evidence artifact skeleton",
+    "ADR skeleton",
+    "operational usage log file",
+    "acceptance evidence JSON stub",
+    "replay verification by operation id",
+    "governed operation status explanation"
+  ],
+  "future_high_value_high_explanation_candidate": "operation replay ledger and weekly usage summary",
+  "next_recommended_priority": "Replay and operator reporting",
+  "certifies": {
+    "runtime_changes_introduced": false,
+    "governance_model_changes_introduced": false,
+    "replay_model_changes_introduced": false,
+    "authority_model_changes_introduced": false,
+    "workflow_scoring_completed": true,
+    "explanation_readiness_scored": true,
+    "trust_explanation_scored": true,
+    "evidence_based_recommendations_created": true
+  },
+  "final_classification": {
+    "FIRST_REAL_WORKFLOW_DISCOVERY_STATUS": "READY"
+  }
+}
