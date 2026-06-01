@@ -22,3 +22,7 @@ __pycache__/
 
 # Daily usage runtime artifacts
 .aigol_daily_usage_runtime/
+
+# AiGOL operator runtime artifacts
+.aigol_operator_runtime/
+manual_test.txt
