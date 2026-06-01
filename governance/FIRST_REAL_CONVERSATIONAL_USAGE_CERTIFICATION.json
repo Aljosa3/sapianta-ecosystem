@@ -1,0 +1,44 @@
+{
+  "artifact": "FIRST_REAL_CONVERSATIONAL_USAGE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operational_scope": {
+    "interface_used": "aigol prompt submit",
+    "runtime_root": "/tmp/aigol_conversational_epoch",
+    "prompts_submitted": 12,
+    "architecture_changes": false,
+    "provider_changes": false,
+    "worker_changes": false,
+    "governance_layer_changes": false
+  },
+  "aggregate_results": {
+    "prompt_artifacts_created": 12,
+    "replay_references_created": 12,
+    "conversation_classifications": 5,
+    "unclassified_prompts": 7,
+    "provider_invocations": 0,
+    "worker_invocations": 0,
+    "execution_requests": 0,
+    "conversational_responses_returned": 0
+  },
+  "findings": {
+    "direct_prompt_ingress_operational": true,
+    "replay_visible_prompt_submission_operational": true,
+    "chatgpt_copy_paste_removed_for_prompt_ingress": true,
+    "chatgpt_still_required_for_actual_conversational_answers": true,
+    "prompt_to_response_activation_missing": true,
+    "provider_assisted_conversation_not_exposed_through_prompt_cli": true
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_visibility_preserved": true
+  },
+  "final_classification": {
+    "FIRST_REAL_CONVERSATIONAL_USAGE_EPOCH_STATUS": "READY"
+  }
+}
