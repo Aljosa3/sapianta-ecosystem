@@ -14,12 +14,13 @@ RESOLUTION_STRATEGY_RUNTIME_VERSION = "RESOLUTION_STRATEGY_RUNTIME_V1"
 RESOLUTION_STRATEGY_SELECTION_ARTIFACT_V1 = "RESOLUTION_STRATEGY_SELECTION_ARTIFACT_V1"
 SELF_RESOLUTION = "SELF_RESOLUTION"
 PROVIDER = "PROVIDER"
+REPLAY = "REPLAY"
 SELECTED = "SELECTED"
 RESOLUTION_STRATEGY_SELECTED = "RESOLUTION_STRATEGY_SELECTED"
 RESOLUTION_STRATEGY_RETURNED = "RESOLUTION_STRATEGY_RETURNED"
 
 REPLAY_STEPS = ("resolution_strategy_selected", "resolution_strategy_returned")
-SUPPORTED_STRATEGIES = frozenset({SELF_RESOLUTION, PROVIDER})
+SUPPORTED_STRATEGIES = frozenset({SELF_RESOLUTION, PROVIDER, REPLAY})
 FORBIDDEN_FIELDS = frozenset(
     {
         "approval_decision",
@@ -94,6 +95,7 @@ def reconstruct_resolution_strategy_replay(replay_dir: str | Path) -> dict[str, 
         "created_at": strategy["created_at"],
         "selection_status": strategy["selection_status"],
         "provider_required": strategy["provider_required"],
+        "replay_required": strategy["replay_required"],
         "provider_used": False,
         "worker_required": False,
         "approval_created": False,
@@ -123,10 +125,11 @@ def _strategy_artifact(
         "human_prompt_reference": _require_string(human_prompt_reference, "human_prompt_reference"),
         "created_at": _require_string(created_at, "created_at"),
         "created_by": _normalize_token(created_by, "created_by"),
-        "candidate_strategies": [SELF_RESOLUTION, PROVIDER],
-        "source_precedence": [SELF_RESOLUTION, PROVIDER],
+        "candidate_strategies": [SELF_RESOLUTION, REPLAY, PROVIDER],
+        "source_precedence": [SELF_RESOLUTION, REPLAY, PROVIDER],
         "provider_required": strategy == PROVIDER,
         "provider_used": False,
+        "replay_required": strategy == REPLAY,
         "worker_required": False,
         "proposal_lifecycle_required": False,
         "selection_status": SELECTED,
@@ -212,6 +215,8 @@ def _validate_strategy_artifact(strategy: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("resolution strategy failed closed: invalid selection status")
     if strategy.get("provider_required") is not (strategy.get("selected_strategy") == PROVIDER):
         raise FailClosedRuntimeError("resolution strategy failed closed: invalid provider requirement")
+    if strategy.get("replay_required") is not (strategy.get("selected_strategy") == REPLAY):
+        raise FailClosedRuntimeError("resolution strategy failed closed: invalid replay requirement")
     if strategy.get("provider_used") is not False:
         raise FailClosedRuntimeError("resolution strategy failed closed: provider use introduced")
     if strategy.get("worker_required") is not False:

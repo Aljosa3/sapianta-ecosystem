@@ -10,6 +10,7 @@ import pytest
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.resolution_strategy_runtime import (
     PROVIDER,
+    REPLAY,
     RESOLUTION_STRATEGY_RETURNED,
     RESOLUTION_STRATEGY_SELECTED,
     RESOLUTION_STRATEGY_SELECTION_ARTIFACT_V1,
@@ -41,6 +42,7 @@ def _strategy(tmp_path, **overrides) -> dict:
     [
         (SELF_RESOLUTION, False),
         (PROVIDER, True),
+        (REPLAY, False),
     ],
 )
 def test_resolution_strategy_selection_records_supported_strategy(
@@ -63,6 +65,7 @@ def test_resolution_strategy_selection_records_supported_strategy(
     assert returned["event_type"] == RESOLUTION_STRATEGY_RETURNED
     assert reconstructed["selected_strategy"] == selected_strategy
     assert reconstructed["provider_required"] is provider_required
+    assert reconstructed["replay_required"] is (selected_strategy == REPLAY)
 
 
 def test_resolution_strategy_persists_replay_events(tmp_path) -> None:

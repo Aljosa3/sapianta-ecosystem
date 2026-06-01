@@ -9,6 +9,7 @@
   "implemented": {
     "strategy_selection_artifact": true,
     "self_resolution_strategy": true,
+    "replay_strategy": true,
     "provider_strategy": true,
     "replay_visible_selection_event": true,
     "replay_visible_return_event": true,
@@ -18,7 +19,6 @@
   "not_implemented": {
     "constitutional_memory_runtime": true,
     "governance_runtime": true,
-    "replay_runtime": true,
     "worker_runtime": true,
     "combined_strategy_runtime": true,
     "execution": true,
@@ -27,6 +27,7 @@
   },
   "supported_strategies": [
     "SELF_RESOLUTION",
+    "REPLAY",
     "PROVIDER"
   ],
   "required_fields": [
@@ -69,6 +70,7 @@
     "execution_requested": false,
     "provider_authority": false,
     "provider_used": false,
+    "replay_required_supported": true,
     "worker_required": false,
     "worker_invoked": false,
     "proposal_lifecycle_required": false,
@@ -83,7 +85,7 @@
   },
   "validation": {
     "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py",
-    "passed": 15,
+    "passed": 16,
     "failed": 0
   },
   "final_classification": {

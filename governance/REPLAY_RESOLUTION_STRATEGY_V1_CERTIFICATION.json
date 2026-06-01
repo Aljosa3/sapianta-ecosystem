@@ -1,0 +1,72 @@
+{
+  "artifact": "REPLAY_RESOLUTION_STRATEGY_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "certified_scope": "replay-based answer resolution strategy",
+  "implemented": {
+    "replay_oriented_prompt_detection": true,
+    "resolution_strategy_replay_selection": true,
+    "replay_visible_strategy_selection_records": true,
+    "replay_based_answer_resolution": true,
+    "deterministic_replay_reconstruction": true,
+    "fail_closed_replay_validation": true
+  },
+  "not_implemented": {
+    "worker_execution": true,
+    "provider_authority": true,
+    "approval_changes": true,
+    "proposal_mutation": true,
+    "provider_inference_for_replay_truth": true
+  },
+  "strategy": "REPLAY",
+  "runtime_artifact": "REPLAY_RESOLUTION_ARTIFACT_V1",
+  "runtime_events": [
+    "REPLAY_RESOLUTION_CREATED",
+    "REPLAY_RESOLUTION_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "non-replay-oriented prompt",
+    "replay unavailable",
+    "empty replay source",
+    "corrupt replay JSON",
+    "replay hash mismatch",
+    "artifact hash mismatch",
+    "invalid replay resolution references",
+    "replay ordering corruption"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_created_event": true,
+    "requires_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_resolution_reference": true,
+    "verifies_resolution_hash": true
+  },
+  "boundary_certification": {
+    "authority": false,
+    "provider_used": false,
+    "provider_authority": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "approval_changed": false,
+    "proposal_mutated": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py tests/test_replay_resolution_strategy_v1.py",
+    "passed": 30,
+    "failed": 0
+  },
+  "final_classification": {
+    "REPLAY_RESOLUTION_STRATEGY_STATUS": "CERTIFIED"
+  }
+}

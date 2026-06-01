@@ -1,0 +1,71 @@
+{
+  "artifact": "REPLAY_RESOLUTION_STRATEGY_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_files": [
+    "aigol/runtime/resolution_strategy_runtime.py",
+    "aigol/runtime/replay_resolution_strategy.py"
+  ],
+  "test_files": [
+    "tests/test_resolution_strategy_runtime_v1.py",
+    "tests/test_replay_resolution_strategy_v1.py"
+  ],
+  "implemented_scope": {
+    "replay_prompt_detection": true,
+    "replay_strategy_selection": true,
+    "replay_based_answer_resolution": true,
+    "replay_reconstruction": true,
+    "provider_inference_for_replay_truth": false,
+    "worker_execution": false,
+    "provider_authority": false,
+    "approval_changes": false,
+    "proposal_mutation": false
+  },
+  "supported_strategy": "REPLAY",
+  "detected_prompt_examples": [
+    "What happened recently?",
+    "What changed?",
+    "Show latest proposal.",
+    "Show latest approval.",
+    "What was the last operation?",
+    "Summarize recent activity."
+  ],
+  "runtime_events": [
+    "RESOLUTION_STRATEGY_SELECTED",
+    "RESOLUTION_STRATEGY_RETURNED",
+    "REPLAY_RESOLUTION_CREATED",
+    "REPLAY_RESOLUTION_RETURNED"
+  ],
+  "acceptance_checks": {
+    "replay_oriented_questions_detected": "PASSED",
+    "replay_strategy_selected": "PASSED",
+    "self_resolution_not_selected_for_replay_prompt": "PASSED",
+    "provider_not_selected_for_replay_prompt": "PASSED",
+    "replay_answer_created_from_replay_evidence": "PASSED",
+    "latest_proposal_visible": "PASSED",
+    "latest_approval_visible": "PASSED",
+    "replay_reconstruction_supported": "PASSED",
+    "replay_unavailable_fails_closed": "PASSED",
+    "replay_corrupt_fails_closed": "PASSED",
+    "invalid_references_fail_closed": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py tests/test_replay_resolution_strategy_v1.py",
+    "passed": 30,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "authority": false,
+    "provider_used": false,
+    "provider_authority": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "approval_changed": false,
+    "proposal_mutated": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "REPLAY_RESOLUTION_STRATEGY_STATUS": "CERTIFIED"
+  }
+}
