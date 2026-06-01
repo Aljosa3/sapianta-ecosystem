@@ -1,0 +1,133 @@
+{
+  "artifact": "RESOLUTION_STRATEGY_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "review_type": "foundation_review_only",
+  "runtime_implemented": false,
+  "routing_implemented": false,
+  "workers_implemented": false,
+  "governance_modified": false,
+  "certified_scope": "provider-neutral replay-safe resolution strategy foundation",
+  "strategy_definition": {
+    "summary": "AiGOL's replay-visible decision about which evidence source category should be used to answer, classify, explain, or escalate a human prompt.",
+    "authoritative_by_itself": false,
+    "execution_capable": false,
+    "routing_authority_by_itself": false
+  },
+  "source_categories": [
+    "SELF_RESOLUTION",
+    "CONSTITUTIONAL_MEMORY",
+    "GOVERNANCE",
+    "REPLAY",
+    "PROVIDER",
+    "WORKER",
+    "COMBINED"
+  ],
+  "default_source_precedence": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER",
+    "WORKER",
+    "COMBINED"
+  ],
+  "provider_assistance": {
+    "may_be_required_for": [
+      "semantic interpretation not covered by deterministic rules",
+      "unsupported language or phrasing",
+      "open-ended conversational synthesis",
+      "provider-assisted classification after deterministic failure",
+      "bounded response drafting"
+    ],
+    "must_never_be_required_for": [
+      "replay truth",
+      "governance truth",
+      "constitutional authority determination",
+      "approval decisions",
+      "authorization decisions",
+      "worker execution permission",
+      "fail-closed termination",
+      "secret handling"
+    ],
+    "provider_authority": false,
+    "provider_execution_authority": false,
+    "provider_governance_authority": false
+  },
+  "minimal_model_fields": [
+    "strategy_id",
+    "strategy_version",
+    "source_prompt_id",
+    "source_conversation_id",
+    "intent_id",
+    "candidate_strategies",
+    "selected_strategy",
+    "selection_reason",
+    "source_precedence",
+    "evidence_refs",
+    "provider_required",
+    "provider_used",
+    "worker_required",
+    "proposal_lifecycle_required",
+    "fail_closed_reason",
+    "created_by",
+    "created_at",
+    "artifact_hash"
+  ],
+  "selection_statuses": [
+    "SELECTED",
+    "FAILED_CLOSED",
+    "DEFERRED_TO_PROPOSAL_LIFECYCLE",
+    "REPLAY_RECONSTRUCTED"
+  ],
+  "replay_visibility": {
+    "strategy_selection_record_required": true,
+    "candidate_strategies_recorded": true,
+    "selected_strategy_recorded": true,
+    "selection_reason_recorded": true,
+    "evidence_refs_recorded": true,
+    "provider_decision_recorded": true,
+    "worker_decision_recorded": true,
+    "proposal_lifecycle_decision_recorded": true,
+    "fail_closed_reason_recorded_when_applicable": true
+  },
+  "proposal_lifecycle_integration": {
+    "strategy_can_require_proposal_lifecycle": true,
+    "strategy_can_create_approved_proposal": false,
+    "strategy_can_create_execution_request": false,
+    "strategy_can_dispatch_worker": false,
+    "provider_can_create_proposal_state": false
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "certification_criteria": {
+    "resolution_strategy_defined": "READY",
+    "source_categories_defined": "READY",
+    "selection_rules_defined": "READY",
+    "provider_required_strategies_defined": "READY",
+    "provider_prohibited_strategies_defined": "READY",
+    "replay_visibility_defined": "READY",
+    "constitutional_invariant_preserved": "READY",
+    "proposal_lifecycle_integration_defined": "READY",
+    "runtime_implementation": "NOT_IMPLEMENTED",
+    "routing_integration": "NOT_IMPLEMENTED",
+    "schema_and_tests": "NOT_IMPLEMENTED"
+  },
+  "remaining_gaps": [
+    "No runtime resolution strategy selector is implemented by this review.",
+    "No routing integration is implemented by this review.",
+    "No replay artifact schema is enforced by this review.",
+    "No tests are introduced by this review.",
+    "No worker integration is implemented by this review.",
+    "No proposal lifecycle runtime integration is implemented by this review."
+  ],
+  "final_classification": {
+    "RESOLUTION_STRATEGY_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
