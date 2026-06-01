@@ -76,6 +76,7 @@ from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledge
 from aigol.moc.proposal_persistence import render_proposal_persistence_summary
 from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
+from aigol.runtime.minimal_human_prompt_interface import submit_human_prompt
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -166,6 +167,15 @@ def build_parser() -> argparse.ArgumentParser:
     diagnostics_sub = diagnostics.add_subparsers(dest="diagnostics_command", required=True)
     diagnostics_runtime = diagnostics_sub.add_parser("runtime")
     diagnostics_runtime.add_argument("--extension-id", default="")
+
+    prompt = subcommands.add_parser("prompt")
+    prompt_sub = prompt.add_subparsers(dest="prompt_command", required=True)
+    prompt_submit = prompt_sub.add_parser("submit")
+    prompt_submit.add_argument("--prompt", required=True)
+    prompt_submit.add_argument("--prompt-id", default="AIGOL-HUMAN-PROMPT-000001")
+    prompt_submit.add_argument("--created-at", default="2026-06-01T00:00:00Z")
+    prompt_submit.add_argument("--runtime-root", default=".aigol_prompt_runtime")
+    prompt_submit.add_argument("--operator-context", default="operator_cli")
 
     run_governed = subcommands.add_parser("run-governed")
     run_governed.add_argument("--worker", required=True)
@@ -361,6 +371,14 @@ def run_command(args: argparse.Namespace) -> dict:
         return explain_operator_operation(operation_id=args.operation_id, runtime_root=args.runtime_root)
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
+    if args.command == "prompt" and args.prompt_command == "submit":
+        return submit_human_prompt(
+            human_prompt=args.prompt,
+            prompt_id=args.prompt_id,
+            created_at=args.created_at,
+            replay_dir=args.runtime_root,
+            operator_context=args.operator_context,
+        )
     if args.command == "run-governed":
         return run_governed_operation_command(
             worker=args.worker,
@@ -720,6 +738,23 @@ def render_command_result(result: dict) -> str:
                 f"native_host_launch_ready: {diagnostics.get('native_host_launch_ready')}",
                 f"chrome_runtime_launch_allowed: {diagnostics.get('chrome_runtime_launch_allowed')}",
                 f"failure_stage: {result.get('failure_stage')}",
+            ],
+        )
+    if command == "aigol prompt submit":
+        return render_card(
+            "AIGOL PROMPT SUBMIT",
+            [
+                f"prompt_id: {result.get('prompt_id')}",
+                f"prompt_status: {result.get('prompt_status')}",
+                f"classification_destination: {result.get('classification_destination')}",
+                f"routing_destination: {result.get('routing_destination')}",
+                f"cognition_path_entered: {result.get('cognition_path_entered')}",
+                f"replay_reference: {result.get('replay_reference')}",
+                f"provider_invoked: {result.get('provider_invoked')}",
+                f"worker_invoked: {result.get('worker_invoked')}",
+                f"execution_requested: {result.get('execution_requested')}",
+                f"fail_closed: {result.get('fail_closed')}",
+                f"failure_reason: {result.get('failure_reason') or ''}",
             ],
         )
     if command == "aigol run-governed":

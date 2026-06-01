@@ -1,0 +1,32 @@
+{
+  "artifact": "MINIMAL_HUMAN_PROMPT_INTERFACE_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_root": "<runtime_root>/<prompt_id>",
+  "required_replay_sources": [
+    "000_human_prompt_artifact.json",
+    "001_human_prompt_lineage.json",
+    "intent_classification/000_intent_classification_artifact.json",
+    "intent_classification/001_intent_classification_replay.json",
+    "intent_routing/000_intent_routing_attachment_record.json",
+    "intent_routing/001_intent_routing_attachment_replay.json"
+  ],
+  "reconstructs": {
+    "prompt_id": true,
+    "prompt_text": true,
+    "timestamp": true,
+    "intent_classification": true,
+    "routing_decision": true,
+    "prompt_lineage": true
+  },
+  "fail_closed_cases": {
+    "missing_prompt": "FAILED_CLOSED",
+    "empty_prompt": "FAILED_CLOSED",
+    "corrupt_prompt_artifact": "RECONSTRUCTION_FAILED",
+    "append_only_violation": "FAILED_CLOSED"
+  },
+  "final_classification": {
+    "MINIMAL_HUMAN_PROMPT_INTERFACE_REPLAY_STATUS": "READY"
+  }
+}

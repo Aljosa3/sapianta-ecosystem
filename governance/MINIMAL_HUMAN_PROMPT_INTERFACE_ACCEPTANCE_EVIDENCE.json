@@ -1,0 +1,29 @@
+{
+  "artifact": "MINIMAL_HUMAN_PROMPT_INTERFACE_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_minimal_human_prompt_interface_v1.py tests/test_intent_classifier_v1.py tests/test_intent_routing_attachment_v1.py",
+    "python -m aigol.cli.aigol_cli prompt submit --prompt \"Explain how AiGOL preserves replay.\" --runtime-root /tmp/aigol_prompt_interface_runtime"
+  ],
+  "validation_results": [
+    "40 passed",
+    "prompt_status=HUMAN_PROMPT_ACCEPTED; classification_destination=CONVERSATION; routing_destination=CONVERSATION"
+  ],
+  "acceptance_criteria": {
+    "accepts_human_prompt": "PASSED",
+    "creates_replay_visible_prompt_artifact": "PASSED",
+    "creates_deterministic_prompt_identity": "PASSED",
+    "records_prompt_lineage": "PASSED",
+    "passes_prompt_into_existing_intent_path": "PASSED",
+    "passes_prompt_into_existing_cognition_path": "PASSED",
+    "preserves_replay_visibility": "PASSED",
+    "missing_prompt_fails_closed": "PASSED",
+    "corrupt_prompt_artifact_detected": "PASSED",
+    "no_provider_worker_or_execution_activation": "PASSED"
+  },
+  "final_classification": {
+    "MINIMAL_HUMAN_PROMPT_INTERFACE_STATUS": "READY"
+  }
+}

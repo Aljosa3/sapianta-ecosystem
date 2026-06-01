@@ -1,0 +1,29 @@
+{
+  "artifact": "MINIMAL_HUMAN_PROMPT_INTERFACE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "human_prompt_accepted": true,
+    "prompt_artifact_created": true,
+    "deterministic_prompt_identity_created": true,
+    "prompt_lineage_recorded": true,
+    "existing_intent_path_used": true,
+    "existing_routing_path_used": true,
+    "cognition_path_entered": true,
+    "prompt_replay_visible": true,
+    "missing_prompt_fails_closed": true,
+    "corrupt_prompt_artifact_detected": true,
+    "new_provider_introduced": false,
+    "new_worker_introduced": false,
+    "new_authorization_model_introduced": false,
+    "new_replay_model_introduced": false,
+    "orchestration_introduced": false,
+    "planning_introduced": false,
+    "autonomous_dispatch_introduced": false
+  },
+  "final_classification": {
+    "MINIMAL_HUMAN_PROMPT_INTERFACE_STATUS": "READY"
+  }
+}
