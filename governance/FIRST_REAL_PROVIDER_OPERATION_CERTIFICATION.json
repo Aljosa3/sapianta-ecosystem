@@ -1,0 +1,55 @@
+{
+  "artifact": "FIRST_REAL_PROVIDER_OPERATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operation": {
+    "provider": "OpenAI",
+    "provider_id": "openai",
+    "provider_version": "openai-responses-v1",
+    "prompt": "Explain provider boundaries.",
+    "runtime_root": "/tmp/aigol_first_real_provider_operation/explain_provider_boundaries",
+    "network_access_used": true,
+    "api_key_present": true
+  },
+  "results": {
+    "provider_reached": true,
+    "provider_response_received": true,
+    "provider_replay_created": true,
+    "provider_replay_reconstructable": true,
+    "provider_proposal_hash_present": true,
+    "aigol_validation_result": "FAILED_CLOSED",
+    "conversation_response_created": false,
+    "failure_reason": "suggested_response_text is required"
+  },
+  "questions": {
+    "can_aigol_reach_provider": true,
+    "can_aigol_receive_responses": true,
+    "can_aigol_validate_responses": "PARTIAL_SCHEMA_MISMATCH",
+    "can_aigol_produce_replay_backed_responses": "PROVIDER_EVIDENCE_YES_FINAL_CONVERSATION_RESPONSE_NO",
+    "provider_substitution_still_works": "YES_AT_PROVIDER_ENVELOPE_BOUNDARY"
+  },
+  "gap": {
+    "type": "semantic_response_schema_mismatch",
+    "provider_returned": "response_text",
+    "conversation_runtime_requires": [
+      "suggested_response_text",
+      "response_reasoning",
+      "confidence"
+    ],
+    "next_required_milestone": "STRUCTURED_PROVIDER_SEMANTIC_RESPONSE_CONTRACT_V1"
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "governance_authority_changed": false,
+    "fail_closed_preserved": true,
+    "replay_visibility_preserved": true
+  },
+  "final_classification": {
+    "FIRST_REAL_PROVIDER_OPERATION_STATUS": "READY_WITH_GAPS"
+  }
+}
