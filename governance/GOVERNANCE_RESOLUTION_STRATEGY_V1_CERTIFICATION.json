@@ -1,0 +1,88 @@
+{
+  "artifact": "GOVERNANCE_RESOLUTION_STRATEGY_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "runtime_file": "aigol/runtime/governance_resolution_strategy.py",
+  "updated_runtime_file": "aigol/runtime/resolution_strategy_runtime.py",
+  "certified_scope": "replay-visible governance-artifact answer resolution",
+  "implemented": {
+    "governance_strategy": true,
+    "governance_prompt_detection": true,
+    "governance_artifact_answer_resolution": true,
+    "strategy_selection_replay": true,
+    "governance_resolution_replay": true,
+    "deterministic_reconstruction": true,
+    "fail_closed_validation": true
+  },
+  "not_implemented": {
+    "execution": true,
+    "worker_dispatch": true,
+    "provider_authority": true,
+    "provider_inference_for_governance_truth": true,
+    "approval_changes": true,
+    "proposal_mutation": true,
+    "governance_mutation": true
+  },
+  "supported_strategy": "GOVERNANCE",
+  "supported_questions": [
+    "What governance exists?",
+    "What was certified?",
+    "Which milestone was completed?",
+    "What governance guarantees exist?",
+    "What ADRs define this capability?",
+    "What is the status of a governance milestone?"
+  ],
+  "runtime_artifact": "GOVERNANCE_RESOLUTION_ARTIFACT_V1",
+  "runtime_events": [
+    "GOVERNANCE_RESOLUTION_CREATED",
+    "GOVERNANCE_RESOLUTION_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "non-governance-oriented prompt",
+    "missing governance evidence",
+    "invalid governance references",
+    "corrupt governance artifacts",
+    "corrupt governance resolution replay",
+    "artifact hash mismatch",
+    "replay wrapper hash mismatch",
+    "invalid source references",
+    "invalid resolution references",
+    "replay ordering corruption"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_strategy_selection_replay": true,
+    "requires_resolution_created_event": true,
+    "requires_resolution_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_resolution_reference": true,
+    "verifies_source_references": true
+  },
+  "boundary_certification": {
+    "reference_only": true,
+    "authority": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "provider_authority": false,
+    "provider_used": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py tests/test_governance_resolution_strategy_v1.py",
+    "passed": 38,
+    "failed": 0
+  },
+  "final_classification": {
+    "GOVERNANCE_RESOLUTION_STRATEGY_STATUS": "CERTIFIED"
+  }
+}

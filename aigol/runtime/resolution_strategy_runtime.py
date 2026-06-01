@@ -16,12 +16,13 @@ SELF_RESOLUTION = "SELF_RESOLUTION"
 PROVIDER = "PROVIDER"
 REPLAY = "REPLAY"
 CONSTITUTIONAL_MEMORY = "CONSTITUTIONAL_MEMORY"
+GOVERNANCE = "GOVERNANCE"
 SELECTED = "SELECTED"
 RESOLUTION_STRATEGY_SELECTED = "RESOLUTION_STRATEGY_SELECTED"
 RESOLUTION_STRATEGY_RETURNED = "RESOLUTION_STRATEGY_RETURNED"
 
 REPLAY_STEPS = ("resolution_strategy_selected", "resolution_strategy_returned")
-SUPPORTED_STRATEGIES = frozenset({SELF_RESOLUTION, PROVIDER, REPLAY, CONSTITUTIONAL_MEMORY})
+SUPPORTED_STRATEGIES = frozenset({SELF_RESOLUTION, PROVIDER, REPLAY, CONSTITUTIONAL_MEMORY, GOVERNANCE})
 FORBIDDEN_FIELDS = frozenset(
     {
         "approval_decision",
@@ -98,6 +99,7 @@ def reconstruct_resolution_strategy_replay(replay_dir: str | Path) -> dict[str, 
         "provider_required": strategy["provider_required"],
         "replay_required": strategy["replay_required"],
         "constitutional_memory_required": strategy["constitutional_memory_required"],
+        "governance_required": strategy["governance_required"],
         "provider_used": False,
         "worker_required": False,
         "approval_created": False,
@@ -127,12 +129,13 @@ def _strategy_artifact(
         "human_prompt_reference": _require_string(human_prompt_reference, "human_prompt_reference"),
         "created_at": _require_string(created_at, "created_at"),
         "created_by": _normalize_token(created_by, "created_by"),
-        "candidate_strategies": [SELF_RESOLUTION, REPLAY, CONSTITUTIONAL_MEMORY, PROVIDER],
-        "source_precedence": [SELF_RESOLUTION, REPLAY, CONSTITUTIONAL_MEMORY, PROVIDER],
+        "candidate_strategies": [SELF_RESOLUTION, REPLAY, CONSTITUTIONAL_MEMORY, GOVERNANCE, PROVIDER],
+        "source_precedence": [SELF_RESOLUTION, REPLAY, CONSTITUTIONAL_MEMORY, GOVERNANCE, PROVIDER],
         "provider_required": strategy == PROVIDER,
         "provider_used": False,
         "replay_required": strategy == REPLAY,
         "constitutional_memory_required": strategy == CONSTITUTIONAL_MEMORY,
+        "governance_required": strategy == GOVERNANCE,
         "worker_required": False,
         "proposal_lifecycle_required": False,
         "selection_status": SELECTED,
@@ -224,6 +227,8 @@ def _validate_strategy_artifact(strategy: dict[str, Any]) -> None:
         strategy.get("selected_strategy") == CONSTITUTIONAL_MEMORY
     ):
         raise FailClosedRuntimeError("resolution strategy failed closed: invalid constitutional memory requirement")
+    if strategy.get("governance_required") is not (strategy.get("selected_strategy") == GOVERNANCE):
+        raise FailClosedRuntimeError("resolution strategy failed closed: invalid governance requirement")
     if strategy.get("provider_used") is not False:
         raise FailClosedRuntimeError("resolution strategy failed closed: provider use introduced")
     if strategy.get("worker_required") is not False:
