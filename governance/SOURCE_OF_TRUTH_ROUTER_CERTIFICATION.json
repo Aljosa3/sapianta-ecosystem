@@ -1,0 +1,110 @@
+{
+  "artifact": "SOURCE_OF_TRUTH_ROUTER_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "classification": {
+    "SOURCE_OF_TRUTH_ROUTER_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": "foundation review for global source-of-truth routing boundary",
+  "created_artifacts": [
+    "governance/SOURCE_OF_TRUTH_ROUTER_FOUNDATION_V1.md",
+    "governance/SOURCE_OF_TRUTH_ROUTER_MODEL_V1.md",
+    "governance/SOURCE_OF_TRUTH_ROUTER_SELECTION_RULES_V1.md",
+    "governance/SOURCE_OF_TRUTH_ROUTER_BOUNDARY_GUARANTEES_V1.md",
+    "governance/SOURCE_OF_TRUTH_ROUTER_ADR_V1.md",
+    "governance/SOURCE_OF_TRUTH_ROUTER_CERTIFICATION.json"
+  ],
+  "router_artifact": "SOURCE_OF_TRUTH_ROUTER_SELECTION_ARTIFACT_V1",
+  "router_events": [
+    "SOURCE_OF_TRUTH_ROUTER_SELECTED",
+    "SOURCE_OF_TRUTH_ROUTER_RETURNED"
+  ],
+  "supported_sources": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "source_priority": [
+    "REPLAY",
+    "GOVERNANCE",
+    "CONSTITUTIONAL_MEMORY",
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "required_fields": [
+    "router_selection_id",
+    "source_prompt_id",
+    "candidate_sources",
+    "selected_source",
+    "source_priority",
+    "selection_reason",
+    "evidence_refs",
+    "provider_required",
+    "provider_used",
+    "worker_required",
+    "execution_required",
+    "proposal_lifecycle_required",
+    "selection_status",
+    "created_by",
+    "created_at",
+    "replay_reference",
+    "artifact_hash"
+  ],
+  "selection_rules": {
+    "replay_preferred_over_provider": true,
+    "governance_preferred_over_provider": true,
+    "constitutional_memory_preferred_over_provider": true,
+    "self_resolution_preferred_when_sufficient": true,
+    "provider_last_resort": true,
+    "ambiguity_fails_closed": true
+  },
+  "replay_reconstruction": {
+    "required": true,
+    "verifies_event_order": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_selected_source_in_candidates": true,
+    "verifies_source_priority": true,
+    "verifies_evidence_refs": true,
+    "read_only": true
+  },
+  "boundary_guarantees": {
+    "provider_authority": false,
+    "provider_used_at_selection_time": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "approval_created": false,
+    "proposal_created": false,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "not_implemented": {
+    "router_runtime": true,
+    "router_tests": true,
+    "source_dispatch": true,
+    "response_generation": true,
+    "provider_invocation": true,
+    "worker_execution": true,
+    "cli_epoch_validation": true
+  },
+  "known_gaps": [
+    "Router runtime is not implemented.",
+    "Router tests are not implemented.",
+    "Source response envelope normalization is not implemented.",
+    "Conversational runtime is not connected to a global source router.",
+    "CLI validation through aigol prompt submit has not been rerun for all sources."
+  ],
+  "final_classification": {
+    "SOURCE_OF_TRUTH_ROUTER_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  }
+}
