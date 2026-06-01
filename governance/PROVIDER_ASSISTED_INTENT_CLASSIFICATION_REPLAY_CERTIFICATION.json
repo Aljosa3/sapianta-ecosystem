@@ -1,0 +1,42 @@
+{
+  "artifact": "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_root": "<runtime_root>/<intent_replay>",
+  "required_replay_sources": [
+    "deterministic_intent_classification/000_intent_classification_artifact.json",
+    "deterministic_intent_classification/001_intent_classification_replay.json",
+    "provider_semantic_assistance/000_provider_proposal_created.json",
+    "provider_semantic_assistance/001_provider_proposal_returned.json",
+    "000_provider_intent_governance_validation.json",
+    "001_provider_assisted_intent_classification_artifact.json",
+    "002_provider_assisted_intent_classification_replay.json"
+  ],
+  "reconstructs": {
+    "deterministic_classification_attempt": true,
+    "provider_request": true,
+    "provider_response": true,
+    "provider_proposal_hash": true,
+    "governance_validation": true,
+    "final_destination": true,
+    "classification_status": true
+  },
+  "fail_closed_cases": {
+    "provider_unavailable": "FAILED_CLOSED",
+    "malformed_provider_response": "FAILED_CLOSED",
+    "invalid_destination": "FAILED_CLOSED",
+    "ambiguous_suggestion": "FAILED_CLOSED",
+    "authority_bearing_provider_response": "FAILED_CLOSED",
+    "corrupt_replay": "RECONSTRUCTION_FAILED"
+  },
+  "authority_certification": {
+    "provider_suggestion_authority": false,
+    "routing_performed_by_provider": false,
+    "execution_requested": false,
+    "worker_invoked": false
+  },
+  "final_classification": {
+    "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_REPLAY_STATUS": "READY"
+  }
+}

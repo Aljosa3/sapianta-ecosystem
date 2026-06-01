@@ -1,0 +1,34 @@
+{
+  "artifact": "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_provider_assisted_intent_classification_v1.py tests/test_intent_classifier_v1.py tests/test_minimal_provider_attachment_runtime_v1.py tests/test_intent_routing_attachment_v1.py",
+    "python -m py_compile aigol/runtime/provider_assisted_intent_classification.py"
+  ],
+  "validation_results": [
+    "54 passed",
+    "py_compile passed"
+  ],
+  "acceptance_criteria": {
+    "deterministic_success_skips_provider": "PASSED",
+    "slovenian_prompt_classified_with_provider_assistance": "PASSED",
+    "provider_suggestion_validated_by_aigol": "PASSED",
+    "provider_assisted_artifact_feeds_existing_routing": "PASSED",
+    "provider_unavailable_fails_closed": "PASSED",
+    "invalid_destination_fails_closed": "PASSED",
+    "ambiguous_suggestion_fails_closed": "PASSED",
+    "authority_bearing_response_fails_closed": "PASSED",
+    "replay_corruption_detected": "PASSED"
+  },
+  "demonstrated_prompt": {
+    "prompt": "Kaj je namen AiGOL?",
+    "deterministic_status": "FAILED_CLOSED",
+    "provider_assisted_status": "CLASSIFIED",
+    "final_destination": "CONVERSATION"
+  },
+  "final_classification": {
+    "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_STATUS": "READY"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "artifact": "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "deterministic_classifier_runs_first": true,
+    "provider_assistance_only_after_deterministic_failure": true,
+    "provider_suggestion_non_authoritative": true,
+    "aigol_validates_suggested_destination": true,
+    "allowed_destinations_enforced": true,
+    "final_classification_replay_visible": true,
+    "provider_request_replay_visible": true,
+    "provider_response_replay_visible": true,
+    "governance_validation_replay_visible": true,
+    "routing_not_performed_by_provider": true,
+    "execution_not_requested": true,
+    "worker_not_invoked": true,
+    "provider_unavailable_fails_closed": true,
+    "invalid_destination_fails_closed": true,
+    "ambiguous_suggestion_fails_closed": true,
+    "authority_bearing_provider_response_fails_closed": true
+  },
+  "runtime_surface": {
+    "module": "aigol/runtime/provider_assisted_intent_classification.py",
+    "function": "classify_intent_with_provider_assistance"
+  },
+  "final_classification": {
+    "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_STATUS": "READY"
+  }
+}
