@@ -1,0 +1,135 @@
+{
+  "artifact": "CONVERSATION_TO_PROPOSAL_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "READY_WITH_GAPS",
+  "review_type": "foundation_review_only",
+  "runtime_implemented": false,
+  "execution_implemented": false,
+  "workers_implemented": false,
+  "governance_modified": false,
+  "certified_scope": "minimal replay-safe conversation-to-proposal flow",
+  "canonical_flow": [
+    "human_prompt_evidence",
+    "conversational_handling",
+    "resolution_strategy_selection",
+    "proposal_eligibility_review",
+    "proposal_runtime_artifact_created",
+    "replay",
+    "future_proposal_lifecycle"
+  ],
+  "proposal_creation_conditions": {
+    "replay_visible_human_prompt_required": true,
+    "conversation_or_strategy_evidence_required": true,
+    "resolution_strategy_required": true,
+    "proposal_lifecycle_required_flag_or_bounded_action_candidate_required": true,
+    "created_by": "AIGOL",
+    "initial_status": "CREATED",
+    "provider_authority_allowed": false,
+    "worker_execution_allowed": false,
+    "approval_created": false
+  },
+  "strategies_may_create_proposal_through_aigol": [
+    "SELF_RESOLUTION",
+    "PROVIDER",
+    "WORKER",
+    "COMBINED",
+    "REPLAY",
+    "GOVERNANCE"
+  ],
+  "strategies_may_not_create_proposal_by_themselves": [
+    "CONSTITUTIONAL_MEMORY"
+  ],
+  "never_create_proposal_for": [
+    "explanatory answer only",
+    "replay truth answer only",
+    "governance truth answer only",
+    "Constitutional Memory citation answer only",
+    "provider explanation without bounded future action",
+    "fail-closed termination",
+    "governance bypass request",
+    "direct execution request"
+  ],
+  "conversation_response_vs_proposal": {
+    "conversation_response": "Human-readable answer with no execution authority.",
+    "proposal": "Candidate future governed action with no execution authority until later lifecycle and execution request handling."
+  },
+  "required_replay_evidence_before_creation": [
+    "human_prompt_artifact_or_equivalent_prompt_evidence",
+    "conversation_handling_reference_when_present",
+    "resolution_strategy_selection_reference",
+    "source_evidence_references",
+    "provider_contribution_reference_when_used",
+    "non_authority_boundary_evidence",
+    "absence_of_direct_execution"
+  ],
+  "proposal_creation_recording": {
+    "events": [
+      "PROPOSAL_RUNTIME_CREATED",
+      "PROPOSAL_RUNTIME_RETURNED"
+    ],
+    "artifact_type": "PROPOSAL_RUNTIME_ARTIFACT_V1",
+    "created_by": "AIGOL",
+    "status": "CREATED",
+    "required_fields": [
+      "proposal_id",
+      "proposal_type",
+      "proposal_source",
+      "proposal_text",
+      "source_prompt_id",
+      "source_conversation_id",
+      "source_strategy_id",
+      "source_provider_event_id",
+      "replay_reference",
+      "artifact_hash"
+    ]
+  },
+  "future_approval_and_execution": {
+    "flow_ends_at_created": true,
+    "inspection_required_later": true,
+    "human_approval_required_later_when_applicable": true,
+    "execution_request_derivation_later": true,
+    "worker_execution_later_only_after_authorization": true
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "approval_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_mutation_authority_introduced": false
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "certification_criteria": {
+    "proposal_creation_conditions_defined": "READY",
+    "eligible_resolution_strategies_defined": "READY",
+    "ineligible_resolution_strategies_defined": "READY",
+    "conversation_response_distinction_defined": "READY",
+    "replay_prerequisites_defined": "READY",
+    "proposal_creation_recording_defined": "READY",
+    "constitutional_invariant_preserved": "READY",
+    "future_approval_and_execution_integration_defined": "READY",
+    "runtime_implementation": "NOT_IMPLEMENTED",
+    "execution_implementation": "NOT_IMPLEMENTED",
+    "worker_implementation": "NOT_IMPLEMENTED",
+    "tests": "NOT_IMPLEMENTED"
+  },
+  "remaining_gaps": [
+    "No runtime conversation-to-proposal flow is implemented by this review.",
+    "No routing integration is implemented by this review.",
+    "No proposal creation code is implemented by this review.",
+    "No schema enforcement is implemented by this review.",
+    "No approval or execution integration is implemented by this review.",
+    "No worker integration is implemented by this review.",
+    "No tests are introduced by this review."
+  ],
+  "final_classification": {
+    "CONVERSATION_TO_PROPOSAL_FLOW_STATUS": "READY_WITH_GAPS"
+  }
+}
