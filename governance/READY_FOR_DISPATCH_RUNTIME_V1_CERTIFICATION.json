@@ -1,0 +1,66 @@
+{
+  "artifact": "READY_FOR_DISPATCH_RUNTIME_V1_CERTIFICATION",
+  "runtime": "READY_FOR_DISPATCH_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "classification": "READY_FOR_DISPATCH_RUNTIME_STATUS = CERTIFIED",
+  "implemented_artifacts": [
+    "aigol/runtime/ready_for_dispatch_runtime.py",
+    "tests/test_ready_for_dispatch_runtime_v1.py",
+    "governance/READY_FOR_DISPATCH_RUNTIME_V1.md",
+    "governance/READY_FOR_DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/READY_FOR_DISPATCH_RUNTIME_V1_CERTIFICATION.json"
+  ],
+  "implemented_capability": {
+    "name": "deterministic readiness validation",
+    "transition": "EXECUTION_REQUEST.CREATED -> READY_FOR_DISPATCH",
+    "artifact_type": "READY_FOR_DISPATCH_ARTIFACT_V1",
+    "mutation_model": "append-only readiness artifact; execution request artifact is not mutated"
+  },
+  "replay_guarantees": {
+    "readiness_events_persisted": true,
+    "ordered_reconstruction": true,
+    "artifact_hash_verified": true,
+    "wrapper_hash_verified": true,
+    "reference_integrity_verified": true,
+    "duplicate_readiness_rejected": true
+  },
+  "fail_closed_guarantees": {
+    "missing_execution_request": true,
+    "invalid_execution_request_status": true,
+    "invalid_references": true,
+    "duplicate_readiness_records": true,
+    "corrupt_artifacts": true,
+    "approval_mismatch": true,
+    "corrupt_replay": true,
+    "provider_authority": true,
+    "worker_dispatch": true,
+    "execution_performed": true
+  },
+  "boundaries": {
+    "worker_assignment_implemented": false,
+    "dispatch_implemented": false,
+    "execution_implemented": false,
+    "completion_implemented": false,
+    "provider_authority_granted": false,
+    "automatic_authorization_granted": false
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_ready_for_dispatch_runtime_v1.py",
+      "result": "18 passed"
+    }
+  },
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "not implemented in this runtime",
+    "replay_records": true
+  },
+  "known_gaps": [
+    "Worker assignment remains future work",
+    "Dispatch remains future work",
+    "Worker execution remains future work",
+    "Execution completion remains future work"
+  ],
+  "final_classification": "CERTIFIED"
+}

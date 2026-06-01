@@ -1,0 +1,68 @@
+{
+  "artifact": "READY_FOR_DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "runtime": "READY_FOR_DISPATCH_RUNTIME_V1",
+  "status": "ACCEPTED",
+  "implementation": {
+    "module": "aigol/runtime/ready_for_dispatch_runtime.py",
+    "tests": "tests/test_ready_for_dispatch_runtime_v1.py",
+    "artifact_type": "READY_FOR_DISPATCH_ARTIFACT_V1",
+    "supported_transition": "EXECUTION_REQUEST.CREATED -> READY_FOR_DISPATCH"
+  },
+  "runtime_entrypoints": [
+    "mark_ready_for_dispatch",
+    "reconstruct_ready_for_dispatch_replay"
+  ],
+  "replay_events": [
+    "READY_FOR_DISPATCH_VALIDATED",
+    "READY_FOR_DISPATCH_RETURNED"
+  ],
+  "required_inputs": [
+    "readiness_id",
+    "execution_request_artifact",
+    "execution_request_replay",
+    "approval_artifact",
+    "validated_at",
+    "replay_reference",
+    "replay_dir"
+  ],
+  "validation_evidence": [
+    "Valid execution request artifact is required",
+    "Execution request status must be CREATED",
+    "Execution request replay must match the execution request artifact",
+    "Approval artifact must be APPROVED",
+    "Approval id and hash must match the execution request",
+    "Proposal references must match across request, replay, and approval",
+    "Provider authority must remain false",
+    "Worker assignment must remain false",
+    "Worker dispatch must remain false",
+    "Execution performed must remain false",
+    "Replay reconstruction must be deterministic"
+  ],
+  "fail_closed_cases_tested": [
+    "Missing execution request",
+    "Missing execution request replay",
+    "Missing readiness fields",
+    "Invalid validated_by actor",
+    "Invalid execution request status",
+    "Approval mismatch",
+    "Corrupt execution request artifact",
+    "Corrupt execution request replay",
+    "Duplicate readiness records",
+    "Corrupt readiness replay artifact",
+    "Corrupt readiness replay ordering",
+    "Corrupt readiness replay reference"
+  ],
+  "boundary_evidence": {
+    "provider_authority": false,
+    "provider_invoked": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "approval_created": false,
+    "automatic_authorization": false
+  },
+  "validation_command": "python -m pytest tests/test_ready_for_dispatch_runtime_v1.py",
+  "validation_result": "18 passed",
+  "final_classification": "CERTIFIED"
+}
