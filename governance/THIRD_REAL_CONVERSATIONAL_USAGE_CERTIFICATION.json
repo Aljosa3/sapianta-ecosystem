@@ -1,0 +1,86 @@
+{
+  "artifact": "THIRD_REAL_CONVERSATIONAL_USAGE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operational_scope": {
+    "interface_used": "python -m aigol.cli.aigol_cli prompt submit",
+    "runtime_root": "/tmp/aigol_third_conversation_epoch",
+    "same_prompt_set_as_second_epoch": true,
+    "prompts_modified": false,
+    "runtime_modified_for_epoch": false,
+    "provider_behavior_modified_for_epoch": false,
+    "governance_layer_modified_for_epoch": false,
+    "replay_architecture_modified_for_epoch": false,
+    "worker_architecture_modified_for_epoch": false
+  },
+  "aggregate_results": {
+    "prompts_submitted": 50,
+    "responses_created": 6,
+    "fail_closed_responses": 44,
+    "success_rate": "12%",
+    "conversation_classifications": 19,
+    "constitutional_memory_classifications": 1,
+    "unclassified_prompts": 30,
+    "conversation_routings": 19,
+    "constitutional_memory_routings": 1,
+    "unrouted_prompts": 30,
+    "replay_visible_provider_responses": 35,
+    "conversation_stage_provider_responses": 8,
+    "provider_assisted_final_responses": 0,
+    "self_resolution_responses": 6,
+    "worker_invocations": 0,
+    "execution_requests": 0
+  },
+  "comparison_to_second_epoch": {
+    "second_epoch_success_rate": "12%",
+    "third_epoch_success_rate": "12%",
+    "success_rate_delta_percentage_points": 0,
+    "provider_response_delta": 35,
+    "provider_assisted_final_response_delta": 0,
+    "material_provider_understanding_improvement": true,
+    "material_final_conversational_coverage_improvement": false
+  },
+  "failure_taxonomy": {
+    "total_failures": 44,
+    "classification_failure": {
+      "count": 27,
+      "percentage_of_failures": "61.36%",
+      "primary_evidence": "suggested_destination is required"
+    },
+    "normalization_failure": {
+      "count": 11,
+      "percentage_of_failures": "25.00%",
+      "primary_evidence": "provider conversation response contains authority-bearing text"
+    },
+    "provider_failure": {
+      "count": 5,
+      "percentage_of_failures": "11.36%",
+      "primary_evidence": "OpenAI provider unavailable"
+    },
+    "other": {
+      "count": 1,
+      "percentage_of_failures": "2.27%",
+      "primary_evidence": "CONSTITUTIONAL_MEMORY_CONSULTATION did not produce conversation response"
+    }
+  },
+  "evidence_references": {
+    "second_epoch_certification": "governance/SECOND_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "third_epoch_runtime_root": "/tmp/aigol_third_conversation_epoch",
+    "provider_context_example": "/tmp/aigol_third_conversation_epoch/case_12/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response/provider_conversation_response/000_provider_proposal_created.json",
+    "provider_fail_closed_example": "/tmp/aigol_third_conversation_epoch/case_12/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response/004_provider_assisted_conversation_response_returned.json",
+    "classification_failure_example": "/tmp/aigol_third_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/001_provider_assisted_intent_classification_artifact.json"
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_visibility_preserved": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "THIRD_REAL_CONVERSATIONAL_USAGE_STATUS": "READY_WITH_GAPS"
+  }
+}
