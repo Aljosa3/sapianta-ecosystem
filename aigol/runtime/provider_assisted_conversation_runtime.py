@@ -10,6 +10,11 @@ from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_registry import ProviderRegistry
 from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED, reconstruct_provider_attachment_replay, run_provider_attachment
 from aigol.runtime.intent_classifier import CLASSIFIED, CONVERSATION
+from aigol.runtime.intent_routing_attachment import (
+    ROUTED,
+    attach_intent_routing,
+    reconstruct_intent_routing_replay,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.provider_assisted_intent_classification import (
     classify_intent_with_provider_assistance,
@@ -94,6 +99,17 @@ def run_provider_assisted_conversation(
             raise FailClosedRuntimeError(f"provider-assisted conversation failed closed: {reason}")
         if intent_artifact.get("classification_destination") != CONVERSATION:
             raise FailClosedRuntimeError("provider-assisted conversation failed closed: prompt is not conversation intent")
+        routing_capture = attach_intent_routing(
+            routing_record_id=f"{conversation_id}:ROUTING",
+            intent_classification_artifact=intent_artifact,
+            routing_timestamp=created_at,
+            replay_reference=str(replay_path / "intent_routing"),
+            replay_dir=replay_path / "intent_routing",
+        )
+        routing_record = routing_capture["intent_routing_attachment_record"]
+        if routing_record.get("routing_status") != ROUTED:
+            reason = routing_record.get("failure_reason") or "routing failed"
+            raise FailClosedRuntimeError(f"provider-assisted conversation failed closed: {reason}")
 
         self_resolution = _self_resolution_artifact(
             resolution_id=f"{conversation_id}:SELF_RESOLUTION",
@@ -235,6 +251,7 @@ def reconstruct_provider_assisted_conversation_replay(replay_dir: str | Path) ->
 
     replay_path = Path(replay_dir)
     intent = reconstruct_provider_assisted_intent_classification_replay(replay_path / "intent_classification")
+    routing = reconstruct_intent_routing_replay(replay_path / "intent_routing")
     wrappers: list[dict[str, Any]] = []
     for index, step in enumerate(REPLAY_STEPS):
         wrapper = load_json(replay_path / f"{index:03d}_{step}.json")
@@ -265,6 +282,7 @@ def reconstruct_provider_assisted_conversation_replay(replay_dir: str | Path) ->
         "prompt_id": started["prompt_id"],
         "prompt_text": started["prompt_text"],
         "intent_classification": deepcopy(intent),
+        "routing_decision": deepcopy(routing),
         "self_resolution_status": self_resolution["self_resolution_status"],
         "provider_assistance_required": validation["provider_assistance_required"],
         "provider_response_replay": deepcopy(provider),
@@ -277,10 +295,16 @@ def reconstruct_provider_assisted_conversation_replay(replay_dir: str | Path) ->
         "worker_invoked": False,
         "execution_requested": False,
         "replay_visible": True,
-        "replay_artifact_count": len(wrappers) + intent["replay_artifact_count"] + (provider["replay_artifact_count"] if provider else 0),
+        "replay_artifact_count": (
+            len(wrappers)
+            + intent["replay_artifact_count"]
+            + routing["replay_artifact_count"]
+            + (provider["replay_artifact_count"] if provider else 0)
+        ),
         "replay_hash": replay_hash(
             {
                 "intent": intent,
+                "routing": routing,
                 "provider": provider,
                 "conversation": wrappers,
             }
@@ -361,12 +385,27 @@ def _deterministic_response(human_prompt: str) -> tuple[str, str]:
             "AiGOL is a governed AI operation path that separates proposal, governance, worker execution, and replay evidence.",
             "matched deterministic AiGOL identity knowledge",
         )
+    if "purpose of aigol" in lowered:
+        return (
+            "The purpose of AiGOL is to make AI-assisted operations governed, replay-visible, fail-closed, and auditable before any worker execution occurs.",
+            "matched deterministic AiGOL purpose knowledge",
+        )
+    if "explain replay" in lowered:
+        return (
+            "Replay is AiGOL's evidence trail: it records prompts, classifications, routing, proposals, authorization, worker results, and response artifacts so an operator can reconstruct what happened.",
+            "matched deterministic replay knowledge",
+        )
+    if "explain governance" in lowered:
+        return (
+            "Governance is the AiGOL boundary that validates admissibility, preserves authority separation, fails closed on unresolved states, and prevents providers or prompts from becoming execution authority.",
+            "matched deterministic governance knowledge",
+        )
     if "how does aigol" in lowered:
         return (
             "AiGOL works by recording a human request, classifying intent, governing admissibility, executing only through authorized workers, and preserving replay evidence.",
             "matched deterministic AiGOL operation knowledge",
         )
-    if "what can aigol" in lowered or "kaj zna aigol" in lowered:
+    if "what can aigol" in lowered or "what can aigol do" in lowered or "kaj zna aigol" in lowered:
         return (
             "AiGOL can classify prompts, preserve replay evidence, attach proposal-only providers, authorize bounded worker requests, execute governed operations, and explain results from replay.",
             "matched deterministic AiGOL capability knowledge",

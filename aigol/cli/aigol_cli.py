@@ -76,7 +76,7 @@ from aigol.moc.proposal_ledger import DEFAULT_LEDGER_PATH, render_proposal_ledge
 from aigol.moc.proposal_persistence import render_proposal_persistence_summary
 from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
-from aigol.runtime.minimal_human_prompt_interface import submit_human_prompt
+from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -372,7 +372,7 @@ def run_command(args: argparse.Namespace) -> dict:
     if args.command == "diagnostics" and args.diagnostics_command == "runtime":
         return runtime_diagnostics(extension_id=args.extension_id)
     if args.command == "prompt" and args.prompt_command == "submit":
-        return submit_human_prompt(
+        return submit_prompt_to_conversation(
             human_prompt=args.prompt,
             prompt_id=args.prompt_id,
             created_at=args.created_at,
@@ -749,7 +749,12 @@ def render_command_result(result: dict) -> str:
                 f"classification_destination: {result.get('classification_destination')}",
                 f"routing_destination: {result.get('routing_destination')}",
                 f"cognition_path_entered: {result.get('cognition_path_entered')}",
+                f"response_status: {result.get('response_status')}",
+                f"response_source: {result.get('response_source')}",
+                f"response_text: {result.get('response_text')}",
                 f"replay_reference: {result.get('replay_reference')}",
+                f"conversation_replay_reference: {result.get('conversation_replay_reference')}",
+                f"provider_used: {result.get('provider_used')}",
                 f"provider_invoked: {result.get('provider_invoked')}",
                 f"worker_invoked: {result.get('worker_invoked')}",
                 f"execution_requested: {result.get('execution_requested')}",

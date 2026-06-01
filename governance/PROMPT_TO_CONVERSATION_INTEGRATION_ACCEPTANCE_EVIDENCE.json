@@ -1,0 +1,33 @@
+{
+  "artifact": "PROMPT_TO_CONVERSATION_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PASSED",
+  "validated_on": "2026-06-01",
+  "validation_commands": [
+    "python -m pytest tests/test_prompt_to_conversation_integration_v1.py tests/test_provider_assisted_conversation_runtime_v1.py tests/test_provider_assisted_intent_classification_v1.py tests/test_minimal_human_prompt_interface_v1.py",
+    "python -m py_compile aigol/runtime/prompt_to_conversation_integration.py aigol/runtime/provider_assisted_conversation_runtime.py",
+    "python -m aigol.cli.aigol_cli prompt submit --prompt \"What is AiGOL?\" --runtime-root /tmp/aigol_prompt_to_conversation_smoke"
+  ],
+  "validation_results": [
+    "30 passed",
+    "py_compile passed",
+    "response_status=PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED; response_source=SELF_RESOLUTION"
+  ],
+  "acceptance_criteria": {
+    "prompt_submit_returns_response": "PASSED",
+    "response_status_returned": "PASSED",
+    "response_source_returned": "PASSED",
+    "response_text_returned": "PASSED",
+    "provider_usage_returned": "PASSED",
+    "deterministic_self_resolution_response": "PASSED",
+    "provider_assisted_conversation_response_with_injected_adapter": "PASSED",
+    "missing_routing_fails_closed": "PASSED",
+    "invalid_provider_response_fails_closed": "PASSED",
+    "corrupt_conversation_replay_detected": "PASSED",
+    "worker_not_invoked": "PASSED",
+    "execution_not_requested": "PASSED"
+  },
+  "final_classification": {
+    "PROMPT_TO_CONVERSATION_INTEGRATION_STATUS": "READY"
+  }
+}

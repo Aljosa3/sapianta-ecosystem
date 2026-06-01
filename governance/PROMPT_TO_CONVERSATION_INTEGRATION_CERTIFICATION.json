@@ -1,0 +1,35 @@
+{
+  "artifact": "PROMPT_TO_CONVERSATION_INTEGRATION_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "certifies": {
+    "human_prompt_interface_reused": true,
+    "provider_assisted_intent_classification_reused": true,
+    "intent_routing_reused": true,
+    "provider_assisted_conversation_runtime_reused": true,
+    "replay_infrastructure_reused": true,
+    "cli_prompt_submit_returns_response_status": true,
+    "cli_prompt_submit_returns_response_source": true,
+    "cli_prompt_submit_returns_response_text": true,
+    "cli_prompt_submit_returns_provider_usage": true,
+    "missing_response_artifact_fails_closed": true,
+    "missing_routing_fails_closed": true,
+    "invalid_conversation_runtime_fails_closed": true,
+    "corrupt_replay_detected": true,
+    "new_provider_created": false,
+    "new_worker_created": false,
+    "new_governance_layer_created": false,
+    "worker_invoked": false,
+    "execution_requested": false
+  },
+  "runtime_surface": {
+    "integration_module": "aigol/runtime/prompt_to_conversation_integration.py",
+    "cli_module": "aigol/cli/aigol_cli.py",
+    "command": "aigol prompt submit"
+  },
+  "final_classification": {
+    "PROMPT_TO_CONVERSATION_INTEGRATION_STATUS": "READY"
+  }
+}

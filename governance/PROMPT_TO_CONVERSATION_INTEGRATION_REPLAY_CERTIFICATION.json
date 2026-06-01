@@ -1,0 +1,53 @@
+{
+  "artifact": "PROMPT_TO_CONVERSATION_INTEGRATION_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_root": "<runtime_root>/<prompt_id>",
+  "required_replay_sources": [
+    "000_human_prompt_artifact.json",
+    "001_human_prompt_lineage.json",
+    "intent_classification/000_intent_classification_artifact.json",
+    "intent_classification/001_intent_classification_replay.json",
+    "intent_routing/000_intent_routing_attachment_record.json",
+    "intent_routing/001_intent_routing_attachment_replay.json",
+    "conversation_response/intent_classification/deterministic_intent_classification/000_intent_classification_artifact.json",
+    "conversation_response/intent_classification/deterministic_intent_classification/001_intent_classification_replay.json",
+    "conversation_response/intent_routing/000_intent_routing_attachment_record.json",
+    "conversation_response/intent_routing/001_intent_routing_attachment_replay.json",
+    "conversation_response/000_provider_assisted_conversation_started.json",
+    "conversation_response/001_conversation_self_resolution_attempted.json",
+    "conversation_response/002_provider_conversation_response_validation.json",
+    "conversation_response/003_provider_assisted_conversation_response_created.json",
+    "conversation_response/004_provider_assisted_conversation_response_returned.json"
+  ],
+  "conditional_replay_sources_when_provider_used": [
+    "conversation_response/intent_classification/provider_semantic_assistance/000_provider_proposal_created.json",
+    "conversation_response/intent_classification/provider_semantic_assistance/001_provider_proposal_returned.json",
+    "conversation_response/provider_conversation_response/000_provider_proposal_created.json",
+    "conversation_response/provider_conversation_response/001_provider_proposal_returned.json"
+  ],
+  "reconstructs": {
+    "prompt": true,
+    "classification": true,
+    "routing": true,
+    "conversation_resolution": true,
+    "provider_usage": true,
+    "final_response": true
+  },
+  "fail_closed_cases": {
+    "missing_response_artifact": "FAILED_CLOSED",
+    "missing_routing": "FAILED_CLOSED",
+    "invalid_conversation_runtime": "FAILED_CLOSED",
+    "corrupt_replay": "RECONSTRUCTION_FAILED"
+  },
+  "authority_certification": {
+    "provider_response_authority": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "authorization_created": false
+  },
+  "final_classification": {
+    "PROMPT_TO_CONVERSATION_INTEGRATION_REPLAY_STATUS": "READY"
+  }
+}
