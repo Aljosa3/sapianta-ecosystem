@@ -1,0 +1,110 @@
+{
+  "artifact": "CANONICAL_CHAIN_ID_CERTIFICATION_V1",
+  "status": "READY_WITH_GAPS",
+  "classification": "CANONICAL_CHAIN_ID_FOUNDATION_STATUS = READY_WITH_GAPS",
+  "scope": "Review-only foundation defining immutable canonical chain identity. No runtime or replay modification.",
+  "created_artifacts": [
+    "governance/CANONICAL_CHAIN_ID_FOUNDATION_V1.md",
+    "governance/CANONICAL_CHAIN_ID_MODEL_V1.md",
+    "governance/CANONICAL_CHAIN_ID_BOUNDARY_GUARANTEES_V1.md",
+    "governance/CANONICAL_CHAIN_ID_ADR_V1.md",
+    "governance/CANONICAL_CHAIN_ID_CERTIFICATION.json"
+  ],
+  "chain_identity_artifact": "CANONICAL_CHAIN_ID_ARTIFACT_V1",
+  "canonical_field": "canonical_chain_id",
+  "created_by": "AiGOL",
+  "created_at": "chain opening after human prompt ingress and source routing evidence",
+  "immutability": {
+    "can_change": false,
+    "mutation_allowed": false,
+    "supersession_requires_new_chain_id": true,
+    "child_chain_requires_replay_visible_parent_reference": true
+  },
+  "future_required_chain_aware_artifacts": [
+    "SOURCE_OF_TRUTH_ROUTER_SELECTION_ARTIFACT_V1 when proposal lifecycle is selected",
+    "PROPOSAL_RUNTIME_ARTIFACT_V1",
+    "PROPOSAL_APPROVAL_ARTIFACT_V1",
+    "EXECUTION_REQUEST_ARTIFACT_V1",
+    "READY_FOR_DISPATCH_ARTIFACT_V1",
+    "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "DISPATCH_ARTIFACT_V1",
+    "WORKER_INVOCATION_ARTIFACT_V1",
+    "Future worker execution artifacts",
+    "Future worker result artifacts",
+    "Future worker termination artifacts"
+  ],
+  "forbidden_creators": [
+    "Provider",
+    "Worker",
+    "Replay",
+    "Human acting directly outside AiGOL governance",
+    "CLI transport alone",
+    "Proposal artifact",
+    "Approval artifact",
+    "Execution request artifact",
+    "Automatic retry logic"
+  ],
+  "reconstruction": {
+    "source": "Replay",
+    "required_checks": [
+      "Locate CANONICAL_CHAIN_OPENED event",
+      "Verify canonical chain id",
+      "Traverse artifacts carrying same canonical_chain_id",
+      "Verify artifact hashes",
+      "Verify replay wrapper hashes",
+      "Verify stage order",
+      "Verify reference and hash continuity",
+      "Reject missing or mismatched chain ids"
+    ],
+    "replay_authority": false
+  },
+  "corruption_detection": [
+    "Missing canonical_chain_id",
+    "Malformed canonical_chain_id",
+    "Mismatched canonical_chain_id",
+    "Artifact hash mismatch",
+    "Replay wrapper hash mismatch",
+    "Invalid stage order",
+    "Child artifact references parent from different chain",
+    "Duplicate unrelated chain id",
+    "Hidden supersession",
+    "Provider-created chain id",
+    "Worker-created chain id"
+  ],
+  "boundary_guarantees": {
+    "identity_only": true,
+    "grants_proposal_authority": false,
+    "grants_approval_authority": false,
+    "grants_execution_request_authority": false,
+    "grants_readiness_authority": false,
+    "grants_worker_assignment_authority": false,
+    "grants_dispatch_authority": false,
+    "grants_invocation_authority": false,
+    "grants_execution_authority": false,
+    "provider_authority": false,
+    "worker_self_authority": false,
+    "replay_records": true,
+    "aigol_governs": true
+  },
+  "not_implemented": [
+    "Runtime chain id creation",
+    "Runtime chain id propagation",
+    "Replay schema changes",
+    "Artifact schema migration",
+    "Chain reconstruction command",
+    "Chain id backfill for historical artifacts"
+  ],
+  "known_gaps": [
+    "Existing certified runtimes do not yet carry canonical_chain_id",
+    "No CANONICAL_CHAIN_ID_ARTIFACT_V1 runtime exists",
+    "No canonical chain reconstruction command exists",
+    "Prompt-to-proposal lineage remains distributed until propagation is implemented"
+  ],
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "unchanged; chain id grants no execution authority",
+    "replay_records": true
+  },
+  "final_classification": "READY_WITH_GAPS"
+}
