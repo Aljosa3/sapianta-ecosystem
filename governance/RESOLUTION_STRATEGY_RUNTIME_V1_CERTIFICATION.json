@@ -1,0 +1,92 @@
+{
+  "artifact": "RESOLUTION_STRATEGY_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "runtime_file": "aigol/runtime/resolution_strategy_runtime.py",
+  "test_file": "tests/test_resolution_strategy_runtime_v1.py",
+  "certified_scope": "minimal replay-visible deterministic resolution strategy selection runtime",
+  "implemented": {
+    "strategy_selection_artifact": true,
+    "self_resolution_strategy": true,
+    "provider_strategy": true,
+    "replay_visible_selection_event": true,
+    "replay_visible_return_event": true,
+    "replay_reconstruction": true,
+    "fail_closed_validation": true
+  },
+  "not_implemented": {
+    "constitutional_memory_runtime": true,
+    "governance_runtime": true,
+    "replay_runtime": true,
+    "worker_runtime": true,
+    "combined_strategy_runtime": true,
+    "execution": true,
+    "approval": true,
+    "provider_invocation": true
+  },
+  "supported_strategies": [
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "required_fields": [
+    "strategy_id",
+    "selected_strategy",
+    "selection_reason",
+    "human_prompt_reference",
+    "created_at"
+  ],
+  "runtime_events": [
+    "RESOLUTION_STRATEGY_SELECTED",
+    "RESOLUTION_STRATEGY_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "missing strategy id",
+    "missing human prompt reference",
+    "missing selected strategy",
+    "missing selection reason",
+    "missing creation timestamp",
+    "invalid strategy",
+    "non-AiGOL creator",
+    "duplicate replay artifacts",
+    "corrupt strategy artifact",
+    "corrupt replay wrapper",
+    "replay ordering corruption",
+    "strategy reference mismatch"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_selected_event": true,
+    "requires_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_strategy_reference": true,
+    "verifies_strategy_hash": true
+  },
+  "boundary_certification": {
+    "authority": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "provider_authority": false,
+    "provider_used": false,
+    "worker_required": false,
+    "worker_invoked": false,
+    "proposal_lifecycle_required": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py",
+    "passed": 15,
+    "failed": 0
+  },
+  "final_classification": {
+    "RESOLUTION_STRATEGY_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

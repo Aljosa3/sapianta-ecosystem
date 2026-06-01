@@ -1,0 +1,70 @@
+{
+  "artifact": "RESOLUTION_STRATEGY_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/resolution_strategy_runtime.py",
+  "test_file": "tests/test_resolution_strategy_runtime_v1.py",
+  "implemented_scope": {
+    "deterministic_strategy_selection": true,
+    "self_resolution_strategy": true,
+    "provider_strategy": true,
+    "constitutional_memory_runtime": false,
+    "governance_runtime": false,
+    "replay_runtime": false,
+    "worker_runtime": false,
+    "combined_strategy_runtime": false,
+    "execution_implemented": false,
+    "approval_implemented": false,
+    "provider_invocation_implemented": false
+  },
+  "runtime_artifact": "RESOLUTION_STRATEGY_SELECTION_ARTIFACT_V1",
+  "supported_strategies": [
+    "SELF_RESOLUTION",
+    "PROVIDER"
+  ],
+  "required_fields": [
+    "strategy_id",
+    "selected_strategy",
+    "selection_reason",
+    "human_prompt_reference",
+    "created_at"
+  ],
+  "runtime_events": [
+    "RESOLUTION_STRATEGY_SELECTED",
+    "RESOLUTION_STRATEGY_RETURNED"
+  ],
+  "acceptance_checks": {
+    "self_resolution_selection_recorded": "PASSED",
+    "provider_selection_recorded": "PASSED",
+    "strategy_selection_artifact_persisted": "PASSED",
+    "strategy_return_artifact_persisted": "PASSED",
+    "replay_reconstruction_supported": "PASSED",
+    "missing_prompt_fails_closed": "PASSED",
+    "missing_fields_fail_closed": "PASSED",
+    "invalid_strategy_fails_closed": "PASSED",
+    "invalid_reference_fails_closed": "PASSED",
+    "corrupt_replay_fails_closed": "PASSED",
+    "duplicate_replay_fails_closed": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_resolution_strategy_runtime_v1.py",
+    "passed": 15,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "authority": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "provider_authority": false,
+    "provider_used": false,
+    "worker_required": false,
+    "worker_invoked": false,
+    "proposal_lifecycle_required": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "RESOLUTION_STRATEGY_RUNTIME_STATUS": "CERTIFIED"
+  }
+}
