@@ -1,0 +1,92 @@
+{
+  "artifact": "PROVIDER_RESPONSE_ALIGNMENT_FAILURE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "scope": {
+    "source_epoch": "THIRD_REAL_CONVERSATIONAL_USAGE_EPOCH_V1",
+    "runtime_root": "/tmp/aigol_third_conversation_epoch",
+    "analysis_only": true,
+    "runtime_modified": false,
+    "providers_modified": false,
+    "governance_modified": false,
+    "replay_modified": false
+  },
+  "observed_counts": {
+    "prompts_submitted": 50,
+    "failed_responses": 44,
+    "provider_responses_returned_in_failed_operations": 35,
+    "provider_attempts_without_returned_response": 5,
+    "provider_assisted_final_responses": 0
+  },
+  "rejection_taxonomy": {
+    "classification_contract_mismatch": {
+      "count": 27,
+      "percentage_of_returned_provider_responses": "77.14%",
+      "rejected_gate": "PROVIDER_ASSISTED_INTENT_GOVERNANCE_VALIDATION",
+      "failed_field": "suggested_destination",
+      "primary_failure_reason": "suggested_destination is required"
+    },
+    "authority_bearing_text_detection": {
+      "count": 8,
+      "percentage_of_returned_provider_responses": "22.86%",
+      "rejected_gate": "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_VALIDATION",
+      "failed_field": "suggested_response_text",
+      "primary_failure_reason": "provider conversation response contains authority-bearing text"
+    },
+    "response_contract_mismatch": {
+      "count": 0,
+      "percentage_of_returned_provider_responses": "0.00%"
+    },
+    "replay_validation_failure": {
+      "count": 0,
+      "percentage_of_returned_provider_responses": "0.00%"
+    },
+    "ambiguity_detection": {
+      "count": 0,
+      "percentage_of_returned_provider_responses": "0.00%"
+    },
+    "other": {
+      "count": 0,
+      "percentage_of_returned_provider_responses": "0.00%"
+    }
+  },
+  "semantic_assessment": {
+    "domain_relevant_provider_responses": 35,
+    "safely_acceptable_as_explanatory_conversation_after_alignment": 28,
+    "potentially_acceptable_only_with_replay_evidence_caveat": 7,
+    "unsafe_due_observed_authority_or_worker_execution_request": 0,
+    "provider_responses_mostly_correct_but_rejected": true,
+    "provider_responses_mostly_poor_quality": false
+  },
+  "authority_marker_counts_in_conversation_rejections": {
+    "authorized": 6,
+    "governance decision": 6,
+    "dispatch": 1,
+    "i authorize": 0,
+    "execute the worker": 0,
+    "worker must execute": 0,
+    "authorization granted": 0
+  },
+  "evidence_references": {
+    "third_epoch_certification": "governance/THIRD_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "classification_failure_example": "/tmp/aigol_third_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/000_provider_intent_governance_validation.json",
+    "classification_provider_response_example": "/tmp/aigol_third_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/provider_semantic_assistance/000_provider_proposal_created.json",
+    "authority_failure_example": "/tmp/aigol_third_conversation_epoch/case_12/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response/002_provider_conversation_response_validation.json",
+    "authority_provider_response_example": "/tmp/aigol_third_conversation_epoch/case_12/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response/provider_conversation_response/000_provider_proposal_created.json",
+    "classification_contract_source": "aigol/runtime/provider_assisted_intent_classification.py",
+    "conversation_validation_source": "aigol/runtime/provider_assisted_conversation_runtime.py"
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_visibility_preserved": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "PROVIDER_RESPONSE_ALIGNMENT_FAILURE_STATUS": "READY_WITH_GAPS"
+  }
+}
