@@ -1,0 +1,95 @@
+{
+  "artifact": "FOURTH_REAL_CONVERSATIONAL_USAGE_CERTIFICATION",
+  "version": "V1",
+  "status": "READY_WITH_GAPS",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "operational_scope": {
+    "interface_used": "python -m aigol.cli.aigol_cli prompt submit",
+    "runtime_root": "/tmp/aigol_fourth_conversation_epoch",
+    "same_prompt_set_as_second_and_third_epochs": true,
+    "prompts_modified": false,
+    "runtime_modified_for_epoch": false,
+    "provider_behavior_modified_for_epoch": false,
+    "governance_layer_modified_for_epoch": false,
+    "replay_architecture_modified_for_epoch": false,
+    "worker_architecture_modified_for_epoch": false
+  },
+  "aggregate_results": {
+    "prompts_submitted": 50,
+    "responses_created": 16,
+    "fail_closed_or_non_conversation_outcomes": 34,
+    "success_rate": "32%",
+    "conversation_classifications": 19,
+    "constitutional_memory_classifications": 1,
+    "unclassified_prompts": 30,
+    "conversation_routings": 19,
+    "constitutional_memory_routings": 1,
+    "unrouted_prompts": 30,
+    "replay_visible_provider_responses": 37,
+    "conversation_stage_provider_responses": 8,
+    "provider_assisted_final_responses": 7,
+    "self_resolution_responses": 9,
+    "worker_invocations": 0,
+    "execution_requests": 0
+  },
+  "comparison": {
+    "second_epoch_success_rate": "12%",
+    "third_epoch_success_rate": "12%",
+    "fourth_epoch_success_rate": "32%",
+    "success_rate_delta_from_third_percentage_points": 20,
+    "responses_created_delta_from_third": 10,
+    "material_improvement_observed": true
+  },
+  "newly_successful_prompts": [
+    "How does AiGOL work?",
+    "Explain authorization.",
+    "Explain fail closed behavior.",
+    "Summarize recent progress.",
+    "Can AiGOL summarize progress?",
+    "Explain.",
+    "Summarize operation history.",
+    "How does AiGOL prevent provider authority?",
+    "How does AiGOL preserve worker isolation?",
+    "Explain AiGOL in Slovenian."
+  ],
+  "remaining_failure_taxonomy": {
+    "classification_failure": {
+      "count": 29,
+      "primary_evidence": "provider-assisted conversation failed closed: human_prompt is required"
+    },
+    "provider_failure": {
+      "count": 3,
+      "primary_evidence": "OpenAI provider unavailable"
+    },
+    "normalization_failure": {
+      "count": 1,
+      "primary_evidence": "provider conversation response contains authority-bearing text"
+    },
+    "other": {
+      "count": 1,
+      "primary_evidence": "CONSTITUTIONAL_MEMORY_CONSULTATION did not produce conversation response"
+    }
+  },
+  "evidence_references": {
+    "fourth_epoch_runtime_root": "/tmp/aigol_fourth_conversation_epoch",
+    "provider_assisted_success_example": "/tmp/aigol_fourth_conversation_epoch/case_13/AIGOL-HUMAN-PROMPT-34260AD00170/conversation_response",
+    "classification_failure_example": "/tmp/aigol_fourth_conversation_epoch/case_6/AIGOL-HUMAN-PROMPT-EFFB68CCCFC8/conversation_response/intent_classification/000_provider_intent_governance_validation.json",
+    "authority_validation_failure_example": "/tmp/aigol_fourth_conversation_epoch/case_12/AIGOL-HUMAN-PROMPT-8987B3838E74/conversation_response",
+    "second_epoch_certification": "governance/SECOND_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "third_epoch_certification": "governance/THIRD_REAL_CONVERSATIONAL_USAGE_CERTIFICATION.json",
+    "contract_refinement_certification": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_CERTIFICATION.json"
+  },
+  "boundary_certification": {
+    "provider_authority_introduced": false,
+    "provider_routing_authority_introduced": false,
+    "worker_authority_introduced": false,
+    "execution_authority_introduced": false,
+    "governance_authority_changed": false,
+    "replay_visibility_preserved": true,
+    "openai_api_key_persisted_or_exposed": false
+  },
+  "final_classification": {
+    "FOURTH_REAL_CONVERSATIONAL_USAGE_STATUS": "READY_WITH_GAPS"
+  }
+}
