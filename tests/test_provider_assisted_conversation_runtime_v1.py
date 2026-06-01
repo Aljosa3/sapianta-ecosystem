@@ -374,6 +374,28 @@ def test_authority_bearing_provider_response_fails_closed(tmp_path):
     assert "authority-bearing" in capture["failure_reason"]
 
 
+def test_explanatory_authority_vocabulary_is_accepted(tmp_path):
+    adapter = SemanticConversationProviderAdapter(
+        conversation_response={
+            "suggested_response_text": (
+                "Providers do not have authority to execute. AiGOL makes the governance decision, "
+                "and workers execute only after governed authorization."
+            ),
+            "response_reasoning": "Explains authority boundaries without claiming authority.",
+            "confidence": "HIGH",
+        }
+    )
+    capture = _run(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+    reconstructed = reconstruct_provider_assisted_conversation_replay(tmp_path / "conversation")
+
+    assert capture["conversation_status"] == "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED"
+    assert "Providers do not have authority to execute" in capture["response_text"]
+    assert capture["provider_response_authority"] is False
+    assert capture["execution_requested"] is False
+    assert capture["worker_invoked"] is False
+    assert reconstructed["response_text"] == capture["response_text"]
+
+
 def test_ambiguous_provider_response_fails_closed(tmp_path):
     adapter = SemanticConversationProviderAdapter(
         conversation_response={

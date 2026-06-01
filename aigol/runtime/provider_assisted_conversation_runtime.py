@@ -779,16 +779,21 @@ def _provider_proposal_hash(provider_capture: dict[str, Any] | None) -> str | No
 
 def _looks_authority_bearing(text: str) -> bool:
     lowered = text.lower()
-    markers = (
-        "authorized",
+    forbidden_claims = (
         "i authorize",
+        "we authorize",
+        "authorization granted",
+        "authorized to proceed",
+        "you are authorized",
+        "i approve",
+        "approved for execution",
         "execute the worker",
         "worker must execute",
-        "dispatch",
-        "governance decision",
-        "authorization granted",
+        "dispatch the worker",
+        "run the worker",
+        "invoke the worker now",
     )
-    return any(marker in lowered for marker in markers)
+    return any(claim in lowered for claim in forbidden_claims)
 
 
 def _ensure_replay_available(replay_path: Path) -> None:

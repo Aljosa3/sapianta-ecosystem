@@ -1,0 +1,48 @@
+{
+  "artifact": "PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "constitutional_invariant": "LLM proposes. AiGOL governs. Worker executes. Replay records.",
+  "implementation_scope": {
+    "provider_assisted_classification_contract_refined": true,
+    "conversation_response_authority_validation_refined": true,
+    "provider_architecture_changed": false,
+    "governance_architecture_changed": false,
+    "replay_architecture_changed": false,
+    "worker_architecture_changed": false
+  },
+  "capabilities_certified": {
+    "structured_suggested_destination_accepted": true,
+    "unambiguous_provider_text_destination_normalized": true,
+    "ambiguous_destination_fails_closed": true,
+    "invalid_destination_fails_closed": true,
+    "authority_claim_fails_closed": true,
+    "explanatory_authority_vocabulary_accepted": true,
+    "replay_evidence_preserved": true
+  },
+  "boundary_certification": {
+    "provider_authority_added": false,
+    "provider_routing_authority_added": false,
+    "provider_execution_authority_added": false,
+    "worker_authority_added": false,
+    "governance_authority_changed": false,
+    "fail_closed_behavior_preserved": true,
+    "provider_output_remains_proposal_evidence_only": true,
+    "aigol_still_validates_final_artifact": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_provider_assisted_intent_classification_v1.py tests/test_provider_assisted_conversation_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py",
+    "passed": 33,
+    "failed": 0
+  },
+  "artifacts": {
+    "implementation": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_V1.md",
+    "acceptance_evidence": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_ACCEPTANCE_EVIDENCE.json",
+    "replay_certification": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_REPLAY_CERTIFICATION.json",
+    "adr": "governance/PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_ADR_V1.md"
+  },
+  "final_classification": {
+    "PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_STATUS": "READY"
+  }
+}

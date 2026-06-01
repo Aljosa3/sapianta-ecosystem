@@ -25,6 +25,7 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 
 
 PROVIDER_ASSISTED_CLASSIFIER_VERSION = "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_V1"
+NORMALIZED_PROVIDER_TEXT_CONFIDENCE = "PROVIDER_TEXT_NORMALIZED"
 MINIMAL_PROVIDER_CONTEXT_CAPSULE_VERSION = "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1"
 MINIMAL_PROVIDER_CONTEXT_CAPSULE_LINES = (
     "AiGOL is a constitutional AI execution governance system.",
@@ -295,18 +296,38 @@ def _extract_provider_suggestion(provider_capture: dict[str, Any]) -> dict[str, 
     envelope = provider_capture.get("provider_proposal_envelope")
     if not isinstance(envelope, dict):
         raise FailClosedRuntimeError("provider assistance envelope is required")
+    request = envelope.get("request")
+    if not isinstance(request, dict):
+        raise FailClosedRuntimeError("provider assistance request evidence is required")
     response = envelope.get("response")
     if not isinstance(response, dict):
         raise FailClosedRuntimeError("provider suggestion response must be a JSON object")
-    suggestion = {
-        "suggested_destination": _require_string(response.get("suggested_destination"), "suggested_destination"),
-        "classification_reasoning": _require_string(response.get("classification_reasoning"), "classification_reasoning"),
-        "confidence": _require_string(response.get("confidence"), "confidence"),
-    }
+    _reject_multiple_destinations(response)
+    if _has_structured_classification_fields(response):
+        suggestion = {
+            "suggested_destination": _require_string(response.get("suggested_destination"), "suggested_destination"),
+            "classification_reasoning": _require_string(response.get("classification_reasoning"), "classification_reasoning"),
+            "confidence": _require_string(response.get("confidence"), "confidence"),
+        }
+    else:
+        response_text = _require_string(response.get("response_text"), "suggested_destination")
+        if _looks_authority_claim(response_text):
+            raise FailClosedRuntimeError("provider suggestion contains authority-bearing text")
+        suggestion = {
+            "suggested_destination": _infer_destination_from_provider_text(
+                response_text=response_text,
+                human_prompt=_require_string(request.get("human_prompt"), "human_prompt"),
+            ),
+            "classification_reasoning": "deterministically normalized from provider response_text",
+            "confidence": NORMALIZED_PROVIDER_TEXT_CONFIDENCE,
+        }
     if suggestion["suggested_destination"] not in VALID_DESTINATIONS:
         raise FailClosedRuntimeError("provider suggested invalid destination")
-    _reject_multiple_destinations(response)
     return suggestion
+
+
+def _has_structured_classification_fields(response: dict[str, Any]) -> bool:
+    return any(key in response for key in ("suggested_destination", "classification_reasoning", "confidence"))
 
 
 def _reject_multiple_destinations(response: dict[str, Any]) -> None:
@@ -316,6 +337,68 @@ def _reject_multiple_destinations(response: dict[str, Any]) -> None:
     alternates = response.get("alternate_destinations")
     if isinstance(alternates, list) and alternates:
         raise FailClosedRuntimeError("provider suggestion is ambiguous")
+
+
+def _infer_destination_from_provider_text(*, response_text: str, human_prompt: str) -> str:
+    text = _require_string(response_text, "response_text").lower()
+    prompt = _require_string(human_prompt, "human_prompt").lower()
+    named_destinations = {destination for destination in VALID_DESTINATIONS if destination.lower() in text}
+    if len(named_destinations) > 1:
+        raise FailClosedRuntimeError("provider suggestion is ambiguous")
+    if len(named_destinations) == 1:
+        return next(iter(named_destinations))
+
+    indicators: dict[str, bool] = {
+        "CONSTITUTIONAL_MEMORY_CONSULTATION": "constitutional memory" in text or ("constitution" in text and "consult" in text),
+        "EXECUTION_REQUEST": "execution request" in text or "side-effectful" in text or "worker capability" in text,
+        "PROVIDER_PROPOSAL": "provider proposal" in text and "classification" not in text,
+        "CONVERSATION": _looks_like_conversation_prompt(prompt)
+        or "conversational question" in text
+        or "asks about" in text
+        or "explanation" in text
+        or "explain" in text,
+    }
+    matches = [destination for destination, matched in indicators.items() if matched]
+    if len(matches) != 1:
+        raise FailClosedRuntimeError("provider suggestion is ambiguous")
+    return matches[0]
+
+
+def _looks_like_conversation_prompt(prompt: str) -> bool:
+    normalized = _require_string(prompt, "human_prompt").lower().strip()
+    conversational_starts = (
+        "what ",
+        "why ",
+        "how ",
+        "when ",
+        "can ",
+        "explain",
+        "kaj ",
+        "kako ",
+        "povej ",
+    )
+    if normalized.endswith("?") or normalized.startswith(conversational_starts):
+        return True
+    return False
+
+
+def _looks_authority_claim(text: str) -> bool:
+    lowered = _require_string(text, "response_text").lower()
+    forbidden_claims = (
+        "i authorize",
+        "we authorize",
+        "authorization granted",
+        "authorized to proceed",
+        "you are authorized",
+        "i approve",
+        "approved for execution",
+        "execute the worker",
+        "worker must execute",
+        "dispatch the worker",
+        "run the worker",
+        "invoke the worker now",
+    )
+    return any(claim in lowered for claim in forbidden_claims)
 
 
 def _validation_artifact(

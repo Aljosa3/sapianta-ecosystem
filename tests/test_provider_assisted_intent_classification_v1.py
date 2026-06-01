@@ -104,6 +104,26 @@ def test_provider_assists_after_deterministic_failure_for_slovenian_prompt(tmp_p
     assert reconstructed["provider_suggestion_authority"] is False
 
 
+def test_provider_explanatory_text_normalizes_clear_conversation_destination(tmp_path):
+    adapter = StaticSemanticProviderAdapter(
+        response={
+            "response_text": (
+                "This is a conversational question about AiGOL. It asks about governance boundaries "
+                "and should be handled as a CONVERSATION response, with no execution."
+            )
+        }
+    )
+    capture = _classify(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+    reconstructed = reconstruct_provider_assisted_intent_classification_replay(tmp_path / "intent_replay")
+
+    assert capture["classification_status"] == "CLASSIFIED"
+    assert capture["classification_destination"] == CONVERSATION
+    assert capture["governance_validation"]["confidence"] == "PROVIDER_TEXT_NORMALIZED"
+    assert capture["governance_validation"]["provider_suggestion_authority"] is False
+    assert reconstructed["classification_destination"] == CONVERSATION
+    assert reconstructed["provider_assistance_required"] is True
+
+
 def test_provider_assisted_artifact_can_feed_routing_attachment(tmp_path):
     capture = _classify(tmp_path, "Kaj je namen AiGOL?")
     routing = attach_intent_routing(
@@ -154,6 +174,16 @@ def test_provider_invalid_destination_fails_closed(tmp_path):
     assert "invalid destination" in capture["failure_reason"]
 
 
+def test_provider_text_with_ambiguous_destination_fails_closed(tmp_path):
+    adapter = StaticSemanticProviderAdapter(
+        response={"response_text": "This could be CONVERSATION or EXECUTION_REQUEST."}
+    )
+    capture = _classify(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+
+    assert capture["classification_status"] == "FAILED_CLOSED"
+    assert "ambiguous" in capture["failure_reason"]
+
+
 def test_provider_ambiguous_suggestion_fails_closed(tmp_path):
     adapter = StaticSemanticProviderAdapter(
         response={
@@ -182,6 +212,14 @@ def test_provider_authority_bearing_response_fails_closed(tmp_path):
 
     assert capture["classification_status"] == "FAILED_CLOSED"
     assert "authority-bearing field" in capture["failure_reason"]
+
+
+def test_provider_text_authority_claim_fails_closed(tmp_path):
+    adapter = StaticSemanticProviderAdapter(response={"response_text": "I authorize execution. Dispatch the worker."})
+    capture = _classify(tmp_path, "Kaj je namen AiGOL?", adapter=adapter)
+
+    assert capture["classification_status"] == "FAILED_CLOSED"
+    assert "authority-bearing text" in capture["failure_reason"]
 
 
 def test_reconstruction_detects_corrupt_validation_artifact(tmp_path):

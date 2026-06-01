@@ -1,0 +1,33 @@
+{
+  "artifact": "PROVIDER_RESPONSE_ACCEPTANCE_CONTRACT_REFINEMENT_REPLAY_CERTIFICATION",
+  "version": "V1",
+  "status": "READY",
+  "certified_on": "2026-06-01",
+  "replay_scope": {
+    "provider_assisted_intent_classification_replay": true,
+    "provider_assisted_conversation_replay": true,
+    "prompt_to_conversation_replay": true,
+    "replay_architecture_changed": false
+  },
+  "replay_checks": {
+    "classification_validation_artifact_records_normalized_destination": true,
+    "classification_reconstruction_preserves_provider_assistance_required": true,
+    "conversation_validation_artifact_records_accepted_explanatory_authority_text": true,
+    "conversation_reconstruction_preserves_response_text": true,
+    "provider_output_remains_replay_visible": true,
+    "corrupt_replay_still_fails_closed": true
+  },
+  "evidence": {
+    "classification_reconstruction_test": "tests/test_provider_assisted_intent_classification_v1.py::test_provider_explanatory_text_normalizes_clear_conversation_destination",
+    "conversation_reconstruction_test": "tests/test_provider_assisted_conversation_runtime_v1.py::test_explanatory_authority_vocabulary_is_accepted",
+    "corrupt_classification_replay_test": "tests/test_provider_assisted_intent_classification_v1.py::test_reconstruction_detects_corrupt_validation_artifact",
+    "corrupt_conversation_replay_test": "tests/test_provider_assisted_conversation_runtime_v1.py::test_reconstruction_detects_corrupt_response_artifact",
+    "prompt_integration_replay_test": "tests/test_prompt_to_conversation_integration_v1.py::test_reconstruct_detects_corrupt_conversation_response"
+  },
+  "boundary_certification": {
+    "append_only_replay_preserved": true,
+    "provider_replay_authority": false,
+    "worker_invoked_by_replay": false,
+    "execution_requested_by_replay": false
+  }
+}
