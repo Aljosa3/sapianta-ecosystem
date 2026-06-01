@@ -1,0 +1,81 @@
+{
+  "artifact": "WORKER_RUNTIME_V1_CERTIFICATION",
+  "runtime": "WORKER_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "classification": "WORKER_RUNTIME_STATUS = CERTIFIED",
+  "implemented_artifacts": [
+    "aigol/runtime/worker_runtime.py",
+    "tests/test_worker_runtime_v1.py",
+    "governance/WORKER_RUNTIME_V1.md",
+    "governance/WORKER_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "governance/WORKER_RUNTIME_V1_CERTIFICATION.json"
+  ],
+  "implemented_capability": {
+    "worker_registration": true,
+    "worker_assignment": true,
+    "assignment_source": "READY_FOR_DISPATCH",
+    "worker_artifact": "WORKER_ARTIFACT_V1",
+    "assignment_artifact": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "mutation_model": "append-only registration and assignment artifacts"
+  },
+  "supported_states": {
+    "worker": [
+      "AVAILABLE",
+      "ASSIGNED",
+      "UNAVAILABLE"
+    ],
+    "assignment": [
+      "ASSIGNED"
+    ]
+  },
+  "replay_guarantees": {
+    "registration_events_persisted": true,
+    "assignment_events_persisted": true,
+    "ordered_reconstruction": true,
+    "artifact_hash_verified": true,
+    "wrapper_hash_verified": true,
+    "worker_reference_integrity_verified": true,
+    "readiness_reference_integrity_verified": true,
+    "duplicate_assignment_rejected": true
+  },
+  "fail_closed_guarantees": {
+    "invalid_worker": true,
+    "duplicate_assignment": true,
+    "worker_unavailable": true,
+    "invalid_readiness_artifact": true,
+    "corrupt_references": true,
+    "unsupported_request_type": true,
+    "provider_authority": true,
+    "worker_self_assignment": true,
+    "dispatch_attempt": true,
+    "execution_attempt": true,
+    "completion_attempt": true
+  },
+  "boundaries": {
+    "dispatch_implemented": false,
+    "execution_implemented": false,
+    "completion_implemented": false,
+    "provider_authority_granted": false,
+    "worker_self_authority_granted": false,
+    "automatic_authorization_granted": false
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_worker_runtime_v1.py",
+      "result": "23 passed"
+    }
+  },
+  "constitutional_invariant": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "worker_executes": "not implemented in this runtime",
+    "replay_records": true
+  },
+  "known_gaps": [
+    "Dispatch remains future work",
+    "Worker execution remains future work",
+    "Execution completion remains future work",
+    "Worker result persistence remains future work"
+  ],
+  "final_classification": "CERTIFIED"
+}

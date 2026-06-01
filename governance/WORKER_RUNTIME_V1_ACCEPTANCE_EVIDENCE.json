@@ -1,0 +1,68 @@
+{
+  "artifact": "WORKER_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "runtime": "WORKER_RUNTIME_V1",
+  "status": "ACCEPTED",
+  "implementation": {
+    "module": "aigol/runtime/worker_runtime.py",
+    "tests": "tests/test_worker_runtime_v1.py",
+    "worker_artifact": "WORKER_ARTIFACT_V1",
+    "assignment_artifact": "WORKER_ASSIGNMENT_ARTIFACT_V1"
+  },
+  "runtime_entrypoints": [
+    "register_worker",
+    "assign_worker",
+    "reconstruct_worker_registration_replay",
+    "reconstruct_worker_assignment_replay"
+  ],
+  "supported_worker_states": [
+    "AVAILABLE",
+    "ASSIGNED",
+    "UNAVAILABLE"
+  ],
+  "assignment_eligibility": [
+    "Worker artifact must be valid",
+    "Worker state must be AVAILABLE",
+    "Readiness artifact must be valid",
+    "Readiness status must be READY_FOR_DISPATCH",
+    "Readiness replay must match readiness artifact",
+    "Worker must support readiness request type",
+    "Assignment must be performed by AIGOL",
+    "Provider authority must remain false",
+    "Worker self-assignment must remain false",
+    "Worker dispatch must remain false",
+    "Execution performed must remain false",
+    "Completion recorded must remain false"
+  ],
+  "replay_events": [
+    "WORKER_REGISTERED",
+    "WORKER_REGISTRATION_RETURNED",
+    "WORKER_ASSIGNED",
+    "WORKER_ASSIGNMENT_RETURNED"
+  ],
+  "fail_closed_cases_tested": [
+    "Invalid worker registration fields",
+    "Missing worker",
+    "Worker unavailable",
+    "Worker already assigned",
+    "Invalid readiness artifact",
+    "Corrupt readiness reference",
+    "Unsupported request type",
+    "Duplicate assignment",
+    "Provider authority in worker artifact",
+    "Corrupt worker registration replay",
+    "Corrupt worker assignment replay",
+    "Corrupt worker assignment ordering"
+  ],
+  "boundary_evidence": {
+    "dispatch_implemented": false,
+    "worker_invocation_implemented": false,
+    "execution_implemented": false,
+    "completion_implemented": false,
+    "provider_authority": false,
+    "worker_self_assigned": false,
+    "automatic_authorization": false
+  },
+  "validation_command": "python -m pytest tests/test_worker_runtime_v1.py",
+  "validation_result": "23 passed",
+  "final_classification": "CERTIFIED"
+}
