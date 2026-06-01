@@ -1,0 +1,42 @@
+{
+  "artifact": "INTERACTIVE_CONVERSATION_CLI_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "INTERACTIVE_CONVERSATION_CLI_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "entrypoint": "aigol conversation",
+    "conversation_only": true,
+    "worker_execution": false,
+    "dispatch": false,
+    "invocation": false,
+    "memory_implementation": false
+  },
+  "certified_properties": {
+    "human_interactive_entry": true,
+    "source_of_truth_router_reuse": true,
+    "conversational_runtime_reuse": true,
+    "replay_visible_turns": true,
+    "graceful_exit": true,
+    "fail_closed_on_runtime_errors": true,
+    "provider_authority_absent": true,
+    "worker_authority_absent": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may propose conversation text only through existing conversation runtime.",
+    "aigol_governs": "AiGOL records source routing and applies existing conversation governance.",
+    "worker_executes": "No worker execution exists in this CLI boundary.",
+    "replay_records": "Router and conversation replay artifacts are persisted per interactive turn."
+  },
+  "evidence": [
+    "aigol/cli/aigol_cli.py",
+    "tests/test_interactive_conversation_cli_v1.py",
+    "governance/INTERACTIVE_CONVERSATION_CLI_V1.md",
+    "governance/INTERACTIVE_CONVERSATION_CLI_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "The interactive CLI does not implement conversational memory.",
+    "Provider-assisted prompts may still depend on configured provider availability through the existing conversation runtime.",
+    "The session summary is returned to callers of the helper; durable replay evidence is provided by the underlying router and conversation runtimes."
+  ]
+}

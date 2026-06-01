@@ -1,0 +1,64 @@
+{
+  "artifact": "INTERACTIVE_CONVERSATION_CLI_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "INTERACTIVE_CONVERSATION_CLI_STATUS": "CERTIFIED"
+  },
+  "runtime_entrypoint": "python -m aigol.cli.aigol_cli conversation",
+  "implemented_capabilities": {
+    "interactive_prompt_loop": true,
+    "graceful_exit_exit": true,
+    "graceful_exit_quit": true,
+    "eof_exit": true,
+    "conversational_runtime_reused": true,
+    "source_of_truth_router_reused": true,
+    "replay_visible_router_events": true,
+    "replay_visible_conversation_events": true,
+    "fail_closed_runtime_errors": true
+  },
+  "forbidden_capabilities_absent": {
+    "worker_execution": true,
+    "worker_assignment": true,
+    "dispatch": true,
+    "worker_invocation": true,
+    "proposal_mutation": true,
+    "approval_changes": true,
+    "memory_implementation": true
+  },
+  "mandatory_turn_fields": [
+    "turn_id",
+    "prompt_id",
+    "selected_source",
+    "selection_reason",
+    "response_status",
+    "response_source",
+    "fail_closed",
+    "replay_reference",
+    "conversation_replay_reference",
+    "source_router_replay_reference"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+      "result": "PASSED",
+      "test_count": 6
+    },
+    "integration_tests": {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_prompt_to_conversation_integration_v1.py tests/test_source_of_truth_router_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 38
+    },
+    "cli_smoke": {
+      "command": "printf 'What is AiGOL?\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --runtime-root /tmp/aigol_interactive_cli_smoke --session-id INTERACTIVE-SMOKE-000001",
+      "result": "PASSED",
+      "observed_response": "AiGOL is a governed AI operation path that separates proposal, governance, worker execution, and replay evidence."
+    }
+  },
+  "replay_guarantees": {
+    "router_selection_recorded": true,
+    "prompt_ingress_recorded": true,
+    "conversation_response_recorded": true,
+    "turn_references_returned": true,
+    "append_only_runtime_artifacts_reused": true
+  }
+}

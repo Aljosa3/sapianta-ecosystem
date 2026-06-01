@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 from typing import Any
 
 from aigol.cli.commands.cognition import (
@@ -77,6 +78,11 @@ from aigol.moc.proposal_persistence import render_proposal_persistence_summary
 from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
+from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
+
+
+INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
+INTERACTIVE_EXIT_COMMANDS = frozenset({"exit", "quit"})
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -176,6 +182,12 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_submit.add_argument("--created-at", default="2026-06-01T00:00:00Z")
     prompt_submit.add_argument("--runtime-root", default=".aigol_prompt_runtime")
     prompt_submit.add_argument("--operator-context", default="operator_cli")
+
+    conversation = subcommands.add_parser("conversation")
+    conversation.add_argument("--session-id", default="AIGOL-INTERACTIVE-CONVERSATION-000001")
+    conversation.add_argument("--created-at", default="2026-06-01T00:00:00Z")
+    conversation.add_argument("--runtime-root", default=".aigol_conversation_runtime")
+    conversation.add_argument("--operator-context", default="interactive_conversation_cli")
 
     run_governed = subcommands.add_parser("run-governed")
     run_governed.add_argument("--worker", required=True)
@@ -329,6 +341,163 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def run_interactive_conversation(
+    args: argparse.Namespace,
+    *,
+    input_func: Any | None = None,
+    output_func: Any | None = None,
+) -> dict[str, Any]:
+    input_reader = input if input_func is None else input_func
+    output_writer = print if output_func is None else output_func
+    session_id = _require_cli_string(args.session_id, "session_id")
+    created_at = _require_cli_string(args.created_at, "created_at")
+    runtime_root = Path(args.runtime_root)
+    session_root = runtime_root / session_id
+    turns: list[dict[str, Any]] = []
+    turn_count = 0
+    failed_turns = 0
+    exit_reason = "EXIT_COMMAND"
+
+    while True:
+        try:
+            raw_prompt = input_reader("AiGOL > ")
+        except EOFError:
+            exit_reason = "EOF"
+            break
+
+        human_prompt = raw_prompt.strip()
+        if not human_prompt:
+            continue
+        if human_prompt.lower() in INTERACTIVE_EXIT_COMMANDS:
+            break
+
+        turn_count += 1
+        turn_id = f"TURN-{turn_count:06d}"
+        prompt_id = f"{session_id}:{turn_id}"
+        turn_root = session_root / turn_id
+        try:
+            router_capture = route_source_of_truth(
+                router_id=f"{prompt_id}:SOURCE_ROUTER",
+                human_prompt_reference=prompt_id,
+                human_prompt=human_prompt,
+                created_at=created_at,
+                replay_dir=turn_root / "source_router",
+            )
+            conversation_capture = submit_prompt_to_conversation(
+                human_prompt=human_prompt,
+                prompt_id=prompt_id,
+                created_at=created_at,
+                replay_dir=session_root / "prompt_runtime",
+                operator_context=args.operator_context,
+            )
+            fail_closed = conversation_capture.get("fail_closed") is True
+            if fail_closed:
+                failed_turns += 1
+                failure_reason = conversation_capture.get("failure_reason") or "conversation failed closed"
+                output_writer(f"FAILED_CLOSED: {failure_reason}")
+            else:
+                output_writer(conversation_capture.get("response_text", ""))
+            turns.append(
+                _interactive_turn_summary(
+                    turn_id=turn_id,
+                    prompt_id=prompt_id,
+                    router_capture=router_capture,
+                    conversation_capture=conversation_capture,
+                    source_router_replay_reference=str(turn_root / "source_router"),
+                    failure_reason=conversation_capture.get("failure_reason"),
+                )
+            )
+        except Exception as exc:
+            failed_turns += 1
+            failure_reason = str(exc) or "interactive conversation failed closed"
+            output_writer(f"FAILED_CLOSED: {failure_reason}")
+            turns.append(
+                _interactive_failed_turn_summary(
+                    turn_id=turn_id,
+                    prompt_id=prompt_id,
+                    source_router_replay_reference=str(turn_root / "source_router"),
+                    failure_reason=failure_reason,
+                )
+            )
+
+    return {
+        "command": "aigol conversation",
+        "interactive_conversation_cli_version": INTERACTIVE_CONVERSATION_CLI_VERSION,
+        "session_id": session_id,
+        "turn_count": turn_count,
+        "failed_turns": failed_turns,
+        "exit_reason": exit_reason,
+        "runtime_root": str(session_root),
+        "replay_visible": True,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+        "turns": turns,
+    }
+
+
+def _interactive_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversation_capture: dict[str, Any],
+    source_router_replay_reference: str,
+    failure_reason: str | None,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": conversation_capture.get("response_status"),
+        "response_source": conversation_capture.get("response_source"),
+        "fail_closed": conversation_capture.get("fail_closed") is True,
+        "failure_reason": failure_reason,
+        "replay_reference": conversation_capture.get("replay_reference"),
+        "conversation_replay_reference": conversation_capture.get("conversation_replay_reference"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+    }
+
+
+def _interactive_failed_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    source_router_replay_reference: str,
+    failure_reason: str,
+) -> dict[str, Any]:
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": "FAILED_CLOSED",
+        "selection_reason": "Interactive conversation failed closed before a complete turn could be returned.",
+        "response_status": "FAILED_CLOSED",
+        "response_source": "UNAVAILABLE",
+        "fail_closed": True,
+        "failure_reason": failure_reason,
+        "replay_reference": None,
+        "conversation_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+    }
+
+
+def _require_cli_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field_name} is required")
+    return value.strip()
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -379,6 +548,18 @@ def run_command(args: argparse.Namespace) -> dict:
             replay_dir=args.runtime_root,
             operator_context=args.operator_context,
         )
+    if args.command == "conversation":
+        return {
+            "command": "aigol conversation",
+            "interactive_conversation_cli_version": INTERACTIVE_CONVERSATION_CLI_VERSION,
+            "session_id": args.session_id,
+            "runtime_root": str(Path(args.runtime_root) / args.session_id),
+            "replay_visible": True,
+            "worker_invoked": False,
+            "execution_requested": False,
+            "dispatch_requested": False,
+            "invocation_requested": False,
+        }
     if args.command == "run-governed":
         return run_governed_operation_command(
             worker=args.worker,
@@ -762,6 +943,22 @@ def render_command_result(result: dict) -> str:
                 f"failure_reason: {result.get('failure_reason') or ''}",
             ],
         )
+    if command == "aigol conversation":
+        return render_card(
+            "AIGOL CONVERSATION",
+            [
+                f"session_id: {result.get('session_id')}",
+                f"runtime_root: {result.get('runtime_root')}",
+                f"turn_count: {result.get('turn_count', 0)}",
+                f"failed_turns: {result.get('failed_turns', 0)}",
+                f"exit_reason: {result.get('exit_reason', '')}",
+                f"replay_visible: {result.get('replay_visible')}",
+                f"worker_invoked: {result.get('worker_invoked')}",
+                f"execution_requested: {result.get('execution_requested')}",
+                f"dispatch_requested: {result.get('dispatch_requested')}",
+                f"invocation_requested: {result.get('invocation_requested')}",
+            ],
+        )
     if command == "aigol run-governed":
         return render_card(
             "AIGOL RUN GOVERNED",
@@ -950,6 +1147,11 @@ def render_command_result(result: dict) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.command == "conversation":
+        result = run_interactive_conversation(args)
+        if getattr(args, "json", False):
+            print(_json(result))
+        return 0
     result = run_command(args)
     if getattr(args, "json", False):
         print(_json(result))
