@@ -1,0 +1,88 @@
+{
+  "artifact": "PROPOSAL_APPROVAL_RUNTIME_V1_CERTIFICATION",
+  "version": "V1",
+  "certified_on": "2026-06-01",
+  "status": "CERTIFIED",
+  "runtime_file": "aigol/runtime/proposal_approval_runtime.py",
+  "test_file": "tests/test_proposal_approval_runtime_v1.py",
+  "certified_scope": "minimal replay-visible proposal approval disposition runtime",
+  "implemented": {
+    "accept_valid_proposal_artifacts": true,
+    "create_replay_visible_approval_events": true,
+    "persist_approval_decisions": true,
+    "reconstruct_approval_history": true,
+    "fail_closed_validation": true
+  },
+  "not_implemented": {
+    "execution": true,
+    "worker_dispatch": true,
+    "provider_approval": true,
+    "automatic_approval": true,
+    "execution_requests": true
+  },
+  "supported_transitions": [
+    "CREATED -> APPROVED",
+    "CREATED -> REJECTED",
+    "CREATED -> EXPIRED"
+  ],
+  "approval_artifact": "PROPOSAL_APPROVAL_ARTIFACT_V1",
+  "runtime_events": [
+    "PROPOSAL_APPROVED",
+    "PROPOSAL_REJECTED",
+    "PROPOSAL_APPROVAL_EXPIRED",
+    "PROPOSAL_APPROVAL_RETURNED"
+  ],
+  "fail_closed_cases": [
+    "missing proposal",
+    "corrupt proposal artifact",
+    "invalid proposal status",
+    "non-AiGOL proposal creator",
+    "invalid human decision",
+    "missing approval fields",
+    "duplicate approval replay artifacts",
+    "corrupt approval artifact",
+    "corrupt replay wrapper",
+    "replay ordering corruption",
+    "approval reference mismatch",
+    "execution request creation",
+    "provider approval",
+    "worker approval",
+    "automatic approval"
+  ],
+  "replay_reconstruction": {
+    "supported": true,
+    "requires_decision_event": true,
+    "requires_returned_event": true,
+    "verifies_wrapper_hashes": true,
+    "verifies_artifact_hashes": true,
+    "verifies_approval_reference": true,
+    "verifies_approval_hash": true,
+    "verifies_proposal_reference": true
+  },
+  "boundary_certification": {
+    "authority": false,
+    "provider_approval": false,
+    "worker_approval": false,
+    "automatic_approval": false,
+    "execution_requested": false,
+    "execution_request_created": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "constitutional_invariant": {
+    "llm": "proposes",
+    "aigol": "governs",
+    "worker": "executes",
+    "replay": "records",
+    "preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_proposal_approval_runtime_v1.py",
+    "passed": 19,
+    "failed": 0
+  },
+  "final_classification": {
+    "PROPOSAL_APPROVAL_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

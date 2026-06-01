@@ -1,0 +1,63 @@
+{
+  "artifact": "PROPOSAL_APPROVAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "accepted_on": "2026-06-01",
+  "runtime_file": "aigol/runtime/proposal_approval_runtime.py",
+  "test_file": "tests/test_proposal_approval_runtime_v1.py",
+  "implemented_scope": {
+    "proposal_approval_disposition": true,
+    "approved_transition": true,
+    "rejected_transition": true,
+    "expired_transition": true,
+    "execution_implemented": false,
+    "worker_dispatch_implemented": false,
+    "provider_approval_implemented": false,
+    "automatic_approval_implemented": false,
+    "execution_request_implemented": false
+  },
+  "supported_transitions": [
+    "CREATED -> APPROVED",
+    "CREATED -> REJECTED",
+    "CREATED -> EXPIRED"
+  ],
+  "runtime_events": [
+    "PROPOSAL_APPROVED",
+    "PROPOSAL_REJECTED",
+    "PROPOSAL_APPROVAL_EXPIRED",
+    "PROPOSAL_APPROVAL_RETURNED"
+  ],
+  "acceptance_checks": {
+    "valid_proposal_artifact_accepted": "PASSED",
+    "approval_event_created": "PASSED",
+    "rejection_event_created": "PASSED",
+    "expiration_event_created": "PASSED",
+    "approval_decision_persisted": "PASSED",
+    "approval_history_reconstructable": "PASSED",
+    "missing_proposal_fails_closed": "PASSED",
+    "invalid_transition_fails_closed": "PASSED",
+    "duplicate_approval_fails_closed": "PASSED",
+    "corrupt_replay_fails_closed": "PASSED",
+    "invalid_status_change_fails_closed": "PASSED",
+    "no_expanded_runtime_surface": "PASSED"
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_proposal_approval_runtime_v1.py",
+    "passed": 19,
+    "failed": 0
+  },
+  "boundary_evidence": {
+    "authority": false,
+    "provider_approval": false,
+    "worker_approval": false,
+    "automatic_approval": false,
+    "execution_requested": false,
+    "execution_request_created": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "replay_visible": true
+  },
+  "final_classification": {
+    "PROPOSAL_APPROVAL_RUNTIME_STATUS": "CERTIFIED"
+  }
+}
