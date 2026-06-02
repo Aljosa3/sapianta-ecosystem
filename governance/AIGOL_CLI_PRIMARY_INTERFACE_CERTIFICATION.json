@@ -1,111 +1,61 @@
 {
-  "artifact": "AIGOL_CLI_PRIMARY_INTERFACE_CERTIFICATION",
-  "status": "READY_WITH_GAPS",
-  "classification": {
+  "artifact": "AIGOL_CLI_PRIMARY_INTERFACE_CERTIFICATION_V1",
+  "review_type": "operator_focused_certification",
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "execution_authority_introduced": false,
+  "dispatch_introduced": false,
+  "invocation_introduced": false,
+  "governance_mutation_introduced": false,
+  "final_classification": {
     "AIGOL_CLI_PRIMARY_INTERFACE_STATUS": "READY_WITH_GAPS"
   },
-  "readiness_level": "CLI Operational Tool",
-  "not_yet_readiness_level": "CLI Primary Interface",
-  "scope": {
-    "review_only": true,
-    "runtime_implemented": false,
-    "cli_modified": false,
-    "governance_existing_artifacts_modified": false,
-    "replay_modified": false,
-    "execution_request_created": false,
-    "worker_dispatch": false,
-    "worker_invocation": false,
-    "execution_performed": false
+  "readiness_estimate": "93-95%",
+  "certification_basis": {
+    "daily_cli_operation": "READY_WITH_GAPS",
+    "chain_inspection": "READY",
+    "learning_lifecycle_inspection": "READY",
+    "execution_lifecycle_inspection": "READY",
+    "replay_evidence_understanding": "READY_WITH_MANUAL_ARTIFACT_GAPS",
+    "conversation_to_inspection": "READY",
+    "copy_paste_replacement": "MAJORITY_REPLACEABLE"
   },
-  "validated_cli_capabilities": {
-    "interactive_conversation": true,
-    "prompt_submit": true,
-    "source_router_reuse": true,
-    "conversation_replay_visible": true,
-    "status_command": true,
-    "replay_ledger": true,
-    "replay_verify": true,
-    "replay_operation": true,
-    "replay_report": true,
-    "replay_explain": true,
-    "run_governed": true,
-    "model_of_control_commands": true,
-    "cognition_inspection_commands": true
-  },
-  "missing_primary_interface_capabilities": {
-    "unified_operator_dashboard": true,
-    "execution_lifecycle_artifact_inspection": true,
-    "governed_learning_artifact_inspection": true,
-    "implementation_plan_inspection": true,
-    "bridge_authorization_cli": true,
-    "runtime_approval_inbox": true,
-    "runtime_approval_decision_commands": true,
-    "unified_chain_reconstruction": true,
-    "source_aware_readiness_cli": true,
-    "conversation_guided_actions": true,
-    "durable_operator_session_context": true
-  },
-  "question_answers": {
-    "workflows_still_requiring_chatgpt_mediation": [
-      "governed learning workflow management from conversation",
-      "implementation plan inspection from conversation",
-      "bridge authorization from conversation",
-      "full chain replay reconstruction from conversation",
-      "runtime approval management from conversation",
-      "certification evidence generation from conversation"
-    ],
-    "workflows_available_entirely_from_cli": [
-      "interactive conversation",
-      "one-shot prompt submit",
-      "status",
-      "ingress generation",
-      "governance validation",
-      "continuity preview",
-      "execution handoff",
-      "return inspection",
-      "replay ledger and verification",
-      "governed operation reporting",
-      "model-of-control artifact commands",
-      "cognition inspection commands"
-    ],
-    "execution_chains_inspectable_from_cli": "PARTIAL",
-    "learning_chains_inspectable_from_cli": "PARTIAL_TO_NO_FIRST_CLASS_COMMAND",
-    "implementation_plans_inspectable_from_cli": "NO_DEDICATED_COMMAND",
-    "replay_chains_reconstructable_from_cli": "PARTIAL",
-    "approvals_manageable_from_cli": "PARTIAL",
-    "improvement_workflows_manageable_from_cli": "NOT_AS_COMPLETE_PRIMARY_WORKFLOW"
-  },
-  "constitutional_boundaries": {
-    "conversation_worker_authority": false,
-    "conversation_execution_authority": false,
-    "cli_provider_authority": false,
-    "cli_replay_mutation": false,
-    "cli_governance_mutation": false,
-    "automatic_approval": false,
-    "automatic_execution": false
-  },
-  "recommended_next_certification_targets": [
-    "AIGOL_CLI_RUNTIME_ARTIFACT_INSPECTION_V1",
-    "AIGOL_CLI_APPROVAL_MANAGEMENT_V1",
-    "AIGOL_CLI_GOVERNED_LEARNING_WORKFLOW_V1",
-    "AIGOL_CLI_IMPLEMENTATION_PLAN_INSPECTION_V1",
-    "AIGOL_CLI_BRIDGE_AUTHORIZATION_V1",
-    "AIGOL_CLI_UNIFIED_REPLAY_RECONSTRUCTION_V1"
+  "certified_capabilities_considered": [
+    "Execution Lifecycle",
+    "Governed Learning Lifecycle",
+    "Learning-to-Execution Bridge",
+    "Replay Inspector Worker",
+    "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1",
+    "CLI_CHAIN_INSPECTION_RUNTIME_V1",
+    "CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1",
+    "Interactive Conversation CLI"
   ],
-  "constitutional_invariant": {
-    "llm_proposes": "Conversation and provider assistance remain non-authoritative.",
-    "aigol_governs": "CLI commands expose governed artifacts and replay-backed validation where implemented.",
-    "human_authorizes": "Primary approval and bridge authorization UX remain incomplete and must stay explicit.",
-    "worker_executes": "Interactive conversation does not dispatch, invoke, or execute workers.",
-    "replay_records": "Existing CLI surfaces preserve replay visibility, but unified chain reconstruction remains future work."
-  },
-  "evidence": [
-    "aigol/cli/aigol_cli.py",
-    "governance/INTERACTIVE_CONVERSATION_CLI_V1.md",
-    "governance/INTERACTIVE_CONVERSATION_CLI_V1_CERTIFICATION.json",
-    "governance/RUNTIME_OPERATOR_CLI_V1.md",
-    "governance/REPLAY_INSPECTOR_WORKER_V1_CERTIFICATION.json",
-    "governance/GOVERNED_LEARNING_RUNTIME_CERTIFICATION.json",
-    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_CERTIFICATION.json"
-  ]
+  "remaining_chatgpt_mediation": [
+    "complex governance narrative interpretation",
+    "ambiguous next-step selection",
+    "remediation proposal drafting",
+    "approval rationale drafting",
+    "large artifact summarization"
+  ],
+  "remaining_manual_artifact_inspection": [
+    "improvement proposal internals",
+    "improvement review and approval context",
+    "implementation plan details",
+    "bridge authorization evidence",
+    "source-aware readiness mismatches",
+    "older replay artifacts without canonical_chain_id"
+  ],
+  "remaining_blockers": [
+    "first-class approval inbox and decision commands",
+    "governed learning workflow command group",
+    "implementation plan inspection command",
+    "bridge authorization command",
+    "source-aware readiness operator surface",
+    "conversation session dashboard"
+  ],
+  "copy_paste_workflow_assessment": {
+    "majority_replaced_by_cli": true,
+    "remaining_copy_paste_expected": true,
+    "remaining_copy_paste_reason": "approval, learning, bridge, and complex governance interpretation workflows are not yet fully first-class CLI surfaces"
+  }
 }
