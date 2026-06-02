@@ -1,0 +1,94 @@
+{
+  "artifact": "TRADING_DECISION_VALIDATION_ACCEPTANCE_CERTIFICATION_V1",
+  "domain": "TRADING",
+  "review_type": "decision_validation_acceptance_criteria",
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "strategy_implementation_introduced": false,
+  "broker_integration_introduced": false,
+  "exchange_integration_introduced": false,
+  "order_placement_introduced": false,
+  "live_trading_introduced": false,
+  "profitability_claims_introduced": false,
+  "decision_validation_dependency": {
+    "TRADING_DOMAIN_DECISION_VALIDATION_STATUS": "CERTIFIED"
+  },
+  "direct_answers": {
+    "minimum_evidence_defined": true,
+    "insufficient_evidence_defined": true,
+    "incomplete_portfolio_context_defined": true,
+    "unacceptable_risk_defined": true,
+    "policy_violation_defined": true,
+    "valid_recommendation_defined": true,
+    "rejected_recommendation_defined": true,
+    "human_review_escalation_defined": true,
+    "mandatory_criteria_defined": true,
+    "advisory_criteria_defined": true
+  },
+  "validation_categories": [
+    "evidence completeness",
+    "canonical chain continuity",
+    "market evidence freshness",
+    "portfolio context completeness",
+    "risk context completeness",
+    "policy constraint presence",
+    "replay visibility",
+    "no-live-execution flags",
+    "human review requirement",
+    "recommendation integrity"
+  ],
+  "mandatory_criteria": [
+    "required evidence present",
+    "required evidence hashable",
+    "replay visible",
+    "canonical chain continuous",
+    "market evidence freshness status present",
+    "portfolio context complete where required",
+    "risk context complete",
+    "policy constraints present",
+    "no-live-execution flags false",
+    "no financial claim",
+    "human review requirement present",
+    "allowed validation result only"
+  ],
+  "advisory_criteria": [
+    "explanation quality",
+    "scenario coverage breadth",
+    "market data source diversity",
+    "confidence narration",
+    "alternative decision comparison",
+    "learning improvement suggestion",
+    "operator readability",
+    "audit package clarity"
+  ],
+  "rejection_categories": [
+    "INSUFFICIENT_EVIDENCE",
+    "INCOMPLETE_PORTFOLIO_CONTEXT",
+    "UNACCEPTABLE_RISK",
+    "POLICY_VIOLATION",
+    "OUT_OF_SCOPE",
+    "FAILED_CLOSED",
+    "REJECTED_BY_GOVERNANCE"
+  ],
+  "escalation_categories": [
+    "HUMAN_REVIEW_REQUIRED",
+    "MATERIAL_RISK_REVIEW",
+    "POLICY_REVIEW",
+    "PORTFOLIO_CONTEXT_REVIEW",
+    "LEARNING_REVIEW",
+    "FAIL_CLOSED_REVIEW"
+  ],
+  "required_false_foundation_flags": {
+    "broker_invoked": false,
+    "exchange_invoked": false,
+    "order_placed": false,
+    "live_trading_performed": false,
+    "portfolio_mutated": false,
+    "strategy_deployed": false,
+    "financial_claim_made": false
+  },
+  "final_classification": {
+    "TRADING_DECISION_VALIDATION_ACCEPTANCE_STATUS": "CERTIFIED"
+  },
+  "recommended_next_milestone": "TRADING_DECISION_VALIDATION_POLICY_CONSTRAINTS_V1"
+}
