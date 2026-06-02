@@ -1,0 +1,55 @@
+{
+  "artifact": "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "runtime": "aigol/runtime/unified_replay_reconstruction_runtime.py",
+  "report_artifact": "UNIFIED_REPLAY_RECONSTRUCTION_REPORT_V1",
+  "implemented_capabilities": {
+    "latest_chain_reconstruction": true,
+    "chain_by_id_reconstruction": true,
+    "execution_lifecycle_reconstruction": true,
+    "learning_lifecycle_reconstruction": true,
+    "full_lineage_reconstruction": true,
+    "persist_replay_visible_reconstruction_events": true
+  },
+  "evidence_sources": {
+    "canonical_chain_id": true,
+    "replay_evidence": true,
+    "runtime_artifacts": true,
+    "worker_evidence": true,
+    "bridge_evidence": true
+  },
+  "fail_closed_detection": {
+    "missing_evidence": true,
+    "chain_corruption": true,
+    "hash_mismatch": true,
+    "continuity_failures": true,
+    "invalid_references": true,
+    "replay_corruption": true,
+    "ambiguous_lineage": true,
+    "multiple_chain_ownership": true,
+    "invalid_chain_references": true
+  },
+  "non_mutation_guarantees": {
+    "modifies_replay_under_reconstruction": false,
+    "modifies_governance": false,
+    "modifies_execution_state": false,
+    "modifies_learning_state": false,
+    "creates_execution_requests": false,
+    "dispatches_workers": false,
+    "invokes_workers": false,
+    "repairs_replay": false
+  },
+  "authority_boundary": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_unified_replay_reconstruction_runtime_v1.py",
+    "acceptance_json": "python -m json.tool governance/UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}
