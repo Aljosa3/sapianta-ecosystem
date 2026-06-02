@@ -1,0 +1,78 @@
+{
+  "artifact": "RESULT_EVALUATION_CERTIFICATION",
+  "status": "CERTIFIED_FOUNDATION",
+  "classification": {
+    "RESULT_EVALUATION_FOUNDATION_STATUS": "READY"
+  },
+  "scope": {
+    "runtime_implemented": false,
+    "foundation_only": true,
+    "reflection_implemented": false,
+    "self_improvement_implemented": false,
+    "result_approval_implemented": false,
+    "result_certification_implemented": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "artifact_model": {
+    "artifact_type": "RESULT_EVALUATION_ARTIFACT_V1",
+    "valid_statuses": [
+      "EVALUATED",
+      "FAILED_CLOSED"
+    ],
+    "creator": "AIGOL",
+    "provider_direct_evaluation_creation_allowed": false,
+    "worker_direct_evaluation_creation_allowed": false,
+    "human_direct_evaluation_creation_allowed": false,
+    "improvement_application_allowed": false
+  },
+  "required_evidence": {
+    "result_artifact": true,
+    "result_hash": true,
+    "result_payload_hash": true,
+    "execution_reference": true,
+    "completion_reference": true,
+    "worker_reference": true,
+    "canonical_chain_id": true,
+    "replay_reference": true,
+    "evaluator_reference": true
+  },
+  "required_absent_authority": {
+    "provider_authority": false,
+    "governance_authority": false,
+    "worker_authority": false,
+    "approval_authority": false,
+    "result_approved": false,
+    "result_certified": false,
+    "reflection_performed": false,
+    "self_improvement_performed": false,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "execution_history_modified": false,
+    "improvement_applied": false
+  },
+  "relationship": {
+    "result": "Captured worker output associated with a completed execution.",
+    "evaluation": "Replay-visible observations about the captured result.",
+    "improvement_proposal": "Future governed proposal that may be informed by evaluation evidence but is not created or approved by evaluation."
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute observations but remains non-authoritative.",
+    "aigol_governs": "AiGOL owns formal evaluation artifact creation and validation.",
+    "worker_executes": "Worker output remains execution evidence, not approval authority.",
+    "replay_records": "Evaluation evidence must be append-only and reconstructable."
+  },
+  "evidence": [
+    "governance/RESULT_EVALUATION_FOUNDATION_V1.md",
+    "governance/RESULT_EVALUATION_MODEL_V1.md",
+    "governance/RESULT_EVALUATION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/RESULT_EVALUATION_ADR_V1.md"
+  ],
+  "known_limits": [
+    "Result Evaluation Runtime is not implemented.",
+    "Reflection Runtime is not implemented.",
+    "Self-Improvement Runtime is not implemented.",
+    "Improvement Proposal Runtime is not implemented.",
+    "Evaluation does not approve, certify, or mutate results."
+  ]
+}
