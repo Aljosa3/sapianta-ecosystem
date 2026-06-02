@@ -1,0 +1,100 @@
+{
+  "artifact_type": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_CERTIFICATION",
+  "certification_id": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_ARTIFACT_V1",
+  "status": "CERTIFIED",
+  "review_only": true,
+  "runtime_implementation_performed": false,
+  "governance_behavior_modified": false,
+  "replay_modified": false,
+  "worker_created": false,
+  "domain_created": false,
+  "proposal_generated": false,
+  "execution_requested": false,
+  "dispatch_requested": false,
+  "provider_authority_introduced": false,
+  "final_classification": {
+    "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_STATUS": "CERTIFIED"
+  },
+  "purpose": "Define the deterministic, replay-visible context bundle required before future AiGOL-native development proposals can be safely produced or validated.",
+  "required_inputs": [
+    "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_ARTIFACT_V1",
+    "requested milestone id",
+    "requested domain",
+    "requested worker family",
+    "requested output scope",
+    "explicit constraints",
+    "core governance certifications",
+    "native development certifications",
+    "cognition findings and gaps",
+    "domain foundation artifacts",
+    "domain decision model artifacts",
+    "policy and acceptance artifacts",
+    "fixture and test scenario artifacts",
+    "known constraints",
+    "known certifications"
+  ],
+  "produced_outputs": [
+    "context bundle",
+    "ordered artifact references",
+    "context hash",
+    "missing context list",
+    "ambiguous context list",
+    "known assumptions",
+    "known gaps",
+    "provider necessity classification",
+    "replay-visible context status"
+  ],
+  "determinism_requirements": [
+    "single accepted intake artifact anchor",
+    "canonical artifact names",
+    "certified status preference",
+    "lexicographic artifact ordering",
+    "artifact hash preservation",
+    "fail closed on missing required context",
+    "fail closed on ambiguous context"
+  ],
+  "replay_requirements": [
+    "record intake reference and hash",
+    "record artifact references and hashes",
+    "record context status",
+    "record missing and ambiguous context",
+    "record provider necessity classification",
+    "record context hash",
+    "preserve no-authority flags",
+    "fail closed on replay/hash mismatch"
+  ],
+  "provider_interaction": {
+    "provider_invoked_by_context_assembly": false,
+    "provider_may_receive_context_bundle_later": true,
+    "provider_authority": false,
+    "provider_may_resolve_missing_context": false,
+    "provider_may_resolve_ambiguity": false,
+    "provider_output_role": "PROPOSAL_ONLY"
+  },
+  "future_domain_interaction": {
+    "trading_domain_supported": true,
+    "marketing_domain_supported_when_certified": true,
+    "healthcare_domain_supported_when_certified": true,
+    "public_services_domain_supported_when_certified": true,
+    "core_governance_remains_authoritative": true
+  },
+  "trading_second_test_enablement": {
+    "target_milestone": "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1",
+    "conversation_entrypoint": "python -m aigol.cli.aigol_cli conversation",
+    "next_required_milestone": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_RUNTIME_V1",
+    "expected_improvement": "conversation mode can prepare a deterministic context bundle before provider proposal or Codex-assisted handoff"
+  },
+  "updated_native_development_readiness": {
+    "previous_percent": 58,
+    "current_percent": 65,
+    "status": "READY_WITH_GAPS"
+  },
+  "remaining_gaps": [
+    "context assembly runtime",
+    "domain and worker resolution registry",
+    "provider necessity policy runtime",
+    "development proposal contract",
+    "conversation-to-implementation governed handoff"
+  ],
+  "recommended_next_milestone": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_RUNTIME_V1"
+}
