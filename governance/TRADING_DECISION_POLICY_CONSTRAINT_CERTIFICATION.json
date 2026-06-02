@@ -1,0 +1,108 @@
+{
+  "artifact": "TRADING_DECISION_POLICY_CONSTRAINT_CERTIFICATION_V1",
+  "domain": "TRADING",
+  "review_type": "decision_validation_policy_constraints",
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "strategy_implementation_introduced": false,
+  "broker_integration_introduced": false,
+  "exchange_integration_introduced": false,
+  "order_placement_introduced": false,
+  "live_trading_introduced": false,
+  "financial_performance_claims_introduced": false,
+  "acceptance_dependency": {
+    "TRADING_DECISION_VALIDATION_ACCEPTANCE_STATUS": "CERTIFIED"
+  },
+  "direct_answers": {
+    "mandatory_policy_constraints_defined": true,
+    "advisory_policy_constraints_defined": true,
+    "automatic_rejection_conditions_defined": true,
+    "escalation_conditions_defined": true,
+    "mandatory_evidence_defined": true,
+    "optional_evidence_defined": true,
+    "prohibited_risk_conditions_defined": true,
+    "prohibited_portfolio_conditions_defined": true,
+    "mandatory_replay_requirements_defined": true,
+    "fail_closed_conditions_defined": true
+  },
+  "mandatory_constraints": [
+    "Trading Decision Request present",
+    "Market Evidence present",
+    "Portfolio Context present where required",
+    "Risk Context present",
+    "Strategy Context present",
+    "Policy Constraint Context present",
+    "required evidence replay-visible",
+    "required evidence hash-linked",
+    "canonical chain continuity",
+    "no-live-execution flags false",
+    "human review requirement explicit",
+    "allowed validation result only"
+  ],
+  "advisory_constraints": [
+    "explanation clarity",
+    "scenario coverage",
+    "source diversity",
+    "alternative comparison",
+    "operator readability",
+    "learning feedback quality",
+    "audit package completeness"
+  ],
+  "rejection_constraints": [
+    "insufficient evidence",
+    "incomplete portfolio context",
+    "unacceptable risk",
+    "policy violation",
+    "out of scope request",
+    "financial performance claim",
+    "strategy deployment request",
+    "live trading authority request"
+  ],
+  "escalation_constraints": [
+    "admissible for human review",
+    "material risk",
+    "policy ambiguity",
+    "portfolio exposure impact",
+    "learning policy proposal",
+    "fail-closed audit"
+  ],
+  "mandatory_replay_requirements": [
+    "replay visibility",
+    "wrapper hash validation",
+    "artifact hash validation",
+    "evidence reference and hash continuity",
+    "canonical chain continuity",
+    "validation reason hash",
+    "rejection or escalation reason hash where applicable",
+    "no-live-execution flags",
+    "fail-closed corruption handling"
+  ],
+  "fail_closed_conditions": [
+    "replay hash mismatch",
+    "artifact hash mismatch",
+    "canonical chain continuity failure",
+    "missing Policy Constraint Context",
+    "missing replay visibility",
+    "broker invocation detected",
+    "exchange invocation detected",
+    "order placement detected",
+    "live trading detected",
+    "portfolio mutation detected",
+    "strategy deployment detected",
+    "financial claim detected",
+    "human authorization ambiguity"
+  ],
+  "required_false_foundation_flags": {
+    "broker_invoked": false,
+    "exchange_invoked": false,
+    "order_placed": false,
+    "live_trading_performed": false,
+    "portfolio_mutated": false,
+    "strategy_deployed": false,
+    "financial_claim_made": false
+  },
+  "final_classification": {
+    "TRADING_DECISION_POLICY_CONSTRAINT_STATUS": "CERTIFIED"
+  },
+  "recommended_next_milestone": "TRADING_DECISION_VALIDATION_TEST_FIXTURES_V1"
+}
