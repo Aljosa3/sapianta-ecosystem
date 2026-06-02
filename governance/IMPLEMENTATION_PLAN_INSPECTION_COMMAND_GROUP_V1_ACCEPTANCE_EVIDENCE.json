@@ -1,0 +1,50 @@
+{
+  "artifact": "IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "runtime": "aigol/cli/commands/plan.py",
+  "cli_wiring": "aigol/cli/aigol_cli.py",
+  "supported_commands": {
+    "plan_list": true,
+    "plan_show": true,
+    "plan_approved": true,
+    "plan_chain": true,
+    "plan_bridge": true,
+    "plan_execution_request": true,
+    "plan_latest": true
+  },
+  "artifact_scope": {
+    "implementation_plan_artifact": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+    "bridge_link_artifact": "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_LINK_ARTIFACT_V1",
+    "execution_request_artifact": "EXECUTION_REQUEST_ARTIFACT_V1"
+  },
+  "boundary_guarantees": {
+    "read_only": true,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_request_creation": false,
+    "approval_runtime_bypass": false,
+    "bridge_runtime_bypass": false
+  },
+  "replay_guarantees": {
+    "replay_visible": true,
+    "wrapper_hash_validation": true,
+    "artifact_hash_validation": true,
+    "plan_text_hash_validation": true,
+    "plan_scope_hash_validation": true,
+    "plan_constraints_hash_validation": true,
+    "planned_artifact_targets_hash_validation": true,
+    "planned_validation_hash_validation": true,
+    "canonical_chain_visibility": true,
+    "fail_closed_corruption_display": true
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_implementation_plan_inspection_command_group_v1.py",
+    "cli_regression": "python -m pytest tests/test_implementation_plan_inspection_command_group_v1.py tests/test_improvement_implementation_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py tests/test_bridge_authorization_command_group_v1.py tests/test_session_dashboard_runtime_v1.py tests/test_aigol_cli_foundation_v1.py",
+    "acceptance_json": "python -m json.tool governance/IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}

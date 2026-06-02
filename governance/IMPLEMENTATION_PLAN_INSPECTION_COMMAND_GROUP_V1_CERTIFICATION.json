@@ -1,0 +1,31 @@
+{
+  "artifact": "IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_runtime": "IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1",
+  "certification_basis": [
+    "The AiGOL CLI exposes plan list, plan show, plan approved, plan chain, plan bridge, plan execution-request, and plan latest commands.",
+    "The command group reconstructs implementation plan visibility from replay-visible implementation plan, bridge link, and implementation-plan-derived execution request artifacts.",
+    "Replay wrapper hashes and relevant artifact hashes are validated before display.",
+    "Plan text, plan scope, plan constraints, planned artifact target, and planned validation hashes are validated before display.",
+    "Missing plan, bridge, or execution request references fail closed.",
+    "The command group does not dispatch, invoke, execute, mutate governance, mutate replay, create execution requests, or bypass approval or bridge runtimes."
+  ],
+  "validated_tests": [
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_list_shows_replay_visible_implementation_plans",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_show_approved_and_latest_filters",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_chain_bridge_and_execution_request_filters",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_parser_and_run_command_support_plan_bridge",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_cli_entrypoint_outputs_plan_json",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_show_missing_fails_closed_without_authority",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_command_detects_corrupt_replay_and_nested_hashes",
+    "tests/test_implementation_plan_inspection_command_group_v1.py::test_plan_command_group_has_no_dispatch_invocation_execution_or_bridge_creation_surface"
+  ],
+  "known_limitations": [
+    "The command group is inspection-only and does not create, approve, reject, or authorize implementation plans.",
+    "Bridge and execution request filters depend on replay-visible bridge link and execution request artifacts already produced by governed runtimes.",
+    "The command group does not replace full lineage reconstruction; operators should use show-full-lineage for cross-lifecycle lineage inspection."
+  ],
+  "final_classification": {
+    "IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_STATUS": "CERTIFIED"
+  }
+}

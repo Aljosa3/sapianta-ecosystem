@@ -82,6 +82,16 @@ from aigol.cli.commands.moc import (
     validate_contract_command,
     validate_proposal_command,
 )
+from aigol.cli.commands.plan import (
+    plan_approved_command,
+    plan_bridge_command,
+    plan_chain_command,
+    plan_execution_request_command,
+    plan_latest_command,
+    plan_list_command,
+    plan_show_command,
+    render_plan_summary,
+)
 from aigol.cli.commands.replay import explain_operator_operation, ledger_summary, operator_operation_report, verify_replay
 from aigol.cli.commands.return_flow import inspect_return
 from aigol.cli.commands.run_governed import run_governed_operation_command, summarize_governed_operation_replay
@@ -221,6 +231,34 @@ def build_parser() -> argparse.ArgumentParser:
     bridge_execution_request.add_argument("execution_request_id")
     bridge_execution_request.add_argument("--replay-root", default=".")
     bridge_execution_request.add_argument("--json", action="store_true")
+
+    plan = subcommands.add_parser("plan")
+    plan_sub = plan.add_subparsers(dest="plan_command", required=True)
+    plan_list = plan_sub.add_parser("list")
+    plan_list.add_argument("--replay-root", default=".")
+    plan_list.add_argument("--json", action="store_true")
+    plan_show = plan_sub.add_parser("show")
+    plan_show.add_argument("implementation_plan_id")
+    plan_show.add_argument("--replay-root", default=".")
+    plan_show.add_argument("--json", action="store_true")
+    plan_approved = plan_sub.add_parser("approved")
+    plan_approved.add_argument("--replay-root", default=".")
+    plan_approved.add_argument("--json", action="store_true")
+    plan_chain = plan_sub.add_parser("chain")
+    plan_chain.add_argument("canonical_chain_id")
+    plan_chain.add_argument("--replay-root", default=".")
+    plan_chain.add_argument("--json", action="store_true")
+    plan_bridge = plan_sub.add_parser("bridge")
+    plan_bridge.add_argument("bridge_id")
+    plan_bridge.add_argument("--replay-root", default=".")
+    plan_bridge.add_argument("--json", action="store_true")
+    plan_execution_request = plan_sub.add_parser("execution-request")
+    plan_execution_request.add_argument("execution_request_id")
+    plan_execution_request.add_argument("--replay-root", default=".")
+    plan_execution_request.add_argument("--json", action="store_true")
+    plan_latest = plan_sub.add_parser("latest")
+    plan_latest.add_argument("--replay-root", default=".")
+    plan_latest.add_argument("--json", action="store_true")
 
     dashboard = subcommands.add_parser("dashboard")
     dashboard.add_argument("--replay-root", default=".")
@@ -726,6 +764,23 @@ def run_command(args: argparse.Namespace) -> dict:
             execution_request_id=args.execution_request_id,
             replay_root=args.replay_root,
         )
+    if args.command == "plan" and args.plan_command == "list":
+        return plan_list_command(replay_root=args.replay_root)
+    if args.command == "plan" and args.plan_command == "show":
+        return plan_show_command(implementation_plan_id=args.implementation_plan_id, replay_root=args.replay_root)
+    if args.command == "plan" and args.plan_command == "approved":
+        return plan_approved_command(replay_root=args.replay_root)
+    if args.command == "plan" and args.plan_command == "chain":
+        return plan_chain_command(canonical_chain_id=args.canonical_chain_id, replay_root=args.replay_root)
+    if args.command == "plan" and args.plan_command == "bridge":
+        return plan_bridge_command(bridge_id=args.bridge_id, replay_root=args.replay_root)
+    if args.command == "plan" and args.plan_command == "execution-request":
+        return plan_execution_request_command(
+            execution_request_id=args.execution_request_id,
+            replay_root=args.replay_root,
+        )
+    if args.command == "plan" and args.plan_command == "latest":
+        return plan_latest_command(replay_root=args.replay_root)
     if args.command == "dashboard":
         dashboard_subcommand = getattr(args, "dashboard_command", None)
         if dashboard_subcommand is None:
@@ -1063,6 +1118,19 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL BRIDGE",
             render_bridge_summary(result).splitlines(),
+        )
+    if command in {
+        "aigol plan list",
+        "aigol plan show",
+        "aigol plan approved",
+        "aigol plan chain",
+        "aigol plan bridge",
+        "aigol plan execution-request",
+        "aigol plan latest",
+    }:
+        return render_card(
+            "AIGOL PLAN",
+            render_plan_summary(result).splitlines(),
         )
     if command in {
         "aigol dashboard",
