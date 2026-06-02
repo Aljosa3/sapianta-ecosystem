@@ -1,0 +1,59 @@
+{
+  "artifact": "REPLAY_INSPECTOR_WORKER_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "REPLAY_INSPECTOR_WORKER_STATUS": "CERTIFIED"
+  },
+  "worker": {
+    "worker_type": "REPLAY_INSPECTOR_WORKER_V1",
+    "report_artifact": "REPLAY_INSPECTION_REPORT_V1",
+    "read_only": true,
+    "implementation": "aigol/runtime/replay_inspector_worker.py"
+  },
+  "implemented_capabilities": {
+    "explicit_replay_reference_input": true,
+    "replay_artifact_inspection": true,
+    "wrapper_hash_validation": true,
+    "artifact_hash_validation": true,
+    "canonical_chain_continuity": true,
+    "replay_visible_output": true,
+    "replay_reconstruction": true,
+    "failed_closed_reports": true,
+    "output_inside_input_rejected": true
+  },
+  "read_only_guarantees": {
+    "modify_replay": false,
+    "modify_governance": false,
+    "modify_filesystem_inputs": false,
+    "modify_runtime_state": false,
+    "modify_execution_history": false,
+    "provider_calls": false,
+    "shell_execution": false,
+    "network_execution": false
+  },
+  "fail_closed_coverage": {
+    "invalid_replay_references": true,
+    "corrupt_replay": true,
+    "chain_mismatch": true,
+    "missing_artifacts": true,
+    "reconstruction_corruption": true,
+    "replay_ordering_corruption": true,
+    "authority_bearing_input": true
+  },
+  "replay_events": [
+    "REPLAY_INSPECTION_RECORDED",
+    "REPLAY_INSPECTION_RETURNED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_replay_inspector_worker_v1.py",
+      "result": "PASSED",
+      "test_count": 11
+    },
+    "worker_lifecycle_tests": {
+      "command": "python -m pytest tests/test_replay_inspector_worker_v1.py tests/test_completion_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 95
+    }
+  }
+}

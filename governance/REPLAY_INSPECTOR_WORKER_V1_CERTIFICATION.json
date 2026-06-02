@@ -1,0 +1,46 @@
+{
+  "artifact": "REPLAY_INSPECTOR_WORKER_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "REPLAY_INSPECTOR_WORKER_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "worker_type": "REPLAY_INSPECTOR_WORKER_V1",
+    "read_only_worker": true,
+    "result_runtime": false,
+    "result_certification": false,
+    "failure_runtime": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_history_mutation": false
+  },
+  "certified_properties": {
+    "explicit_replay_references_required": true,
+    "replay_report_created": true,
+    "replay_reconstruction_supported": true,
+    "canonical_chain_continuity_supported": true,
+    "read_only_enforced": true,
+    "fail_closed": true,
+    "provider_authority_absent": true,
+    "worker_authority_absent": true,
+    "governance_authority_absent": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider evidence remains upstream and non-authoritative.",
+    "aigol_governs": "AiGOL supplies explicit replay references and lifecycle authorization before worker use.",
+    "worker_executes": "The worker performs bounded read-only replay inspection.",
+    "replay_records": "The worker output is persisted as replay-visible inspection evidence."
+  },
+  "evidence": [
+    "aigol/runtime/replay_inspector_worker.py",
+    "tests/test_replay_inspector_worker_v1.py",
+    "governance/REPLAY_INSPECTOR_WORKER_V1.md",
+    "governance/REPLAY_INSPECTOR_WORKER_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "The worker emits an inspection report, not result certification.",
+    "The worker reads explicit replay references only.",
+    "Missing replay references fail closed before report replay is written.",
+    "Corrupt replay references produce FAILED_CLOSED inspection reports when the output path is safe."
+  ]
+}
