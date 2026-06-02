@@ -1,0 +1,90 @@
+{
+  "artifact": "GOVERNED_LEARNING_RUNTIME_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "GOVERNED_LEARNING_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "review_only": true,
+    "runtime_code_modified": false,
+    "governance_existing_artifacts_modified": false,
+    "replay_modified": false,
+    "validated_chain_operational": true,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "code_mutation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "self_application": false
+  },
+  "validated_chain": [
+    "RESULT_ARTIFACT_V1",
+    "RESULT_EVALUATION_ARTIFACT_V1",
+    "IMPROVEMENT_PROPOSAL_ARTIFACT_V1",
+    "IMPROVEMENT_REVIEW_ARTIFACT_V1",
+    "IMPROVEMENT_APPROVAL_ARTIFACT_V1",
+    "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1"
+  ],
+  "validated_runtimes": {
+    "RESULT_RUNTIME_V1": "CERTIFIED",
+    "RESULT_EVALUATION_RUNTIME_V1": "CERTIFIED",
+    "IMPROVEMENT_PROPOSAL_RUNTIME_V1": "CERTIFIED",
+    "IMPROVEMENT_REVIEW_RUNTIME_V1": "CERTIFIED",
+    "IMPROVEMENT_APPROVAL_RUNTIME_V1": "CERTIFIED",
+    "IMPROVEMENT_IMPLEMENTATION_RUNTIME_V1": "CERTIFIED"
+  },
+  "validated_properties": {
+    "every_artifact_replay_reconstructable": true,
+    "canonical_chain_continuity_preserved": true,
+    "approval_bypass_found": false,
+    "self_approval_allowed": false,
+    "self_implementation_allowed": false,
+    "governance_authority_leak_found": false,
+    "replay_authority_leak_found": false,
+    "worker_authority_leak_found": false,
+    "implementation_planning_mutates_execution_state": false,
+    "blocking_lifecycle_gaps_found": false
+  },
+  "fail_closed_properties": {
+    "duplicate_artifacts_rejected": true,
+    "corrupt_replay_rejected": true,
+    "corrupt_references_rejected": true,
+    "chain_mismatch_rejected": true,
+    "rejected_approval_rejected_for_planning": true,
+    "authority_bearing_plan_content_rejected": true
+  },
+  "validation": {
+    "operational_chain_tests": {
+      "command": "python -m pytest tests/test_result_runtime_v1.py tests/test_result_evaluation_runtime_v1.py tests/test_improvement_proposal_runtime_v1.py tests/test_improvement_review_runtime_v1.py tests/test_improvement_approval_runtime_v1.py tests/test_improvement_implementation_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 84
+    }
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance remains non-authoritative throughout governed learning.",
+    "aigol_governs": "AiGOL validates evidence, records artifacts, and enforces approval and planning boundaries.",
+    "human_authorizes": "Implementation planning requires upstream human-authorized approved improvement evidence.",
+    "worker_executes": "Worker output remains upstream result evidence and does not gain governance authority.",
+    "replay_records": "Replay records append-only events and reconstructs history without mutation or decision authority."
+  },
+  "evidence": [
+    "governance/GOVERNED_LEARNING_RUNTIME_END_TO_END_VALIDATION_V1.md",
+    "governance/GOVERNED_LEARNING_RUNTIME_FINDINGS_V1.md",
+    "governance/GOVERNED_LEARNING_RUNTIME_GAP_ANALYSIS_V1.md",
+    "governance/GOVERNED_LEARNING_RUNTIME_RECOMMENDATIONS_V1.md",
+    "tests/test_result_runtime_v1.py",
+    "tests/test_result_evaluation_runtime_v1.py",
+    "tests/test_improvement_proposal_runtime_v1.py",
+    "tests/test_improvement_review_runtime_v1.py",
+    "tests/test_improvement_approval_runtime_v1.py",
+    "tests/test_improvement_implementation_runtime_v1.py"
+  ],
+  "future_out_of_scope_boundaries": [
+    "Implementation Plan to Execution Request",
+    "governed implementation execution",
+    "implementation result certification",
+    "reflection runtime",
+    "self-improvement runtime"
+  ]
+}
