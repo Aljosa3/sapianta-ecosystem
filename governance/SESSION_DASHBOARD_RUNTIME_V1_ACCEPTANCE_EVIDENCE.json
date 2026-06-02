@@ -1,0 +1,51 @@
+{
+  "artifact": "SESSION_DASHBOARD_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "runtime": "aigol/cli/commands/dashboard.py",
+  "cli_wiring": "aigol/cli/aigol_cli.py",
+  "supported_commands": {
+    "dashboard": true,
+    "dashboard_summary": true,
+    "dashboard_approvals": true,
+    "dashboard_bridges": true,
+    "dashboard_chains": true,
+    "dashboard_learning": true,
+    "dashboard_execution": true
+  },
+  "dashboard_contents": {
+    "latest_chains": true,
+    "pending_approvals": true,
+    "pending_bridge_authorizations": true,
+    "recent_execution_requests": true,
+    "recent_learning_artifacts": true,
+    "suggested_safe_next_actions": true
+  },
+  "certified_runtime_reuse": [
+    "APPROVAL_COMMAND_GROUP_V1",
+    "BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1"
+  ],
+  "boundary_guarantees": {
+    "read_only": true,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_request_creation": false
+  },
+  "replay_guarantees": {
+    "replay_visible": true,
+    "wrapper_hash_validation": true,
+    "artifact_hash_validation": true,
+    "canonical_chain_visibility": true,
+    "source_replay_immutability_tested": true,
+    "fail_closed_corruption_display": true
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_session_dashboard_runtime_v1.py",
+    "cli_regression": "python -m pytest tests/test_session_dashboard_runtime_v1.py tests/test_approval_command_group_v1.py tests/test_bridge_authorization_command_group_v1.py tests/test_cli_chain_inspection_runtime_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_aigol_cli_foundation_v1.py",
+    "acceptance_json": "python -m json.tool governance/SESSION_DASHBOARD_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/SESSION_DASHBOARD_RUNTIME_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}

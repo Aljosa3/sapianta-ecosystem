@@ -1,0 +1,29 @@
+{
+  "artifact": "SESSION_DASHBOARD_RUNTIME_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_runtime": "SESSION_DASHBOARD_RUNTIME_V1",
+  "certification_basis": [
+    "The AiGOL CLI exposes dashboard, dashboard summary, dashboard approvals, dashboard bridges, dashboard chains, dashboard learning, and dashboard execution commands.",
+    "The dashboard summarizes latest chains, pending approvals, pending bridge authorizations, recent execution requests, recent learning artifacts, and suggested safe next actions.",
+    "The dashboard reuses certified approval and bridge command groups.",
+    "Replay wrapper hashes and relevant artifact hashes are validated before display.",
+    "Source replay immutability is tested.",
+    "The dashboard does not dispatch, invoke, execute, mutate governance, mutate replay, create execution requests, or infer authorization."
+  ],
+  "validated_tests": [
+    "tests/test_session_dashboard_runtime_v1.py::test_dashboard_summary_aggregates_operator_state",
+    "tests/test_session_dashboard_runtime_v1.py::test_dashboard_subcommands_are_supported",
+    "tests/test_session_dashboard_runtime_v1.py::test_parser_and_run_command_support_dashboard_bridges",
+    "tests/test_session_dashboard_runtime_v1.py::test_cli_entrypoint_outputs_dashboard_json",
+    "tests/test_session_dashboard_runtime_v1.py::test_dashboard_does_not_mutate_source_replay",
+    "tests/test_session_dashboard_runtime_v1.py::test_dashboard_detects_corrupt_relevant_replay",
+    "tests/test_session_dashboard_runtime_v1.py::test_dashboard_runtime_has_no_dispatch_invocation_or_execution_surface"
+  ],
+  "known_limitations": [
+    "The dashboard suggests safe next actions but does not execute them inside the interactive conversation loop.",
+    "Older replay artifacts without canonical_chain_id remain visible only through available compatibility evidence."
+  ],
+  "final_classification": {
+    "SESSION_DASHBOARD_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

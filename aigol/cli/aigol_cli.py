@@ -50,6 +50,16 @@ from aigol.cli.commands.cognition import (
     inspect_topology,
 )
 from aigol.cli.commands.continuity import continuity_preview_summary
+from aigol.cli.commands.dashboard import (
+    dashboard_approvals_command,
+    dashboard_bridges_command,
+    dashboard_chains_command,
+    dashboard_command,
+    dashboard_execution_command,
+    dashboard_learning_command,
+    dashboard_summary_command,
+    render_dashboard_summary,
+)
 from aigol.cli.commands.diagnostics import runtime_diagnostics
 from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
@@ -211,6 +221,36 @@ def build_parser() -> argparse.ArgumentParser:
     bridge_execution_request.add_argument("execution_request_id")
     bridge_execution_request.add_argument("--replay-root", default=".")
     bridge_execution_request.add_argument("--json", action="store_true")
+
+    dashboard = subcommands.add_parser("dashboard")
+    dashboard.add_argument("--replay-root", default=".")
+    dashboard.add_argument("--limit", type=int, default=10)
+    dashboard.add_argument("--json", action="store_true")
+    dashboard_sub = dashboard.add_subparsers(dest="dashboard_command")
+    dashboard_summary = dashboard_sub.add_parser("summary")
+    dashboard_summary.add_argument("--replay-root", default=".")
+    dashboard_summary.add_argument("--limit", type=int, default=10)
+    dashboard_summary.add_argument("--json", action="store_true")
+    dashboard_approvals = dashboard_sub.add_parser("approvals")
+    dashboard_approvals.add_argument("--replay-root", default=".")
+    dashboard_approvals.add_argument("--limit", type=int, default=10)
+    dashboard_approvals.add_argument("--json", action="store_true")
+    dashboard_bridges = dashboard_sub.add_parser("bridges")
+    dashboard_bridges.add_argument("--replay-root", default=".")
+    dashboard_bridges.add_argument("--limit", type=int, default=10)
+    dashboard_bridges.add_argument("--json", action="store_true")
+    dashboard_chains = dashboard_sub.add_parser("chains")
+    dashboard_chains.add_argument("--replay-root", default=".")
+    dashboard_chains.add_argument("--limit", type=int, default=10)
+    dashboard_chains.add_argument("--json", action="store_true")
+    dashboard_learning = dashboard_sub.add_parser("learning")
+    dashboard_learning.add_argument("--replay-root", default=".")
+    dashboard_learning.add_argument("--limit", type=int, default=10)
+    dashboard_learning.add_argument("--json", action="store_true")
+    dashboard_execution = dashboard_sub.add_parser("execution")
+    dashboard_execution.add_argument("--replay-root", default=".")
+    dashboard_execution.add_argument("--limit", type=int, default=10)
+    dashboard_execution.add_argument("--json", action="store_true")
 
     execution = subcommands.add_parser("execution")
     execution_sub = execution.add_subparsers(dest="execution_command", required=True)
@@ -686,6 +726,22 @@ def run_command(args: argparse.Namespace) -> dict:
             execution_request_id=args.execution_request_id,
             replay_root=args.replay_root,
         )
+    if args.command == "dashboard":
+        dashboard_subcommand = getattr(args, "dashboard_command", None)
+        if dashboard_subcommand is None:
+            return dashboard_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "summary":
+            return dashboard_summary_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "approvals":
+            return dashboard_approvals_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "bridges":
+            return dashboard_bridges_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "chains":
+            return dashboard_chains_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "learning":
+            return dashboard_learning_command(replay_root=args.replay_root, limit=args.limit)
+        if dashboard_subcommand == "execution":
+            return dashboard_execution_command(replay_root=args.replay_root, limit=args.limit)
     if args.command == "execution" and args.execution_command == "handoff":
         return run_execution_handoff(
             ingress_artifact=_artifact_from_args(args),
@@ -1007,6 +1063,19 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL BRIDGE",
             render_bridge_summary(result).splitlines(),
+        )
+    if command in {
+        "aigol dashboard",
+        "aigol dashboard summary",
+        "aigol dashboard approvals",
+        "aigol dashboard bridges",
+        "aigol dashboard chains",
+        "aigol dashboard learning",
+        "aigol dashboard execution",
+    }:
+        return render_card(
+            "AIGOL DASHBOARD",
+            render_dashboard_summary(result).splitlines(),
         )
     if command == "aigol dispatch authorize":
         return render_card(
