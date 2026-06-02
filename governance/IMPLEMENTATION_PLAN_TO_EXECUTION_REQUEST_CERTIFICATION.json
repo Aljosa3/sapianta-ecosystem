@@ -1,0 +1,80 @@
+{
+  "artifact": "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_CERTIFICATION",
+  "status": "READY",
+  "classification": {
+    "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_FOUNDATION_STATUS": "READY"
+  },
+  "scope": {
+    "review_only": true,
+    "runtime_implemented": false,
+    "execution_request_created": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "execution_performed": false,
+    "code_mutation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "self_application": false
+  },
+  "source_artifact": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+  "future_target_artifact": "EXECUTION_REQUEST_ARTIFACT_V1",
+  "validated_design_properties": {
+    "implementation_plan_automatic_execution_request_forbidden": true,
+    "approved_implementation_plan_required": true,
+    "approved_improvement_approval_required": true,
+    "human_authorization_required": true,
+    "canonical_chain_continuity_required": true,
+    "replay_evidence_required": true,
+    "payload_bound_to_plan_scope": true,
+    "provider_authority_prevented": true,
+    "worker_authority_prevented": true,
+    "replay_authority_prevented": true,
+    "governance_mutation_prevented": true,
+    "execution_state_mutation_prevented": true
+  },
+  "required_future_replay_evidence": [
+    "RESULT_ARTIFACT_V1",
+    "RESULT_EVALUATION_ARTIFACT_V1",
+    "IMPROVEMENT_PROPOSAL_ARTIFACT_V1",
+    "IMPROVEMENT_REVIEW_ARTIFACT_V1",
+    "IMPROVEMENT_APPROVAL_ARTIFACT_V1",
+    "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+    "future human execution-request authorization evidence",
+    "future EXECUTION_REQUEST_ARTIFACT_V1"
+  ],
+  "fail_closed_requirements": {
+    "missing_plan": true,
+    "invalid_plan_status": true,
+    "missing_approval": true,
+    "rejected_approval": true,
+    "missing_human_authorization": true,
+    "chain_mismatch": true,
+    "corrupt_references": true,
+    "corrupt_replay": true,
+    "duplicate_execution_request": true,
+    "unbounded_payload": true,
+    "provider_created_request": true,
+    "worker_created_request": true,
+    "replay_created_request": true,
+    "implied_dispatch_or_execution": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute non-authoritative plan language only.",
+    "aigol_governs": "AiGOL validates implementation plan evidence, authorization, payload bounds, and chain continuity.",
+    "human_authorizes": "Execution request creation from implementation plans requires explicit human authorization evidence.",
+    "worker_executes": "Worker execution remains downstream and separately governed.",
+    "replay_records": "Replay records bridge evidence and reconstructs continuity without mutation or decision authority."
+  },
+  "known_limits": [
+    "This foundation does not implement runtime code.",
+    "This foundation does not create execution requests.",
+    "The future human execution-request authorization artifact is not yet implemented.",
+    "The future implementation-plan-derived execution request runtime is not implemented."
+  ],
+  "evidence": [
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_FOUNDATION_V1.md",
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_MODEL_V1.md",
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_BOUNDARY_GUARANTEES_V1.md",
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_ADR_V1.md"
+  ]
+}
