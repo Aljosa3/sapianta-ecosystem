@@ -1,0 +1,66 @@
+{
+  "artifact_type": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_RUNTIME_CERTIFICATION",
+  "certification_id": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/development_context_assembly_runtime.py",
+  "governance_behavior_modified": false,
+  "domains_created": false,
+  "workers_created": false,
+  "proposals_generated": false,
+  "providers_invoked": false,
+  "dispatch_requested": false,
+  "execution_requested": false,
+  "certified_capabilities": [
+    "assemble deterministic development context from accepted intake artifacts",
+    "resolve certified core governance references",
+    "resolve native development references",
+    "resolve cognition references",
+    "resolve Trading Domain references",
+    "resolve worker taxonomy references",
+    "resolve policy and acceptance references",
+    "resolve fixture references",
+    "produce ordered artifact references and hashes",
+    "produce context hash",
+    "record missing context",
+    "record ambiguous context",
+    "classify provider necessity without invoking providers",
+    "persist reconstructable replay",
+    "detect replay corruption"
+  ],
+  "fail_closed_conditions": [
+    "invalid intake artifact",
+    "intake hash mismatch",
+    "intake not accepted",
+    "intake not safe for native development",
+    "unsupported domain context",
+    "missing required context",
+    "reference hash mismatch",
+    "ambiguous context",
+    "append-only replay path collision",
+    "replay ordering mismatch",
+    "replay hash mismatch"
+  ],
+  "validation_summary": {
+    "runtime_tests": "6 passed",
+    "native_development_intake_regression": "9 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "readiness_update": {
+    "previous_native_development_readiness_percent": 65,
+    "current_native_development_readiness_percent": 72,
+    "status": "READY_WITH_GAPS"
+  },
+  "remaining_gaps": [
+    "conversation integration with context assembly runtime",
+    "domain and worker resolution registry",
+    "provider necessity policy runtime",
+    "development proposal contract",
+    "conversation-to-implementation governed handoff"
+  ],
+  "recommended_next_milestone": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_V1"
+}
