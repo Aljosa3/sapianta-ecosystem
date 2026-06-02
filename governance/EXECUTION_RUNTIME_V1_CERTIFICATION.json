@@ -1,0 +1,46 @@
+{
+  "artifact": "EXECUTION_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "EXECUTION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "implemented_transition": "INVOKED_TO_EXECUTING",
+    "completion_runtime": false,
+    "result_runtime": false,
+    "failure_runtime": false,
+    "reflection_runtime": false,
+    "self_improvement_runtime": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "certified_properties": {
+    "valid_invocation_required": true,
+    "worker_identity_verified": true,
+    "worker_assignment_continuity_required": true,
+    "dispatch_continuity_required": true,
+    "canonical_chain_continuity_required": true,
+    "execution_metadata_required": true,
+    "execution_context_required": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider-originated proposals remain upstream and non-authoritative.",
+    "aigol_governs": "AiGOL validates invocation, dispatch, assignment, worker identity, and chain continuity before EXECUTING.",
+    "worker_executes": "Execution is represented only as an execution-start state in this runtime.",
+    "replay_records": "Execution start and return events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/execution_runtime.py",
+    "tests/test_execution_runtime_v1.py",
+    "governance/EXECUTION_RUNTIME_V1.md",
+    "governance/EXECUTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Completion is not implemented.",
+    "Result certification is not implemented.",
+    "Failure handling beyond fail-closed validation is not implemented.",
+    "The runtime records execution start only."
+  ]
+}
