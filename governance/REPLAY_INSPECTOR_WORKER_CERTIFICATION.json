@@ -1,0 +1,91 @@
+{
+  "artifact": "REPLAY_INSPECTOR_WORKER_CERTIFICATION",
+  "status": "CERTIFIED_FOUNDATION",
+  "classification": {
+    "REPLAY_INSPECTOR_WORKER_FOUNDATION_STATUS": "READY"
+  },
+  "worker": {
+    "worker_type": "REPLAY_INSPECTOR_WORKER_V1",
+    "worker_class": "READ_ONLY_REPLAY_INSPECTION_WORKER",
+    "capability": "REPLAY_INSPECTION_READ_ONLY",
+    "implementation_status": "NOT_IMPLEMENTED_FOUNDATION_ONLY"
+  },
+  "allowed_reads": [
+    "SOURCE_ROUTER_REPLAY",
+    "PROMPT_REPLAY",
+    "PROPOSAL_REPLAY",
+    "APPROVAL_REPLAY",
+    "EXECUTION_REQUEST_REPLAY",
+    "READY_FOR_DISPATCH_REPLAY",
+    "WORKER_REGISTRATION_REPLAY",
+    "WORKER_ASSIGNMENT_REPLAY",
+    "DISPATCH_REPLAY",
+    "WORKER_INVOCATION_REPLAY",
+    "EXECUTION_REPLAY",
+    "COMPLETION_REPLAY"
+  ],
+  "forbidden_actions": {
+    "modify_replay": true,
+    "modify_governance": true,
+    "modify_lifecycle_artifacts": true,
+    "approve_proposals": true,
+    "create_execution_requests": true,
+    "dispatch_workers": true,
+    "invoke_workers": true,
+    "start_execution": true,
+    "complete_execution": true,
+    "certify_results": true,
+    "analyze_failures_as_governance": true,
+    "call_providers": true,
+    "self_improve": true
+  },
+  "required_output": {
+    "artifact_type": "REPLAY_INSPECTION_RESULT_V1",
+    "status_values": [
+      "INSPECTION_COMPLETED",
+      "FAILED_CLOSED"
+    ],
+    "authority_flags_required_false": [
+      "provider_authority",
+      "governance_authority",
+      "worker_authority",
+      "mutation_performed"
+    ]
+  },
+  "fail_closed_on": [
+    "missing_replay_reference",
+    "corrupt_replay_wrapper",
+    "corrupt_artifact_hash",
+    "chain_mismatch",
+    "worker_identity_mismatch",
+    "unauthorized_path",
+    "unexpected_artifact_type",
+    "authority_bearing_input",
+    "mutation_attempt",
+    "serialization_failure"
+  ],
+  "lifecycle_integration": {
+    "proposal_required": true,
+    "approval_required": true,
+    "execution_request_required": true,
+    "ready_for_dispatch_required": true,
+    "worker_assignment_required": true,
+    "dispatch_required": true,
+    "invocation_required": true,
+    "execution_required": true,
+    "completion_required": true,
+    "bypass_allowed": false
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider evidence remains upstream and non-authoritative.",
+    "aigol_governs": "AiGOL controls lifecycle authorization and worker invocation.",
+    "worker_executes": "The worker performs bounded read-only replay inspection.",
+    "replay_records": "Lifecycle replay and future inspection output remain replay-visible."
+  },
+  "evidence": [
+    "governance/REPLAY_INSPECTOR_WORKER_FOUNDATION_V1.md",
+    "governance/REPLAY_INSPECTOR_WORKER_MODEL_V1.md",
+    "governance/REPLAY_INSPECTOR_WORKER_BOUNDARY_GUARANTEES_V1.md",
+    "governance/REPLAY_INSPECTOR_WORKER_ADR_V1.md"
+  ]
+}
