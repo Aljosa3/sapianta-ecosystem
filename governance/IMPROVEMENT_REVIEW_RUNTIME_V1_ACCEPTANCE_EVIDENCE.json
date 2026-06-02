@@ -1,0 +1,62 @@
+{
+  "artifact": "IMPROVEMENT_REVIEW_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "IMPROVEMENT_REVIEW_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_artifact": "IMPROVEMENT_REVIEW_ARTIFACT_V1",
+  "implemented_capabilities": {
+    "improvement_review_creation": true,
+    "valid_improvement_proposal_required": true,
+    "canonical_chain_continuity": true,
+    "worker_identity_continuity": true,
+    "review_criteria_capture": true,
+    "review_findings_capture": true,
+    "approval_recommendation_recording": true,
+    "approval_not_performed_recording": true,
+    "implementation_not_authorized_recording": true,
+    "replay_visible_review_events": true,
+    "replay_reconstruction": true
+  },
+  "fail_closed_coverage": {
+    "invalid_proposal": true,
+    "duplicate_review": true,
+    "chain_mismatch": true,
+    "corrupt_references": true,
+    "replay_corruption": true,
+    "invalid_review_source": true,
+    "authority_bearing_review_criteria": true,
+    "authority_bearing_review_findings": true,
+    "non_boolean_approval_recommendation": true
+  },
+  "forbidden_capabilities_absent": {
+    "improvement_approval": true,
+    "improvement_rejection": true,
+    "implementation_planning": true,
+    "implementation_execution": true,
+    "execution_request_creation": true,
+    "worker_dispatch": true,
+    "worker_invocation": true,
+    "governance_mutation": true,
+    "replay_mutation": true,
+    "reflection": true,
+    "self_improvement": true,
+    "self_application": true
+  },
+  "replay_events": [
+    "IMPROVEMENT_REVIEW_RECORDED",
+    "IMPROVEMENT_REVIEW_RETURNED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_improvement_review_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 14
+    },
+    "lifecycle_tests": {
+      "command": "python -m pytest tests/test_improvement_review_runtime_v1.py tests/test_improvement_proposal_runtime_v1.py tests/test_result_evaluation_runtime_v1.py tests/test_result_runtime_v1.py tests/test_replay_inspector_worker_v1.py tests/test_completion_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 149
+    }
+  }
+}
