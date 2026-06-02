@@ -1,0 +1,69 @@
+{
+  "artifact": "IMPROVEMENT_IMPLEMENTATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "IMPROVEMENT_IMPLEMENTATION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_artifact": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+  "implemented_capabilities": {
+    "implementation_plan_creation": true,
+    "valid_improvement_approval_required": true,
+    "approved_status_required": true,
+    "rejected_approval_rejected": true,
+    "canonical_chain_continuity": true,
+    "upstream_reference_continuity": true,
+    "plan_text_recording": true,
+    "plan_scope_recording": true,
+    "plan_constraints_recording": true,
+    "planned_artifact_targets_recording": true,
+    "planned_validation_recording": true,
+    "future_execution_path_description_allowed": true,
+    "future_worker_description_allowed": true,
+    "execution_request_not_created_recording": true,
+    "implementation_not_performed_recording": true,
+    "replay_visible_implementation_plan_events": true,
+    "replay_reconstruction": true
+  },
+  "fail_closed_coverage": {
+    "invalid_approval": true,
+    "rejected_approval": true,
+    "duplicate_implementation_plan": true,
+    "chain_mismatch": true,
+    "corrupt_references": true,
+    "replay_corruption": true,
+    "invalid_plan_source": true,
+    "authority_bearing_scope": true,
+    "authority_bearing_constraints": true,
+    "authority_bearing_plan_text": true
+  },
+  "forbidden_capabilities_absent": {
+    "code_mutation": true,
+    "governance_mutation": true,
+    "replay_mutation": true,
+    "execution_request_creation": true,
+    "worker_dispatch": true,
+    "worker_invocation": true,
+    "worker_execution": true,
+    "approval_decision_creation": true,
+    "reflection": true,
+    "self_modification": true,
+    "self_improvement": true,
+    "self_application": true
+  },
+  "replay_events": [
+    "IMPROVEMENT_IMPLEMENTATION_PLAN_CREATED",
+    "IMPROVEMENT_IMPLEMENTATION_PLAN_RETURNED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_improvement_implementation_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 15
+    },
+    "lifecycle_tests": {
+      "command": "python -m pytest tests/test_improvement_implementation_runtime_v1.py tests/test_improvement_approval_runtime_v1.py tests/test_improvement_review_runtime_v1.py tests/test_improvement_proposal_runtime_v1.py tests/test_result_evaluation_runtime_v1.py tests/test_result_runtime_v1.py tests/test_replay_inspector_worker_v1.py tests/test_completion_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 179
+    }
+  }
+}

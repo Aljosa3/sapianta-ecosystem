@@ -1,0 +1,58 @@
+{
+  "artifact": "IMPROVEMENT_IMPLEMENTATION_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "IMPROVEMENT_IMPLEMENTATION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "artifact_type": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+    "approved_approval_required": true,
+    "future_implementation_description": true,
+    "future_execution_path_description": true,
+    "future_worker_description": true,
+    "code_mutation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "worker_execution": false,
+    "self_modification": false,
+    "self_improvement": false,
+    "self_application": false
+  },
+  "certified_properties": {
+    "valid_approval_required": true,
+    "approved_status_required": true,
+    "approval_hash_required": true,
+    "upstream_reference_hashes_required": true,
+    "canonical_chain_continuity_required": true,
+    "execution_request_created_false": true,
+    "implementation_performed_false": true,
+    "plan_artifact_hash_bound": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute non-authoritative plan language only.",
+    "aigol_governs": "AiGOL validates approved improvement evidence, chain continuity, plan content, and replay visibility.",
+    "human_authorizes": "Implementation planning requires an upstream human-authorized APPROVED improvement approval artifact.",
+    "worker_executes": "No worker execution occurs in this runtime; future worker paths remain descriptive only.",
+    "replay_records": "Implementation plan created and returned events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/improvement_implementation_runtime.py",
+    "tests/test_improvement_implementation_runtime_v1.py",
+    "governance/IMPROVEMENT_IMPLEMENTATION_RUNTIME_V1.md",
+    "governance/IMPROVEMENT_IMPLEMENTATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Improvement Implementation Runtime records implementation plans only.",
+    "Execution request creation from implementation plans is not implemented.",
+    "Code mutation is not implemented.",
+    "Worker dispatch, worker invocation, and worker execution are not implemented by this runtime.",
+    "Reflection, self-modification, self-improvement, and self-application remain out of scope."
+  ]
+}
