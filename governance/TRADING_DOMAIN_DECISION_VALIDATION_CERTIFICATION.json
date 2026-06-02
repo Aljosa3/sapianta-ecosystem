@@ -1,0 +1,104 @@
+{
+  "artifact": "TRADING_DOMAIN_DECISION_VALIDATION_CERTIFICATION_V1",
+  "domain": "TRADING",
+  "review_type": "decision_validation_architecture",
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "broker_integration_introduced": false,
+  "exchange_integration_introduced": false,
+  "order_placement_introduced": false,
+  "live_trading_introduced": false,
+  "strategy_implementation_introduced": false,
+  "financial_performance_claims_introduced": false,
+  "foundation_dependency": {
+    "TRADING_DOMAIN_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "direct_answers": {
+    "trading_decision_request_defined": true,
+    "required_evidence_defined": true,
+    "validations_defined": true,
+    "insufficient_evidence_defined": true,
+    "unacceptable_risk_defined": true,
+    "valid_decision_recommendation_defined": true,
+    "rejected_recommendation_defined": true,
+    "participating_workers_defined": true,
+    "replay_evidence_defined": true,
+    "learning_attachment_defined": true
+  },
+  "required_evidence": [
+    "Market Evidence",
+    "Portfolio Context",
+    "Risk Context",
+    "Strategy Context",
+    "Policy Constraint Context",
+    "Human Review Requirement",
+    "Replay Context",
+    "No-live-execution flags"
+  ],
+  "required_validations": [
+    "request completeness validation",
+    "canonical chain continuity validation",
+    "market evidence freshness validation",
+    "market evidence source validation",
+    "portfolio context validation",
+    "risk context validation",
+    "strategy context validation",
+    "policy constraint validation",
+    "prohibited action validation",
+    "replay visibility validation",
+    "live execution absence validation",
+    "human review requirement validation"
+  ],
+  "allowed_validation_results": [
+    "ADMISSIBLE_FOR_HUMAN_REVIEW",
+    "REJECTED_BY_GOVERNANCE",
+    "FAILED_CLOSED",
+    "INSUFFICIENT_EVIDENCE",
+    "UNACCEPTABLE_RISK",
+    "OUT_OF_SCOPE",
+    "SIMULATION_ONLY"
+  ],
+  "candidate_workers": [
+    "Market Data Worker",
+    "Market Evidence Normalization Worker",
+    "Portfolio Worker",
+    "Strategy Evaluation Worker",
+    "Trading Risk Analysis Worker",
+    "Compliance Constraint Worker",
+    "Decision Explanation Worker",
+    "Trading Replay Inspector Worker"
+  ],
+  "candidate_decision_lifecycle": [
+    "TRADING_DECISION_REQUESTED",
+    "TRADING_EVIDENCE_COLLECTED",
+    "TRADING_EVIDENCE_NORMALIZED",
+    "PORTFOLIO_CONTEXT_VALIDATED",
+    "STRATEGY_CONTEXT_EVALUATED",
+    "RISK_CONTEXT_ANALYZED",
+    "POLICY_CONSTRAINTS_VALIDATED",
+    "TRADING_DECISION_VALIDATED",
+    "HUMAN_REVIEW_REQUIRED",
+    "TRADING_DECISION_RECORDED",
+    "TRADING_LEARNING_FEEDBACK_ATTACHED"
+  ],
+  "required_false_foundation_flags": {
+    "broker_invoked": false,
+    "exchange_invoked": false,
+    "order_placed": false,
+    "live_trading_performed": false,
+    "portfolio_mutated": false,
+    "strategy_deployed": false,
+    "financial_claim_made": false
+  },
+  "authority_boundary_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes": true,
+    "replay_records": true
+  },
+  "final_classification": {
+    "TRADING_DOMAIN_DECISION_VALIDATION_STATUS": "CERTIFIED"
+  },
+  "recommended_next_milestone": "TRADING_DECISION_VALIDATION_ACCEPTANCE_CRITERIA_V1"
+}
