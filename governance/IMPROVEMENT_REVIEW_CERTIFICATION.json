@@ -1,0 +1,85 @@
+{
+  "artifact": "IMPROVEMENT_REVIEW_CERTIFICATION",
+  "status": "CERTIFIED_FOUNDATION",
+  "classification": {
+    "IMPROVEMENT_REVIEW_FOUNDATION_STATUS": "READY"
+  },
+  "scope": {
+    "runtime_implemented": false,
+    "foundation_only": true,
+    "approval_implemented": false,
+    "implementation_implemented": false,
+    "reflection_implemented": false,
+    "self_improvement_implemented": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "artifact_model": {
+    "artifact_type": "IMPROVEMENT_REVIEW_ARTIFACT_V1",
+    "valid_statuses": [
+      "IMPROVEMENT_REVIEWED",
+      "FAILED_CLOSED"
+    ],
+    "creator": "AIGOL",
+    "provider_direct_review_creation_allowed": false,
+    "worker_direct_review_creation_allowed": false,
+    "human_direct_review_creation_allowed": false,
+    "automatic_self_improvement_allowed": false
+  },
+  "required_evidence": {
+    "improvement_proposal_artifact": true,
+    "improvement_proposal_hash": true,
+    "proposal_status_improvement_proposed": true,
+    "evaluation_reference": true,
+    "evaluation_hash": true,
+    "result_reference": true,
+    "result_hash": true,
+    "canonical_chain_id": true,
+    "approval_required_true": true,
+    "implementation_authorized_false": true,
+    "replay_reference": true
+  },
+  "required_absent_authority": {
+    "provider_authority": false,
+    "governance_authority": false,
+    "worker_authority": false,
+    "approval_authority": false,
+    "implementation_authority": false,
+    "self_improvement_authority": false,
+    "proposal_approved": false,
+    "proposal_rejected": false,
+    "implementation_authorized": false,
+    "implementation_applied": false,
+    "execution_requested": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "relationship": {
+    "improvement_proposal": "Replay-visible proposed change derived from evaluation evidence.",
+    "improvement_review": "Replay-visible assessment of the improvement proposal.",
+    "improvement_approval": "Future explicit human-authorized governance decision required before implementation.",
+    "implementation": "Future governed execution path allowed only after approval."
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute review text but remains non-authoritative.",
+    "aigol_governs": "AiGOL owns formal improvement review artifact creation and validation.",
+    "worker_executes": "Worker output remains upstream evidence, not review or approval authority.",
+    "replay_records": "Improvement review evidence must be append-only and reconstructable."
+  },
+  "evidence": [
+    "governance/IMPROVEMENT_REVIEW_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_REVIEW_MODEL_V1.md",
+    "governance/IMPROVEMENT_REVIEW_BOUNDARY_GUARANTEES_V1.md",
+    "governance/IMPROVEMENT_REVIEW_ADR_V1.md"
+  ],
+  "known_limits": [
+    "Improvement Review Runtime is not implemented.",
+    "Improvement Approval Runtime is not implemented.",
+    "Implementation Runtime is not implemented.",
+    "Reflection Runtime is not implemented.",
+    "Self-Improvement Runtime is not implemented.",
+    "Review does not approve, reject, implement, mutate, or self-apply changes."
+  ]
+}
