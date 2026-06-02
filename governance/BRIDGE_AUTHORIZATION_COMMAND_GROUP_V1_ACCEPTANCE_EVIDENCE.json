@@ -1,0 +1,46 @@
+{
+  "artifact": "BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "command_group": "bridge",
+  "runtime": "aigol/cli/commands/bridge.py",
+  "cli_wiring": "aigol/cli/aigol_cli.py",
+  "supported_commands": {
+    "bridge_list": true,
+    "bridge_show": true,
+    "bridge_pending": true,
+    "bridge_approved": true,
+    "bridge_rejected": true,
+    "bridge_chain": true,
+    "bridge_execution_request": true
+  },
+  "bridge_artifacts_supported": [
+    "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_LINK_ARTIFACT_V1",
+    "EXECUTION_REQUEST_ARTIFACT_V1 from IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1"
+  ],
+  "boundary_guarantees": {
+    "read_only": true,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_request_creation": false,
+    "authorization_runtime_bypass": false,
+    "human_authorization_inference": false
+  },
+  "replay_guarantees": {
+    "replay_visible": true,
+    "wrapper_hash_validation": true,
+    "artifact_hash_validation": true,
+    "canonical_chain_filtering": true,
+    "execution_request_filtering": true,
+    "fail_closed_corruption_display": true
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_bridge_authorization_command_group_v1.py",
+    "bridge_runtime_regression": "python -m pytest tests/test_bridge_authorization_command_group_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py tests/test_cli_chain_inspection_runtime_v1.py tests/test_aigol_cli_foundation_v1.py",
+    "acceptance_json": "python -m json.tool governance/BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}

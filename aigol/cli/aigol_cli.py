@@ -16,6 +16,16 @@ from aigol.cli.commands.approval import (
     approval_show_command,
     render_approval_summary,
 )
+from aigol.cli.commands.bridge import (
+    bridge_approved_command,
+    bridge_chain_command,
+    bridge_execution_request_command,
+    bridge_list_command,
+    bridge_pending_command,
+    bridge_rejected_command,
+    bridge_show_command,
+    render_bridge_summary,
+)
 from aigol.cli.commands.chain_inspection import (
     render_chain_inspection_summary,
     show_chain_command,
@@ -174,6 +184,33 @@ def build_parser() -> argparse.ArgumentParser:
     dispatch_authorize.add_argument("--artifact-json", default="")
     dispatch_authorize.add_argument("--human-request", default="Authorize governed dispatch continuity.")
     dispatch_authorize.add_argument("--semantic-intent", default="Deterministic dispatch authorization")
+
+    bridge = subcommands.add_parser("bridge")
+    bridge_sub = bridge.add_subparsers(dest="bridge_command", required=True)
+    bridge_list = bridge_sub.add_parser("list")
+    bridge_list.add_argument("--replay-root", default=".")
+    bridge_list.add_argument("--json", action="store_true")
+    bridge_show = bridge_sub.add_parser("show")
+    bridge_show.add_argument("bridge_id")
+    bridge_show.add_argument("--replay-root", default=".")
+    bridge_show.add_argument("--json", action="store_true")
+    bridge_pending = bridge_sub.add_parser("pending")
+    bridge_pending.add_argument("--replay-root", default=".")
+    bridge_pending.add_argument("--json", action="store_true")
+    bridge_approved = bridge_sub.add_parser("approved")
+    bridge_approved.add_argument("--replay-root", default=".")
+    bridge_approved.add_argument("--json", action="store_true")
+    bridge_rejected = bridge_sub.add_parser("rejected")
+    bridge_rejected.add_argument("--replay-root", default=".")
+    bridge_rejected.add_argument("--json", action="store_true")
+    bridge_chain = bridge_sub.add_parser("chain")
+    bridge_chain.add_argument("canonical_chain_id")
+    bridge_chain.add_argument("--replay-root", default=".")
+    bridge_chain.add_argument("--json", action="store_true")
+    bridge_execution_request = bridge_sub.add_parser("execution-request")
+    bridge_execution_request.add_argument("execution_request_id")
+    bridge_execution_request.add_argument("--replay-root", default=".")
+    bridge_execution_request.add_argument("--json", action="store_true")
 
     execution = subcommands.add_parser("execution")
     execution_sub = execution.add_subparsers(dest="execution_command", required=True)
@@ -632,6 +669,23 @@ def run_command(args: argparse.Namespace) -> dict:
         return continuity_preview_summary(ingress_artifact=_artifact_from_args(args))
     if args.command == "dispatch" and args.dispatch_command == "authorize":
         return authorize_dispatch(ingress_artifact=_artifact_from_args(args))
+    if args.command == "bridge" and args.bridge_command == "list":
+        return bridge_list_command(replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "show":
+        return bridge_show_command(bridge_id=args.bridge_id, replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "pending":
+        return bridge_pending_command(replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "approved":
+        return bridge_approved_command(replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "rejected":
+        return bridge_rejected_command(replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "chain":
+        return bridge_chain_command(canonical_chain_id=args.canonical_chain_id, replay_root=args.replay_root)
+    if args.command == "bridge" and args.bridge_command == "execution-request":
+        return bridge_execution_request_command(
+            execution_request_id=args.execution_request_id,
+            replay_root=args.replay_root,
+        )
     if args.command == "execution" and args.execution_command == "handoff":
         return run_execution_handoff(
             ingress_artifact=_artifact_from_args(args),
@@ -940,6 +994,19 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL APPROVAL",
             render_approval_summary(result).splitlines(),
+        )
+    if command in {
+        "aigol bridge list",
+        "aigol bridge show",
+        "aigol bridge pending",
+        "aigol bridge approved",
+        "aigol bridge rejected",
+        "aigol bridge chain",
+        "aigol bridge execution-request",
+    }:
+        return render_card(
+            "AIGOL BRIDGE",
+            render_bridge_summary(result).splitlines(),
         )
     if command == "aigol dispatch authorize":
         return render_card(

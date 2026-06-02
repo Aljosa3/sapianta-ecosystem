@@ -1,0 +1,30 @@
+{
+  "artifact": "BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_command_group": "BRIDGE_AUTHORIZATION_COMMAND_GROUP_V1",
+  "certification_basis": [
+    "The AiGOL CLI exposes bridge list/show/pending/approved/rejected/chain/execution-request commands.",
+    "The command group recognizes implementation-plan-to-execution-request bridge link artifacts and derived execution request artifacts.",
+    "Replay wrapper hashes and bridge artifact hashes are validated before display.",
+    "Canonical chain continuity and execution request references are preserved in operator output.",
+    "Corrupt bridge replay fails closed in operator-visible output.",
+    "The command group does not dispatch, invoke, execute, mutate governance, mutate replay, create execution requests, bypass authorization runtimes, or infer human authorization."
+  ],
+  "validated_tests": [
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_list_shows_authorized_bridge_transitions",
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_show_and_status_filters",
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_chain_and_execution_request_filters",
+    "tests/test_bridge_authorization_command_group_v1.py::test_parser_and_run_command_support_bridge_execution_request",
+    "tests/test_bridge_authorization_command_group_v1.py::test_cli_entrypoint_outputs_bridge_json",
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_show_missing_fails_closed_without_authority",
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_command_detects_corrupt_bridge_replay",
+    "tests/test_bridge_authorization_command_group_v1.py::test_bridge_command_group_has_no_dispatch_invocation_or_execution_surface"
+  ],
+  "known_limitations": [
+    "The command group is inspection and visibility oriented; it does not create bridge transitions or execution requests.",
+    "Rejected and pending bridge states are displayed only when replay-visible bridge evidence records those states."
+  ],
+  "final_classification": {
+    "BRIDGE_AUTHORIZATION_COMMAND_GROUP_STATUS": "CERTIFIED"
+  }
+}
