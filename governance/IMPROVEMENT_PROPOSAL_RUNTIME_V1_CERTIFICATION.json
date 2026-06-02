@@ -1,0 +1,55 @@
+{
+  "artifact": "IMPROVEMENT_PROPOSAL_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "IMPROVEMENT_PROPOSAL_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "artifact_type": "IMPROVEMENT_PROPOSAL_ARTIFACT_V1",
+    "improvement_review": false,
+    "improvement_approval": false,
+    "implementation_planning": false,
+    "implementation_execution": false,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "reflection": false,
+    "self_improvement": false,
+    "self_application": false
+  },
+  "certified_properties": {
+    "valid_evaluation_required": true,
+    "improvement_recommendation_required": true,
+    "canonical_chain_continuity_required": true,
+    "worker_identity_continuity_required": true,
+    "evaluation_hash_required": true,
+    "result_hash_required": true,
+    "approval_required": true,
+    "implementation_authorized_false": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute proposal language but remains non-authoritative.",
+    "aigol_governs": "AiGOL validates evaluation evidence and records proposal-only artifacts.",
+    "worker_executes": "Worker output remains upstream evidence, not improvement authority.",
+    "replay_records": "Improvement proposal created and returned events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/improvement_proposal_runtime.py",
+    "tests/test_improvement_proposal_runtime_v1.py",
+    "governance/IMPROVEMENT_PROPOSAL_RUNTIME_V1.md",
+    "governance/IMPROVEMENT_PROPOSAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Improvement Proposal Runtime creates proposal-only artifacts.",
+    "Improvement Review Runtime is not implemented.",
+    "Improvement Approval Runtime is not implemented.",
+    "Implementation Planning Runtime is not implemented.",
+    "Execution request creation from improvement proposals is not implemented.",
+    "Reflection, self-improvement, and self-application remain out of scope."
+  ]
+}
