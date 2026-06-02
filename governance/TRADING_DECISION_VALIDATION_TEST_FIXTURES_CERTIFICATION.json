@@ -1,0 +1,101 @@
+{
+  "artifact": "TRADING_DECISION_VALIDATION_TEST_FIXTURES_CERTIFICATION_V1",
+  "domain": "TRADING",
+  "review_type": "decision_validation_fixture_architecture",
+  "runtime_changes_introduced": false,
+  "worker_implementation_introduced": false,
+  "strategy_implementation_introduced": false,
+  "broker_integration_introduced": false,
+  "exchange_integration_introduced": false,
+  "order_placement_introduced": false,
+  "live_trading_introduced": false,
+  "profitability_claims_introduced": false,
+  "policy_constraint_dependency": {
+    "TRADING_DECISION_POLICY_CONSTRAINT_STATUS": "CERTIFIED"
+  },
+  "direct_answers": {
+    "valid_minimal_fixture_defined": true,
+    "insufficient_evidence_fixture_defined": true,
+    "incomplete_portfolio_context_fixture_defined": true,
+    "unacceptable_risk_fixture_defined": true,
+    "policy_violation_fixture_defined": true,
+    "human_review_escalation_fixture_defined": true,
+    "learning_review_escalation_fixture_defined": true,
+    "fail_closed_fixtures_defined": true,
+    "mandatory_evidence_fields_defined": true,
+    "optional_evidence_fields_defined": true,
+    "replay_evidence_defined": true,
+    "fixture_organization_defined": true
+  },
+  "fixture_categories": [
+    "valid",
+    "insufficient_evidence",
+    "incomplete_portfolio_context",
+    "unacceptable_risk",
+    "policy_violation",
+    "human_review_escalation",
+    "learning_review_escalation",
+    "fail_closed_replay_integrity",
+    "fail_closed_authority_violation",
+    "advisory"
+  ],
+  "mandatory_evidence_fields": [
+    "fixture_id",
+    "fixture_category",
+    "expected_validation_result",
+    "canonical_chain_id",
+    "trading_decision_id",
+    "decision_request_reference",
+    "market_evidence_reference",
+    "portfolio_context_reference",
+    "risk_context_reference",
+    "strategy_context_reference",
+    "policy_constraint_reference",
+    "replay_reference",
+    "replay_visible",
+    "broker_invoked",
+    "exchange_invoked",
+    "order_placed",
+    "live_trading_performed",
+    "portfolio_mutated",
+    "strategy_deployed",
+    "financial_claim_made"
+  ],
+  "optional_evidence_fields": [
+    "alternative_scenario_references",
+    "additional_market_data_references",
+    "historical_simulation_reference",
+    "rejected_alternative_recommendations",
+    "explanation_reference",
+    "learning_feedback_reference",
+    "operator_notes_reference"
+  ],
+  "escalation_fixture_categories": [
+    "human review required",
+    "material risk review",
+    "policy review",
+    "portfolio context review",
+    "learning review",
+    "fail-closed audit"
+  ],
+  "fail_closed_fixture_categories": [
+    "replay hash mismatch",
+    "artifact hash mismatch",
+    "chain continuity failure",
+    "missing replay visibility",
+    "broker invocation detected",
+    "exchange invocation detected",
+    "order placement detected",
+    "live trading detected",
+    "portfolio mutation detected",
+    "strategy deployment detected",
+    "financial claim detected",
+    "human authorization ambiguity"
+  ],
+  "recommended_future_fixture_layout": "governance/trading/fixtures/<fixture_category>/<fixture_id>.json",
+  "final_classification": {
+    "TRADING_DECISION_VALIDATION_TEST_FIXTURES_STATUS": "CERTIFIED"
+  },
+  "recommended_next_milestone": "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1",
+  "safe_first_worker_rationale": "Market evidence normalization can be implemented as a read-only evidence worker over explicit Market Evidence fixtures without strategy, risk, portfolio, broker, exchange, order, or live trading authority."
+}
