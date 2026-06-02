@@ -1,0 +1,100 @@
+{
+  "artifact": "OPERATOR_WORKFLOW_GAP_CLOSURE_V1",
+  "review_type": "minimum_operator_workflow_gap_closure",
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "governance_behavior_changes_introduced": false,
+  "execution_authority_introduced": false,
+  "dispatch_introduced": false,
+  "invocation_introduced": false,
+  "final_classification": {
+    "OPERATOR_WORKFLOW_GAP_CLOSURE_STATUS": "READY"
+  },
+  "current_primary_interface_status": "READY_WITH_GAPS",
+  "target_primary_interface_status": "CERTIFIED",
+  "minimum_remaining_workflows": {
+    "approval_management": {
+      "required": true,
+      "highest_impact": true,
+      "minimum_commands": [
+        "approval inbox",
+        "approval show <APPROVAL_ID>",
+        "approval decide <APPROVAL_ID>",
+        "approval history"
+      ]
+    },
+    "bridge_authorization": {
+      "required": true,
+      "minimum_commands": [
+        "bridge show <BRIDGE_ID>",
+        "bridge authorize-execution-request <PLAN_ID>"
+      ]
+    },
+    "implementation_plan_inspection": {
+      "required": true,
+      "minimum_commands": [
+        "plan show <PLAN_ID>",
+        "plan lineage <PLAN_ID>",
+        "plan bridge-status <PLAN_ID>"
+      ]
+    },
+    "governed_learning_workflow": {
+      "required": true,
+      "minimum_commands": [
+        "learning evaluate-result",
+        "learning propose-improvement",
+        "learning review-improvement",
+        "learning approve-improvement",
+        "learning plan-implementation",
+        "learning status <CHAIN_ID>"
+      ]
+    },
+    "session_dashboard": {
+      "required": true,
+      "minimum_visibility": [
+        "current chain",
+        "latest chain",
+        "related chains",
+        "pending approvals",
+        "latest proposal",
+        "latest implementation plan",
+        "bridge authorization status",
+        "execution request status",
+        "latest fail-closed event",
+        "safe next commands"
+      ]
+    },
+    "conversation_shortcuts": {
+      "required": true,
+      "minimum_shortcuts": [
+        "/chain",
+        "/lineage",
+        "/learning",
+        "/execution",
+        "/next"
+      ]
+    }
+  },
+  "remaining_chatgpt_mediation": [
+    "ambiguous next-step selection",
+    "complex governance narrative interpretation",
+    "approval rationale drafting",
+    "improvement proposal drafting",
+    "source-aware readiness explanation",
+    "older compatibility replay interpretation"
+  ],
+  "remaining_manual_artifact_inspection": [
+    "approval context",
+    "improvement proposal and review details",
+    "implementation plan contents",
+    "bridge linkage evidence",
+    "source-aware readiness mismatches",
+    "older replay artifacts without canonical_chain_id"
+  ],
+  "estimated_path_to_certified": {
+    "scope": "small bounded operator workflow layer",
+    "core_runtime_required": false,
+    "new_authority_required": false,
+    "expected_status_after_minimum_set": "CERTIFICATION_REVIEW_READY"
+  }
+}
