@@ -1,0 +1,84 @@
+{
+  "artifact": "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "bridge_artifact_type": "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_LINK_ARTIFACT_V1",
+    "execution_request_artifact_type": "EXECUTION_REQUEST_ARTIFACT_V1",
+    "source_artifact_type": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+    "readiness_validation": false,
+    "worker_assignment": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "worker_execution": false,
+    "completion": false,
+    "result_capture": false,
+    "code_mutation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "self_approval": false,
+    "self_authorization": false,
+    "self_implementation": false,
+    "self_application": false
+  },
+  "certified_properties": {
+    "valid_plan_required": true,
+    "valid_approval_required": true,
+    "approved_status_required": true,
+    "canonical_chain_continuity_required": true,
+    "explicit_human_execution_authorization_required": true,
+    "planning_authorization_not_sufficient": true,
+    "request_payload_hash_bound": true,
+    "execution_request_artifact_hash_bound": true,
+    "bridge_link_hash_bound": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "fail_closed": true
+  },
+  "boundary_guarantees": {
+    "implementation_plan_automatic_request_creation": false,
+    "provider_authority": false,
+    "worker_authority": false,
+    "replay_authority": false,
+    "governance_mutation": false,
+    "execution_state_mutation": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_performed": false,
+    "implementation_performed": false
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 18
+    },
+    "broader_regression_tests": {
+      "command": "python -m pytest tests/test_improvement_implementation_runtime_v1.py tests/test_improvement_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 68
+    }
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance remains non-authoritative and cannot create execution requests.",
+    "aigol_governs": "AiGOL validates implementation plan evidence, approval evidence, human authorization, chain continuity, and payload bounds.",
+    "human_authorizes": "Execution request creation from an implementation plan requires explicit human execution-request authorization.",
+    "worker_executes": "Workers remain downstream and are not dispatched, invoked, or executed by this bridge.",
+    "replay_records": "Replay records creation and link events and reconstructs the bridge without mutation or decision authority."
+  },
+  "evidence": [
+    "aigol/runtime/implementation_plan_to_execution_request_runtime.py",
+    "tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1.md",
+    "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "This runtime creates implementation-plan-derived execution requests only.",
+    "Existing Ready For Dispatch Runtime remains proposal-derived and requires future source-aware integration.",
+    "This runtime does not dispatch, invoke, execute, complete, capture results, or mutate code.",
+    "Domain capability policy for implementation-plan-derived requests remains future work."
+  ]
+}

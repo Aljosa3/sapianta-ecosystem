@@ -1,0 +1,74 @@
+{
+  "artifact": "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_artifacts": {
+    "bridge_artifact": "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_LINK_ARTIFACT_V1",
+    "execution_request_artifact": "EXECUTION_REQUEST_ARTIFACT_V1"
+  },
+  "implemented_capabilities": {
+    "implementation_plan_to_execution_request_bridge": true,
+    "valid_implementation_plan_required": true,
+    "valid_improvement_approval_required": true,
+    "approved_status_required": true,
+    "canonical_chain_continuity": true,
+    "explicit_human_execution_authorization_required": true,
+    "planning_authorization_not_sufficient": true,
+    "source_aware_execution_request_created": true,
+    "bridge_link_artifact_created": true,
+    "bounded_request_payload_required": true,
+    "replay_visible_creation_event": true,
+    "replay_visible_link_event": true,
+    "deterministic_replay_reconstruction": true
+  },
+  "fail_closed_coverage": {
+    "invalid_implementation_plan": true,
+    "invalid_approval": true,
+    "rejected_approval": true,
+    "duplicate_bridge_creation": true,
+    "chain_mismatch": true,
+    "corrupt_references": true,
+    "replay_corruption": true,
+    "authority_bearing_content": true,
+    "automatic_execution_request_creation": true,
+    "missing_explicit_human_authorization": true,
+    "planning_authorization_reuse": true
+  },
+  "forbidden_capabilities_absent": {
+    "readiness_validation": true,
+    "worker_assignment": true,
+    "worker_dispatch": true,
+    "worker_invocation": true,
+    "worker_execution": true,
+    "completion": true,
+    "result_capture": true,
+    "code_mutation": true,
+    "governance_mutation": true,
+    "replay_mutation": true,
+    "self_approval": true,
+    "self_authorization": true,
+    "self_implementation": true,
+    "self_application": true,
+    "provider_authority": true,
+    "worker_authority": true,
+    "replay_authority": true
+  },
+  "replay_events": [
+    "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_CREATED",
+    "IMPLEMENTATION_PLAN_EXECUTION_REQUEST_LINKED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 18
+    },
+    "broader_regression_tests": {
+      "command": "python -m pytest tests/test_improvement_implementation_runtime_v1.py tests/test_improvement_approval_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 68
+    }
+  }
+}
