@@ -1,0 +1,74 @@
+{
+  "artifact_type": "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/conversation_session_resume_runtime.py",
+    "aigol/runtime/native_development_task_intake_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_files": [
+    "tests/test_native_development_task_intake_and_session_resume_v1.py"
+  ],
+  "validated_requirements": {
+    "session_resume_detects_existing_session_directories": true,
+    "session_resume_discovers_existing_turns": true,
+    "session_resume_allocates_next_unused_turn_id": true,
+    "append_only_router_collisions_avoided": true,
+    "native_development_task_intake_artifact_created": true,
+    "milestone_id_captured": true,
+    "domain_detected_when_available": true,
+    "worker_family_detected_when_available": true,
+    "output_scope_captured": true,
+    "explicit_constraints_captured": true,
+    "task_kind_captured": true,
+    "safe_for_native_development_captured": true,
+    "codex_assisted_handoff_requirement_captured": true,
+    "fail_closed_without_milestone": true,
+    "fail_closed_on_authority_bearing_scope": true,
+    "no_automatic_implementation": true,
+    "reconstructable_replay": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_native_development_task_intake_and_session_resume_v1.py",
+      "result": "9 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+      "result": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_chain_continuity_runtime_v1.py",
+      "result": "7 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_prompt_to_conversation_integration_v1.py",
+      "result": "6 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "execution_requests_created": false,
+    "workers_dispatched": false,
+    "workers_invoked": false,
+    "domains_created": false,
+    "governance_modified": false,
+    "replay_modified_outside_append_only_intake_evidence": false,
+    "provider_authority_introduced": false
+  },
+  "fixed_failure_modes": [
+    "default conversation session turn replay collision",
+    "development prompt provider ambiguity for recognized milestone intake",
+    "provider unavailability blocking basic development-intent recording"
+  ],
+  "remaining_gaps": [
+    "development context assembly artifact",
+    "domain and worker resolution registry",
+    "provider necessity policy",
+    "development proposal contract",
+    "conversation-to-implementation governed handoff"
+  ],
+  "updated_native_development_readiness_percent": 58,
+  "recommended_next_milestone": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_ARTIFACT_V1"
+}
+

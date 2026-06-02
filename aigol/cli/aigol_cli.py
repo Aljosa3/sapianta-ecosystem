@@ -126,6 +126,13 @@ from aigol.moc.proposal_persistence import render_proposal_persistence_summary
 from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
+from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.native_development_task_intake_runtime import (
+    FAILED_CLOSED as NATIVE_DEVELOPMENT_FAILED_CLOSED,
+    is_native_development_prompt,
+    render_native_development_task_summary,
+    run_native_development_task_intake,
+)
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
 
 
@@ -556,6 +563,8 @@ def run_interactive_conversation(
     exit_reason = "EXIT_COMMAND"
     current_chain_id: str | None = None
     latest_chain_id: str | None = None
+    initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
+    next_turn_number = initial_resume["next_turn_number"]
 
     while True:
         try:
@@ -571,10 +580,18 @@ def run_interactive_conversation(
             break
 
         turn_count += 1
-        turn_id = f"TURN-{turn_count:06d}"
+        turn_id = f"TURN-{next_turn_number:06d}"
+        next_turn_number += 1
         prompt_id = f"{session_id}:{turn_id}"
         turn_root = session_root / turn_id
         try:
+            resume_state = resume_conversation_session(
+                session_id=session_id,
+                runtime_root=runtime_root,
+                created_at=created_at,
+            )
+            if resume_state["next_turn_id"] != turn_id:
+                raise RuntimeError("conversation session resume failed closed: turn allocation mismatch")
             router_capture = route_source_of_truth(
                 router_id=f"{prompt_id}:SOURCE_ROUTER",
                 human_prompt_reference=prompt_id,
@@ -582,35 +599,62 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
             )
-            conversation_capture = submit_prompt_to_conversation(
-                human_prompt=human_prompt,
-                prompt_id=prompt_id,
-                created_at=created_at,
-                replay_dir=session_root / "prompt_runtime",
-                operator_context=args.operator_context,
-                session_id=session_id,
-                current_chain_id=current_chain_id,
-                latest_chain_id=latest_chain_id,
-            )
-            current_chain_id = conversation_capture.get("current_chain_id") or current_chain_id
-            latest_chain_id = conversation_capture.get("latest_chain_id") or current_chain_id
-            fail_closed = conversation_capture.get("fail_closed") is True
-            if fail_closed:
-                failed_turns += 1
-                failure_reason = conversation_capture.get("failure_reason") or "conversation failed closed"
-                output_writer(f"FAILED_CLOSED: {failure_reason}")
-            else:
-                output_writer(conversation_capture.get("response_text", ""))
-            turns.append(
-                _interactive_turn_summary(
+            if is_native_development_prompt(human_prompt):
+                intake_capture = run_native_development_task_intake(
+                    intake_id=f"{prompt_id}:NATIVE_DEVELOPMENT_TASK_INTAKE",
+                    human_prompt_reference=prompt_id,
+                    human_prompt=human_prompt,
+                    created_at=created_at,
+                    replay_dir=turn_root / "native_development_task_intake",
+                    session_id=session_id,
                     turn_id=turn_id,
-                    prompt_id=prompt_id,
-                    router_capture=router_capture,
-                    conversation_capture=conversation_capture,
-                    source_router_replay_reference=str(turn_root / "source_router"),
-                    failure_reason=conversation_capture.get("failure_reason"),
                 )
-            )
+                fail_closed = intake_capture.get("fail_closed") is True
+                if fail_closed:
+                    failed_turns += 1
+                    failure_reason = intake_capture.get("failure_reason") or "native development task intake failed closed"
+                    output_writer(f"FAILED_CLOSED: {failure_reason}")
+                else:
+                    output_writer(render_native_development_task_summary(intake_capture))
+                turns.append(
+                    _interactive_native_development_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        intake_capture=intake_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            else:
+                conversation_capture = submit_prompt_to_conversation(
+                    human_prompt=human_prompt,
+                    prompt_id=prompt_id,
+                    created_at=created_at,
+                    replay_dir=session_root / "prompt_runtime",
+                    operator_context=args.operator_context,
+                    session_id=session_id,
+                    current_chain_id=current_chain_id,
+                    latest_chain_id=latest_chain_id,
+                )
+                current_chain_id = conversation_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = conversation_capture.get("latest_chain_id") or current_chain_id
+                fail_closed = conversation_capture.get("fail_closed") is True
+                if fail_closed:
+                    failed_turns += 1
+                    failure_reason = conversation_capture.get("failure_reason") or "conversation failed closed"
+                    output_writer(f"FAILED_CLOSED: {failure_reason}")
+                else:
+                    output_writer(conversation_capture.get("response_text", ""))
+                turns.append(
+                    _interactive_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversation_capture=conversation_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                        failure_reason=conversation_capture.get("failure_reason"),
+                    )
+                )
         except Exception as exc:
             failed_turns += 1
             failure_reason = str(exc) or "interactive conversation failed closed"
@@ -632,6 +676,9 @@ def run_interactive_conversation(
         "failed_turns": failed_turns,
         "exit_reason": exit_reason,
         "runtime_root": str(session_root),
+        "session_resumed": initial_resume["session_resumed"],
+        "existing_turn_count": initial_resume["existing_turn_count"],
+        "next_turn_id_at_start": initial_resume["next_turn_id"],
         "current_chain_id": current_chain_id,
         "latest_chain_id": latest_chain_id,
         "replay_visible": True,
@@ -705,6 +752,53 @@ def _interactive_failed_turn_summary(
         "suggested_inspection_commands": [],
         "conversation_chain_continuity_replay_reference": None,
         "source_router_replay_reference": source_router_replay_reference,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+    }
+
+
+def _interactive_native_development_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    intake_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": intake_capture.get("intake_status"),
+        "response_source": "NATIVE_DEVELOPMENT_TASK_INTAKE",
+        "fail_closed": intake_capture.get("fail_closed") is True,
+        "failure_reason": intake_capture.get("failure_reason"),
+        "replay_reference": intake_capture.get("native_development_task_intake_replay_reference"),
+        "conversation_replay_reference": None,
+        "canonical_chain_id": None,
+        "current_chain_id": None,
+        "latest_chain_id": None,
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "native_development_task_intake_replay_reference": intake_capture.get(
+            "native_development_task_intake_replay_reference"
+        ),
+        "recognized_development_task": intake_capture.get("intake_status") != NATIVE_DEVELOPMENT_FAILED_CLOSED,
+        "requested_milestone_id": intake_capture.get("requested_milestone_id"),
+        "requested_domain": intake_capture.get("requested_domain"),
+        "requested_worker_family": intake_capture.get("requested_worker_family"),
+        "requested_output_scope": intake_capture.get("requested_output_scope", []),
+        "explicit_constraints": intake_capture.get("explicit_constraints", []),
+        "task_kind": intake_capture.get("task_kind"),
+        "safe_for_native_development": intake_capture.get("safe_for_native_development"),
+        "codex_assisted_handoff_required": intake_capture.get("codex_assisted_handoff_required"),
+        "suggested_next_safe_handoff": intake_capture.get("suggested_next_safe_handoff"),
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,
@@ -1327,6 +1421,9 @@ def render_command_result(result: dict) -> str:
             [
                 f"session_id: {result.get('session_id')}",
                 f"runtime_root: {result.get('runtime_root')}",
+                f"session_resumed: {result.get('session_resumed')}",
+                f"existing_turn_count: {result.get('existing_turn_count')}",
+                f"next_turn_id_at_start: {result.get('next_turn_id_at_start')}",
                 f"current_chain_id: {result.get('current_chain_id')}",
                 f"latest_chain_id: {result.get('latest_chain_id')}",
                 f"turn_count: {result.get('turn_count', 0)}",

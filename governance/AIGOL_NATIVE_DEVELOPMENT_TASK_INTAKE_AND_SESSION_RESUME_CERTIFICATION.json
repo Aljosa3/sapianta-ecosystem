@@ -1,0 +1,59 @@
+{
+  "artifact_type": "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_CERTIFICATION",
+  "certification_id": "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "session_resume_runtime": true,
+    "native_development_task_intake_runtime": true,
+    "conversation_mode_integration": true,
+    "automatic_implementation": false,
+    "domain_creation": false,
+    "worker_creation": false,
+    "execution_authority": false
+  },
+  "certified_capabilities": [
+    "detect existing conversation sessions",
+    "discover existing turns",
+    "allocate next unused turn id",
+    "avoid append-only source router replay collisions",
+    "recognize explicit native development milestone prompts",
+    "record AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_ARTIFACT_V1",
+    "reconstruct native development task intake replay",
+    "fail closed on missing milestone id",
+    "fail closed on prohibited authority scope",
+    "surface Codex-assisted handoff requirement to operator"
+  ],
+  "preserved_boundaries": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes_only_after_governed_authorization": true,
+    "replay_records": true,
+    "provider_proposal_only": true,
+    "read_only_until_explicit_handoff": true
+  },
+  "must_not_claim": [
+    "AiGOL can fully generate domains from conversation mode",
+    "AiGOL can fully generate workers from conversation mode",
+    "AiGOL can execute development tasks autonomously",
+    "AiGOL can bypass Codex-assisted implementation handoff",
+    "AiGOL can trade, place orders, dispatch, invoke, or execute from this runtime"
+  ],
+  "validation_summary": {
+    "focused_test_suite": "9 passed",
+    "interactive_conversation_regression": "6 passed",
+    "conversation_chain_continuity_regression": "7 passed",
+    "prompt_to_conversation_regression": "6 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "updated_native_development_readiness": {
+    "previous_percent": 45,
+    "current_percent": 58,
+    "status": "READY_WITH_GAPS"
+  },
+  "recommended_next_milestone": "AIGOL_DEVELOPMENT_CONTEXT_ASSEMBLY_ARTIFACT_V1"
+}
