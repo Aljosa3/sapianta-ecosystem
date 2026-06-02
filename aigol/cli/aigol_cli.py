@@ -7,6 +7,15 @@ import json
 from pathlib import Path
 from typing import Any
 
+from aigol.cli.commands.approval import (
+    approval_approved_command,
+    approval_chain_command,
+    approval_list_command,
+    approval_pending_command,
+    approval_rejected_command,
+    approval_show_command,
+    render_approval_summary,
+)
 from aigol.cli.commands.chain_inspection import (
     render_chain_inspection_summary,
     show_chain_command,
@@ -128,6 +137,29 @@ def build_parser() -> argparse.ArgumentParser:
     governance_validate.add_argument("--artifact-json", default="")
     governance_validate.add_argument("--human-request", default="Validate governed CLI continuity.")
     governance_validate.add_argument("--semantic-intent", default="Deterministic governance validation")
+
+    approval = subcommands.add_parser("approval")
+    approval_sub = approval.add_subparsers(dest="approval_command", required=True)
+    approval_list = approval_sub.add_parser("list")
+    approval_list.add_argument("--replay-root", default=".")
+    approval_list.add_argument("--json", action="store_true")
+    approval_show = approval_sub.add_parser("show")
+    approval_show.add_argument("approval_id")
+    approval_show.add_argument("--replay-root", default=".")
+    approval_show.add_argument("--json", action="store_true")
+    approval_pending = approval_sub.add_parser("pending")
+    approval_pending.add_argument("--replay-root", default=".")
+    approval_pending.add_argument("--json", action="store_true")
+    approval_approved = approval_sub.add_parser("approved")
+    approval_approved.add_argument("--replay-root", default=".")
+    approval_approved.add_argument("--json", action="store_true")
+    approval_rejected = approval_sub.add_parser("rejected")
+    approval_rejected.add_argument("--replay-root", default=".")
+    approval_rejected.add_argument("--json", action="store_true")
+    approval_chain = approval_sub.add_parser("chain")
+    approval_chain.add_argument("canonical_chain_id")
+    approval_chain.add_argument("--replay-root", default=".")
+    approval_chain.add_argument("--json", action="store_true")
 
     continuity = subcommands.add_parser("continuity")
     continuity_sub = continuity.add_subparsers(dest="continuity_command", required=True)
@@ -584,6 +616,18 @@ def run_command(args: argparse.Namespace) -> dict:
         }
     if args.command == "governance" and args.governance_command == "validate":
         return validate_governance_continuity(ingress_artifact=_artifact_from_args(args))
+    if args.command == "approval" and args.approval_command == "list":
+        return approval_list_command(replay_root=args.replay_root)
+    if args.command == "approval" and args.approval_command == "show":
+        return approval_show_command(approval_id=args.approval_id, replay_root=args.replay_root)
+    if args.command == "approval" and args.approval_command == "pending":
+        return approval_pending_command(replay_root=args.replay_root)
+    if args.command == "approval" and args.approval_command == "approved":
+        return approval_approved_command(replay_root=args.replay_root)
+    if args.command == "approval" and args.approval_command == "rejected":
+        return approval_rejected_command(replay_root=args.replay_root)
+    if args.command == "approval" and args.approval_command == "chain":
+        return approval_chain_command(canonical_chain_id=args.canonical_chain_id, replay_root=args.replay_root)
     if args.command == "continuity" and args.continuity_command == "preview":
         return continuity_preview_summary(ingress_artifact=_artifact_from_args(args))
     if args.command == "dispatch" and args.dispatch_command == "authorize":
@@ -884,6 +928,18 @@ def render_command_result(result: dict) -> str:
                 f"provider_invoked: {result.get('provider_invoked')}",
                 f"native_messaging_called: {result.get('native_messaging_called')}",
             ],
+        )
+    if command in {
+        "aigol approval list",
+        "aigol approval show",
+        "aigol approval pending",
+        "aigol approval approved",
+        "aigol approval rejected",
+        "aigol approval chain",
+    }:
+        return render_card(
+            "AIGOL APPROVAL",
+            render_approval_summary(result).splitlines(),
         )
     if command == "aigol dispatch authorize":
         return render_card(

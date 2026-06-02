@@ -1,0 +1,30 @@
+{
+  "artifact": "APPROVAL_COMMAND_GROUP_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_command_group": "APPROVAL_COMMAND_GROUP_V1",
+  "certification_basis": [
+    "The AiGOL CLI exposes approval list/show/pending/approved/rejected/chain commands.",
+    "The command group recognizes proposal approval and improvement approval artifacts.",
+    "Replay wrapper hashes and approval artifact hashes are validated before display.",
+    "Canonical chain continuity is preserved where approval artifacts include canonical_chain_id.",
+    "Corrupt approval replay fails closed in operator-visible output.",
+    "The command group does not dispatch, invoke, execute, mutate governance, mutate replay, create execution requests, or bypass approval runtimes."
+  ],
+  "validated_tests": [
+    "tests/test_approval_command_group_v1.py::test_approval_list_shows_governed_approval_artifacts",
+    "tests/test_approval_command_group_v1.py::test_approval_show_and_status_filters",
+    "tests/test_approval_command_group_v1.py::test_approval_chain_filters_by_canonical_chain_id",
+    "tests/test_approval_command_group_v1.py::test_parser_and_run_command_support_approval_chain",
+    "tests/test_approval_command_group_v1.py::test_cli_entrypoint_outputs_approval_json",
+    "tests/test_approval_command_group_v1.py::test_approval_show_missing_fails_closed_without_authority",
+    "tests/test_approval_command_group_v1.py::test_approval_command_detects_corrupt_approval_replay",
+    "tests/test_approval_command_group_v1.py::test_approval_command_group_has_no_dispatch_invocation_or_execution_surface"
+  ],
+  "known_limitations": [
+    "The command group is inspection and visibility oriented; it does not yet record new approval decisions.",
+    "Older proposal approval artifacts without canonical_chain_id remain visible but cannot be included in chain-specific filtering unless future evidence supplies canonical chain identity."
+  ],
+  "final_classification": {
+    "APPROVAL_COMMAND_GROUP_STATUS": "CERTIFIED"
+  }
+}

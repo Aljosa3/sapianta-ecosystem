@@ -1,0 +1,43 @@
+{
+  "artifact": "APPROVAL_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "command_group": "approval",
+  "runtime": "aigol/cli/commands/approval.py",
+  "cli_wiring": "aigol/cli/aigol_cli.py",
+  "supported_commands": {
+    "approval_list": true,
+    "approval_show": true,
+    "approval_pending": true,
+    "approval_approved": true,
+    "approval_rejected": true,
+    "approval_chain": true
+  },
+  "approval_artifacts_supported": [
+    "PROPOSAL_APPROVAL_ARTIFACT_V1",
+    "IMPROVEMENT_APPROVAL_ARTIFACT_V1"
+  ],
+  "boundary_guarantees": {
+    "read_only": true,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "execution_request_creation": false,
+    "approval_runtime_bypass": false
+  },
+  "replay_guarantees": {
+    "replay_visible": true,
+    "wrapper_hash_validation": true,
+    "artifact_hash_validation": true,
+    "canonical_chain_filtering": true,
+    "fail_closed_corruption_display": true
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_approval_command_group_v1.py",
+    "approval_runtime_regression": "python -m pytest tests/test_approval_command_group_v1.py tests/test_proposal_approval_runtime_v1.py tests/test_improvement_approval_runtime_v1.py tests/test_aigol_cli_foundation_v1.py",
+    "acceptance_json": "python -m json.tool governance/APPROVAL_COMMAND_GROUP_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/APPROVAL_COMMAND_GROUP_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}
