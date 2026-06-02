@@ -1,0 +1,87 @@
+{
+  "artifact": "IMPROVEMENT_IMPLEMENTATION_CERTIFICATION",
+  "status": "CERTIFIED_FOUNDATION",
+  "classification": {
+    "IMPROVEMENT_IMPLEMENTATION_FOUNDATION_STATUS": "READY"
+  },
+  "scope": {
+    "runtime_implemented": false,
+    "foundation_only": true,
+    "execution_request_creation_implemented": false,
+    "implementation_implemented": false,
+    "code_mutation": false,
+    "self_application_implemented": false,
+    "self_modification_implemented": false,
+    "self_improvement_implemented": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "artifact_model": {
+    "artifact_type": "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1",
+    "valid_statuses": [
+      "IMPLEMENTATION_PLAN_CREATED",
+      "FAILED_CLOSED"
+    ],
+    "creator": "AIGOL",
+    "provider_direct_plan_creation_allowed": false,
+    "worker_direct_plan_creation_allowed": false,
+    "human_direct_plan_creation_allowed": false,
+    "automatic_self_application_allowed": false
+  },
+  "required_evidence": {
+    "improvement_approval_artifact": true,
+    "improvement_approval_hash": true,
+    "approval_decision_approved": true,
+    "approval_status_approved": true,
+    "human_authorization_reference": true,
+    "improvement_review_reference": true,
+    "improvement_review_hash": true,
+    "improvement_proposal_reference": true,
+    "improvement_proposal_hash": true,
+    "evaluation_reference": true,
+    "evaluation_hash": true,
+    "result_reference": true,
+    "result_hash": true,
+    "canonical_chain_id": true,
+    "replay_reference": true
+  },
+  "required_absent_authority": {
+    "provider_authority": false,
+    "worker_authority": false,
+    "aigol_autonomous_implementation": false,
+    "execution_request_created": false,
+    "implementation_performed": false,
+    "code_mutated": false,
+    "configuration_mutated": false,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "self_modification_performed": false,
+    "self_improvement_performed": false
+  },
+  "relationship": {
+    "approval": "Explicit human-authorized decision permitting future planning when approved.",
+    "implementation_plan": "Replay-visible bounded plan for future implementation work.",
+    "execution_request": "Future governed request required before implementation execution.",
+    "actual_code_change": "Future implementation output allowed only after governed execution."
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance may contribute plan text but remains non-authoritative.",
+    "aigol_governs": "AiGOL validates approved evidence and records the planning boundary.",
+    "worker_executes": "Worker output remains upstream evidence, not planning or implementation authority.",
+    "replay_records": "Implementation plan evidence must be append-only and reconstructable."
+  },
+  "evidence": [
+    "governance/IMPROVEMENT_IMPLEMENTATION_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_IMPLEMENTATION_MODEL_V1.md",
+    "governance/IMPROVEMENT_IMPLEMENTATION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/IMPROVEMENT_IMPLEMENTATION_ADR_V1.md"
+  ],
+  "known_limits": [
+    "Improvement Implementation Planning Runtime is not implemented.",
+    "Execution request creation from implementation plans is not implemented.",
+    "Actual code implementation is not implemented.",
+    "Reflection Runtime is not implemented.",
+    "Self-Improvement Runtime is not implemented.",
+    "Implementation plans do not create execution requests, mutate code, or self-apply changes."
+  ]
+}
