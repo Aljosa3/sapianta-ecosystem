@@ -1,0 +1,59 @@
+{
+  "artifact": "RESULT_EVALUATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "RESULT_EVALUATION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_artifact": "RESULT_EVALUATION_ARTIFACT_V1",
+  "implemented_capabilities": {
+    "result_evaluation": true,
+    "valid_result_required": true,
+    "canonical_chain_continuity": true,
+    "worker_identity_continuity": true,
+    "evaluation_observation_capture": true,
+    "improvement_recommendation_recording": true,
+    "replay_visible_evaluation_events": true,
+    "replay_reconstruction": true
+  },
+  "fail_closed_coverage": {
+    "invalid_result": true,
+    "chain_mismatch": true,
+    "duplicate_evaluation": true,
+    "corrupt_references": true,
+    "replay_corruption": true,
+    "invalid_evaluation_source": true,
+    "authority_bearing_observations": true,
+    "improvement_proposal_reference_injection": true
+  },
+  "forbidden_capabilities_absent": {
+    "result_approval": true,
+    "result_certification": true,
+    "improvement_approval": true,
+    "improvement_proposal_creation": true,
+    "implementation_plan_creation": true,
+    "execution_request_creation": true,
+    "worker_dispatch": true,
+    "worker_invocation": true,
+    "governance_mutation": true,
+    "replay_mutation": true,
+    "reflection": true,
+    "self_improvement": true,
+    "self_application": true
+  },
+  "replay_events": [
+    "RESULT_EVALUATION_RECORDED",
+    "RESULT_EVALUATION_RETURNED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_result_evaluation_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 13
+    },
+    "lifecycle_tests": {
+      "command": "python -m pytest tests/test_result_evaluation_runtime_v1.py tests/test_result_runtime_v1.py tests/test_replay_inspector_worker_v1.py tests/test_completion_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 121
+    }
+  }
+}

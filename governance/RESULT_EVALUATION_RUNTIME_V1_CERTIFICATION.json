@@ -1,0 +1,53 @@
+{
+  "artifact": "RESULT_EVALUATION_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "RESULT_EVALUATION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "artifact_type": "RESULT_EVALUATION_ARTIFACT_V1",
+    "result_approval": false,
+    "result_certification": false,
+    "improvement_approval": false,
+    "improvement_proposal_creation": false,
+    "implementation_plan_creation": false,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "reflection": false,
+    "self_improvement": false,
+    "self_application": false
+  },
+  "certified_properties": {
+    "valid_result_required": true,
+    "canonical_chain_continuity_required": true,
+    "worker_identity_continuity_required": true,
+    "result_hash_required": true,
+    "worker_output_hash_required": true,
+    "evaluation_observations_hash_required": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance remains optional and non-authoritative.",
+    "aigol_governs": "AiGOL validates result evidence and records evaluation observations without approval or implementation authority.",
+    "worker_executes": "Worker output remains upstream evidence, not evaluation authority.",
+    "replay_records": "Result evaluation recorded and returned events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/result_evaluation_runtime.py",
+    "tests/test_result_evaluation_runtime_v1.py",
+    "governance/RESULT_EVALUATION_RUNTIME_V1.md",
+    "governance/RESULT_EVALUATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Result Evaluation Runtime records observations only.",
+    "Improvement Proposal Runtime is not implemented.",
+    "Improvement Approval Runtime is not implemented.",
+    "Implementation Planning Runtime is not implemented.",
+    "Reflection, self-improvement, and self-application remain out of scope."
+  ]
+}
