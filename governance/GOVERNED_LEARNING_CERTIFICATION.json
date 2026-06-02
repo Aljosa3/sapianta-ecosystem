@@ -1,0 +1,68 @@
+{
+  "artifact": "GOVERNED_LEARNING_CERTIFICATION",
+  "status": "CERTIFIED_WITH_GAPS",
+  "classification": {
+    "GOVERNED_LEARNING_END_TO_END_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": {
+    "review_only": true,
+    "runtime_implemented": false,
+    "self_modification_implemented": false,
+    "implementation_implemented": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "validated_chain": [
+    "RESULT_ARTIFACT_V1",
+    "RESULT_EVALUATION_ARTIFACT_V1",
+    "IMPROVEMENT_PROPOSAL_ARTIFACT_V1",
+    "IMPROVEMENT_REVIEW_ARTIFACT_V1",
+    "IMPROVEMENT_APPROVAL_ARTIFACT_V1",
+    "IMPROVEMENT_IMPLEMENTATION_PLAN_ARTIFACT_V1"
+  ],
+  "validated_properties": {
+    "replay_reconstruction_design_present": true,
+    "replay_reconstruction_runtime_complete": false,
+    "authority_leaks_found": false,
+    "self_approval_allowed": false,
+    "self_implementation_allowed": false,
+    "replay_mutation_allowed": false,
+    "canonical_chain_continuity_defined": true,
+    "approval_implementation_separated": true,
+    "governance_boundaries_preserved": true
+  },
+  "authority_boundaries": {
+    "provider_authority": false,
+    "worker_authority": false,
+    "aigol_autonomous_approval": false,
+    "automatic_self_improvement": false,
+    "human_approval_required": true,
+    "replay_decision_authority": false
+  },
+  "remaining_gaps": [
+    "Result Evaluation Runtime is not implemented.",
+    "Improvement Proposal Runtime is not implemented.",
+    "Improvement Review Runtime is not implemented.",
+    "Improvement Approval Runtime is not implemented.",
+    "Improvement Implementation Planning Runtime is not implemented.",
+    "Execution request creation from approved implementation plans is not defined or implemented.",
+    "Operational replay reconstruction tests are missing for foundation-only artifacts."
+  ],
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance remains optional and non-authoritative throughout governed learning.",
+    "aigol_governs": "AiGOL validates evidence and records artifacts, while human authority is required for approval.",
+    "worker_executes": "Worker output remains upstream evidence, not approval or self-improvement authority.",
+    "replay_records": "Replay records append-only evidence and may reconstruct history without mutation."
+  },
+  "evidence": [
+    "governance/GOVERNED_LEARNING_END_TO_END_VALIDATION_V1.md",
+    "governance/GOVERNED_LEARNING_FINDINGS_V1.md",
+    "governance/GOVERNED_LEARNING_GAP_ANALYSIS_V1.md",
+    "governance/GOVERNED_LEARNING_RECOMMENDATIONS_V1.md",
+    "governance/RESULT_EVALUATION_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_PROPOSAL_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_REVIEW_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_APPROVAL_FOUNDATION_V1.md",
+    "governance/IMPROVEMENT_IMPLEMENTATION_FOUNDATION_V1.md"
+  ]
+}
