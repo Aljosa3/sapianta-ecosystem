@@ -1,0 +1,102 @@
+{
+  "artifact": "COGNITION_RUNTIME_COVERAGE_CERTIFICATION_V1",
+  "review_type": "end_to_end_cognition_coverage",
+  "runtime_changes_introduced": false,
+  "governance_mutation_introduced": false,
+  "execution_behavior_changes_introduced": false,
+  "worker_creation_introduced": false,
+  "domain_modification_introduced": false,
+  "coverage_method": {
+    "case_count": 16,
+    "runtime_root": "/tmp/aigol_cognition_coverage_v1",
+    "provider_mode": "local proposal-only coverage adapter",
+    "real_provider_called": false,
+    "worker_invoked_count": 0,
+    "execution_requested_count": 0
+  },
+  "coverage_results": {
+    "representative_prompt_class_coverage_percentage": 100.0,
+    "successful_response_coverage_percentage": 75.0,
+    "healthy_fail_closed_percentage": 25.0,
+    "handled_count": 12,
+    "fail_closed_count": 4,
+    "provider_used_count": 10,
+    "self_resolved_count": 2
+  },
+  "prompt_classes_passed": [
+    "simple conversation",
+    "Slovenian conversation",
+    "AiGOL explanation",
+    "replay explanation",
+    "governance explanation",
+    "current status",
+    "recent progress",
+    "provider-needed prompt",
+    "self-resolution prompt",
+    "domain-related prompt",
+    "trading-domain prompt",
+    "ambiguous prompt"
+  ],
+  "prompt_classes_fail_closed": [
+    "constitutional memory consultation through prompt-to-conversation path",
+    "unsupported prompt with provider unavailable",
+    "unsafe execution request",
+    "malformed prompt"
+  ],
+  "prompt_classes_failed_unsafely": [],
+  "route_gaps": [
+    "current status routed to provider instead of replay or dashboard context",
+    "unsafe execution request routed to provider before conversation rejection",
+    "ambiguous provider/execution prompt routed to provider instead of ambiguity handling",
+    "domain-related prompt routed to provider without canonical domain registry",
+    "trading-domain prompt routed to provider without canonical domain registry"
+  ],
+  "context_assembly_gaps": [
+    "current status",
+    "recent progress",
+    "governance explanation",
+    "replay explanation",
+    "domain-related prompt",
+    "trading-domain prompt"
+  ],
+  "domain_selection_gaps": [
+    "domain-related prompt",
+    "trading-domain prompt",
+    "ambiguous prompt"
+  ],
+  "provider_necessity_ambiguity": [
+    "current status",
+    "recent progress",
+    "governance explanation",
+    "replay explanation",
+    "domain-related prompt",
+    "trading-domain prompt",
+    "ambiguous prompt"
+  ],
+  "provider_boundary": {
+    "provider_use_remained_proposal_only": true,
+    "provider_authority_introduced": false,
+    "worker_invocation_introduced": false,
+    "execution_request_introduced": false
+  },
+  "replay_assessment": {
+    "temporary_replay_artifacts_created": true,
+    "replay_references_available": true,
+    "top_level_replay_visible_rollup_consistent": false,
+    "finding": "Replay evidence exists, but top-level coverage reporting needs a clearer replay visibility rollup."
+  },
+  "final_classification": {
+    "COGNITION_RUNTIME_COVERAGE_STATUS": "READY_WITH_GAPS"
+  },
+  "recommendation": {
+    "choice": "Continue Trading",
+    "next_trading_milestone": "TRADING_DECISION_VALIDATION_TEST_FIXTURES_V1",
+    "parallel_cognition_hardening": [
+      "CONTEXT_ASSEMBLY_ARTIFACT_MODEL_V1",
+      "DOMAIN_SELECTION_REGISTRY_V1",
+      "PROVIDER_NECESSITY_POLICY_V1",
+      "EVIDENCE_BOUND_CONVERSATION_RESPONSE_V1",
+      "COGNITION_REPLAY_VISIBILITY_ROLLUP_V1"
+    ]
+  }
+}
