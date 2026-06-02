@@ -1,0 +1,87 @@
+{
+  "artifact_type": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/conversation_native_development_context_integration.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_files": [
+    "tests/test_conversation_native_development_context_integration_v1.py"
+  ],
+  "validated_requirements": {
+    "development_task_prompts_create_or_reference_intake_artifact": true,
+    "development_context_is_assembled": true,
+    "context_assembly_status_exposed": true,
+    "context_hash_exposed": true,
+    "missing_context_exposed": true,
+    "ambiguous_context_exposed": true,
+    "provider_necessity_classification_exposed": true,
+    "replay_visibility_preserved": true,
+    "task_intake_reference_exposed": true,
+    "context_assembly_reference_exposed": true,
+    "canonical_chain_id_exposed": true,
+    "suggested_next_actions_exposed": true,
+    "fails_closed_on_missing_required_context": true,
+    "replay_corruption_detected": true,
+    "providers_not_invoked": true,
+    "proposals_not_generated": true,
+    "workers_not_created": true,
+    "domains_not_created": true,
+    "workers_not_invoked": true,
+    "execution_not_requested": true,
+    "dispatch_not_requested": true,
+    "governance_not_mutated": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_context_integration_v1.py",
+      "result": "5 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_native_development_task_intake_and_session_resume_v1.py",
+      "result": "9 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_development_context_assembly_runtime_v1.py",
+      "result": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+      "result": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_chain_continuity_runtime_v1.py",
+      "result": "7 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_prompt_to_conversation_integration_v1.py",
+      "result": "6 passed"
+    }
+  ],
+  "replay_layers": [
+    "source router replay",
+    "native development task intake replay",
+    "development context assembly replay",
+    "conversation native development context integration replay",
+    "conversation chain continuity replay"
+  ],
+  "authority_boundaries": {
+    "providers_invoked": false,
+    "proposals_generated": false,
+    "domains_created": false,
+    "workers_created": false,
+    "workers_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false
+  },
+  "target_second_test": {
+    "milestone": "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1",
+    "entrypoint": "python -m aigol.cli.aigol_cli conversation",
+    "expected_behavior": "conversation records task intake and deterministic context assembly before any proposal or implementation handoff"
+  },
+  "updated_native_development_readiness_percent": 80,
+  "recommended_next_milestone": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_V1"
+}
+

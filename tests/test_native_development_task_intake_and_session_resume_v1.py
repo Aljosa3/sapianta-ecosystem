@@ -183,16 +183,16 @@ def test_interactive_conversation_surfaces_development_intake_without_provider_o
 
     assert result["turn_count"] == 1
     assert result["failed_turns"] == 0
-    assert turn["response_source"] == "NATIVE_DEVELOPMENT_TASK_INTAKE"
+    assert turn["response_source"] == "NATIVE_DEVELOPMENT_CONTEXT_ASSEMBLY"
     assert turn["recognized_development_task"] is True
-    assert turn["requested_milestone_id"] == MILESTONE_ID
-    assert turn["requested_domain"] == "TRADING"
-    assert turn["requested_worker_family"] == "MARKET_EVIDENCE_NORMALIZATION"
-    assert turn["safe_for_native_development"] is True
-    assert turn["codex_assisted_handoff_required"] is True
+    assert turn["task_intake_reference"]
+    assert turn["context_assembly_reference"]
+    assert turn["context_status"] == "CONTEXT_ASSEMBLED"
+    assert turn["context_hash"].startswith("sha256:")
+    assert turn["provider_necessity_classification"] == "PROVIDER_REQUIRED_FOR_PROPOSAL"
     assert turn["worker_invoked"] is False
     assert turn["execution_requested"] is False
-    assert "recognized_development_task" in output[0]
+    assert "context_status: CONTEXT_ASSEMBLED" in output[0]
     assert "session_resumed: False" in rendered
 
 

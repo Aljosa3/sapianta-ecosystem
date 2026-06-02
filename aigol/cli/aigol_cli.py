@@ -128,10 +128,12 @@ from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
 from aigol.runtime.native_development_task_intake_runtime import (
-    FAILED_CLOSED as NATIVE_DEVELOPMENT_FAILED_CLOSED,
     is_native_development_prompt,
-    render_native_development_task_summary,
-    run_native_development_task_intake,
+)
+from aigol.runtime.conversation_native_development_context_integration import (
+    FAILED_CLOSED as NATIVE_DEVELOPMENT_CONTEXT_FAILED_CLOSED,
+    render_conversation_native_development_context_summary,
+    run_conversation_native_development_context_integration,
 )
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
 
@@ -600,28 +602,35 @@ def run_interactive_conversation(
                 replay_dir=turn_root / "source_router",
             )
             if is_native_development_prompt(human_prompt):
-                intake_capture = run_native_development_task_intake(
-                    intake_id=f"{prompt_id}:NATIVE_DEVELOPMENT_TASK_INTAKE",
-                    human_prompt_reference=prompt_id,
+                native_context_capture = run_conversation_native_development_context_integration(
+                    prompt_id=prompt_id,
                     human_prompt=human_prompt,
                     created_at=created_at,
-                    replay_dir=turn_root / "native_development_task_intake",
+                    replay_dir=turn_root,
+                    governance_root="governance",
                     session_id=session_id,
                     turn_id=turn_id,
+                    current_chain_id=current_chain_id,
+                    latest_chain_id=latest_chain_id,
                 )
-                fail_closed = intake_capture.get("fail_closed") is True
+                current_chain_id = native_context_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = native_context_capture.get("latest_chain_id") or current_chain_id
+                fail_closed = native_context_capture.get("fail_closed") is True
                 if fail_closed:
                     failed_turns += 1
-                    failure_reason = intake_capture.get("failure_reason") or "native development task intake failed closed"
+                    failure_reason = (
+                        native_context_capture.get("failure_reason")
+                        or "native development context integration failed closed"
+                    )
                     output_writer(f"FAILED_CLOSED: {failure_reason}")
                 else:
-                    output_writer(render_native_development_task_summary(intake_capture))
+                    output_writer(render_conversation_native_development_context_summary(native_context_capture))
                 turns.append(
                     _interactive_native_development_turn_summary(
                         turn_id=turn_id,
                         prompt_id=prompt_id,
                         router_capture=router_capture,
-                        intake_capture=intake_capture,
+                        native_context_capture=native_context_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -764,7 +773,7 @@ def _interactive_native_development_turn_summary(
     turn_id: str,
     prompt_id: str,
     router_capture: dict[str, Any],
-    intake_capture: dict[str, Any],
+    native_context_capture: dict[str, Any],
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
@@ -773,32 +782,44 @@ def _interactive_native_development_turn_summary(
         "prompt_id": prompt_id,
         "selected_source": source_artifact["selected_source"],
         "selection_reason": source_artifact["selection_reason"],
-        "response_status": intake_capture.get("intake_status"),
-        "response_source": "NATIVE_DEVELOPMENT_TASK_INTAKE",
-        "fail_closed": intake_capture.get("fail_closed") is True,
-        "failure_reason": intake_capture.get("failure_reason"),
-        "replay_reference": intake_capture.get("native_development_task_intake_replay_reference"),
-        "conversation_replay_reference": None,
-        "canonical_chain_id": None,
-        "current_chain_id": None,
-        "latest_chain_id": None,
-        "related_chain_id": None,
-        "suggested_inspection_commands": [],
-        "conversation_chain_continuity_replay_reference": None,
-        "source_router_replay_reference": source_router_replay_reference,
-        "native_development_task_intake_replay_reference": intake_capture.get(
-            "native_development_task_intake_replay_reference"
+        "response_status": native_context_capture.get("response_status"),
+        "response_source": native_context_capture.get("response_source"),
+        "fail_closed": native_context_capture.get("fail_closed") is True,
+        "failure_reason": native_context_capture.get("failure_reason"),
+        "replay_reference": native_context_capture.get("replay_reference"),
+        "conversation_replay_reference": native_context_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": native_context_capture.get("canonical_chain_id"),
+        "current_chain_id": native_context_capture.get("current_chain_id"),
+        "latest_chain_id": native_context_capture.get("latest_chain_id"),
+        "related_chain_id": native_context_capture.get("related_chain_id"),
+        "suggested_inspection_commands": native_context_capture.get("suggested_inspection_commands", []),
+        "conversation_chain_continuity_replay_reference": native_context_capture.get(
+            "conversation_chain_continuity_replay_reference"
         ),
-        "recognized_development_task": intake_capture.get("intake_status") != NATIVE_DEVELOPMENT_FAILED_CLOSED,
-        "requested_milestone_id": intake_capture.get("requested_milestone_id"),
-        "requested_domain": intake_capture.get("requested_domain"),
-        "requested_worker_family": intake_capture.get("requested_worker_family"),
-        "requested_output_scope": intake_capture.get("requested_output_scope", []),
-        "explicit_constraints": intake_capture.get("explicit_constraints", []),
-        "task_kind": intake_capture.get("task_kind"),
-        "safe_for_native_development": intake_capture.get("safe_for_native_development"),
-        "codex_assisted_handoff_required": intake_capture.get("codex_assisted_handoff_required"),
-        "suggested_next_safe_handoff": intake_capture.get("suggested_next_safe_handoff"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "native_development_task_intake_replay_reference": native_context_capture.get(
+            "native_development_task_intake", {}
+        ).get("native_development_task_intake_replay_reference")
+        if isinstance(native_context_capture.get("native_development_task_intake"), dict)
+        else None,
+        "development_context_assembly_replay_reference": native_context_capture.get(
+            "development_context_assembly", {}
+        ).get("development_context_assembly_replay_reference")
+        if isinstance(native_context_capture.get("development_context_assembly"), dict)
+        else None,
+        "conversation_native_development_context_replay_reference": native_context_capture.get(
+            "conversation_replay_reference"
+        ),
+        "recognized_development_task": native_context_capture.get("response_status")
+        != NATIVE_DEVELOPMENT_CONTEXT_FAILED_CLOSED,
+        "task_intake_reference": native_context_capture.get("task_intake_reference"),
+        "context_assembly_reference": native_context_capture.get("context_assembly_reference"),
+        "context_status": native_context_capture.get("context_status"),
+        "context_hash": native_context_capture.get("context_hash"),
+        "missing_context": native_context_capture.get("missing_context", []),
+        "ambiguous_context": native_context_capture.get("ambiguous_context", []),
+        "provider_necessity_classification": native_context_capture.get("provider_necessity_classification"),
+        "suggested_next_actions": native_context_capture.get("suggested_next_actions", []),
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,

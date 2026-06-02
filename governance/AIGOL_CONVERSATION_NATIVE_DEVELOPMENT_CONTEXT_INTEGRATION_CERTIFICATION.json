@@ -1,0 +1,63 @@
+{
+  "artifact_type": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_CERTIFICATION",
+  "certification_id": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/conversation_native_development_context_integration.py",
+  "cli_integration_performed": true,
+  "cli_file": "aigol/cli/aigol_cli.py",
+  "governance_behavior_modified": false,
+  "domains_created": false,
+  "workers_created": false,
+  "proposals_generated": false,
+  "providers_invoked": false,
+  "dispatch_requested": false,
+  "execution_requested": false,
+  "certified_capabilities": [
+    "conversation mode routes native development prompts through task intake",
+    "conversation mode assembles deterministic development context",
+    "conversation mode exposes task intake reference",
+    "conversation mode exposes context assembly reference",
+    "conversation mode exposes context status and context hash",
+    "conversation mode exposes missing and ambiguous context",
+    "conversation mode exposes provider necessity classification",
+    "conversation mode preserves canonical chain continuity",
+    "conversation native development replay is reconstructable",
+    "conversation native development replay corruption is detected"
+  ],
+  "fail_closed_conditions": [
+    "task intake cannot be created",
+    "task intake is not accepted",
+    "context assembly fails",
+    "required context is missing",
+    "integration replay collision",
+    "integration replay hash mismatch",
+    "nested replay integrity failure"
+  ],
+  "validation_summary": {
+    "conversation_native_development_context_integration_tests": "5 passed",
+    "native_development_intake_regression": "9 passed",
+    "development_context_assembly_regression": "6 passed",
+    "interactive_conversation_regression": "6 passed",
+    "conversation_chain_continuity_regression": "7 passed",
+    "prompt_to_conversation_regression": "6 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "readiness_update": {
+    "previous_native_development_readiness_percent": 72,
+    "current_native_development_readiness_percent": 80,
+    "status": "READY_WITH_GAPS"
+  },
+  "remaining_gaps": [
+    "domain and worker resolution registry",
+    "provider necessity policy runtime",
+    "development proposal contract",
+    "conversation-to-implementation governed handoff",
+    "second real-world Trading worker foundation dry run"
+  ],
+  "recommended_next_milestone": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_V1"
+}
