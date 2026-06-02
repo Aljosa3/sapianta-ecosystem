@@ -1,0 +1,48 @@
+{
+  "artifact": "RESULT_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "RESULT_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "artifact_type": "RESULT_ARTIFACT_V1",
+    "quality_evaluation": false,
+    "result_approval": false,
+    "result_certification": false,
+    "failure_analysis": false,
+    "reflection": false,
+    "self_improvement": false,
+    "governance_mutation": false,
+    "replay_mutation": false
+  },
+  "certified_properties": {
+    "valid_completion_required": true,
+    "valid_execution_required": true,
+    "worker_identity_continuity_required": true,
+    "canonical_chain_continuity_required": true,
+    "worker_output_hash_required": true,
+    "result_payload_hash_required": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider evidence remains upstream and non-authoritative.",
+    "aigol_governs": "AiGOL validates completion, execution, worker identity, chain continuity, and output hashes before result capture.",
+    "worker_executes": "Worker output is captured as evidence but not granted certification authority.",
+    "replay_records": "Result captured and returned events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/result_runtime.py",
+    "tests/test_result_runtime_v1.py",
+    "governance/RESULT_RUNTIME_V1.md",
+    "governance/RESULT_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Result Runtime captures output only.",
+    "Result quality evaluation is not implemented.",
+    "Result approval is not implemented.",
+    "Result certification is not implemented.",
+    "Failure analysis, reflection, and self-improvement remain out of scope."
+  ]
+}

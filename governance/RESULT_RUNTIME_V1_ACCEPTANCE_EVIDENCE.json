@@ -1,0 +1,58 @@
+{
+  "artifact": "RESULT_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "classification": {
+    "RESULT_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_artifact": "RESULT_ARTIFACT_V1",
+  "implemented_capabilities": {
+    "result_capture": true,
+    "valid_completion_required": true,
+    "valid_execution_required": true,
+    "worker_identity_continuity": true,
+    "canonical_chain_continuity": true,
+    "worker_output_capture": true,
+    "worker_metadata_capture": true,
+    "worker_reference_capture": true,
+    "chain_reference_capture": true,
+    "replay_visible_result_events": true,
+    "replay_reconstruction": true
+  },
+  "fail_closed_coverage": {
+    "invalid_completion": true,
+    "invalid_execution": true,
+    "worker_mismatch": true,
+    "chain_mismatch": true,
+    "duplicate_results": true,
+    "corrupt_references": true,
+    "replay_corruption": true,
+    "authority_bearing_worker_output": true
+  },
+  "forbidden_capabilities_absent": {
+    "quality_evaluation": true,
+    "result_approval": true,
+    "result_certification": true,
+    "failure_analysis": true,
+    "reflection": true,
+    "self_improvement": true,
+    "governance_mutation": true,
+    "replay_mutation": true,
+    "execution_history_mutation": true
+  },
+  "replay_events": [
+    "RESULT_RECORDED",
+    "RESULT_RETURNED"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_result_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 13
+    },
+    "lifecycle_tests": {
+      "command": "python -m pytest tests/test_result_runtime_v1.py tests/test_replay_inspector_worker_v1.py tests/test_completion_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py",
+      "result": "PASSED",
+      "test_count": 108
+    }
+  }
+}
