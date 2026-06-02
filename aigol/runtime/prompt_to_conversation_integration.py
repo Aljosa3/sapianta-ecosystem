@@ -16,6 +16,10 @@ from aigol.runtime.minimal_human_prompt_interface import (
     submit_human_prompt,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.conversation_chain_continuity_runtime import (
+    attach_conversation_chain_continuity,
+    reconstruct_conversation_chain_continuity_replay,
+)
 from aigol.runtime.provider_assisted_conversation_runtime import (
     CREATED,
     FAILED_CLOSED,
@@ -38,6 +42,10 @@ def submit_prompt_to_conversation(
     provider_id: str = OPENAI_PROVIDER_ID,
     registry: ProviderRegistry | None = None,
     adapter: ProviderAdapter | None = None,
+    session_id: str | None = None,
+    current_chain_id: str | None = None,
+    latest_chain_id: str | None = None,
+    related_chain_id: str | None = None,
 ) -> dict[str, Any]:
     """Submit a prompt and activate conversation response when valid."""
 
@@ -69,9 +77,29 @@ def submit_prompt_to_conversation(
         response = conversation["provider_assisted_conversation_response"]
         if response.get("conversation_status") != CREATED:
             raise FailClosedRuntimeError(response.get("failure_reason") or "conversation response missing")
-        return _capture(prompt_capture, conversation)
+        capture = _capture(prompt_capture, conversation)
+        return _attach_chain_continuity(
+            capture,
+            prompt_id=prompt_capture["prompt_id"],
+            created_at=created_at,
+            replay_dir=prompt_replay_path / "chain_continuity",
+            session_id=session_id,
+            current_chain_id=current_chain_id,
+            latest_chain_id=latest_chain_id,
+            related_chain_id=related_chain_id,
+        )
     except Exception as exc:
-        return _failed_capture(prompt_capture, failure_reason=_failure_reason(exc))
+        failed = _failed_capture(prompt_capture, failure_reason=_failure_reason(exc))
+        return _attach_chain_continuity(
+            failed,
+            prompt_id=prompt_capture.get("prompt_id", prompt_id),
+            created_at=created_at,
+            replay_dir=prompt_replay_path / "chain_continuity",
+            session_id=session_id,
+            current_chain_id=current_chain_id,
+            latest_chain_id=latest_chain_id,
+            related_chain_id=related_chain_id,
+        )
 
 
 def reconstruct_prompt_to_conversation_replay(replay_dir: str | Path, *, prompt_id: str) -> dict[str, Any]:
@@ -79,10 +107,21 @@ def reconstruct_prompt_to_conversation_replay(replay_dir: str | Path, *, prompt_
 
     prompt_replay_path = Path(replay_dir) / _require_string(prompt_id, "prompt_id")
     conversation = reconstruct_provider_assisted_conversation_replay(prompt_replay_path / "conversation_response")
+    continuity = None
+    continuity_path = prompt_replay_path / "chain_continuity"
+    if continuity_path.exists():
+        continuity = reconstruct_conversation_chain_continuity_replay(continuity_path)
     return {
         "prompt_id": prompt_id,
         "prompt_replay_reference": str(prompt_replay_path),
         "conversation_response": deepcopy(conversation),
+        "canonical_chain_id": continuity.get("canonical_chain_id") if continuity else None,
+        "current_chain_id": continuity.get("current_chain_id") if continuity else None,
+        "latest_chain_id": continuity.get("latest_chain_id") if continuity else None,
+        "related_chain_id": continuity.get("related_chain_id") if continuity else None,
+        "suggested_inspection_commands": deepcopy(continuity.get("suggested_inspection_commands", []))
+        if continuity
+        else [],
         "response_status": conversation["conversation_status"],
         "response_text": conversation["response_text"],
         "response_source": _response_source(conversation["provider_assistance_required"]),
@@ -139,6 +178,45 @@ def _failed_capture(prompt_capture: dict[str, Any], *, failure_reason: str) -> d
     )
     capture["prompt_to_conversation_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _attach_chain_continuity(
+    capture: dict[str, Any],
+    *,
+    prompt_id: str,
+    created_at: str,
+    replay_dir: str | Path,
+    session_id: str | None,
+    current_chain_id: str | None,
+    latest_chain_id: str | None,
+    related_chain_id: str | None,
+) -> dict[str, Any]:
+    continuity = attach_conversation_chain_continuity(
+        prompt_id=prompt_id,
+        conversation_capture=capture,
+        created_at=created_at,
+        replay_dir=replay_dir,
+        session_id=session_id,
+        current_chain_id=current_chain_id,
+        latest_chain_id=latest_chain_id,
+        related_chain_id=related_chain_id,
+    )
+    updated = deepcopy(capture)
+    updated.update(
+        {
+            "canonical_chain_id": continuity["canonical_chain_id"],
+            "current_chain_id": continuity["current_chain_id"],
+            "latest_chain_id": continuity["latest_chain_id"],
+            "related_chain_id": continuity["related_chain_id"],
+            "suggested_inspection_commands": deepcopy(continuity["suggested_inspection_commands"]),
+            "conversation_chain_continuity_replay_reference": continuity[
+                "conversation_chain_continuity_replay_reference"
+            ],
+            "conversation_chain_continuity_hash": continuity["conversation_chain_continuity_capture_hash"],
+        }
+    )
+    updated["prompt_to_conversation_capture_hash"] = replay_hash(updated)
+    return updated
 
 
 def _provider_dependencies(

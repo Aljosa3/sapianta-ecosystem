@@ -1,0 +1,29 @@
+{
+  "artifact": "CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_runtime": "CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1",
+  "certified_record": "CONVERSATION_CHAIN_CONTINUITY_RECORD_V1",
+  "certification_basis": [
+    "Conversation turns can attach canonical chain continuity evidence.",
+    "Prompt-to-conversation captures expose canonical_chain_id, current_chain_id, latest_chain_id, related_chain_id, and suggested inspection commands.",
+    "Interactive conversation preserves current chain continuity across turns where possible.",
+    "Continuity replay reconstruction detects corruption and fails closed.",
+    "The runtime does not create execution requests, dispatch workers, invoke workers, execute work, mutate governance, or mutate replay outside append-only evidence."
+  ],
+  "validated_tests": [
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_attach_conversation_chain_continuity_persists_replay_visible_record",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_prompt_to_conversation_exposes_canonical_chain_and_suggestions",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_interactive_conversation_preserves_current_chain_across_turns",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_related_chain_reference_is_preserved_without_execution",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_reconstruction_detects_corrupt_continuity_replay",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_authority_bearing_conversation_capture_fails_closed",
+    "tests/test_conversation_chain_continuity_runtime_v1.py::test_conversation_chain_continuity_has_no_execution_authority_imports"
+  ],
+  "known_limitations": [
+    "Conversation mode exposes and preserves chain ids, but it does not automatically run chain inspection commands after each turn.",
+    "Canonical chain id derivation for conversation-only sessions is deterministic but does not upgrade older non-chain replay evidence."
+  ],
+  "final_classification": {
+    "CONVERSATION_CHAIN_CONTINUITY_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

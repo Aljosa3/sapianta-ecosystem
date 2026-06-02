@@ -1,0 +1,39 @@
+{
+  "artifact": "CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "runtime": "aigol/runtime/conversation_chain_continuity_runtime.py",
+  "integrations": [
+    "aigol/runtime/prompt_to_conversation_integration.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "implemented_capabilities": {
+    "conversation_turn_chain_continuity": true,
+    "conversation_outputs_expose_canonical_chain_id": true,
+    "latest_chain_reference": true,
+    "current_chain_reference": true,
+    "related_chain_reference": true,
+    "inspection_command_suggestions": true,
+    "deterministic_replay_reconstruction": true
+  },
+  "suggested_commands": [
+    "show-chain <CHAIN_ID>",
+    "show-full-lineage <CHAIN_ID>",
+    "show-learning-lifecycle <CHAIN_ID>"
+  ],
+  "boundary_guarantees": {
+    "execution_authority": false,
+    "replay_mutation_outside_append_only_evidence": false,
+    "governance_mutation": false,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "execution_request_creation": false
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_conversation_chain_continuity_runtime_v1.py",
+    "broader_conversation_reconstruction_regression": "python -m pytest tests/test_conversation_chain_continuity_runtime_v1.py tests/test_prompt_to_conversation_integration_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_cli_chain_inspection_runtime_v1.py tests/test_unified_replay_reconstruction_runtime_v1.py tests/test_provider_assisted_conversation_runtime_v1.py",
+    "acceptance_json": "python -m json.tool governance/CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}

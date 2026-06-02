@@ -407,6 +407,8 @@ def run_interactive_conversation(
     turn_count = 0
     failed_turns = 0
     exit_reason = "EXIT_COMMAND"
+    current_chain_id: str | None = None
+    latest_chain_id: str | None = None
 
     while True:
         try:
@@ -439,7 +441,12 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=session_root / "prompt_runtime",
                 operator_context=args.operator_context,
+                session_id=session_id,
+                current_chain_id=current_chain_id,
+                latest_chain_id=latest_chain_id,
             )
+            current_chain_id = conversation_capture.get("current_chain_id") or current_chain_id
+            latest_chain_id = conversation_capture.get("latest_chain_id") or current_chain_id
             fail_closed = conversation_capture.get("fail_closed") is True
             if fail_closed:
                 failed_turns += 1
@@ -478,6 +485,8 @@ def run_interactive_conversation(
         "failed_turns": failed_turns,
         "exit_reason": exit_reason,
         "runtime_root": str(session_root),
+        "current_chain_id": current_chain_id,
+        "latest_chain_id": latest_chain_id,
         "replay_visible": True,
         "worker_invoked": False,
         "execution_requested": False,
@@ -508,6 +517,14 @@ def _interactive_turn_summary(
         "failure_reason": failure_reason,
         "replay_reference": conversation_capture.get("replay_reference"),
         "conversation_replay_reference": conversation_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": conversation_capture.get("canonical_chain_id"),
+        "current_chain_id": conversation_capture.get("current_chain_id"),
+        "latest_chain_id": conversation_capture.get("latest_chain_id"),
+        "related_chain_id": conversation_capture.get("related_chain_id"),
+        "suggested_inspection_commands": conversation_capture.get("suggested_inspection_commands", []),
+        "conversation_chain_continuity_replay_reference": conversation_capture.get(
+            "conversation_chain_continuity_replay_reference"
+        ),
         "source_router_replay_reference": source_router_replay_reference,
         "worker_invoked": False,
         "execution_requested": False,
@@ -534,6 +551,12 @@ def _interactive_failed_turn_summary(
         "failure_reason": failure_reason,
         "replay_reference": None,
         "conversation_replay_reference": None,
+        "canonical_chain_id": None,
+        "current_chain_id": None,
+        "latest_chain_id": None,
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
         "source_router_replay_reference": source_router_replay_reference,
         "worker_invoked": False,
         "execution_requested": False,
@@ -1024,6 +1047,10 @@ def render_command_result(result: dict) -> str:
                 f"response_status: {result.get('response_status')}",
                 f"response_source: {result.get('response_source')}",
                 f"response_text: {result.get('response_text')}",
+                f"canonical_chain_id: {result.get('canonical_chain_id')}",
+                f"current_chain_id: {result.get('current_chain_id')}",
+                f"latest_chain_id: {result.get('latest_chain_id')}",
+                f"suggested_inspection_commands: {_json({'commands': result.get('suggested_inspection_commands', [])})}",
                 f"replay_reference: {result.get('replay_reference')}",
                 f"conversation_replay_reference: {result.get('conversation_replay_reference')}",
                 f"provider_used: {result.get('provider_used')}",
@@ -1040,6 +1067,8 @@ def render_command_result(result: dict) -> str:
             [
                 f"session_id: {result.get('session_id')}",
                 f"runtime_root: {result.get('runtime_root')}",
+                f"current_chain_id: {result.get('current_chain_id')}",
+                f"latest_chain_id: {result.get('latest_chain_id')}",
                 f"turn_count: {result.get('turn_count', 0)}",
                 f"failed_turns: {result.get('failed_turns', 0)}",
                 f"exit_reason: {result.get('exit_reason', '')}",
