@@ -1,0 +1,62 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_CERTIFICATION",
+  "certification_id": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/domain_and_worker_resolution_registry.py",
+  "semantic_interpretation_performed": false,
+  "providers_invoked": false,
+  "domains_created": false,
+  "workers_created": false,
+  "proposals_generated": false,
+  "dispatch_requested": false,
+  "execution_requested": false,
+  "certified_capabilities": [
+    "deterministic domain registry",
+    "deterministic worker family registry",
+    "deterministic milestone type registry",
+    "Trading worker family resolution",
+    "future domain registration placeholders",
+    "registry hash generation",
+    "replay-visible resolution artifacts",
+    "fail closed unknown domain",
+    "fail closed unknown worker family",
+    "fail closed ambiguous worker family",
+    "fail closed duplicate registration",
+    "fail closed invalid milestone type",
+    "replay reconstruction",
+    "replay corruption detection"
+  ],
+  "fail_closed_conditions": [
+    "unknown domain",
+    "unknown worker family",
+    "ambiguous worker family",
+    "duplicate domain registration",
+    "duplicate worker family registration",
+    "duplicate milestone registration",
+    "invalid milestone type",
+    "append-only replay collision",
+    "replay hash mismatch"
+  ],
+  "validation_summary": {
+    "runtime_tests": "8 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "readiness_update": {
+    "previous_native_development_readiness_percent": 80,
+    "current_native_development_readiness_percent": 84,
+    "status": "READY_WITH_GAPS"
+  },
+  "remaining_gaps": [
+    "provider necessity policy runtime",
+    "development proposal contract",
+    "conversation-to-implementation governed handoff",
+    "registry integration into task intake and context assembly",
+    "second real-world Trading worker foundation dry run"
+  ],
+  "recommended_next_milestone": "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_V1"
+}

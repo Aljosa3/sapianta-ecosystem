@@ -1,0 +1,85 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/domain_and_worker_resolution_registry.py"
+  ],
+  "test_files": [
+    "tests/test_domain_and_worker_resolution_registry_v1.py"
+  ],
+  "validated_requirements": {
+    "domain_registry_created": true,
+    "trading_domain_supported": true,
+    "marketing_domain_registered_future": true,
+    "healthcare_domain_registered_future": true,
+    "public_services_domain_registered_future": true,
+    "worker_family_registry_created": true,
+    "trading_market_evidence_normalization_supported": true,
+    "trading_risk_analysis_supported": true,
+    "trading_portfolio_analysis_supported": true,
+    "trading_strategy_evaluation_supported": true,
+    "trading_decision_explanation_supported": true,
+    "milestone_mapping_created": true,
+    "worker_foundation_supported": true,
+    "worker_runtime_supported": true,
+    "worker_certification_supported": true,
+    "worker_acceptance_supported": true,
+    "unknown_domain_fails_closed": true,
+    "unknown_worker_family_fails_closed": true,
+    "ambiguous_worker_family_fails_closed": true,
+    "duplicate_registration_fails_closed": true,
+    "invalid_milestone_type_fails_closed": true,
+    "registry_version_preserved": true,
+    "registry_hash_preserved": true,
+    "resolution_result_preserved": true,
+    "replay_reconstructable": true,
+    "replay_corruption_detected": true,
+    "semantic_interpretation_not_performed": true,
+    "providers_not_invoked": true,
+    "workers_not_created": true,
+    "domains_not_created": true,
+    "proposals_not_generated": true,
+    "execution_not_requested": true,
+    "dispatch_not_requested": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_domain_and_worker_resolution_registry_v1.py",
+      "result": "8 passed"
+    }
+  ],
+  "registry": {
+    "registry_version": "AIGOL_DOMAIN_AND_WORKER_RESOLUTION_REGISTRY_V1",
+    "domains": [
+      "TRADING",
+      "MARKETING",
+      "HEALTHCARE",
+      "PUBLIC_SERVICES"
+    ],
+    "trading_worker_families": [
+      "MARKET_EVIDENCE_NORMALIZATION",
+      "RISK_ANALYSIS",
+      "PORTFOLIO_ANALYSIS",
+      "STRATEGY_EVALUATION",
+      "DECISION_EXPLANATION"
+    ],
+    "milestone_types": [
+      "WORKER_FOUNDATION",
+      "WORKER_RUNTIME",
+      "WORKER_CERTIFICATION",
+      "WORKER_ACCEPTANCE"
+    ]
+  },
+  "authority_boundaries": {
+    "providers_invoked": false,
+    "domains_created": false,
+    "workers_created": false,
+    "proposals_generated": false,
+    "execution_requested": false,
+    "dispatch_requested": false
+  },
+  "updated_native_development_readiness_percent": 84,
+  "recommended_next_milestone": "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_V1"
+}
+
