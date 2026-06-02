@@ -1,0 +1,30 @@
+{
+  "artifact": "CLI_CHAIN_INSPECTION_RUNTIME_V1_CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "certified_runtime": "CLI_CHAIN_INSPECTION_RUNTIME_V1",
+  "authoritative_reconstruction_source": "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1",
+  "certification_basis": [
+    "Operator-facing chain inspection commands are implemented.",
+    "Commands call the unified replay reconstruction runtime as the authoritative reconstruction source.",
+    "Human-readable summaries and JSON output are supported.",
+    "Fail-closed reconstruction results are displayed to operators.",
+    "Source replay evidence is not mutated by CLI chain inspection.",
+    "The command module does not import or call execution request creation, dispatch, invocation, or execution runtimes."
+  ],
+  "validated_tests": [
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_show_chain_command_uses_unified_reconstruction_and_renders_summary",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_all_chain_inspection_commands_are_supported",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_parser_and_run_command_support_show_full_lineage",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_cli_entrypoint_outputs_json_summary",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_fail_closed_reconstruction_is_displayed_to_operator",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_chain_inspection_does_not_mutate_source_replay",
+    "tests/test_cli_chain_inspection_runtime_v1.py::test_chain_inspection_module_has_no_execution_authority_imports"
+  ],
+  "known_limitations": [
+    "The commands are now available as CLI surfaces, but conversation mode does not yet automatically suggest or invoke chain inspection views after each turn.",
+    "Older replay artifacts without canonical_chain_id are not upgraded to canonical identity by CLI inspection."
+  ],
+  "final_classification": {
+    "CLI_CHAIN_INSPECTION_RUNTIME_STATUS": "CERTIFIED"
+  }
+}

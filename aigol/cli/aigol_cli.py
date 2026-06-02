@@ -7,6 +7,15 @@ import json
 from pathlib import Path
 from typing import Any
 
+from aigol.cli.commands.chain_inspection import (
+    render_chain_inspection_summary,
+    show_chain_command,
+    show_chain_summary_command,
+    show_execution_lifecycle_command,
+    show_full_lineage_command,
+    show_latest_chain_command,
+    show_learning_lifecycle_command,
+)
 from aigol.cli.commands.cognition import (
     check_semantic_replay_continuity,
     inspect_authority,
@@ -188,6 +197,47 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--created-at", default="2026-06-01T00:00:00Z")
     conversation.add_argument("--runtime-root", default=".aigol_conversation_runtime")
     conversation.add_argument("--operator-context", default="interactive_conversation_cli")
+
+    show_latest_chain = subcommands.add_parser("show-latest-chain")
+    show_latest_chain.add_argument("--replay-root", default=".")
+    show_latest_chain.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_latest_chain.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_latest_chain.add_argument("--json", action="store_true")
+
+    show_chain = subcommands.add_parser("show-chain")
+    show_chain.add_argument("canonical_chain_id")
+    show_chain.add_argument("--replay-root", default=".")
+    show_chain.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_chain.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_chain.add_argument("--json", action="store_true")
+
+    show_execution_lifecycle = subcommands.add_parser("show-execution-lifecycle")
+    show_execution_lifecycle.add_argument("canonical_chain_id")
+    show_execution_lifecycle.add_argument("--replay-root", default=".")
+    show_execution_lifecycle.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_execution_lifecycle.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_execution_lifecycle.add_argument("--json", action="store_true")
+
+    show_learning_lifecycle = subcommands.add_parser("show-learning-lifecycle")
+    show_learning_lifecycle.add_argument("canonical_chain_id")
+    show_learning_lifecycle.add_argument("--replay-root", default=".")
+    show_learning_lifecycle.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_learning_lifecycle.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_learning_lifecycle.add_argument("--json", action="store_true")
+
+    show_full_lineage = subcommands.add_parser("show-full-lineage")
+    show_full_lineage.add_argument("canonical_chain_id")
+    show_full_lineage.add_argument("--replay-root", default=".")
+    show_full_lineage.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_full_lineage.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_full_lineage.add_argument("--json", action="store_true")
+
+    show_chain_summary = subcommands.add_parser("show-chain-summary")
+    show_chain_summary.add_argument("canonical_chain_id")
+    show_chain_summary.add_argument("--replay-root", default=".")
+    show_chain_summary.add_argument("--report-root", default=".aigol_chain_inspection_runtime")
+    show_chain_summary.add_argument("--created-at", default="2026-06-02T00:00:00Z")
+    show_chain_summary.add_argument("--json", action="store_true")
 
     run_governed = subcommands.add_parser("run-governed")
     run_governed.add_argument("--worker", required=True)
@@ -560,6 +610,47 @@ def run_command(args: argparse.Namespace) -> dict:
             "dispatch_requested": False,
             "invocation_requested": False,
         }
+    if args.command == "show-latest-chain":
+        return show_latest_chain_command(
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
+    if args.command == "show-chain":
+        return show_chain_command(
+            canonical_chain_id=args.canonical_chain_id,
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
+    if args.command == "show-execution-lifecycle":
+        return show_execution_lifecycle_command(
+            canonical_chain_id=args.canonical_chain_id,
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
+    if args.command == "show-learning-lifecycle":
+        return show_learning_lifecycle_command(
+            canonical_chain_id=args.canonical_chain_id,
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
+    if args.command == "show-full-lineage":
+        return show_full_lineage_command(
+            canonical_chain_id=args.canonical_chain_id,
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
+    if args.command == "show-chain-summary":
+        return show_chain_summary_command(
+            canonical_chain_id=args.canonical_chain_id,
+            replay_root=args.replay_root,
+            report_root=args.report_root,
+            created_at=args.created_at,
+        )
     if args.command == "run-governed":
         return run_governed_operation_command(
             worker=args.worker,
@@ -958,6 +1049,18 @@ def render_command_result(result: dict) -> str:
                 f"dispatch_requested: {result.get('dispatch_requested')}",
                 f"invocation_requested: {result.get('invocation_requested')}",
             ],
+        )
+    if command in {
+        "aigol show-latest-chain",
+        "aigol show-chain",
+        "aigol show-execution-lifecycle",
+        "aigol show-learning-lifecycle",
+        "aigol show-full-lineage",
+        "aigol show-chain-summary",
+    }:
+        return render_card(
+            "AIGOL CHAIN INSPECTION",
+            render_chain_inspection_summary(result).splitlines(),
         )
     if command == "aigol run-governed":
         return render_card(

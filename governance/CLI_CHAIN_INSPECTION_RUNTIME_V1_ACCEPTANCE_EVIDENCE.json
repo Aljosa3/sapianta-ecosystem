@@ -1,0 +1,38 @@
+{
+  "artifact": "CLI_CHAIN_INSPECTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE",
+  "status": "PASSED",
+  "runtime": "aigol/cli/commands/chain_inspection.py",
+  "cli_wiring": "aigol/cli/aigol_cli.py",
+  "authoritative_reconstruction_source": "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1",
+  "supported_commands": {
+    "show_latest_chain": true,
+    "show_chain_by_id": true,
+    "show_execution_lifecycle": true,
+    "show_learning_lifecycle": true,
+    "show_full_lineage": true,
+    "show_chain_summary": true
+  },
+  "operator_display": {
+    "human_readable_summaries": true,
+    "json_output": true,
+    "fail_closed_results_displayed": true,
+    "deterministic_replay_reconstruction": true
+  },
+  "boundary_guarantees": {
+    "read_only": true,
+    "execution_authority": false,
+    "replay_mutation": false,
+    "governance_mutation": false,
+    "dispatch": false,
+    "invocation": false,
+    "execution": false,
+    "source_replay_mutation": false
+  },
+  "validation": {
+    "focused_test": "python -m pytest tests/test_cli_chain_inspection_runtime_v1.py",
+    "broader_cli_reconstruction_regression": "python -m pytest tests/test_cli_chain_inspection_runtime_v1.py tests/test_unified_replay_reconstruction_runtime_v1.py tests/test_aigol_cli_foundation_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_replay_inspector_worker_v1.py",
+    "acceptance_json": "python -m json.tool governance/CLI_CHAIN_INSPECTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json",
+    "certification_json": "python -m json.tool governance/CLI_CHAIN_INSPECTION_RUNTIME_V1_CERTIFICATION.json",
+    "diff_check": "git diff --check"
+  }
+}
