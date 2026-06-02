@@ -1,0 +1,91 @@
+{
+  "artifact": "TRADING_DOMAIN_CERTIFICATION_V1",
+  "domain": "TRADING",
+  "review_type": "domain_foundation_architecture",
+  "foundation_only": true,
+  "runtime_changes_introduced": false,
+  "cli_changes_introduced": false,
+  "governance_core_changes_introduced": false,
+  "broker_integration_introduced": false,
+  "exchange_integration_introduced": false,
+  "order_placement_introduced": false,
+  "live_trading_introduced": false,
+  "strategy_implementation_introduced": false,
+  "financial_claims_introduced": false,
+  "core_dependencies": {
+    "AIGOL_CORE_FREEZE_STATUS": "CERTIFIED",
+    "AIGOL_CLI_PRIMARY_INTERFACE_STATUS": "CERTIFIED"
+  },
+  "domain_purpose": "AI Decision Validator for trading-related decisions",
+  "direct_answers": {
+    "purpose_defined": true,
+    "domain_responsibilities_defined": true,
+    "core_responsibilities_preserved": true,
+    "candidate_workers_defined": true,
+    "generic_workers_identified": true,
+    "trading_specific_workers_identified": true,
+    "authority_boundaries_defined": true,
+    "replay_requirements_defined": true,
+    "learning_requirements_defined": true,
+    "minimal_architecture_defined": true
+  },
+  "candidate_workers": {
+    "generic_reusable": [
+      "Evidence Normalization Worker",
+      "Risk Analysis Worker",
+      "Compliance Constraint Worker",
+      "Scenario Evaluation Worker",
+      "Decision Explanation Worker",
+      "Replay Inspector Worker"
+    ],
+    "trading_specific": [
+      "Market Data Worker",
+      "Market Evidence Normalization Worker",
+      "Strategy Evaluation Worker",
+      "Trading Risk Analysis Worker",
+      "Portfolio Worker",
+      "Trading Scenario Backtest Worker",
+      "Trading Signal Evidence Worker"
+    ],
+    "future_execution_sensitive_out_of_scope": [
+      "Trading Execution Worker"
+    ]
+  },
+  "minimal_trading_lifecycle": [
+    "TRADING_DECISION_REQUESTED",
+    "MARKET_EVIDENCE_ATTACHED",
+    "PORTFOLIO_CONTEXT_ATTACHED",
+    "STRATEGY_EVALUATED",
+    "RISK_ANALYZED",
+    "GOVERNANCE_VALIDATED",
+    "HUMAN_REVIEW_REQUIRED",
+    "TRADING_DECISION_RECORDED",
+    "LEARNING_FEEDBACK_AVAILABLE"
+  ],
+  "authority_boundary_preserved": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes": true,
+    "replay_records": true,
+    "broker_invoked": false,
+    "exchange_invoked": false,
+    "order_placed": false,
+    "live_trading_performed": false
+  },
+  "explicit_non_goals": [
+    "broker integration",
+    "exchange integration",
+    "order placement",
+    "live trading",
+    "autonomous trading",
+    "strategy implementation",
+    "financial advice",
+    "profitability claims",
+    "regulatory compliance certification"
+  ],
+  "final_classification": {
+    "TRADING_DOMAIN_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "recommended_next_milestone": "TRADING_DOMAIN_DECISION_VALIDATION_MODEL_V1"
+}
