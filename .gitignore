@@ -26,3 +26,5 @@ __pycache__/
 # AiGOL operator runtime artifacts
 .aigol_operator_runtime/
 manual_test.txt
+.aigol_conversation_runtime/
+.aigol_prompt_runtime/
