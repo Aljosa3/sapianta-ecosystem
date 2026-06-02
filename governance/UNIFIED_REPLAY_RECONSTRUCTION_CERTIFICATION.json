@@ -1,0 +1,114 @@
+{
+  "artifact": "UNIFIED_REPLAY_RECONSTRUCTION_CERTIFICATION",
+  "status": "READY_WITH_GAPS",
+  "classification": {
+    "UNIFIED_REPLAY_RECONSTRUCTION_FOUNDATION_STATUS": "READY_WITH_GAPS"
+  },
+  "scope": {
+    "review_only": true,
+    "runtime_implemented": false,
+    "cli_modified": false,
+    "replay_modified": false,
+    "governance_existing_artifacts_modified": false,
+    "execution_request_created": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "execution_performed": false,
+    "self_application": false
+  },
+  "defined_model": {
+    "future_report_artifact": "UNIFIED_REPLAY_RECONSTRUCTION_REPORT_V1",
+    "preferred_identity": "canonical_chain_id",
+    "compatibility_lineage_supported": true,
+    "read_only_reconstruction": true,
+    "operator_inspection_views_defined": true
+  },
+  "supported_future_views": [
+    "LATEST_CHAIN",
+    "CHAIN_BY_ID",
+    "EXECUTION_CHAIN",
+    "LEARNING_CHAIN",
+    "BRIDGE_CHAIN",
+    "FULL_CHAIN_LINEAGE",
+    "CORRUPTION_REPORT",
+    "MISSING_EVIDENCE_REPORT",
+    "AUTHORITY_BOUNDARY_REPORT"
+  ],
+  "mandatory_validation_rules": {
+    "artifact_hash_validation": true,
+    "replay_wrapper_hash_validation": true,
+    "upstream_reference_validation": true,
+    "upstream_hash_validation": true,
+    "canonical_chain_id_validation_where_present": true,
+    "missing_evidence_detection": true,
+    "corruption_detection": true,
+    "ambiguous_chain_detection": true,
+    "authority_boundary_validation": true,
+    "stage_order_validation": true
+  },
+  "authority_boundaries": {
+    "provider_authority": false,
+    "worker_authority": false,
+    "replay_authority": false,
+    "governance_mutation": false,
+    "runtime_mutation": false,
+    "automatic_approval": false,
+    "automatic_authorization": false,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "execution_performed": false,
+    "self_application": false
+  },
+  "mandatory_replay_evidence": [
+    "human prompt replay or prompt reference",
+    "source router replay",
+    "proposal replay",
+    "proposal approval replay",
+    "execution request replay",
+    "ready-for-dispatch replay",
+    "worker assignment replay",
+    "dispatch replay where applicable",
+    "invocation replay where applicable",
+    "execution replay where applicable",
+    "completion replay where applicable",
+    "result replay",
+    "result evaluation replay",
+    "improvement proposal replay",
+    "improvement review replay",
+    "improvement approval replay",
+    "implementation plan replay",
+    "implementation-to-execution bridge replay",
+    "source-aware execution request replay",
+    "artifact hashes",
+    "replay wrapper hashes",
+    "human authorization evidence"
+  ],
+  "known_gaps": [
+    "Unified reconstruction runtime is not implemented.",
+    "Unified reconstruction CLI commands are not implemented.",
+    "Mixed-generation execution artifacts may require compatibility lineage when canonical_chain_id is absent.",
+    "No single persisted UNIFIED_REPLAY_RECONSTRUCTION_REPORT_V1 exists yet.",
+    "No operator dashboard consumes unified reconstruction yet."
+  ],
+  "relationship_to_cli_readiness": {
+    "addresses_primary_gap": "Unified replay reconstruction and chain inspection.",
+    "cli_primary_interface_unblocked_by_model": true,
+    "cli_primary_interface_still_requires_runtime_and_cli_commands": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider evidence is reconstructed only as non-authoritative proposal or conversation evidence.",
+    "aigol_governs": "AiGOL validates artifact lineage, hashes, chain continuity, and authority boundaries.",
+    "human_authorizes": "Human approval and bridge authorization remain explicit replay evidence.",
+    "worker_executes": "Worker evidence remains execution output and cannot become governance authority.",
+    "replay_records": "Replay reconstructs and reports without mutation, repair, or decision authority."
+  },
+  "evidence": [
+    "governance/UNIFIED_REPLAY_RECONSTRUCTION_FOUNDATION_V1.md",
+    "governance/UNIFIED_REPLAY_RECONSTRUCTION_MODEL_V1.md",
+    "governance/UNIFIED_REPLAY_RECONSTRUCTION_BOUNDARY_GUARANTEES_V1.md",
+    "governance/UNIFIED_REPLAY_RECONSTRUCTION_ADR_V1.md",
+    "governance/AIGOL_CLI_PRIMARY_INTERFACE_READINESS_V1.md",
+    "governance/CANONICAL_CHAIN_ID_FOUNDATION_V1.md"
+  ]
+}
