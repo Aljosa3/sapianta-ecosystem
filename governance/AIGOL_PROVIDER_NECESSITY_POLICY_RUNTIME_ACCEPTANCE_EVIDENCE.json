@@ -1,0 +1,58 @@
+{
+  "artifact_type": "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/provider_necessity_policy_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_provider_necessity_policy_runtime_v1.py"
+  ],
+  "validated_requirements": {
+    "provider_required_supported": true,
+    "provider_optional_supported": true,
+    "provider_prohibited_supported": true,
+    "show_chain_provider_prohibited": true,
+    "dashboard_provider_prohibited": true,
+    "replay_inspection_provider_prohibited": true,
+    "worker_foundation_design_provider_required": true,
+    "domain_architecture_proposal_provider_required": true,
+    "governance_review_provider_optional": true,
+    "necessity_classification_persisted": true,
+    "reason_persisted": true,
+    "policy_version_persisted": true,
+    "policy_hash_persisted": true,
+    "fails_closed_when_necessity_cannot_be_determined": true,
+    "fails_closed_on_ambiguous_policy": true,
+    "replay_reconstructable": true,
+    "replay_corruption_detected": true,
+    "providers_not_invoked": true,
+    "proposals_not_created": true,
+    "workers_not_created": true,
+    "domains_not_created": true,
+    "dispatch_not_requested": true,
+    "execution_not_requested": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_provider_necessity_policy_runtime_v1.py",
+      "result": "8 passed"
+    }
+  ],
+  "classifications": [
+    "PROVIDER_REQUIRED",
+    "PROVIDER_OPTIONAL",
+    "PROVIDER_PROHIBITED"
+  ],
+  "authority_boundaries": {
+    "providers_invoked": false,
+    "proposals_created": false,
+    "workers_created": false,
+    "domains_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false
+  },
+  "updated_native_development_readiness_percent": 88,
+  "recommended_next_milestone": "AIGOL_DEVELOPMENT_PROPOSAL_CONTRACT_RUNTIME_V1"
+}
+
