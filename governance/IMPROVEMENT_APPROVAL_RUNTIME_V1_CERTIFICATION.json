@@ -1,0 +1,56 @@
+{
+  "artifact": "IMPROVEMENT_APPROVAL_RUNTIME_V1_CERTIFICATION",
+  "status": "CERTIFIED",
+  "classification": {
+    "IMPROVEMENT_APPROVAL_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "scope": {
+    "runtime_implemented": true,
+    "artifact_type": "IMPROVEMENT_APPROVAL_ARTIFACT_V1",
+    "approved_decision_supported": true,
+    "rejected_decision_supported": true,
+    "implementation_planning": false,
+    "implementation_execution": false,
+    "execution_request_creation": false,
+    "worker_dispatch": false,
+    "worker_invocation": false,
+    "governance_mutation": false,
+    "replay_mutation": false,
+    "reflection": false,
+    "self_modification": false,
+    "self_improvement": false,
+    "self_application": false
+  },
+  "certified_properties": {
+    "valid_review_required": true,
+    "valid_proposal_required": true,
+    "human_authorization_required": true,
+    "canonical_chain_continuity_required": true,
+    "review_hash_required": true,
+    "proposal_hash_required": true,
+    "implementation_authorization_only_for_approved": true,
+    "execution_request_created_false": true,
+    "implementation_performed_false": true,
+    "replay_visible": true,
+    "fail_closed": true
+  },
+  "constitutional_invariant": {
+    "llm_proposes": "Provider assistance remains non-authoritative and cannot approve.",
+    "aigol_governs": "AiGOL validates review and proposal evidence, then records explicit human authorization.",
+    "worker_executes": "Worker output remains upstream evidence, not approval authority.",
+    "replay_records": "Improvement approval recorded and returned events are persisted as append-only replay artifacts."
+  },
+  "evidence": [
+    "aigol/runtime/improvement_approval_runtime.py",
+    "tests/test_improvement_approval_runtime_v1.py",
+    "governance/IMPROVEMENT_APPROVAL_RUNTIME_V1.md",
+    "governance/IMPROVEMENT_APPROVAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "known_limits": [
+    "Improvement Approval Runtime records approval decisions only.",
+    "Approved decisions authorize future implementation planning but do not perform planning.",
+    "Implementation Planning Runtime is not implemented.",
+    "Execution request creation from approved improvements is not implemented.",
+    "Reflection, self-modification, self-improvement, and self-application remain out of scope."
+  ]
+}
