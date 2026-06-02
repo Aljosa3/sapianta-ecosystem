@@ -1,0 +1,94 @@
+{
+  "artifact_type": "AIGOL_NATIVE_DEVELOPMENT_FAILURE_CERTIFICATION",
+  "certification_id": "AIGOL_NATIVE_DEVELOPMENT_FAILURE_ANALYSIS_V1",
+  "review_only": true,
+  "runtime_implementation_performed": false,
+  "cli_modification_performed": false,
+  "governance_behavior_modified": false,
+  "replay_modified": false,
+  "worker_created": false,
+  "domain_modified": false,
+  "observed_attempt": {
+    "requested_milestone": "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1",
+    "entrypoint": "python -m aigol.cli.aigol_cli conversation",
+    "observed_failures": [
+      "append-only runtime artifact already exists: 000_source_of_truth_router_selected.json",
+      "provider suggestion is ambiguous",
+      "OpenAI provider unavailable"
+    ],
+    "observed_successes": [
+      "governance interpretation",
+      "constraint interpretation",
+      "worker-input explanation",
+      "next-worker recommendation"
+    ]
+  },
+  "root_cause_classification": "MULTIPLE_INTERACTING_CAUSES",
+  "root_causes": [
+    {
+      "cause": "CONVERSATION_SESSION_REPLAY_REUSE",
+      "classification": "EXPECTED_FAIL_CLOSED_WITH_SESSION_CONTINUITY_GAP",
+      "severity": "HIGH"
+    },
+    {
+      "cause": "MISSING_NATIVE_DEVELOPMENT_TASK_INTAKE",
+      "classification": "DEVELOPMENT_TASK_COGNITION_GAP",
+      "severity": "HIGH"
+    },
+    {
+      "cause": "PROVIDER_SUGGESTION_AMBIGUITY",
+      "classification": "PROVIDER_ASSISTED_CLASSIFICATION_GAP_FOR_COMPLEX_DEVELOPMENT_PROMPTS",
+      "severity": "HIGH"
+    },
+    {
+      "cause": "OPENAI_PROVIDER_UNAVAILABLE",
+      "classification": "EXPECTED_FAIL_CLOSED_PROVIDER_AVAILABILITY_OR_CONFIGURATION_FAILURE",
+      "severity": "MEDIUM"
+    }
+  ],
+  "append_only_artifact_analysis": {
+    "runtime_bug": "PARTIAL",
+    "replay_bug": false,
+    "append_only_design_issue": false,
+    "session_continuity_issue": true,
+    "artifact_naming_issue": true,
+    "expected_fail_closed_behavior": true
+  },
+  "provider_ambiguity_analysis": {
+    "context_assembly_missing": true,
+    "domain_resolution_missing": true,
+    "worker_resolution_missing": true,
+    "development_task_orchestration_missing": true,
+    "provider_necessity_policy_missing": true
+  },
+  "openai_provider_analysis": {
+    "provider_attachment_issue_possible": true,
+    "configuration_issue_possible": true,
+    "runtime_issue_confirmed": false,
+    "expected_fail_closed_behavior": true
+  },
+  "failure_path": [
+    "Human Prompt",
+    "Interactive Conversation CLI",
+    "Default session id and TURN-000001 allocation",
+    "Source Of Truth Router",
+    "Append-only replay collision",
+    "FAILED_CLOSED"
+  ],
+  "secondary_failure_path": [
+    "Human Prompt",
+    "Prompt-To-Conversation Integration",
+    "Provider-Assisted Conversation Runtime",
+    "Provider-Assisted Intent Classification",
+    "Provider Attachment or Provider Suggestion Normalization",
+    "FAILED_CLOSED"
+  ],
+  "aigol_cli_primary_interface_certification_contradicted": false,
+  "contradiction_reason": "Primary CLI certification covers operator visibility, inspection, dashboard, replay reconstruction, and conversation-to-inspection workflows, not native development artifact generation from conversation mode.",
+  "native_development_readiness_percent": 45,
+  "highest_value_corrective_milestone": "AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_V1",
+  "recommendation": "Prioritize Native Development Readiness",
+  "final_classification": {
+    "AIGOL_NATIVE_DEVELOPMENT_READINESS_STATUS": "PARTIAL"
+  }
+}
