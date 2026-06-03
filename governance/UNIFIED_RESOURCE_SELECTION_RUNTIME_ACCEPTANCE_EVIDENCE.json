@@ -1,0 +1,43 @@
+{
+  "artifact_type": "UNIFIED_RESOURCE_SELECTION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "UNIFIED_RESOURCE_SELECTION_RUNTIME_V1",
+  "status": "PASSED",
+  "validation_commands": [
+    "python -m pytest tests/test_unified_resource_selection_runtime_v1.py",
+    "python -m json.tool governance/UNIFIED_RESOURCE_SELECTION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "python -m json.tool governance/UNIFIED_RESOURCE_SELECTION_RUNTIME_CERTIFICATION.json",
+    "git diff --check"
+  ],
+  "test_results": {
+    "focused_runtime_suite": "12 passed"
+  },
+  "covered_behaviors": [
+    "provider resource selection",
+    "worker resource selection",
+    "hybrid resource selected as provider role",
+    "hybrid resource selected as worker role",
+    "governance runtime resource selection",
+    "provider prohibited fail-closed behavior",
+    "worker authorization requirement fail-closed behavior",
+    "trust mismatch diagnostics",
+    "duplicate registry fail-closed behavior",
+    "ambiguous resource resolution fail-closed behavior",
+    "corrupt replay detection",
+    "authority boundary import scan"
+  ],
+  "authority_boundaries_verified": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "governance_mutated": false
+  },
+  "replay_verified": {
+    "selection_recorded": true,
+    "selection_returned": true,
+    "reconstruction_supported": true,
+    "hash_mismatch_detected": true
+  }
+}
+

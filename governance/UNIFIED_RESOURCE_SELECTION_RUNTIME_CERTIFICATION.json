@@ -1,0 +1,89 @@
+{
+  "artifact_type": "UNIFIED_RESOURCE_SELECTION_RUNTIME_CERTIFICATION",
+  "certification_id": "UNIFIED_RESOURCE_SELECTION_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "UNIFIED_RESOURCE_SELECTION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/unified_resource_selection_runtime.py",
+  "test_file": "tests/test_unified_resource_selection_runtime_v1.py",
+  "artifacts_defined": [
+    "RESOURCE_SELECTION_ARTIFACT_V1",
+    "RESOURCE_SELECTION_STATUS_V1",
+    "RESOURCE_SELECTION_DIAGNOSTICS_V1"
+  ],
+  "supported_resource_categories": [
+    "PROVIDER",
+    "WORKER",
+    "HYBRID_PROVIDER_WORKER",
+    "OPERATOR_TOOL",
+    "GOVERNANCE_RUNTIME",
+    "DOMAIN_RUNTIME"
+  ],
+  "default_resources": {
+    "OPENAI": "PROVIDER",
+    "ANTHROPIC": "PROVIDER",
+    "CODEX": "HYBRID_PROVIDER_WORKER",
+    "CLAUDE_CODE": "HYBRID_PROVIDER_WORKER",
+    "REPLAY_INSPECTOR_WORKER": "WORKER",
+    "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME": "GOVERNANCE_RUNTIME"
+  },
+  "selection_responsibilities": {
+    "eligible_resources": true,
+    "capability_compatibility": true,
+    "authority_compatibility": true,
+    "trust_compatibility": true,
+    "category_compatibility": true,
+    "role_compatibility": true
+  },
+  "hybrid_resource_handling": {
+    "explicit_active_role_required": true,
+    "provider_role_supported": true,
+    "worker_role_supported": true,
+    "implicit_role_switching_allowed": false,
+    "role_specific_authority_profiles": true
+  },
+  "fail_closed_conditions": {
+    "no_eligible_resource": true,
+    "capability_mismatch": true,
+    "authority_mismatch": true,
+    "trust_mismatch": true,
+    "registry_inconsistency": true,
+    "ambiguous_resource_resolution": true,
+    "provider_prohibited": true,
+    "worker_authorization_missing": true,
+    "replay_corruption": true
+  },
+  "replay_requirements": {
+    "selected_resource_persisted": true,
+    "resource_category_persisted": true,
+    "active_role_persisted": true,
+    "selection_rationale_persisted": true,
+    "capability_matches_persisted": true,
+    "trust_matches_persisted": true,
+    "authority_matches_persisted": true,
+    "replay_hash_persisted": true
+  },
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "provider_authority_created": false,
+    "worker_authority_created": false,
+    "governance_mutated": false
+  },
+  "validation": {
+    "focused_runtime_suite": "12 passed",
+    "json_evidence_validated": true,
+    "git_diff_check": "PASSED"
+  },
+  "updated_ecosystem_readiness": {
+    "resource_selection_readiness_percent": 100,
+    "provider_worker_invocation_readiness": "NOT_STARTED",
+    "ppp_resource_selection_integration": "NEXT"
+  },
+  "recommended_next_milestone": "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_V1"
+}
