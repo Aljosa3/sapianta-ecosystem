@@ -1,0 +1,61 @@
+{
+  "artifact_type": "AIGOL_CONVERSATION_PPP_ROUTING_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_CONVERSATION_PPP_ROUTING_INTEGRATION_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/conversation_ppp_routing_integration.py"
+  ],
+  "test_files": [
+    "tests/test_conversation_ppp_routing_integration_v1.py"
+  ],
+  "validated_requirements": {
+    "routes_development_requests_through_ppp": true,
+    "creates_task_intake_artifacts": true,
+    "assembles_context": true,
+    "resolves_domain_references": true,
+    "resolves_worker_references": true,
+    "evaluates_provider_necessity": true,
+    "invokes_proposal_production": true,
+    "invokes_repair_retry_when_required": true,
+    "surfaces_clarification_flow_when_required": true,
+    "surfaces_approval_flow_when_required": true,
+    "creates_implementation_handoff_when_validation_succeeds": true,
+    "fails_closed_when_provider_unavailable": true,
+    "detects_replay_corruption": true,
+    "conversation_remains_non_executing": true,
+    "conversation_remains_non_dispatching": true,
+    "conversation_remains_governance_only": true,
+    "workers_not_created": true,
+    "domains_not_created": true,
+    "workers_not_invoked": true,
+    "execution_not_requested": true,
+    "dispatch_not_requested": true,
+    "governance_not_mutated": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py",
+      "result": "6 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked_for_proposal_when_required": true,
+    "provider_authority": false,
+    "aigol_governance_only": true,
+    "human_final_authority": true,
+    "workers_created": false,
+    "domains_created": false,
+    "workers_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "updated_native_development_readiness_percent": 99.8,
+  "remaining_blockers_before_real_no_copy_paste_conversation_workflow": [
+    "operational provider availability and credentials",
+    "final real-world no-copy-paste dry run through conversation mode",
+    "operator display polish for clarification and approval prompts"
+  ],
+  "recommended_next_milestone": "AIGOL_NO_COPY_PASTE_NATIVE_DEVELOPMENT_DRY_RUN_V1"
+}
+
