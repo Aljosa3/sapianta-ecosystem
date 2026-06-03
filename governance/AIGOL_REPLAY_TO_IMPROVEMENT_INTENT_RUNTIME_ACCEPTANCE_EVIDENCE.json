@@ -1,0 +1,61 @@
+{
+  "artifact_type": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T17:30:00+00:00",
+  "runtime": "aigol/runtime/replay_to_improvement_intent_runtime.py",
+  "tests": [
+    "tests/test_replay_to_improvement_intent_runtime_v1.py"
+  ],
+  "coverage": {
+    "confirmed_gap_to_improvement_intent": "passed",
+    "domain_effectiveness_to_domain_model_intent": "passed",
+    "no_gap_fail_closed": "passed",
+    "insufficient_confidence_fail_closed": "passed",
+    "chain_continuity_fail_closed": "passed",
+    "replay_hash_mismatch_fail_closed": "passed",
+    "replay_corruption_detection": "passed",
+    "authority_boundary_import_scan": "passed"
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_replay_to_improvement_intent_runtime_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_CERTIFICATION.json",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "authority_boundaries": {
+    "proposal_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "replay_visibility": {
+    "intent_evidence_recorded": true,
+    "intent_classification_recorded": true,
+    "intent_created": true,
+    "intent_returned": true,
+    "reconstruction_supported": true,
+    "corruption_detection_supported": true
+  }
+}

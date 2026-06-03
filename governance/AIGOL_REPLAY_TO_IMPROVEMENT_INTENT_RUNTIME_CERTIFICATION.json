@@ -1,0 +1,59 @@
+{
+  "artifact_type": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_CERTIFICATION",
+  "version": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T17:30:00+00:00",
+  "final_classification": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_STATUS = CERTIFIED",
+  "certification_basis": [
+    "runtime consumes certified gap detection artifacts",
+    "runtime verifies gap evidence, classification, and detection artifact hashes",
+    "runtime requires confirmed gaps before intent creation",
+    "runtime requires high or deterministic confidence",
+    "runtime requires canonical chain continuity",
+    "runtime emits bounded improvement intent only",
+    "runtime does not create proposals or invoke PPP",
+    "runtime does not invoke providers, workers, dispatch, or execution"
+  ],
+  "created_artifacts": [
+    "IMPROVEMENT_INTENT_EVIDENCE_V1",
+    "IMPROVEMENT_INTENT_CLASSIFICATION_V1",
+    "IMPROVEMENT_INTENT_ARTIFACT_V1"
+  ],
+  "allowed_intent_examples": [
+    "Validation improvement required.",
+    "Policy refinement needed.",
+    "Optimization needed.",
+    "Replay integrity analysis required.",
+    "Domain effectiveness improvement required.",
+    "Failure pattern analysis required."
+  ],
+  "prohibited_intent_examples": [
+    "Add MACD.",
+    "Modify worker X.",
+    "Deploy strategy Y.",
+    "Invoke provider.",
+    "Create execution request."
+  ],
+  "fail_closed_conditions": [
+    "gap evidence missing",
+    "confirmed gap missing",
+    "confidence insufficient",
+    "replay broken",
+    "classification ambiguous",
+    "chain continuity failed",
+    "hash mismatch",
+    "implementation details prohibited"
+  ],
+  "authority_boundaries": {
+    "proposal_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "recommended_next_milestone": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_V1"
+}
