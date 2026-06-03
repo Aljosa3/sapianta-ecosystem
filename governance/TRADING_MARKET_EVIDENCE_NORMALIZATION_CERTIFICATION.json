@@ -1,0 +1,108 @@
+{
+  "artifact_type": "TRADING_MARKET_EVIDENCE_NORMALIZATION_CERTIFICATION",
+  "certification_id": "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "worker_family_id": "MARKET_EVIDENCE_NORMALIZATION",
+  "domain_id": "TRADING",
+  "foundation_only": true,
+  "runtime_implementation_performed": false,
+  "worker_implementation_performed": false,
+  "broker_integration": false,
+  "exchange_integration": false,
+  "order_placement": false,
+  "live_trading": false,
+  "portfolio_mutation": false,
+  "strategy_deployment": false,
+  "financial_claims": false,
+  "created_artifacts": [
+    "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1.md",
+    "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_MODEL_V1.md",
+    "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_REPLAY_MODEL_V1.md",
+    "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_FIXTURE_COVERAGE_V1.md",
+    "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "define worker purpose",
+    "define worker lifecycle",
+    "define worker inputs",
+    "define worker outputs",
+    "define replay model",
+    "define fixture coverage",
+    "define fail-closed conditions",
+    "define authority boundaries",
+    "preserve read-only evidence-only worker scope",
+    "preserve non-executing trading domain foundation"
+  ],
+  "worker_inputs": [
+    "market evidence artifacts",
+    "price evidence",
+    "volume evidence",
+    "source metadata evidence",
+    "instrument metadata evidence",
+    "timestamp and freshness evidence",
+    "replay references",
+    "canonical chain id"
+  ],
+  "worker_outputs": [
+    "normalized market evidence artifact",
+    "evidence integrity status",
+    "normalized price evidence fields",
+    "normalized volume evidence fields",
+    "normalized metadata fields",
+    "replay references",
+    "input evidence hashes",
+    "normalization diagnostics",
+    "fail-closed reason when applicable"
+  ],
+  "fail_closed_conditions": [
+    "input evidence missing",
+    "input evidence not replay-visible",
+    "canonical chain id missing",
+    "input artifact hash mismatch",
+    "replay wrapper hash mismatch",
+    "instrument identity ambiguous",
+    "timestamp missing or invalid",
+    "freshness status indeterminate",
+    "price evidence malformed",
+    "volume evidence malformed",
+    "source metadata missing",
+    "normalization cannot be deterministic",
+    "broker invocation detected",
+    "exchange invocation detected",
+    "order placement detected",
+    "live trading detected",
+    "portfolio mutation detected",
+    "strategy deployment detected",
+    "financial performance claim detected"
+  ],
+  "authority_boundaries": {
+    "read_only": true,
+    "evidence_only": true,
+    "replay_visible": true,
+    "non_executing": true,
+    "broker_invoked": false,
+    "exchange_invoked": false,
+    "order_placed": false,
+    "live_trading_performed": false,
+    "portfolio_mutated": false,
+    "strategy_deployed": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false
+  },
+  "fixture_categories": [
+    "VALID_MINIMAL_MARKET_EVIDENCE",
+    "INSUFFICIENT_MARKET_EVIDENCE",
+    "MALFORMED_PRICE_EVIDENCE",
+    "MALFORMED_VOLUME_EVIDENCE",
+    "AMBIGUOUS_INSTRUMENT_EVIDENCE",
+    "STALE_MARKET_EVIDENCE",
+    "REPLAY_HASH_MISMATCH",
+    "AUTHORITY_BOUNDARY_VIOLATION"
+  ],
+  "recommended_next_trading_worker": "TRADING_PORTFOLIO_CONTEXT_WORKER_FOUNDATION_V1"
+}
+
