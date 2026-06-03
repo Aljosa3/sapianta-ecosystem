@@ -1,0 +1,46 @@
+{
+  "artifact_type": "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_V1",
+  "status": "PASSED",
+  "validation_commands": [
+    "python -m pytest tests/test_unified_resource_selection_ppp_integration_v1.py",
+    "python -m pytest tests/test_unified_resource_selection_runtime_v1.py",
+    "python -m json.tool governance/UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+    "python -m json.tool governance/UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_CERTIFICATION.json",
+    "git diff --check"
+  ],
+  "test_results": {
+    "focused_integration_suite": "9 passed"
+  },
+  "covered_behaviors": [
+    "provider resource integrated for PPP proposal production",
+    "hybrid resource integrated as provider role",
+    "hybrid resource integrated as worker role",
+    "worker role integration remains handoff reference only",
+    "missing resource selection fails closed",
+    "ambiguous role fails closed",
+    "capability mismatch fails closed",
+    "trust mismatch fails closed",
+    "authority mismatch fails closed",
+    "incompatible PPP stage fails closed",
+    "corrupt replay detection",
+    "authority boundary import scan"
+  ],
+  "authority_boundaries_verified": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "provider_authority_created": false,
+    "worker_authority_created": false,
+    "governance_mutated": false
+  },
+  "replay_verified": {
+    "integration_recorded": true,
+    "integration_returned": true,
+    "reconstruction_supported": true,
+    "hash_mismatch_detected": true
+  }
+}
+

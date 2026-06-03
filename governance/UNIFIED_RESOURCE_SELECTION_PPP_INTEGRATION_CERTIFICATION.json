@@ -1,0 +1,90 @@
+{
+  "artifact_type": "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_CERTIFICATION",
+  "certification_id": "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "UNIFIED_RESOURCE_SELECTION_PPP_INTEGRATION_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/unified_resource_selection_ppp_integration.py",
+  "test_file": "tests/test_unified_resource_selection_ppp_integration_v1.py",
+  "artifact_defined": "RESOURCE_PPP_INTEGRATION_ARTIFACT_V1",
+  "integration_position": "Resource Selection -> PPP",
+  "supported_resource_categories": [
+    "PROVIDER",
+    "WORKER",
+    "HYBRID_PROVIDER_WORKER"
+  ],
+  "supported_active_roles": [
+    "PROVIDER_ROLE",
+    "WORKER_ROLE"
+  ],
+  "ppp_statuses": {
+    "provider_role": "PPP_PROVIDER_PROPOSAL_READY",
+    "worker_role": "PPP_WORKER_HANDOFF_REFERENCE_READY"
+  },
+  "consumed_selection_fields": [
+    "selected_resource_id",
+    "selected_resource_category",
+    "selected_resource_version",
+    "selected_role_type",
+    "selected_authority_profile",
+    "selection_rationale",
+    "capability_matches",
+    "trust_matches",
+    "authority_matches",
+    "category_matches",
+    "role_matches",
+    "artifact_hash"
+  ],
+  "hybrid_resource_handling": {
+    "explicit_role_required": true,
+    "provider_role_supported": true,
+    "worker_role_supported": true,
+    "implicit_role_switching_allowed": false,
+    "provider_to_worker_authority_flow_allowed": false,
+    "worker_to_provider_authority_flow_allowed": false
+  },
+  "fail_closed_conditions": {
+    "resource_selection_missing": true,
+    "resource_role_ambiguous": true,
+    "authority_mismatch": true,
+    "capability_mismatch": true,
+    "trust_mismatch": true,
+    "replay_inconsistency": true,
+    "ppp_stage_incompatible_with_role": true,
+    "replay_corruption": true
+  },
+  "replay_requirements": {
+    "selected_resource_persisted": true,
+    "resource_category_persisted": true,
+    "active_role_persisted": true,
+    "selection_hash_persisted": true,
+    "selection_rationale_persisted": true,
+    "capability_matches_persisted": true,
+    "trust_matches_persisted": true,
+    "authority_matches_persisted": true,
+    "context_hash_persisted": true
+  },
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "provider_authority_created": false,
+    "worker_authority_created": false,
+    "governance_mutated": false
+  },
+  "validation": {
+    "focused_integration_suite": "9 passed",
+    "json_evidence_validated": true,
+    "git_diff_check": "PASSED"
+  },
+  "updated_ecosystem_readiness": {
+    "resource_selection_readiness_percent": 100,
+    "ppp_resource_integration_percent": 100,
+    "provider_or_worker_invocation_readiness": "NOT_STARTED"
+  },
+  "recommended_next_milestone": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_V1"
+}
