@@ -1,0 +1,69 @@
+{
+  "artifact_type": "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_CERTIFICATION",
+  "certification_id": "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/provider_proposal_production_runtime.py",
+  "provider_invocation_permitted_when_required": true,
+  "provider_authority": false,
+  "proposal_only": true,
+  "workers_created": false,
+  "domains_created": false,
+  "implementation_authorized": false,
+  "dispatch_requested": false,
+  "execution_requested": false,
+  "governance_mutated": false,
+  "certified_capabilities": [
+    "validate implementation handoff artifact",
+    "validate context bundle",
+    "validate domain and worker registry resolution",
+    "validate provider necessity policy",
+    "prepare provider request packet",
+    "invoke approved provider through provider attachment boundary",
+    "capture provider response artifact",
+    "convert provider response to development proposal artifact",
+    "validate generated proposal contract",
+    "persist provider id",
+    "persist provider request hash",
+    "persist provider response hash",
+    "persist proposal hash",
+    "persist context hash",
+    "persist canonical chain id",
+    "persist provider invocation status",
+    "reconstruct provider proposal production replay",
+    "detect replay corruption"
+  ],
+  "fail_closed_conditions": [
+    "provider unavailable",
+    "provider prohibited by policy",
+    "provider not required by policy",
+    "provider response invalid",
+    "proposal contract validation fails",
+    "authority violation detected",
+    "replay mismatch detected",
+    "ambiguous provider result detected",
+    "append-only replay artifact collision",
+    "replay hash mismatch"
+  ],
+  "validation_summary": {
+    "runtime_tests": "8 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "readiness_update": {
+    "previous_native_development_readiness_percent": 98,
+    "current_native_development_readiness_percent": 99,
+    "status": "READY"
+  },
+  "remaining_gaps_before_no_copy_paste_development": [
+    "provider proposal repair and retry is not yet implemented",
+    "conversation CLI must route provider proposal production into the native development flow",
+    "provider availability must be operationally configured",
+    "human clarification remains required when provider output fails validation and no retry exists"
+  ],
+  "recommended_next_milestone": "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_V1"
+}
+
