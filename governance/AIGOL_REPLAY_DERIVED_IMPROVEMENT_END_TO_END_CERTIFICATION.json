@@ -1,0 +1,82 @@
+{
+  "artifact": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_END_TO_END_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_END_TO_END_DRY_RUN_V1",
+  "certification_date": "2026-06-03",
+  "scenario": {
+    "domain": "TRADING",
+    "observed_condition": "Observed drawdown exceeds threshold.",
+    "expected_condition": "Trading risk evidence should remain within certified policy thresholds or produce replay-visible improvement intent.",
+    "high_risk_domain": true
+  },
+  "validated_flow": [
+    "Execution evidence represented as replay-visible input",
+    "Replay to Gap Detection",
+    "Gap Detection to Improvement Intent",
+    "Improvement Intent to Cognition Routing",
+    "Cognition Routing to Resource Selection Routing",
+    "Resource Selection Routing to PPP Integration",
+    "PPP-compatible handoff candidate input"
+  ],
+  "validated_artifacts": [
+    "GAP_DETECTION_ARTIFACT_V1",
+    "GAP_CLASSIFICATION_ARTIFACT_V1",
+    "GAP_EVIDENCE_ARTIFACT_V1",
+    "IMPROVEMENT_INTENT_ARTIFACT_V1",
+    "IMPROVEMENT_INTENT_EVIDENCE_V1",
+    "IMPROVEMENT_INTENT_CLASSIFICATION_V1",
+    "COGNITION_ROUTED_INTENT_ARTIFACT_V1",
+    "COGNITION_ROUTING_EVIDENCE_V1",
+    "COGNITION_ROUTING_CLASSIFICATION_V1",
+    "RESOURCE_SELECTION_ROUTED_INTENT_V1",
+    "RESOURCE_SELECTION_ROUTING_EVIDENCE_V1",
+    "RESOURCE_SELECTION_ROUTING_CLASSIFICATION_V1",
+    "PPP_ROUTED_INTENT_ARTIFACT_V1",
+    "PPP_ROUTING_EVIDENCE_V1",
+    "PPP_ROUTING_CLASSIFICATION_V1"
+  ],
+  "source_agnostic_ppp_assessment": {
+    "status": "PASS",
+    "ppp_receives_replay_source": false,
+    "ppp_contract_is_source_agnostic": true,
+    "source_lineage_remains_replay_visible_outside_ppp_contract": true
+  },
+  "human_authority_assessment": {
+    "status": "PASS",
+    "human_remains_final_authority": true,
+    "trading_requires_human_approval": true,
+    "replay_derived_intent_can_authorize": false,
+    "replay_derived_intent_can_execute": false
+  },
+  "authority_boundaries": {
+    "ppp_proposal_production_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_cognition_routing_runtime_v1.py tests/test_replay_derived_intent_resource_selection_routing_runtime_v1.py tests/test_replay_derived_intent_resource_selection_ppp_integration_runtime_v1.py",
+      "status": "PASS",
+      "summary": "38 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_REPLAY_DERIVED_IMPROVEMENT_END_TO_END_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "readiness_assessment": {
+    "replay_derived_improvement_readiness_percent": 99.5,
+    "remaining_gap": "Run replay-derived PPP handoff dry run with deterministic proposal validation and approval-required handoff evidence."
+  },
+  "recommended_next_milestone": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_PPP_HANDOFF_DRY_RUN_V1",
+  "final_classification": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_END_TO_END_STATUS = CERTIFIED"
+}
