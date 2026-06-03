@@ -1,0 +1,73 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/clarified_intent_resource_selection_ppp_integration_runtime.py",
+  "test_file": "tests/test_clarified_intent_resource_selection_ppp_integration_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "routes_clarified_resource_selection_intent_to_ppp_input",
+      "status": "PASS",
+      "evidence": "CLARIFIED_PPP_ROUTED_INTENT_ARTIFACT_V1, CLARIFIED_PPP_ROUTING_EVIDENCE_V1, and CLARIFIED_PPP_ROUTING_CLASSIFICATION_V1 are produced."
+    },
+    {
+      "check": "direct_clarified_and_replay_derived_intents_are_ppp_equivalent",
+      "status": "PASS",
+      "evidence": "PPP input contract contains source-agnostic fields and hides clarification and replay-derived source identity from PPP."
+    },
+    {
+      "check": "unresolved_clarification_fails_closed",
+      "status": "PASS",
+      "evidence": "Failed clarified Resource Selection routing caused by unresolved clarification cannot enter PPP routing."
+    },
+    {
+      "check": "invalid_resource_selection_lineage_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed when clarified Resource Selection routing references or hashes mismatch."
+    },
+    {
+      "check": "invalid_cognition_lineage_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed when selected interpretation diverges across clarified lineage artifacts."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed if source visibility leaks into PPP through upstream Resource Selection contract fields."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed when canonical chain ids diverge."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects altered clarified PPP routed intent artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke PPP, PPP proposal production, providers, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_clarified_intent_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "9 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "ppp_proposal_production_invoked": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_STATUS = CERTIFIED"
+}
