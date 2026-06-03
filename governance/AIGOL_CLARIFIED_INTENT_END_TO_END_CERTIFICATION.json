@@ -1,0 +1,77 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_END_TO_END_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CLARIFIED_INTENT_END_TO_END_DRY_RUN_V1",
+  "certification_date": "2026-06-03",
+  "scenario": {
+    "human_prompt": "Create a workstation.",
+    "clarification_resolution": "Create a new employee-management domain.",
+    "resolved_interpretation": "DOMAIN_FOUNDATION",
+    "canonical_chain_id": "CHAIN-CLARIFIED-INTENT-E2E-000001"
+  },
+  "validated_flow": [
+    "Human Intent",
+    "Clarification Dialog",
+    "Clarification Resolution",
+    "Cognition",
+    "Resource Selection",
+    "PPP",
+    "Proposal Production",
+    "Proposal Validation",
+    "Approval Evidence",
+    "Implementation Handoff"
+  ],
+  "observed_status": {
+    "clarification_status": "HUMAN_CLARIFICATION_RESOLVED",
+    "cognition_integration_status": "CLARIFIED_COGNITION_INPUT_CREATED",
+    "resource_selection_routing_status": "CLARIFIED_RESOURCE_SELECTION_INTENT_ROUTED",
+    "ppp_routing_status": "CLARIFIED_PPP_INTENT_ROUTED",
+    "proposal_production_status": "DETERMINISTIC_DRY_RUN_PROPOSAL_CREATED",
+    "proposal_validation_status": "DEVELOPMENT_PROPOSAL_CONTRACT_VALIDATED",
+    "approval_status": "HUMAN_APPROVAL_REQUIRED",
+    "handoff_status": "IMPLEMENTATION_HANDOFF_CREATED"
+  },
+  "replay_reconstruction": {
+    "clarification_dialog_replay_artifacts": 3,
+    "clarification_cognition_integration_replay_artifacts": 4,
+    "clarified_resource_selection_routing_replay_artifacts": 4,
+    "clarified_ppp_routing_replay_artifacts": 4,
+    "proposal_contract_replay_artifacts": 2,
+    "implementation_handoff_replay_artifacts": 2,
+    "replay_continuity": "PASS",
+    "chain_continuity": "PASS"
+  },
+  "authority_tests": {
+    "clarification_authorized": false,
+    "clarification_executed": false,
+    "ppp_executed": false,
+    "provider_invoked_live": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "human_final_authority": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_clarified_intent_resource_selection_routing_v1.py tests/test_clarified_intent_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "34 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_END_TO_END_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_gaps": [
+    "Conversation-mode orchestration for the complete clarified path.",
+    "Approved live provider adapter availability for clarified PPP routed intent.",
+    "Approval resume runtime after human approval evidence."
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_V1",
+  "final_classification": "AIGOL_CLARIFIED_INTENT_END_TO_END_STATUS = CERTIFIED"
+}
