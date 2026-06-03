@@ -1,0 +1,62 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/clarified_intent_provider_proposal_production_integration.py",
+  "test_file": "tests/test_clarified_intent_provider_proposal_production_integration_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "integrates_clarified_provider_request_with_proposal_production",
+      "status": "PASS",
+      "evidence": "CLARIFIED_PROVIDER_PROPOSAL_PRODUCTION_ARTIFACT_V1 is created with provider request packet readiness."
+    },
+    {
+      "check": "provider_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Runtime fails closed when selected provider id differs from requested provider id."
+    },
+    {
+      "check": "invalid_provider_lineage_fails_closed",
+      "status": "PASS",
+      "evidence": "Runtime fails closed when bridge evidence or classification references and hashes mismatch."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Runtime fails closed when source visibility leaks into PPP input contract."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Runtime fails closed when canonical chain ids diverge."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified production integration artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not dispatch, execute, invoke workers, or create execution requests."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_clarified_intent_provider_proposal_production_integration_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "worker_invoked": false,
+    "worker_created": false,
+    "domain_created": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_STATUS = CERTIFIED"
+}

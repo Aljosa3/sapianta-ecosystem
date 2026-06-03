@@ -1,0 +1,56 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/clarified_intent_provider_proposal_production_integration.py"
+  ],
+  "test_artifacts": [
+    "tests/test_clarified_intent_provider_proposal_production_integration_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_V1.md",
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Integrates clarified provider request artifacts with governed provider proposal production readiness.",
+    "Preserves clarification lineage, selected interpretation, PPP lineage, provider lineage, replay continuity, and chain continuity.",
+    "Verifies clarified provider request artifacts can become valid provider proposal production inputs.",
+    "Fails closed on unresolved clarification, invalid PPP lineage, invalid provider lineage, provider mismatch, replay corruption, and chain continuity failure."
+  ],
+  "non_goals_preserved": [
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No worker invocation.",
+    "No worker execution.",
+    "No worker creation.",
+    "No domain creation.",
+    "No governance mutation.",
+    "No provider response capture in this runtime."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_clarified_intent_resource_selection_routing_v1.py tests/test_clarified_intent_resource_selection_ppp_integration_v1.py tests/test_clarified_intent_conversation_routing_integration_v1.py tests/test_clarified_intent_provider_proposal_bridge_v1.py tests/test_clarified_intent_provider_proposal_production_integration_v1.py",
+      "status": "PASS",
+      "summary": "54 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_PROVIDER_RESPONSE_CAPTURE_V1",
+  "final_classification": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_STATUS = CERTIFIED"
+}
