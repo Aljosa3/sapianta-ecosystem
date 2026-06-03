@@ -1,0 +1,63 @@
+{
+  "artifact_type": "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_CERTIFICATION",
+  "certification_id": "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/provider_proposal_repair_and_retry_runtime.py",
+  "max_provider_retries": 3,
+  "provider_authority": false,
+  "proposal_only": true,
+  "aigol_governance_only": true,
+  "human_final_authority": true,
+  "workers_created": false,
+  "domains_created": false,
+  "dispatch_requested": false,
+  "execution_requested": false,
+  "governance_mutated": false,
+  "certified_capabilities": [
+    "accept rejected development proposals",
+    "accept validation failure evidence",
+    "generate provider repair requests",
+    "request corrected proposals from providers",
+    "validate corrected proposals",
+    "retry deterministic validation failures",
+    "persist retry count",
+    "persist retry history",
+    "persist retry reasons",
+    "persist validation failures",
+    "create human clarification artifact for ambiguity",
+    "create human approval artifact for high-risk domains",
+    "reconstruct repair and retry replay",
+    "detect replay corruption"
+  ],
+  "fail_closed_conditions": [
+    "retry limit exceeded",
+    "provider unavailable",
+    "replay mismatch detected",
+    "authority violation detected",
+    "governance violation detected",
+    "invalid proposal repeatedly returned",
+    "escalation artifact cannot be created",
+    "replay hash mismatch"
+  ],
+  "validation_summary": {
+    "runtime_tests": "7 passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "readiness_update": {
+    "previous_native_development_readiness_percent": 99,
+    "current_native_development_readiness_percent": 99.5,
+    "status": "READY"
+  },
+  "remaining_gaps_before_true_no_copy_paste_development": [
+    "conversation CLI routing into provider proposal production and repair/retry",
+    "operational provider availability and credentials",
+    "final real-world no-copy-paste dry run through conversation mode"
+  ],
+  "recommended_next_milestone": "AIGOL_CONVERSATION_PROVIDER_PROPOSAL_FLOW_INTEGRATION_V1"
+}
+

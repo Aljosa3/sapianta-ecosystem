@@ -1,0 +1,73 @@
+{
+  "artifact_type": "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "implementation_files": [
+    "aigol/runtime/provider_proposal_repair_and_retry_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_provider_proposal_repair_and_retry_runtime_v1.py"
+  ],
+  "defined_artifacts": [
+    "PROVIDER_REPAIR_REQUEST_V1",
+    "PROVIDER_RETRY_RESPONSE_V1",
+    "CORRECTED_DEVELOPMENT_PROPOSAL_V1",
+    "RETRY_STATUS_ARTIFACT_V1",
+    "HUMAN_CLARIFICATION_REQUIRED_ARTIFACT_V1",
+    "HUMAN_APPROVAL_REQUIRED_ARTIFACT_V1"
+  ],
+  "validated_requirements": {
+    "accepts_rejected_proposals": true,
+    "accepts_validation_failure_evidence": true,
+    "generates_repair_requests": true,
+    "requests_corrected_proposals_from_providers": true,
+    "validates_corrected_proposals": true,
+    "supports_auto_retry": true,
+    "max_provider_retries_defined": 3,
+    "persists_retry_count": true,
+    "persists_retry_history": true,
+    "persists_retry_reasons": true,
+    "persists_validation_failures": true,
+    "persists_retry_outcome": true,
+    "creates_human_clarification_artifact_for_ambiguity": true,
+    "creates_human_approval_artifact_for_high_risk_domain": true,
+    "fails_closed_when_retry_limit_exceeded": true,
+    "fails_closed_when_provider_unavailable": true,
+    "fails_closed_on_authority_violation": true,
+    "detects_replay_corruption": true,
+    "provider_remains_proposal_only": true,
+    "aigol_remains_governance_only": true,
+    "human_final_authority_preserved": true,
+    "workers_not_created": true,
+    "domains_not_created": true,
+    "dispatch_not_requested": true,
+    "execution_not_requested": true,
+    "governance_not_mutated": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_provider_proposal_repair_and_retry_runtime_v1.py",
+      "result": "7 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked_for_retry_when_allowed": true,
+    "provider_authority": false,
+    "proposal_only": true,
+    "aigol_governance_only": true,
+    "human_final_authority": true,
+    "workers_created": false,
+    "domains_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "updated_native_development_readiness_percent": 99.5,
+  "remaining_blockers_before_true_no_copy_paste_development": [
+    "conversation CLI routing into provider proposal production and repair/retry",
+    "operational provider availability and credentials",
+    "final no-copy-paste conversation dry run"
+  ],
+  "recommended_next_milestone": "AIGOL_CONVERSATION_PROVIDER_PROPOSAL_FLOW_INTEGRATION_V1"
+}
+
