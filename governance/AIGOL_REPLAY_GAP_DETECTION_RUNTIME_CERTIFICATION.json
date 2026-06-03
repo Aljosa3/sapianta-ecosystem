@@ -1,0 +1,55 @@
+{
+  "artifact_type": "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_CERTIFICATION",
+  "version": "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T17:00:00+00:00",
+  "final_classification": "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_STATUS = CERTIFIED",
+  "certification_basis": [
+    "gap evidence artifacts are replay-visible and hash-bound",
+    "gap classifications require replay references, source hashes, thresholds, and confidence",
+    "gap detection persists append-only replay events",
+    "runtime detects performance, policy, validation, replay integrity, domain effectiveness, and repeated failure gaps",
+    "runtime fails closed on missing evidence, broken replay, undefined thresholds, and ambiguous classification",
+    "runtime does not create improvement intent or improvement proposals",
+    "runtime does not invoke PPP, providers, workers, dispatch, or execution"
+  ],
+  "supported_domains": [
+    "TRADING",
+    "MARKETING",
+    "HEALTHCARE",
+    "HR",
+    "AIGOL_CORE"
+  ],
+  "false_positive_controls": [
+    "evidence references required",
+    "replay references required",
+    "replay hashes required",
+    "observed condition required",
+    "expected condition required",
+    "threshold checks required",
+    "confidence classification required"
+  ],
+  "fail_closed_conditions": [
+    "evidence missing",
+    "replay broken",
+    "thresholds undefined",
+    "classification ambiguous",
+    "confidence classification missing",
+    "unsupported domain",
+    "replay corruption"
+  ],
+  "authority_boundaries": {
+    "proposal_created": false,
+    "improvement_proposal_created": false,
+    "improvement_intent_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "authorization_created": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "recommended_next_milestone": "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_V1"
+}
