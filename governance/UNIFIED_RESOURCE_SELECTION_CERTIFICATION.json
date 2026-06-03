@@ -1,0 +1,90 @@
+{
+  "artifact_type": "UNIFIED_RESOURCE_SELECTION_CERTIFICATION",
+  "certification_id": "UNIFIED_RESOURCE_SELECTION_FOUNDATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "UNIFIED_RESOURCE_SELECTION_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "scope": "Foundation architecture only",
+  "runtime_implementation_performed": false,
+  "provider_implementation_performed": false,
+  "worker_implementation_performed": false,
+  "execution_enabled": false,
+  "dispatch_enabled": false,
+  "governance_mutated": false,
+  "replay_mutated": false,
+  "resource_definition": {
+    "resource_is_selectable_capability_boundary": true,
+    "resource_identity_is_stable": true,
+    "authority_is_role_specific": true,
+    "identity_grants_authority": false
+  },
+  "resource_categories": [
+    "PROVIDER",
+    "WORKER",
+    "HYBRID_PROVIDER_WORKER",
+    "OPERATOR_TOOL",
+    "GOVERNANCE_RUNTIME",
+    "DOMAIN_RUNTIME"
+  ],
+  "initial_resource_classification": {
+    "OPENAI": "PROVIDER",
+    "ANTHROPIC": "PROVIDER",
+    "CODEX": "HYBRID_PROVIDER_WORKER",
+    "CLAUDE_CODE": "HYBRID_PROVIDER_WORKER"
+  },
+  "hybrid_resource_model": {
+    "single_resource_identity": true,
+    "multiple_role_bindings": true,
+    "role_specific_capabilities": true,
+    "role_specific_authority_profiles": true,
+    "role_specific_replay_contracts": true,
+    "implicit_role_switching_allowed": false
+  },
+  "selection_model": {
+    "deterministic_selection_required": true,
+    "replay_visible_selection_required": true,
+    "provider_selection_supported": true,
+    "worker_selection_supported": true,
+    "hybrid_selection_supported": true,
+    "active_role_required": true,
+    "random_selection_prohibited": true,
+    "selection_invokes_resources": false
+  },
+  "capability_evaluation": {
+    "workflow_match_required": true,
+    "domain_match_required": true,
+    "category_match_required": true,
+    "role_match_required": true,
+    "authority_boundary_match_required": true,
+    "trust_threshold_required": true,
+    "cost_threshold_supported": true,
+    "dependency_match_required": true,
+    "replay_contract_match_required": true
+  },
+  "ppp_interaction": {
+    "provider_role_requests_proposal_evidence": true,
+    "worker_role_requires_authorization": true,
+    "hybrid_role_must_be_explicit": true,
+    "ppp_may_create_handoffs": true,
+    "ppp_may_recommend_resource_lifecycle_changes": true,
+    "ppp_invokes_workers": false,
+    "ppp_dispatches": false,
+    "ppp_executes": false,
+    "ppp_authorizes": false
+  },
+  "authority_boundaries": {
+    "provider_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes_only_authorized_work": true,
+    "replay_records": true,
+    "provider_executes": false,
+    "provider_dispatches": false,
+    "provider_authorizes": false,
+    "worker_self_authorizes": false,
+    "worker_self_dispatches": false,
+    "resource_identity_grants_authority": false
+  },
+  "recommended_first_runtime_milestone": "UNIFIED_RESOURCE_SELECTION_RUNTIME_V1"
+}
