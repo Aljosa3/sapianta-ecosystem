@@ -1,0 +1,73 @@
+{
+  "artifact": "AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "provider_unavailable_detected",
+      "status": "PASS",
+      "evidence": "Fallback detects provider-assisted conversation failure containing OpenAI provider unavailable."
+    },
+    {
+      "check": "workstation_prompt_clarification_request",
+      "status": "PASS",
+      "evidence": "Create a workstation creates HUMAN_CLARIFICATION_REQUEST_ARTIFACT_V1 with domain, worker, capability, intent, and resource ambiguity."
+    },
+    {
+      "check": "operator_options_rendered",
+      "status": "PASS",
+      "evidence": "Conversation output renders bounded questions and candidate interpretations without guessing."
+    },
+    {
+      "check": "noneligible_prompt_fails_closed",
+      "status": "PASS",
+      "evidence": "Fallback fails closed when the prompt is not clarification-eligible."
+    },
+    {
+      "check": "provider_unavailable_required",
+      "status": "PASS",
+      "evidence": "Fallback fails closed when provider failure evidence does not show provider unavailability."
+    },
+    {
+      "check": "interactive_conversation_integration",
+      "status": "PASS",
+      "evidence": "Interactive conversation converts provider-unavailable Create a workstation into HUMAN_CLARIFICATION_REQUIRED and does not increment failed_turns."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified fallback artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Fallback runtime source does not invoke providers, workers, dispatch, execution, or authorization."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_intent_clarification_dialog_runtime_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "19 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked_by_fallback": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false,
+    "silent_interpretation_selected": false
+  },
+  "final_classification": "AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_STATUS = CERTIFIED"
+}

@@ -1,0 +1,62 @@
+{
+  "artifact": "AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_conversation_provider_unavailable_clarification_fallback_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_V1.md",
+    "governance/AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Detects provider-unavailable conversation failure evidence.",
+    "Preserves provider failure evidence and hash before fallback.",
+    "Routes eligible ambiguous development-style prompts into deterministic clarification.",
+    "Creates HUMAN_CLARIFICATION_REQUEST_ARTIFACT_V1 before requiring provider availability.",
+    "Renders bounded operator-facing clarification questions and options.",
+    "Fails closed when no deterministic clarification fallback is available."
+  ],
+  "non_goals_preserved": [
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No worker invocation.",
+    "No governance mutation.",
+    "No silent interpretation selection.",
+    "No provider invocation by fallback."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_intent_clarification_dialog_runtime_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "19 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_cli_retest": "printf 'Create a workstation.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation",
+  "final_classification": "AIGOL_CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_STATUS = CERTIFIED"
+}

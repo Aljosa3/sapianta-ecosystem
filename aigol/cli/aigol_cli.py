@@ -127,6 +127,11 @@ from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
+    HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
+    render_provider_unavailable_clarification_fallback,
+    run_conversation_provider_unavailable_clarification_fallback,
+)
 from aigol.runtime.native_development_task_intake_runtime import (
     is_native_development_prompt,
 )
@@ -672,9 +677,28 @@ def run_interactive_conversation(
                 latest_chain_id = conversation_capture.get("latest_chain_id") or current_chain_id
                 fail_closed = conversation_capture.get("fail_closed") is True
                 if fail_closed:
-                    failed_turns += 1
-                    failure_reason = conversation_capture.get("failure_reason") or "conversation failed closed"
-                    output_writer(f"FAILED_CLOSED: {failure_reason}")
+                    fallback_capture = run_conversation_provider_unavailable_clarification_fallback(
+                        fallback_id=f"{prompt_id}:PROVIDER-UNAVAILABLE-CLARIFICATION-FALLBACK",
+                        prompt_id=prompt_id,
+                        human_prompt=human_prompt,
+                        provider_failure_capture=conversation_capture,
+                        canonical_chain_id=conversation_capture.get("canonical_chain_id") or current_chain_id or prompt_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "provider_unavailable_clarification_fallback",
+                    )
+                    if fallback_capture.get("response_status") == PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED:
+                        conversation_capture = fallback_capture
+                        fail_closed = False
+                        output_writer(render_provider_unavailable_clarification_fallback(fallback_capture))
+                    else:
+                        failed_turns += 1
+                        failure_reason = (
+                            fallback_capture.get("failure_reason")
+                            or conversation_capture.get("failure_reason")
+                            or "conversation failed closed"
+                        )
+                        conversation_capture = fallback_capture
+                        output_writer(f"FAILED_CLOSED: {failure_reason}")
                 else:
                     output_writer(conversation_capture.get("response_text", ""))
                 turns.append(
