@@ -76,11 +76,11 @@ DEFAULT_WORKER_FAMILIES = (
     },
     {
         "domain_id": "TRADING",
-        "worker_family_id": "PORTFOLIO_ANALYSIS",
-        "display_name": "Portfolio Analysis",
+        "worker_family_id": "PORTFOLIO_CONTEXT",
+        "display_name": "Portfolio Context",
         "worker_class": "PORTFOLIO_CONTEXT",
         "status": "FOUNDATION_CANDIDATE",
-        "aliases": ("PORTFOLIO ANALYSIS", "PORTFOLIO WORKER"),
+        "aliases": ("PORTFOLIO ANALYSIS", "PORTFOLIO_ANALYSIS", "PORTFOLIO WORKER", "PORTFOLIO CONTEXT"),
         "authority": "CONTEXT_EVIDENCE_ONLY",
     },
     {
@@ -269,6 +269,7 @@ def _resolve_worker(registry: dict[str, Any], domain_id: str, value: str) -> dic
             key == _normalize_key(worker["worker_family_id"], "worker_family_id")
             or key in {_normalize_key(alias, "worker_alias") for alias in worker.get("aliases", [])}
             or key == _normalize_key(worker.get("display_name"), "worker_display_name")
+            or key == _normalize_key(worker.get("worker_class"), "worker_class")
         )
     ]
     if not matches:
@@ -520,4 +521,3 @@ def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "domain worker resolution failed closed"
-

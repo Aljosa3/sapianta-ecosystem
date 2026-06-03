@@ -1,0 +1,58 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_WORKER_REGISTRY_PORTFOLIO_CONTEXT_FIX_CERTIFICATION",
+  "certification_id": "AIGOL_DOMAIN_WORKER_REGISTRY_PORTFOLIO_CONTEXT_FIX_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_DOMAIN_WORKER_REGISTRY_PORTFOLIO_CONTEXT_FIX_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_files_updated": [
+    "aigol/runtime/domain_and_worker_resolution_registry.py"
+  ],
+  "test_files_updated": [
+    "tests/test_domain_and_worker_resolution_registry_v1.py"
+  ],
+  "root_cause": {
+    "type": "WORKER_FAMILY_CANONICAL_ID_MISMATCH",
+    "intake_worker_family": "PORTFOLIO_CONTEXT",
+    "previous_registry_worker_family_id": "PORTFOLIO_ANALYSIS",
+    "previous_worker_class": "PORTFOLIO_CONTEXT",
+    "corrected_registry_worker_family_id": "PORTFOLIO_CONTEXT"
+  },
+  "registry_changes": {
+    "portfolio_context_canonical_worker_family": "PORTFOLIO_CONTEXT",
+    "portfolio_analysis_preserved_as_alias": true,
+    "worker_class_resolution_supported": true,
+    "semantic_interpretation_performed": false
+  },
+  "validation": {
+    "registry_resolution_tests": "9 passed",
+    "conversation_ppp_routing_tests": "6 passed",
+    "portfolio_context_ppp_dry_run": "CONVERSATION_PPP_HANDOFF_CREATED",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "authority_boundaries": {
+    "provider_invoked_by_registry": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "worker_created": false,
+    "domain_created": false,
+    "governance_mutated": false
+  },
+  "replay_impact": {
+    "registry_hash_changes_for_future_replay": true,
+    "old_replay_mutated": false,
+    "new_replay_records_corrected_registry_hash": true,
+    "replay_continuity_preserved": true
+  },
+  "updated_no_copy_paste_readiness": {
+    "previous_status": "PARTIAL",
+    "current_status": "READY_FOR_REPEAT_DRY_RUN",
+    "readiness_percent": 99.9
+  },
+  "recommendation": "Repeat AIGOL_NO_COPY_PASTE_REAL_WORLD_DRY_RUN_V1 for TRADING_PORTFOLIO_CONTEXT_WORKER_FOUNDATION_V1",
+  "recommended_next_milestone": "AIGOL_NO_COPY_PASTE_REAL_WORLD_DRY_RUN_V1_REPEAT"
+}
+

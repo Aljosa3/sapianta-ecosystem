@@ -77,6 +77,28 @@ def test_registry_supports_future_domains_without_worker_resolution(tmp_path) ->
     assert capture["provider_invoked"] is False
 
 
+def test_resolves_trading_portfolio_context_by_intake_worker_family(tmp_path) -> None:
+    capture = resolve_domain_worker_milestone(
+        resolution_id="RESOLUTION-TRADING-PORTFOLIO-CONTEXT-000001",
+        domain_id="TRADING",
+        worker_family_id="PORTFOLIO_CONTEXT",
+        milestone_type="WORKER_FOUNDATION",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "portfolio_context",
+    )
+    reconstructed = reconstruct_domain_worker_resolution_replay(tmp_path / "portfolio_context")
+
+    assert capture["resolution_status"] == RESOLUTION_SUCCEEDED
+    assert capture["domain_id"] == "TRADING"
+    assert capture["worker_family_id"] == "PORTFOLIO_CONTEXT"
+    assert capture["resolution_result"]["worker_family"]["worker_class"] == "PORTFOLIO_CONTEXT"
+    assert capture["resolution_result"]["canonical_milestone_prefix"] == "TRADING_PORTFOLIO_CONTEXT_WORKER_FOUNDATION"
+    assert capture["semantic_interpretation_performed"] is False
+    assert capture["provider_invoked"] is False
+    assert reconstructed["worker_family_id"] == "PORTFOLIO_CONTEXT"
+    assert reconstructed["replay_artifact_count"] == 2
+
+
 def test_unknown_domain_fails_closed(tmp_path) -> None:
     capture = resolve_domain_worker_milestone(
         resolution_id="RESOLUTION-UNKNOWN-DOMAIN-000001",
