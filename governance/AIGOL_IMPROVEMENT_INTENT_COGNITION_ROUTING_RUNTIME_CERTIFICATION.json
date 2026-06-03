@@ -1,0 +1,51 @@
+{
+  "artifact_type": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_CERTIFICATION",
+  "version": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T18:00:00+00:00",
+  "final_classification": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_STATUS = CERTIFIED",
+  "certification_basis": [
+    "runtime consumes certified replay-derived improvement intent artifacts",
+    "runtime verifies source intent, evidence, and classification hashes",
+    "runtime preserves source lineage while producing source-agnostic cognition input",
+    "runtime preserves confidence and domain references",
+    "runtime preserves chain continuity",
+    "runtime makes PPP unaware of the intent source",
+    "runtime does not create proposals or invoke PPP",
+    "runtime does not invoke providers, workers, dispatch, authorization, or execution"
+  ],
+  "created_artifacts": [
+    "COGNITION_ROUTING_EVIDENCE_V1",
+    "COGNITION_ROUTING_CLASSIFICATION_V1",
+    "COGNITION_ROUTED_INTENT_ARTIFACT_V1"
+  ],
+  "invariant_test": {
+    "human_intent_after_cognition": "source-agnostic structured input",
+    "replay_derived_intent_after_cognition_routing": "source-agnostic structured input",
+    "ppp_intent_source_awareness": false,
+    "source_lineage_preserved_for_replay": true
+  },
+  "fail_closed_conditions": [
+    "improvement intent missing",
+    "improvement intent evidence missing",
+    "improvement intent classification missing",
+    "improvement intent not created",
+    "improvement intent not ppp eligible",
+    "source lineage broken",
+    "chain continuity failed",
+    "hash mismatch",
+    "replay corruption"
+  ],
+  "authority_boundaries": {
+    "proposal_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "recommended_next_milestone": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_ROUTING_RUNTIME_V1"
+}

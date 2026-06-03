@@ -1,0 +1,57 @@
+{
+  "artifact_type": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T18:00:00+00:00",
+  "runtime": "aigol/runtime/improvement_intent_cognition_routing_runtime.py",
+  "tests": [
+    "tests/test_improvement_intent_cognition_routing_runtime_v1.py"
+  ],
+  "coverage": {
+    "improvement_intent_to_cognition_input": "passed",
+    "human_replay_intent_ppp_equivalence": "passed",
+    "not_ppp_eligible_fail_closed": "passed",
+    "lineage_hash_mismatch_fail_closed": "passed",
+    "chain_continuity_fail_closed": "passed",
+    "replay_corruption_detection": "passed",
+    "authority_boundary_import_scan": "passed"
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_improvement_intent_cognition_routing_runtime_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_cognition_routing_runtime_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPROVEMENT_INTENT_COGNITION_ROUTING_RUNTIME_CERTIFICATION.json",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "authority_boundaries": {
+    "proposal_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "intent_source_equivalence": {
+    "human_intent": "structured cognition input",
+    "replay_derived_intent": "structured cognition input after routing",
+    "ppp_source_visibility": false
+  }
+}
