@@ -1,0 +1,93 @@
+{
+  "artifact": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_PPP_HANDOFF_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_PPP_HANDOFF_DRY_RUN_V1",
+  "certification_date": "2026-06-03",
+  "scenario": {
+    "domain": "TRADING",
+    "observed_condition": "Observed drawdown 0.22 exceeds certified threshold 0.10.",
+    "gap_category": "DOMAIN_EFFECTIVENESS_GAP",
+    "target_milestone": "TRADING_RISK_ANALYSIS_WORKER_FOUNDATION_V1",
+    "affected_layer": "DOMAIN",
+    "worker_family_id": "RISK_ANALYSIS"
+  },
+  "dry_run_result": {
+    "gap_status": "GAPS_DETECTED",
+    "intent_status": "IMPROVEMENT_INTENT_CREATED",
+    "cognition_status": "COGNITION_INTENT_ROUTED",
+    "resource_selection_routing_status": "RESOURCE_SELECTION_INTENT_ROUTED",
+    "ppp_routing_status": "PPP_INTENT_ROUTED",
+    "proposal_id": "PROPOSAL-REPLAY-DERIVED-DRAWDOWN-000001",
+    "proposal_hash": "sha256:0a9b60f5cc319c52c1ddb9d90fe26975130b7e3f114000909184ce7fd1898804",
+    "proposal_validation_status": "DEVELOPMENT_PROPOSAL_CONTRACT_VALIDATED",
+    "approval_required_artifact_type": "HUMAN_APPROVAL_REQUIRED_ARTIFACT_V1",
+    "approval_required_artifact_hash": "sha256:5e31af139a8e20a8e3b263562b35478cda4f2bb289190acdfa0cbc9277a4dea4",
+    "handoff_status": "IMPLEMENTATION_HANDOFF_CREATED",
+    "handoff_hash": "sha256:2154bffa6456e5e4c742f72100a4286c772cd7fa50094ff64d105d4a4be00d7a"
+  },
+  "replay_reconstruction": {
+    "gap_detection_replay_artifacts": 4,
+    "improvement_intent_replay_artifacts": 4,
+    "cognition_routing_replay_artifacts": 4,
+    "resource_selection_routing_replay_artifacts": 4,
+    "ppp_routing_replay_artifacts": 4,
+    "proposal_contract_replay_artifacts": 2,
+    "implementation_handoff_replay_artifacts": 2,
+    "status": "PASS"
+  },
+  "ppp_source_agnostic_assessment": {
+    "status": "PASS",
+    "ppp_contract_source_visible": false,
+    "ppp_receives_replay_source_authority": false,
+    "ppp_infers_from_raw_replay": false
+  },
+  "human_authority_assessment": {
+    "status": "PASS",
+    "human_final_authority": true,
+    "trading_approval_required": true,
+    "approval_created_as_requirement_not_authorization": true
+  },
+  "replay_authority_assessment": {
+    "status": "PASS",
+    "replay_can_approve": false,
+    "replay_can_authorize": false,
+    "replay_can_execute": false,
+    "replay_can_dispatch": false
+  },
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "worker_created": false,
+    "domain_created": false,
+    "governance_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "manual dry run through certified runtimes using deterministic Trading drawdown proposal fixture",
+      "status": "PASS",
+      "summary": "Replay-derived improvement reached proposal validation, approval-required evidence, and implementation handoff."
+    },
+    {
+      "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_cognition_routing_runtime_v1.py tests/test_replay_derived_intent_resource_selection_routing_runtime_v1.py tests/test_replay_derived_intent_resource_selection_ppp_integration_runtime_v1.py tests/test_development_proposal_contract_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "52 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_REPLAY_DERIVED_IMPROVEMENT_PPP_HANDOFF_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "readiness_assessment": {
+    "replay_derived_improvement_readiness_percent": 99.8,
+    "remaining_gap": "Human approval resume runtime for bounded continuation after approval-required evidence."
+  },
+  "recommended_next_milestone": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_APPROVAL_RESUME_RUNTIME_V1",
+  "final_classification": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_PPP_HANDOFF_STATUS = CERTIFIED"
+}
