@@ -1,0 +1,56 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/clarified_intent_resource_selection_routing_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_clarified_intent_resource_selection_routing_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_V1.md",
+    "governance/AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Routes clarified cognition input into Resource Selection-compatible structured requirements.",
+    "Preserves clarification history, replay continuity, chain continuity, confidence, domain references, and selected interpretation.",
+    "Keeps clarification source lineage replay-visible outside the Resource Selection input contract.",
+    "Proves direct intent and clarified intent become equivalent Resource Selection inputs.",
+    "Fails closed on unresolved clarification, invalid cognition integration, replay corruption, insufficient confidence, ambiguous selected interpretation, and chain continuity failure."
+  ],
+  "non_goals_preserved": [
+    "No Resource Selection invocation.",
+    "No PPP invocation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_clarified_intent_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "25 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_V1",
+  "final_classification": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_STATUS = CERTIFIED"
+}

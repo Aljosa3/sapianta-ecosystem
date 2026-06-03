@@ -1,0 +1,78 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/clarified_intent_resource_selection_routing_runtime.py",
+  "test_file": "tests/test_clarified_intent_resource_selection_routing_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "clarified_cognition_input_to_resource_selection_requirements",
+      "status": "PASS",
+      "evidence": "Resolved Trading Risk Analysis clarification creates CLARIFIED_RESOURCE_SELECTION_ROUTED_INTENT_V1."
+    },
+    {
+      "check": "direct_and_clarified_intent_equivalence",
+      "status": "PASS",
+      "evidence": "Resource Selection input contract is source-agnostic and hides HUMAN_CLARIFICATION source identity."
+    },
+    {
+      "check": "unresolved_clarification_fails_closed",
+      "status": "PASS",
+      "evidence": "Unresolved clarification cannot enter Resource Selection routing."
+    },
+    {
+      "check": "invalid_cognition_integration_fails_closed",
+      "status": "PASS",
+      "evidence": "Invalid clarified cognition input cannot enter Resource Selection routing."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Clarified cognition evidence hash mismatch fails closed."
+    },
+    {
+      "check": "confidence_insufficient_fails_closed",
+      "status": "PASS",
+      "evidence": "Medium confidence fails closed against the default high-confidence threshold."
+    },
+    {
+      "check": "ambiguous_selected_interpretation_fails_closed",
+      "status": "PASS",
+      "evidence": "Selected interpretation mismatch fails closed."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Divergent canonical chain ids fail closed."
+    },
+    {
+      "check": "corrupt_reconstruction_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified clarified Resource Selection routed intent hashes."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke Resource Selection, PPP, providers, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_clarified_intent_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "10 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "resource_selection_invoked": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_STATUS = CERTIFIED"
+}
