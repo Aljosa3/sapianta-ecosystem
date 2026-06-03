@@ -1,0 +1,62 @@
+{
+  "artifact": "AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/intent_clarification_dialog_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_intent_clarification_dialog_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_V1.md",
+    "governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Creates bounded human clarification requests for ambiguous intent.",
+    "Records hash-linked human clarification responses.",
+    "Creates resolved intent artifacts only when ambiguity is resolved.",
+    "Preserves clarification history and canonical chain continuity.",
+    "Fails closed when ambiguity remains unresolved, answers contradict candidates, replay is corrupted, or clarification exceeds limits."
+  ],
+  "supported_ambiguity_categories": [
+    "DOMAIN_AMBIGUITY",
+    "WORKER_AMBIGUITY",
+    "CAPABILITY_AMBIGUITY",
+    "INTENT_AMBIGUITY",
+    "RESOURCE_AMBIGUITY"
+  ],
+  "non_goals_preserved": [
+    "No proposal creation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_V1",
+  "final_classification": "AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_STATUS = CERTIFIED"
+}

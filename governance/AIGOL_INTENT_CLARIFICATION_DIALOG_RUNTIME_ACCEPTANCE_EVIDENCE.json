@@ -1,0 +1,61 @@
+{
+  "artifact": "AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/intent_clarification_dialog_runtime.py",
+  "test_file": "tests/test_intent_clarification_dialog_runtime_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "ambiguous_prompt_resolves_to_bounded_intent",
+      "status": "PASS",
+      "evidence": "Create a workstation resolves to a selected Trading Risk Analysis worker foundation candidate."
+    },
+    {
+      "check": "clarification_history_preserved",
+      "status": "PASS",
+      "evidence": "Prior clarification history is retained and extended in the resolution artifact."
+    },
+    {
+      "check": "unresolved_ambiguity_fails_closed",
+      "status": "PASS",
+      "evidence": "Unknown selected interpretation fails closed."
+    },
+    {
+      "check": "contradictory_answers_fail_closed",
+      "status": "PASS",
+      "evidence": "Human response that selects one candidate but supplies a conflicting domain fails closed."
+    },
+    {
+      "check": "clarification_limit_fails_closed",
+      "status": "PASS",
+      "evidence": "Clarification history at the maximum step limit fails closed."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified resolution artifact hashes."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke providers, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_STATUS = CERTIFIED"
+}
