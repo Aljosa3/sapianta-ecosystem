@@ -1,0 +1,58 @@
+{
+  "artifact": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/runtime_progress_visibility.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_runtime_progress_visibility_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_RUNTIME_PROGRESS_VISIBILITY_V1.md",
+    "governance/AIGOL_RUNTIME_PROGRESS_VISIBILITY_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_RUNTIME_PROGRESS_VISIBILITY_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Records deterministic runtime progress visibility snapshots.",
+    "Supports PENDING, RUNNING, WAITING_FOR_PROVIDER, WAITING_FOR_HUMAN_CLARIFICATION, WAITING_FOR_HUMAN_APPROVAL, COMPLETED, and FAILED_CLOSED statuses.",
+    "Supports conversation, clarification, cognition, resource selection, PPP, provider proposal production, proposal validation, approval, handoff, and replay improvement stage visibility.",
+    "Creates replay-visible RUNTIME_DURATION_HISTORY_V1 ETA inputs.",
+    "Reconstructs replay and verifies stage ordering, timestamp ordering, status continuity, and hash integrity.",
+    "Adds runtime-status, runtime-progress, and runtime-watch CLI visibility commands."
+  ],
+  "non_goals_preserved": [
+    "No execution alteration.",
+    "No governance alteration.",
+    "No PPP alteration.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_runtime_progress_visibility_v1.py",
+      "status": "PASS",
+      "summary": "9 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_RUNTIME_PROGRESS_VISIBILITY_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_RUNTIME_PROGRESS_VISIBILITY_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_CONVERSATION_INSTRUMENTATION_V1",
+  "final_classification": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_STATUS = CERTIFIED"
+}

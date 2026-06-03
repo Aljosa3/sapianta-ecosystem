@@ -130,6 +130,12 @@ from aigol.runtime.conversation_session_resume_runtime import resume_conversatio
 from aigol.runtime.native_development_task_intake_runtime import (
     is_native_development_prompt,
 )
+from aigol.runtime.runtime_progress_visibility import (
+    format_runtime_progress,
+    format_runtime_status,
+    load_runtime_progress,
+    watch_runtime_progress,
+)
 from aigol.runtime.conversation_native_development_context_integration import (
     FAILED_CLOSED as NATIVE_DEVELOPMENT_CONTEXT_FAILED_CLOSED,
     render_conversation_native_development_context_summary,
@@ -163,6 +169,23 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="command", required=True)
 
     subcommands.add_parser("status")
+
+    runtime_status = subcommands.add_parser("runtime-status")
+    runtime_status.add_argument("runtime_id")
+    runtime_status.add_argument("--replay-root", default=".aigol_runtime_progress")
+    runtime_status.add_argument("--json", action="store_true")
+
+    runtime_progress = subcommands.add_parser("runtime-progress")
+    runtime_progress.add_argument("runtime_id")
+    runtime_progress.add_argument("--replay-root", default=".aigol_runtime_progress")
+    runtime_progress.add_argument("--json", action="store_true")
+
+    runtime_watch = subcommands.add_parser("runtime-watch")
+    runtime_watch.add_argument("runtime_id")
+    runtime_watch.add_argument("--replay-root", default=".aigol_runtime_progress")
+    runtime_watch.add_argument("--interval-seconds", type=float, default=2.0)
+    runtime_watch.add_argument("--iterations", type=int, default=0)
+    runtime_watch.add_argument("--json", action="store_true")
 
     ingress = subcommands.add_parser("ingress")
     ingress_sub = ingress.add_subparsers(dest="ingress_command", required=True)
@@ -836,6 +859,27 @@ def _require_cli_string(value: Any, field_name: str) -> str:
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
+    if args.command == "runtime-status":
+        progress = load_runtime_progress(args.runtime_id, replay_root=args.replay_root)
+        progress["command"] = "aigol runtime-status"
+        return progress
+    if args.command == "runtime-progress":
+        progress = load_runtime_progress(args.runtime_id, replay_root=args.replay_root)
+        progress["command"] = "aigol runtime-progress"
+        return progress
+    if args.command == "runtime-watch":
+        max_iterations = args.iterations if args.iterations > 0 else None
+        outputs = watch_runtime_progress(
+            runtime_id=args.runtime_id,
+            replay_root=args.replay_root,
+            interval_seconds=args.interval_seconds,
+            max_iterations=max_iterations,
+        )
+        latest = load_runtime_progress(args.runtime_id, replay_root=args.replay_root)
+        latest["command"] = "aigol runtime-watch"
+        latest["watch_outputs"] = outputs
+        latest["watch_iteration_count"] = len(outputs)
+        return latest
     if args.command == "ingress" and args.ingress_command == "generate":
         return {
             "command": "aigol ingress generate",
@@ -1176,6 +1220,15 @@ def render_command_result(result: dict) -> str:
     command = result.get("command", "")
     if command == "aigol status":
         return render_status(result)
+    if command == "aigol runtime-status":
+        return format_runtime_status(result)
+    if command == "aigol runtime-progress":
+        return format_runtime_progress(result)
+    if command == "aigol runtime-watch":
+        outputs = result.get("watch_outputs", [])
+        if isinstance(outputs, list) and outputs:
+            return "\n\n".join(str(output) for output in outputs)
+        return format_runtime_progress(result)
     if command == "aigol ingress generate":
         artifact = result["ingress_artifact"]
         return render_card(

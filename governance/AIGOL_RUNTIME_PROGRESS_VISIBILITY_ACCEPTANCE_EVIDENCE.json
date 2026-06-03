@@ -1,0 +1,69 @@
+{
+  "artifact": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/runtime_progress_visibility.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_runtime_progress_visibility_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "runtime_progress_snapshot_recorded",
+      "status": "PASS",
+      "evidence": "RUNTIME_PROGRESS_VISIBILITY_ARTIFACT_V1 records status, current stage, completed stages, elapsed time, ETA inputs, and replay-visible authority flags."
+    },
+    {
+      "check": "operator_progress_rendering",
+      "status": "PASS",
+      "evidence": "runtime-progress renders RUNNING status, runtime id, current stage, deterministic progress bar, elapsed time, estimated remaining time, and current activity."
+    },
+    {
+      "check": "replay_reconstruction",
+      "status": "PASS",
+      "evidence": "Replay reconstruction verifies snapshot ordering, status continuity, stage continuity, timestamp ordering, wrapper hashes, and artifact hashes."
+    },
+    {
+      "check": "eta_model",
+      "status": "PASS",
+      "evidence": "RUNTIME_DURATION_HISTORY_V1 supports estimated ETA when remaining stage averages exist and unknown ETA when duration history is incomplete."
+    },
+    {
+      "check": "fail_closed_invalid_stage",
+      "status": "PASS",
+      "evidence": "Invalid current stage records FAILED_CLOSED visibility without provider, worker, dispatch, authorization, or execution authority."
+    },
+    {
+      "check": "timestamp_corruption_detection",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects timestamp ordering mismatch after replay corruption."
+    },
+    {
+      "check": "cli_commands",
+      "status": "PASS",
+      "evidence": "runtime-status and runtime-progress load replay-visible progress without altering the underlying workflow."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke providers, provider proposal production, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_runtime_progress_visibility_v1.py",
+      "status": "PASS",
+      "summary": "9 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "visibility_only": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false,
+    "ppp_mutated": false
+  },
+  "final_classification": "AIGOL_RUNTIME_PROGRESS_VISIBILITY_STATUS = CERTIFIED"
+}
