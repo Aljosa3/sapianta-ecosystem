@@ -1,0 +1,62 @@
+{
+  "artifact": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/replay_derived_intent_resource_selection_ppp_integration_runtime.py",
+  "test_file": "tests/test_replay_derived_intent_resource_selection_ppp_integration_runtime_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "routes_resource_selection_routed_replay_intent_to_ppp_input",
+      "status": "PASS",
+      "evidence": "PPP_ROUTED_INTENT_ARTIFACT_V1, PPP_ROUTING_EVIDENCE_V1, and PPP_ROUTING_CLASSIFICATION_V1 are produced."
+    },
+    {
+      "check": "human_and_replay_intent_are_ppp_equivalent_after_routing",
+      "status": "PASS",
+      "evidence": "PPP input contract contains source-agnostic fields and hides replay-derived source identity from PPP."
+    },
+    {
+      "check": "source_visibility_leak_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed if replay-derived source visibility leaks into upstream contract visibility fields."
+    },
+    {
+      "check": "lineage_hash_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed when upstream Resource Selection routing references or hashes mismatch."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Routing fails closed when canonical chain ids diverge."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects altered PPP routed intent artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke PPP production, providers, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_replay_derived_intent_resource_selection_ppp_integration_runtime_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "ppp_proposal_production_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_STATUS = CERTIFIED"
+}

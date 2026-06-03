@@ -1,0 +1,39 @@
+{
+  "artifact": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/replay_derived_intent_resource_selection_ppp_integration_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_replay_derived_intent_resource_selection_ppp_integration_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_V1.md",
+    "governance/AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Replay-derived Resource Selection-routed intent is converted into PPP-compatible input.",
+    "PPP receives a source-agnostic input contract.",
+    "Replay lineage, confidence, domain references, chain continuity, and resource requirement references are preserved.",
+    "Replay reconstruction verifies artifact ordering and hash integrity.",
+    "Routing fails closed on source visibility leak, lineage mismatch, hash mismatch, chain break, and replay collision."
+  ],
+  "non_goals_preserved": [
+    "No PPP proposal production invocation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation."
+  ],
+  "readiness_assessment": {
+    "replay_derived_improvement_readiness_percent": 99,
+    "remaining_gap": "End-to-end replay-derived improvement dry run through PPP without execution authority."
+  },
+  "final_classification": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_STATUS = CERTIFIED"
+}
