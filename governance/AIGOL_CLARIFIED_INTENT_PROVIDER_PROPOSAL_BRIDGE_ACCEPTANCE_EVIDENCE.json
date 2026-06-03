@@ -1,0 +1,64 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/clarified_intent_provider_proposal_bridge.py",
+  "test_file": "tests/test_clarified_intent_provider_proposal_bridge_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "bridges_clarified_ppp_intent_to_provider_proposal_request",
+      "status": "PASS",
+      "evidence": "CLARIFIED_PROVIDER_PROPOSAL_REQUEST_ARTIFACT_V1 is created with PROVIDER_REQUEST_PACKET_V1 readiness."
+    },
+    {
+      "check": "provider_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Bridge fails closed when selected provider id differs from requested provider id."
+    },
+    {
+      "check": "invalid_ppp_lineage_fails_closed",
+      "status": "PASS",
+      "evidence": "Bridge fails closed when clarified PPP routing references or hashes mismatch."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Bridge fails closed when source visibility leaks into PPP input contract."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Bridge fails closed when canonical chain ids diverge."
+    },
+    {
+      "check": "corrupt_bridge_replay_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified provider proposal request artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke provider proposal production, provider attachment, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_clarified_intent_provider_proposal_bridge_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "provider_proposal_production_invoked": false,
+    "worker_invoked": false,
+    "worker_created": false,
+    "domain_created": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_STATUS = CERTIFIED"
+}

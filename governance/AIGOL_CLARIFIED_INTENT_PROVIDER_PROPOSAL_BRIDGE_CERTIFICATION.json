@@ -1,0 +1,57 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/clarified_intent_provider_proposal_bridge.py"
+  ],
+  "test_artifacts": [
+    "tests/test_clarified_intent_provider_proposal_bridge_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_V1.md",
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Bridges clarified PPP routed intent into provider proposal production request readiness.",
+    "Preserves clarification lineage, selected interpretation, confidence, chain continuity, PPP continuity, and replay continuity.",
+    "Verifies provider id matching before provider proposal request readiness.",
+    "Fails closed on unresolved clarification, invalid PPP lineage, replay corruption, chain continuity failure, and provider mismatch."
+  ],
+  "non_goals_preserved": [
+    "No provider invocation.",
+    "No provider proposal production invocation.",
+    "No proposal execution.",
+    "No authorization.",
+    "No dispatch.",
+    "No worker invocation.",
+    "No worker execution.",
+    "No worker creation.",
+    "No domain creation.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_clarified_intent_resource_selection_routing_v1.py tests/test_clarified_intent_resource_selection_ppp_integration_v1.py tests/test_clarified_intent_conversation_routing_integration_v1.py tests/test_clarified_intent_provider_proposal_bridge_v1.py",
+      "status": "PASS",
+      "summary": "47 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_PRODUCTION_INTEGRATION_V1",
+  "final_classification": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_STATUS = CERTIFIED"
+}
