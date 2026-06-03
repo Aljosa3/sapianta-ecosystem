@@ -1,0 +1,100 @@
+{
+  "artifact_type": "AIGOL_WORKER_ECOSYSTEM_CERTIFICATION",
+  "certification_id": "AIGOL_WORKER_ECOSYSTEM_FOUNDATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_WORKER_ECOSYSTEM_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "scope": "Foundation architecture only",
+  "runtime_implementation_performed": false,
+  "worker_implementation_performed": false,
+  "provider_implementation_performed": false,
+  "execution_enabled": false,
+  "dispatch_enabled": false,
+  "governance_mutated": false,
+  "replay_mutated": false,
+  "worker_definition": {
+    "worker_is_bounded_capability_executor": true,
+    "requires_governed_authorization": true,
+    "returns_replay_visible_result_evidence": true,
+    "self_authorization_allowed": false,
+    "self_dispatch_allowed": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "worker_registry_model_defined": true,
+  "worker_capability_model_defined": true,
+  "worker_selection_model_defined": true,
+  "worker_lifecycle_model_defined": true,
+  "worker_lifecycle_states": [
+    "PROPOSED",
+    "FOUNDATION_DEFINED",
+    "IMPLEMENTATION_PLANNED",
+    "IMPLEMENTED",
+    "CERTIFICATION_PENDING",
+    "CERTIFIED",
+    "AVAILABLE",
+    "DEGRADED",
+    "SUSPENDED",
+    "DEPRECATED",
+    "RETIRED"
+  ],
+  "worker_capability_families": [
+    "REPLAY_INSPECTION",
+    "EVIDENCE_NORMALIZATION",
+    "CONTEXT_ASSEMBLY",
+    "RISK_ANALYSIS",
+    "PORTFOLIO_CONTEXT",
+    "STRATEGY_EVALUATION",
+    "DECISION_EXPLANATION",
+    "FILESYSTEM_INSPECTION",
+    "IMPLEMENTATION_ASSISTANCE",
+    "GOVERNANCE_ARTIFACT_INSPECTION"
+  ],
+  "provider_worker_classification": {
+    "OPENAI": "PROVIDER",
+    "ANTHROPIC": "PROVIDER",
+    "CODEX": "HYBRID_PROVIDER_WORKER",
+    "CLAUDE_CODE": "HYBRID_PROVIDER_WORKER"
+  },
+  "hybrid_resource_policy": {
+    "role_specific_selection_required": true,
+    "role_specific_authority_profiles_required": true,
+    "provider_role_proposal_only": true,
+    "worker_role_requires_authorization": true,
+    "implicit_role_switching_allowed": false,
+    "shared_identity_allowed_with_separate_registry_entries": true
+  },
+  "ppp_governance": {
+    "worker_creation_proposals_governed_through_ppp": true,
+    "worker_upgrade_proposals_governed_through_ppp": true,
+    "worker_repair_proposals_governed_through_ppp": true,
+    "worker_deprecation_proposals_governed_through_ppp": true,
+    "ppp_creates_workers": false,
+    "ppp_invokes_workers": false,
+    "ppp_dispatches": false,
+    "ppp_executes": false
+  },
+  "reuse_or_create_decision": {
+    "reuse_existing_worker_when_capability_and_authority_match": true,
+    "create_new_worker_only_when_no_existing_worker_fits": true,
+    "creation_requires_ppp_and_governance": true,
+    "selection_may_recommend_creation": true,
+    "selection_may_not_create_worker": true
+  },
+  "authority_boundaries": {
+    "provider_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes_only_authorized_work": true,
+    "replay_records": true,
+    "worker_authorizes": false,
+    "worker_governs": false,
+    "worker_self_dispatches": false,
+    "worker_mutates_replay": false,
+    "worker_mutates_governance": false
+  },
+  "recommendation": "UNIFIED_RESOURCE_SELECTION_FOUNDATION_V1",
+  "rejected_next_milestone": "PROVIDER_SELECTION_RUNTIME_V1",
+  "reason": "Provider selection alone cannot represent hybrid resources such as Codex and Claude Code without future refactoring."
+}
