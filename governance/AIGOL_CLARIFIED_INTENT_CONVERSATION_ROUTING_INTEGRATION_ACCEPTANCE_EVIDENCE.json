@@ -1,0 +1,60 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/clarified_intent_conversation_routing_integration.py",
+  "test_file": "tests/test_clarified_intent_conversation_routing_integration_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "conversation_routes_ambiguous_prompt_through_clarified_path_to_ppp",
+      "status": "PASS",
+      "evidence": "Ambiguous 'Create a workstation.' prompt resolves to HR domain foundation and reaches CLARIFIED_PPP_INTENT_ROUTED."
+    },
+    {
+      "check": "clarification_unresolved_fails_closed",
+      "status": "PASS",
+      "evidence": "Unknown selected interpretation fails closed before cognition continuation."
+    },
+    {
+      "check": "ambiguity_not_detected_fails_closed",
+      "status": "PASS",
+      "evidence": "Conversation routing refuses to enter clarified path without ambiguity categories."
+    },
+    {
+      "check": "corrupt_replay_detected",
+      "status": "PASS",
+      "evidence": "Conversation route reconstruction detects modified route artifacts through hash verification."
+    },
+    {
+      "check": "ppp_source_agnostic_contract_preserved",
+      "status": "PASS",
+      "evidence": "PPP input contract hides HUMAN_CLARIFICATION source identity."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke provider proposal production, provider attachment, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_clarified_intent_conversation_routing_integration_v1.py",
+      "status": "PASS",
+      "summary": "6 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "proposal_created": false,
+    "proposal_validated": false,
+    "approval_decision_created": false,
+    "implementation_handoff_created": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_STATUS = CERTIFIED"
+}

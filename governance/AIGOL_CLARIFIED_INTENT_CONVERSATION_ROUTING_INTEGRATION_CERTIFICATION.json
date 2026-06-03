@@ -1,0 +1,60 @@
+{
+  "artifact": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/clarified_intent_conversation_routing_integration.py"
+  ],
+  "test_artifacts": [
+    "tests/test_clarified_intent_conversation_routing_integration_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_V1.md",
+    "governance/AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Detects ambiguity before entering clarified conversation routing.",
+    "Invokes the certified clarification dialog and accepts a bounded human clarification response.",
+    "Resumes canonical chain continuity through clarified cognition integration.",
+    "Continues through clarified Resource Selection routing and clarified PPP routing.",
+    "Preserves replay continuity across the clarified conversation route.",
+    "Fails closed on unresolved clarification, missing ambiguity, replay corruption, and upstream continuity failures."
+  ],
+  "non_goals_preserved": [
+    "No provider invocation.",
+    "No worker invocation.",
+    "No PPP proposal production invocation.",
+    "No proposal creation.",
+    "No proposal validation.",
+    "No approval decision creation.",
+    "No implementation handoff creation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_clarified_intent_resource_selection_routing_v1.py tests/test_clarified_intent_resource_selection_ppp_integration_v1.py tests/test_clarified_intent_conversation_routing_integration_v1.py",
+      "status": "PASS",
+      "summary": "40 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_PROVIDER_PROPOSAL_BRIDGE_V1",
+  "final_classification": "AIGOL_CLARIFIED_INTENT_CONVERSATION_ROUTING_INTEGRATION_STATUS = CERTIFIED"
+}
