@@ -1,0 +1,53 @@
+{
+  "artifact_type": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_ROUTING_RUNTIME_CERTIFICATION",
+  "version": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_ROUTING_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T18:30:00+00:00",
+  "final_classification": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_ROUTING_RUNTIME_STATUS = CERTIFIED",
+  "certification_basis": [
+    "runtime consumes certified cognition-routed improvement intent artifacts",
+    "runtime verifies source routed intent, evidence, and classification hashes",
+    "runtime preserves source lineage while producing source-agnostic Resource Selection input",
+    "runtime preserves confidence and domain references",
+    "runtime preserves canonical chain continuity",
+    "runtime makes Resource Selection unaware of the intent source",
+    "runtime does not invoke Resource Selection",
+    "runtime does not invoke PPP, providers, workers, dispatch, authorization, or execution"
+  ],
+  "created_artifacts": [
+    "RESOURCE_SELECTION_ROUTING_EVIDENCE_V1",
+    "RESOURCE_SELECTION_ROUTING_CLASSIFICATION_V1",
+    "RESOURCE_SELECTION_ROUTED_INTENT_V1"
+  ],
+  "invariant_test": {
+    "human_intent_after_cognition": "source-agnostic Resource Selection requirements",
+    "replay_derived_intent_after_routing": "source-agnostic Resource Selection requirements",
+    "resource_selection_intent_source_awareness": false,
+    "source_lineage_preserved_for_replay": true
+  },
+  "fail_closed_conditions": [
+    "cognition routed intent missing",
+    "cognition routing evidence missing",
+    "cognition routing classification missing",
+    "cognition intent not routed",
+    "source visibility leak",
+    "source lineage broken",
+    "chain continuity failed",
+    "hash mismatch",
+    "classification ambiguous",
+    "replay corruption"
+  ],
+  "authority_boundaries": {
+    "resource_selection_invoked": false,
+    "proposal_created": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "recommended_next_milestone": "AIGOL_REPLAY_DERIVED_INTENT_RESOURCE_SELECTION_PPP_INTEGRATION_RUNTIME_V1"
+}
