@@ -1,0 +1,56 @@
+{
+  "artifact_type": "AIGOL_ARCHITECTURAL_LAYER_BOUNDARIES_CERTIFICATION",
+  "certification_id": "AIGOL_ARCHITECTURAL_LAYER_BOUNDARIES_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_ARCHITECTURAL_LAYER_BOUNDARIES_STATUS": "CERTIFIED"
+  },
+  "scope": "Architecture clarification only",
+  "runtime_implementation_performed": false,
+  "governance_mutated": false,
+  "provider_changes_performed": false,
+  "worker_changes_performed": false,
+  "execution_changes_performed": false,
+  "layer_definitions": {
+    "COGNITION": "Transforms human intent into structured understanding without creating authority.",
+    "RESOURCE_SELECTION": "Chooses an eligible Resource and explicit active role without invoking, authorizing, or executing it.",
+    "PPP": "Turns structured intent and selected Resources into proposal, validation, approval, repair, and handoff artifacts without becoming governance or execution.",
+    "GOVERNANCE": "Determines admissibility, approval, authorization, and certification while preserving constitutional and replay boundaries.",
+    "EXECUTION": "Performs only explicitly authorized bounded work and returns replay-visible result evidence."
+  },
+  "layer_order": [
+    "COGNITION",
+    "RESOURCE_SELECTION",
+    "PPP",
+    "GOVERNANCE",
+    "EXECUTION"
+  ],
+  "ppp_preservation": {
+    "original_purpose_preserved": true,
+    "intent_to_proposal_to_validation_to_approval_to_handoff": true,
+    "ppp_becomes_cognition": false,
+    "ppp_becomes_resource_selection": false,
+    "ppp_becomes_governance": false,
+    "ppp_becomes_execution": false,
+    "status": "PRESERVED_WITH_DRIFT_RISK"
+  },
+  "drift_findings": [
+    "PPP is the most drift-prone layer because it touches cognition artifacts, resource selection artifacts, provider proposal production, proposal validation, approval surfacing, and handoff.",
+    "Provider necessity and resource selection must remain outside PPP decision ownership.",
+    "Proposal validation must not be treated as governance approval.",
+    "Implementation handoff must not be treated as execution request or dispatch.",
+    "Hybrid Resources must not switch roles implicitly."
+  ],
+  "responsibility_corrections": {
+    "raw_intent_interpretation": "COGNITION",
+    "context_assembly": "COGNITION",
+    "resource_selection": "RESOURCE_SELECTION",
+    "trust_scoring": "RESOURCE_SELECTION_OR_GOVERNANCE_POLICY",
+    "proposal_contract_validation": "PPP",
+    "approval_decision": "GOVERNANCE_AND_HUMAN_AUTHORITY",
+    "execution_request_creation": "GOVERNANCE_EXECUTION_BRIDGE",
+    "worker_invocation": "EXECUTION"
+  },
+  "recommended_next_milestone": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_V1",
+  "certification_result": "AIGOL architectural layer boundaries are certified with PPP preserved as a proposal pipeline and explicit drift guardrails."
+}
