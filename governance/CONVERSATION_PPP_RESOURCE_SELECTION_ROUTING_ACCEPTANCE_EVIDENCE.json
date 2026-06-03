@@ -1,0 +1,56 @@
+{
+  "artifact_type": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_ACCEPTANCE_EVIDENCE",
+  "version": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T16:00:00+00:00",
+  "runtime": "aigol/runtime/conversation_ppp_resource_selection_routing.py",
+  "tests": [
+    "tests/test_conversation_ppp_resource_selection_routing_v1.py"
+  ],
+  "coverage": {
+    "provider_resource_path": "passed",
+    "hybrid_provider_role_path": "passed",
+    "hybrid_worker_role_path": "passed",
+    "implicit_hybrid_role_fail_closed": "passed",
+    "selected_provider_mismatch_fail_closed": "passed",
+    "provider_unavailable_fail_closed": "passed",
+    "replay_corruption_detection": "passed",
+    "authority_boundary_import_scan": "passed"
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m pytest tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py tests/test_conversation_ppp_routing_integration_v1.py",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_ACCEPTANCE_EVIDENCE.json",
+      "status": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_CERTIFICATION.json",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "authority_boundaries": {
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "governance_mutated": false,
+    "provider_authority_created": false
+  },
+  "replay_visibility": {
+    "route_recorded": true,
+    "route_returned": true,
+    "reconstruction_supported": true,
+    "corruption_detection_supported": true
+  }
+}

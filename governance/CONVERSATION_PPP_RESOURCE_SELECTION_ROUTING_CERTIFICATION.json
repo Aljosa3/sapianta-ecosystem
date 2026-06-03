@@ -1,0 +1,44 @@
+{
+  "artifact_type": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_CERTIFICATION",
+  "version": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T16:00:00+00:00",
+  "certification_basis": [
+    "conversation routing invokes certified context assembly",
+    "domain and worker references are resolved before PPP",
+    "unified resource selection is consumed before PPP proposal production",
+    "resource selection PPP integration validates category, role, capability, trust, and authority compatibility",
+    "hybrid provider-worker resources require explicit role selection",
+    "provider proposal production remains proposal-only",
+    "worker-role routing does not invoke workers",
+    "replay evidence is append-only and reconstructable"
+  ],
+  "supported_explicit_roles": [
+    "OPENAI_PROVIDER_ROLE",
+    "ANTHROPIC_PROVIDER_ROLE",
+    "CODEX_PROVIDER_ROLE",
+    "CODEX_WORKER_ROLE",
+    "CLAUDE_CODE_PROVIDER_ROLE",
+    "CLAUDE_CODE_WORKER_ROLE"
+  ],
+  "fail_closed_conditions": [
+    "context assembly failure",
+    "domain resolution failure",
+    "worker resolution failure",
+    "provider necessity mismatch",
+    "resource selection failure",
+    "resource PPP integration failure",
+    "implicit hybrid role",
+    "selected provider mismatch",
+    "provider unavailable",
+    "replay corruption"
+  ],
+  "layer_boundary_assessment": {
+    "conversation": "routing only",
+    "resource_selection": "selects eligible resource only",
+    "ppp": "proposal lifecycle only",
+    "governance": "validation only",
+    "execution": "not invoked"
+  },
+  "final_classification": "CONVERSATION_PPP_RESOURCE_SELECTION_ROUTING_STATUS = CERTIFIED"
+}
