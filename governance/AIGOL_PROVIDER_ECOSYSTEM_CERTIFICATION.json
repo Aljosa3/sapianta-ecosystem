@@ -1,0 +1,92 @@
+{
+  "artifact_type": "AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION",
+  "certification_id": "AIGOL_PROVIDER_ECOSYSTEM_FOUNDATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_PROVIDER_ECOSYSTEM_FOUNDATION_STATUS": "CERTIFIED"
+  },
+  "scope": "Foundation architecture only",
+  "runtime_implementation_performed": false,
+  "provider_implementation_performed": false,
+  "api_integration_performed": false,
+  "credentials_created_or_persisted": false,
+  "execution_enabled": false,
+  "dispatch_enabled": false,
+  "governance_mutated": false,
+  "replay_mutated": false,
+  "initial_providers": [
+    "OPENAI",
+    "ANTHROPIC",
+    "CODEX",
+    "CLAUDE_CODE"
+  ],
+  "provider_lifecycle_states": [
+    "REGISTERED",
+    "APPROVED",
+    "ATTACHED",
+    "AVAILABLE",
+    "DEGRADED",
+    "UNAVAILABLE",
+    "SUSPENDED",
+    "RETIRED"
+  ],
+  "provider_capability_families": [
+    "NATIVE_DEVELOPMENT_PROPOSAL",
+    "GOVERNANCE_REVIEW_ASSISTANCE",
+    "DOMAIN_ARCHITECTURE_PROPOSAL",
+    "WORKER_FOUNDATION_PROPOSAL",
+    "PROPOSAL_REPAIR",
+    "CLARIFICATION_QUESTION_PROPOSAL",
+    "EXPLANATION_ONLY"
+  ],
+  "registry_model": {
+    "provider_registration_defined": true,
+    "provider_attachment_defined": true,
+    "provider_versioning_defined": true,
+    "provider_approval_defined": true,
+    "provider_retirement_defined": true,
+    "provider_cost_representation_defined": true,
+    "provider_trust_representation_defined": true,
+    "authority_denials_required": true
+  },
+  "selection_policy": {
+    "deterministic_selection_required": true,
+    "provider_necessity_respected": true,
+    "cost_policy_defined": true,
+    "trust_policy_defined": true,
+    "fallback_policy_defined": true,
+    "random_selection_prohibited": true,
+    "selection_invokes_provider": false
+  },
+  "failure_handling": {
+    "unknown_provider_fails_closed": true,
+    "unapproved_provider_fails_closed": true,
+    "unavailable_provider_fails_closed_or_uses_approved_fallback": true,
+    "malformed_response_fails_closed": true,
+    "authority_violation_fails_closed": true,
+    "ambiguous_selection_fails_closed": true,
+    "historical_replay_not_rewritten": true
+  },
+  "provider_independence": {
+    "provider_output_is_untrusted_input": true,
+    "provider_selection_is_policy_mediated": true,
+    "provider_capability_is_not_authority": true,
+    "proposal_validation_owned_by_aigol": true,
+    "human_final_authority_preserved": true,
+    "workers_not_invoked_by_providers": true
+  },
+  "authority_boundaries": {
+    "llm_proposes": true,
+    "aigol_governs": true,
+    "human_authorizes": true,
+    "worker_executes_only_after_governance": true,
+    "replay_records": true,
+    "provider_authorizes": false,
+    "provider_governs": false,
+    "provider_executes": false,
+    "provider_dispatches": false,
+    "provider_mutates_replay": false,
+    "provider_mutates_governance": false
+  },
+  "recommended_next_milestone": "AIGOL_PROVIDER_SELECTION_RUNTIME_V1"
+}
