@@ -1,0 +1,56 @@
+{
+  "artifact": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/intent_clarification_cognition_integration.py"
+  ],
+  "test_artifacts": [
+    "tests/test_intent_clarification_cognition_integration_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_V1.md",
+    "governance/AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Converts resolved clarification into cognition-compatible structured input.",
+    "Preserves clarification history, replay continuity, chain continuity, domain references, and confidence.",
+    "Keeps clarification source lineage replay-visible outside the cognition input contract.",
+    "Proves resolved clarification intent and direct intent become equivalent cognition inputs.",
+    "Fails closed on unresolved clarification, contradictory clarification, replay corruption, and chain continuity failure."
+  ],
+  "non_goals_preserved": [
+    "No cognition invocation.",
+    "No PPP invocation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_cognition_integration_v1.py",
+      "status": "PASS",
+      "summary": "8 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "recommended_next_milestone": "AIGOL_CLARIFIED_INTENT_RESOURCE_SELECTION_ROUTING_V1",
+  "final_classification": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_STATUS = CERTIFIED"
+}

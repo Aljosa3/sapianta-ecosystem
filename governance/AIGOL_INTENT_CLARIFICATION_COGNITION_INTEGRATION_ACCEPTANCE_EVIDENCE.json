@@ -1,0 +1,68 @@
+{
+  "artifact": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/intent_clarification_cognition_integration.py",
+  "test_file": "tests/test_intent_clarification_cognition_integration_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "resolved_clarification_to_cognition_input",
+      "status": "PASS",
+      "evidence": "Resolved Trading Risk Analysis clarification creates CLARIFIED_COGNITION_INPUT_ARTIFACT_V1."
+    },
+    {
+      "check": "direct_and_resolved_intent_equivalence",
+      "status": "PASS",
+      "evidence": "Cognition input contract is source-agnostic and hides HUMAN_CLARIFICATION source identity."
+    },
+    {
+      "check": "unresolved_clarification_fails_closed",
+      "status": "PASS",
+      "evidence": "Unresolved clarification cannot become cognition input."
+    },
+    {
+      "check": "contradictory_clarification_fails_closed",
+      "status": "PASS",
+      "evidence": "Contradictory clarification cannot become cognition input."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Request and response hash mismatch fails closed."
+    },
+    {
+      "check": "chain_continuity_failure_fails_closed",
+      "status": "PASS",
+      "evidence": "Divergent canonical chain ids fail closed."
+    },
+    {
+      "check": "corrupt_reconstruction_detected",
+      "status": "PASS",
+      "evidence": "Replay reconstruction detects modified clarified cognition input hashes."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke cognition, PPP, providers, workers, dispatch, or execution."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_intent_clarification_cognition_integration_v1.py",
+      "status": "PASS",
+      "summary": "8 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "cognition_invoked": false,
+    "ppp_invoked": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_INTENT_CLARIFICATION_COGNITION_INTEGRATION_STATUS = CERTIFIED"
+}
