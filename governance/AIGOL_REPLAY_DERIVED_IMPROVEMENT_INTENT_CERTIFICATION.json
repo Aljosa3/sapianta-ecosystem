@@ -1,0 +1,49 @@
+{
+  "artifact_type": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_INTENT_CERTIFICATION",
+  "version": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_INTENT_FOUNDATION_V1",
+  "status": "CERTIFIED",
+  "created_at": "2026-06-03T16:30:00+00:00",
+  "final_classification": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_INTENT_FOUNDATION_STATUS = CERTIFIED",
+  "scope": "foundation_only",
+  "runtime_implemented": false,
+  "ppp_modified": false,
+  "execution_enabled": false,
+  "self_modification_enabled": false,
+  "core_finding": "Replay-derived intent can be integrated as an upstream structured intent source without modifying PPP.",
+  "intent_source_equivalence": {
+    "human_intent": "eligible after cognition structures the prompt",
+    "replay_derived_intent": "eligible after gap detection creates hash-bound structured intent",
+    "ppp_treatment": "equivalent structured intent source"
+  },
+  "ppp_preservation_assessment": {
+    "ppp_changed": false,
+    "ppp_detects_gaps": false,
+    "ppp_approves": false,
+    "ppp_executes": false,
+    "assessment": "PPP remains preserved as Intent -> Proposal -> Validation -> Approval -> Handoff."
+  },
+  "human_authority_assessment": {
+    "human_final_authority": true,
+    "human_review_required_for_high_risk": true,
+    "replay_intent_can_approve": false,
+    "replay_intent_can_authorize": false,
+    "replay_intent_can_execute": false
+  },
+  "domain_applicability": {
+    "trading": "non-executing evidence and validation improvements only; no broker, exchange, order, live trading, or portfolio mutation authority",
+    "marketing": "analysis and review improvements only; no campaign activation authority",
+    "healthcare": "high-risk review-only improvements with explicit human approval",
+    "hr": "privacy-preserving review-only improvements with human oversight",
+    "aigol_core": "constitution-preserving review-only improvements unless separately human-governed"
+  },
+  "recommended_first_runtime_milestone": "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_V1",
+  "authority_boundaries": {
+    "provider_authority": false,
+    "worker_authority": false,
+    "governance_mutation_authority": false,
+    "replay_mutation_authority": false,
+    "execution_authority": false,
+    "dispatch_authority": false,
+    "self_modification_authority": false
+  }
+}
