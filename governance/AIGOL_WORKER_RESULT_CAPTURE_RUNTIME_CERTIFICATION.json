@@ -1,0 +1,75 @@
+{
+  "artifact": "AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/worker_result_capture_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_worker_result_capture_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Consumes WORKER_INVOCATION_ARTIFACT_V1 through replay reconstruction.",
+    "Verifies invocation, dispatch, assignment, authorization, execution packet, Worker identity, replay, authority, chain, and hash continuity.",
+    "Binds Worker output to allowed outputs, forbidden operations, execution packet scope, and Worker scope.",
+    "Produces WORKER_RESULT_CAPTURE_ARTIFACT_V1 evidence.",
+    "Persists result capture evidence, classification, artifact, and result.",
+    "Supports Filesystem Worker, Monitoring Worker, and approved Trading Improvement acceptance flows.",
+    "Integrates CLI progression from Worker Invocation to Worker Result Capture."
+  ],
+  "non_goals_preserved": [
+    "No semantic result validation.",
+    "No result approval.",
+    "No approval creation.",
+    "No post-execution replay review.",
+    "No lifecycle termination.",
+    "No governance mutation.",
+    "No existing replay mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py",
+      "status": "PASS",
+      "summary": "13 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py tests/test_interactive_conversation_cli_v1.py",
+      "status": "PASS",
+      "summary": "163 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_result_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "status": "PASS",
+      "summary": "191 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "no whitespace errors"
+    }
+  ],
+  "remaining_blockers_before_first_governed_result_validation": [
+    "A governed result validation runtime must consume WORKER_RESULT_CAPTURE_ARTIFACT_V1.",
+    "Result validation must verify validation requirements, output scope, forbidden-operation absence, Worker scope, packet scope, replay continuity, authority continuity, and hash continuity.",
+    "Post-execution replay review and termination remain separate downstream certifications."
+  ],
+  "final_classification": "AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_STATUS = CERTIFIED"
+}

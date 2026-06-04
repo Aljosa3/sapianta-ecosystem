@@ -1,0 +1,121 @@
+{
+  "artifact": "AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/worker_result_capture_runtime.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_worker_result_capture_runtime_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_result_captured",
+      "status": "PASS",
+      "evidence": "Filesystem Worker flow reaches WORKER_INVOKED and then WORKER_RESULT_CAPTURED."
+    },
+    {
+      "check": "monitoring_worker_result_captured",
+      "status": "PASS",
+      "evidence": "Monitoring Worker flow reaches WORKER_INVOKED and then WORKER_RESULT_CAPTURED."
+    },
+    {
+      "check": "approved_trading_improvement_result_captured",
+      "status": "PASS",
+      "evidence": "Trading improvement requires approval, reaches WORKER_INVOKED, and then reaches WORKER_RESULT_CAPTURED."
+    },
+    {
+      "check": "output_outside_allowed_scope_fails_closed",
+      "status": "PASS",
+      "evidence": "Produced output outside invocation allowed_outputs prevents result capture."
+    },
+    {
+      "check": "forbidden_operation_fails_closed",
+      "status": "PASS",
+      "evidence": "Worker output operation intersecting forbidden_operations prevents result capture."
+    },
+    {
+      "check": "worker_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Worker identity drift in Worker output prevents result capture."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Invocation replay corruption prevents result capture."
+    },
+    {
+      "check": "chain_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Worker output chain drift prevents result capture."
+    },
+    {
+      "check": "authority_violation_fails_closed",
+      "status": "PASS",
+      "evidence": "Authority-bearing Worker output prevents result capture."
+    },
+    {
+      "check": "cli_reaches_worker_result_capture",
+      "status": "PASS",
+      "evidence": "Interactive CLI renders Worker Result Capture with WORKER_RESULT_CAPTURED."
+    }
+  ],
+  "result_capture_model": {
+    "worker_identity": true,
+    "worker_family": true,
+    "execution_packet_reference": true,
+    "invocation_reference": true,
+    "dispatch_reference": true,
+    "authorization_reference": true,
+    "chain_id": true,
+    "replay_references": true,
+    "allowed_outputs_bound": true,
+    "forbidden_operations_bound": true,
+    "packet_scope_bound": true,
+    "worker_scope_bound": true
+  },
+  "authority_boundaries": {
+    "worker_assigned": true,
+    "worker_dispatched": true,
+    "worker_invoked": true,
+    "worker_result_captured": true,
+    "result_created": true,
+    "result_validated": false,
+    "post_execution_replay_reviewed": false,
+    "terminated": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "existing_replay_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py",
+      "status": "PASS",
+      "summary": "13 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py tests/test_interactive_conversation_cli_v1.py",
+      "status": "PASS",
+      "summary": "163 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_result_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "status": "PASS",
+      "summary": "191 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "no whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_STATUS = CERTIFIED"
+}
