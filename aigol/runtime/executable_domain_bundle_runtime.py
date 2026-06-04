@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.domain_bundle_registry_runtime import resolve_domain_bundle_entry
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_result_validation_runtime import (
@@ -604,9 +605,18 @@ def _capture(
 
 
 def _require_bundle_id(value: Any) -> str:
-    if value != MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID:
+    bundle_id = _require_string(value, "bundle_id")
+    try:
+        entry = resolve_domain_bundle_entry(
+            domain_id="MARKETING",
+            bundle_id=bundle_id,
+            require_executable=True,
+        )
+    except FailClosedRuntimeError as exc:
+        raise FailClosedRuntimeError("executable bundle failed closed: invalid bundle id") from exc
+    if entry["bundle_id"] != MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID:
         raise FailClosedRuntimeError("executable bundle failed closed: invalid bundle id")
-    return value
+    return bundle_id
 
 
 def _persist_step(replay_dir: Path, index: int, step: str, artifact: dict[str, Any]) -> None:
