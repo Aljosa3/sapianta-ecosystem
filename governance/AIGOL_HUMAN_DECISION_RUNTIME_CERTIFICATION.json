@@ -1,0 +1,99 @@
+{
+  "artifact_type": "AIGOL_HUMAN_DECISION_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_HUMAN_DECISION_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/human_decision_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_human_decision_runtime_v1.py",
+    "tests/test_implementation_approval_resume_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_HUMAN_DECISION_RUNTIME_V1.md",
+    "governance/AIGOL_HUMAN_DECISION_RUNTIME_CERTIFICATION.json"
+  ],
+  "runtime_model": [
+    "HUMAN_APPROVAL_REQUIRED operations present APPROVE, REJECT, and REQUEST_MODIFICATION choices.",
+    "Every selected decision is recorded by AIGOL_HUMAN_DECISION_RUNTIME_V1 before branching.",
+    "APPROVE preserves the existing approval resume path.",
+    "REJECT records a governed rejection terminal decision without implementation handoff.",
+    "REQUEST_MODIFICATION records a modification request and replay-visible clarification state.",
+    "Decision replay reconstruction validates ordering, wrapper hashes, artifact hashes, decision reference continuity, and chain continuity."
+  ],
+  "decision_outcomes": {
+    "APPROVE": {
+      "decision_status": "HUMAN_DECISION_RECORDED",
+      "terminal_status": "APPROVAL_DECISION_RECORDED",
+      "continues_to_existing_approval_resume": true
+    },
+    "REJECT": {
+      "decision_status": "GOVERNED_REJECTION_RECORDED",
+      "terminal_status": "GOVERNED_REJECTION_TERMINATED",
+      "continues_to_existing_approval_resume": false
+    },
+    "REQUEST_MODIFICATION": {
+      "decision_status": "MODIFICATION_REQUEST_RECORDED",
+      "terminal_status": "CLARIFICATION_REQUIRED",
+      "continues_to_existing_approval_resume": false
+    }
+  },
+  "replay_impact": [
+    "Human decisions emit 000_human_decision_recorded.json and 001_human_decision_returned.json.",
+    "Approval lineage is validated against the approval-required artifact and approval resume packet.",
+    "Reject and modification decisions are terminal replay-visible outcomes for the pending approval operation.",
+    "Approve decisions preserve existing approval resume replay and downstream lifecycle behavior."
+  ],
+  "authority_boundaries_preserved": [
+    "No automatic approval.",
+    "No provider approval authority.",
+    "No worker approval authority.",
+    "No execution request created by the human decision artifact.",
+    "No dispatch request created by the human decision artifact.",
+    "No worker invocation created by the human decision artifact.",
+    "No governance mutation.",
+    "No replay mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/human_decision_runtime.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_human_decision_runtime_v1.py tests/test_implementation_approval_resume_v1.py",
+      "status": "PASS",
+      "summary": "15 passed."
+    },
+    {
+      "command": "Improve trading strategy. -> Approve",
+      "status": "PASS",
+      "summary": "CLI presented choices, recorded human decision replay, and continued through existing approval resume path."
+    },
+    {
+      "command": "Improve trading strategy. -> Reject",
+      "status": "PASS",
+      "summary": "CLI presented choices and recorded governed rejection terminal replay."
+    },
+    {
+      "command": "Improve trading strategy. -> Request modification",
+      "status": "PASS",
+      "summary": "CLI presented choices and recorded replay-visible clarification state."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_HUMAN_DECISION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify human decision runtime",
+  "final_classification": "AIGOL_HUMAN_DECISION_RUNTIME_STATUS = CERTIFIED"
+}

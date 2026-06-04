@@ -146,6 +146,14 @@ from aigol.runtime.implementation_approval_resume import (
     render_implementation_approval_resume_summary,
     resume_implementation_after_approval,
 )
+from aigol.runtime.human_decision_runtime import (
+    APPROVE,
+    REJECT,
+    REQUEST_MODIFICATION,
+    normalize_human_decision,
+    record_human_decision,
+    render_human_decision_summary,
+)
 from aigol.runtime.governed_implementation_dry_run import (
     prepare_governed_implementation_dry_run,
     render_governed_implementation_dry_run_summary,
@@ -725,7 +733,61 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
             )
-            if human_prompt.lower().strip().rstrip(".") == "approve" and pending_approval_required is not None:
+            human_decision = normalize_human_decision(human_prompt)
+            if pending_approval_required is not None and human_decision in {REJECT, REQUEST_MODIFICATION}:
+                human_decision_capture = record_human_decision(
+                    human_decision_id=f"{prompt_id}:HUMAN-DECISION",
+                    approval_required_artifact=pending_approval_required[
+                        "conversation_to_ppp_handoff_execution_artifact"
+                    ],
+                    decision=human_decision,
+                    decision_reason=f"Operator selected {human_decision}.",
+                    decided_by=args.operator_context or "HUMAN_OPERATOR",
+                    decided_at=created_at,
+                    replay_dir=turn_root / "human_decision",
+                )
+                if human_decision_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {human_decision_capture.get('failure_reason')}")
+                else:
+                    current_chain_id = human_decision_capture.get("chain_id") or current_chain_id
+                    latest_chain_id = current_chain_id
+                    pending_approval_required = None
+                    output_writer(render_human_decision_summary(human_decision_capture))
+                turns.append(
+                    _interactive_human_decision_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        human_decision_capture=human_decision_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif human_decision == APPROVE and pending_approval_required is not None:
+                human_decision_capture = record_human_decision(
+                    human_decision_id=f"{prompt_id}:HUMAN-DECISION",
+                    approval_required_artifact=pending_approval_required[
+                        "conversation_to_ppp_handoff_execution_artifact"
+                    ],
+                    decision=human_decision,
+                    decision_reason="Operator selected APPROVE.",
+                    decided_by=args.operator_context or "HUMAN_OPERATOR",
+                    decided_at=created_at,
+                    replay_dir=turn_root / "human_decision",
+                )
+                if human_decision_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {human_decision_capture.get('failure_reason')}")
+                    turns.append(
+                        _interactive_human_decision_turn_summary(
+                            turn_id=turn_id,
+                            prompt_id=prompt_id,
+                            router_capture=router_capture,
+                            human_decision_capture=human_decision_capture,
+                            source_router_replay_reference=str(turn_root / "source_router"),
+                        )
+                    )
+                    continue
                 approval_request = pending_approval_required["conversation_to_ppp_handoff_execution_artifact"][
                     "approval_resume_packet"
                 ]["approval_request_artifact"]
@@ -1047,6 +1109,7 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         approval_resume_capture=approval_resume_capture,
+                        human_decision_capture=human_decision_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -1384,7 +1447,10 @@ def run_interactive_conversation(
                                                                                 + render_governed_termination_summary(termination_capture)
                                                                             )
                         else:
-                            output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
+                            summary = render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                            if ppp_capture.get("terminal_status") == "HUMAN_APPROVAL_REQUIRED":
+                                summary += "\n\nHuman Decision Required\n\nChoices:\n* APPROVE\n* REJECT\n* REQUEST_MODIFICATION"
+                            output_writer(summary)
                 turns.append(
                     _interactive_native_development_intent_routing_turn_summary(
                         turn_id=turn_id,
@@ -1742,9 +1808,12 @@ def _interactive_approval_resume_turn_summary(
     prompt_id: str,
     router_capture: dict[str, Any],
     approval_resume_capture: dict[str, Any],
+    human_decision_capture: dict[str, Any] | None = None,
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
+    if not isinstance(human_decision_capture, dict):
+        human_decision_capture = {}
     handoff_visibility = approval_resume_capture.get("implementation_handoff_visibility")
     if not isinstance(handoff_visibility, dict):
         handoff_visibility = {}
@@ -1800,6 +1869,9 @@ def _interactive_approval_resume_turn_summary(
         "conversation_chain_continuity_replay_reference": None,
         "source_router_replay_reference": source_router_replay_reference,
         "approval_resume_status": approval_resume_capture.get("resume_status"),
+        "human_decision_status": human_decision_capture.get("decision_status"),
+        "human_decision": human_decision_capture.get("decision"),
+        "human_decision_replay_reference": human_decision_capture.get("human_decision_replay_reference"),
         "approval_id": approval_resume_capture.get("approval_id"),
         "approval_scope": approval_resume_capture.get("approval_scope"),
         "handoff_status": approval_resume_capture.get("handoff_status"),
@@ -1858,6 +1930,48 @@ def _interactive_approval_resume_turn_summary(
         "dispatch_requested": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "invocation_requested": invocation_request_capture.get("request_status")
         == "WORKER_INVOCATION_REQUEST_CREATED",
+    }
+
+
+def _interactive_human_decision_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    human_decision_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": human_decision_capture.get("terminal_status"),
+        "response_source": "HUMAN_DECISION_RUNTIME",
+        "fail_closed": human_decision_capture.get("fail_closed") is True,
+        "failure_reason": human_decision_capture.get("failure_reason"),
+        "replay_reference": human_decision_capture.get("human_decision_replay_reference"),
+        "conversation_replay_reference": human_decision_capture.get("human_decision_replay_reference"),
+        "canonical_chain_id": human_decision_capture.get("chain_id"),
+        "current_chain_id": human_decision_capture.get("chain_id"),
+        "latest_chain_id": human_decision_capture.get("chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "human_decision_status": human_decision_capture.get("decision_status"),
+        "human_decision": human_decision_capture.get("decision"),
+        "human_decision_replay_reference": human_decision_capture.get("human_decision_replay_reference"),
+        "approval_scope": human_decision_capture.get("approval_scope"),
+        "clarification_required": human_decision_capture.get("clarification_required") is True,
+        "implementation_authorized": human_decision_capture.get("implementation_authorized") is True,
+        "implementation_rejected": human_decision_capture.get("implementation_rejected") is True,
+        "modification_requested": human_decision_capture.get("modification_requested") is True,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "worker_invoked": False,
+        "replay_visible": True,
     }
 
 
