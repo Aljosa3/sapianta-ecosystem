@@ -1,0 +1,74 @@
+{
+  "artifact": "AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/governed_implementation_dry_run.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_governed_implementation_dry_run_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_V1.md",
+    "governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Converts certified implementation handoffs into execution candidates.",
+    "Converts execution candidates into bounded execution packets.",
+    "Validates chain, handoff, approval, candidate, packet, authority, replay, and hash continuity.",
+    "Produces EXECUTION_READY without starting execution.",
+    "Supports direct and approval-resumed implementation handoffs.",
+    "Persists execution candidate, packet, validation, and ready status replay artifacts."
+  ],
+  "non_goals_preserved": [
+    "No worker invocation.",
+    "No Codex invocation.",
+    "No Claude Code invocation.",
+    "No file creation.",
+    "No code generation.",
+    "No execution dispatch.",
+    "No execution authorization.",
+    "No governance mutation.",
+    "No existing replay mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_governed_implementation_dry_run_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "27 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py",
+      "status": "PASS",
+      "summary": "51 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_blockers_before_first_governed_worker_invocation": [
+    "Execution authorization policy remains required.",
+    "Governed worker invocation runtime remains required.",
+    "Worker sandbox and output validation must be certified.",
+    "Execution result replay and post-execution governance review remain required."
+  ],
+  "final_classification": "AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_STATUS = CERTIFIED"
+}

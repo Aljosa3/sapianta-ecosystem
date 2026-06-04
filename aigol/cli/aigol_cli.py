@@ -146,6 +146,10 @@ from aigol.runtime.implementation_approval_resume import (
     render_implementation_approval_resume_summary,
     resume_implementation_after_approval,
 )
+from aigol.runtime.governed_implementation_dry_run import (
+    prepare_governed_implementation_dry_run,
+    render_governed_implementation_dry_run_summary,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -688,12 +692,33 @@ def run_interactive_conversation(
                         output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                     else:
                         approval_resume_capture["implementation_handoff_visibility"] = handoff_visibility_capture
-                        pending_approval_required = None
-                        output_writer(
-                            render_implementation_approval_resume_summary(approval_resume_capture)
-                            + "\n"
-                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                        dry_run_capture = prepare_governed_implementation_dry_run(
+                            dry_run_id=f"{prompt_id}:GOVERNED-IMPLEMENTATION-DRY-RUN",
+                            handoff_replay_reference=approval_resume_capture["implementation_handoff_replay_reference"],
+                            handoff_visibility_artifact=handoff_visibility_capture[
+                                "implementation_handoff_visibility_artifact"
+                            ],
+                            upstream_lineage_artifact=approval_resume_capture[
+                                "implementation_approval_resume_artifact"
+                            ],
+                            created_at=created_at,
+                            replay_dir=turn_root / "governed_implementation_dry_run",
                         )
+                        approval_resume_capture["governed_implementation_dry_run"] = dry_run_capture
+                        if dry_run_capture.get("fail_closed") is True:
+                            failed_turns += 1
+                            approval_resume_capture["fail_closed"] = True
+                            approval_resume_capture["failure_reason"] = dry_run_capture.get("failure_reason")
+                            output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
+                        else:
+                            pending_approval_required = None
+                            output_writer(
+                                render_implementation_approval_resume_summary(approval_resume_capture)
+                                + "\n"
+                                + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                + "\n"
+                                + render_governed_implementation_dry_run_summary(dry_run_capture)
+                            )
                 turns.append(
                     _interactive_approval_resume_turn_summary(
                         turn_id=turn_id,
@@ -759,11 +784,32 @@ def run_interactive_conversation(
                                 failed_turns += 1
                                 output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                             else:
-                                output_writer(
-                                    render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
-                                    + "\n"
-                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                dry_run_capture = prepare_governed_implementation_dry_run(
+                                    dry_run_id=f"{prompt_id}:GOVERNED-IMPLEMENTATION-DRY-RUN",
+                                    handoff_replay_reference=ppp_capture["handoff_replay_reference"],
+                                    handoff_visibility_artifact=handoff_visibility_capture[
+                                        "implementation_handoff_visibility_artifact"
+                                    ],
+                                    upstream_lineage_artifact=ppp_capture[
+                                        "conversation_to_ppp_handoff_execution_artifact"
+                                    ],
+                                    created_at=created_at,
+                                    replay_dir=turn_root / "governed_implementation_dry_run",
                                 )
+                                routing_capture["governed_implementation_dry_run"] = dry_run_capture
+                                if dry_run_capture.get("fail_closed") is True:
+                                    routing_capture["fail_closed"] = True
+                                    routing_capture["failure_reason"] = dry_run_capture.get("failure_reason")
+                                    failed_turns += 1
+                                    output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
+                                else:
+                                    output_writer(
+                                        render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                        + "\n"
+                                        + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                        + "\n"
+                                        + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                    )
                         else:
                             output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
@@ -976,6 +1022,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     handoff_visibility = routing_capture.get("implementation_handoff_visibility")
     if not isinstance(handoff_visibility, dict):
         handoff_visibility = {}
+    dry_run_capture = routing_capture.get("governed_implementation_dry_run")
+    if not isinstance(dry_run_capture, dict):
+        dry_run_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1016,6 +1065,10 @@ def _interactive_native_development_intent_routing_turn_summary(
             "implementation_handoff_visibility_replay_reference"
         ),
         "implementation_handoff_summary_hash": handoff_visibility.get("summary_hash"),
+        "execution_preparation_status": dry_run_capture.get("execution_status"),
+        "governed_implementation_dry_run_replay_reference": dry_run_capture.get(
+            "governed_implementation_dry_run_replay_reference"
+        ),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_invoked": False,
         "execution_requested": False,
@@ -1036,6 +1089,9 @@ def _interactive_approval_resume_turn_summary(
     handoff_visibility = approval_resume_capture.get("implementation_handoff_visibility")
     if not isinstance(handoff_visibility, dict):
         handoff_visibility = {}
+    dry_run_capture = approval_resume_capture.get("governed_implementation_dry_run")
+    if not isinstance(dry_run_capture, dict):
+        dry_run_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1064,6 +1120,10 @@ def _interactive_approval_resume_turn_summary(
         ),
         "implementation_handoff_visibility_replay_reference": handoff_visibility.get(
             "implementation_handoff_visibility_replay_reference"
+        ),
+        "execution_preparation_status": dry_run_capture.get("execution_status"),
+        "governed_implementation_dry_run_replay_reference": dry_run_capture.get(
+            "governed_implementation_dry_run_replay_reference"
         ),
         "worker_invoked": False,
         "execution_requested": False,

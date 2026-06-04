@@ -1,0 +1,86 @@
+{
+  "artifact": "AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/governed_implementation_dry_run.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_governed_implementation_dry_run_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_execution_ready",
+      "status": "PASS",
+      "evidence": "Create a filesystem worker reaches IMPLEMENTATION_HANDOFF_CREATED and then EXECUTION_READY without execution."
+    },
+    {
+      "check": "monitoring_worker_execution_ready",
+      "status": "PASS",
+      "evidence": "Create a monitoring worker reaches IMPLEMENTATION_HANDOFF_CREATED and then EXECUTION_READY without execution."
+    },
+    {
+      "check": "approved_trading_execution_ready",
+      "status": "PASS",
+      "evidence": "Improve trading strategy reaches HUMAN_APPROVAL_REQUIRED; Approve resumes to IMPLEMENTATION_HANDOFF_CREATED and then EXECUTION_READY."
+    },
+    {
+      "check": "corrupt_lineage_fails_closed",
+      "status": "PASS",
+      "evidence": "Corrupted handoff visibility lineage fails closed before execution preparation."
+    },
+    {
+      "check": "execution_packet_boundaries",
+      "status": "PASS",
+      "evidence": "Execution packet records NOT_STARTED, preparation_only, execution_authorized false, and explicit forbidden operations."
+    },
+    {
+      "check": "replay_reconstruction",
+      "status": "PASS",
+      "evidence": "Replay reconstruction verifies candidate, packet, validation, handoff, approval, and hash continuity."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Dry-run runtime source does not invoke workers, invoke Codex, invoke Claude Code, create files, generate code, dispatch execution, authorize execution, or mutate governance."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_governed_implementation_dry_run_v1.py",
+      "status": "PASS",
+      "summary": "7 passed"
+    },
+    {
+      "command": "printf 'Create a filesystem worker.\\nCreate a monitoring worker.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-GOVERNED-DRY-RUN-WORKERS --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_governed_implementation_dry_run_workers",
+      "status": "PASS",
+      "summary": "Filesystem and monitoring worker handoffs both returned EXECUTION_READY."
+    },
+    {
+      "command": "printf 'Improve trading strategy.\\nApprove.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-GOVERNED-DRY-RUN-TRADING --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_governed_implementation_dry_run_trading",
+      "status": "PASS",
+      "summary": "Approved trading handoff returned EXECUTION_READY."
+    },
+    {
+      "command": "python -m pytest tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "27 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py",
+      "status": "PASS",
+      "summary": "51 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "worker_invoked": false,
+    "codex_invoked": false,
+    "claude_code_invoked": false,
+    "files_created": false,
+    "code_generated": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "authorization_created": false,
+    "governance_mutated": false,
+    "existing_replay_mutated": false
+  },
+  "final_classification": "AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_STATUS = CERTIFIED"
+}
