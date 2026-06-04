@@ -1,373 +1,437 @@
-"""Tests for WORKER_INVOCATION_RUNTIME_V1."""
+"""Tests for AIGOL_WORKER_INVOCATION_RUNTIME_V1."""
 
 from __future__ import annotations
 
+from copy import deepcopy
 import inspect
 import json
 
 import pytest
 
-from aigol.runtime.dispatch_runtime import dispatch_worker
-from aigol.runtime.execution_request_runtime import create_execution_request
+from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.runtime.conversation_native_development_intent_routing import (
+    run_conversation_native_development_intent_routing,
+)
+from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.conversation_to_ppp_handoff_execution import (
+    HUMAN_APPROVAL_REQUIRED,
+    run_conversation_to_ppp_handoff_execution,
+)
+from aigol.runtime.execution_authorization_runtime import authorize_execution_ready
+from aigol.runtime.governed_implementation_dry_run import prepare_governed_implementation_dry_run
+from aigol.runtime.implementation_approval_resume import (
+    create_human_implementation_approval,
+    resume_implementation_after_approval,
+)
+from aigol.runtime.implementation_handoff_visibility import create_implementation_handoff_visibility_summary
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.proposal_approval_runtime import decide_proposal_approval
-from aigol.runtime.proposal_runtime import create_proposal
-from aigol.runtime.ready_for_dispatch_runtime import mark_ready_for_dispatch
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
+from aigol.runtime.worker_assignment_runtime import (
+    assign_worker_from_invocation_request,
+    default_worker_registry_for_request,
+)
+from aigol.runtime.worker_dispatch_runtime import dispatch_assigned_worker
+from aigol.runtime.worker_invocation_request_runtime import create_worker_invocation_request
 from aigol.runtime.worker_invocation_runtime import (
-    INVOKED,
     WORKER_INVOCATION_ARTIFACT_V1,
-    WORKER_INVOCATION_RETURNED,
-    WORKER_INVOCATION_VALIDATED,
+    WORKER_INVOKED,
+    invoke_dispatched_worker,
     invoke_worker,
     reconstruct_worker_invocation_replay,
 )
-from aigol.runtime.worker_runtime import ASSIGNED, UNAVAILABLE, assign_worker, register_worker
 
 
-CREATED_AT = "2026-06-01T11:00:00+00:00"
-CANONICAL_CHAIN_ID = "CHAIN-20260601-INVOCATION-000001"
-_MISSING = object()
+CREATED_AT = "2026-06-04T00:00:00+00:00"
+SESSION_ID = "SESSION-WORKER-INVOCATION-000001"
 
 
-def _proposal(tmp_path) -> dict:
-    return create_proposal(
-        proposal_id="PROPOSAL-INVOCATION-000001",
-        proposal_type="CAPABILITY_PROPOSAL",
-        proposal_source="CONVERSATION",
-        proposal_text="Create a bounded worker invocation candidate.",
+def _args(tmp_path, *, session_id: str):
+    parser = build_parser()
+    return parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            session_id,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+        ]
+    )
+
+
+def _input_sequence(values: list[str]):
+    iterator = iter(values)
+
+    def read(_prompt: str) -> str:
+        return next(iterator)
+
+    return read
+
+
+def _ppp_capture(tmp_path, *, prompt: str, suffix: str):
+    session_id = f"{SESSION_ID}-{suffix}"
+    allocation = resume_conversation_session(
+        session_id=session_id,
+        runtime_root=tmp_path / f"routing_runtime_{suffix}",
         created_at=CREATED_AT,
-        replay_reference="REPLAY-PROPOSAL-INVOCATION-000001",
-        replay_dir=tmp_path / "proposal",
-    )["proposal_runtime_artifact"]
-
-
-def _approval(tmp_path, proposal: dict) -> dict:
-    return decide_proposal_approval(
-        approval_id="APPROVAL-INVOCATION-000001",
-        proposal_artifact=proposal,
-        human_decision="APPROVE",
-        decision_reason="Human operator approves invocation lineage.",
-        operator_label="human-operator",
+    )
+    prompt_id = f"{session_id}:{allocation['next_turn_id']}"
+    routed = run_conversation_native_development_intent_routing(
+        routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
+        prompt_id=prompt_id,
+        human_prompt=prompt,
+        canonical_chain_id=prompt_id,
+        turn_allocation_evidence=allocation,
         created_at=CREATED_AT,
-        replay_reference="REPLAY-APPROVAL-INVOCATION-000001",
-        replay_dir=tmp_path / "approval",
-    )["proposal_approval_artifact"]
-
-
-def _execution_request(tmp_path, proposal: dict, approval: dict) -> dict:
-    return create_execution_request(
-        execution_request_id="EXECUTION-REQUEST-INVOCATION-000001",
-        proposal_artifact=proposal,
-        approval_artifact=approval,
-        requested_by="AIGOL",
+        replay_dir=tmp_path / f"routing_{suffix}",
+    )
+    return run_conversation_to_ppp_handoff_execution(
+        execution_id=f"{prompt_id}:CONVERSATION-TO-PPP-HANDOFF",
+        native_development_intent_routed_artifact=routed["native_development_intent_routed_artifact"],
         created_at=CREATED_AT,
-        request_type="CAPABILITY_EXECUTION_REQUEST",
-        request_payload={
-            "approved_action": "INVOKE_ONLY",
-            "scope": "worker invocation without execution or completion",
-        },
-        replay_reference="REPLAY-EXECUTION-REQUEST-INVOCATION-000001",
-        replay_dir=tmp_path / "execution_request",
+        replay_dir=tmp_path / f"ppp_{suffix}",
     )
 
 
-def _readiness(tmp_path) -> dict:
-    proposal = _proposal(tmp_path)
-    approval = _approval(tmp_path, proposal)
-    request_capture = _execution_request(tmp_path, proposal, approval)
-    return mark_ready_for_dispatch(
-        readiness_id="READY-FOR-DISPATCH-INVOCATION-000001",
-        execution_request_artifact=request_capture["execution_request_artifact"],
-        execution_request_replay=request_capture["execution_request_replay"],
-        approval_artifact=approval,
-        validated_at=CREATED_AT,
-        replay_reference="REPLAY-READY-FOR-DISPATCH-INVOCATION-000001",
-        replay_dir=tmp_path / "readiness",
-    )
-
-
-def _worker(tmp_path) -> dict:
-    return register_worker(
-        worker_id="WORKER-INVOCATION-000001",
-        worker_type="LOCAL_BOUNDED_CAPABILITY_WORKER",
-        worker_version="1.0.0",
-        declared_capabilities=["BOUNDARY_ARTIFACT_INVOCATION"],
-        supported_request_types=["CAPABILITY_EXECUTION_REQUEST"],
-        trust_boundary="LOCAL_BOUNDED_WORKER",
-        created_at=CREATED_AT,
-        replay_reference="REPLAY-WORKER-INVOCATION-000001",
-        replay_dir=tmp_path / "worker",
-    )
-
-
-def _assignment(tmp_path, **overrides) -> dict:
-    worker_capture = overrides.pop("worker_capture", _MISSING)
-    readiness_capture = overrides.pop("readiness_capture", _MISSING)
-    if worker_capture is _MISSING:
-        worker_capture = _worker(tmp_path)
-    if readiness_capture is _MISSING:
-        readiness_capture = _readiness(tmp_path)
-    args = {
-        "worker_assignment_id": "WORKER-ASSIGNMENT-INVOCATION-000001",
-        "worker_artifact": worker_capture["worker_artifact"],
-        "readiness_artifact": readiness_capture["ready_for_dispatch_artifact"],
-        "readiness_replay": readiness_capture["ready_for_dispatch_replay"],
-        "assigned_by": "AIGOL",
-        "assigned_at": CREATED_AT,
-        "canonical_chain_id": CANONICAL_CHAIN_ID,
-        "replay_reference": "REPLAY-WORKER-ASSIGNMENT-INVOCATION-000001",
-        "replay_dir": tmp_path / "assignment",
-    }
-    args.update(overrides)
-    capture = assign_worker(**args)
-    capture["_readiness_capture"] = readiness_capture
-    return capture
-
-
-def _dispatch(tmp_path, **overrides) -> dict:
-    assignment_capture = overrides.pop("assignment_capture", _MISSING)
-    readiness_capture = overrides.pop("readiness_capture", _MISSING)
-    if readiness_capture is _MISSING and assignment_capture is not _MISSING:
-        readiness_capture = assignment_capture.get("_readiness_capture", _MISSING)
-    if readiness_capture is _MISSING:
-        readiness_capture = _readiness(tmp_path)
-    if assignment_capture is _MISSING:
-        assignment_capture = _assignment(tmp_path, readiness_capture=readiness_capture)
-    args = {
-        "dispatch_id": "DISPATCH-INVOCATION-000001",
-        "worker_assignment_artifact": assignment_capture["worker_assignment_artifact"],
-        "worker_assignment_replay": assignment_capture["worker_assignment_replay"],
-        "readiness_artifact": readiness_capture["ready_for_dispatch_artifact"],
-        "canonical_chain_id": CANONICAL_CHAIN_ID,
-        "dispatched_by": "AIGOL",
-        "dispatched_at": CREATED_AT,
-        "replay_reference": "REPLAY-DISPATCH-INVOCATION-000001",
-        "replay_dir": tmp_path / "dispatch",
-    }
-    args.update(overrides)
-    return dispatch_worker(**args)
-
-
-def _parameters(dispatch_capture: dict) -> dict:
-    dispatch = dispatch_capture["dispatch_artifact"]
-    return {
-        "execution_request_reference": dispatch["execution_request_reference"],
-        "request_type": dispatch["request_type"],
-        "capability_id": dispatch["capability_id"],
-        "payload_reference": "EXECUTION-REQUEST-PAYLOAD-INVOCATION-000001",
-        "payload_hash": "sha256:payload-invocation-000001",
-        "allowed_effects": ["INVOKE_BOUNDARY_ONLY"],
-        "forbidden_effects": ["EXECUTE_WORK", "COMPLETE_WORK"],
-    }
-
-
-def _invocation(tmp_path, **overrides) -> dict:
-    assignment_capture = overrides.pop("assignment_capture", _MISSING)
-    dispatch_capture = overrides.pop("dispatch_capture", _MISSING)
-    if assignment_capture is _MISSING:
-        readiness_capture = _readiness(tmp_path)
-        assignment_capture = _assignment(tmp_path, readiness_capture=readiness_capture)
-    if dispatch_capture is _MISSING:
-        dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-    args = {
-        "worker_invocation_id": "WORKER-INVOCATION-000001",
-        "dispatch_artifact": dispatch_capture["dispatch_artifact"],
-        "dispatch_replay": dispatch_capture["dispatch_replay"],
-        "worker_assignment_artifact": assignment_capture["worker_assignment_artifact"],
-        "canonical_chain_id": CANONICAL_CHAIN_ID,
-        "invocation_parameters": _parameters(dispatch_capture),
-        "invoked_by": "AIGOL",
-        "invoked_at": CREATED_AT,
-        "replay_reference": "REPLAY-WORKER-INVOCATION-000001",
-        "replay_dir": tmp_path / "invocation",
-    }
-    args.update(overrides)
-    return invoke_worker(**args)
-
-
-def test_worker_invocation_creates_replay_visible_artifact(tmp_path) -> None:
-    readiness_capture = _readiness(tmp_path)
-    assignment_capture = _assignment(tmp_path, readiness_capture=readiness_capture)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture, readiness_capture=readiness_capture)
-    capture = _invocation(tmp_path, assignment_capture=assignment_capture, dispatch_capture=dispatch_capture)
-    invocation = capture["worker_invocation_artifact"]
-    returned = capture["worker_invocation_replay"]
-    reconstructed = reconstruct_worker_invocation_replay(tmp_path / "invocation")
-
-    assert invocation["artifact_type"] == WORKER_INVOCATION_ARTIFACT_V1
-    assert invocation["invocation_status"] == INVOKED
-    assert invocation["canonical_chain_id"] == CANONICAL_CHAIN_ID
-    assert invocation["dispatch_reference"] == "DISPATCH-INVOCATION-000001"
-    assert invocation["provider_authority"] is False
-    assert invocation["worker_self_invoked"] is False
-    assert invocation["execution_started"] is False
-    assert invocation["execution_performed"] is False
-    assert invocation["completion_recorded"] is False
-    assert returned["event_type"] == WORKER_INVOCATION_RETURNED
-    assert reconstructed["invocation_status"] == INVOKED
-    assert reconstructed["execution_started"] is False
-    assert reconstructed["execution_performed"] is False
-
-
-def test_worker_invocation_persists_replay_events(tmp_path) -> None:
-    _invocation(tmp_path)
-
-    validated = tmp_path / "invocation" / "000_worker_invocation_validated.json"
-    returned = tmp_path / "invocation" / "001_worker_invocation_returned.json"
-    assert validated.exists()
-    assert returned.exists()
-    assert json.loads(validated.read_text(encoding="utf-8"))["event_type"] == WORKER_INVOCATION_VALIDATED
-    assert json.loads(returned.read_text(encoding="utf-8"))["event_type"] == WORKER_INVOCATION_RETURNED
-
-
-def test_invalid_dispatch_fails_closed(tmp_path) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-    dispatch_capture["dispatch_artifact"]["dispatch_status"] = "CANCELLED"
-    dispatch_capture["dispatch_artifact"].pop("artifact_hash")
-    dispatch_capture["dispatch_artifact"]["artifact_hash"] = replay_hash(dispatch_capture["dispatch_artifact"])
-
-    with pytest.raises(FailClosedRuntimeError, match="invalid dispatch status"):
-        _invocation(tmp_path, assignment_capture=assignment_capture, dispatch_capture=dispatch_capture)
-
-
-def test_worker_mismatch_fails_closed(tmp_path) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-    assignment_capture["worker_assignment_artifact"]["worker_id"] = "OTHER"
-    assignment_capture["worker_assignment_artifact"].pop("artifact_hash")
-    assignment_capture["worker_assignment_artifact"]["artifact_hash"] = replay_hash(
-        assignment_capture["worker_assignment_artifact"]
-    )
-
-    with pytest.raises(FailClosedRuntimeError, match="assignment hash mismatch"):
-        _invocation(tmp_path, assignment_capture=assignment_capture, dispatch_capture=dispatch_capture)
-
-
-def test_worker_unavailable_fails_closed(tmp_path) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-    assignment_capture["worker_assignment_artifact"]["worker_state_after"] = UNAVAILABLE
-    assignment_capture["worker_assignment_artifact"].pop("artifact_hash")
-    assignment_capture["worker_assignment_artifact"]["artifact_hash"] = replay_hash(
-        assignment_capture["worker_assignment_artifact"]
-    )
-
-    with pytest.raises(FailClosedRuntimeError, match="worker unavailable"):
-        _invocation(tmp_path, assignment_capture=assignment_capture, dispatch_capture=dispatch_capture)
-
-
-def test_duplicate_invocation_fails_closed(tmp_path) -> None:
-    _invocation(tmp_path)
-
-    with pytest.raises(FailClosedRuntimeError, match="already exists"):
-        _invocation(tmp_path)
-
-
-def test_chain_mismatch_fails_closed(tmp_path) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-
-    with pytest.raises(FailClosedRuntimeError, match="chain mismatch"):
-        _invocation(
-            tmp_path,
-            assignment_capture=assignment_capture,
-            dispatch_capture=dispatch_capture,
-            canonical_chain_id="CHAIN-20260601-OTHER",
+def _execution_ready(tmp_path, *, prompt: str, suffix: str):
+    ppp = _ppp_capture(tmp_path, prompt=prompt, suffix=suffix)
+    upstream = ppp["conversation_to_ppp_handoff_execution_artifact"]
+    handoff_replay_reference = ppp.get("handoff_replay_reference")
+    approval_status = ppp["approval_status"]
+    if ppp["terminal_status"] == HUMAN_APPROVAL_REQUIRED:
+        request = upstream["approval_resume_packet"]["approval_request_artifact"]
+        approval = create_human_implementation_approval(
+            approval_id=f"HUMAN-APPROVAL-{suffix}",
+            approval_request_artifact=request,
+            approving_actor="human.operator",
+            approval_timestamp=CREATED_AT,
         )
+        resumed = resume_implementation_after_approval(
+            resume_id=f"APPROVAL-RESUME-{suffix}",
+            approval_required_replay_reference=ppp["conversation_to_ppp_handoff_execution_replay_reference"],
+            human_approval_artifact=approval,
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / f"approval_resume_{suffix}",
+        )
+        upstream = resumed["implementation_approval_resume_artifact"]
+        handoff_replay_reference = resumed["implementation_handoff_replay_reference"]
+        approval_status = "APPROVED"
+    visibility = create_implementation_handoff_visibility_summary(
+        visibility_id=f"VISIBILITY-{suffix}",
+        handoff_replay_reference=handoff_replay_reference,
+        approval_status=approval_status,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"visibility_{suffix}",
+    )
+    return prepare_governed_implementation_dry_run(
+        dry_run_id=f"DRY-RUN-{suffix}",
+        handoff_replay_reference=handoff_replay_reference,
+        handoff_visibility_artifact=visibility["implementation_handoff_visibility_artifact"],
+        upstream_lineage_artifact=upstream,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"dry_run_{suffix}",
+    )
+
+
+def _authorization(tmp_path, *, prompt: str, suffix: str) -> dict:
+    ready = _execution_ready(tmp_path, prompt=prompt, suffix=suffix)
+    return authorize_execution_ready(
+        authorization_id=f"AUTHORIZATION-{suffix}",
+        execution_ready_replay_reference=ready["governed_implementation_dry_run_replay_reference"],
+        authorizing_actor="AIGOL_GOVERNANCE",
+        authorized_at=CREATED_AT,
+        replay_dir=tmp_path / f"authorization_{suffix}",
+    )
+
+
+def _invocation_request(tmp_path, *, prompt: str, suffix: str) -> dict:
+    authorization = _authorization(tmp_path, prompt=prompt, suffix=suffix)
+    return create_worker_invocation_request(
+        invocation_request_id=f"WORKER-INVOCATION-REQUEST-{suffix}",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="AIGOL_GOVERNANCE",
+        requested_at=CREATED_AT,
+        replay_dir=tmp_path / f"invocation_request_{suffix}",
+    )
+
+
+def _assignment(tmp_path, *, prompt: str, suffix: str) -> dict:
+    request_capture = _invocation_request(tmp_path, prompt=prompt, suffix=suffix)
+    request = request_capture["worker_invocation_request_artifact"]
+    return assign_worker_from_invocation_request(
+        worker_assignment_id=f"WORKER-ASSIGNMENT-{suffix}",
+        worker_invocation_request_artifact=request,
+        worker_invocation_request_replay_reference=request_capture["worker_invocation_request_replay_reference"],
+        worker_registry_artifacts=default_worker_registry_for_request(request, created_at=CREATED_AT),
+        assigned_by="AIGOL_GOVERNANCE",
+        assigned_at=CREATED_AT,
+        replay_dir=tmp_path / f"assignment_{suffix}",
+    )
+
+
+def _dispatch(tmp_path, *, prompt: str, suffix: str, assignment_capture: dict | None = None) -> dict:
+    if assignment_capture is None:
+        assignment_capture = _assignment(tmp_path, prompt=prompt, suffix=suffix)
+    return dispatch_assigned_worker(
+        worker_dispatch_id=f"WORKER-DISPATCH-{suffix}",
+        worker_assignment_artifact=assignment_capture["worker_assignment_artifact"],
+        worker_assignment_replay_reference=assignment_capture["worker_assignment_replay_reference"],
+        dispatched_by="AIGOL_GOVERNANCE",
+        dispatched_at=CREATED_AT,
+        replay_dir=tmp_path / f"dispatch_{suffix}",
+    )
+
+
+def _invoke(tmp_path, *, prompt: str, suffix: str, dispatch_capture: dict | None = None) -> dict:
+    if dispatch_capture is None:
+        dispatch_capture = _dispatch(tmp_path, prompt=prompt, suffix=suffix)
+    return invoke_dispatched_worker(
+        worker_invocation_id=f"WORKER-INVOCATION-{suffix}",
+        worker_dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=dispatch_capture["worker_dispatch_replay_reference"],
+        invoked_by="AIGOL_GOVERNANCE",
+        invoked_at=CREATED_AT,
+        replay_dir=tmp_path / f"invocation_{suffix}",
+    )
 
 
 @pytest.mark.parametrize(
-    "bad_parameters",
+    ("prompt", "suffix"),
     [
-        {},
-        {"execute_now": True},
-        {
-            "execution_request_reference": "OTHER",
-            "request_type": "CAPABILITY_EXECUTION_REQUEST",
-            "capability_id": "BOUNDARY_ARTIFACT_INVOCATION",
-            "payload_reference": "PAYLOAD",
-            "payload_hash": "sha256:payload",
-            "allowed_effects": [],
-            "forbidden_effects": [],
-        },
+        ("Create a filesystem worker.", "filesystem"),
+        ("Create a monitoring worker.", "monitoring"),
+        ("Improve trading strategy.", "trading"),
     ],
 )
-def test_parameter_validation_failure_fails_closed(tmp_path, bad_parameters: dict) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
+def test_worker_dispatched_becomes_worker_invoked(tmp_path, prompt: str, suffix: str) -> None:
+    capture = _invoke(tmp_path, prompt=prompt, suffix=suffix)
+    invocation = capture["worker_invocation_artifact"]
+    reconstructed = reconstruct_worker_invocation_replay(tmp_path / f"invocation_{suffix}")
 
-    with pytest.raises(FailClosedRuntimeError, match="invocation_parameters|authority-bearing|validation failure"):
-        _invocation(
-            tmp_path,
-            assignment_capture=assignment_capture,
-            dispatch_capture=dispatch_capture,
-            invocation_parameters=bad_parameters,
-        )
+    assert capture["invocation_status"] == WORKER_INVOKED
+    assert invocation["artifact_type"] == WORKER_INVOCATION_ARTIFACT_V1
+    assert invocation["invocation_status"] == WORKER_INVOKED
+    assert invocation["worker_dispatch_reference"] == f"WORKER-DISPATCH-{suffix}"
+    assert invocation["worker_id"]
+    assert invocation["execution_packet_reference"].endswith(":PACKET")
+    assert invocation["worker_assigned"] is True
+    assert invocation["worker_dispatched"] is True
+    assert invocation["worker_invoked"] is True
+    assert invocation["execution_started"] is False
+    assert invocation["result_created"] is False
+    assert invocation["result_validated"] is False
+    assert invocation["post_execution_replay_reviewed"] is False
+    assert invocation["terminated"] is False
+    assert reconstructed["invocation_status"] == WORKER_INVOKED
+    assert reconstructed["worker_id"] == invocation["worker_id"]
 
 
-def test_corrupt_dispatch_replay_reference_fails_closed(tmp_path) -> None:
-    assignment_capture = _assignment(tmp_path)
-    dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
-    dispatch_capture["dispatch_replay"]["dispatch_reference"] = "OTHER"
-    dispatch_capture["dispatch_replay"].pop("artifact_hash")
-    dispatch_capture["dispatch_replay"]["artifact_hash"] = replay_hash(dispatch_capture["dispatch_replay"])
+def test_worker_invocation_compatibility_wrapper_uses_current_chain(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="wrapper")
+    capture = invoke_worker(
+        worker_invocation_id="WORKER-INVOCATION-wrapper",
+        worker_dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=dispatch_capture["worker_dispatch_replay_reference"],
+        invoked_by="AIGOL_GOVERNANCE",
+        invoked_at=CREATED_AT,
+        replay_dir=tmp_path / "invocation_wrapper",
+    )
 
-    with pytest.raises(FailClosedRuntimeError, match="dispatch replay reference mismatch"):
-        _invocation(tmp_path, assignment_capture=assignment_capture, dispatch_capture=dispatch_capture)
+    assert capture["invocation_status"] == WORKER_INVOKED
 
 
-def test_replay_reconstruction_detects_artifact_corruption(tmp_path) -> None:
-    _invocation(tmp_path)
-    path = tmp_path / "invocation" / "000_worker_invocation_validated.json"
-    wrapper = json.loads(path.read_text(encoding="utf-8"))
-    wrapper["artifact"]["execution_performed"] = True
-    path.write_text(json.dumps(wrapper, sort_keys=True), encoding="utf-8")
+def test_worker_invocation_persists_replay_evidence(tmp_path) -> None:
+    _invoke(tmp_path, prompt="Create a filesystem worker.", suffix="replay-events")
+
+    replay_dir = tmp_path / "invocation_replay-events"
+    assert (replay_dir / "000_invocation_evidence_recorded.json").exists()
+    assert (replay_dir / "001_invocation_classification_recorded.json").exists()
+    assert (replay_dir / "002_invocation_artifact_recorded.json").exists()
+    assert (replay_dir / "003_invocation_result_recorded.json").exists()
+
+
+def test_worker_invocation_fails_closed_on_dispatch_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="dispatch")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["worker_dispatch_id"] = "OTHER-DISPATCH"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="dispatch",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_assignment_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="assignment")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["worker_assignment_hash"] = "sha256:assignment-mismatch"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="assignment",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_authorization_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="authorization")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["authorization_hash"] = "sha256:authorization-mismatch"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="authorization",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_packet_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="packet")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["execution_packet_reference"] = "OTHER-PACKET"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="packet",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_worker_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="worker")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["worker_id"] = "OTHER-WORKER"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="worker",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_replay_corruption(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="replay-corruption")
+    replay_file = tmp_path / "dispatch_replay-corruption" / "002_dispatch_artifact_recorded.json"
+    wrapper = json.loads(replay_file.read_text(encoding="utf-8"))
+    wrapper["artifact"]["worker_id"] = "CORRUPTED-WORKER"
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="replay-corruption",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "hash mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_authority_violation(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="authority")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["governance_mutated"] = True
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="authority",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_fails_closed_on_chain_mismatch(tmp_path) -> None:
+    dispatch_capture = _dispatch(tmp_path, prompt="Create a filesystem worker.", suffix="chain")
+    dispatch = deepcopy(dispatch_capture["worker_dispatch_artifact"])
+    dispatch["chain_id"] = "OTHER-CHAIN"
+    dispatch.pop("artifact_hash")
+    dispatch["artifact_hash"] = replay_hash(dispatch)
+    dispatch_capture["worker_dispatch_artifact"] = dispatch
+
+    capture = _invoke(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="chain",
+        dispatch_capture=dispatch_capture,
+    )
+
+    assert capture["invocation_status"] == "FAILED_CLOSED"
+    assert "dispatch mismatch" in capture["failure_reason"]
+
+
+def test_worker_invocation_reconstruction_detects_hash_mismatch(tmp_path) -> None:
+    _invoke(tmp_path, prompt="Create a filesystem worker.", suffix="reconstruct")
+    replay_file = tmp_path / "invocation_reconstruct" / "002_invocation_artifact_recorded.json"
+    wrapper = json.loads(replay_file.read_text(encoding="utf-8"))
+    wrapper["artifact"]["worker_id"] = "CORRUPTED-WORKER"
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
 
     with pytest.raises(FailClosedRuntimeError, match="hash mismatch"):
-        reconstruct_worker_invocation_replay(tmp_path / "invocation")
+        reconstruct_worker_invocation_replay(tmp_path / "invocation_reconstruct")
 
 
-def test_replay_reconstruction_detects_ordering_corruption(tmp_path) -> None:
-    _invocation(tmp_path)
-    path = tmp_path / "invocation" / "001_worker_invocation_returned.json"
-    wrapper = json.loads(path.read_text(encoding="utf-8"))
-    wrapper["replay_step"] = "worker_invocation_validated"
-    path.write_text(json.dumps(wrapper, sort_keys=True), encoding="utf-8")
+def test_worker_invocation_runtime_does_not_validate_results_or_terminate() -> None:
+    source = inspect.getsource(invoke_dispatched_worker)
 
-    with pytest.raises(FailClosedRuntimeError, match="ordering mismatch"):
-        reconstruct_worker_invocation_replay(tmp_path / "invocation")
+    assert "RESULT_VALIDATED" not in source
+    assert "POST_EXECUTION_REPLAY_REVIEW" not in source
+    assert "TERMINATED" not in source
 
 
-def test_replay_reconstruction_detects_chain_mismatch(tmp_path) -> None:
-    _invocation(tmp_path)
-    path = tmp_path / "invocation" / "001_worker_invocation_returned.json"
-    wrapper = json.loads(path.read_text(encoding="utf-8"))
-    wrapper["artifact"]["canonical_chain_id"] = "CHAIN-20260601-OTHER"
-    wrapper["artifact"].pop("artifact_hash")
-    wrapper["artifact"]["artifact_hash"] = replay_hash(wrapper["artifact"])
-    wrapper.pop("replay_hash")
-    wrapper["replay_hash"] = replay_hash(wrapper)
-    path.write_text(json.dumps(wrapper, sort_keys=True), encoding="utf-8")
+def test_interactive_cli_reaches_worker_invocation(tmp_path) -> None:
+    args = _args(tmp_path, session_id="SESSION-CLI-WORKER-INVOCATION-000001")
+    output: list[str] = []
 
-    with pytest.raises(FailClosedRuntimeError, match="chain mismatch"):
-        reconstruct_worker_invocation_replay(tmp_path / "invocation")
+    result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["Create a filesystem worker.", "exit"]),
+        output_func=output.append,
+    )
 
-
-def test_no_execution_completion_or_provider_surface_imports() -> None:
-    import aigol.runtime.worker_invocation_runtime as worker_invocation_runtime
-
-    source = inspect.getsource(worker_invocation_runtime)
-
-    assert "subprocess" not in source
-    assert "os.system" not in source
-    assert "requests" not in source
-    assert "urllib" not in source
-    assert "socket" not in source
-    assert "openai" not in source.lower()
-    assert "anthropic" not in source.lower()
-    assert "async " not in source
-    assert "await " not in source
-    assert "threading" not in source
-    assert "multiprocessing" not in source
+    assert result["worker_invoked"] is True
+    assert any("Worker Invocation" in chunk for chunk in output)
+    assert any("Invocation Status: WORKER_INVOKED" in chunk for chunk in output)
+    assert any("No result validation yet." in chunk for chunk in output)

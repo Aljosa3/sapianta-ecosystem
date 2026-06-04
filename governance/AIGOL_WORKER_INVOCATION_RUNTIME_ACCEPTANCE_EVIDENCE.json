@@ -1,0 +1,134 @@
+{
+  "artifact": "AIGOL_WORKER_INVOCATION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/worker_invocation_runtime.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_worker_invocation_runtime_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_invoked",
+      "status": "PASS",
+      "evidence": "Filesystem Worker flow reaches WORKER_DISPATCHED and then WORKER_INVOKED."
+    },
+    {
+      "check": "monitoring_worker_invoked",
+      "status": "PASS",
+      "evidence": "Monitoring Worker flow reaches WORKER_DISPATCHED and then WORKER_INVOKED."
+    },
+    {
+      "check": "approved_trading_improvement_worker_invoked",
+      "status": "PASS",
+      "evidence": "Trading improvement requires approval, reaches WORKER_DISPATCHED, and then reaches WORKER_INVOKED."
+    },
+    {
+      "check": "dispatch_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch reference drift prevents invocation."
+    },
+    {
+      "check": "assignment_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch assignment hash drift prevents invocation."
+    },
+    {
+      "check": "authorization_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch authorization hash drift prevents invocation."
+    },
+    {
+      "check": "packet_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch execution packet drift prevents invocation."
+    },
+    {
+      "check": "worker_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch Worker identity drift prevents invocation."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Dispatch replay corruption prevents invocation."
+    },
+    {
+      "check": "authority_violation_fails_closed",
+      "status": "PASS",
+      "evidence": "Governance mutation marker drift prevents invocation."
+    },
+    {
+      "check": "chain_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided dispatch chain drift prevents invocation."
+    },
+    {
+      "check": "cli_reaches_worker_invocation",
+      "status": "PASS",
+      "evidence": "Interactive CLI renders Worker Invocation with WORKER_INVOKED."
+    }
+  ],
+  "invocation_model": {
+    "assigned_worker_identity": true,
+    "assigned_worker_family": true,
+    "execution_packet_scope": true,
+    "allowed_outputs": true,
+    "forbidden_operations": true,
+    "validation_requirements": true,
+    "dispatch_lineage": true,
+    "assignment_lineage": true,
+    "invocation_request_lineage": true,
+    "authorization_lineage": true,
+    "execution_packet_lineage": true,
+    "worker_identity_continuity": true,
+    "chain_continuity": true,
+    "replay_continuity": true,
+    "authority_continuity": true
+  },
+  "authority_boundaries": {
+    "worker_assigned": true,
+    "worker_dispatched": true,
+    "worker_invoked": true,
+    "execution_started": false,
+    "result_created": false,
+    "result_validated": false,
+    "post_execution_replay_reviewed": false,
+    "terminated": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "existing_replay_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py",
+      "status": "PASS",
+      "summary": "16 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py tests/test_interactive_conversation_cli_v1.py",
+      "status": "PASS",
+      "summary": "150 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_result_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "status": "PASS",
+      "summary": "178 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_INVOCATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_WORKER_INVOCATION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "no whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_WORKER_INVOCATION_RUNTIME_STATUS = CERTIFIED"
+}
