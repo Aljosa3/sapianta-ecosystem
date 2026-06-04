@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -149,6 +150,9 @@ def test_show_chain_command_uses_unified_reconstruction_and_renders_summary(tmp_
     assert result["cli_chain_inspection_runtime_version"] == CLI_CHAIN_INSPECTION_RUNTIME_VERSION
     assert result["status"] == "READY"
     assert result["reconstruction_status"] == "RECONSTRUCTED"
+    assert result["source_replay_read_only"] is True
+    assert result["inspection_report_persisted"] is False
+    assert result["operationally_read_only"] is True
     assert result["conversation_present"] is True
     assert result["source_routing_present"] is True
     assert result["execution_requests_created"] is False
@@ -258,7 +262,46 @@ def test_cli_entrypoint_outputs_json_summary(tmp_path) -> None:
     assert result.returncode == 0
     assert payload["command"] == "aigol show-chain-summary"
     assert payload["status"] == "READY"
+    assert payload["inspection_report_persisted"] is False
     assert payload["summary_only"] is True
+
+
+def test_show_latest_chain_cli_is_repeatable_with_default_arguments(tmp_path) -> None:
+    _chain(tmp_path)
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(ROOT)
+
+    command = ["python", "-m", "aigol.cli.aigol_cli", "show-latest-chain", "--json"]
+    first = subprocess.run(
+        command,
+        cwd=str(tmp_path),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=False,
+    )
+    second = subprocess.run(
+        command,
+        cwd=str(tmp_path),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=False,
+    )
+    first_payload = json.loads(first.stdout)
+    second_payload = json.loads(second.stdout)
+
+    assert first.returncode == 0
+    assert second.returncode == 0
+    assert first_payload["status"] == "READY"
+    assert second_payload["status"] == "READY"
+    assert first_payload["canonical_chain_id"] == CANONICAL_CHAIN_ID
+    assert second_payload["canonical_chain_id"] == CANONICAL_CHAIN_ID
+    assert first_payload["inspection_report_persisted"] is False
+    assert second_payload["inspection_report_persisted"] is False
+    assert not (tmp_path / ".aigol_chain_inspection_runtime").exists()
 
 
 def test_fail_closed_reconstruction_is_displayed_to_operator(tmp_path) -> None:
@@ -274,6 +317,7 @@ def test_fail_closed_reconstruction_is_displayed_to_operator(tmp_path) -> None:
     assert result["fail_closed"] is True
     assert result["workers_dispatched"] is False
     assert result["workers_invoked"] is False
+    assert result["inspection_report_persisted"] is False
     assert "fail_closed: True" in rendered
     assert "replay root missing" in rendered
 
@@ -293,7 +337,7 @@ def test_chain_inspection_does_not_mutate_source_replay(tmp_path) -> None:
     )
 
     assert source_file.read_text(encoding="utf-8") == before
-    assert report_root.exists()
+    assert not report_root.exists()
 
 
 def test_chain_inspection_module_has_no_execution_authority_imports() -> None:

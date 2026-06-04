@@ -1,0 +1,79 @@
+{
+  "artifact_type": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/unified_replay_reconstruction_runtime.py",
+    "aigol/cli/commands/chain_inspection.py"
+  ],
+  "test_artifacts": [
+    "tests/test_cli_chain_inspection_runtime_v1.py",
+    "tests/test_unified_replay_reconstruction_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_V1.md",
+    "governance/AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_CERTIFICATION.json"
+  ],
+  "runtime_model": [
+    "Unified replay reconstruction now supports persisted and non-persisted modes.",
+    "Direct runtime callers preserve persisted append-only report behavior by default.",
+    "CLI chain inspection uses non-persisted reconstruction for operationally read-only show commands.",
+    "Inspection reports remain deterministic, replay-visible, and hash-addressed in output.",
+    "Optional persisted reconstruction artifacts remain valid for explicit audit evidence."
+  ],
+  "replay_integrity": [
+    "Source replay wrapper hashes are still validated.",
+    "Source artifact hashes are still validated.",
+    "Reference continuity checks are still enforced.",
+    "Append-only report writes are still append-only when persistence is requested.",
+    "Default CLI inspection does not create report artifacts and therefore cannot collide on repeat."
+  ],
+  "operator_usability": [
+    "Repeated show-latest-chain invocation succeeds.",
+    "Output distinguishes source_replay_read_only from inspection_report_persisted.",
+    "Default inspection is operationally read-only.",
+    "No timestamp or report-root workaround is required for ordinary inspection."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/unified_replay_reconstruction_runtime.py aigol/cli/commands/chain_inspection.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_cli_chain_inspection_runtime_v1.py tests/test_unified_replay_reconstruction_runtime_v1.py",
+      "status": "PASS",
+      "summary": "16 passed."
+    },
+    {
+      "command": "python -m aigol.cli.aigol_cli show-latest-chain",
+      "status": "PASS",
+      "summary": "First execution returned READY and did not persist inspection report artifacts."
+    },
+    {
+      "command": "python -m aigol.cli.aigol_cli show-latest-chain",
+      "status": "PASS",
+      "summary": "Second execution returned READY without append-only artifact collision."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Valid JSON."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify repeatable read-only chain inspection",
+  "final_classification": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_STATUS = CERTIFIED"
+}

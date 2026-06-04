@@ -128,6 +128,9 @@ def render_chain_inspection_summary(result: dict[str, Any]) -> str:
         f"report_id: {result.get('report_id')}",
         f"replay_root: {result.get('replay_root')}",
         f"report_dir: {result.get('report_dir')}",
+        f"source_replay_read_only: {result.get('source_replay_read_only')}",
+        f"inspection_report_persisted: {result.get('inspection_report_persisted')}",
+        f"operationally_read_only: {result.get('operationally_read_only')}",
         f"conversation: {result.get('conversation_present')}",
         f"source_routing: {result.get('source_routing_present')}",
         f"execution_lifecycle_artifacts: {result.get('execution_lifecycle_artifact_count')}",
@@ -170,6 +173,7 @@ def _inspect(
         }
         if canonical_chain_id is not None:
             kwargs["canonical_chain_id"] = canonical_chain_id
+        kwargs["persist_report"] = False
         report = reconstruction_func(**kwargs)
         return _operator_result(
             command=command,
@@ -216,6 +220,9 @@ def _operator_result(
         "report_hash": report.get("artifact_hash"),
         "replay_root": str(replay_root),
         "report_dir": str(report_dir),
+        "source_replay_read_only": True,
+        "inspection_report_persisted": report.get("report_persisted") is True,
+        "operationally_read_only": report.get("operationally_read_only") is not False,
         "conversation_present": _present(report, "conversation"),
         "source_routing_present": _present(report, "source_routing"),
         "execution_lifecycle_artifact_count": _count(report, "execution_lifecycle"),

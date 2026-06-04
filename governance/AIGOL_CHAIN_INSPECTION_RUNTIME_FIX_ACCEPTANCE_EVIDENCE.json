@@ -1,0 +1,41 @@
+{
+  "artifact_type": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "status": "PASSED",
+  "accepted_milestone": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_V1",
+  "acceptance_date": "2026-06-04",
+  "accepted_behaviors": {
+    "source_replay_not_mutated": true,
+    "append_only_governance_guarantees_preserved": true,
+    "default_show_latest_chain_operationally_read_only": true,
+    "default_show_latest_chain_repeatable": true,
+    "inspection_does_not_require_unique_runtime_artifacts": true,
+    "inspection_output_replay_visible": true,
+    "persisted_reconstruction_reports_remain_supported": true
+  },
+  "repeated_execution_validation": [
+    {
+      "command": "python -m aigol.cli.aigol_cli show-latest-chain",
+      "status": "PASS",
+      "summary": "First execution returned status READY with inspection_report_persisted false."
+    },
+    {
+      "command": "python -m aigol.cli.aigol_cli show-latest-chain",
+      "status": "PASS",
+      "summary": "Second execution returned status READY with the same report id and no append-only collision."
+    }
+  ],
+  "runtime_validation": [
+    {
+      "command": "python -m py_compile aigol/runtime/unified_replay_reconstruction_runtime.py aigol/cli/commands/chain_inspection.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_cli_chain_inspection_runtime_v1.py tests/test_unified_replay_reconstruction_runtime_v1.py",
+      "status": "PASS",
+      "summary": "16 passed."
+    }
+  ],
+  "final_classification": "AIGOL_CHAIN_INSPECTION_RUNTIME_FIX_STATUS = CERTIFIED"
+}

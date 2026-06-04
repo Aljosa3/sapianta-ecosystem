@@ -110,7 +110,13 @@ ID_FIELDS = (
 TIME_FIELDS = ("created_at", "started_at", "completed_at", "evaluated_at", "assigned_at", "dispatched_at", "invoked_at")
 
 
-def reconstruct_latest_chain(*, replay_root: str | Path, report_dir: str | Path, created_at: str) -> dict[str, Any]:
+def reconstruct_latest_chain(
+    *,
+    replay_root: str | Path,
+    report_dir: str | Path,
+    created_at: str,
+    persist_report: bool = True,
+) -> dict[str, Any]:
     """Reconstruct the most recent canonical chain from replay evidence."""
 
     return _reconstruct(
@@ -118,11 +124,17 @@ def reconstruct_latest_chain(*, replay_root: str | Path, report_dir: str | Path,
         replay_root=Path(replay_root),
         report_dir=Path(report_dir),
         created_at=created_at,
+        persist_report=persist_report,
     )
 
 
 def reconstruct_chain_by_id(
-    *, canonical_chain_id: str, replay_root: str | Path, report_dir: str | Path, created_at: str
+    *,
+    canonical_chain_id: str,
+    replay_root: str | Path,
+    report_dir: str | Path,
+    created_at: str,
+    persist_report: bool = True,
 ) -> dict[str, Any]:
     """Reconstruct one canonical chain by id."""
 
@@ -132,11 +144,17 @@ def reconstruct_chain_by_id(
         report_dir=Path(report_dir),
         created_at=created_at,
         canonical_chain_id=canonical_chain_id,
+        persist_report=persist_report,
     )
 
 
 def reconstruct_execution_lifecycle(
-    *, canonical_chain_id: str, replay_root: str | Path, report_dir: str | Path, created_at: str
+    *,
+    canonical_chain_id: str,
+    replay_root: str | Path,
+    report_dir: str | Path,
+    created_at: str,
+    persist_report: bool = True,
 ) -> dict[str, Any]:
     """Reconstruct execution lifecycle evidence for one chain."""
 
@@ -146,11 +164,17 @@ def reconstruct_execution_lifecycle(
         report_dir=Path(report_dir),
         created_at=created_at,
         canonical_chain_id=canonical_chain_id,
+        persist_report=persist_report,
     )
 
 
 def reconstruct_learning_lifecycle(
-    *, canonical_chain_id: str, replay_root: str | Path, report_dir: str | Path, created_at: str
+    *,
+    canonical_chain_id: str,
+    replay_root: str | Path,
+    report_dir: str | Path,
+    created_at: str,
+    persist_report: bool = True,
 ) -> dict[str, Any]:
     """Reconstruct governed learning lifecycle evidence for one chain."""
 
@@ -160,11 +184,17 @@ def reconstruct_learning_lifecycle(
         report_dir=Path(report_dir),
         created_at=created_at,
         canonical_chain_id=canonical_chain_id,
+        persist_report=persist_report,
     )
 
 
 def reconstruct_full_lineage(
-    *, canonical_chain_id: str, replay_root: str | Path, report_dir: str | Path, created_at: str
+    *,
+    canonical_chain_id: str,
+    replay_root: str | Path,
+    report_dir: str | Path,
+    created_at: str,
+    persist_report: bool = True,
 ) -> dict[str, Any]:
     """Reconstruct full chain lineage across replay, runtime, bridge, and worker evidence."""
 
@@ -174,6 +204,7 @@ def reconstruct_full_lineage(
         report_dir=Path(report_dir),
         created_at=created_at,
         canonical_chain_id=canonical_chain_id,
+        persist_report=persist_report,
     )
 
 
@@ -220,10 +251,12 @@ def _reconstruct(
     report_dir: Path,
     created_at: str,
     canonical_chain_id: str | None = None,
+    persist_report: bool = True,
 ) -> dict[str, Any]:
     if scope not in SCOPES:
         raise FailClosedRuntimeError("unified replay reconstruction failed closed: invalid scope")
-    _ensure_report_replay_available(report_dir)
+    if persist_report:
+        _ensure_report_replay_available(report_dir)
     try:
         evidence = _scan_replay_root(replay_root, report_dir)
         chain_id = _select_chain_id(scope, canonical_chain_id, evidence)
@@ -240,6 +273,7 @@ def _reconstruct(
             created_at=created_at,
             status=RECONSTRUCTED,
             failure_reason=None,
+            report_persisted=persist_report,
         )
     except Exception as exc:
         report = _failed_report(
@@ -248,10 +282,13 @@ def _reconstruct(
             replay_root=replay_root,
             created_at=created_at,
             failure_reason=_failure_reason(exc),
+            report_persisted=persist_report,
         )
-        _persist_report(report_dir, report)
+        if persist_report:
+            _persist_report(report_dir, report)
         raise FailClosedRuntimeError(report["failure_reason"]) from exc
-    _persist_report(report_dir, report)
+    if persist_report:
+        _persist_report(report_dir, report)
     return _public_report(report)
 
 
@@ -365,6 +402,7 @@ def _report(
     created_at: str,
     status: str,
     failure_reason: str | None,
+    report_persisted: bool,
 ) -> dict[str, Any]:
     artifact_refs = [_artifact_ref(item) for item in evidence]
     report = {
@@ -375,6 +413,8 @@ def _report(
         "reconstruction_scope": scope,
         "reconstruction_status": status,
         "replay_root": str(replay_root),
+        "report_persisted": report_persisted,
+        "operationally_read_only": not report_persisted,
         "conversation": _section(evidence, _is_conversation_evidence),
         "source_routing": _section(evidence, _is_source_routing_evidence),
         "execution_lifecycle": _section(evidence, lambda item: _artifact_type(item) in EXECUTION_ARTIFACT_TYPES),
@@ -405,6 +445,7 @@ def _report(
             "execution_requests_created": False,
             "workers_dispatched": False,
             "workers_invoked": False,
+            "inspection_report_persisted": report_persisted,
         },
         "failure_reason": failure_reason,
         "created_at": _require_string(created_at, "created_at"),
@@ -421,6 +462,7 @@ def _failed_report(
     replay_root: Path,
     created_at: str,
     failure_reason: str,
+    report_persisted: bool,
 ) -> dict[str, Any]:
     chain_id = canonical_chain_id if isinstance(canonical_chain_id, str) and canonical_chain_id.strip() else "UNRESOLVED"
     report = {
@@ -431,6 +473,8 @@ def _failed_report(
         "reconstruction_scope": scope,
         "reconstruction_status": FAILED_CLOSED,
         "replay_root": str(replay_root),
+        "report_persisted": report_persisted,
+        "operationally_read_only": not report_persisted,
         "conversation": _empty_section(),
         "source_routing": _empty_section(),
         "execution_lifecycle": _empty_section(),
@@ -449,6 +493,7 @@ def _failed_report(
             "execution_requests_created": False,
             "workers_dispatched": False,
             "workers_invoked": False,
+            "inspection_report_persisted": report_persisted,
         },
         "failure_reason": failure_reason,
         "created_at": _safe_string(created_at, "INVALID_CREATED_AT"),
