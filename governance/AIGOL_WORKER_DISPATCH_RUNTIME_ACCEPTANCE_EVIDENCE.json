@@ -1,0 +1,92 @@
+{
+  "artifact": "AIGOL_WORKER_DISPATCH_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/worker_dispatch_runtime.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_worker_dispatch_runtime_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_dispatched",
+      "status": "PASS",
+      "evidence": "Filesystem Worker flow reaches WORKER_ASSIGNED and then WORKER_DISPATCHED."
+    },
+    {
+      "check": "monitoring_worker_dispatched",
+      "status": "PASS",
+      "evidence": "Monitoring Worker flow reaches WORKER_ASSIGNED and then WORKER_DISPATCHED."
+    },
+    {
+      "check": "trading_improvement_worker_dispatched",
+      "status": "PASS",
+      "evidence": "Trading improvement requires approval, reaches WORKER_ASSIGNED, and then reaches WORKER_DISPATCHED."
+    },
+    {
+      "check": "worker_identity_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided assignment Worker identity drift prevents dispatch."
+    },
+    {
+      "check": "assignment_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided assignment reference drift prevents dispatch."
+    },
+    {
+      "check": "packet_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Provided assignment packet drift prevents dispatch."
+    },
+    {
+      "check": "authority_violation_fails_closed",
+      "status": "PASS",
+      "evidence": "Invocation authority drift in assignment evidence prevents dispatch."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Dispatch replay corruption is detected during reconstruction."
+    },
+    {
+      "check": "chain_mismatch_fails_closed",
+      "status": "PASS",
+      "evidence": "Dispatch replay chain mismatch is detected during reconstruction."
+    }
+  ],
+  "dispatch_model": {
+    "assigned_worker_identity": true,
+    "dispatch_eligibility": true,
+    "execution_packet_compatibility": true,
+    "role_compatibility": true,
+    "authority_continuity": true,
+    "replay_continuity": true
+  },
+  "authority_boundaries": {
+    "worker_assigned": true,
+    "worker_dispatched": true,
+    "worker_invoked": false,
+    "execution_started": false,
+    "result_created": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "existing_replay_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py",
+      "status": "PASS",
+      "summary": "12 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py tests/test_interactive_conversation_cli_v1.py",
+      "status": "PASS",
+      "summary": "134 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py tests/test_ready_for_dispatch_runtime_v1.py tests/test_worker_runtime_v1.py tests/test_dispatch_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_execution_runtime_v1.py tests/test_result_runtime_v1.py tests/test_execution_request_runtime_v1.py tests/test_implementation_plan_to_execution_request_runtime_v1.py",
+      "status": "PASS",
+      "summary": "177 passed"
+    }
+  ],
+  "final_classification": "AIGOL_WORKER_DISPATCH_RUNTIME_STATUS = CERTIFIED"
+}

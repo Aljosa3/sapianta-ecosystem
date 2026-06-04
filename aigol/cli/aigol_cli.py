@@ -163,6 +163,10 @@ from aigol.runtime.worker_assignment_runtime import (
     default_worker_registry_for_request,
     render_worker_assignment_summary,
 )
+from aigol.runtime.worker_dispatch_runtime import (
+    dispatch_assigned_worker,
+    render_worker_dispatch_summary,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -783,20 +787,43 @@ def run_interactive_conversation(
                                         )
                                         output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                                     else:
-                                        pending_approval_required = None
-                                        output_writer(
-                                            render_implementation_approval_resume_summary(approval_resume_capture)
-                                            + "\n"
-                                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                            + "\n"
-                                            + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                            + "\n"
-                                            + render_execution_authorization_summary(authorization_capture)
-                                            + "\n"
-                                            + render_worker_invocation_request_summary(invocation_request_capture)
-                                            + "\n"
-                                            + render_worker_assignment_summary(assignment_capture)
+                                        dispatch_capture = dispatch_assigned_worker(
+                                            worker_dispatch_id=f"{prompt_id}:WORKER-DISPATCH",
+                                            worker_assignment_artifact=assignment_capture[
+                                                "worker_assignment_artifact"
+                                            ],
+                                            worker_assignment_replay_reference=assignment_capture[
+                                                "worker_assignment_replay_reference"
+                                            ],
+                                            dispatched_by="AIGOL_GOVERNANCE",
+                                            dispatched_at=created_at,
+                                            replay_dir=turn_root / "worker_dispatch",
                                         )
+                                        approval_resume_capture["worker_dispatch"] = dispatch_capture
+                                        if dispatch_capture.get("fail_closed") is True:
+                                            failed_turns += 1
+                                            approval_resume_capture["fail_closed"] = True
+                                            approval_resume_capture["failure_reason"] = dispatch_capture.get(
+                                                "failure_reason"
+                                            )
+                                            output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
+                                        else:
+                                            pending_approval_required = None
+                                            output_writer(
+                                                render_implementation_approval_resume_summary(approval_resume_capture)
+                                                + "\n"
+                                                + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                + "\n"
+                                                + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                + "\n"
+                                                + render_execution_authorization_summary(authorization_capture)
+                                                + "\n"
+                                                + render_worker_invocation_request_summary(invocation_request_capture)
+                                                + "\n"
+                                                + render_worker_assignment_summary(assignment_capture)
+                                                + "\n"
+                                                + render_worker_dispatch_summary(dispatch_capture)
+                                            )
                 turns.append(
                     _interactive_approval_resume_turn_summary(
                         turn_id=turn_id,
@@ -940,19 +967,42 @@ def run_interactive_conversation(
                                                 failed_turns += 1
                                                 output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                             else:
-                                                output_writer(
-                                                    render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
-                                                    + "\n"
-                                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                                    + "\n"
-                                                    + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                                    + "\n"
-                                                    + render_execution_authorization_summary(authorization_capture)
-                                                    + "\n"
-                                                    + render_worker_invocation_request_summary(invocation_request_capture)
-                                                    + "\n"
-                                                    + render_worker_assignment_summary(assignment_capture)
+                                                dispatch_capture = dispatch_assigned_worker(
+                                                    worker_dispatch_id=f"{prompt_id}:WORKER-DISPATCH",
+                                                    worker_assignment_artifact=assignment_capture[
+                                                        "worker_assignment_artifact"
+                                                    ],
+                                                    worker_assignment_replay_reference=assignment_capture[
+                                                        "worker_assignment_replay_reference"
+                                                    ],
+                                                    dispatched_by="AIGOL_GOVERNANCE",
+                                                    dispatched_at=created_at,
+                                                    replay_dir=turn_root / "worker_dispatch",
                                                 )
+                                                routing_capture["worker_dispatch"] = dispatch_capture
+                                                if dispatch_capture.get("fail_closed") is True:
+                                                    routing_capture["fail_closed"] = True
+                                                    routing_capture["failure_reason"] = dispatch_capture.get(
+                                                        "failure_reason"
+                                                    )
+                                                    failed_turns += 1
+                                                    output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
+                                                else:
+                                                    output_writer(
+                                                        render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                                        + "\n"
+                                                        + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                        + "\n"
+                                                        + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                        + "\n"
+                                                        + render_execution_authorization_summary(authorization_capture)
+                                                        + "\n"
+                                                        + render_worker_invocation_request_summary(invocation_request_capture)
+                                                        + "\n"
+                                                        + render_worker_assignment_summary(assignment_capture)
+                                                        + "\n"
+                                                        + render_worker_dispatch_summary(dispatch_capture)
+                                                    )
                         else:
                             output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
@@ -1074,9 +1124,10 @@ def run_interactive_conversation(
         "latest_chain_id": latest_chain_id,
         "replay_visible": True,
         "worker_assigned": any(turn.get("worker_assigned") is True for turn in turns),
+        "worker_dispatched": any(turn.get("worker_dispatched") is True for turn in turns),
         "worker_invoked": False,
         "execution_requested": False,
-        "dispatch_requested": False,
+        "dispatch_requested": any(turn.get("dispatch_requested") is True for turn in turns),
         "invocation_requested": any(turn.get("invocation_requested") is True for turn in turns),
         "turns": turns,
     }
@@ -1178,6 +1229,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     assignment_capture = routing_capture.get("worker_assignment")
     if not isinstance(assignment_capture, dict):
         assignment_capture = {}
+    dispatch_capture = routing_capture.get("worker_dispatch")
+    if not isinstance(dispatch_capture, dict):
+        dispatch_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1232,11 +1286,14 @@ def _interactive_native_development_intent_routing_turn_summary(
         ),
         "worker_assignment_status": assignment_capture.get("assignment_status"),
         "worker_assignment_replay_reference": assignment_capture.get("worker_assignment_replay_reference"),
+        "worker_dispatch_status": dispatch_capture.get("dispatch_status"),
+        "worker_dispatch_replay_reference": dispatch_capture.get("worker_dispatch_replay_reference"),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
+        "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "worker_invoked": False,
         "execution_requested": False,
-        "dispatch_requested": False,
+        "dispatch_requested": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "invocation_requested": invocation_request_capture.get("request_status")
         == "WORKER_INVOCATION_REQUEST_CREATED",
     }
@@ -1266,6 +1323,9 @@ def _interactive_approval_resume_turn_summary(
     assignment_capture = approval_resume_capture.get("worker_assignment")
     if not isinstance(assignment_capture, dict):
         assignment_capture = {}
+    dispatch_capture = approval_resume_capture.get("worker_dispatch")
+    if not isinstance(dispatch_capture, dict):
+        dispatch_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1309,10 +1369,13 @@ def _interactive_approval_resume_turn_summary(
         ),
         "worker_assignment_status": assignment_capture.get("assignment_status"),
         "worker_assignment_replay_reference": assignment_capture.get("worker_assignment_replay_reference"),
+        "worker_dispatch_status": dispatch_capture.get("dispatch_status"),
+        "worker_dispatch_replay_reference": dispatch_capture.get("worker_dispatch_replay_reference"),
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
+        "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "worker_invoked": False,
         "execution_requested": False,
-        "dispatch_requested": False,
+        "dispatch_requested": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "invocation_requested": invocation_request_capture.get("request_status")
         == "WORKER_INVOCATION_REQUEST_CREATED",
     }
@@ -1524,6 +1587,7 @@ def run_command(args: argparse.Namespace) -> dict:
             "runtime_root": str(Path(args.runtime_root) / args.session_id),
             "replay_visible": True,
             "worker_assigned": False,
+            "worker_dispatched": False,
             "worker_invoked": False,
             "execution_requested": False,
             "dispatch_requested": False,
@@ -2033,6 +2097,7 @@ def render_command_result(result: dict) -> str:
                 f"exit_reason: {result.get('exit_reason', '')}",
                 f"replay_visible: {result.get('replay_visible')}",
                 f"worker_assigned: {result.get('worker_assigned')}",
+                f"worker_dispatched: {result.get('worker_dispatched')}",
                 f"worker_invoked: {result.get('worker_invoked')}",
                 f"execution_requested: {result.get('execution_requested')}",
                 f"dispatch_requested: {result.get('dispatch_requested')}",

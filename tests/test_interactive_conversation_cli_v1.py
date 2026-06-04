@@ -145,7 +145,7 @@ def test_interactive_conversation_cli_does_not_import_worker_or_dispatch_runtime
     source = inspect.getsource(aigol_cli)
 
     assert "worker_invocation_runtime" not in source
-    assert "dispatch_runtime" not in source
+    assert "from aigol.runtime.dispatch_runtime" not in source
     assert "assign_worker(" not in source
     assert "invoke_worker(" not in source
     assert "dispatch_worker(" not in source
