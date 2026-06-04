@@ -3,8 +3,8 @@
 ## Status
 
 Deterministic placeholder governance document created by
-`AIGOL_REAL_OUTPUT_BINDING_RUNTIME_V1`.
+`AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_V1`.
 
 ## Scope
 
-This artifact proves one exact, create-only governance output binding.
+This artifact is the foundation member of the first governed Marketing domain bundle.

@@ -1,0 +1,66 @@
+{
+  "artifact_type": "AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "certifies": "AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "classification": "AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_STATUS = CERTIFIED",
+  "objective": "Create and verify one exact governed Marketing domain bundle from a validated Worker result.",
+  "input": "WORKER_RESULT_VALIDATION_ARTIFACT_V1",
+  "output": "MULTI_ARTIFACT_DOMAIN_BUNDLE_ARTIFACT_V1",
+  "authorization": "BUNDLE_MUTATION_AUTHORIZATION",
+  "lifecycle": [
+    "RESULT_VALIDATED",
+    "BUNDLE_AUTHORIZED",
+    "ARTIFACTS_CREATED",
+    "BUNDLE_VERIFIED",
+    "REVIEW_COMPLETED",
+    "TERMINATED"
+  ],
+  "certified_bundle": {
+    "bundle_id": "MARKETING_DOMAIN_BUNDLE_V1",
+    "permission": "CREATE_ONLY",
+    "overwrite_permitted": false,
+    "artifacts": [
+      "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
+      "governance/MARKETING_DOMAIN_MODEL_V1.md",
+      "governance/MARKETING_DOMAIN_CERTIFICATION.json"
+    ]
+  },
+  "replay_artifacts": [
+    "bundle authorization",
+    "bundle creation evidence",
+    "per-artifact verification",
+    "bundle verification result"
+  ],
+  "outputs": [
+    "aigol/runtime/multi_artifact_domain_bundle_runtime.py",
+    "tests/test_multi_artifact_domain_bundle_runtime_v1.py",
+    "governance/AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_V1.md",
+    "governance/AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_CERTIFICATION.json",
+    "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
+    "governance/MARKETING_DOMAIN_MODEL_V1.md",
+    "governance/MARKETING_DOMAIN_CERTIFICATION.json"
+  ],
+  "supporting_integration_changes": [
+    "aigol/cli/aigol_cli.py",
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "tests/test_real_output_binding_runtime_v1.py"
+  ],
+  "authority_boundaries": [
+    "No bundle mutation without exact BUNDLE_MUTATION_AUTHORIZATION.",
+    "No implicit artifact creation.",
+    "No overwrite, delete, rename, move, recursive creation, directory creation, or authority transfer."
+  ],
+  "remaining_gap": "Runtime and test generation remain unimplemented.",
+  "validation": {
+    "status": "CERTIFIED_WITH_VISIBLE_UNRELATED_SUITE_FAILURES",
+    "focused_bundle_binding_review_termination_tests": "72 passed",
+    "execution_chain_tests": "69 passed",
+    "conversation_and_handoff_tests": "41 passed",
+    "full_repository_tests": "4106 passed, 7 unrelated browser-companion constraint tests failed",
+    "json_validation": "passed",
+    "python_compilation": "passed",
+    "git_diff_check": "passed"
+  }
+}
