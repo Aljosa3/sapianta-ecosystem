@@ -1,0 +1,71 @@
+{
+  "artifact_type": "AIGOL_REAL_OUTPUT_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "runtime": "AIGOL_REAL_OUTPUT_BINDING_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "scope": "One exact create-only governance Markdown artifact.",
+  "target": {
+    "path": "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
+    "artifact_type": "GOVERNANCE_DOCUMENT_MARKDOWN",
+    "permission": "CREATE_ONLY",
+    "deterministic_content": true
+  },
+  "acceptance": [
+    {
+      "check": "validated_output_becomes_verified_artifact",
+      "evidence": "Focused runtime tests prove RESULT_VALIDATED becomes OUTPUT_BOUND, ARTIFACT_CREATED, and ARTIFACT_VERIFIED."
+    },
+    {
+      "check": "exact_output_mutation_authorization_required",
+      "evidence": "Missing, altered, or mismatched authorization fails closed."
+    },
+    {
+      "check": "create_only_no_overwrite",
+      "evidence": "An existing target fails closed and existing content remains unchanged."
+    },
+    {
+      "check": "path_and_type_scope",
+      "evidence": "Any target other than governance/MARKETING_DOMAIN_FOUNDATION_V1.md or any artifact type other than GOVERNANCE_DOCUMENT_MARKDOWN fails closed."
+    },
+    {
+      "check": "no_directory_creation",
+      "evidence": "A missing governance directory fails closed."
+    },
+    {
+      "check": "artifact_verification",
+      "evidence": "The runtime verifies file existence, resolved path, content hash, and replay references."
+    },
+    {
+      "check": "replay_recording",
+      "evidence": "Replay persists mutation authorization, binding evidence, binding artifact, and verification result."
+    },
+    {
+      "check": "cli_lifecycle",
+      "evidence": "The marketing-domain CLI path reaches OUTPUT_BOUND, ARTIFACT_CREATED, ARTIFACT_VERIFIED, REVIEW_COMPLETED, and TERMINATED."
+    }
+  ],
+  "validation": {
+    "focused_binding_tests": "16 passed",
+    "binding_validation_review_termination_tests": "59 passed",
+    "execution_chain_tests": "69 passed",
+    "conversation_and_handoff_tests": "41 passed",
+    "full_repository_tests": "4092 passed, 7 unrelated browser-companion constraint tests failed",
+    "json_validation": "passed",
+    "python_compilation": "passed",
+    "git_diff_check": "passed"
+  },
+  "known_validation_gaps": [
+    "The full repository suite retains seven failures in browser-companion JavaScript constraint tests unrelated to the AiGOL real output binding runtime."
+  ],
+  "non_goals_preserved": [
+    "no multi-file bundles",
+    "no recursive creation",
+    "no directory creation",
+    "no runtime file creation",
+    "no test generation",
+    "no overwrite",
+    "no delete",
+    "no rename",
+    "no move"
+  ]
+}

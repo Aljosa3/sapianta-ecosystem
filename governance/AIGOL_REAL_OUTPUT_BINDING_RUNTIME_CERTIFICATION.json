@@ -1,0 +1,61 @@
+{
+  "artifact_type": "AIGOL_REAL_OUTPUT_BINDING_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "certifies": "AIGOL_REAL_OUTPUT_BINDING_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "classification": "AIGOL_REAL_OUTPUT_BINDING_RUNTIME_STATUS = CERTIFIED",
+  "objective": "Implement the smallest safe runtime that creates one exact governance artifact from a validated Worker result.",
+  "input": "WORKER_RESULT_VALIDATION_ARTIFACT_V1",
+  "output": "REAL_OUTPUT_BINDING_ARTIFACT_V1",
+  "authorization": "EXACT_OUTPUT_MUTATION_AUTHORIZATION",
+  "lifecycle": [
+    "RESULT_VALIDATED",
+    "OUTPUT_BOUND",
+    "ARTIFACT_CREATED",
+    "ARTIFACT_VERIFIED",
+    "REVIEW_COMPLETED",
+    "TERMINATED"
+  ],
+  "certified_target": {
+    "path": "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
+    "artifact_type": "GOVERNANCE_DOCUMENT_MARKDOWN",
+    "permission": "CREATE_ONLY",
+    "overwrite_permitted": false
+  },
+  "replay_artifacts": [
+    "mutation authorization",
+    "output binding evidence",
+    "real output binding artifact",
+    "artifact verification result"
+  ],
+  "outputs": [
+    "aigol/runtime/real_output_binding_runtime.py",
+    "tests/test_real_output_binding_runtime_v1.py",
+    "governance/AIGOL_REAL_OUTPUT_BINDING_RUNTIME_V1.md",
+    "governance/AIGOL_REAL_OUTPUT_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_REAL_OUTPUT_BINDING_RUNTIME_CERTIFICATION.json",
+    "governance/MARKETING_DOMAIN_FOUNDATION_V1.md"
+  ],
+  "supporting_integration_changes": [
+    "aigol/cli/aigol_cli.py",
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "tests/test_worker_result_validation_runtime_v1.py"
+  ],
+  "authority_boundaries": [
+    "No filesystem mutation without exact output mutation authorization.",
+    "Authorization is bound to validation reference, validation hash, chain id, exact path, artifact type, content hash, and create-only permission.",
+    "Authorization is not transferable and does not permit overwrite, delete, rename, move, directory creation, or recursive creation."
+  ],
+  "remaining_gap": "Multi-file domain creation remains unimplemented.",
+  "validation": {
+    "status": "CERTIFIED_WITH_VISIBLE_UNRELATED_SUITE_FAILURES",
+    "focused_binding_tests": "16 passed",
+    "binding_validation_review_termination_tests": "59 passed",
+    "execution_chain_tests": "69 passed",
+    "conversation_and_handoff_tests": "41 passed",
+    "full_repository_tests": "4092 passed, 7 unrelated browser-companion constraint tests failed",
+    "json_validation": "passed",
+    "python_compilation": "passed",
+    "git_diff_check": "passed"
+  }
+}
