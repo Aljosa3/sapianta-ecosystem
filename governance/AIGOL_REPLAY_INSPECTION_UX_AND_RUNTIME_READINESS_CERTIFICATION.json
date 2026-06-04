@@ -1,0 +1,72 @@
+{
+  "artifact_type": "AIGOL_REPLAY_INSPECTION_UX_AND_RUNTIME_READINESS_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "certifies": "AIGOL_REPLAY_INSPECTION_UX_AND_RUNTIME_READINESS_V1",
+  "certification_date": "2026-06-04",
+  "review_scope": [
+    "aigol/cli/commands/chain_inspection.py",
+    "aigol/runtime/unified_replay_reconstruction_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_cli_chain_inspection_runtime_v1.py",
+    "tests/test_unified_replay_reconstruction_runtime_v1.py",
+    "governance/CLI_CHAIN_INSPECTION_RUNTIME_V1.md",
+    "governance/UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1.md"
+  ],
+  "created_artifacts": [
+    "governance/AIGOL_REPLAY_INSPECTION_UX_AND_RUNTIME_READINESS_REVIEW_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_EXISTING_COMPONENTS_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_GAP_ANALYSIS_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_ROOT_CAUSE_ANALYSIS_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_REUSE_PLAN_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_RECOMMENDED_FIX_ORDER_V1.md",
+    "governance/AIGOL_REPLAY_INSPECTION_UX_AND_RUNTIME_READINESS_CERTIFICATION.json"
+  ],
+  "runtime_mutation_performed": false,
+  "implementation_changes_performed": false,
+  "new_authority_created": false,
+  "governance_model_changed": false,
+  "root_cause": "show-latest-chain uses deterministic report directory identity and mandatory append-only unified replay reconstruction report persistence, so repeated invocation with the same created_at collides with existing report artifacts.",
+  "determinations": {
+    "show_latest_chain_should_be_strictly_read_only_by_default": true,
+    "chain_inspection_should_create_runtime_artifacts_by_default": false,
+    "persisted_runtime_artifacts_should_be_explicit_or_ephemeral": true,
+    "failure_cause": "Architectural coupling of read-style inspection to mandatory append-only report creation, implemented through deterministic report directory reuse.",
+    "current_behavior_violates_operator_replay_inspection_expectations": true,
+    "ocs_ready": false
+  },
+  "existing_components": [
+    "CLI chain inspection command adapter.",
+    "Unified replay reconstruction runtime.",
+    "Replay wrapper and artifact hash validation.",
+    "Fail-closed reconstruction report model.",
+    "Source replay immutability tests.",
+    "Operator summary renderer."
+  ],
+  "blocking_gaps": [
+    "No pure no-write inspection mode.",
+    "Default show-latest-chain creates report artifacts.",
+    "Repeated inspection with same inputs can fail closed.",
+    "Read-only status does not distinguish source replay immutability from report persistence.",
+    "Collision failure message exposes low-level append-only filename instead of operator recovery guidance.",
+    "Regression tests do not cover repeated show-latest-chain invocation."
+  ],
+  "recommended_next_milestone": "AIGOL_REPLAY_INSPECTION_READ_ONLY_REPEATABILITY_V1",
+  "recommended_fix_order": [
+    "Define replay inspection operator contract.",
+    "Split pure reconstruction from persisted report creation.",
+    "Make show-* commands pure by default.",
+    "Add explicit persisted report mode with unique or certified idempotent report identity.",
+    "Improve report collision diagnostics.",
+    "Add repeated inspection and no-write regression tests.",
+    "Re-certify chain inspection for OCS."
+  ],
+  "validation_commands": [
+    {
+      "command": "Review-only source inspection with rg and sed.",
+      "status": "PASS",
+      "summary": "Chain inspection, unified replay reconstruction, tests, and existing certification artifacts were inspected. The failing command was not executed to preserve the no-runtime-mutation requirement."
+    }
+  ],
+  "final_classification": "AIGOL_REPLAY_INSPECTION_UX_AND_RUNTIME_READINESS_STATUS = NOT_READY_FOR_OCS_TRANSITION"
+}
