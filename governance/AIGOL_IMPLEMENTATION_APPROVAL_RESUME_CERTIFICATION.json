@@ -1,0 +1,78 @@
+{
+  "artifact": "AIGOL_IMPLEMENTATION_APPROVAL_RESUME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_IMPLEMENTATION_APPROVAL_RESUME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/implementation_approval_resume.py",
+    "aigol/runtime/conversation_to_ppp_handoff_execution.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_implementation_approval_resume_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_IMPLEMENTATION_APPROVAL_RESUME_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_APPROVAL_RESUME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_IMPLEMENTATION_APPROVAL_RESUME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Persists approval-resume packets for HUMAN_APPROVAL_REQUIRED conversation-to-PPP stops.",
+    "Creates human approval artifacts from explicit human approval input.",
+    "Verifies approval lineage, chain continuity, proposal lineage, scope continuity, approval validity, and expiration.",
+    "Resumes approved high-risk chains to IMPLEMENTATION_HANDOFF_CREATED.",
+    "Persists approval request, approval decision, approval resume, and resumed handoff replay artifacts.",
+    "Supports interactive CLI flow: Improve trading strategy, then Approve."
+  ],
+  "non_goals_preserved": [
+    "Approval resume does not create approvals autonomously.",
+    "Approval resume does not modify approvals.",
+    "Approval resume does not authorize unrelated work.",
+    "No worker execution.",
+    "No worker dispatch.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_implementation_approval_resume_v1.py",
+      "status": "PASS",
+      "summary": "8 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_implementation_approval_resume_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "33 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "30 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_APPROVAL_RESUME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_APPROVAL_RESUME_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_blockers_before_governed_implementation_execution": [
+    "Execution remains intentionally out of scope.",
+    "A separate governed implementation execution runtime is required after handoff.",
+    "Enterprise approval dashboard integration remains a follow-on concern."
+  ],
+  "final_classification": "AIGOL_IMPLEMENTATION_APPROVAL_RESUME_STATUS = CERTIFIED"
+}

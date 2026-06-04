@@ -1,0 +1,85 @@
+{
+  "artifact": "AIGOL_IMPLEMENTATION_APPROVAL_RESUME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/implementation_approval_resume.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_implementation_approval_resume_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "trading_prompt_requires_approval",
+      "status": "PASS",
+      "evidence": "Improve trading strategy reaches HUMAN_APPROVAL_REQUIRED before handoff."
+    },
+    {
+      "check": "approve_resumes_same_chain",
+      "status": "PASS",
+      "evidence": "Approve creates a human approval artifact scoped to the pending chain and resumes to IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "approval_artifact_fields",
+      "status": "PASS",
+      "evidence": "Approval artifact contains chain id, approval id, approval scope, timestamp, approving actor, approval request hash, proposal hash, and approval hash."
+    },
+    {
+      "check": "approval_missing_fails_closed",
+      "status": "PASS",
+      "evidence": "Resume fails closed when the approval artifact is missing."
+    },
+    {
+      "check": "approval_expired_fails_closed",
+      "status": "PASS",
+      "evidence": "Resume fails closed when approval expiration precedes resume time."
+    },
+    {
+      "check": "replay_corruption_detected",
+      "status": "PASS",
+      "evidence": "Approval-resume replay reconstruction detects corrupted resume artifacts through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Approval-resume runtime source does not invoke workers, dispatch workers, start execution, mutate governance, or authorize unrelated work."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_implementation_approval_resume_v1.py",
+      "status": "PASS",
+      "summary": "8 passed"
+    },
+    {
+      "command": "printf 'Improve trading strategy.\\nApprove.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-APPROVAL-RESUME-000001 --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_implementation_approval_resume_cli_acceptance",
+      "status": "PASS",
+      "summary": "CLI returned HUMAN_APPROVAL_REQUIRED, then IMPLEMENTATION_APPROVAL_RESUMED and IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "command": "python -m pytest tests/test_implementation_approval_resume_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "33 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "30 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "approval_created_by_human_input": true,
+    "approval_resume_created_approval": false,
+    "approval_modified": false,
+    "unrelated_work_authorized": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_IMPLEMENTATION_APPROVAL_RESUME_STATUS = CERTIFIED"
+}

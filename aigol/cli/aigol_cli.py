@@ -141,6 +141,11 @@ from aigol.runtime.implementation_handoff_visibility import (
     create_implementation_handoff_visibility_summary,
     render_implementation_handoff_visibility_summary,
 )
+from aigol.runtime.implementation_approval_resume import (
+    create_human_implementation_approval,
+    render_implementation_approval_resume_summary,
+    resume_implementation_after_approval,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -607,6 +612,7 @@ def run_interactive_conversation(
     exit_reason = "EXIT_COMMAND"
     current_chain_id: str | None = None
     latest_chain_id: str | None = None
+    pending_approval_required: dict[str, Any] | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
 
     while True:
@@ -642,7 +648,62 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
             )
-            if is_conversation_native_development_intent(human_prompt):
+            if human_prompt.lower().strip().rstrip(".") == "approve" and pending_approval_required is not None:
+                approval_request = pending_approval_required["conversation_to_ppp_handoff_execution_artifact"][
+                    "approval_resume_packet"
+                ]["approval_request_artifact"]
+                human_approval = create_human_implementation_approval(
+                    approval_id=f"{prompt_id}:HUMAN-APPROVAL",
+                    approval_request_artifact=approval_request,
+                    approving_actor=args.operator_context or "HUMAN_OPERATOR",
+                    approval_timestamp=created_at,
+                )
+                approval_resume_capture = resume_implementation_after_approval(
+                    resume_id=f"{prompt_id}:IMPLEMENTATION-APPROVAL-RESUME",
+                    approval_required_replay_reference=pending_approval_required[
+                        "conversation_to_ppp_handoff_execution_replay_reference"
+                    ],
+                    human_approval_artifact=human_approval,
+                    created_at=created_at,
+                    replay_dir=turn_root / "implementation_approval_resume",
+                )
+                fail_closed = approval_resume_capture.get("fail_closed") is True
+                if fail_closed:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {approval_resume_capture.get('failure_reason')}")
+                else:
+                    current_chain_id = approval_resume_capture.get("chain_id") or current_chain_id
+                    latest_chain_id = current_chain_id
+                    handoff_visibility_capture = create_implementation_handoff_visibility_summary(
+                        visibility_id=f"{prompt_id}:IMPLEMENTATION-HANDOFF-VISIBILITY",
+                        handoff_replay_reference=approval_resume_capture["implementation_handoff_replay_reference"],
+                        approval_status="APPROVED",
+                        created_at=created_at,
+                        replay_dir=turn_root / "implementation_handoff_visibility",
+                    )
+                    if handoff_visibility_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        approval_resume_capture["fail_closed"] = True
+                        approval_resume_capture["failure_reason"] = handoff_visibility_capture.get("failure_reason")
+                        output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
+                    else:
+                        approval_resume_capture["implementation_handoff_visibility"] = handoff_visibility_capture
+                        pending_approval_required = None
+                        output_writer(
+                            render_implementation_approval_resume_summary(approval_resume_capture)
+                            + "\n"
+                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                        )
+                turns.append(
+                    _interactive_approval_resume_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        approval_resume_capture=approval_resume_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif is_conversation_native_development_intent(human_prompt):
                 routing_capture = run_conversation_native_development_intent_routing(
                     routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
                     prompt_id=prompt_id,
@@ -673,6 +734,8 @@ def run_interactive_conversation(
                     routing_capture["response_source"] = "CONVERSATION_TO_PPP_HANDOFF_EXECUTION"
                     routing_capture["fail_closed"] = ppp_capture.get("fail_closed") is True
                     routing_capture["failure_reason"] = ppp_capture.get("failure_reason")
+                    if ppp_capture.get("terminal_status") == "HUMAN_APPROVAL_REQUIRED":
+                        pending_approval_required = ppp_capture
                     if routing_capture["fail_closed"]:
                         failed_turns += 1
                         output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
@@ -954,6 +1017,54 @@ def _interactive_native_development_intent_routing_turn_summary(
         ),
         "implementation_handoff_summary_hash": handoff_visibility.get("summary_hash"),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+    }
+
+
+def _interactive_approval_resume_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    approval_resume_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    handoff_visibility = approval_resume_capture.get("implementation_handoff_visibility")
+    if not isinstance(handoff_visibility, dict):
+        handoff_visibility = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": approval_resume_capture.get("handoff_status"),
+        "response_source": "IMPLEMENTATION_APPROVAL_RESUME",
+        "fail_closed": approval_resume_capture.get("fail_closed") is True,
+        "failure_reason": approval_resume_capture.get("failure_reason"),
+        "replay_reference": approval_resume_capture.get("implementation_approval_resume_replay_reference"),
+        "conversation_replay_reference": approval_resume_capture.get("implementation_approval_resume_replay_reference"),
+        "canonical_chain_id": approval_resume_capture.get("chain_id"),
+        "current_chain_id": approval_resume_capture.get("chain_id"),
+        "latest_chain_id": approval_resume_capture.get("chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "approval_resume_status": approval_resume_capture.get("resume_status"),
+        "approval_id": approval_resume_capture.get("approval_id"),
+        "approval_scope": approval_resume_capture.get("approval_scope"),
+        "handoff_status": approval_resume_capture.get("handoff_status"),
+        "handoff_reference": approval_resume_capture.get("handoff_reference"),
+        "implementation_approval_resume_replay_reference": approval_resume_capture.get(
+            "implementation_approval_resume_replay_reference"
+        ),
+        "implementation_handoff_visibility_replay_reference": handoff_visibility.get(
+            "implementation_handoff_visibility_replay_reference"
+        ),
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,

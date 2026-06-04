@@ -134,6 +134,7 @@ def run_conversation_to_ppp_handoff_execution(
             routed=routed,
             context=context,
             registry=registry,
+            policy=policy,
             resource=resource,
             ppp=ppp,
             proposal_production=proposal_production,
@@ -370,6 +371,8 @@ def _approval_artifact(execution_id: str, routed: dict[str, Any], proposal: dict
         "approval_id": f"{execution_id}:APPROVAL-EVIDENCE",
         "approval_status": HUMAN_APPROVAL_REQUIRED if high_risk else "APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
         "approval_reason": "Trading is high-risk and requires human approval." if high_risk else "Non-executing handoff may be created without execution approval.",
+        "canonical_chain_id": routed["canonical_chain_id"],
+        "approval_scope": f"{routed['target_domain']}:{routed['intent_class']}:{routed.get('target_milestone')}",
         "proposal_reference": proposal["proposal_id"],
         "proposal_hash": proposal["artifact_hash"],
         "validation_reference": validation["development_proposal_contract_validation_artifact"]["contract_validation_id"],
@@ -392,6 +395,16 @@ def _execution_artifact(**kwargs: Any) -> dict[str, Any]:
     approval = kwargs["approval"]
     handoff = kwargs["handoff"]
     handoff_artifact = handoff.get("implementation_handoff_artifact", {}) if isinstance(handoff, dict) else {}
+    resume_packet = None
+    if kwargs["terminal_status"] == HUMAN_APPROVAL_REQUIRED:
+        resume_packet = _resume_packet(
+            context=kwargs["context"],
+            registry=kwargs["registry"],
+            policy=kwargs["policy"],
+            proposal_production=kwargs["proposal_production"],
+            validation=validation,
+            approval=approval,
+        )
     artifact = {
         "artifact_type": CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ARTIFACT_V1,
         "runtime_version": AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_VERSION,
@@ -411,6 +424,7 @@ def _execution_artifact(**kwargs: Any) -> dict[str, Any]:
         "proposal_validation_hash": validation["development_proposal_contract_validation_artifact"]["artifact_hash"],
         "approval_status": approval["approval_status"],
         "approval_hash": approval["artifact_hash"],
+        "approval_scope": approval["approval_scope"],
         "handoff_status": handoff.get("handoff_status") if handoff else None,
         "handoff_reference": handoff_artifact.get("handoff_id") if handoff else None,
         "handoff_hash": handoff.get("handoff_hash") if handoff else None,
@@ -423,6 +437,7 @@ def _execution_artifact(**kwargs: Any) -> dict[str, Any]:
         "execution_requested": False,
         "dispatch_requested": False,
         "governance_mutated": False,
+        "approval_resume_packet": resume_packet,
         "failure_reason": kwargs["failure_reason"],
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -449,6 +464,7 @@ def _failed_execution_artifact(*, execution_id: str, routed: dict[str, Any], cre
         "proposal_validation_hash": None,
         "approval_status": FAILED_CLOSED,
         "approval_hash": None,
+        "approval_scope": None,
         "handoff_status": None,
         "handoff_reference": None,
         "handoff_hash": None,
@@ -461,6 +477,7 @@ def _failed_execution_artifact(*, execution_id: str, routed: dict[str, Any], cre
         "execution_requested": False,
         "dispatch_requested": False,
         "governance_mutated": False,
+        "approval_resume_packet": None,
         "failure_reason": failure_reason,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -521,6 +538,43 @@ def _milestone_type(routed: dict[str, Any]) -> str:
 def _output_targets(routed: dict[str, Any]) -> list[str]:
     stem = str(routed.get("target_milestone") or routed["routed_intent_id"]).upper().replace(":", "_")
     return [f"governance/{stem}.md", f"governance/{stem}_CERTIFICATION.json"]
+
+
+def _resume_packet(
+    *,
+    context: dict[str, Any],
+    registry: dict[str, Any],
+    policy: dict[str, Any],
+    proposal_production: dict[str, Any],
+    validation: dict[str, Any],
+    approval: dict[str, Any],
+) -> dict[str, Any]:
+    packet = {
+        "artifact_type": "IMPLEMENTATION_APPROVAL_RESUME_PACKET_V1",
+        "context_assembly_artifact": deepcopy(context),
+        "registry_resolution_artifact": deepcopy(registry),
+        "provider_necessity_policy_artifact": deepcopy(policy),
+        "provider_proposal_production_artifact": deepcopy(proposal_production),
+        "proposal_artifact": deepcopy(proposal_production["development_proposal_artifact"]),
+        "proposal_contract_validation_artifact": deepcopy(
+            validation["development_proposal_contract_validation_artifact"]
+        ),
+        "approval_request_artifact": deepcopy(approval),
+        "context_hash": context["artifact_hash"],
+        "registry_hash": registry["artifact_hash"],
+        "policy_hash": policy["artifact_hash"],
+        "proposal_production_hash": proposal_production["artifact_hash"],
+        "proposal_hash": proposal_production["development_proposal_artifact"]["artifact_hash"],
+        "proposal_validation_hash": validation["development_proposal_contract_validation_artifact"]["artifact_hash"],
+        "approval_request_hash": approval["artifact_hash"],
+        "replay_visible": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+    }
+    packet["packet_hash"] = replay_hash(packet)
+    return packet
 
 
 def _persist_step(replay_dir: Path, index: int, step: str, artifact: dict[str, Any]) -> None:
