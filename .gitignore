@@ -28,3 +28,6 @@ __pycache__/
 manual_test.txt
 .aigol_conversation_runtime/
 .aigol_prompt_runtime/
+
+# Chain inspection runtime artifacts
+.aigol_chain_inspection_runtime/
