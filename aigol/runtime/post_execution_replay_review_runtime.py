@@ -162,7 +162,7 @@ def render_post_execution_replay_review_summary(capture: dict[str, Any]) -> str:
         f"Reviewed Worker: {capture.get('worker_id')}",
         f"Replay Reference: {capture.get('post_execution_replay_review_replay_reference')}",
         "",
-        "No termination yet.",
+        "Termination is a separate downstream stage.",
     ]
     if capture.get("failure_reason"):
         lines.append(f"failure_reason: {capture['failure_reason']}")

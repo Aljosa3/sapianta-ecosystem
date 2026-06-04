@@ -164,4 +164,4 @@ def test_interactive_cli_reaches_post_execution_replay_review(tmp_path) -> None:
     assert any("Validation Status: RESULT_VALIDATED" in chunk for chunk in output)
     assert any("Post-Execution Replay Review" in chunk for chunk in output)
     assert any("Replay Review Status: REVIEW_COMPLETED" in chunk for chunk in output)
-    assert any("No termination yet." in chunk for chunk in output)
+    assert any("Termination is a separate downstream stage." in chunk for chunk in output)
