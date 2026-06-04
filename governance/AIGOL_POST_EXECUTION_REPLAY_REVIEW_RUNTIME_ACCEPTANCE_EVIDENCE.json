@@ -1,0 +1,96 @@
+{
+  "artifact": "AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/post_execution_replay_review_runtime.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_post_execution_replay_review_runtime_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_review_completed",
+      "status": "PASS",
+      "evidence": "Filesystem Worker flow reaches RESULT_VALIDATED and then REVIEW_COMPLETED."
+    },
+    {
+      "check": "monitoring_worker_review_completed",
+      "status": "PASS",
+      "evidence": "Monitoring Worker flow reaches RESULT_VALIDATED and then REVIEW_COMPLETED."
+    },
+    {
+      "check": "approved_trading_improvement_review_completed",
+      "status": "PASS",
+      "evidence": "Approved Trading Improvement reaches RESULT_VALIDATED and then REVIEW_COMPLETED."
+    },
+    {
+      "check": "integrity_drift_fails_closed",
+      "status": "PASS",
+      "evidence": "Worker, packet, chain, authority, and validation drift prevent review completion."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Replay hash corruption prevents review completion."
+    },
+    {
+      "check": "cli_reaches_review_completed",
+      "status": "PASS",
+      "evidence": "Interactive CLI renders Post-Execution Replay Review with REVIEW_COMPLETED."
+    }
+  ],
+  "replay_review_model": {
+    "handoff_lineage": true,
+    "authorization_lineage": true,
+    "invocation_lineage": true,
+    "dispatch_lineage": true,
+    "result_capture_lineage": true,
+    "validation_lineage": true,
+    "chain_continuity": true,
+    "replay_continuity": true,
+    "authority_continuity": true,
+    "worker_continuity": true,
+    "packet_continuity": true,
+    "hash_continuity": true
+  },
+  "authority_boundaries": {
+    "result_validated": true,
+    "post_execution_replay_reviewed": true,
+    "terminated": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "existing_replay_mutated": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_post_execution_replay_review_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "13 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_post_execution_replay_review_runtime_v1.py tests/test_worker_result_validation_runtime_v1.py tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "97 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_implementation_approval_resume_v1.py tests/test_governed_implementation_dry_run_v1.py -q",
+      "status": "PASS",
+      "summary": "40 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_STATUS = CERTIFIED"
+}
