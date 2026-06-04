@@ -137,6 +137,10 @@ from aigol.runtime.conversation_to_ppp_handoff_execution import (
     render_conversation_to_ppp_handoff_execution_summary,
     run_conversation_to_ppp_handoff_execution,
 )
+from aigol.runtime.implementation_handoff_visibility import (
+    create_implementation_handoff_visibility_summary,
+    render_implementation_handoff_visibility_summary,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -673,7 +677,32 @@ def run_interactive_conversation(
                         failed_turns += 1
                         output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                     else:
-                        output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
+                        handoff_visibility_capture = None
+                        if (
+                            ppp_capture.get("terminal_status") == "IMPLEMENTATION_HANDOFF_CREATED"
+                            and ppp_capture.get("handoff_replay_reference")
+                        ):
+                            handoff_visibility_capture = create_implementation_handoff_visibility_summary(
+                                visibility_id=f"{prompt_id}:IMPLEMENTATION-HANDOFF-VISIBILITY",
+                                handoff_replay_reference=ppp_capture["handoff_replay_reference"],
+                                approval_status=ppp_capture.get("approval_status") or "",
+                                created_at=created_at,
+                                replay_dir=turn_root / "implementation_handoff_visibility",
+                            )
+                            routing_capture["implementation_handoff_visibility"] = handoff_visibility_capture
+                            if handoff_visibility_capture.get("fail_closed") is True:
+                                routing_capture["fail_closed"] = True
+                                routing_capture["failure_reason"] = handoff_visibility_capture.get("failure_reason")
+                                failed_turns += 1
+                                output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
+                            else:
+                                output_writer(
+                                    render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                    + "\n"
+                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                )
+                        else:
+                            output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
                     _interactive_native_development_intent_routing_turn_summary(
                         turn_id=turn_id,
@@ -881,6 +910,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     ppp_capture = routing_capture.get("conversation_to_ppp_handoff_execution")
     if not isinstance(ppp_capture, dict):
         ppp_capture = {}
+    handoff_visibility = routing_capture.get("implementation_handoff_visibility")
+    if not isinstance(handoff_visibility, dict):
+        handoff_visibility = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -917,6 +949,10 @@ def _interactive_native_development_intent_routing_turn_summary(
         "conversation_to_ppp_handoff_execution_replay_reference": ppp_capture.get(
             "conversation_to_ppp_handoff_execution_replay_reference"
         ),
+        "implementation_handoff_visibility_replay_reference": handoff_visibility.get(
+            "implementation_handoff_visibility_replay_reference"
+        ),
+        "implementation_handoff_summary_hash": handoff_visibility.get("summary_hash"),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_invoked": False,
         "execution_requested": False,

@@ -1,0 +1,69 @@
+{
+  "artifact": "AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/implementation_handoff_visibility.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_implementation_handoff_visibility_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Creates replay-visible handoff summaries for IMPLEMENTATION_HANDOFF_CREATED terminal states.",
+    "Displays target domain, target resource, target worker, planned artifacts, resource roles, estimated scope, approval status, handoff reference, and summary reference.",
+    "Persists summary hash and verifies handoff lineage during replay reconstruction.",
+    "Renders handoff summaries in conversation CLI output."
+  ],
+  "non_goals_preserved": [
+    "No planned implementation artifact creation.",
+    "No worker execution.",
+    "No worker dispatch.",
+    "No implementation authorization.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No governance mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "5 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "34 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_blockers_before_approval_resume_and_governed_implementation": [
+    "Approval-resume runtime is still required for HUMAN_APPROVAL_REQUIRED terminal states.",
+    "Actual governed implementation remains separate from visibility and requires human authority.",
+    "Scope estimation is deterministic visibility, not a final implementation commitment."
+  ],
+  "final_classification": "AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_STATUS = CERTIFIED"
+}

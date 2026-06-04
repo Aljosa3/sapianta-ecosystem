@@ -1,0 +1,78 @@
+{
+  "artifact": "AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/implementation_handoff_visibility.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_implementation_handoff_visibility_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_summary_created",
+      "status": "PASS",
+      "evidence": "Create a filesystem worker produces IMPLEMENTATION_HANDOFF_CREATED plus a handoff summary targeting SERVER_MANAGEMENT / FILESYSTEM."
+    },
+    {
+      "check": "planned_artifacts_visible",
+      "status": "PASS",
+      "evidence": "Summary displays governance foundation, model, certification, runtime, and test artifact candidates."
+    },
+    {
+      "check": "resource_roles_visible",
+      "status": "PASS",
+      "evidence": "Summary displays CLAUDE_CODE (WORKER_ROLE) as the required resource role."
+    },
+    {
+      "check": "scope_estimation_visible",
+      "status": "PASS",
+      "evidence": "Summary displays governance artifacts: 3, runtime artifacts: 1, tests: 2."
+    },
+    {
+      "check": "approval_status_visible",
+      "status": "PASS",
+      "evidence": "APPROVAL_NOT_REQUIRED_FOR_HANDOFF is rendered as NOT REQUIRED."
+    },
+    {
+      "check": "replay_reconstruction",
+      "status": "PASS",
+      "evidence": "Visibility replay reconstruction verifies handoff lineage, artifact lineage, wrapper hashes, artifact hashes, and summary hash continuity."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Visibility runtime source does not create planned implementation artifacts, dispatch workers, invoke workers, authorize implementation, start execution, or mutate governance."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "5 passed"
+    },
+    {
+      "command": "printf 'Create a filesystem worker.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-HANDOFF-VISIBILITY-000001 --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_implementation_handoff_visibility_cli_acceptance",
+      "status": "PASS",
+      "summary": "CLI returned IMPLEMENTATION_HANDOFF_CREATED plus Handoff Summary."
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_implementation_handoff_visibility_v1.py",
+      "status": "PASS",
+      "summary": "34 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "implementation_artifacts_created": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_IMPLEMENTATION_HANDOFF_VISIBILITY_STATUS = CERTIFIED"
+}
