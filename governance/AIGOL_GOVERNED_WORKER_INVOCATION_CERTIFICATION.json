@@ -1,0 +1,63 @@
+{
+  "artifact": "AIGOL_GOVERNED_WORKER_INVOCATION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_GOVERNED_WORKER_INVOCATION_FOUNDATION_V1",
+  "certification_date": "2026-06-04",
+  "scope": "Architecture only",
+  "governance_artifacts": [
+    "governance/AIGOL_GOVERNED_WORKER_INVOCATION_FOUNDATION_V1.md",
+    "governance/AIGOL_EXECUTION_AUTHORITY_MODEL_V1.md",
+    "governance/AIGOL_WORKER_INVOCATION_MODEL_V1.md",
+    "governance/AIGOL_EXECUTION_VALIDATION_MODEL_V1.md",
+    "governance/AIGOL_POST_EXECUTION_REPLAY_MODEL_V1.md",
+    "governance/AIGOL_GOVERNED_WORKER_INVOCATION_CERTIFICATION.json"
+  ],
+  "constitutional_findings": [
+    "Worker invocation authority exists only at the governed AiGOL invocation boundary.",
+    "EXECUTION_READY proves preparation and does not grant execution authority.",
+    "Execution authorization must be explicit, bounded, replay-visible, revocable, and non-transferable.",
+    "Worker assignment and dispatch are required before invocation.",
+    "Conversation, cognition, Resource Selection, PPP, providers, replay, improvement intent, and Workers cannot invoke Workers.",
+    "Pre-invocation validation, post-execution result validation, and post-execution replay review are mandatory.",
+    "Replay records evidence and never creates, restores, or extends authority."
+  ],
+  "required_future_runtime_artifacts": [
+    "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "EXECUTION_AUTHORIZATION_REVOCATION_ARTIFACT_V1",
+    "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+    "WORKER_ASSIGNMENT_ARTIFACT",
+    "DISPATCH_ARTIFACT_V1",
+    "WORKER_INVOCATION_ARTIFACT_V1",
+    "WORKER_RESULT_ARTIFACT_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1"
+  ],
+  "non_goals_preserved": [
+    "No execution.",
+    "No Worker invocation.",
+    "No dispatch.",
+    "No file creation.",
+    "No code generation.",
+    "No execution authorization.",
+    "No governance mutation.",
+    "No replay mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_WORKER_INVOCATION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_gap_before_first_governed_worker_execution": [
+    "A governed execution authorization runtime is not implemented by this milestone.",
+    "A governed Worker assignment and dispatch runtime is not implemented by this milestone.",
+    "A governed Worker invocation runtime is not implemented by this milestone.",
+    "Worker sandbox, effect controls, result validation runtime, and post-execution replay review must be certified before real execution."
+  ],
+  "final_classification": "AIGOL_GOVERNED_WORKER_INVOCATION_FOUNDATION_STATUS = CERTIFIED"
+}
