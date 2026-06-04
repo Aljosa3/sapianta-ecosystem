@@ -1,0 +1,77 @@
+{
+  "artifact": "AIGOL_GOVERNED_TERMINATION_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_GOVERNED_TERMINATION_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/governed_termination_runtime.py",
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_governed_termination_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_V1.md",
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Consumes POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1 through replay reconstruction.",
+    "Verifies closure preconditions, review evidence, validation, authorization, packet, Worker, chain, replay, authority, and hash continuity.",
+    "Produces immutable GOVERNED_TERMINATION_ARTIFACT_V1 evidence.",
+    "Produces TERMINATED and TERMINAL_OPERATION_STATE.",
+    "Persists termination evidence, classification, artifact, and result.",
+    "Supports future improvement-intent source handoff only through a separate explicit governed request.",
+    "Integrates CLI progression from Post-Execution Replay Review to Governed Termination."
+  ],
+  "non_goals_preserved": [
+    "No new work authorization.",
+    "No Worker dispatch.",
+    "No execution retry.",
+    "No improvement intent creation.",
+    "No improvement-intent handoff execution.",
+    "No governance mutation.",
+    "No existing replay mutation.",
+    "No hidden continuation or resurrection."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py tests/test_post_execution_replay_review_runtime_v1.py tests/test_worker_result_validation_runtime_v1.py tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "112 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_implementation_approval_resume_v1.py tests/test_governed_implementation_dry_run_v1.py -q",
+      "status": "PASS",
+      "summary": "40 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "python -m py_compile aigol/runtime/governed_termination_runtime.py aigol/runtime/post_execution_replay_review_runtime.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Python compilation passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_GOVERNED_TERMINATION_RUNTIME_STATUS = CERTIFIED"
+}

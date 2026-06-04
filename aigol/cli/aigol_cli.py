@@ -184,6 +184,10 @@ from aigol.runtime.post_execution_replay_review_runtime import (
     render_post_execution_replay_review_summary,
     review_validated_worker_result,
 )
+from aigol.runtime.governed_termination_runtime import (
+    render_governed_termination_summary,
+    terminate_reviewed_operation,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -913,30 +917,55 @@ def run_interactive_conversation(
                                                                 f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
                                                             )
                                                         else:
-                                                            pending_approval_required = None
-                                                            output_writer(
-                                                                render_implementation_approval_resume_summary(approval_resume_capture)
-                                                                + "\n"
-                                                                + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                                                + "\n"
-                                                                + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                                                + "\n"
-                                                                + render_execution_authorization_summary(authorization_capture)
-                                                                + "\n"
-                                                                + render_worker_invocation_request_summary(invocation_request_capture)
-                                                                + "\n"
-                                                                + render_worker_assignment_summary(assignment_capture)
-                                                                + "\n"
-                                                                + render_worker_dispatch_summary(dispatch_capture)
-                                                                + "\n"
-                                                                + render_worker_invocation_summary(invocation_capture)
-                                                                + "\n"
-                                                                + render_worker_result_capture_summary(result_capture)
-                                                                + "\n"
-                                                                + render_worker_result_validation_summary(validation_capture)
-                                                                + "\n"
-                                                                + render_post_execution_replay_review_summary(review_capture)
+                                                            termination_capture = terminate_reviewed_operation(
+                                                                governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
+                                                                post_execution_replay_review_artifact=review_capture[
+                                                                    "post_execution_replay_review_artifact"
+                                                                ],
+                                                                post_execution_replay_review_replay_reference=review_capture[
+                                                                    "post_execution_replay_review_replay_reference"
+                                                                ],
+                                                                terminated_by="AIGOL_GOVERNANCE",
+                                                                terminated_at=created_at,
+                                                                replay_dir=turn_root / "governed_termination",
                                                             )
+                                                            approval_resume_capture["governed_termination"] = termination_capture
+                                                            if termination_capture.get("fail_closed") is True:
+                                                                failed_turns += 1
+                                                                approval_resume_capture["fail_closed"] = True
+                                                                approval_resume_capture["failure_reason"] = termination_capture.get(
+                                                                    "failure_reason"
+                                                                )
+                                                                output_writer(
+                                                                    f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
+                                                                )
+                                                            else:
+                                                                pending_approval_required = None
+                                                                output_writer(
+                                                                    render_implementation_approval_resume_summary(approval_resume_capture)
+                                                                    + "\n"
+                                                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                                    + "\n"
+                                                                    + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                                    + "\n"
+                                                                    + render_execution_authorization_summary(authorization_capture)
+                                                                    + "\n"
+                                                                    + render_worker_invocation_request_summary(invocation_request_capture)
+                                                                    + "\n"
+                                                                    + render_worker_assignment_summary(assignment_capture)
+                                                                    + "\n"
+                                                                    + render_worker_dispatch_summary(dispatch_capture)
+                                                                    + "\n"
+                                                                    + render_worker_invocation_summary(invocation_capture)
+                                                                    + "\n"
+                                                                    + render_worker_result_capture_summary(result_capture)
+                                                                    + "\n"
+                                                                    + render_worker_result_validation_summary(validation_capture)
+                                                                    + "\n"
+                                                                    + render_post_execution_replay_review_summary(review_capture)
+                                                                    + "\n"
+                                                                    + render_governed_termination_summary(termination_capture)
+                                                                )
                 turns.append(
                     _interactive_approval_resume_turn_summary(
                         turn_id=turn_id,
@@ -1189,29 +1218,54 @@ def run_interactive_conversation(
                                                                         f"FAILED_CLOSED: {routing_capture['failure_reason']}"
                                                                     )
                                                                 else:
-                                                                    output_writer(
-                                                                        render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
-                                                                        + "\n"
-                                                                        + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                                                        + "\n"
-                                                                        + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                                                        + "\n"
-                                                                        + render_execution_authorization_summary(authorization_capture)
-                                                                        + "\n"
-                                                                        + render_worker_invocation_request_summary(invocation_request_capture)
-                                                                        + "\n"
-                                                                        + render_worker_assignment_summary(assignment_capture)
-                                                                        + "\n"
-                                                                        + render_worker_dispatch_summary(dispatch_capture)
-                                                                        + "\n"
-                                                                        + render_worker_invocation_summary(invocation_capture)
-                                                                        + "\n"
-                                                                        + render_worker_result_capture_summary(result_capture)
-                                                                        + "\n"
-                                                                        + render_worker_result_validation_summary(validation_capture)
-                                                                        + "\n"
-                                                                        + render_post_execution_replay_review_summary(review_capture)
+                                                                    termination_capture = terminate_reviewed_operation(
+                                                                        governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
+                                                                        post_execution_replay_review_artifact=review_capture[
+                                                                            "post_execution_replay_review_artifact"
+                                                                        ],
+                                                                        post_execution_replay_review_replay_reference=review_capture[
+                                                                            "post_execution_replay_review_replay_reference"
+                                                                        ],
+                                                                        terminated_by="AIGOL_GOVERNANCE",
+                                                                        terminated_at=created_at,
+                                                                        replay_dir=turn_root / "governed_termination",
                                                                     )
+                                                                    routing_capture["governed_termination"] = termination_capture
+                                                                    if termination_capture.get("fail_closed") is True:
+                                                                        routing_capture["fail_closed"] = True
+                                                                        routing_capture["failure_reason"] = termination_capture.get(
+                                                                            "failure_reason"
+                                                                        )
+                                                                        failed_turns += 1
+                                                                        output_writer(
+                                                                            f"FAILED_CLOSED: {routing_capture['failure_reason']}"
+                                                                        )
+                                                                    else:
+                                                                        output_writer(
+                                                                            render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                                                            + "\n"
+                                                                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                                            + "\n"
+                                                                            + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                                            + "\n"
+                                                                            + render_execution_authorization_summary(authorization_capture)
+                                                                            + "\n"
+                                                                            + render_worker_invocation_request_summary(invocation_request_capture)
+                                                                            + "\n"
+                                                                            + render_worker_assignment_summary(assignment_capture)
+                                                                            + "\n"
+                                                                            + render_worker_dispatch_summary(dispatch_capture)
+                                                                            + "\n"
+                                                                            + render_worker_invocation_summary(invocation_capture)
+                                                                            + "\n"
+                                                                            + render_worker_result_capture_summary(result_capture)
+                                                                            + "\n"
+                                                                            + render_worker_result_validation_summary(validation_capture)
+                                                                            + "\n"
+                                                                            + render_post_execution_replay_review_summary(review_capture)
+                                                                            + "\n"
+                                                                            + render_governed_termination_summary(termination_capture)
+                                                                        )
                         else:
                             output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
@@ -1340,6 +1394,7 @@ def run_interactive_conversation(
         "post_execution_replay_reviewed": any(
             turn.get("post_execution_replay_reviewed") is True for turn in turns
         ),
+        "terminated": any(turn.get("terminated") is True for turn in turns),
         "execution_requested": False,
         "dispatch_requested": any(turn.get("dispatch_requested") is True for turn in turns),
         "invocation_requested": any(turn.get("invocation_requested") is True for turn in turns),
@@ -1458,6 +1513,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     review_capture = routing_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
+    termination_capture = routing_capture.get("governed_termination")
+    if not isinstance(termination_capture, dict):
+        termination_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1526,6 +1584,8 @@ def _interactive_native_development_intent_routing_turn_summary(
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
         ),
+        "governed_termination_status": termination_capture.get("termination_status"),
+        "governed_termination_replay_reference": termination_capture.get("governed_termination_replay_reference"),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
         "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
@@ -1533,6 +1593,7 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
+        "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,
         "dispatch_requested": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "invocation_requested": invocation_request_capture.get("request_status")
@@ -1579,6 +1640,9 @@ def _interactive_approval_resume_turn_summary(
     review_capture = approval_resume_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
+    termination_capture = approval_resume_capture.get("governed_termination")
+    if not isinstance(termination_capture, dict):
+        termination_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1636,12 +1700,15 @@ def _interactive_approval_resume_turn_summary(
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
         ),
+        "governed_termination_status": termination_capture.get("termination_status"),
+        "governed_termination_replay_reference": termination_capture.get("governed_termination_replay_reference"),
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
         "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
+        "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,
         "dispatch_requested": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "invocation_requested": invocation_request_capture.get("request_status")

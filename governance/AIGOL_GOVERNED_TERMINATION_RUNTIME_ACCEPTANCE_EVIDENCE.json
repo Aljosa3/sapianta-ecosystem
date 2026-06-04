@@ -1,0 +1,106 @@
+{
+  "artifact": "AIGOL_GOVERNED_TERMINATION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/governed_termination_runtime.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_governed_termination_runtime_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "filesystem_worker_terminated",
+      "status": "PASS",
+      "evidence": "Filesystem Worker flow reaches REVIEW_COMPLETED and then TERMINATED."
+    },
+    {
+      "check": "monitoring_worker_terminated",
+      "status": "PASS",
+      "evidence": "Monitoring Worker flow reaches REVIEW_COMPLETED and then TERMINATED."
+    },
+    {
+      "check": "approved_trading_improvement_terminated",
+      "status": "PASS",
+      "evidence": "Approved Trading Improvement reaches REVIEW_COMPLETED and then TERMINATED."
+    },
+    {
+      "check": "invalid_review_fails_closed",
+      "status": "PASS",
+      "evidence": "Review, integrity, Worker, chain, authority, and prior-termination drift prevent closure."
+    },
+    {
+      "check": "replay_corruption_fails_closed",
+      "status": "PASS",
+      "evidence": "Replay hash corruption prevents closure."
+    },
+    {
+      "check": "append_only_collision_fails_closed",
+      "status": "PASS",
+      "evidence": "A second termination write to the same replay directory fails closed."
+    },
+    {
+      "check": "cli_reaches_terminated",
+      "status": "PASS",
+      "evidence": "Interactive CLI renders Governed Termination with TERMINATED."
+    }
+  ],
+  "closure_model": {
+    "review_continuity": true,
+    "validation_continuity": true,
+    "authorization_continuity": true,
+    "packet_continuity": true,
+    "worker_continuity": true,
+    "chain_continuity": true,
+    "replay_continuity": true,
+    "authority_continuity": true,
+    "hash_continuity": true,
+    "prior_termination_absent": true
+  },
+  "authority_boundaries": {
+    "post_execution_replay_reviewed": true,
+    "terminated": true,
+    "governance_mutated": false,
+    "existing_replay_mutated": false,
+    "improvement_intent_created": false,
+    "improvement_intent_handoff_executed": false,
+    "continuation_created": false,
+    "retry_created": false
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py tests/test_post_execution_replay_review_runtime_v1.py tests/test_worker_result_validation_runtime_v1.py tests/test_worker_result_capture_runtime_v1.py tests/test_worker_invocation_runtime_v1.py tests/test_worker_dispatch_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py tests/test_execution_authorization_runtime_v1.py -q",
+      "status": "PASS",
+      "summary": "112 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_implementation_approval_resume_v1.py tests/test_governed_implementation_dry_run_v1.py -q",
+      "status": "PASS",
+      "summary": "40 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "python -m py_compile aigol/runtime/governed_termination_runtime.py aigol/runtime/post_execution_replay_review_runtime.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Python compilation passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_GOVERNED_TERMINATION_RUNTIME_STATUS = CERTIFIED"
+}
