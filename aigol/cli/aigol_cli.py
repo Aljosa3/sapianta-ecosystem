@@ -150,6 +150,10 @@ from aigol.runtime.governed_implementation_dry_run import (
     prepare_governed_implementation_dry_run,
     render_governed_implementation_dry_run_summary,
 )
+from aigol.runtime.execution_authorization_runtime import (
+    authorize_execution_ready,
+    render_execution_authorization_summary,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -711,14 +715,32 @@ def run_interactive_conversation(
                             approval_resume_capture["failure_reason"] = dry_run_capture.get("failure_reason")
                             output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                         else:
-                            pending_approval_required = None
-                            output_writer(
-                                render_implementation_approval_resume_summary(approval_resume_capture)
-                                + "\n"
-                                + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                + "\n"
-                                + render_governed_implementation_dry_run_summary(dry_run_capture)
+                            authorization_capture = authorize_execution_ready(
+                                authorization_id=f"{prompt_id}:EXECUTION-AUTHORIZATION",
+                                execution_ready_replay_reference=dry_run_capture[
+                                    "governed_implementation_dry_run_replay_reference"
+                                ],
+                                authorizing_actor="AIGOL_GOVERNANCE",
+                                authorized_at=created_at,
+                                replay_dir=turn_root / "execution_authorization",
                             )
+                            approval_resume_capture["execution_authorization"] = authorization_capture
+                            if authorization_capture.get("fail_closed") is True:
+                                failed_turns += 1
+                                approval_resume_capture["fail_closed"] = True
+                                approval_resume_capture["failure_reason"] = authorization_capture.get("failure_reason")
+                                output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
+                            else:
+                                pending_approval_required = None
+                                output_writer(
+                                    render_implementation_approval_resume_summary(approval_resume_capture)
+                                    + "\n"
+                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                    + "\n"
+                                    + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                    + "\n"
+                                    + render_execution_authorization_summary(authorization_capture)
+                                )
                 turns.append(
                     _interactive_approval_resume_turn_summary(
                         turn_id=turn_id,
@@ -803,13 +825,31 @@ def run_interactive_conversation(
                                     failed_turns += 1
                                     output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                 else:
-                                    output_writer(
-                                        render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
-                                        + "\n"
-                                        + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                        + "\n"
-                                        + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                    authorization_capture = authorize_execution_ready(
+                                        authorization_id=f"{prompt_id}:EXECUTION-AUTHORIZATION",
+                                        execution_ready_replay_reference=dry_run_capture[
+                                            "governed_implementation_dry_run_replay_reference"
+                                        ],
+                                        authorizing_actor="AIGOL_GOVERNANCE",
+                                        authorized_at=created_at,
+                                        replay_dir=turn_root / "execution_authorization",
                                     )
+                                    routing_capture["execution_authorization"] = authorization_capture
+                                    if authorization_capture.get("fail_closed") is True:
+                                        routing_capture["fail_closed"] = True
+                                        routing_capture["failure_reason"] = authorization_capture.get("failure_reason")
+                                        failed_turns += 1
+                                        output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
+                                    else:
+                                        output_writer(
+                                            render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                            + "\n"
+                                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                            + "\n"
+                                            + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                            + "\n"
+                                            + render_execution_authorization_summary(authorization_capture)
+                                        )
                         else:
                             output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
@@ -1025,6 +1065,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     dry_run_capture = routing_capture.get("governed_implementation_dry_run")
     if not isinstance(dry_run_capture, dict):
         dry_run_capture = {}
+    authorization_capture = routing_capture.get("execution_authorization")
+    if not isinstance(authorization_capture, dict):
+        authorization_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1069,6 +1112,10 @@ def _interactive_native_development_intent_routing_turn_summary(
         "governed_implementation_dry_run_replay_reference": dry_run_capture.get(
             "governed_implementation_dry_run_replay_reference"
         ),
+        "execution_authorization_status": authorization_capture.get("authorization_status"),
+        "execution_authorization_replay_reference": authorization_capture.get(
+            "execution_authorization_replay_reference"
+        ),
         "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_invoked": False,
         "execution_requested": False,
@@ -1092,6 +1139,9 @@ def _interactive_approval_resume_turn_summary(
     dry_run_capture = approval_resume_capture.get("governed_implementation_dry_run")
     if not isinstance(dry_run_capture, dict):
         dry_run_capture = {}
+    authorization_capture = approval_resume_capture.get("execution_authorization")
+    if not isinstance(authorization_capture, dict):
+        authorization_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -1124,6 +1174,10 @@ def _interactive_approval_resume_turn_summary(
         "execution_preparation_status": dry_run_capture.get("execution_status"),
         "governed_implementation_dry_run_replay_reference": dry_run_capture.get(
             "governed_implementation_dry_run_replay_reference"
+        ),
+        "execution_authorization_status": authorization_capture.get("authorization_status"),
+        "execution_authorization_replay_reference": authorization_capture.get(
+            "execution_authorization_replay_reference"
         ),
         "worker_invoked": False,
         "execution_requested": False,

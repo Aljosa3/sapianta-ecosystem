@@ -1,0 +1,73 @@
+{
+  "artifact": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/execution_authorization_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_execution_authorization_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1.md",
+    "governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Reconstructs execution-ready replay before authorization.",
+    "Verifies execution packet, candidate, handoff, approval, chain, replay, authority, and hash continuity.",
+    "Produces bounded EXECUTION_AUTHORIZATION_ARTIFACT_V1 evidence.",
+    "Produces EXECUTION_AUTHORIZED without assigning, dispatching, invoking, or executing a Worker.",
+    "Persists authorization request, decision, artifact, and result replay evidence.",
+    "Supports direct governance-approved and human-approved execution-ready chains."
+  ],
+  "non_goals_preserved": [
+    "No Worker assignment.",
+    "No Worker dispatch.",
+    "No Worker invocation.",
+    "No execution.",
+    "No result creation.",
+    "No approval creation.",
+    "No governance mutation.",
+    "No existing replay mutation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_execution_authorization_runtime_v1.py",
+      "status": "PASS",
+      "summary": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_execution_authorization_runtime_v1.py tests/test_governed_implementation_dry_run_v1.py tests/test_implementation_approval_resume_v1.py tests/test_implementation_handoff_visibility_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py tests/test_provider_proposal_production_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py",
+      "status": "PASS",
+      "summary": "94 passed"
+    },
+    {
+      "command": "CLI filesystem Worker and approved trading improvement acceptance tests",
+      "status": "PASS",
+      "summary": "Both flows reached EXECUTION_AUTHORIZED without Worker assignment, dispatch, invocation, or execution."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_gap_before_first_worker_invocation": [
+    "A governed Worker assignment runtime must consume execution authorization.",
+    "A governed dispatch runtime must bind the assigned Worker to the authorization.",
+    "A governed Worker invocation request and invocation runtime remain required.",
+    "Worker sandbox, result validation, and post-execution replay review must be certified before real execution."
+  ],
+  "final_classification": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_STATUS = CERTIFIED"
+}
