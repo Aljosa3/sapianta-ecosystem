@@ -84,7 +84,11 @@ def _execute(tmp_path, *, prompt: str):
     [
         "Create a marketing domain.",
         "Add provider Anthropic.",
+        "Add provider Claude Code.",
+        "Create a server management domain.",
         "Create sentiment analysis worker.",
+        "Create a filesystem worker.",
+        "Create a monitoring worker.",
     ],
 )
 def test_native_development_conversation_intents_reach_implementation_handoff(tmp_path, prompt: str) -> None:
@@ -148,7 +152,11 @@ def test_interactive_conversation_routes_acceptance_scenarios_to_terminal_states
             [
                 "Create a marketing domain.",
                 "Add provider Anthropic.",
+                "Add provider Claude Code.",
+                "Create a server management domain.",
                 "Create sentiment analysis worker.",
+                "Create a filesystem worker.",
+                "Create a monitoring worker.",
                 "Improve trading strategy.",
                 "exit",
             ]
@@ -161,10 +169,14 @@ def test_interactive_conversation_routes_acceptance_scenarios_to_terminal_states
         IMPLEMENTATION_HANDOFF_CREATED,
         IMPLEMENTATION_HANDOFF_CREATED,
         IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
         HUMAN_APPROVAL_REQUIRED,
     ]
     assert all(turn["response_source"] == "CONVERSATION_TO_PPP_HANDOFF_EXECUTION" for turn in result["turns"])
-    assert "approval_status: HUMAN_APPROVAL_REQUIRED" in output[3]
+    assert "approval_status: HUMAN_APPROVAL_REQUIRED" in output[7]
 
 
 def test_handoff_execution_fails_closed_on_invalid_routing_artifact(tmp_path) -> None:

@@ -21,6 +21,10 @@ from aigol.runtime.conversation_native_development_intent_routing import (
 from aigol.runtime.conversation_to_implementation_handoff_runtime import IMPLEMENTATION_HANDOFF_CREATED
 from aigol.runtime.conversation_to_ppp_handoff_execution import HUMAN_APPROVAL_REQUIRED
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.domain_and_worker_resolution_registry import (
+    RESOLUTION_SUCCEEDED,
+    resolve_domain_worker_milestone,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 
@@ -73,7 +77,11 @@ def _routing(tmp_path, *, prompt: str):
     [
         ("Create a marketing domain.", CREATE_DOMAIN, "MARKETING", "DOMAIN"),
         ("Add provider Anthropic.", ADD_PROVIDER, "AIGOL_CORE", "PROVIDER"),
+        ("Add provider Claude Code.", ADD_PROVIDER, "AIGOL_CORE", "PROVIDER"),
+        ("Create a server management domain.", CREATE_DOMAIN, "SERVER_MANAGEMENT", "DOMAIN"),
         ("Create sentiment analysis worker.", CREATE_WORKER, "MARKETING", "WORKER"),
+        ("Create a filesystem worker.", CREATE_WORKER, "SERVER_MANAGEMENT", "WORKER"),
+        ("Create a monitoring worker.", CREATE_WORKER, "SERVER_MANAGEMENT", "WORKER"),
         ("Improve trading strategy.", IMPROVE_EXISTING_CAPABILITY, "TRADING", "CAPABILITY"),
     ],
 )
@@ -99,6 +107,9 @@ def test_classifies_supported_native_development_intents(
     assert capture["dispatch_requested"] is False
     assert reconstructed["intent_class"] == intent_class
     assert reconstructed["turn_id"] == "TURN-000001"
+    assert reconstructed["catalog_version"] == "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_V1"
+    assert reconstructed["catalog_hash"].startswith("sha256:")
+    assert reconstructed["catalog_match_terms"]
 
 
 def test_workstation_remains_clarification_not_native_development() -> None:
@@ -109,7 +120,11 @@ def test_interactive_conversation_routes_acceptance_prompts_without_provider_ent
     prompts = [
         "Create a marketing domain.",
         "Add provider Anthropic.",
+        "Add provider Claude Code.",
+        "Create a server management domain.",
         "Create sentiment analysis worker.",
+        "Create a filesystem worker.",
+        "Create a monitoring worker.",
         "Improve trading strategy.",
         "exit",
     ]
@@ -120,15 +135,23 @@ def test_interactive_conversation_routes_acceptance_prompts_without_provider_ent
         output_func=output.append,
     )
 
-    assert result["turn_count"] == 4
+    assert result["turn_count"] == 8
     assert result["failed_turns"] == 0
     assert [turn["turn_id"] for turn in result["turns"]] == [
         "TURN-000001",
         "TURN-000002",
         "TURN-000003",
         "TURN-000004",
+        "TURN-000005",
+        "TURN-000006",
+        "TURN-000007",
+        "TURN-000008",
     ]
     assert [turn["response_status"] for turn in result["turns"]] == [
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
         IMPLEMENTATION_HANDOFF_CREATED,
         IMPLEMENTATION_HANDOFF_CREATED,
         IMPLEMENTATION_HANDOFF_CREATED,
@@ -138,10 +161,14 @@ def test_interactive_conversation_routes_acceptance_prompts_without_provider_ent
     assert all(turn["recognized_development_task"] is True for turn in result["turns"])
     assert result["turns"][0]["intent_class"] == CREATE_DOMAIN
     assert result["turns"][1]["target_provider"] == "ANTHROPIC"
-    assert result["turns"][2]["target_worker_family"] == "SENTIMENT_ANALYSIS"
-    assert result["turns"][3]["intent_class"] == IMPROVE_EXISTING_CAPABILITY
+    assert result["turns"][2]["target_provider"] == "CLAUDE_CODE"
+    assert result["turns"][3]["target_domain"] == "SERVER_MANAGEMENT"
+    assert result["turns"][4]["target_worker_family"] == "SENTIMENT_ANALYSIS"
+    assert result["turns"][5]["target_worker_family"] == "FILESYSTEM"
+    assert result["turns"][6]["target_worker_family"] == "MONITORING"
+    assert result["turns"][7]["intent_class"] == IMPROVE_EXISTING_CAPABILITY
     assert "conversation_to_ppp_terminal_status: IMPLEMENTATION_HANDOFF_CREATED" in output[0]
-    assert "approval_status: HUMAN_APPROVAL_REQUIRED" in output[3]
+    assert "approval_status: HUMAN_APPROVAL_REQUIRED" in output[7]
 
 
 def test_turn_allocation_uses_fresh_resume_state_for_each_turn(tmp_path) -> None:
@@ -155,6 +182,24 @@ def test_turn_allocation_uses_fresh_resume_state_for_each_turn(tmp_path) -> None
     assert result["failed_turns"] == 0
     assert [turn["turn_id"] for turn in result["turns"]] == ["TURN-000001", "TURN-000002"]
     assert "turn allocation mismatch" not in "\n".join(output)
+
+
+@pytest.mark.parametrize("worker_family", ["FILESYSTEM", "MONITORING"])
+def test_server_management_worker_catalog_resolves_in_domain_registry(tmp_path, worker_family: str) -> None:
+    capture = resolve_domain_worker_milestone(
+        resolution_id=f"SERVER-MANAGEMENT-{worker_family}-RESOLUTION",
+        domain_id="SERVER_MANAGEMENT",
+        worker_family_id=worker_family,
+        milestone_type="WORKER_FOUNDATION",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / worker_family.lower(),
+    )
+
+    assert capture["resolution_status"] == RESOLUTION_SUCCEEDED
+    assert capture["domain_id"] == "SERVER_MANAGEMENT"
+    assert capture["worker_family_id"] == worker_family
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
 
 
 def test_routing_fails_closed_when_turn_allocation_invalid(tmp_path) -> None:

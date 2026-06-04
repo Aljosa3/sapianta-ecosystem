@@ -19,6 +19,7 @@ NATIVE_DEVELOPMENT_INTENT_ROUTED_ARTIFACT_V1 = "NATIVE_DEVELOPMENT_INTENT_ROUTED
 NATIVE_DEVELOPMENT_INTENT_ROUTED = "NATIVE_DEVELOPMENT_INTENT_ROUTED"
 CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
 FAILED_CLOSED = "FAILED_CLOSED"
+CONVERSATION_RESOURCE_CATALOG_VERSION = "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_V1"
 
 CREATE_DOMAIN = "CREATE_DOMAIN"
 CREATE_WORKER = "CREATE_WORKER"
@@ -160,6 +161,11 @@ def reconstruct_conversation_native_development_intent_routing_replay(replay_dir
         raise FailClosedRuntimeError("conversation native development intent routing classification reference mismatch")
     if routed.get("routing_classification_hash") != classification["artifact_hash"]:
         raise FailClosedRuntimeError("conversation native development intent routing classification hash mismatch")
+    if routed.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED:
+        if routed.get("catalog_hash") != classification.get("catalog_hash"):
+            raise FailClosedRuntimeError("conversation native development intent routing catalog hash mismatch")
+        if routed.get("catalog_version_hash") != classification.get("catalog_version_hash"):
+            raise FailClosedRuntimeError("conversation native development intent routing catalog version hash mismatch")
     if returned.get("routed_intent_reference") != routed["routed_intent_id"]:
         raise FailClosedRuntimeError("conversation native development intent routing returned reference mismatch")
     return {
@@ -168,6 +174,12 @@ def reconstruct_conversation_native_development_intent_routing_replay(replay_dir
         "intent_class": routed["intent_class"],
         "target_domain": routed["target_domain"],
         "target_resource": routed["target_resource"],
+        "target_provider": routed["target_provider"],
+        "target_worker_family": routed["target_worker_family"],
+        "catalog_version": routed.get("catalog_version"),
+        "catalog_hash": routed.get("catalog_hash"),
+        "catalog_version_hash": routed.get("catalog_version_hash"),
+        "catalog_match_terms": deepcopy(routed.get("catalog_match_terms", [])),
         "canonical_chain_id": routed["canonical_chain_id"],
         "turn_id": evidence["turn_id"],
         "turn_allocation_hash": evidence["turn_allocation_hash"],
@@ -202,7 +214,36 @@ def render_native_development_intent_routing_summary(capture: dict[str, Any]) ->
 def _classify_intent(human_prompt: str) -> dict[str, Any]:
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".")
-    rules = (
+    rules = _catalog_rules()
+    catalog_hash = _catalog_hash(rules)
+    catalog_version_hash = replay_hash(
+        {"catalog_version": CONVERSATION_RESOURCE_CATALOG_VERSION, "catalog_hash": catalog_hash}
+    )
+    matches = []
+    for intent_class, required_terms, details in rules:
+        if all(term in normalized for term in required_terms):
+            matches.append((intent_class, required_terms, details))
+    if len(matches) != 1:
+        if "workstation" in normalized:
+            return {"routing_decision": CLARIFICATION_REQUIRED}
+        raise FailClosedRuntimeError("conversation native development intent routing failed closed: intent cannot be classified")
+    intent_class, matched_terms, details = matches[0]
+    return {
+        "routing_decision": NATIVE_DEVELOPMENT_INTENT_ROUTED,
+        "intent_class": intent_class,
+        "confidence": "HIGH",
+        "next_pipeline_stage": "NATIVE_DEVELOPMENT_INTAKE",
+        "catalog_version": CONVERSATION_RESOURCE_CATALOG_VERSION,
+        "catalog_hash": catalog_hash,
+        "catalog_version_hash": catalog_version_hash,
+        "catalog_match_terms": list(matched_terms),
+        "catalog_match_evidence": f"Matched {intent_class} through deterministic conversation resource catalog.",
+        **details,
+    }
+
+
+def _catalog_rules() -> tuple[tuple[str, tuple[str, ...], dict[str, Any]], ...]:
+    return (
         (
             CREATE_DOMAIN,
             ("create", "marketing", "domain"),
@@ -216,6 +257,18 @@ def _classify_intent(human_prompt: str) -> dict[str, Any]:
             },
         ),
         (
+            CREATE_DOMAIN,
+            ("create", "server", "management", "domain"),
+            {
+                "target_domain": "SERVER_MANAGEMENT",
+                "target_resource": "DOMAIN",
+                "target_provider": None,
+                "target_worker_family": None,
+                "target_milestone": "SERVER_MANAGEMENT_DOMAIN_FOUNDATION_V1",
+                "target_capability": "DOMAIN_FOUNDATION",
+            },
+        ),
+        (
             CREATE_WORKER,
             ("create", "sentiment", "analysis", "worker"),
             {
@@ -225,6 +278,30 @@ def _classify_intent(human_prompt: str) -> dict[str, Any]:
                 "target_worker_family": "SENTIMENT_ANALYSIS",
                 "target_milestone": "MARKETING_SENTIMENT_ANALYSIS_WORKER_FOUNDATION_V1",
                 "target_capability": "SENTIMENT_ANALYSIS",
+            },
+        ),
+        (
+            CREATE_WORKER,
+            ("create", "filesystem", "worker"),
+            {
+                "target_domain": "SERVER_MANAGEMENT",
+                "target_resource": "WORKER",
+                "target_provider": None,
+                "target_worker_family": "FILESYSTEM",
+                "target_milestone": "SERVER_MANAGEMENT_FILESYSTEM_WORKER_FOUNDATION_V1",
+                "target_capability": "FILESYSTEM_MANAGEMENT",
+            },
+        ),
+        (
+            CREATE_WORKER,
+            ("create", "monitoring", "worker"),
+            {
+                "target_domain": "SERVER_MANAGEMENT",
+                "target_resource": "WORKER",
+                "target_provider": None,
+                "target_worker_family": "MONITORING",
+                "target_milestone": "SERVER_MANAGEMENT_MONITORING_WORKER_FOUNDATION_V1",
+                "target_capability": "SERVER_MONITORING",
             },
         ),
         (
@@ -248,6 +325,18 @@ def _classify_intent(human_prompt: str) -> dict[str, Any]:
                 "target_provider": "ANTHROPIC",
                 "target_worker_family": None,
                 "target_milestone": "AIGOL_PROVIDER_ANTHROPIC_ATTACHMENT_V1",
+                "target_capability": "PROVIDER_ECOSYSTEM",
+            },
+        ),
+        (
+            ADD_PROVIDER,
+            ("add", "provider", "claude", "code"),
+            {
+                "target_domain": "AIGOL_CORE",
+                "target_resource": "PROVIDER",
+                "target_provider": "CLAUDE_CODE",
+                "target_worker_family": None,
+                "target_milestone": "AIGOL_PROVIDER_CLAUDE_CODE_ATTACHMENT_V1",
                 "target_capability": "PROVIDER_ECOSYSTEM",
             },
         ),
@@ -288,22 +377,22 @@ def _classify_intent(human_prompt: str) -> dict[str, Any]:
             },
         ),
     )
-    matches = []
-    for intent_class, required_terms, details in rules:
-        if all(term in normalized for term in required_terms):
-            matches.append((intent_class, details))
-    if len(matches) != 1:
-        if "workstation" in normalized:
-            return {"routing_decision": CLARIFICATION_REQUIRED}
-        raise FailClosedRuntimeError("conversation native development intent routing failed closed: intent cannot be classified")
-    intent_class, details = matches[0]
-    return {
-        "routing_decision": NATIVE_DEVELOPMENT_INTENT_ROUTED,
-        "intent_class": intent_class,
-        "confidence": "HIGH",
-        "next_pipeline_stage": "NATIVE_DEVELOPMENT_INTAKE",
-        **details,
-    }
+
+
+def _catalog_hash(rules: tuple[tuple[str, tuple[str, ...], dict[str, Any]], ...]) -> str:
+    return replay_hash(
+        {
+            "catalog_version": CONVERSATION_RESOURCE_CATALOG_VERSION,
+            "rules": [
+                {
+                    "intent_class": intent_class,
+                    "required_terms": list(required_terms),
+                    "details": details,
+                }
+                for intent_class, required_terms, details in rules
+            ],
+        }
+    )
 
 
 def _evidence_artifact(
@@ -324,6 +413,8 @@ def _evidence_artifact(
         "routing_evidence_id": f"{_require_string(routing_id, 'routing_id')}:EVIDENCE",
         "prompt_id": _require_string(prompt_id, "prompt_id"),
         "human_prompt_hash": replay_hash(_require_string(human_prompt, "human_prompt")),
+        "catalog_version": CONVERSATION_RESOURCE_CATALOG_VERSION,
+        "catalog_version_hash": replay_hash(CONVERSATION_RESOURCE_CATALOG_VERSION),
         "canonical_chain_id": _require_string(canonical_chain_id, "canonical_chain_id"),
         "turn_id": turn_allocation_evidence["next_turn_id"],
         "turn_allocation_hash": turn_allocation_evidence["artifact_hash"],
@@ -362,6 +453,11 @@ def _classification_artifact(
         "routing_decision": analysis["routing_decision"],
         "intent_class": analysis.get("intent_class"),
         "confidence": analysis.get("confidence"),
+        "catalog_version": analysis.get("catalog_version"),
+        "catalog_hash": analysis.get("catalog_hash"),
+        "catalog_version_hash": analysis.get("catalog_version_hash"),
+        "catalog_match_terms": analysis.get("catalog_match_terms", []),
+        "catalog_match_evidence": analysis.get("catalog_match_evidence"),
         "target_domain": analysis.get("target_domain"),
         "target_resource": analysis.get("target_resource"),
         "target_provider": analysis.get("target_provider"),
@@ -406,6 +502,11 @@ def _routed_artifact(
         "routing_status": routing_status,
         "intent_class": analysis.get("intent_class"),
         "confidence": analysis.get("confidence"),
+        "catalog_version": analysis.get("catalog_version"),
+        "catalog_hash": analysis.get("catalog_hash"),
+        "catalog_version_hash": analysis.get("catalog_version_hash"),
+        "catalog_match_terms": analysis.get("catalog_match_terms", []),
+        "catalog_match_evidence": analysis.get("catalog_match_evidence"),
         "target_domain": analysis.get("target_domain"),
         "target_resource": analysis.get("target_resource"),
         "target_provider": analysis.get("target_provider"),
@@ -457,6 +558,8 @@ def _failed_evidence_artifact(**kwargs: Any) -> dict[str, Any]:
         "routing_evidence_id": f"{kwargs.get('routing_id')}:EVIDENCE",
         "prompt_id": kwargs.get("prompt_id") if isinstance(kwargs.get("prompt_id"), str) else None,
         "human_prompt_hash": replay_hash(kwargs.get("human_prompt")) if isinstance(kwargs.get("human_prompt"), str) else None,
+        "catalog_version": CONVERSATION_RESOURCE_CATALOG_VERSION,
+        "catalog_version_hash": replay_hash(CONVERSATION_RESOURCE_CATALOG_VERSION),
         "canonical_chain_id": kwargs.get("canonical_chain_id") if isinstance(kwargs.get("canonical_chain_id"), str) else None,
         "turn_id": kwargs.get("turn_allocation_evidence", {}).get("next_turn_id")
         if isinstance(kwargs.get("turn_allocation_evidence"), dict)
@@ -537,6 +640,11 @@ def _capture(
         "target_worker_family": routed["target_worker_family"],
         "target_milestone": routed["target_milestone"],
         "target_capability": routed["target_capability"],
+        "catalog_version": routed.get("catalog_version"),
+        "catalog_hash": routed.get("catalog_hash"),
+        "catalog_version_hash": routed.get("catalog_version_hash"),
+        "catalog_match_terms": routed.get("catalog_match_terms", []),
+        "catalog_match_evidence": routed.get("catalog_match_evidence"),
         "next_pipeline_stage": routed["next_pipeline_stage"],
         "canonical_chain_id": routed["canonical_chain_id"],
         "current_chain_id": routed["canonical_chain_id"],

@@ -53,6 +53,14 @@ DEFAULT_DOMAINS = (
         "certification_artifact": None,
         "aliases": ("PUBLIC_SERVICES", "PUBLIC SERVICES"),
     },
+    {
+        "domain_id": "SERVER_MANAGEMENT",
+        "display_name": "Server Management",
+        "status": "REGISTERED_FUTURE_DOMAIN",
+        "foundation_artifact": None,
+        "certification_artifact": None,
+        "aliases": ("SERVER_MANAGEMENT", "SERVER MANAGEMENT"),
+    },
 )
 
 DEFAULT_WORKER_FAMILIES = (
@@ -100,6 +108,24 @@ DEFAULT_WORKER_FAMILIES = (
         "status": "FOUNDATION_CANDIDATE",
         "aliases": ("DECISION EXPLANATION",),
         "authority": "EXPLANATION_ONLY",
+    },
+    {
+        "domain_id": "SERVER_MANAGEMENT",
+        "worker_family_id": "FILESYSTEM",
+        "display_name": "Filesystem",
+        "worker_class": "FILESYSTEM",
+        "status": "FOUNDATION_CANDIDATE",
+        "aliases": ("FILESYSTEM", "FILE SYSTEM", "FILESYSTEM WORKER"),
+        "authority": "READ_ONLY_SYSTEM_EVIDENCE",
+    },
+    {
+        "domain_id": "SERVER_MANAGEMENT",
+        "worker_family_id": "MONITORING",
+        "display_name": "Monitoring",
+        "worker_class": "MONITORING",
+        "status": "FOUNDATION_CANDIDATE",
+        "aliases": ("MONITORING", "SERVER MONITORING", "MONITORING WORKER"),
+        "authority": "OBSERVABILITY_ONLY",
     },
 )
 

@@ -1,0 +1,89 @@
+{
+  "artifact": "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/conversation_native_development_intent_routing.py",
+  "registry": "aigol/runtime/domain_and_worker_resolution_registry.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "validated_at": "2026-06-04",
+  "catalog_entries_added": {
+    "providers": [
+      "CLAUDE_CODE"
+    ],
+    "domains": [
+      "SERVER_MANAGEMENT"
+    ],
+    "workers": [
+      "FILESYSTEM",
+      "MONITORING"
+    ]
+  },
+  "acceptance_checks": [
+    {
+      "check": "add_provider_claude_code",
+      "status": "PASS",
+      "evidence": "Add provider Claude Code classifies as ADD_PROVIDER targeting CLAUDE_CODE and reaches IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "create_server_management_domain",
+      "status": "PASS",
+      "evidence": "Create a server management domain classifies as CREATE_DOMAIN targeting SERVER_MANAGEMENT and reaches IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "create_filesystem_worker",
+      "status": "PASS",
+      "evidence": "Create a filesystem worker classifies as CREATE_WORKER targeting SERVER_MANAGEMENT / FILESYSTEM and reaches IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "create_monitoring_worker",
+      "status": "PASS",
+      "evidence": "Create a monitoring worker classifies as CREATE_WORKER targeting SERVER_MANAGEMENT / MONITORING and reaches IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "catalog_lineage_replay",
+      "status": "PASS",
+      "evidence": "Routing replay reconstruction exposes catalog version, catalog hash, catalog version hash, and match terms."
+    },
+    {
+      "check": "server_management_registry_resolution",
+      "status": "PASS",
+      "evidence": "SERVER_MANAGEMENT worker families FILESYSTEM and MONITORING resolve through the domain-worker registry."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    },
+    {
+      "command": "printf 'Add provider Claude Code.\\nCreate a server management domain.\\nCreate a filesystem worker.\\nCreate a monitoring worker.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-CATALOG-EXPANSION-000001 --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_conversation_resource_catalog_cli_acceptance",
+      "status": "PASS",
+      "summary": "All four prompts returned conversation_to_ppp_terminal_status: IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "command": "python -m pytest tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "21 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "15 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false
+  },
+  "final_classification": "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_STATUS = CERTIFIED"
+}

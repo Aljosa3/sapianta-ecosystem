@@ -1,0 +1,80 @@
+{
+  "artifact": "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/conversation_native_development_intent_routing.py",
+    "aigol/runtime/domain_and_worker_resolution_registry.py"
+  ],
+  "cli_artifacts": [
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_conversation_native_development_intent_routing_v1.py",
+    "tests/test_conversation_to_ppp_handoff_execution_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_V1.md",
+    "governance/AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Classifies Add provider Claude Code as ADD_PROVIDER targeting CLAUDE_CODE.",
+    "Classifies Create a server management domain as CREATE_DOMAIN targeting SERVER_MANAGEMENT.",
+    "Classifies Create a filesystem worker as CREATE_WORKER targeting SERVER_MANAGEMENT / FILESYSTEM.",
+    "Classifies Create a monitoring worker as CREATE_WORKER targeting SERVER_MANAGEMENT / MONITORING.",
+    "Persists catalog version, catalog hash, catalog version hash, catalog match terms, and catalog match evidence.",
+    "Verifies catalog hash lineage during routing replay reconstruction.",
+    "Registers SERVER_MANAGEMENT, FILESYSTEM, and MONITORING in the domain-worker registry."
+  ],
+  "non_goals_preserved": [
+    "No execution.",
+    "No dispatch.",
+    "No authorization.",
+    "No worker invocation.",
+    "No provider invocation.",
+    "No governance mutation.",
+    "No silent ambiguity resolution."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "29 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "21 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_risk": [
+    "Catalog expansion remains deterministic term matching; broader natural-language coverage still needs governed catalog growth or clarification.",
+    "Created handoffs remain implementation candidates only and do not create domains, workers, providers, or registry mutations at runtime."
+  ],
+  "final_classification": "AIGOL_CONVERSATION_RESOURCE_CATALOG_EXPANSION_STATUS = CERTIFIED"
+}
