@@ -50,10 +50,11 @@
     "Provider-generated executable code remains out of scope for the factory contract."
   ],
   "known_current_limitations": [
-    "Current runtime remains Marketing-specific until a later implementation milestone.",
-    "The contract does not itself implement registry resolution.",
-    "Server Management, Trading, and Healthcare are resolvable by contract but not executable by current runtime."
+    "This contract artifact remains review-only and does not itself implement registry resolution.",
+    "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1 later realizes executable placeholder bundle generation for MARKETING, SERVER_MANAGEMENT, TRADING, and HEALTHCARE.",
+    "Real domain behavior remains outside the placeholder factory runtime."
   ],
+  "runtime_realization_note": "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1 implements the first registry-driven executable placeholder bundle factory after this review-only contract.",
   "validation_commands": [
     {
       "command": "python -m json.tool governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_CERTIFICATION.json",

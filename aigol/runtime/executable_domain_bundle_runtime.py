@@ -6,7 +6,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from aigol.runtime.domain_bundle_registry_runtime import resolve_domain_bundle_entry
+from aigol.runtime.domain_bundle_registry_runtime import (
+    domain_bundle_contents,
+    resolve_domain_bundle_entry_by_bundle_id,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_result_validation_runtime import (
@@ -391,9 +394,10 @@ def _validate_authorization(authorization: Any, validation: dict[str, Any] | Non
     _require_bundle_id(authorization.get("bundle_id"))
     if authorization.get("authorization_status") != EXECUTABLE_BUNDLE_AUTHORIZED:
         raise FailClosedRuntimeError("executable bundle failed closed: authorization invalid")
-    if authorization.get("artifacts") != [_manifest(path) for path in EXECUTABLE_BUNDLE_PATHS]:
+    expected_manifests = _expected_manifests_for_authorization(authorization)
+    if authorization.get("artifacts") != expected_manifests:
         raise FailClosedRuntimeError("executable bundle failed closed: exact artifact list mismatch")
-    if authorization.get("artifact_count") != len(EXECUTABLE_BUNDLE_PATHS) or authorization.get("permission") != CREATE_ONLY:
+    if authorization.get("artifact_count") != len(expected_manifests) or authorization.get("permission") != CREATE_ONLY:
         raise FailClosedRuntimeError("executable bundle failed closed: create-only authorization required")
     for field in (
         "overwrite_permitted",
@@ -415,6 +419,33 @@ def _validate_authorization(authorization: Any, validation: dict[str, Any] | Non
         if authorization.get("chain_id") != validation["chain_id"]:
             raise FailClosedRuntimeError("executable bundle failed closed: chain mismatch")
     return deepcopy(authorization)
+
+
+def _expected_manifests_for_authorization(authorization: dict[str, Any]) -> list[dict[str, Any]]:
+    if not authorization.get("domain_id") and authorization.get("bundle_id") == MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID:
+        return [_manifest(path) for path in EXECUTABLE_BUNDLE_PATHS]
+    entry = resolve_domain_bundle_entry_by_bundle_id(
+        bundle_id=authorization.get("bundle_id"),
+        require_executable=True,
+    )
+    contents = domain_bundle_contents(entry)
+    manifests = []
+    for template in [
+        *entry["artifact_templates"],
+        entry["runtime_template"],
+        entry["test_template"],
+    ]:
+        path = template["path"]
+        manifests.append(
+            {
+                "path": path,
+                "artifact_type": template["artifact_type"],
+                "content_hash": replay_hash(contents[path]),
+                "permission": CREATE_ONLY,
+                "overwrite_permitted": False,
+            }
+        )
+    return manifests
 
 
 def _resolve_targets(workspace_root: Path) -> dict[str, Path]:
@@ -607,15 +638,12 @@ def _capture(
 def _require_bundle_id(value: Any) -> str:
     bundle_id = _require_string(value, "bundle_id")
     try:
-        entry = resolve_domain_bundle_entry(
-            domain_id="MARKETING",
+        entry = resolve_domain_bundle_entry_by_bundle_id(
             bundle_id=bundle_id,
             require_executable=True,
         )
     except FailClosedRuntimeError as exc:
         raise FailClosedRuntimeError("executable bundle failed closed: invalid bundle id") from exc
-    if entry["bundle_id"] != MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID:
-        raise FailClosedRuntimeError("executable bundle failed closed: invalid bundle id")
     return bundle_id
 
 

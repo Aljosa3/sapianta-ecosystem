@@ -48,28 +48,28 @@ def default_domain_bundle_registry() -> dict[str, Any]:
                 domain_id="SERVER_MANAGEMENT",
                 display_name="Server Management",
                 bundle_id="SERVER_MANAGEMENT_EXECUTABLE_DOMAIN_BUNDLE_V1",
-                domain_status="REGISTERED_CONTRACT_ONLY",
-                factory_resolution_status=RESOLVABLE_NOT_EXECUTABLE,
+                domain_status="EXECUTABLE_PLACEHOLDER_CERTIFIED",
+                factory_resolution_status=RESOLVABLE_EXECUTABLE,
                 regulatory_constraints=["No server mutation authority.", "No deployment authority."],
-                known_gaps=["Executable Server Management bundle is not certified."],
+                known_gaps=["Real Server Management implementation logic remains unimplemented."],
             ),
             _entry(
                 domain_id="TRADING",
                 display_name="Trading",
                 bundle_id="TRADING_EXECUTABLE_DOMAIN_BUNDLE_V1",
-                domain_status="REGISTERED_REQUIRES_HUMAN_APPROVAL",
-                factory_resolution_status=RESOLVABLE_NOT_EXECUTABLE,
-                regulatory_constraints=["No broker/API execution.", "Human approval required before implementation."],
-                known_gaps=["Executable Trading bundle is not certified."],
+                domain_status="EXECUTABLE_PLACEHOLDER_CERTIFIED",
+                factory_resolution_status=RESOLVABLE_EXECUTABLE,
+                regulatory_constraints=["No broker/API execution.", "No trading execution authority."],
+                known_gaps=["Real Trading implementation logic remains unimplemented."],
             ),
             _entry(
                 domain_id="HEALTHCARE",
                 display_name="Healthcare",
                 bundle_id="HEALTHCARE_EXECUTABLE_DOMAIN_BUNDLE_V1",
-                domain_status="REGISTERED_REQUIRES_HUMAN_APPROVAL",
-                factory_resolution_status=RESOLVABLE_NOT_EXECUTABLE,
-                regulatory_constraints=["No compliance guarantee claims.", "Human approval required before implementation."],
-                known_gaps=["Executable Healthcare bundle is not certified."],
+                domain_status="EXECUTABLE_PLACEHOLDER_CERTIFIED",
+                factory_resolution_status=RESOLVABLE_EXECUTABLE,
+                regulatory_constraints=["No compliance guarantee claims.", "No clinical or patient-data authority."],
+                known_gaps=["Real Healthcare implementation logic remains unimplemented."],
             ),
         ],
         "semantic_interpretation_performed": False,
@@ -152,6 +152,34 @@ def resolve_domain_bundle_entry(
     return resolved
 
 
+def resolve_domain_bundle_entry_by_bundle_id(
+    *,
+    bundle_id: str,
+    require_executable: bool = False,
+    registry: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve one registry entry by bundle id without replay persistence."""
+
+    active_registry = deepcopy(registry) if registry is not None else default_domain_bundle_registry()
+    registry_hash = _validate_registry(active_registry)
+    bundle_key = _normalize_key(bundle_id, "bundle_id")
+    matches = [
+        entry
+        for entry in active_registry["entries"]
+        if _normalize_key(entry["bundle_id"], "bundle_id") == bundle_key
+    ]
+    if not matches:
+        raise FailClosedRuntimeError("domain bundle registry failed closed: unknown domain bundle")
+    if len(matches) > 1:
+        raise FailClosedRuntimeError("domain bundle registry failed closed: ambiguous domain bundle")
+    entry = deepcopy(matches[0])
+    if require_executable and entry["factory_resolution_status"] != RESOLVABLE_EXECUTABLE:
+        raise FailClosedRuntimeError("domain bundle registry failed closed: domain bundle is not executable")
+    entry["registry_hash"] = registry_hash
+    entry["registry_version"] = active_registry["registry_version"]
+    return entry
+
+
 def reconstruct_domain_bundle_resolution_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct domain bundle registry resolution replay."""
 
@@ -194,6 +222,13 @@ def reconstruct_domain_bundle_resolution_replay(replay_dir: str | Path) -> dict[
     }
 
 
+def domain_bundle_contents(entry: dict[str, Any]) -> dict[str, str]:
+    """Return deterministic placeholder bundle content for a registry entry."""
+
+    _validate_entry(entry)
+    return domain_bundle_contents_without_validation(entry)
+
+
 def _entry(
     *,
     domain_id: str,
@@ -234,8 +269,151 @@ def _entry(
         entry["runtime_template"]["path"],
         entry["test_template"]["path"],
     ]
+    contents = domain_bundle_contents_without_validation(entry)
+    _apply_content_hashes(entry, contents)
     entry["entry_hash"] = replay_hash(_entry_hash_input(entry))
     return entry
+
+
+def domain_bundle_contents_without_validation(entry: dict[str, Any]) -> dict[str, str]:
+    candidate = deepcopy(entry)
+    candidate.setdefault("entry_hash", "sha256:pending")
+    domain_id = candidate["domain_id"]
+    display = candidate["domain_display_name"]
+    slug = domain_id.lower()
+    runtime_version_symbol = candidate["runtime_template"]["runtime_version_symbol"]
+    describe_function = candidate["runtime_template"]["describe_function"]
+    runtime_version = f"{domain_id}_DOMAIN_RUNTIME_V1"
+    paths = [
+        *(template["path"] for template in candidate["artifact_templates"]),
+        candidate["runtime_template"]["path"],
+        candidate["test_template"]["path"],
+    ]
+    if domain_id == "MARKETING":
+        return {
+            paths[0]: """# MARKETING_DOMAIN_FOUNDATION_V1
+
+## Status
+
+Deterministic placeholder governance document created by
+`AIGOL_EXECUTABLE_DOMAIN_BUNDLE_RUNTIME_V1`.
+
+## Scope
+
+This artifact is the foundation member of the first governed executable Marketing domain bundle.
+""",
+            paths[1]: """# MARKETING_DOMAIN_MODEL_V1
+
+## Status
+
+Deterministic placeholder Marketing domain model.
+
+## Model
+
+The Marketing domain is represented as a governed, replay-visible executable domain bundle.
+""",
+            paths[2]: """{
+  "artifact_type": "MARKETING_DOMAIN_CERTIFICATION",
+  "artifact_version": "V1",
+  "domain": "MARKETING",
+  "status": "PLACEHOLDER_EXECUTABLE_CERTIFIED",
+  "bundle_id": "MARKETING_EXECUTABLE_DOMAIN_BUNDLE_V1"
+}
+""",
+            paths[3]: '''"""Deterministic placeholder runtime for the governed Marketing domain."""
+
+from __future__ import annotations
+
+
+MARKETING_DOMAIN_RUNTIME_VERSION = "MARKETING_DOMAIN_RUNTIME_V1"
+
+
+def describe_marketing_domain() -> dict[str, str]:
+    """Return the bounded placeholder Marketing domain runtime identity."""
+
+    return {
+        "domain": "MARKETING",
+        "runtime_version": MARKETING_DOMAIN_RUNTIME_VERSION,
+        "implementation_status": "PLACEHOLDER",
+    }
+''',
+            paths[4]: '''"""Tests for the deterministic placeholder Marketing domain runtime."""
+
+from aigol.runtime.marketing_domain_runtime import (
+    MARKETING_DOMAIN_RUNTIME_VERSION,
+    describe_marketing_domain,
+)
+
+
+def test_marketing_domain_runtime_identity() -> None:
+    assert describe_marketing_domain() == {
+        "domain": "MARKETING",
+        "runtime_version": MARKETING_DOMAIN_RUNTIME_VERSION,
+        "implementation_status": "PLACEHOLDER",
+    }
+''',
+        }
+    return {
+        paths[0]: (
+            f"# {domain_id}_DOMAIN_FOUNDATION_V1\n\n"
+            "## Status\n\n"
+            "Deterministic placeholder governance document created by\n"
+            "`AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1`.\n\n"
+            "## Scope\n\n"
+            f"This artifact is the foundation member of the governed executable {display} domain bundle.\n"
+        ),
+        paths[1]: (
+            f"# {domain_id}_DOMAIN_MODEL_V1\n\n"
+            "## Status\n\n"
+            f"Deterministic placeholder {display} domain model.\n\n"
+            "## Model\n\n"
+            f"The {display} domain is represented as a governed, replay-visible executable domain bundle.\n"
+        ),
+        paths[2]: (
+            "{\n"
+            f'  "artifact_type": "{domain_id}_DOMAIN_CERTIFICATION",\n'
+            '  "artifact_version": "V1",\n'
+            f'  "domain": "{domain_id}",\n'
+            '  "status": "PLACEHOLDER_EXECUTABLE_CERTIFIED",\n'
+            f'  "bundle_id": "{candidate["bundle_id"]}"\n'
+            "}\n"
+        ),
+        paths[3]: (
+            f'"""Deterministic placeholder runtime for the governed {display} domain."""\n\n'
+            "from __future__ import annotations\n\n\n"
+            f'{runtime_version_symbol} = "{runtime_version}"\n\n\n'
+            f"def {describe_function}() -> dict[str, str]:\n"
+            f'    """Return the bounded placeholder {display} domain runtime identity."""\n\n'
+            "    return {\n"
+            f'        "domain": "{domain_id}",\n'
+            f'        "runtime_version": {runtime_version_symbol},\n'
+            '        "implementation_status": "PLACEHOLDER",\n'
+            "    }\n"
+        ),
+        paths[4]: (
+            f'"""Tests for the deterministic placeholder {display} domain runtime."""\n\n'
+            f"from aigol.runtime.{slug}_domain_runtime import (\n"
+            f"    {runtime_version_symbol},\n"
+            f"    {describe_function},\n"
+            ")\n\n\n"
+            f"def test_{slug}_domain_runtime_identity() -> None:\n"
+            f"    assert {describe_function}() == {{\n"
+            f'        "domain": "{domain_id}",\n'
+            f'        "runtime_version": {runtime_version_symbol},\n'
+            '        "implementation_status": "PLACEHOLDER",\n'
+            "    }\n"
+        ),
+    }
+
+
+def _apply_content_hashes(entry: dict[str, Any], contents: dict[str, str]) -> None:
+    templates = [
+        *entry["artifact_templates"],
+        entry["runtime_template"],
+        entry["test_template"],
+    ]
+    for template in templates:
+        template["canonical_content_hash"] = replay_hash(contents[template["path"]])
 
 
 def _template(role: str, path: str, artifact_type: str) -> dict[str, Any]:
@@ -499,6 +677,8 @@ def _entry_template_hashes(entry: dict[str, Any]) -> list[str]:
 def _entry_hash_input(entry: dict[str, Any]) -> dict[str, Any]:
     candidate = deepcopy(entry)
     candidate.pop("entry_hash", None)
+    candidate.pop("registry_hash", None)
+    candidate.pop("registry_version", None)
     return candidate
 
 

@@ -1,0 +1,101 @@
+{
+  "artifact_type": "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/domain_bundle_registry_runtime.py",
+    "aigol/runtime/generic_domain_factory_runtime.py",
+    "aigol/runtime/executable_domain_bundle_runtime.py",
+    "aigol/runtime/conversation_native_development_intent_routing.py",
+    "aigol/runtime/conversation_to_ppp_handoff_execution.py",
+    "aigol/runtime/implementation_handoff_visibility.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_domain_bundle_registry_runtime_v1.py",
+    "tests/test_generic_domain_factory_runtime_v1.py",
+    "tests/test_executable_domain_bundle_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1.md",
+    "governance/AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "Executable domain bundle generation was still Marketing-specific even after domain identity resolution became registry-visible.",
+  "runtime_model": [
+    "Generic domain factory runtime consumes DOMAIN_BUNDLE_REGISTRY resolution artifacts.",
+    "Domain creation prompts resolve to MARKETING, SERVER_MANAGEMENT, TRADING, or HEALTHCARE through registry-backed artifact targets.",
+    "Factory authorization derives exact artifact manifests and content hashes from the resolved registry entry.",
+    "Factory creation preserves CREATE_ONLY target absence preflight and per-artifact verification.",
+    "Post-execution replay review reconstructs registry-driven executable bundles through bundle id resolution.",
+    "Failure paths emit a terminal fail-closed bundle result without requiring missing success artifacts."
+  ],
+  "supported_domains": {
+    "MARKETING": "MARKETING_EXECUTABLE_DOMAIN_BUNDLE_V1",
+    "SERVER_MANAGEMENT": "SERVER_MANAGEMENT_EXECUTABLE_DOMAIN_BUNDLE_V1",
+    "TRADING": "TRADING_EXECUTABLE_DOMAIN_BUNDLE_V1",
+    "HEALTHCARE": "HEALTHCARE_EXECUTABLE_DOMAIN_BUNDLE_V1"
+  },
+  "replay_impact": [
+    "Executable bundle replay remains append-only and uses the existing four-step bundle replay sequence.",
+    "Registry resolution replay is nested under executable bundle replay for reconstruction.",
+    "Registry hash and entry hash continuity are recorded in authorization, evidence, verification, and bundle artifacts.",
+    "Replay review no longer assumes Marketing-only manifests for registry-backed bundle ids.",
+    "CREATE_ONLY collisions remain deterministic fail-closed outcomes without missing-artifact cascade failures."
+  ],
+  "boundaries_preserved": [
+    "No OCS functionality.",
+    "No semantic cognition changes.",
+    "No broker/API execution.",
+    "No trading execution authority.",
+    "No clinical, patient-data, or healthcare compliance authority.",
+    "No deployment or server mutation authority.",
+    "No provider-generated executable code.",
+    "No overwrite, delete, rename, move, recursive creation, implicit creation, or directory creation authority."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/domain_bundle_registry_runtime.py aigol/runtime/generic_domain_factory_runtime.py aigol/runtime/executable_domain_bundle_runtime.py aigol/runtime/conversation_to_ppp_handoff_execution.py aigol/runtime/conversation_native_development_intent_routing.py aigol/runtime/implementation_handoff_visibility.py aigol/cli/aigol_cli.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_domain_bundle_registry_runtime_v1.py tests/test_generic_domain_factory_runtime_v1.py tests/test_executable_domain_bundle_runtime_v1.py",
+      "status": "PASS",
+      "summary": "37 passed."
+    },
+    {
+      "command": "Create a marketing domain.",
+      "status": "PASS",
+      "summary": "CLI lifecycle reached executable bundle verification, post-execution replay review, and governed termination."
+    },
+    {
+      "command": "Create a trading domain.",
+      "status": "PASS",
+      "summary": "CLI lifecycle reached executable bundle verification, post-execution replay review, and governed termination."
+    },
+    {
+      "command": "Create a healthcare domain.",
+      "status": "PASS",
+      "summary": "CLI lifecycle reached executable bundle verification, post-execution replay review, and governed termination."
+    },
+    {
+      "command": "Create a server management domain.",
+      "status": "PASS",
+      "summary": "CLI lifecycle reached executable bundle verification, post-execution replay review, and governed termination."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify generic domain factory runtime",
+  "final_classification": "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_STATUS = CERTIFIED"
+}

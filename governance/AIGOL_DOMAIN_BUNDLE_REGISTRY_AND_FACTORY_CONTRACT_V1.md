@@ -45,6 +45,12 @@ runtime can deterministically find a registry entry, determine whether the entry
 is executable, and either continue with exact authorized artifacts or fail
 closed with a domain-specific reason.
 
+## Runtime Realization Note
+
+`AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1` realizes the first runtime
+implementation of this contract for executable placeholder bundles while
+preserving the contract boundaries below.
+
 ## Contract Boundaries
 
 The future factory runtime must preserve:

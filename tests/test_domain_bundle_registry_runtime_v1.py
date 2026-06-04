@@ -36,9 +36,9 @@ def test_default_registry_resolves_required_domains_without_prompt_derived_filen
     assert registry["registry_version"] == DOMAIN_BUNDLE_REGISTRY_VERSION
     assert set(entries) == {"MARKETING", "SERVER_MANAGEMENT", "TRADING", "HEALTHCARE"}
     assert entries["MARKETING"]["factory_resolution_status"] == RESOLVABLE_EXECUTABLE
-    assert entries["SERVER_MANAGEMENT"]["factory_resolution_status"] == RESOLVABLE_NOT_EXECUTABLE
-    assert entries["TRADING"]["factory_resolution_status"] == RESOLVABLE_NOT_EXECUTABLE
-    assert entries["HEALTHCARE"]["factory_resolution_status"] == RESOLVABLE_NOT_EXECUTABLE
+    assert entries["SERVER_MANAGEMENT"]["factory_resolution_status"] == RESOLVABLE_EXECUTABLE
+    assert entries["TRADING"]["factory_resolution_status"] == RESOLVABLE_EXECUTABLE
+    assert entries["HEALTHCARE"]["factory_resolution_status"] == RESOLVABLE_EXECUTABLE
     assert entries["MARKETING"]["artifact_paths"] == [
         "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
         "governance/MARKETING_DOMAIN_MODEL_V1.md",
@@ -54,9 +54,9 @@ def test_default_registry_resolves_required_domains_without_prompt_derived_filen
     ("domain_id", "expected_status"),
     [
         ("MARKETING", RESOLVABLE_EXECUTABLE),
-        ("SERVER_MANAGEMENT", RESOLVABLE_NOT_EXECUTABLE),
-        ("TRADING", RESOLVABLE_NOT_EXECUTABLE),
-        ("HEALTHCARE", RESOLVABLE_NOT_EXECUTABLE),
+        ("SERVER_MANAGEMENT", RESOLVABLE_EXECUTABLE),
+        ("TRADING", RESOLVABLE_EXECUTABLE),
+        ("HEALTHCARE", RESOLVABLE_EXECUTABLE),
     ],
 )
 def test_resolves_domain_bundle_with_replay(tmp_path, domain_id: str, expected_status: str) -> None:
@@ -98,13 +98,22 @@ def test_marketing_entry_resolves_as_current_executable_bundle_identity() -> Non
     assert "governance/MARKETING_DOMAIN_FOUNDATION_V1.md" in entry["artifact_paths"]
 
 
-def test_non_executable_domain_fails_closed_when_executable_required(tmp_path) -> None:
+def test_non_executable_registry_entry_fails_closed_when_executable_required(tmp_path) -> None:
+    registry = default_domain_bundle_registry()
+    registry["entries"][1]["factory_resolution_status"] = RESOLVABLE_NOT_EXECUTABLE
+    registry["entries"][1].pop("entry_hash")
+    registry["entries"][1]["entry_hash"] = replay_hash(
+        {key: value for key, value in registry["entries"][1].items() if key != "entry_hash"}
+    )
+    registry.pop("registry_hash")
+    registry.pop("artifact_hash")
     capture = resolve_domain_bundle(
         resolution_id="DOMAIN-BUNDLE-RESOLUTION-SERVER-MANAGEMENT-EXECUTABLE",
         domain_id="SERVER_MANAGEMENT",
         require_executable=True,
         created_at=CREATED_AT,
         replay_dir=tmp_path / "server_management_executable",
+        registry=registry,
     )
     reconstructed = reconstruct_domain_bundle_resolution_replay(tmp_path / "server_management_executable")
 

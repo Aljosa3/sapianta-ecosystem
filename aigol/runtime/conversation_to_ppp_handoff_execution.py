@@ -24,6 +24,7 @@ from aigol.runtime.development_proposal_contract_runtime import (
     DEVELOPMENT_PROPOSAL_CONTRACT_VALIDATED,
     validate_development_proposal_contract,
 )
+from aigol.runtime.domain_bundle_registry_runtime import resolve_domain_bundle_entry
 from aigol.runtime.domain_and_worker_resolution_registry import (
     DOMAIN_WORKER_RESOLUTION_ARTIFACT_V1,
     RESOLUTION_SUCCEEDED,
@@ -365,7 +366,7 @@ def _proposal_production_artifact(execution_id: str, routed: dict[str, Any], con
 
 
 def _approval_artifact(execution_id: str, routed: dict[str, Any], proposal: dict[str, Any], validation: dict[str, Any], created_at: str) -> dict[str, Any]:
-    high_risk = routed.get("target_domain") == "TRADING"
+    high_risk = routed.get("target_domain") == "TRADING" and routed.get("intent_class") != "CREATE_DOMAIN"
     artifact = {
         "artifact_type": "CONVERSATION_TO_PPP_APPROVAL_EVIDENCE_V1",
         "approval_id": f"{execution_id}:APPROVAL-EVIDENCE",
@@ -536,6 +537,12 @@ def _milestone_type(routed: dict[str, Any]) -> str:
 
 
 def _output_targets(routed: dict[str, Any]) -> list[str]:
+    if routed.get("intent_class") == "CREATE_DOMAIN":
+        entry = resolve_domain_bundle_entry(
+            domain_id=routed["target_domain"],
+            require_executable=True,
+        )
+        return list(entry["artifact_paths"])
     stem = str(routed.get("target_milestone") or routed["routed_intent_id"]).upper().replace(":", "_")
     return [f"governance/{stem}.md", f"governance/{stem}_CERTIFICATION.json"]
 

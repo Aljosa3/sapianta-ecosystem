@@ -180,13 +180,11 @@ from aigol.runtime.worker_result_validation_runtime import (
     render_worker_result_validation_summary,
     validate_worker_result,
 )
+from aigol.runtime.domain_bundle_registry_runtime import default_domain_bundle_registry
 from aigol.runtime.executable_domain_bundle_runtime import (
-    FOUNDATION_PATH,
-    MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID,
-    create_executable_bundle_mutation_authorization,
-    create_marketing_executable_domain_bundle,
     render_executable_domain_bundle_summary,
 )
+from aigol.runtime.generic_domain_factory_runtime import create_generic_executable_domain_bundle
 from aigol.runtime.post_execution_replay_review_runtime import (
     render_post_execution_replay_review_summary,
     review_validated_worker_result,
@@ -230,20 +228,19 @@ def _bind_supported_executable_domain_bundle(
     replay_dir: Path,
 ) -> dict[str, Any] | None:
     validation = validation_capture["worker_result_validation_artifact"]
-    if FOUNDATION_PATH not in validation.get("produced_outputs", []):
+    produced_outputs = set(validation.get("produced_outputs", []))
+    registry_entry = None
+    for entry in default_domain_bundle_registry()["entries"]:
+        if produced_outputs == set(entry["artifact_paths"]):
+            registry_entry = entry
+            break
+    if registry_entry is None:
         return None
-    authorization = create_executable_bundle_mutation_authorization(
-        executable_bundle_authorization_id=f"{prompt_id}:EXECUTABLE-BUNDLE-MUTATION-AUTHORIZATION",
-        bundle_id=MARKETING_EXECUTABLE_DOMAIN_BUNDLE_ID,
-        worker_result_validation_artifact=validation,
-        authorized_by="AIGOL_GOVERNANCE",
-        authorized_at=created_at,
-    )
-    return create_marketing_executable_domain_bundle(
-        executable_bundle_runtime_id=f"{prompt_id}:EXECUTABLE-DOMAIN-BUNDLE",
+    return create_generic_executable_domain_bundle(
+        generic_domain_factory_runtime_id=f"{prompt_id}:GENERIC-DOMAIN-FACTORY",
+        domain_id=registry_entry["domain_id"],
         worker_result_validation_artifact=validation,
         worker_result_validation_replay_reference=validation_capture["worker_result_validation_replay_reference"],
-        executable_bundle_mutation_authorization_artifact=authorization,
         workspace_root=workspace_root,
         created_by="AIGOL_GOVERNANCE",
         created_at=created_at,

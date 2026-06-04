@@ -36,17 +36,22 @@ The runtime provides:
 
 ## Registry Domains
 
-The registry resolves:
+The registry originally certified Marketing as executable and the remaining
+domains as resolvable but not executable. The later
+`AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1` milestone realizes the factory path
+and updates all four registry entries to executable placeholder capability.
+
+The current registry resolves:
 
 | Domain | Resolution status |
 | --- | --- |
 | `MARKETING` | `RESOLVABLE_EXECUTABLE` |
-| `SERVER_MANAGEMENT` | `RESOLVABLE_NOT_EXECUTABLE` |
-| `TRADING` | `RESOLVABLE_NOT_EXECUTABLE` |
-| `HEALTHCARE` | `RESOLVABLE_NOT_EXECUTABLE` |
+| `SERVER_MANAGEMENT` | `RESOLVABLE_EXECUTABLE` |
+| `TRADING` | `RESOLVABLE_EXECUTABLE` |
+| `HEALTHCARE` | `RESOLVABLE_EXECUTABLE` |
 
-Only Marketing is executable in this milestone. Non-Marketing domains are
-registry-resolvable but must fail closed when executable creation is required.
+All four domains are executable placeholders only. Real domain implementation
+logic remains outside this registry milestone.
 
 ## Replay Model
 

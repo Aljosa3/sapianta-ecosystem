@@ -33,10 +33,11 @@
   ],
   "resolved_domains": {
     "MARKETING": "RESOLVABLE_EXECUTABLE",
-    "SERVER_MANAGEMENT": "RESOLVABLE_NOT_EXECUTABLE",
-    "TRADING": "RESOLVABLE_NOT_EXECUTABLE",
-    "HEALTHCARE": "RESOLVABLE_NOT_EXECUTABLE"
+    "SERVER_MANAGEMENT": "RESOLVABLE_EXECUTABLE",
+    "TRADING": "RESOLVABLE_EXECUTABLE",
+    "HEALTHCARE": "RESOLVABLE_EXECUTABLE"
   },
+  "runtime_continuity_note": "AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1 realizes executable placeholder generation for all four registry domains while preserving registry hash and entry hash validation.",
   "non_goals_preserved": [
     "No domain factory artifact creation.",
     "No non-Marketing executable domain creation.",

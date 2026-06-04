@@ -334,6 +334,10 @@ def _planned_artifacts(handoff: dict[str, Any], target_resource: str) -> list[st
             f"tests/test_{stem.lower()}.py",
         ]
     if target_resource == "DOMAIN":
+        if any(target.startswith("aigol/runtime/") for target in source_targets) or any(
+            target.startswith("tests/") for target in source_targets
+        ):
+            return source_targets
         artifacts = [
             f"governance/{stem}.md",
             f"governance/{stem.replace('DOMAIN_FOUNDATION_V1', 'DOMAIN_MODEL_V1')}.md",

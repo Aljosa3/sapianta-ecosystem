@@ -269,6 +269,30 @@ def _catalog_rules() -> tuple[tuple[str, tuple[str, ...], dict[str, Any]], ...]:
             },
         ),
         (
+            CREATE_DOMAIN,
+            ("create", "trading", "domain"),
+            {
+                "target_domain": "TRADING",
+                "target_resource": "DOMAIN",
+                "target_provider": None,
+                "target_worker_family": None,
+                "target_milestone": "TRADING_DOMAIN_FOUNDATION_V1",
+                "target_capability": "DOMAIN_FOUNDATION",
+            },
+        ),
+        (
+            CREATE_DOMAIN,
+            ("create", "healthcare", "domain"),
+            {
+                "target_domain": "HEALTHCARE",
+                "target_resource": "DOMAIN",
+                "target_provider": None,
+                "target_worker_family": None,
+                "target_milestone": "HEALTHCARE_DOMAIN_FOUNDATION_V1",
+                "target_capability": "DOMAIN_FOUNDATION",
+            },
+        ),
+        (
             CREATE_WORKER,
             ("create", "sentiment", "analysis", "worker"),
             {
