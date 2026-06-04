@@ -133,6 +133,54 @@ def test_existing_artifact_fails_before_any_executable_bundle_member_is_created(
     assert all(not (workspace / path).exists() for path in EXECUTABLE_BUNDLE_PATHS[1:])
 
 
+def test_existing_artifact_failure_replay_reconstructs_without_missing_authorization_cascade(tmp_path) -> None:
+    validation = _validate(tmp_path, prompt="Create a marketing domain.", suffix="existing-replay")
+    authorization = _authorization(validation, suffix="existing-replay")
+    workspace = _workspace(tmp_path)
+    existing = workspace / EXECUTABLE_BUNDLE_PATHS[0]
+    existing.write_text("existing\n", encoding="utf-8")
+    replay_dir = tmp_path / "executable_bundle_existing_replay"
+
+    result = create_marketing_executable_domain_bundle(
+        executable_bundle_runtime_id="EXECUTABLE-DOMAIN-BUNDLE-existing-replay",
+        worker_result_validation_artifact=validation["worker_result_validation_artifact"],
+        worker_result_validation_replay_reference=validation["worker_result_validation_replay_reference"],
+        executable_bundle_mutation_authorization_artifact=authorization,
+        workspace_root=workspace,
+        created_by="AIGOL_GOVERNANCE",
+        created_at=CREATED_AT,
+        replay_dir=replay_dir,
+    )
+    reconstructed = reconstruct_executable_domain_bundle_replay(replay_dir)
+
+    assert result["executable_bundle_verification_status"] == "FAILED_CLOSED"
+    assert reconstructed["executable_bundle_verification_status"] == "FAILED_CLOSED"
+    assert "target already exists" in reconstructed["failure_reason"]
+    assert reconstructed["replay_artifact_count"] == 1
+    assert not (replay_dir / "000_executable_bundle_authorization_recorded.json").exists()
+
+
+def test_interactive_marketing_domain_collision_fails_closed_once_without_replay_review_cascade(tmp_path) -> None:
+    args = _args(tmp_path, session_id="SESSION-CLI-EXECUTABLE-BUNDLE-COLLISION-000001")
+    existing = tmp_path / EXECUTABLE_BUNDLE_PATHS[0]
+    existing.write_text("existing\n", encoding="utf-8")
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["Create a marketing domain.", "exit"]),
+        output_func=output.append,
+    )
+
+    failed_closed_lines = [chunk for chunk in output if chunk.startswith("FAILED_CLOSED:")]
+    assert len(failed_closed_lines) == 1
+    assert "target already exists" in failed_closed_lines[0]
+    assert "runtime artifact missing" not in "\n".join(output)
+    assert result["executable_bundle_verified"] is False
+    assert result["post_execution_replay_reviewed"] is False
+    assert result["terminated"] is False
+
+
 @pytest.mark.parametrize(
     ("changes", "reason"),
     [

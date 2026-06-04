@@ -1,0 +1,58 @@
+{
+  "artifact_type": "AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_V1",
+  "certification_date": "2026-06-04",
+  "implemented_runtime_artifacts": [
+    "aigol/runtime/executable_domain_bundle_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_executable_domain_bundle_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_V1.md",
+    "governance/AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_CERTIFICATION.json"
+  ],
+  "certified_behaviors": [
+    "CREATE_ONLY collision remains fail-closed.",
+    "Terminal failed executable bundle replay reconstructs without loading missing success-only artifacts.",
+    "Interactive orchestration does not invoke replay review after executable bundle fail-closed.",
+    "No missing-artifact cascade is emitted for the collision path.",
+    "Successful executable bundle replay semantics remain unchanged."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_executable_domain_bundle_runtime_v1.py tests/test_post_execution_replay_review_runtime_v1.py",
+      "status": "PASS",
+      "summary": "28 passed"
+    },
+    {
+      "command": "printf 'Create a marketing domain.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-EXECUTABLE-BUNDLE-FAILURE-REPLAY-CONSISTENCY-000001 --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_executable_bundle_failure_replay_consistency_runtime --workspace /home/pisarna/work/sapianta",
+      "status": "PASS",
+      "summary": "Single FAILED_CLOSED outcome; no runtime artifact missing error."
+    },
+    {
+      "command": "python -m pytest tests/test_governance_conformance.py",
+      "status": "PASS",
+      "summary": "5 passed"
+    },
+    {
+      "command": "python -m runtime.governance.governance_conformance_engine",
+      "status": "PARTIALLY_CONFORMANT",
+      "summary": "18 checks passed, 2 hook drift checks failed; critical_violations = 0. Existing partial conformance remains visible."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_EXECUTABLE_BUNDLE_FAILURE_REPLAY_CONSISTENCY_STATUS = CERTIFIED"
+}

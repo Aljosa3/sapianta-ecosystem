@@ -952,94 +952,98 @@ def run_interactive_conversation(
                                                             output_writer(
                                                                 f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
                                                             )
-                                                        review_capture = review_validated_worker_result(
-                                                            post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
-                                                            worker_result_validation_artifact=validation_capture[
-                                                                "worker_result_validation_artifact"
-                                                            ],
-                                                            worker_result_validation_replay_reference=validation_capture[
-                                                                "worker_result_validation_replay_reference"
-                                                            ],
-                                                            executable_bundle_artifact=(
-                                                                executable_bundle_capture["executable_domain_bundle_artifact"]
-                                                                if executable_bundle_capture
-                                                                else None
-                                                            ),
-                                                            executable_bundle_replay_reference=(
-                                                                executable_bundle_capture["executable_bundle_replay_reference"]
-                                                                if executable_bundle_capture
-                                                                else None
-                                                            ),
-                                                            reviewed_by="AIGOL_GOVERNANCE",
-                                                            reviewed_at=created_at,
-                                                            replay_dir=turn_root / "post_execution_replay_review",
-                                                        )
-                                                        approval_resume_capture["post_execution_replay_review"] = review_capture
-                                                        if review_capture.get("fail_closed") is True:
-                                                            failed_turns += 1
-                                                            approval_resume_capture["fail_closed"] = True
-                                                            approval_resume_capture["failure_reason"] = review_capture.get(
-                                                                "failure_reason"
-                                                            )
-                                                            output_writer(
-                                                                f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
-                                                            )
-                                                        else:
-                                                            termination_capture = terminate_reviewed_operation(
-                                                                governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
-                                                                post_execution_replay_review_artifact=review_capture[
-                                                                    "post_execution_replay_review_artifact"
+                                                        if not (
+                                                            executable_bundle_capture is not None
+                                                            and executable_bundle_capture.get("fail_closed") is True
+                                                        ):
+                                                            review_capture = review_validated_worker_result(
+                                                                post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
+                                                                worker_result_validation_artifact=validation_capture[
+                                                                    "worker_result_validation_artifact"
                                                                 ],
-                                                                post_execution_replay_review_replay_reference=review_capture[
-                                                                    "post_execution_replay_review_replay_reference"
+                                                                worker_result_validation_replay_reference=validation_capture[
+                                                                    "worker_result_validation_replay_reference"
                                                                 ],
-                                                                terminated_by="AIGOL_GOVERNANCE",
-                                                                terminated_at=created_at,
-                                                                replay_dir=turn_root / "governed_termination",
+                                                                executable_bundle_artifact=(
+                                                                    executable_bundle_capture["executable_domain_bundle_artifact"]
+                                                                    if executable_bundle_capture
+                                                                    else None
+                                                                ),
+                                                                executable_bundle_replay_reference=(
+                                                                    executable_bundle_capture["executable_bundle_replay_reference"]
+                                                                    if executable_bundle_capture
+                                                                    else None
+                                                                ),
+                                                                reviewed_by="AIGOL_GOVERNANCE",
+                                                                reviewed_at=created_at,
+                                                                replay_dir=turn_root / "post_execution_replay_review",
                                                             )
-                                                            approval_resume_capture["governed_termination"] = termination_capture
-                                                            if termination_capture.get("fail_closed") is True:
+                                                            approval_resume_capture["post_execution_replay_review"] = review_capture
+                                                            if review_capture.get("fail_closed") is True:
                                                                 failed_turns += 1
                                                                 approval_resume_capture["fail_closed"] = True
-                                                                approval_resume_capture["failure_reason"] = termination_capture.get(
+                                                                approval_resume_capture["failure_reason"] = review_capture.get(
                                                                     "failure_reason"
                                                                 )
                                                                 output_writer(
                                                                     f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
                                                                 )
                                                             else:
-                                                                pending_approval_required = None
-                                                                output_writer(
-                                                                    render_implementation_approval_resume_summary(approval_resume_capture)
-                                                                    + "\n"
-                                                                    + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                                                    + "\n"
-                                                                    + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                                                    + "\n"
-                                                                    + render_execution_authorization_summary(authorization_capture)
-                                                                    + "\n"
-                                                                    + render_worker_invocation_request_summary(invocation_request_capture)
-                                                                    + "\n"
-                                                                    + render_worker_assignment_summary(assignment_capture)
-                                                                    + "\n"
-                                                                    + render_worker_dispatch_summary(dispatch_capture)
-                                                                    + "\n"
-                                                                    + render_worker_invocation_summary(invocation_capture)
-                                                                    + "\n"
-                                                                    + render_worker_result_capture_summary(result_capture)
-                                                                    + "\n"
-                                                                    + render_worker_result_validation_summary(validation_capture)
-                                                                    + "\n"
-                                                                    + (
-                                                                        render_executable_domain_bundle_summary(executable_bundle_capture)
-                                                                        + "\n"
-                                                                        if executable_bundle_capture
-                                                                        else ""
-                                                                    )
-                                                                    + render_post_execution_replay_review_summary(review_capture)
-                                                                    + "\n"
-                                                                    + render_governed_termination_summary(termination_capture)
+                                                                termination_capture = terminate_reviewed_operation(
+                                                                    governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
+                                                                    post_execution_replay_review_artifact=review_capture[
+                                                                        "post_execution_replay_review_artifact"
+                                                                    ],
+                                                                    post_execution_replay_review_replay_reference=review_capture[
+                                                                        "post_execution_replay_review_replay_reference"
+                                                                    ],
+                                                                    terminated_by="AIGOL_GOVERNANCE",
+                                                                    terminated_at=created_at,
+                                                                    replay_dir=turn_root / "governed_termination",
                                                                 )
+                                                                approval_resume_capture["governed_termination"] = termination_capture
+                                                                if termination_capture.get("fail_closed") is True:
+                                                                    failed_turns += 1
+                                                                    approval_resume_capture["fail_closed"] = True
+                                                                    approval_resume_capture["failure_reason"] = termination_capture.get(
+                                                                        "failure_reason"
+                                                                    )
+                                                                    output_writer(
+                                                                        f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
+                                                                    )
+                                                                else:
+                                                                    pending_approval_required = None
+                                                                    output_writer(
+                                                                        render_implementation_approval_resume_summary(approval_resume_capture)
+                                                                        + "\n"
+                                                                        + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                                        + "\n"
+                                                                        + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                                        + "\n"
+                                                                        + render_execution_authorization_summary(authorization_capture)
+                                                                        + "\n"
+                                                                        + render_worker_invocation_request_summary(invocation_request_capture)
+                                                                        + "\n"
+                                                                        + render_worker_assignment_summary(assignment_capture)
+                                                                        + "\n"
+                                                                        + render_worker_dispatch_summary(dispatch_capture)
+                                                                        + "\n"
+                                                                        + render_worker_invocation_summary(invocation_capture)
+                                                                        + "\n"
+                                                                        + render_worker_result_capture_summary(result_capture)
+                                                                        + "\n"
+                                                                        + render_worker_result_validation_summary(validation_capture)
+                                                                        + "\n"
+                                                                        + (
+                                                                            render_executable_domain_bundle_summary(executable_bundle_capture)
+                                                                            + "\n"
+                                                                            if executable_bundle_capture
+                                                                            else ""
+                                                                        )
+                                                                        + render_post_execution_replay_review_summary(review_capture)
+                                                                        + "\n"
+                                                                        + render_governed_termination_summary(termination_capture)
+                                                                    )
                 turns.append(
                     _interactive_approval_resume_turn_summary(
                         turn_id=turn_id,
@@ -1289,55 +1293,36 @@ def run_interactive_conversation(
                                                                     output_writer(
                                                                         f"FAILED_CLOSED: {routing_capture['failure_reason']}"
                                                                     )
-                                                                review_capture = review_validated_worker_result(
-                                                                    post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
-                                                                    worker_result_validation_artifact=validation_capture[
-                                                                        "worker_result_validation_artifact"
-                                                                    ],
-                                                                    worker_result_validation_replay_reference=validation_capture[
-                                                                        "worker_result_validation_replay_reference"
-                                                                    ],
-                                                                    executable_bundle_artifact=(
-                                                                        executable_bundle_capture["executable_domain_bundle_artifact"]
-                                                                        if executable_bundle_capture
-                                                                        else None
-                                                                    ),
-                                                                    executable_bundle_replay_reference=(
-                                                                        executable_bundle_capture["executable_bundle_replay_reference"]
-                                                                        if executable_bundle_capture
-                                                                        else None
-                                                                    ),
-                                                                    reviewed_by="AIGOL_GOVERNANCE",
-                                                                    reviewed_at=created_at,
-                                                                    replay_dir=turn_root / "post_execution_replay_review",
-                                                                )
-                                                                routing_capture["post_execution_replay_review"] = review_capture
-                                                                if review_capture.get("fail_closed") is True:
-                                                                    routing_capture["fail_closed"] = True
-                                                                    routing_capture["failure_reason"] = review_capture.get(
-                                                                        "failure_reason"
-                                                                    )
-                                                                    failed_turns += 1
-                                                                    output_writer(
-                                                                        f"FAILED_CLOSED: {routing_capture['failure_reason']}"
-                                                                    )
-                                                                else:
-                                                                    termination_capture = terminate_reviewed_operation(
-                                                                        governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
-                                                                        post_execution_replay_review_artifact=review_capture[
-                                                                            "post_execution_replay_review_artifact"
+                                                                if not (
+                                                                    executable_bundle_capture is not None
+                                                                    and executable_bundle_capture.get("fail_closed") is True
+                                                                ):
+                                                                    review_capture = review_validated_worker_result(
+                                                                        post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
+                                                                        worker_result_validation_artifact=validation_capture[
+                                                                            "worker_result_validation_artifact"
                                                                         ],
-                                                                        post_execution_replay_review_replay_reference=review_capture[
-                                                                            "post_execution_replay_review_replay_reference"
+                                                                        worker_result_validation_replay_reference=validation_capture[
+                                                                            "worker_result_validation_replay_reference"
                                                                         ],
-                                                                        terminated_by="AIGOL_GOVERNANCE",
-                                                                        terminated_at=created_at,
-                                                                        replay_dir=turn_root / "governed_termination",
+                                                                        executable_bundle_artifact=(
+                                                                            executable_bundle_capture["executable_domain_bundle_artifact"]
+                                                                            if executable_bundle_capture
+                                                                            else None
+                                                                        ),
+                                                                        executable_bundle_replay_reference=(
+                                                                            executable_bundle_capture["executable_bundle_replay_reference"]
+                                                                            if executable_bundle_capture
+                                                                            else None
+                                                                        ),
+                                                                        reviewed_by="AIGOL_GOVERNANCE",
+                                                                        reviewed_at=created_at,
+                                                                        replay_dir=turn_root / "post_execution_replay_review",
                                                                     )
-                                                                    routing_capture["governed_termination"] = termination_capture
-                                                                    if termination_capture.get("fail_closed") is True:
+                                                                    routing_capture["post_execution_replay_review"] = review_capture
+                                                                    if review_capture.get("fail_closed") is True:
                                                                         routing_capture["fail_closed"] = True
-                                                                        routing_capture["failure_reason"] = termination_capture.get(
+                                                                        routing_capture["failure_reason"] = review_capture.get(
                                                                             "failure_reason"
                                                                         )
                                                                         failed_turns += 1
@@ -1345,39 +1330,62 @@ def run_interactive_conversation(
                                                                             f"FAILED_CLOSED: {routing_capture['failure_reason']}"
                                                                         )
                                                                     else:
-                                                                        output_writer(
-                                                                            render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
-                                                                            + "\n"
-                                                                            + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
-                                                                            + "\n"
-                                                                            + render_governed_implementation_dry_run_summary(dry_run_capture)
-                                                                            + "\n"
-                                                                            + render_execution_authorization_summary(authorization_capture)
-                                                                            + "\n"
-                                                                            + render_worker_invocation_request_summary(invocation_request_capture)
-                                                                            + "\n"
-                                                                            + render_worker_assignment_summary(assignment_capture)
-                                                                            + "\n"
-                                                                            + render_worker_dispatch_summary(dispatch_capture)
-                                                                            + "\n"
-                                                                            + render_worker_invocation_summary(invocation_capture)
-                                                                            + "\n"
-                                                                            + render_worker_result_capture_summary(result_capture)
-                                                                            + "\n"
-                                                                            + render_worker_result_validation_summary(validation_capture)
-                                                                            + "\n"
-                                                                            + (
-                                                                                render_executable_domain_bundle_summary(
-                                                                                    executable_bundle_capture
-                                                                                )
-                                                                                + "\n"
-                                                                                if executable_bundle_capture
-                                                                                else ""
-                                                                            )
-                                                                            + render_post_execution_replay_review_summary(review_capture)
-                                                                            + "\n"
-                                                                            + render_governed_termination_summary(termination_capture)
+                                                                        termination_capture = terminate_reviewed_operation(
+                                                                            governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
+                                                                            post_execution_replay_review_artifact=review_capture[
+                                                                                "post_execution_replay_review_artifact"
+                                                                            ],
+                                                                            post_execution_replay_review_replay_reference=review_capture[
+                                                                                "post_execution_replay_review_replay_reference"
+                                                                            ],
+                                                                            terminated_by="AIGOL_GOVERNANCE",
+                                                                            terminated_at=created_at,
+                                                                            replay_dir=turn_root / "governed_termination",
                                                                         )
+                                                                        routing_capture["governed_termination"] = termination_capture
+                                                                        if termination_capture.get("fail_closed") is True:
+                                                                            routing_capture["fail_closed"] = True
+                                                                            routing_capture["failure_reason"] = termination_capture.get(
+                                                                                "failure_reason"
+                                                                            )
+                                                                            failed_turns += 1
+                                                                            output_writer(
+                                                                                f"FAILED_CLOSED: {routing_capture['failure_reason']}"
+                                                                            )
+                                                                        else:
+                                                                            output_writer(
+                                                                                render_conversation_to_ppp_handoff_execution_summary(ppp_capture)
+                                                                                + "\n"
+                                                                                + render_implementation_handoff_visibility_summary(handoff_visibility_capture)
+                                                                                + "\n"
+                                                                                + render_governed_implementation_dry_run_summary(dry_run_capture)
+                                                                                + "\n"
+                                                                                + render_execution_authorization_summary(authorization_capture)
+                                                                                + "\n"
+                                                                                + render_worker_invocation_request_summary(invocation_request_capture)
+                                                                                + "\n"
+                                                                                + render_worker_assignment_summary(assignment_capture)
+                                                                                + "\n"
+                                                                                + render_worker_dispatch_summary(dispatch_capture)
+                                                                                + "\n"
+                                                                                + render_worker_invocation_summary(invocation_capture)
+                                                                                + "\n"
+                                                                                + render_worker_result_capture_summary(result_capture)
+                                                                                + "\n"
+                                                                                + render_worker_result_validation_summary(validation_capture)
+                                                                                + "\n"
+                                                                                + (
+                                                                                    render_executable_domain_bundle_summary(
+                                                                                        executable_bundle_capture
+                                                                                    )
+                                                                                    + "\n"
+                                                                                    if executable_bundle_capture
+                                                                                    else ""
+                                                                                )
+                                                                                + render_post_execution_replay_review_summary(review_capture)
+                                                                                + "\n"
+                                                                                + render_governed_termination_summary(termination_capture)
+                                                                            )
                         else:
                             output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(

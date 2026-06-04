@@ -241,6 +241,10 @@ def reconstruct_executable_domain_bundle_replay(replay_dir: str | Path) -> dict[
     """Reconstruct executable bundle replay and verify current files."""
 
     replay_path = Path(replay_dir)
+    failed_replay = _load_failed_replay_if_present(replay_path)
+    if failed_replay is not None:
+        return failed_replay
+
     wrappers = []
     for index, step in enumerate(REPLAY_STEPS):
         wrapper = load_json(replay_path / f"{index:03d}_{step}.json")
@@ -275,6 +279,51 @@ def reconstruct_executable_domain_bundle_replay(replay_dir: str | Path) -> dict[
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
+        "failure_reason": bundle["failure_reason"],
+    }
+
+
+def _load_failed_replay_if_present(replay_path: Path) -> dict[str, Any] | None:
+    failure_path = replay_path / f"003_{REPLAY_STEPS[3]}.json"
+    if not failure_path.exists():
+        return None
+
+    wrapper = load_json(failure_path)
+    if wrapper.get("replay_index") != 3 or wrapper.get("replay_step") != REPLAY_STEPS[3]:
+        raise FailClosedRuntimeError("executable bundle replay ordering mismatch")
+    _verify_wrapper_hash(wrapper)
+    bundle = wrapper.get("artifact")
+    _verify_artifact_hash(bundle, "executable bundle replay artifact")
+    if (
+        bundle.get("artifact_type") != EXECUTABLE_BUNDLE_VERIFICATION_RESULT_V1
+        or bundle.get("executable_bundle_verification_status") != FAILED_CLOSED
+    ):
+        return None
+
+    wrappers: list[dict[str, Any]] = []
+    for index, step in enumerate(REPLAY_STEPS[:3]):
+        path = replay_path / f"{index:03d}_{step}.json"
+        if not path.exists():
+            break
+        prefix_wrapper = load_json(path)
+        if prefix_wrapper.get("replay_index") != index or prefix_wrapper.get("replay_step") != step:
+            raise FailClosedRuntimeError("executable bundle replay ordering mismatch")
+        _verify_wrapper_hash(prefix_wrapper)
+        _verify_artifact_hash(prefix_wrapper.get("artifact"), "executable bundle replay artifact")
+        wrappers.append(prefix_wrapper)
+
+    return {
+        "executable_bundle_runtime_id": bundle["executable_bundle_runtime_id"],
+        "bundle_id": bundle["bundle_id"],
+        "executable_bundle_authorization_status": bundle["executable_bundle_authorization_status"],
+        "artifact_creation_status": bundle["artifact_creation_status"],
+        "executable_bundle_verification_status": bundle["executable_bundle_verification_status"],
+        "artifact_paths": [],
+        "worker_result_validation_reference": bundle["worker_result_validation_reference"],
+        "chain_id": bundle.get("chain_id"),
+        "replay_visible": True,
+        "replay_artifact_count": len(wrappers) + 1,
+        "replay_hash": replay_hash([*wrappers, wrapper]),
         "failure_reason": bundle["failure_reason"],
     }
 
