@@ -1,0 +1,98 @@
+{
+  "artifact": "AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/conversation_to_ppp_handoff_execution.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_conversation_to_ppp_handoff_execution_v1.py",
+  "validated_at": "2026-06-04",
+  "acceptance_checks": [
+    {
+      "check": "create_marketing_domain_reaches_handoff",
+      "status": "PASS",
+      "evidence": "Create a marketing domain reaches IMPLEMENTATION_HANDOFF_CREATED through Resource Selection, PPP integration, proposal production evidence, proposal validation, approval evidence, and implementation handoff."
+    },
+    {
+      "check": "add_provider_anthropic_reaches_terminal_state",
+      "status": "PASS",
+      "evidence": "Add provider Anthropic reaches IMPLEMENTATION_HANDOFF_CREATED without conversation entry failure."
+    },
+    {
+      "check": "create_sentiment_analysis_worker_reaches_handoff",
+      "status": "PASS",
+      "evidence": "Create sentiment analysis worker reaches IMPLEMENTATION_HANDOFF_CREATED and preserves no-worker-invocation boundaries."
+    },
+    {
+      "check": "improve_trading_strategy_requires_approval",
+      "status": "PASS",
+      "evidence": "Improve trading strategy reaches HUMAN_APPROVAL_REQUIRED because TRADING is high risk."
+    },
+    {
+      "check": "cli_acceptance_marketing_domain",
+      "status": "PASS",
+      "evidence": "python -m aigol.cli.aigol_cli conversation no longer stops at NATIVE_DEVELOPMENT_INTAKE for Create a marketing domain and returns IMPLEMENTATION_HANDOFF_CREATED."
+    },
+    {
+      "check": "replay_reconstruction",
+      "status": "PASS",
+      "evidence": "Conversation-to-PPP handoff replay reconstruction verifies wrapper ordering, artifact hashes, execution reference, execution hash, and handoff lineage."
+    },
+    {
+      "check": "replay_corruption_detected",
+      "status": "PASS",
+      "evidence": "Reconstruction fails closed when the recorded execution artifact is modified."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Runtime source does not invoke workers, dispatch, execute, authorize, or mutate governance."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "9 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "19 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_provider_unavailable_clarification_fallback_v1.py tests/test_intent_clarification_dialog_runtime_v1.py",
+      "status": "PASS",
+      "summary": "13 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "21 passed"
+    },
+    {
+      "command": "printf 'Create a marketing domain.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id SESSION-CLI-ACCEPTANCE-PPP-HANDOFF-000001 --created-at 2026-06-04T00:00:00+00:00 --runtime-root /tmp/aigol_conversation_to_ppp_cli_acceptance",
+      "status": "PASS",
+      "summary": "Returned conversation_to_ppp_terminal_status: IMPLEMENTATION_HANDOFF_CREATED."
+    }
+  ],
+  "authority_boundaries": {
+    "provider_authority": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false,
+    "approval_bypassed": false
+  },
+  "final_classification": "AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_STATUS = CERTIFIED"
+}

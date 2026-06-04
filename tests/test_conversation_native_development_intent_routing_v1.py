@@ -18,6 +18,8 @@ from aigol.runtime.conversation_native_development_intent_routing import (
     reconstruct_conversation_native_development_intent_routing_replay,
     run_conversation_native_development_intent_routing,
 )
+from aigol.runtime.conversation_to_implementation_handoff_runtime import IMPLEMENTATION_HANDOFF_CREATED
+from aigol.runtime.conversation_to_ppp_handoff_execution import HUMAN_APPROVAL_REQUIRED
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
@@ -126,12 +128,20 @@ def test_interactive_conversation_routes_acceptance_prompts_without_provider_ent
         "TURN-000003",
         "TURN-000004",
     ]
-    assert all(turn["response_status"] == NATIVE_DEVELOPMENT_INTENT_ROUTED for turn in result["turns"])
-    assert all(turn["response_source"] == "NATIVE_DEVELOPMENT_INTENT_ROUTING" for turn in result["turns"])
-    assert "intent_class: CREATE_DOMAIN" in output[0]
-    assert "target_provider: ANTHROPIC" in output[1]
-    assert "target_worker_family: SENTIMENT_ANALYSIS" in output[2]
-    assert "intent_class: IMPROVE_EXISTING_CAPABILITY" in output[3]
+    assert [turn["response_status"] for turn in result["turns"]] == [
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        IMPLEMENTATION_HANDOFF_CREATED,
+        HUMAN_APPROVAL_REQUIRED,
+    ]
+    assert all(turn["response_source"] == "CONVERSATION_TO_PPP_HANDOFF_EXECUTION" for turn in result["turns"])
+    assert all(turn["recognized_development_task"] is True for turn in result["turns"])
+    assert result["turns"][0]["intent_class"] == CREATE_DOMAIN
+    assert result["turns"][1]["target_provider"] == "ANTHROPIC"
+    assert result["turns"][2]["target_worker_family"] == "SENTIMENT_ANALYSIS"
+    assert result["turns"][3]["intent_class"] == IMPROVE_EXISTING_CAPABILITY
+    assert "conversation_to_ppp_terminal_status: IMPLEMENTATION_HANDOFF_CREATED" in output[0]
+    assert "approval_status: HUMAN_APPROVAL_REQUIRED" in output[3]
 
 
 def test_turn_allocation_uses_fresh_resume_state_for_each_turn(tmp_path) -> None:

@@ -1,0 +1,89 @@
+{
+  "artifact": "AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_V1",
+  "certification_date": "2026-06-04",
+  "runtime_artifacts": [
+    "aigol/runtime/conversation_to_ppp_handoff_execution.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_conversation_to_ppp_handoff_execution_v1.py",
+    "tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_V1.md",
+    "governance/AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Continues conversation-routed native-development intents beyond NATIVE_DEVELOPMENT_INTAKE.",
+    "Routes conversation intents through Resource Selection and Resource Selection PPP Integration.",
+    "Creates deterministic proposal production evidence for proposal-only handoff continuation.",
+    "Validates the generated development proposal contract before handoff.",
+    "Creates implementation handoff evidence for non-high-risk prompts.",
+    "Stops high-risk TRADING improvement prompts at HUMAN_APPROVAL_REQUIRED.",
+    "Preserves replay reconstruction across routing, PPP, proposal validation, approval, and handoff evidence."
+  ],
+  "non_goals_preserved": [
+    "No worker execution.",
+    "No worker dispatch.",
+    "No execution authorization.",
+    "No governance mutation.",
+    "No approval bypass.",
+    "No direct domain creation.",
+    "No direct worker creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "9 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_to_ppp_handoff_execution_v1.py",
+      "status": "PASS",
+      "summary": "19 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_provider_unavailable_clarification_fallback_v1.py tests/test_intent_clarification_dialog_runtime_v1.py",
+      "status": "PASS",
+      "summary": "13 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_provider_proposal_production_runtime_v1.py tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+      "status": "PASS",
+      "summary": "15 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_unified_resource_selection_runtime_v1.py tests/test_unified_resource_selection_ppp_integration_v1.py",
+      "status": "PASS",
+      "summary": "21 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_blockers_before_full_conversation_driven_domain_creation": [
+    "Dedicated native-development task-intake artifacts must replace the deterministic context shell.",
+    "Domain-specific context assembly must provide full implementation-planning references.",
+    "Human approval resume behavior after HUMAN_APPROVAL_REQUIRED remains a follow-on runtime.",
+    "Conversation mode still creates handoff candidates only; it does not create domains, workers, or provider registry mutations."
+  ],
+  "final_classification": "AIGOL_CONVERSATION_TO_PPP_HANDOFF_EXECUTION_STATUS = CERTIFIED"
+}

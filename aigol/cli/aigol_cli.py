@@ -133,6 +133,10 @@ from aigol.runtime.conversation_native_development_intent_routing import (
     render_native_development_intent_routing_summary,
     run_conversation_native_development_intent_routing,
 )
+from aigol.runtime.conversation_to_ppp_handoff_execution import (
+    render_conversation_to_ppp_handoff_execution_summary,
+    run_conversation_to_ppp_handoff_execution,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -652,7 +656,24 @@ def run_interactive_conversation(
                     failure_reason = routing_capture.get("failure_reason") or "native development intent routing failed closed"
                     output_writer(f"FAILED_CLOSED: {failure_reason}")
                 else:
-                    output_writer(render_native_development_intent_routing_summary(routing_capture))
+                    ppp_capture = run_conversation_to_ppp_handoff_execution(
+                        execution_id=f"{prompt_id}:CONVERSATION-TO-PPP-HANDOFF",
+                        native_development_intent_routed_artifact=routing_capture[
+                            "native_development_intent_routed_artifact"
+                        ],
+                        created_at=created_at,
+                        replay_dir=turn_root / "conversation_to_ppp_handoff_execution",
+                    )
+                    routing_capture["conversation_to_ppp_handoff_execution"] = ppp_capture
+                    routing_capture["response_status"] = ppp_capture.get("terminal_status")
+                    routing_capture["response_source"] = "CONVERSATION_TO_PPP_HANDOFF_EXECUTION"
+                    routing_capture["fail_closed"] = ppp_capture.get("fail_closed") is True
+                    routing_capture["failure_reason"] = ppp_capture.get("failure_reason")
+                    if routing_capture["fail_closed"]:
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
+                    else:
+                        output_writer(render_conversation_to_ppp_handoff_execution_summary(ppp_capture))
                 turns.append(
                     _interactive_native_development_intent_routing_turn_summary(
                         turn_id=turn_id,
@@ -857,6 +878,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
+    ppp_capture = routing_capture.get("conversation_to_ppp_handoff_execution")
+    if not isinstance(ppp_capture, dict):
+        ppp_capture = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -885,7 +909,15 @@ def _interactive_native_development_intent_routing_turn_summary(
         "target_worker_family": routing_capture.get("target_worker_family"),
         "target_milestone": routing_capture.get("target_milestone"),
         "next_pipeline_stage": routing_capture.get("next_pipeline_stage"),
-        "recognized_development_task": routing_capture.get("response_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
+        "conversation_to_ppp_terminal_status": ppp_capture.get("terminal_status"),
+        "handoff_status": ppp_capture.get("handoff_status"),
+        "handoff_reference": ppp_capture.get("handoff_reference"),
+        "approval_status": ppp_capture.get("approval_status"),
+        "proposal_validation_status": ppp_capture.get("proposal_validation_status"),
+        "conversation_to_ppp_handoff_execution_replay_reference": ppp_capture.get(
+            "conversation_to_ppp_handoff_execution_replay_reference"
+        ),
+        "recognized_development_task": routing_capture.get("routing_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,
