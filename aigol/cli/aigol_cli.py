@@ -180,6 +180,13 @@ from aigol.runtime.worker_result_validation_runtime import (
     render_worker_result_validation_summary,
     validate_worker_result,
 )
+from aigol.runtime.real_output_binding_runtime import (
+    GOVERNANCE_DOCUMENT_MARKDOWN,
+    TARGET_PATH,
+    bind_validated_output,
+    create_exact_output_mutation_authorization,
+    render_real_output_binding_summary,
+)
 from aigol.runtime.post_execution_replay_review_runtime import (
     render_post_execution_replay_review_summary,
     review_validated_worker_result,
@@ -212,6 +219,37 @@ from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
 INTERACTIVE_EXIT_COMMANDS = frozenset({"exit", "quit"})
+
+
+def _bind_supported_real_output(
+    *,
+    prompt_id: str,
+    validation_capture: dict[str, Any],
+    workspace_root: str | Path,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any] | None:
+    validation = validation_capture["worker_result_validation_artifact"]
+    if TARGET_PATH not in validation.get("produced_outputs", []):
+        return None
+    authorization = create_exact_output_mutation_authorization(
+        mutation_authorization_id=f"{prompt_id}:EXACT-OUTPUT-MUTATION-AUTHORIZATION",
+        worker_result_validation_artifact=validation,
+        target_path=TARGET_PATH,
+        artifact_type=GOVERNANCE_DOCUMENT_MARKDOWN,
+        authorized_by="AIGOL_GOVERNANCE",
+        authorized_at=created_at,
+    )
+    return bind_validated_output(
+        real_output_binding_id=f"{prompt_id}:REAL-OUTPUT-BINDING",
+        worker_result_validation_artifact=validation,
+        worker_result_validation_replay_reference=validation_capture["worker_result_validation_replay_reference"],
+        mutation_authorization_artifact=authorization,
+        workspace_root=workspace_root,
+        bound_by="AIGOL_GOVERNANCE",
+        bound_at=created_at,
+        replay_dir=replay_dir,
+    )
 
 
 def _json(data: dict[str, Any]) -> str:
@@ -442,6 +480,7 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--created-at", default="2026-06-01T00:00:00Z")
     conversation.add_argument("--runtime-root", default=".aigol_conversation_runtime")
     conversation.add_argument("--operator-context", default="interactive_conversation_cli")
+    conversation.add_argument("--workspace", default=".")
 
     show_latest_chain = subcommands.add_parser("show-latest-chain")
     show_latest_chain.add_argument("--replay-root", default=".")
@@ -894,6 +933,26 @@ def run_interactive_conversation(
                                                         )
                                                         output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                                                     else:
+                                                        output_binding_capture = _bind_supported_real_output(
+                                                            prompt_id=prompt_id,
+                                                            validation_capture=validation_capture,
+                                                            workspace_root=args.workspace,
+                                                            created_at=created_at,
+                                                            replay_dir=turn_root / "real_output_binding",
+                                                        )
+                                                        if output_binding_capture is not None:
+                                                            approval_resume_capture["real_output_binding"] = output_binding_capture
+                                                        if output_binding_capture is not None and output_binding_capture.get(
+                                                            "fail_closed"
+                                                        ) is True:
+                                                            failed_turns += 1
+                                                            approval_resume_capture["fail_closed"] = True
+                                                            approval_resume_capture["failure_reason"] = output_binding_capture.get(
+                                                                "failure_reason"
+                                                            )
+                                                            output_writer(
+                                                                f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}"
+                                                            )
                                                         review_capture = review_validated_worker_result(
                                                             post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
                                                             worker_result_validation_artifact=validation_capture[
@@ -902,6 +961,16 @@ def run_interactive_conversation(
                                                             worker_result_validation_replay_reference=validation_capture[
                                                                 "worker_result_validation_replay_reference"
                                                             ],
+                                                            real_output_binding_artifact=(
+                                                                output_binding_capture["real_output_binding_artifact"]
+                                                                if output_binding_capture
+                                                                else None
+                                                            ),
+                                                            real_output_binding_replay_reference=(
+                                                                output_binding_capture["real_output_binding_replay_reference"]
+                                                                if output_binding_capture
+                                                                else None
+                                                            ),
                                                             reviewed_by="AIGOL_GOVERNANCE",
                                                             reviewed_at=created_at,
                                                             replay_dir=turn_root / "post_execution_replay_review",
@@ -962,6 +1031,12 @@ def run_interactive_conversation(
                                                                     + "\n"
                                                                     + render_worker_result_validation_summary(validation_capture)
                                                                     + "\n"
+                                                                    + (
+                                                                        render_real_output_binding_summary(output_binding_capture)
+                                                                        + "\n"
+                                                                        if output_binding_capture
+                                                                        else ""
+                                                                    )
                                                                     + render_post_execution_replay_review_summary(review_capture)
                                                                     + "\n"
                                                                     + render_governed_termination_summary(termination_capture)
@@ -1195,6 +1270,26 @@ def run_interactive_conversation(
                                                                 failed_turns += 1
                                                                 output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                                             else:
+                                                                output_binding_capture = _bind_supported_real_output(
+                                                                    prompt_id=prompt_id,
+                                                                    validation_capture=validation_capture,
+                                                                    workspace_root=args.workspace,
+                                                                    created_at=created_at,
+                                                                    replay_dir=turn_root / "real_output_binding",
+                                                                )
+                                                                if output_binding_capture is not None:
+                                                                    routing_capture["real_output_binding"] = output_binding_capture
+                                                                if output_binding_capture is not None and output_binding_capture.get(
+                                                                    "fail_closed"
+                                                                ) is True:
+                                                                    routing_capture["fail_closed"] = True
+                                                                    routing_capture["failure_reason"] = output_binding_capture.get(
+                                                                        "failure_reason"
+                                                                    )
+                                                                    failed_turns += 1
+                                                                    output_writer(
+                                                                        f"FAILED_CLOSED: {routing_capture['failure_reason']}"
+                                                                    )
                                                                 review_capture = review_validated_worker_result(
                                                                     post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
                                                                     worker_result_validation_artifact=validation_capture[
@@ -1203,6 +1298,16 @@ def run_interactive_conversation(
                                                                     worker_result_validation_replay_reference=validation_capture[
                                                                         "worker_result_validation_replay_reference"
                                                                     ],
+                                                                    real_output_binding_artifact=(
+                                                                        output_binding_capture["real_output_binding_artifact"]
+                                                                        if output_binding_capture
+                                                                        else None
+                                                                    ),
+                                                                    real_output_binding_replay_reference=(
+                                                                        output_binding_capture["real_output_binding_replay_reference"]
+                                                                        if output_binding_capture
+                                                                        else None
+                                                                    ),
                                                                     reviewed_by="AIGOL_GOVERNANCE",
                                                                     reviewed_at=created_at,
                                                                     replay_dir=turn_root / "post_execution_replay_review",
@@ -1262,6 +1367,14 @@ def run_interactive_conversation(
                                                                             + "\n"
                                                                             + render_worker_result_validation_summary(validation_capture)
                                                                             + "\n"
+                                                                            + (
+                                                                                render_real_output_binding_summary(
+                                                                                    output_binding_capture
+                                                                                )
+                                                                                + "\n"
+                                                                                if output_binding_capture
+                                                                                else ""
+                                                                            )
                                                                             + render_post_execution_replay_review_summary(review_capture)
                                                                             + "\n"
                                                                             + render_governed_termination_summary(termination_capture)
@@ -1391,6 +1504,9 @@ def run_interactive_conversation(
         "worker_invoked": any(turn.get("worker_invoked") is True for turn in turns),
         "worker_result_captured": any(turn.get("worker_result_captured") is True for turn in turns),
         "worker_result_validated": any(turn.get("worker_result_validated") is True for turn in turns),
+        "output_bound": any(turn.get("output_bound") is True for turn in turns),
+        "artifact_created": any(turn.get("artifact_created") is True for turn in turns),
+        "artifact_verified": any(turn.get("artifact_verified") is True for turn in turns),
         "post_execution_replay_reviewed": any(
             turn.get("post_execution_replay_reviewed") is True for turn in turns
         ),
@@ -1510,6 +1626,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     validation_capture = routing_capture.get("worker_result_validation")
     if not isinstance(validation_capture, dict):
         validation_capture = {}
+    output_binding_capture = routing_capture.get("real_output_binding")
+    if not isinstance(output_binding_capture, dict):
+        output_binding_capture = {}
     review_capture = routing_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
@@ -1580,6 +1699,8 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_result_validation_replay_reference": validation_capture.get(
             "worker_result_validation_replay_reference"
         ),
+        "real_output_binding_status": output_binding_capture.get("output_binding_status"),
+        "real_output_binding_replay_reference": output_binding_capture.get("real_output_binding_replay_reference"),
         "post_execution_replay_review_status": review_capture.get("review_status"),
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
@@ -1592,6 +1713,9 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
+        "output_bound": output_binding_capture.get("output_binding_status") == "OUTPUT_BOUND",
+        "artifact_created": output_binding_capture.get("artifact_creation_status") == "ARTIFACT_CREATED",
+        "artifact_verified": output_binding_capture.get("verification_status") == "ARTIFACT_VERIFIED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
         "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,
@@ -1637,6 +1761,9 @@ def _interactive_approval_resume_turn_summary(
     validation_capture = approval_resume_capture.get("worker_result_validation")
     if not isinstance(validation_capture, dict):
         validation_capture = {}
+    output_binding_capture = approval_resume_capture.get("real_output_binding")
+    if not isinstance(output_binding_capture, dict):
+        output_binding_capture = {}
     review_capture = approval_resume_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
@@ -1696,6 +1823,8 @@ def _interactive_approval_resume_turn_summary(
         "worker_result_validation_replay_reference": validation_capture.get(
             "worker_result_validation_replay_reference"
         ),
+        "real_output_binding_status": output_binding_capture.get("output_binding_status"),
+        "real_output_binding_replay_reference": output_binding_capture.get("real_output_binding_replay_reference"),
         "post_execution_replay_review_status": review_capture.get("review_status"),
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
@@ -1707,6 +1836,9 @@ def _interactive_approval_resume_turn_summary(
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
+        "output_bound": output_binding_capture.get("output_binding_status") == "OUTPUT_BOUND",
+        "artifact_created": output_binding_capture.get("artifact_creation_status") == "ARTIFACT_CREATED",
+        "artifact_verified": output_binding_capture.get("verification_status") == "ARTIFACT_VERIFIED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
         "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,

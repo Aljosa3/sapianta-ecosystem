@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.real_output_binding_runtime import (
+    ARTIFACT_VERIFIED,
+    REAL_OUTPUT_BINDING_ARTIFACT_V1,
+    reconstruct_real_output_binding_replay,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_result_validation_runtime import (
     RESULT_VALIDATED,
@@ -37,6 +42,8 @@ def review_validated_worker_result(
     post_execution_replay_review_id: str,
     worker_result_validation_artifact: dict[str, Any],
     worker_result_validation_replay_reference: str,
+    real_output_binding_artifact: dict[str, Any] | None = None,
+    real_output_binding_replay_reference: str | None = None,
     reviewed_by: str,
     reviewed_at: str,
     replay_dir: str | Path,
@@ -50,12 +57,19 @@ def review_validated_worker_result(
             Path(worker_result_validation_replay_reference),
             worker_result_validation_artifact,
         )
+        output_binding = _load_output_binding_lineage(
+            real_output_binding_artifact,
+            real_output_binding_replay_reference,
+            lineage["validation"],
+        )
         validation = lineage["validation"]
         evidence = _evidence_artifact(
             review_id=post_execution_replay_review_id,
             validation=validation,
             lineage=lineage,
+            output_binding=output_binding,
             validation_replay_reference=worker_result_validation_replay_reference,
+            output_binding_replay_reference=real_output_binding_replay_reference,
             reviewed_at=reviewed_at,
         )
         classification = _classification_artifact(
@@ -68,6 +82,7 @@ def review_validated_worker_result(
             evidence=evidence,
             classification=classification,
             validation=validation,
+            output_binding=output_binding,
             reviewed_by=reviewed_by,
             reviewed_at=reviewed_at,
         )
@@ -128,6 +143,11 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
         raise FailClosedRuntimeError("post-execution replay review chain mismatch")
     _validate_review_artifact(review)
     _load_validation_lineage(Path(evidence["worker_result_validation_replay_reference"]), None, review=review)
+    _load_output_binding_lineage(
+        None,
+        evidence.get("real_output_binding_replay_reference"),
+        review,
+    )
     return {
         "post_execution_replay_review_id": review["post_execution_replay_review_id"],
         "review_status": result["review_status"],
@@ -143,6 +163,7 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
         "authority_integrity_assessment": review["authority_integrity_assessment"],
         "execution_integrity_assessment": review["execution_integrity_assessment"],
         "validation_integrity_assessment": review["validation_integrity_assessment"],
+        "output_binding_integrity_assessment": review["output_binding_integrity_assessment"],
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
@@ -318,12 +339,54 @@ def _load_chain_artifacts(validation_evidence: dict[str, Any]) -> dict[str, dict
     }
 
 
+def _load_output_binding_lineage(
+    provided_binding: dict[str, Any] | None,
+    replay_reference: str | None,
+    validation: dict[str, Any],
+) -> dict[str, Any] | None:
+    if provided_binding is None and replay_reference is None:
+        return None
+    if replay_reference is None:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding lineage incomplete")
+    reconstructed = reconstruct_real_output_binding_replay(Path(replay_reference))
+    if reconstructed.get("verification_status") != ARTIFACT_VERIFIED:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding verification invalid")
+    wrapper = load_json(Path(replay_reference) / "002_output_binding_artifact_recorded.json")
+    _verify_wrapper_hash(wrapper)
+    binding = wrapper.get("artifact")
+    if not isinstance(binding, dict):
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding replay corruption")
+    _verify_artifact_hash(binding, "real output binding lineage artifact")
+    if binding.get("artifact_type") != REAL_OUTPUT_BINDING_ARTIFACT_V1:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: invalid output binding artifact")
+    if provided_binding is not None:
+        _verify_artifact_hash(provided_binding, "provided real output binding artifact")
+        if provided_binding.get("real_output_binding_id") != binding.get("real_output_binding_id"):
+            raise FailClosedRuntimeError("post-execution replay review failed closed: output binding mismatch")
+        if provided_binding.get("artifact_hash") != binding.get("artifact_hash"):
+            raise FailClosedRuntimeError("post-execution replay review failed closed: output binding mismatch")
+    validation_reference = validation.get("worker_result_validation_id")
+    validation_hash = validation.get("artifact_hash")
+    if validation_reference is None:
+        validation_reference = validation.get("worker_result_validation_reference")
+        validation_hash = validation.get("worker_result_validation_hash")
+    if binding.get("worker_result_validation_reference") != validation_reference:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding validation mismatch")
+    if binding.get("worker_result_validation_hash") != validation_hash:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding validation mismatch")
+    if binding.get("chain_id") != validation.get("chain_id"):
+        raise FailClosedRuntimeError("post-execution replay review failed closed: output binding chain mismatch")
+    return binding
+
+
 def _evidence_artifact(
     *,
     review_id: str,
     validation: dict[str, Any],
     lineage: dict[str, Any],
+    output_binding: dict[str, Any] | None,
     validation_replay_reference: str,
+    output_binding_replay_reference: str | None,
     reviewed_at: str,
 ) -> dict[str, Any]:
     chain = lineage["chain"]
@@ -356,6 +419,14 @@ def _evidence_artifact(
         "worker_family": validation["worker_family"],
         "worker_role": validation["worker_role"],
         "validation_requirements": deepcopy(validation["validation_requirements"]),
+        "real_output_binding_reference": output_binding["real_output_binding_id"] if output_binding else None,
+        "real_output_binding_hash": output_binding["artifact_hash"] if output_binding else None,
+        "real_output_binding_replay_reference": (
+            _require_string(output_binding_replay_reference, "real_output_binding_replay_reference")
+            if output_binding
+            else None
+        ),
+        "artifact_creation_review_required": output_binding is not None,
         "lineage_checks": deepcopy(lineage["lineage_checks"]),
         "recorded_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
@@ -393,6 +464,7 @@ def _classification_artifact(*, review_id: str, evidence: dict[str, Any], review
         )
         else FAILED_CLOSED,
         "validation_integrity_assessment": INTEGRITY_VERIFIED if checks["validation_continuity"] else FAILED_CLOSED,
+        "output_binding_integrity_assessment": INTEGRITY_VERIFIED,
         "classified_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
         **_post_review_boundary_flags(),
@@ -402,6 +474,7 @@ def _classification_artifact(*, review_id: str, evidence: dict[str, Any], review
         artifact["authority_integrity_assessment"],
         artifact["execution_integrity_assessment"],
         artifact["validation_integrity_assessment"],
+        artifact["output_binding_integrity_assessment"],
     ):
         raise FailClosedRuntimeError("post-execution replay review failed closed: integrity assessment failed")
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -414,6 +487,7 @@ def _review_artifact(
     evidence: dict[str, Any],
     classification: dict[str, Any],
     validation: dict[str, Any],
+    output_binding: dict[str, Any] | None,
     reviewed_by: str,
     reviewed_at: str,
 ) -> dict[str, Any]:
@@ -449,6 +523,10 @@ def _review_artifact(
         "authority_integrity_assessment": classification["authority_integrity_assessment"],
         "execution_integrity_assessment": classification["execution_integrity_assessment"],
         "validation_integrity_assessment": classification["validation_integrity_assessment"],
+        "output_binding_integrity_assessment": classification["output_binding_integrity_assessment"],
+        "real_output_binding_reference": output_binding["real_output_binding_id"] if output_binding else None,
+        "real_output_binding_hash": output_binding["artifact_hash"] if output_binding else None,
+        "artifact_creation_reviewed": output_binding is not None,
         "reviewed_by": _require_string(reviewed_by, "reviewed_by"),
         "reviewed_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
@@ -585,6 +663,7 @@ def _validate_review_artifact(review: dict[str, Any]) -> None:
         "authority_integrity_assessment",
         "execution_integrity_assessment",
         "validation_integrity_assessment",
+        "output_binding_integrity_assessment",
     ):
         if review.get(assessment) != INTEGRITY_VERIFIED:
             raise FailClosedRuntimeError("post-execution replay review failed closed: integrity assessment failed")

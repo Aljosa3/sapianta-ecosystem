@@ -34,6 +34,7 @@ SESSION_ID = "SESSION-NATIVE-INTENT-ROUTING-000001"
 
 
 def _args(tmp_path, *, session_id: str = SESSION_ID):
+    (tmp_path / "governance").mkdir(exist_ok=True)
     parser = build_parser()
     return parser.parse_args(
         [
@@ -44,6 +45,8 @@ def _args(tmp_path, *, session_id: str = SESSION_ID):
             CREATED_AT,
             "--runtime-root",
             str(tmp_path / "interactive_runtime"),
+            "--workspace",
+            str(tmp_path),
         ]
     )
 
