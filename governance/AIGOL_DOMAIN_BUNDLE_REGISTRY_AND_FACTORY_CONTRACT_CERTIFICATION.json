@@ -1,0 +1,70 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "certifies": "AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_V1",
+  "certification_date": "2026-06-04",
+  "review_scope": [
+    "aigol/runtime/executable_domain_bundle_runtime.py",
+    "aigol/runtime/multi_artifact_domain_bundle_runtime.py",
+    "aigol/runtime/implementation_handoff_visibility.py",
+    "aigol/runtime/conversation_to_ppp_handoff_execution.py"
+  ],
+  "created_contract_artifacts": [
+    "governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_READINESS_REVIEW_V1.md",
+    "governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_V1.md",
+    "governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_MODEL_V1.md",
+    "governance/AIGOL_DOMAIN_FACTORY_CONTRACT_V1.md",
+    "governance/AIGOL_DOMAIN_BUNDLE_RESOLUTION_MODEL_V1.md",
+    "governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_CERTIFICATION.json"
+  ],
+  "designed_models": [
+    "DOMAIN_BUNDLE_REGISTRY",
+    "DOMAIN_FACTORY_CONTRACT",
+    "DOMAIN_ARTIFACT_TEMPLATE_MODEL",
+    "DOMAIN_RUNTIME_TEMPLATE_MODEL",
+    "DOMAIN_TEST_TEMPLATE_MODEL",
+    "DOMAIN_BUNDLE_RESOLUTION_MODEL"
+  ],
+  "required_resolvable_domains": [
+    "MARKETING",
+    "SERVER_MANAGEMENT",
+    "TRADING",
+    "HEALTHCARE"
+  ],
+  "resolution_policy": {
+    "MARKETING": "RESOLVABLE_EXECUTABLE",
+    "SERVER_MANAGEMENT": "RESOLVABLE_NOT_EXECUTABLE",
+    "TRADING": "RESOLVABLE_NOT_EXECUTABLE",
+    "HEALTHCARE": "RESOLVABLE_NOT_EXECUTABLE"
+  },
+  "runtime_mutation_performed": false,
+  "implementation_changes_performed": false,
+  "executable_filesystem_mutation_performed": false,
+  "governance_mutation_scope": "Contract and certification artifacts only.",
+  "certified_contract_requirements": [
+    "Future executable bundle creation must consume registry entries instead of hardcoded filenames.",
+    "Future resolution must support MARKETING, SERVER_MANAGEMENT, TRADING, and HEALTHCARE domain ids.",
+    "Non-executable registry entries must fail closed deterministically.",
+    "CREATE_ONLY, exact hash authorization, preflight, replay, and post-execution review semantics must be preserved.",
+    "Provider-generated executable code remains out of scope for the factory contract."
+  ],
+  "known_current_limitations": [
+    "Current runtime remains Marketing-specific until a later implementation milestone.",
+    "The contract does not itself implement registry resolution.",
+    "Server Management, Trading, and Healthcare are resolvable by contract but not executable by current runtime."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m json.tool governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Valid JSON."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "final_classification": "AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_STATUS = CERTIFIED_REVIEW_ONLY"
+}
