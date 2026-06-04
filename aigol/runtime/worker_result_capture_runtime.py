@@ -398,6 +398,7 @@ def _evidence_artifact(
         "worker_role": invocation["worker_role"],
         "allowed_outputs": deepcopy(invocation["allowed_outputs"]),
         "forbidden_operations": deepcopy(invocation["forbidden_operations"]),
+        "validation_requirements": deepcopy(invocation["validation_requirements"]),
         "produced_outputs": deepcopy(worker_output["produced_outputs"]),
         "operations": deepcopy(worker_output["operations"]),
         "worker_output_reference": worker_output["worker_output_id"],
@@ -502,6 +503,7 @@ def _result_capture_artifact(
         "worker_role": invocation["worker_role"],
         "allowed_outputs": deepcopy(invocation["allowed_outputs"]),
         "forbidden_operations": deepcopy(invocation["forbidden_operations"]),
+        "validation_requirements": deepcopy(invocation["validation_requirements"]),
         "produced_outputs": deepcopy(worker_output["produced_outputs"]),
         "operations": deepcopy(worker_output["operations"]),
         "worker_output_reference": worker_output["worker_output_id"],
@@ -636,6 +638,8 @@ def _validate_result_capture_artifact(capture_artifact: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("worker result capture failed closed: output outside allowed scope")
     if set(capture_artifact.get("operations", [])).intersection(capture_artifact.get("forbidden_operations", [])):
         raise FailClosedRuntimeError("worker result capture failed closed: forbidden operation detected")
+    if not _string_list(capture_artifact.get("validation_requirements")):
+        raise FailClosedRuntimeError("worker result capture failed closed: validation requirements missing")
     for field in (
         "worker_result_capture_id",
         "worker_invocation_reference",

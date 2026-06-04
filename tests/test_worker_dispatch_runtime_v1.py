@@ -337,12 +337,15 @@ def test_cli_acceptance_flows_reach_worker_dispatched(tmp_path) -> None:
 
     assert filesystem["turns"][0]["worker_dispatch_status"] == WORKER_DISPATCHED
     assert filesystem["worker_dispatched"] is True
-    assert filesystem["worker_invoked"] is False
+    assert filesystem["worker_invoked"] is True
     assert "Dispatch Status: WORKER_DISPATCHED" in filesystem_output[0]
     assert "No Worker has been invoked, executed, or produced results." in filesystem_output[0]
+    assert "Invocation Status: WORKER_INVOKED" in filesystem_output[0]
     assert trading["turns"][1]["worker_dispatch_status"] == WORKER_DISPATCHED
     assert trading["worker_dispatched"] is True
+    assert trading["worker_invoked"] is True
     assert "Dispatch Status: WORKER_DISPATCHED" in trading_output[1]
+    assert "Invocation Status: WORKER_INVOKED" in trading_output[1]
 
 
 def test_worker_dispatch_runtime_preserves_authority_boundaries() -> None:

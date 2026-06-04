@@ -141,10 +141,9 @@ def test_conversation_command_metadata_is_renderable_without_running_loop(tmp_pa
     assert "execution_requested: False" in rendered
 
 
-def test_interactive_conversation_cli_does_not_import_worker_or_dispatch_runtime():
+def test_interactive_conversation_cli_does_not_import_legacy_worker_or_dispatch_runtime():
     source = inspect.getsource(aigol_cli)
 
-    assert "worker_invocation_runtime" not in source
     assert "from aigol.runtime.dispatch_runtime" not in source
     assert "assign_worker(" not in source
     assert "invoke_worker(" not in source
