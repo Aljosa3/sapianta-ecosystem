@@ -51,6 +51,8 @@ SESSION_ID = "SESSION-WORKER-RESULT-VALIDATION-000001"
 
 def _args(tmp_path, *, session_id: str):
     (tmp_path / "governance").mkdir(exist_ok=True)
+    (tmp_path / "aigol" / "runtime").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "tests").mkdir(exist_ok=True)
     parser = build_parser()
     return parser.parse_args(
         [

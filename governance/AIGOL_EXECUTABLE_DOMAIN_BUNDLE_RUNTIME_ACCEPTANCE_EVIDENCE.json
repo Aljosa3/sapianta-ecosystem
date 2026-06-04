@@ -1,0 +1,62 @@
+{
+  "artifact_type": "AIGOL_EXECUTABLE_DOMAIN_BUNDLE_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "runtime": "AIGOL_EXECUTABLE_DOMAIN_BUNDLE_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "bundle": {
+    "bundle_id": "MARKETING_EXECUTABLE_DOMAIN_BUNDLE_V1",
+    "authorization": "EXECUTABLE_BUNDLE_MUTATION_AUTHORIZATION",
+    "permission": "CREATE_ONLY",
+    "artifacts": [
+      "governance/MARKETING_DOMAIN_FOUNDATION_V1.md",
+      "governance/MARKETING_DOMAIN_MODEL_V1.md",
+      "governance/MARKETING_DOMAIN_CERTIFICATION.json",
+      "aigol/runtime/marketing_domain_runtime.py",
+      "tests/test_marketing_domain_runtime_v1.py"
+    ]
+  },
+  "acceptance": [
+    {
+      "check": "exact_ordered_authorization",
+      "evidence": "Authorization binds the exact ordered artifact list, paths, types, hashes, validation lineage, chain id, and create-only permission."
+    },
+    {
+      "check": "no_implicit_or_unauthorized_creation",
+      "evidence": "Artifact-list drift, implicit creation permission, or unauthorized authority fields fail closed."
+    },
+    {
+      "check": "no_overwrite",
+      "evidence": "Any existing target fails closed during preflight before sibling artifacts are created."
+    },
+    {
+      "check": "bundle_completeness",
+      "evidence": "All five governance, runtime, and test artifacts must be created and verified before EXECUTABLE_BUNDLE_VERIFIED."
+    },
+    {
+      "check": "replay_recording",
+      "evidence": "Replay records executable bundle authorization, creation evidence, per-artifact verification, and bundle verification result."
+    },
+    {
+      "check": "cli_lifecycle",
+      "evidence": "The Marketing domain CLI path reaches EXECUTABLE_BUNDLE_AUTHORIZED, ARTIFACTS_CREATED, EXECUTABLE_BUNDLE_VERIFIED, REVIEW_COMPLETED, and TERMINATED."
+    },
+    {
+      "check": "actual_repository_creation",
+      "evidence": "The certified CLI acceptance created all five executable Marketing domain bundle artifacts in the repository."
+    }
+  ],
+  "implementation_boundary": "The runtime and test files are deterministic executable placeholders, not real Marketing implementation logic.",
+  "validation": {
+    "focused_executable_bundle_lifecycle_tests": "86 passed",
+    "generated_marketing_runtime_test": "passed",
+    "execution_chain_tests": "69 passed",
+    "conversation_and_handoff_tests": "41 passed",
+    "full_repository_tests": "4120 passed, 7 unrelated browser-companion constraint tests failed",
+    "json_validation": "passed",
+    "python_compilation": "passed",
+    "git_diff_check": "passed"
+  },
+  "known_validation_gaps": [
+    "The full repository suite retains seven failures in browser-companion JavaScript constraint tests unrelated to the AiGOL executable domain bundle runtime."
+  ]
+}

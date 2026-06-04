@@ -334,11 +334,19 @@ def _planned_artifacts(handoff: dict[str, Any], target_resource: str) -> list[st
             f"tests/test_{stem.lower()}.py",
         ]
     if target_resource == "DOMAIN":
-        return [
+        artifacts = [
             f"governance/{stem}.md",
             f"governance/{stem.replace('DOMAIN_FOUNDATION_V1', 'DOMAIN_MODEL_V1')}.md",
             f"governance/{stem.replace('DOMAIN_FOUNDATION_V1', 'DOMAIN_CERTIFICATION')}.json",
         ]
+        if stem == "MARKETING_DOMAIN_FOUNDATION_V1":
+            artifacts.extend(
+                [
+                    "aigol/runtime/marketing_domain_runtime.py",
+                    "tests/test_marketing_domain_runtime_v1.py",
+                ]
+            )
+        return artifacts
     if target_resource == "PROVIDER":
         return [
             f"governance/{stem}.md",

@@ -6,4 +6,4 @@ Deterministic placeholder Marketing domain model.
 
 ## Model
 
-The Marketing domain is represented as a governed, replay-visible domain bundle.
+The Marketing domain is represented as a governed, replay-visible executable domain bundle.

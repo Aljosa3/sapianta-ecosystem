@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.executable_domain_bundle_runtime import (
+    EXECUTABLE_BUNDLE_VERIFIED,
+    EXECUTABLE_DOMAIN_BUNDLE_ARTIFACT_V1,
+    reconstruct_executable_domain_bundle_replay,
+)
 from aigol.runtime.multi_artifact_domain_bundle_runtime import (
     BUNDLE_VERIFIED,
     MULTI_ARTIFACT_DOMAIN_BUNDLE_ARTIFACT_V1,
@@ -51,6 +56,8 @@ def review_validated_worker_result(
     real_output_binding_replay_reference: str | None = None,
     domain_bundle_artifact: dict[str, Any] | None = None,
     domain_bundle_replay_reference: str | None = None,
+    executable_bundle_artifact: dict[str, Any] | None = None,
+    executable_bundle_replay_reference: str | None = None,
     reviewed_by: str,
     reviewed_at: str,
     replay_dir: str | Path,
@@ -74,7 +81,12 @@ def review_validated_worker_result(
             domain_bundle_replay_reference,
             lineage["validation"],
         )
-        if output_binding is not None and domain_bundle is not None:
+        executable_bundle = _load_executable_bundle_lineage(
+            executable_bundle_artifact,
+            executable_bundle_replay_reference,
+            lineage["validation"],
+        )
+        if sum(item is not None for item in (output_binding, domain_bundle, executable_bundle)) > 1:
             raise FailClosedRuntimeError("post-execution replay review failed closed: multiple output realizations")
         validation = lineage["validation"]
         evidence = _evidence_artifact(
@@ -83,9 +95,11 @@ def review_validated_worker_result(
             lineage=lineage,
             output_binding=output_binding,
             domain_bundle=domain_bundle,
+            executable_bundle=executable_bundle,
             validation_replay_reference=worker_result_validation_replay_reference,
             output_binding_replay_reference=real_output_binding_replay_reference,
             domain_bundle_replay_reference=domain_bundle_replay_reference,
+            executable_bundle_replay_reference=executable_bundle_replay_reference,
             reviewed_at=reviewed_at,
         )
         classification = _classification_artifact(
@@ -100,6 +114,7 @@ def review_validated_worker_result(
             validation=validation,
             output_binding=output_binding,
             domain_bundle=domain_bundle,
+            executable_bundle=executable_bundle,
             reviewed_by=reviewed_by,
             reviewed_at=reviewed_at,
         )
@@ -168,6 +183,11 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
     _load_domain_bundle_lineage(
         None,
         evidence.get("domain_bundle_replay_reference"),
+        review,
+    )
+    _load_executable_bundle_lineage(
+        None,
+        evidence.get("executable_bundle_replay_reference"),
         review,
     )
     return {
@@ -439,6 +459,44 @@ def _load_domain_bundle_lineage(
     return bundle
 
 
+def _load_executable_bundle_lineage(
+    provided_bundle: dict[str, Any] | None,
+    replay_reference: str | None,
+    validation: dict[str, Any],
+) -> dict[str, Any] | None:
+    if provided_bundle is None and replay_reference is None:
+        return None
+    if replay_reference is None:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle lineage incomplete")
+    reconstructed = reconstruct_executable_domain_bundle_replay(Path(replay_reference))
+    if reconstructed.get("executable_bundle_verification_status") != EXECUTABLE_BUNDLE_VERIFIED:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle verification invalid")
+    wrapper = load_json(Path(replay_reference) / "003_executable_bundle_verification_result_recorded.json")
+    _verify_wrapper_hash(wrapper)
+    bundle = wrapper.get("artifact")
+    _verify_artifact_hash(bundle, "executable bundle lineage artifact")
+    if bundle.get("artifact_type") != EXECUTABLE_DOMAIN_BUNDLE_ARTIFACT_V1:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: invalid executable bundle artifact")
+    if provided_bundle is not None:
+        _verify_artifact_hash(provided_bundle, "provided executable bundle artifact")
+        if provided_bundle.get("executable_bundle_runtime_id") != bundle.get("executable_bundle_runtime_id"):
+            raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle mismatch")
+        if provided_bundle.get("artifact_hash") != bundle.get("artifact_hash"):
+            raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle mismatch")
+    validation_reference = validation.get("worker_result_validation_id")
+    validation_hash = validation.get("artifact_hash")
+    if validation_reference is None:
+        validation_reference = validation.get("worker_result_validation_reference")
+        validation_hash = validation.get("worker_result_validation_hash")
+    if bundle.get("worker_result_validation_reference") != validation_reference:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle validation mismatch")
+    if bundle.get("worker_result_validation_hash") != validation_hash:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle validation mismatch")
+    if bundle.get("chain_id") != validation.get("chain_id"):
+        raise FailClosedRuntimeError("post-execution replay review failed closed: executable bundle chain mismatch")
+    return bundle
+
+
 def _evidence_artifact(
     *,
     review_id: str,
@@ -446,9 +504,11 @@ def _evidence_artifact(
     lineage: dict[str, Any],
     output_binding: dict[str, Any] | None,
     domain_bundle: dict[str, Any] | None,
+    executable_bundle: dict[str, Any] | None,
     validation_replay_reference: str,
     output_binding_replay_reference: str | None,
     domain_bundle_replay_reference: str | None,
+    executable_bundle_replay_reference: str | None,
     reviewed_at: str,
 ) -> dict[str, Any]:
     chain = lineage["chain"]
@@ -497,6 +557,14 @@ def _evidence_artifact(
             else None
         ),
         "bundle_creation_review_required": domain_bundle is not None,
+        "executable_bundle_reference": executable_bundle["executable_bundle_runtime_id"] if executable_bundle else None,
+        "executable_bundle_hash": executable_bundle["artifact_hash"] if executable_bundle else None,
+        "executable_bundle_replay_reference": (
+            _require_string(executable_bundle_replay_reference, "executable_bundle_replay_reference")
+            if executable_bundle
+            else None
+        ),
+        "executable_bundle_review_required": executable_bundle is not None,
         "lineage_checks": deepcopy(lineage["lineage_checks"]),
         "recorded_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
@@ -559,6 +627,7 @@ def _review_artifact(
     validation: dict[str, Any],
     output_binding: dict[str, Any] | None,
     domain_bundle: dict[str, Any] | None,
+    executable_bundle: dict[str, Any] | None,
     reviewed_by: str,
     reviewed_at: str,
 ) -> dict[str, Any]:
@@ -601,6 +670,9 @@ def _review_artifact(
         "domain_bundle_reference": domain_bundle["domain_bundle_runtime_id"] if domain_bundle else None,
         "domain_bundle_hash": domain_bundle["artifact_hash"] if domain_bundle else None,
         "bundle_creation_reviewed": domain_bundle is not None,
+        "executable_bundle_reference": executable_bundle["executable_bundle_runtime_id"] if executable_bundle else None,
+        "executable_bundle_hash": executable_bundle["artifact_hash"] if executable_bundle else None,
+        "executable_bundle_reviewed": executable_bundle is not None,
         "reviewed_by": _require_string(reviewed_by, "reviewed_by"),
         "reviewed_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,

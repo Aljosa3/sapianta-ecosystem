@@ -10,6 +10,10 @@ import pytest
 
 from aigol.cli.aigol_cli import run_interactive_conversation
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.executable_domain_bundle_runtime import (
+    EXECUTABLE_BUNDLE_CONTENTS,
+    EXECUTABLE_BUNDLE_PATHS,
+)
 from aigol.runtime.multi_artifact_domain_bundle_runtime import (
     ARTIFACTS_CREATED,
     BUNDLE_ARTIFACT_TYPES,
@@ -184,7 +188,7 @@ def test_bundle_runtime_has_no_delete_rename_move_or_directory_creation() -> Non
     assert "open(\"x\"" in source
 
 
-def test_interactive_cli_creates_and_verifies_marketing_domain_bundle(tmp_path) -> None:
+def test_interactive_cli_routes_marketing_domain_to_executable_bundle(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
         _args(tmp_path, session_id="SESSION-CLI-MULTI-ARTIFACT-DOMAIN-BUNDLE-000001"),
@@ -192,12 +196,15 @@ def test_interactive_cli_creates_and_verifies_marketing_domain_bundle(tmp_path) 
         output_func=output.append,
     )
 
-    assert result["bundle_authorized"] is True
+    assert result["executable_bundle_authorized"] is True
     assert result["artifacts_created"] is True
-    assert result["bundle_verified"] is True
+    assert result["executable_bundle_verified"] is True
     assert result["post_execution_replay_reviewed"] is True
     assert result["terminated"] is True
-    assert all((tmp_path / path).read_text(encoding="utf-8") == BUNDLE_CONTENTS[path] for path in BUNDLE_PATHS)
-    assert any("Bundle Authorization Status: BUNDLE_AUTHORIZED" in chunk for chunk in output)
+    assert all(
+        (tmp_path / path).read_text(encoding="utf-8") == EXECUTABLE_BUNDLE_CONTENTS[path]
+        for path in EXECUTABLE_BUNDLE_PATHS
+    )
+    assert any("Executable Bundle Authorization Status: EXECUTABLE_BUNDLE_AUTHORIZED" in chunk for chunk in output)
     assert any("Artifact Creation Status: ARTIFACTS_CREATED" in chunk for chunk in output)
-    assert any("Bundle Verification Status: BUNDLE_VERIFIED" in chunk for chunk in output)
+    assert any("Executable Bundle Verification Status: EXECUTABLE_BUNDLE_VERIFIED" in chunk for chunk in output)
