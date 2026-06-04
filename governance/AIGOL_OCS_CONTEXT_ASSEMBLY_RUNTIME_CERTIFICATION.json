@@ -1,0 +1,72 @@
+{
+  "artifact_type": "AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "contract_reference": "AIGOL_OCS_BOUNDARY_AND_CONTEXT_ASSEMBLY_CONTRACT_STATUS = CERTIFIED_CONTRACT_ONLY",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_context_assembly_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_context_assembly_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "The OCS boundary contract existed without an executable runtime capable of assembling deterministic replay-visible context evidence.",
+  "runtime_model": [
+    "OCS context assembly consumes explicit source context grouped by conversation, clarification, PPP, approval, replay-visible operation, domain, and registry categories.",
+    "Each accepted source must be replay-visible.",
+    "Source artifact hashes are verified when present.",
+    "Sources are normalized into deterministic ids, artifact types, source hashes, and summaries.",
+    "Duplicate source fingerprints are suppressed and recorded.",
+    "The assembled context records empty sections explicitly.",
+    "Context hash is derived from normalized inputs, rejected duplicate records, context sections, known gaps, authority flags, and status.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and context hash continuity."
+  ],
+  "replay_impact": [
+    "OCS context assembly now produces append-only replay-visible evidence.",
+    "Replay reconstruction can prove what OCS saw and what it did not accept.",
+    "Repeated deterministic source inputs produce the same context hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not depend on provider, worker, dispatch, or execution side effects."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No worker assignment.",
+    "No worker dispatch.",
+    "No worker invocation.",
+    "No provider invocation.",
+    "No governance mutation.",
+    "No replay mutation outside append-only OCS evidence.",
+    "No approval inference.",
+    "No domain creation authority."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_context_assembly_runtime_v1.py tests/test_development_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "12 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "commit_message": "Certify OCS context assembly runtime",
+  "final_classification": "AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_STATUS = CERTIFIED"
+}
