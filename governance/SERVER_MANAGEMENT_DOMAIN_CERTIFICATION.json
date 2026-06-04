@@ -1,0 +1,7 @@
+{
+  "artifact_type": "SERVER_MANAGEMENT_DOMAIN_CERTIFICATION",
+  "artifact_version": "V1",
+  "domain": "SERVER_MANAGEMENT",
+  "status": "PLACEHOLDER_EXECUTABLE_CERTIFIED",
+  "bundle_id": "SERVER_MANAGEMENT_EXECUTABLE_DOMAIN_BUNDLE_V1"
+}

@@ -1,0 +1,7 @@
+{
+  "artifact_type": "HEALTHCARE_DOMAIN_CERTIFICATION",
+  "artifact_version": "V1",
+  "domain": "HEALTHCARE",
+  "status": "PLACEHOLDER_EXECUTABLE_CERTIFIED",
+  "bundle_id": "HEALTHCARE_EXECUTABLE_DOMAIN_BUNDLE_V1"
+}
