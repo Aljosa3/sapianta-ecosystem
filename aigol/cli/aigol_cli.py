@@ -180,12 +180,12 @@ from aigol.runtime.worker_result_validation_runtime import (
     render_worker_result_validation_summary,
     validate_worker_result,
 )
-from aigol.runtime.real_output_binding_runtime import (
-    GOVERNANCE_DOCUMENT_MARKDOWN,
-    TARGET_PATH,
-    bind_validated_output,
-    create_exact_output_mutation_authorization,
-    render_real_output_binding_summary,
+from aigol.runtime.multi_artifact_domain_bundle_runtime import (
+    FOUNDATION_PATH,
+    MARKETING_DOMAIN_BUNDLE_ID,
+    create_bundle_mutation_authorization,
+    create_marketing_domain_bundle,
+    render_multi_artifact_domain_bundle_summary,
 )
 from aigol.runtime.post_execution_replay_review_runtime import (
     render_post_execution_replay_review_summary,
@@ -221,7 +221,7 @@ INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
 INTERACTIVE_EXIT_COMMANDS = frozenset({"exit", "quit"})
 
 
-def _bind_supported_real_output(
+def _bind_supported_domain_bundle(
     *,
     prompt_id: str,
     validation_capture: dict[str, Any],
@@ -230,24 +230,23 @@ def _bind_supported_real_output(
     replay_dir: Path,
 ) -> dict[str, Any] | None:
     validation = validation_capture["worker_result_validation_artifact"]
-    if TARGET_PATH not in validation.get("produced_outputs", []):
+    if FOUNDATION_PATH not in validation.get("produced_outputs", []):
         return None
-    authorization = create_exact_output_mutation_authorization(
-        mutation_authorization_id=f"{prompt_id}:EXACT-OUTPUT-MUTATION-AUTHORIZATION",
+    authorization = create_bundle_mutation_authorization(
+        bundle_authorization_id=f"{prompt_id}:BUNDLE-MUTATION-AUTHORIZATION",
+        bundle_id=MARKETING_DOMAIN_BUNDLE_ID,
         worker_result_validation_artifact=validation,
-        target_path=TARGET_PATH,
-        artifact_type=GOVERNANCE_DOCUMENT_MARKDOWN,
         authorized_by="AIGOL_GOVERNANCE",
         authorized_at=created_at,
     )
-    return bind_validated_output(
-        real_output_binding_id=f"{prompt_id}:REAL-OUTPUT-BINDING",
+    return create_marketing_domain_bundle(
+        domain_bundle_runtime_id=f"{prompt_id}:MULTI-ARTIFACT-DOMAIN-BUNDLE",
         worker_result_validation_artifact=validation,
         worker_result_validation_replay_reference=validation_capture["worker_result_validation_replay_reference"],
-        mutation_authorization_artifact=authorization,
+        bundle_mutation_authorization_artifact=authorization,
         workspace_root=workspace_root,
-        bound_by="AIGOL_GOVERNANCE",
-        bound_at=created_at,
+        created_by="AIGOL_GOVERNANCE",
+        created_at=created_at,
         replay_dir=replay_dir,
     )
 
@@ -933,21 +932,21 @@ def run_interactive_conversation(
                                                         )
                                                         output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                                                     else:
-                                                        output_binding_capture = _bind_supported_real_output(
+                                                        domain_bundle_capture = _bind_supported_domain_bundle(
                                                             prompt_id=prompt_id,
                                                             validation_capture=validation_capture,
                                                             workspace_root=args.workspace,
                                                             created_at=created_at,
-                                                            replay_dir=turn_root / "real_output_binding",
+                                                            replay_dir=turn_root / "multi_artifact_domain_bundle",
                                                         )
-                                                        if output_binding_capture is not None:
-                                                            approval_resume_capture["real_output_binding"] = output_binding_capture
-                                                        if output_binding_capture is not None and output_binding_capture.get(
+                                                        if domain_bundle_capture is not None:
+                                                            approval_resume_capture["domain_bundle"] = domain_bundle_capture
+                                                        if domain_bundle_capture is not None and domain_bundle_capture.get(
                                                             "fail_closed"
                                                         ) is True:
                                                             failed_turns += 1
                                                             approval_resume_capture["fail_closed"] = True
-                                                            approval_resume_capture["failure_reason"] = output_binding_capture.get(
+                                                            approval_resume_capture["failure_reason"] = domain_bundle_capture.get(
                                                                 "failure_reason"
                                                             )
                                                             output_writer(
@@ -961,14 +960,14 @@ def run_interactive_conversation(
                                                             worker_result_validation_replay_reference=validation_capture[
                                                                 "worker_result_validation_replay_reference"
                                                             ],
-                                                            real_output_binding_artifact=(
-                                                                output_binding_capture["real_output_binding_artifact"]
-                                                                if output_binding_capture
+                                                            domain_bundle_artifact=(
+                                                                domain_bundle_capture["multi_artifact_domain_bundle_artifact"]
+                                                                if domain_bundle_capture
                                                                 else None
                                                             ),
-                                                            real_output_binding_replay_reference=(
-                                                                output_binding_capture["real_output_binding_replay_reference"]
-                                                                if output_binding_capture
+                                                            domain_bundle_replay_reference=(
+                                                                domain_bundle_capture["domain_bundle_replay_reference"]
+                                                                if domain_bundle_capture
                                                                 else None
                                                             ),
                                                             reviewed_by="AIGOL_GOVERNANCE",
@@ -1032,9 +1031,9 @@ def run_interactive_conversation(
                                                                     + render_worker_result_validation_summary(validation_capture)
                                                                     + "\n"
                                                                     + (
-                                                                        render_real_output_binding_summary(output_binding_capture)
+                                                                        render_multi_artifact_domain_bundle_summary(domain_bundle_capture)
                                                                         + "\n"
-                                                                        if output_binding_capture
+                                                                        if domain_bundle_capture
                                                                         else ""
                                                                     )
                                                                     + render_post_execution_replay_review_summary(review_capture)
@@ -1270,20 +1269,20 @@ def run_interactive_conversation(
                                                                 failed_turns += 1
                                                                 output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                                             else:
-                                                                output_binding_capture = _bind_supported_real_output(
+                                                                domain_bundle_capture = _bind_supported_domain_bundle(
                                                                     prompt_id=prompt_id,
                                                                     validation_capture=validation_capture,
                                                                     workspace_root=args.workspace,
                                                                     created_at=created_at,
-                                                                    replay_dir=turn_root / "real_output_binding",
+                                                                    replay_dir=turn_root / "multi_artifact_domain_bundle",
                                                                 )
-                                                                if output_binding_capture is not None:
-                                                                    routing_capture["real_output_binding"] = output_binding_capture
-                                                                if output_binding_capture is not None and output_binding_capture.get(
+                                                                if domain_bundle_capture is not None:
+                                                                    routing_capture["domain_bundle"] = domain_bundle_capture
+                                                                if domain_bundle_capture is not None and domain_bundle_capture.get(
                                                                     "fail_closed"
                                                                 ) is True:
                                                                     routing_capture["fail_closed"] = True
-                                                                    routing_capture["failure_reason"] = output_binding_capture.get(
+                                                                    routing_capture["failure_reason"] = domain_bundle_capture.get(
                                                                         "failure_reason"
                                                                     )
                                                                     failed_turns += 1
@@ -1298,14 +1297,14 @@ def run_interactive_conversation(
                                                                     worker_result_validation_replay_reference=validation_capture[
                                                                         "worker_result_validation_replay_reference"
                                                                     ],
-                                                                    real_output_binding_artifact=(
-                                                                        output_binding_capture["real_output_binding_artifact"]
-                                                                        if output_binding_capture
+                                                                    domain_bundle_artifact=(
+                                                                        domain_bundle_capture["multi_artifact_domain_bundle_artifact"]
+                                                                        if domain_bundle_capture
                                                                         else None
                                                                     ),
-                                                                    real_output_binding_replay_reference=(
-                                                                        output_binding_capture["real_output_binding_replay_reference"]
-                                                                        if output_binding_capture
+                                                                    domain_bundle_replay_reference=(
+                                                                        domain_bundle_capture["domain_bundle_replay_reference"]
+                                                                        if domain_bundle_capture
                                                                         else None
                                                                     ),
                                                                     reviewed_by="AIGOL_GOVERNANCE",
@@ -1368,11 +1367,11 @@ def run_interactive_conversation(
                                                                             + render_worker_result_validation_summary(validation_capture)
                                                                             + "\n"
                                                                             + (
-                                                                                render_real_output_binding_summary(
-                                                                                    output_binding_capture
+                                                                                render_multi_artifact_domain_bundle_summary(
+                                                                                    domain_bundle_capture
                                                                                 )
                                                                                 + "\n"
-                                                                                if output_binding_capture
+                                                                                if domain_bundle_capture
                                                                                 else ""
                                                                             )
                                                                             + render_post_execution_replay_review_summary(review_capture)
@@ -1507,6 +1506,9 @@ def run_interactive_conversation(
         "output_bound": any(turn.get("output_bound") is True for turn in turns),
         "artifact_created": any(turn.get("artifact_created") is True for turn in turns),
         "artifact_verified": any(turn.get("artifact_verified") is True for turn in turns),
+        "bundle_authorized": any(turn.get("bundle_authorized") is True for turn in turns),
+        "artifacts_created": any(turn.get("artifacts_created") is True for turn in turns),
+        "bundle_verified": any(turn.get("bundle_verified") is True for turn in turns),
         "post_execution_replay_reviewed": any(
             turn.get("post_execution_replay_reviewed") is True for turn in turns
         ),
@@ -1626,9 +1628,9 @@ def _interactive_native_development_intent_routing_turn_summary(
     validation_capture = routing_capture.get("worker_result_validation")
     if not isinstance(validation_capture, dict):
         validation_capture = {}
-    output_binding_capture = routing_capture.get("real_output_binding")
-    if not isinstance(output_binding_capture, dict):
-        output_binding_capture = {}
+    domain_bundle_capture = routing_capture.get("domain_bundle")
+    if not isinstance(domain_bundle_capture, dict):
+        domain_bundle_capture = {}
     review_capture = routing_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
@@ -1699,8 +1701,8 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_result_validation_replay_reference": validation_capture.get(
             "worker_result_validation_replay_reference"
         ),
-        "real_output_binding_status": output_binding_capture.get("output_binding_status"),
-        "real_output_binding_replay_reference": output_binding_capture.get("real_output_binding_replay_reference"),
+        "domain_bundle_status": domain_bundle_capture.get("bundle_verification_status"),
+        "domain_bundle_replay_reference": domain_bundle_capture.get("domain_bundle_replay_reference"),
         "post_execution_replay_review_status": review_capture.get("review_status"),
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
@@ -1713,9 +1715,9 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
-        "output_bound": output_binding_capture.get("output_binding_status") == "OUTPUT_BOUND",
-        "artifact_created": output_binding_capture.get("artifact_creation_status") == "ARTIFACT_CREATED",
-        "artifact_verified": output_binding_capture.get("verification_status") == "ARTIFACT_VERIFIED",
+        "bundle_authorized": domain_bundle_capture.get("bundle_authorization_status") == "BUNDLE_AUTHORIZED",
+        "artifacts_created": domain_bundle_capture.get("artifact_creation_status") == "ARTIFACTS_CREATED",
+        "bundle_verified": domain_bundle_capture.get("bundle_verification_status") == "BUNDLE_VERIFIED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
         "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,
@@ -1761,9 +1763,9 @@ def _interactive_approval_resume_turn_summary(
     validation_capture = approval_resume_capture.get("worker_result_validation")
     if not isinstance(validation_capture, dict):
         validation_capture = {}
-    output_binding_capture = approval_resume_capture.get("real_output_binding")
-    if not isinstance(output_binding_capture, dict):
-        output_binding_capture = {}
+    domain_bundle_capture = approval_resume_capture.get("domain_bundle")
+    if not isinstance(domain_bundle_capture, dict):
+        domain_bundle_capture = {}
     review_capture = approval_resume_capture.get("post_execution_replay_review")
     if not isinstance(review_capture, dict):
         review_capture = {}
@@ -1823,8 +1825,8 @@ def _interactive_approval_resume_turn_summary(
         "worker_result_validation_replay_reference": validation_capture.get(
             "worker_result_validation_replay_reference"
         ),
-        "real_output_binding_status": output_binding_capture.get("output_binding_status"),
-        "real_output_binding_replay_reference": output_binding_capture.get("real_output_binding_replay_reference"),
+        "domain_bundle_status": domain_bundle_capture.get("bundle_verification_status"),
+        "domain_bundle_replay_reference": domain_bundle_capture.get("domain_bundle_replay_reference"),
         "post_execution_replay_review_status": review_capture.get("review_status"),
         "post_execution_replay_review_replay_reference": review_capture.get(
             "post_execution_replay_review_replay_reference"
@@ -1836,9 +1838,9 @@ def _interactive_approval_resume_turn_summary(
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
-        "output_bound": output_binding_capture.get("output_binding_status") == "OUTPUT_BOUND",
-        "artifact_created": output_binding_capture.get("artifact_creation_status") == "ARTIFACT_CREATED",
-        "artifact_verified": output_binding_capture.get("verification_status") == "ARTIFACT_VERIFIED",
+        "bundle_authorized": domain_bundle_capture.get("bundle_authorization_status") == "BUNDLE_AUTHORIZED",
+        "artifacts_created": domain_bundle_capture.get("artifact_creation_status") == "ARTIFACTS_CREATED",
+        "bundle_verified": domain_bundle_capture.get("bundle_verification_status") == "BUNDLE_VERIFIED",
         "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
         "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "execution_requested": False,
