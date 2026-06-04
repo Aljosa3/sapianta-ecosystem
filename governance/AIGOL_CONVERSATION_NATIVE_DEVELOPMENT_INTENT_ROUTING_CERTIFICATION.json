@@ -1,0 +1,70 @@
+{
+  "artifact": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_V1",
+  "certification_date": "2026-06-03",
+  "runtime_artifacts": [
+    "aigol/runtime/conversation_native_development_intent_routing.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_artifacts": [
+    "tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_V1.md",
+    "governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Classifies normal conversation prompts into native-development intent classes before provider-assisted conversation.",
+    "Routes domain creation, worker creation, provider addition, capability improvement, replay upgrade, and governance policy prompts.",
+    "Preserves clarification for ambiguous prompts such as Create a workstation.",
+    "Persists intent classification, routing evidence, routing classification, routed intent, turn allocation hash, and replay lineage.",
+    "Fixes turn allocation by using the latest per-turn session resume state."
+  ],
+  "non_goals_preserved": [
+    "No provider invocation.",
+    "No worker invocation.",
+    "No authorization.",
+    "No dispatch.",
+    "No execution.",
+    "No governance mutation.",
+    "No implementation artifact creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py",
+      "status": "PASS",
+      "summary": "10 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_conversation_native_development_context_integration_v1.py tests/test_intent_clarification_dialog_runtime_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "34 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS"
+    }
+  ],
+  "remaining_blockers_before_broader_cli_testing": [
+    "Downstream native-development intake still expects explicit milestone-oriented artifacts for full context assembly.",
+    "Provider proposal production is not invoked by this routing milestone.",
+    "Marketing and provider ecosystem context bundles need dedicated downstream intake/context mappings for full PPP handoff."
+  ],
+  "final_classification": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_STATUS = CERTIFIED"
+}

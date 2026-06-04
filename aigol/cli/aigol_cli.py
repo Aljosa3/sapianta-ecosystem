@@ -127,6 +127,12 @@ from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.conversation_native_development_intent_routing import (
+    NATIVE_DEVELOPMENT_INTENT_ROUTED,
+    is_conversation_native_development_intent,
+    render_native_development_intent_routing_summary,
+    run_conversation_native_development_intent_routing,
+)
 from aigol.runtime.conversation_provider_unavailable_clarification_fallback import (
     HUMAN_CLARIFICATION_REQUIRED as PROVIDER_UNAVAILABLE_HUMAN_CLARIFICATION_REQUIRED,
     render_provider_unavailable_clarification_fallback,
@@ -594,7 +600,6 @@ def run_interactive_conversation(
     current_chain_id: str | None = None
     latest_chain_id: str | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
-    next_turn_number = initial_resume["next_turn_number"]
 
     while True:
         try:
@@ -610,8 +615,7 @@ def run_interactive_conversation(
             break
 
         turn_count += 1
-        turn_id = f"TURN-{next_turn_number:06d}"
-        next_turn_number += 1
+        turn_id = "TURN-UNALLOCATED"
         prompt_id = f"{session_id}:{turn_id}"
         turn_root = session_root / turn_id
         try:
@@ -620,8 +624,9 @@ def run_interactive_conversation(
                 runtime_root=runtime_root,
                 created_at=created_at,
             )
-            if resume_state["next_turn_id"] != turn_id:
-                raise RuntimeError("conversation session resume failed closed: turn allocation mismatch")
+            turn_id = resume_state["next_turn_id"]
+            prompt_id = f"{session_id}:{turn_id}"
+            turn_root = session_root / turn_id
             router_capture = route_source_of_truth(
                 router_id=f"{prompt_id}:SOURCE_ROUTER",
                 human_prompt_reference=prompt_id,
@@ -629,7 +634,35 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
             )
-            if is_native_development_prompt(human_prompt):
+            if is_conversation_native_development_intent(human_prompt):
+                routing_capture = run_conversation_native_development_intent_routing(
+                    routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    turn_allocation_evidence=resume_state,
+                    created_at=created_at,
+                    replay_dir=turn_root / "native_development_intent_routing",
+                )
+                current_chain_id = routing_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = routing_capture.get("latest_chain_id") or current_chain_id
+                fail_closed = routing_capture.get("fail_closed") is True
+                if fail_closed:
+                    failed_turns += 1
+                    failure_reason = routing_capture.get("failure_reason") or "native development intent routing failed closed"
+                    output_writer(f"FAILED_CLOSED: {failure_reason}")
+                else:
+                    output_writer(render_native_development_intent_routing_summary(routing_capture))
+                turns.append(
+                    _interactive_native_development_intent_routing_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        routing_capture=routing_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif is_native_development_prompt(human_prompt):
                 native_context_capture = run_conversation_native_development_context_integration(
                     prompt_id=prompt_id,
                     human_prompt=human_prompt,
@@ -808,6 +841,51 @@ def _interactive_failed_turn_summary(
         "suggested_inspection_commands": [],
         "conversation_chain_continuity_replay_reference": None,
         "source_router_replay_reference": source_router_replay_reference,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+    }
+
+
+def _interactive_native_development_intent_routing_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    routing_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": routing_capture.get("response_status"),
+        "response_source": routing_capture.get("response_source"),
+        "fail_closed": routing_capture.get("fail_closed") is True,
+        "failure_reason": routing_capture.get("failure_reason"),
+        "replay_reference": routing_capture.get("native_development_intent_routing_replay_reference"),
+        "conversation_replay_reference": routing_capture.get("native_development_intent_routing_replay_reference"),
+        "canonical_chain_id": routing_capture.get("canonical_chain_id"),
+        "current_chain_id": routing_capture.get("current_chain_id"),
+        "latest_chain_id": routing_capture.get("latest_chain_id"),
+        "related_chain_id": routing_capture.get("related_chain_id"),
+        "suggested_inspection_commands": routing_capture.get("suggested_inspection_commands", []),
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "native_development_intent_routing_replay_reference": routing_capture.get(
+            "native_development_intent_routing_replay_reference"
+        ),
+        "intent_class": routing_capture.get("intent_class"),
+        "target_domain": routing_capture.get("target_domain"),
+        "target_resource": routing_capture.get("target_resource"),
+        "target_provider": routing_capture.get("target_provider"),
+        "target_worker_family": routing_capture.get("target_worker_family"),
+        "target_milestone": routing_capture.get("target_milestone"),
+        "next_pipeline_stage": routing_capture.get("next_pipeline_stage"),
+        "recognized_development_task": routing_capture.get("response_status") == NATIVE_DEVELOPMENT_INTENT_ROUTED,
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,

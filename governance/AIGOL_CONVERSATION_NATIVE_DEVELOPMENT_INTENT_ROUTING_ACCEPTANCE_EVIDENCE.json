@@ -1,0 +1,83 @@
+{
+  "artifact": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "CERTIFIED",
+  "runtime": "aigol/runtime/conversation_native_development_intent_routing.py",
+  "cli": "aigol/cli/aigol_cli.py",
+  "test_file": "tests/test_conversation_native_development_intent_routing_v1.py",
+  "validated_at": "2026-06-03",
+  "acceptance_checks": [
+    {
+      "check": "create_marketing_domain_routes",
+      "status": "PASS",
+      "evidence": "Create a marketing domain routes as CREATE_DOMAIN targeting MARKETING."
+    },
+    {
+      "check": "add_provider_anthropic_routes",
+      "status": "PASS",
+      "evidence": "Add provider Anthropic routes as ADD_PROVIDER targeting ANTHROPIC."
+    },
+    {
+      "check": "create_sentiment_analysis_worker_routes",
+      "status": "PASS",
+      "evidence": "Create sentiment analysis worker routes as CREATE_WORKER targeting MARKETING / SENTIMENT_ANALYSIS."
+    },
+    {
+      "check": "improve_trading_strategy_routes",
+      "status": "PASS",
+      "evidence": "Improve trading strategy routes as IMPROVE_EXISTING_CAPABILITY targeting TRADING strategy improvement."
+    },
+    {
+      "check": "workstation_remains_clarification",
+      "status": "PASS",
+      "evidence": "Create a workstation remains outside native-development routing and is left for clarification."
+    },
+    {
+      "check": "turn_allocation_fix",
+      "status": "PASS",
+      "evidence": "Repeated Create sentiment analysis worker turns allocate TURN-000001 then TURN-000002 without mismatch."
+    },
+    {
+      "check": "invalid_turn_allocation_fails_closed",
+      "status": "PASS",
+      "evidence": "Prompt id and turn allocation mismatch fails closed before routing."
+    },
+    {
+      "check": "replay_corruption_detected",
+      "status": "PASS",
+      "evidence": "Routing reconstruction detects modified routed intent artifact through hash verification."
+    },
+    {
+      "check": "authority_boundary_static_scan",
+      "status": "PASS",
+      "evidence": "Routing runtime source does not invoke providers, workers, dispatch, execution, or authorization."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py",
+      "status": "PASS",
+      "summary": "10 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_native_development_intent_routing_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_conversation_native_development_context_integration_v1.py tests/test_intent_clarification_dialog_runtime_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py",
+      "status": "PASS",
+      "summary": "34 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversation_ppp_routing_integration_v1.py tests/test_conversation_ppp_resource_selection_routing_v1.py",
+      "status": "PASS",
+      "summary": "14 passed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "dispatch_requested": false,
+    "execution_requested": false,
+    "governance_mutated": false,
+    "silent_interpretation_selected": false
+  },
+  "final_classification": "AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_STATUS = CERTIFIED"
+}
