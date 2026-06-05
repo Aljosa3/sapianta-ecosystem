@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_OPERATOR_SUMMARY_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_OPERATOR_SUMMARY_RUNTIME_V1",
+  "runtime_component": "aigol/runtime/operator_summary_runtime.py",
+  "test_component": "tests/test_operator_summary_runtime_v1.py",
+  "accepted_capabilities": [
+    {
+      "capability": "technical lifecycle translation",
+      "evidence": "Verbose worker and validation lifecycle statuses are translated into concise operator headlines."
+    },
+    {
+      "capability": "deterministic summary hashing",
+      "evidence": "Identical lifecycle inputs produce identical operator_summary_hash values."
+    },
+    {
+      "capability": "replay-visible summary evidence",
+      "evidence": "Summary and returned artifacts are persisted as append-only replay evidence."
+    },
+    {
+      "capability": "replay reconstruction",
+      "evidence": "Reconstruction validates replay order, wrapper hashes, artifact hashes, returned references, and summary hash continuity."
+    },
+    {
+      "capability": "fail-closed invalid input handling",
+      "evidence": "Invalid lifecycle inputs produce FAILED_CLOSED summary evidence."
+    },
+    {
+      "capability": "authority preservation",
+      "evidence": "All authority flags are false and the runtime does not import CLI or mutating lifecycle runtimes."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_operator_summary_runtime_v1.py",
+      "result": "7 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OPERATOR_SUMMARY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "authority_boundary": {
+    "read_only": true,
+    "replay_visible": true,
+    "source_replay_mutated": false,
+    "lifecycle_modified": false,
+    "execution_authorized": false,
+    "dispatch_authorized": false,
+    "worker_invocation_authorized": false,
+    "provider_invocation_authorized": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "automatic_implementation_authorized": false
+  },
+  "final_classification": "AIGOL_OPERATOR_SUMMARY_RUNTIME_STATUS = CERTIFIED"
+}

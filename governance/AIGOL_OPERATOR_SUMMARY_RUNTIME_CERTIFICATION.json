@@ -1,0 +1,50 @@
+{
+  "artifact_type": "AIGOL_OPERATOR_SUMMARY_RUNTIME_CERTIFICATION",
+  "milestone_id": "AIGOL_OPERATOR_SUMMARY_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "runtime_component": "aigol/runtime/operator_summary_runtime.py",
+  "certification_basis": [
+    "operator summary artifact is deterministic",
+    "summary replay evidence is append-only",
+    "replay reconstruction validates summary continuity",
+    "identical lifecycle inputs produce identical summaries",
+    "runtime does not create authority",
+    "runtime does not modify source replay or lifecycle state",
+    "runtime fails closed for invalid lifecycle input and replay tampering"
+  ],
+  "outputs": {
+    "operator_summary_artifact": "OPERATOR_SUMMARY_ARTIFACT_V1",
+    "hash": "operator_summary_hash"
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_operator_summary_runtime_v1.py",
+      "result": "7 passed"
+    },
+    "acceptance_evidence_json": {
+      "command": "python -m json.tool governance/AIGOL_OPERATOR_SUMMARY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "result": "passed"
+    },
+    "certification_json": {
+      "command": "python -m json.tool governance/AIGOL_OPERATOR_SUMMARY_RUNTIME_CERTIFICATION.json",
+      "result": "passed"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  },
+  "non_goals": [
+    "No lifecycle modification",
+    "No source replay mutation",
+    "No execution authorization",
+    "No dispatch authorization",
+    "No worker invocation authorization",
+    "No provider invocation authorization",
+    "No approval creation",
+    "No implementation creation",
+    "No governance mutation"
+  ],
+  "recommended_next_step": "Integrate OPERATOR_SUMMARY_ARTIFACT_V1 rendering into conversation output as the default compact view while preserving verbose lifecycle inspection.",
+  "final_classification": "AIGOL_OPERATOR_SUMMARY_RUNTIME_STATUS = CERTIFIED"
+}
