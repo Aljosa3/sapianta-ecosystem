@@ -1,0 +1,75 @@
+{
+  "artifact_type": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "runtime": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_V1",
+  "created_at": "2026-06-05",
+  "implemented_artifacts": [
+    "OCS_TO_PPP_HANDOFF_ARTIFACT_V1"
+  ],
+  "implemented_replay_steps": [
+    "000_ocs_to_ppp_handoff_recorded.json",
+    "001_ocs_to_ppp_handoff_returned.json"
+  ],
+  "validated_capabilities": [
+    "consume OCS context assembly artifact",
+    "consume OCS cognition artifact",
+    "consume OCS replay-derived intent artifact",
+    "consume OCS memory artifact",
+    "consume OCS continuity artifact",
+    "consume OCS semantic resolution artifact",
+    "validate OCS source lineage hashes",
+    "generate proposal-only PPP handoff candidates",
+    "attach semantic continuity evidence",
+    "attach domain resolution evidence",
+    "attach clarification requirements",
+    "attach provider necessity findings",
+    "attach worker candidate findings",
+    "compute deterministic handoff hash",
+    "persist replay-visible handoff evidence",
+    "reconstruct handoff evidence deterministically from replay",
+    "detect corrupt replay"
+  ],
+  "forbidden_capabilities_preserved": [
+    "execution authorization",
+    "governance mutation",
+    "replay mutation",
+    "provider invocation",
+    "worker invocation",
+    "automatic implementation",
+    "approval creation",
+    "domain creation",
+    "PPP invocation"
+  ],
+  "deterministic_reconstruction": {
+    "supported": true,
+    "evidence": "tests/test_ocs_to_ppp_binding_runtime_v1.py proves identical OCS artifacts reconstruct to the same handoff hash."
+  },
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_to_ppp_binding_runtime.py aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_to_ppp_binding_runtime_v1.py tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "37 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "final_classification": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_STATUS = CERTIFIED"
+}

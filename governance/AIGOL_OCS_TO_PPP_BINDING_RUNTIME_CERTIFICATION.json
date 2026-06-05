@@ -1,0 +1,77 @@
+{
+  "artifact_type": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "semantic_resolution_runtime_reference": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_to_ppp_binding_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_to_ppp_binding_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS had deterministic semantic resolution but lacked a replay-visible proposal-only binding from OCS outputs into PPP handoff candidates.",
+  "runtime_model": [
+    "OCS-to-PPP binding consumes explicit OCS context, cognition, replay-derived intent, memory, continuity, and semantic resolution artifacts.",
+    "The runtime validates replay visibility, artifact hashes, known OCS artifact types, known OCS statuses, and full source lineage hash continuity.",
+    "The runtime rejects any source carrying authority-bearing flags.",
+    "The runtime generates PPP handoff candidates from replay-derived improvement candidates.",
+    "The runtime attaches semantic continuity evidence, domain resolution evidence, clarification requirements, provider necessity findings, and worker candidate findings.",
+    "The runtime marks all outputs as proposal-only and non-authoritative.",
+    "The handoff hash is derived from source hashes, candidate list, attached evidence, authority flags, status, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and handoff hash continuity."
+  ],
+  "replay_impact": [
+    "OCS now has append-only replay-visible PPP handoff candidate evidence.",
+    "Replay reconstruction can prove which OCS artifacts shaped the candidate handoff.",
+    "Identical OCS artifacts produce the same handoff hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke PPP, providers, workers, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No automatic implementation.",
+    "No approval creation.",
+    "No domain creation.",
+    "No PPP invocation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_to_ppp_binding_runtime.py aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_to_ppp_binding_runtime_v1.py tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "37 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_TO_PPP_BINDING_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify OCS to PPP binding runtime",
+  "final_classification": "AIGOL_OCS_TO_PPP_BINDING_RUNTIME_STATUS = CERTIFIED"
+}
