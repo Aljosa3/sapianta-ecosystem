@@ -60,6 +60,10 @@ def _args(tmp_path):
             CREATED_AT,
             "--actor-id",
             "human.operator",
+            "--decision",
+            "APPROVE",
+            "--decision-reason",
+            "Approve validated provider candidate.",
         ]
     )
 
@@ -72,7 +76,8 @@ def test_first_real_implementation_generation_epoch_runs_through_cli_parser(tmp_
     assert result["fail_closed"] is False
     assert result["final_classification"] == "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_STATUS = CERTIFIED"
     assert "001_real_provider_proposal_envelope.json" in result["replay_files"]
-    assert "010_implementation_certification_artifact.json" in result["replay_files"]
+    assert "007_interactive_operator_decision_artifact.json" in result["replay_files"]
+    assert "011_implementation_certification_artifact.json" in result["replay_files"]
     assert result["workspace_files"] == [
         "aigol/runtime/first_real_epoch_provider_worker.py",
         "governance/FIRST_REAL_EPOCH_PROVIDER_WORKER_V1.md",
@@ -86,8 +91,9 @@ def test_first_real_implementation_generation_epoch_replay_contains_provider_and
     provider = json.loads((runtime_root / "001_real_provider_proposal_envelope.json").read_text())
     manifest = json.loads((runtime_root / "003_implementation_manifest_artifact.json").read_text())
     summary = json.loads((runtime_root / "006_implementation_summary_artifact.json").read_text())
-    certification = json.loads((runtime_root / "010_implementation_certification_artifact.json").read_text())
-    replay_report = json.loads((runtime_root / "011_replay_inspection_report.json").read_text())
+    decision = json.loads((runtime_root / "007_interactive_operator_decision_artifact.json").read_text())
+    certification = json.loads((runtime_root / "011_implementation_certification_artifact.json").read_text())
+    replay_report = json.loads((runtime_root / "012_replay_inspection_report.json").read_text())
 
     assert provider["provider_id"] == REAL_PROVIDER_ID
     assert provider["response"]["response_type"] == "REAL_PROVIDER_IMPLEMENTATION_CANDIDATE_V1"
@@ -96,8 +102,11 @@ def test_first_real_implementation_generation_epoch_replay_contains_provider_and
     assert summary["summary_status"] == "IMPLEMENTATION_SUMMARY_CREATED"
     assert certification["certification_status"] == "IMPLEMENTATION_CERTIFIED"
     assert certification["certified_path_count"] == 3
+    assert decision["decision"] == "APPROVE"
+    assert decision["approval_granted"] is True
     assert replay_report["implementation_certification_hash"] == certification["implementation_certification_hash"]
     assert replay_report["provider_output_trusted_before_validation"] is False
+    assert replay_report["materialization_without_approval"] is False
 
 
 def test_first_real_implementation_generation_epoch_materialized_files_run_generated_tests(tmp_path) -> None:
@@ -121,6 +130,8 @@ def test_first_real_implementation_generation_epoch_fails_closed_on_collision(tm
         runtime_root=tmp_path / "second_replay",
         workspace=first["workspace"],
         created_at=CREATED_AT,
+        operator_decision="APPROVE",
+        decision_reason="Approve first real epoch collision test.",
     )
 
     assert second["epoch_status"] == "REAL_EPOCH_FAILED_CLOSED"
@@ -159,6 +170,10 @@ def test_first_real_implementation_generation_epoch_subprocess_entrypoint(tmp_pa
             str(tmp_path / "workspace"),
             "--created-at",
             CREATED_AT,
+            "--decision",
+            "APPROVE",
+            "--decision-reason",
+            "Approve subprocess candidate.",
         ],
         cwd=str(ROOT),
         capture_output=True,

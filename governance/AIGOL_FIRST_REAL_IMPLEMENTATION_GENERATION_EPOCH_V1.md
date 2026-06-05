@@ -22,19 +22,21 @@ materialization, and certification.
 
 ```text
 python -m aigol.cli.aigol_cli implementation real-epoch \
-  --request "Create a real provider-generated implementation candidate for epoch validation." \
-  --runtime-root /tmp/aigol_first_real_implementation_generation_epoch_replay \
-  --workspace /tmp/aigol_first_real_implementation_generation_epoch_workspace \
-  --created-at 2026-06-05T21:00:00Z \
-  --actor-id human.operator
+  --request "Create a provider generated implementation candidate requiring interactive approval." \
+  --runtime-root /tmp/aigol_interactive_gates_approve_replay \
+  --workspace /tmp/aigol_interactive_gates_approve_workspace \
+  --created-at 2026-06-05T22:00:00Z \
+  --actor-id human.operator \
+  --decision APPROVE \
+  --decision-reason "Validated paths and hashes; approve CREATE_ONLY mutation."
 ```
 
 Observed result:
 
 ```text
 epoch_status: REAL_EPOCH_CERTIFIED
-epoch_hash: sha256:be3eb4cfe5b3d66eb12e124ce1fc8023d729431d904ce6cd4253bb23873d348e
-replay_files: 16
+epoch_hash: sha256:3bbcd73835aa7f9515b98f39b830956a6bdad9b14670f2c78e2f8fe4a3be0c25
+replay_files: 17
 workspace_files: 3
 ```
 
@@ -50,6 +52,7 @@ Human Request
 -> Generated Content Validation
 -> Generated Test Validation
 -> Implementation Summary
+-> Interactive Approval
 -> Human Acceptance Evidence
 -> Filesystem Mutation Authorization
 -> CREATE_ONLY Materialization
@@ -82,6 +85,7 @@ Preserved constraints:
 - no implicit mutation;
 - `CREATE_ONLY` only;
 - filesystem mutation occurs only after human acceptance evidence and mutation authorization;
+- human acceptance evidence is derived from a replay-visible `APPROVE` decision;
 - execution authorization is not granted by this epoch.
 
 ## Collision Result
@@ -117,4 +121,3 @@ git diff --check
 - Generated tests are executed by validation command after materialization, not
   by the certification runtime itself.
 - Human acceptance evidence is CLI-supplied rather than interactive.
-
