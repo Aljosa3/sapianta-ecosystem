@@ -41,6 +41,18 @@ AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_STATUS = "CERTIFIED"
 COMMAND = "aigol implementation real-epoch"
 REAL_PROVIDER_ID = "AIGOL_REAL_IMPLEMENTATION_PROVIDER"
 REAL_PROVIDER_VERSION = "1.0.0"
+APPROVE = "APPROVE"
+REJECT = "REJECT"
+ABORT = "ABORT"
+ALLOWED_OPERATOR_DECISIONS = frozenset({APPROVE, REJECT, ABORT})
+
+
+class _GateStop(Exception):
+    def __init__(self, status: str, fail_closed: bool, reason: str) -> None:
+        super().__init__(reason)
+        self.status = status
+        self.fail_closed = fail_closed
+        self.reason = reason
 
 
 class LocalRealImplementationProviderAdapter:
@@ -72,6 +84,9 @@ def run_first_real_implementation_generation_epoch(
     created_at: str,
     actor_id: str = "human.operator",
     provider_adapter: Any | None = None,
+    operator_decision: str | None = None,
+    decision_reason: str | None = None,
+    operator_decision_callback: Any | None = None,
 ) -> dict[str, Any]:
     """Run a provider-proposed implementation through the certified lifecycle."""
 
@@ -156,16 +171,34 @@ def run_first_real_implementation_generation_epoch(
         )["implementation_summary_artifact"]
         _require_stage_status(summary, "summary_status", "IMPLEMENTATION_SUMMARY_CREATED")
         _persist(runtime_path / "006_implementation_summary_artifact.json", summary)
+        checkpoint = _operator_checkpoint(
+            human_request=request_text,
+            candidate=candidate,
+            manifest=manifest,
+            summary=summary,
+            content_validation=content_validation,
+            test_validation=test_validation,
+        )
+        decision = _operator_decision_artifact(
+            checkpoint=checkpoint,
+            actor_id=actor_id,
+            decided_at=created_at,
+            operator_decision=operator_decision,
+            decision_reason=decision_reason,
+            operator_decision_callback=operator_decision_callback,
+        )
+        _persist(runtime_path / "007_interactive_operator_decision_artifact.json", decision)
+        _require_approval(decision)
         acceptance = accept_generated_content(
             acceptance_id="GENERATED-CONTENT-ACCEPTANCE-FIRST-REAL-EPOCH-000001",
             implementation_manifest_artifact=manifest,
             generated_content_validation_artifact=content_validation,
             generated_test_validation_artifact=test_validation,
-            human_acceptance_evidence=_acceptance_evidence(actor_id=actor_id, created_at=created_at),
+            human_acceptance_evidence=_acceptance_evidence(decision),
             created_at=created_at,
         )["generated_content_acceptance_artifact"]
         _require_stage_status(acceptance, "acceptance_status", "GENERATED_CONTENT_ACCEPTED")
-        _persist(runtime_path / "007_generated_content_acceptance_artifact.json", acceptance)
+        _persist(runtime_path / "008_generated_content_acceptance_artifact.json", acceptance)
         authorization = authorize_filesystem_mutation(
             authorization_id="FILESYSTEM-MUTATION-AUTHORIZATION-FIRST-REAL-EPOCH-000001",
             implementation_manifest_artifact=manifest,
@@ -176,7 +209,7 @@ def run_first_real_implementation_generation_epoch(
             created_at=created_at,
         )["filesystem_mutation_authorization_artifact"]
         _require_stage_status(authorization, "authorization_status", "FILESYSTEM_MUTATION_AUTHORIZED")
-        _persist(runtime_path / "008_filesystem_mutation_authorization_artifact.json", authorization)
+        _persist(runtime_path / "009_filesystem_mutation_authorization_artifact.json", authorization)
         mutation = apply_filesystem_mutation(
             mutation_id="FILESYSTEM-MUTATION-FIRST-REAL-EPOCH-000001",
             implementation_manifest_artifact=manifest,
@@ -186,7 +219,7 @@ def run_first_real_implementation_generation_epoch(
             target_root_reference="OPERATOR_SUPPLIED_WORKSPACE",
         )["filesystem_mutation_artifact"]
         _require_stage_status(mutation, "mutation_status", "FILESYSTEM_MUTATION_COMPLETED")
-        _persist(runtime_path / "009_filesystem_mutation_artifact.json", mutation)
+        _persist(runtime_path / "010_filesystem_mutation_artifact.json", mutation)
         certification = certify_implementation(
             certification_id="IMPLEMENTATION-CERTIFICATION-FIRST-REAL-EPOCH-000001",
             implementation_manifest_artifact=manifest,
@@ -196,7 +229,7 @@ def run_first_real_implementation_generation_epoch(
             created_at=created_at,
         )["implementation_certification_artifact"]
         _require_stage_status(certification, "certification_status", "IMPLEMENTATION_CERTIFIED")
-        _persist(runtime_path / "010_implementation_certification_artifact.json", certification)
+        _persist(runtime_path / "011_implementation_certification_artifact.json", certification)
         replay_report = _replay_report(
             runtime_path=runtime_path,
             workspace_path=workspace_path,
@@ -204,12 +237,18 @@ def run_first_real_implementation_generation_epoch(
             candidate=candidate,
             manifest=manifest,
             summary=summary,
+            operator_decision=decision,
             certification=certification,
         )
-        _persist(runtime_path / "011_replay_inspection_report.json", replay_report)
+        _persist(runtime_path / "012_replay_inspection_report.json", replay_report)
         status = "REAL_EPOCH_CERTIFIED"
         fail_closed = False
         failure_reason = None
+    except _GateStop as exc:
+        replay_report = _failed_replay_report(runtime_path=runtime_path, workspace_path=workspace_path, exc=exc)
+        status = exc.status
+        fail_closed = exc.fail_closed
+        failure_reason = exc.reason
     except Exception as exc:
         replay_report = _failed_replay_report(runtime_path=runtime_path, workspace_path=workspace_path, exc=exc)
         status = "REAL_EPOCH_FAILED_CLOSED"
@@ -471,6 +510,7 @@ def _replay_report(
     candidate: dict[str, Any],
     manifest: dict[str, Any],
     summary: dict[str, Any],
+    operator_decision: dict[str, Any],
     certification: dict[str, Any],
 ) -> dict[str, Any]:
     report = {
@@ -479,12 +519,16 @@ def _replay_report(
         "candidate_hash": candidate["candidate_hash"],
         "implementation_manifest_hash": manifest["implementation_manifest_hash"],
         "implementation_summary_hash": summary["implementation_summary_hash"],
+        "interactive_operator_decision_hash": operator_decision["interactive_operator_decision_hash"],
+        "operator_decision": operator_decision["decision"],
         "implementation_certification_hash": certification["implementation_certification_hash"],
         "certification_status": certification["certification_status"],
         "certified_path_count": certification["certified_path_count"],
         "replay_files": _replay_files(runtime_path),
         "workspace_files": _workspace_files(workspace_path),
         "provider_output_trusted_before_validation": False,
+        "materialization_without_approval": False,
+        "authorization_without_approval": False,
         "replay_visible": True,
     }
     report["replay_report_hash"] = replay_hash(report)
@@ -504,11 +548,11 @@ def _failed_replay_report(*, runtime_path: Path, workspace_path: Path, exc: Exce
     return report
 
 
-def _acceptance_evidence(*, actor_id: str, created_at: str) -> dict[str, str]:
+def _acceptance_evidence(decision: dict[str, Any]) -> dict[str, str]:
     return {
-        "actor_id": actor_id,
+        "actor_id": decision["actor_id"],
         "decision": ACCEPTANCE_DECISION,
-        "accepted_at": created_at,
+        "accepted_at": decision["decided_at"],
         "acceptance_scope": ACCEPTANCE_SCOPE,
         "acceptance_statement": ACCEPTANCE_STATEMENT,
     }
@@ -522,6 +566,112 @@ def _authorization_evidence(*, actor_id: str, created_at: str) -> dict[str, str]
         "authorization_scope": AUTHORIZATION_SCOPE,
         "authorization_statement": AUTHORIZATION_STATEMENT,
     }
+
+
+def _operator_checkpoint(
+    *,
+    human_request: str,
+    candidate: dict[str, Any],
+    manifest: dict[str, Any],
+    summary: dict[str, Any],
+    content_validation: dict[str, Any],
+    test_validation: dict[str, Any],
+) -> dict[str, Any]:
+    affected_paths = [
+        entry["target_path"]
+        for entry in list(manifest.get("file_entries", [])) + list(manifest.get("test_entries", []))
+    ]
+    checkpoint = {
+        "artifact_type": "INTERACTIVE_ACCEPTANCE_AUTHORIZATION_CHECKPOINT_V1",
+        "request_summary": human_request,
+        "generated_implementation_summary": {
+            "purpose": summary["implementation_purpose"],
+            "planned_functionality": deepcopy(summary["planned_functionality"]),
+            "validation_outcomes": deepcopy(summary["validation_outcomes"]),
+        },
+        "manifest_summary": {
+            "manifest_id": manifest["manifest_id"],
+            "implementation_manifest_hash": manifest["implementation_manifest_hash"],
+            "file_count": manifest["file_count"],
+            "test_count": manifest["test_count"],
+            "operation_mode": manifest["operation_mode"],
+        },
+        "affected_paths": affected_paths,
+        "content_validation_hash": content_validation["generated_content_validation_hash"],
+        "test_validation_hash": test_validation["generated_test_validation_hash"],
+        "candidate_hash": candidate["candidate_hash"],
+        "choices": [APPROVE, REJECT, ABORT],
+        "replay_visible": True,
+    }
+    checkpoint["checkpoint_hash"] = replay_hash(checkpoint)
+    return checkpoint
+
+
+def _operator_decision_artifact(
+    *,
+    checkpoint: dict[str, Any],
+    actor_id: str,
+    decided_at: str,
+    operator_decision: str | None,
+    decision_reason: str | None,
+    operator_decision_callback: Any | None,
+) -> dict[str, Any]:
+    raw_decision = operator_decision
+    raw_reason = decision_reason
+    if raw_decision is None and operator_decision_callback is not None:
+        callback_result = operator_decision_callback(deepcopy(checkpoint))
+        if isinstance(callback_result, dict):
+            raw_decision = callback_result.get("decision")
+            raw_reason = callback_result.get("decision_reason", raw_reason)
+        else:
+            raw_decision = callback_result
+    decision = _normalize_decision(raw_decision)
+    reason = _require_string(raw_reason or f"Operator selected {decision}.", "decision_reason")
+    artifact = {
+        "artifact_type": "INTERACTIVE_OPERATOR_DECISION_ARTIFACT_V1",
+        "checkpoint_hash": checkpoint["checkpoint_hash"],
+        "checkpoint": deepcopy(checkpoint),
+        "actor_id": _require_string(actor_id, "actor_id"),
+        "decision": decision,
+        "decided_at": _require_string(decided_at, "decided_at"),
+        "decision_reason": reason,
+        "approval_granted": decision == APPROVE,
+        "authorization_allowed": decision == APPROVE,
+        "materialization_allowed": decision == APPROVE,
+        "rejection_recorded": decision == REJECT,
+        "abort_recorded": decision == ABORT,
+        "filesystem_mutated": False,
+        "filesystem_mutation_authorized": False,
+        "execution_authorized": False,
+        "replay_visible": True,
+    }
+    artifact["interactive_operator_decision_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _require_approval(decision: dict[str, Any]) -> None:
+    if decision["decision"] == APPROVE:
+        return
+    if decision["decision"] == REJECT:
+        raise _GateStop(
+            "REAL_EPOCH_REJECTED_FAILED_CLOSED",
+            True,
+            f"interactive operator rejected implementation: {decision['decision_reason']}",
+        )
+    raise _GateStop(
+        "REAL_EPOCH_ABORTED",
+        False,
+        f"interactive operator aborted implementation: {decision['decision_reason']}",
+    )
+
+
+def _normalize_decision(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise FailClosedRuntimeError("operator decision is required")
+    decision = value.strip().upper()
+    if decision not in ALLOWED_OPERATOR_DECISIONS:
+        raise FailClosedRuntimeError("operator decision must be APPROVE, REJECT, or ABORT")
+    return decision
 
 
 def _persist(path: Path, artifact: dict[str, Any]) -> None:

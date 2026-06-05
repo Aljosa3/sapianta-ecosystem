@@ -463,6 +463,8 @@ def build_parser() -> argparse.ArgumentParser:
     implementation_real_epoch.add_argument("--workspace", default=".aigol_real_implementation_generation_workspace")
     implementation_real_epoch.add_argument("--created-at", default="2026-06-05T00:00:00Z")
     implementation_real_epoch.add_argument("--actor-id", default="human.operator")
+    implementation_real_epoch.add_argument("--decision", default="")
+    implementation_real_epoch.add_argument("--decision-reason", default="")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -2186,6 +2188,8 @@ def run_command(args: argparse.Namespace) -> dict:
             workspace=args.workspace,
             created_at=args.created_at,
             actor_id=args.actor_id,
+            operator_decision=args.decision or None,
+            decision_reason=args.decision_reason or None,
         )
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
@@ -2938,6 +2942,30 @@ def render_command_result(result: dict) -> str:
     return render_card("AIGOL", [_json(result)])
 
 
+def _interactive_real_epoch_decision_callback(checkpoint: dict[str, Any]) -> dict[str, str]:
+    print(
+        render_card(
+            "AIGOL INTERACTIVE ACCEPTANCE CHECKPOINT",
+            [
+                f"request: {checkpoint.get('request_summary')}",
+                f"purpose: {checkpoint.get('generated_implementation_summary', {}).get('purpose')}",
+                "planned_functionality: "
+                + _json(checkpoint.get("generated_implementation_summary", {}).get("planned_functionality", [])),
+                "manifest: " + _json(checkpoint.get("manifest_summary", {})),
+                "affected_paths:",
+                *[f"  {path}" for path in checkpoint.get("affected_paths", [])],
+                "choices: APPROVE | REJECT | ABORT",
+            ],
+        )
+    )
+    decision = input("Decision [APPROVE/REJECT/ABORT]: ").strip()
+    reason = input("Decision reason: ").strip()
+    return {
+        "decision": decision,
+        "decision_reason": reason or f"Operator selected {decision}.",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -2945,6 +2973,25 @@ def main(argv: list[str] | None = None) -> int:
         result = run_interactive_conversation(args)
         if getattr(args, "json", False):
             print(_json(result))
+        return 0
+    if (
+        args.command == "implementation"
+        and args.implementation_command == "real-epoch"
+        and not args.decision
+    ):
+        result = run_first_real_implementation_generation_epoch(
+            human_request=args.request,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+            created_at=args.created_at,
+            actor_id=args.actor_id,
+            decision_reason=args.decision_reason or None,
+            operator_decision_callback=_interactive_real_epoch_decision_callback,
+        )
+        if getattr(args, "json", False):
+            print(_json(result))
+        else:
+            print(render_command_result(result))
         return 0
     result = run_command(args)
     if getattr(args, "json", False):

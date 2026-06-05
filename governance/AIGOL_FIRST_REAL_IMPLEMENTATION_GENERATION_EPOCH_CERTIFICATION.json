@@ -2,12 +2,13 @@
   "artifact_type": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_CERTIFICATION",
   "milestone": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_V1",
   "final_classification": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_STATUS = CERTIFIED",
-  "cli_command": "python -m aigol.cli.aigol_cli implementation real-epoch --request \"Create a real provider-generated implementation candidate for epoch validation.\" --runtime-root /tmp/aigol_first_real_implementation_generation_epoch_replay --workspace /tmp/aigol_first_real_implementation_generation_epoch_workspace --created-at 2026-06-05T21:00:00Z --actor-id human.operator",
+  "cli_command": "python -m aigol.cli.aigol_cli implementation real-epoch --request \"Create a provider generated implementation candidate requiring interactive approval.\" --runtime-root /tmp/aigol_interactive_gates_approve_replay --workspace /tmp/aigol_interactive_gates_approve_workspace --created-at 2026-06-05T22:00:00Z --actor-id human.operator --decision APPROVE --decision-reason \"Validated paths and hashes; approve CREATE_ONLY mutation.\"",
   "epoch_status": "REAL_EPOCH_CERTIFIED",
-  "epoch_hash": "sha256:be3eb4cfe5b3d66eb12e124ce1fc8023d729431d904ce6cd4253bb23873d348e",
-  "provider_proposal_hash": "sha256:22c1586dff8859bd4fa312ff96a94b25aee21cdf440c870516dbbf0e836b3cce",
-  "implementation_manifest_hash": "sha256:9d5d52fb32b87f99c89a00d60849a90dec16e61f1ad7f8aa2d273061fdd91379",
-  "implementation_certification_hash": "sha256:456ac765c3e730316d50fe29d068e3a89b886365cd93b5adbd26b3beb5113b43",
+  "epoch_hash": "sha256:3bbcd73835aa7f9515b98f39b830956a6bdad9b14670f2c78e2f8fe4a3be0c25",
+  "provider_proposal_hash": "sha256:da05efdfb85858b410796d16e48e3c78da7fb53c77e4f91e08402f4294b6dc17",
+  "implementation_manifest_hash": "sha256:68be3ddd7691b3f0ba5df994610bb1cc8d66e89b1a2a2608ee27b6cadf6a22f2",
+  "interactive_operator_decision_hash": "sha256:d1641b2d5d87e043fc333f24c7902692606c93f092c9f8f1c565bca2f8421523",
+  "implementation_certification_hash": "sha256:05fddb220df6849cdff9e524012df3b8bcb2afbddbb923661b08bcf2973636c2",
   "certified_path_count": 3,
   "validated_flow": [
     "human request",
@@ -17,6 +18,7 @@
     "generated content validation",
     "generated test validation",
     "implementation summary",
+    "interactive operator approval",
     "human acceptance evidence",
     "filesystem mutation authorization",
     "CREATE_ONLY materialization",
@@ -44,7 +46,7 @@
   },
   "known_limits": [
     "provider is a bounded local AiGOL provider adapter rather than an external API invocation",
-    "human acceptance evidence is CLI-supplied rather than interactive",
+    "interactive mode prompts for approval when --decision is omitted",
     "generated tests are executed as validation evidence after materialization"
   ]
 }
