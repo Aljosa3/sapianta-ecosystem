@@ -1,0 +1,36 @@
+{
+  "milestone_id": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_STATUS",
+  "certified_capabilities": {
+    "direct_provider_invocation": true,
+    "manual_copy_paste_relay_removed": true,
+    "replay_visible_provider_request": true,
+    "replay_visible_provider_response": true,
+    "provider_identity_and_metadata_binding": true,
+    "lineage_reference_binding": true,
+    "credential_policy_loading": true,
+    "response_schema_registry_normalization": true,
+    "replay_reconstruction": true
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "governance_authority_preserved": true,
+    "implementation_authority_chain_preserved": true,
+    "fail_closed_semantics_preserved": true,
+    "provider_authority_granted": false,
+    "governance_mutation_introduced": false,
+    "hidden_runtime_continuation_introduced": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/native_provider_execution_runtime.py",
+    "cli": "aigol provider invoke",
+    "acceptance_evidence": "governance/AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_native_provider_execution_runtime_v1.py",
+      "tests/test_aigol_cli_foundation_v1.py"
+    ]
+  },
+  "status_statement": "AiGOL can invoke a registered provider directly from the CLI after explicit human approval, capture request and response evidence, normalize through a schema registry, and reconstruct replay without human copy/paste relay. Provider output remains untrusted and non-authoritative."
+}

@@ -1,0 +1,13 @@
+{
+  "classification": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_STATUS",
+  "milestone_id": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "provider_invocation": "DIRECT_GOVERNED_INVOCATION_AVAILABLE",
+  "replay_binding": "REQUEST_RESPONSE_IDENTITY_METADATA_LINEAGE_RECORDED",
+  "credential_policy": "GOVERNED_ENV_CREDENTIAL_LOADING_WITH_NO_SECRET_PERSISTENCE",
+  "schema_registry": "OPENAI_RESPONSES_V1_NORMALIZATION_REGISTERED",
+  "authority_boundary": "HUMAN_APPROVAL_REQUIRED_PROVIDER_NON_AUTHORITATIVE",
+  "fail_closed": true,
+  "manual_copy_paste_relay_required": false,
+  "known_limit": "OpenAI is the only native provider registered in this milestone."
+}

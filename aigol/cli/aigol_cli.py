@@ -77,6 +77,11 @@ from aigol.runtime.multi_provider_competitive_proposal_runtime import (
     render_multi_provider_competitive_review,
     run_multi_provider_competitive_proposal_runtime,
 )
+from aigol.runtime.native_provider_execution_runtime import (
+    DEFAULT_OPENAI_MODEL,
+    render_native_provider_execution_summary,
+    run_native_provider_execution,
+)
 from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
@@ -477,6 +482,21 @@ def build_parser() -> argparse.ArgumentParser:
     implementation_compete.add_argument("--actor-id", default="human.operator")
     implementation_compete.add_argument("--selection", default="ABORT")
     implementation_compete.add_argument("--decision-reason", default="")
+
+    provider = subcommands.add_parser("provider")
+    provider_sub = provider.add_subparsers(dest="provider_command", required=True)
+    provider_invoke = provider_sub.add_parser("invoke")
+    provider_invoke.add_argument("--request", required=True)
+    provider_invoke.add_argument("--execution-id", default="AIGOL-NATIVE-PROVIDER-EXECUTION-000001")
+    provider_invoke.add_argument("--provider-id", default="openai")
+    provider_invoke.add_argument("--model", default=DEFAULT_OPENAI_MODEL)
+    provider_invoke.add_argument("--credential-env", default="AIGOL_OPENAI_API_KEY")
+    provider_invoke.add_argument("--runtime-root", default=".aigol_native_provider_execution_runtime")
+    provider_invoke.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    provider_invoke.add_argument("--approved-by", default="human.operator")
+    provider_invoke.add_argument("--human-approved", action="store_true")
+    provider_invoke.add_argument("--timeout-seconds", type=int, default=20)
+    provider_invoke.add_argument("--json", action="store_true")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -2213,6 +2233,21 @@ def run_command(args: argparse.Namespace) -> dict:
             selection=args.selection,
             decision_reason=args.decision_reason or None,
         )
+    if args.command == "provider" and args.provider_command == "invoke":
+        result = run_native_provider_execution(
+            execution_id=args.execution_id,
+            human_request=args.request,
+            provider_id=args.provider_id,
+            model=args.model,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.execution_id,
+            human_approved=args.human_approved,
+            approved_by=args.approved_by,
+            credential_env=args.credential_env,
+            timeout_seconds=args.timeout_seconds,
+        )
+        result["replay_reference"] = str(Path(args.runtime_root) / args.execution_id)
+        return result
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -2519,6 +2554,11 @@ def render_command_result(result: dict) -> str:
         return render_first_real_implementation_generation_epoch(result)
     if command == "aigol implementation compete":
         return render_multi_provider_competitive_review(result)
+    if command == "aigol provider invoke":
+        return render_card(
+            "AIGOL NATIVE PROVIDER EXECUTION",
+            render_native_provider_execution_summary(result).splitlines()[1:],
+        )
     if command in {
         "aigol approval list",
         "aigol approval show",

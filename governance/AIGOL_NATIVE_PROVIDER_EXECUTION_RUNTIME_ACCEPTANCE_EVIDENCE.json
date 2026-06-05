@@ -1,0 +1,55 @@
+{
+  "milestone_id": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_NATIVE_PROVIDER_EXECUTION_RUNTIME_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_flow": [
+    "Human Request",
+    "Explicit Human Approval Evidence",
+    "Governed Credential Policy",
+    "Provider Invocation",
+    "Provider Result Capture",
+    "Schema Registry Normalization",
+    "Replay Binding"
+  ],
+  "requirements": {
+    "provider_invocation_without_manual_copy_paste": true,
+    "provider_request_recorded": true,
+    "provider_response_recorded": true,
+    "provider_identity_recorded": true,
+    "provider_metadata_recorded": true,
+    "lineage_references_recorded": true,
+    "human_approval_boundaries_preserved": true,
+    "implementation_authority_chain_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_reconstruction_preserved": true,
+    "governed_provider_credential_loading": true,
+    "provider_response_normalization_schema_registry": true
+  },
+  "runtime_entrypoint": "aigol provider invoke",
+  "runtime_module": "aigol/runtime/native_provider_execution_runtime.py",
+  "test_evidence": [
+    "tests/test_native_provider_execution_runtime_v1.py",
+    "tests/test_aigol_cli_foundation_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_native_provider_execution_runtime_v1.py",
+    "python -m pytest tests/test_aigol_cli_foundation_v1.py"
+  ],
+  "governance_boundaries": {
+    "provider_output_authoritative": false,
+    "automatic_implementation": false,
+    "automatic_approval": false,
+    "provider_routing": false,
+    "automatic_retries": false,
+    "streaming": false,
+    "tool_use": false,
+    "function_calling": false,
+    "credential_secret_persisted": false
+  },
+  "known_limits": [
+    "OpenAI is the only registered native provider schema in this milestone.",
+    "Tests use injected transport and do not require live network credentials.",
+    "Provider result normalization proves bounded response capture, not semantic correctness of provider advice."
+  ]
+}
