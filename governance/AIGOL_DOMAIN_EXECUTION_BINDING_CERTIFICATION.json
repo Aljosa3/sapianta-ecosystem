@@ -1,0 +1,80 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_EXECUTION_BINDING_CERTIFICATION",
+  "certification_id": "AIGOL_DOMAIN_EXECUTION_BINDING_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_DOMAIN_EXECUTION_BINDING_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/domain_execution_binding_runtime.py",
+  "governance_artifact": "governance/AIGOL_DOMAIN_EXECUTION_BINDING_V1.md",
+  "test_files": [
+    "tests/test_domain_execution_binding_runtime_v1.py",
+    "tests/test_domain_runtime_v1.py",
+    "tests/test_first_end_to_end_governed_operation_v1.py"
+  ],
+  "supporting_runtimes": [
+    "aigol/runtime/domain_runtime.py",
+    "aigol/provider/provider_runtime.py",
+    "aigol/authorization/authorization_runtime.py",
+    "aigol/workers/filesystem_worker.py"
+  ],
+  "certified_components": [
+    "Domain Execution Contract",
+    "Domain Provider Binding",
+    "Domain Worker Binding",
+    "Execution Authorization",
+    "Replay Visibility",
+    "Fail-Closed Behavior",
+    "Domain Execution Certification"
+  ],
+  "certified_execution_flow": [
+    "Domain",
+    "Execution Request",
+    "Provider",
+    "Worker",
+    "Result",
+    "Replay",
+    "Domain Evidence"
+  ],
+  "certified_replay_events": [
+    "DOMAIN_EXECUTION_REQUESTED",
+    "DOMAIN_EXECUTION_AUTHORIZED",
+    "DOMAIN_EXECUTION_DISPATCHED",
+    "DOMAIN_EXECUTION_COMPLETED",
+    "DOMAIN_EXECUTION_REJECTED"
+  ],
+  "real_certified_execution": {
+    "performed_by_existing_worker_runtime": true,
+    "worker_id": "FILESYSTEM_CREATE_WORKER",
+    "authorized_scope": "FILESYSTEM_CREATE_FILE",
+    "output_file": "domain_execution_evidence.txt",
+    "external_api_execution": false,
+    "broker_execution": false,
+    "governance_mutation": false
+  },
+  "authority_boundaries": {
+    "provider_can_authorize": false,
+    "provider_execution_authority": false,
+    "worker_self_authorized": false,
+    "governance_authorization_required": true,
+    "replay_visible": true,
+    "append_only_replay": true
+  },
+  "validation_summary": {
+    "domain_execution_binding_tests": "7 passed",
+    "base_domain_runtime_tests": "9 passed",
+    "first_end_to_end_governed_operation_tests": "10 passed",
+    "combined_targeted_tests": "26 passed",
+    "compileall": "passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "success_criteria": {
+    "governed_domain_can_dispatch_certified_execution_request": true,
+    "existing_provider_runtime_used": true,
+    "existing_worker_runtime_used": true,
+    "domain_evidence_recorded": true,
+    "fail_closed_behavior_certified": true
+  }
+}
