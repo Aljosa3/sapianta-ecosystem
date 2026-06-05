@@ -1,0 +1,48 @@
+{
+  "milestone_id": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_STATUS",
+  "certified_capabilities": {
+    "domain_reference_resolution": true,
+    "semantic_similarity_resolution": true,
+    "domain_adaptation_candidate_generation": true,
+    "clarification_required_for_missing_target_domain": true,
+    "replay_visible_artifacts": true,
+    "replay_reconstruction": true,
+    "lineage_binding": true,
+    "conversation_cli_integration": true,
+    "conversational_workflow_registry_integration": true,
+    "direct_cli_inspection_command": true
+  },
+  "certified_artifacts": {
+    "domain_reference": "DOMAIN_REFERENCE_ARTIFACT_V1",
+    "semantic_similarity": "SEMANTIC_SIMILARITY_ARTIFACT_V1",
+    "domain_adaptation_candidate": "DOMAIN_ADAPTATION_CANDIDATE_ARTIFACT_V1"
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "approval_boundary_preserved": true,
+    "authorization_boundary_preserved": true,
+    "fail_closed_semantics_preserved_for_noneligible_prompts": true,
+    "provider_authority_granted": false,
+    "worker_authority_granted": false,
+    "execution_authority_granted": false,
+    "domain_creation_authorized": false,
+    "governance_mutation_introduced": false,
+    "replay_mutation_introduced": false,
+    "approval_bypass_introduced": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/semantic_similarity_domain_reference_runtime.py",
+    "direct_cli": "aigol domain-reference resolve",
+    "conversation_cli": "aigol conversation",
+    "conversational_routing": "aigol conversational route",
+    "acceptance_evidence": "governance/AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_semantic_similarity_domain_reference_runtime_v1.py",
+      "tests/test_conversational_cli_runtime_v1.py"
+    ]
+  },
+  "status_statement": "AiGOL can now deterministically resolve domain references and semantic adaptation requests into replay-visible, lineage-bound, non-authoritative domain adaptation candidates. Explicit trading-domain conversational routing remains unchanged."
+}

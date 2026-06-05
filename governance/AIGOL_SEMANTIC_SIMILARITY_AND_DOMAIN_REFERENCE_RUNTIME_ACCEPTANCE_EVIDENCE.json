@@ -1,0 +1,83 @@
+{
+  "milestone_id": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_flow": [
+    "Human Request",
+    "Conversational CLI Routing",
+    "Domain Reference Resolution",
+    "Semantic Similarity Resolution",
+    "Domain Adaptation Candidate",
+    "Replay"
+  ],
+  "validated_scenarios": {
+    "Create something similar to the trading domain but focused on healthcare.": [
+      "DOMAIN_REFERENCE_RESOLVED",
+      "DOMAIN_ADAPTATION_CANDIDATE_CREATED"
+    ],
+    "Create a healthcare version of the trading domain.": [
+      "DOMAIN_REFERENCE_RESOLVED",
+      "DOMAIN_ADAPTATION_CANDIDATE_CREATED"
+    ],
+    "Use the compliance domain as a basis for a financial compliance domain.": [
+      "DOMAIN_REFERENCE_RESOLVED",
+      "DOMAIN_ADAPTATION_CANDIDATE_CREATED"
+    ],
+    "Create a trading domain.": [
+      "EXISTING_CONVERSATIONAL_WORKFLOW_UNCHANGED",
+      "CREATE_DOMAIN_TRADING"
+    ],
+    "Create something similar to the trading domain.": [
+      "DOMAIN_REFERENCE_RESOLVED",
+      "CLARIFICATION_REQUIRED"
+    ]
+  },
+  "certified_artifacts": {
+    "domain_reference": "DOMAIN_REFERENCE_ARTIFACT_V1",
+    "semantic_similarity": "SEMANTIC_SIMILARITY_ARTIFACT_V1",
+    "domain_adaptation_candidate": "DOMAIN_ADAPTATION_CANDIDATE_ARTIFACT_V1"
+  },
+  "requirements": {
+    "existing_domain_reference_detection": true,
+    "referenced_domain_identity_detection": true,
+    "referenced_capability_identity_detection": true,
+    "referenced_runtime_identity_detection": true,
+    "semantic_similarity_marker_detection": true,
+    "domain_adaptation_candidate_created": true,
+    "clarification_required_when_target_missing": true,
+    "conversational_cli_integration": true,
+    "direct_cli_inspection_command": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "lineage_bound": true,
+    "deterministic": true,
+    "domain_created": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "approval_bypassed": false
+  },
+  "runtime": "aigol/runtime/semantic_similarity_domain_reference_runtime.py",
+  "cli_integration": [
+    "aigol domain-reference resolve",
+    "aigol conversation",
+    "aigol conversational route"
+  ],
+  "tests": [
+    "tests/test_semantic_similarity_domain_reference_runtime_v1.py",
+    "tests/test_conversational_cli_runtime_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_semantic_similarity_domain_reference_runtime_v1.py tests/test_conversational_cli_runtime_v1.py",
+    "python -m pytest tests/test_semantic_similarity_domain_reference_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "known_limits": [
+    "The runtime creates non-authoritative adaptation candidates only; it does not create executable domains.",
+    "Semantic resolution is deterministic and registry-backed; prompts outside the marker and domain-reference patterns remain fail-closed or enter other certified clarification workflows.",
+    "Clarification response ingestion for adaptation candidates is not implemented in this milestone."
+  ]
+}

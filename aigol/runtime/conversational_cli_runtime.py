@@ -23,6 +23,7 @@ FAILED_CLOSED = "FAILED_CLOSED"
 CREATE_DOMAIN_TRADING = "CREATE_DOMAIN_TRADING"
 CREATE_DOMAIN_MARKETING = "CREATE_DOMAIN_MARKETING"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+DOMAIN_ADAPTATION_REFERENCE = "DOMAIN_ADAPTATION_REFERENCE"
 SHOW_LATEST_REPLAY_CHAIN = "SHOW_LATEST_REPLAY_CHAIN"
 REVIEW_LATEST_AUDIT = "REVIEW_LATEST_AUDIT"
 IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
@@ -174,6 +175,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "unknown_domain_clarification_runtime",
             clarification=True,
         ),
+        _workflow(
+            DOMAIN_ADAPTATION_REFERENCE,
+            "aigol domain-reference resolve",
+            "semantic_similarity_domain_reference_runtime",
+        ),
         _workflow(SHOW_LATEST_REPLAY_CHAIN, "aigol show-latest-chain", "cli_chain_inspection_runtime"),
         _workflow(REVIEW_LATEST_AUDIT, "aigol conversational route", "capability_audit_artifact_review"),
         _workflow(IMPROVE_PROVIDER_LAYER, "aigol conversational route", "provider_layer_review_guidance"),
@@ -185,6 +191,8 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
 def _classify_workflow(human_prompt: str) -> dict[str, Any]:
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".?!")
+    if _is_domain_adaptation_reference_prompt(normalized):
+        return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
     if "create" in normalized and "trading" in normalized and "domain" in normalized:
         return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
     if "create" in normalized and "marketing" in normalized and "domain" in normalized:
@@ -217,6 +225,20 @@ def _analysis(workflow_id: str, confidence: str, matched_terms: list[str]) -> di
         "existing_cli_command": entry["existing_cli_command"],
         "operator_summary": _operator_summary(workflow_id),
     }
+
+
+def _is_domain_adaptation_reference_prompt(normalized: str) -> bool:
+    markers = (
+        "similar to",
+        "based on",
+        "derived from",
+        "version of",
+        "adaptation of",
+        "same as but",
+        "as a basis",
+    )
+    domains = ("trading", "marketing", "compliance", "healthcare", "public services", "server management")
+    return any(marker in normalized for marker in markers) and any(domain in normalized for domain in domains)
 
 
 def _routing_decision_artifact(
@@ -446,6 +468,7 @@ def _operator_summary(workflow_id: str) -> str:
         CREATE_DOMAIN_TRADING: "Route to existing native-development domain workflow.",
         CREATE_DOMAIN_MARKETING: "Route to existing native-development domain workflow.",
         CREATE_DOMAIN_COMPLIANCE_CLARIFICATION: "Use certified unknown-domain clarification workflow.",
+        DOMAIN_ADAPTATION_REFERENCE: "Resolve semantic domain references into a governed adaptation candidate.",
         SHOW_LATEST_REPLAY_CHAIN: "Show latest replay chain through read-only chain inspection.",
         REVIEW_LATEST_AUDIT: "Review existing capability audit artifacts without regenerating them.",
         IMPROVE_PROVIDER_LAYER: "Route to provider-layer improvement review guidance without execution.",

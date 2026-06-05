@@ -1,0 +1,15 @@
+{
+  "classification": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_STATUS",
+  "milestone_id": "AIGOL_SEMANTIC_SIMILARITY_AND_DOMAIN_REFERENCE_RUNTIME_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "domain_reference_resolution": "AVAILABLE",
+  "semantic_similarity_resolution": "AVAILABLE",
+  "domain_adaptation_candidate": "AVAILABLE_NON_AUTHORITATIVE",
+  "clarification_integration": "CLARIFICATION_REQUIRED_WHEN_TARGET_DOMAIN_MISSING",
+  "replay_binding": "DOMAIN_REFERENCE_SEMANTIC_SIMILARITY_AND_ADAPTATION_CANDIDATE_LINEAGE_BOUND",
+  "conversation_behavior": "DOMAIN_REFERENCE_ADAPTATION_REQUESTS_ENTER_REPLAY_VISIBLE_RESOLUTION_WORKFLOW",
+  "existing_trading_behavior": "UNCHANGED",
+  "authority_boundary": "RESOLUTION_ONLY_NO_DOMAIN_CREATION_NO_PROVIDER_NO_WORKER_NO_EXECUTION",
+  "fail_closed": "PRESERVED_FOR_NONELIGIBLE_OR_INVALID_REPLAY",
+  "known_limit": "Clarification response ingestion and governed domain creation from adaptation candidates are not implemented in this milestone."
+}

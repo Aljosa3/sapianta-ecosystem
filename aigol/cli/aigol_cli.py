@@ -252,6 +252,11 @@ from aigol.runtime.unknown_domain_clarification_runtime import (
     render_unknown_domain_clarification_workflow,
     run_unknown_domain_clarification_workflow,
 )
+from aigol.runtime.semantic_similarity_domain_reference_runtime import (
+    is_domain_reference_adaptation_prompt,
+    render_domain_reference_resolution_summary,
+    run_semantic_similarity_domain_reference_resolution,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -571,6 +576,17 @@ def build_parser() -> argparse.ArgumentParser:
     clarification_unknown.add_argument("--created-at", default="2026-06-05T00:00:00Z")
     clarification_unknown.add_argument("--runtime-root", default=".aigol_unknown_domain_clarification_runtime")
     clarification_unknown.add_argument("--json", action="store_true")
+
+    domain_reference = subcommands.add_parser("domain-reference")
+    domain_reference_sub = domain_reference.add_subparsers(dest="domain_reference_command", required=True)
+    domain_reference_resolve = domain_reference_sub.add_parser("resolve")
+    domain_reference_resolve.add_argument("--prompt", required=True)
+    domain_reference_resolve.add_argument("--prompt-id", default="AIGOL-DOMAIN-REFERENCE-PROMPT-000001")
+    domain_reference_resolve.add_argument("--resolution-id", default="AIGOL-DOMAIN-REFERENCE-RESOLUTION-000001")
+    domain_reference_resolve.add_argument("--canonical-chain-id", default="AIGOL-DOMAIN-REFERENCE-CHAIN-000001")
+    domain_reference_resolve.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    domain_reference_resolve.add_argument("--runtime-root", default=".aigol_domain_reference_runtime")
+    domain_reference_resolve.add_argument("--json", action="store_true")
 
     conversation = subcommands.add_parser("conversation")
     conversation.add_argument("--session-id", default="AIGOL-INTERACTIVE-CONVERSATION-000001")
@@ -1238,6 +1254,40 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif is_domain_reference_adaptation_prompt(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
+                domain_reference_capture = run_semantic_similarity_domain_reference_resolution(
+                    resolution_id=f"{prompt_id}:SEMANTIC-SIMILARITY-DOMAIN-REFERENCE",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "semantic_similarity_domain_reference",
+                )
+                current_chain_id = domain_reference_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = domain_reference_capture.get("latest_chain_id") or current_chain_id
+                if domain_reference_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {domain_reference_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_domain_reference_resolution_summary(domain_reference_capture))
+                turns.append(
+                    _interactive_domain_reference_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        domain_reference_capture=domain_reference_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif is_unknown_domain_clarification_eligible(human_prompt):
                 conversational_routing_capture = route_conversational_cli_intent(
                     routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
@@ -1877,6 +1927,68 @@ def _interactive_unknown_domain_clarification_turn_summary(
         "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
             "conversational_cli_routing_replay_reference"
         ),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_reference_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    domain_reference_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None = None,
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    reference = domain_reference_capture.get("domain_reference_artifact")
+    if not isinstance(reference, dict):
+        reference = {}
+    similarity = domain_reference_capture.get("semantic_similarity_artifact")
+    if not isinstance(similarity, dict):
+        similarity = {}
+    candidate = domain_reference_capture.get("domain_adaptation_candidate_artifact")
+    if not isinstance(candidate, dict):
+        candidate = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": domain_reference_capture.get("response_status"),
+        "response_source": domain_reference_capture.get("response_source"),
+        "fail_closed": domain_reference_capture.get("fail_closed") is True,
+        "failure_reason": domain_reference_capture.get("failure_reason"),
+        "replay_reference": domain_reference_capture.get("semantic_similarity_domain_reference_replay_reference"),
+        "conversation_replay_reference": domain_reference_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": domain_reference_capture.get("canonical_chain_id"),
+        "current_chain_id": domain_reference_capture.get("current_chain_id"),
+        "latest_chain_id": domain_reference_capture.get("latest_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": (conversational_routing_capture or {}).get("workflow_id"),
+        "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
+            "conversational_cli_routing_replay_reference"
+        ),
+        "domain_reference_artifact_type": reference.get("artifact_type"),
+        "semantic_similarity_artifact_type": similarity.get("artifact_type"),
+        "domain_adaptation_candidate_artifact_type": candidate.get("artifact_type"),
+        "reference_status": reference.get("reference_status"),
+        "candidate_status": candidate.get("candidate_status"),
+        "source_domain": candidate.get("source_domain"),
+        "target_domain": candidate.get("target_domain"),
+        "operation": candidate.get("operation"),
+        "missing_information": candidate.get("missing_information", []),
+        "clarification_required": candidate.get("clarification_required") is True,
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
@@ -2636,6 +2748,17 @@ def run_command(args: argparse.Namespace) -> dict:
         )
         result["command"] = "aigol clarification unknown-domain"
         return result
+    if args.command == "domain-reference" and args.domain_reference_command == "resolve":
+        result = run_semantic_similarity_domain_reference_resolution(
+            resolution_id=args.resolution_id,
+            prompt_id=args.prompt_id,
+            human_prompt=args.prompt,
+            canonical_chain_id=args.canonical_chain_id,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.resolution_id,
+        )
+        result["command"] = "aigol domain-reference resolve"
+        return result
     if args.command == "conversation":
         return {
             "command": "aigol conversation",
@@ -3158,6 +3281,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL UNKNOWN DOMAIN CLARIFICATION",
             render_unknown_domain_clarification_workflow(result).splitlines(),
+        )
+    if command == "aigol domain-reference resolve":
+        return render_card(
+            "AIGOL DOMAIN REFERENCE RESOLUTION",
+            render_domain_reference_resolution_summary(result).splitlines(),
         )
     if command == "aigol conversation":
         return render_card(
