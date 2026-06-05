@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import re
@@ -21,8 +22,30 @@ AIGOL_CAPABILITY_AUDIT_RUNTIME_VERSION = "AIGOL_CAPABILITY_AUDIT_RUNTIME_V1"
 MATRIX_ARTIFACT_ID = "AIGOL_CAPABILITY_MATRIX_V2"
 AUDIT_DOCUMENT_ID = "AIGOL_CAPABILITY_AUDIT_V2"
 ROADMAP_DOCUMENT_ID = "AIGOL_ROADMAP_POST_AUDIT_V2"
+SUMMARY_DOCUMENT_ID = "AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1"
 
 STATUS_ORDER = ("CERTIFIED", "IMPLEMENTED", "PARTIAL", "NOT_STARTED")
+STATUS_SCORE = {"CERTIFIED": 100, "IMPLEMENTED": 75, "PARTIAL": 45, "NOT_STARTED": 0}
+
+CANONICAL_LAYERS = (
+    "L1 Governance",
+    "L2 Cognition (OCS)",
+    "L3 Provider/Worker",
+    "L4 Execution",
+    "L5 Implementation Generation",
+    "L6 Domain Runtime",
+    "L7 Marketplace / Ecosystem",
+)
+
+OPERATOR_LAYER_LABELS = {
+    "L1 Governance": "Governance",
+    "L2 Cognition (OCS)": "OCS / Cognition",
+    "L3 Provider/Worker": "Provider / Worker",
+    "L4 Execution": "Execution",
+    "L5 Implementation Generation": "Implementation Generation",
+    "L6 Domain Runtime": "Domain Runtime",
+    "L7 Marketplace / Ecosystem": "Marketplace / Ecosystem",
+}
 
 SCANNED_DIRECTORIES = (
     "governance/",
@@ -90,26 +113,36 @@ def run_capability_audit(
     matrix = build_capability_matrix(detected, normalization_rules=load_normalization_rules(root))
     audit_md = render_audit_document(matrix)
     roadmap_md = render_roadmap_document(matrix)
+    summary = build_audit_report_summary(matrix, repository_root=root)
+    summary_md = render_audit_report_summary(summary)
 
     matrix_path = governance_dir / "AIGOL_CAPABILITY_MATRIX_V2.json"
     audit_path = governance_dir / "AIGOL_CAPABILITY_AUDIT_V2.md"
     roadmap_path = governance_dir / "AIGOL_ROADMAP_POST_AUDIT_V2.md"
+    summary_path = governance_dir / "AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1.md"
     matrix_path.write_text(json.dumps(matrix, sort_keys=True, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
     audit_path.write_text(audit_md, encoding="utf-8")
     roadmap_path.write_text(roadmap_md, encoding="utf-8")
+    summary_path.write_text(summary_md, encoding="utf-8")
 
     return {
         "runtime_version": AIGOL_CAPABILITY_AUDIT_RUNTIME_VERSION,
         "matrix_path": str(matrix_path),
         "audit_path": str(audit_path),
         "roadmap_path": str(roadmap_path),
+        "summary_path": str(summary_path),
         "capability_counts": deepcopy(matrix["capability_counts"]),
+        "normalized_capability_counts": deepcopy(summary["normalized_capability_counts"]),
         "layer_maturity_scores": deepcopy(matrix["layer_maturity_scores"]),
+        "overall_maturity": summary["overall_maturity"],
+        "recommended_next_milestone": deepcopy(summary["recommended_next_milestone"]),
         "generated_artifacts": [
             "governance/AIGOL_CAPABILITY_AUDIT_V2.md",
             "governance/AIGOL_CAPABILITY_MATRIX_V2.json",
             "governance/AIGOL_ROADMAP_POST_AUDIT_V2.md",
+            "governance/AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1.md",
         ],
+        "operator_summary": deepcopy(summary),
         "audit_hash": replay_hash(matrix),
         "replay_visible": True,
     }
@@ -217,6 +250,7 @@ def build_capability_matrix(
             "normalization_rules_artifact": rules.get("artifact_id", "BUILT_IN_CAPABILITY_NORMALIZATION_RULES"),
         },
         "capability_counts": capability_counts,
+        "normalized_capability_counts": _normalized_capability_counts(capabilities),
         "layer_maturity_scores": _layer_scores(capabilities),
         "capabilities": capabilities,
     }
@@ -378,6 +412,155 @@ def render_roadmap_document(matrix: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def build_audit_report_summary(
+    matrix: dict[str, Any],
+    *,
+    repository_root: str | Path,
+    audit_timestamp: str | None = None,
+) -> dict[str, Any]:
+    """Build the operator-focused capability audit summary model."""
+
+    timestamp = audit_timestamp or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    layer_scores = _complete_layer_scores(matrix.get("layer_maturity_scores", {}))
+    ranked_strongest = _rank_layers(layer_scores, reverse=True)[:5]
+    ranked_weakest = _rank_layers(layer_scores, reverse=False)[:5]
+    growth_areas = _top_growth_areas(matrix["capabilities"])
+    stagnating_areas = _top_stagnating_areas(matrix["capabilities"])
+    recommendation = _recommended_next_milestone(layer_scores, growth_areas, stagnating_areas)
+    return {
+        "artifact_id": SUMMARY_DOCUMENT_ID,
+        "runtime_version": AIGOL_CAPABILITY_AUDIT_RUNTIME_VERSION,
+        "repository": str(Path(repository_root).resolve()),
+        "audit_timestamp": timestamp,
+        "capability_counts": deepcopy(matrix["capability_counts"]),
+        "normalized_capability_counts": _normalized_capability_counts(matrix["capabilities"]),
+        "layer_scores": layer_scores,
+        "overall_maturity": _overall_maturity(layer_scores),
+        "top_strongest_layers": ranked_strongest,
+        "top_weakest_layers": ranked_weakest,
+        "top_capability_growth_areas": growth_areas,
+        "top_stagnating_areas": stagnating_areas,
+        "recommended_next_milestone": recommendation,
+        "status": "SUCCESS",
+    }
+
+
+def render_audit_report_summary(summary: dict[str, Any]) -> str:
+    """Render the operator-focused audit summary markdown report."""
+
+    counts = summary["capability_counts"]
+    normalized_counts = summary["normalized_capability_counts"]
+    lines = [
+        "# AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1",
+        "",
+        "## Status",
+        "",
+        "Operator-focused summary generated by `AIGOL_CAPABILITY_AUDIT_RUNTIME_V1`.",
+        "",
+        "```text",
+        "AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_STATUS = CERTIFIED",
+        "```",
+        "",
+        "## Repository",
+        "",
+        f"`{summary['repository']}`",
+        "",
+        "## Audit Timestamp",
+        "",
+        f"`{summary['audit_timestamp']}`",
+        "",
+        "## Overall Maturity",
+        "",
+        f"`{summary['overall_maturity']}`",
+        "",
+        "## Capability Counts",
+        "",
+        "| Status | Count |",
+        "| --- | ---: |",
+    ]
+    for status in STATUS_ORDER:
+        lines.append(f"| `{status}` | {counts.get(status, 0)} |")
+    lines.extend(
+        [
+            f"| Total | {counts.get('total', 0)} |",
+            "",
+            "## Normalized Capability Counts",
+            "",
+            "| Status | Count |",
+            "| --- | ---: |",
+        ]
+    )
+    for status in STATUS_ORDER:
+        lines.append(f"| `{status}` | {normalized_counts.get(status, 0)} |")
+    lines.extend(
+        [
+            f"| Total | {normalized_counts.get('total', 0)} |",
+            "",
+            "## Layer Scores",
+            "",
+            "| Layer | Score |",
+            "| --- | ---: |",
+        ]
+    )
+    for layer in CANONICAL_LAYERS:
+        lines.append(f"| {OPERATOR_LAYER_LABELS[layer]} | {summary['layer_scores'][layer]} |")
+    lines.extend(["", "## Top 5 Strongest Layers", ""])
+    lines.extend(_ranked_layer_lines(summary["top_strongest_layers"]))
+    lines.extend(["", "## Top 5 Weakest Layers", ""])
+    lines.extend(_ranked_layer_lines(summary["top_weakest_layers"]))
+    lines.extend(["", "## Top Capability Growth Areas", ""])
+    lines.extend(_area_lines(summary["top_capability_growth_areas"]))
+    lines.extend(["", "## Top Stagnating Areas", ""])
+    lines.extend(_area_lines(summary["top_stagnating_areas"]))
+    recommendation = summary["recommended_next_milestone"]
+    lines.extend(
+        [
+            "",
+            "## Recommended Next Milestone",
+            "",
+            "```text",
+            recommendation["milestone"],
+            "```",
+            "",
+            recommendation["reasoning"],
+            "",
+            "## CLI Summary Contract",
+            "",
+            "After successful audit execution the CLI prints `AIGOL CAPABILITY AUDIT SUMMARY` with repository, overall maturity, top strengths, top weaknesses, recommended next milestone, and success status.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_cli_summary(summary: dict[str, Any]) -> str:
+    """Render the successful audit CLI summary."""
+
+    recommendation = summary["recommended_next_milestone"]
+    lines = [
+        "AIGOL CAPABILITY AUDIT SUMMARY",
+        "",
+        f"Repository: {summary['repository']}",
+        f"Overall Maturity: {summary['overall_maturity']}",
+        "",
+        "Top Strengths:",
+    ]
+    lines.extend(_cli_layer_lines(summary["top_strongest_layers"]))
+    lines.extend(["", "Top Weaknesses:"])
+    lines.extend(_cli_layer_lines(summary["top_weakest_layers"]))
+    lines.extend(
+        [
+            "",
+            "Recommended Next Milestone:",
+            f"{recommendation['milestone']}",
+            f"Reasoning: {recommendation['reasoning']}",
+            "",
+            "Status: SUCCESS",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _files(root: Path, pattern: str) -> list[Path]:
     if not root.exists():
         return []
@@ -465,11 +648,140 @@ def _layer_scores(capabilities: list[dict[str, Any]]) -> dict[str, int]:
     for capability in capabilities:
         grouped[capability["layer"]].append(capability)
     scores: dict[str, int] = {}
-    status_score = {"CERTIFIED": 100, "IMPLEMENTED": 75, "PARTIAL": 45, "NOT_STARTED": 0}
     for layer in sorted(grouped):
-        values = [status_score[item["status"]] for item in grouped[layer]]
+        values = [STATUS_SCORE[item["status"]] for item in grouped[layer]]
         scores[layer] = round(sum(values) / len(values)) if values else 0
     return scores
+
+
+def _normalized_capability_counts(capabilities: list[dict[str, Any]]) -> dict[str, int]:
+    strongest_by_id: dict[str, str] = {}
+    strength = {status: index for index, status in enumerate(reversed(STATUS_ORDER))}
+    for capability in capabilities:
+        capability_id = capability.get("capability_id") or capability.get("capability_key")
+        status = capability["status"]
+        previous = strongest_by_id.get(capability_id)
+        if previous is None or strength[status] > strength[previous]:
+            strongest_by_id[capability_id] = status
+    counts = Counter(strongest_by_id.values())
+    normalized_counts = {status: counts.get(status, 0) for status in STATUS_ORDER}
+    normalized_counts["total"] = len(strongest_by_id)
+    return normalized_counts
+
+
+def _complete_layer_scores(scores: dict[str, int]) -> dict[str, int]:
+    return {layer: int(scores.get(layer, 0)) for layer in CANONICAL_LAYERS}
+
+
+def _overall_maturity(layer_scores: dict[str, int]) -> int:
+    values = [layer_scores[layer] for layer in CANONICAL_LAYERS]
+    return round(sum(values) / len(values)) if values else 0
+
+
+def _rank_layers(layer_scores: dict[str, int], *, reverse: bool) -> list[dict[str, Any]]:
+    return [
+        {
+            "layer": layer,
+            "label": OPERATOR_LAYER_LABELS[layer],
+            "score": score,
+        }
+        for layer, score in sorted(layer_scores.items(), key=lambda item: (-item[1], item[0]) if reverse else (item[1], item[0]))
+    ]
+
+
+def _top_growth_areas(capabilities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped = _status_counts_by_layer(capabilities)
+    areas = []
+    for layer in CANONICAL_LAYERS:
+        counts = grouped[layer]
+        growth_signal = counts["IMPLEMENTED"] + counts["PARTIAL"]
+        areas.append(
+            {
+                "layer": layer,
+                "label": OPERATOR_LAYER_LABELS[layer],
+                "score": growth_signal,
+                "reason": f"{growth_signal} capabilities are implemented or partial and can be moved toward certification.",
+            }
+        )
+    return sorted(areas, key=lambda item: (-item["score"], item["layer"]))[:5]
+
+
+def _top_stagnating_areas(capabilities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped = _status_counts_by_layer(capabilities)
+    areas = []
+    for layer in CANONICAL_LAYERS:
+        counts = grouped[layer]
+        stagnation_signal = counts["NOT_STARTED"] + counts["PARTIAL"]
+        areas.append(
+            {
+                "layer": layer,
+                "label": OPERATOR_LAYER_LABELS[layer],
+                "score": stagnation_signal,
+                "reason": f"{stagnation_signal} capabilities are partial or not started.",
+            }
+        )
+    return sorted(areas, key=lambda item: (-item["score"], item["layer"]))[:5]
+
+
+def _status_counts_by_layer(capabilities: list[dict[str, Any]]) -> dict[str, Counter]:
+    grouped: dict[str, Counter] = {layer: Counter() for layer in CANONICAL_LAYERS}
+    for capability in capabilities:
+        layer = capability.get("layer")
+        if layer not in grouped:
+            grouped[layer] = Counter()
+        grouped[layer][capability["status"]] += 1
+    return grouped
+
+
+def _recommended_next_milestone(
+    layer_scores: dict[str, int],
+    growth_areas: list[dict[str, Any]],
+    stagnating_areas: list[dict[str, Any]],
+) -> dict[str, str]:
+    weakest_priority = {
+        "L7 Marketplace / Ecosystem": 0,
+        "L5 Implementation Generation": 1,
+        "L6 Domain Runtime": 2,
+        "L3 Provider/Worker": 3,
+        "L4 Execution": 4,
+        "L2 Cognition (OCS)": 5,
+        "L1 Governance": 6,
+    }
+    weakest_layer = min(layer_scores.items(), key=lambda item: (item[1], weakest_priority.get(item[0], 99)))[0]
+    if weakest_layer == "L7 Marketplace / Ecosystem":
+        milestone = "AIGOL_MARKETPLACE_ECOSYSTEM_FOUNDATION_V1"
+        reason = "Marketplace / Ecosystem is the weakest canonical layer; move from planning evidence toward a bounded ecosystem foundation before commercial expansion."
+    elif weakest_layer == "L6 Domain Runtime":
+        milestone = "AIGOL_DOMAIN_EXECUTION_BINDING_V1"
+        reason = "Domain Runtime needs stronger operational execution evidence; bind governed domains to certified execution replay."
+    elif weakest_layer == "L5 Implementation Generation":
+        milestone = "AIGOL_NATIVE_DEVELOPMENT_END_TO_END_DRY_RUN_V1"
+        reason = "Implementation Generation remains weak relative to governance; prioritize a replay-safe native development dry run."
+    elif weakest_layer == "L3 Provider/Worker":
+        milestone = "AIGOL_PROVIDER_WORKER_CERTIFICATION_EXPANSION_V1"
+        reason = "Provider / Worker evidence should be expanded and certified before broader ecosystem work."
+    else:
+        milestone = "AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1"
+        reason = "Operator visibility is the safest next improvement because it strengthens planning without changing execution authority."
+    if growth_areas:
+        reason += f" Highest growth signal is {growth_areas[0]['label']}."
+    if stagnating_areas:
+        reason += f" Highest stagnation signal is {stagnating_areas[0]['label']}."
+    return {"milestone": milestone, "reasoning": reason}
+
+
+def _ranked_layer_lines(layers: list[dict[str, Any]]) -> list[str]:
+    return [f"{index}. {item['label']}: {item['score']}" for index, item in enumerate(layers, start=1)]
+
+
+def _cli_layer_lines(layers: list[dict[str, Any]]) -> list[str]:
+    return [f"- {item['label']}: {item['score']}" for item in layers]
+
+
+def _area_lines(areas: list[dict[str, Any]]) -> list[str]:
+    if not areas:
+        return ["No areas detected."]
+    return [f"- {item['label']}: {item['reason']}" for item in areas]
 
 
 def _capability_lines(capabilities: list[dict[str, Any]], *, empty: str, limit: int = 50) -> list[str]:
@@ -485,7 +797,8 @@ def _capability_lines(capabilities: list[dict[str, Any]], *, empty: str, limit: 
 def main(argv: list[str] | None = None) -> int:
     args = argv or []
     root = Path(args[0]) if args else Path.cwd()
-    run_capability_audit(repository_root=root)
+    capture = run_capability_audit(repository_root=root)
+    print(render_cli_summary(capture["operator_summary"]))
     return 0
 
 
@@ -496,7 +809,10 @@ __all__ = [
     "detect_capabilities",
     "infer_layer",
     "main",
+    "build_audit_report_summary",
     "render_audit_document",
+    "render_audit_report_summary",
+    "render_cli_summary",
     "render_roadmap_document",
     "run_capability_audit",
 ]
