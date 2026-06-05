@@ -1,0 +1,39 @@
+{
+  "artifact_type": "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_CERTIFICATION",
+  "milestone": "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_V1",
+  "final_classification": "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_STATUS = CERTIFIED",
+  "runtime_component": "aigol/runtime/generated_content_acceptance_runtime.py",
+  "output_artifact": "GENERATED_CONTENT_ACCEPTANCE_ARTIFACT_V1",
+  "output_hash": "generated_content_acceptance_hash",
+  "validated_responsibilities": [
+    "bind human acceptance to a specific implementation manifest",
+    "bind acceptance to generated content validation evidence",
+    "bind acceptance to generated test validation evidence",
+    "prevent acceptance reuse",
+    "preserve replay-visible lineage"
+  ],
+  "forbidden_capabilities_preserved": {
+    "filesystem_mutation": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_authorization": false,
+    "automatic_approval_inference": false
+  },
+  "determinism_evidence": {
+    "identical_acceptance_lineage_produces_identical_acceptance_hashes": true,
+    "identical_acceptance_lineage_produces_identical_acceptance_artifacts": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_generated_content_acceptance_runtime_v1.py",
+    "python -m pytest tests/test_generated_test_validation_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_validation_runtime_v1.py",
+    "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+    "git diff --check"
+  ],
+  "known_limitations": [
+    "runtime records human acceptance but does not create filesystem mutation authorization",
+    "acceptance reuse prevention depends on supplied prior acceptance lineage keys",
+    "runtime does not inspect existing target filesystem state",
+    "runtime does not execute generated tests"
+  ]
+}
