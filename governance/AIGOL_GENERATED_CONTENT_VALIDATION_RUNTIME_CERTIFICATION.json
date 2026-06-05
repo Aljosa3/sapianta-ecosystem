@@ -1,0 +1,38 @@
+{
+  "artifact_type": "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_CERTIFICATION",
+  "milestone": "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_V1",
+  "final_classification": "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_component": "aigol/runtime/generated_content_validation_runtime.py",
+  "output_artifact": "GENERATED_CONTENT_VALIDATION_ARTIFACT_V1",
+  "output_hash": "generated_content_validation_hash",
+  "validated_responsibilities": [
+    "manifest consistency",
+    "file content hashes",
+    "test content hashes",
+    "artifact types",
+    "allowed paths",
+    "CREATE_ONLY constraints",
+    "bundle consistency"
+  ],
+  "forbidden_capabilities_preserved": {
+    "filesystem_mutation": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "approval_creation": false,
+    "execution_authorization": false
+  },
+  "determinism_evidence": {
+    "identical_implementation_manifests_produce_identical_validation_hashes": true,
+    "identical_implementation_manifests_produce_identical_validation_artifacts": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_generated_content_validation_runtime_v1.py",
+    "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+    "git diff --check"
+  ],
+  "known_limitations": [
+    "runtime validates manifest-contained generated content only",
+    "runtime does not inspect existing target filesystem state",
+    "runtime does not authorize content acceptance or filesystem mutation"
+  ]
+}
