@@ -69,6 +69,10 @@ from aigol.cli.commands.implementation_epoch import (
     render_implementation_epoch_summary,
     run_implementation_generation_epoch,
 )
+from aigol.runtime.first_real_implementation_generation_epoch_runtime import (
+    render_first_real_implementation_generation_epoch,
+    run_first_real_implementation_generation_epoch,
+)
 from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
@@ -453,6 +457,12 @@ def build_parser() -> argparse.ArgumentParser:
     implementation_epoch.add_argument("--workspace", default=".aigol_implementation_generation_workspace")
     implementation_epoch.add_argument("--created-at", default="2026-06-05T00:00:00Z")
     implementation_epoch.add_argument("--actor-id", default="human.operator")
+    implementation_real_epoch = implementation_sub.add_parser("real-epoch")
+    implementation_real_epoch.add_argument("--request", required=True)
+    implementation_real_epoch.add_argument("--runtime-root", default=".aigol_real_implementation_generation_epoch")
+    implementation_real_epoch.add_argument("--workspace", default=".aigol_real_implementation_generation_workspace")
+    implementation_real_epoch.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    implementation_real_epoch.add_argument("--actor-id", default="human.operator")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -2169,6 +2179,14 @@ def run_command(args: argparse.Namespace) -> dict:
             created_at=args.created_at,
             actor_id=args.actor_id,
         )
+    if args.command == "implementation" and args.implementation_command == "real-epoch":
+        return run_first_real_implementation_generation_epoch(
+            human_request=args.request,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+            created_at=args.created_at,
+            actor_id=args.actor_id,
+        )
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -2471,6 +2489,8 @@ def render_command_result(result: dict) -> str:
         )
     if command == "aigol implementation epoch":
         return render_implementation_epoch_summary(result)
+    if command == "aigol implementation real-epoch":
+        return render_first_real_implementation_generation_epoch(result)
     if command in {
         "aigol approval list",
         "aigol approval show",

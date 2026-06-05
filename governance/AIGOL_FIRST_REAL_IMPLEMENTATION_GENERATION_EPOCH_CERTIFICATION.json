@@ -1,0 +1,50 @@
+{
+  "artifact_type": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_CERTIFICATION",
+  "milestone": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_V1",
+  "final_classification": "AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_STATUS = CERTIFIED",
+  "cli_command": "python -m aigol.cli.aigol_cli implementation real-epoch --request \"Create a real provider-generated implementation candidate for epoch validation.\" --runtime-root /tmp/aigol_first_real_implementation_generation_epoch_replay --workspace /tmp/aigol_first_real_implementation_generation_epoch_workspace --created-at 2026-06-05T21:00:00Z --actor-id human.operator",
+  "epoch_status": "REAL_EPOCH_CERTIFIED",
+  "epoch_hash": "sha256:be3eb4cfe5b3d66eb12e124ce1fc8023d729431d904ce6cd4253bb23873d348e",
+  "provider_proposal_hash": "sha256:22c1586dff8859bd4fa312ff96a94b25aee21cdf440c870516dbbf0e836b3cce",
+  "implementation_manifest_hash": "sha256:9d5d52fb32b87f99c89a00d60849a90dec16e61f1ad7f8aa2d273061fdd91379",
+  "implementation_certification_hash": "sha256:456ac765c3e730316d50fe29d068e3a89b886365cd93b5adbd26b3beb5113b43",
+  "certified_path_count": 3,
+  "validated_flow": [
+    "human request",
+    "OCS semantic request preparation",
+    "real provider proposal",
+    "implementation manifest",
+    "generated content validation",
+    "generated test validation",
+    "implementation summary",
+    "human acceptance evidence",
+    "filesystem mutation authorization",
+    "CREATE_ONLY materialization",
+    "implementation certification",
+    "replay inspection",
+    "fail-closed collision test"
+  ],
+  "materialized_files": [
+    "aigol/runtime/first_real_epoch_provider_worker.py",
+    "governance/FIRST_REAL_EPOCH_PROVIDER_WORKER_V1.md",
+    "tests/test_first_real_epoch_provider_worker.py"
+  ],
+  "forbidden_capabilities_preserved": {
+    "overwrite": false,
+    "delete": false,
+    "rename": false,
+    "implicit_mutation": false,
+    "unauthorized_filesystem_mutation": false,
+    "execution_authorization": false,
+    "provider_authority": false
+  },
+  "collision_test": {
+    "second_run_status": "REAL_EPOCH_FAILED_CLOSED",
+    "failure_reason": "filesystem mutation failed closed: CREATE_ONLY collision"
+  },
+  "known_limits": [
+    "provider is a bounded local AiGOL provider adapter rather than an external API invocation",
+    "human acceptance evidence is CLI-supplied rather than interactive",
+    "generated tests are executed as validation evidence after materialization"
+  ]
+}
