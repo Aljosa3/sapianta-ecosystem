@@ -1,0 +1,50 @@
+{
+  "artifact_type": "AIGOL_IMPLEMENTATION_CERTIFICATION_RUNTIME_CERTIFICATION",
+  "milestone": "AIGOL_IMPLEMENTATION_CERTIFICATION_RUNTIME_V1",
+  "final_classification": "AIGOL_IMPLEMENTATION_CERTIFICATION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_component": "aigol/runtime/implementation_certification_runtime.py",
+  "output_artifact": "IMPLEMENTATION_CERTIFICATION_ARTIFACT_V1",
+  "output_hash": "implementation_certification_hash",
+  "validated_responsibilities": [
+    "consume filesystem mutation artifact",
+    "consume filesystem mutation authorization artifact",
+    "consume generated content acceptance artifact",
+    "consume implementation manifest artifact",
+    "verify exact path continuity",
+    "verify exact content hash continuity",
+    "verify exact authorization continuity",
+    "verify exact materialization continuity"
+  ],
+  "forbidden_capabilities_preserved": {
+    "filesystem_mutation": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_authorization": false,
+    "governance_mutation": false
+  },
+  "determinism_evidence": {
+    "identical_implementation_bundles_produce_identical_certification_hashes": true,
+    "identical_implementation_bundles_produce_identical_certification_artifacts": true
+  },
+  "fail_closed_evidence": {
+    "authorization_lineage_mismatch_rejected": true,
+    "materialization_path_mismatch_rejected": true,
+    "materialized_hash_mismatch_rejected": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_implementation_certification_runtime_v1.py",
+    "python -m pytest tests/test_filesystem_mutation_runtime_v1.py",
+    "python -m pytest tests/test_filesystem_mutation_authorization_runtime_v1.py",
+    "python -m pytest tests/test_implementation_summary_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_acceptance_runtime_v1.py",
+    "python -m pytest tests/test_generated_test_validation_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_validation_runtime_v1.py",
+    "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+    "git diff --check"
+  ],
+  "known_limitations": [
+    "runtime certifies replay-visible mutation evidence but does not read materialized files directly",
+    "runtime does not execute generated tests",
+    "runtime does not authorize downstream execution"
+  ]
+}
