@@ -1,0 +1,71 @@
+{
+  "artifact_type": "AIGOL_OCS_COGNITION_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_COGNITION_RUNTIME_V1",
+  "certification_date": "2026-06-04",
+  "context_runtime_reference": "AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_cognition_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_cognition_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_COGNITION_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_COGNITION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_COGNITION_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS context assembly existed without a bounded cognition runtime capable of producing deterministic replay-visible cognition findings.",
+  "runtime_model": [
+    "OCS cognition consumes OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1.",
+    "The runtime validates context artifact hash, context hash, replay visibility, assembled status, and false authority flags.",
+    "The runtime analyzes normalized replay-visible source summaries.",
+    "The runtime identifies task intent, ambiguity, clarification requirements, domain candidates, worker candidates, and provider necessity.",
+    "The runtime computes cognition_hash from source context identity, analysis outputs, authority flags, status, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and cognition hash continuity."
+  ],
+  "replay_impact": [
+    "OCS cognition now produces append-only replay-visible evidence.",
+    "Replay reconstruction can prove which OCS context hash cognition consumed.",
+    "The same OCS context artifact produces the same cognition hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke providers, workers, dispatch, approval, governance mutation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No worker assignment.",
+    "No worker dispatch.",
+    "No approval creation.",
+    "No approval inference.",
+    "No domain creation.",
+    "No governance mutation.",
+    "No replay mutation outside append-only OCS cognition evidence."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py tests/test_development_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "18 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_COGNITION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_COGNITION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "commit_message": "Certify OCS cognition runtime",
+  "final_classification": "AIGOL_OCS_COGNITION_RUNTIME_STATUS = CERTIFIED"
+}
