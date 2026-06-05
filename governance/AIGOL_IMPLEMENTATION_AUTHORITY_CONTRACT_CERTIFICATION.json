@@ -1,0 +1,64 @@
+{
+  "artifact_type": "AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_CERTIFICATION",
+  "milestone_id": "AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_V1",
+  "certification_status": "CERTIFIED_CONTRACT_ONLY",
+  "review_only": true,
+  "implementation_changes": false,
+  "runtime_changes": false,
+  "governance_model_changes": false,
+  "deliverables": [
+    "governance/AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_READINESS_REVIEW_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_EXISTING_COMPONENTS_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_GAP_ANALYSIS_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_AUTHORITY_MODEL_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_MANIFEST_MODEL_V1.md",
+    "governance/AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_CERTIFICATION.json"
+  ],
+  "authority_answers": {
+    "who_may_authorize_implementation_creation": "Human operator only, through explicit replay-visible approval artifacts.",
+    "what_artifacts_must_be_authorized": [
+      "implementation candidate selection",
+      "provider implementation generation request",
+      "generated implementation manifest",
+      "generated code validation",
+      "generated test validation",
+      "human content acceptance",
+      "filesystem mutation authorization",
+      "post-application certification"
+    ],
+    "how_generated_files_are_represented": "IMPLEMENTATION_MANIFEST_ARTIFACT_V1 file_entries with exact path, artifact type, operation, content encoding, content hash, preflight state, validation requirements, and false authority flags.",
+    "how_content_hashes_are_bound": "Per-file content hashes are bound across manifest, validation, content acceptance, filesystem mutation authorization, post-application verification, and certification.",
+    "how_tests_are_bound": "test_entries link generated tests to implementation file entries, validation commands, fixture references, expected coverage target, and negative case requirements.",
+    "how_implementation_manifests_are_represented": "A non-authoritative content-bearing IMPLEMENTATION_MANIFEST_ARTIFACT_V1 with ordered file_entries, ordered test_entries, validation requirements, forbidden operations, manifest_hash, and artifact_hash.",
+    "what_replay_evidence_is_required": "Candidate selection, provider generation authorization, provider request/response, manifest, code validation, test validation, content acceptance, filesystem mutation authorization, file application, post-application verification, and implementation certification.",
+    "what_approvals_are_required": [
+      "candidate selection authorization",
+      "provider implementation-generation authorization",
+      "generated content acceptance authorization",
+      "filesystem mutation authorization"
+    ],
+    "how_multi_file_implementations_are_certified": "By IMPLEMENTATION_MANIFEST_CERTIFICATION_ARTIFACT_V1 verifying manifest hash continuity, per-file hashes, per-test hashes, validation results, human acceptance, mutation authorization, file application results, post-application hashes, and replay reconstruction."
+  },
+  "authority_boundaries": {
+    "human_operator_may_authorize": true,
+    "aigol_may_self_authorize": false,
+    "provider_may_authorize": false,
+    "worker_may_authorize": false,
+    "ocs_may_authorize": false,
+    "ppp_may_authorize": false,
+    "replay_may_authorize": false,
+    "proposal_is_implementation_authority": false,
+    "handoff_is_filesystem_mutation_authority": false,
+    "execution_ready_is_execution_authority": false,
+    "approval_scope_reuse_allowed": false
+  },
+  "initial_runtime_scope_recommended": {
+    "operation_mode": "CREATE_ONLY",
+    "update_semantics": "FUTURE_CERTIFICATION_REQUIRED",
+    "dependency_installation": "PROHIBITED",
+    "recursive_mutation": "PROHIBITED",
+    "automatic_implementation": "PROHIBITED"
+  },
+  "recommended_next_milestone": "AIGOL_IMPLEMENTATION_MANIFEST_CONTRACT_RUNTIME_V1",
+  "final_classification": "AIGOL_IMPLEMENTATION_AUTHORITY_CONTRACT_STATUS = CERTIFIED_CONTRACT_ONLY"
+}
