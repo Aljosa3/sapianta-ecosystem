@@ -1,0 +1,38 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_STATUS",
+  "certified_capabilities": {
+    "natural_language_workflow_routing": true,
+    "intent_to_workflow_selection": true,
+    "clarification_workflow_delegation": true,
+    "existing_runtime_delegation": true,
+    "routing_replay_recording": true,
+    "routing_replay_reconstruction": true,
+    "workflow_coverage_measurement": true,
+    "interactive_conversation_cli_integration": true
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "approval_boundary_preserved": true,
+    "authorization_boundary_preserved": true,
+    "provider_controls_preserved": true,
+    "worker_controls_preserved": true,
+    "router_invokes_provider": false,
+    "router_invokes_worker": false,
+    "router_requests_execution": false,
+    "router_mutates_governance": false,
+    "router_mutates_replay": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/conversational_cli_runtime.py",
+    "cli": "aigol conversational route",
+    "conversation_cli": "aigol conversation",
+    "acceptance_evidence": "governance/AIGOL_CONVERSATIONAL_CLI_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_conversational_cli_runtime_v1.py"
+    ]
+  },
+  "status_statement": "Operators can use natural language to select registered certified AiGOL workflows through replay-visible conversational routing. The router delegates to existing runtimes and does not bypass approval, authorization, provider, worker, execution, or replay controls."
+}

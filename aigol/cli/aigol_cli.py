@@ -144,6 +144,13 @@ from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.conversational_cli_runtime import (
+    IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+    REVIEW_LATEST_AUDIT as CONVERSATIONAL_REVIEW_LATEST_AUDIT,
+    SHOW_LATEST_REPLAY_CHAIN as CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+    render_conversational_cli_routing_summary,
+    route_conversational_cli_intent,
+)
 from aigol.runtime.conversation_native_development_intent_routing import (
     NATIVE_DEVELOPMENT_INTENT_ROUTED,
     is_conversation_native_development_intent,
@@ -238,6 +245,7 @@ from aigol.runtime.conversation_native_development_context_integration import (
     run_conversation_native_development_context_integration,
 )
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
+from aigol.runtime.transport.serialization import replay_hash
 from aigol.runtime.unknown_domain_clarification_runtime import (
     CLARIFICATION_REQUIRED as UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
     is_unknown_domain_clarification_eligible,
@@ -541,6 +549,17 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_submit.add_argument("--created-at", default="2026-06-01T00:00:00Z")
     prompt_submit.add_argument("--runtime-root", default=".aigol_prompt_runtime")
     prompt_submit.add_argument("--operator-context", default="operator_cli")
+
+    conversational = subcommands.add_parser("conversational")
+    conversational_sub = conversational.add_subparsers(dest="conversational_command", required=True)
+    conversational_route = conversational_sub.add_parser("route")
+    conversational_route.add_argument("--prompt", required=True)
+    conversational_route.add_argument("--prompt-id", default="AIGOL-CONVERSATIONAL-PROMPT-000001")
+    conversational_route.add_argument("--routing-id", default="AIGOL-CONVERSATIONAL-ROUTING-000001")
+    conversational_route.add_argument("--canonical-chain-id", default="AIGOL-CONVERSATIONAL-CHAIN-000001")
+    conversational_route.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    conversational_route.add_argument("--runtime-root", default=".aigol_conversational_cli_runtime")
+    conversational_route.add_argument("--json", action="store_true")
 
     clarification = subcommands.add_parser("clarification")
     clarification_sub = clarification.add_subparsers(dest="clarification_command", required=True)
@@ -1187,7 +1206,47 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif _is_conversational_cli_readonly_candidate(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
+                workflow_capture = _run_conversational_cli_selected_readonly_workflow(
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    routing_capture=conversational_routing_capture,
+                    runtime_root=args.runtime_root,
+                    turn_root=turn_root,
+                    created_at=created_at,
+                )
+                if workflow_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {workflow_capture.get('failure_reason')}")
+                else:
+                    output_writer(workflow_capture.get("response_text", ""))
+                turns.append(
+                    _interactive_conversational_cli_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        workflow_capture=workflow_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif is_unknown_domain_clarification_eligible(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
                 clarification_capture = run_unknown_domain_clarification_workflow(
                     clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
                     prompt_id=prompt_id,
@@ -1209,10 +1268,19 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         clarification_capture=clarification_capture,
+                        conversational_routing_capture=conversational_routing_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
             elif is_conversation_native_development_intent(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
                 routing_capture = run_conversation_native_development_intent_routing(
                     routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
                     prompt_id=prompt_id,
@@ -1556,6 +1624,7 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         routing_capture=routing_capture,
+                        conversational_routing_capture=conversational_routing_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -1767,6 +1836,7 @@ def _interactive_unknown_domain_clarification_turn_summary(
     prompt_id: str,
     router_capture: dict[str, Any],
     clarification_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None = None,
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
@@ -1803,6 +1873,10 @@ def _interactive_unknown_domain_clarification_turn_summary(
         == UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
         "unknown_domain_artifact_type": unknown.get("artifact_type"),
         "clarification_request_artifact_type": request.get("artifact_type"),
+        "conversational_workflow_id": (conversational_routing_capture or {}).get("workflow_id"),
+        "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
+            "conversational_cli_routing_replay_reference"
+        ),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
@@ -1814,12 +1888,69 @@ def _interactive_unknown_domain_clarification_turn_summary(
     }
 
 
+def _interactive_conversational_cli_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any],
+    workflow_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": workflow_capture.get("response_status"),
+        "response_source": workflow_capture.get("response_source"),
+        "response_text": workflow_capture.get("response_text"),
+        "fail_closed": workflow_capture.get("fail_closed") is True,
+        "failure_reason": workflow_capture.get("failure_reason"),
+        "replay_reference": conversational_routing_capture.get("conversational_cli_routing_replay_reference"),
+        "conversation_replay_reference": conversational_routing_capture.get("conversational_cli_routing_replay_reference"),
+        "canonical_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "current_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "latest_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": conversational_routing_capture.get("workflow_id"),
+        "conversational_cli_routing_replay_reference": conversational_routing_capture.get(
+            "conversational_cli_routing_replay_reference"
+        ),
+        "existing_runtime": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
+            "existing_runtime"
+        ),
+        "existing_cli_command": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
+            "existing_cli_command"
+        ),
+        "coverage": conversational_routing_capture.get("coverage"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
 def _interactive_native_development_intent_routing_turn_summary(
     *,
     turn_id: str,
     prompt_id: str,
     router_capture: dict[str, Any],
     routing_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None = None,
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
@@ -1882,6 +2013,10 @@ def _interactive_native_development_intent_routing_turn_summary(
         "source_router_replay_reference": source_router_replay_reference,
         "native_development_intent_routing_replay_reference": routing_capture.get(
             "native_development_intent_routing_replay_reference"
+        ),
+        "conversational_workflow_id": (conversational_routing_capture or {}).get("workflow_id"),
+        "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
+            "conversational_cli_routing_replay_reference"
         ),
         "intent_class": routing_capture.get("intent_class"),
         "target_domain": routing_capture.get("target_domain"),
@@ -2192,6 +2327,119 @@ def _require_cli_string(value: Any, field_name: str) -> str:
     return value.strip()
 
 
+def _is_conversational_cli_readonly_candidate(human_prompt: str) -> bool:
+    prompt = str(human_prompt or "").lower()
+    return (
+        ("latest" in prompt and ("replay chain" in prompt or "chain" in prompt))
+        or ("review" in prompt and "audit" in prompt)
+        or ("improve" in prompt and "provider" in prompt and "layer" in prompt)
+    )
+
+
+def _run_conversational_cli_selected_readonly_workflow(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    routing_capture: dict[str, Any],
+    runtime_root: str | Path,
+    turn_root: Path,
+    created_at: str,
+) -> dict[str, Any]:
+    workflow_id = routing_capture.get("workflow_id")
+    try:
+        if routing_capture.get("fail_closed") is True:
+            raise ValueError(routing_capture.get("failure_reason") or "conversational route failed closed")
+        if workflow_id == CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN:
+            result = show_latest_chain_command(
+                replay_root=runtime_root,
+                report_root=turn_root / "conversational_chain_inspection",
+                created_at=created_at,
+            )
+            response_text = render_chain_inspection_summary(result)
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text=response_text,
+                existing_result=result,
+                response_status=result.get("status", "READY"),
+                fail_closed=result.get("fail_closed") is True,
+                failure_reason=result.get("failure_reason"),
+            )
+        if workflow_id == CONVERSATIONAL_REVIEW_LATEST_AUDIT:
+            audit_path = Path("governance") / "AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1.md"
+            if not audit_path.exists():
+                raise ValueError("latest audit summary artifact is missing")
+            lines = audit_path.read_text(encoding="utf-8").splitlines()
+            preview = "\n".join(line for line in lines[:18] if line.strip())
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text="LATEST AUDIT REVIEW\n" + preview,
+                existing_result={"audit_summary_path": str(audit_path), "read_only": True},
+            )
+        if workflow_id == CONVERSATIONAL_IMPROVE_PROVIDER_LAYER:
+            response_text = "\n".join(
+                [
+                    "PROVIDER LAYER IMPROVEMENT REVIEW",
+                    "Workflow Selected: IMPROVE_PROVIDER_LAYER",
+                    "Existing Runtime: provider-layer review guidance",
+                    "Safe next step: create a bounded provider-layer improvement proposal with human approval.",
+                    "No provider invoked.",
+                    "No worker invoked.",
+                    "No execution requested.",
+                ]
+            )
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text=response_text,
+                existing_result={"read_only": True, "proposal_created": False},
+            )
+        raise ValueError(f"unsupported conversational read-only workflow: {workflow_id}")
+    except Exception as exc:
+        return _conversational_workflow_capture(
+            prompt_id=prompt_id,
+            workflow_id=workflow_id,
+            response_text="",
+            existing_result={},
+            response_status="FAILED_CLOSED",
+            fail_closed=True,
+            failure_reason=str(exc),
+        )
+
+
+def _conversational_workflow_capture(
+    *,
+    prompt_id: str,
+    workflow_id: str | None,
+    response_text: str,
+    existing_result: dict[str, Any],
+    response_status: str = "READY",
+    fail_closed: bool = False,
+    failure_reason: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "prompt_id": prompt_id,
+        "workflow_id": workflow_id,
+        "response_status": response_status,
+        "response_source": "CONVERSATIONAL_CLI_WORKFLOW",
+        "response_text": response_text,
+        "existing_result": existing_result,
+        "fail_closed": fail_closed,
+        "failure_reason": failure_reason,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "workflow_capture_hash": replay_hash(
+            {"prompt_id": prompt_id, "workflow_id": workflow_id, "response_status": response_status}
+        ),
+    }
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -2367,6 +2615,15 @@ def run_command(args: argparse.Namespace) -> dict:
             created_at=args.created_at,
             replay_dir=args.runtime_root,
             operator_context=args.operator_context,
+        )
+    if args.command == "conversational" and args.conversational_command == "route":
+        return route_conversational_cli_intent(
+            routing_id=args.routing_id,
+            prompt_id=args.prompt_id,
+            human_prompt=args.prompt,
+            canonical_chain_id=args.canonical_chain_id,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.routing_id,
         )
     if args.command == "clarification" and args.clarification_command == "unknown-domain":
         result = run_unknown_domain_clarification_workflow(
@@ -2891,6 +3148,11 @@ def render_command_result(result: dict) -> str:
                 f"fail_closed: {result.get('fail_closed')}",
                 f"failure_reason: {result.get('failure_reason') or ''}",
             ],
+        )
+    if command == "aigol conversational route":
+        return render_card(
+            "AIGOL CONVERSATIONAL ROUTING",
+            render_conversational_cli_routing_summary(result).splitlines(),
         )
     if command == "aigol clarification unknown-domain":
         return render_card(

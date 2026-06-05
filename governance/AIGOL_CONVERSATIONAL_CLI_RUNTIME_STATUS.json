@@ -1,0 +1,13 @@
+{
+  "classification": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_STATUS",
+  "milestone_id": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "intent_routing": "AVAILABLE",
+  "workflow_selection": "AVAILABLE",
+  "clarification_integration": "AVAILABLE",
+  "replay_visibility": "ROUTING_DECISIONS_REPLAY_VISIBLE_AND_RECONSTRUCTABLE",
+  "workflow_coverage": "8/8_REGISTERED_CONVERSATIONAL_WORKFLOWS_ACCESSIBLE",
+  "primary_operator_interface": "NATURAL_LANGUAGE_ROUTE_AVAILABLE",
+  "authority_boundary": "ROUTER_SELECTS_WORKFLOWS_ONLY_DOWNSTREAM_CONTROLS_PRESERVED",
+  "known_limit": "Coverage is bounded to the registered conversational workflow map, not every AiGOL CLI command."
+}

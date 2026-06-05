@@ -1,0 +1,68 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_CONVERSATIONAL_CLI_RUNTIME_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_flow": [
+    "Natural Language",
+    "Source Of Truth Router / OCS-facing ingress",
+    "Intent Resolution",
+    "Workflow Selection",
+    "Existing Certified Runtime"
+  ],
+  "validated_examples": {
+    "Create a trading domain.": "CREATE_DOMAIN_TRADING",
+    "Review latest audit.": "REVIEW_LATEST_AUDIT",
+    "Show latest replay chain.": "SHOW_LATEST_REPLAY_CHAIN",
+    "Improve provider layer.": "IMPROVE_PROVIDER_LAYER",
+    "Create a compliance domain.": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+  },
+  "requirements": {
+    "intent_routing": true,
+    "maps_to_existing_certified_workflows": true,
+    "clarification_integration": true,
+    "routing_decisions_replay_visible": true,
+    "routing_decisions_replay_reconstructable": true,
+    "approval_bypass": false,
+    "authorization_bypass": false,
+    "provider_control_bypass": false,
+    "worker_control_bypass": false,
+    "provider_invoked_by_router": false,
+    "worker_invoked_by_router": false,
+    "execution_requested_by_router": false
+  },
+  "workflow_coverage": {
+    "registered_workflows": 8,
+    "conversationally_accessible_workflows": 8,
+    "coverage_ratio": "8/8",
+    "workflow_ids": [
+      "CREATE_DOMAIN_TRADING",
+      "CREATE_DOMAIN_MARKETING",
+      "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "SHOW_LATEST_REPLAY_CHAIN",
+      "REVIEW_LATEST_AUDIT",
+      "IMPROVE_PROVIDER_LAYER",
+      "SHOW_STATUS",
+      "SHOW_DASHBOARD"
+    ]
+  },
+  "runtime": "aigol/runtime/conversational_cli_runtime.py",
+  "cli_integration": [
+    "aigol conversational route",
+    "aigol conversation"
+  ],
+  "tests": [
+    "tests/test_conversational_cli_runtime_v1.py",
+    "tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_conversational_cli_runtime_v1.py",
+    "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "known_limits": [
+    "The coverage ratio applies to the registered conversational workflow map for this milestone, not every CLI command in the repository.",
+    "The router selects workflows and records replay evidence; downstream certified runtimes remain responsible for approval, authorization, provider, worker, and replay controls.",
+    "Provider-layer improvement is routed to review guidance, not implementation."
+  ]
+}
