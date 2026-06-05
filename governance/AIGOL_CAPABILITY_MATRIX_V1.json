@@ -1,0 +1,587 @@
+{
+  "artifact_id": "AIGOL_CAPABILITY_MATRIX_V1",
+  "status": "CERTIFICATION_AUDIT",
+  "scope": {
+    "scanned_directories": [
+      "governance/",
+      "runtime/",
+      "tests/"
+    ],
+    "classification_rule": "Capability claims require at least one local runtime, test, governance, replay evidence, certification, or CLI evidence reference. CERTIFIED requires certification evidence.",
+    "status_values": [
+      "NOT_STARTED",
+      "PARTIAL",
+      "IMPLEMENTED",
+      "CERTIFIED"
+    ],
+    "layer_note": "Requested L1-L7 audit layers are used as audit groupings and do not redefine the canonical constitutional layer model."
+  },
+  "capability_counts": {
+    "NOT_STARTED": 4,
+    "PARTIAL": 10,
+    "IMPLEMENTED": 0,
+    "CERTIFIED": 41,
+    "total": 55
+  },
+  "layer_maturity_scores": {
+    "L1 Governance": 92,
+    "L2 Cognition (OCS)": 86,
+    "L3 Provider/Worker": 82,
+    "L4 Execution": 79,
+    "L5 Implementation Generation": 58,
+    "L6 Domain Runtime": 63,
+    "L7 Marketplace / Ecosystem": 39
+  },
+  "capabilities": [
+    {
+      "layer": "L1 Governance",
+      "capability": "Constitutional governance conformance engine",
+      "implementation": ["runtime/governance/governance_conformance_engine.py", "runtime/governance/conformance_rules.py", "runtime/governance/conformance_models.py"],
+      "tests": ["tests/test_governance_conformance.py"],
+      "certification": ["governance/GOVERNANCE_RESILIENCE_CERTIFICATION_GATE_V1_CERTIFICATION.json"],
+      "replay_evidence": [".github/governance/evidence/GOVERNANCE_CONFORMANCE_REPORT.json"],
+      "cli_evidence": ["python -m runtime.governance.governance_conformance_engine"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L1 Governance",
+      "capability": "Capability governance matrix and eligibility model",
+      "implementation": ["governance/CAPABILITY_GOVERNANCE_MATRIX_V1_ADR.md", "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_FINALIZE_MANIFEST.json"],
+      "tests": ["tests/test_capability_model.py", "tests/test_runtime_capability_mapping.py", "tests/test_capability_registry.py"],
+      "certification": ["governance/CAPABILITY_GOVERNANCE_MATRIX_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/CAPABILITY_GOVERNANCE_MATRIX_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L1 Governance",
+      "capability": "Governance replay evidence schema and replay certification",
+      "implementation": ["governance/constitutional/replay/GOVERNANCE_REPLAY_EVIDENCE_SCHEMA_V1.md", "governance/constitutional/replay/GOVERNANCE_REPLAY_EVIDENCE_FREEZE_MANIFEST.json"],
+      "tests": ["tests/test_replay_chain_integrity_validation_v1.py", "tests/test_unified_replay_reconstruction_runtime_v1.py", "tests/test_replay_pollution_guard.py"],
+      "certification": ["governance/constitutional/replay/GOVERNANCE_REPLAY_EVIDENCE_CERTIFICATION.json", "governance/UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/constitutional/replay/GOVERNANCE_REPLAY_EVIDENCE_ACCEPTANCE.json", "governance/UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["tests/test_replay_summary_command_v1.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L1 Governance",
+      "capability": "Approval and authorization governance",
+      "implementation": ["governance/PROPOSAL_APPROVAL_MODEL_V1.md", "governance/AUTHORIZATION_AUTHORITY_MODEL_V1.md", "governance/EXECUTION_AUTHORIZATION_MANIFEST.json"],
+      "tests": ["tests/test_proposal_approval_runtime_v1.py", "tests/test_human_approval_gate_v1.py", "tests/test_execution_authorization_runtime_v1.py"],
+      "certification": ["governance/PROPOSAL_APPROVAL_RUNTIME_V1_CERTIFICATION.json", "governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROPOSAL_APPROVAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["tests/test_approval_cli.py", "tests/test_approval_command_group_v1.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L1 Governance",
+      "capability": "Runtime policy engine",
+      "implementation": ["governance/FINALIZE_RUNTIME_POLICY_ENGINE_V1.json"],
+      "tests": ["tests/test_runtime_policy_engine_v1.py", "tests/test_policy_engine.py", "tests/test_policy_rules.py"],
+      "certification": ["governance/RUNTIME_POLICY_ENGINE_CERTIFICATION.json"],
+      "replay_evidence": ["governance/FINALIZE_RUNTIME_POLICY_ENGINE_V1.json"],
+      "cli_evidence": ["tests/test_policy_cli.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L1 Governance",
+      "capability": "Operational governance evidence index",
+      "implementation": ["governance/operational/OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_V1.md", "governance/operational/OPERATIONAL_GOVERNANCE_EVIDENCE_MANIFEST_V1.json"],
+      "tests": [],
+      "certification": ["governance/operational/OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_CERTIFICATION.json"],
+      "replay_evidence": ["governance/operational/OPERATIONAL_GOVERNANCE_EVIDENCE_INDEX_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "Conversation runtime and chain continuity",
+      "implementation": ["governance/CONVERSATION_RUNTIME_V1_CERTIFICATION.json", "governance/CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1.md"],
+      "tests": ["tests/test_conversation_runtime_v1.py", "tests/test_conversation_chain_continuity_runtime_v1.py", "tests/test_interactive_conversation_cli_v1.py"],
+      "certification": ["governance/CONVERSATION_RUNTIME_V1_CERTIFICATION.json", "governance/CONVERSATIONAL_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/CONVERSATION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/CONVERSATION_CHAIN_CONTINUITY_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["governance/INTERACTIVE_CONVERSATION_CLI_V1_CERTIFICATION.json", "tests/test_interactive_conversation_cli_v1.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "Intent classification artifact and classifier runtime",
+      "implementation": ["governance/INTENT_CLASSIFIER_MODEL_V1.md", "governance/INTENT_CLASSIFICATION_ARTIFACT_MANIFEST.json"],
+      "tests": ["tests/test_intent_classifier_v1.py", "tests/test_intent_classifier.py"],
+      "certification": ["governance/INTENT_CLASSIFIER_CERTIFICATION.json", "governance/INTENT_CLASSIFICATION_ARTIFACT_CERTIFICATION.json"],
+      "replay_evidence": ["governance/INTENT_CLASSIFICATION_ARTIFACT_ACCEPTANCE.json", "governance/INTENT_CLASSIFIER_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "Prompt-to-conversation integration",
+      "implementation": ["governance/PROMPT_EVIDENCE_CONTINUITY_FLOW_V1.md"],
+      "tests": ["tests/test_prompt_to_conversation_integration_v1.py"],
+      "certification": ["governance/PROMPT_TO_CONVERSATION_INTEGRATION_CERTIFICATION.json", "governance/PROMPT_TO_CONVERSATION_INTEGRATION_REPLAY_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROMPT_TO_CONVERSATION_INTEGRATION_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "OCS cognition runtime",
+      "implementation": ["governance/AIGOL_OCS_BOUNDARY_CONTRACT_V1.md", "governance/AIGOL_OCS_COGNITION_RUNTIME_CERTIFICATION.json"],
+      "tests": ["tests/test_ocs_cognition_runtime_v1.py", "tests/test_cognition_runtime_v1.py", "tests/test_ocs_end_to_end_runtime_v1.py"],
+      "certification": ["governance/AIGOL_OCS_COGNITION_RUNTIME_CERTIFICATION.json", "governance/AIGOL_OCS_END_TO_END_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_OCS_COGNITION_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_OCS_END_TO_END_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["tests/test_ocs_chain_inspection_runtime_v1.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "OCS semantic resolution",
+      "implementation": ["governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_V1.md"],
+      "tests": ["tests/test_ocs_semantic_resolution_runtime_v1.py"],
+      "certification": ["governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "OCS context assembly",
+      "implementation": ["governance/AIGOL_OCS_BOUNDARY_AND_CONTEXT_ASSEMBLY_CONTRACT_V1.md"],
+      "tests": ["tests/test_ocs_context_assembly_runtime_v1.py"],
+      "certification": ["governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_CERTIFICATION.json", "governance/AIGOL_OCS_BOUNDARY_AND_CONTEXT_ASSEMBLY_CONTRACT_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_OCS_CONTEXT_ASSEMBLY_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "OCS clarification runtime",
+      "implementation": ["governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_V1.md"],
+      "tests": ["tests/test_ocs_clarification_runtime_v1.py", "tests/test_intent_clarification_dialog_runtime_v1.py"],
+      "certification": ["governance/AIGOL_OCS_CLARIFICATION_RUNTIME_CERTIFICATION.json", "governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_OCS_CLARIFICATION_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_INTENT_CLARIFICATION_DIALOG_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "OCS memory and continuity runtime",
+      "implementation": ["governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_CERTIFICATION.json", "governance/CONSTITUTIONAL_MEMORY_INDEX_MODEL_V1.md"],
+      "tests": ["tests/test_ocs_memory_and_continuity_runtime_v1.py", "tests/test_constitutional_memory_access_v1.py", "tests/test_constitutional_memory_consultation_activation_v1.py"],
+      "certification": ["governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_CERTIFICATION.json", "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/CONSTITUTIONAL_MEMORY_CONSULTATION_ACTIVATION_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "Native development task intake and session resume",
+      "implementation": ["governance/AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_CERTIFICATION.json"],
+      "tests": ["tests/test_native_development_task_intake_and_session_resume_v1.py", "tests/test_conversation_native_development_intent_routing_v1.py"],
+      "certification": ["governance/AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_AND_SESSION_RESUME_CERTIFICATION.json", "governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_CONVERSATION_NATIVE_DEVELOPMENT_INTENT_ROUTING_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L2 Cognition (OCS)",
+      "capability": "Native development end-to-end readiness",
+      "implementation": ["governance/AIGOL_NATIVE_DEVELOPMENT_GAP_ANALYSIS_V1.md", "governance/AIGOL_NATIVE_DEVELOPMENT_FAILURE_ANALYSIS_V1.md"],
+      "tests": ["tests/test_conversation_native_development_context_integration_v1.py", "tests/test_conversation_to_implementation_handoff_runtime_v1.py"],
+      "certification": ["governance/AIGOL_NATIVE_DEVELOPMENT_FAILURE_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_NATIVE_DEVELOPMENT_END_TO_END_DRY_RUN_V1.md"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Provider registry and provider identity",
+      "implementation": ["governance/AIGOL_PROVIDER_REGISTRY_MODEL_V1.md", "governance/PROVIDER_IDENTITY_MODEL_V1.md"],
+      "tests": ["tests/test_provider_registry.py", "tests/test_provider_identity.py"],
+      "certification": ["governance/PROVIDER_ATTACHMENT_CERTIFICATION_V1.json"],
+      "replay_evidence": ["governance/PROVIDER_ATTACHMENT_ACCEPTANCE_EVIDENCE_V1.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "OpenAI provider adapter",
+      "implementation": ["governance/OPENAI_PROVIDER_ADAPTER_V1.md"],
+      "tests": ["tests/test_openai_provider_adapter_v1.py", "tests/test_openai_provider_adapter_pressure_validation_v1.py"],
+      "certification": ["governance/OPENAI_PROVIDER_ADAPTER_CERTIFICATION.json", "governance/OPENAI_PROVIDER_ADAPTER_PRESSURE_CERTIFICATION.json"],
+      "replay_evidence": ["governance/OPENAI_PROVIDER_ADAPTER_ACCEPTANCE.json", "governance/REAL_OPENAI_CONNECTIVITY_EVIDENCE_V1.md"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Live provider invocation and normalization",
+      "implementation": ["governance/LIVE_PROVIDER_NORMALIZATION_SUCCESS_V1.md"],
+      "tests": ["tests/test_live_external_llm_provider_v1.py", "tests/test_live_openai_runtime_connector_v1.py", "tests/test_live_provider_normalization_success_v1.py"],
+      "certification": ["governance/LIVE_EXTERNAL_LLM_PROVIDER_V1_ACCEPTANCE_EVIDENCE.json", "governance/LIVE_OPENAI_RUNTIME_CONNECTOR_V1_CERTIFICATION.json", "governance/LIVE_PROVIDER_NORMALIZATION_SUCCESS_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/LIVE_PROVIDER_NORMALIZATION_SUCCESS_V1_ACCEPTANCE_EVIDENCE.json", "governance/REAL_OPENAI_API_INVOCATION_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Provider proposal runtime",
+      "implementation": ["governance/AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_V1.md", "governance/PROVIDER_PROPOSAL_RUNTIME_V1_CERTIFICATION.json"],
+      "tests": ["tests/test_provider_proposal_runtime_v1.py", "tests/test_provider_proposal_production_runtime_v1.py"],
+      "certification": ["governance/PROVIDER_PROPOSAL_RUNTIME_V1_CERTIFICATION.json", "governance/AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROVIDER_PROPOSAL_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Provider proposal repair and retry",
+      "implementation": ["governance/AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_V1.md"],
+      "tests": ["tests/test_provider_proposal_repair_and_retry_runtime_v1.py"],
+      "certification": ["governance/AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Provider agnostic raw response capture",
+      "implementation": ["governance/PROVIDER_AGNOSTIC_RAW_RESPONSE_CAPTURE_V1.md"],
+      "tests": ["tests/test_provider_agnostic_raw_response_capture_v1.py"],
+      "certification": ["governance/PROVIDER_AGNOSTIC_RAW_RESPONSE_CAPTURE_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROVIDER_AGNOSTIC_RAW_RESPONSE_CAPTURE_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Worker runtime and assignment",
+      "implementation": ["governance/WORKER_RUNTIME_MODEL_V1.md", "governance/AIGOL_WORKER_REGISTRY_MODEL_V1.md"],
+      "tests": ["tests/test_worker_runtime_v1.py", "tests/test_worker_assignment_runtime_v1.py"],
+      "certification": ["governance/WORKER_RUNTIME_V1_CERTIFICATION.json", "governance/AIGOL_WORKER_ASSIGNMENT_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/WORKER_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_WORKER_ASSIGNMENT_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Worker authorization, dispatch, invocation, and result capture",
+      "implementation": ["governance/GOVERNED_WORKER_AUTHORIZATION_MODEL_V1.md", "governance/AIGOL_WORKER_INVOCATION_RUNTIME_V1.md", "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_V1.md"],
+      "tests": ["tests/test_minimal_governed_worker_authorization_runtime_v1.py", "tests/test_worker_dispatch_runtime_v1.py", "tests/test_worker_invocation_runtime_v1.py", "tests/test_worker_result_capture_runtime_v1.py"],
+      "certification": ["governance/MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_CERTIFICATION.json", "governance/AIGOL_WORKER_DISPATCH_RUNTIME_CERTIFICATION.json", "governance/AIGOL_WORKER_INVOCATION_RUNTIME_CERTIFICATION.json", "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_WORKER_DISPATCH_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_WORKER_INVOCATION_RUNTIME_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L3 Provider/Worker",
+      "capability": "Provider ecosystem completeness",
+      "implementation": ["governance/AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION.json", "governance/PROVIDER_POSITION_RECONSTRUCTION_V1.md"],
+      "tests": ["tests/test_provider_transport_connector.py", "tests/test_provider_contracts.py"],
+      "certification": ["governance/AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROVIDER_POSITION_RECONSTRUCTION_V1.md"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Execution request runtime",
+      "implementation": ["governance/EXECUTION_REQUEST_RUNTIME_MODEL_V1.md"],
+      "tests": ["tests/test_execution_request_runtime_v1.py", "tests/test_runtime_operation_payload.py"],
+      "certification": ["governance/EXECUTION_REQUEST_RUNTIME_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/EXECUTION_REQUEST_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Minimal governed execution runtime",
+      "implementation": ["governance/MINIMAL_GOVERNED_EXECUTION_RUNTIME_MANIFEST.json", "governance/MINIMAL_EXECUTION_RUNTIME_MANIFEST.json"],
+      "tests": ["tests/test_minimal_governed_execution_path_v1.py", "tests/test_minimal_execution_runtime_prototype_v1.py", "tests/test_execution_runtime_v1.py"],
+      "certification": ["governance/MINIMAL_GOVERNED_EXECUTION_RUNTIME_CERTIFICATION.json", "governance/EXECUTION_RUNTIME_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/MINIMAL_GOVERNED_EXECUTION_RUNTIME_ACCEPTANCE.json", "governance/EXECUTION_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Dispatch runtime and ready-for-dispatch boundary",
+      "implementation": ["governance/DISPATCH_RUNTIME_MODEL_V1.md", "governance/READY_FOR_DISPATCH_RUNTIME_BOUNDARY_GUARANTEES_V1.md"],
+      "tests": ["tests/test_dispatch_runtime_v1.py", "tests/test_ready_for_dispatch_runtime_v1.py"],
+      "certification": ["governance/DISPATCH_RUNTIME_V1_CERTIFICATION.json", "governance/READY_FOR_DISPATCH_RUNTIME_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/READY_FOR_DISPATCH_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Result runtime and governed return interpretation",
+      "implementation": ["governance/RESULT_RUNTIME_ADR_V1.md", "governance/GOVERNED_RESULT_SUMMARY_MANIFEST.json"],
+      "tests": ["tests/test_result_runtime_v1.py", "tests/test_governed_result_summary_v1.py", "tests/test_governed_return_interpretation_v1.py"],
+      "certification": ["governance/RESULT_RUNTIME_V1_CERTIFICATION.json", "governance/GOVERNED_RESULT_SUMMARY_CERTIFICATION.json", "governance/GOVERNED_RETURN_INTERPRETATION_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/RESULT_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json", "governance/GOVERNED_RESULT_SUMMARY_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Live governed execution transport",
+      "implementation": [".github/governance/transport/GOVERNED_LIVE_EXECUTION_TRANSPORT_V1.md", ".github/governance/transport/GOVERNED_LIVE_EXECUTION_TRANSPORT_V1.json"],
+      "tests": ["tests/test_governed_live_execution_transport.py", "tests/test_live_runtime_wiring.py"],
+      "certification": ["runtime/wiring_evidence/LIVE_RUNTIME_WIRING_CERTIFICATION.json"],
+      "replay_evidence": ["runtime/wiring_evidence/LIVE_RUNTIME_WIRING_REPLAY.json", "runtime/wiring_evidence/LIVE_RUNTIME_WIRING_CONTINUITY.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Operational runtime CLI and inspection",
+      "implementation": ["governance/RUNTIME_OPERATOR_CLI_V1.md", "governance/MINIMAL_RUNTIME_OPERATOR_CLI_V1.json"],
+      "tests": ["tests/test_runtime_operator_cli_v1.py", "tests/test_minimal_runtime_operator_cli_v1.py", "tests/test_minimal_runtime_contract_inspection_v1.py"],
+      "certification": ["governance/RUNTIME_OPERATOR_CLI_V1_CERTIFICATION.json", "governance/MINIMAL_RUNTIME_OPERATOR_CLI_CERTIFICATION.json"],
+      "replay_evidence": ["governance/RUNTIME_OPERATOR_CLI_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["tests/test_replay_summary_command_v1.py", "tests/test_cli_chain_inspection_runtime_v1.py"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Post-execution replay review and operation ledger",
+      "implementation": ["governance/OPERATION_REPLAY_LEDGER_AND_REPORTING_CERTIFICATION.json", "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_CERTIFICATION.json"],
+      "tests": ["tests/test_operation_replay_ledger_and_reporting_v1.py", "tests/test_post_execution_replay_review_runtime_v1.py"],
+      "certification": ["governance/OPERATION_REPLAY_LEDGER_AND_REPORTING_CERTIFICATION.json", "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/OPERATION_REPLAY_LEDGER_AND_REPORTING_ACCEPTANCE_EVIDENCE.json", "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L4 Execution",
+      "capability": "Production deployment automation",
+      "implementation": ["governance/PRODUCTION_ISOLATION_FOUNDATION_V1.md"],
+      "tests": ["tests/test_production_isolation_foundation_v1.py"],
+      "certification": ["governance/PRODUCTION_ISOLATION_FOUNDATION_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PRODUCTION_ISOLATION_FOUNDATION_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Implementation manifest runtime",
+      "implementation": ["governance/AIGOL_IMPLEMENTATION_MANIFEST_MODEL_V1.md"],
+      "tests": ["tests/test_implementation_manifest_runtime_v1.py"],
+      "certification": ["governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Implementation plan to execution request conversion",
+      "implementation": ["governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_MODEL_V1.md", "governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_FOUNDATION_V1.md"],
+      "tests": ["tests/test_implementation_plan_to_execution_request_runtime_v1.py"],
+      "certification": ["governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": ["governance/IMPLEMENTATION_PLAN_INSPECTION_COMMAND_GROUP_V1_CERTIFICATION.json"],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Generated content validation and acceptance",
+      "implementation": ["governance/AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_V1.md", "governance/AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_V1.md"],
+      "tests": ["tests/test_generated_content_validation_runtime_v1.py", "tests/test_generated_content_acceptance_runtime_v1.py"],
+      "certification": ["governance/AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_CERTIFICATION.json", "governance/AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_CERTIFICATION.json"],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "First end-to-end implementation generation epoch",
+      "implementation": ["governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_USAGE_REPORT_V1.md"],
+      "tests": ["tests/test_first_end_to_end_implementation_generation_epoch_v1.py"],
+      "certification": ["governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_REPLAY_REPORT.json", "governance/AIGOL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Governed implementation dry run",
+      "implementation": ["governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_V1.md"],
+      "tests": ["tests/test_governed_implementation_dry_run_v1.py"],
+      "certification": ["governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_GOVERNED_IMPLEMENTATION_DRY_RUN_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Native implementation generation as operator-ready product flow",
+      "implementation": ["governance/AIGOL_REAL_IMPLEMENTATION_GENERATION_READINESS_CERTIFICATION.json", "governance/AIGOL_NATIVE_DEVELOPMENT_FAILURE_ANALYSIS_V1.md"],
+      "tests": ["tests/test_first_real_implementation_generation_epoch_v1.py", "tests/test_conversation_to_implementation_handoff_runtime_v1.py"],
+      "certification": ["governance/AIGOL_REAL_IMPLEMENTATION_GENERATION_READINESS_CERTIFICATION.json", "governance/AIGOL_NATIVE_DEVELOPMENT_FAILURE_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_NATIVE_DEVELOPMENT_END_TO_END_DRY_RUN_V1.md"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L5 Implementation Generation",
+      "capability": "Autonomous code mutation without human authority",
+      "implementation": ["governance/AIGOL_EXECUTION_AUTHORITY_MODEL_V1.md", "governance/ANTI_AGENTIC_GUARANTEES_V1.md"],
+      "tests": [],
+      "certification": [],
+      "replay_evidence": ["governance/AIGOL_NATIVE_DEVELOPMENT_FAILURE_CERTIFICATION.json"],
+      "cli_evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Trading decision validation domain runtime",
+      "implementation": ["governance/TRADING_DOMAIN_DECISION_VALIDATION_MODEL_V1.md", "governance/TRADING_DOMAIN_FOUNDATION_V1.md"],
+      "tests": ["tests/test_first_readonly_domain_experiment_v1.py", "tests/test_first_real_domain_worker_v1.py"],
+      "certification": ["governance/TRADING_DOMAIN_DECISION_VALIDATION_CERTIFICATION.json", "governance/TRADING_DECISION_VALIDATION_ACCEPTANCE_CERTIFICATION.json"],
+      "replay_evidence": ["governance/FIRST_READONLY_DOMAIN_EXPERIMENT_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Trading decision fixtures and policy constraints",
+      "implementation": ["governance/TRADING_DECISION_VALIDATION_TEST_FIXTURES_V1.md"],
+      "tests": ["tests/test_first_readonly_domain_experiment_v1.py"],
+      "certification": ["governance/TRADING_DECISION_VALIDATION_TEST_FIXTURES_CERTIFICATION.json", "governance/TRADING_DECISION_POLICY_CONSTRAINT_CERTIFICATION.json"],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Trading market evidence normalization worker foundation",
+      "implementation": ["governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1.md", "governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_MODEL_V1.md"],
+      "tests": [],
+      "certification": ["governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_CERTIFICATION.json"],
+      "replay_evidence": ["governance/TRADING_MARKET_EVIDENCE_NORMALIZATION_FIXTURE_COVERAGE_V1.md"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Generic domain factory and executable domain bundle",
+      "implementation": ["governance/AIGOL_GENERIC_DOMAIN_FACTORY_RUNTIME_V1.md", "governance/AIGOL_DOMAIN_FACTORY_CONTRACT_V1.md"],
+      "tests": ["tests/test_generic_domain_factory_runtime_v1.py", "tests/test_executable_domain_bundle_runtime_v1.py", "tests/test_domain_bundle_registry_runtime_v1.py"],
+      "certification": ["governance/AIGOL_GENERIC_DOMAIN_FACTORY_READINESS_CERTIFICATION.json", "governance/AIGOL_EXECUTABLE_DOMAIN_BUNDLE_RUNTIME_CERTIFICATION.json", "governance/AIGOL_DOMAIN_BUNDLE_REGISTRY_AND_FACTORY_CONTRACT_CERTIFICATION.json"],
+      "replay_evidence": ["governance/AIGOL_EXECUTABLE_DOMAIN_BUNDLE_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Healthcare domain runtime",
+      "implementation": [],
+      "tests": ["tests/test_healthcare_domain_runtime_v1.py"],
+      "certification": ["governance/HEALTHCARE_DOMAIN_CERTIFICATION.json"],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Marketing domain runtime",
+      "implementation": ["governance/MARKETING_DOMAIN_FOUNDATION_V1.md"],
+      "tests": ["tests/test_marketing_domain_runtime_v1.py"],
+      "certification": ["governance/MARKETING_DOMAIN_CERTIFICATION.json"],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Server management domain runtime",
+      "implementation": ["governance/SERVER_MANAGEMENT_DOMAIN_MODEL_V1.md"],
+      "tests": ["tests/test_server_management_domain_runtime_v1.py"],
+      "certification": ["governance/SERVER_MANAGEMENT_DOMAIN_CERTIFICATION.json"],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L6 Domain Runtime",
+      "capability": "Production-grade multi-domain commercial runtime portfolio",
+      "implementation": ["governance/CROSS_DOMAIN_READINESS_REVIEW_V1.md", "governance/AIGOL_GENERIC_DOMAIN_FACTORY_GAP_ANALYSIS_V1.md"],
+      "tests": ["tests/test_multi_artifact_domain_bundle_runtime_v1.py"],
+      "certification": ["governance/CROSS_DOMAIN_READINESS_EVIDENCE_V1.json"],
+      "replay_evidence": ["governance/AIGOL_MULTI_ARTIFACT_DOMAIN_BUNDLE_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Resource selection runtime",
+      "implementation": ["governance/RESOURCE_CAPABILITY_MODEL_V1.md", "governance/RESOURCE_REGISTRY_MODEL_V1.md"],
+      "tests": ["tests/test_unified_resource_selection_runtime_v1.py", "tests/test_clarified_intent_resource_selection_routing_v1.py"],
+      "certification": ["governance/UNIFIED_RESOURCE_SELECTION_RUNTIME_CERTIFICATION.json", "governance/UNIFIED_RESOURCE_SELECTION_CERTIFICATION.json"],
+      "replay_evidence": ["governance/UNIFIED_RESOURCE_SELECTION_RUNTIME_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "CERTIFIED"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Provider substitutability",
+      "implementation": ["governance/PROVIDER_SUBSTITUTABILITY_REVIEW_V1.md"],
+      "tests": [],
+      "certification": ["governance/PROVIDER_SUBSTITUTABILITY_CERTIFICATION.json", "governance/PROVIDER_SUBSTITUTION_CERTIFICATION.json"],
+      "replay_evidence": ["governance/PROVIDER_SUBSTITUTION_ACCEPTANCE_EVIDENCE.json", "governance/PROVIDER_SUBSTITUTABILITY_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Worker ecosystem readiness",
+      "implementation": ["governance/WORKER_ECOSYSTEM_READINESS_REVIEW_V1.md", "governance/WORKER_ECOSYSTEM_DUPLICATION_RISKS_V1.md"],
+      "tests": [],
+      "certification": ["governance/WORKER_ECOSYSTEM_READINESS_CERTIFICATION.json", "governance/AIGOL_WORKER_ECOSYSTEM_CERTIFICATION.json"],
+      "replay_evidence": ["governance/WORKER_SUBSTITUTABILITY_EVIDENCE_V1.md"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Local node architecture",
+      "implementation": ["governance/LOCAL_NODE_ARCHITECTURE_V1.md"],
+      "tests": [],
+      "certification": ["governance/LOCAL_NODE_ARCHITECTURE_V1_CERTIFICATION.json"],
+      "replay_evidence": ["governance/LOCAL_NODE_ARCHITECTURE_V1_ACCEPTANCE_EVIDENCE.json"],
+      "cli_evidence": [],
+      "status": "PARTIAL"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Marketplace discovery, packaging, and commercial listing",
+      "implementation": [],
+      "tests": [],
+      "certification": [],
+      "replay_evidence": ["governance/WORKER_ECOSYSTEM_READINESS_REVIEW_V1.md", "governance/AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION.json"],
+      "cli_evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "Enterprise tenant, organization, and billing governance",
+      "implementation": ["governance/SEMANTIC_EXPOSURE_MODEL_V1.md", "governance/CAPABILITY_GOVERNANCE_MATRIX_V1_ADR.md"],
+      "tests": [],
+      "certification": [],
+      "replay_evidence": [],
+      "cli_evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "layer": "L7 Marketplace / Ecosystem",
+      "capability": "External partner onboarding and certification workflow",
+      "implementation": ["governance/EXTERNAL_WORKER_ARCHITECTURE_IMPACT_V1.md", "governance/REAL_EXTERNAL_LLM_ATTACHMENT_V1.md"],
+      "tests": [],
+      "certification": [],
+      "replay_evidence": ["governance/FIRST_EXTERNAL_WORKER_ATTACHMENT_ACCEPTANCE.json"],
+      "cli_evidence": [],
+      "status": "NOT_STARTED"
+    }
+  ]
+}
