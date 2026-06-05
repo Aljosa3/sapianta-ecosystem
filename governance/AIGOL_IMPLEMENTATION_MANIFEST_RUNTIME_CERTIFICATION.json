@@ -1,0 +1,49 @@
+{
+  "artifact_type": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_CERTIFICATION",
+  "milestone_id": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "runtime_component": "aigol/runtime/implementation_manifest_runtime.py",
+  "outputs": {
+    "implementation_manifest_artifact": "IMPLEMENTATION_MANIFEST_ARTIFACT_V1",
+    "hash": "implementation_manifest_hash"
+  },
+  "certification_basis": [
+    "manifest is content-bearing and replay-visible",
+    "manifest records exact file list and exact file hashes",
+    "manifest records artifact types and implementation bundle identity",
+    "manifest hash is deterministic for identical bundles",
+    "manifest binds source candidate, handoff, provider authorization, and provider response lineage",
+    "runtime supports CREATE_ONLY only",
+    "runtime does not mutate files or create authority",
+    "replay reconstruction detects tampering"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+      "result": "7 passed"
+    },
+    "acceptance_evidence_json": {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "result": "passed"
+    },
+    "certification_json": {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_CERTIFICATION.json",
+      "result": "passed"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  },
+  "forbidden_capabilities_verified": {
+    "filesystem_mutation": false,
+    "execution_authorization": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "approval_creation": false,
+    "governance_mutation": false,
+    "source_replay_mutation": false
+  },
+  "recommended_next_milestone": "AIGOL_GENERATED_CODE_VALIDATION_RUNTIME_V1",
+  "final_classification": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_STATUS = CERTIFIED"
+}

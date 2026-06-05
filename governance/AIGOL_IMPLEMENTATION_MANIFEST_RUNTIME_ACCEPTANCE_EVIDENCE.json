@@ -1,0 +1,70 @@
+{
+  "artifact_type": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "milestone_id": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_V1",
+  "runtime_component": "aigol/runtime/implementation_manifest_runtime.py",
+  "test_component": "tests/test_implementation_manifest_runtime_v1.py",
+  "accepted_capabilities": [
+    {
+      "capability": "exact file list",
+      "evidence": "Manifest records ordered file_entries with exact target paths."
+    },
+    {
+      "capability": "exact file hashes",
+      "evidence": "Manifest records content_hash and entry hash for each generated file and test."
+    },
+    {
+      "capability": "artifact type binding",
+      "evidence": "Each generated file and test entry includes artifact_type."
+    },
+    {
+      "capability": "implementation bundle identity",
+      "evidence": "Manifest records implementation_bundle_id and binds it into implementation_manifest_hash."
+    },
+    {
+      "capability": "deterministic manifest hash",
+      "evidence": "Identical implementation bundles produce identical implementation_manifest_hash values."
+    },
+    {
+      "capability": "replay-visible lineage",
+      "evidence": "Manifest binds candidate, handoff, provider generation authorization, and provider response references and hashes."
+    },
+    {
+      "capability": "test binding",
+      "evidence": "Generated test entries must reference known file entries and validation commands."
+    },
+    {
+      "capability": "authority preservation",
+      "evidence": "Runtime records false authority flags and does not perform mutation, invocation, approval creation, or execution authorization."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+      "result": "7 passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "result": "passed"
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_CERTIFICATION.json",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "authority_boundary": {
+    "read_only": true,
+    "filesystem_mutated": false,
+    "execution_authorized": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "approval_created": false,
+    "governance_mutated": false,
+    "source_replay_mutated": false,
+    "automatic_implementation_authorized": false
+  },
+  "final_classification": "AIGOL_IMPLEMENTATION_MANIFEST_RUNTIME_STATUS = CERTIFIED"
+}
