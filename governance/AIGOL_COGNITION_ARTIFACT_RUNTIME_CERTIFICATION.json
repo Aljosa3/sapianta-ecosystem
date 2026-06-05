@@ -1,0 +1,116 @@
+{
+  "artifact": "AIGOL_COGNITION_ARTIFACT_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "milestone": "AIGOL_COGNITION_ARTIFACT_RUNTIME_V1",
+  "status": "CERTIFIED_COGNITION_ARTIFACT_RUNTIME",
+  "final_classification": {
+    "AIGOL_COGNITION_ARTIFACT_RUNTIME_STATUS": "CERTIFIED_COGNITION_ARTIFACT_RUNTIME"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/cognition_artifact_runtime.py",
+  "test_file": "tests/test_cognition_artifact_runtime_v1.py",
+  "upstream_runtime_reference": "AIGOL_LLM_COGNITION_PROVIDER_RUNTIME_V1",
+  "certifies": {
+    "llm_cognition_artifact_defined": true,
+    "provider_response_normalization": true,
+    "canonical_provider_assisted_cognition_output": true,
+    "findings_normalized": true,
+    "assumptions_normalized": true,
+    "alternatives_normalized": true,
+    "risks_normalized": true,
+    "uncertainties_normalized": true,
+    "confidence_normalized": true,
+    "context_hash_bound": true,
+    "request_hash_bound": true,
+    "response_hash_bound": true,
+    "provider_identity_bound": true,
+    "lineage_references_bound": true,
+    "replay_reconstruction_supported": true,
+    "authority_boundary_enforced": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "implemented_artifact": "LLM_COGNITION_ARTIFACT_V1",
+  "input_artifacts": [
+    "OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1",
+    "LLM_COGNITION_PROVIDER_REQUEST_ARTIFACT_V1",
+    "LLM_COGNITION_PROVIDER_RESPONSE_ARTIFACT_V1"
+  ],
+  "normalized_fields": [
+    "findings",
+    "assumptions",
+    "alternatives",
+    "risks",
+    "uncertainties",
+    "confidence"
+  ],
+  "authority_model": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "boundary_rejections": [
+    "approvals",
+    "execution instructions",
+    "governance mutations",
+    "replay mutations",
+    "worker invocation",
+    "domain creation authority",
+    "implementation authority",
+    "authorization claims"
+  ],
+  "replay_reconstruction_requirements": [
+    "context artifact hash",
+    "context hash",
+    "provider request artifact hash",
+    "request hash",
+    "provider response artifact hash",
+    "response hash",
+    "provider identity",
+    "provider metadata",
+    "lineage references"
+  ],
+  "governance_preservation": {
+    "provider_output_authoritative": false,
+    "human_review_required": true,
+    "no_multi_provider_cognition": true,
+    "no_cognition_comparison": true,
+    "no_cognition_continuity": true,
+    "no_cognition_memory_integration": true,
+    "no_cognition_clarification_integration": true,
+    "no_worker_invocation": true,
+    "no_execution": true,
+    "no_approval_creation": true,
+    "no_governance_mutation": true,
+    "no_replay_mutation": true
+  },
+  "fail_closed_conditions": [
+    "invalid OCS context artifact",
+    "invalid cognition provider request artifact",
+    "invalid cognition provider response artifact",
+    "context hash mismatch",
+    "request hash mismatch",
+    "response hash missing",
+    "provider identity missing",
+    "authority-bearing provider output",
+    "invalid confidence value",
+    "structured output missing findings",
+    "append-only replay collision",
+    "replay tampering detected"
+  ],
+  "acceptance_evidence": "governance/AIGOL_COGNITION_ARTIFACT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+  "validation_summary": {
+    "runtime_tests": "14 passed",
+    "runtime_test_command": "python -m pytest tests/test_cognition_artifact_runtime_v1.py tests/test_llm_cognition_provider_runtime_v1.py",
+    "json_parse": "PASS",
+    "json_parse_commands": [
+      "python -m json.tool governance/AIGOL_COGNITION_ARTIFACT_RUNTIME_CERTIFICATION.json",
+      "python -m json.tool governance/AIGOL_COGNITION_ARTIFACT_RUNTIME_ACCEPTANCE_EVIDENCE.json"
+    ],
+    "git_diff_check": "PASS",
+    "git_diff_check_command": "git diff --check"
+  },
+  "next_safe_milestone": "AIGOL_MULTI_PROVIDER_COGNITION_RUNTIME_V1"
+}

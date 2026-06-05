@@ -1,0 +1,95 @@
+{
+  "artifact": "AIGOL_COGNITION_ARTIFACT_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "milestone": "AIGOL_COGNITION_ARTIFACT_RUNTIME_V1",
+  "classification": "CERTIFIED_COGNITION_ARTIFACT_RUNTIME",
+  "runtime_file": "aigol/runtime/cognition_artifact_runtime.py",
+  "test_file": "tests/test_cognition_artifact_runtime_v1.py",
+  "demonstrated_flow": [
+    "Human Question",
+    "OCS Context",
+    "Cognition Provider",
+    "Provider Response",
+    "LLM_COGNITION_ARTIFACT_V1"
+  ],
+  "implemented_artifact": "LLM_COGNITION_ARTIFACT_V1",
+  "normalized_fields": [
+    "findings",
+    "assumptions",
+    "alternatives",
+    "risks",
+    "uncertainties",
+    "confidence"
+  ],
+  "required_lineage": [
+    "context_hash",
+    "request_hash",
+    "response_hash",
+    "provider_identity",
+    "provider_metadata",
+    "lineage_references"
+  ],
+  "acceptance_scenarios": [
+    {
+      "scenario": "structured provider response normalization",
+      "result": "PASS",
+      "evidence": "JSON provider response is normalized into findings, assumptions, alternatives, risks, uncertainties, and confidence"
+    },
+    {
+      "scenario": "plain text provider response normalization",
+      "result": "PASS",
+      "evidence": "bounded plain text is normalized as a finding with UNKNOWN confidence"
+    },
+    {
+      "scenario": "authority-bearing provider response",
+      "result": "PASS",
+      "evidence": "output with execution authorization fails closed"
+    },
+    {
+      "scenario": "lineage mismatch",
+      "result": "PASS",
+      "evidence": "provider response context hash mismatch fails closed"
+    },
+    {
+      "scenario": "authority preservation",
+      "result": "PASS",
+      "evidence": "artifact remains non-authoritative and creates no worker, execution, approval, governance, or replay mutation"
+    },
+    {
+      "scenario": "replay tampering",
+      "result": "PASS",
+      "evidence": "reconstruction detects replay hash mismatch"
+    },
+    {
+      "scenario": "append-only replay collision",
+      "result": "PASS",
+      "evidence": "second write to same replay path fails closed"
+    }
+  ],
+  "authority_boundaries": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "non_goals_preserved": {
+    "multi_provider_cognition": false,
+    "cognition_comparison": false,
+    "cognition_continuity": false,
+    "cognition_memory_integration": false,
+    "cognition_clarification_integration": false,
+    "worker_invocation": false,
+    "execution": false,
+    "approval_creation": false
+  },
+  "validation": {
+    "runtime_tests": "python -m pytest tests/test_cognition_artifact_runtime_v1.py",
+    "runtime_tests_result": "7 passed",
+    "json_parse": "PASS",
+    "json_parse_command": "python -m json.tool governance/AIGOL_COGNITION_ARTIFACT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "git_diff_check": "PASS",
+    "git_diff_check_command": "git diff --check"
+  }
+}
