@@ -1,0 +1,14 @@
+{
+  "classification": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_STATUS",
+  "milestone_id": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "recommendation_continuity": "AVAILABLE",
+  "recommendation_approval": "AVAILABLE_EXPLICIT_HUMAN_ONLY",
+  "followup_workflow": "AVAILABLE_CANDIDATES_ONLY",
+  "conversation_behavior": "RECOMMENDATION_TO_APPROVAL_TO_FOLLOWUP_CONTINUITY_AVAILABLE",
+  "replay_binding": "CONTINUITY_APPROVAL_AND_FOLLOWUP_ARTIFACTS_LINEAGE_BOUND",
+  "human_authority": "APPROVE_REJECT_IGNORE_REMAINS_HUMAN",
+  "authority_boundary": "NO_DOMAIN_CREATION_NO_PROVIDER_NO_WORKER_NO_IMPLEMENTATION_AUTHORIZATION_NO_EXECUTION",
+  "fail_closed": "PRESERVED_FOR_MISSING_APPROVAL_UNSUPPORTED_FOLLOWUP_OR_INVALID_REPLAY",
+  "known_limit": "Follow-up outputs are non-authoritative candidates for human review; downstream governed proposal implementation remains separate."
+}

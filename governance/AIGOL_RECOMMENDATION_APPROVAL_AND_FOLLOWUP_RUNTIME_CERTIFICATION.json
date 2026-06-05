@@ -1,0 +1,48 @@
+{
+  "milestone_id": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_STATUS",
+  "certified_capabilities": {
+    "recommendation_continuity": true,
+    "recommendation_approval_recording": true,
+    "recommendation_rejection_recording": true,
+    "recommendation_ignore_recording": true,
+    "followup_proposal_candidate_generation": true,
+    "followup_implementation_candidate_generation": true,
+    "followup_domain_plan_candidate_generation": true,
+    "followup_roadmap_candidate_generation": true,
+    "conversation_memory_integration": true,
+    "replay_discovery_for_resumed_sessions": true,
+    "replay_reconstruction": true,
+    "lineage_binding": true
+  },
+  "certified_artifacts": {
+    "recommendation_continuity": "RECOMMENDATION_CONTINUITY_ARTIFACT_V1",
+    "recommendation_approval": "RECOMMENDATION_APPROVAL_ARTIFACT_V1",
+    "recommendation_followup": "RECOMMENDATION_FOLLOWUP_ARTIFACT_V1"
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "explicit_human_approval_required": true,
+    "approval_boundary_preserved": true,
+    "implementation_authority_granted": false,
+    "execution_authority_granted": false,
+    "provider_authority_granted": false,
+    "worker_authority_granted": false,
+    "domain_creation_authorized": false,
+    "governance_mutation_introduced": false,
+    "replay_mutation_introduced": false,
+    "approval_bypass_introduced": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/recommendation_approval_followup_runtime.py",
+    "conversation_cli": "aigol conversation",
+    "acceptance_evidence": "governance/AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_recommendation_approval_followup_runtime_v1.py",
+      "tests/test_operator_decision_support_runtime_v1.py"
+    ]
+  },
+  "status_statement": "AiGOL can maintain recommendation lineage across recommendation generation, explicit human approval, and follow-up candidate preparation without gaining approval, implementation, execution, provider, worker, domain creation, governance mutation, or replay mutation authority."
+}

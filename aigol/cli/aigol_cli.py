@@ -245,7 +245,7 @@ from aigol.runtime.conversation_native_development_context_integration import (
     run_conversation_native_development_context_integration,
 )
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import load_json, replay_hash
 from aigol.runtime.unknown_domain_clarification_runtime import (
     CLARIFICATION_REQUIRED as UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
     is_unknown_domain_clarification_eligible,
@@ -261,6 +261,21 @@ from aigol.runtime.operator_decision_support_runtime import (
     is_operator_decision_support_prompt,
     render_operator_decision_support_summary,
     run_operator_decision_support,
+)
+from aigol.runtime.recommendation_approval_followup_runtime import (
+    APPROVE as RECOMMENDATION_APPROVE,
+    IGNORE as RECOMMENDATION_IGNORE,
+    REJECT as RECOMMENDATION_REJECT,
+    create_recommendation_continuity,
+    create_recommendation_followup,
+    is_recommendation_approval_prompt,
+    is_recommendation_followup_prompt,
+    is_recommendation_ignore_prompt,
+    is_recommendation_rejection_prompt,
+    record_recommendation_approval,
+    render_recommendation_approval_summary,
+    render_recommendation_continuity_summary,
+    render_recommendation_followup_summary,
 )
 
 
@@ -824,6 +839,7 @@ def run_interactive_conversation(
     latest_chain_id: str | None = None
     pending_approval_required: dict[str, Any] | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
+    recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
 
     while True:
         try:
@@ -1238,6 +1254,62 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif recommendation_continuity_artifact is not None and _is_recommendation_decision_prompt(human_prompt):
+                recommendation_decision = _recommendation_decision_from_prompt(human_prompt)
+                recommendation_approval_capture = record_recommendation_approval(
+                    approval_id=f"{prompt_id}:RECOMMENDATION-APPROVAL",
+                    recommendation_continuity_artifact=recommendation_continuity_artifact,
+                    operator_decision=recommendation_decision,
+                    approval_timestamp=created_at,
+                    replay_dir=turn_root / "recommendation_approval",
+                )
+                if recommendation_approval_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {recommendation_approval_capture.get('failure_reason')}")
+                else:
+                    recommendation_approval_artifact = recommendation_approval_capture[
+                        "recommendation_approval_artifact"
+                    ]
+                    output_writer(render_recommendation_approval_summary(recommendation_approval_capture))
+                    if recommendation_decision in {RECOMMENDATION_REJECT, RECOMMENDATION_IGNORE}:
+                        recommendation_continuity_artifact = None
+                        recommendation_approval_artifact = None
+                turns.append(
+                    _interactive_recommendation_approval_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        recommendation_approval_capture=recommendation_approval_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif (
+                recommendation_continuity_artifact is not None
+                and recommendation_approval_artifact is not None
+                and is_recommendation_followup_prompt(human_prompt)
+            ):
+                recommendation_followup_capture = create_recommendation_followup(
+                    followup_id=f"{prompt_id}:RECOMMENDATION-FOLLOWUP",
+                    recommendation_continuity_artifact=recommendation_continuity_artifact,
+                    recommendation_approval_artifact=recommendation_approval_artifact,
+                    human_prompt=human_prompt,
+                    created_at=created_at,
+                    replay_dir=turn_root / "recommendation_followup",
+                )
+                if recommendation_followup_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {recommendation_followup_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_recommendation_followup_summary(recommendation_followup_capture))
+                turns.append(
+                    _interactive_recommendation_followup_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        recommendation_followup_capture=recommendation_followup_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif _is_conversational_cli_readonly_candidate(human_prompt):
                 conversational_routing_capture = route_conversational_cli_intent(
                     routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
@@ -1327,7 +1399,31 @@ def run_interactive_conversation(
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {decision_support_capture.get('failure_reason')}")
                 else:
-                    output_writer(render_operator_decision_support_summary(decision_support_capture))
+                    recommendation_continuity_capture = create_recommendation_continuity(
+                        continuity_id=f"{prompt_id}:RECOMMENDATION-CONTINUITY",
+                        recommendation_artifact=decision_support_capture["operator_decision_support_artifact"],
+                        conversation_reference=prompt_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "recommendation_continuity",
+                    )
+                    decision_support_capture["recommendation_continuity"] = recommendation_continuity_capture
+                    if recommendation_continuity_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        decision_support_capture["fail_closed"] = True
+                        decision_support_capture["failure_reason"] = recommendation_continuity_capture.get(
+                            "failure_reason"
+                        )
+                        output_writer(f"FAILED_CLOSED: {decision_support_capture['failure_reason']}")
+                    else:
+                        recommendation_continuity_artifact = recommendation_continuity_capture[
+                            "recommendation_continuity_artifact"
+                        ]
+                        recommendation_approval_artifact = None
+                        output_writer(
+                            render_operator_decision_support_summary(decision_support_capture)
+                            + "\n"
+                            + render_recommendation_continuity_summary(recommendation_continuity_capture)
+                        )
                 turns.append(
                     _interactive_operator_decision_support_turn_summary(
                         turn_id=turn_id,
@@ -2063,6 +2159,12 @@ def _interactive_operator_decision_support_turn_summary(
     recommendation = decision_support_capture.get("operator_decision_support_artifact")
     if not isinstance(recommendation, dict):
         recommendation = {}
+    continuity_capture = decision_support_capture.get("recommendation_continuity")
+    if not isinstance(continuity_capture, dict):
+        continuity_capture = {}
+    continuity = continuity_capture.get("recommendation_continuity_artifact")
+    if not isinstance(continuity, dict):
+        continuity = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -2093,11 +2195,101 @@ def _interactive_operator_decision_support_turn_summary(
         "risks": recommendation.get("risks", []),
         "confidence": recommendation.get("confidence"),
         "human_authority": recommendation.get("human_authority"),
+        "recommendation_continuity_status": continuity.get("continuity_status"),
+        "recommendation_continuity_reference": continuity.get("continuity_id"),
+        "recommendation_continuity_replay_reference": continuity_capture.get(
+            "recommendation_continuity_replay_reference"
+        ),
+        "followup_candidates": continuity.get("followup_candidates", []),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
         "execution_requested": False,
         "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_recommendation_approval_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    recommendation_approval_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    approval = recommendation_approval_capture.get("recommendation_approval_artifact")
+    if not isinstance(approval, dict):
+        approval = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": recommendation_approval_capture.get("response_status"),
+        "response_source": recommendation_approval_capture.get("response_source"),
+        "fail_closed": recommendation_approval_capture.get("fail_closed") is True,
+        "failure_reason": recommendation_approval_capture.get("failure_reason"),
+        "replay_reference": recommendation_approval_capture.get("recommendation_approval_replay_reference"),
+        "conversation_replay_reference": recommendation_approval_capture.get("conversation_replay_reference"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "recommendation_reference": approval.get("recommendation_reference"),
+        "continuity_reference": approval.get("continuity_reference"),
+        "operator_decision": approval.get("operator_decision"),
+        "approval_status": approval.get("approval_status"),
+        "available_next_actions": approval.get("available_next_actions", []),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "implementation_authorized": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_recommendation_followup_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    recommendation_followup_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    followup = recommendation_followup_capture.get("recommendation_followup_artifact")
+    if not isinstance(followup, dict):
+        followup = {}
+    candidate = followup.get("candidate")
+    if not isinstance(candidate, dict):
+        candidate = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": recommendation_followup_capture.get("response_status"),
+        "response_source": recommendation_followup_capture.get("response_source"),
+        "fail_closed": recommendation_followup_capture.get("fail_closed") is True,
+        "failure_reason": recommendation_followup_capture.get("failure_reason"),
+        "replay_reference": recommendation_followup_capture.get("recommendation_followup_replay_reference"),
+        "conversation_replay_reference": recommendation_followup_capture.get("conversation_replay_reference"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "recommendation_reference": followup.get("recommendation_reference"),
+        "continuity_reference": followup.get("continuity_reference"),
+        "approval_reference": followup.get("approval_reference"),
+        "followup_action": followup.get("followup_action"),
+        "candidate_status": followup.get("candidate_status"),
+        "candidate_title": candidate.get("title"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "implementation_authorized": False,
         "domain_created": False,
         "governance_mutated": False,
         "replay_mutated": False,
@@ -2541,6 +2733,60 @@ def _require_cli_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} is required")
     return value.strip()
+
+
+def _latest_recommendation_state(session_root: Path) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    continuity_artifact: dict[str, Any] | None = None
+    approval_artifact: dict[str, Any] | None = None
+    if not session_root.exists():
+        return None, None
+    for turn_root in sorted((path for path in session_root.iterdir() if path.is_dir()), key=lambda path: path.name):
+        continuity = _load_turn_artifact(
+            turn_root / "recommendation_continuity" / "000_recommendation_continuity_recorded.json"
+        )
+        if continuity and continuity.get("approval_status") == "APPROVAL_REQUIRED":
+            continuity_artifact = continuity
+            approval_artifact = None
+        approval = _load_turn_artifact(
+            turn_root / "recommendation_approval" / "000_recommendation_approval_recorded.json"
+        )
+        if (
+            approval
+            and continuity_artifact
+            and approval.get("continuity_hash") == continuity_artifact.get("artifact_hash")
+            and approval.get("operator_decision") == RECOMMENDATION_APPROVE
+        ):
+            approval_artifact = approval
+    return continuity_artifact, approval_artifact
+
+
+def _load_turn_artifact(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        wrapper = load_json(path)
+    except Exception:
+        return None
+    artifact = wrapper.get("artifact")
+    return artifact if isinstance(artifact, dict) else None
+
+
+def _is_recommendation_decision_prompt(human_prompt: str) -> bool:
+    return (
+        is_recommendation_approval_prompt(human_prompt)
+        or is_recommendation_rejection_prompt(human_prompt)
+        or is_recommendation_ignore_prompt(human_prompt)
+    )
+
+
+def _recommendation_decision_from_prompt(human_prompt: str) -> str:
+    if is_recommendation_approval_prompt(human_prompt):
+        return RECOMMENDATION_APPROVE
+    if is_recommendation_rejection_prompt(human_prompt):
+        return RECOMMENDATION_REJECT
+    if is_recommendation_ignore_prompt(human_prompt):
+        return RECOMMENDATION_IGNORE
+    raise ValueError("unsupported recommendation decision prompt")
 
 
 def _is_conversational_cli_readonly_candidate(human_prompt: str) -> bool:

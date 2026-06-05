@@ -1,0 +1,93 @@
+{
+  "milestone_id": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_flow": [
+    "Human Request",
+    "Decision Support",
+    "Recommendation Artifact",
+    "Recommendation Continuity Artifact",
+    "Human Approval",
+    "Recommendation Approval Artifact",
+    "Follow-Up Workflow",
+    "Candidate Artifact",
+    "Human Review"
+  ],
+  "validated_scenarios": {
+    "I want to create the first real AiGOL product domain.": {
+      "expected": "RECOMMENDATION_GENERATED",
+      "recommended": "SAPIANTA_AI_PR_GATE"
+    },
+    "I approve the recommendation.": {
+      "expected": "RECOMMENDATION_APPROVAL_RECORDED",
+      "operator_decision": "APPROVE"
+    },
+    "Prepare the first product domain proposal.": {
+      "expected": "RECOMMENDATION_FOLLOWUP_CANDIDATE_GENERATED",
+      "followup_action": "PREPARE_PROPOSAL"
+    },
+    "Prepare implementation candidate.": {
+      "expected": "RECOMMENDATION_FOLLOWUP_CANDIDATE_GENERATED",
+      "followup_action": "PREPARE_IMPLEMENTATION_CANDIDATE",
+      "executed": false,
+      "authorized": false
+    }
+  },
+  "certified_artifacts": {
+    "recommendation_continuity": "RECOMMENDATION_CONTINUITY_ARTIFACT_V1",
+    "recommendation_approval": "RECOMMENDATION_APPROVAL_ARTIFACT_V1",
+    "recommendation_followup": "RECOMMENDATION_FOLLOWUP_ARTIFACT_V1"
+  },
+  "supported_operator_decisions": [
+    "APPROVE",
+    "REJECT",
+    "IGNORE"
+  ],
+  "supported_followup_actions": [
+    "PREPARE_PROPOSAL",
+    "PREPARE_IMPLEMENTATION_CANDIDATE",
+    "PREPARE_DOMAIN_PLAN",
+    "PREPARE_ROADMAP"
+  ],
+  "requirements": {
+    "recommendation_continuity_runtime": true,
+    "recommendation_approval_runtime": true,
+    "followup_workflow_runtime": true,
+    "conversational_memory_integration": true,
+    "resumed_session_replay_discovery": true,
+    "explicit_human_approval_required": true,
+    "approval_reject_ignore_supported": true,
+    "followup_candidates_only": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "lineage_bound": true,
+    "deterministic": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "implementation_authorized": false,
+    "domain_created": false,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "approval_bypassed": false
+  },
+  "runtime": "aigol/runtime/recommendation_approval_followup_runtime.py",
+  "cli_integration": [
+    "aigol conversation"
+  ],
+  "tests": [
+    "tests/test_recommendation_approval_followup_runtime_v1.py",
+    "tests/test_operator_decision_support_runtime_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_recommendation_approval_followup_runtime_v1.py tests/test_operator_decision_support_runtime_v1.py",
+    "python -m pytest tests/test_recommendation_approval_followup_runtime_v1.py tests/test_operator_decision_support_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_semantic_similarity_domain_reference_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "known_limits": [
+    "Follow-up artifacts are proposal, plan, implementation-candidate, or roadmap candidates only.",
+    "The runtime does not create domains, invoke providers, invoke workers, authorize implementation, or request execution.",
+    "Recommendation approval continuity is scoped to replay-visible recommendation artifacts and explicit operator decisions."
+  ]
+}
