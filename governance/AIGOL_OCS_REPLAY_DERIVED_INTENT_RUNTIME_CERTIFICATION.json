@@ -1,0 +1,71 @@
+{
+  "artifact_type": "AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "cognition_runtime_reference": "AIGOL_OCS_COGNITION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_replay_derived_intent_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_replay_derived_intent_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS cognition existed without a runtime that generated bounded improvement-intent candidates from cognition findings and replay-visible history.",
+  "runtime_model": [
+    "OCS replay-derived intent consumes OCS_COGNITION_ARTIFACT_V1.",
+    "The runtime validates cognition artifact hash, cognition hash, replay visibility, completed status, and false authority flags.",
+    "The runtime consumes explicit replay-visible execution, validation, failure, and operator-decision history.",
+    "History is normalized into deterministic pattern keys.",
+    "Recurring failures, recurring clarification requests, recurring operator interventions, and capability gaps become proposal-eligible improvement candidates.",
+    "The runtime computes intent_hash from source cognition identity, normalized history, candidates, counts, authority flags, status, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and intent hash continuity."
+  ],
+  "replay_impact": [
+    "OCS can now generate append-only replay-visible improvement-intent candidate evidence.",
+    "Replay reconstruction can prove which cognition hash and replay history produced each candidate.",
+    "Identical OCS cognition and replay history produce the same intent hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke providers, workers, PPP, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No self-modification.",
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No automatic implementation.",
+    "No approval creation.",
+    "No domain creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py",
+      "status": "PASS",
+      "summary": "26 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "commit_message": "Certify OCS replay-derived intent runtime",
+  "final_classification": "AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_STATUS = CERTIFIED"
+}
