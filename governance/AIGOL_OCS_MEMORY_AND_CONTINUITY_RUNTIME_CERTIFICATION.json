@@ -1,0 +1,71 @@
+{
+  "artifact_type": "AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "replay_derived_intent_runtime_reference": "AIGOL_OCS_REPLAY_DERIVED_INTENT_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_memory_and_continuity_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_memory_and_continuity_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS had operation-level context, cognition, and replay-derived intent evidence but lacked bounded memory and continuity across related replay-visible operations.",
+  "runtime_model": [
+    "OCS memory and continuity consumes explicit OCS context, cognition, replay-derived intent, domain registry, and replay-visible operation history inputs.",
+    "The runtime validates replay visibility, artifact hashes, known OCS artifact types, known OCS artifact statuses, and false authority flags.",
+    "Inputs are normalized into source references, domains, operation keys, and intent keys.",
+    "Memory summarizes source counts, domains, intent keys, operation groups, and bounded memory text.",
+    "Continuity records context linkage, operation grouping, domain continuity, and intent continuity.",
+    "The memory hash is derived from normalized sources, memory summary, status, authority flags, and failure state.",
+    "The continuity hash is derived from memory hash, linkage, operation groups, domain continuity, intent continuity, status, authority flags, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, memory hash continuity, continuity hash continuity, and returned reference continuity."
+  ],
+  "replay_impact": [
+    "OCS now has append-only replay-visible memory and continuity evidence.",
+    "Replay reconstruction can prove which sources shaped memory and continuity.",
+    "Identical replay-visible source history produces the same memory hash and continuity hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke providers, workers, PPP, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No automatic implementation.",
+    "No approval creation.",
+    "No domain creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "24 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "commit_message": "Certify OCS memory and continuity runtime",
+  "final_classification": "AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_STATUS = CERTIFIED"
+}
