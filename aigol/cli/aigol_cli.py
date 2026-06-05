@@ -73,6 +73,10 @@ from aigol.runtime.first_real_implementation_generation_epoch_runtime import (
     render_first_real_implementation_generation_epoch,
     run_first_real_implementation_generation_epoch,
 )
+from aigol.runtime.multi_provider_competitive_proposal_runtime import (
+    render_multi_provider_competitive_review,
+    run_multi_provider_competitive_proposal_runtime,
+)
 from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
@@ -465,6 +469,14 @@ def build_parser() -> argparse.ArgumentParser:
     implementation_real_epoch.add_argument("--actor-id", default="human.operator")
     implementation_real_epoch.add_argument("--decision", default="")
     implementation_real_epoch.add_argument("--decision-reason", default="")
+    implementation_compete = implementation_sub.add_parser("compete")
+    implementation_compete.add_argument("--request", required=True)
+    implementation_compete.add_argument("--runtime-root", default=".aigol_multi_provider_competition")
+    implementation_compete.add_argument("--workspace", default=".aigol_multi_provider_competition_workspace")
+    implementation_compete.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    implementation_compete.add_argument("--actor-id", default="human.operator")
+    implementation_compete.add_argument("--selection", default="ABORT")
+    implementation_compete.add_argument("--decision-reason", default="")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -2191,6 +2203,16 @@ def run_command(args: argparse.Namespace) -> dict:
             operator_decision=args.decision or None,
             decision_reason=args.decision_reason or None,
         )
+    if args.command == "implementation" and args.implementation_command == "compete":
+        return run_multi_provider_competitive_proposal_runtime(
+            human_request=args.request,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+            created_at=args.created_at,
+            actor_id=args.actor_id,
+            selection=args.selection,
+            decision_reason=args.decision_reason or None,
+        )
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -2495,6 +2517,8 @@ def render_command_result(result: dict) -> str:
         return render_implementation_epoch_summary(result)
     if command == "aigol implementation real-epoch":
         return render_first_real_implementation_generation_epoch(result)
+    if command == "aigol implementation compete":
+        return render_multi_provider_competitive_review(result)
     if command in {
         "aigol approval list",
         "aigol approval show",
