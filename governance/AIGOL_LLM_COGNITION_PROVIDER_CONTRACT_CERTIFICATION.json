@@ -1,0 +1,122 @@
+{
+  "artifact": "AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_CERTIFICATION",
+  "version": "V1",
+  "milestone": "AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_V1",
+  "status": "CERTIFIED_GOVERNANCE_CONTRACT",
+  "final_classification": {
+    "AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_STATUS": "CERTIFIED_GOVERNANCE_CONTRACT"
+  },
+  "governance_contract_created": true,
+  "runtime_implementation_performed": false,
+  "provider_invocation_implemented": false,
+  "openai_calls_implemented": false,
+  "multi_provider_support_implemented": false,
+  "ocs_cognition_behavior_modified": false,
+  "new_execution_path_created": false,
+  "certifies": {
+    "cognition_provider_role_defined": true,
+    "cognition_provider_distinct_from_proposal_provider": true,
+    "cognition_provider_is_non_authoritative": true,
+    "provider_authority_false": true,
+    "approval_authority_false": true,
+    "execution_authority_false": true,
+    "worker_authority_false": true,
+    "governance_authority_false": true,
+    "replay_authority_false": true,
+    "necessity_policy_defined": true,
+    "fail_closed_requirements_defined": true,
+    "future_runtime_preconditions_defined": true,
+    "constitutional_invariant_preserved": true
+  },
+  "role": {
+    "name": "COGNITION_PROVIDER",
+    "role_class": "external_non_authoritative_cognition_participant",
+    "purpose": [
+      "analyze",
+      "infer",
+      "compare",
+      "explain",
+      "identify uncertainty",
+      "identify missing information"
+    ]
+  },
+  "allowed_outputs": [
+    "findings",
+    "assumptions",
+    "alternatives",
+    "risks",
+    "uncertainties",
+    "confidence statements",
+    "clarification candidates"
+  ],
+  "prohibited_outputs": [
+    "approvals",
+    "authorizations",
+    "governance mutations",
+    "replay mutations",
+    "worker invocation",
+    "execution authorization",
+    "domain creation authorization",
+    "implementation authorization"
+  ],
+  "authority_model": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "implementation_authority": false,
+    "domain_creation_authority": false,
+    "dispatch_authority": false,
+    "memory_mutation_authority": false,
+    "policy_override_authority": false,
+    "human_authority_replacement": false
+  },
+  "necessity_classifications": [
+    "COGNITION_PROVIDER_REQUIRED",
+    "COGNITION_PROVIDER_OPTIONAL",
+    "COGNITION_PROVIDER_PROHIBITED"
+  ],
+  "fail_closed_conditions": [
+    "provider not approved",
+    "provider not registered",
+    "provider contract missing",
+    "provider role is not COGNITION_PROVIDER",
+    "provider authority flags missing",
+    "provider authority flags not false",
+    "provider response exceeds authority boundary",
+    "cognition request violates governance policy",
+    "lineage references missing",
+    "replay binding cannot be reconstructed",
+    "response cannot be normalized into allowed output classes",
+    "response attempts approval, authorization, execution, worker invocation, domain creation, implementation, governance mutation, or replay mutation"
+  ],
+  "constitutional_invariant": [
+    "LLM proposes.",
+    "AiGOL governs.",
+    "Worker executes.",
+    "Replay records."
+  ],
+  "deliverables": [
+    "governance/AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_V1.md",
+    "governance/AIGOL_LLM_COGNITION_PROVIDER_AUTHORITY_POLICY_V1.md",
+    "governance/AIGOL_LLM_COGNITION_PROVIDER_NECESSITY_POLICY_V1.md",
+    "governance/AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_CERTIFICATION.json"
+  ],
+  "non_goals_preserved": {
+    "provider_runtime_created": false,
+    "cognition_runtime_created": false,
+    "cognition_artifact_runtime_created": false,
+    "openai_integration_created": false,
+    "multi_provider_cognition_created": false,
+    "comparison_runtime_created": false
+  },
+  "next_safe_milestone": "AIGOL_LLM_COGNITION_PROVIDER_RUNTIME_V1",
+  "validation": {
+    "json_parse": "PASS",
+    "json_parse_command": "python -m json.tool governance/AIGOL_LLM_COGNITION_PROVIDER_CONTRACT_CERTIFICATION.json",
+    "git_diff_check": "PASS",
+    "git_diff_check_command": "git diff --check"
+  }
+}
