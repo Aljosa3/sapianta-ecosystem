@@ -1,0 +1,45 @@
+{
+  "artifact_type": "AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_CERTIFICATION",
+  "milestone": "AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_V1",
+  "final_classification": "AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_STATUS = CERTIFIED_WITH_OPERATOR_FRICTION",
+  "primary_interface": "AiGOL CLI",
+  "cli_command": "python -m aigol.cli.aigol_cli implementation epoch --request \"Create a minimal governed implementation candidate for the first end-to-end AiGOL implementation generation epoch.\" --runtime-root /tmp/aigol_first_e2e_implementation_generation_epoch_replay --workspace /tmp/aigol_first_e2e_implementation_generation_epoch_workspace --created-at 2026-06-05T20:00:00Z --actor-id human.operator",
+  "epoch_status": "EPOCH_CERTIFIED",
+  "epoch_hash": "sha256:589b896461305c67a00419e8963e153f44281ee7bdd4131de1f0427a4af07afa",
+  "implementation_certification_hash": "sha256:e2cf6eb18624ee3c34d331daf6b1b66b6f059594916af9dba69dad291a19a414",
+  "deliverables": [
+    "governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_USAGE_REPORT_V1.md",
+    "governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_REPLAY_INSPECTION_REPORT_V1.md",
+    "governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_OPERATOR_FRICTION_ANALYSIS_V1.md",
+    "governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_REMAINING_BLOCKERS_ANALYSIS_V1.md",
+    "governance/AIGOL_FIRST_END_TO_END_IMPLEMENTATION_GENERATION_EPOCH_CERTIFICATION_REPORT_V1.md"
+  ],
+  "validated_lifecycle": [
+    "real implementation request",
+    "implementation candidate generation",
+    "implementation manifest creation",
+    "generated content validation",
+    "generated test validation",
+    "implementation summary generation",
+    "human acceptance",
+    "filesystem mutation authorization",
+    "file materialization",
+    "implementation certification",
+    "replay chain inspection",
+    "operator experience documentation"
+  ],
+  "forbidden_capabilities_preserved": {
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_authorization": false,
+    "unauthorized_filesystem_mutation": false,
+    "overwrite": false
+  },
+  "remaining_friction": [
+    "acceptance evidence is CLI-supplied rather than interactive",
+    "filesystem mutation authorization evidence is CLI-supplied rather than interactive",
+    "replay inspection is file-list based",
+    "generated tests are not executed by the epoch command",
+    "provider-assisted generation is not part of this certified epoch path"
+  ]
+}

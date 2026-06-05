@@ -65,6 +65,10 @@ from aigol.cli.commands.dispatch import authorize_dispatch
 from aigol.cli.commands.execution import run_execution_handoff
 from aigol.cli.commands.governance import validate_governance_continuity
 from aigol.cli.commands.ingress import generate_ingress_artifact
+from aigol.cli.commands.implementation_epoch import (
+    render_implementation_epoch_summary,
+    run_implementation_generation_epoch,
+)
 from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
@@ -440,6 +444,15 @@ def build_parser() -> argparse.ArgumentParser:
     execution_handoff.add_argument("--timeout-seconds", type=int, default=600)
     execution_handoff.add_argument("--full-codex-exec", action="store_true")
     execution_handoff.add_argument("--runtime-root", default="")
+
+    implementation = subcommands.add_parser("implementation")
+    implementation_sub = implementation.add_subparsers(dest="implementation_command", required=True)
+    implementation_epoch = implementation_sub.add_parser("epoch")
+    implementation_epoch.add_argument("--request", required=True)
+    implementation_epoch.add_argument("--runtime-root", default=".aigol_implementation_generation_epoch")
+    implementation_epoch.add_argument("--workspace", default=".aigol_implementation_generation_workspace")
+    implementation_epoch.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    implementation_epoch.add_argument("--actor-id", default="human.operator")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -2148,6 +2161,14 @@ def run_command(args: argparse.Namespace) -> dict:
             provider_success_proof=not args.full_codex_exec,
             runtime_root=args.runtime_root or None,
         )
+    if args.command == "implementation" and args.implementation_command == "epoch":
+        return run_implementation_generation_epoch(
+            request=args.request,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+            created_at=args.created_at,
+            actor_id=args.actor_id,
+        )
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -2448,6 +2469,8 @@ def render_command_result(result: dict) -> str:
                 f"native_messaging_called: {result.get('native_messaging_called')}",
             ],
         )
+    if command == "aigol implementation epoch":
+        return render_implementation_epoch_summary(result)
     if command in {
         "aigol approval list",
         "aigol approval show",
