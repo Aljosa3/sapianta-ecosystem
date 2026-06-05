@@ -1,0 +1,46 @@
+{
+  "artifact_type": "AIGOL_FILESYSTEM_MUTATION_RUNTIME_CERTIFICATION",
+  "milestone": "AIGOL_FILESYSTEM_MUTATION_RUNTIME_V1",
+  "final_classification": "AIGOL_FILESYSTEM_MUTATION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_component": "aigol/runtime/filesystem_mutation_runtime.py",
+  "output_artifact": "FILESYSTEM_MUTATION_ARTIFACT_V1",
+  "output_hash": "filesystem_mutation_hash",
+  "validated_responsibilities": [
+    "consume FILESYSTEM_MUTATION_AUTHORIZATION_ARTIFACT_V1",
+    "create only authorized files",
+    "verify exact content hashes",
+    "verify exact paths",
+    "enforce CREATE_ONLY",
+    "fail closed on collisions",
+    "emit replay-visible mutation evidence"
+  ],
+  "forbidden_capabilities_preserved": {
+    "overwrite": false,
+    "delete": false,
+    "rename": false,
+    "move": false,
+    "implicit_file_creation": false,
+    "unauthorized_files": false,
+    "provider_invocation": false,
+    "worker_invocation": false
+  },
+  "determinism_evidence": {
+    "identical_authorized_bundles_produce_identical_mutation_hashes": true,
+    "identical_authorized_bundles_produce_identical_mutation_artifacts": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_filesystem_mutation_runtime_v1.py",
+    "python -m pytest tests/test_filesystem_mutation_authorization_runtime_v1.py",
+    "python -m pytest tests/test_implementation_summary_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_acceptance_runtime_v1.py",
+    "python -m pytest tests/test_generated_test_validation_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_validation_runtime_v1.py",
+    "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+    "git diff --check"
+  ],
+  "known_limitations": [
+    "runtime materializes files but does not run generated tests",
+    "runtime does not perform post-application semantic certification",
+    "runtime records mutation evidence in returned artifacts without appending replay files"
+  ]
+}
