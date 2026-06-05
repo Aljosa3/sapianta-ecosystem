@@ -1,0 +1,45 @@
+{
+  "artifact_type": "AIGOL_FILESYSTEM_MUTATION_AUTHORIZATION_RUNTIME_CERTIFICATION",
+  "milestone": "AIGOL_FILESYSTEM_MUTATION_AUTHORIZATION_RUNTIME_V1",
+  "final_classification": "AIGOL_FILESYSTEM_MUTATION_AUTHORIZATION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_component": "aigol/runtime/filesystem_mutation_authorization_runtime.py",
+  "output_artifact": "FILESYSTEM_MUTATION_AUTHORIZATION_ARTIFACT_V1",
+  "output_hash": "filesystem_mutation_authorization_hash",
+  "validated_responsibilities": [
+    "bind authorization to accepted implementation bundle",
+    "bind authorization to implementation manifest",
+    "bind authorization to generated content validation",
+    "bind authorization to generated test validation",
+    "bind authorization to generated content acceptance",
+    "enforce exact CREATE_ONLY permissions",
+    "enforce exact paths",
+    "enforce exact content hashes",
+    "prevent authorization reuse"
+  ],
+  "forbidden_capabilities_preserved": {
+    "filesystem_mutation": false,
+    "provider_invocation": false,
+    "worker_invocation": false,
+    "execution_authorization": false,
+    "automatic_authorization_inference": false
+  },
+  "determinism_evidence": {
+    "identical_authorization_lineage_produces_identical_authorization_hashes": true,
+    "identical_authorization_lineage_produces_identical_authorization_artifacts": true
+  },
+  "validation_commands": [
+    "python -m pytest tests/test_filesystem_mutation_authorization_runtime_v1.py",
+    "python -m pytest tests/test_implementation_summary_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_acceptance_runtime_v1.py",
+    "python -m pytest tests/test_generated_test_validation_runtime_v1.py",
+    "python -m pytest tests/test_generated_content_validation_runtime_v1.py",
+    "python -m pytest tests/test_implementation_manifest_runtime_v1.py",
+    "git diff --check"
+  ],
+  "known_limitations": [
+    "runtime creates authorization evidence but does not perform filesystem mutation",
+    "authorization reuse prevention depends on supplied prior authorization lineage keys",
+    "runtime does not inspect existing target filesystem state",
+    "runtime does not execute generated tests"
+  ]
+}
