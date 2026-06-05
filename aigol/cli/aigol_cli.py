@@ -238,6 +238,12 @@ from aigol.runtime.conversation_native_development_context_integration import (
     run_conversation_native_development_context_integration,
 )
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
+from aigol.runtime.unknown_domain_clarification_runtime import (
+    CLARIFICATION_REQUIRED as UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
+    is_unknown_domain_clarification_eligible,
+    render_unknown_domain_clarification_workflow,
+    run_unknown_domain_clarification_workflow,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -535,6 +541,17 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_submit.add_argument("--created-at", default="2026-06-01T00:00:00Z")
     prompt_submit.add_argument("--runtime-root", default=".aigol_prompt_runtime")
     prompt_submit.add_argument("--operator-context", default="operator_cli")
+
+    clarification = subcommands.add_parser("clarification")
+    clarification_sub = clarification.add_subparsers(dest="clarification_command", required=True)
+    clarification_unknown = clarification_sub.add_parser("unknown-domain")
+    clarification_unknown.add_argument("--prompt", required=True)
+    clarification_unknown.add_argument("--prompt-id", default="AIGOL-UNKNOWN-DOMAIN-PROMPT-000001")
+    clarification_unknown.add_argument("--clarification-id", default="AIGOL-UNKNOWN-DOMAIN-CLARIFICATION-000001")
+    clarification_unknown.add_argument("--canonical-chain-id", default="AIGOL-UNKNOWN-DOMAIN-CHAIN-000001")
+    clarification_unknown.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    clarification_unknown.add_argument("--runtime-root", default=".aigol_unknown_domain_clarification_runtime")
+    clarification_unknown.add_argument("--json", action="store_true")
 
     conversation = subcommands.add_parser("conversation")
     conversation.add_argument("--session-id", default="AIGOL-INTERACTIVE-CONVERSATION-000001")
@@ -1170,6 +1187,31 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif is_unknown_domain_clarification_eligible(human_prompt):
+                clarification_capture = run_unknown_domain_clarification_workflow(
+                    clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "unknown_domain_clarification",
+                )
+                current_chain_id = clarification_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = clarification_capture.get("latest_chain_id") or current_chain_id
+                if clarification_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {clarification_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_unknown_domain_clarification_workflow(clarification_capture))
+                turns.append(
+                    _interactive_unknown_domain_clarification_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        clarification_capture=clarification_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif is_conversation_native_development_intent(human_prompt):
                 routing_capture = run_conversation_native_development_intent_routing(
                     routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
@@ -1716,6 +1758,59 @@ def _interactive_failed_turn_summary(
         "execution_requested": False,
         "dispatch_requested": False,
         "invocation_requested": False,
+    }
+
+
+def _interactive_unknown_domain_clarification_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    clarification_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    unknown = clarification_capture.get("unknown_domain_artifact")
+    if not isinstance(unknown, dict):
+        unknown = {}
+    request = clarification_capture.get("clarification_request_artifact")
+    if not isinstance(request, dict):
+        request = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": clarification_capture.get("response_status"),
+        "response_source": clarification_capture.get("response_source"),
+        "fail_closed": clarification_capture.get("fail_closed") is True,
+        "failure_reason": clarification_capture.get("failure_reason"),
+        "replay_reference": clarification_capture.get("unknown_domain_replay_reference"),
+        "conversation_replay_reference": clarification_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": clarification_capture.get("canonical_chain_id"),
+        "current_chain_id": clarification_capture.get("current_chain_id"),
+        "latest_chain_id": clarification_capture.get("latest_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "unknown_domain_status": unknown.get("unknown_domain_status"),
+        "originating_intent": request.get("originating_intent") or unknown.get("originating_intent"),
+        "proposed_domain": request.get("proposed_domain") or unknown.get("proposed_domain"),
+        "requested_domain": unknown.get("requested_domain"),
+        "missing_information": request.get("missing_information", []),
+        "clarification_required": clarification_capture.get("response_status")
+        == UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
+        "unknown_domain_artifact_type": unknown.get("artifact_type"),
+        "clarification_request_artifact_type": request.get("artifact_type"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
     }
 
 
@@ -2273,6 +2368,17 @@ def run_command(args: argparse.Namespace) -> dict:
             replay_dir=args.runtime_root,
             operator_context=args.operator_context,
         )
+    if args.command == "clarification" and args.clarification_command == "unknown-domain":
+        result = run_unknown_domain_clarification_workflow(
+            clarification_id=args.clarification_id,
+            prompt_id=args.prompt_id,
+            human_prompt=args.prompt,
+            canonical_chain_id=args.canonical_chain_id,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.clarification_id,
+        )
+        result["command"] = "aigol clarification unknown-domain"
+        return result
     if args.command == "conversation":
         return {
             "command": "aigol conversation",
@@ -2785,6 +2891,11 @@ def render_command_result(result: dict) -> str:
                 f"fail_closed: {result.get('fail_closed')}",
                 f"failure_reason: {result.get('failure_reason') or ''}",
             ],
+        )
+    if command == "aigol clarification unknown-domain":
+        return render_card(
+            "AIGOL UNKNOWN DOMAIN CLARIFICATION",
+            render_unknown_domain_clarification_workflow(result).splitlines(),
         )
     if command == "aigol conversation":
         return render_card(

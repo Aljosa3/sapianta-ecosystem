@@ -1,0 +1,76 @@
+{
+  "milestone_id": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_scenarios": [
+    {
+      "scenario": "Create a compliance domain.",
+      "expected_flow": [
+        "UNKNOWN_DOMAIN",
+        "CLARIFICATION_REQUIRED"
+      ],
+      "accepted": true
+    },
+    {
+      "scenario": "Create a new domain for validating regulatory compliance requirements.",
+      "expected_flow": [
+        "INTENT_RESOLVED",
+        "PROPOSED_DOMAIN",
+        "CLARIFICATION_REQUIRED"
+      ],
+      "accepted": true
+    },
+    {
+      "scenario": "Create a trading domain.",
+      "expected_flow": [
+        "existing native-development routing behavior unchanged"
+      ],
+      "accepted": true
+    }
+  ],
+  "requirements": {
+    "unknown_domain_detected": true,
+    "missing_domain_mapping_detected": true,
+    "missing_capability_mapping_detected": true,
+    "unknown_domain_artifact_emitted": "UNKNOWN_DOMAIN_ARTIFACT_V1",
+    "clarification_request_artifact_emitted": "CLARIFICATION_REQUEST_ARTIFACT_V1",
+    "clarification_id_present": true,
+    "originating_intent_present": true,
+    "proposed_domain_present": true,
+    "missing_information_present": true,
+    "replay_references_present": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "lineage_bound": true,
+    "operator_ux_replaces_prompt_not_clarification_eligible": true
+  },
+  "runtime": "aigol/runtime/unknown_domain_clarification_runtime.py",
+  "cli_integration": [
+    "aigol conversation",
+    "aigol clarification unknown-domain"
+  ],
+  "tests": [
+    "tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "tests/test_conversation_native_development_intent_routing_v1.py",
+    "tests/test_conversation_provider_unavailable_clarification_fallback_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "python -m pytest tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py"
+  ],
+  "governance_preservation": {
+    "creates_domains": false,
+    "invokes_providers": false,
+    "invokes_workers": false,
+    "authorizes_execution": false,
+    "creates_approvals": false,
+    "mutates_governance": false,
+    "mutates_replay": false
+  },
+  "known_limits": [
+    "This milestone implements deterministic compliance-domain clarification and preserves existing trading-domain routing.",
+    "Operator answers are requested but not consumed into domain creation in this milestone.",
+    "Clarification artifacts are workflow evidence only and carry no implementation authority."
+  ]
+}

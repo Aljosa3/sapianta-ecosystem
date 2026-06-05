@@ -1,0 +1,14 @@
+{
+  "classification": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_STATUS",
+  "milestone_id": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "unknown_domain_runtime": "AVAILABLE",
+  "clarification_runtime": "AVAILABLE",
+  "operator_ux": "CLARIFICATION_WORKFLOW_RENDERED",
+  "replay_binding": "UNKNOWN_DOMAIN_AND_CLARIFICATION_REQUEST_LINEAGE_BOUND",
+  "conversation_behavior": "UNKNOWN_CONVERSATIONAL_DOMAIN_REQUESTS_ENTER_CLARIFICATION_WHEN_ELIGIBLE",
+  "existing_trading_behavior": "UNCHANGED",
+  "authority_boundary": "CLARIFICATION_ONLY_NO_DOMAIN_CREATION_NO_PROVIDER_NO_WORKER_NO_EXECUTION",
+  "fail_closed": "PRESERVED_FOR_NONELIGIBLE_OR_INVALID_REPLAY",
+  "known_limit": "Compliance-domain clarification is implemented as a bounded deterministic workflow; operator response ingestion into domain creation is not implemented."
+}

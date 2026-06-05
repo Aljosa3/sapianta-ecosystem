@@ -1,0 +1,41 @@
+{
+  "milestone_id": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_STATUS",
+  "certified_capabilities": {
+    "unknown_domain_runtime": true,
+    "clarification_runtime": true,
+    "operator_facing_clarification_ux": true,
+    "replay_visible_clarification_artifacts": true,
+    "replay_reconstruction": true,
+    "lineage_binding": true,
+    "conversation_cli_integration": true,
+    "direct_cli_inspection_command": true
+  },
+  "certified_artifacts": {
+    "unknown_domain": "UNKNOWN_DOMAIN_ARTIFACT_V1",
+    "clarification_request": "CLARIFICATION_REQUEST_ARTIFACT_V1"
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "governance_authority_preserved": true,
+    "fail_closed_semantics_preserved_for_noneligible_prompts": true,
+    "provider_authority_granted": false,
+    "worker_authority_granted": false,
+    "execution_authority_granted": false,
+    "domain_creation_authorized": false,
+    "governance_mutation_introduced": false,
+    "replay_mutation_introduced": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/unknown_domain_clarification_runtime.py",
+    "cli": "aigol clarification unknown-domain",
+    "conversation_cli": "aigol conversation",
+    "acceptance_evidence": "governance/AIGOL_UNKNOWN_DOMAIN_AND_CLARIFICATION_UX_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_unknown_domain_and_clarification_ux_v1.py"
+    ]
+  },
+  "status_statement": "Unknown compliance-domain conversational requests now enter a governed, replay-visible clarification workflow instead of immediately failing with prompt-not-clarification-eligible. Existing trading-domain routing remains unchanged."
+}
