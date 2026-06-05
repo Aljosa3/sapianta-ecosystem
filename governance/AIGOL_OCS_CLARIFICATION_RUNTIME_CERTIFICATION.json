@@ -1,0 +1,78 @@
+{
+  "artifact_type": "AIGOL_OCS_CLARIFICATION_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_CLARIFICATION_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "chain_inspection_runtime_reference": "AIGOL_OCS_CHAIN_INSPECTION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_clarification_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_clarification_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_CLARIFICATION_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_CLARIFICATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_CLARIFICATION_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS cognition and semantic resolution surfaced ambiguity but lacked a dedicated replay-visible clarification artifact that normalized requests and preserved continuity and semantic references.",
+  "runtime_model": [
+    "OCS clarification consumes explicit OCS cognition and semantic resolution artifacts.",
+    "The runtime validates replay visibility, artifact hashes, known OCS artifact types, known OCS statuses, and semantic-to-cognition lineage hash continuity.",
+    "The runtime rejects any source carrying authority-bearing flags.",
+    "The runtime converts required cognition clarification requirements and semantic clarification candidates into deterministic clarification requests.",
+    "The runtime preserves semantic references and continuity references from semantic resolution.",
+    "The runtime records both clarification-required and clarification-not-required states.",
+    "The runtime marks all outputs as replay-visible and non-authoritative.",
+    "The clarification hash is derived from source hashes, clarification requests, ambiguity evidence, continuity references, semantic references, authority flags, status, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and clarification hash continuity."
+  ],
+  "replay_impact": [
+    "OCS now has append-only replay-visible clarification evidence.",
+    "Replay reconstruction can prove which cognition and semantic resolution artifacts produced the clarification requests.",
+    "Identical ambiguity inputs produce the same clarification hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke PPP, providers, workers, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No approval creation.",
+    "No domain creation.",
+    "No PPP invocation.",
+    "No automatic implementation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_clarification_runtime.py aigol/runtime/ocs_chain_inspection_runtime.py aigol/runtime/ocs_to_ppp_binding_runtime.py aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_clarification_runtime_v1.py tests/test_ocs_chain_inspection_runtime_v1.py tests/test_ocs_to_ppp_binding_runtime_v1.py tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "50 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_CLARIFICATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_CLARIFICATION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify OCS clarification runtime",
+  "final_classification": "AIGOL_OCS_CLARIFICATION_RUNTIME_STATUS = CERTIFIED"
+}
