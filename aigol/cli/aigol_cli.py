@@ -257,6 +257,11 @@ from aigol.runtime.semantic_similarity_domain_reference_runtime import (
     render_domain_reference_resolution_summary,
     run_semantic_similarity_domain_reference_resolution,
 )
+from aigol.runtime.operator_decision_support_runtime import (
+    is_operator_decision_support_prompt,
+    render_operator_decision_support_summary,
+    run_operator_decision_support,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -587,6 +592,17 @@ def build_parser() -> argparse.ArgumentParser:
     domain_reference_resolve.add_argument("--created-at", default="2026-06-05T00:00:00Z")
     domain_reference_resolve.add_argument("--runtime-root", default=".aigol_domain_reference_runtime")
     domain_reference_resolve.add_argument("--json", action="store_true")
+
+    decision_support = subcommands.add_parser("decision-support")
+    decision_support_sub = decision_support.add_subparsers(dest="decision_support_command", required=True)
+    decision_support_recommend = decision_support_sub.add_parser("recommend")
+    decision_support_recommend.add_argument("--prompt", required=True)
+    decision_support_recommend.add_argument("--prompt-id", default="AIGOL-DECISION-SUPPORT-PROMPT-000001")
+    decision_support_recommend.add_argument("--recommendation-id", default="AIGOL-DECISION-SUPPORT-RECOMMENDATION-000001")
+    decision_support_recommend.add_argument("--canonical-chain-id", default="AIGOL-DECISION-SUPPORT-CHAIN-000001")
+    decision_support_recommend.add_argument("--created-at", default="2026-06-05T00:00:00Z")
+    decision_support_recommend.add_argument("--runtime-root", default=".aigol_operator_decision_support_runtime")
+    decision_support_recommend.add_argument("--json", action="store_true")
 
     conversation = subcommands.add_parser("conversation")
     conversation.add_argument("--session-id", default="AIGOL-INTERACTIVE-CONVERSATION-000001")
@@ -1284,6 +1300,40 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         domain_reference_capture=domain_reference_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif is_operator_decision_support_prompt(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
+                decision_support_capture = run_operator_decision_support(
+                    recommendation_id=f"{prompt_id}:OPERATOR-DECISION-SUPPORT",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "operator_decision_support",
+                )
+                current_chain_id = decision_support_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = decision_support_capture.get("latest_chain_id") or current_chain_id
+                if decision_support_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {decision_support_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_operator_decision_support_summary(decision_support_capture))
+                turns.append(
+                    _interactive_operator_decision_support_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        decision_support_capture=decision_support_capture,
                         conversational_routing_capture=conversational_routing_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
@@ -1989,6 +2039,60 @@ def _interactive_domain_reference_turn_summary(
         "operation": candidate.get("operation"),
         "missing_information": candidate.get("missing_information", []),
         "clarification_required": candidate.get("clarification_required") is True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_operator_decision_support_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    decision_support_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None = None,
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    recommendation = decision_support_capture.get("operator_decision_support_artifact")
+    if not isinstance(recommendation, dict):
+        recommendation = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": decision_support_capture.get("response_status"),
+        "response_source": decision_support_capture.get("response_source"),
+        "fail_closed": decision_support_capture.get("fail_closed") is True,
+        "failure_reason": decision_support_capture.get("failure_reason"),
+        "replay_reference": decision_support_capture.get("operator_decision_support_replay_reference"),
+        "conversation_replay_reference": decision_support_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": decision_support_capture.get("canonical_chain_id"),
+        "current_chain_id": decision_support_capture.get("current_chain_id"),
+        "latest_chain_id": decision_support_capture.get("latest_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": (conversational_routing_capture or {}).get("workflow_id"),
+        "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
+            "conversational_cli_routing_replay_reference"
+        ),
+        "operator_decision_support_artifact_type": recommendation.get("artifact_type"),
+        "recommendation_status": recommendation.get("recommendation_status"),
+        "recommendation_category": recommendation.get("category"),
+        "recommendation": recommendation.get("recommendation"),
+        "alternatives": recommendation.get("alternatives", []),
+        "risks": recommendation.get("risks", []),
+        "confidence": recommendation.get("confidence"),
+        "human_authority": recommendation.get("human_authority"),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
@@ -2759,6 +2863,17 @@ def run_command(args: argparse.Namespace) -> dict:
         )
         result["command"] = "aigol domain-reference resolve"
         return result
+    if args.command == "decision-support" and args.decision_support_command == "recommend":
+        result = run_operator_decision_support(
+            recommendation_id=args.recommendation_id,
+            prompt_id=args.prompt_id,
+            human_prompt=args.prompt,
+            canonical_chain_id=args.canonical_chain_id,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.recommendation_id,
+        )
+        result["command"] = "aigol decision-support recommend"
+        return result
     if args.command == "conversation":
         return {
             "command": "aigol conversation",
@@ -3286,6 +3401,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL DOMAIN REFERENCE RESOLUTION",
             render_domain_reference_resolution_summary(result).splitlines(),
+        )
+    if command == "aigol decision-support recommend":
+        return render_card(
+            "AIGOL OPERATOR DECISION SUPPORT",
+            render_operator_decision_support_summary(result).splitlines(),
         )
     if command == "aigol conversation":
         return render_card(

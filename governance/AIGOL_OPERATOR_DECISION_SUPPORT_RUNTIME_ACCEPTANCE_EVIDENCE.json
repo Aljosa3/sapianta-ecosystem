@@ -1,0 +1,83 @@
+{
+  "milestone_id": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "final_classification": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_STATUS",
+  "acceptance_status": "ACCEPTED",
+  "validated_flow": [
+    "Human Request",
+    "OCS / Conversational Routing",
+    "Decision Support Runtime",
+    "LLM Analysis Candidate Policy Surface",
+    "Recommendation Artifact",
+    "Human Review"
+  ],
+  "validated_scenarios": {
+    "I want to create the first real AiGOL product domain.": {
+      "category": "DOMAIN_SELECTION",
+      "recommended": "SAPIANTA_AI_PR_GATE",
+      "status": "RECOMMENDATION_GENERATED"
+    },
+    "Which capability should be implemented next?": {
+      "category": "CAPABILITY_PRIORITIZATION",
+      "recommended": "CLARIFICATION_RESPONSE_INGESTION",
+      "status": "RECOMMENDATION_GENERATED"
+    },
+    "Which provider should be attached first?": {
+      "category": "PROVIDER_COMPARISON",
+      "recommended": "OPENAI_RESPONSES_PROVIDER",
+      "status": "RECOMMENDATION_GENERATED"
+    }
+  },
+  "certified_artifacts": {
+    "operator_decision_support": "OPERATOR_DECISION_SUPPORT_ARTIFACT_V1"
+  },
+  "supported_categories": [
+    "DOMAIN_SELECTION",
+    "CAPABILITY_PRIORITIZATION",
+    "ROADMAP_PRIORITIZATION",
+    "IMPLEMENTATION_SEQUENCING",
+    "PROVIDER_COMPARISON",
+    "WORKER_COMPARISON"
+  ],
+  "requirements": {
+    "recommendation_runtime": true,
+    "recommendation_hash_recorded": true,
+    "alternatives_recorded": true,
+    "risks_recorded": true,
+    "confidence_recorded": true,
+    "reasoning_recorded": true,
+    "llm_analysis_candidate_policy_surface": true,
+    "human_authority_preserved": true,
+    "replay_visible": true,
+    "replay_reconstructable": true,
+    "lineage_bound": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "approval_created": false,
+    "domain_created": false,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "approval_bypassed": false
+  },
+  "runtime": "aigol/runtime/operator_decision_support_runtime.py",
+  "cli_integration": [
+    "aigol decision-support recommend",
+    "aigol conversation",
+    "aigol conversational route"
+  ],
+  "tests": [
+    "tests/test_operator_decision_support_runtime_v1.py",
+    "tests/test_conversational_cli_runtime_v1.py"
+  ],
+  "validation_commands": [
+    "python -m pytest tests/test_operator_decision_support_runtime_v1.py tests/test_conversational_cli_runtime_v1.py",
+    "python -m pytest tests/test_operator_decision_support_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_semantic_similarity_domain_reference_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
+  ],
+  "known_limits": [
+    "The runtime emits non-authoritative recommendations only; it does not approve, execute, create domains, or start implementation.",
+    "The LLM analysis candidate is represented as a governed role-policy surface in this milestone; direct provider-backed recommendation drafting remains a future governed extension.",
+    "Human decisions are represented as required downstream choices: approve, reject, or ignore."
+  ]
+}

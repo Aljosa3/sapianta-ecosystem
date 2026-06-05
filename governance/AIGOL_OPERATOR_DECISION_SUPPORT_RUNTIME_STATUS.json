@@ -1,0 +1,14 @@
+{
+  "classification": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_STATUS",
+  "milestone_id": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_V1",
+  "status": "RUNTIME_IMPLEMENTED_AND_CERTIFIED",
+  "recommendation_runtime": "AVAILABLE",
+  "recommendation_categories": "DOMAIN_CAPABILITY_ROADMAP_IMPLEMENTATION_PROVIDER_WORKER",
+  "llm_analysis_candidate_role": "NON_AUTHORITATIVE_POLICY_SURFACE_AVAILABLE",
+  "replay_binding": "OPERATOR_DECISION_SUPPORT_ARTIFACT_LINEAGE_BOUND",
+  "conversation_behavior": "HIGHER_LEVEL_OPERATOR_QUESTIONS_ENTER_RECOMMENDATION_WORKFLOW",
+  "human_authority": "APPROVE_REJECT_IGNORE_REMAINS_HUMAN",
+  "authority_boundary": "RECOMMENDATION_ONLY_NO_APPROVAL_NO_DOMAIN_CREATION_NO_PROVIDER_NO_WORKER_NO_EXECUTION",
+  "fail_closed": "PRESERVED_FOR_UNSUPPORTED_OR_INVALID_REPLAY",
+  "known_limit": "Direct provider-backed recommendation drafting is not enabled by this milestone; recommendations are deterministic and non-authoritative."
+}

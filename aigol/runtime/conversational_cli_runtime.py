@@ -24,6 +24,7 @@ CREATE_DOMAIN_TRADING = "CREATE_DOMAIN_TRADING"
 CREATE_DOMAIN_MARKETING = "CREATE_DOMAIN_MARKETING"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 DOMAIN_ADAPTATION_REFERENCE = "DOMAIN_ADAPTATION_REFERENCE"
+OPERATOR_DECISION_SUPPORT = "OPERATOR_DECISION_SUPPORT"
 SHOW_LATEST_REPLAY_CHAIN = "SHOW_LATEST_REPLAY_CHAIN"
 REVIEW_LATEST_AUDIT = "REVIEW_LATEST_AUDIT"
 IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
@@ -180,6 +181,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "aigol domain-reference resolve",
             "semantic_similarity_domain_reference_runtime",
         ),
+        _workflow(
+            OPERATOR_DECISION_SUPPORT,
+            "aigol decision-support recommend",
+            "operator_decision_support_runtime",
+        ),
         _workflow(SHOW_LATEST_REPLAY_CHAIN, "aigol show-latest-chain", "cli_chain_inspection_runtime"),
         _workflow(REVIEW_LATEST_AUDIT, "aigol conversational route", "capability_audit_artifact_review"),
         _workflow(IMPROVE_PROVIDER_LAYER, "aigol conversational route", "provider_layer_review_guidance"),
@@ -193,6 +199,8 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
     normalized = prompt.lower().strip().rstrip(".?!")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    if _is_operator_decision_support_prompt(normalized):
+        return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["operator", "decision", "support"])
     if "create" in normalized and "trading" in normalized and "domain" in normalized:
         return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
     if "create" in normalized and "marketing" in normalized and "domain" in normalized:
@@ -239,6 +247,22 @@ def _is_domain_adaptation_reference_prompt(normalized: str) -> bool:
     )
     domains = ("trading", "marketing", "compliance", "healthcare", "public services", "server management")
     return any(marker in normalized for marker in markers) and any(domain in normalized for domain in domains)
+
+
+def _is_operator_decision_support_prompt(normalized: str) -> bool:
+    return (
+        ("first real" in normalized and ("product domain" in normalized or "aigol product domain" in normalized))
+        or "which capability" in normalized
+        or ("capability" in normalized and "next" in normalized)
+        or "which provider" in normalized
+        or ("provider" in normalized and "first" in normalized)
+        or "which worker" in normalized
+        or ("worker" in normalized and "compare" in normalized)
+        or "roadmap" in normalized
+        or "prioritize" in normalized
+        or "priority" in normalized
+        or "sequencing" in normalized
+    )
 
 
 def _routing_decision_artifact(
@@ -469,6 +493,7 @@ def _operator_summary(workflow_id: str) -> str:
         CREATE_DOMAIN_MARKETING: "Route to existing native-development domain workflow.",
         CREATE_DOMAIN_COMPLIANCE_CLARIFICATION: "Use certified unknown-domain clarification workflow.",
         DOMAIN_ADAPTATION_REFERENCE: "Resolve semantic domain references into a governed adaptation candidate.",
+        OPERATOR_DECISION_SUPPORT: "Generate a governed non-authoritative recommendation for human review.",
         SHOW_LATEST_REPLAY_CHAIN: "Show latest replay chain through read-only chain inspection.",
         REVIEW_LATEST_AUDIT: "Review existing capability audit artifacts without regenerating them.",
         IMPROVE_PROVIDER_LAYER: "Route to provider-layer improvement review guidance without execution.",

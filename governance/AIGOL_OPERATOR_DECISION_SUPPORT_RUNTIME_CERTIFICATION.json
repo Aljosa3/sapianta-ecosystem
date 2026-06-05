@@ -1,0 +1,50 @@
+{
+  "milestone_id": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED_WITH_BOUNDED_SCOPE",
+  "final_classification": "AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_STATUS",
+  "certified_capabilities": {
+    "human_facing_recommendation_generation": true,
+    "domain_selection_recommendations": true,
+    "capability_prioritization_recommendations": true,
+    "roadmap_prioritization_recommendations": true,
+    "implementation_sequencing_recommendations": true,
+    "provider_comparison_recommendations": true,
+    "worker_comparison_recommendations": true,
+    "llm_analysis_candidate_role_policy": true,
+    "replay_visible_artifact_creation": true,
+    "replay_reconstruction": true,
+    "lineage_binding": true,
+    "conversation_cli_integration": true,
+    "conversational_workflow_registry_integration": true,
+    "direct_cli_inspection_command": true
+  },
+  "certified_artifacts": {
+    "operator_decision_support": "OPERATOR_DECISION_SUPPORT_ARTIFACT_V1"
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "human_final_decision_required": "APPROVE_REJECT_IGNORE",
+    "approval_boundary_preserved": true,
+    "authorization_boundary_preserved": true,
+    "provider_authority_granted": false,
+    "worker_authority_granted": false,
+    "execution_authority_granted": false,
+    "domain_creation_authorized": false,
+    "governance_mutation_introduced": false,
+    "replay_mutation_introduced": false,
+    "approval_bypass_introduced": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/operator_decision_support_runtime.py",
+    "direct_cli": "aigol decision-support recommend",
+    "conversation_cli": "aigol conversation",
+    "conversational_routing": "aigol conversational route",
+    "acceptance_evidence": "governance/AIGOL_OPERATOR_DECISION_SUPPORT_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_operator_decision_support_runtime_v1.py",
+      "tests/test_conversational_cli_runtime_v1.py"
+    ]
+  },
+  "status_statement": "AiGOL can now generate governed, replay-visible, non-authoritative recommendations for human operator decision making while preserving approval, authorization, provider, worker, execution, governance, and replay boundaries."
+}
