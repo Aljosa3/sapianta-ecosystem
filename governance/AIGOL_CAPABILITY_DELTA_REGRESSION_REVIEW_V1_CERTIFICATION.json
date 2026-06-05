@@ -1,0 +1,75 @@
+{
+  "artifact_type": "AIGOL_CAPABILITY_DELTA_REGRESSION_REVIEW_V1_CERTIFICATION",
+  "certification_id": "AIGOL_CAPABILITY_DELTA_REGRESSION_REVIEW_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_CAPABILITY_DELTA_REGRESSION_REVIEW_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/capability_delta_regression_review_runtime.py",
+  "test_file": "tests/test_capability_delta_regression_review_runtime_v1.py",
+  "generated_artifacts": [
+    "governance/AIGOL_CAPABILITY_DELTA_REGRESSION_REVIEW_V1.md",
+    "governance/AIGOL_CAPABILITY_DELTA_CORRECTED_V1.json"
+  ],
+  "analyzed_inputs": [
+    "governance/AIGOL_CAPABILITY_MATRIX_V1.json",
+    "governance/AIGOL_CAPABILITY_MATRIX_V2.json",
+    "governance/AIGOL_CAPABILITY_DELTA_V1.json"
+  ],
+  "certified_detection": {
+    "capability_inflation": true,
+    "classification_drift": true,
+    "duplicate_capability_detection": true,
+    "parser_inconsistency": true,
+    "granularity_change": true
+  },
+  "classification_counts": {
+    "REAL_CHANGE": 2,
+    "CLASSIFICATION_CHANGE": 34,
+    "PARSER_CHANGE": 1583,
+    "DUPLICATE_DETECTION": 203
+  },
+  "raw_delta": {
+    "CERTIFIED": 350,
+    "IMPLEMENTED": 8,
+    "PARTIAL": 1398,
+    "NOT_STARTED": 0
+  },
+  "adjusted_delta": {
+    "CERTIFIED": 2,
+    "IMPLEMENTED": 0,
+    "PARTIAL": 0,
+    "NOT_STARTED": 0,
+    "adjusted_added_capabilities": 2,
+    "adjusted_removed_capabilities": 0,
+    "adjusted_status_changes": 0,
+    "adjusted_total_capability_delta": 2
+  },
+  "real_change_capabilities": [
+    "Capability Audit Runtime",
+    "Native Development Replay Safe Handoff Hardening"
+  ],
+  "recommended_next_milestone": "AIGOL_CAPABILITY_AUDIT_NORMALIZATION_V1",
+  "authority_boundaries": {
+    "review_only": true,
+    "capability_status_mutated": false,
+    "capabilities_certified_by_review_runtime": false,
+    "implementation_authorized": false,
+    "execution_authorized": false,
+    "providers_invoked": false,
+    "workers_invoked": false,
+    "governance_semantics_mutated": false
+  },
+  "validation_summary": {
+    "runtime_tests": "2 passed",
+    "targeted_generation": "completed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "success_criteria": {
+    "delta_classified_by_cause": true,
+    "adjusted_delta_computed": true,
+    "capability_delta_trustworthy_for_long_term_planning": true
+  }
+}
