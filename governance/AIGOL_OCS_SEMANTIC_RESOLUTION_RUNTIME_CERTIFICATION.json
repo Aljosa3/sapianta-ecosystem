@@ -1,0 +1,72 @@
+{
+  "artifact_type": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "memory_and_continuity_runtime_reference": "AIGOL_OCS_MEMORY_AND_CONTINUITY_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_semantic_resolution_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_semantic_resolution_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS had bounded memory and continuity but lacked deterministic semantic resolution over memory, continuity, cognition, replay-derived intent, and registry context.",
+  "runtime_model": [
+    "OCS semantic resolution consumes explicit OCS memory, continuity, cognition, replay-derived intent, and domain registry context inputs.",
+    "The runtime validates replay visibility, artifact hashes, known OCS artifact types, known OCS statuses, memory-continuity hash linkage, and false authority flags.",
+    "The runtime resolves semantic references from memory, continuity, cognition, intent candidates, and registry context.",
+    "The runtime resolves domain identities, capability identities, and worker identities.",
+    "Continuity-aware reference linking binds semantic references to operation groups.",
+    "Ambiguity detection records multiple identities or unresolved references.",
+    "Clarification candidates are generated only as non-authority evidence.",
+    "The semantic hash is derived from source hashes, registry context, semantic resolutions, continuity links, ambiguity evidence, clarification candidates, authority flags, status, and failure state.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and semantic hash continuity."
+  ],
+  "replay_impact": [
+    "OCS now has append-only replay-visible semantic resolution evidence.",
+    "Replay reconstruction can prove which memory, continuity, cognition, intent, and registry evidence shaped semantic identity resolution.",
+    "Identical OCS memory and continuity history produces the same semantic hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke providers, workers, PPP, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No automatic implementation.",
+    "No approval creation.",
+    "No domain creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "30 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "commit_message": "Certify OCS semantic resolution runtime",
+  "final_classification": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_STATUS = CERTIFIED"
+}

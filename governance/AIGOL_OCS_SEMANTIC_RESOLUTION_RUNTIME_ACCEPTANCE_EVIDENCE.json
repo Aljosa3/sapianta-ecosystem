@@ -1,0 +1,68 @@
+{
+  "artifact_type": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "runtime": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_V1",
+  "created_at": "2026-06-05",
+  "implemented_artifacts": [
+    "OCS_SEMANTIC_RESOLUTION_ARTIFACT_V1"
+  ],
+  "implemented_replay_steps": [
+    "000_ocs_semantic_resolution_recorded.json",
+    "001_ocs_semantic_resolution_returned.json"
+  ],
+  "validated_capabilities": [
+    "consume OCS memory artifact",
+    "consume OCS continuity artifact",
+    "consume OCS cognition artifact",
+    "consume replay-derived intent artifact",
+    "consume domain registry context",
+    "resolve semantic references",
+    "resolve domain identity",
+    "resolve capability identity",
+    "resolve worker identity",
+    "link references through continuity",
+    "detect ambiguity",
+    "generate clarification candidates",
+    "compute deterministic semantic hash",
+    "persist replay-visible semantic evidence",
+    "reconstruct semantic resolution deterministically from replay",
+    "detect corrupt replay"
+  ],
+  "forbidden_capabilities_preserved": [
+    "execution authorization",
+    "governance mutation",
+    "replay mutation",
+    "provider invocation",
+    "worker invocation",
+    "automatic implementation",
+    "approval creation",
+    "domain creation"
+  ],
+  "deterministic_reconstruction": {
+    "supported": true,
+    "evidence": "tests/test_ocs_semantic_resolution_runtime_v1.py proves identical OCS memory and continuity history reconstructs to the same semantic hash."
+  },
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "30 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    }
+  ],
+  "final_classification": "AIGOL_OCS_SEMANTIC_RESOLUTION_RUNTIME_STATUS = CERTIFIED"
+}
