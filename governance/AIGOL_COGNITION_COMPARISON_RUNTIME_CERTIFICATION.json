@@ -1,0 +1,106 @@
+{
+  "artifact": "AIGOL_COGNITION_COMPARISON_RUNTIME_CERTIFICATION",
+  "version": "V1",
+  "milestone": "AIGOL_COGNITION_COMPARISON_RUNTIME_V1",
+  "status": "CERTIFIED_COGNITION_COMPARISON_RUNTIME",
+  "final_classification": {
+    "AIGOL_COGNITION_COMPARISON_RUNTIME_STATUS": "CERTIFIED_COGNITION_COMPARISON_RUNTIME"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/cognition_comparison_runtime.py",
+  "test_file": "tests/test_cognition_comparison_runtime_v1.py",
+  "upstream_runtime_references": [
+    "AIGOL_LLM_COGNITION_PROVIDER_RUNTIME_V1",
+    "AIGOL_COGNITION_ARTIFACT_RUNTIME_V1",
+    "AIGOL_MULTI_PROVIDER_COGNITION_RUNTIME_V1"
+  ],
+  "certifies": {
+    "cognition_comparison_artifact_created": true,
+    "multiple_cognition_artifacts_compared": true,
+    "agreement_detected": true,
+    "disagreement_detected": true,
+    "conflicting_assumptions_detected": true,
+    "conflicting_risks_detected": true,
+    "conflicting_alternatives_detected": true,
+    "uncertainty_detected": true,
+    "missing_information_detected": true,
+    "comparison_confidence_produced": true,
+    "source_cognition_artifacts_bound": true,
+    "provider_identities_bound": true,
+    "replay_lineage_bound": true,
+    "replay_reconstruction_supported": true,
+    "non_authoritative_boundary_preserved": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "implemented_artifact": "COGNITION_COMPARISON_ARTIFACT_V1",
+  "input_artifacts": [
+    "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "LLM_COGNITION_ARTIFACT_V1"
+  ],
+  "comparison_outputs": [
+    "comparison_findings",
+    "agreement",
+    "disagreement",
+    "conflicting_assumptions",
+    "conflicting_risks",
+    "conflicting_alternatives",
+    "uncertainty",
+    "missing_information",
+    "comparison_confidence"
+  ],
+  "authority_model": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "replay_reconstruction_requirements": [
+    "source result bundle hash",
+    "source cognition artifact hashes",
+    "source cognition hashes",
+    "provider identities",
+    "provider identity hashes",
+    "context hash",
+    "comparison hash",
+    "lineage references"
+  ],
+  "governance_preservation": {
+    "comparison_output_authoritative": false,
+    "human_review_required": true,
+    "no_continuity_integration": true,
+    "no_memory_integration": true,
+    "no_clarification_integration": true,
+    "no_worker_invocation": true,
+    "no_execution": true,
+    "no_approval_creation": true,
+    "no_governance_mutation": true,
+    "no_replay_mutation": true
+  },
+  "fail_closed_conditions": [
+    "invalid multi-provider result bundle",
+    "source bundle already contains comparison",
+    "fewer than two cognition artifacts",
+    "invalid LLM cognition artifact",
+    "authority-bearing source content",
+    "invalid confidence value",
+    "append-only replay collision",
+    "replay tampering detected"
+  ],
+  "acceptance_evidence": "governance/AIGOL_COGNITION_COMPARISON_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+  "validation_summary": {
+    "runtime_tests": "7 passed",
+    "runtime_test_command": "python -m pytest tests/test_cognition_comparison_runtime_v1.py",
+    "chain_tests": "28 passed",
+    "chain_test_command": "python -m pytest tests/test_cognition_comparison_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py tests/test_cognition_artifact_runtime_v1.py tests/test_llm_cognition_provider_runtime_v1.py",
+    "json_parse": "PASS",
+    "json_parse_commands": [
+      "python -m json.tool governance/AIGOL_COGNITION_COMPARISON_RUNTIME_CERTIFICATION.json",
+      "python -m json.tool governance/AIGOL_COGNITION_COMPARISON_RUNTIME_ACCEPTANCE_EVIDENCE.json"
+    ],
+    "git_diff_check": "PASS",
+    "git_diff_check_command": "git diff --check"
+  },
+  "next_safe_milestone": "AIGOL_OCS_LLM_COGNITION_CONTINUITY_AND_CLARIFICATION_V1"
+}
