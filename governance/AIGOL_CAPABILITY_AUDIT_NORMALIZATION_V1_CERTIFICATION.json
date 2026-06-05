@@ -1,0 +1,70 @@
+{
+  "artifact_type": "AIGOL_CAPABILITY_AUDIT_NORMALIZATION_V1_CERTIFICATION",
+  "certification_id": "AIGOL_CAPABILITY_AUDIT_NORMALIZATION_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_CAPABILITY_AUDIT_NORMALIZATION_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/capability_normalization_runtime.py",
+  "rules_artifact": "governance/AIGOL_CAPABILITY_NORMALIZATION_RULES_V1.json",
+  "generated_matrix": "governance/AIGOL_CAPABILITY_NORMALIZED_MATRIX_V1.json",
+  "audit_runtime_updated": true,
+  "audit_runtime_file": "aigol/runtime/capability_audit_runtime.py",
+  "test_files": [
+    "tests/test_capability_normalization_runtime_v1.py",
+    "tests/test_capability_audit_runtime_v1.py"
+  ],
+  "introduced_identity_field": "CAPABILITY_ID",
+  "certified_normalization": [
+    "names",
+    "versions",
+    "aliases",
+    "formatting differences",
+    "terminal classification suffixes"
+  ],
+  "certified_detection": [
+    "duplicate capability names",
+    "renamed capabilities",
+    "version-only changes",
+    "alias collapses",
+    "duplicate collapse"
+  ],
+  "generated_normalization_summary": {
+    "source_capability_count": 1821,
+    "normalized_capability_count": 1622,
+    "collapsed_capabilities": 199,
+    "duplicate_groups": 157,
+    "renamed_capabilities": 157,
+    "version_only_changes": 78
+  },
+  "generated_normalized_status_counts": {
+    "CERTIFIED": 366,
+    "IMPLEMENTED": 8,
+    "PARTIAL": 1244,
+    "NOT_STARTED": 4
+  },
+  "authority_boundaries": {
+    "identity_normalization_only": true,
+    "capabilities_certified_by_normalization_runtime": false,
+    "implementation_authorized": false,
+    "execution_authorized": false,
+    "providers_invoked": false,
+    "workers_invoked": false,
+    "governance_semantics_mutated": false,
+    "raw_evidence_deleted": false
+  },
+  "validation_summary": {
+    "normalization_tests": "3 passed",
+    "audit_runtime_integration_tests": "4 passed",
+    "targeted_generation": "completed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "success_criteria": {
+    "capability_id_introduced": true,
+    "normalized_matrix_generated": true,
+    "audit_runtime_uses_normalized_identities": true,
+    "capability_identity_stable_across_audit_generations": true
+  }
+}

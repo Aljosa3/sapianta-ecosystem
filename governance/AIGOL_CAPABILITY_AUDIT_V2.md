@@ -20,11 +20,11 @@ Scanned directories:
 
 | Status | Count |
 | --- | ---: |
-| `CERTIFIED` | 391 |
-| `IMPLEMENTED` | 8 |
-| `PARTIAL` | 1408 |
+| `CERTIFIED` | 394 |
+| `IMPLEMENTED` | 9 |
+| `PARTIAL` | 1414 |
 | `NOT_STARTED` | 4 |
-| Total | 1811 |
+| Total | 1821 |
 
 ## Layer Maturity Scores
 
@@ -42,9 +42,9 @@ Scanned directories:
 
 ### L1 Governance
 
-- `CERTIFIED`: 136
-- `IMPLEMENTED`: 1
-- `PARTIAL`: 704
+- `CERTIFIED`: 139
+- `IMPLEMENTED`: 2
+- `PARTIAL`: 710
 - `NOT_STARTED`: 0
 
 Representative `CERTIFIED` capabilities:
@@ -60,6 +60,7 @@ Representative `CERTIFIED` capabilities:
 - CLI Chain Inspection Runtime
 
 Representative `IMPLEMENTED` capabilities:
+- Capability Delta
 - Filesystem Read Only Capability
 
 Representative `PARTIAL` capabilities:

@@ -9,6 +9,10 @@ from pathlib import Path
 import re
 from typing import Any
 
+from aigol.runtime.capability_normalization_runtime import (
+    load_normalization_rules,
+    normalize_capability_identity,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import replay_hash
 
@@ -83,7 +87,7 @@ def run_capability_audit(
     governance_dir.mkdir(parents=True, exist_ok=True)
 
     detected = detect_capabilities(root)
-    matrix = build_capability_matrix(detected)
+    matrix = build_capability_matrix(detected, normalization_rules=load_normalization_rules(root))
     audit_md = render_audit_document(matrix)
     roadmap_md = render_roadmap_document(matrix)
 
@@ -166,16 +170,24 @@ def detect_capabilities(repository_root: str | Path) -> dict[str, dict[str, Any]
     return entries
 
 
-def build_capability_matrix(entries: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def build_capability_matrix(
+    entries: dict[str, dict[str, Any]],
+    *,
+    normalization_rules: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Build the machine-readable V2 matrix from detected entries."""
 
     capabilities = []
+    rules = normalization_rules or load_normalization_rules()
     for entry in sorted(entries.values(), key=lambda item: (item["layer"], item["capability"])):
+        identity = normalize_capability_identity(entry["key"], rules)
         capabilities.append(
             {
                 "layer": entry["layer"],
                 "capability": entry["capability"],
+                "capability_id": identity["capability_id"],
                 "capability_key": entry["key"],
+                "canonical_capability_key": identity["canonical_key"],
                 "implementation": entry["implementation"],
                 "tests": entry["tests"],
                 "governance": entry["governance"],
@@ -183,6 +195,7 @@ def build_capability_matrix(entries: dict[str, dict[str, Any]]) -> dict[str, Any
                 "replay_evidence": entry["replay_evidence"],
                 "status": entry["status"],
                 "classification_reason": _classification_reason(entry),
+                "normalization": identity,
             }
         )
 
@@ -201,6 +214,7 @@ def build_capability_matrix(entries: dict[str, dict[str, Any]]) -> dict[str, Any
                 "meet stronger criteria. NOT_STARTED is reserved for explicit planned or missing capabilities."
             ),
             "status_values": list(STATUS_ORDER),
+            "normalization_rules_artifact": rules.get("artifact_id", "BUILT_IN_CAPABILITY_NORMALIZATION_RULES"),
         },
         "capability_counts": capability_counts,
         "layer_maturity_scores": _layer_scores(capabilities),

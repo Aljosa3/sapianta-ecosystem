@@ -76,3 +76,15 @@ def test_certified_capability_requires_certification_evidence(tmp_path) -> None:
 
     assert sample["status"] == "IMPLEMENTED"
     assert sample["certification"] == []
+
+
+def test_audit_matrix_includes_normalized_capability_id(tmp_path) -> None:
+    root = _fixture_repo(tmp_path)
+
+    entries = detect_capabilities(root)
+    matrix = build_capability_matrix(entries)
+    sample = next(item for item in matrix["capabilities"] if item["capability_key"] == "sample_capability")
+
+    assert sample["capability_id"] == "CAPABILITY::SAMPLE_CAPABILITY"
+    assert sample["canonical_capability_key"] == "sample_capability"
+    assert sample["normalization"]["capability_id"] == sample["capability_id"]

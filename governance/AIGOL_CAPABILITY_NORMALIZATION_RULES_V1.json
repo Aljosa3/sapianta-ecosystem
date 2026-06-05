@@ -1,0 +1,52 @@
+{
+  "artifact_id": "AIGOL_CAPABILITY_NORMALIZATION_RULES_V1",
+  "status": "ACTIVE",
+  "capability_id_prefix": "CAPABILITY",
+  "normalization_rules": {
+    "lowercase": true,
+    "strip_aigol_prefix": true,
+    "collapse_non_alphanumeric_to_underscore": true,
+    "collapse_repeated_underscores": true,
+    "strip_version_suffixes": true,
+    "strip_terminal_classification_suffixes": true
+  },
+  "version_patterns": [
+    "_v[0-9]+$",
+    "_v[0-9]+_[0-9]+$"
+  ],
+  "terminal_suffixes": [
+    "_runtime",
+    "_model",
+    "_foundation",
+    "_certification",
+    "_acceptance",
+    "_acceptance_evidence",
+    "_evidence",
+    "_manifest",
+    "_report",
+    "_review",
+    "_gap_analysis",
+    "_recommendations",
+    "_readiness",
+    "_adr",
+    "_boundary_guarantees"
+  ],
+  "aliases": {
+    "conversation_to_implementation_handoff_runtime": "conversation_to_implementation_handoff",
+    "implementation_handoff_visibility": "conversation_to_implementation_handoff",
+    "native_development_replay_safe_handoff_hardening": "conversation_to_implementation_handoff",
+    "capability_audit": "capability_audit_runtime",
+    "capability_matrix": "capability_audit_runtime",
+    "capability_delta": "capability_delta_runtime",
+    "capability_delta_regression_review": "capability_delta_regression_review_runtime",
+    "ocs_cognition_runtime": "ocs_cognition",
+    "cognition_runtime": "ocs_cognition",
+    "provider_proposal_production_runtime": "provider_proposal_production",
+    "provider_proposal_runtime": "provider_proposal",
+    "worker_invocation_runtime": "worker_invocation",
+    "worker_invocation_request_runtime": "worker_invocation_request",
+    "implementation_manifest_runtime": "implementation_manifest",
+    "generated_content_validation_runtime": "generated_content_validation",
+    "generated_content_acceptance_runtime": "generated_content_acceptance"
+  }
+}
