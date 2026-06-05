@@ -1,0 +1,83 @@
+{
+  "artifact_type": "AIGOL_CAPABILITY_DELTA_RUNTIME_V1_CERTIFICATION",
+  "certification_id": "AIGOL_CAPABILITY_DELTA_RUNTIME_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_CAPABILITY_DELTA_RUNTIME_STATUS": "CERTIFIED"
+  },
+  "runtime_implementation_performed": true,
+  "runtime_file": "aigol/runtime/capability_delta_runtime.py",
+  "test_file": "tests/test_capability_delta_runtime_v1.py",
+  "governance_document": "governance/AIGOL_CAPABILITY_DELTA_RUNTIME_V1.md",
+  "input_matrices": [
+    "governance/AIGOL_CAPABILITY_MATRIX_V1.json",
+    "governance/AIGOL_CAPABILITY_MATRIX_V2.json"
+  ],
+  "generated_artifacts": [
+    "governance/AIGOL_CAPABILITY_DELTA_REPORT_V1.md",
+    "governance/AIGOL_CAPABILITY_DELTA_V1.json"
+  ],
+  "certified_computations": [
+    "added capabilities",
+    "removed capabilities",
+    "status changes",
+    "maturity changes",
+    "layer score deltas",
+    "CERTIFIED delta",
+    "IMPLEMENTED delta",
+    "PARTIAL delta",
+    "NOT_STARTED delta",
+    "top improvements",
+    "top regressions",
+    "recommended next milestone"
+  ],
+  "generated_status_deltas": {
+    "CERTIFIED": 350,
+    "IMPLEMENTED": 8,
+    "PARTIAL": 1398,
+    "NOT_STARTED": 0
+  },
+  "generated_capability_movement": {
+    "added_capabilities": 1784,
+    "removed_capabilities": 28,
+    "status_changes": 10,
+    "total_capability_delta": 1756
+  },
+  "generated_layer_score_deltas": {
+    "L1 Governance": -38,
+    "L2 Cognition": -26,
+    "L3 Provider/Worker": -22,
+    "L4 Execution": -24,
+    "L5 Implementation": 10,
+    "L6 Domain Runtime": 2,
+    "L7 Marketplace": 9
+  },
+  "recommended_next_milestone": "AIGOL_CAPABILITY_DELTA_REGRESSION_REVIEW_V1",
+  "interpretive_boundary": [
+    "V1 is a manual audit matrix.",
+    "V2 is a runtime-generated audit matrix.",
+    "Some deltas reflect audit granularity and schema drift rather than capability degradation.",
+    "Regressions are preserved for review and are not hidden."
+  ],
+  "authority_boundaries": {
+    "comparison_only": true,
+    "capability_status_mutated": false,
+    "capabilities_certified_by_delta_runtime": false,
+    "implementation_authorized": false,
+    "execution_authorized": false,
+    "providers_invoked": false,
+    "workers_invoked": false,
+    "governance_semantics_mutated": false
+  },
+  "validation_summary": {
+    "runtime_tests": "2 passed",
+    "targeted_generation": "completed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "success_criteria": {
+    "capability_progress_quantified_between_audits": true,
+    "delta_report_generated": true,
+    "delta_json_generated": true
+  }
+}
