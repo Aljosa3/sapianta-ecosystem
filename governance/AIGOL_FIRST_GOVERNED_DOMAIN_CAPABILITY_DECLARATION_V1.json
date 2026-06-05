@@ -1,0 +1,26 @@
+{
+  "artifact_type": "AIGOL_FIRST_GOVERNED_DOMAIN_CAPABILITY_DECLARATION_V1",
+  "domain_id": "AI_DECISION_VALIDATION",
+  "capabilities": [
+    {
+      "capability_id": "AI_DECISION_INTAKE",
+      "description": "Accept a bounded AI decision review input for deterministic governance evaluation."
+    },
+    {
+      "capability_id": "CONSTITUTIONAL_BOUNDARY_CHECK",
+      "description": "Evaluate whether the requested action remains inside declared constitutional boundaries."
+    },
+    {
+      "capability_id": "REPLAY_VISIBLE_DECISION_REVIEW",
+      "description": "Record the review result as replay-visible governance evidence."
+    }
+  ],
+  "non_capabilities": [
+    "external execution",
+    "provider invocation",
+    "worker dispatch",
+    "governance mutation",
+    "automatic human-approval substitution"
+  ],
+  "status": "CERTIFIED"
+}

@@ -1,0 +1,16 @@
+{
+  "artifact_type": "AIGOL_FIRST_GOVERNED_DOMAIN_GOVERNANCE_BINDING_V1",
+  "domain_id": "AI_DECISION_VALIDATION",
+  "governance_scope": "Product 1 AI Decision Validator governed operational domain",
+  "governance_policy_refs": [
+    "docs/governance/CONSTITUTIONAL_INVARIANTS.md",
+    "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+    "docs/product_lifecycle/PRODUCT_1_EXECUTION_PHASE_V1.md"
+  ],
+  "human_authority_required": true,
+  "provider_invoked": false,
+  "worker_invoked": false,
+  "external_execution_authorized": false,
+  "governance_mutation_authorized": false,
+  "status": "CERTIFIED"
+}

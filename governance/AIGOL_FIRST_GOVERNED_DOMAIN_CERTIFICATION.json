@@ -1,0 +1,85 @@
+{
+  "artifact_type": "AIGOL_FIRST_GOVERNED_DOMAIN_CERTIFICATION",
+  "certification_id": "AIGOL_FIRST_GOVERNED_DOMAIN_V1",
+  "status": "CERTIFIED",
+  "final_classification": {
+    "AIGOL_FIRST_GOVERNED_DOMAIN_STATUS": "CERTIFIED"
+  },
+  "domain": {
+    "domain_id": "AI_DECISION_VALIDATION",
+    "display_name": "AI Decision Validation",
+    "domain_version": "1.0.0"
+  },
+  "runtime_files": [
+    "aigol/runtime/first_governed_domain_runtime.py",
+    "aigol/runtime/domain_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_first_governed_domain_runtime_v1.py",
+    "tests/test_domain_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_V1.md",
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_MANIFEST_V1.json",
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_CAPABILITY_DECLARATION_V1.json",
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_GOVERNANCE_BINDING_V1.json",
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_EXECUTION_EXAMPLE_V1.json",
+    "governance/AIGOL_FIRST_GOVERNED_DOMAIN_CERTIFICATION.json"
+  ],
+  "certified_lifecycle": [
+    "CREATED",
+    "VALIDATED",
+    "ACTIVE",
+    "EXECUTING",
+    "SUSPENDED",
+    "RETIRED"
+  ],
+  "certified_replay_events": [
+    "DOMAIN_CREATED",
+    "DOMAIN_VALIDATED",
+    "DOMAIN_ACTIVATED",
+    "DOMAIN_EXECUTED",
+    "DOMAIN_SUSPENDED",
+    "DOMAIN_RETIRED"
+  ],
+  "certified_components": [
+    "Domain Runtime integration",
+    "Domain Manifest",
+    "Domain Capability Declaration",
+    "Domain Lifecycle support",
+    "Domain Governance Binding",
+    "Domain Replay Visibility",
+    "Domain Certification",
+    "Domain Execution Example"
+  ],
+  "execution_example": {
+    "execution_id": "AI-DECISION-VALIDATION-EXAMPLE-000001:GOVERNED-EXECUTION-EXAMPLE",
+    "decision_result": "REQUIRES_HUMAN_REVIEW",
+    "boundary_result": "EXTERNAL_EXECUTION_NOT_AUTHORIZED",
+    "external_execution_performed": false
+  },
+  "authority_boundaries": {
+    "human_authority_required": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "dispatch_requested": false,
+    "external_execution_performed": false,
+    "external_execution_authorized": false,
+    "governance_mutated": false
+  },
+  "validation_summary": {
+    "first_governed_domain_tests": "7 passed",
+    "base_domain_runtime_tests": "9 passed",
+    "combined_targeted_tests": "16 passed",
+    "domain_stack_targeted_tests": "38 passed",
+    "compileall": "passed",
+    "json_validation_required": true,
+    "diff_check_required": true
+  },
+  "success_criteria": {
+    "complete_governed_domain_lifecycle_demonstrated": true,
+    "certified_aigol_stack_used": true,
+    "replay_visibility_preserved": true,
+    "certification_guarantees_preserved": true
+  }
+}

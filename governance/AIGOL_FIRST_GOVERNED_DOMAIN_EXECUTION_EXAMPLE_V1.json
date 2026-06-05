@@ -1,0 +1,23 @@
+{
+  "artifact_type": "AIGOL_FIRST_GOVERNED_DOMAIN_EXECUTION_EXAMPLE_V1",
+  "domain_id": "AI_DECISION_VALIDATION",
+  "execution_id": "AI-DECISION-VALIDATION-EXAMPLE-000001:GOVERNED-EXECUTION-EXAMPLE",
+  "execution_input": {
+    "decision_id": "AI-DECISION-VALIDATION-EXAMPLE-000001",
+    "decision_type": "ENTERPRISE_AI_ACTION_REVIEW",
+    "requested_action": "approve generated recommendation for operator review",
+    "risk_signals": [
+      "requires_human_review",
+      "external_effects_not_authorized"
+    ]
+  },
+  "decision_result": "REQUIRES_HUMAN_REVIEW",
+  "boundary_result": "EXTERNAL_EXECUTION_NOT_AUTHORIZED",
+  "provider_invoked": false,
+  "worker_invoked": false,
+  "external_execution_performed": false,
+  "dispatch_requested": false,
+  "governance_mutated": false,
+  "human_authority_required": true,
+  "status": "CERTIFIED"
+}
