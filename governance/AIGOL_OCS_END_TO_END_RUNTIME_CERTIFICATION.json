@@ -1,0 +1,78 @@
+{
+  "artifact_type": "AIGOL_OCS_END_TO_END_RUNTIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "status": "CERTIFIED",
+  "certifies": "AIGOL_OCS_END_TO_END_RUNTIME_V1",
+  "certification_date": "2026-06-05",
+  "clarification_runtime_reference": "AIGOL_OCS_CLARIFICATION_RUNTIME_STATUS = CERTIFIED",
+  "chain_inspection_runtime_reference": "AIGOL_OCS_CHAIN_INSPECTION_RUNTIME_STATUS = CERTIFIED",
+  "runtime_artifacts": [
+    "aigol/runtime/ocs_end_to_end_runtime.py"
+  ],
+  "test_artifacts": [
+    "tests/test_ocs_end_to_end_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OCS_END_TO_END_RUNTIME_V1.md",
+    "governance/AIGOL_OCS_END_TO_END_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OCS_END_TO_END_RUNTIME_CERTIFICATION.json"
+  ],
+  "root_cause": "OCS had certified stage runtimes but lacked a single replay-visible runtime that executed and certified the complete bounded cognition sequence.",
+  "runtime_model": [
+    "OCS end-to-end runtime accepts replay-visible source context and replay-visible history inputs.",
+    "The runtime executes context assembly, cognition, replay-derived intent, memory and continuity, semantic resolution, clarification, OCS-to-PPP binding, and chain inspection.",
+    "The runtime fails closed if any certified stage fails closed.",
+    "The runtime preserves exact stage references and stage hashes for lineage inspection.",
+    "The runtime records clarification summary and deterministic operator summary.",
+    "The runtime marks all outputs as replay-visible, proposal-only, and non-authoritative.",
+    "The end-to-end hash is derived from stable source inputs and stage outcomes while preserving exact path-bearing stage hashes separately for lineage.",
+    "Replay reconstruction validates ordering, wrapper hashes, artifact hashes, returned continuity, and end-to-end hash continuity."
+  ],
+  "replay_impact": [
+    "OCS now has append-only replay-visible end-to-end execution evidence.",
+    "Replay reconstruction can prove which OCS stages ran and which exact stage hashes were produced.",
+    "Identical OCS inputs produce the same end-to-end hash.",
+    "The runtime does not mutate source replay.",
+    "The runtime does not invoke PPP, providers, workers, approval, governance mutation, implementation, or execution."
+  ],
+  "boundaries_preserved": [
+    "No execution authorization.",
+    "No governance mutation.",
+    "No source replay mutation.",
+    "No provider invocation.",
+    "No worker invocation.",
+    "No approval creation.",
+    "No domain creation.",
+    "No PPP invocation.",
+    "No automatic implementation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/ocs_end_to_end_runtime.py aigol/runtime/ocs_clarification_runtime.py aigol/runtime/ocs_chain_inspection_runtime.py aigol/runtime/ocs_to_ppp_binding_runtime.py aigol/runtime/ocs_semantic_resolution_runtime.py aigol/runtime/ocs_memory_and_continuity_runtime.py aigol/runtime/ocs_replay_derived_intent_runtime.py aigol/runtime/ocs_cognition_runtime.py aigol/runtime/ocs_context_assembly_runtime.py",
+      "status": "PASS",
+      "summary": "Compilation passed."
+    },
+    {
+      "command": "python -m pytest tests/test_ocs_end_to_end_runtime_v1.py tests/test_ocs_clarification_runtime_v1.py tests/test_ocs_chain_inspection_runtime_v1.py tests/test_ocs_to_ppp_binding_runtime_v1.py tests/test_ocs_semantic_resolution_runtime_v1.py tests/test_ocs_memory_and_continuity_runtime_v1.py tests/test_ocs_replay_derived_intent_runtime_v1.py tests/test_ocs_cognition_runtime_v1.py tests/test_ocs_context_assembly_runtime_v1.py",
+      "status": "PASS",
+      "summary": "56 passed."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_END_TO_END_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool governance/AIGOL_OCS_END_TO_END_RUNTIME_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors."
+    }
+  ],
+  "commit_message": "Certify OCS end-to-end runtime",
+  "final_classification": "AIGOL_OCS_END_TO_END_RUNTIME_STATUS = CERTIFIED"
+}
