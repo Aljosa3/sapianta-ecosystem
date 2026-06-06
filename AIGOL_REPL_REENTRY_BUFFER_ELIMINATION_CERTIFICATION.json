@@ -1,0 +1,57 @@
+{
+  "artifact_type": "AIGOL_REPL_REENTRY_BUFFER_ELIMINATION_CERTIFICATION",
+  "artifact_version": "V1",
+  "certification_status": "CERTIFIED",
+  "created_at": "2026-06-06",
+  "classification": "REPL_REENTRY_BUFFER_ELIMINATION_CERTIFIED",
+  "certified_claims": {
+    "phantom_second_turn_eliminated": true,
+    "stdin_residual_sentinel_consumption_eliminated": true,
+    "single_line_repl_behavior_preserved": true,
+    "multiline_prompt_support_preserved": true,
+    "replay_compatibility_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "provider_authority_changed": false,
+    "dispatch_authority_changed": false,
+    "workflow_authority_changed": false
+  },
+  "constitutional_boundary": {
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "provider_authority_granted": false,
+    "execution_authority_granted": false,
+    "worker_authority_granted": false,
+    "autonomous_continuation_introduced": false
+  },
+  "certified_fix": {
+    "file": "aigol/cli/aigol_cli.py",
+    "function": "_read_interactive_prompt_capture",
+    "change": "Removed inner buffered-input readiness break after multiline mode starts; EOF is handled without turning residual sentinel input into a new prompt.",
+    "turn_boundary_source_after_fix": "multiline sentinel or EOF",
+    "turn_boundary_source_rejected": "transient buffered stdin readiness after continuation lines"
+  },
+  "validation": {
+    "commands": [
+      {
+        "command": "python -m pytest tests/test_multiline_prompt_support_runtime_v1.py",
+        "result": "PASSED",
+        "summary": "4 passed"
+      },
+      {
+        "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+        "result": "PASSED",
+        "summary": "6 passed"
+      }
+    ],
+    "diff_check": "PASSED"
+  },
+  "known_limitations": [
+    "Manual terminal multiline entry still depends on entering multiline mode from buffered input detection; this certification addresses phantom reentry after buffered multiline capture starts.",
+    "Provider-assisted fallback remains fail-closed by design for unsupported or provider-unavailable prompts."
+  ],
+  "final_outputs": {
+    "PHANTOM_SECOND_TURN_ELIMINATED": true,
+    "ROOT_CAUSE": "Premature multiline capture termination left sentinel or residual stdin for REPL reentry.",
+    "FIX_REQUIRED": "TRUE_APPLIED"
+  }
+}

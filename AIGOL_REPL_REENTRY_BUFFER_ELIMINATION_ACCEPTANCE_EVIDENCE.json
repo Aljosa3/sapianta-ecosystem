@@ -1,0 +1,74 @@
+{
+  "artifact_type": "AIGOL_REPL_REENTRY_BUFFER_ELIMINATION_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "status": "ACCEPTED",
+  "created_at": "2026-06-06",
+  "scope": {
+    "runtime_changed": true,
+    "cli_behavior_preserved": true,
+    "provider_behavior_changed": false,
+    "workflow_behavior_changed": false,
+    "dispatch_authority_changed": false,
+    "fail_closed_behavior_preserved": true,
+    "replay_compatibility_preserved": true
+  },
+  "root_cause": {
+    "confirmed": true,
+    "location": "aigol/cli/aigol_cli.py::_read_interactive_prompt_capture",
+    "failure_mode": "multiline capture rechecked buffered input after continuation lines and could exit before consuming the sentinel",
+    "reentry_path": "run_interactive_conversation next loop iteration called _read_interactive_prompt_capture again and consumed residual stdin as a new prompt",
+    "observed_downstream_route": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "downstream_failure_mode": "FAILED_CLOSED when residual prompt reached provider-assisted fallback"
+  },
+  "fix": {
+    "applied": true,
+    "summary": "Once multiline mode starts, capture reads until the sentinel is consumed or EOF is encountered.",
+    "primary_file": "aigol/cli/aigol_cli.py",
+    "primary_function": "_read_interactive_prompt_capture",
+    "sentinel": ".",
+    "sentinel_consumed": true,
+    "sentinel_included_in_prompt": false,
+    "readiness_check_used_as_inner_turn_boundary": false
+  },
+  "acceptance_tests": [
+    {
+      "test": "tests/test_multiline_prompt_support_runtime_v1.py::test_multiline_reentry_does_not_consume_sentinel_as_second_turn",
+      "purpose": "Prove intermittent pending-input readiness does not leave the multiline sentinel for REPL reentry.",
+      "input_sequence": [
+        "Run OCS cognition on this prompt.",
+        "Preserve one governed turn.",
+        ".",
+        "exit"
+      ],
+      "pending_input_sequence": [
+        true,
+        false
+      ],
+      "expected": {
+        "turn_count": 1,
+        "failed_turns": 0,
+        "turn_directories": 1,
+        "terminator_included": false,
+        "single_turn_guarantee": true,
+        "fragment_turns_created": false,
+        "turn_completed_rendered": true
+      },
+      "result": "PASSED"
+    },
+    {
+      "test": "tests/test_multiline_prompt_support_runtime_v1.py",
+      "result": "4 passed",
+      "command": "python -m pytest tests/test_multiline_prompt_support_runtime_v1.py"
+    },
+    {
+      "test": "tests/test_interactive_conversation_cli_v1.py",
+      "result": "6 passed",
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py"
+    }
+  ],
+  "final_outputs": {
+    "PHANTOM_SECOND_TURN_ELIMINATED": true,
+    "ROOT_CAUSE": "Premature multiline capture termination left sentinel or residual stdin for REPL reentry.",
+    "FIX_REQUIRED": "TRUE_APPLIED"
+  }
+}
