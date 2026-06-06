@@ -56,12 +56,14 @@ class OpenAIProviderAdapter:
         provider_version: str = OPENAI_PROVIDER_VERSION,
         endpoint: str = OPENAI_RESPONSES_ENDPOINT,
         timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+        max_output_tokens: int | None = None,
         client: OpenAIClient | None = None,
     ) -> None:
         self.provider_version = _require_string(provider_version, "provider_version")
         self.model = _require_string(model, "model")
         self.endpoint = _require_string(endpoint, "endpoint")
         self.timeout_seconds = _require_positive_int(timeout_seconds, "timeout_seconds")
+        self.max_output_tokens = _optional_positive_int(max_output_tokens, "max_output_tokens")
         self._api_key = api_key
         self._client = client or OpenAIHTTPClient()
 
@@ -69,7 +71,7 @@ class OpenAIProviderAdapter:
         api_key = _resolve_api_key(self._api_key)
         prompt = _extract_prompt(request)
         human_prompt = _extract_human_prompt(request, fallback=prompt)
-        payload = _create_openai_payload(model=self.model, prompt=prompt)
+        payload = _create_openai_payload(model=self.model, prompt=prompt, max_output_tokens=self.max_output_tokens)
         raw_response = self._call_openai(payload=payload, api_key=api_key)
         response_text = _extract_response_text(raw_response)
         provider_response = {
@@ -165,12 +167,15 @@ def openai_provider_metadata(*, provider_version: str = OPENAI_PROVIDER_VERSION,
     )
 
 
-def _create_openai_payload(*, model: str, prompt: str) -> dict[str, Any]:
-    return {
+def _create_openai_payload(*, model: str, prompt: str, max_output_tokens: int | None = None) -> dict[str, Any]:
+    payload = {
         "model": model,
         "input": prompt,
         "stream": False,
     }
+    if max_output_tokens is not None:
+        payload["max_output_tokens"] = _require_positive_int(max_output_tokens, "max_output_tokens")
+    return payload
 
 
 def _extract_prompt(value: Any) -> str:
@@ -251,3 +256,9 @@ def _require_positive_int(value: Any, field_name: str) -> int:
     if not isinstance(value, int) or value <= 0:
         raise FailClosedRuntimeError(f"{field_name} must be a positive integer")
     return value
+
+
+def _optional_positive_int(value: Any, field_name: str) -> int | None:
+    if value is None:
+        return None
+    return _require_positive_int(value, field_name)

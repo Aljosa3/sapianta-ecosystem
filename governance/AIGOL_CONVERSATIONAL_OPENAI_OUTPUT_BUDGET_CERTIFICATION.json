@@ -1,0 +1,39 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1",
+  "classification": "CERTIFIED_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME",
+  "status": "CERTIFIED",
+  "code_modified": true,
+  "runtime_modified": true,
+  "governance_modified": true,
+  "fail_closed_preserved": true,
+  "replay_compatibility_preserved": true,
+  "provider_non_authority_preserved": true,
+  "comparison_runtime_preserved": true,
+  "continuity_runtime_preserved": true,
+  "clarification_runtime_preserved": true,
+  "certified_behavior": {
+    "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1_created": true,
+    "budget_recorded_before_provider_invocation": true,
+    "max_output_tokens_applied_to_openai_payload": true,
+    "estimated_char_budget_within_provider_response_bound": true,
+    "invalid_budget_fails_closed": true
+  },
+  "budget": {
+    "max_output_tokens": 1200,
+    "estimated_char_budget": 6000,
+    "max_provider_response_chars": 8192
+  },
+  "validation": {
+    "tests_passed": true,
+    "test_count": 29,
+    "commands": [
+      "python -m pytest tests/test_conversational_openai_output_budget_runtime_v1.py tests/test_real_openai_conversational_attachment_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_first_real_provider_attachment_v1.py tests/test_provider_health_and_readiness_runtime_v1.py tests/test_openai_provider_failure_diagnostics_v1.py"
+    ]
+  },
+  "final_outputs": {
+    "OUTPUT_BUDGET_ACTIVE": true,
+    "EXPECTED_RESPONSE_WITHIN_LIMIT": true,
+    "COMPARISON_COMPATIBLE": true
+  },
+  "certification_statement": "Conversational OCS OpenAI provider calls now use a deterministic replay-visible output budget while preserving fail-closed response bounds, replay compatibility, provider non-authority, and downstream comparison compatibility."
+}

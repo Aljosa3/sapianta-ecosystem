@@ -1,0 +1,56 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1",
+  "classification": "CERTIFIED_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME",
+  "status": "ACCEPTED",
+  "implementation_files": [
+    "aigol/provider/providers/openai_provider.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_files": [
+    "tests/test_conversational_openai_output_budget_runtime_v1.py"
+  ],
+  "governance_files": [
+    "governance/AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1.md",
+    "governance/AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_CERTIFICATION.json"
+  ],
+  "runtime_artifact": {
+    "artifact_type": "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1",
+    "replay_filename": "000_openai_output_budget_recorded.json",
+    "replay_visible": true,
+    "deterministic": true,
+    "fail_closed": true,
+    "fields": [
+      "model",
+      "max_output_tokens",
+      "estimated_char_budget",
+      "provider_id"
+    ]
+  },
+  "budget": {
+    "model": "gpt-5.1",
+    "max_output_tokens": 1200,
+    "estimated_char_budget": 6000,
+    "max_provider_response_chars": 8192,
+    "expected_response_within_limit": true
+  },
+  "acceptance_assertions": {
+    "output_budget_active": true,
+    "payload_contains_max_output_tokens": true,
+    "budget_artifact_created_for_openai": true,
+    "budget_artifact_created_for_openai_comparison": true,
+    "invalid_budget_fails_closed_before_invocation": true,
+    "comparison_compatible": true,
+    "provider_non_authority_preserved": true,
+    "replay_compatibility_preserved": true
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_conversational_openai_output_budget_runtime_v1.py tests/test_real_openai_conversational_attachment_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_first_real_provider_attachment_v1.py tests/test_provider_health_and_readiness_runtime_v1.py tests/test_openai_provider_failure_diagnostics_v1.py",
+    "result": "29 passed"
+  },
+  "final_outputs": {
+    "OUTPUT_BUDGET_ACTIVE": true,
+    "EXPECTED_RESPONSE_WITHIN_LIMIT": true,
+    "COMPARISON_COMPATIBLE": true
+  }
+}
