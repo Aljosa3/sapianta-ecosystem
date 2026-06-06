@@ -1,0 +1,63 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_V1",
+  "classification": "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_ACCEPTANCE_EVIDENCE",
+  "implementation": true,
+  "review_only": false,
+  "displayed_workflow_equals_executed_workflow": true,
+  "dispatch_authority": {
+    "routing_decision_artifact": "CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1",
+    "workflow_selection_artifact": "CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1",
+    "dispatch_source": "workflow_selection_artifact.workflow_id",
+    "visibility_artifact_dispatch_authority": false
+  },
+  "implemented_changes": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "summary": "Interactive ordinary prompt dispatch now calls route_conversational_cli_intent once and dispatches by authoritative workflow selection."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "summary": "Routing visibility for ordinary prompts is generated from the authoritative routing capture."
+    },
+    {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "summary": "Router registry now includes NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION and DEFAULT_PROVIDER_ASSISTED_CONVERSATION."
+    },
+    {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "summary": "OCS cognition priority now allows OCS-marked prompts to route authoritatively to OCS before operator decision support."
+    }
+  ],
+  "stateful_gates_preserved": [
+    "implementation approval resume",
+    "human decision reject/request modification",
+    "recommendation approval",
+    "recommendation follow-up"
+  ],
+  "tests": [
+    {
+      "command": "python -m pytest tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py",
+      "result": "PASSED",
+      "summary": "23 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversation_provider_unavailable_clarification_fallback_v1.py tests/test_conversation_native_development_context_integration_v1.py tests/test_native_development_task_intake_and_session_resume_v1.py",
+      "result": "PASSED",
+      "summary": "44 passed"
+    },
+    {
+      "command": "python -m pytest tests/",
+      "result": "INCONCLUSIVE",
+      "summary": "Collected 4471 items; pre-existing failures appeared outside this milestone area and the tool session did not return a final summary, with no live pytest process remaining afterward."
+    }
+  ],
+  "acceptance_assertions": {
+    "ocs_prompt_dispatches_to_ocs": true,
+    "operator_support_prompt_dispatches_to_operator_support": true,
+    "routing_visibility_equals_dispatch_workflow": true,
+    "ordinary_prompt_routes_exactly_once": true,
+    "no_display_dispatch_divergence": true,
+    "stateful_pre_routing_gates_preserved": true,
+    "replay_compatibility_preserved": true
+  }
+}
