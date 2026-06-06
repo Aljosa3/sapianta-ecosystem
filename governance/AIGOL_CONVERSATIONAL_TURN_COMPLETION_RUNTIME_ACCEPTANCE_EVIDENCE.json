@@ -1,0 +1,77 @@
+{
+  "artifact": "AIGOL_CONVERSATIONAL_TURN_COMPLETION_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "accepted_classification": "CERTIFIED_CONVERSATIONAL_TURN_COMPLETION_RUNTIME",
+  "accepted_on": "2026-06-06",
+  "runtime_scope": {
+    "interactive_cli_loop": "aigol/cli/aigol_cli.py::run_interactive_conversation",
+    "completion_runtime": "aigol/runtime/conversational_turn_completion_runtime.py",
+    "changed_boundary": "operator-visible completion and result-delivery lifecycle evidence",
+    "governance_authority_expanded": false,
+    "provider_behavior_changed": false,
+    "ocs_cognition_behavior_changed": false,
+    "repl_behavior_changed": false
+  },
+  "accepted_artifacts": [
+    "TURN_COMPLETED_ARTIFACT_V1",
+    "RESULT_DELIVERED_ARTIFACT_V1"
+  ],
+  "accepted_lifecycle_transitions": [
+    {
+      "transition": "TURN_COMPLETED",
+      "from_state": "REPLAY_PROGRESS_RECORDED",
+      "to_state": "TURN_COMPLETED",
+      "accepted": true
+    },
+    {
+      "transition": "RESULT_DELIVERED",
+      "from_state": "TURN_COMPLETED",
+      "to_state": "RESULT_DELIVERED",
+      "accepted": true
+    }
+  ],
+  "accepted_operator_summary": [
+    "================================",
+    "TURN COMPLETED",
+    "turn_id: ...",
+    "providers: ...",
+    "status: COMPLETED",
+    "result_delivered: TRUE",
+    "elapsed: ...",
+    "============"
+  ],
+  "accepted_replay_evidence": {
+    "turn_completion_replay_directory": "<runtime_root>/<session_id>/<turn_id>/turn_completion/",
+    "turn_completed_file": "000_turn_completed.json",
+    "result_delivered_file": "001_result_delivered.json",
+    "reconstruction_runtime": "reconstruct_conversational_turn_completion_replay",
+    "replay_visible_completion": true,
+    "result_delivery_explicit": true
+  },
+  "accepted_non_goals_preserved": [
+    "No provider invocation added by turn completion runtime.",
+    "No worker dispatch added by turn completion runtime.",
+    "No execution request added by turn completion runtime.",
+    "No approval authority added by turn completion runtime.",
+    "No governance mutation added by turn completion runtime.",
+    "No existing replay mutation added by turn completion runtime.",
+    "No one-shot mode added to the interactive REPL."
+  ],
+  "acceptance_tests": [
+    {
+      "test": "tests/test_interactive_conversation_cli_v1.py::test_interactive_conversation_records_router_and_conversation_replay",
+      "evidence": "Validates operator completion block, turn summary flags, artifact types, and replay reconstruction."
+    },
+    {
+      "test": "tests/test_conversational_ocs_cognition_binding_v1.py::test_broad_conversational_prompt_runs_certified_ocs_cognition_path",
+      "evidence": "Validates OCS cognition still completes and renders deterministic provider evidence in the completion block."
+    }
+  ],
+  "success_criteria": {
+    "completed_turn_visible": true,
+    "delivered_result_visible": true,
+    "next_prompt_distinguishable": true,
+    "governance_boundaries_preserved": true
+  }
+}

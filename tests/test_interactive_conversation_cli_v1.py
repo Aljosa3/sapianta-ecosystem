@@ -13,6 +13,11 @@ from aigol.cli.aigol_cli import (
 from aigol.runtime.conversational_progress_binding_runtime import (
     reconstruct_conversational_progress_binding,
 )
+from aigol.runtime.conversational_turn_completion_runtime import (
+    RESULT_DELIVERED_ARTIFACT_V1,
+    TURN_COMPLETED_ARTIFACT_V1,
+    reconstruct_conversational_turn_completion_replay,
+)
 
 
 TIMESTAMP = "2026-06-01T00:00:00Z"
@@ -76,7 +81,21 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert turn["selected_source"] == "CONSTITUTIONAL_MEMORY"
     assert turn["response_source"] == "SELF_RESOLUTION"
     assert turn["fail_closed"] is False
+    assert turn["turn_completed"] is True
+    assert turn["result_delivered"] is True
+    assert turn["turn_completion_artifact_type"] == TURN_COMPLETED_ARTIFACT_V1
+    assert turn["result_delivered_artifact_type"] == RESULT_DELIVERED_ARTIFACT_V1
     assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert output[0].splitlines()[-8:] == [
+        "================================",
+        "TURN COMPLETED",
+        "turn_id: TURN-000001",
+        "providers: NONE",
+        "status: COMPLETED",
+        "result_delivered: TRUE",
+        "elapsed: 8s",
+        "============",
+    ]
     assert any("governed AI operation path" in line for line in output)
     assert (session_root / "TURN-000001" / "source_router" / "000_source_of_truth_router_selected.json").exists()
     assert (
@@ -91,6 +110,14 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     )
     assert progress["latest_runtime_status"] == "COMPLETED"
     assert progress["latest_stage"] == "Replay"
+    completion = reconstruct_conversational_turn_completion_replay(
+        session_root / "TURN-000001" / "turn_completion"
+    )
+    assert completion["turn_completed"] is True
+    assert completion["result_delivered"] is True
+    assert completion["status"] == "COMPLETED"
+    assert completion["providers"] == []
+    assert completion["replay_artifact_count"] == 2
 
 
 def test_interactive_conversation_quit_exits_without_turns(tmp_path):

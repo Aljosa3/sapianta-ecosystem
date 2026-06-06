@@ -293,6 +293,12 @@ from aigol.runtime.conversational_progress_binding_runtime import (
     create_conversational_progress_binding,
     record_conversational_progress_checkpoint,
 )
+from aigol.runtime.conversational_turn_completion_runtime import (
+    STATUS_COMPLETED as TURN_COMPLETION_COMPLETED,
+    STATUS_FAILED_CLOSED as TURN_COMPLETION_FAILED_CLOSED,
+    record_conversational_result_delivered,
+    record_conversational_turn_completed,
+)
 from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     STATUS_COMPLETED as OCS_LLM_COGNITION_COMPLETED,
@@ -575,6 +581,71 @@ def _emit_interactive_conversation_cognition_progress(
             snapshot_at=snapshot_at,
             output_writer=output_writer,
         )
+
+
+def _record_interactive_turn_completion(
+    *,
+    session_id: str,
+    turn_id: str,
+    prompt_id: str,
+    turn_summary: dict[str, Any],
+    progress_binding_capture: dict[str, Any],
+    turn_root: Path,
+    created_at: str,
+    delivered_output_line_count: int,
+) -> dict[str, Any]:
+    status = TURN_COMPLETION_FAILED_CLOSED if turn_summary.get("fail_closed") is True else TURN_COMPLETION_COMPLETED
+    turn_completed = record_conversational_turn_completed(
+        session_id=session_id,
+        turn_id=turn_id,
+        prompt_id=prompt_id,
+        providers=_interactive_turn_providers(turn_summary),
+        status=status,
+        result_delivered=False,
+        elapsed_seconds=_interactive_turn_elapsed_seconds(progress_binding_capture),
+        progress_replay_reference=progress_binding_capture["runtime_progress_replay_reference"],
+        created_at=created_at,
+        replay_dir=turn_root / "turn_completion",
+    )
+    delivery = record_conversational_result_delivered(
+        turn_completed_artifact=turn_completed["turn_completed_artifact"],
+        delivered_at=created_at,
+        delivered_output_line_count=delivered_output_line_count,
+    )
+    turn_summary["turn_completed"] = True
+    turn_summary["result_delivered"] = True
+    turn_summary["turn_completion_replay_reference"] = delivery["turn_completion_replay_reference"]
+    turn_summary["turn_completion_status"] = delivery["result_delivered_artifact"]["status"]
+    turn_summary["turn_completion_artifact_type"] = turn_completed["turn_completed_artifact"]["artifact_type"]
+    turn_summary["result_delivered_artifact_type"] = delivery["result_delivered_artifact"]["artifact_type"]
+    return delivery
+
+
+def _interactive_turn_elapsed_seconds(progress_binding_capture: dict[str, Any]) -> int:
+    artifact = progress_binding_capture.get("conversational_progress_binding_artifact")
+    if isinstance(artifact, dict) and isinstance(artifact.get("stage_count"), int):
+        return artifact["stage_count"]
+    return 0
+
+
+def _interactive_turn_providers(turn_summary: dict[str, Any]) -> list[str]:
+    provider_ids = turn_summary.get("provider_ids")
+    if isinstance(provider_ids, list) and provider_ids:
+        return [str(provider_id) for provider_id in provider_ids]
+    if turn_summary.get("provider_invoked") is True:
+        source = turn_summary.get("response_source")
+        if isinstance(source, str) and source.strip():
+            return [source.strip()]
+        return ["PROVIDER_INVOKED"]
+    return []
+
+
+def _delivered_output_line_count(*chunks: str) -> int:
+    count = 0
+    for chunk in chunks:
+        if chunk:
+            count += len(chunk.splitlines())
+    return count
 
 
 def _artifact_from_args(args: argparse.Namespace) -> dict:
@@ -2242,7 +2313,23 @@ def run_interactive_conversation(
             )
             failure_output = [line for line in turn_output_buffer if line.startswith("FAILED_CLOSED:")]
             normal_output = [line for line in turn_output_buffer if not line.startswith("FAILED_CLOSED:")]
-            terminal_output_writer("\n".join(turn_progress_buffer + normal_output))
+            completion_capture: dict[str, Any] | None = None
+            if turns[-1].get("fail_closed") is not True:
+                completion_capture = _record_interactive_turn_completion(
+                    session_id=session_id,
+                    turn_id=turn_id,
+                    prompt_id=prompt_id,
+                    turn_summary=turns[-1],
+                    progress_binding_capture=progress_binding_capture,
+                    turn_root=turn_root,
+                    created_at=created_at,
+                    delivered_output_line_count=_delivered_output_line_count(
+                        "\n".join(turn_progress_buffer + normal_output),
+                    ),
+                )
+                normal_output.append(completion_capture["operator_completion_summary"])
+            rendered_normal_output = "\n".join(turn_progress_buffer + normal_output)
+            terminal_output_writer(rendered_normal_output)
             for failure_line in failure_output:
                 terminal_output_writer(failure_line)
             output_writer = terminal_output_writer
@@ -2726,6 +2813,12 @@ def _interactive_ocs_llm_cognition_turn_summary(
     stage_captures = ocs_cognition_capture.get("stage_captures")
     if not isinstance(stage_captures, dict):
         stage_captures = {}
+    multi_provider_capture = stage_captures.get("multi_provider_cognition")
+    if not isinstance(multi_provider_capture, dict):
+        multi_provider_capture = {}
+    request_bundle = multi_provider_capture.get("request_bundle")
+    if not isinstance(request_bundle, dict):
+        request_bundle = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -2764,6 +2857,7 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "context_hash": artifact.get("context_hash"),
         "provider_count": artifact.get("provider_count"),
         "successful_provider_count": artifact.get("successful_provider_count"),
+        "provider_ids": request_bundle.get("deterministic_provider_order", []),
         "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
         "comparison_artifact_hash": artifact.get("comparison_artifact_hash"),
         "continuity_artifact_hash": artifact.get("continuity_artifact_hash"),

@@ -78,6 +78,7 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path)
     assert turn["ocs_llm_cognition_artifact_type"] == OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1
     assert turn["provider_invoked"] is True
     assert turn["successful_provider_count"] == 2
+    assert turn["provider_ids"] == ["aigol-cognition-alpha", "aigol-cognition-beta"]
     assert turn["cognition_artifact_count"] == 2
     assert turn["comparison_artifact_hash"]
     assert turn["continuity_artifact_hash"]
@@ -87,6 +88,14 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path)
     assert turn["approval_created"] is False
     assert output[0].splitlines()[:8] == PROGRESS_LINES
     assert "AIGOL OCS LLM COGNITION END-TO-END" in output[0]
+    assert output[0].splitlines()[-8:-2] == [
+        "================================",
+        "TURN COMPLETED",
+        "turn_id: TURN-000001",
+        "providers: aigol-cognition-alpha, aigol-cognition-beta",
+        "status: COMPLETED",
+        "result_delivered: TRUE",
+    ]
     assert replay["final_status"] == STATUS_COMPLETED
     assert replay["provider_count"] == 2
     assert replay["cognition_artifact_count"] == 2
