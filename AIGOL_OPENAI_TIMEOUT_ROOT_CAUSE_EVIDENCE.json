@@ -1,0 +1,167 @@
+{
+  "milestone_id": "AIGOL_OPENAI_TIMEOUT_ROOT_CAUSE_V1",
+  "status": "REVIEW_ONLY",
+  "code_modified": false,
+  "runtime_behavior_modified": false,
+  "evidence_source": "current HEAD source plus newly generated replay and live bounded probe",
+  "authoritative_replay_turn": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001",
+  "source_trace": {
+    "conversational_provider_contracts": {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_ocs_cognition_provider_contracts",
+      "line_region": "461-473",
+      "providers": [
+        "openai",
+        "openai-comparison"
+      ]
+    },
+    "conversational_transport_binding": {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_ocs_cognition_transports",
+      "line_region": "500-524",
+      "calls": "run_provider_attachment(provider_id=OPENAI_PROVIDER_ID, adapter=_conversation_openai_provider_adapter())"
+    },
+    "adapter_construction": {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_openai_provider_adapter",
+      "line_region": "490-491",
+      "expression": "OpenAIProviderAdapter()",
+      "timeout_override_present": false
+    },
+    "adapter_defaults": {
+      "file": "aigol/provider/providers/openai_provider.py",
+      "line_region": "24-31, 51-66",
+      "default_model": "gpt-5.1",
+      "default_endpoint": "https://api.openai.com/v1/responses",
+      "default_timeout_seconds": 20,
+      "max_response_chars": 8192
+    },
+    "http_request_boundary": {
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "OpenAIHTTPClient.__call__",
+      "line_region": "132-156",
+      "timeout_call": "request.urlopen(http_request, timeout=timeout_seconds)",
+      "timeout_exception_handler": "except (error.URLError, TimeoutError, json.JSONDecodeError) as exc: raise FailClosedRuntimeError(\"OpenAI provider unavailable\") from exc"
+    },
+    "provider_attachment_invocation": {
+      "file": "aigol/provider/provider_runtime.py",
+      "function": "run_provider_attachment",
+      "line_region": "51-112",
+      "adapter_call_line": 81,
+      "readiness_gate_lines": "67-76"
+    },
+    "readiness_timeout_validation": {
+      "file": "aigol/provider/provider_runtime.py",
+      "function": "_openai_model_configuration_valid",
+      "line_region": "612-623",
+      "behavior": "validates timeout_seconds is a positive integer but does not tune the value"
+    },
+    "multi_provider_transport_call": {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_invoke_provider_request",
+      "line_region": "400-423",
+      "streaming": false
+    }
+  },
+  "replay_evidence": {
+    "openai": {
+      "readiness_artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_readiness_recorded.json",
+      "provider_failure_artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+      "readiness_status": "READY",
+      "provider_invocation_allowed": true,
+      "failure_reason": "OpenAI provider unavailable",
+      "failure_diagnostics": {
+        "failure_stage": "openai_http_request",
+        "exception_type": "TimeoutError",
+        "transport_failure_category": "TIMEOUT",
+        "http_status": null
+      },
+      "prompt_chars": 3059,
+      "request_stream": false,
+      "request_tool_use": false,
+      "request_function_calling": false
+    },
+    "openai-comparison": {
+      "readiness_artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_readiness_recorded.json",
+      "provider_failure_artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_proposal_created.json",
+      "readiness_status": "READY",
+      "provider_invocation_allowed": true,
+      "failure_reason": "OpenAI provider unavailable",
+      "failure_diagnostics": {
+        "failure_stage": "openai_http_request",
+        "exception_type": "TimeoutError",
+        "transport_failure_category": "TIMEOUT",
+        "http_status": null
+      },
+      "prompt_chars": 3070,
+      "request_stream": false,
+      "request_tool_use": false,
+      "request_function_calling": false
+    }
+  },
+  "live_probe_evidence": {
+    "probe_input": "same openai provider request from current replay TURN-000001",
+    "payload": {
+      "model": "gpt-5.1",
+      "endpoint": "https://api.openai.com/v1/responses",
+      "stream": false,
+      "payload_keys": [
+        "input",
+        "model",
+        "stream"
+      ],
+      "prompt_chars": 3059,
+      "prompt_json_valid": true,
+      "prompt_keys": [
+        "allowed_outputs",
+        "human_request",
+        "instruction",
+        "ocs_context_reference",
+        "provider_id"
+      ],
+      "human_request_chars": 463
+    },
+    "timeout_20_seconds_probe": {
+      "probe_timeout_seconds": 20,
+      "probe_status": "FAILED",
+      "actual_elapsed_seconds": 20.142,
+      "exception_chain": [
+        {
+          "exception_type": "FailClosedRuntimeError",
+          "message": "OpenAI provider unavailable"
+        },
+        {
+          "exception_type": "TimeoutError",
+          "message": "The read operation timed out"
+        }
+      ]
+    },
+    "timeout_60_seconds_probe": {
+      "probe_timeout_seconds": 60,
+      "probe_status": "FAILED_AFTER_HTTP_RESPONSE",
+      "actual_elapsed_seconds": 39.892,
+      "exception_chain": [
+        {
+          "exception_type": "FailClosedRuntimeError",
+          "message": "OpenAI provider response exceeds bounded size"
+        }
+      ],
+      "interpretation": "The wider timeout crosses the HTTP read boundary and reaches response extraction, proving the 20 second timeout is too low for this OCS request. A separate response-size guard blocks success afterward."
+    }
+  },
+  "verification_matrix": {
+    "timeout_value_too_low": true,
+    "request_payload_malformed": false,
+    "model_name_mismatch": "NO_EVIDENCE",
+    "endpoint_mismatch": false,
+    "streaming_non_streaming_mismatch": false,
+    "transport_wrapper_blocks_response_parsing": false,
+    "separate_downstream_size_guard_detected": true
+  },
+  "final_outputs": {
+    "ROOT_CAUSE": "Conversational OCS uses OpenAIProviderAdapter() with the fixed default 20 second urllib read timeout. The larger non-streaming gpt-5.1 OCS cognition request does not complete inside that budget and raises TimeoutError at openai_http_request.",
+    "FIX_REQUIRED": true,
+    "MINIMAL_SAFE_FIX": "Set an explicit bounded conversational OCS OpenAI timeout above the observed response boundary, and keep it replay-visible and fail-closed. For end-to-end success, also constrain or govern response length so output fits MAX_OPENAI_RESPONSE_CHARS.",
+    "EXPECTED_RESULT_AFTER_FIX": "The current TimeoutError should stop. Without a response-size policy change, the next expected fail-closed condition is OpenAI provider response exceeds bounded size."
+  }
+}

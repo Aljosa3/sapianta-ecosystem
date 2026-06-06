@@ -1,0 +1,32 @@
+{
+  "milestone_id": "AIGOL_OPENAI_TIMEOUT_ROOT_CAUSE_V1",
+  "classification": "TIMEOUT_ROOT_CAUSE_REVIEW_ONLY",
+  "status": "CERTIFIED_REVIEW_FINDING",
+  "code_modified": false,
+  "runtime_modified": false,
+  "provider_behavior_modified": false,
+  "governance_modified": false,
+  "fail_closed_preserved": true,
+  "evidence_basis": [
+    "current HEAD source trace",
+    "newly generated conversational OCS replay artifacts",
+    "live bounded probe against the same replayed provider request"
+  ],
+  "determinations": {
+    "REQUEST_TIMEOUT_SECONDS": 20,
+    "ACTUAL_ELAPSED_SECONDS": 20.142,
+    "OPENAI_MODEL_USED": "gpt-5.1",
+    "OPENAI_ENDPOINT_USED": "https://api.openai.com/v1/responses",
+    "ROOT_CAUSE": "fixed 20 second non-streaming OpenAI HTTP read timeout is too low for the OCS cognition request",
+    "FIX_REQUIRED": true,
+    "MINIMAL_SAFE_FIX": "use an explicit bounded OCS OpenAI timeout above the observed response boundary and preserve fail-closed replay evidence",
+    "EXPECTED_RESULT_AFTER_FIX": "TimeoutError should be eliminated; response-size guard must still be addressed for full end-to-end success"
+  },
+  "known_next_blocker": {
+    "present": true,
+    "failure_reason": "OpenAI provider response exceeds bounded size",
+    "guard": "MAX_OPENAI_RESPONSE_CHARS",
+    "guard_value": 8192
+  },
+  "certification_statement": "The timeout root cause is certified as a fixed default timeout mismatch for the conversational OCS OpenAI workload. This certification does not certify a runtime fix or production readiness."
+}
