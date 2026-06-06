@@ -1,0 +1,82 @@
+{
+  "milestone_id": "AIGOL_PROVIDER_HEALTH_AND_READINESS_RUNTIME_V1",
+  "classification": "CERTIFIED_PROVIDER_HEALTH_AND_READINESS_RUNTIME",
+  "status": "ACCEPTED",
+  "runtime_changed": true,
+  "artifact_created": "PROVIDER_READINESS_ARTIFACT_V1",
+  "readiness_statuses": [
+    "READY",
+    "NOT_READY"
+  ],
+  "validations": {
+    "api_key_presence": true,
+    "provider_configuration_validity": true,
+    "model_configuration_validity": true,
+    "transport_availability": true,
+    "provider_activation_readiness": true
+  },
+  "sanitized_diagnostics": {
+    "allowed_fields": [
+      "readiness_stage",
+      "failure_category",
+      "exception_type",
+      "http_status"
+    ],
+    "sensitive_data_excluded": [
+      "api_keys",
+      "authorization_headers",
+      "request_bodies",
+      "raw_response_bodies",
+      "stack_traces"
+    ]
+  },
+  "provider_invocation_guard": {
+    "ready_allows_invocation": true,
+    "not_ready_skips_invocation": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "replay_evidence": {
+    "readiness_replay_file": "000_provider_readiness_recorded.json",
+    "provider_replay_reconstruction_exposes_readiness_artifact": true,
+    "failure_artifacts_include_readiness_artifact_when_not_ready": true
+  },
+  "authority_preservation": {
+    "provider_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false
+  },
+  "test_evidence": [
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_ready_openai_provider_records_readiness_before_invocation",
+      "evidence": "READY readiness is replayed before provider invocation and invocation proceeds once."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_missing_api_key_records_not_ready_and_skips_invocation",
+      "evidence": "Missing API key records NOT_READY and the OpenAI client receives zero calls."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_provider_configuration_invalid_records_not_ready",
+      "evidence": "Provider version mismatch records provider_configuration_validity as NOT_READY and skips invocation."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_model_configuration_invalid_records_not_ready",
+      "evidence": "Invalid endpoint/model configuration records model_configuration_validity as NOT_READY and skips invocation."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_transport_unavailable_records_not_ready",
+      "evidence": "Non-callable transport records transport_availability as NOT_READY and skips invocation."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_provider_activation_not_ready_records_not_ready",
+      "evidence": "Unavailable provider metadata records provider_activation_readiness as NOT_READY and skips invocation."
+    },
+    {
+      "test": "tests/test_provider_health_and_readiness_runtime_v1.py::test_readiness_replay_excludes_sensitive_data",
+      "evidence": "Readiness replay excludes API key, Authorization header, bearer token, stack trace, and request prompt."
+    }
+  ],
+  "commands_run": [
+    "python -m pytest tests/test_provider_health_and_readiness_runtime_v1.py tests/test_openai_provider_failure_diagnostics_v1.py tests/test_first_real_provider_attachment_v1.py tests/test_minimal_provider_attachment_runtime_v1.py"
+  ]
+}

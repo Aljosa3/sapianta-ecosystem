@@ -1,0 +1,55 @@
+{
+  "milestone_id": "AIGOL_PROVIDER_HEALTH_AND_READINESS_RUNTIME_V1",
+  "classification": "CERTIFIED_PROVIDER_HEALTH_AND_READINESS_RUNTIME",
+  "status": "CERTIFIED",
+  "certified": true,
+  "scope": "Governed OpenAI provider readiness before provider invocation",
+  "runtime_files_modified": [
+    "aigol/provider/provider_runtime.py"
+  ],
+  "test_files_added": [
+    "tests/test_provider_health_and_readiness_runtime_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_PROVIDER_HEALTH_AND_READINESS_RUNTIME_V1.md",
+    "governance/AIGOL_PROVIDER_HEALTH_AND_READINESS_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_PROVIDER_HEALTH_AND_READINESS_CERTIFICATION.json"
+  ],
+  "artifact_contract": {
+    "artifact_type": "PROVIDER_READINESS_ARTIFACT_V1",
+    "runtime_version": "AIGOL_PROVIDER_HEALTH_AND_READINESS_RUNTIME_V1",
+    "statuses": [
+      "READY",
+      "NOT_READY"
+    ]
+  },
+  "certification_requirements": {
+    "fail_closed": true,
+    "deterministic_output": true,
+    "no_credential_exposure": true,
+    "replay_evidence_generated": true,
+    "provider_invocation_skipped_when_not_ready": true
+  },
+  "sanitized_diagnostics": {
+    "allowed_fields": [
+      "readiness_stage",
+      "failure_category",
+      "exception_type",
+      "http_status"
+    ],
+    "disallowed_content": [
+      "api_keys",
+      "authorization_headers",
+      "request_bodies",
+      "raw_response_bodies",
+      "stack_traces"
+    ]
+  },
+  "authority_preservation": {
+    "provider_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false
+  },
+  "final_decision": "CERTIFIED"
+}

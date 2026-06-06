@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 from typing import Any
 from urllib import error as url_error
+from urllib.parse import urlparse
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_proposal_envelope import validate_provider_proposal_envelope
@@ -16,10 +18,15 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 
 
 PROVIDER_ATTACHMENT_RUNTIME_VERSION = "MINIMAL_PROVIDER_ATTACHMENT_RUNTIME_V1"
+PROVIDER_HEALTH_AND_READINESS_RUNTIME_VERSION = "AIGOL_PROVIDER_HEALTH_AND_READINESS_RUNTIME_V1"
+PROVIDER_READINESS_ARTIFACT_TYPE = "PROVIDER_READINESS_ARTIFACT_V1"
 PROVIDER_PROPOSAL_CREATED = "PROVIDER_PROPOSAL_CREATED"
 PROVIDER_PROPOSAL_RETURNED = "PROVIDER_PROPOSAL_RETURNED"
 FAILED_CLOSED = "FAILED_CLOSED"
+READY = "READY"
+NOT_READY = "NOT_READY"
 REPLAY_STEPS = ("provider_proposal_created", "provider_proposal_returned")
+PROVIDER_READINESS_STEP = "provider_readiness_recorded"
 
 FORBIDDEN_RUNTIME_FIELDS = frozenset(
     {
@@ -33,6 +40,12 @@ FORBIDDEN_RUNTIME_FIELDS = frozenset(
         "replay_mutation",
     }
 )
+
+
+class ProviderNotReadyRuntimeError(FailClosedRuntimeError):
+    def __init__(self, readiness_artifact: dict[str, Any]) -> None:
+        super().__init__("provider readiness failed closed")
+        self.readiness_artifact = deepcopy(readiness_artifact)
 
 
 def run_provider_attachment(
@@ -51,6 +64,16 @@ def run_provider_attachment(
     try:
         _ensure_provider_replay_available(replay_path)
         provider = registry.lookup_provider(provider_id)
+        readiness_artifact = None
+        if _requires_provider_readiness(adapter):
+            readiness_artifact = _provider_readiness_artifact(
+                provider=provider,
+                adapter=adapter,
+                timestamp=timestamp,
+            )
+            _persist_provider_readiness_if_possible(replay_path, readiness_artifact)
+            if readiness_artifact["readiness_status"] != READY:
+                raise ProviderNotReadyRuntimeError(readiness_artifact)
         if provider["provider_status"] != AVAILABLE:
             raise FailClosedRuntimeError("provider is unavailable")
         _validate_adapter(provider=provider, adapter=adapter)
@@ -68,6 +91,7 @@ def run_provider_attachment(
         return _capture(envelope_dict, created, returned)
     except Exception as exc:
         failure_diagnostics = _failure_diagnostics(exc)
+        readiness_artifact = _readiness_artifact_from_exception(exc)
         envelope = _failed_envelope(
             provider_id=provider_id,
             request=request,
@@ -75,12 +99,14 @@ def run_provider_attachment(
             timestamp=timestamp,
             failure_reason=_failure_reason(exc),
             failure_diagnostics=failure_diagnostics,
+            readiness_artifact=readiness_artifact,
         )
         _persist_failure_if_possible(replay_path, 0, REPLAY_STEPS[0], envelope)
         returned = _failed_returned(
             envelope=envelope,
             failure_reason=envelope["failure_reason"],
             failure_diagnostics=failure_diagnostics,
+            readiness_artifact=readiness_artifact,
         )
         _persist_failure_if_possible(replay_path, 1, REPLAY_STEPS[1], returned)
         return _capture(envelope, envelope, returned)
@@ -126,6 +152,19 @@ def reconstruct_provider_attachment_replay(replay_dir: str | Path) -> dict[str, 
     }
     if "failure_diagnostics" in created:
         replay["failure_diagnostics"] = deepcopy(created["failure_diagnostics"])
+    if "provider_readiness_artifact" in created:
+        replay["provider_readiness_artifact"] = deepcopy(created["provider_readiness_artifact"])
+    readiness_path = replay_path / f"000_{PROVIDER_READINESS_STEP}.json"
+    if readiness_path.exists():
+        readiness_wrapper = load_json(readiness_path)
+        if readiness_wrapper.get("replay_step") != PROVIDER_READINESS_STEP:
+            raise FailClosedRuntimeError("provider readiness replay step mismatch")
+        _verify_wrapper_hash(readiness_wrapper)
+        readiness_artifact = readiness_wrapper.get("artifact")
+        if not isinstance(readiness_artifact, dict):
+            raise FailClosedRuntimeError("provider readiness replay artifact must be a JSON object")
+        _verify_artifact_hash(readiness_artifact, "provider readiness artifact")
+        replay["provider_readiness_artifact"] = deepcopy(readiness_artifact)
     return replay
 
 
@@ -191,6 +230,7 @@ def _failed_envelope(
     timestamp: Any,
     failure_reason: str,
     failure_diagnostics: dict[str, Any],
+    readiness_artifact: dict[str, Any] | None,
 ) -> dict[str, Any]:
     artifact = {
         "runtime_version": PROVIDER_ATTACHMENT_RUNTIME_VERSION,
@@ -214,11 +254,19 @@ def _failed_envelope(
         "failure_reason": failure_reason,
         "failure_diagnostics": deepcopy(failure_diagnostics),
     }
+    if readiness_artifact is not None:
+        artifact["provider_readiness_artifact"] = deepcopy(readiness_artifact)
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
 
-def _failed_returned(*, envelope: dict[str, Any], failure_reason: str, failure_diagnostics: dict[str, Any]) -> dict[str, Any]:
+def _failed_returned(
+    *,
+    envelope: dict[str, Any],
+    failure_reason: str,
+    failure_diagnostics: dict[str, Any],
+    readiness_artifact: dict[str, Any] | None,
+) -> dict[str, Any]:
     artifact = {
         "runtime_version": PROVIDER_ATTACHMENT_RUNTIME_VERSION,
         "event_type": FAILED_CLOSED,
@@ -237,6 +285,8 @@ def _failed_returned(*, envelope: dict[str, Any], failure_reason: str, failure_d
         "failure_reason": failure_reason,
         "failure_diagnostics": deepcopy(failure_diagnostics),
     }
+    if readiness_artifact is not None:
+        artifact["provider_readiness_artifact"] = deepcopy(readiness_artifact)
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
@@ -280,6 +330,9 @@ def _ensure_provider_replay_available(replay_path: Path) -> None:
         path = replay_path / f"{index:03d}_{step}.json"
         if path.exists():
             raise FailClosedRuntimeError(f"append-only runtime artifact already exists: {path.name}")
+    readiness_path = replay_path / f"000_{PROVIDER_READINESS_STEP}.json"
+    if readiness_path.exists():
+        raise FailClosedRuntimeError(f"append-only runtime artifact already exists: {readiness_path.name}")
 
 
 def _validate_adapter(*, provider: dict[str, Any], adapter: ProviderAdapter) -> None:
@@ -320,6 +373,20 @@ def _persist_failure_if_possible(replay_dir: Path, index: int, step: str, artifa
             return
 
 
+def _persist_provider_readiness_if_possible(replay_dir: Path, artifact: dict[str, Any]) -> None:
+    path = replay_dir / f"000_{PROVIDER_READINESS_STEP}.json"
+    if path.exists():
+        return
+    _verify_artifact_hash(artifact, "provider readiness artifact")
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": PROVIDER_READINESS_STEP,
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(path, wrapper)
+
+
 def _verify_artifact_hash(artifact: dict[str, Any], label: str) -> None:
     if not isinstance(artifact, dict):
         raise FailClosedRuntimeError(f"{label} must be a JSON object")
@@ -349,12 +416,20 @@ def _is_json_serializable(value: Any) -> bool:
 
 
 def _failure_reason(exc: Exception) -> str:
+    if isinstance(exc, ProviderNotReadyRuntimeError):
+        category = exc.readiness_artifact["sanitized_diagnostics"]["failure_category"]
+        if category == "MISSING_API_KEY":
+            return "OPENAI_API_KEY is required"
+        return "provider readiness failed closed"
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "provider attachment failed closed"
 
 
 def _failure_diagnostics(exc: Exception) -> dict[str, Any]:
+    readiness_artifact = _readiness_artifact_from_exception(exc)
+    if readiness_artifact is not None:
+        return deepcopy(readiness_artifact["sanitized_diagnostics"])
     diagnostic_exc = _diagnostic_exception(exc)
     return {
         "failure_stage": _failure_stage(exc=exc, diagnostic_exc=diagnostic_exc),
@@ -404,3 +479,157 @@ def _http_status(exc: Exception) -> int | None:
     if isinstance(exc, url_error.HTTPError) and isinstance(exc.code, int):
         return exc.code
     return None
+
+
+def _readiness_artifact_from_exception(exc: Exception) -> dict[str, Any] | None:
+    if isinstance(exc, ProviderNotReadyRuntimeError):
+        return deepcopy(exc.readiness_artifact)
+    return None
+
+
+def _provider_readiness_artifact(*, provider: dict[str, Any], adapter: ProviderAdapter, timestamp: str) -> dict[str, Any]:
+    readiness_checks = _provider_readiness_checks(provider=provider, adapter=adapter)
+    failed_check = next((check for check in readiness_checks if check["check_status"] != READY), None)
+    readiness_status = READY if failed_check is None else NOT_READY
+    diagnostics = _readiness_diagnostics(failed_check)
+    artifact = {
+        "artifact_type": PROVIDER_READINESS_ARTIFACT_TYPE,
+        "runtime_version": PROVIDER_HEALTH_AND_READINESS_RUNTIME_VERSION,
+        "provider_id": provider["provider_id"],
+        "provider_type": provider["provider_type"],
+        "provider_version": provider["provider_version"],
+        "provider_status": provider["provider_status"],
+        "provider_identity_hash": provider["provider_identity_hash"],
+        "readiness_status": readiness_status,
+        "readiness_checks": readiness_checks,
+        "sanitized_diagnostics": diagnostics,
+        "api_key_present": _check_status(readiness_checks, "api_key_presence") == READY,
+        "provider_configuration_valid": _check_status(readiness_checks, "provider_configuration_validity") == READY,
+        "model_configuration_valid": _check_status(readiness_checks, "model_configuration_validity") == READY,
+        "transport_available": _check_status(readiness_checks, "transport_availability") == READY,
+        "provider_activation_ready": readiness_status == READY,
+        "provider_invocation_allowed": readiness_status == READY,
+        "provider_invoked": False,
+        "credential_exposed": False,
+        "authorization_header_exposed": False,
+        "request_body_exposed": False,
+        "raw_response_body_exposed": False,
+        "stack_trace_exposed": False,
+        "authority": False,
+        "execution_capable": False,
+        "worker_invoked": False,
+        "replay_visible": True,
+        "timestamp": timestamp if isinstance(timestamp, str) and timestamp.strip() else "INVALID_TIMESTAMP",
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _provider_readiness_checks(*, provider: dict[str, Any], adapter: ProviderAdapter) -> list[dict[str, Any]]:
+    return [
+        _readiness_check(
+            check_id="api_key_presence",
+            ready=_openai_api_key_present(adapter),
+            failure_category="MISSING_API_KEY",
+        ),
+        _readiness_check(
+            check_id="provider_configuration_validity",
+            ready=_openai_provider_configuration_valid(provider=provider, adapter=adapter),
+            failure_category="PROVIDER_CONFIGURATION_INVALID",
+        ),
+        _readiness_check(
+            check_id="model_configuration_validity",
+            ready=_openai_model_configuration_valid(adapter),
+            failure_category="MODEL_CONFIGURATION_INVALID",
+        ),
+        _readiness_check(
+            check_id="transport_availability",
+            ready=_openai_transport_available(adapter),
+            failure_category="TRANSPORT_UNAVAILABLE",
+        ),
+        _readiness_check(
+            check_id="provider_activation_readiness",
+            ready=provider.get("provider_status") == AVAILABLE,
+            failure_category="PROVIDER_NOT_AVAILABLE",
+        ),
+    ]
+
+
+def _readiness_check(*, check_id: str, ready: bool, failure_category: str) -> dict[str, Any]:
+    return {
+        "check_id": check_id,
+        "check_status": READY if ready else NOT_READY,
+        "failure_category": None if ready else failure_category,
+    }
+
+
+def _readiness_diagnostics(failed_check: dict[str, Any] | None) -> dict[str, Any]:
+    if failed_check is None:
+        return {
+            "readiness_stage": "provider_activation_readiness",
+            "failure_category": None,
+            "exception_type": None,
+            "http_status": None,
+        }
+    return {
+        "readiness_stage": failed_check["check_id"],
+        "failure_category": failed_check["failure_category"],
+        "exception_type": None,
+        "http_status": None,
+    }
+
+
+def _check_status(readiness_checks: list[dict[str, Any]], check_id: str) -> str:
+    for check in readiness_checks:
+        if check["check_id"] == check_id:
+            return check["check_status"]
+    return NOT_READY
+
+
+def _openai_api_key_present(adapter: ProviderAdapter) -> bool:
+    candidate = getattr(adapter, "_api_key", None)
+    if candidate is None:
+        candidate = os.environ.get("OPENAI_API_KEY")
+    return isinstance(candidate, str) and bool(candidate.strip())
+
+
+def _requires_provider_readiness(adapter: ProviderAdapter) -> bool:
+    return (
+        getattr(adapter, "provider_id", None) == "openai"
+        and hasattr(adapter, "_client")
+        and hasattr(adapter, "endpoint")
+        and hasattr(adapter, "model")
+    )
+
+
+def _openai_provider_configuration_valid(*, provider: dict[str, Any], adapter: ProviderAdapter) -> bool:
+    return (
+        provider.get("provider_id") == getattr(adapter, "provider_id", None)
+        and provider.get("provider_version") == getattr(adapter, "provider_version", None)
+    )
+
+
+def _openai_model_configuration_valid(adapter: ProviderAdapter) -> bool:
+    model = getattr(adapter, "model", None)
+    endpoint = getattr(adapter, "endpoint", None)
+    timeout_seconds = getattr(adapter, "timeout_seconds", None)
+    return (
+        isinstance(model, str)
+        and bool(model.strip())
+        and isinstance(endpoint, str)
+        and _https_url(endpoint)
+        and isinstance(timeout_seconds, int)
+        and timeout_seconds > 0
+    )
+
+
+def _openai_transport_available(adapter: ProviderAdapter) -> bool:
+    return callable(getattr(adapter, "_client", None))
+
+
+def _https_url(value: str) -> bool:
+    try:
+        parsed = urlparse(value)
+    except ValueError:
+        return False
+    return parsed.scheme == "https" and bool(parsed.netloc)
