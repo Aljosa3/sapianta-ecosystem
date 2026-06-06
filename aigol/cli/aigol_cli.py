@@ -147,8 +147,13 @@ from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
 from aigol.runtime.conversational_cli_runtime import (
+    CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+    CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
+    CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
+    DOMAIN_ADAPTATION_REFERENCE as CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
     OCS_LLM_COGNITION as CONVERSATIONAL_OCS_LLM_COGNITION,
+    OPERATOR_DECISION_SUPPORT as CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
     REVIEW_LATEST_AUDIT as CONVERSATIONAL_REVIEW_LATEST_AUDIT,
     SHOW_LATEST_REPLAY_CHAIN as CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
     is_ocs_llm_cognition_prompt,
@@ -300,6 +305,15 @@ from aigol.runtime.conversational_turn_completion_runtime import (
     STATUS_FAILED_CLOSED as TURN_COMPLETION_FAILED_CLOSED,
     record_conversational_result_delivered,
     record_conversational_turn_completed,
+)
+from aigol.runtime.conversational_routing_visibility_runtime import (
+    HIGH as ROUTING_VISIBILITY_HIGH,
+    LOW as ROUTING_VISIBILITY_LOW,
+    MEDIUM as ROUTING_VISIBILITY_MEDIUM,
+    NO_CERTIFIED_WORKFLOW_MATCHED,
+    ROUTING_FAILED_CLOSED,
+    ROUTING_SELECTED,
+    record_conversational_routing_visibility,
 )
 from aigol.runtime.multiline_prompt_support_runtime import (
     record_multiline_prompt_capture,
@@ -677,6 +691,330 @@ def _attach_interactive_multiline_prompt_capture(
     turn_summary["assembled_prompt_hash"] = artifact["assembled_prompt_hash"]
     turn_summary["fragment_turns_created"] = artifact["fragment_turns_created"]
     turn_summary["partial_routing_allowed"] = artifact["partial_routing_allowed"]
+
+
+def _attach_interactive_routing_visibility(
+    *,
+    turn_summary: dict[str, Any],
+    routing_visibility_capture: dict[str, Any],
+) -> None:
+    artifact = routing_visibility_capture["conversational_routing_visibility_artifact"]
+    turn_summary["routing_visibility_replay_reference"] = routing_visibility_capture[
+        "conversational_routing_visibility_replay_reference"
+    ]
+    turn_summary["routing_visibility_artifact_type"] = artifact["artifact_type"]
+    turn_summary["routing_visibility_workflow_id"] = artifact["workflow_id"]
+    turn_summary["routing_visibility_status"] = artifact["routing_status"]
+    turn_summary["routing_confidence"] = artifact["routing_confidence"]
+    turn_summary["matched_signals"] = artifact["matched_signals"]
+    turn_summary["competing_signals"] = artifact["competing_signals"]
+    turn_summary["routing_reason"] = artifact["routing_reason"]
+
+
+def _record_interactive_routing_visibility(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    human_prompt: str,
+    pending_approval_required: dict[str, Any] | None,
+    recommendation_continuity_artifact: dict[str, Any] | None,
+    recommendation_approval_artifact: dict[str, Any] | None,
+    created_at: str,
+    turn_root: Path,
+) -> dict[str, Any]:
+    analysis = _interactive_routing_visibility_analysis(
+        human_prompt=human_prompt,
+        pending_approval_required=pending_approval_required,
+        recommendation_continuity_artifact=recommendation_continuity_artifact,
+        recommendation_approval_artifact=recommendation_approval_artifact,
+    )
+    return record_conversational_routing_visibility(
+        turn_id=turn_id,
+        prompt_id=prompt_id,
+        human_prompt=human_prompt,
+        workflow_id=analysis["workflow_id"],
+        routing_status=analysis["routing_status"],
+        routing_confidence=analysis["routing_confidence"],
+        matched_signals=analysis["matched_signals"],
+        competing_signals=analysis["competing_signals"],
+        routing_reason=analysis["routing_reason"],
+        routing_timestamp=created_at,
+        replay_dir=turn_root / "routing_visibility",
+    )
+
+
+def _interactive_routing_visibility_analysis(
+    *,
+    human_prompt: str,
+    pending_approval_required: dict[str, Any] | None,
+    recommendation_continuity_artifact: dict[str, Any] | None,
+    recommendation_approval_artifact: dict[str, Any] | None,
+) -> dict[str, Any]:
+    human_decision = normalize_human_decision(human_prompt)
+    if pending_approval_required is not None and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}:
+        return _routing_visibility_selected(
+            workflow_id=(
+                "IMPLEMENTATION_APPROVAL_RESUME"
+                if human_decision == APPROVE
+                else "HUMAN_DECISION_RUNTIME"
+            ),
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=[human_decision],
+            competing_signals=[],
+            routing_reason="Pending human approval context and explicit operator decision detected.",
+        )
+    if recommendation_continuity_artifact is not None and _is_recommendation_decision_prompt(human_prompt):
+        return _routing_visibility_selected(
+            workflow_id="RECOMMENDATION_APPROVAL",
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=[_recommendation_decision_from_prompt(human_prompt)],
+            competing_signals=[],
+            routing_reason="Pending recommendation continuity and explicit recommendation decision detected.",
+        )
+    if (
+        recommendation_continuity_artifact is not None
+        and recommendation_approval_artifact is not None
+        and is_recommendation_followup_prompt(human_prompt)
+    ):
+        return _routing_visibility_selected(
+            workflow_id="RECOMMENDATION_FOLLOWUP",
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=_matched_terms(human_prompt, ("prepare", "proposal", "implementation", "candidate")),
+            competing_signals=[],
+            routing_reason="Approved recommendation context and follow-up preparation request detected.",
+        )
+
+    candidates = _interactive_routing_visibility_candidates(human_prompt)
+    selected = _selected_routing_visibility_candidate(human_prompt, candidates)
+    if selected is None:
+        return {
+            "workflow_id": NO_CERTIFIED_WORKFLOW_MATCHED,
+            "routing_status": ROUTING_FAILED_CLOSED,
+            "routing_confidence": ROUTING_VISIBILITY_LOW,
+            "matched_signals": [],
+            "competing_signals": [],
+            "routing_reason": "No certified workflow matched.",
+        }
+    competing = [candidate["workflow_id"] for candidate in candidates if candidate["workflow_id"] != selected["workflow_id"]]
+    confidence = selected["routing_confidence"]
+    if competing and confidence == ROUTING_VISIBILITY_HIGH:
+        confidence = ROUTING_VISIBILITY_MEDIUM
+    return _routing_visibility_selected(
+        workflow_id=selected["workflow_id"],
+        routing_confidence=confidence,
+        matched_signals=selected["matched_signals"],
+        competing_signals=competing,
+        routing_reason=selected["routing_reason"],
+    )
+
+
+def _interactive_routing_visibility_candidates(human_prompt: str) -> list[dict[str, Any]]:
+    prompt = str(human_prompt or "")
+    normalized = prompt.lower()
+    candidates: list[dict[str, Any]] = []
+    if _is_conversational_cli_readonly_candidate(prompt):
+        if "latest" in normalized and ("replay chain" in normalized or "chain" in normalized):
+            candidates.append(
+                _candidate(
+                    CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+                    ROUTING_VISIBILITY_HIGH,
+                    _matched_terms(prompt, ("latest", "replay", "chain")),
+                    "Replay chain inspection request detected.",
+                )
+            )
+        if "review" in normalized and "audit" in normalized:
+            candidates.append(
+                _candidate(
+                    CONVERSATIONAL_REVIEW_LATEST_AUDIT,
+                    ROUTING_VISIBILITY_HIGH,
+                    _matched_terms(prompt, ("review", "audit")),
+                    "Audit review request detected.",
+                )
+            )
+        if "improve" in normalized and "provider" in normalized and "layer" in normalized:
+            candidates.append(
+                _candidate(
+                    CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+                    ROUTING_VISIBILITY_MEDIUM,
+                    _matched_terms(prompt, ("improve", "provider", "layer")),
+                    "Provider-layer improvement guidance request detected.",
+                )
+            )
+    if is_domain_reference_adaptation_prompt(prompt):
+        candidates.append(
+            _candidate(
+                CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
+                ROUTING_VISIBILITY_HIGH,
+                _matched_terms(prompt, ("similar", "based", "derived", "adaptation", "trading", "marketing", "domain")),
+                "Domain adaptation reference signals detected.",
+            )
+        )
+    if is_operator_decision_support_prompt(prompt):
+        candidates.append(
+            _candidate(
+                CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
+                ROUTING_VISIBILITY_HIGH,
+                _matched_terms(prompt, ("first real", "product domain", "which", "capability", "provider", "roadmap", "priority")),
+                "Operator decision-support request detected.",
+            )
+        )
+    if is_unknown_domain_clarification_eligible(prompt):
+        candidates.append(
+            _candidate(
+                CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+                ROUTING_VISIBILITY_HIGH,
+                _matched_terms(prompt, ("create", "domain", "compliance", "regulatory")),
+                "Unknown-domain clarification route detected.",
+            )
+        )
+    if is_conversation_native_development_intent(prompt):
+        candidates.append(_native_development_visibility_candidate(prompt))
+    if is_native_development_prompt(prompt):
+        candidates.append(
+            _candidate(
+                "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+                ROUTING_VISIBILITY_HIGH,
+                ["native_development_milestone"],
+                "Native development milestone prompt detected.",
+            )
+        )
+    if is_ocs_llm_cognition_prompt(prompt):
+        ocs_signals = _matched_terms(
+            prompt,
+            (
+                "first real aigol product",
+                "commercialization",
+                "managed services",
+                "license the platform",
+                "sell domains",
+                "should sapianta",
+                "continue",
+                "help me decide",
+                "what should",
+                "sapianta",
+                "product",
+            ),
+        )
+        candidates.append(
+            _candidate(
+                CONVERSATIONAL_OCS_LLM_COGNITION,
+                ROUTING_VISIBILITY_HIGH if len(ocs_signals) >= 2 else ROUTING_VISIBILITY_MEDIUM,
+                ocs_signals or ["ocs_cognition_marker"],
+                "Prompt requests comparative strategic analysis.",
+            )
+        )
+        if any(
+            term in normalized
+            for term in ("which", "should", "primarily", "recommend", "priority", "prioritize", "roadmap", "first")
+        ):
+            candidates.append(
+                _candidate(
+                    CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
+                    ROUTING_VISIBILITY_LOW,
+                    _matched_terms(
+                        prompt,
+                        ("which", "should", "primarily", "recommend", "priority", "prioritize", "roadmap", "first"),
+                    ),
+                    "Partial operator decision-support signals also detected.",
+                )
+            )
+    return candidates
+
+
+def _selected_routing_visibility_candidate(
+    human_prompt: str,
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    prompt = str(human_prompt or "")
+    order = (
+        CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+        CONVERSATIONAL_REVIEW_LATEST_AUDIT,
+        CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+        CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
+        CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
+        CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+        CONVERSATIONAL_CREATE_DOMAIN_TRADING,
+        CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
+        "NATIVE_DEVELOPMENT_INTENT_ROUTING",
+        "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+        CONVERSATIONAL_OCS_LLM_COGNITION,
+    )
+    if is_ocs_llm_cognition_prompt(prompt):
+        order = tuple(item for item in order if item != CONVERSATIONAL_OPERATOR_DECISION_SUPPORT) + (
+            CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
+        )
+    by_workflow = {candidate["workflow_id"]: candidate for candidate in candidates}
+    for workflow_id in order:
+        if workflow_id in by_workflow:
+            return by_workflow[workflow_id]
+    return None
+
+
+def _native_development_visibility_candidate(human_prompt: str) -> dict[str, Any]:
+    normalized = str(human_prompt or "").lower()
+    if "trading" in normalized and "domain" in normalized:
+        workflow_id = CONVERSATIONAL_CREATE_DOMAIN_TRADING
+    elif "marketing" in normalized and "domain" in normalized:
+        workflow_id = CONVERSATIONAL_CREATE_DOMAIN_MARKETING
+    else:
+        workflow_id = "NATIVE_DEVELOPMENT_INTENT_ROUTING"
+    return _candidate(
+        workflow_id,
+        ROUTING_VISIBILITY_HIGH,
+        _matched_terms(
+            human_prompt,
+            (
+                "create",
+                "add",
+                "improve",
+                "domain",
+                "worker",
+                "provider",
+                "trading",
+                "marketing",
+                "filesystem",
+                "monitoring",
+            ),
+        ),
+        "Native development intent signals detected.",
+    )
+
+
+def _routing_visibility_selected(
+    *,
+    workflow_id: str,
+    routing_confidence: str,
+    matched_signals: list[str],
+    competing_signals: list[str],
+    routing_reason: str,
+) -> dict[str, Any]:
+    return {
+        "workflow_id": workflow_id,
+        "routing_status": ROUTING_SELECTED,
+        "routing_confidence": routing_confidence,
+        "matched_signals": matched_signals,
+        "competing_signals": list(dict.fromkeys(competing_signals)),
+        "routing_reason": routing_reason,
+    }
+
+
+def _candidate(
+    workflow_id: str,
+    routing_confidence: str,
+    matched_signals: list[str],
+    routing_reason: str,
+) -> dict[str, Any]:
+    return {
+        "workflow_id": workflow_id,
+        "routing_confidence": routing_confidence,
+        "matched_signals": matched_signals,
+        "routing_reason": routing_reason,
+    }
+
+
+def _matched_terms(human_prompt: str, terms: tuple[str, ...]) -> list[str]:
+    normalized = str(human_prompt or "").lower()
+    return [term for term in terms if term in normalized]
 
 
 def _read_interactive_prompt_capture(*, input_reader: Any) -> dict[str, Any]:
@@ -1299,6 +1637,17 @@ def run_interactive_conversation(
                 created_at=created_at,
                 turn_root=turn_root,
             )
+            routing_visibility_capture = _record_interactive_routing_visibility(
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                human_prompt=human_prompt,
+                pending_approval_required=pending_approval_required,
+                recommendation_continuity_artifact=recommendation_continuity_artifact,
+                recommendation_approval_artifact=recommendation_approval_artifact,
+                created_at=created_at,
+                turn_root=turn_root,
+            )
+            turn_progress_buffer.append(routing_visibility_capture["operator_routing_summary"])
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,
                 stage=CONVERSATIONAL_PROGRESS_ROUTING,
@@ -2388,6 +2737,10 @@ def run_interactive_conversation(
             _attach_interactive_multiline_prompt_capture(
                 turn_summary=turns[-1],
                 multiline_prompt_capture=multiline_prompt_capture,
+            )
+            _attach_interactive_routing_visibility(
+                turn_summary=turns[-1],
+                routing_visibility_capture=routing_visibility_capture,
             )
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,

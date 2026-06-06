@@ -1,0 +1,119 @@
+{
+  "artifact": "AIGOL_CONVERSATIONAL_ROUTING_VISIBILITY_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "accepted_classification": "CERTIFIED_CONVERSATIONAL_ROUTING_VISIBILITY_RUNTIME",
+  "accepted_on": "2026-06-06",
+  "runtime_scope": {
+    "interactive_cli_loop": "aigol/cli/aigol_cli.py::run_interactive_conversation",
+    "routing_visibility_runtime": "aigol/runtime/conversational_routing_visibility_runtime.py",
+    "changed_boundary": "operator-visible routing explanation before workflow execution",
+    "workflow_routing_behavior_changed": false,
+    "ocs_cognition_runtime_changed": false,
+    "provider_runtime_changed": false,
+    "worker_runtime_changed": false,
+    "existing_replay_schema_changed": false
+  },
+  "accepted_artifacts": [
+    "CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1"
+  ],
+  "accepted_fields": [
+    "turn_id",
+    "workflow_id",
+    "routing_confidence",
+    "matched_signals",
+    "competing_signals",
+    "routing_reason",
+    "routing_timestamp"
+  ],
+  "accepted_confidence_levels": [
+    "HIGH",
+    "MEDIUM",
+    "LOW"
+  ],
+  "case_coverage": [
+    {
+      "case": "OCS cognition prompt",
+      "expected_workflow": "OCS_LLM_COGNITION",
+      "expected_competing_visibility": "OPERATOR_DECISION_SUPPORT",
+      "accepted": true
+    },
+    {
+      "case": "Operator decision support prompt",
+      "expected_workflow": "OPERATOR_DECISION_SUPPORT",
+      "accepted": true
+    },
+    {
+      "case": "Domain creation prompt",
+      "expected_workflow": "CREATE_DOMAIN_MARKETING",
+      "accepted": true
+    },
+    {
+      "case": "Replay review prompt",
+      "expected_workflow": "SHOW_LATEST_REPLAY_CHAIN",
+      "accepted": true
+    },
+    {
+      "case": "Failed/default routing prompt",
+      "expected_workflow": "NO_CERTIFIED_WORKFLOW_MATCHED",
+      "expected_status": "ROUTING_FAILED_CLOSED",
+      "accepted": true
+    }
+  ],
+  "accepted_operator_rendering": {
+    "routing_decision_block_before_progress": true,
+    "workflow_visible": true,
+    "confidence_visible": true,
+    "matched_signals_visible": true,
+    "competing_signals_visible": true,
+    "reason_visible": true,
+    "failed_routing_visible_before_fallback": true
+  },
+  "accepted_replay_evidence": {
+    "replay_directory": "<runtime_root>/<session_id>/<turn_id>/routing_visibility/",
+    "replay_file": "000_conversational_routing_visibility_recorded.json",
+    "reconstruction_runtime": "reconstruct_conversational_routing_visibility_replay",
+    "human_prompt_hash_recorded": true,
+    "routing_signals_recorded": true,
+    "workflow_selection_recorded": true
+  },
+  "accepted_non_goals_preserved": [
+    "No workflow routing behavior change.",
+    "No OCS cognition runtime change.",
+    "No provider runtime change.",
+    "No worker runtime change.",
+    "No execution request.",
+    "No approval authority.",
+    "No governance mutation.",
+    "No existing replay mutation."
+  ],
+  "acceptance_tests": [
+    {
+      "test": "tests/test_conversational_routing_visibility_runtime_v1.py::test_ocs_cognition_prompt_renders_and_reconstructs_competing_visibility",
+      "evidence": "Validates OCS workflow, MEDIUM confidence, matched signals, competing OPERATOR_DECISION_SUPPORT, CLI rendering, and replay reconstruction."
+    },
+    {
+      "test": "tests/test_conversational_routing_visibility_runtime_v1.py::test_operator_decision_support_prompt_renders_visibility",
+      "evidence": "Validates operator decision-support visibility and replay reconstruction."
+    },
+    {
+      "test": "tests/test_conversational_routing_visibility_runtime_v1.py::test_domain_creation_prompt_renders_visibility",
+      "evidence": "Validates domain creation workflow visibility and replay reconstruction."
+    },
+    {
+      "test": "tests/test_conversational_routing_visibility_runtime_v1.py::test_replay_review_prompt_renders_visibility",
+      "evidence": "Validates replay review workflow visibility and replay reconstruction."
+    },
+    {
+      "test": "tests/test_conversational_routing_visibility_runtime_v1.py::test_failed_routing_prompt_renders_visibility_before_fallback",
+      "evidence": "Validates ROUTING_FAILED_CLOSED visibility before fallback and replay reconstruction."
+    }
+  ],
+  "success_criteria": {
+    "operator_can_determine_destination": true,
+    "operator_can_determine_reason": true,
+    "operator_can_determine_alternatives": true,
+    "replay_reconstruction_succeeds": true,
+    "workflow_behavior_preserved": true
+  }
+}
