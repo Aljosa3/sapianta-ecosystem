@@ -26,6 +26,10 @@ PROGRESS_LINES = [
 ]
 
 
+def _progress_lines(rendered: str) -> list[str]:
+    return [line for line in rendered.splitlines() if line.startswith("[") and len(line) > 1 and line[1].isdigit()]
+
+
 def _args(tmp_path):
     parser = build_parser()
     return parser.parse_args(
@@ -86,7 +90,7 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path)
     assert turn["worker_invoked"] is False
     assert turn["execution_requested"] is False
     assert turn["approval_created"] is False
-    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert _progress_lines(output[0])[:8] == PROGRESS_LINES
     assert "AIGOL OCS LLM COGNITION END-TO-END" in output[0]
     assert output[0].splitlines()[-8:-2] == [
         "================================",

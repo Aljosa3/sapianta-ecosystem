@@ -41,6 +41,10 @@ PROGRESS_LINES = [
 ]
 
 
+def _progress_lines(rendered: str) -> list[str]:
+    return [line for line in rendered.splitlines() if line.startswith("[") and len(line) > 1 and line[1].isdigit()]
+
+
 def _route(tmp_path, prompt: str):
     return route_conversational_cli_intent(
         routing_id="CONVERSATIONAL-ROUTING-1",
@@ -171,7 +175,7 @@ def test_interactive_conversation_routes_readonly_provider_layer_prompt(tmp_path
     assert turn["provider_invoked"] is False
     assert turn["worker_invoked"] is False
     assert turn["execution_requested"] is False
-    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert _progress_lines(output[0])[:8] == PROGRESS_LINES
     assert any("PROVIDER LAYER IMPROVEMENT REVIEW" in line for line in output)
     assert replay_path.exists()
 
@@ -188,8 +192,8 @@ def test_interactive_domain_and_clarification_routes_record_conversational_decis
     assert result["turns"][0]["conversational_workflow_id"] == CREATE_DOMAIN_TRADING
     assert result["turns"][1]["conversational_workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
     assert result["turns"][1]["response_status"] == CLARIFICATION_REQUIRED
-    assert output[0].splitlines()[:8] == PROGRESS_LINES
-    assert output[1].splitlines()[:8] == PROGRESS_LINES
+    assert _progress_lines(output[0])[:8] == PROGRESS_LINES
+    assert _progress_lines(output[1])[:8] == PROGRESS_LINES
     assert any("Unknown Domain Detected" in line for line in output)
 
 

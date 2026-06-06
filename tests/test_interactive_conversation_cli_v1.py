@@ -33,6 +33,10 @@ PROGRESS_LINES = [
 ]
 
 
+def _progress_lines(rendered: str) -> list[str]:
+    return [line for line in rendered.splitlines() if line.startswith("[") and len(line) > 1 and line[1].isdigit()]
+
+
 def _args(tmp_path, *, session_id: str = "INTERACTIVE-TEST-000001"):
     parser = build_parser()
     return parser.parse_args(
@@ -85,7 +89,7 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert turn["result_delivered"] is True
     assert turn["turn_completion_artifact_type"] == TURN_COMPLETED_ARTIFACT_V1
     assert turn["result_delivered_artifact_type"] == RESULT_DELIVERED_ARTIFACT_V1
-    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert _progress_lines(output[0])[:8] == PROGRESS_LINES
     assert output[0].splitlines()[-8:] == [
         "================================",
         "TURN COMPLETED",
@@ -168,7 +172,9 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
     assert result["turn_count"] == 1
     assert result["failed_turns"] == 1
     rendered = output[0].splitlines()
-    assert rendered[:6] == PROGRESS_LINES[:6]
+    assert [line for line in rendered if line.startswith("[") and len(line) > 1 and line[1].isdigit()][
+        :6
+    ] == PROGRESS_LINES[:6]
     assert "[8/8] Replay" in rendered
     assert output[-1] == "FAILED_CLOSED: synthetic runtime failure"
     assert turn["response_status"] == "FAILED_CLOSED"

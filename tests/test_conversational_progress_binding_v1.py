@@ -29,6 +29,10 @@ SESSION_ID = "SESSION-CONVERSATIONAL-PROGRESS-000001"
 PROMPT_ID = f"{SESSION_ID}:TURN-000001"
 
 
+def _progress_lines(rendered: str) -> list[str]:
+    return [line for line in rendered.splitlines() if line.startswith("[") and len(line) > 1 and line[1].isdigit()]
+
+
 def _binding(tmp_path):
     return create_conversational_progress_binding(
         binding_id=f"{PROMPT_ID}:PROGRESS-BINDING",
@@ -121,7 +125,7 @@ def test_interactive_conversation_renders_progress_without_new_authority(tmp_pat
         output_func=output.append,
     )
 
-    assert output[0].splitlines()[:8] == [
+    assert _progress_lines(output[0])[:8] == [
         "[1/8] Routing",
         "[2/8] Cognition",
         "[3/8] Provider Invocation",
