@@ -31,6 +31,8 @@ IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
 SHOW_STATUS = "SHOW_STATUS"
 SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
+NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 
 REPLAY_STEPS = (
     "conversational_routing_decision_recorded",
@@ -192,15 +194,29 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
         _workflow(IMPROVE_PROVIDER_LAYER, "aigol conversational route", "provider_layer_review_guidance"),
         _workflow(SHOW_STATUS, "aigol status", "status_summary"),
         _workflow(SHOW_DASHBOARD, "aigol dashboard", "session_dashboard_runtime"),
+        _workflow(
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            "aigol conversation",
+            "conversation_native_development_context_integration",
+        ),
         _workflow(OCS_LLM_COGNITION, "aigol conversation", "ocs_llm_cognition_end_to_end_runtime"),
+        _workflow(
+            DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
+            "aigol conversation",
+            "prompt_to_conversation_integration",
+        ),
     )
 
 
 def _classify_workflow(human_prompt: str) -> dict[str, Any]:
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".?!")
+    if "unrestricted" in normalized and "autonomous agent" in normalized:
+        raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    if _is_ocs_llm_cognition_prompt(normalized):
+        return _analysis(OCS_LLM_COGNITION, "MEDIUM", ["ocs", "llm", "cognition"])
     if _is_operator_decision_support_prompt(normalized):
         return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["operator", "decision", "support"])
     if "create" in normalized and "trading" in normalized and "domain" in normalized:
@@ -221,9 +237,9 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(SHOW_STATUS, "HIGH", ["status"])
     if "dashboard" in normalized:
         return _analysis(SHOW_DASHBOARD, "HIGH", ["dashboard"])
-    if _is_ocs_llm_cognition_prompt(normalized):
-        return _analysis(OCS_LLM_COGNITION, "MEDIUM", ["ocs", "llm", "cognition"])
-    raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
+    if _is_native_development_context_prompt(prompt):
+        return _analysis(NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, "HIGH", ["native", "development", "context"])
+    return _analysis(DEFAULT_PROVIDER_ASSISTED_CONVERSATION, "LOW", ["provider", "conversation", "fallback"])
 
 
 def _analysis(workflow_id: str, confidence: str, matched_terms: list[str]) -> dict[str, Any]:
@@ -306,6 +322,15 @@ def _is_ocs_llm_cognition_prompt(normalized: str) -> bool:
     if any(marker in normalized for marker in cognition_markers):
         return True
     return normalized.endswith("?") and normalized.startswith(question_starts)
+
+
+def _is_native_development_context_prompt(prompt: str) -> bool:
+    normalized = prompt.lower()
+    has_milestone = "aigol_" in normalized or "v1" in normalized
+    has_development_marker = any(
+        marker in normalized for marker in ("implement", "create", "open", "foundation", "runtime", "worker", "domain")
+    )
+    return has_milestone and has_development_marker
 
 
 def _routing_decision_artifact(
@@ -542,7 +567,9 @@ def _operator_summary(workflow_id: str) -> str:
         IMPROVE_PROVIDER_LAYER: "Route to provider-layer improvement review guidance without execution.",
         SHOW_STATUS: "Show AiGOL status.",
         SHOW_DASHBOARD: "Show read-only operator dashboard.",
+        NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION: "Assemble native development context without provider or execution.",
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
+        DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }
     return summaries.get(workflow_id, "")
 

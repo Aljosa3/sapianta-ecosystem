@@ -151,11 +151,15 @@ from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
     CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE as CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
+    DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+    NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION as CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION as CONVERSATIONAL_OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT as CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
     REVIEW_LATEST_AUDIT as CONVERSATIONAL_REVIEW_LATEST_AUDIT,
+    SHOW_DASHBOARD as CONVERSATIONAL_SHOW_DASHBOARD,
     SHOW_LATEST_REPLAY_CHAIN as CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+    SHOW_STATUS as CONVERSATIONAL_SHOW_STATUS,
     is_ocs_llm_cognition_prompt,
     render_conversational_cli_routing_summary,
     route_conversational_cli_intent,
@@ -719,15 +723,19 @@ def _record_interactive_routing_visibility(
     pending_approval_required: dict[str, Any] | None,
     recommendation_continuity_artifact: dict[str, Any] | None,
     recommendation_approval_artifact: dict[str, Any] | None,
+    conversational_routing_capture: dict[str, Any] | None = None,
     created_at: str,
     turn_root: Path,
 ) -> dict[str, Any]:
-    analysis = _interactive_routing_visibility_analysis(
-        human_prompt=human_prompt,
-        pending_approval_required=pending_approval_required,
-        recommendation_continuity_artifact=recommendation_continuity_artifact,
-        recommendation_approval_artifact=recommendation_approval_artifact,
-    )
+    if conversational_routing_capture is None:
+        analysis = _interactive_routing_visibility_analysis(
+            human_prompt=human_prompt,
+            pending_approval_required=pending_approval_required,
+            recommendation_continuity_artifact=recommendation_continuity_artifact,
+            recommendation_approval_artifact=recommendation_approval_artifact,
+        )
+    else:
+        analysis = _authoritative_routing_visibility_analysis(conversational_routing_capture)
     return record_conversational_routing_visibility(
         turn_id=turn_id,
         prompt_id=prompt_id,
@@ -741,6 +749,38 @@ def _record_interactive_routing_visibility(
         routing_timestamp=created_at,
         replay_dir=turn_root / "routing_visibility",
     )
+
+
+def _authoritative_routing_visibility_analysis(conversational_routing_capture: dict[str, Any]) -> dict[str, Any]:
+    decision = conversational_routing_capture.get("routing_decision_artifact")
+    if not isinstance(decision, dict):
+        decision = {}
+    selection = conversational_routing_capture.get("workflow_selection_artifact")
+    if not isinstance(selection, dict):
+        selection = {}
+    if conversational_routing_capture.get("fail_closed") is True:
+        return {
+            "workflow_id": NO_CERTIFIED_WORKFLOW_MATCHED,
+            "routing_status": ROUTING_FAILED_CLOSED,
+            "routing_confidence": ROUTING_VISIBILITY_LOW,
+            "matched_signals": [],
+            "competing_signals": [],
+            "routing_reason": conversational_routing_capture.get("failure_reason") or "No certified workflow matched.",
+        }
+    confidence = str(decision.get("confidence") or ROUTING_VISIBILITY_LOW)
+    if confidence not in {ROUTING_VISIBILITY_HIGH, ROUTING_VISIBILITY_MEDIUM, ROUTING_VISIBILITY_LOW}:
+        confidence = ROUTING_VISIBILITY_LOW
+    matched_terms = decision.get("matched_terms")
+    if not isinstance(matched_terms, list):
+        matched_terms = []
+    return {
+        "workflow_id": selection.get("workflow_id") or conversational_routing_capture.get("workflow_id"),
+        "routing_status": ROUTING_SELECTED,
+        "routing_confidence": confidence,
+        "matched_signals": [str(term) for term in matched_terms],
+        "competing_signals": [],
+        "routing_reason": selection.get("operator_summary") or "Authoritative workflow selection recorded.",
+    }
 
 
 def _interactive_routing_visibility_analysis(
@@ -1637,6 +1677,32 @@ def run_interactive_conversation(
                 created_at=created_at,
                 turn_root=turn_root,
             )
+            human_decision = normalize_human_decision(human_prompt)
+            stateful_pre_routing_gate = (
+                (pending_approval_required is not None and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION})
+                or (
+                    recommendation_continuity_artifact is not None
+                    and _is_recommendation_decision_prompt(human_prompt)
+                )
+                or (
+                    recommendation_continuity_artifact is not None
+                    and recommendation_approval_artifact is not None
+                    and is_recommendation_followup_prompt(human_prompt)
+                )
+            )
+            conversational_routing_capture: dict[str, Any] | None = None
+            if not stateful_pre_routing_gate:
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
+            authoritative_workflow_id = (
+                (conversational_routing_capture or {}).get("workflow_selection_artifact", {}).get("workflow_id")
+            )
             routing_visibility_capture = _record_interactive_routing_visibility(
                 turn_id=turn_id,
                 prompt_id=prompt_id,
@@ -1644,6 +1710,7 @@ def run_interactive_conversation(
                 pending_approval_required=pending_approval_required,
                 recommendation_continuity_artifact=recommendation_continuity_artifact,
                 recommendation_approval_artifact=recommendation_approval_artifact,
+                conversational_routing_capture=conversational_routing_capture,
                 created_at=created_at,
                 turn_root=turn_root,
             )
@@ -1668,7 +1735,6 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            human_decision = normalize_human_decision(human_prompt)
             if pending_approval_required is not None and human_decision in {REJECT, REQUEST_MODIFICATION}:
                 human_decision_capture = record_human_decision(
                     human_decision_id=f"{prompt_id}:HUMAN-DECISION",
@@ -2104,15 +2170,36 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif _is_conversational_cli_readonly_candidate(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+            elif conversational_routing_capture is not None and conversational_routing_capture.get("fail_closed") is True:
+                failed_turns += 1
+                workflow_capture = _conversational_workflow_capture(
                     prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
+                    workflow_id=NO_CERTIFIED_WORKFLOW_MATCHED,
+                    response_text="",
+                    existing_result={},
+                    response_status="FAILED_CLOSED",
+                    fail_closed=True,
+                    failure_reason=conversational_routing_capture.get("failure_reason")
+                    or "conversational routing failed closed",
                 )
+                output_writer(f"FAILED_CLOSED: {workflow_capture.get('failure_reason')}")
+                turns.append(
+                    _interactive_conversational_cli_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        workflow_capture=workflow_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif authoritative_workflow_id in {
+                CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+                CONVERSATIONAL_REVIEW_LATEST_AUDIT,
+                CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+                CONVERSATIONAL_SHOW_STATUS,
+                CONVERSATIONAL_SHOW_DASHBOARD,
+            }:
                 workflow_capture = _run_conversational_cli_selected_readonly_workflow(
                     prompt_id=prompt_id,
                     human_prompt=human_prompt,
@@ -2136,15 +2223,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_domain_reference_adaptation_prompt(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
-                )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE:
                 domain_reference_capture = run_semantic_similarity_domain_reference_resolution(
                     resolution_id=f"{prompt_id}:SEMANTIC-SIMILARITY-DOMAIN-REFERENCE",
                     prompt_id=prompt_id,
@@ -2170,15 +2249,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_operator_decision_support_prompt(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
-                )
+            elif authoritative_workflow_id == CONVERSATIONAL_OPERATOR_DECISION_SUPPORT:
                 decision_support_capture = run_operator_decision_support(
                     recommendation_id=f"{prompt_id}:OPERATOR-DECISION-SUPPORT",
                     prompt_id=prompt_id,
@@ -2228,15 +2299,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_unknown_domain_clarification_eligible(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
-                )
+            elif authoritative_workflow_id == CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION:
                 clarification_capture = run_unknown_domain_clarification_workflow(
                     clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
                     prompt_id=prompt_id,
@@ -2262,15 +2325,10 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_conversation_native_development_intent(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
-                )
+            elif authoritative_workflow_id in {
+                CONVERSATIONAL_CREATE_DOMAIN_TRADING,
+                CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
+            }:
                 routing_capture = run_conversation_native_development_intent_routing(
                     routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",
                     prompt_id=prompt_id,
@@ -2618,7 +2676,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_native_development_prompt(human_prompt):
+            elif authoritative_workflow_id == CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION:
                 native_context_capture = run_conversation_native_development_context_integration(
                     prompt_id=prompt_id,
                     human_prompt=human_prompt,
@@ -2651,15 +2709,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            elif is_ocs_llm_cognition_prompt(human_prompt):
-                conversational_routing_capture = route_conversational_cli_intent(
-                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "conversational_cli_routing",
-                )
+            elif authoritative_workflow_id == CONVERSATIONAL_OCS_LLM_COGNITION:
                 ocs_cognition_capture = _run_conversational_ocs_llm_cognition(
                     prompt_id=prompt_id,
                     human_prompt=human_prompt,
@@ -2685,7 +2735,7 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
-            else:
+            elif authoritative_workflow_id == CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION:
                 conversation_capture = submit_prompt_to_conversation(
                     human_prompt=human_prompt,
                     prompt_id=prompt_id,
@@ -2732,6 +2782,18 @@ def run_interactive_conversation(
                         conversation_capture=conversation_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                         failure_reason=conversation_capture.get("failure_reason"),
+                    )
+                )
+            else:
+                failed_turns += 1
+                failure_reason = f"unsupported conversational workflow selection: {authoritative_workflow_id}"
+                output_writer(f"FAILED_CLOSED: {failure_reason}")
+                turns.append(
+                    _interactive_failed_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                        failure_reason=failure_reason,
                     )
                 )
             _attach_interactive_multiline_prompt_capture(
@@ -3828,6 +3890,28 @@ def _run_conversational_cli_selected_readonly_workflow(
                 workflow_id=workflow_id,
                 response_text=response_text,
                 existing_result={"read_only": True, "proposal_created": False},
+            )
+        if workflow_id == CONVERSATIONAL_SHOW_STATUS:
+            result = status_summary()
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text=render_status(result),
+                existing_result=result,
+                response_status=result.get("status", "READY"),
+                fail_closed=result.get("fail_closed") is True,
+                failure_reason=result.get("failure_reason"),
+            )
+        if workflow_id == CONVERSATIONAL_SHOW_DASHBOARD:
+            result = dashboard_summary_command(replay_root=runtime_root)
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text=render_dashboard_summary(result),
+                existing_result=result,
+                response_status=result.get("status", "READY"),
+                fail_closed=result.get("fail_closed") is True,
+                failure_reason=result.get("failure_reason"),
             )
         raise ValueError(f"unsupported conversational read-only workflow: {workflow_id}")
     except Exception as exc:
