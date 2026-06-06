@@ -1,0 +1,212 @@
+{
+  "milestone_id": "AIGOL_OPENAI_RESPONSE_SIZE_ROOT_CAUSE_V1",
+  "status": "REVIEW_ONLY",
+  "code_modified": false,
+  "runtime_behavior_modified": false,
+  "evidence_source": "current HEAD source, current replay artifacts, sanitized live OpenAI size measurement",
+  "authoritative_replay_turn": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001",
+  "source_trace": {
+    "provider_request_artifact_creation": {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_create_provider_request_artifact",
+      "line_region": "325-390",
+      "behavior": "builds provider request input from _provider_prompt(...)"
+    },
+    "provider_prompt_construction": {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_provider_prompt",
+      "line_region": "830-846",
+      "prompt_fields": [
+        "instruction",
+        "provider_id",
+        "human_request",
+        "ocs_context_reference",
+        "allowed_outputs"
+      ],
+      "allowed_outputs": [
+        "findings",
+        "assumptions",
+        "alternatives",
+        "risks",
+        "uncertainties",
+        "confidence"
+      ]
+    },
+    "context_assembly": {
+      "file": "aigol/runtime/ocs_context_assembly_runtime.py",
+      "function": "assemble_ocs_context",
+      "line_region": "65-93",
+      "behavior": "assembles deterministic replay-visible context evidence"
+    },
+    "openai_payload_creation": {
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "OpenAIProviderAdapter.generate_proposal",
+      "line_region": "68-107",
+      "payload_function": "_create_openai_payload",
+      "payload_shape": {
+        "model": "gpt-5.1",
+        "input": "provider prompt",
+        "stream": false
+      },
+      "max_output_tokens_configured": false
+    },
+    "response_bound": {
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "_bounded_response_text",
+      "line_region": "232-236",
+      "max_openai_response_chars": 8192,
+      "failure_reason": "OpenAI provider response exceeds bounded size"
+    }
+  },
+  "request_measurements": {
+    "openai": {
+      "request_character_count": 3059,
+      "request_token_estimate_chars_div_4": 765,
+      "actual_openai_input_tokens": 842,
+      "human_request_character_count": 463,
+      "streaming": false,
+      "tool_use": false,
+      "function_calling": false
+    },
+    "openai-comparison": {
+      "request_character_count": 3070,
+      "request_token_estimate_chars_div_4": 768,
+      "human_request_character_count": 463,
+      "streaming": false,
+      "tool_use": false,
+      "function_calling": false
+    },
+    "context": {
+      "context_status": "OCS_CONTEXT_ASSEMBLED",
+      "accepted_input_count": 3,
+      "deduplicated_input_count": 0,
+      "rejected_input_count": 0,
+      "context_artifact_chars": 6094,
+      "context_sections": [
+        {
+          "category": "conversation_context",
+          "source_count": 1
+        },
+        {
+          "category": "clarification_context",
+          "source_count": 0
+        },
+        {
+          "category": "ppp_context",
+          "source_count": 0
+        },
+        {
+          "category": "approval_context",
+          "source_count": 0
+        },
+        {
+          "category": "replay_visible_operation_context",
+          "source_count": 1
+        },
+        {
+          "category": "domain_context",
+          "source_count": 0
+        },
+        {
+          "category": "registry_context",
+          "source_count": 1
+        }
+      ]
+    }
+  },
+  "sanitized_live_response_measurement": {
+    "probe_input": "same openai provider request from current replay TURN-000001",
+    "timeout_seconds": 60,
+    "status": "SUCCEEDED",
+    "elapsed_seconds": 41.636,
+    "response_body_logged": false,
+    "response_text_chars": 23052,
+    "response_token_estimate_chars_div_4": 5763,
+    "openai_usage": {
+      "input_tokens": 842,
+      "output_tokens": 4875,
+      "total_tokens": 5717,
+      "cached_tokens": 0,
+      "reasoning_tokens": 0
+    },
+    "raw_response_shape": {
+      "raw_type": "dict",
+      "output_item_count": 1,
+      "raw_keys": [
+        "background",
+        "billing",
+        "completed_at",
+        "created_at",
+        "error",
+        "frequency_penalty",
+        "id",
+        "incomplete_details",
+        "instructions",
+        "max_output_tokens",
+        "max_tool_calls",
+        "metadata",
+        "model",
+        "moderation",
+        "object",
+        "output",
+        "parallel_tool_calls",
+        "presence_penalty",
+        "previous_response_id",
+        "prompt_cache_key",
+        "prompt_cache_retention",
+        "reasoning",
+        "safety_identifier",
+        "service_tier",
+        "status",
+        "store",
+        "temperature",
+        "text",
+        "tool_choice",
+        "tools",
+        "top_logprobs",
+        "top_p",
+        "truncation",
+        "usage",
+        "user"
+      ]
+    },
+    "max_openai_response_chars": 8192,
+    "exceeds_bound": true,
+    "response_to_bound_ratio": 2.81
+  },
+  "component_attribution": {
+    "cognition": {
+      "causes_excessive_output": true,
+      "reason": "cognition provider prompt includes a broad multi-section human request"
+    },
+    "prompt_assembly": {
+      "causes_excessive_output": true,
+      "reason": "prompt assembly passes the full human request through without output length instruction"
+    },
+    "openai_payload": {
+      "causes_excessive_output": true,
+      "reason": "payload does not set max_output_tokens or another output budget"
+    },
+    "replay_context": {
+      "causes_excessive_output": false,
+      "reason": "provider input is about 3.1k characters and 842 measured input tokens"
+    },
+    "comparison": {
+      "causes_excessive_output": false,
+      "reason": "comparison is not reached before provider response-size failure"
+    },
+    "continuity": {
+      "causes_excessive_output": false,
+      "reason": "continuity is not reached"
+    },
+    "clarification": {
+      "causes_excessive_output": false,
+      "reason": "clarification is not reached"
+    }
+  },
+  "final_outputs": {
+    "RESPONSE_SIZE_ROOT_CAUSE": "Unconstrained conversational OCS cognition-provider generation produces a 23052-character response for a request whose adapter bound is 8192 characters.",
+    "MINIMAL_SAFE_FIX": "Add a deterministic OpenAI output budget for conversational OCS provider requests and keep the existing fail-closed response bound as a safety guard.",
+    "EXPECTED_POST_FIX_BEHAVIOR": "Provider responses fit the bound, provider envelopes are created, and multi-provider cognition can proceed to artifact normalization and comparison."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "milestone_id": "AIGOL_OPENAI_RESPONSE_SIZE_ROOT_CAUSE_V1",
+  "classification": "RESPONSE_SIZE_ROOT_CAUSE_REVIEW_ONLY",
+  "status": "CERTIFIED_REVIEW_FINDING",
+  "code_modified": false,
+  "runtime_modified": false,
+  "provider_behavior_modified": false,
+  "governance_modified": false,
+  "fail_closed_preserved": true,
+  "provider_non_authority_preserved": true,
+  "replay_compatibility_preserved": true,
+  "determinations": {
+    "REQUEST_CHARACTER_COUNT": 3059,
+    "REQUEST_TOKEN_ESTIMATE": 842,
+    "EXPECTED_RESPONSE_CHARACTER_COUNT": 23052,
+    "MAX_OPENAI_RESPONSE_CHARS": 8192,
+    "EXCESS_RATIO": 2.81,
+    "RESPONSE_SIZE_ROOT_CAUSE": "unconstrained conversational OCS cognition-provider output exceeds the adapter response bound",
+    "MINIMAL_SAFE_FIX": "add deterministic output budgeting to conversational OCS OpenAI provider requests while preserving the post-response fail-closed bound",
+    "EXPECTED_POST_FIX_BEHAVIOR": "bounded provider responses proceed to provider envelope creation and downstream cognition normalization"
+  },
+  "component_classification": {
+    "cognition_provider_request": "ROOT_CAUSE",
+    "openai_payload_budget": "ROOT_CAUSE",
+    "prompt_assembly": "CONTRIBUTING_CAUSE",
+    "comparison": "NOT_CAUSE",
+    "continuity": "NOT_CAUSE",
+    "clarification": "NOT_CAUSE",
+    "replay_context": "NOT_CAUSE"
+  },
+  "certification_statement": "The response-size root cause is certified as an output-budget mismatch between unconstrained conversational OCS cognition generation and the existing OpenAI adapter response bound. This certification does not implement or certify a runtime fix."
+}
