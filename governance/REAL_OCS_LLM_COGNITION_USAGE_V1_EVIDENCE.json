@@ -1,0 +1,88 @@
+{
+  "artifact": "REAL_OCS_LLM_COGNITION_USAGE_V1_EVIDENCE",
+  "version": "V1",
+  "classification": "REAL_OCS_LLM_COGNITION_USAGE_V1",
+  "validation_status": "FAILED_REAL_PROVIDER_OCS_PARTICIPATION",
+  "runtime_implementation_performed": false,
+  "provider_credentials_persisted": false,
+  "human_request": "I want to create the first real AiGOL product.",
+  "registered_cognition_providers": [
+    {
+      "provider_id": "openai",
+      "provider_type": "external_llm",
+      "provider_role": "COGNITION_PROVIDER",
+      "provider_schema_id": "openai.responses.v1",
+      "registered": true
+    },
+    {
+      "provider_id": "deterministic-reviewer",
+      "provider_type": "deterministic_local_control",
+      "provider_role": "COGNITION_PROVIDER",
+      "provider_schema_id": "mock.cognition.v1",
+      "registered": true
+    }
+  ],
+  "approved_cognition_providers": [
+    {
+      "provider_id": "openai",
+      "approved": true
+    },
+    {
+      "provider_id": "deterministic-reviewer",
+      "approved": true
+    }
+  ],
+  "provider_selected": {
+    "provider_id": "openai",
+    "provider_type": "external_llm"
+  },
+  "real_provider_connectivity": {
+    "credential_present": true,
+    "network_enabled_probe": "SUCCESS",
+    "responses_api_reachable": true,
+    "credential_value_recorded": false
+  },
+  "ocs_end_to_end_probe": {
+    "runtime": "AIGOL_OCS_LLM_COGNITION_END_TO_END_V1",
+    "final_status": "FAILED_CLOSED",
+    "failure_reason": "cognition comparison failed closed: at least two cognition artifacts are required for comparison",
+    "real_provider_branch": {
+      "provider_id": "openai",
+      "provider_failure_stage": "PROVIDER_COGNITION_PROCESSING",
+      "provider_failure_reason": "provider response did not include response text",
+      "llm_cognition_artifact_created": false,
+      "comparison_participation": false,
+      "continuity_participation": false,
+      "clarification_participation": false
+    },
+    "deterministic_control_branch": {
+      "provider_id": "deterministic-reviewer",
+      "llm_cognition_artifact_created": true
+    }
+  },
+  "single_provider_probe": {
+    "runtime": "AIGOL_LLM_COGNITION_PROVIDER_RUNTIME_V1",
+    "provider_id": "openai",
+    "final_status": "FAILED_CLOSED",
+    "failure_reason": "cognition provider response exceeds authority boundary",
+    "llm_cognition_artifact_created": false
+  },
+  "observed_safe_openai_response_shape": {
+    "top_level_output_text_present": false,
+    "output_type": "list",
+    "output_content_path": "output[].content[].text",
+    "content_item_type": "output_text"
+  },
+  "missing_component": {
+    "component": "real OpenAI response normalization in multi-provider OCS cognition path",
+    "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+    "function": "_extract_response_text",
+    "current_behavior": "accepts top-level output_text, text, or response_text only",
+    "required_behavior": "normalize OpenAI Responses API output[].content[].text while preserving authority-boundary checks"
+  },
+  "final_answers": {
+    "REAL_LLM_PROVIDER_ATTACHED": false,
+    "REAL_LLM_PROVIDER_USED_BY_OCS": false
+  },
+  "recommended_next_milestone": "AIGOL_REAL_OPENAI_COGNITION_RESPONSE_NORMALIZATION_V1"
+}
