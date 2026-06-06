@@ -1,0 +1,96 @@
+{
+  "artifact": "AIGOL_INTERACTIVE_CONVERSATION_LOOP_REENTRY_EVIDENCE",
+  "version": "V1",
+  "classification": "AIGOL_INTERACTIVE_CONVERSATION_LOOP_REENTRY_REVIEW_V1",
+  "review_only": true,
+  "runtime_modified": false,
+  "implementation_performed": false,
+  "controlled_trace": {
+    "runtime_root": "/tmp/aigol_reentry_trace_review",
+    "session_id": "REENTRY-TRACE-000001",
+    "input_sequence": [
+      "I want to create the first real AiGOL product.",
+      "",
+      "",
+      "nonsense followup",
+      "exit"
+    ],
+    "prompts_displayed": 5,
+    "turn_count": 2,
+    "failed_turns": 1,
+    "turns": [
+      {
+        "turn_id": "TURN-000001",
+        "response_status": "COMPLETED",
+        "response_source": "OCS_LLM_COGNITION_END_TO_END",
+        "fail_closed": false,
+        "conversational_workflow_id": "OCS_LLM_COGNITION"
+      },
+      {
+        "turn_id": "TURN-000002",
+        "response_status": "FAILED_CLOSED",
+        "response_source": "DETERMINISTIC_CLARIFICATION_FALLBACK",
+        "fail_closed": true,
+        "failure_reason": "conversation provider clarification fallback failed closed: prompt is not clarification-eligible"
+      }
+    ]
+  },
+  "source_evidence": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "lines": "1106-1117",
+      "finding": "The interactive loop reads AiGOL > continuously, skips empty prompts with continue, and exits only on exit, quit, or EOF."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "lines": "2148-2178",
+      "finding": "The OCS cognition branch renders a completed cognition summary and appends a turn summary, but does not break the REPL loop."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "lines": "2179-2217",
+      "finding": "Subsequent non-empty unmatched prompts enter the legacy submit_prompt_to_conversation path and provider-unavailable clarification fallback."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "lines": "2228-2248",
+      "finding": "Result assembly and replay progress are emitted, then the loop naturally re-enters; no explicit RESULT_DELIVERED or TURN_COMPLETED transition is persisted."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "main",
+      "lines": "4335-4339",
+      "finding": "Interactive conversation returns only after the loop exits; non-json interactive mode does not render the returned result object."
+    },
+    {
+      "file": "tests/test_conversational_ocs_cognition_binding_v1.py",
+      "lines": "55-95",
+      "finding": "Regression tests prove one valid prompt followed by exit produces one completed OCS cognition turn with replay reconstruction."
+    }
+  ],
+  "answers": {
+    "what_happens_after_completed": "The turn result is assembled and printed, progress replay is recorded as completed, and the while loop reads the next prompt.",
+    "why_loop_reenters_routing": "run_interactive_conversation is a REPL loop and has no break after successful turn completion.",
+    "why_aigol_prompt_repeats": "Each input_reader call displays AiGOL >. Blank inputs are skipped and immediately prompt again.",
+    "empty_prompt_processed": false,
+    "stdin_buffering_involved": "possible for repeated prompts; required for queued blank or non-empty lines in scripted or pasted input",
+    "result_returned_more_than_once": false,
+    "completed_turn_not_terminated": "The individual turn completes; the interactive session intentionally continues.",
+    "valid_output_after_fail_cycles": "Later valid non-empty input can produce a successful cognition turn after earlier non-empty inputs failed.",
+    "turn_completion_owner": "aigol/cli/aigol_cli.py::run_interactive_conversation",
+    "turn_completed_transition_present": false,
+    "result_delivered_transition_present": false,
+    "bug_location": "interactive conversation loop and output lifecycle semantics in aigol_cli.py"
+  },
+  "minimal_fix_scope": [
+    "Add explicit TURN_COMPLETED lifecycle state.",
+    "Add explicit RESULT_DELIVERED lifecycle state.",
+    "Persist or replay-bind turn completion/result delivery.",
+    "Add visible post-result prompt separator or one-shot mode if desired.",
+    "Do not change OCS cognition runtime or clarification fallback semantics."
+  ]
+}
