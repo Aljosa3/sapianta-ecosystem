@@ -2303,6 +2303,32 @@
       "tests": []
     },
     {
+      "canonical_capability_key": "capability_audit_report_summary",
+      "capability": "Capability Audit Report Summary",
+      "capability_id": "CAPABILITY::CAPABILITY_AUDIT_REPORT_SUMMARY",
+      "capability_key": "capability_audit_report_summary",
+      "certification": [
+        "governance/AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1_CERTIFICATION.json"
+      ],
+      "classification_reason": "certification evidence detected",
+      "governance": [],
+      "implementation": [],
+      "layer": "L1 Governance",
+      "normalization": {
+        "canonical_key": "capability_audit_report_summary",
+        "capability_id": "CAPABILITY::CAPABILITY_AUDIT_REPORT_SUMMARY",
+        "normalized_key": "capability_audit_report_summary",
+        "raw_key": "capability_audit_report_summary",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [
+        "governance/AIGOL_CAPABILITY_AUDIT_REPORT_SUMMARY_V1.md"
+      ],
+      "status": "CERTIFIED",
+      "tests": []
+    },
+    {
       "canonical_capability_key": "capability_audit_runtime",
       "capability": "Capability Audit Runtime",
       "capability_id": "CAPABILITY::CAPABILITY_AUDIT_RUNTIME",
@@ -37294,6 +37320,58 @@
       "tests": []
     },
     {
+      "canonical_capability_key": "domain_execution_binding",
+      "capability": "Domain Execution Binding",
+      "capability_id": "CAPABILITY::DOMAIN_EXECUTION_BINDING",
+      "capability_key": "domain_execution_binding",
+      "certification": [
+        "governance/AIGOL_DOMAIN_EXECUTION_BINDING_CERTIFICATION.json"
+      ],
+      "classification_reason": "certification evidence detected",
+      "governance": [
+        "governance/AIGOL_DOMAIN_EXECUTION_BINDING_V1.md"
+      ],
+      "implementation": [
+        "aigol/runtime/domain_execution_binding_runtime.py"
+      ],
+      "layer": "L4 Execution",
+      "normalization": {
+        "canonical_key": "domain_execution_binding",
+        "capability_id": "CAPABILITY::DOMAIN_EXECUTION_BINDING",
+        "normalized_key": "domain_execution_binding",
+        "raw_key": "domain_execution_binding",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "CERTIFIED",
+      "tests": []
+    },
+    {
+      "canonical_capability_key": "domain_execution_binding",
+      "capability": "Domain Execution Binding Runtime",
+      "capability_id": "CAPABILITY::DOMAIN_EXECUTION_BINDING",
+      "capability_key": "domain_execution_binding_runtime",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [],
+      "implementation": [],
+      "layer": "L4 Execution",
+      "normalization": {
+        "canonical_key": "domain_execution_binding",
+        "capability_id": "CAPABILITY::DOMAIN_EXECUTION_BINDING",
+        "normalized_key": "domain_execution_binding",
+        "raw_key": "domain_execution_binding_runtime",
+        "suffix_collapsed": "true",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
+      "tests": [
+        "tests/test_domain_execution_binding_runtime_v1.py"
+      ]
+    },
+    {
       "canonical_capability_key": "end_to_end_execution_chain",
       "capability": "End To End Execution Chain",
       "capability_id": "CAPABILITY::END_TO_END_EXECUTION_CHAIN",
@@ -38851,6 +38929,30 @@
       },
       "replay_evidence": [],
       "status": "CERTIFIED",
+      "tests": []
+    },
+    {
+      "canonical_capability_key": "first_governed_domain_execution_example",
+      "capability": "First Governed Domain Execution Example",
+      "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_EXECUTION_EXAMPLE",
+      "capability_key": "first_governed_domain_execution_example",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_EXECUTION_EXAMPLE_V1.json"
+      ],
+      "implementation": [],
+      "layer": "L4 Execution",
+      "normalization": {
+        "canonical_key": "first_governed_domain_execution_example",
+        "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_EXECUTION_EXAMPLE",
+        "normalized_key": "first_governed_domain_execution_example",
+        "raw_key": "first_governed_domain_execution_example",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
       "tests": []
     },
     {
@@ -44146,6 +44248,32 @@
       "tests": []
     },
     {
+      "canonical_capability_key": "domain",
+      "capability": "Domain",
+      "capability_id": "CAPABILITY::DOMAIN",
+      "capability_key": "domain",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [
+        "governance/AIGOL_DOMAIN_RUNTIME_V1.md"
+      ],
+      "implementation": [
+        "aigol/runtime/domain_runtime.py"
+      ],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "domain",
+        "capability_id": "CAPABILITY::DOMAIN",
+        "normalized_key": "domain",
+        "raw_key": "domain",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
+      "tests": []
+    },
+    {
       "canonical_capability_key": "domain_bundle_registry",
       "capability": "Domain Bundle Registry",
       "capability_id": "CAPABILITY::DOMAIN_BUNDLE_REGISTRY",
@@ -44297,6 +44425,32 @@
       "tests": []
     },
     {
+      "canonical_capability_key": "domain",
+      "capability": "Domain Runtime",
+      "capability_id": "CAPABILITY::DOMAIN",
+      "capability_key": "domain_runtime",
+      "certification": [
+        "governance/AIGOL_DOMAIN_RUNTIME_V1_CERTIFICATION.json"
+      ],
+      "classification_reason": "certification evidence detected",
+      "governance": [],
+      "implementation": [],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "domain",
+        "capability_id": "CAPABILITY::DOMAIN",
+        "normalized_key": "domain",
+        "raw_key": "domain_runtime",
+        "suffix_collapsed": "true",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "CERTIFIED",
+      "tests": [
+        "tests/test_domain_runtime_v1.py"
+      ]
+    },
+    {
       "canonical_capability_key": "executable_domain_bundle",
       "capability": "Executable Domain Bundle",
       "capability_id": "CAPABILITY::EXECUTABLE_DOMAIN_BUNDLE",
@@ -44348,6 +44502,108 @@
       "status": "PARTIAL",
       "tests": [
         "tests/test_executable_domain_bundle_runtime_v1.py"
+      ]
+    },
+    {
+      "canonical_capability_key": "first_governed_domain",
+      "capability": "First Governed Domain",
+      "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN",
+      "capability_key": "first_governed_domain",
+      "certification": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_CERTIFICATION.json"
+      ],
+      "classification_reason": "certification evidence detected",
+      "governance": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_V1.md"
+      ],
+      "implementation": [
+        "aigol/runtime/first_governed_domain_runtime.py"
+      ],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "first_governed_domain",
+        "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN",
+        "normalized_key": "first_governed_domain",
+        "raw_key": "first_governed_domain",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_MANIFEST_V1.json"
+      ],
+      "status": "CERTIFIED",
+      "tests": []
+    },
+    {
+      "canonical_capability_key": "first_governed_domain_capability_declaration",
+      "capability": "First Governed Domain Capability Declaration",
+      "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_CAPABILITY_DECLARATION",
+      "capability_key": "first_governed_domain_capability_declaration",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_CAPABILITY_DECLARATION_V1.json"
+      ],
+      "implementation": [],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "first_governed_domain_capability_declaration",
+        "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_CAPABILITY_DECLARATION",
+        "normalized_key": "first_governed_domain_capability_declaration",
+        "raw_key": "first_governed_domain_capability_declaration",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
+      "tests": []
+    },
+    {
+      "canonical_capability_key": "first_governed_domain_governance_binding",
+      "capability": "First Governed Domain Governance Binding",
+      "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_GOVERNANCE_BINDING",
+      "capability_key": "first_governed_domain_governance_binding",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [
+        "governance/AIGOL_FIRST_GOVERNED_DOMAIN_GOVERNANCE_BINDING_V1.json"
+      ],
+      "implementation": [],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "first_governed_domain_governance_binding",
+        "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN_GOVERNANCE_BINDING",
+        "normalized_key": "first_governed_domain_governance_binding",
+        "raw_key": "first_governed_domain_governance_binding",
+        "suffix_collapsed": "false",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
+      "tests": []
+    },
+    {
+      "canonical_capability_key": "first_governed_domain",
+      "capability": "First Governed Domain Runtime",
+      "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN",
+      "capability_key": "first_governed_domain_runtime",
+      "certification": [],
+      "classification_reason": "local evidence detected but implementation, tests, or certification are incomplete",
+      "governance": [],
+      "implementation": [],
+      "layer": "L6 Domain Runtime",
+      "normalization": {
+        "canonical_key": "first_governed_domain",
+        "capability_id": "CAPABILITY::FIRST_GOVERNED_DOMAIN",
+        "normalized_key": "first_governed_domain",
+        "raw_key": "first_governed_domain_runtime",
+        "suffix_collapsed": "true",
+        "version_collapsed": "false"
+      },
+      "replay_evidence": [],
+      "status": "PARTIAL",
+      "tests": [
+        "tests/test_first_governed_domain_runtime_v1.py"
       ]
     },
     {
@@ -45589,11 +45845,11 @@
     }
   ],
   "capability_counts": {
-    "CERTIFIED": 394,
+    "CERTIFIED": 398,
     "IMPLEMENTED": 9,
     "NOT_STARTED": 4,
-    "PARTIAL": 1414,
-    "total": 1821
+    "PARTIAL": 1420,
+    "total": 1831
   },
   "layer_maturity_scores": {
     "L1 Governance": 54,
@@ -45604,7 +45860,14 @@
     "L6 Domain Runtime": 65,
     "L7 Marketplace / Ecosystem": 48
   },
-  "matrix_hash": "sha256:c4e7861549ff62ee368e7b67de234a2275918051c7c8a86bb222373502ae0f4f",
+  "matrix_hash": "sha256:a3d617c9fb94be9c7e4a552c5af9043d3e3a92c531a899a0bd5b7eb531d71e3f",
+  "normalized_capability_counts": {
+    "CERTIFIED": 370,
+    "IMPLEMENTED": 8,
+    "NOT_STARTED": 4,
+    "PARTIAL": 1247,
+    "total": 1629
+  },
   "runtime_version": "AIGOL_CAPABILITY_AUDIT_RUNTIME_V1",
   "scope": {
     "classification_rule": "CERTIFIED requires certification evidence. IMPLEMENTED requires runtime implementation and tests. PARTIAL requires at least one governance, runtime, test, replay, or certification signal but does not meet stronger criteria. NOT_STARTED is reserved for explicit planned or missing capabilities.",

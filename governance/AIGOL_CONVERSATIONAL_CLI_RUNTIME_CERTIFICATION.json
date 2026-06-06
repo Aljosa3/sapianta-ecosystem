@@ -11,7 +11,9 @@
     "routing_replay_recording": true,
     "routing_replay_reconstruction": true,
     "workflow_coverage_measurement": true,
-    "interactive_conversation_cli_integration": true
+    "interactive_conversation_cli_integration": true,
+    "semantic_domain_reference_delegation": true,
+    "operator_decision_support_delegation": true
   },
   "constitutional_preservation": {
     "human_authority_preserved": true,
@@ -31,7 +33,9 @@
     "conversation_cli": "aigol conversation",
     "acceptance_evidence": "governance/AIGOL_CONVERSATIONAL_CLI_RUNTIME_ACCEPTANCE_EVIDENCE.json",
     "tests": [
-      "tests/test_conversational_cli_runtime_v1.py"
+      "tests/test_conversational_cli_runtime_v1.py",
+      "tests/test_semantic_similarity_domain_reference_runtime_v1.py",
+      "tests/test_operator_decision_support_runtime_v1.py"
     ]
   },
   "status_statement": "Operators can use natural language to select registered certified AiGOL workflows through replay-visible conversational routing. The router delegates to existing runtimes and does not bypass approval, authorization, provider, worker, execution, or replay controls."

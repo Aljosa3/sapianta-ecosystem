@@ -15,7 +15,9 @@
     "Review latest audit.": "REVIEW_LATEST_AUDIT",
     "Show latest replay chain.": "SHOW_LATEST_REPLAY_CHAIN",
     "Improve provider layer.": "IMPROVE_PROVIDER_LAYER",
-    "Create a compliance domain.": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+    "Create a compliance domain.": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+    "Create a healthcare version of the trading domain.": "DOMAIN_ADAPTATION_REFERENCE",
+    "I want to create the first real AiGOL product domain.": "OPERATOR_DECISION_SUPPORT"
   },
   "requirements": {
     "intent_routing": true,
@@ -32,13 +34,15 @@
     "execution_requested_by_router": false
   },
   "workflow_coverage": {
-    "registered_workflows": 8,
-    "conversationally_accessible_workflows": 8,
-    "coverage_ratio": "8/8",
+    "registered_workflows": 10,
+    "conversationally_accessible_workflows": 10,
+    "coverage_ratio": "10/10",
     "workflow_ids": [
       "CREATE_DOMAIN_TRADING",
       "CREATE_DOMAIN_MARKETING",
       "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "DOMAIN_ADAPTATION_REFERENCE",
+      "OPERATOR_DECISION_SUPPORT",
       "SHOW_LATEST_REPLAY_CHAIN",
       "REVIEW_LATEST_AUDIT",
       "IMPROVE_PROVIDER_LAYER",
@@ -54,11 +58,13 @@
   "tests": [
     "tests/test_conversational_cli_runtime_v1.py",
     "tests/test_unknown_domain_and_clarification_ux_v1.py",
-    "tests/test_conversation_native_development_intent_routing_v1.py"
+    "tests/test_conversation_native_development_intent_routing_v1.py",
+    "tests/test_semantic_similarity_domain_reference_runtime_v1.py",
+    "tests/test_operator_decision_support_runtime_v1.py"
   ],
   "validation_commands": [
     "python -m pytest tests/test_conversational_cli_runtime_v1.py",
-    "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
+    "python -m pytest tests/test_operator_decision_support_runtime_v1.py tests/test_semantic_similarity_domain_reference_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py tests/test_conversation_native_development_intent_routing_v1.py"
   ],
   "known_limits": [
     "The coverage ratio applies to the registered conversational workflow map for this milestone, not every CLI command in the repository.",

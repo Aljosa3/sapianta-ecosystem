@@ -20,11 +20,11 @@ Scanned directories:
 
 | Status | Count |
 | --- | ---: |
-| `CERTIFIED` | 394 |
+| `CERTIFIED` | 398 |
 | `IMPLEMENTED` | 9 |
-| `PARTIAL` | 1414 |
+| `PARTIAL` | 1420 |
 | `NOT_STARTED` | 4 |
-| Total | 1821 |
+| Total | 1831 |
 
 ## Layer Maturity Scores
 
@@ -42,7 +42,7 @@ Scanned directories:
 
 ### L1 Governance
 
-- `CERTIFIED`: 139
+- `CERTIFIED`: 140
 - `IMPLEMENTED`: 2
 - `PARTIAL`: 710
 - `NOT_STARTED`: 0
@@ -149,22 +149,22 @@ Representative `PARTIAL` capabilities:
 
 ### L4 Execution
 
-- `CERTIFIED`: 45
+- `CERTIFIED`: 46
 - `IMPLEMENTED`: 1
-- `PARTIAL`: 202
+- `PARTIAL`: 204
 - `NOT_STARTED`: 0
 
 Representative `CERTIFIED` capabilities:
 - Controlled Retry Execution
 - Dispatch
 - Dispatch Runtime
+- Domain Execution Binding
 - End To End Execution Chain
 - Execution Authorization
 - Execution Boundary
 - Execution Path Readiness
 - Execution Request
 - Execution Request Runtime
-- Execution Runtime
 
 Representative `IMPLEMENTED` capabilities:
 - Minimal Execution Runtime Prototype
@@ -217,34 +217,34 @@ Representative `NOT_STARTED` capabilities:
 
 ### L6 Domain Runtime
 
-- `CERTIFIED`: 17
+- `CERTIFIED`: 19
 - `IMPLEMENTED`: 0
-- `PARTIAL`: 29
+- `PARTIAL`: 33
 - `NOT_STARTED`: 0
 
 Representative `CERTIFIED` capabilities:
 - Cross Domain Readiness
 - Domain Bundle Registry
 - Domain Bundle Registry And Factory Contract
+- Domain Runtime
 - Executable Domain Bundle
+- First Governed Domain
 - First Readonly Domain Experiment
 - Generic Domain Factory
 - Generic Domain Factory Readiness
 - Healthcare Domain
-- Marketing Domain
-- Multi Artifact Domain Bundle
 
 Representative `PARTIAL` capabilities:
+- Domain
 - Domain Bundle Registry And Factory Contract Readiness
 - Domain Bundle Registry Runtime
 - Domain Bundle Resolution
 - Domain Factory Contract
 - Executable Domain Bundle Runtime
+- First Governed Domain Capability Declaration
+- First Governed Domain Governance Binding
+- First Governed Domain Runtime
 - First Readonly Domain Experiment V1
-- Generic Domain Factory Existing Components
-- Generic Domain Factory Reuse Plan
-- Generic Domain Factory Runtime
-- Healthcare Domain Runtime
 
 ### L7 Marketplace / Ecosystem
 
