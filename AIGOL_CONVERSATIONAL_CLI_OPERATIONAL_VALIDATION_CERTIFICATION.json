@@ -1,0 +1,193 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_CLI_OPERATIONAL_VALIDATION_V1",
+  "classification": "AUDIT_ONLY_NOT_CERTIFIED",
+  "scope": "aigol conversation interactive CLI lifecycle",
+  "review_only": true,
+  "code_modified": false,
+  "operationally_reliable_for_unconstrained_human_use": false,
+  "verdict_summary": "Six confirmed defects across input handling, routing, visibility, and fallback. Zero false positives. CLI is reliable only for marker-matching single-line prompts under the OCS LLM cognition branch.",
+  "deliverables": [
+    "AIGOL_CONVERSATIONAL_CLI_OPERATIONAL_VALIDATION_V1.md",
+    "AIGOL_CONVERSATIONAL_CLI_OPERATIONAL_TRACE_ANALYSIS_V1.md",
+    "AIGOL_CONVERSATIONAL_CLI_ROOT_CAUSE_ANALYSIS_V1.md",
+    "AIGOL_CONVERSATIONAL_CLI_RECOMMENDED_FIXES_V1.md",
+    "AIGOL_CONVERSATIONAL_CLI_OPERATIONAL_VALIDATION_CERTIFICATION.json"
+  ],
+  "findings": [
+    {
+      "id": "F-1",
+      "classification": "IMPLEMENTATION_BUG",
+      "title": "Multi-line prompts are fragmented into separate turns",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "branch": "main while-loop input_reader call",
+      "lines": "1177-1188",
+      "root_cause": "Single Python input() call per turn; no bracketed-paste handling, no continuation/EOF sentinel, no --prompt-file. Blank lines silently discarded.",
+      "operational_impact": "Each newline of a pasted block becomes an independent turn; routing, OCS cognition, and fallback are applied per fragment.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:1179",
+        "aigol/cli/aigol_cli.py:1184-1186"
+      ]
+    },
+    {
+      "id": "F-2",
+      "classification": "ROUTING_BUG",
+      "title": "Routing is a manually ordered cascade of fragile string predicates",
+      "file": "aigol/cli/aigol_cli.py + aigol/runtime/conversational_cli_runtime.py",
+      "function": "run_interactive_conversation dispatch chain; is_ocs_llm_cognition_prompt; _is_operator_decision_support_prompt; is_conversation_native_development_intent; is_unknown_domain_clarification_eligible; _is_conversational_cli_readonly_candidate",
+      "branch": "if/elif cascade at aigol/cli/aigol_cli.py 1234-2250",
+      "lines": "1234-2250",
+      "root_cause": "No unified intent classifier; each predicate uses its own substring search with no ambiguity scoring or priority tie-breaker.",
+      "operational_impact": "Phrasing-sensitive routing produces inconsistent destinations without operator-visible explanation.",
+      "evidence_paths": [
+        "aigol/runtime/conversational_cli_runtime.py:282-308",
+        "aigol/runtime/conversational_cli_runtime.py:256-269",
+        "aigol/runtime/conversation_native_development_intent_routing.py:214-242",
+        "aigol/runtime/unknown_domain_clarification_runtime.py:204-226"
+      ]
+    },
+    {
+      "id": "F-3",
+      "classification": "VISIBILITY_BUG",
+      "title": "providers: NONE is a turn-summary projection gap",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_interactive_turn_providers; _interactive_turn_summary and siblings",
+      "branch": "turn-summary construction at end of every routing branch",
+      "lines": "631-640; 2289-2298; 2797-2878",
+      "root_cause": "Only _interactive_ocs_llm_cognition_turn_summary populates provider_ids; all other branches omit it, so _interactive_turn_providers returns [] and the renderer prints NONE.",
+      "operational_impact": "Completion artifact asserts no providers were involved even when a provider was attempted and failed.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:631-640",
+        "aigol/cli/aigol_cli.py:2860",
+        "aigol/runtime/conversational_turn_completion_runtime.py:218"
+      ]
+    },
+    {
+      "id": "F-4",
+      "classification": "VISIBILITY_BUG",
+      "title": "elapsed_seconds is a hardcoded stage count",
+      "file": "aigol/cli/aigol_cli.py + aigol/runtime/conversational_progress_binding_runtime.py",
+      "function": "_interactive_turn_elapsed_seconds; _duration_history",
+      "branch": "called unconditionally in _record_interactive_turn_completion",
+      "lines": "624-628; 204-216",
+      "root_cause": "_interactive_turn_elapsed_seconds returns artifact['stage_count'] (constant 8). _duration_history returns last_duration_seconds=1 per stage. No time.monotonic measurement.",
+      "operational_impact": "elapsed: 8s is invariant; replay-visible elapsed_seconds carries no real latency information.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:624-628",
+        "aigol/runtime/conversational_progress_binding_runtime.py:35-44",
+        "aigol/runtime/conversational_progress_binding_runtime.py:204-216"
+      ]
+    },
+    {
+      "id": "F-5",
+      "classification": "VISIBILITY_BUG",
+      "title": "TURN COMPLETED is recorded before result delivery",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_record_interactive_turn_completion and turn-end flush block",
+      "branch": "completion block at end of try-body",
+      "lines": "586-621; 2314-2335",
+      "root_cause": "record_conversational_result_delivered is called inside _record_interactive_turn_completion, which stamps delivered_at=created_at and result_delivered=True BEFORE terminal_output_writer flushes the buffer.",
+      "operational_impact": "result_delivered: TRUE is asserted prior to the operator-facing print; process death between artifact write and flush leaves replay inconsistent with terminal output.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:586-621",
+        "aigol/cli/aigol_cli.py:2326-2332"
+      ]
+    },
+    {
+      "id": "F-6",
+      "classification": "VISIBILITY_BUG",
+      "title": "Progress checkpoints are deterministic placeholders",
+      "file": "aigol/cli/aigol_cli.py + aigol/runtime/conversational_progress_binding_runtime.py + aigol/runtime/runtime_progress_visibility.py",
+      "function": "_emit_interactive_conversation_progress; _emit_interactive_conversation_cognition_progress; record_runtime_progress_snapshot",
+      "branch": "snapshot record path",
+      "lines": "543-583; 90-145",
+      "root_cause": "All checkpoints use snapshot_at=created_at (CLI constant). Five cognition checkpoints are emitted unconditionally even for branches that don't run those stages. elapsed_seconds derived from snapshot - started is always 0.",
+      "operational_impact": "Progress visibility reflects the lifecycle template, not real execution; operators cannot diagnose stalls from the rendered output.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:543-583",
+        "aigol/runtime/runtime_progress_visibility.py:113-119"
+      ]
+    },
+    {
+      "id": "F-7",
+      "classification": "USABILITY_BUG",
+      "title": "Provider-unavailable clarification fallback is a hard-coded phrase list",
+      "file": "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+      "function": "_classify_ambiguity",
+      "branch": "FailClosedRuntimeError at line 229-231",
+      "lines": "165-231",
+      "root_cause": "Fallback recognizes only 'workstation'+create/open/build/add and the literal phrases 'improve trading'/'add analysis'/'create reporting' (with optional period). Everything else fails closed.",
+      "operational_impact": "Whenever the provider is unavailable, almost every prompt produces 'prompt is not clarification-eligible' instead of a graceful clarification or offline response.",
+      "evidence_paths": [
+        "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py:28-32",
+        "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py:165-231"
+      ]
+    },
+    {
+      "id": "F-8",
+      "classification": "IMPLEMENTATION_BUG",
+      "title": "Default conversation path requires a live OpenAI provider",
+      "file": "aigol/runtime/prompt_to_conversation_integration.py",
+      "function": "submit_prompt_to_conversation; _provider_dependencies",
+      "branch": "default provider construction",
+      "lines": "35-102; 222-232",
+      "root_cause": "Hard default to OPENAI_PROVIDER_ID + OpenAIProviderAdapter() with no offline/deterministic fallback transport. The OCS branch has its own in-process transport but the legacy conversation branch does not.",
+      "operational_impact": "CLI is unusable offline; non-marker prompts fall into a branch that requires AIGOL_OPENAI_API_KEY.",
+      "evidence_paths": [
+        "aigol/runtime/prompt_to_conversation_integration.py:35-102",
+        "aigol/runtime/prompt_to_conversation_integration.py:222-232",
+        "aigol/cli/aigol_cli.py:439-494"
+      ]
+    },
+    {
+      "id": "F-9",
+      "classification": "ROUTING_BUG",
+      "title": "Operator decision-support keyword soup can collide with OCS markers",
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "function": "_is_operator_decision_support_prompt; _is_ocs_llm_cognition_prompt",
+      "branch": "elif chain in aigol/cli/aigol_cli.py at 1735 and 2216",
+      "lines": "256-269; 282-308",
+      "root_cause": "Both predicates can match the same prompt; routing is decided by source-file ordering rather than ambiguity scoring or explicit priority.",
+      "operational_impact": "Latent ambiguity; nearly identical prompts produce different artifact types without operator-visible diagnostics.",
+      "evidence_paths": [
+        "aigol/runtime/conversational_cli_runtime.py:256-269",
+        "aigol/runtime/conversational_cli_runtime.py:282-308",
+        "aigol/cli/aigol_cli.py:1735",
+        "aigol/cli/aigol_cli.py:2216"
+      ]
+    },
+    {
+      "id": "F-10",
+      "classification": "VISIBILITY_BUG",
+      "title": "Per-turn created_at is a CLI argument, not a real timestamp",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "branch": "created_at extraction at top of run_interactive_conversation",
+      "lines": "1164; 956",
+      "root_cause": "created_at is taken from args.created_at (default 2026-06-01T00:00:00Z) and reused for every artifact across every turn. No real-clock derivation.",
+      "operational_impact": "Forensic correlation between operator wall-clock observations and replay artifacts is impossible.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:1164",
+        "aigol/cli/aigol_cli.py:956"
+      ]
+    }
+  ],
+  "false_positives": [],
+  "operator_questions_resolved": {
+    "why_multi_line_split_into_turns": "F-1: single input() per turn; no multi-line aggregation.",
+    "stdin_parsing_buffering_or_turn_allocation_responsible": "Stdin parsing — line-buffered input(). Turn allocation is itself correct, but it is invoked once per stdin line.",
+    "why_some_turns_run_OCS_others_clarification_fallback": "F-2 + F-7 + F-8: OCS branch fires only on narrow markers; everything else falls to the OpenAI-dependent default branch whose failure fallback only recognizes four phrases.",
+    "routing_deterministic": "Yes, but extremely phrasing-sensitive (F-2). Same prompt always routes the same way; small phrasing changes can flip routing.",
+    "when_providers_NONE_vs_alpha_beta": "F-3: only _interactive_ocs_llm_cognition_turn_summary populates provider_ids; every other branch produces NONE regardless of whether providers were attempted.",
+    "is_elapsed_time_measured_correctly": "No (F-4 + F-6 + F-10). It is a constant equal to stage_count (8) and is unrelated to real wall-clock duration.",
+    "is_TURN_COMPLETED_emitted_only_after_result_delivery": "No (F-5). The result_delivered artifact is recorded before terminal_output_writer flushes.",
+    "does_progress_visibility_reflect_real_execution": "No (F-6 + F-10). Checkpoints carry constant timestamps and are emitted regardless of whether the corresponding stage actually ran.",
+    "is_CLI_operationally_reliable_for_normal_human_usage": "No. Reliable only for marker-matching single-line prompts under the OCS-cognition branch with an available provider transport."
+  },
+  "recommended_fix_priority": {
+    "P0": ["R-1", "R-7", "R-8"],
+    "P1": ["R-3", "R-4", "R-5"],
+    "P2": ["R-2", "R-6", "R-9"],
+    "P3": ["R-10"]
+  }
+}
