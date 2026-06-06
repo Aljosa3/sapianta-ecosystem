@@ -146,8 +146,10 @@ from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_co
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
 from aigol.runtime.conversational_cli_runtime import (
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+    OCS_LLM_COGNITION as CONVERSATIONAL_OCS_LLM_COGNITION,
     REVIEW_LATEST_AUDIT as CONVERSATIONAL_REVIEW_LATEST_AUDIT,
     SHOW_LATEST_REPLAY_CHAIN as CONVERSATIONAL_SHOW_LATEST_REPLAY_CHAIN,
+    is_ocs_llm_cognition_prompt,
     render_conversational_cli_routing_summary,
     route_conversational_cli_intent,
 )
@@ -291,6 +293,12 @@ from aigol.runtime.conversational_progress_binding_runtime import (
     create_conversational_progress_binding,
     record_conversational_progress_checkpoint,
 )
+from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
+from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
+    STATUS_COMPLETED as OCS_LLM_COGNITION_COMPLETED,
+    render_ocs_llm_cognition_end_to_end_summary,
+    run_ocs_llm_cognition_end_to_end,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -328,6 +336,183 @@ def _bind_supported_executable_domain_bundle(
 
 def _json(data: dict[str, Any]) -> str:
     return json.dumps(data, sort_keys=True, separators=(",", ":"))
+
+
+def _replay_visible_context_source(
+    *,
+    artifact_id: str,
+    artifact_type: str,
+    summary: str,
+    created_at: str,
+    **extra: Any,
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": artifact_type,
+        "artifact_id": artifact_id,
+        "summary": summary,
+        "created_at": created_at,
+        "replay_visible": True,
+        "authority": False,
+        "provider_authority": False,
+        "approval_authority": False,
+        "execution_authority": False,
+        "worker_authority": False,
+        "governance_authority": False,
+        "replay_authority": False,
+        "approval_created": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "worker_invoked": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }
+    artifact.update(extra)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _conversation_ocs_cognition_source_context(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    router_capture: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture.get("source_of_truth_router_artifact") or {}
+    return {
+        "conversation_context": [
+            _replay_visible_context_source(
+                artifact_id=f"{prompt_id}:HUMAN-COGNITION-REQUEST",
+                artifact_type="HUMAN_COGNITION_REQUEST_ARTIFACT_V1",
+                summary=human_prompt,
+                created_at=created_at,
+                prompt_id=prompt_id,
+                human_prompt_hash=replay_hash(human_prompt),
+            )
+        ],
+        "replay_visible_operation_context": [
+            _replay_visible_context_source(
+                artifact_id=f"{prompt_id}:SOURCE-ROUTER-CONTEXT",
+                artifact_type="CONVERSATIONAL_SOURCE_ROUTER_CONTEXT_V1",
+                summary=source_artifact.get("selection_reason")
+                or "Source router context for conversational OCS cognition.",
+                created_at=created_at,
+                selected_source=source_artifact.get("selected_source"),
+                source_router_hash=source_artifact.get("artifact_hash"),
+            )
+        ],
+        "registry_context": [
+            _replay_visible_context_source(
+                artifact_id=f"{prompt_id}:OCS-COGNITION-BINDING-CONTEXT",
+                artifact_type="CONVERSATIONAL_OCS_COGNITION_BINDING_CONTEXT_V1",
+                summary="Broad conversational cognition prompt routed to certified OCS LLM cognition end-to-end.",
+                created_at=created_at,
+                binding_milestone="AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_V1",
+                target_runtime="AIGOL_OCS_LLM_COGNITION_END_TO_END_V1",
+            )
+        ],
+    }
+
+
+def _conversation_ocs_cognition_provider_contracts(created_at: str) -> list[dict[str, Any]]:
+    return [
+        create_default_cognition_provider_contract(
+            provider_id="aigol-cognition-alpha",
+            provider_label="AiGOL Cognition Alpha",
+            created_at=created_at,
+        ),
+        create_default_cognition_provider_contract(
+            provider_id="aigol-cognition-beta",
+            provider_label="AiGOL Cognition Beta",
+            created_at=created_at,
+        ),
+    ]
+
+
+def _conversation_ocs_cognition_transports() -> dict[str, Any]:
+    def _transport(payload: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+        provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "provider")
+        if provider_id.endswith("alpha"):
+            result = {
+                "findings": [
+                    "The request is a broad operator cognition question, not an execution request.",
+                    "The next governed step should remain human review of non-authoritative guidance.",
+                ],
+                "assumptions": [
+                    "The operator wants product-level guidance before creating or executing a domain artifact."
+                ],
+                "alternatives": [
+                    "AI Decision Validator product domain",
+                    "Governed platform licensing path",
+                    "Managed governance service path",
+                ],
+                "risks": [
+                    "Commercial direction is underspecified.",
+                    "Domain creation should not occur without explicit human approval.",
+                ],
+                "uncertainties": [
+                    "Target buyer and first packaged offer remain unclear.",
+                ],
+                "confidence": "MEDIUM",
+            }
+        else:
+            result = {
+                "findings": [
+                    "The prompt asks for analysis and recommendation support within OCS cognition boundaries.",
+                    "A human-facing clarification should identify product purpose, target users, and capability scope.",
+                ],
+                "assumptions": [
+                    "The desired output is guidance, not worker execution.",
+                ],
+                "alternatives": [
+                    "Start with Product 1 AI Decision Validator",
+                    "Package SAPIANTA as a licensed governance platform",
+                    "Offer managed governance review services first",
+                ],
+                "risks": [
+                    "Premature implementation could bypass product-positioning review.",
+                    "Provider cognition must remain non-authoritative.",
+                ],
+                "uncertainties": [
+                    "Primary product segment is not yet selected.",
+                    "First customer workflow is not yet specified.",
+                ],
+                "confidence": "MEDIUM",
+            }
+        return {"output_text": json.dumps(result, sort_keys=True)}
+
+    return {
+        "aigol-cognition-alpha": _transport,
+        "aigol-cognition-beta": _transport,
+    }
+
+
+def _run_conversational_ocs_llm_cognition(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    router_capture: dict[str, Any],
+    current_chain_id: str | None,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    return run_ocs_llm_cognition_end_to_end(
+        end_to_end_id=f"{prompt_id}:OCS-LLM-COGNITION-END-TO-END",
+        human_question=human_prompt,
+        source_context=_conversation_ocs_cognition_source_context(
+            prompt_id=prompt_id,
+            human_prompt=human_prompt,
+            router_capture=router_capture,
+            created_at=created_at,
+        ),
+        provider_contracts=_conversation_ocs_cognition_provider_contracts(created_at),
+        transport_registry=_conversation_ocs_cognition_transports(),
+        created_at=created_at,
+        replay_dir=replay_dir,
+        source_chain_id=current_chain_id or prompt_id,
+        source_request_reference=prompt_id,
+    )
 
 
 def _create_interactive_conversation_progress_binding(
@@ -1957,6 +2142,40 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif is_ocs_llm_cognition_prompt(human_prompt):
+                conversational_routing_capture = route_conversational_cli_intent(
+                    routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    canonical_chain_id=current_chain_id or prompt_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "conversational_cli_routing",
+                )
+                ocs_cognition_capture = _run_conversational_ocs_llm_cognition(
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    router_capture=router_capture,
+                    current_chain_id=current_chain_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "ocs_llm_cognition_end_to_end",
+                )
+                current_chain_id = current_chain_id or prompt_id
+                latest_chain_id = current_chain_id
+                if ocs_cognition_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {ocs_cognition_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_ocs_llm_cognition_end_to_end_summary(ocs_cognition_capture))
+                turns.append(
+                    _interactive_ocs_llm_cognition_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        ocs_cognition_capture=ocs_cognition_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             else:
                 conversation_capture = submit_prompt_to_conversation(
                     human_prompt=human_prompt,
@@ -2483,6 +2702,83 @@ def _interactive_conversational_cli_turn_summary(
         "authorization_created": False,
         "execution_requested": False,
         "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_ocs_llm_cognition_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    ocs_cognition_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    artifact = ocs_cognition_capture.get("ocs_llm_cognition_end_to_end_artifact")
+    if not isinstance(artifact, dict):
+        artifact = {}
+    human_result = artifact.get("human_facing_cognition_result")
+    if not isinstance(human_result, dict):
+        human_result = {}
+    stage_captures = ocs_cognition_capture.get("stage_captures")
+    if not isinstance(stage_captures, dict):
+        stage_captures = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": ocs_cognition_capture.get("final_status"),
+        "response_source": "OCS_LLM_COGNITION_END_TO_END",
+        "fail_closed": ocs_cognition_capture.get("fail_closed") is True,
+        "failure_reason": ocs_cognition_capture.get("failure_reason"),
+        "replay_reference": ocs_cognition_capture.get("replay_reference"),
+        "conversation_replay_reference": ocs_cognition_capture.get("replay_reference"),
+        "canonical_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "current_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "latest_chain_id": conversational_routing_capture.get("routing_decision_artifact", {}).get(
+            "canonical_chain_id"
+        ),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": conversational_routing_capture.get("workflow_id"),
+        "conversational_cli_routing_replay_reference": conversational_routing_capture.get(
+            "conversational_cli_routing_replay_reference"
+        ),
+        "existing_runtime": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
+            "existing_runtime"
+        ),
+        "existing_cli_command": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
+            "existing_cli_command"
+        ),
+        "ocs_llm_cognition_artifact_type": artifact.get("artifact_type"),
+        "context_hash": artifact.get("context_hash"),
+        "provider_count": artifact.get("provider_count"),
+        "successful_provider_count": artifact.get("successful_provider_count"),
+        "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
+        "comparison_artifact_hash": artifact.get("comparison_artifact_hash"),
+        "continuity_artifact_hash": artifact.get("continuity_artifact_hash"),
+        "clarification_artifact_hash": artifact.get("clarification_artifact_hash"),
+        "comparison_confidence": human_result.get("comparison_confidence"),
+        "clarification_required": human_result.get("clarification_required"),
+        "clarification_candidate_count": human_result.get("clarification_candidate_count"),
+        "stage_captures_present": sorted(stage_captures),
+        "provider_invoked": ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_created": False,
+        "approval_bypassed": False,
+        "domain_created": False,
         "governance_mutated": False,
         "replay_mutated": False,
     }

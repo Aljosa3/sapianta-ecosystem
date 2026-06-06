@@ -1,0 +1,68 @@
+{
+  "artifact": "AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_CERTIFICATION",
+  "version": "V1",
+  "milestone": "AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_V1",
+  "status": "CERTIFIED_CONVERSATIONAL_OCS_COGNITION_BINDING",
+  "final_classification": {
+    "AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_STATUS": "CERTIFIED_CONVERSATIONAL_OCS_COGNITION_BINDING"
+  },
+  "certifies": [
+    "broad conversational cognition routing",
+    "interactive CLI binding to AIGOL_OCS_LLM_COGNITION_END_TO_END_V1",
+    "human-facing cognition result rendering",
+    "replay-visible OCS cognition turn summaries",
+    "legacy explicit route preservation"
+  ],
+  "does_not_certify": [
+    "new provider architecture",
+    "live provider credential policy changes",
+    "worker invocation by cognition",
+    "execution authorization by cognition",
+    "approval creation by cognition",
+    "domain creation by cognition",
+    "governance mutation",
+    "replay mutation"
+  ],
+  "modified_files": [
+    "aigol/runtime/conversational_cli_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_conversational_cli_runtime_v1.py",
+    "tests/test_conversational_ocs_cognition_binding_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_V1.md",
+    "governance/AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_CERTIFICATION.json"
+  ],
+  "validation": {
+    "focused_runtime_tests": "31 passed",
+    "json_validation": "required",
+    "diff_check": "required"
+  },
+  "authority_model": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false
+  },
+  "replay_assurance": {
+    "context_replay": true,
+    "provider_request_response_replay": true,
+    "cognition_artifact_replay": true,
+    "comparison_replay": true,
+    "continuity_replay": true,
+    "clarification_replay": true,
+    "end_to_end_replay_reconstruction": true
+  },
+  "success_criteria": {
+    "prompt": "I want to create the first real AiGOL product.",
+    "ocs_cognition_executed": true,
+    "cognition_artifacts_created": true,
+    "comparison_executed": true,
+    "continuity_executed": true,
+    "clarification_executed_when_needed": true,
+    "human_facing_result_returned": true
+  }
+}

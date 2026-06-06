@@ -1,0 +1,65 @@
+{
+  "artifact": "AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "milestone": "AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_V1",
+  "classification": "CERTIFIED_CONVERSATIONAL_OCS_COGNITION_BINDING",
+  "runtime_modifications": [
+    "aigol/runtime/conversational_cli_runtime.py",
+    "aigol/cli/aigol_cli.py"
+  ],
+  "tests": [
+    "tests/test_conversational_ocs_cognition_binding_v1.py",
+    "tests/test_conversational_cli_runtime_v1.py",
+    "tests/test_interactive_conversation_cli_v1.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+  ],
+  "validated_prompt": "I want to create the first real AiGOL product.",
+  "expected_path": [
+    "aigol conversation",
+    "CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1",
+    "OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1",
+    "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1",
+    "LLM_COGNITION_ARTIFACT_V1",
+    "COGNITION_COMPARISON_ARTIFACT_V1",
+    "COGNITION_CONTINUITY_ARTIFACT_V1",
+    "COGNITION_CLARIFICATION_ARTIFACT_V1",
+    "human-facing cognition result"
+  ],
+  "acceptance_results": {
+    "broad_conversational_prompt_routes_to_ocs_cognition": true,
+    "ocs_context_assembled": true,
+    "cognition_artifacts_created": true,
+    "comparison_executed": true,
+    "continuity_executed": true,
+    "clarification_executed": true,
+    "human_facing_result_returned": true,
+    "replay_reconstructable": true,
+    "legacy_provider_unavailable_fallback_preserved": true,
+    "explicit_domain_routes_preserved": true,
+    "worker_execution_not_introduced": true,
+    "approval_creation_not_introduced": true
+  },
+  "governance_preservation": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "domain_created": false,
+    "approval_created": false,
+    "execution_requested": false,
+    "worker_invoked_by_cognition_binding": false
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py",
+    "result": "31 passed",
+    "json_parse_required": true,
+    "diff_check_required": true
+  },
+  "notes": [
+    "The conversational binding uses deterministic approved cognition-provider contracts and deterministic local cognition transports for CLI validation.",
+    "The binding reuses the certified OCS LLM cognition end-to-end runtime instead of creating a new cognition architecture.",
+    "The provider-unavailable clarification fallback remains available for narrow legacy ambiguity prompts."
+  ]
+}

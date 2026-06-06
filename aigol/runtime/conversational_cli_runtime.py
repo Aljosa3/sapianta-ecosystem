@@ -30,6 +30,7 @@ REVIEW_LATEST_AUDIT = "REVIEW_LATEST_AUDIT"
 IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
 SHOW_STATUS = "SHOW_STATUS"
 SHOW_DASHBOARD = "SHOW_DASHBOARD"
+OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 
 REPLAY_STEPS = (
     "conversational_routing_decision_recorded",
@@ -191,6 +192,7 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
         _workflow(IMPROVE_PROVIDER_LAYER, "aigol conversational route", "provider_layer_review_guidance"),
         _workflow(SHOW_STATUS, "aigol status", "status_summary"),
         _workflow(SHOW_DASHBOARD, "aigol dashboard", "session_dashboard_runtime"),
+        _workflow(OCS_LLM_COGNITION, "aigol conversation", "ocs_llm_cognition_end_to_end_runtime"),
     )
 
 
@@ -219,6 +221,8 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(SHOW_STATUS, "HIGH", ["status"])
     if "dashboard" in normalized:
         return _analysis(SHOW_DASHBOARD, "HIGH", ["dashboard"])
+    if _is_ocs_llm_cognition_prompt(normalized):
+        return _analysis(OCS_LLM_COGNITION, "MEDIUM", ["ocs", "llm", "cognition"])
     raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
 
 
@@ -263,6 +267,45 @@ def _is_operator_decision_support_prompt(normalized: str) -> bool:
         or "priority" in normalized
         or "sequencing" in normalized
     )
+
+
+def is_ocs_llm_cognition_prompt(human_prompt: str) -> bool:
+    """Return whether a prompt should enter broad OCS LLM cognition."""
+
+    try:
+        normalized = _require_string(human_prompt, "human_prompt").lower().strip().rstrip(".?!")
+    except FailClosedRuntimeError:
+        return False
+    return _is_ocs_llm_cognition_prompt(normalized)
+
+
+def _is_ocs_llm_cognition_prompt(normalized: str) -> bool:
+    if "unrestricted" in normalized and "autonomous agent" in normalized:
+        return False
+    if "domain" in normalized and any(term in normalized for term in ("create", "new", "add")):
+        return False
+    cognition_markers = (
+        "first real aigol product",
+        "commercialization",
+        "managed services",
+        "license the platform",
+        "sell domains",
+        "should sapianta",
+        "continue the aigol",
+        "continue ",
+        "help me decide",
+        "what should",
+    )
+    question_starts = (
+        "should ",
+        "what should ",
+        "how should ",
+        "why should ",
+        "can you analyze",
+    )
+    if any(marker in normalized for marker in cognition_markers):
+        return True
+    return normalized.endswith("?") and normalized.startswith(question_starts)
 
 
 def _routing_decision_artifact(
@@ -499,6 +542,7 @@ def _operator_summary(workflow_id: str) -> str:
         IMPROVE_PROVIDER_LAYER: "Route to provider-layer improvement review guidance without execution.",
         SHOW_STATUS: "Show AiGOL status.",
         SHOW_DASHBOARD: "Show read-only operator dashboard.",
+        OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
     }
     return summaries.get(workflow_id, "")
 

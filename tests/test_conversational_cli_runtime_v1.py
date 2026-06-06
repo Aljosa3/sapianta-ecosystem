@@ -14,6 +14,7 @@ from aigol.runtime.conversational_cli_runtime import (
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
     IMPROVE_PROVIDER_LAYER,
+    OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
     REVIEW_LATEST_AUDIT,
     SHOW_LATEST_REPLAY_CHAIN,
@@ -90,6 +91,8 @@ def _input_sequence(values: list[str]):
         ("Create a compliance domain.", CREATE_DOMAIN_COMPLIANCE_CLARIFICATION),
         ("Create a healthcare version of the trading domain.", DOMAIN_ADAPTATION_REFERENCE),
         ("I want to create the first real AiGOL product domain.", OPERATOR_DECISION_SUPPORT),
+        ("I want to create the first real AiGOL product.", OCS_LLM_COGNITION),
+        ("Should Sapianta primarily sell domains, license the platform, or offer managed services?", OCS_LLM_COGNITION),
     ],
 )
 def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: str, workflow_id: str) -> None:
@@ -113,12 +116,13 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 10
-    assert coverage["conversationally_accessible_workflows"] == 10
-    assert coverage["coverage_ratio"] == "10/10"
+    assert coverage["registered_workflows"] == 11
+    assert coverage["conversationally_accessible_workflows"] == 11
+    assert coverage["coverage_ratio"] == "11/11"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
+    assert OCS_LLM_COGNITION in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -141,7 +145,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 10/10" in rendered
+    assert "coverage: 11/11" in rendered
 
 
 def test_interactive_conversation_routes_readonly_provider_layer_prompt(tmp_path) -> None:
