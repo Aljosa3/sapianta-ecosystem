@@ -1,0 +1,149 @@
+{
+  "milestone_id": "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_REVIEW_V1",
+  "classification": "REVIEW_ONLY_ROUTE_TRACE_EVIDENCE",
+  "scope": "aigol conversation routing visibility to workflow dispatch path",
+  "review_only": true,
+  "code_modified": false,
+  "observed_prompt_summary": "Commercial Sapianta product opportunity prompt requesting findings, assumptions, alternatives, risks, uncertainties, provider disagreements, clarification questions, confidence, milestone, commercialization path, reasoning, and cognition output only.",
+  "observed_displayed_workflow": "OCS_LLM_COGNITION",
+  "observed_executed_runtime": "OPERATOR_DECISION_SUPPORT",
+  "observed_result_signature": {
+    "heading": "Recommendation Generated",
+    "category": "PROVIDER_COMPARISON",
+    "replay_reference_suffix": "operator_decision_support",
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "execution_requested": false
+  },
+  "route_trace": [
+    {
+      "step": 1,
+      "transition": "Prompt captured for interactive turn",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "line_region": "1628-1639",
+      "result": "human_prompt available before routing visibility"
+    },
+    {
+      "step": 2,
+      "transition": "Routing visibility artifact recorded",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_record_interactive_routing_visibility",
+      "line_region": "714-743; 1640-1650",
+      "result": "operator_routing_summary appended to turn_progress_buffer"
+    },
+    {
+      "step": 3,
+      "transition": "Routing visibility candidates computed",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_interactive_routing_visibility_candidates",
+      "line_region": "811-921",
+      "result": "OCS_LLM_COGNITION and OPERATOR_DECISION_SUPPORT can both be candidates"
+    },
+    {
+      "step": 4,
+      "transition": "Routing visibility selected OCS",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_selected_routing_visibility_candidate",
+      "line_region": "924-950",
+      "result": "operator decision support is moved behind OCS for visibility when OCS predicate is true"
+    },
+    {
+      "step": 5,
+      "transition": "Visibility artifact persisted as visibility-only",
+      "file": "aigol/runtime/conversational_routing_visibility_runtime.py",
+      "function": "record_conversational_routing_visibility",
+      "line_region": "47-76",
+      "result": "visibility_only true, authority_granted false, provider_invoked false"
+    },
+    {
+      "step": 6,
+      "transition": "Actual dispatch executed separately",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "line_region": "2173-2230",
+      "result": "operator decision-support branch executed before OCS branch"
+    },
+    {
+      "step": 7,
+      "transition": "OCS branch not reached",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "line_region": "2654-2687",
+      "result": "OCS branch is later in the cascade and is skipped once operator support matches"
+    },
+    {
+      "step": 8,
+      "transition": "Operator support runtime generated observed result",
+      "file": "aigol/runtime/operator_decision_support_runtime.py",
+      "function": "run_operator_decision_support; render_operator_decision_support_summary",
+      "line_region": "42-75; 140-163",
+      "result": "Recommendation Generated output produced"
+    }
+  ],
+  "review_questions": {
+    "did_execution_enter_ocs_llm_cognition_end_to_end": false,
+    "routing_visibility_influences_dispatch": false,
+    "routing_decision_is_display_only": true,
+    "can_display_ocs_while_dispatch_executes_operator_support": true,
+    "provider_invoked_false_explanation": "The executed runtime was operator_decision_support_runtime, whose replay reconstruction returns provider_invoked false.",
+    "providers_none_interpretation": "For this observed path, providers NONE corroborates that OCS cognition did not execute when combined with the operator_decision_support replay and Recommendation Generated result."
+  },
+  "findings": [
+    {
+      "id": "F-1",
+      "classification": "DISPATCH_BUG",
+      "title": "Displayed workflow is not dispatch authority",
+      "root_cause": "CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1 is rendered before dispatch but is not consumed by the dispatch cascade.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:714-743",
+        "aigol/cli/aigol_cli.py:1640-1650",
+        "aigol/runtime/conversational_routing_visibility_runtime.py:47-76",
+        "aigol/cli/aigol_cli.py:2173-2230"
+      ]
+    },
+    {
+      "id": "F-2",
+      "classification": "ROUTING_BUG",
+      "title": "Routing visibility priority diverges from dispatch priority",
+      "root_cause": "Visibility moves OPERATOR_DECISION_SUPPORT behind OCS when OCS matches; dispatch checks operator decision support before OCS.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:924-950",
+        "aigol/cli/aigol_cli.py:2173-2230",
+        "aigol/cli/aigol_cli.py:2654-2687"
+      ]
+    },
+    {
+      "id": "F-3",
+      "classification": "FALSE_POSITIVE",
+      "title": "Operator decision-support output is correct for the branch actually executed",
+      "root_cause": "The output signature matches render_operator_decision_support_summary and operator_decision_support replay reconstruction.",
+      "evidence_paths": [
+        "aigol/runtime/operator_decision_support_runtime.py:114-137",
+        "aigol/runtime/operator_decision_support_runtime.py:140-163"
+      ]
+    },
+    {
+      "id": "F-4",
+      "classification": "FALSE_POSITIVE",
+      "title": "OCS cognition runtime did not fail in this trace",
+      "root_cause": "The OCS dispatch branch and _run_conversational_ocs_llm_cognition were not reached.",
+      "evidence_paths": [
+        "aigol/cli/aigol_cli.py:523-547",
+        "aigol/cli/aigol_cli.py:2654-2687"
+      ]
+    },
+    {
+      "id": "F-5",
+      "classification": "VISIBILITY_BUG",
+      "title": "ROUTING DECISION heading implies execution selection",
+      "root_cause": "The rendered routing block does not clearly distinguish visibility-only route explanation from actual workflow dispatch authority.",
+      "evidence_paths": [
+        "aigol/runtime/conversational_routing_visibility_runtime.py:47-76",
+        "aigol/runtime/conversational_routing_visibility_runtime.py:131-151"
+      ]
+    }
+  ],
+  "root_cause_summary": "Duplicate independent routing systems: routing visibility selected OCS for display, while the runtime dispatch cascade independently matched and executed operator decision support first.",
+  "conclusive_answer": "The CLI displayed workflow OCS_LLM_COGNITION because the routing visibility artifact selected it, but produced operator_decision_support output because actual dispatch ignored that artifact and entered the earlier operator decision-support branch."
+}

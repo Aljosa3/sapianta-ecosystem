@@ -1,0 +1,54 @@
+{
+  "milestone_id": "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_REVIEW_V1",
+  "classification": "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_REVIEW_CERTIFICATION",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "scope": "targeted route-trace review of OCS routing visibility versus operator decision-support dispatch",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_behavior_changed": false,
+  "provider_behavior_changed": false,
+  "ocs_cognition_behavior_changed": false,
+  "certification_summary": "The observed mismatch is certified as a routing visibility to dispatch mismatch. The displayed OCS workflow comes from a visibility-only artifact; the executed output comes from the independent operator decision-support dispatch branch.",
+  "deliverables": [
+    "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_REVIEW_V1.md",
+    "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_EVIDENCE.json",
+    "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_CERTIFICATION.json",
+    "AIGOL_OCS_LLM_COGNITION_ROUTE_TRACE_DIAGRAM_V1.md"
+  ],
+  "certified_answers": {
+    "execution_entered_ocs_llm_cognition_end_to_end": false,
+    "routing_visibility_artifact_is_dispatch_source": false,
+    "actual_dispatch_source": "aigol/cli/aigol_cli.py::run_interactive_conversation if/elif cascade",
+    "actual_executed_workflow": "OPERATOR_DECISION_SUPPORT",
+    "displayed_workflow_source": "CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1",
+    "provider_invoked_false_explained": true,
+    "providers_none_explained": true,
+    "root_cause_identified": true
+  },
+  "root_cause": {
+    "classification": "DISPATCH_BUG",
+    "summary": "Routing visibility and workflow dispatch use separate selection mechanisms with divergent priority. Visibility can display OCS while dispatch executes operator decision support first.",
+    "primary_file": "aigol/cli/aigol_cli.py",
+    "visibility_functions": [
+      "_record_interactive_routing_visibility",
+      "_interactive_routing_visibility_analysis",
+      "_interactive_routing_visibility_candidates",
+      "_selected_routing_visibility_candidate"
+    ],
+    "dispatch_function": "run_interactive_conversation",
+    "dispatch_branch_executed": "elif is_operator_decision_support_prompt(human_prompt)",
+    "dispatch_branch_not_reached": "elif is_ocs_llm_cognition_prompt(human_prompt)"
+  },
+  "evidence_quality": {
+    "exact_files_identified": true,
+    "exact_functions_identified": true,
+    "exact_branches_identified": true,
+    "exact_runtime_path_identified": true,
+    "review_questions_answered": true
+  },
+  "limitations": [
+    "This certification is review-only and does not implement a dispatch fix.",
+    "Line numbers refer to the current working tree at review time.",
+    "No runtime execution was required to prove the static branch ordering mismatch."
+  ]
+}
