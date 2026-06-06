@@ -131,6 +131,42 @@ def test_multiple_approved_providers_produce_independent_cognition_artifacts(tmp
         assert provider_result["comparison_performed"] is False
 
 
+def test_openai_responses_api_nested_output_text_produces_cognition_artifact(tmp_path):
+    def openai_shape_transport(_payload: dict, metadata: dict) -> dict:
+        assert metadata["provider_role"] == "COGNITION_PROVIDER"
+        return {
+            "id": "response-openai-shape",
+            "object": "response",
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": _provider_text(metadata["provider_id"]),
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+        }
+
+    transports = _transports()
+    transports["provider-a"] = openai_shape_transport
+    result = _run(tmp_path, transport_registry=transports)
+
+    assert result["final_status"] == STATUS_COMPLETED
+    assert result["successful_provider_count"] == 3
+    provider_a = next(item for item in result["provider_results"] if item["provider_id"] == "provider-a")
+    response = provider_a["provider_response_artifact"]
+    cognition_artifact = provider_a["llm_cognition_artifact"]
+    assert response["response_text"] == _provider_text("provider-a")
+    assert response["provider_invoked"] is True
+    assert cognition_artifact["artifact_type"] == LLM_COGNITION_ARTIFACT_V1
+    assert cognition_artifact["canonical_provider_assisted_cognition_output"] is True
+
+
 def test_provider_failure_is_isolated_and_remaining_providers_continue(tmp_path):
     result = _run(tmp_path, transport_registry=_transports(failing_provider="provider-b"))
 

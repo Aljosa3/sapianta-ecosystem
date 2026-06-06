@@ -854,7 +854,27 @@ def _extract_response_text(raw_response: Any) -> str:
     for key in ("output_text", "text", "response_text"):
         if isinstance(raw_response.get(key), str):
             return _require_string(raw_response[key], "provider_response_text")
+    nested_text = _extract_responses_api_text(raw_response)
+    if nested_text:
+        return _require_string(nested_text, "provider_response_text")
     raise FailClosedRuntimeError("provider response did not include response text")
+
+
+def _extract_responses_api_text(raw_response: dict[str, Any]) -> str:
+    output = raw_response.get("output")
+    if not isinstance(output, list):
+        return ""
+    parts: list[str] = []
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for content_item in content:
+            if isinstance(content_item, dict) and isinstance(content_item.get("text"), str):
+                parts.append(content_item["text"])
+    return "".join(parts)
 
 
 def _reject_prohibited_flags(artifact: dict[str, Any], label: str) -> None:

@@ -1,0 +1,63 @@
+{
+  "artifact": "AIGOL_REAL_LLM_COGNITION_ATTACHMENT_FIX_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "milestone": "AIGOL_REAL_LLM_COGNITION_ATTACHMENT_FIX_V1",
+  "status": "PASS",
+  "classification": "CERTIFIED_REAL_LLM_COGNITION_ATTACHMENT",
+  "runtime_modified": "aigol/runtime/multi_provider_cognition_runtime.py",
+  "test_modified": "tests/test_multi_provider_cognition_runtime_v1.py",
+  "root_cause": {
+    "function": "_extract_response_text",
+    "previous_supported_shapes": [
+      "output_text",
+      "text",
+      "response_text"
+    ],
+    "added_supported_shape": "output[].content[].text"
+  },
+  "real_validation": {
+    "human_request": "I want to create the first real AiGOL product.",
+    "provider_selected": "openai",
+    "provider_type": "external_llm",
+    "provider_schema_id": "openai.responses.v1",
+    "final_status": "COMPLETED",
+    "REAL_LLM_PROVIDER_ATTACHED": true,
+    "REAL_LLM_PROVIDER_USED_BY_OCS": true,
+    "provider_invocation_evidence": {
+      "provider_id": "openai",
+      "provider_invoked": true,
+      "provider_request_artifact_hash": "sha256:9e6d56b4a1940041e0d87bdc530122e38f58c9a5fbd9051976f03e67c9d0ee64",
+      "provider_response_artifact_hash": "sha256:58c3c3e24321500780f0818c6bd8ad8ee5208a8fb17db4b0a1de4d3f99112373"
+    },
+    "cognition_artifact_evidence": {
+      "artifact_type": "LLM_COGNITION_ARTIFACT_V1",
+      "artifact_hash": "sha256:e49f31b7821946be2f03ffd618b65f0fc8bb388a96033cda1ced4e53a3864b47"
+    },
+    "comparison_evidence": {
+      "comparison_artifact_hash": "sha256:d2d16e7cff3ac3862b11d36b779331e65e481c363edeea50db5ed2ed1cd869a4",
+      "comparison_confidence": "MEDIUM"
+    },
+    "continuity_evidence": {
+      "history_reference_hash": "sha256:2071dad7a1b3da42cce234e5a06dd3d598e5a34a0e30e3be85cc8e94639d2922",
+      "continuity_artifact_hash": "sha256:e2d821c69ea63e780387ba93e0de8ee3ba376ee73500c767b0611728a20803c8"
+    },
+    "clarification_evidence": {
+      "clarification_artifact_hash": "sha256:c6c8a7591f20291864a87a4a73f4b96be395d791c559860ba51341fcaae07677",
+      "clarification_required": true,
+      "clarification_candidate_count": 3
+    },
+    "replay_reconstruction_evidence": {
+      "reconstructed": true,
+      "replay_hash": "sha256:7d254c8f9afdbd14e62b2af295d6cd49377a6096f20314b1578ac827e261c4f4"
+    }
+  },
+  "validation_summary": {
+    "multi_provider_regression_tests": "8 passed",
+    "multi_provider_regression_test_command": "python -m pytest tests/test_multi_provider_cognition_runtime_v1.py",
+    "full_cognition_chain_tests": "44 passed",
+    "full_cognition_chain_test_command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_ocs_llm_cognition_continuity_and_clarification_runtime_v1.py tests/test_cognition_comparison_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py tests/test_cognition_artifact_runtime_v1.py tests/test_llm_cognition_provider_runtime_v1.py",
+    "real_openai_ocs_validation": "PASS",
+    "json_parse": "PASS",
+    "git_diff_check": "PASS"
+  }
+}
