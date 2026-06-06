@@ -57,6 +57,24 @@ class BufferedPasteInput:
         return bool(self.values) and self.values[0] != "exit"
 
 
+class IntermittentBufferedPasteInput:
+    def __init__(self, values: list[str], pending_results: list[bool]):
+        self.values = list(values)
+        self.pending_results = list(pending_results)
+        self.prompts: list[str] = []
+
+    def __call__(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        if not self.values:
+            raise EOFError
+        return self.values.pop(0)
+
+    def has_pending_input(self) -> bool:
+        if self.pending_results:
+            return self.pending_results.pop(0)
+        return bool(self.values) and self.values[0] != "exit"
+
+
 def _args(tmp_path, *, session_id: str = SESSION_ID):
     parser = build_parser()
     return parser.parse_args(
@@ -139,6 +157,60 @@ def test_case_b_multiline_paste_creates_one_turn_without_fragmentation(tmp_path,
     assert "TURN COMPLETED" in output[0]
     assert pasted.prompts.count("AiGOL > ") == 2
     assert pasted.prompts.count("... ") == len(CASE_B_LINES)
+
+
+def test_multiline_reentry_does_not_consume_sentinel_as_second_turn(tmp_path, monkeypatch) -> None:
+    output: list[str] = []
+    pasted = IntermittentBufferedPasteInput(
+        [
+            "Run OCS cognition on this prompt.",
+            "Preserve one governed turn.",
+            MULTILINE_PROMPT_TERMINATOR,
+            "exit",
+        ],
+        pending_results=[True, False],
+    )
+
+    def deterministic_conversation(**kwargs):
+        prompt_id = kwargs["prompt_id"]
+        return {
+            "prompt_id": prompt_id,
+            "response_status": "READY",
+            "response_source": "DETERMINISTIC_TEST_CONVERSATION",
+            "response_text": "single governed turn",
+            "conversation_replay_reference": "deterministic/conversation",
+            "replay_reference": "deterministic/prompt",
+            "fail_closed": False,
+            "failure_reason": None,
+            "canonical_chain_id": f"{prompt_id}:CHAIN",
+            "current_chain_id": f"{prompt_id}:CHAIN",
+            "latest_chain_id": f"{prompt_id}:CHAIN",
+            "suggested_inspection_commands": [],
+        }
+
+    monkeypatch.setattr(aigol_cli, "submit_prompt_to_conversation", deterministic_conversation)
+
+    result = run_interactive_conversation(
+        _args(tmp_path, session_id="SESSION-MULTILINE-REENTRY-000001"),
+        input_func=pasted,
+        output_func=output.append,
+    )
+
+    session_root = tmp_path / "interactive_runtime" / "SESSION-MULTILINE-REENTRY-000001"
+    prompt_replay = reconstruct_multiline_prompt_capture_replay(
+        session_root / "TURN-000001" / "multiline_prompt_capture"
+    )
+
+    assert result["turn_count"] == 1
+    assert result["failed_turns"] == 0
+    assert len(result["turns"]) == 1
+    assert len(list(session_root.glob("TURN-*"))) == 1
+    assert result["turns"][0]["multiline_line_count"] == 2
+    assert result["turns"][0]["fragment_turns_created"] is False
+    assert prompt_replay["terminator_included"] is False
+    assert prompt_replay["single_turn_guarantee"] is True
+    assert pasted.prompts == ["AiGOL > ", "... ", "... ", "AiGOL > "]
+    assert "TURN COMPLETED" in output[0]
 
 
 def test_single_line_prompt_still_creates_one_turn(tmp_path, monkeypatch) -> None:

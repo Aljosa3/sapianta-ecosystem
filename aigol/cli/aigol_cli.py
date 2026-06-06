@@ -258,7 +258,7 @@ from aigol.runtime.conversation_native_development_context_integration import (
     run_conversation_native_development_context_integration,
 )
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
-from aigol.runtime.transport.serialization import load_json, replay_hash
+from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.unknown_domain_clarification_runtime import (
     CLARIFICATION_REQUIRED as UNKNOWN_DOMAIN_CLARIFICATION_REQUIRED,
     is_unknown_domain_clarification_eligible,
@@ -322,9 +322,12 @@ from aigol.runtime.conversational_routing_visibility_runtime import (
 from aigol.runtime.multiline_prompt_support_runtime import (
     record_multiline_prompt_capture,
 )
+from aigol.runtime.models import FailClosedRuntimeError
 from aigol.provider.provider_registry import ProviderRegistry
 from aigol.provider.provider_runtime import run_provider_attachment
 from aigol.provider.providers.openai_provider import (
+    DEFAULT_OPENAI_MODEL as OPENAI_PROVIDER_DEFAULT_MODEL,
+    MAX_OPENAI_RESPONSE_CHARS,
     OPENAI_PROVIDER_ID,
     OpenAIProviderAdapter,
     openai_provider_metadata,
@@ -338,6 +341,13 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
+CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_VERSION = "AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1"
+OPENAI_OUTPUT_BUDGET_ARTIFACT_V1 = "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1"
+CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS = 1200
+CONVERSATIONAL_OCS_OPENAI_CHARS_PER_TOKEN_ESTIMATE = 5
+CONVERSATIONAL_OCS_OPENAI_ESTIMATED_CHAR_BUDGET = (
+    CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS * CONVERSATIONAL_OCS_OPENAI_CHARS_PER_TOKEN_ESTIMATE
+)
 INTERACTIVE_EXIT_COMMANDS = frozenset({"exit", "quit"})
 MULTILINE_PROMPT_TERMINATOR = "."
 INTERACTIVE_CONVERSATION_MULTILINE_BANNER = "\n".join(
@@ -488,7 +498,7 @@ def _conversation_openai_cognition_provider_contract(
 
 
 def _conversation_openai_provider_adapter() -> OpenAIProviderAdapter:
-    return OpenAIProviderAdapter()
+    return OpenAIProviderAdapter(max_output_tokens=CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS)
 
 
 def _conversation_openai_provider_registry() -> ProviderRegistry:
@@ -502,6 +512,13 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
         provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "")
         if provider_id not in {OPENAI_PROVIDER_ID, "openai-comparison"}:
             raise FailClosedRuntimeError("conversational OCS provider is not registered for real OpenAI attachment")
+        provider_replay_dir = replay_dir / "real_openai_provider_attachment" / provider_id
+        _record_conversational_openai_output_budget(
+            provider_id=provider_id,
+            model=OPENAI_PROVIDER_DEFAULT_MODEL,
+            created_at=created_at,
+            replay_dir=provider_replay_dir,
+        )
         provider_capture = run_provider_attachment(
             provider_id=OPENAI_PROVIDER_ID,
             request={
@@ -516,12 +533,47 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
             timestamp=created_at,
             registry=_conversation_openai_provider_registry(),
             adapter=_conversation_openai_provider_adapter(),
-            replay_dir=replay_dir / "real_openai_provider_attachment" / provider_id,
+            replay_dir=provider_replay_dir,
         )
         response = provider_capture["provider_proposal_envelope"]["response"]
         return response.get("raw_response") or {"output_text": response["response_text"]}
 
     return {OPENAI_PROVIDER_ID: _transport, "openai-comparison": _transport}
+
+
+def _record_conversational_openai_output_budget(
+    *,
+    provider_id: str,
+    model: str,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": OPENAI_OUTPUT_BUDGET_ARTIFACT_V1,
+        "runtime_version": CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_VERSION,
+        "provider_id": provider_id,
+        "model": model,
+        "max_output_tokens": CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS,
+        "estimated_char_budget": CONVERSATIONAL_OCS_OPENAI_ESTIMATED_CHAR_BUDGET,
+        "max_provider_response_chars": MAX_OPENAI_RESPONSE_CHARS,
+        "budget_status": "ACTIVE",
+        "budget_deterministic": True,
+        "provider_invocation_allowed": CONVERSATIONAL_OCS_OPENAI_ESTIMATED_CHAR_BUDGET <= MAX_OPENAI_RESPONSE_CHARS,
+        "fail_closed": True,
+        "replay_visible": True,
+        "created_at": created_at,
+    }
+    if not artifact["provider_invocation_allowed"]:
+        raise FailClosedRuntimeError("conversational OpenAI output budget exceeds provider response bound")
+    artifact["artifact_hash"] = replay_hash(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "openai_output_budget_recorded",
+        "artifact": artifact,
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_dir / "000_openai_output_budget_recorded.json", wrapper)
+    return artifact
 
 
 def _run_conversational_ocs_llm_cognition(
@@ -1085,13 +1137,14 @@ def _read_interactive_prompt_capture(*, input_reader: Any) -> dict[str, Any]:
     lines = [raw_prompt]
     terminator_seen = False
     while True:
-        continuation = input_reader("... ")
+        try:
+            continuation = input_reader("... ")
+        except EOFError:
+            break
         if continuation.strip() == MULTILINE_PROMPT_TERMINATOR:
             terminator_seen = True
             break
         lines.append(continuation)
-        if not _has_buffered_multiline_input(input_reader):
-            break
     assembled = "\n".join(lines)
     return {
         "human_prompt": assembled,
