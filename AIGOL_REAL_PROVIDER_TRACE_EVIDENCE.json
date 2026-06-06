@@ -1,0 +1,158 @@
+{
+  "milestone_id": "AIGOL_REAL_PROVIDER_TRACE_REVIEW_V1",
+  "classification": "REVIEW_ONLY_REAL_PROVIDER_TRACE_EVIDENCE",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_modified": false,
+  "certification_changed": false,
+  "real_llm_provider_used_by_ocs": false,
+  "provider_status": [
+    {
+      "provider_id": "aigol-cognition-alpha",
+      "provider_type": "internal deterministic cognition transport",
+      "adapter": "aigol/cli/aigol_cli.py::_conversation_ocs_cognition_transports.<locals>._transport",
+      "transport": "deterministic in-process Python function",
+      "credential_required": false,
+      "credential_loaded": false,
+      "credential_used": false,
+      "external_call_made": false,
+      "real_model_output": false,
+      "classification": "SYNTHETIC_DETERMINISTIC_PROVIDER"
+    },
+    {
+      "provider_id": "aigol-cognition-beta",
+      "provider_type": "internal deterministic cognition transport",
+      "adapter": "aigol/cli/aigol_cli.py::_conversation_ocs_cognition_transports.<locals>._transport",
+      "transport": "deterministic in-process Python function",
+      "credential_required": false,
+      "credential_loaded": false,
+      "credential_used": false,
+      "external_call_made": false,
+      "real_model_output": false,
+      "classification": "SYNTHETIC_DETERMINISTIC_PROVIDER"
+    }
+  ],
+  "execution_trace": [
+    {
+      "step": "Human Prompt -> Conversational Routing",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_run_conversational_ocs_llm_cognition",
+      "line_region": "527-548",
+      "evidence": "Passes provider_contracts and transport_registry into run_ocs_llm_cognition_end_to_end."
+    },
+    {
+      "step": "Provider Contract Definition",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_ocs_cognition_provider_contracts",
+      "line_region": "454-466",
+      "evidence": "Creates contracts for aigol-cognition-alpha and aigol-cognition-beta."
+    },
+    {
+      "step": "Provider Contract Factory",
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "create_default_cognition_provider_contract",
+      "line_region": "153-190",
+      "evidence": "Default schema is mock.cognition.v1; creates replay-visible approved contract."
+    },
+    {
+      "step": "Transport Binding",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_ocs_cognition_transports",
+      "line_region": "469-524",
+      "evidence": "Maps both provider IDs to the same local _transport function returning json.dumps(result)."
+    },
+    {
+      "step": "OCS End-To-End",
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "function": "run_ocs_llm_cognition_end_to_end",
+      "line_region": "91-167",
+      "evidence": "Runs context, multi-provider cognition, comparison, continuity, clarification, and final artifact assembly."
+    },
+    {
+      "step": "Provider Request Creation",
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_create_provider_request_artifact",
+      "line_region": "325-397",
+      "evidence": "Creates LLM_COGNITION_PROVIDER_REQUEST_ARTIFACT_V1 and records provider_invoked false before transport invocation."
+    },
+    {
+      "step": "Provider Invocation",
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_invoke_provider_request",
+      "line_region": "400-422",
+      "evidence": "Gets transport from supplied registry and calls transport(payload, metadata)."
+    },
+    {
+      "step": "Provider Response Artifact",
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "function": "_invoke_provider_request",
+      "line_region": "423-490",
+      "evidence": "Captures raw_response, response_text, hashes, and provider_invoked true."
+    },
+    {
+      "step": "Cognition Artifact",
+      "file": "aigol/runtime/cognition_artifact_runtime.py",
+      "function": "create_llm_cognition_artifact",
+      "line_region": "133-190",
+      "evidence": "Normalizes response_text into LLM_COGNITION_ARTIFACT_V1 with request/response/contract lineage."
+    },
+    {
+      "step": "Comparison",
+      "file": "aigol/runtime/cognition_comparison_runtime.py",
+      "function": "run_cognition_comparison_runtime",
+      "line_region": "72-145",
+      "evidence": "Extracts cognition artifacts from result bundle and creates comparison artifact."
+    },
+    {
+      "step": "Continuity And Clarification",
+      "file": "aigol/runtime/ocs_llm_cognition_continuity_and_clarification_runtime.py",
+      "function": "run_ocs_llm_cognition_continuity_and_clarification",
+      "line_region": "72-119",
+      "evidence": "Creates history, continuity, clarification, and returned replay artifacts."
+    },
+    {
+      "step": "Replay Reconstruction",
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "function": "reconstruct_ocs_llm_cognition_end_to_end_replay",
+      "line_region": "191-260",
+      "evidence": "Reconstructs context, multi-provider cognition, comparison, continuity, and clarification replay."
+    }
+  ],
+  "credential_trace": {
+    "ocs_multi_provider_path_credential_required": false,
+    "ocs_multi_provider_path_credential_used": false,
+    "evidence": [
+      "aigol/cli/aigol_cli.py:469-524",
+      "aigol/runtime/multi_provider_cognition_runtime.py:400-422"
+    ],
+    "separate_openai_runtime_exists": true,
+    "separate_openai_runtime_not_used_by_reviewed_path": true,
+    "separate_openai_evidence": [
+      "aigol/runtime/llm_cognition_provider_runtime.py:298-323",
+      "aigol/runtime/llm_cognition_provider_runtime.py:532-549",
+      "aigol/runtime/llm_cognition_provider_runtime.py:669-700"
+    ]
+  },
+  "transport_trace": {
+    "http_api_transport_reached": false,
+    "local_model_transport_reached": false,
+    "deterministic_mock_transport_reached": true,
+    "transport_callable_source": "aigol/cli/aigol_cli.py:469-524"
+  },
+  "replay_evidence": {
+    "request_artifact": "LLM_COGNITION_PROVIDER_REQUEST_ARTIFACT_V1 via multi_provider_cognition_runtime.py:325-397",
+    "response_artifact": "LLM_COGNITION_PROVIDER_RESPONSE_ARTIFACT_V1 via multi_provider_cognition_runtime.py:423-490",
+    "cognition_artifact": "LLM_COGNITION_ARTIFACT_V1 via cognition_artifact_runtime.py:133-190",
+    "comparison_artifact": "COGNITION_COMPARISON_ARTIFACT_V1 via cognition_comparison_runtime.py:72-145",
+    "continuity_artifact": "COGNITION_CONTINUITY_ARTIFACT_V1 via ocs_llm_cognition_continuity_and_clarification_runtime.py:72-119",
+    "clarification_artifact": "COGNITION_CLARIFICATION_ARTIFACT_V1 via ocs_llm_cognition_continuity_and_clarification_runtime.py:72-119"
+  },
+  "lineage_verified_by_code": [
+    "provider request artifact includes provider_contract_hash",
+    "provider response artifact includes provider_request_hash",
+    "cognition artifact lineage references provider request hash and provider response hash",
+    "comparison artifact references source cognition artifacts",
+    "end-to-end replay reconstructs and verifies stage hashes"
+  ],
+  "final_decision": "REAL_LLM_PROVIDER_USED_BY_OCS = false"
+}
