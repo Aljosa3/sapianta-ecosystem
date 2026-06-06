@@ -1,0 +1,56 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_REVIEW_V1",
+  "classification": "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_REVIEW_CERTIFICATION",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "scope": "conversational CLI routing decision and workflow dispatch authority unification review",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_behavior_changed": false,
+  "provider_behavior_changed": false,
+  "workflow_behavior_changed": false,
+  "certification_summary": "Dispatch authority should move to CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1, hash-bound to CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1. CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1 should remain visibility-only and be generated from the authoritative selection.",
+  "deliverables": [
+    "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_REVIEW_V1.md",
+    "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_EVIDENCE.json",
+    "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_CERTIFICATION.json"
+  ],
+  "certified_answers": {
+    "which_artifact_should_be_dispatch_authority": "CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1",
+    "routing_decision_binding_required": "CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1",
+    "can_conversational_routing_visibility_artifact_be_dispatch_authority": false,
+    "visibility_artifact_role": "operator-facing replay-visible display evidence",
+    "current_dispatch_authority": "aigol/cli/aigol_cli.py::run_interactive_conversation if/elif cascade",
+    "safe_migration_possible": true,
+    "safe_direct_cutover_without_preserving_stateful_exceptions": false,
+    "implementation_complexity": "MEDIUM_HIGH"
+  },
+  "required_preserved_boundaries": [
+    "pending implementation approval decisions",
+    "recommendation approval decisions",
+    "recommendation follow-up decisions",
+    "fail-closed semantics for unmapped prompts",
+    "provider controls",
+    "worker controls",
+    "approval controls",
+    "replay reconstruction",
+    "turn completion evidence"
+  ],
+  "migration_certification": {
+    "recommended_architecture": "Stateful Resume Gate -> route_conversational_cli_intent -> CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1 -> dispatch by workflow_id -> visibility projection -> workflow runtime",
+    "minimum_required_tests": [
+      "OCS prompt visibility and dispatch equality",
+      "operator decision-support visibility and dispatch equality",
+      "ambiguous OCS/operator prompt single authoritative workflow",
+      "domain creation route dispatch equality",
+      "domain adaptation route dispatch equality",
+      "readonly route dispatch equality",
+      "unknown-domain clarification route dispatch equality",
+      "pending approval stateful resume preserved",
+      "recommendation approval stateful resume preserved",
+      "recommendation follow-up stateful resume preserved",
+      "unmapped prompt fail-closed or explicit fallback behavior certified"
+    ],
+    "certification_condition": "CERTIFIED only after all existing CLI tests and new dispatch-authority regression tests pass."
+  },
+  "final_answer": "AiGOL conversational CLI can safely move to Routing Decision = Dispatch Authority without breaking existing certified workflows only through a staged migration using CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1, with stateful pre-routing gates preserved and missing workflows explicitly registered or retained as documented exceptions."
+}

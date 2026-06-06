@@ -1,0 +1,243 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_DISPATCH_AUTHORITY_UNIFICATION_REVIEW_V1",
+  "classification": "REVIEW_ONLY_DISPATCH_AUTHORITY_UNIFICATION_EVIDENCE",
+  "scope": "aigol conversation routing decision and workflow dispatch authority",
+  "review_only": true,
+  "code_modified": false,
+  "recommended_dispatch_authority": {
+    "artifact_type": "CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1",
+    "bound_decision_artifact": "CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1",
+    "source_runtime": "aigol/runtime/conversational_cli_runtime.py::route_conversational_cli_intent",
+    "reason": "Workflow selection is hash-bound to the routing decision and contains workflow_id, routing_status, existing_runtime, existing_cli_command, coverage, and downstream control preservation fields."
+  },
+  "rejected_dispatch_authority": {
+    "artifact_type": "CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1",
+    "source_runtime": "aigol/runtime/conversational_routing_visibility_runtime.py::record_conversational_routing_visibility",
+    "reason": "The artifact is explicitly visibility-only and authority-denying.",
+    "evidence_paths": [
+      "aigol/runtime/conversational_routing_visibility_runtime.py:47-76",
+      "aigol/runtime/conversational_routing_visibility_runtime.py:131-151"
+    ]
+  },
+  "current_authority_model": {
+    "display_route": {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_record_interactive_routing_visibility",
+      "line_region": "714-743; 1640-1650",
+      "authority": false
+    },
+    "certified_router": {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "function": "route_conversational_cli_intent",
+      "line_region": "42-79",
+      "authority_candidate": true,
+      "current_interactive_authority": false
+    },
+    "actual_dispatch": {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "line_region": "2051-2688",
+      "authority": true,
+      "mechanism": "if/elif predicate cascade"
+    }
+  },
+  "existing_dispatch_dependencies": [
+    {
+      "workflow_or_state": "RECOMMENDATION_APPROVAL",
+      "line_region": "2051-2079",
+      "depends_on": [
+        "recommendation_continuity_artifact",
+        "_is_recommendation_decision_prompt"
+      ],
+      "migration_note": "Preserve as stateful pre-routing gate or add session-state-aware router input."
+    },
+    {
+      "workflow_or_state": "RECOMMENDATION_FOLLOWUP",
+      "line_region": "2080-2106",
+      "depends_on": [
+        "recommendation_continuity_artifact",
+        "recommendation_approval_artifact",
+        "is_recommendation_followup_prompt"
+      ],
+      "migration_note": "Preserve as stateful pre-routing gate."
+    },
+    {
+      "workflow_or_state": "CONVERSATIONAL_CLI_READONLY_WORKFLOW",
+      "line_region": "2107-2138",
+      "depends_on": [
+        "_is_conversational_cli_readonly_candidate",
+        "_run_conversational_cli_selected_readonly_workflow"
+      ],
+      "migration_note": "Can dispatch by workflow_id after route_conversational_cli_intent."
+    },
+    {
+      "workflow_or_state": "DOMAIN_ADAPTATION_REFERENCE",
+      "line_region": "2139-2172",
+      "depends_on": [
+        "is_domain_reference_adaptation_prompt",
+        "run_semantic_similarity_domain_reference_resolution"
+      ],
+      "migration_note": "Can dispatch by workflow_id after route_conversational_cli_intent."
+    },
+    {
+      "workflow_or_state": "OPERATOR_DECISION_SUPPORT",
+      "line_region": "2173-2230",
+      "depends_on": [
+        "is_operator_decision_support_prompt",
+        "run_operator_decision_support",
+        "create_recommendation_continuity"
+      ],
+      "migration_note": "Can dispatch by workflow_id; preserve recommendation continuity side effect."
+    },
+    {
+      "workflow_or_state": "UNKNOWN_DOMAIN_CLARIFICATION",
+      "line_region": "2231-2264",
+      "depends_on": [
+        "is_unknown_domain_clarification_eligible",
+        "run_unknown_domain_clarification_workflow"
+      ],
+      "migration_note": "Can dispatch by workflow_id after route_conversational_cli_intent."
+    },
+    {
+      "workflow_or_state": "NATIVE_DEVELOPMENT_INTENT_ROUTING",
+      "line_region": "2265-2620",
+      "depends_on": [
+        "is_conversation_native_development_intent",
+        "run_conversation_native_development_intent_routing",
+        "run_conversation_to_ppp_handoff_execution",
+        "governed implementation dry-run and worker chain"
+      ],
+      "migration_note": "Can dispatch by registered domain workflow IDs, but handler extraction is larger due nested approval and worker evidence."
+    },
+    {
+      "workflow_or_state": "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+      "line_region": "2621-2653",
+      "depends_on": [
+        "is_native_development_prompt",
+        "run_conversation_native_development_context_integration"
+      ],
+      "migration_note": "Not currently registered in workflow_registry; must be registered or kept as explicit exception."
+    },
+    {
+      "workflow_or_state": "OCS_LLM_COGNITION",
+      "line_region": "2654-2687",
+      "depends_on": [
+        "is_ocs_llm_cognition_prompt",
+        "_run_conversational_ocs_llm_cognition",
+        "render_ocs_llm_cognition_end_to_end_summary"
+      ],
+      "migration_note": "Can dispatch by workflow_id after router priority is aligned and regression tested."
+    },
+    {
+      "workflow_or_state": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "line_region": "2688 onward",
+      "depends_on": [
+        "submit_prompt_to_conversation"
+      ],
+      "migration_note": "Current router fails closed on unmapped prompts; fallback must become a registered workflow or remain explicit exception."
+    }
+  ],
+  "affected_files": [
+    {
+      "path": "aigol/cli/aigol_cli.py",
+      "reason": "Owns interactive prompt loop, routing visibility call, dispatch cascade, branch-local side effects, output rendering, turn summaries, and completion."
+    },
+    {
+      "path": "aigol/runtime/conversational_cli_runtime.py",
+      "reason": "Owns routing decision and workflow selection artifacts; would need to become the ordinary prompt dispatch authority and cover missing workflows or exceptions."
+    },
+    {
+      "path": "aigol/runtime/conversational_routing_visibility_runtime.py",
+      "reason": "Should render or persist visibility from authoritative routing selection instead of a parallel classifier."
+    },
+    {
+      "path": "aigol/runtime/operator_decision_support_runtime.py",
+      "reason": "Operator-support predicate currently participates in dispatch priority and provider-comparison classification."
+    },
+    {
+      "path": "aigol/runtime/conversation_native_development_intent_routing.py",
+      "reason": "Native development intent branch has deep side effects and approval/handoff evidence."
+    },
+    {
+      "path": "aigol/runtime/conversation_native_development_context_integration.py",
+      "reason": "Native development context branch is currently outside the certified router registry."
+    },
+    {
+      "path": "aigol/runtime/unknown_domain_clarification_runtime.py",
+      "reason": "Clarification workflow must preserve current fail-closed and clarification-required semantics."
+    },
+    {
+      "path": "aigol/runtime/semantic_similarity_domain_reference_runtime.py",
+      "reason": "Domain adaptation reference workflow depends on current branch routing."
+    },
+    {
+      "path": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "reason": "No behavior change required, but tests must prove dispatch reaches this runtime when workflow selection is OCS."
+    },
+    {
+      "path": "tests/test_conversational_cli_runtime_v1.py",
+      "reason": "Tests router coverage, routing replay, interactive routing branch outputs, and fail-closed routing."
+    },
+    {
+      "path": "tests/test_conversational_routing_visibility_runtime_v1.py",
+      "reason": "Tests visibility workflow and competing signals; expectations would need to match authoritative selection."
+    },
+    {
+      "path": "tests/test_interactive_conversation_cli_v1.py",
+      "reason": "Interactive CLI regression coverage for prompt handling and turn outputs."
+    },
+    {
+      "path": "tests/test_conversational_ocs_cognition_binding_v1.py",
+      "reason": "Must prove OCS selected workflow dispatches to OCS end-to-end."
+    },
+    {
+      "path": "tests/test_semantic_similarity_domain_reference_runtime_v1.py",
+      "reason": "Contains routing integration expectations for domain adaptation/reference behavior."
+    }
+  ],
+  "breakage_risks": [
+    {
+      "risk": "Stateful approval and recommendation prompts stop routing correctly",
+      "severity": "HIGH",
+      "mitigation": "Keep stateful resume gate before ordinary routing or extend router inputs with session state."
+    },
+    {
+      "risk": "Native development context integration becomes unreachable",
+      "severity": "MEDIUM_HIGH",
+      "mitigation": "Register NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION or document it as a pre-routing exception."
+    },
+    {
+      "risk": "Legacy default conversation fallback disappears",
+      "severity": "MEDIUM_HIGH",
+      "mitigation": "Register explicit DEFAULT_PROVIDER_ASSISTED_CONVERSATION or intentionally certify fail-closed behavior."
+    },
+    {
+      "risk": "Turn summaries lose branch-local fields",
+      "severity": "MEDIUM",
+      "mitigation": "Extract branch handlers without changing summary builders."
+    },
+    {
+      "risk": "Routing priority changes certified workflow behavior",
+      "severity": "HIGH",
+      "mitigation": "Add ambiguous prompt regression tests before changing authority."
+    }
+  ],
+  "minimal_migration_path": [
+    "Declare CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1 as dispatch authority and preserve visibility as non-authoritative display evidence.",
+    "Keep pending approval, recommendation approval, and recommendation follow-up as a stateful pre-routing gate.",
+    "Call route_conversational_cli_intent once for ordinary prompts before workflow execution.",
+    "Dispatch from workflow_selection_artifact.workflow_id instead of re-running prompt predicates.",
+    "Generate CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1 from the authoritative routing capture.",
+    "Register missing workflows or document explicit exceptions before total unification.",
+    "Add regression tests for OCS/operator ambiguity, stateful resumes, default fallback/fail-closed behavior, and visibility/dispatch equality."
+  ],
+  "implementation_complexity": {
+    "estimate": "MEDIUM_HIGH",
+    "reason": "The authoritative routing artifact exists, but the interactive loop interleaves branch selection, runtime execution, pending state mutation, replay directory creation, output rendering, and turn-summary construction."
+  },
+  "final_answer": {
+    "can_move_to_routing_decision_equals_dispatch_authority": true,
+    "safe_without_breaking_existing_certified_workflows": "Yes, if staged with stateful pre-routing gates preserved and missing workflows explicitly registered or documented as exceptions.",
+    "can_visibility_artifact_become_authority": false
+  }
+}
