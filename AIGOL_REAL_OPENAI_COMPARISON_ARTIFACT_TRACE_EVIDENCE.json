@@ -1,0 +1,144 @@
+{
+  "artifact": "AIGOL_REAL_OPENAI_COMPARISON_ARTIFACT_TRACE_EVIDENCE",
+  "version": "V1",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_modified": false,
+  "observed_replay": {
+    "turn_id": "TURN-000153",
+    "ocs_replay_root": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end",
+    "request_bundle": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/000_multi_provider_cognition_request_bundle.json",
+    "result_bundle": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/001_multi_provider_cognition_result_bundle.json",
+    "comparison_artifact": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/stages/cognition_comparison/000_cognition_comparison_artifact.json"
+  },
+  "final_answer": {
+    "OPENAI_ARTIFACT_CREATED": false,
+    "OPENAI_COMPARISON_ARTIFACT_CREATED": false,
+    "SUCCESSFUL_COGNITION_ARTIFACT_COUNT": 0,
+    "COMPARISON_MINIMUM_REQUIRED": 2,
+    "ROOT_CAUSE": "Both OpenAI-backed provider attachment attempts failed closed with OpenAI provider unavailable before successful provider response artifact creation and cognition artifact normalization."
+  },
+  "provider_contract_trace": {
+    "source_file": "aigol/cli/aigol_cli.py",
+    "function": "_conversation_ocs_cognition_provider_contracts",
+    "line_region": "461-473",
+    "providers": [
+      {
+        "provider_id": "openai",
+        "provider_role": "COGNITION_PROVIDER",
+        "provider_schema_id": "openai.responses.v1",
+        "approved": true
+      },
+      {
+        "provider_id": "openai-comparison",
+        "provider_role": "COGNITION_PROVIDER",
+        "provider_schema_id": "openai.responses.v1",
+        "approved": true
+      }
+    ]
+  },
+  "transport_registry_trace": {
+    "source_file": "aigol/cli/aigol_cli.py",
+    "function": "_conversation_ocs_cognition_transports",
+    "line_region": "500-524",
+    "transport_keys": [
+      "openai",
+      "openai-comparison"
+    ],
+    "both_use_run_provider_attachment": true,
+    "both_use_openai_provider_id_for_attachment": true,
+    "both_use_same_adapter_factory": "_conversation_openai_provider_adapter",
+    "both_use_same_registry_factory": "_conversation_openai_provider_registry"
+  },
+  "observed_request_bundle": {
+    "provider_count": 2,
+    "deterministic_provider_order": [
+      "openai",
+      "openai-comparison"
+    ],
+    "request_artifact_count": 2,
+    "provider_request_artifact_hashes": [
+      "sha256:6d93aa52143442f636657550274d5775c30e03d558bfdcb19bf3624408e934ad",
+      "sha256:99b01579f686945053aedef5127ef71ca2374f6d05b42a7c3632c757f66b06b2"
+    ]
+  },
+  "observed_provider_attachment_replay": [
+    {
+      "provider_slot": "openai",
+      "provider_attachment_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+      "event_type": "FAILED_CLOSED",
+      "failure_reason": "OpenAI provider unavailable",
+      "provider_invoked": false,
+      "response": null
+    },
+    {
+      "provider_slot": "openai-comparison",
+      "provider_attachment_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_proposal_created.json",
+      "event_type": "FAILED_CLOSED",
+      "failure_reason": "OpenAI provider unavailable",
+      "provider_invoked": false,
+      "response": null
+    }
+  ],
+  "observed_result_bundle": {
+    "provider_count": 2,
+    "successful_provider_count": 0,
+    "failed_provider_count": 2,
+    "provider_results_count": 0,
+    "provider_failures_count": 2,
+    "cognition_artifact_hashes": [],
+    "provider_failures": [
+      {
+        "provider_id": "openai",
+        "failed_stage": "PROVIDER_COGNITION_PROCESSING",
+        "failure_reason": "provider cognition processing failed closed",
+        "provider_invoked": false
+      },
+      {
+        "provider_id": "openai-comparison",
+        "failed_stage": "PROVIDER_COGNITION_PROCESSING",
+        "failure_reason": "provider cognition processing failed closed",
+        "provider_invoked": false
+      }
+    ]
+  },
+  "comparison_trace": {
+    "source_file": "aigol/runtime/cognition_comparison_runtime.py",
+    "minimum_required_line_region": "123-133",
+    "minimum_required": 2,
+    "observed_source_cognition_artifacts": 0,
+    "observed_failure_reason": "at least two cognition artifacts are required for comparison"
+  },
+  "code_evidence": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_region": "461-524",
+      "evidence": "Binding creates openai and openai-comparison provider slots and transport keys."
+    },
+    {
+      "file": "aigol/provider/providers/openai_provider.py",
+      "line_region": "68-122",
+      "evidence": "OpenAIProviderAdapter generates proposals and maps client failures to OpenAI provider unavailable."
+    },
+    {
+      "file": "aigol/provider/provider_runtime.py",
+      "line_region": "36-78",
+      "evidence": "run_provider_attachment returns FAILED_CLOSED envelope with response null on provider failure."
+    },
+    {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "line_region": "262-322",
+      "evidence": "Provider failures are isolated and appended to provider_failures."
+    },
+    {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "line_region": "546-600",
+      "evidence": "Result bundle records successful_provider_count, failed_provider_count, provider_results, provider_failures, and cognition_artifact_hashes."
+    },
+    {
+      "file": "aigol/runtime/cognition_comparison_runtime.py",
+      "line_region": "123-133",
+      "evidence": "Comparison requires at least two cognition artifacts."
+    }
+  ]
+}
