@@ -1,0 +1,133 @@
+{
+  "milestone_id": "AIGOL_REAL_OPENAI_CONVERSATIONAL_REVALIDATION_V1",
+  "validation_type": "EXECUTION_VALIDATION",
+  "historical_replay_ignored": true,
+  "authoritative_session_id": "AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002",
+  "authoritative_turn_id": "TURN-000001",
+  "authoritative_turn_replay_dir": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001",
+  "prompt_hash": "sha256:0900daed62b7af8af9e0a5df3f42e52d79b0f522173a6a4815ee8b570615ad51",
+  "routing": {
+    "workflow_id": "OCS_LLM_COGNITION",
+    "routing_status": "WORKFLOW_SELECTED",
+    "workflow_selection_artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/conversational_cli_routing/001_conversational_workflow_selection_recorded.json",
+    "workflow_selection_hash": "sha256:a65c7b55abfe0b0b26dcd87fd6075c28545ad08b200cae9747f411eac2f77366"
+  },
+  "provider_readiness": [
+    {
+      "binding": "openai",
+      "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_readiness_recorded.json",
+      "artifact_hash": "sha256:0b60e247a592d7d5575d46a5052d65328124e3673241bc02afcefb2dcd7c91ef",
+      "readiness_status": "READY",
+      "api_key_present": true,
+      "provider_configuration_valid": true,
+      "model_configuration_valid": true,
+      "transport_available": true,
+      "provider_activation_ready": true,
+      "provider_invocation_allowed": true,
+      "sanitized_diagnostics": {
+        "readiness_stage": "provider_activation_readiness",
+        "failure_category": null,
+        "exception_type": null,
+        "http_status": null
+      }
+    },
+    {
+      "binding": "openai-comparison",
+      "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_readiness_recorded.json",
+      "artifact_hash": "sha256:0b60e247a592d7d5575d46a5052d65328124e3673241bc02afcefb2dcd7c91ef",
+      "readiness_status": "READY",
+      "api_key_present": true,
+      "provider_configuration_valid": true,
+      "model_configuration_valid": true,
+      "transport_available": true,
+      "provider_activation_ready": true,
+      "provider_invocation_allowed": true,
+      "sanitized_diagnostics": {
+        "readiness_stage": "provider_activation_readiness",
+        "failure_category": null,
+        "exception_type": null,
+        "http_status": null
+      }
+    }
+  ],
+  "provider_attachments": [
+    {
+      "binding": "openai",
+      "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+      "artifact_hash": "sha256:0c4f57eb1767a5b51977f312af0c76cba823c97a2e2734c79ab8d7f66a73051d",
+      "event_type": "FAILED_CLOSED",
+      "provider_invoked": false,
+      "failure_reason": "OpenAI provider unavailable",
+      "failure_diagnostics": {
+        "failure_stage": "openai_http_request",
+        "exception_type": "TimeoutError",
+        "transport_failure_category": "TIMEOUT",
+        "http_status": null
+      }
+    },
+    {
+      "binding": "openai-comparison",
+      "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_proposal_created.json",
+      "artifact_hash": "sha256:714314f6c894ab72853bad84c4abb367962086aced4a774bb9afc6cccda52598",
+      "event_type": "FAILED_CLOSED",
+      "provider_invoked": false,
+      "failure_reason": "OpenAI provider unavailable",
+      "failure_diagnostics": {
+        "failure_stage": "openai_http_request",
+        "exception_type": "TimeoutError",
+        "transport_failure_category": "TIMEOUT",
+        "http_status": null
+      }
+    }
+  ],
+  "multi_provider_cognition": {
+    "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/001_multi_provider_cognition_result_bundle.json",
+    "artifact_type": "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "bundle_status": "COMPLETED",
+    "provider_count": 2,
+    "successful_provider_count": 0,
+    "failed_provider_count": 2,
+    "cognition_artifact_hashes": [],
+    "provider_failure_hashes": [
+      "sha256:027aab97c9940621ab6454339f14c4b0cb074875a70fa039cc0c35d28b3556af",
+      "sha256:cbd642c09e234750366e26bb8f2c5f62618b32e1f041435da945d1c54d1a42ec"
+    ],
+    "comparison_performed": false
+  },
+  "comparison": {
+    "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/cognition_comparison/000_cognition_comparison_artifact.json",
+    "artifact_hash": "sha256:67d5e7a0fb7d99a10e4fda043986d2302b462fc4534644748363f3ea3c20a4af",
+    "comparison_status": "FAILED_CLOSED",
+    "failure_reason": "at least two cognition artifacts are required for comparison"
+  },
+  "end_to_end": {
+    "artifact": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-CONVERSATIONAL-REVALIDATION-000002/TURN-000001/ocs_llm_cognition_end_to_end/000_ocs_llm_cognition_end_to_end_artifact.json",
+    "artifact_type": "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1",
+    "workflow_status": "FAILED_CLOSED",
+    "failure_reason": "cognition comparison failed closed: at least two cognition artifacts are required for comparison",
+    "provider_count": 0,
+    "successful_provider_count": 0,
+    "failed_provider_count": 0,
+    "cognition_artifact_hashes": [],
+    "comparison_artifact_hash": null,
+    "continuity_artifact_hash": null,
+    "clarification_artifact_hash": null
+  },
+  "determinations": {
+    "REAL_OPENAI_PROVIDER_USED": false,
+    "REAL_OPENAI_PROVIDER_USED_BY_OCS": false,
+    "PROVIDER_READINESS_STATUS": "READY",
+    "PROVIDER_READINESS_RUNTIME_WORKING": true,
+    "SUCCESSFUL_PROVIDER_COUNT": 0,
+    "FAILED_PROVIDER_COUNT": 2,
+    "COGNITION_ARTIFACT_COUNT": 0,
+    "COMPARISON_EXECUTED": true,
+    "COMPARISON_RUNTIME_WORKING": false,
+    "CONTINUITY_EXECUTED": false,
+    "CLARIFICATION_EXECUTED": false,
+    "END_TO_END_STATUS": "FAILED_CLOSED",
+    "END_TO_END_OCS_COGNITION_WORKING": false,
+    "PREVIOUS_COMPARISON_MINIMUM_ARTIFACT_FAILURE_STILL_OCCURS": true,
+    "PRODUCTION_READY_STATUS": "NOT_READY"
+  }
+}
