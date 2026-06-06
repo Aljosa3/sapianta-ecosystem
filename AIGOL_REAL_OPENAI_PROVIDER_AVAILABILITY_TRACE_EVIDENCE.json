@@ -1,0 +1,138 @@
+{
+  "artifact": "AIGOL_REAL_OPENAI_PROVIDER_AVAILABILITY_TRACE_EVIDENCE",
+  "version": "V1",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_modified": false,
+  "required_outputs": {
+    "REAL_OPENAI_PROVIDER_REGISTERED": true,
+    "REAL_OPENAI_PROVIDER_CREDENTIAL_FOUND": true,
+    "REAL_OPENAI_PROVIDER_AVAILABLE": false,
+    "FAILURE_LOCATION": "aigol/provider/providers/openai_provider.py::OpenAIHTTPClient.__call__ outbound request boundary, surfaced through OpenAIProviderAdapter._call_openai and run_provider_attachment",
+    "ROOT_CAUSE": "Outbound OpenAI transport unavailable after successful provider registration, lookup, adapter initialization, and credential lookup; exact low-level exception is not replay-persisted."
+  },
+  "environment_presence_check": {
+    "OPENAI_API_KEY_PRESENT": true,
+    "OPENAI_API_KEY_LENGTH_REDACTED_PRESENT": true,
+    "AIGOL_OPENAI_API_KEY_PRESENT": false,
+    "credential_values_exposed": false
+  },
+  "provider_registration_check": {
+    "lookup_provider_id": "openai",
+    "lookup_provider_status": "AVAILABLE",
+    "adapter_provider_id": "openai",
+    "adapter_class": "OpenAIProviderAdapter",
+    "registered_correctly": true,
+    "lookup_succeeded": true,
+    "adapter_initialization_succeeded": true
+  },
+  "observed_replay": {
+    "provider_attachment_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000153/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+    "event_type": "FAILED_CLOSED",
+    "failure_reason": "OpenAI provider unavailable",
+    "provider_invoked": false,
+    "provider_status": "FAILED_CLOSED",
+    "provider_version": "UNKNOWN",
+    "response": null
+  },
+  "trace": [
+    {
+      "step": "Conversational CLI binding",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_ocs_cognition_transports",
+      "line_region": "500-524",
+      "evidence": "Transport calls run_provider_attachment with provider_id=OPENAI_PROVIDER_ID."
+    },
+    {
+      "step": "Provider registration",
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_conversation_openai_provider_registry",
+      "line_region": "494-497",
+      "evidence": "Registers openai_provider_metadata()."
+    },
+    {
+      "step": "Provider metadata",
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "openai_provider_metadata",
+      "line_region": "159-165",
+      "evidence": "Creates provider_id=openai, provider_type=llm, provider_version=openai-responses-v1, provider_status=AVAILABLE."
+    },
+    {
+      "step": "Provider lookup and availability check",
+      "file": "aigol/provider/provider_runtime.py",
+      "function": "run_provider_attachment",
+      "line_region": "50-54",
+      "evidence": "Looks up provider and checks provider_status != AVAILABLE. Observed failure was not this branch."
+    },
+    {
+      "step": "Adapter proposal generation",
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "OpenAIProviderAdapter.generate_proposal",
+      "line_region": "68-74",
+      "evidence": "Resolves API key, creates OpenAI payload, and calls _call_openai."
+    },
+    {
+      "step": "Credential lookup",
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "_resolve_api_key",
+      "line_region": "239-241",
+      "evidence": "Uses OPENAI_API_KEY. Missing key would produce OPENAI_API_KEY is required, not observed failure."
+    },
+    {
+      "step": "Outbound OpenAI call",
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "OpenAIProviderAdapter._call_openai",
+      "line_region": "109-122",
+      "evidence": "Calls configured client and maps non-runtime client exceptions to OpenAI provider unavailable."
+    },
+    {
+      "step": "Default HTTP transport",
+      "file": "aigol/provider/providers/openai_provider.py",
+      "function": "OpenAIHTTPClient.__call__",
+      "line_region": "132-156",
+      "evidence": "POSTs to https://api.openai.com/v1/responses and maps URLError, TimeoutError, and JSONDecodeError to OpenAI provider unavailable."
+    },
+    {
+      "step": "Failure capture",
+      "file": "aigol/provider/provider_runtime.py",
+      "function": "run_provider_attachment",
+      "line_region": "67-78",
+      "evidence": "Catches failure and persists FAILED_CLOSED provider attachment replay."
+    }
+  ],
+  "candidate_causes": {
+    "missing_api_key": {
+      "supported": false,
+      "reason": "OPENAI_API_KEY is present; missing key would produce OPENAI_API_KEY is required."
+    },
+    "wrong_environment_variable": {
+      "supported": false,
+      "reason": "This adapter uses OPENAI_API_KEY, which is present. AIGOL_OPENAI_API_KEY is not used by OpenAIProviderAdapter."
+    },
+    "provider_registration": {
+      "supported": false,
+      "reason": "Provider lookup returned provider_status AVAILABLE."
+    },
+    "adapter_initialization": {
+      "supported": false,
+      "reason": "Adapter instantiated as OpenAIProviderAdapter with provider_id openai."
+    },
+    "transport_configuration": {
+      "supported": true,
+      "reason": "Failure occurs at outbound OpenAI client call boundary."
+    },
+    "runtime_guard": {
+      "supported": false,
+      "reason": "Runtime reached adapter.generate_proposal."
+    },
+    "policy_restriction": {
+      "supported": false,
+      "reason": "Observed failure string is transport availability, not policy rejection."
+    },
+    "network_restriction": {
+      "supported": "plausible_not_replay_proven",
+      "reason": "OpenAIHTTPClient maps URLError/TimeoutError to the observed message, but replay does not persist the chained exception."
+    }
+  },
+  "final_classification": "OPENAI_PROVIDER_REGISTRATION_AND_CREDENTIAL_OK_TRANSPORT_UNAVAILABLE"
+}

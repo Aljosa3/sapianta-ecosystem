@@ -1,0 +1,33 @@
+{
+  "artifact": "AIGOL_REAL_OPENAI_PROVIDER_AVAILABILITY_TRACE_CERTIFICATION",
+  "version": "V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "classification": "AIGOL_REAL_OPENAI_PROVIDER_AVAILABILITY_TRACE_REVIEW",
+  "review_only": true,
+  "code_modified": false,
+  "runtime_modified": false,
+  "certifies": {
+    "real_openai_provider_registered": true,
+    "real_openai_provider_lookup_succeeds": true,
+    "real_openai_provider_credential_found": true,
+    "real_openai_provider_available": false,
+    "failure_location_identified": true,
+    "root_cause_bounded": true,
+    "low_level_transport_exception_replay_visible": false
+  },
+  "required_outputs": {
+    "REAL_OPENAI_PROVIDER_REGISTERED": true,
+    "REAL_OPENAI_PROVIDER_CREDENTIAL_FOUND": true,
+    "REAL_OPENAI_PROVIDER_AVAILABLE": false,
+    "FAILURE_LOCATION": "aigol/provider/providers/openai_provider.py::OpenAIHTTPClient.__call__ / OpenAIProviderAdapter._call_openai outbound client call",
+    "ROOT_CAUSE": "Outbound OpenAI transport unavailable after successful registration, lookup, adapter initialization, and credential lookup; exact low-level exception is not persisted in replay."
+  },
+  "evidence_artifact": "AIGOL_REAL_OPENAI_PROVIDER_AVAILABILITY_TRACE_EVIDENCE.json",
+  "review_artifact": "AIGOL_REAL_OPENAI_PROVIDER_AVAILABILITY_TRACE_REVIEW_V1.md",
+  "limitations": [
+    "Credential values were not exposed.",
+    "No live OpenAI retry was performed.",
+    "Replay records OpenAI provider unavailable but does not persist the chained low-level exception.",
+    "Network restriction is plausible but not conclusively distinguishable from timeout or response-decoding failure using replay alone."
+  ]
+}
