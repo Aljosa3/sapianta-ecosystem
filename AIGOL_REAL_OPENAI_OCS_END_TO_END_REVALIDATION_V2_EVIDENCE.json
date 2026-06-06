@@ -1,0 +1,147 @@
+{
+  "milestone_id": "AIGOL_REAL_OPENAI_OCS_END_TO_END_REVALIDATION_V2",
+  "status": "EXECUTION_VALIDATION",
+  "current_head_validation": true,
+  "acceptance_replay_turn": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001",
+  "excluded_replays": [
+    {
+      "session_id": "AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000001",
+      "reason": "validation harness did not expose buffered multiline input and fragmented the prompt into multiple turns"
+    }
+  ],
+  "execution_summary": {
+    "session_id": "AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002",
+    "turn_id": "TURN-000001",
+    "turn_count": 1,
+    "failed_turns": 0,
+    "workflow": "OCS_LLM_COGNITION",
+    "response_source": "OCS_LLM_COGNITION_END_TO_END",
+    "turn_status": "COMPLETED",
+    "providers": [
+      "openai",
+      "openai-comparison"
+    ]
+  },
+  "provider_readiness": [
+    {
+      "binding_provider_id": "openai",
+      "readiness_provider_id": "openai",
+      "readiness_status": "READY",
+      "artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_readiness_recorded.json",
+      "artifact_hash": "sha256:0b60e247a592d7d5575d46a5052d65328124e3673241bc02afcefb2dcd7c91ef"
+    },
+    {
+      "binding_provider_id": "openai-comparison",
+      "readiness_provider_id": "openai",
+      "readiness_status": "READY",
+      "artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_readiness_recorded.json",
+      "artifact_hash": "sha256:0b60e247a592d7d5575d46a5052d65328124e3673241bc02afcefb2dcd7c91ef"
+    }
+  ],
+  "output_budget": [
+    {
+      "provider_id": "openai",
+      "budget_status": "ACTIVE",
+      "max_output_tokens": 1200,
+      "estimated_char_budget": 6000,
+      "artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_openai_output_budget_recorded.json",
+      "artifact_hash": "sha256:521ae42e2357abd3f276a190c2cbf24951a56e2e4778e5beaf86e2588f69e866"
+    },
+    {
+      "provider_id": "openai-comparison",
+      "budget_status": "ACTIVE",
+      "max_output_tokens": 1200,
+      "estimated_char_budget": 6000,
+      "artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_openai_output_budget_recorded.json",
+      "artifact_hash": "sha256:a58b356108572565ff7c56224a852e7836b2c5984d53a95f1fa2016368fe86b1"
+    }
+  ],
+  "provider_artifacts": [
+    {
+      "provider_id": "openai",
+      "provider_invoked": true,
+      "failure_reason": null,
+      "failure_diagnostics": null,
+      "created_artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+      "created_artifact_hash": "sha256:ee151c3a633aff440dfbb0fdf4142c30c675d4883c5de4a3652ac00fe89bb20b",
+      "returned_artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/001_provider_proposal_returned.json",
+      "returned_artifact_hash": "sha256:8c625e8f796db1e1cc9e8ac1938858d6b97782e6935907ae22c63946485d32d4"
+    },
+    {
+      "provider_id": "openai-comparison",
+      "provider_invoked": true,
+      "failure_reason": null,
+      "failure_diagnostics": null,
+      "created_artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_proposal_created.json",
+      "created_artifact_hash": "sha256:585f3163052af51d8c927b8f54bae382473580a2e9e94167717354a28a0b87d0",
+      "returned_artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/001_provider_proposal_returned.json",
+      "returned_artifact_hash": "sha256:eaa5e6122bdc1cbc2adc6a9ea7120779686f189e8fe97b3f38af2cdef4a17cd5"
+    }
+  ],
+  "multi_provider_cognition": {
+    "artifact_path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/001_multi_provider_cognition_result_bundle.json",
+    "artifact_hash": "sha256:f49e4382153efe0f768269cee7c8dffee945d37091c0f64780f059387dd20f5d",
+    "bundle_status": "COMPLETED",
+    "provider_count": 2,
+    "successful_provider_count": 2,
+    "failed_provider_count": 0,
+    "cognition_artifact_count": 2,
+    "cognition_artifact_hashes": [
+      "sha256:311a93d31e5c4681f3e5ffd44f0933d14274277a2f154625ff68d7a797011d0a",
+      "sha256:8830bb21c677d3c53017f0bc97b41d70007b6e03671913b3c0f56eeab051a32a"
+    ],
+    "provider_failure_hashes": []
+  },
+  "first_successful_artifacts": {
+    "provider_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json",
+      "hash": "sha256:ee151c3a633aff440dfbb0fdf4142c30c675d4883c5de4a3652ac00fe89bb20b"
+    },
+    "cognition_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/providers/openai/cognition_artifact/000_llm_cognition_artifact.json",
+      "hash": "sha256:311a93d31e5c4681f3e5ffd44f0933d14274277a2f154625ff68d7a797011d0a"
+    },
+    "comparison_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/cognition_comparison/000_cognition_comparison_artifact.json",
+      "hash": "sha256:317bd4b4b6fdb3bdab247a94f51278b02388c3d11a57a6b4e17fd94cd7ee3830"
+    },
+    "continuity_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/continuity_and_clarification/001_cognition_continuity_artifact.json",
+      "hash": "sha256:f64dda50f475b171d02c9b7a034081794953b54e27a80d7235565400256298be"
+    },
+    "clarification_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/stages/continuity_and_clarification/002_cognition_clarification_artifact.json",
+      "hash": "sha256:4bda04ceec445a437687fdd44e0f24ddfd2a64100340fccea0601e1593627f15"
+    },
+    "end_to_end_artifact": {
+      "path": ".aigol_conversation_runtime/AIGOL-REAL-OPENAI-OCS-E2E-REVALIDATION-V2-000002/TURN-000001/ocs_llm_cognition_end_to_end/000_ocs_llm_cognition_end_to_end_artifact.json",
+      "hash": "sha256:ed9c1b26404c237451d5274e65279e6340186fa0a40d1ec4fbbf52e849e6e5fb"
+    }
+  },
+  "stage_statuses": {
+    "PROVIDER_READINESS_STATUS": "READY",
+    "SUCCESSFUL_PROVIDER_COUNT": 2,
+    "FAILED_PROVIDER_COUNT": 0,
+    "COGNITION_ARTIFACT_COUNT": 2,
+    "COMPARISON_EXECUTED": true,
+    "COMPARISON_STATUS": "COMPLETED",
+    "CONTINUITY_EXECUTED": true,
+    "CONTINUITY_STATUS": "COMPLETED",
+    "CLARIFICATION_EXECUTED": true,
+    "CLARIFICATION_STATUS": "CLARIFICATION_REQUIRED",
+    "CLARIFICATION_REQUIRED": true,
+    "END_TO_END_STATUS": "COMPLETED"
+  },
+  "failure_diagnostics": {
+    "failure_occurred": false,
+    "provider_failure_diagnostics": []
+  },
+  "final_outputs": {
+    "REAL_OPENAI_PROVIDER_USED_BY_OCS": true,
+    "COMPARISON_RUNTIME_WORKING": true,
+    "CONTINUITY_RUNTIME_WORKING": true,
+    "CLARIFICATION_RUNTIME_WORKING": true,
+    "END_TO_END_OCS_COGNITION_WORKING": true,
+    "PRODUCTION_READY_STATUS": "OPERATIONALLY_VALIDATED_CURRENT_HEAD_NOT_FULL_PRODUCTION_CERTIFICATION"
+  }
+}
