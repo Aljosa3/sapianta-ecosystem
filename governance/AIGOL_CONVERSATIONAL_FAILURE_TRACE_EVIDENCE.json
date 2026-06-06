@@ -1,0 +1,147 @@
+{
+  "artifact": "AIGOL_CONVERSATIONAL_FAILURE_TRACE_EVIDENCE",
+  "version": "V1",
+  "classification": "AIGOL_CONVERSATIONAL_FAILURE_TRACE_REVIEW_V1",
+  "review_only": true,
+  "runtime_modified": false,
+  "implementation_performed": false,
+  "observed_failure": {
+    "terminal_progress_lines": [
+      "[1/8] Routing",
+      "[2/8] Cognition",
+      "[3/8] Provider Invocation",
+      "[4/8] Comparison",
+      "[5/8] Continuity",
+      "[6/8] Clarification",
+      "[7/8] Result Assembly",
+      "[8/8] Replay"
+    ],
+    "terminal_failure": "FAILED_CLOSED: conversation provider clarification fallback failed closed: prompt is not clarification-eligible"
+  },
+  "local_reproduction": {
+    "runtime_root": "/tmp/aigol_conversational_failure_trace_review",
+    "session_id": "TRACE-FAILURE-REVIEW-000001",
+    "prompt": "I want to create the first real AiGOL product.",
+    "turn_count": 1,
+    "failed_turns": 1,
+    "response_status": "FAILED_CLOSED",
+    "response_source": "DETERMINISTIC_CLARIFICATION_FALLBACK",
+    "failure_reason": "conversation provider clarification fallback failed closed: prompt is not clarification-eligible"
+  },
+  "executed_replay_artifacts": [
+    "source_router/000_source_of_truth_router_selected.json",
+    "source_router/001_source_of_truth_router_returned.json",
+    "conversational_progress/000_conversational_progress_binding.json",
+    "conversational_progress/runtime_progress/000_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/001_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/002_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/003_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/004_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/005_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/006_runtime_progress_visibility_snapshot.json",
+    "conversational_progress/runtime_progress/007_runtime_progress_visibility_snapshot.json",
+    "prompt_runtime/<prompt_id>/000_human_prompt_artifact.json",
+    "prompt_runtime/<prompt_id>/001_human_prompt_lineage.json",
+    "prompt_runtime/<prompt_id>/conversation_response/000_provider_assisted_conversation_started.json",
+    "prompt_runtime/<prompt_id>/conversation_response/001_conversation_self_resolution_attempted.json",
+    "prompt_runtime/<prompt_id>/conversation_response/002_provider_conversation_response_validation.json",
+    "prompt_runtime/<prompt_id>/conversation_response/003_provider_assisted_conversation_response_created.json",
+    "prompt_runtime/<prompt_id>/conversation_response/004_provider_assisted_conversation_response_returned.json",
+    "prompt_runtime/<prompt_id>/conversation_response/intent_classification/provider_semantic_assistance/001_provider_proposal_returned.json",
+    "prompt_runtime/<prompt_id>/chain_continuity/000_conversation_chain_continuity_recorded.json",
+    "prompt_runtime/<prompt_id>/chain_continuity/001_conversation_chain_continuity_returned.json",
+    "provider_unavailable_clarification_fallback/000_conversation_provider_unavailable_clarification_fallback_recorded.json"
+  ],
+  "missing_ocs_llm_cognition_artifacts_in_failure_path": [
+    "OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1",
+    "LLM_COGNITION_ARTIFACT_V1",
+    "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "COGNITION_COMPARISON_ARTIFACT_V1",
+    "COGNITION_CONTINUITY_ARTIFACT_V1",
+    "COGNITION_CLARIFICATION_ARTIFACT_V1",
+    "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1"
+  ],
+  "source_evidence": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "lines": "923-930",
+      "finding": "The interactive loop ignores blank prompts and immediately reads another prompt, which can produce adjacent prompts in a terminal."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "lines": "957-976",
+      "finding": "Progress checkpoints are emitted before branch-specific runtime execution."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "lines": "1960-1983",
+      "finding": "The default branch calls submit_prompt_to_conversation and then invokes provider-unavailable clarification fallback when that capture fails closed."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "lines": "2009-2028",
+      "finding": "Result assembly emits completion and replay progress snapshots even when the branch result is a failed fallback capture."
+    },
+    {
+      "file": "aigol/runtime/prompt_to_conversation_integration.py",
+      "lines": "66-79",
+      "finding": "The default prompt-to-conversation integration invokes the older provider-assisted conversation runtime."
+    },
+    {
+      "file": "aigol/runtime/provider_assisted_conversation_runtime.py",
+      "lines": "95-111",
+      "finding": "Provider-assisted conversation first runs provider-assisted intent classification and fails closed if classification is not completed as conversation."
+    },
+    {
+      "file": "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+      "lines": "53-58",
+      "finding": "Fallback requires provider-unavailable evidence and then classifies the prompt for narrow ambiguity handling."
+    },
+    {
+      "file": "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+      "lines": "229-231",
+      "finding": "Fallback raises prompt-is-not-clarification-eligible for prompts outside its hard-coded ambiguity cases."
+    },
+    {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "lines": "197-222",
+      "finding": "Conversational routing has finite workflow mappings and no general OCS LLM cognition route."
+    },
+    {
+      "file": "aigol/runtime/operator_decision_support_runtime.py",
+      "lines": "166-172",
+      "finding": "The first-real-product decision-support route requires product-domain wording."
+    }
+  ],
+  "answers": {
+    "provider_cognition_successfully_executed_before_failure": false,
+    "valid_llm_cognition_artifact_produced": false,
+    "comparison_executed": false,
+    "ocs_cognition_continuity_executed": false,
+    "ocs_cognition_clarification_executed": false,
+    "provider_unavailable_fallback_executed": true,
+    "replay_captures_actual_failure_chain": true,
+    "replay_captures_full_ocs_llm_cognition_chain": false
+  },
+  "root_cause": "General conversational cognition prompts are not bound from aigol conversation to AIGOL_OCS_LLM_COGNITION_END_TO_END_V1. They fall through to the older provider-assisted conversation runtime and then into a narrow provider-unavailable clarification fallback.",
+  "affected_runtimes": [
+    "aigol/cli/aigol_cli.py",
+    "aigol/runtime/prompt_to_conversation_integration.py",
+    "aigol/runtime/provider_assisted_conversation_runtime.py",
+    "aigol/runtime/conversation_provider_unavailable_clarification_fallback.py",
+    "aigol/runtime/conversational_cli_runtime.py"
+  ],
+  "affected_artifacts": [
+    "CONVERSATION_PROVIDER_UNAVAILABLE_CLARIFICATION_FALLBACK_ARTIFACT_V1",
+    "PROVIDER_ASSISTED_CONVERSATION_RESPONSE_ARTIFACT",
+    "PROVIDER_ASSISTED_INTENT_GOVERNANCE_VALIDATION",
+    "RUNTIME_PROGRESS_VISIBILITY_ARTIFACT_V1"
+  ],
+  "minimal_fix_scope": [
+    "Add a conversational route for broad OCS LLM cognition prompts.",
+    "Bind that route to run_ocs_llm_cognition_end_to_end.",
+    "Render human_facing_cognition_result from OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1.",
+    "Keep provider-unavailable clarification fallback limited to legacy fallback cases.",
+    "Expose whether progress stages are visibility-only or backed by executed stage artifacts."
+  ]
+}
