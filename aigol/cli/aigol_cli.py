@@ -322,7 +322,14 @@ from aigol.runtime.conversational_routing_visibility_runtime import (
 from aigol.runtime.multiline_prompt_support_runtime import (
     record_multiline_prompt_capture,
 )
-from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
+from aigol.provider.provider_registry import ProviderRegistry
+from aigol.provider.provider_runtime import run_provider_attachment
+from aigol.provider.providers.openai_provider import (
+    OPENAI_PROVIDER_ID,
+    OpenAIProviderAdapter,
+    openai_provider_metadata,
+)
+from aigol.runtime.llm_cognition_provider_runtime import create_default_openai_cognition_provider_contract
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     STATUS_COMPLETED as OCS_LLM_COGNITION_COMPLETED,
     render_ocs_llm_cognition_end_to_end_summary,
@@ -453,75 +460,68 @@ def _conversation_ocs_cognition_source_context(
 
 def _conversation_ocs_cognition_provider_contracts(created_at: str) -> list[dict[str, Any]]:
     return [
-        create_default_cognition_provider_contract(
-            provider_id="aigol-cognition-alpha",
-            provider_label="AiGOL Cognition Alpha",
+        _conversation_openai_cognition_provider_contract(
+            provider_id=OPENAI_PROVIDER_ID,
+            provider_label="OpenAI Responses Provider",
             created_at=created_at,
         ),
-        create_default_cognition_provider_contract(
-            provider_id="aigol-cognition-beta",
-            provider_label="AiGOL Cognition Beta",
+        _conversation_openai_cognition_provider_contract(
+            provider_id="openai-comparison",
+            provider_label="OpenAI Responses Provider Comparison Pass",
             created_at=created_at,
         ),
     ]
 
 
-def _conversation_ocs_cognition_transports() -> dict[str, Any]:
-    def _transport(payload: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
-        provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "provider")
-        if provider_id.endswith("alpha"):
-            result = {
-                "findings": [
-                    "The request is a broad operator cognition question, not an execution request.",
-                    "The next governed step should remain human review of non-authoritative guidance.",
-                ],
-                "assumptions": [
-                    "The operator wants product-level guidance before creating or executing a domain artifact."
-                ],
-                "alternatives": [
-                    "AI Decision Validator product domain",
-                    "Governed platform licensing path",
-                    "Managed governance service path",
-                ],
-                "risks": [
-                    "Commercial direction is underspecified.",
-                    "Domain creation should not occur without explicit human approval.",
-                ],
-                "uncertainties": [
-                    "Target buyer and first packaged offer remain unclear.",
-                ],
-                "confidence": "MEDIUM",
-            }
-        else:
-            result = {
-                "findings": [
-                    "The prompt asks for analysis and recommendation support within OCS cognition boundaries.",
-                    "A human-facing clarification should identify product purpose, target users, and capability scope.",
-                ],
-                "assumptions": [
-                    "The desired output is guidance, not worker execution.",
-                ],
-                "alternatives": [
-                    "Start with Product 1 AI Decision Validator",
-                    "Package SAPIANTA as a licensed governance platform",
-                    "Offer managed governance review services first",
-                ],
-                "risks": [
-                    "Premature implementation could bypass product-positioning review.",
-                    "Provider cognition must remain non-authoritative.",
-                ],
-                "uncertainties": [
-                    "Primary product segment is not yet selected.",
-                    "First customer workflow is not yet specified.",
-                ],
-                "confidence": "MEDIUM",
-            }
-        return {"output_text": json.dumps(result, sort_keys=True)}
+def _conversation_openai_cognition_provider_contract(
+    *, provider_id: str, provider_label: str, created_at: str
+) -> dict[str, Any]:
+    artifact = create_default_openai_cognition_provider_contract(created_at=created_at)
+    artifact["provider_id"] = provider_id
+    artifact["provider_identity"]["provider_id"] = provider_id
+    artifact["provider_identity"]["provider_label"] = provider_label
+    artifact["single_provider_only"] = False
+    artifact["multi_provider_cognition_scope"] = True
+    artifact.pop("artifact_hash", None)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
 
-    return {
-        "aigol-cognition-alpha": _transport,
-        "aigol-cognition-beta": _transport,
-    }
+
+def _conversation_openai_provider_adapter() -> OpenAIProviderAdapter:
+    return OpenAIProviderAdapter()
+
+
+def _conversation_openai_provider_registry() -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(openai_provider_metadata())
+    return registry
+
+
+def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path) -> dict[str, Any]:
+    def _transport(payload: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+        provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "")
+        if provider_id not in {OPENAI_PROVIDER_ID, "openai-comparison"}:
+            raise FailClosedRuntimeError("conversational OCS provider is not registered for real OpenAI attachment")
+        provider_capture = run_provider_attachment(
+            provider_id=OPENAI_PROVIDER_ID,
+            request={
+                "prompt": payload["input"],
+                "human_prompt": payload["input"],
+                "provider_metadata": metadata,
+                "stream": False,
+                "tool_use": False,
+                "function_calling": False,
+            },
+            proposal_id=f"{provider_id}:CONVERSATIONAL-OCS-COGNITION",
+            timestamp=created_at,
+            registry=_conversation_openai_provider_registry(),
+            adapter=_conversation_openai_provider_adapter(),
+            replay_dir=replay_dir / "real_openai_provider_attachment" / provider_id,
+        )
+        response = provider_capture["provider_proposal_envelope"]["response"]
+        return response.get("raw_response") or {"output_text": response["response_text"]}
+
+    return {OPENAI_PROVIDER_ID: _transport, "openai-comparison": _transport}
 
 
 def _run_conversational_ocs_llm_cognition(
@@ -543,12 +543,25 @@ def _run_conversational_ocs_llm_cognition(
             created_at=created_at,
         ),
         provider_contracts=_conversation_ocs_cognition_provider_contracts(created_at),
-        transport_registry=_conversation_ocs_cognition_transports(),
+        transport_registry=_conversation_ocs_cognition_transports(created_at=created_at, replay_dir=replay_dir),
         created_at=created_at,
         replay_dir=replay_dir,
         source_chain_id=current_chain_id or prompt_id,
         source_request_reference=prompt_id,
     )
+
+
+def _ocs_cognition_provider_ids(ocs_cognition_capture: dict[str, Any]) -> list[str]:
+    multi_capture = ocs_cognition_capture.get("stage_captures", {}).get("multi_provider_cognition", {})
+    request_bundle = multi_capture.get("request_bundle") or {}
+    provider_ids = request_bundle.get("deterministic_provider_order")
+    if isinstance(provider_ids, list):
+        return [str(provider_id) for provider_id in provider_ids]
+    return []
+
+
+def _real_llm_provider_used_by_ocs(ocs_cognition_capture: dict[str, Any]) -> bool:
+    return any(provider_id == OPENAI_PROVIDER_ID or provider_id.startswith("openai-") for provider_id in _ocs_cognition_provider_ids(ocs_cognition_capture))
 
 
 def _create_interactive_conversation_progress_binding(
@@ -2724,7 +2737,15 @@ def run_interactive_conversation(
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {ocs_cognition_capture.get('failure_reason')}")
                 else:
-                    output_writer(render_ocs_llm_cognition_end_to_end_summary(ocs_cognition_capture))
+                    output_writer(
+                        "\n".join(
+                            [
+                                render_ocs_llm_cognition_end_to_end_summary(ocs_cognition_capture),
+                                "REAL_LLM_PROVIDER_USED_BY_OCS = "
+                                f"{str(_real_llm_provider_used_by_ocs(ocs_cognition_capture)).lower()}",
+                            ]
+                        )
+                    )
                 turns.append(
                     _interactive_ocs_llm_cognition_turn_summary(
                         turn_id=turn_id,
@@ -3366,6 +3387,7 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "provider_count": artifact.get("provider_count"),
         "successful_provider_count": artifact.get("successful_provider_count"),
         "provider_ids": request_bundle.get("deterministic_provider_order", []),
+        "real_llm_provider_used_by_ocs": _real_llm_provider_used_by_ocs(ocs_cognition_capture),
         "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
         "comparison_artifact_hash": artifact.get("comparison_artifact_hash"),
         "continuity_artifact_hash": artifact.get("continuity_artifact_hash"),

@@ -1,0 +1,71 @@
+{
+  "artifact": "AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "milestone": "AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_V1",
+  "status": "PASS",
+  "classification": "REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_ACCEPTANCE",
+  "implementation_scope": {
+    "modified_binding_layer": "aigol/cli/aigol_cli.py",
+    "new_provider_runtime_created": false,
+    "new_cognition_runtime_created": false,
+    "new_replay_model_created": false,
+    "new_governance_model_created": false
+  },
+  "provider_selection": {
+    "removed_synthetic_providers": [
+      "aigol-cognition-alpha",
+      "aigol-cognition-beta"
+    ],
+    "selected_providers": [
+      "openai",
+      "openai-comparison"
+    ],
+    "provider_count": 2,
+    "REAL_LLM_PROVIDER_USED_BY_OCS": true
+  },
+  "reused_components": [
+    "aigol.provider.providers.openai_provider.OpenAIProviderAdapter",
+    "aigol.provider.provider_runtime.run_provider_attachment",
+    "aigol.runtime.llm_cognition_provider_runtime.create_default_openai_cognition_provider_contract",
+    "aigol.runtime.multi_provider_cognition_runtime.run_multi_provider_cognition_runtime",
+    "aigol.runtime.ocs_llm_cognition_end_to_end_runtime.run_ocs_llm_cognition_end_to_end"
+  ],
+  "preserved_runtime_stages": {
+    "ocs_context": true,
+    "multi_provider_cognition": true,
+    "cognition_artifact": true,
+    "comparison": true,
+    "continuity": true,
+    "clarification": true,
+    "replay": true
+  },
+  "operator_visible_evidence": {
+    "workflow": "OCS_LLM_COGNITION",
+    "providers_line": "providers: openai, openai-comparison",
+    "real_provider_line": "REAL_LLM_PROVIDER_USED_BY_OCS = true",
+    "turn_completed_visible": true
+  },
+  "tests": [
+    {
+      "command": "python -m pytest tests/test_conversational_ocs_cognition_binding_v1.py",
+      "result": "2 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_real_openai_conversational_attachment_v1.py",
+      "result": "1 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversational_routing_visibility_runtime_v1.py tests/test_conversational_dispatch_authority_unification_v1.py",
+      "result": "8 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_conversational_ocs_cognition_binding_v1.py tests/test_real_openai_conversational_attachment_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py",
+      "result": "19 passed"
+    }
+  ],
+  "limitations": [
+    "Automated tests inject a deterministic OpenAIProviderAdapter client to avoid network dependency.",
+    "Live operation requires the existing OpenAI adapter credential path to resolve OPENAI_API_KEY.",
+    "The second OpenAI-backed provider slot preserves the existing comparison runtime requirement for at least two cognition artifacts."
+  ]
+}

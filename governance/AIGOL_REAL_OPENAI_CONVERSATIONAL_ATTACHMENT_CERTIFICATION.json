@@ -1,0 +1,40 @@
+{
+  "artifact": "AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_CERTIFICATION",
+  "version": "V1",
+  "milestone": "AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_V1",
+  "status": "CERTIFIED",
+  "classification": "CERTIFIED_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT",
+  "certifies": {
+    "synthetic_conversational_ocs_providers_removed": true,
+    "openai_provider_selected_by_conversational_ocs_binding": true,
+    "REAL_LLM_PROVIDER_USED_BY_OCS": true,
+    "provider_count_greater_than_zero": true,
+    "operator_visible_provider_line": true,
+    "operator_visible_real_provider_line": true,
+    "ocs_cognition_artifacts_preserved": true,
+    "comparison_preserved": true,
+    "continuity_preserved": true,
+    "clarification_preserved": true,
+    "replay_semantics_preserved": true,
+    "governance_boundaries_preserved": true
+  },
+  "runtime_changes": [
+    "aigol/cli/aigol_cli.py"
+  ],
+  "test_changes": [
+    "tests/test_conversational_ocs_cognition_binding_v1.py",
+    "tests/test_conversational_dispatch_authority_unification_v1.py",
+    "tests/test_real_openai_conversational_attachment_v1.py"
+  ],
+  "acceptance_evidence": "governance/AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_ACCEPTANCE_EVIDENCE.json",
+  "validation_summary": {
+    "focused_conversational_ocs_binding": "2 passed",
+    "real_openai_conversational_attachment": "1 passed",
+    "routing_visibility_and_dispatch_authority": "8 passed",
+    "ocs_and_multi_provider_regression": "19 passed"
+  },
+  "final_classification": {
+    "AIGOL_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT_STATUS": "CERTIFIED_REAL_OPENAI_CONVERSATIONAL_ATTACHMENT",
+    "REAL_LLM_PROVIDER_USED_BY_OCS": true
+  }
+}
