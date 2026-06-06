@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+
 from aigol.cli import aigol_cli
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.provider.providers.openai_provider import OpenAIProviderAdapter
 from aigol.runtime.conversational_cli_runtime import OCS_LLM_COGNITION, OPERATOR_DECISION_SUPPORT
 from aigol.runtime.conversational_routing_visibility_runtime import (
     reconstruct_conversational_routing_visibility_replay,
@@ -56,7 +59,43 @@ def _routing_decision_path(tmp_path, session_id: str):
     )
 
 
-def test_ocs_visibility_and_dispatch_share_authoritative_workflow(tmp_path) -> None:
+def _install_openai_adapter(monkeypatch):
+    def fake_client(_payload: dict, *, api_key: str, endpoint: str, timeout_seconds: int) -> dict:
+        return {
+            "id": "resp-dispatch-authority-openai",
+            "object": "response",
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": json.dumps(
+                                {
+                                    "findings": ["OpenAI provided bounded OCS cognition."],
+                                    "assumptions": ["Provider output remains non-authoritative."],
+                                    "alternatives": ["AI Decision Validator", "Managed governance review"],
+                                    "risks": ["Commercial direction remains underspecified."],
+                                    "uncertainties": ["First customer segment remains open."],
+                                    "confidence": "MEDIUM",
+                                },
+                                sort_keys=True,
+                            ),
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+        }
+
+    def adapter() -> OpenAIProviderAdapter:
+        return OpenAIProviderAdapter(api_key="test-openai-key", client=fake_client)
+
+    monkeypatch.setattr(aigol_cli, "_conversation_openai_provider_adapter", adapter)
+
+
+def test_ocs_visibility_and_dispatch_share_authoritative_workflow(tmp_path, monkeypatch) -> None:
     session_id = "SESSION-DISPATCH-AUTHORITY-OCS-000001"
     prompt = "\n".join(
         [
@@ -68,6 +107,7 @@ def test_ocs_visibility_and_dispatch_share_authoritative_workflow(tmp_path) -> N
         ]
     )
     output: list[str] = []
+    _install_openai_adapter(monkeypatch)
 
     result = run_interactive_conversation(
         _args(tmp_path, session_id=session_id),

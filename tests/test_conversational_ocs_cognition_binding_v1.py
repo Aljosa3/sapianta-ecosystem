@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.provider.providers.openai_provider import OpenAIProviderAdapter
 from aigol.runtime.conversational_cli_runtime import OCS_LLM_COGNITION
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1,
@@ -56,8 +59,71 @@ def _input_sequence(values: list[str]):
     return read
 
 
-def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path) -> None:
+def _openai_response_text() -> str:
+    return json.dumps(
+        {
+            "findings": [
+                "The prompt requests governed product cognition before any execution.",
+                "The real OpenAI provider is attached as a non-authoritative cognition source.",
+            ],
+            "assumptions": [
+                "The operator wants analysis and recommendations, not automatic mutation.",
+            ],
+            "alternatives": [
+                "AI Decision Validator",
+                "Governed platform licensing",
+                "Managed governance review service",
+            ],
+            "risks": [
+                "Provider output remains untrusted until normalized and reviewed.",
+            ],
+            "uncertainties": [
+                "The first buyer profile remains underspecified.",
+            ],
+            "confidence": "MEDIUM",
+        },
+        sort_keys=True,
+    )
+
+
+def _install_openai_adapter(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_client(payload: dict, *, api_key: str, endpoint: str, timeout_seconds: int) -> dict:
+        captured["payload"] = payload
+        captured["api_key"] = api_key
+        captured["endpoint"] = endpoint
+        captured["timeout_seconds"] = timeout_seconds
+        return {
+            "id": "resp-conversational-openai-001",
+            "object": "response",
+            "output": [
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": _openai_response_text(),
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+        }
+
+    def adapter() -> OpenAIProviderAdapter:
+        return OpenAIProviderAdapter(api_key="test-openai-key", client=fake_client)
+
+    from aigol.cli import aigol_cli
+
+    monkeypatch.setattr(aigol_cli, "_conversation_openai_provider_adapter", adapter)
+    return captured
+
+
+def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path, monkeypatch) -> None:
     output: list[str] = []
+    captured = _install_openai_adapter(monkeypatch)
 
     result = run_interactive_conversation(
         _args(tmp_path),
@@ -82,8 +148,11 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path)
     assert turn["ocs_llm_cognition_artifact_type"] == OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1
     assert turn["provider_invoked"] is True
     assert turn["successful_provider_count"] == 2
-    assert turn["provider_ids"] == ["aigol-cognition-alpha", "aigol-cognition-beta"]
+    assert turn["provider_ids"] == ["openai", "openai-comparison"]
+    assert "openai" in turn["provider_ids"]
+    assert turn["real_llm_provider_used_by_ocs"] is True
     assert turn["cognition_artifact_count"] == 2
+    assert captured["api_key"] == "test-openai-key"
     assert turn["comparison_artifact_hash"]
     assert turn["continuity_artifact_hash"]
     assert turn["clarification_artifact_hash"]
@@ -92,11 +161,12 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path)
     assert turn["approval_created"] is False
     assert _progress_lines(output[0])[:8] == PROGRESS_LINES
     assert "AIGOL OCS LLM COGNITION END-TO-END" in output[0]
+    assert "REAL_LLM_PROVIDER_USED_BY_OCS = true" in output[0]
     assert output[0].splitlines()[-8:-2] == [
         "================================",
         "TURN COMPLETED",
         "turn_id: TURN-000001",
-        "providers: aigol-cognition-alpha, aigol-cognition-beta",
+        "providers: openai, openai-comparison",
         "status: COMPLETED",
         "result_delivered: TRUE",
     ]
