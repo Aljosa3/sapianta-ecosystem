@@ -1,0 +1,56 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_PROGRESS_BINDING_V1",
+  "artifact_type": "ACCEPTANCE_EVIDENCE",
+  "status": "ACCEPTED",
+  "runtime": "aigol/runtime/conversational_progress_binding_runtime.py",
+  "cli_integration": "aigol/cli/aigol_cli.py",
+  "reused_runtime": "aigol/runtime/runtime_progress_visibility.py",
+  "test_file": "tests/test_conversational_progress_binding_v1.py",
+  "evidence": [
+    {
+      "check": "conversation_progress_binding_artifact_created",
+      "result": "PASS",
+      "artifact": "CONVERSATIONAL_PROGRESS_BINDING_ARTIFACT_V1"
+    },
+    {
+      "check": "existing_runtime_progress_visibility_reused",
+      "result": "PASS",
+      "artifact": "RUNTIME_PROGRESS_VISIBILITY_ARTIFACT_V1"
+    },
+    {
+      "check": "eight_stage_terminal_progress_rendered",
+      "result": "PASS",
+      "rendered_lines": [
+        "[1/8] Routing",
+        "[2/8] Cognition",
+        "[3/8] Provider Invocation",
+        "[4/8] Comparison",
+        "[5/8] Continuity",
+        "[6/8] Clarification",
+        "[7/8] Result Assembly",
+        "[8/8] Replay"
+      ]
+    },
+    {
+      "check": "replay_reconstruction",
+      "result": "PASS",
+      "reconstruction": "conversational binding and runtime progress replay reconstruct"
+    },
+    {
+      "check": "authority_preservation",
+      "result": "PASS",
+      "provider_invoked": false,
+      "worker_invoked": false,
+      "authorization_created": false,
+      "dispatch_requested": false,
+      "execution_requested": false
+    }
+  ],
+  "validation": [
+    {
+      "command": "python -m pytest tests/test_conversational_progress_binding_v1.py tests/test_runtime_progress_visibility_v1.py tests/test_interactive_conversation_cli_v1.py tests/test_conversational_cli_runtime_v1.py",
+      "result": "PASS",
+      "tests": 31
+    }
+  ]
+}

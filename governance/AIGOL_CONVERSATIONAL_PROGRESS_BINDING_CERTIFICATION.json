@@ -1,0 +1,46 @@
+{
+  "milestone_id": "AIGOL_CONVERSATIONAL_PROGRESS_BINDING_V1",
+  "artifact_type": "CERTIFICATION",
+  "certification_status": "CERTIFIED",
+  "final_classification": "CERTIFIED_CONVERSATIONAL_PROGRESS_BINDING",
+  "certified_capabilities": {
+    "conversation_progress_binding_artifact": true,
+    "runtime_progress_visibility_reuse": true,
+    "interactive_conversation_progress_emission": true,
+    "terminal_progress_rendering": true,
+    "runtime_progress_replay_snapshots": true,
+    "progress_replay_reconstruction": true,
+    "fail_closed_progress_visibility": true
+  },
+  "constitutional_preservation": {
+    "human_authority_preserved": true,
+    "approval_boundary_preserved": true,
+    "authorization_boundary_preserved": true,
+    "provider_controls_preserved": true,
+    "worker_controls_preserved": true,
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "provider_invoked_by_progress_binding": false,
+    "worker_invoked_by_progress_binding": false,
+    "execution_requested_by_progress_binding": false,
+    "governance_mutated_by_progress_binding": false
+  },
+  "certification_basis": {
+    "runtime": "aigol/runtime/conversational_progress_binding_runtime.py",
+    "cli": "aigol conversation",
+    "existing_progress_runtime": "aigol/runtime/runtime_progress_visibility.py",
+    "governance": "governance/AIGOL_CONVERSATIONAL_PROGRESS_BINDING_V1.md",
+    "acceptance_evidence": "governance/AIGOL_CONVERSATIONAL_PROGRESS_BINDING_ACCEPTANCE_EVIDENCE.json",
+    "tests": [
+      "tests/test_conversational_progress_binding_v1.py",
+      "tests/test_runtime_progress_visibility_v1.py",
+      "tests/test_interactive_conversation_cli_v1.py",
+      "tests/test_conversational_cli_runtime_v1.py"
+    ]
+  },
+  "status_statement": "The conversational CLI now emits and renders replay-visible progress checkpoints through the existing runtime progress visibility infrastructure without creating provider, worker, approval, execution, governance, or replay authority."
+}

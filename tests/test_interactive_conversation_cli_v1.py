@@ -10,9 +10,22 @@ from aigol.cli.aigol_cli import (
     run_command,
     run_interactive_conversation,
 )
+from aigol.runtime.conversational_progress_binding_runtime import (
+    reconstruct_conversational_progress_binding,
+)
 
 
 TIMESTAMP = "2026-06-01T00:00:00Z"
+PROGRESS_LINES = [
+    "[1/8] Routing",
+    "[2/8] Cognition",
+    "[3/8] Provider Invocation",
+    "[4/8] Comparison",
+    "[5/8] Continuity",
+    "[6/8] Clarification",
+    "[7/8] Result Assembly",
+    "[8/8] Replay",
+]
 
 
 def _args(tmp_path, *, session_id: str = "INTERACTIVE-TEST-000001"):
@@ -63,7 +76,8 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert turn["selected_source"] == "CONSTITUTIONAL_MEMORY"
     assert turn["response_source"] == "SELF_RESOLUTION"
     assert turn["fail_closed"] is False
-    assert output and "governed AI operation path" in output[0]
+    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert any("governed AI operation path" in line for line in output)
     assert (session_root / "TURN-000001" / "source_router" / "000_source_of_truth_router_selected.json").exists()
     assert (
         session_root
@@ -72,6 +86,11 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
         / "conversation_response"
         / "004_provider_assisted_conversation_response_returned.json"
     ).exists()
+    progress = reconstruct_conversational_progress_binding(
+        session_root / "TURN-000001" / "conversational_progress"
+    )
+    assert progress["latest_runtime_status"] == "COMPLETED"
+    assert progress["latest_stage"] == "Replay"
 
 
 def test_interactive_conversation_quit_exits_without_turns(tmp_path):
@@ -121,7 +140,10 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
 
     assert result["turn_count"] == 1
     assert result["failed_turns"] == 1
-    assert output == ["FAILED_CLOSED: synthetic runtime failure"]
+    rendered = output[0].splitlines()
+    assert rendered[:6] == PROGRESS_LINES[:6]
+    assert "[8/8] Replay" in rendered
+    assert output[-1] == "FAILED_CLOSED: synthetic runtime failure"
     assert turn["response_status"] == "FAILED_CLOSED"
     assert turn["fail_closed"] is True
     assert turn["worker_invoked"] is False

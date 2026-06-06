@@ -277,6 +277,20 @@ from aigol.runtime.recommendation_approval_followup_runtime import (
     render_recommendation_continuity_summary,
     render_recommendation_followup_summary,
 )
+from aigol.runtime.conversational_progress_binding_runtime import (
+    CLARIFICATION as CONVERSATIONAL_PROGRESS_CLARIFICATION,
+    COGNITION as CONVERSATIONAL_PROGRESS_COGNITION,
+    COMPARISON as CONVERSATIONAL_PROGRESS_COMPARISON,
+    COMPLETED as CONVERSATIONAL_PROGRESS_COMPLETED,
+    CONTINUITY as CONVERSATIONAL_PROGRESS_CONTINUITY,
+    FAILED_CLOSED as CONVERSATIONAL_PROGRESS_FAILED_CLOSED,
+    PROVIDER_INVOCATION as CONVERSATIONAL_PROGRESS_PROVIDER_INVOCATION,
+    REPLAY as CONVERSATIONAL_PROGRESS_REPLAY,
+    RESULT_ASSEMBLY as CONVERSATIONAL_PROGRESS_RESULT_ASSEMBLY,
+    ROUTING as CONVERSATIONAL_PROGRESS_ROUTING,
+    create_conversational_progress_binding,
+    record_conversational_progress_checkpoint,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -314,6 +328,68 @@ def _bind_supported_executable_domain_bundle(
 
 def _json(data: dict[str, Any]) -> str:
     return json.dumps(data, sort_keys=True, separators=(",", ":"))
+
+
+def _create_interactive_conversation_progress_binding(
+    *,
+    session_id: str,
+    turn_id: str,
+    prompt_id: str,
+    created_at: str,
+    turn_root: Path,
+) -> dict[str, Any]:
+    return create_conversational_progress_binding(
+        binding_id=f"{prompt_id}:CONVERSATIONAL-PROGRESS-BINDING",
+        session_id=session_id,
+        turn_id=turn_id,
+        prompt_id=prompt_id,
+        workflow_id="INTERACTIVE_CONVERSATION_TURN",
+        created_at=created_at,
+        replay_dir=turn_root / "conversational_progress",
+    )
+
+
+def _emit_interactive_conversation_progress(
+    *,
+    binding_capture: dict[str, Any],
+    stage: str,
+    activity: str,
+    snapshot_at: str,
+    output_writer: Any,
+    runtime_status: str = "RUNNING",
+) -> dict[str, Any]:
+    capture = record_conversational_progress_checkpoint(
+        binding_artifact=binding_capture["conversational_progress_binding_artifact"],
+        stage=stage,
+        activity=activity,
+        snapshot_at=snapshot_at,
+        runtime_status=runtime_status,
+    )
+    output_writer(capture["operator_progress_line"])
+    return capture
+
+
+def _emit_interactive_conversation_cognition_progress(
+    *,
+    binding_capture: dict[str, Any],
+    snapshot_at: str,
+    output_writer: Any,
+) -> None:
+    checkpoints = (
+        (CONVERSATIONAL_PROGRESS_COGNITION, "Cognition visibility checkpoint recorded."),
+        (CONVERSATIONAL_PROGRESS_PROVIDER_INVOCATION, "Provider invocation boundary checkpoint recorded."),
+        (CONVERSATIONAL_PROGRESS_COMPARISON, "Comparison visibility checkpoint recorded."),
+        (CONVERSATIONAL_PROGRESS_CONTINUITY, "Continuity visibility checkpoint recorded."),
+        (CONVERSATIONAL_PROGRESS_CLARIFICATION, "Clarification visibility checkpoint recorded."),
+    )
+    for stage, activity in checkpoints:
+        _emit_interactive_conversation_progress(
+            binding_capture=binding_capture,
+            stage=stage,
+            activity=activity,
+            snapshot_at=snapshot_at,
+            output_writer=output_writer,
+        )
 
 
 def _artifact_from_args(args: argparse.Namespace) -> dict:
@@ -827,6 +903,7 @@ def run_interactive_conversation(
 ) -> dict[str, Any]:
     input_reader = input if input_func is None else input_func
     output_writer = print if output_func is None else output_func
+    terminal_output_writer = output_writer
     session_id = _require_cli_string(args.session_id, "session_id")
     created_at = _require_cli_string(args.created_at, "created_at")
     runtime_root = Path(args.runtime_root)
@@ -858,6 +935,9 @@ def run_interactive_conversation(
         turn_id = "TURN-UNALLOCATED"
         prompt_id = f"{session_id}:{turn_id}"
         turn_root = session_root / turn_id
+        progress_binding_capture: dict[str, Any] | None = None
+        turn_progress_buffer: list[str] = []
+        turn_output_buffer: list[str] = []
         try:
             resume_state = resume_conversation_session(
                 session_id=session_id,
@@ -867,12 +947,32 @@ def run_interactive_conversation(
             turn_id = resume_state["next_turn_id"]
             prompt_id = f"{session_id}:{turn_id}"
             turn_root = session_root / turn_id
+            progress_binding_capture = _create_interactive_conversation_progress_binding(
+                session_id=session_id,
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                created_at=created_at,
+                turn_root=turn_root,
+            )
+            _emit_interactive_conversation_progress(
+                binding_capture=progress_binding_capture,
+                stage=CONVERSATIONAL_PROGRESS_ROUTING,
+                activity="Prompt received; routing started.",
+                snapshot_at=created_at,
+                output_writer=turn_progress_buffer.append,
+            )
+            output_writer = turn_output_buffer.append
             router_capture = route_source_of_truth(
                 router_id=f"{prompt_id}:SOURCE_ROUTER",
                 human_prompt_reference=prompt_id,
                 human_prompt=human_prompt,
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
+            )
+            _emit_interactive_conversation_cognition_progress(
+                binding_capture=progress_binding_capture,
+                snapshot_at=created_at,
+                output_writer=turn_progress_buffer.append,
             )
             human_decision = normalize_human_decision(human_prompt)
             if pending_approval_required is not None and human_decision in {REJECT, REQUEST_MODIFICATION}:
@@ -1906,9 +2006,45 @@ def run_interactive_conversation(
                         failure_reason=conversation_capture.get("failure_reason"),
                     )
                 )
+            _emit_interactive_conversation_progress(
+                binding_capture=progress_binding_capture,
+                stage=CONVERSATIONAL_PROGRESS_RESULT_ASSEMBLY,
+                activity="Human-facing conversation result assembled.",
+                snapshot_at=created_at,
+                output_writer=turn_progress_buffer.append,
+            )
+            _emit_interactive_conversation_progress(
+                binding_capture=progress_binding_capture,
+                stage=CONVERSATIONAL_PROGRESS_REPLAY,
+                activity="Conversation progress replay recorded.",
+                snapshot_at=created_at,
+                output_writer=turn_progress_buffer.append,
+                runtime_status=CONVERSATIONAL_PROGRESS_COMPLETED,
+            )
+            failure_output = [line for line in turn_output_buffer if line.startswith("FAILED_CLOSED:")]
+            normal_output = [line for line in turn_output_buffer if not line.startswith("FAILED_CLOSED:")]
+            terminal_output_writer("\n".join(turn_progress_buffer + normal_output))
+            for failure_line in failure_output:
+                terminal_output_writer(failure_line)
+            output_writer = terminal_output_writer
         except Exception as exc:
+            output_writer = terminal_output_writer
             failed_turns += 1
             failure_reason = str(exc) or "interactive conversation failed closed"
+            if progress_binding_capture is not None:
+                try:
+                    _emit_interactive_conversation_progress(
+                        binding_capture=progress_binding_capture,
+                        stage=CONVERSATIONAL_PROGRESS_REPLAY,
+                        activity=f"Conversation failed closed: {failure_reason}",
+                        snapshot_at=created_at,
+                        output_writer=turn_progress_buffer.append,
+                        runtime_status=CONVERSATIONAL_PROGRESS_FAILED_CLOSED,
+                    )
+                except Exception:
+                    pass
+            if turn_progress_buffer:
+                output_writer("\n".join(turn_progress_buffer))
             output_writer(f"FAILED_CLOSED: {failure_reason}")
             turns.append(
                 _interactive_failed_turn_summary(

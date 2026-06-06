@@ -28,6 +28,16 @@ from aigol.runtime.unknown_domain_clarification_runtime import CLARIFICATION_REQ
 
 CREATED_AT = "2026-06-05T00:00:00Z"
 SESSION_ID = "SESSION-CONVERSATIONAL-CLI-RUNTIME-000001"
+PROGRESS_LINES = [
+    "[1/8] Routing",
+    "[2/8] Cognition",
+    "[3/8] Provider Invocation",
+    "[4/8] Comparison",
+    "[5/8] Continuity",
+    "[6/8] Clarification",
+    "[7/8] Result Assembly",
+    "[8/8] Replay",
+]
 
 
 def _route(tmp_path, prompt: str):
@@ -157,7 +167,8 @@ def test_interactive_conversation_routes_readonly_provider_layer_prompt(tmp_path
     assert turn["provider_invoked"] is False
     assert turn["worker_invoked"] is False
     assert turn["execution_requested"] is False
-    assert "PROVIDER LAYER IMPROVEMENT REVIEW" in output[0]
+    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert any("PROVIDER LAYER IMPROVEMENT REVIEW" in line for line in output)
     assert replay_path.exists()
 
 
@@ -173,7 +184,9 @@ def test_interactive_domain_and_clarification_routes_record_conversational_decis
     assert result["turns"][0]["conversational_workflow_id"] == CREATE_DOMAIN_TRADING
     assert result["turns"][1]["conversational_workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
     assert result["turns"][1]["response_status"] == CLARIFICATION_REQUIRED
-    assert "Unknown Domain Detected" in output[1]
+    assert output[0].splitlines()[:8] == PROGRESS_LINES
+    assert output[1].splitlines()[:8] == PROGRESS_LINES
+    assert any("Unknown Domain Detected" in line for line in output)
 
 
 def test_unmapped_prompt_fails_closed_with_replay(tmp_path) -> None:
