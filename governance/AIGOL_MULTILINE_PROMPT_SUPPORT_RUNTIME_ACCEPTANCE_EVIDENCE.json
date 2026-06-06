@@ -1,0 +1,96 @@
+{
+  "artifact": "AIGOL_MULTILINE_PROMPT_SUPPORT_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "accepted_classification": "CERTIFIED_MULTILINE_PROMPT_SUPPORT_RUNTIME",
+  "accepted_on": "2026-06-06",
+  "remediates": [
+    {
+      "finding_id": "F-1",
+      "finding": "Multi-line prompts are fragmented into separate turns",
+      "source": "AIGOL_CONVERSATIONAL_CLI_OPERATIONAL_VALIDATION_V1",
+      "remediation_status": "REMEDIATED_FOR_SENTINEL_TERMINATED_MULTILINE_PROMPTS"
+    }
+  ],
+  "runtime_scope": {
+    "interactive_cli_loop": "aigol/cli/aigol_cli.py::run_interactive_conversation",
+    "prompt_capture_runtime": "aigol/runtime/multiline_prompt_support_runtime.py",
+    "sentinel": ".",
+    "sentinel_included_in_prompt": false,
+    "single_line_ux_preserved": true,
+    "routing_runtime_changed": false,
+    "ocs_cognition_runtime_changed": false,
+    "provider_runtime_changed": false
+  },
+  "accepted_artifacts": [
+    "MULTILINE_PROMPT_CAPTURED_ARTIFACT_V1"
+  ],
+  "accepted_replay_fields": [
+    "line_count",
+    "character_count",
+    "assembled_prompt_hash",
+    "turn_boundary_event",
+    "single_turn_guarantee",
+    "fragment_turns_created",
+    "partial_routing_allowed"
+  ],
+  "case_b_acceptance": {
+    "input_structure": [
+      "I want to create the first real commercial Sapianta product.",
+      "",
+      "Use the current AiGOL architecture and repository state.",
+      "",
+      "Produce:",
+      "1. Findings",
+      "2. Assumptions",
+      "3. Alternatives",
+      "4. Risks",
+      "5. Recommendation",
+      "",
+      "Explain your reasoning.",
+      "",
+      "Do not create or modify anything.",
+      "",
+      "Provide cognition output only.",
+      "."
+    ],
+    "expected_turn_count": 1,
+    "expected_turn_started_count": 1,
+    "expected_turn_completed_count": 1,
+    "expected_routing_decision_count": 1,
+    "fragment_turns_created": false
+  },
+  "accepted_non_goals_preserved": [
+    "No OCS cognition runtime change.",
+    "No provider runtime change.",
+    "No conversation routing runtime change.",
+    "No worker dispatch.",
+    "No execution request.",
+    "No approval authority.",
+    "No governance mutation.",
+    "No existing replay mutation."
+  ],
+  "acceptance_tests": [
+    {
+      "test": "tests/test_multiline_prompt_support_runtime_v1.py::test_case_b_multiline_paste_creates_one_turn_without_fragmentation",
+      "evidence": "Verifies Case-B structure creates one turn, one TURN_STARTED capture, one routing decision, one TURN_COMPLETED replay, and no fragment turns."
+    },
+    {
+      "test": "tests/test_multiline_prompt_support_runtime_v1.py::test_single_line_prompt_still_creates_one_turn",
+      "evidence": "Verifies existing single-line prompt behavior remains one turn."
+    },
+    {
+      "test": "tests/test_multiline_prompt_support_runtime_v1.py::test_multiline_startup_banner_is_discoverable",
+      "evidence": "Verifies operator-visible multiline banner text exists."
+    }
+  ],
+  "success_criteria": {
+    "single_multiline_paste_creates_one_turn": true,
+    "terminator_excluded": true,
+    "blank_lines_preserved": true,
+    "routing_executed_once": true,
+    "completion_executed_once": true,
+    "single_line_compatibility_preserved": true,
+    "no_fragment_turns_created": true
+  }
+}

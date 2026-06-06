@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import select
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -299,6 +301,9 @@ from aigol.runtime.conversational_turn_completion_runtime import (
     record_conversational_result_delivered,
     record_conversational_turn_completed,
 )
+from aigol.runtime.multiline_prompt_support_runtime import (
+    record_multiline_prompt_capture,
+)
 from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     STATUS_COMPLETED as OCS_LLM_COGNITION_COMPLETED,
@@ -309,6 +314,13 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
 INTERACTIVE_EXIT_COMMANDS = frozenset({"exit", "quit"})
+MULTILINE_PROMPT_TERMINATOR = "."
+INTERACTIVE_CONVERSATION_MULTILINE_BANNER = "\n".join(
+    [
+        "Multi-line mode enabled.",
+        "Finish prompt with a single '.' on its own line.",
+    ]
+)
 
 
 def _bind_supported_executable_domain_bundle(
@@ -646,6 +658,71 @@ def _delivered_output_line_count(*chunks: str) -> int:
         if chunk:
             count += len(chunk.splitlines())
     return count
+
+
+def _attach_interactive_multiline_prompt_capture(
+    *,
+    turn_summary: dict[str, Any],
+    multiline_prompt_capture: dict[str, Any],
+) -> None:
+    artifact = multiline_prompt_capture["multiline_prompt_capture_artifact"]
+    turn_summary["turn_started"] = multiline_prompt_capture["turn_started"]
+    turn_summary["multiline_prompt_capture_replay_reference"] = multiline_prompt_capture[
+        "multiline_prompt_capture_replay_reference"
+    ]
+    turn_summary["multiline_prompt_capture_artifact_type"] = artifact["artifact_type"]
+    turn_summary["multiline_input_mode"] = artifact["input_mode"]
+    turn_summary["multiline_line_count"] = artifact["line_count"]
+    turn_summary["multiline_character_count"] = artifact["character_count"]
+    turn_summary["assembled_prompt_hash"] = artifact["assembled_prompt_hash"]
+    turn_summary["fragment_turns_created"] = artifact["fragment_turns_created"]
+    turn_summary["partial_routing_allowed"] = artifact["partial_routing_allowed"]
+
+
+def _read_interactive_prompt_capture(*, input_reader: Any) -> dict[str, Any]:
+    raw_prompt = input_reader("AiGOL > ")
+    if not _has_buffered_multiline_input(input_reader):
+        return {
+            "human_prompt": raw_prompt.strip(),
+            "prompt_lines": [raw_prompt.strip()] if raw_prompt.strip() else [],
+            "line_count": 1 if raw_prompt.strip() else 0,
+            "input_mode": "SINGLE_LINE",
+            "terminator": MULTILINE_PROMPT_TERMINATOR,
+            "terminator_seen": False,
+        }
+
+    lines = [raw_prompt]
+    terminator_seen = False
+    while True:
+        continuation = input_reader("... ")
+        if continuation.strip() == MULTILINE_PROMPT_TERMINATOR:
+            terminator_seen = True
+            break
+        lines.append(continuation)
+        if not _has_buffered_multiline_input(input_reader):
+            break
+    assembled = "\n".join(lines)
+    return {
+        "human_prompt": assembled,
+        "prompt_lines": lines,
+        "line_count": len(lines),
+        "input_mode": "MULTILINE_SENTINEL",
+        "terminator": MULTILINE_PROMPT_TERMINATOR,
+        "terminator_seen": terminator_seen,
+    }
+
+
+def _has_buffered_multiline_input(input_reader: Any) -> bool:
+    has_pending = getattr(input_reader, "has_pending_input", None)
+    if callable(has_pending):
+        return bool(has_pending())
+    if input_reader is not input:
+        return False
+    try:
+        readable, _, _ = select.select([sys.stdin], [], [], 0)
+    except Exception:
+        return False
+    return bool(readable)
 
 
 def _artifact_from_args(args: argparse.Namespace) -> dict:
@@ -1173,18 +1250,20 @@ def run_interactive_conversation(
     pending_approval_required: dict[str, Any] | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
+    if input_func is None and output_func is None:
+        output_writer(INTERACTIVE_CONVERSATION_MULTILINE_BANNER)
 
     while True:
         try:
-            raw_prompt = input_reader("AiGOL > ")
+            prompt_capture = _read_interactive_prompt_capture(input_reader=input_reader)
         except EOFError:
             exit_reason = "EOF"
             break
 
-        human_prompt = raw_prompt.strip()
+        human_prompt = prompt_capture["human_prompt"]
         if not human_prompt:
             continue
-        if human_prompt.lower() in INTERACTIVE_EXIT_COMMANDS:
+        if prompt_capture["input_mode"] == "SINGLE_LINE" and human_prompt.lower() in INTERACTIVE_EXIT_COMMANDS:
             break
 
         turn_count += 1
@@ -1203,6 +1282,16 @@ def run_interactive_conversation(
             turn_id = resume_state["next_turn_id"]
             prompt_id = f"{session_id}:{turn_id}"
             turn_root = session_root / turn_id
+            multiline_prompt_capture = record_multiline_prompt_capture(
+                session_id=session_id,
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                prompt_lines=prompt_capture["prompt_lines"],
+                assembled_prompt=human_prompt,
+                terminator=prompt_capture["terminator"],
+                created_at=created_at,
+                replay_dir=turn_root / "multiline_prompt_capture",
+            )
             progress_binding_capture = _create_interactive_conversation_progress_binding(
                 session_id=session_id,
                 turn_id=turn_id,
@@ -2296,6 +2385,10 @@ def run_interactive_conversation(
                         failure_reason=conversation_capture.get("failure_reason"),
                     )
                 )
+            _attach_interactive_multiline_prompt_capture(
+                turn_summary=turns[-1],
+                multiline_prompt_capture=multiline_prompt_capture,
+            )
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,
                 stage=CONVERSATIONAL_PROGRESS_RESULT_ASSEMBLY,
