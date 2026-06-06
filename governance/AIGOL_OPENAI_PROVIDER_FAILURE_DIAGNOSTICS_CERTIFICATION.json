@@ -1,0 +1,51 @@
+{
+  "milestone_id": "AIGOL_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS_V1",
+  "classification": "CERTIFIED_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS",
+  "status": "CERTIFIED",
+  "certified": true,
+  "scope": "OpenAI provider failure diagnostics in provider attachment replay",
+  "runtime_files_modified": [
+    "aigol/provider/provider_runtime.py"
+  ],
+  "test_files_added": [
+    "tests/test_openai_provider_failure_diagnostics_v1.py"
+  ],
+  "governance_artifacts": [
+    "governance/AIGOL_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS_V1.md",
+    "governance/AIGOL_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS_CERTIFICATION.json"
+  ],
+  "success_criteria": {
+    "fail_closed_behavior_preserved": true,
+    "existing_failure_reason_preserved": true,
+    "sanitized_diagnostics_added": true,
+    "provider_failure_artifact_updated": true,
+    "replay_evidence_updated": true,
+    "dns_failure_recorded": true,
+    "timeout_recorded": true,
+    "http_error_recorded": true,
+    "sensitive_data_excluded": true
+  },
+  "diagnostic_contract": {
+    "allowed_fields": [
+      "exception_type",
+      "transport_failure_category",
+      "http_status",
+      "failure_stage"
+    ],
+    "disallowed_fields": [
+      "api_keys",
+      "authorization_headers",
+      "request_bodies",
+      "raw_response_bodies",
+      "stack_traces"
+    ]
+  },
+  "authority_preservation": {
+    "provider_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false
+  },
+  "final_decision": "CERTIFIED"
+}

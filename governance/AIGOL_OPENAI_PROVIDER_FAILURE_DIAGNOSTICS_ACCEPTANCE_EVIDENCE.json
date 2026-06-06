@@ -1,0 +1,56 @@
+{
+  "milestone_id": "AIGOL_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS_V1",
+  "classification": "CERTIFIED_OPENAI_PROVIDER_FAILURE_DIAGNOSTICS",
+  "status": "ACCEPTED",
+  "runtime_changed": true,
+  "provider_authority_changed": false,
+  "execution_authority_changed": false,
+  "worker_authority_changed": false,
+  "failure_reason_preserved": true,
+  "diagnostics_added": true,
+  "diagnostic_fields": [
+    "exception_type",
+    "transport_failure_category",
+    "http_status",
+    "failure_stage"
+  ],
+  "sensitive_fields_excluded": [
+    "api_keys",
+    "authorization_headers",
+    "request_bodies",
+    "raw_response_bodies",
+    "stack_traces",
+    "raw_exception_messages"
+  ],
+  "replay_evidence": {
+    "provider_proposal_created_contains_failure_diagnostics": true,
+    "provider_proposal_returned_contains_failure_diagnostics": true,
+    "replay_reconstruction_preserved": true
+  },
+  "test_evidence": [
+    {
+      "test": "tests/test_openai_provider_failure_diagnostics_v1.py::test_dns_failure_records_sanitized_url_error_diagnostics",
+      "evidence": "URLError is recorded as URL_ERROR with failure_stage openai_http_request and no HTTP status."
+    },
+    {
+      "test": "tests/test_openai_provider_failure_diagnostics_v1.py::test_timeout_failure_records_sanitized_timeout_diagnostics",
+      "evidence": "TimeoutError is recorded as TIMEOUT with failure_stage openai_http_request."
+    },
+    {
+      "test": "tests/test_openai_provider_failure_diagnostics_v1.py::test_http_error_records_sanitized_status_diagnostics",
+      "evidence": "HTTPError is recorded as HTTP_ERROR with http_status 429 through the production OpenAIHTTPClient boundary."
+    },
+    {
+      "test": "tests/test_openai_provider_failure_diagnostics_v1.py::test_replay_contains_failure_diagnostics",
+      "evidence": "Created and returned replay artifacts contain matching failure_diagnostics."
+    },
+    {
+      "test": "tests/test_openai_provider_failure_diagnostics_v1.py::test_failure_diagnostics_exclude_sensitive_data",
+      "evidence": "Replay capture excludes API key, Authorization header, bearer token, stack trace, and raw exception message."
+    }
+  ],
+  "commands_run": [
+    "python -m pytest tests/test_openai_provider_failure_diagnostics_v1.py",
+    "python -m pytest tests/test_first_real_provider_attachment_v1.py tests/test_minimal_provider_attachment_runtime_v1.py"
+  ]
+}

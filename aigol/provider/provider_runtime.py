@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 from typing import Any
+from urllib import error as url_error
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_proposal_envelope import validate_provider_proposal_envelope
@@ -65,15 +67,21 @@ def run_provider_attachment(
         _persist_step(replay_path, 1, REPLAY_STEPS[1], returned)
         return _capture(envelope_dict, created, returned)
     except Exception as exc:
+        failure_diagnostics = _failure_diagnostics(exc)
         envelope = _failed_envelope(
             provider_id=provider_id,
             request=request,
             proposal_id=proposal_id,
             timestamp=timestamp,
             failure_reason=_failure_reason(exc),
+            failure_diagnostics=failure_diagnostics,
         )
         _persist_failure_if_possible(replay_path, 0, REPLAY_STEPS[0], envelope)
-        returned = _failed_returned(envelope=envelope, failure_reason=envelope["failure_reason"])
+        returned = _failed_returned(
+            envelope=envelope,
+            failure_reason=envelope["failure_reason"],
+            failure_diagnostics=failure_diagnostics,
+        )
         _persist_failure_if_possible(replay_path, 1, REPLAY_STEPS[1], returned)
         return _capture(envelope, envelope, returned)
 
@@ -99,7 +107,7 @@ def reconstruct_provider_attachment_replay(replay_dir: str | Path) -> dict[str, 
         raise FailClosedRuntimeError("provider attachment replay proposal hash mismatch")
     if returned.get("created_hash") != created.get("artifact_hash"):
         raise FailClosedRuntimeError("provider attachment replay created hash mismatch")
-    return {
+    replay = {
         "provider_id": created["provider_id"],
         "provider_version": created["provider_version"],
         "request": deepcopy(created["request"]),
@@ -116,6 +124,9 @@ def reconstruct_provider_attachment_replay(replay_dir: str | Path) -> dict[str, 
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
     }
+    if "failure_diagnostics" in created:
+        replay["failure_diagnostics"] = deepcopy(created["failure_diagnostics"])
+    return replay
 
 
 def _created_replay(*, provider: dict[str, Any], envelope: dict[str, Any], timestamp: str) -> dict[str, Any]:
@@ -172,7 +183,15 @@ def _returned_replay(
     return artifact
 
 
-def _failed_envelope(*, provider_id: Any, request: Any, proposal_id: Any, timestamp: Any, failure_reason: str) -> dict[str, Any]:
+def _failed_envelope(
+    *,
+    provider_id: Any,
+    request: Any,
+    proposal_id: Any,
+    timestamp: Any,
+    failure_reason: str,
+    failure_diagnostics: dict[str, Any],
+) -> dict[str, Any]:
     artifact = {
         "runtime_version": PROVIDER_ATTACHMENT_RUNTIME_VERSION,
         "event_type": FAILED_CLOSED,
@@ -193,12 +212,13 @@ def _failed_envelope(*, provider_id: Any, request: Any, proposal_id: Any, timest
         "execution_capable": False,
         "replay_visible": True,
         "failure_reason": failure_reason,
+        "failure_diagnostics": deepcopy(failure_diagnostics),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
 
-def _failed_returned(*, envelope: dict[str, Any], failure_reason: str) -> dict[str, Any]:
+def _failed_returned(*, envelope: dict[str, Any], failure_reason: str, failure_diagnostics: dict[str, Any]) -> dict[str, Any]:
     artifact = {
         "runtime_version": PROVIDER_ATTACHMENT_RUNTIME_VERSION,
         "event_type": FAILED_CLOSED,
@@ -215,6 +235,7 @@ def _failed_returned(*, envelope: dict[str, Any], failure_reason: str) -> dict[s
         "execution_capable": False,
         "replay_visible": True,
         "failure_reason": failure_reason,
+        "failure_diagnostics": deepcopy(failure_diagnostics),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -331,3 +352,55 @@ def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "provider attachment failed closed"
+
+
+def _failure_diagnostics(exc: Exception) -> dict[str, Any]:
+    diagnostic_exc = _diagnostic_exception(exc)
+    return {
+        "failure_stage": _failure_stage(exc=exc, diagnostic_exc=diagnostic_exc),
+        "exception_type": _exception_type(diagnostic_exc),
+        "transport_failure_category": _transport_failure_category(diagnostic_exc),
+        "http_status": _http_status(diagnostic_exc),
+    }
+
+
+def _diagnostic_exception(exc: Exception) -> Exception:
+    cause = exc.__cause__
+    if isinstance(cause, (url_error.HTTPError, url_error.URLError, TimeoutError, json.JSONDecodeError)):
+        return cause
+    return exc
+
+
+def _failure_stage(*, exc: Exception, diagnostic_exc: Exception) -> str:
+    if isinstance(diagnostic_exc, (url_error.HTTPError, url_error.URLError, TimeoutError, json.JSONDecodeError)):
+        return "openai_http_request"
+    if isinstance(exc, FailClosedRuntimeError) and str(exc).startswith("OpenAI provider"):
+        return "openai_provider_adapter"
+    return "provider_attachment_runtime"
+
+
+def _exception_type(exc: Exception) -> str:
+    name = type(exc).__name__
+    if not name or any(character not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_" for character in name):
+        return "UNKNOWN_EXCEPTION"
+    return name
+
+
+def _transport_failure_category(exc: Exception) -> str:
+    if isinstance(exc, url_error.HTTPError):
+        return "HTTP_ERROR"
+    if isinstance(exc, url_error.URLError):
+        return "URL_ERROR"
+    if isinstance(exc, TimeoutError):
+        return "TIMEOUT"
+    if isinstance(exc, json.JSONDecodeError):
+        return "JSON_DECODE"
+    if isinstance(exc, FailClosedRuntimeError):
+        return "FAIL_CLOSED"
+    return "CLIENT_EXCEPTION"
+
+
+def _http_status(exc: Exception) -> int | None:
+    if isinstance(exc, url_error.HTTPError) and isinstance(exc.code, int):
+        return exc.code
+    return None
