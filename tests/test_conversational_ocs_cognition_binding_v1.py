@@ -160,6 +160,14 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert turn["execution_requested"] is False
     assert turn["approval_created"] is False
     assert _progress_lines(output[0])[:8] == PROGRESS_LINES
+    assert output[0].index("AIGOL OCS COGNITION") < output[0].index("AIGOL OCS LLM COGNITION END-TO-END")
+    assert "Findings:" in output[0]
+    assert "Assumptions:" in output[0]
+    assert "Risks:" in output[0]
+    assert "Uncertainties:" in output[0]
+    assert "Clarification Questions:" in output[0]
+    assert "Recommended Next Milestone:" in output[0]
+    assert "The prompt requests governed product cognition before any execution." in output[0]
     assert "AIGOL OCS LLM COGNITION END-TO-END" in output[0]
     assert "REAL_LLM_PROVIDER_USED_BY_OCS = true" in output[0]
     assert output[0].splitlines()[-8:-2] == [

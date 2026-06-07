@@ -16,6 +16,8 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     STATUS_COMPLETED,
     STATUS_FAILED_CLOSED,
     reconstruct_ocs_llm_cognition_end_to_end_replay,
+    render_operator_visible_ocs_llm_cognition,
+    render_ocs_llm_cognition_end_to_end_summary,
     run_ocs_llm_cognition_end_to_end,
 )
 from aigol.runtime.transport.serialization import replay_hash
@@ -116,10 +118,40 @@ def test_end_to_end_runtime_creates_human_facing_cognition_result(tmp_path):
     assert len(artifact["cognition_artifact_hashes"]) == 3
     assert artifact["human_facing_cognition_result"]["clarification_required"] is True
     assert artifact["human_facing_cognition_result"]["allowed_next_step"] == "HUMAN_REVIEW"
+    assert artifact["human_facing_cognition_result"]["findings"]
+    assert artifact["human_facing_cognition_result"]["assumptions"]
+    assert artifact["human_facing_cognition_result"]["risks"]
+    assert artifact["human_facing_cognition_result"]["uncertainties"]
+    assert artifact["human_facing_cognition_result"]["clarification_questions"]
+    assert artifact["human_facing_cognition_result"]["recommended_next_milestone"]
     assert replay["final_status"] == STATUS_COMPLETED
     assert replay["provider_count"] == 3
     assert replay["cognition_artifact_count"] == 3
     assert replay["clarification_required"] is True
+
+
+def test_operator_visible_cognition_rendering_precedes_technical_summary(tmp_path):
+    result = _run(tmp_path)
+    operator_section = render_operator_visible_ocs_llm_cognition(result)
+    technical_summary = render_ocs_llm_cognition_end_to_end_summary(result)
+    combined = operator_section + "\n" + technical_summary
+
+    assert combined.index("AIGOL OCS COGNITION") < combined.index("AIGOL OCS LLM COGNITION END-TO-END")
+    for heading in (
+        "Findings:",
+        "Assumptions:",
+        "Risks:",
+        "Uncertainties:",
+        "Clarification Questions:",
+        "Recommended Next Milestone:",
+    ):
+        assert heading in operator_section
+    assert "Shared finding: the question requires bounded human review." in operator_section
+    assert "Shared uncertainty: exact operating scope remains underspecified." in operator_section
+    assert "Human review of normalized cognition output." in operator_section
+    assert "replay_reference:" in technical_summary
+    assert "provider_count:" in technical_summary
+    assert "non_authoritative: True" in operator_section
 
 
 def test_end_to_end_reconstructs_each_stage_replay(tmp_path):
