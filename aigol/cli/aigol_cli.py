@@ -534,7 +534,7 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
             replay_dir=provider_replay_dir,
         )
         response = provider_capture["provider_proposal_envelope"]["response"]
-        return response.get("raw_response") or {"output_text": response["response_text"]}
+        return {"output_text": response["response_text"]}
 
     return {OPENAI_PROVIDER_ID: _transport}
 
