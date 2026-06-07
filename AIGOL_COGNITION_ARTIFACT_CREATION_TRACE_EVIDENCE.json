@@ -1,0 +1,110 @@
+{
+  "artifact_type": "AIGOL_COGNITION_ARTIFACT_CREATION_TRACE_EVIDENCE",
+  "artifact_version": "V1",
+  "status": "TRACE_CERTIFIED",
+  "created_at": "2026-06-06",
+  "scope": {
+    "runtime_changed": false,
+    "provider_behavior_changed": false,
+    "comparison_behavior_changed": false,
+    "fail_closed_behavior_preserved": true,
+    "replay_visible": true
+  },
+  "observed_replay": {
+    "session_id": "AIGOL-INTERACTIVE-CONVERSATION-000001",
+    "turn_id": "TURN-000157",
+    "base_path": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end",
+    "end_to_end_artifact": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/000_ocs_llm_cognition_end_to_end_artifact.json",
+    "multi_provider_result_bundle": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/001_multi_provider_cognition_result_bundle.json",
+    "comparison_artifact": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/stages/cognition_comparison/000_cognition_comparison_artifact.json"
+  },
+  "route_trace": [
+    "Human Prompt",
+    "OCS_LLM_COGNITION dispatch",
+    "_run_conversational_ocs_llm_cognition",
+    "run_ocs_llm_cognition_end_to_end",
+    "assemble_ocs_context",
+    "run_multi_provider_cognition_runtime",
+    "provider invocation",
+    "provider response capture",
+    "run_cognition_artifact_runtime",
+    "run_cognition_comparison_runtime"
+  ],
+  "provider_trace": [
+    {
+      "provider_slot": "openai",
+      "readiness_status": "READY",
+      "output_budget_status": "ACTIVE",
+      "provider_invocation_allowed": true,
+      "provider_attachment_event": "FAILED_CLOSED",
+      "provider_response_exists": false,
+      "cognition_artifact_created": false,
+      "normalization_successful": false,
+      "failure_reason": "OpenAI provider unavailable",
+      "failure_stage": "openai_http_request",
+      "transport_failure_category": "TIMEOUT",
+      "provider_attachment_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai/000_provider_proposal_created.json"
+    },
+    {
+      "provider_slot": "openai-comparison",
+      "readiness_status": "READY",
+      "output_budget_status": "ACTIVE",
+      "provider_invocation_allowed": true,
+      "provider_attachment_event": "PROVIDER_PROPOSAL_CREATED",
+      "provider_return_event": "PROVIDER_PROPOSAL_RETURNED",
+      "provider_response_exists": true,
+      "raw_response_exists": true,
+      "response_text_length": 5872,
+      "cognition_artifact_created": true,
+      "normalization_successful": true,
+      "normalization_status": "NORMALIZED",
+      "normalization_source_format": "plain_text",
+      "cognition_artifact_status": "COMPLETED",
+      "provider_attachment_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/real_openai_provider_attachment/openai-comparison/000_provider_proposal_created.json",
+      "cognition_artifact_replay": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000157/ocs_llm_cognition_end_to_end/stages/multi_provider_cognition/providers/openai-comparison/cognition_artifact/000_llm_cognition_artifact.json"
+    }
+  ],
+  "multi_provider_result_bundle": {
+    "artifact_type": "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "bundle_status": "COMPLETED",
+    "provider_count": 2,
+    "successful_provider_count": 1,
+    "failed_provider_count": 1,
+    "cognition_artifact_count": 1,
+    "provider_failure_count": 1,
+    "cognition_artifact_hashes": [
+      "sha256:cba4f1d1ab6703f4fefbe609474d52e792c1cb99bd9d0cabb8d71f5921058d78"
+    ],
+    "provider_failure_hashes": [
+      "sha256:a0b19b90fee28c885c18defb22548ccf4e1e4cea2c62f966149401f3c28a5f00"
+    ]
+  },
+  "comparison_trace": {
+    "runtime": "aigol/runtime/cognition_comparison_runtime.py",
+    "function": "create_cognition_comparison_artifact",
+    "minimum_required_cognition_artifacts": 2,
+    "actual_successful_cognition_artifacts": 1,
+    "comparison_status": "FAILED_CLOSED",
+    "failure_reason": "at least two cognition artifacts are required for comparison",
+    "failure_is_expected_fail_closed_behavior": true
+  },
+  "first_failure": {
+    "operational_location": "aigol/provider/providers/openai_provider.py::OpenAIProviderAdapter._call_openai",
+    "operational_reason": "OpenAI provider unavailable",
+    "replay_diagnostics": {
+      "exception_type": "TimeoutError",
+      "failure_stage": "openai_http_request",
+      "transport_failure_category": "TIMEOUT"
+    },
+    "workflow_location": "aigol/runtime/cognition_comparison_runtime.py::create_cognition_comparison_artifact",
+    "workflow_reason": "at least two cognition artifacts are required for comparison"
+  },
+  "final_outputs": {
+    "PROVIDER_RESPONSE_EXISTS": "PARTIAL_1_OF_2",
+    "COGNITION_ARTIFACT_CREATED": true,
+    "COGNITION_ARTIFACT_COUNT": 1,
+    "NORMALIZATION_SUCCESSFUL": "PARTIAL_1_OF_2",
+    "ROOT_CAUSE": "One provider failed before response/artifact creation, leaving only one cognition artifact; comparison correctly requires at least two.",
+    "MINIMAL_SAFE_FIX": "Add a pre-comparison artifact sufficiency gate with provider failure replay details; preserve the two-artifact comparison invariant."
+  }
+}
