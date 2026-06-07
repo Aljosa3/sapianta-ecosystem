@@ -1,0 +1,81 @@
+{
+  "artifact_type": "AIGOL_REAL_ELAPSED_TIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "status": "ACCEPTED",
+  "created_at": "2026-06-06",
+  "scope": {
+    "runtime_changed": true,
+    "cli_output_format_preserved": true,
+    "turn_completion_artifacts_preserved": true,
+    "replay_visible": true,
+    "deterministic_test_support": true,
+    "fail_closed_behavior_preserved": true,
+    "provider_behavior_changed": false,
+    "workflow_behavior_changed": false,
+    "dispatch_authority_changed": false
+  },
+  "previous_behavior": {
+    "elapsed_source": "conversational_progress_binding_artifact.stage_count",
+    "placeholder_value": 8,
+    "problem": "elapsed_seconds represented progress stage count rather than wall-clock execution duration"
+  },
+  "new_behavior": {
+    "elapsed_source": "monotonic wall-clock duration",
+    "production_clock": "time.monotonic",
+    "test_clock_injection": "run_interactive_conversation(..., monotonic_func=...)",
+    "replay_field": "elapsed_seconds",
+    "operator_output_field": "elapsed: {elapsed_seconds}s",
+    "nonnegative_clamp": true
+  },
+  "code_references": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "run_interactive_conversation",
+      "evidence": "captures turn_started_monotonic after prompt acceptance and before turn execution"
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_interactive_turn_elapsed_seconds",
+      "evidence": "computes monotonic_now() - turn_started_monotonic instead of reading stage_count"
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "function": "_record_interactive_turn_completion",
+      "evidence": "passes measured elapsed_seconds to existing turn completion runtime"
+    },
+    {
+      "file": "aigol/runtime/conversational_turn_completion_runtime.py",
+      "function": "record_conversational_turn_completed",
+      "evidence": "existing TURN_COMPLETED_ARTIFACT_V1 elapsed_seconds field remains replay-visible"
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "test": "tests/test_interactive_conversation_cli_v1.py::test_interactive_conversation_records_router_and_conversation_replay",
+      "deterministic_clock": [
+        100.0,
+        103.0
+      ],
+      "expected_cli_output": "elapsed: 3s",
+      "expected_replay_elapsed_seconds": 3,
+      "placeholder_stage_count_value": 8,
+      "placeholder_removed": true,
+      "result": "PASSED"
+    },
+    {
+      "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+      "result": "PASSED",
+      "summary": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_multiline_prompt_support_runtime_v1.py",
+      "result": "PASSED",
+      "summary": "4 passed"
+    }
+  ],
+  "final_outputs": {
+    "REAL_ELAPSED_TIME_ACTIVE": true,
+    "PLACEHOLDER_ELAPSED_REMOVED": true,
+    "REPLAY_COMPATIBLE": true
+  }
+}

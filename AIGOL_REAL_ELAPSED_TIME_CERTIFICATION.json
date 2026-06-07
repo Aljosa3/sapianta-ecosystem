@@ -1,0 +1,56 @@
+{
+  "artifact_type": "AIGOL_REAL_ELAPSED_TIME_CERTIFICATION",
+  "artifact_version": "V1",
+  "certification_status": "CERTIFIED",
+  "created_at": "2026-06-06",
+  "classification": "REAL_ELAPSED_TIME_RUNTIME_CERTIFIED",
+  "certified_claims": {
+    "real_elapsed_time_active": true,
+    "placeholder_elapsed_removed": true,
+    "replay_compatible": true,
+    "deterministic_test_support_active": true,
+    "cli_output_format_preserved": true,
+    "existing_turn_completion_artifacts_preserved": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "constitutional_boundary": {
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "provider_authority_granted": false,
+    "execution_authority_granted": false,
+    "worker_authority_granted": false,
+    "dispatch_authority_changed": false,
+    "autonomous_continuation_introduced": false
+  },
+  "certified_fix": {
+    "primary_file": "aigol/cli/aigol_cli.py",
+    "previous_elapsed_source": "progress stage_count",
+    "new_elapsed_source": "monotonic wall-clock duration",
+    "replay_field": "elapsed_seconds",
+    "operator_output_format": "elapsed: {elapsed_seconds}s"
+  },
+  "validation": {
+    "commands": [
+      {
+        "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py",
+        "result": "PASSED",
+        "summary": "6 passed"
+      },
+      {
+        "command": "python -m pytest tests/test_multiline_prompt_support_runtime_v1.py",
+        "result": "PASSED",
+        "summary": "4 passed"
+      }
+    ],
+    "diff_check": "PASSED"
+  },
+  "known_limitations": [
+    "Elapsed time is recorded as integer seconds to preserve the existing CLI and artifact field shape.",
+    "Progress checkpoint timestamps remain separate progress visibility evidence and are not redefined by this runtime fix."
+  ],
+  "final_outputs": {
+    "REAL_ELAPSED_TIME_ACTIVE": true,
+    "PLACEHOLDER_ELAPSED_REMOVED": true,
+    "REPLAY_COMPATIBLE": true
+  }
+}
