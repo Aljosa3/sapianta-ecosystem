@@ -1,0 +1,35 @@
+{
+  "certification_id": "AIGOL_REAL_COGNITION_PIPELINE_TRACE_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_REAL_COGNITION_PIPELINE_TRACE",
+  "status": "CERTIFIED_TRACE_ONLY",
+  "runtime_artifact": "AIGOL_REAL_COGNITION_PIPELINE_TRACE_V1.md",
+  "evidence_artifact": "AIGOL_REAL_COGNITION_PIPELINE_TRACE_EVIDENCE.json",
+  "runtime_changes_made": false,
+  "certified_scope": [
+    "Trace real conversational OCS cognition pipeline",
+    "Identify first serialization and preservation point for JSON blob findings",
+    "Preserve governance, replay, provider non-authority, and current runtime behavior"
+  ],
+  "certified_findings": {
+    "openai_response_is_text_boundary": true,
+    "top_level_json_parse_exists": true,
+    "inner_json_in_findings_is_not_recursively_normalized": true,
+    "renderer_is_not_first_serialization_stage": true,
+    "exact_preservation_location_identified": true,
+    "fix_required": true
+  },
+  "final_outputs": {
+    "OPENAI_RESPONSE_TYPE": "dict with output text string",
+    "PROVIDER_ARTIFACT_TYPE": "dict with response_text string",
+    "COGNITION_ARTIFACT_TYPE": "dict LLM_COGNITION_ARTIFACT_V1 with findings list",
+    "HUMAN_FACING_COGNITION_TYPE": "dict",
+    "RENDERER_INPUT_TYPE": "list[str]",
+    "FIRST_SERIALIZATION_STAGE": "OpenAI response content text",
+    "FIRST_SERIALIZATION_FUNCTION": "OpenAI provider output extraction / cognition artifact string-list normalization",
+    "FIRST_SERIALIZATION_LINE": "aigol/provider/providers/openai_provider.py:76 and aigol/runtime/cognition_artifact_runtime.py:302-306",
+    "ROOT_CAUSE": "Provider output contains a JSON document serialized inside findings[0]; cognition normalization parses only the top-level JSON and preserves the inner JSON as a finding string.",
+    "FIX_REQUIRED": true,
+    "OPERATOR_OUTPUT_STATUS": "JSON_BLOB_SOURCE_IDENTIFIED"
+  }
+}
