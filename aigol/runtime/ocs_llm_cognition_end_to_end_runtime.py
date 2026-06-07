@@ -469,6 +469,10 @@ def _human_facing_result(
 ) -> dict[str, Any]:
     clarification_candidates = deepcopy(clarification_artifact.get("clarification_candidates", []))
     cognition_artifacts = _source_cognition_artifacts(result_bundle)
+    clarification_questions = _dedupe_operator_items(
+        _operator_cognition_items(cognition_artifacts, "clarification_questions")
+        + [item["question"] for item in clarification_candidates if isinstance(item, dict) and item.get("question")]
+    )
     return {
         "result_type": "HUMAN_FACING_COGNITION_RESULT",
         "summary": "Provider-assisted cognition completed. Human review remains required before any downstream action.",
@@ -484,10 +488,8 @@ def _human_facing_result(
         "clarification_status": clarification_artifact.get("clarification_status"),
         "clarification_candidate_count": len(clarification_candidates),
         "clarification_candidates": clarification_candidates,
-        "clarification_questions": [
-            item["question"] for item in clarification_candidates if isinstance(item, dict) and item.get("question")
-        ],
-        "recommended_next_milestone": "Human review of normalized cognition output.",
+        "clarification_questions": clarification_questions,
+        "recommended_next_milestone": _operator_recommended_next_milestone(cognition_artifacts),
         "allowed_next_step": "HUMAN_REVIEW",
         "approval_created": False,
         "execution_requested": False,
@@ -515,6 +517,16 @@ def _operator_cognition_items(cognition_artifacts: list[dict[str, Any]], field_n
     for artifact in cognition_artifacts:
         items.extend(_operator_items_from_value(artifact.get(field_name), field_name))
     return _dedupe_operator_items(items)
+
+
+def _operator_recommended_next_milestone(cognition_artifacts: list[dict[str, Any]]) -> str:
+    for artifact in cognition_artifacts:
+        milestone = artifact.get("recommended_next_milestone")
+        if isinstance(milestone, str):
+            cleaned = _clean_operator_text(milestone)
+            if cleaned:
+                return cleaned
+    return "Human review of normalized cognition output."
 
 
 def _operator_items_from_value(value: Any, field_name: str) -> list[str]:

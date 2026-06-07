@@ -51,6 +51,11 @@ COGNITION_FIELDS = (
     "uncertainties",
 )
 
+OPTIONAL_OPERATOR_COGNITION_FIELDS = (
+    "clarification_questions",
+    "recommended_next_milestone",
+)
+
 CONFIDENCE_VALUES = {"LOW", "MEDIUM", "HIGH", "DETERMINISTIC", "UNKNOWN"}
 
 PROHIBITED_RESPONSE_PHRASES = (
@@ -157,13 +162,15 @@ def create_llm_cognition_artifact(
         "alternatives": normalized["alternatives"],
         "risks": normalized["risks"],
         "uncertainties": normalized["uncertainties"],
+        "clarification_questions": normalized["clarification_questions"],
+        "recommended_next_milestone": normalized["recommended_next_milestone"],
         "confidence": normalized["confidence"],
         "normalization": {
             "normalization_status": "NORMALIZED",
             "normalization_policy": "AIGOL_COGNITION_ARTIFACT_NORMALIZATION_POLICY_V1",
             "source_format": normalized["source_format"],
             "authority_boundary_checked": True,
-            "allowed_fields": list(COGNITION_FIELDS) + ["confidence"],
+            "allowed_fields": list(COGNITION_FIELDS) + list(OPTIONAL_OPERATOR_COGNITION_FIELDS) + ["confidence"],
         },
         "context_hash": context["context_hash"],
         "request_hash": request_artifact["request_hash"],
@@ -269,6 +276,7 @@ def _normalize_provider_cognition(response_text: str) -> dict[str, Any]:
     parsed = _parse_json_response(text)
     source_format = "json" if parsed is not None else "plain_text"
     source = parsed if parsed is not None else {"findings": [text], "confidence": "UNKNOWN"}
+    source = _expand_nested_cognition_json(source)
     normalized = {
         "source_format": source_format,
         "findings": _normalize_string_list(source.get("findings"), "findings", required=True),
@@ -276,12 +284,76 @@ def _normalize_provider_cognition(response_text: str) -> dict[str, Any]:
         "alternatives": _normalize_string_list(source.get("alternatives"), "alternatives"),
         "risks": _normalize_string_list(source.get("risks"), "risks"),
         "uncertainties": _normalize_string_list(source.get("uncertainties"), "uncertainties"),
+        "clarification_questions": _normalize_string_list(source.get("clarification_questions"), "clarification_questions"),
+        "recommended_next_milestone": _normalize_optional_string(
+            source.get("recommended_next_milestone"),
+            "recommended_next_milestone",
+        ),
         "confidence": _normalize_confidence(source.get("confidence")),
     }
-    for field in COGNITION_FIELDS:
+    for field in COGNITION_FIELDS + ("clarification_questions",):
         for item in normalized[field]:
             _reject_authority_bearing_text(item)
+    if normalized["recommended_next_milestone"]:
+        _reject_authority_bearing_text(normalized["recommended_next_milestone"])
     return normalized
+
+
+def _expand_nested_cognition_json(source: dict[str, Any]) -> dict[str, Any]:
+    expanded = deepcopy(source)
+    findings = source.get("findings")
+    if not isinstance(findings, list):
+        return expanded
+    retained_findings: list[Any] = []
+    nested_documents: list[dict[str, Any]] = []
+    for item in findings:
+        nested = _parse_nested_cognition_document(item)
+        if nested is None:
+            retained_findings.append(item)
+        else:
+            nested_documents.append(nested)
+    if not nested_documents:
+        return expanded
+    expanded["findings"] = retained_findings
+    for nested in nested_documents:
+        for field in COGNITION_FIELDS + ("clarification_questions",):
+            if field in nested:
+                expanded[field] = _merge_json_cognition_values(expanded.get(field), nested.get(field))
+        if nested.get("recommended_next_milestone") and not expanded.get("recommended_next_milestone"):
+            expanded["recommended_next_milestone"] = nested["recommended_next_milestone"]
+        if nested.get("confidence") and not expanded.get("confidence"):
+            expanded["confidence"] = nested["confidence"]
+    return expanded
+
+
+def _parse_nested_cognition_document(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    if not (stripped.startswith("{") and stripped.endswith("}")):
+        return None
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    allowed = set(COGNITION_FIELDS) | set(OPTIONAL_OPERATOR_COGNITION_FIELDS) | {"confidence"}
+    if not any(field in parsed for field in allowed):
+        return None
+    return parsed
+
+
+def _merge_json_cognition_values(existing: Any, nested: Any) -> list[Any]:
+    merged: list[Any] = []
+    for value in (existing, nested):
+        if value is None:
+            continue
+        if isinstance(value, list):
+            merged.extend(value)
+        else:
+            merged.append(value)
+    return merged
 
 
 def _parse_json_response(response_text: str) -> dict[str, Any] | None:
@@ -307,6 +379,15 @@ def _normalize_string_list(value: Any, field_name: str, *, required: bool = Fals
     if required and not normalized:
         raise FailClosedRuntimeError(f"{field_name} must include at least one bounded item")
     return normalized
+
+
+def _normalize_optional_string(value: Any, field_name: str) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        normalized = _normalize_string_list(value, field_name)
+        return normalized[0] if normalized else ""
+    return " ".join(_require_string(value, field_name).split())
 
 
 def _normalize_confidence(value: Any) -> str:
