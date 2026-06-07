@@ -1,0 +1,125 @@
+{
+  "artifact_id": "AIGOL_PROVIDER_USAGE_AND_BALANCE_VISIBILITY_ACCEPTANCE_EVIDENCE_V1",
+  "milestone_id": "AIGOL_PROVIDER_USAGE_AND_BALANCE_VISIBILITY_V1",
+  "status": "ACCEPTED",
+  "canonical_usage_artifact": "PROVIDER_USAGE_ARTIFACT_V1",
+  "canonical_balance_artifact": "PROVIDER_BALANCE_ARTIFACT_V1_DEFINED_NOT_IMPLEMENTED",
+  "runtime_changes": {
+    "usage_artifact_created": true,
+    "operator_usage_section_rendered": true,
+    "balance_runtime_implemented": false,
+    "provider_authority_changed": false,
+    "approval_authority_changed": false,
+    "execution_authority_changed": false,
+    "worker_authority_changed": false,
+    "governance_authority_changed": false,
+    "replay_authority_changed": false
+  },
+  "implemented_files": [
+    "aigol/runtime/multi_provider_cognition_runtime.py",
+    "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+  ],
+  "provider_response_fields": {
+    "prompt_tokens": "SUPPORTED_WHEN_USAGE_PROMPT_TOKENS_OR_INPUT_TOKENS_PRESENT",
+    "completion_tokens": "SUPPORTED_WHEN_USAGE_COMPLETION_TOKENS_OR_OUTPUT_TOKENS_PRESENT",
+    "total_tokens": "SUPPORTED_WHEN_USAGE_TOTAL_TOKENS_PRESENT_OR_DERIVABLE",
+    "model_identifier": "SUPPORTED_WHEN_RESPONSE_MODEL_PRESENT_WITH_REQUEST_IDENTITY_FALLBACK",
+    "request_latency": "SUPPORTED_BY_AIGOL_PROVIDER_TRANSPORT_TIMER"
+  },
+  "provider_usage_artifact_fields": [
+    "artifact_type",
+    "provider_id",
+    "model",
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "elapsed_seconds",
+    "estimated_cost",
+    "currency",
+    "timestamp",
+    "balance_visibility_supported",
+    "balance_source",
+    "remaining_balance",
+    "usage_hash",
+    "artifact_hash"
+  ],
+  "operator_visible_section": {
+    "heading": "PROVIDER USAGE",
+    "fields": [
+      "Provider",
+      "Model",
+      "Prompt Tokens",
+      "Completion Tokens",
+      "Total Tokens",
+      "Elapsed",
+      "Estimated Cost",
+      "Balance"
+    ],
+    "raw_provider_payload_visible": false,
+    "authority_metadata_visible": false,
+    "replay_implementation_details_visible": false
+  },
+  "balance_visibility": {
+    "classification": "PARTIAL",
+    "direct_remaining_balance_from_provider_response": false,
+    "openai_usage_api_supported": true,
+    "openai_costs_api_supported": true,
+    "balance_source_defined": true,
+    "balance_source": "OpenAI organization Usage and Costs APIs for spend visibility; remaining balance is not returned by individual provider response."
+  },
+  "pricing_basis": {
+    "pricing_source": "OpenAI public pricing documentation",
+    "estimated_cost_currency": "USD",
+    "known_model_rates_per_million_tokens": {
+      "gpt-5": {
+        "input": 1.25,
+        "output": 10.0
+      },
+      "gpt-5.1": {
+        "input": 1.25,
+        "output": 10.0
+      },
+      "gpt-5.2": {
+        "input": 1.75,
+        "output": 14.0
+      },
+      "gpt-5-mini": {
+        "input": 0.25,
+        "output": 2.0
+      },
+      "gpt-5-nano": {
+        "input": 0.05,
+        "output": 0.4
+      }
+    },
+    "unknown_model_estimated_cost": null
+  },
+  "acceptance_test_observation": {
+    "provider_id": "openai",
+    "model": "gpt-5.1",
+    "prompt_tokens": 1450,
+    "completion_tokens": 980,
+    "total_tokens": 2430,
+    "estimated_cost": 0.011612,
+    "balance_visibility_supported": "PARTIAL",
+    "operator_output_contains_provider_usage": true
+  },
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py",
+      "result": "PASSED",
+      "observed": "26 passed"
+    }
+  ],
+  "final_outputs": {
+    "TOKEN_USAGE_VISIBLE": true,
+    "ESTIMATED_COST_VISIBLE": true,
+    "LATENCY_VISIBLE": true,
+    "BALANCE_VISIBILITY_SUPPORTED": "PARTIAL",
+    "BALANCE_SOURCE_DEFINED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true
+  }
+}

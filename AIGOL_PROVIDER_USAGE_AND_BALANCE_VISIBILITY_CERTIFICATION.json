@@ -1,0 +1,70 @@
+{
+  "artifact_id": "AIGOL_PROVIDER_USAGE_AND_BALANCE_VISIBILITY_CERTIFICATION_V1",
+  "milestone_id": "AIGOL_PROVIDER_USAGE_AND_BALANCE_VISIBILITY_V1",
+  "certification_status": "CERTIFIED_PROVIDER_USAGE_VISIBILITY",
+  "canonical_usage_artifact": "PROVIDER_USAGE_ARTIFACT_V1",
+  "canonical_balance_artifact": "PROVIDER_BALANCE_ARTIFACT_V1_DEFINED_NOT_IMPLEMENTED",
+  "certified_capabilities": {
+    "token_usage_visible": true,
+    "estimated_cost_visible": true,
+    "latency_visible": true,
+    "balance_visibility_supported": "PARTIAL",
+    "balance_source_defined": true,
+    "replay_compatible": true,
+    "governance_compatible": true
+  },
+  "authority_boundary_certification": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_authority": false,
+    "usage_visibility_is_authority": false,
+    "cost_visibility_is_authority": false,
+    "balance_visibility_is_authority": false
+  },
+  "replay_certification": {
+    "usage_artifact_replay_visible": true,
+    "usage_hash_recorded": true,
+    "provider_response_artifact_hash_preserved": true,
+    "multi_provider_result_bundle_hash_preserved": true,
+    "ocs_end_to_end_hash_preserved": true,
+    "append_only_replay_preserved": true,
+    "raw_provider_payload_not_rendered_in_usage_section": true
+  },
+  "balance_certification": {
+    "direct_provider_response_balance_supported": false,
+    "usage_and_cost_api_source_defined": true,
+    "remaining_balance_runtime_implemented": false,
+    "classification": "PARTIAL",
+    "reason": "Usage and Costs APIs can support spend visibility, but remaining account balance is not present in the individual OpenAI provider response."
+  },
+  "non_goals_certified": [
+    "No provider authority was added.",
+    "No approval authority was added.",
+    "No execution authority was added.",
+    "No worker authority was added.",
+    "No governance authority was added.",
+    "No replay authority was added.",
+    "No raw provider payload rendering was added to the operator usage section.",
+    "No billing or balance API runtime was implemented.",
+    "No credentials are rendered."
+  ],
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py",
+      "status": "PASSED",
+      "tests_passed": 26
+    }
+  },
+  "final_outputs": {
+    "TOKEN_USAGE_VISIBLE": true,
+    "ESTIMATED_COST_VISIBLE": true,
+    "LATENCY_VISIBLE": true,
+    "BALANCE_VISIBILITY_SUPPORTED": "PARTIAL",
+    "BALANCE_SOURCE_DEFINED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true
+  }
+}
