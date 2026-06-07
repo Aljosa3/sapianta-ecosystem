@@ -171,7 +171,17 @@ def test_operator_visible_cognition_rendering_precedes_technical_summary(tmp_pat
             {
                 "findings": [
                     "Structured finding is operator readable.",
-                    json.dumps({"findings": ["Nested JSON finding is extracted cleanly."]}, sort_keys=True),
+                    json.dumps(
+                        {
+                            "findings": ["Nested JSON finding is extracted cleanly."],
+                            "assumptions": ["Nested JSON assumption is extracted cleanly."],
+                            "risks": ["Nested JSON risk is extracted cleanly."],
+                            "uncertainties": ["Nested JSON uncertainty is extracted cleanly."],
+                            "clarification_questions": ["Nested JSON clarification is extracted cleanly?"],
+                            "recommended_next_milestone": "Nested JSON next milestone is extracted cleanly.",
+                        },
+                        sort_keys=True,
+                    ),
                 ],
                 "assumptions": ["Structured assumption is operator readable."],
                 "risks": ["Structured risk is operator readable."],
@@ -182,8 +192,13 @@ def test_operator_visible_cognition_rendering_precedes_technical_summary(tmp_pat
                 "Structured finding is operator readable.",
                 "Nested JSON finding is extracted cleanly.",
                 "Structured assumption is operator readable.",
+                "Nested JSON assumption is extracted cleanly.",
                 "Structured risk is operator readable.",
+                "Nested JSON risk is extracted cleanly.",
                 "Structured uncertainty is operator readable.",
+                "Nested JSON uncertainty is extracted cleanly.",
+                "Nested JSON clarification is extracted cleanly?",
+                "Nested JSON next milestone is extracted cleanly.",
             ],
         ),
         (

@@ -135,6 +135,79 @@ def test_provider_response_normalizes_into_canonical_llm_cognition_artifact(tmp_
     assert replay["canonical_provider_assisted_cognition_output"] is True
 
 
+def test_nested_cognition_json_in_findings_is_merged_into_canonical_fields(tmp_path, monkeypatch):
+    nested = {
+        "findings": ["Nested finding is recovered."],
+        "assumptions": ["Nested assumption is recovered."],
+        "risks": ["Nested risk is recovered."],
+        "uncertainties": ["Nested uncertainty is recovered."],
+        "clarification_questions": ["Which buyer segment should be prioritized?"],
+        "recommended_next_milestone": "Human review of recovered nested cognition.",
+    }
+    provider_text = _provider_text(
+        findings=[json.dumps(nested, sort_keys=True)],
+        assumptions=[],
+        risks=[],
+        uncertainties=[],
+    )
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Nested finding is recovered."]
+    assert artifact["assumptions"] == ["Nested assumption is recovered."]
+    assert artifact["risks"] == ["Nested risk is recovered."]
+    assert artifact["uncertainties"] == ["Nested uncertainty is recovered."]
+    assert artifact["clarification_questions"] == ["Which buyer segment should be prioritized?"]
+    assert artifact["recommended_next_milestone"] == "Human review of recovered nested cognition."
+
+
+def test_normal_findings_list_is_preserved_without_nested_json(tmp_path, monkeypatch):
+    provider_text = _provider_text(findings=["Normal finding remains plain text."])
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Normal finding remains plain text."]
+    assert artifact["assumptions"] == ["Provider output is advisory and untrusted."]
+    assert artifact["risks"] == ["Provider output may omit governance constraints."]
+
+
+def test_mixed_findings_list_merges_nested_json_and_preserves_plain_findings(tmp_path, monkeypatch):
+    nested = {
+        "findings": ["Nested mixed finding is recovered."],
+        "assumptions": ["Nested mixed assumption is recovered."],
+        "risks": ["Nested mixed risk is recovered."],
+        "uncertainties": ["Nested mixed uncertainty is recovered."],
+    }
+    provider_text = _provider_text(findings=["Plain mixed finding remains.", json.dumps(nested, sort_keys=True)])
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Plain mixed finding remains.", "Nested mixed finding is recovered."]
+    assert artifact["assumptions"] == [
+        "Provider output is advisory and untrusted.",
+        "Nested mixed assumption is recovered.",
+    ]
+    assert artifact["risks"] == [
+        "Provider output may omit governance constraints.",
+        "Nested mixed risk is recovered.",
+    ]
+    assert artifact["uncertainties"] == [
+        "No multi-provider agreement is available in this milestone.",
+        "Nested mixed uncertainty is recovered.",
+    ]
+
+
+def test_invalid_json_string_in_findings_remains_plain_finding(tmp_path, monkeypatch):
+    invalid_json = '{"findings": ["not closed"]'
+    provider_text = _provider_text(findings=[invalid_json])
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == [invalid_json]
+    assert artifact["assumptions"] == ["Provider output is advisory and untrusted."]
+    assert artifact["risks"] == ["Provider output may omit governance constraints."]
+
+
 def test_plain_text_provider_response_becomes_bounded_finding_with_unknown_confidence(tmp_path, monkeypatch):
     result = _run_artifact(
         tmp_path,
