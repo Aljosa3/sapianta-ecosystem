@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.llm_cognition_provider_runtime import (
@@ -54,6 +55,25 @@ COGNITION_FIELDS = (
 OPTIONAL_OPERATOR_COGNITION_FIELDS = (
     "clarification_questions",
     "recommended_next_milestone",
+)
+
+SECTION_LABEL_TO_FIELD = {
+    "findings": "findings",
+    "assumptions": "assumptions",
+    "alternatives": "alternatives",
+    "risks": "risks",
+    "uncertainties": "uncertainties",
+    "clarification questions": "clarification_questions",
+    "clarification question": "clarification_questions",
+    "recommended next milestone": "recommended_next_milestone",
+    "next milestone": "recommended_next_milestone",
+}
+
+SECTION_LABEL_PATTERN = re.compile(
+    r"(?i)(?<![A-Za-z0-9_])"
+    r"(findings|assumptions|alternatives|risks|uncertainties|"
+    r"clarification questions|clarification question|recommended next milestone|next milestone)"
+    r"\s*(?::|\s+-)"
 )
 
 CONFIDENCE_VALUES = {"LOW", "MEDIUM", "HIGH", "DETERMINISTIC", "UNKNOWN"}
@@ -277,6 +297,7 @@ def _normalize_provider_cognition(response_text: str) -> dict[str, Any]:
     source_format = "json" if parsed is not None else "plain_text"
     source = parsed if parsed is not None else {"findings": [text], "confidence": "UNKNOWN"}
     source = _expand_nested_cognition_json(source)
+    source = _expand_section_labeled_cognition_text(source)
     normalized = {
         "source_format": source_format,
         "findings": _normalize_string_list(source.get("findings"), "findings", required=True),
@@ -324,6 +345,75 @@ def _expand_nested_cognition_json(source: dict[str, Any]) -> dict[str, Any]:
         if nested.get("confidence") and not expanded.get("confidence"):
             expanded["confidence"] = nested["confidence"]
     return expanded
+
+
+def _expand_section_labeled_cognition_text(source: dict[str, Any]) -> dict[str, Any]:
+    expanded = deepcopy(source)
+    findings = source.get("findings")
+    if not isinstance(findings, list):
+        return expanded
+    retained_findings: list[Any] = []
+    parsed_documents: list[dict[str, Any]] = []
+    for item in findings:
+        parsed = _parse_section_labeled_cognition_document(item)
+        if parsed is None:
+            retained_findings.append(item)
+        else:
+            parsed_documents.append(parsed)
+    if not parsed_documents:
+        return expanded
+    expanded["findings"] = retained_findings
+    for parsed in parsed_documents:
+        for field in COGNITION_FIELDS + ("clarification_questions",):
+            if field in parsed:
+                expanded[field] = _merge_json_cognition_values(expanded.get(field), parsed.get(field))
+        if parsed.get("recommended_next_milestone") and not expanded.get("recommended_next_milestone"):
+            expanded["recommended_next_milestone"] = parsed["recommended_next_milestone"]
+    return expanded
+
+
+def _parse_section_labeled_cognition_document(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    matches = list(SECTION_LABEL_PATTERN.finditer(text))
+    fields = {SECTION_LABEL_TO_FIELD[match.group(1).lower()] for match in matches}
+    if len(fields) < 2:
+        return None
+    parsed: dict[str, Any] = {}
+    for index, match in enumerate(matches):
+        field = SECTION_LABEL_TO_FIELD[match.group(1).lower()]
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        content = text[start:end].strip()
+        if not content:
+            continue
+        if field == "recommended_next_milestone":
+            if not parsed.get(field):
+                parsed[field] = _section_content_to_optional_string(content)
+        else:
+            parsed[field] = _merge_json_cognition_values(parsed.get(field), _section_content_to_items(content))
+    return parsed if parsed.get("findings") else None
+
+
+def _section_content_to_items(content: str) -> list[str]:
+    normalized = " ".join(content.split())
+    if not normalized:
+        return []
+    bullet_items = [item.strip() for item in re.split(r"(?:^|\s)[-*]\s+", normalized) if item.strip()]
+    if len(bullet_items) > 1 or normalized.startswith(("- ", "* ")):
+        return bullet_items
+    numbered_items = [item.strip() for item in re.split(r"(?:^|\s)\d+[.)]\s+", normalized) if item.strip()]
+    if len(numbered_items) > 1 or re.match(r"^\d+[.)]\s+", normalized):
+        return numbered_items
+    return [normalized]
+
+
+def _section_content_to_optional_string(content: str) -> str:
+    items = _section_content_to_items(content)
+    return items[0] if items else ""
 
 
 def _parse_nested_cognition_document(value: Any) -> dict[str, Any] | None:
