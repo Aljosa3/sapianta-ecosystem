@@ -312,6 +312,61 @@ def test_section_labeled_provider_cognition_renders_complete_operator_sections(t
     assert "Uncertainties:\n- (none recorded)" not in operator_section
 
 
+def test_operator_visible_provider_usage_section_renders_tokens_latency_and_cost(tmp_path):
+    response_text = json.dumps(
+        {
+            "findings": ["Usage metrics should be visible without authority changes."],
+            "assumptions": ["OpenAI usage is reported by the provider response."],
+            "risks": ["Cost is estimated from configured token pricing."],
+            "uncertainties": ["Balance is not returned by the provider response."],
+            "confidence": "MEDIUM",
+        },
+        sort_keys=True,
+    )
+
+    def transport(_payload: dict, metadata: dict) -> dict:
+        assert metadata["provider_role"] == "COGNITION_PROVIDER"
+        return {
+            "model": "gpt-5.1",
+            "output_text": response_text,
+            "usage": {
+                "input_tokens": 1450,
+                "output_tokens": 980,
+                "total_tokens": 2430,
+            },
+        }
+
+    result = _run(
+        tmp_path,
+        end_to_end_id="OCS-LLM-COGNITION-PROVIDER-USAGE",
+        provider_contracts=_contracts(("openai",)),
+        transport_registry={"openai": transport},
+        single_provider_primary_mode=True,
+    )
+    usage_artifact = result["stage_captures"]["multi_provider_cognition"]["result_bundle"]["provider_usage_artifacts"][0]
+    operator_section = render_operator_visible_ocs_llm_cognition(result)
+
+    assert usage_artifact["artifact_type"] == "PROVIDER_USAGE_ARTIFACT_V1"
+    assert usage_artifact["provider_id"] == "openai"
+    assert usage_artifact["model"] == "gpt-5.1"
+    assert usage_artifact["prompt_tokens"] == 1450
+    assert usage_artifact["completion_tokens"] == 980
+    assert usage_artifact["total_tokens"] == 2430
+    assert usage_artifact["estimated_cost"] == 0.011612
+    assert usage_artifact["balance_visibility_supported"] == "PARTIAL"
+    assert "PROVIDER USAGE" in operator_section
+    assert "Provider: openai" in operator_section
+    assert "Model: gpt-5.1" in operator_section
+    assert "Prompt Tokens: 1450" in operator_section
+    assert "Completion Tokens: 980" in operator_section
+    assert "Total Tokens: 2430" in operator_section
+    assert "Elapsed: " in operator_section
+    assert "Estimated Cost: $0.011612" in operator_section
+    assert "Balance: PARTIAL" in operator_section
+    assert "provider_authority" not in operator_section
+    assert "raw_response" not in operator_section
+
+
 def test_end_to_end_reconstructs_each_stage_replay(tmp_path):
     _run(tmp_path)
     replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
