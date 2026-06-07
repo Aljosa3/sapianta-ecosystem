@@ -1,0 +1,57 @@
+{
+  "artifact_id": "AIGOL_NESTED_COGNITION_JSON_NORMALIZATION_FIX_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "nested_cognition_json_normalization",
+  "implemented_files": [
+    "aigol/runtime/cognition_artifact_runtime.py",
+    "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+    "tests/test_cognition_artifact_runtime_v1.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+  ],
+  "normalization_behavior": {
+    "nested_json_detected_in": "findings[]",
+    "valid_nested_json_parsed": true,
+    "invalid_nested_json_preserved_as_plain_finding": true,
+    "normal_findings_preserved": true,
+    "mixed_findings_preserved_and_merged": true
+  },
+  "recovered_fields": {
+    "findings": true,
+    "assumptions": true,
+    "risks": true,
+    "uncertainties": true,
+    "clarification_questions": true,
+    "recommended_next_milestone": true
+  },
+  "preservation": {
+    "replay_compatible": true,
+    "governance_compatible": true,
+    "provider_non_authority_preserved": true,
+    "existing_cognition_artifacts_preserved": true,
+    "technical_summary_preserved": true,
+    "core_cognition_hash_compatibility_preserved": true
+  },
+  "regression_cases": {
+    "CASE_A_NESTED_COGNITION_JSON_IN_FINDINGS_0": "passed",
+    "CASE_B_NORMAL_FINDINGS_LIST": "passed",
+    "CASE_C_MIXED_FINDINGS_LIST": "passed",
+    "CASE_D_INVALID_JSON_STRING": "passed"
+  },
+    "validation": {
+        "focused_tests": {
+            "command": "python -m pytest tests/test_cognition_artifact_runtime_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py",
+            "result": "58 passed"
+        }
+    },
+  "final_outputs": {
+    "NESTED_JSON_DETECTED": true,
+    "NESTED_JSON_PARSED": true,
+    "ASSUMPTIONS_RECOVERED": true,
+    "RISKS_RECOVERED": true,
+    "UNCERTAINTIES_RECOVERED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED_NO_JSON_BLOB",
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true
+  }
+}

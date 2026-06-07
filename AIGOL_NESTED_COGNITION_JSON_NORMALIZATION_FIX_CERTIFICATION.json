@@ -1,0 +1,50 @@
+{
+  "certification_id": "AIGOL_NESTED_COGNITION_JSON_NORMALIZATION_FIX_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_NESTED_COGNITION_JSON_NORMALIZATION_FIX",
+  "status": "CERTIFIED",
+  "runtime_artifact": "AIGOL_NESTED_COGNITION_JSON_NORMALIZATION_FIX_V1.md",
+  "acceptance_evidence": "AIGOL_NESTED_COGNITION_JSON_NORMALIZATION_FIX_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Detect valid nested cognition JSON documents inside findings",
+    "Merge recovered nested fields into canonical cognition artifact fields",
+    "Project recovered clarification questions and recommended next milestone into operator-facing OCS cognition output",
+    "Preserve replay, governance, provider non-authority, and technical summary behavior"
+  ],
+  "certified_non_goals": [
+    "No provider invocation change",
+    "No routing change",
+    "No dispatch change",
+    "No replay mutation semantics change",
+    "No provider authority promotion",
+    "No approval, execution, worker, or governance mutation creation"
+  ],
+  "certification_findings": {
+    "nested_json_detected": true,
+    "nested_json_parsed": true,
+    "findings_recovered": true,
+    "assumptions_recovered": true,
+    "risks_recovered": true,
+    "uncertainties_recovered": true,
+    "clarification_questions_recovered": true,
+    "recommended_next_milestone_recovered": true,
+    "invalid_json_preserved": true,
+    "operator_json_blob_removed": true,
+    "replay_compatible": true,
+    "governance_compatible": true
+  },
+  "validation_summary": {
+    "focused_tests_passed": true,
+    "focused_test_count": 58
+  },
+  "final_outputs": {
+    "NESTED_JSON_DETECTED": true,
+    "NESTED_JSON_PARSED": true,
+    "ASSUMPTIONS_RECOVERED": true,
+    "RISKS_RECOVERED": true,
+    "UNCERTAINTIES_RECOVERED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED_NO_JSON_BLOB",
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true
+  }
+}
