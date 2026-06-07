@@ -1,0 +1,137 @@
+{
+  "artifact_id": "AIGOL_HUMAN_COGNITION_OUTPUT_TRACE_EVIDENCE_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "REVIEW_ONLY",
+  "runtime_code_changed": false,
+  "provider_behavior_changed": false,
+  "workflow_behavior_changed": false,
+  "validation_replay_root": "/tmp/aigol_single_provider_ocs_e2e_validation/interactive_runtime/SESSION-SINGLE-PROVIDER-OCS-E2E-VALIDATION-000001/TURN-000001/ocs_llm_cognition_end_to_end",
+  "trace": {
+    "provider_response_creation": {
+      "file": "aigol/runtime/llm_cognition_provider_runtime.py",
+      "line_start": 322,
+      "line_end": 350,
+      "stores": [
+        "raw_response",
+        "raw_response_hash",
+        "response_text",
+        "response_text_hash",
+        "response_status"
+      ]
+    },
+    "openai_response_text_extraction": {
+      "file": "aigol/runtime/llm_cognition_provider_runtime.py",
+      "line_start": 552,
+      "line_end": 574,
+      "summary": "Extracts bounded text from OpenAI output_text/text/response_text or Responses API output content text."
+    },
+    "provider_to_cognition_artifact": {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "line_start": 275,
+      "line_end": 297,
+      "summary": "Invokes provider, passes provider_response_artifact into run_cognition_artifact_runtime, and stores success result."
+    },
+    "provider_result_embedding": {
+      "file": "aigol/runtime/multi_provider_cognition_runtime.py",
+      "line_start": 614,
+      "line_end": 623,
+      "summary": "Embeds provider_response_artifact, llm_cognition_artifact, hashes, and cognition_replay_reference in provider_results."
+    },
+    "cognition_artifact_persistence": {
+      "file": "aigol/runtime/cognition_artifact_runtime.py",
+      "line_start": 78,
+      "line_end": 104,
+      "summary": "Persists LLM_COGNITION_ARTIFACT_V1 and returned artifact to provider cognition replay directory."
+    },
+    "end_to_end_result_assembly": {
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "line_start": 313,
+      "line_end": 359,
+      "summary": "Stores provider response hashes, cognition artifact hashes, human-facing result, and stage replay references."
+    },
+    "human_facing_result_assembly": {
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "line_start": 392,
+      "line_end": 409,
+      "summary": "Builds comparison/clarification-oriented human_facing_cognition_result without normalized findings/assumptions/risks/uncertainties."
+    },
+    "cli_rendering_dispatch": {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_start": 2794,
+      "line_end": 2801,
+      "summary": "Conversational OCS dispatch renders render_ocs_llm_cognition_end_to_end_summary plus REAL_LLM_PROVIDER_USED_BY_OCS."
+    },
+    "technical_summary_renderer": {
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "line_start": 279,
+      "line_end": 296,
+      "summary": "Renderer outputs technical status fields and does not render normalized cognition content."
+    }
+  },
+  "replay_evidence": {
+    "provider_response_location": "stages/multi_provider_cognition/001_multi_provider_cognition_result_bundle.json::artifact.provider_results[0].provider_response_artifact.response_text",
+    "provider_response_text_fields": [
+      "findings",
+      "assumptions",
+      "alternatives",
+      "risks",
+      "uncertainties",
+      "confidence"
+    ],
+    "provider_response_hash": "sha256:8b389bdc07c0b4600b8260da2a5f5e4ee5e3c5319900add9998aa92b01060509",
+    "cognition_artifact_location": "stages/multi_provider_cognition/providers/openai/cognition_artifact/000_llm_cognition_artifact.json",
+    "cognition_artifact_hash": "sha256:6091bc23645a40778f4d0b90cac00e415d464dc3468e822428f16d719edee7ff",
+    "cognition_fields_present": {
+      "findings": true,
+      "assumptions": true,
+      "alternatives": true,
+      "risks": true,
+      "uncertainties": true,
+      "confidence": true
+    },
+    "sample_normalized_cognition": {
+      "findings": [
+        "Sapianta should validate the first product through governed cognition before execution.",
+        "The prompt requests product opportunity analysis, not autonomous mutation."
+      ],
+      "assumptions": [
+        "The operator wants replay-visible strategic cognition."
+      ],
+      "alternatives": [
+        "AI Decision Validator",
+        "Managed governance review",
+        "Platform licensing"
+      ],
+      "risks": [
+        "Provider output remains non-authoritative and requires governance framing."
+      ],
+      "uncertainties": [
+        "Market entry sequencing requires additional operator input."
+      ],
+      "confidence": "MEDIUM"
+    }
+  },
+  "classification": {
+    "response_discarded": false,
+    "response_hidden": true,
+    "response_reconstructable_from_replay": true,
+    "operator_visible_cognition_supported_in_current_cli_output": false
+  },
+  "minimal_safe_fix": [
+    "Add a non-authoritative operator cognition renderer sourced from normalized cognition artifacts or replay-equivalent stage capture fields.",
+    "Append the operator cognition view to the existing technical summary instead of replacing the summary.",
+    "Render findings, assumptions, alternatives, risks, uncertainties, confidence, allowed next step, and clarification candidates.",
+    "Preserve provider non-authority, human review requirement, replay references, fail-closed behavior, and no execution/approval/worker flags."
+  ],
+  "final_outputs": {
+    "OPENAI_RESPONSE_EXISTS": true,
+    "OPENAI_RESPONSE_LOCATION": "multi_provider_cognition result bundle: artifact.provider_results[0].provider_response_artifact.response_text",
+    "COGNITION_ARTIFACT_EXISTS": true,
+    "COGNITION_ARTIFACT_LOCATION": "stages/multi_provider_cognition/providers/openai/cognition_artifact/000_llm_cognition_artifact.json",
+    "CLI_RENDERER": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py::render_ocs_llm_cognition_end_to_end_summary",
+    "RESPONSE_HIDDEN_OR_LOST": "HIDDEN_BY_SUMMARY_RENDERING",
+    "ROOT_CAUSE": "conversational OCS renders a technical completion summary and does not render normalized cognition content",
+    "MINIMAL_SAFE_FIX": "add a non-authoritative operator cognition renderer sourced from normalized cognition artifacts, preserving the existing technical summary and replay references",
+    "OPERATOR_VISIBLE_COGNITION_SUPPORTED": "NOT_CURRENTLY_IN_CLI_OUTPUT_BUT_RECONSTRUCTABLE_FROM_REPLAY"
+  }
+}

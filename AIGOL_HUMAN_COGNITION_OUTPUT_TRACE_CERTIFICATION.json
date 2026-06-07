@@ -1,0 +1,42 @@
+{
+  "certification_id": "AIGOL_HUMAN_COGNITION_OUTPUT_TRACE_CERTIFICATION_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "PASSED",
+  "scope": "Trace of OpenAI cognition response storage and conversational CLI rendering behavior.",
+  "runtime_code_changed": false,
+  "provider_behavior_changed": false,
+  "workflow_behavior_changed": false,
+  "openai_response_exists": true,
+  "cognition_artifact_exists": true,
+  "response_reconstructable_from_replay": true,
+  "response_discarded": false,
+  "response_hidden_by_summary_rendering": true,
+  "governance_preserved": true,
+  "replay_compatibility_preserved": true,
+  "fail_closed_behavior_preserved": true,
+  "provider_non_authority_preserved": true,
+  "certified_findings": {
+    "cli_renderer": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py::render_ocs_llm_cognition_end_to_end_summary",
+    "root_cause": "Conversational OCS renders a technical completion summary and does not render normalized cognition content.",
+    "minimal_safe_fix": "Add a non-authoritative operator cognition renderer sourced from normalized cognition artifacts while preserving the existing technical summary and replay references."
+  },
+  "evidence_artifacts": [
+    "AIGOL_HUMAN_COGNITION_OUTPUT_TRACE_V1.md",
+    "AIGOL_HUMAN_COGNITION_OUTPUT_TRACE_EVIDENCE.json"
+  ],
+  "validation": {
+    "json_parse": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "OPENAI_RESPONSE_EXISTS": true,
+    "OPENAI_RESPONSE_LOCATION": "multi_provider_cognition result bundle: artifact.provider_results[0].provider_response_artifact.response_text",
+    "COGNITION_ARTIFACT_EXISTS": true,
+    "COGNITION_ARTIFACT_LOCATION": "stages/multi_provider_cognition/providers/openai/cognition_artifact/000_llm_cognition_artifact.json",
+    "CLI_RENDERER": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py::render_ocs_llm_cognition_end_to_end_summary",
+    "RESPONSE_HIDDEN_OR_LOST": "HIDDEN_BY_SUMMARY_RENDERING",
+    "ROOT_CAUSE": "conversational OCS renders a technical completion summary and does not render normalized cognition content",
+    "MINIMAL_SAFE_FIX": "add a non-authoritative operator cognition renderer sourced from normalized cognition artifacts, preserving the existing technical summary and replay references",
+    "OPERATOR_VISIBLE_COGNITION_SUPPORTED": "NOT_CURRENTLY_IN_CLI_OUTPUT_BUT_RECONSTRUCTABLE_FROM_REPLAY"
+  }
+}
