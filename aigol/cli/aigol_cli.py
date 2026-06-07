@@ -534,7 +534,16 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
             replay_dir=provider_replay_dir,
         )
         response = provider_capture["provider_proposal_envelope"]["response"]
-        return {"output_text": response["response_text"]}
+        raw_response = response.get("raw_response")
+        if not isinstance(raw_response, dict):
+            raw_response = {}
+        provider_response = {
+            "output_text": response["response_text"],
+            "model": response.get("model") or OPENAI_PROVIDER_DEFAULT_MODEL,
+        }
+        if isinstance(raw_response.get("usage"), dict):
+            provider_response["usage"] = raw_response["usage"]
+        return provider_response
 
     return {OPENAI_PROVIDER_ID: _transport}
 

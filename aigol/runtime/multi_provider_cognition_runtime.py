@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import time
 from typing import Any, Callable
 
 from aigol.runtime.cognition_artifact_runtime import (
@@ -31,6 +32,7 @@ CERTIFIED_CLASSIFICATION = "CERTIFIED_MULTI_PROVIDER_COGNITION_RUNTIME"
 MULTI_PROVIDER_COGNITION_REQUEST_BUNDLE_V1 = "MULTI_PROVIDER_COGNITION_REQUEST_BUNDLE_V1"
 MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1 = "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1"
 PROVIDER_COGNITION_FAILURE_ARTIFACT_V1 = "PROVIDER_COGNITION_FAILURE_ARTIFACT_V1"
+PROVIDER_USAGE_ARTIFACT_V1 = "PROVIDER_USAGE_ARTIFACT_V1"
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED_CLOSED = "FAILED_CLOSED"
@@ -50,6 +52,14 @@ AUTHORITY_FLAGS = {
 }
 
 ProviderTransport = Callable[[dict[str, Any], dict[str, Any]], Any]
+
+MODEL_TOKEN_PRICING_USD_PER_MILLION = {
+    "gpt-5": {"input": 1.25, "output": 10.00},
+    "gpt-5.1": {"input": 1.25, "output": 10.00},
+    "gpt-5.2": {"input": 1.75, "output": 14.00},
+    "gpt-5-mini": {"input": 0.25, "output": 2.00},
+    "gpt-5-nano": {"input": 0.05, "output": 0.40},
+}
 
 
 def run_multi_provider_cognition_runtime(
@@ -418,8 +428,16 @@ def _invoke_provider_request(
         "provider_identity": deepcopy(provider_contract["provider_identity"]),
         "provider_schema_id": provider_contract["provider_schema_id"],
     }
+    started = time.perf_counter()
     raw_response = _json_safe(transport(deepcopy(payload), deepcopy(metadata)))
+    elapsed_seconds = round(max(0.0, time.perf_counter() - started), 3)
     response_text = _extract_response_text(raw_response)
+    provider_usage = _provider_usage_artifact(
+        provider_id=provider_id,
+        model=_provider_model(request_artifact, raw_response),
+        raw_response=raw_response,
+        elapsed_seconds=elapsed_seconds,
+    )
     artifact = {
         "artifact_type": LLM_COGNITION_PROVIDER_RESPONSE_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -445,6 +463,8 @@ def _invoke_provider_request(
         "raw_response_hash": replay_hash(raw_response),
         "response_text": response_text,
         "response_text_hash": replay_hash(response_text),
+        "provider_usage_artifact": provider_usage,
+        "provider_usage_hash": provider_usage["artifact_hash"],
         "response_status": "CAPTURED",
         "untrusted_provider_output": True,
         "non_authoritative": True,
@@ -479,6 +499,7 @@ def _invoke_provider_request(
             "ocs_context_hash": artifact["ocs_context_hash"],
             "raw_response_hash": artifact["raw_response_hash"],
             "response_text_hash": artifact["response_text_hash"],
+            "provider_usage_hash": artifact["provider_usage_hash"],
             "response_status": artifact["response_status"],
             "untrusted_provider_output": artifact["untrusted_provider_output"],
             "non_authoritative": artifact["non_authoritative"],
@@ -566,6 +587,14 @@ def _create_result_bundle(
         "provider_results": deepcopy(provider_results),
         "provider_failures": deepcopy(provider_failures),
         "cognition_artifact_hashes": [result["cognition_artifact_hash"] for result in provider_results],
+        "provider_usage_hashes": [
+            result["provider_usage_hash"] for result in provider_results if result.get("provider_usage_hash")
+        ],
+        "provider_usage_artifacts": [
+            deepcopy(result["provider_usage_artifact"])
+            for result in provider_results
+            if isinstance(result.get("provider_usage_artifact"), dict)
+        ],
         "provider_failure_hashes": [failure["artifact_hash"] for failure in provider_failures],
         "failure_isolated": True,
         "comparison_performed": False,
@@ -590,6 +619,7 @@ def _create_result_bundle(
             "successful_provider_count": artifact["successful_provider_count"],
             "failed_provider_count": artifact["failed_provider_count"],
             "cognition_artifact_hashes": artifact["cognition_artifact_hashes"],
+            "provider_usage_hashes": artifact["provider_usage_hashes"],
             "provider_failure_hashes": artifact["provider_failure_hashes"],
             "comparison_performed": artifact["comparison_performed"],
             "confidence_aggregation_performed": artifact["confidence_aggregation_performed"],
@@ -619,11 +649,105 @@ def _provider_success_result(
         "llm_cognition_artifact": deepcopy(cognition_artifact),
         "provider_request_artifact_hash": request_artifact["artifact_hash"],
         "provider_response_artifact_hash": response_artifact["artifact_hash"],
+        "provider_usage_artifact": deepcopy(response_artifact.get("provider_usage_artifact")),
+        "provider_usage_hash": response_artifact.get("provider_usage_hash"),
         "cognition_artifact_hash": cognition_artifact["artifact_hash"],
         "cognition_replay_reference": cognition_replay_reference,
         "comparison_performed": False,
         "confidence_aggregation_performed": False,
     }
+
+
+def _provider_usage_artifact(
+    *,
+    provider_id: str,
+    model: str,
+    raw_response: dict[str, Any],
+    elapsed_seconds: float,
+) -> dict[str, Any]:
+    prompt_tokens, completion_tokens, total_tokens = _extract_token_usage(raw_response)
+    artifact = {
+        "artifact_type": PROVIDER_USAGE_ARTIFACT_V1,
+        "provider_id": _require_string(provider_id, "provider_id"),
+        "model": _require_string(model, "model"),
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "elapsed_seconds": elapsed_seconds,
+        "estimated_cost": _estimated_cost_usd(model, prompt_tokens, completion_tokens),
+        "currency": "USD",
+        "timestamp": "PROVIDER_RESPONSE_CAPTURED",
+        "balance_visibility_supported": "PARTIAL",
+        "balance_source": "OpenAI organization Usage and Costs APIs; no remaining-balance value is available in provider response",
+        "remaining_balance": None,
+        "provider_authority": False,
+        "approval_authority": False,
+        "execution_authority": False,
+        "worker_authority": False,
+        "governance_authority": False,
+        "replay_authority": False,
+    }
+    artifact["usage_hash"] = replay_hash(
+        {
+            "provider_id": artifact["provider_id"],
+            "model": artifact["model"],
+            "prompt_tokens": artifact["prompt_tokens"],
+            "completion_tokens": artifact["completion_tokens"],
+            "total_tokens": artifact["total_tokens"],
+            "elapsed_seconds": artifact["elapsed_seconds"],
+            "estimated_cost": artifact["estimated_cost"],
+            "currency": artifact["currency"],
+        }
+    )
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _extract_token_usage(raw_response: dict[str, Any]) -> tuple[int | None, int | None, int | None]:
+    usage = raw_response.get("usage") if isinstance(raw_response, dict) else None
+    if not isinstance(usage, dict):
+        return None, None, None
+    prompt_tokens = _optional_nonnegative_int(
+        usage.get("prompt_tokens", usage.get("input_tokens")),
+    )
+    completion_tokens = _optional_nonnegative_int(
+        usage.get("completion_tokens", usage.get("output_tokens")),
+    )
+    total_tokens = _optional_nonnegative_int(usage.get("total_tokens"))
+    if total_tokens is None and (prompt_tokens is not None or completion_tokens is not None):
+        total_tokens = int(prompt_tokens or 0) + int(completion_tokens or 0)
+    return prompt_tokens, completion_tokens, total_tokens
+
+
+def _optional_nonnegative_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None
+
+
+def _provider_model(request_artifact: dict[str, Any], raw_response: dict[str, Any]) -> str:
+    response_model = raw_response.get("model") if isinstance(raw_response, dict) else None
+    if isinstance(response_model, str) and response_model.strip():
+        return response_model.strip()
+    identity = request_artifact.get("provider_identity")
+    if isinstance(identity, dict):
+        model = identity.get("model")
+        if isinstance(model, str) and model.strip():
+            return model.strip()
+    return "unknown"
+
+
+def _estimated_cost_usd(model: str, prompt_tokens: int | None, completion_tokens: int | None) -> float | None:
+    if prompt_tokens is None and completion_tokens is None:
+        return None
+    pricing = MODEL_TOKEN_PRICING_USD_PER_MILLION.get(model)
+    if pricing is None:
+        return None
+    prompt_cost = (prompt_tokens or 0) * pricing["input"] / 1_000_000
+    completion_cost = (completion_tokens or 0) * pricing["output"] / 1_000_000
+    return round(prompt_cost + completion_cost, 6)
 
 
 def _provider_failure_artifact(

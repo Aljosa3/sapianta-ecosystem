@@ -317,8 +317,76 @@ def render_operator_visible_ocs_llm_cognition(result: dict[str, Any]) -> str:
             *_render_bullets(human_result.get("clarification_questions")),
             "Recommended Next Milestone:",
             *_render_bullets([human_result.get("recommended_next_milestone")]),
+            *_render_provider_usage_section(result),
         ]
     )
+
+
+def _render_provider_usage_section(result: dict[str, Any]) -> list[str]:
+    usages = _provider_usage_artifacts(result)
+    if not usages:
+        return []
+    lines = ["PROVIDER USAGE"]
+    for usage in usages:
+        lines.extend(
+            [
+                f"Provider: {_format_usage_value(usage.get('provider_id'))}",
+                f"Model: {_format_usage_value(usage.get('model'))}",
+                f"Prompt Tokens: {_format_usage_value(usage.get('prompt_tokens'))}",
+                f"Completion Tokens: {_format_usage_value(usage.get('completion_tokens'))}",
+                f"Total Tokens: {_format_usage_value(usage.get('total_tokens'))}",
+                f"Elapsed: {_format_elapsed(usage.get('elapsed_seconds'))}",
+                f"Estimated Cost: {_format_cost(usage.get('estimated_cost'), usage.get('currency'))}",
+            ]
+        )
+        if usage.get("balance_visibility_supported") == "SUPPORTED":
+            lines.append(f"Balance: {_format_cost(usage.get('remaining_balance'), usage.get('currency'))} remaining")
+        elif usage.get("balance_visibility_supported"):
+            lines.append(f"Balance: {usage.get('balance_visibility_supported')}")
+    return lines
+
+
+def _provider_usage_artifacts(result: dict[str, Any]) -> list[dict[str, Any]]:
+    stage_captures = result.get("stage_captures")
+    if not isinstance(stage_captures, dict):
+        return []
+    multi_capture = stage_captures.get("multi_provider_cognition")
+    if not isinstance(multi_capture, dict):
+        return []
+    bundle = multi_capture.get("result_bundle")
+    if not isinstance(bundle, dict):
+        return []
+    usages = bundle.get("provider_usage_artifacts")
+    if isinstance(usages, list):
+        return [deepcopy(item) for item in usages if isinstance(item, dict)]
+    provider_results = bundle.get("provider_results")
+    if not isinstance(provider_results, list):
+        return []
+    collected = []
+    for item in provider_results:
+        if isinstance(item, dict) and isinstance(item.get("provider_usage_artifact"), dict):
+            collected.append(deepcopy(item["provider_usage_artifact"]))
+    return collected
+
+
+def _format_usage_value(value: Any) -> str:
+    if value is None or value == "":
+        return "unavailable"
+    return str(value)
+
+
+def _format_elapsed(value: Any) -> str:
+    if isinstance(value, int | float):
+        return f"{value:g}s"
+    return "unavailable"
+
+
+def _format_cost(value: Any, currency: Any) -> str:
+    if not isinstance(value, int | float):
+        return "unavailable"
+    if currency == "USD":
+        return f"${value:.6f}".rstrip("0").rstrip(".")
+    return f"{value:g} {currency or ''}".strip()
 
 
 def _render_bullets(items: Any) -> list[str]:
@@ -406,6 +474,7 @@ def _end_to_end_artifact(
         "failed_provider_count": result_bundle["failed_provider_count"],
         "provider_request_artifact_hashes": [item["provider_request_artifact_hash"] for item in provider_results],
         "provider_response_artifact_hashes": [item["provider_response_artifact_hash"] for item in provider_results],
+        "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
         "cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
         "provider_failure_hashes": result_bundle["provider_failure_hashes"],
         "single_provider_primary_mode": bool(single_provider_primary_mode),
@@ -427,6 +496,7 @@ def _end_to_end_artifact(
             "context_artifact_hash": context_artifact["artifact_hash"],
             "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
+            "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
             "comparison_artifact_hash": comparison_artifact["artifact_hash"],
             "history_reference_hash": history_reference["artifact_hash"],
             "continuity_artifact_hash": continuity_artifact["artifact_hash"],
@@ -602,6 +672,7 @@ def _failed_end_to_end_artifact(
         "failed_provider_count": 0,
         "provider_request_artifact_hashes": [],
         "provider_response_artifact_hashes": [],
+        "provider_usage_artifact_hashes": [],
         "cognition_artifact_hashes": [],
         "provider_failure_hashes": [],
         "single_provider_primary_mode": False,
@@ -959,6 +1030,7 @@ def _compute_end_to_end_hash(artifact: dict[str, Any]) -> str:
             "multi_provider_result_bundle_hash": artifact["multi_provider_result_bundle_hash"],
             "provider_request_artifact_hashes": artifact["provider_request_artifact_hashes"],
             "provider_response_artifact_hashes": artifact["provider_response_artifact_hashes"],
+            "provider_usage_artifact_hashes": artifact.get("provider_usage_artifact_hashes", []),
             "cognition_artifact_hashes": artifact["cognition_artifact_hashes"],
             "provider_failure_hashes": artifact["provider_failure_hashes"],
             "single_provider_primary_mode": artifact["single_provider_primary_mode"],
