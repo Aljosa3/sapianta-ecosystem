@@ -1,0 +1,100 @@
+{
+  "artifact_id": "AIGOL_REAL_OPERATOR_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "PARTIAL_ACCEPTANCE_FAILED_OPERATOR_STRUCTURE",
+  "validation_type": "real_operator_acceptance",
+  "executed_at": "2026-06-07T00:00:00Z",
+  "command": "printf 'I want to create the first real commercial Sapianta product.\\nUse the current AiGOL architecture and repository state.\\nAssume existing product domains remain read-only evidence.\\nProduce findings, assumptions, risks, uncertainties, clarification questions, and a recommended next milestone.\\n.\\nexit\\n' | python -m aigol.cli.aigol_cli conversation --session-id AIGOL-REAL-OPERATOR-ACCEPTANCE-000003 --created-at 2026-06-07T00:00:00Z --runtime-root /tmp/aigol_real_operator_acceptance_runtime_3 --workspace /home/pisarna/work/sapianta",
+  "session_id": "AIGOL-REAL-OPERATOR-ACCEPTANCE-000003",
+  "turn_id": "TURN-000003",
+  "runtime_root": "/tmp/aigol_real_operator_acceptance_runtime_3",
+  "replay_reference": "/tmp/aigol_real_operator_acceptance_runtime_3/AIGOL-REAL-OPERATOR-ACCEPTANCE-000003/TURN-000003",
+  "workflow_selection": {
+    "artifact_path": "/tmp/aigol_real_operator_acceptance_runtime_3/AIGOL-REAL-OPERATOR-ACCEPTANCE-000003/TURN-000003/conversational_cli_routing/001_conversational_workflow_selection_recorded.json",
+    "workflow_id": "OCS_LLM_COGNITION",
+    "routing_status": "WORKFLOW_SELECTED",
+    "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+  },
+  "ocs_end_to_end": {
+    "artifact_path": "/tmp/aigol_real_operator_acceptance_runtime_3/AIGOL-REAL-OPERATOR-ACCEPTANCE-000003/TURN-000003/ocs_llm_cognition_end_to_end/000_ocs_llm_cognition_end_to_end_artifact.json",
+    "workflow_status": "COMPLETED",
+    "provider_count": 1,
+    "successful_provider_count": 1,
+    "failed_provider_count": 0,
+    "provider_invoked": true,
+    "single_provider_primary_mode": true,
+    "fail_closed": false,
+    "provider_response_artifact_count": 1,
+    "cognition_artifact_count": 1,
+    "human_facing_cognition_present": true
+  },
+  "turn_completion": {
+    "artifact_path": "/tmp/aigol_real_operator_acceptance_runtime_3/AIGOL-REAL-OPERATOR-ACCEPTANCE-000003/TURN-000003/turn_completion/000_turn_completed.json",
+    "status": "COMPLETED",
+    "lifecycle_state": "TURN_COMPLETED",
+    "providers": [
+      "openai"
+    ]
+  },
+  "operator_output_checks": {
+    "findings_heading_present": true,
+    "assumptions_heading_present": true,
+    "risks_heading_present": true,
+    "uncertainties_heading_present": true,
+    "clarification_questions_heading_present": true,
+    "recommended_next_milestone_heading_present": true,
+    "technical_summary_present_after_cognition": true,
+    "json_findings_marker_visible": false,
+    "raw_json_blob_visible": false,
+    "serialized_cognition_payload_visible": true,
+    "none_recorded_visible_where_data_exists": true,
+    "findings_rendered": true,
+    "assumptions_rendered": false,
+    "risks_rendered": false,
+    "uncertainties_rendered": false,
+    "clarification_questions_rendered": true,
+    "next_milestone_rendered": true
+  },
+  "observed_operator_shape": {
+    "findings_shape": "single_section_labeled_text_item",
+    "findings_sample_prefix": "findings: -",
+    "embedded_section_labels_detected_in_findings": [
+      "assumptions:",
+      "risks:",
+      "uncertainties:",
+      "clarification questions:"
+    ],
+    "assumptions_output": "(none recorded)",
+    "risks_output": "(none recorded)",
+    "uncertainties_output": "(none recorded)"
+  },
+  "governance_preservation": {
+    "provider_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "governance_authority": false,
+    "replay_visible": true,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "human_review_required": true,
+    "non_authoritative": true
+  },
+  "acceptance_result": {
+    "pipeline_completed": true,
+    "real_openai_provider_used": true,
+    "operator_output_structured": "PARTIAL",
+    "json_blob_visible": false,
+    "cognition_sections_complete": false,
+    "technical_summary_preserved": true,
+    "accepted": false,
+    "failure_reason": "Real provider output arrived as section-labeled plain text inside a single finding item, leaving canonical assumptions, risks, and uncertainties empty for operator rendering."
+  },
+  "final_outputs": {
+    "OPERATOR_OUTPUT_STRUCTURED": "PARTIAL",
+    "JSON_BLOB_VISIBLE": false,
+    "COGNITION_SECTIONS_COMPLETE": false,
+    "TURN_COMPLETED": true,
+    "OCS_PROVIDER_STABILIZATION_STATUS": "PROVIDER_LIVE_TURN_COMPLETED_OPERATOR_STRUCTURE_INCOMPLETE"
+  }
+}

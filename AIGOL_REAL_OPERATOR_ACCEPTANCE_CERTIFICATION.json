@@ -1,0 +1,61 @@
+{
+  "certification_id": "AIGOL_REAL_OPERATOR_ACCEPTANCE_CERTIFICATION",
+  "version": "V1",
+  "classification": "REAL_OPERATOR_ACCEPTANCE_VALIDATION",
+  "status": "NOT_CERTIFIED",
+  "runtime_artifact": "AIGOL_REAL_OPERATOR_ACCEPTANCE_V1.md",
+  "acceptance_evidence": "AIGOL_REAL_OPERATOR_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Real CLI conversation executed with OpenAI-backed OCS cognition",
+    "Workflow selection, provider invocation, cognition artifact creation, replay creation, and turn completion verified",
+    "Technical summary preservation verified",
+    "Governance and provider non-authority boundaries verified"
+  ],
+  "non_certified_scope": [
+    "Complete operator-visible structured cognition sections",
+    "Canonical recovery of section-labeled plain text cognition embedded inside Findings",
+    "Absence of '(none recorded)' when equivalent data is embedded inside the provider cognition text"
+  ],
+  "certification_findings": {
+    "workflow_selected": "OCS_LLM_COGNITION",
+    "real_provider_used": "openai",
+    "provider_count": 1,
+    "successful_provider_count": 1,
+    "cognition_artifact_created": true,
+    "human_facing_cognition_created": true,
+    "replay_created": true,
+    "turn_completed": true,
+    "technical_summary_preserved": true,
+    "json_findings_marker_visible": false,
+    "raw_json_blob_visible": false,
+    "serialized_cognition_payload_visible": true,
+    "cognition_sections_complete": false,
+    "operator_output_accepted": false,
+    "provider_non_authority_preserved": true,
+    "governance_compatible": true,
+    "replay_compatible": true
+  },
+  "certification_decision": {
+    "accepted": false,
+    "decision": "DO_NOT_CERTIFY_OPERATOR_ACCEPTANCE",
+    "reason": "The real provider path completed, but operator cognition output is only partially structured. Assumptions, risks, and uncertainties remained empty while corresponding content was embedded inside a single Findings text item."
+  },
+  "required_follow_up": {
+    "follow_up_required": true,
+    "recommended_runtime_fix": "Add bounded normalization for section-labeled plain text cognition embedded inside a finding item, without parsing raw provider payloads directly and without changing provider authority.",
+    "preserve": [
+      "Replay compatibility",
+      "Governance compatibility",
+      "Provider non-authority",
+      "Existing technical summary",
+      "Existing nested JSON normalization"
+    ]
+  },
+  "final_outputs": {
+    "OPERATOR_OUTPUT_STRUCTURED": "PARTIAL",
+    "JSON_BLOB_VISIBLE": false,
+    "COGNITION_SECTIONS_COMPLETE": false,
+    "TURN_COMPLETED": true,
+    "OCS_PROVIDER_STABILIZATION_STATUS": "PROVIDER_LIVE_TURN_COMPLETED_OPERATOR_STRUCTURE_INCOMPLETE"
+  }
+}
