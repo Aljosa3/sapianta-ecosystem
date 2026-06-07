@@ -101,6 +101,8 @@ def test_ocs_visibility_and_dispatch_share_authoritative_workflow(tmp_path, monk
         [
             "I want to create the first real commercial Sapianta product.",
             "Use the current AiGOL architecture and repository state.",
+            "Assume existing product domains remain read-only evidence.",
+            "Do not create a new domain or mutate governance.",
             "Analyze the opportunity.",
             "Produce provider disagreements and a recommended commercialization path.",
             "Provide cognition output only.",

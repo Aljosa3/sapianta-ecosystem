@@ -40,6 +40,38 @@ PROGRESS_LINES = [
     "[8/8] Replay",
 ]
 
+OCS_GENERALIZATION_CASE_A = "I want to create the first real commercial Sapianta product."
+OCS_GENERALIZATION_CASE_B = "\n\n".join(
+    [
+        OCS_GENERALIZATION_CASE_A,
+        "Use the current AiGOL architecture and repository state.",
+        "Assume:",
+        "- Existing product domains remain read-only evidence.",
+        "- Do not create a new domain or mutate governance.",
+    ]
+)
+OCS_GENERALIZATION_CASE_C = "\n\n".join(
+    [
+        OCS_GENERALIZATION_CASE_A,
+        "Produce:",
+        "- Findings",
+        "- Assumptions",
+        "- Risks",
+        "- Uncertainties",
+        "- Recommended next milestone",
+    ]
+)
+OCS_GENERALIZATION_CASE_D = "\n".join(
+    [
+        OCS_GENERALIZATION_CASE_A,
+        "",
+        "Context:",
+        "Current AiGOL routing, OCS cognition, replay, and governance artifacts exist.",
+        "Use repository state as context.",
+        "Keep provider output non-authoritative.",
+    ]
+)
+
 
 def _progress_lines(rendered: str) -> list[str]:
     return [line for line in rendered.splitlines() if line.startswith("[") and len(line) > 1 and line[1].isdigit()]
@@ -116,6 +148,25 @@ def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: s
     assert selection["authorization_created"] is False
     assert selection["approval_bypassed"] is False
     assert replay["workflow_id"] == workflow_id
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        OCS_GENERALIZATION_CASE_A,
+        OCS_GENERALIZATION_CASE_B,
+        OCS_GENERALIZATION_CASE_C,
+        OCS_GENERALIZATION_CASE_D,
+    ],
+)
+def test_ocs_product_cognition_prompts_generalize_with_appended_context(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["workflow_id"] == OCS_LLM_COGNITION
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_selection_artifact"]["workflow_id"] == OCS_LLM_COGNITION
+    assert replay["workflow_id"] == OCS_LLM_COGNITION
 
 
 def test_conversational_routing_records_coverage(tmp_path) -> None:

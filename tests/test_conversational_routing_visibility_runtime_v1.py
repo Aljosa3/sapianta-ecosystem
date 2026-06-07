@@ -115,6 +115,36 @@ def test_sapianta_commercial_product_prompt_renders_ocs_visibility(tmp_path) -> 
     assert "workflow: OCS_LLM_COGNITION" in output[0]
 
 
+def test_extended_sapianta_product_prompt_renders_ocs_visibility(tmp_path) -> None:
+    session_id = "SESSION-ROUTING-VISIBILITY-SAPIANTA-OCS-EXTENDED-000001"
+    output: list[str] = []
+    prompt = "\n".join(
+        [
+            "I want to create the first real commercial Sapianta product.",
+            "",
+            "Use the current AiGOL architecture and repository state.",
+            "Assume existing product domains remain read-only evidence.",
+            "Do not create a new domain or mutate governance.",
+            "Produce findings, risks, uncertainties, and the recommended next milestone.",
+        ]
+    )
+
+    result = run_interactive_conversation(
+        _args(tmp_path, session_id=session_id),
+        input_func=_input_sequence([prompt, "exit"]),
+        output_func=output.append,
+    )
+
+    replay = _routing_replay(tmp_path, session_id)
+    turn = result["turns"][0]
+
+    assert turn["routing_visibility_workflow_id"] == OCS_LLM_COGNITION
+    assert turn["conversational_workflow_id"] == OCS_LLM_COGNITION
+    assert replay["workflow_id"] == OCS_LLM_COGNITION
+    assert replay["routing_status"] == ROUTING_SELECTED
+    assert "workflow: OCS_LLM_COGNITION" in output[0]
+
+
 def test_operator_decision_support_prompt_renders_visibility(tmp_path) -> None:
     session_id = "SESSION-ROUTING-VISIBILITY-OPERATOR-000001"
     output: list[str] = []
