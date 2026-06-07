@@ -1,0 +1,85 @@
+{
+  "artifact_id": "AIGOL_OCS_ROUTING_GENERALIZATION_FIX_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "ocs_routing_generalization",
+  "implemented_files": [
+    "aigol/runtime/conversational_cli_runtime.py",
+    "tests/test_conversational_cli_runtime_v1.py",
+    "tests/test_conversational_routing_visibility_runtime_v1.py",
+    "tests/test_conversational_dispatch_authority_unification_v1.py"
+  ],
+  "classification_trace": {
+    "authoritative_classifier": "aigol/runtime/conversational_cli_runtime.py::_classify_workflow",
+    "ocs_predicate": "aigol/runtime/conversational_cli_runtime.py::is_ocs_llm_cognition_prompt",
+    "exact_phrase_markers": [
+      "first real aigol product",
+      "first real commercial sapianta product",
+      "first real sapianta product",
+      "commercial sapianta product",
+      "sapianta product opportunity"
+    ],
+    "keyword_markers": [
+      "sapianta",
+      "aigol",
+      "commercial",
+      "architecture",
+      "governance",
+      "cognition",
+      "product",
+      "opportunity",
+      "analyze",
+      "analysis",
+      "evaluate",
+      "decide"
+    ],
+    "ordering_effects": [
+      "domain adaptation reference remains checked before OCS",
+      "OCS remains checked before operator decision support in the certified router",
+      "provider fallback remains last",
+      "routing visibility selection demotes operator support when OCS predicate is true"
+    ],
+    "fallback_precedence": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION remains the final fallback only when no certified workflow predicate matches"
+  },
+  "failure_cause": {
+    "full_string_equality": false,
+    "punctuation_dependency": false,
+    "line_count_dependency": false,
+    "token_count_dependency": false,
+    "keyword_density_dependency": false,
+    "rule_ordering_dependency": true,
+    "domain_veto_dependency": true,
+    "summary": "Extended prompts failed when appended context introduced domain plus create/new language, activating a broad domain-creation veto before OCS product-cognition markers were allowed to classify."
+  },
+  "regression_cases": {
+    "CASE_A_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_B_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_C_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_D_WORKFLOW": "OCS_LLM_COGNITION"
+  },
+  "alignment_validation": {
+    "routing_visibility": "aligned",
+    "workflow_selection": "aligned",
+    "dispatch": "aligned",
+    "provider_fallback_preserved": true,
+    "worker_workflows_preserved": true,
+    "replay_workflows_preserved": true,
+    "governance_workflows_preserved": true
+  },
+  "validation": {
+    "focused_routing_tests": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_ocs_cognition_binding_v1.py",
+      "result": "33 passed"
+    },
+    "ocs_runtime_tests": {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py",
+      "result": "10 passed"
+    }
+  },
+  "final_outputs": {
+    "ROUTING_GENERALIZATION_STATUS": "FIXED",
+    "ROUTING_ALIGNMENT": "ALIGNED",
+    "DISPATCH_ALIGNMENT": "ALIGNED",
+    "REGRESSION_TEST_STATUS": "PASSED"
+  }
+}

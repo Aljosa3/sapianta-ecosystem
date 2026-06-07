@@ -1,0 +1,49 @@
+{
+  "certification_id": "AIGOL_OCS_ROUTING_GENERALIZATION_FIX_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_OCS_ROUTING_GENERALIZATION_FIX",
+  "status": "CERTIFIED",
+  "runtime_artifact": "AIGOL_OCS_ROUTING_GENERALIZATION_FIX_V1.md",
+  "acceptance_evidence": "AIGOL_OCS_ROUTING_GENERALIZATION_FIX_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Generalize OCS product-cognition classification for prompts with appended assumptions, context, formatting requests, and analysis requirements",
+    "Preserve workflow selection and routing visibility alignment",
+    "Preserve interactive dispatch alignment for OCS_LLM_COGNITION"
+  ],
+  "certified_non_goals": [
+    "No provider behavior change",
+    "No raw provider payload rendering change",
+    "No replay mutation semantics change",
+    "No worker execution authority change",
+    "No governance authority change",
+    "No unrestricted autonomy or AGI framing"
+  ],
+  "certification_findings": {
+    "generalized_ocs_intent_detection": true,
+    "case_a_routes_to_ocs": true,
+    "case_b_routes_to_ocs": true,
+    "case_c_routes_to_ocs": true,
+    "case_d_routes_to_ocs": true,
+    "routing_visibility_aligned": true,
+    "workflow_selection_aligned": true,
+    "dispatch_aligned": true,
+    "provider_fallback_preserved": true,
+    "governance_boundaries_preserved": true
+  },
+  "validation_summary": {
+    "focused_routing_tests_passed": true,
+    "focused_routing_test_count": 33,
+    "ocs_runtime_tests_passed": true,
+    "ocs_runtime_test_count": 10
+  },
+  "final_outputs": {
+    "CASE_A_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_B_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_C_WORKFLOW": "OCS_LLM_COGNITION",
+    "CASE_D_WORKFLOW": "OCS_LLM_COGNITION",
+    "ROUTING_GENERALIZATION_STATUS": "FIXED",
+    "ROUTING_ALIGNMENT": "ALIGNED",
+    "DISPATCH_ALIGNMENT": "ALIGNED",
+    "REGRESSION_TEST_STATUS": "PASSED"
+  }
+}
