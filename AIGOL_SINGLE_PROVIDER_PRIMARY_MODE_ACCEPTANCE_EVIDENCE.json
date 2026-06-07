@@ -1,0 +1,130 @@
+{
+  "artifact_type": "AIGOL_SINGLE_PROVIDER_PRIMARY_MODE_ACCEPTANCE_EVIDENCE",
+  "artifact_version": "V1",
+  "status": "ACCEPTED",
+  "created_at": "2026-06-07",
+  "default_provider": "OPENAI",
+  "scope": {
+    "runtime_changed": true,
+    "conversational_ocs_default_changed": true,
+    "generic_multi_provider_runtime_preserved": true,
+    "comparison_runtime_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_visible": true,
+    "governance_compatible": true
+  },
+  "current_conversational_ocs_execution_path": {
+    "default_provider_count": 1,
+    "provider_ids": [
+      "openai"
+    ],
+    "single_provider_primary_mode": true,
+    "comparison_required": false,
+    "comparison_performed": false,
+    "continuity_preserved": true,
+    "clarification_preserved": true,
+    "replay_preserved": true
+  },
+  "comparison_dependencies": {
+    "minimum_cognition_artifact_count_enforced": true,
+    "minimum_required": 2,
+    "enforcement_locations": [
+      {
+        "file": "aigol/runtime/cognition_comparison_runtime.py",
+        "function": "create_cognition_comparison_artifact",
+        "condition": "len(artifacts) < 2",
+        "failure_reason": "at least two cognition artifacts are required for comparison"
+      }
+    ],
+    "test_coverage": [
+      "tests/test_cognition_comparison_runtime_v1.py",
+      "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+    ],
+    "comparison_invariant_relaxed": false
+  },
+  "implemented_code_changes": [
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "change": "Added DEFAULT_PROVIDER = \"OPENAI\"."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "change": "Conversational OCS provider contracts now include exactly one provider: openai."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "change": "Conversational OCS transport registry now exposes exactly one provider: openai."
+    },
+    {
+      "file": "aigol/cli/aigol_cli.py",
+      "change": "Conversational OCS invokes run_ocs_llm_cognition_end_to_end with single_provider_primary_mode=True."
+    },
+    {
+      "file": "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+      "change": "Added single-provider primary mode that creates a replay-compatible non-comparison summary artifact for downstream continuity and clarification."
+    }
+  ],
+  "replay_impact": {
+    "existing_end_to_end_artifact_preserved": true,
+    "existing_multi_provider_result_bundle_preserved": true,
+    "existing_continuity_artifacts_preserved": true,
+    "existing_clarification_artifacts_preserved": true,
+    "existing_comparison_replay_slot_preserved": true,
+    "new_replay_fields": [
+      "single_provider_primary_mode",
+      "comparison_required",
+      "comparison_performed"
+    ]
+  },
+  "governance_impact": {
+    "provider_non_authority_preserved": true,
+    "human_review_required": true,
+    "approval_created": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "dispatch_requested": false,
+    "governance_modified": false,
+    "replay_modified": false
+  },
+  "compatibility_impact": {
+    "conversational_default_provider_count_changed_from_two_to_one": true,
+    "multi_provider_advanced_path_available": true,
+    "generic_end_to_end_default_mode_unchanged": true,
+    "comparison_runtime_still_requires_two_artifacts": true
+  },
+  "risks": [
+    "Single-provider summary currently uses the existing cognition comparison replay slot for downstream compatibility.",
+    "Operator progress still includes a comparison label even when comparison is not performed.",
+    "Human-controlled provider switching is documented but not implemented in this milestone.",
+    "Default path no longer generates provider-disagreement evidence."
+  ],
+  "future_provider_switching": {
+    "implemented": false,
+    "documented": true,
+    "example_commands": [
+      "Use Claude for this conversation.",
+      "Use Gemini for this task.",
+      "Set default provider to Claude."
+    ],
+    "required_future_artifact": "replay-visible human-controlled provider selection artifact"
+  },
+  "validation": {
+    "commands": [
+      {
+        "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_multiline_prompt_support_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_cognition_comparison_runtime_v1.py",
+        "result": "PASSED",
+        "summary": "28 passed"
+      }
+    ],
+    "diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "DEFAULT_PROVIDER": "OPENAI",
+    "SINGLE_PROVIDER_PRIMARY_MODE_SUPPORTED": true,
+    "COMPARISON_OPTIONAL": true,
+    "MULTI_PROVIDER_STILL_SUPPORTED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "MINIMAL_SAFE_FIX": "Conversational OCS defaults to one OPENAI provider with single_provider_primary_mode=True; advanced multi-provider comparison remains intact."
+  }
+}

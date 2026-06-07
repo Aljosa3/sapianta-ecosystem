@@ -1,0 +1,80 @@
+{
+  "artifact_type": "AIGOL_SINGLE_PROVIDER_PRIMARY_MODE_CERTIFICATION",
+  "artifact_version": "V1",
+  "certification_status": "CERTIFIED",
+  "created_at": "2026-06-07",
+  "classification": "SINGLE_PROVIDER_PRIMARY_MODE_CERTIFIED",
+  "certified_claims": {
+    "default_provider": "OPENAI",
+    "single_provider_primary_mode_supported": true,
+    "comparison_optional": true,
+    "multi_provider_still_supported": true,
+    "replay_compatible": true,
+    "governance_compatible": true,
+    "fail_closed_behavior_preserved": true,
+    "provider_non_authority_preserved": true,
+    "comparison_minimum_artifact_invariant_preserved_for_advanced_mode": true
+  },
+  "constitutional_boundary": {
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "provider_authority_granted": false,
+    "execution_authority_granted": false,
+    "worker_authority_granted": false,
+    "dispatch_authority_changed": false,
+    "autonomous_provider_switching_introduced": false
+  },
+  "minimum_cognition_artifact_count_enforcement": {
+    "minimum_required_for_comparison": 2,
+    "enforcement_locations": [
+      "aigol/runtime/cognition_comparison_runtime.py::create_cognition_comparison_artifact"
+    ],
+    "single_provider_primary_mode_bypasses_comparison_runtime": true,
+    "comparison_runtime_invariant_preserved": true
+  },
+  "certified_runtime_shape": {
+    "conversational_default_path": [
+      "Human",
+      "OCS",
+      "DEFAULT_PROVIDER: OPENAI",
+      "LLM_COGNITION_ARTIFACT_V1",
+      "single-provider primary summary",
+      "continuity",
+      "clarification",
+      "replay",
+      "done"
+    ],
+    "advanced_path_future_supported": [
+      "Human",
+      "Multiple Providers",
+      "Comparison",
+      "Replay",
+      "done"
+    ]
+  },
+  "validation": {
+    "commands": [
+      {
+        "command": "python -m pytest tests/test_interactive_conversation_cli_v1.py tests/test_multiline_prompt_support_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_cognition_comparison_runtime_v1.py",
+        "result": "PASSED",
+        "summary": "28 passed"
+      }
+    ],
+    "json_artifacts_parse": "PASSED",
+    "diff_check": "PASSED"
+  },
+  "known_limitations": [
+    "Provider switching commands are documented for future work but not implemented in this milestone.",
+    "The single-provider primary mode uses a comparison-compatible replay slot so existing continuity and replay reconstruction remain stable.",
+    "Operator progress still includes the comparison stage label even when comparison_required is false."
+  ],
+  "final_outputs": {
+    "DEFAULT_PROVIDER": "OPENAI",
+    "SINGLE_PROVIDER_PRIMARY_MODE_SUPPORTED": true,
+    "COMPARISON_OPTIONAL": true,
+    "MULTI_PROVIDER_STILL_SUPPORTED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "MINIMAL_SAFE_FIX": "Conversational OCS defaults to one OPENAI provider with single_provider_primary_mode=True; advanced multi-provider comparison remains intact."
+  }
+}
