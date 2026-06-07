@@ -1,0 +1,309 @@
+{
+  "artifact_id": "AIGOL_WORKER_HANDOFF_GAP_ANALYSIS_EVIDENCE_V1",
+  "analysis_id": "AIGOL_WORKER_HANDOFF_GAP_ANALYSIS_V1",
+  "status": "REVIEW_ONLY_EVIDENCE",
+  "runtime_code_changed": false,
+  "cli_behavior_changed": false,
+  "worker_runtime_created": false,
+  "validation_runtime_created": false,
+  "repair_runtime_created": false,
+  "review_scope": {
+    "current_validated_flow": [
+      "Human",
+      "OCS",
+      "OpenAI Provider",
+      "Cognition Artifact",
+      "Replay",
+      "TURN COMPLETED"
+    ],
+    "target_flow": [
+      "Human",
+      "OCS",
+      "Worker Request",
+      "Validation",
+      "Authorization",
+      "Worker",
+      "Replay"
+    ],
+    "analysis_only": true
+  },
+  "inspected_runtime_modules": [
+    "aigol/runtime/conversation_to_implementation_handoff_runtime.py",
+    "aigol/runtime/domain_and_worker_resolution_registry.py",
+    "aigol/runtime/execution_authorization_runtime.py",
+    "aigol/runtime/governed_implementation_dry_run.py",
+    "aigol/runtime/governed_termination_runtime.py",
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "aigol/runtime/replay_inspector_worker.py",
+    "aigol/runtime/worker_assignment_runtime.py",
+    "aigol/runtime/worker_dispatch_runtime.py",
+    "aigol/runtime/worker_invocation_request_runtime.py",
+    "aigol/runtime/worker_invocation_runtime.py",
+    "aigol/runtime/worker_result_capture_runtime.py",
+    "aigol/runtime/worker_result_validation_runtime.py",
+    "aigol/runtime/worker_runtime.py",
+    "aigol/authorization/authorization_runtime.py",
+    "aigol/workers/filesystem_worker.py",
+    "aigol/workers/github_worker.py"
+  ],
+  "inspected_tests": [
+    "tests/test_conversation_to_implementation_handoff_runtime_v1.py",
+    "tests/test_execution_authorization_runtime_v1.py",
+    "tests/test_first_end_to_end_governed_operation_v1.py",
+    "tests/test_first_real_domain_worker_v1.py",
+    "tests/test_governed_implementation_dry_run_v1.py",
+    "tests/test_governed_termination_runtime_v1.py",
+    "tests/test_minimal_governed_worker_authorization_runtime_v1.py",
+    "tests/test_post_execution_replay_review_runtime_v1.py",
+    "tests/test_worker_assignment_runtime_v1.py",
+    "tests/test_worker_dispatch_runtime_v1.py",
+    "tests/test_worker_invocation_request_runtime_v1.py",
+    "tests/test_worker_invocation_runtime_v1.py",
+    "tests/test_worker_result_capture_runtime_v1.py",
+    "tests/test_worker_result_validation_runtime_v1.py",
+    "tests/test_worker_runtime_v1.py"
+  ],
+  "inspected_governance_artifacts": [
+    "governance/AIGOL_EXECUTION_WORKER_EXISTING_COMPONENTS_V1.md",
+    "governance/AIGOL_EXECUTION_WORKER_GAP_ANALYSIS_V1.md",
+    "governance/AIGOL_EXECUTION_WORKER_READINESS_REVIEW_V1.md",
+    "governance/AIGOL_EXECUTION_WORKER_RECOMMENDED_IMPLEMENTATION_PATH_V1.md",
+    "governance/AIGOL_WORKER_ASSIGNMENT_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_DISPATCH_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_INVOCATION_REQUEST_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_INVOCATION_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_V1.md",
+    "governance/AUTHORIZED_WORKER_REQUEST_MODEL_V1.md",
+    "governance/FIRST_END_TO_END_GOVERNED_OPERATION_V1.md",
+    "governance/FIRST_REAL_DOMAIN_WORKER_V1.md",
+    "governance/MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_V1.md"
+  ],
+  "component_statuses": {
+    "WORKER_REQUEST_ARTIFACT": {
+      "status": "EXISTS",
+      "evidence": [
+        "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+        "AUTHORIZED_WORKER_REQUEST_V1"
+      ],
+      "gap": "OCS handoff does not yet emit a compatible execution-intake candidate."
+    },
+    "WORKER_AUTHORIZATION_ARTIFACT": {
+      "status": "EXISTS",
+      "evidence": [
+        "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+        "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_V1"
+      ],
+      "gap": "OCS-originated approval-to-authorization binding is missing."
+    },
+    "WORKER_EXECUTION_ARTIFACT": {
+      "status": "PARTIAL",
+      "evidence": [
+        "WORKER_ASSIGNMENT_ARTIFACT_V1",
+        "WORKER_DISPATCH_ARTIFACT_V1",
+        "WORKER_INVOCATION_ARTIFACT_V1",
+        "filesystem_worker",
+        "github_worker"
+      ],
+      "gap": "Generalized OCS-originated execution and multi-worker execution are not certified."
+    },
+    "WORKER_REPLAY_ARTIFACT": {
+      "status": "EXISTS_WITH_UNIFIED_REPLAY_GAP",
+      "evidence": [
+        "WORKER_RESULT_CAPTURE_ARTIFACT_V1",
+        "WORKER_RESULT_VALIDATION_ARTIFACT_V1",
+        "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1",
+        "GOVERNED_TERMINATION_ARTIFACT_V1"
+      ],
+      "gap": "A single operator-facing closed-cycle replay report is missing."
+    },
+    "WORKER_VALIDATION_ARTIFACT": {
+      "status": "EXISTS_WITH_SCOPE_GAPS",
+      "evidence": [
+        "EXECUTION_READY_STATUS_ARTIFACT_V1",
+        "WORKER_RESULT_VALIDATION_ARTIFACT_V1"
+      ],
+      "gap": "OCS-intake validation and aggregate multi-worker validation are missing."
+    },
+    "WORKER_FAILURE_CLASSIFICATION": {
+      "status": "PARTIAL",
+      "evidence": [
+        "stage-local FAILED_CLOSED statuses",
+        "validation reasons",
+        "governed termination success path"
+      ],
+      "gap": "Unified cancellation, expiry, revocation, interruption, invalid-chain, failed-closed, and partial-completion terminal path family is missing."
+    },
+    "EXECUTION_READINESS_MODEL": {
+      "status": "EXISTS",
+      "evidence": [
+        "governed_implementation_dry_run.py",
+        "EXECUTION_READY_STATUS_ARTIFACT_V1"
+      ],
+      "gap": "OCS-to-execution readiness contract is missing."
+    }
+  },
+  "reusable_components": [
+    "execution_authorization_runtime",
+    "worker_invocation_request_runtime",
+    "worker_assignment_runtime",
+    "worker_dispatch_runtime",
+    "worker_invocation_runtime",
+    "worker_result_capture_runtime",
+    "worker_result_validation_runtime",
+    "post_execution_replay_review_runtime",
+    "governed_termination_runtime",
+    "governed_implementation_dry_run",
+    "conversation_to_implementation_handoff_runtime",
+    "domain_and_worker_resolution_registry",
+    "authorization_runtime",
+    "filesystem_worker",
+    "github_worker",
+    "replay_inspector_worker",
+    "replay hashing and canonical serialization patterns"
+  ],
+  "missing_components": [
+    {
+      "capability": "OCS_TO_EXECUTION_HANDOFF_CONTRACT",
+      "status": "MISSING",
+      "priority": "P0",
+      "reason_missing": "OCS cognition does not create a replay-visible execution-intake candidate with approval scope and worker targeting constraints."
+    },
+    {
+      "capability": "OCS_APPROVAL_TO_WORKER_BINDING",
+      "status": "MISSING",
+      "priority": "P0_AFTER_HANDOFF_CONTRACT",
+      "reason_missing": "Approval patterns exist, but OCS-originated approvals are not canonically bound to worker eligibility."
+    },
+    {
+      "capability": "CANONICAL_WORKER_PORTFOLIO_REGISTRY",
+      "status": "PARTIAL",
+      "priority": "P1",
+      "reason_missing": "Worker identity and registry evidence exist, but portfolio lifecycle authority is not unified."
+    },
+    {
+      "capability": "WORKER_METADATA_NORMALIZATION",
+      "status": "PARTIAL",
+      "priority": "P1",
+      "reason_missing": "Worker metadata exists in multiple contexts without one universal certified normalization artifact."
+    },
+    {
+      "capability": "UNIFIED_CLOSED_CYCLE_REPLAY_INSPECTION",
+      "status": "MISSING",
+      "priority": "P1",
+      "reason_missing": "Stage-local replay exists, but a single operator-facing Human-to-Replay report is missing."
+    },
+    {
+      "capability": "NON_SUCCESS_TERMINAL_PATH_FAMILY",
+      "status": "PARTIAL",
+      "priority": "P1_BEFORE_MULTI_WORKER_RUNTIME",
+      "reason_missing": "Stage fail-closed states exist, but terminal state taxonomy is not certified as one lifecycle family."
+    },
+    {
+      "capability": "MULTI_WORKER_ORCHESTRATION",
+      "status": "MISSING",
+      "priority": "P2",
+      "reason_missing": "The certified chain is single-worker."
+    },
+    {
+      "capability": "MULTI_WORKER_RESULT_AGGREGATION",
+      "status": "MISSING",
+      "priority": "P2_AFTER_ORCHESTRATION_CONTRACT",
+      "reason_missing": "Single result validation exists, but aggregate validation and conflict handling are missing."
+    },
+    {
+      "capability": "ENTERPRISE_EXECUTION_AUDIT_PACKET",
+      "status": "MISSING",
+      "priority": "P3",
+      "reason_missing": "Evidence exists but is distributed across stage artifacts."
+    }
+  ],
+  "duplicate_work_to_avoid": [
+    "execution_authorization_runtime",
+    "worker_invocation_request_runtime",
+    "worker_assignment_runtime",
+    "worker_dispatch_runtime",
+    "worker_invocation_runtime",
+    "worker_result_capture_runtime",
+    "worker_result_validation_runtime",
+    "post_execution_replay_review_runtime",
+    "governed_termination_runtime",
+    "authorized_worker_request_model",
+    "minimal_governed_worker_authorization_runtime",
+    "filesystem_worker_pattern",
+    "github_worker_pattern",
+    "stage-local replay reconstruction"
+  ],
+  "recommended_sequence": [
+    "AIGOL_OCS_TO_EXECUTION_HANDOFF_CONTRACT_V1",
+    "AIGOL_APPROVAL_TO_WORKER_BINDING_CONTRACT_V1",
+    "AIGOL_WORKER_PORTFOLIO_REGISTRY_CONTRACT_V1",
+    "AIGOL_WORKER_PORTFOLIO_REGISTRY_RUNTIME_V1",
+    "AIGOL_WORKER_METADATA_NORMALIZATION_RUNTIME_V1",
+    "AIGOL_OCS_APPROVAL_TO_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+    "AIGOL_UNIFIED_EXECUTION_WORKER_REPLAY_INSPECTION_RUNTIME_V1",
+    "AIGOL_NON_SUCCESS_EXECUTION_TERMINAL_PATHS_RUNTIME_V1",
+    "AIGOL_MULTI_WORKER_ORCHESTRATION_CONTRACT_V1",
+    "AIGOL_MULTI_WORKER_ORCHESTRATION_RUNTIME_V1",
+    "AIGOL_MULTI_WORKER_RESULT_AGGREGATION_RUNTIME_V1",
+    "AIGOL_EXECUTION_WORKER_PRESSURE_AND_RESUME_VALIDATION_V1",
+    "AIGOL_EXECUTION_WORKER_ENTERPRISE_AUDIT_PACKET_V1"
+  ],
+  "minimal_next_milestone": {
+    "id": "AIGOL_OCS_TO_EXECUTION_HANDOFF_CONTRACT_V1",
+    "type": "GOVERNANCE_CONTRACT",
+    "runtime_behavior": false,
+    "worker_invocation": false,
+    "worker_dispatch": false,
+    "execution_authorization": false,
+    "purpose": "Define how OCS cognition may become a human-reviewed execution-intake candidate without authorizing or invoking a worker."
+  },
+  "final_outputs": {
+    "WORKER_FOUNDATION_STATUS": "EXISTS_WITH_GENERALIZATION_GAPS",
+    "WORKER_AUTHORIZATION_STATUS": "EXISTS",
+    "WORKER_EXECUTION_STATUS": "PARTIAL",
+    "WORKER_REPLAY_STATUS": "EXISTS_WITH_UNIFIED_REPLAY_GAP",
+    "WORKER_VALIDATION_STATUS": "EXISTS_WITH_SCOPE_GAPS",
+    "WORKER_FAILURE_CLASSIFICATION_STATUS": "PARTIAL",
+    "EXECUTION_READINESS_STATUS": "EXISTS",
+    "REUSABLE_COMPONENTS": [
+      "execution_authorization",
+      "worker_invocation_request",
+      "worker_assignment",
+      "worker_dispatch",
+      "worker_invocation",
+      "worker_result_capture",
+      "worker_result_validation",
+      "post_execution_replay_review",
+      "governed_termination",
+      "governed_implementation_dry_run",
+      "domain_and_worker_resolution_registry",
+      "proof_workers",
+      "replay_hashing"
+    ],
+    "MISSING_COMPONENTS": [
+      "OCS_TO_EXECUTION_HANDOFF_CONTRACT",
+      "OCS_APPROVAL_TO_WORKER_BINDING",
+      "CANONICAL_WORKER_PORTFOLIO_REGISTRY",
+      "WORKER_METADATA_NORMALIZATION",
+      "UNIFIED_CLOSED_CYCLE_REPLAY_INSPECTION",
+      "NON_SUCCESS_TERMINAL_PATH_FAMILY",
+      "MULTI_WORKER_ORCHESTRATION",
+      "MULTI_WORKER_RESULT_AGGREGATION",
+      "ENTERPRISE_EXECUTION_AUDIT_PACKET"
+    ],
+    "DUPLICATE_WORK_TO_AVOID": [
+      "worker_authorization_runtime",
+      "worker_request_runtime",
+      "worker_dispatch_runtime",
+      "worker_invocation_runtime",
+      "worker_result_capture_runtime",
+      "worker_result_validation_runtime",
+      "replay_review_runtime",
+      "termination_runtime",
+      "proof_worker_patterns"
+    ],
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_OCS_TO_EXECUTION_HANDOFF_CONTRACT_V1",
+    "READY_FOR_WORKER_IMPLEMENTATION": "FALSE_FOR_NEW_WORKER_FOUNDATION_TRUE_FOR_HANDOFF_CONTRACT"
+  }
+}
