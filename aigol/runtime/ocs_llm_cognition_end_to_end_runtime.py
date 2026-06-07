@@ -8,6 +8,9 @@ from typing import Any, Callable
 
 from aigol.runtime.cognition_comparison_runtime import (
     COGNITION_COMPARISON_ARTIFACT_V1,
+    COGNITION_COMPARISON_RETURNED_V1,
+    CERTIFIED_CLASSIFICATION as COGNITION_COMPARISON_CERTIFIED_CLASSIFICATION,
+    MILESTONE_ID as COGNITION_COMPARISON_RUNTIME_VERSION,
     reconstruct_cognition_comparison_replay,
     run_cognition_comparison_runtime,
 )
@@ -74,6 +77,7 @@ def run_ocs_llm_cognition_end_to_end(
     prior_cognition_artifacts: list[dict[str, Any]] | None = None,
     prior_comparison_artifacts: list[dict[str, Any]] | None = None,
     prior_clarification_artifacts: list[dict[str, Any]] | None = None,
+    single_provider_primary_mode: bool = False,
     disagreement_threshold: int = 1,
     uncertainty_threshold: int = 1,
     minimum_confidence: str = "HIGH",
@@ -111,12 +115,21 @@ def run_ocs_llm_cognition_end_to_end(
         _require_stage_success(multi_capture, "multi-provider cognition")
         result_bundle = _validate_result_bundle(multi_capture["result_bundle"])
 
-        comparison_capture = run_cognition_comparison_runtime(
-            cognition_comparison_id=f"{end_to_end}:COGNITION_COMPARISON",
-            multi_provider_result_bundle=result_bundle,
-            created_at=timestamp,
-            replay_dir=stage_paths["cognition_comparison"],
-        )
+        comparison_id = f"{end_to_end}:COGNITION_COMPARISON"
+        if single_provider_primary_mode and len(result_bundle.get("provider_results", [])) == 1:
+            comparison_capture = _single_provider_primary_comparison_capture(
+                cognition_comparison_id=comparison_id,
+                result_bundle=result_bundle,
+                created_at=timestamp,
+                replay_dir=stage_paths["cognition_comparison"],
+            )
+        else:
+            comparison_capture = run_cognition_comparison_runtime(
+                cognition_comparison_id=comparison_id,
+                multi_provider_result_bundle=result_bundle,
+                created_at=timestamp,
+                replay_dir=stage_paths["cognition_comparison"],
+            )
         _require_stage_success(comparison_capture, "cognition comparison")
         comparison_artifact = _validate_comparison_artifact(comparison_capture["cognition_comparison_artifact"])
 
@@ -148,6 +161,7 @@ def run_ocs_llm_cognition_end_to_end(
             stage_replay_references={key: str(value) for key, value in stage_paths.items()},
             failure_reason="",
             workflow_status=STATUS_COMPLETED,
+            single_provider_primary_mode=single_provider_primary_mode,
         )
         returned = _returned_artifact(artifact)
         _persist_step(replay_path, 0, REPLAY_STEPS[0], artifact)
@@ -296,6 +310,7 @@ def _end_to_end_artifact(
     stage_replay_references: dict[str, str],
     failure_reason: str,
     workflow_status: str,
+    single_provider_primary_mode: bool,
 ) -> dict[str, Any]:
     provider_results = result_bundle.get("provider_results", [])
     human_result = _human_facing_result(comparison_artifact, clarification_artifact)
@@ -320,6 +335,9 @@ def _end_to_end_artifact(
         "provider_response_artifact_hashes": [item["provider_response_artifact_hash"] for item in provider_results],
         "cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
         "provider_failure_hashes": result_bundle["provider_failure_hashes"],
+        "single_provider_primary_mode": bool(single_provider_primary_mode),
+        "comparison_required": not bool(single_provider_primary_mode),
+        "comparison_performed": comparison_artifact.get("single_provider_primary_mode") is not True,
         "comparison_artifact_hash": comparison_artifact["artifact_hash"],
         "comparison_hash": comparison_artifact["comparison_hash"],
         "history_reference_hash": history_reference["artifact_hash"],
@@ -377,6 +395,8 @@ def _human_facing_result(comparison_artifact: dict[str, Any], clarification_arti
         "summary": "Provider-assisted cognition completed. Human review remains required before any downstream action.",
         "comparison_confidence": comparison_artifact.get("comparison_confidence"),
         "comparison_findings": deepcopy(comparison_artifact.get("comparison_findings", [])),
+        "comparison_performed": comparison_artifact.get("single_provider_primary_mode") is not True,
+        "single_provider_primary_mode": comparison_artifact.get("single_provider_primary_mode") is True,
         "clarification_required": clarification_artifact.get("clarification_required") is True,
         "clarification_status": clarification_artifact.get("clarification_status"),
         "clarification_candidate_count": len(clarification_artifact.get("clarification_candidates", [])),
@@ -418,6 +438,9 @@ def _failed_end_to_end_artifact(
         "provider_response_artifact_hashes": [],
         "cognition_artifact_hashes": [],
         "provider_failure_hashes": [],
+        "single_provider_primary_mode": False,
+        "comparison_required": True,
+        "comparison_performed": False,
         "comparison_artifact_hash": None,
         "comparison_hash": None,
         "history_reference_hash": None,
@@ -502,6 +525,227 @@ def _returned_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     return returned
 
 
+def _single_provider_primary_comparison_capture(
+    *,
+    cognition_comparison_id: str,
+    result_bundle: dict[str, Any],
+    created_at: str,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    replay_path = Path(replay_dir)
+    _ensure_comparison_replay_available(replay_path)
+    provider_results = result_bundle.get("provider_results", [])
+    if len(provider_results) != 1:
+        raise FailClosedRuntimeError("single-provider primary mode requires exactly one successful cognition artifact")
+    cognition_artifact = provider_results[0].get("llm_cognition_artifact")
+    if not isinstance(cognition_artifact, dict):
+        raise FailClosedRuntimeError("single-provider primary cognition artifact is required")
+    artifact = _single_provider_primary_comparison_artifact(
+        cognition_comparison_id=cognition_comparison_id,
+        result_bundle=result_bundle,
+        cognition_artifact=cognition_artifact,
+        created_at=created_at,
+    )
+    returned = _comparison_returned_artifact(artifact)
+    _persist_comparison_step(replay_path, 0, "cognition_comparison_artifact", artifact)
+    _persist_comparison_step(replay_path, 1, "cognition_comparison_returned", returned)
+    return {
+        "command": "aigol cognition comparison run",
+        "milestone_id": COGNITION_COMPARISON_RUNTIME_VERSION,
+        "final_classification": "AIGOL_COGNITION_COMPARISON_RUNTIME_STATUS",
+        "classification": COGNITION_COMPARISON_CERTIFIED_CLASSIFICATION,
+        "final_status": STATUS_COMPLETED,
+        "cognition_comparison_id": artifact["cognition_comparison_id"],
+        "cognition_comparison_artifact": deepcopy(artifact),
+        "cognition_comparison_returned": deepcopy(returned),
+        "comparison_confidence": artifact["comparison_confidence"],
+        "single_provider_primary_mode": True,
+        "comparison_performed": False,
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "replay_reference": str(replay_path),
+        "approval_created": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "fail_closed": False,
+        "failure_reason": "",
+    }
+
+
+def _single_provider_primary_comparison_artifact(
+    *,
+    cognition_comparison_id: str,
+    result_bundle: dict[str, Any],
+    cognition_artifact: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    source = _single_provider_source_summary(cognition_artifact)
+    provider_id = source["provider_id"]
+    uncertainty = [
+        {
+            "text": item,
+            "provider_id": provider_id,
+            "source": "single_provider_uncertainty",
+        }
+        for item in cognition_artifact.get("uncertainties", [])
+    ]
+    missing_information = []
+    for field in ("findings", "assumptions", "alternatives", "risks", "uncertainties"):
+        if not cognition_artifact.get(field):
+            missing_information.append(
+                {
+                    "provider_id": provider_id,
+                    "missing": field,
+                    "reason": "source cognition artifact field empty",
+                }
+            )
+    artifact = {
+        "artifact_type": COGNITION_COMPARISON_ARTIFACT_V1,
+        "runtime_version": COGNITION_COMPARISON_RUNTIME_VERSION,
+        "classification": COGNITION_COMPARISON_CERTIFIED_CLASSIFICATION,
+        "cognition_comparison_id": _require_string(cognition_comparison_id, "cognition_comparison_id"),
+        "comparison_status": STATUS_COMPLETED,
+        "multi_provider_cognition_bundle_id": result_bundle["multi_provider_cognition_bundle_id"],
+        "source_result_bundle_hash": result_bundle["artifact_hash"],
+        "source_result_bundle_result_hash": result_bundle["result_bundle_hash"],
+        "context_hash": result_bundle["context_hash"],
+        "source_cognition_artifacts": [source],
+        "provider_identities": [deepcopy(cognition_artifact["provider_identity"])],
+        "comparison_findings": [
+            "Single-provider primary cognition completed.",
+            "Comparison was not performed in default conversational OCS mode.",
+            f"Provider cognition confidence: {cognition_artifact.get('confidence')}.",
+        ],
+        "agreement": [],
+        "disagreement": [
+            {"text": item, "providers": [provider_id], "provider_count": 1}
+            for item in cognition_artifact.get("findings", [])
+        ],
+        "conflicting_assumptions": [],
+        "conflicting_risks": [],
+        "conflicting_alternatives": [],
+        "uncertainty": uncertainty,
+        "missing_information": missing_information,
+        "comparison_confidence": cognition_artifact.get("confidence") or "UNKNOWN",
+        "comparison_policy": {
+            "comparison_method": "single_provider_primary_mode_no_comparison",
+            "confidence_model": "single provider normalized cognition confidence",
+            "non_authoritative": True,
+            "human_review_required": True,
+        },
+        "lineage_refs": {
+            "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
+            "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
+            "context_hash": result_bundle["context_hash"],
+            "source_cognition_artifact_hashes": [cognition_artifact["artifact_hash"]],
+            "source_cognition_hashes": [cognition_artifact["cognition_hash"]],
+            "provider_identity_hashes": [replay_hash(cognition_artifact["provider_identity"])],
+        },
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "non_authoritative": True,
+        "human_review_required": True,
+        "comparison_created": False,
+        "single_provider_primary_mode": True,
+        "comparison_performed": False,
+        "approval_created": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["comparison_hash"] = _compute_comparison_compatible_hash(artifact)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _single_provider_source_summary(artifact: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "cognition_artifact_id": artifact["cognition_artifact_id"],
+        "artifact_hash": artifact["artifact_hash"],
+        "cognition_hash": artifact["cognition_hash"],
+        "provider_id": artifact["provider_identity"]["provider_id"],
+        "provider_identity": deepcopy(artifact["provider_identity"]),
+        "context_hash": artifact["context_hash"],
+        "request_hash": artifact["request_hash"],
+        "response_hash": artifact["response_hash"],
+        "confidence": artifact["confidence"],
+    }
+
+
+def _comparison_returned_artifact(comparison_artifact: dict[str, Any]) -> dict[str, Any]:
+    returned = {
+        "artifact_type": COGNITION_COMPARISON_RETURNED_V1,
+        "runtime_version": COGNITION_COMPARISON_RUNTIME_VERSION,
+        "cognition_comparison_reference": comparison_artifact["cognition_comparison_id"],
+        "cognition_comparison_hash": comparison_artifact["artifact_hash"],
+        "comparison_hash": comparison_artifact["comparison_hash"],
+        "comparison_status": comparison_artifact["comparison_status"],
+        "comparison_confidence": comparison_artifact["comparison_confidence"],
+        "replay_visible": True,
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "approval_created": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }
+    returned["artifact_hash"] = replay_hash(returned)
+    return returned
+
+
+def _persist_comparison_step(replay_path: Path, index: int, step: str, artifact: dict[str, Any]) -> None:
+    wrapper = {
+        "replay_index": index,
+        "replay_step": step,
+        "event_type": step.upper(),
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / f"{index:03d}_{step}.json", wrapper)
+
+
+def _ensure_comparison_replay_available(replay_path: Path) -> None:
+    for index, step in enumerate(("cognition_comparison_artifact", "cognition_comparison_returned")):
+        path = replay_path / f"{index:03d}_{step}.json"
+        if path.exists():
+            raise FailClosedRuntimeError(f"append-only runtime artifact already exists: {path.name}")
+
+
+def _compute_comparison_compatible_hash(artifact: dict[str, Any]) -> str:
+    return replay_hash(
+        {
+            "cognition_comparison_id": artifact["cognition_comparison_id"],
+            "comparison_status": artifact["comparison_status"],
+            "multi_provider_cognition_bundle_id": artifact["multi_provider_cognition_bundle_id"],
+            "source_result_bundle_hash": artifact["source_result_bundle_hash"],
+            "context_hash": artifact["context_hash"],
+            "source_cognition_artifacts": artifact["source_cognition_artifacts"],
+            "provider_identities": artifact["provider_identities"],
+            "comparison_findings": artifact["comparison_findings"],
+            "agreement": artifact["agreement"],
+            "disagreement": artifact["disagreement"],
+            "conflicting_assumptions": artifact["conflicting_assumptions"],
+            "conflicting_risks": artifact["conflicting_risks"],
+            "conflicting_alternatives": artifact["conflicting_alternatives"],
+            "uncertainty": artifact["uncertainty"],
+            "missing_information": artifact["missing_information"],
+            "comparison_confidence": artifact["comparison_confidence"],
+            "lineage_refs": artifact["lineage_refs"],
+            "authority_flags": artifact["authority_flags"],
+            "failure_reason": artifact.get("failure_reason"),
+        }
+    )
+
+
 def _capture(
     *,
     final_status: str,
@@ -551,6 +795,9 @@ def _compute_end_to_end_hash(artifact: dict[str, Any]) -> str:
             "provider_response_artifact_hashes": artifact["provider_response_artifact_hashes"],
             "cognition_artifact_hashes": artifact["cognition_artifact_hashes"],
             "provider_failure_hashes": artifact["provider_failure_hashes"],
+            "single_provider_primary_mode": artifact["single_provider_primary_mode"],
+            "comparison_required": artifact["comparison_required"],
+            "comparison_performed": artifact["comparison_performed"],
             "comparison_artifact_hash": artifact["comparison_artifact_hash"],
             "comparison_hash": artifact["comparison_hash"],
             "history_reference_hash": artifact["history_reference_hash"],

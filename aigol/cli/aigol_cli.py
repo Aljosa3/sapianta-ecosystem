@@ -6,6 +6,7 @@ import argparse
 import json
 import select
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -343,6 +344,7 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
 CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_VERSION = "AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1"
 OPENAI_OUTPUT_BUDGET_ARTIFACT_V1 = "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1"
+DEFAULT_PROVIDER = "OPENAI"
 CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS = 1200
 CONVERSATIONAL_OCS_OPENAI_CHARS_PER_TOKEN_ESTIMATE = 5
 CONVERSATIONAL_OCS_OPENAI_ESTIMATED_CHAR_BUDGET = (
@@ -475,11 +477,6 @@ def _conversation_ocs_cognition_provider_contracts(created_at: str) -> list[dict
             provider_label="OpenAI Responses Provider",
             created_at=created_at,
         ),
-        _conversation_openai_cognition_provider_contract(
-            provider_id="openai-comparison",
-            provider_label="OpenAI Responses Provider Comparison Pass",
-            created_at=created_at,
-        ),
     ]
 
 
@@ -490,8 +487,8 @@ def _conversation_openai_cognition_provider_contract(
     artifact["provider_id"] = provider_id
     artifact["provider_identity"]["provider_id"] = provider_id
     artifact["provider_identity"]["provider_label"] = provider_label
-    artifact["single_provider_only"] = False
-    artifact["multi_provider_cognition_scope"] = True
+    artifact["single_provider_only"] = True
+    artifact["multi_provider_cognition_scope"] = False
     artifact.pop("artifact_hash", None)
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -510,7 +507,7 @@ def _conversation_openai_provider_registry() -> ProviderRegistry:
 def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path) -> dict[str, Any]:
     def _transport(payload: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
         provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "")
-        if provider_id not in {OPENAI_PROVIDER_ID, "openai-comparison"}:
+        if provider_id != OPENAI_PROVIDER_ID:
             raise FailClosedRuntimeError("conversational OCS provider is not registered for real OpenAI attachment")
         provider_replay_dir = replay_dir / "real_openai_provider_attachment" / provider_id
         _record_conversational_openai_output_budget(
@@ -538,7 +535,7 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
         response = provider_capture["provider_proposal_envelope"]["response"]
         return response.get("raw_response") or {"output_text": response["response_text"]}
 
-    return {OPENAI_PROVIDER_ID: _transport, "openai-comparison": _transport}
+    return {OPENAI_PROVIDER_ID: _transport}
 
 
 def _record_conversational_openai_output_budget(
@@ -600,6 +597,7 @@ def _run_conversational_ocs_llm_cognition(
         replay_dir=replay_dir,
         source_chain_id=current_chain_id or prompt_id,
         source_request_reference=prompt_id,
+        single_provider_primary_mode=True,
     )
 
 
@@ -687,6 +685,7 @@ def _record_interactive_turn_completion(
     progress_binding_capture: dict[str, Any],
     turn_root: Path,
     created_at: str,
+    elapsed_seconds: int,
     delivered_output_line_count: int,
 ) -> dict[str, Any]:
     status = TURN_COMPLETION_FAILED_CLOSED if turn_summary.get("fail_closed") is True else TURN_COMPLETION_COMPLETED
@@ -697,7 +696,7 @@ def _record_interactive_turn_completion(
         providers=_interactive_turn_providers(turn_summary),
         status=status,
         result_delivered=False,
-        elapsed_seconds=_interactive_turn_elapsed_seconds(progress_binding_capture),
+        elapsed_seconds=elapsed_seconds,
         progress_replay_reference=progress_binding_capture["runtime_progress_replay_reference"],
         created_at=created_at,
         replay_dir=turn_root / "turn_completion",
@@ -713,14 +712,13 @@ def _record_interactive_turn_completion(
     turn_summary["turn_completion_status"] = delivery["result_delivered_artifact"]["status"]
     turn_summary["turn_completion_artifact_type"] = turn_completed["turn_completed_artifact"]["artifact_type"]
     turn_summary["result_delivered_artifact_type"] = delivery["result_delivered_artifact"]["artifact_type"]
+    turn_summary["elapsed_seconds"] = delivery["result_delivered_artifact"]["elapsed_seconds"]
     return delivery
 
 
-def _interactive_turn_elapsed_seconds(progress_binding_capture: dict[str, Any]) -> int:
-    artifact = progress_binding_capture.get("conversational_progress_binding_artifact")
-    if isinstance(artifact, dict) and isinstance(artifact.get("stage_count"), int):
-        return artifact["stage_count"]
-    return 0
+def _interactive_turn_elapsed_seconds(*, turn_started_monotonic: float, monotonic_now: Any) -> int:
+    elapsed = float(monotonic_now()) - float(turn_started_monotonic)
+    return max(0, int(elapsed))
 
 
 def _interactive_turn_providers(turn_summary: dict[str, Any]) -> list[str]:
@@ -1677,10 +1675,12 @@ def run_interactive_conversation(
     *,
     input_func: Any | None = None,
     output_func: Any | None = None,
+    monotonic_func: Any | None = None,
 ) -> dict[str, Any]:
     input_reader = input if input_func is None else input_func
     output_writer = print if output_func is None else output_func
     terminal_output_writer = output_writer
+    monotonic_now = time.monotonic if monotonic_func is None else monotonic_func
     session_id = _require_cli_string(args.session_id, "session_id")
     created_at = _require_cli_string(args.created_at, "created_at")
     runtime_root = Path(args.runtime_root)
@@ -1710,6 +1710,7 @@ def run_interactive_conversation(
         if prompt_capture["input_mode"] == "SINGLE_LINE" and human_prompt.lower() in INTERACTIVE_EXIT_COMMANDS:
             break
 
+        turn_started_monotonic = float(monotonic_now())
         turn_count += 1
         turn_id = "TURN-UNALLOCATED"
         prompt_id = f"{session_id}:{turn_id}"
@@ -2905,6 +2906,10 @@ def run_interactive_conversation(
                     progress_binding_capture=progress_binding_capture,
                     turn_root=turn_root,
                     created_at=created_at,
+                    elapsed_seconds=_interactive_turn_elapsed_seconds(
+                        turn_started_monotonic=turn_started_monotonic,
+                        monotonic_now=monotonic_now,
+                    ),
                     delivered_output_line_count=_delivered_output_line_count(
                         "\n".join(turn_progress_buffer + normal_output),
                     ),
@@ -3442,6 +3447,9 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "provider_ids": request_bundle.get("deterministic_provider_order", []),
         "real_llm_provider_used_by_ocs": _real_llm_provider_used_by_ocs(ocs_cognition_capture),
         "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
+        "single_provider_primary_mode": artifact.get("single_provider_primary_mode") is True,
+        "comparison_required": artifact.get("comparison_required") is True,
+        "comparison_performed": artifact.get("comparison_performed") is True,
         "comparison_artifact_hash": artifact.get("comparison_artifact_hash"),
         "continuity_artifact_hash": artifact.get("continuity_artifact_hash"),
         "clarification_artifact_hash": artifact.get("clarification_artifact_hash"),
