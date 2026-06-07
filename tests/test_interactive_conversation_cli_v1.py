@@ -61,6 +61,15 @@ def _input_sequence(values: list[str]):
     return read
 
 
+def _monotonic_sequence(values: list[float]):
+    iterator = iter(values)
+
+    def read() -> float:
+        return next(iterator)
+
+    return read
+
+
 def test_interactive_conversation_records_router_and_conversation_replay(tmp_path):
     args = _args(tmp_path)
     output: list[str] = []
@@ -69,6 +78,7 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
         args,
         input_func=_input_sequence(["What is AiGOL?", "exit"]),
         output_func=output.append,
+        monotonic_func=_monotonic_sequence([100.0, 103.0]),
     )
     turn = result["turns"][0]
     session_root = tmp_path / "interactive_runtime" / "INTERACTIVE-TEST-000001"
@@ -97,7 +107,7 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
         "providers: NONE",
         "status: COMPLETED",
         "result_delivered: TRUE",
-        "elapsed: 8s",
+        "elapsed: 3s",
         "============",
     ]
     assert any("governed AI operation path" in line for line in output)
@@ -121,6 +131,7 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert completion["result_delivered"] is True
     assert completion["status"] == "COMPLETED"
     assert completion["providers"] == []
+    assert completion["elapsed_seconds"] == 3
     assert completion["replay_artifact_count"] == 2
 
 

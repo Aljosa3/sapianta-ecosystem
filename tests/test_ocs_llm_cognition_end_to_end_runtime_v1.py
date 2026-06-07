@@ -149,6 +149,29 @@ def test_provider_failure_is_isolated_when_two_providers_succeed(tmp_path):
     assert replay["failed_provider_count"] == 1
 
 
+def test_single_provider_primary_mode_completes_without_comparison_requirement(tmp_path):
+    result = _run(
+        tmp_path,
+        provider_contracts=_contracts(("provider-a",)),
+        transport_registry=_transports(),
+        single_provider_primary_mode=True,
+    )
+    artifact = result["ocs_llm_cognition_end_to_end_artifact"]
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+    assert result["final_status"] == STATUS_COMPLETED
+    assert artifact["provider_count"] == 1
+    assert artifact["successful_provider_count"] == 1
+    assert artifact["cognition_artifact_hashes"]
+    assert artifact["single_provider_primary_mode"] is True
+    assert artifact["comparison_required"] is False
+    assert artifact["comparison_performed"] is False
+    assert replay["final_status"] == STATUS_COMPLETED
+    assert replay["provider_count"] == 1
+    assert replay["cognition_artifact_count"] == 1
+    assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
+
+
 def test_end_to_end_fails_closed_when_comparison_lacks_two_cognition_artifacts(tmp_path):
     result = _run(
         tmp_path,

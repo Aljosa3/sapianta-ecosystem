@@ -147,11 +147,11 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert turn["conversational_workflow_id"] == OCS_LLM_COGNITION
     assert turn["ocs_llm_cognition_artifact_type"] == OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1
     assert turn["provider_invoked"] is True
-    assert turn["successful_provider_count"] == 2
-    assert turn["provider_ids"] == ["openai", "openai-comparison"]
+    assert turn["successful_provider_count"] == 1
+    assert turn["provider_ids"] == ["openai"]
     assert "openai" in turn["provider_ids"]
     assert turn["real_llm_provider_used_by_ocs"] is True
-    assert turn["cognition_artifact_count"] == 2
+    assert turn["cognition_artifact_count"] == 1
     assert captured["api_key"] == "test-openai-key"
     assert turn["comparison_artifact_hash"]
     assert turn["continuity_artifact_hash"]
@@ -166,15 +166,16 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
         "================================",
         "TURN COMPLETED",
         "turn_id: TURN-000001",
-        "providers: openai, openai-comparison",
+        "providers: openai",
         "status: COMPLETED",
         "result_delivered: TRUE",
     ]
     assert replay["final_status"] == STATUS_COMPLETED
-    assert replay["provider_count"] == 2
-    assert replay["cognition_artifact_count"] == 2
+    assert replay["provider_count"] == 1
+    assert replay["cognition_artifact_count"] == 1
+    assert replay["stage_replay"]["cognition_comparison"]["final_status"] == STATUS_COMPLETED
     assert replay["stage_replay"]["context"]["context_status"] == "OCS_CONTEXT_ASSEMBLED"
-    assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 2
+    assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
     assert replay["stage_replay"]["continuity_and_clarification"]["clarification_candidate_count"] >= 1
 
 
