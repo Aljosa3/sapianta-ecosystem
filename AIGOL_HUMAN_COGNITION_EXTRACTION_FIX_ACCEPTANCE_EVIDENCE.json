@@ -1,0 +1,46 @@
+{
+  "artifact_id": "AIGOL_HUMAN_COGNITION_EXTRACTION_FIX_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "human_cognition_extraction_fix",
+  "implemented_files": [
+    "aigol/cli/aigol_cli.py",
+    "tests/test_conversational_ocs_cognition_binding_v1.py"
+  ],
+  "trace": {
+    "provider_response": "OpenAI response text captured by provider proposal envelope",
+    "handoff_before_fix": "response.get('raw_response') preferred replay-normalized text string",
+    "handoff_after_fix": "{'output_text': response['response_text']}",
+    "cognition_artifact": "LLM_COGNITION_ARTIFACT_V1",
+    "human_facing_result": "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1.human_facing_cognition_result",
+    "renderer": "render_operator_visible_ocs_llm_cognition"
+  },
+  "determination": {
+    "json_stored_as_string": true,
+    "json_double_serialized": false,
+    "json_not_normalized": true,
+    "renderer_received_wrong_type": false,
+    "wrong_type_boundary": "conversational OCS transport returned replay-normalized text instead of provider response object shape"
+  },
+  "preserved": {
+    "replay": true,
+    "governance": true,
+    "provider_non_authority": true,
+    "technical_summary": true,
+    "routing": true,
+    "dispatch": true
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_conversational_ocs_cognition_binding_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py",
+      "result": "47 passed"
+    }
+  },
+  "final_outputs": {
+    "JSON_STRING_PRESENT": false,
+    "STRUCTURED_COGNITION_PRESENT": true,
+    "ROOT_CAUSE": "Conversational OCS transport preferred provider attachment raw_response, which is replay-normalized text, causing JSON cognition text to cross the cognition boundary as a string instead of the expected output_text response shape.",
+    "FIX_APPLIED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED"
+  }
+}

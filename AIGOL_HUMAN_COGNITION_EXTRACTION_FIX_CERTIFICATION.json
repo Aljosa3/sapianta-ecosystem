@@ -1,0 +1,44 @@
+{
+  "certification_id": "AIGOL_HUMAN_COGNITION_EXTRACTION_FIX_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_HUMAN_COGNITION_EXTRACTION_FIX",
+  "status": "CERTIFIED",
+  "runtime_artifact": "AIGOL_HUMAN_COGNITION_EXTRACTION_FIX_V1.md",
+  "acceptance_evidence": "AIGOL_HUMAN_COGNITION_EXTRACTION_FIX_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Fix conversational OCS handoff so provider JSON cognition text is normalized into structured cognition fields",
+    "Preserve operator-visible structured cognition rendering",
+    "Preserve replay, governance, provider non-authority, and technical summary behavior"
+  ],
+  "certified_non_goals": [
+    "No provider invocation behavior change",
+    "No routing change",
+    "No dispatch change",
+    "No replay mutation semantics change",
+    "No provider authority promotion",
+    "No approval, execution, worker, or governance mutation creation"
+  ],
+  "certification_findings": {
+    "json_string_boundary_identified": true,
+    "transport_shape_fixed": true,
+    "structured_findings_rendered": true,
+    "structured_assumptions_rendered": true,
+    "structured_risks_rendered": true,
+    "structured_uncertainties_rendered": true,
+    "serialized_json_blob_suppressed": true,
+    "technical_summary_preserved": true,
+    "replay_compatible": true,
+    "governance_compatible": true
+  },
+  "validation_summary": {
+    "focused_tests_passed": true,
+    "focused_test_count": 47
+  },
+  "final_outputs": {
+    "JSON_STRING_PRESENT": false,
+    "STRUCTURED_COGNITION_PRESENT": true,
+    "ROOT_CAUSE": "Provider attachment raw_response is replay-normalized text; returning it directly collapsed structured JSON cognition into one string before normalization.",
+    "FIX_APPLIED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED"
+  }
+}
