@@ -306,7 +306,7 @@ def is_ocs_llm_cognition_prompt(human_prompt: str) -> bool:
 def _is_ocs_llm_cognition_prompt(normalized: str, *, ends_with_question: bool = False) -> bool:
     if "unrestricted" in normalized and "autonomous agent" in normalized:
         return False
-    if "domain" in normalized and any(term in normalized for term in ("create", "new", "add")):
+    if "product domain" in normalized and "product domains" not in normalized:
         return False
     cognition_markers = (
         "first real aigol product",
@@ -325,6 +325,13 @@ def _is_ocs_llm_cognition_prompt(normalized: str, *, ends_with_question: bool = 
         "help me decide",
         "what should",
     )
+    has_cognition_marker = any(marker in normalized for marker in cognition_markers)
+    if (
+        not has_cognition_marker
+        and "domain" in normalized
+        and any(term in normalized for term in ("create", "new", "add"))
+    ):
+        return False
     question_starts = (
         "should ",
         "what should ",
@@ -332,7 +339,7 @@ def _is_ocs_llm_cognition_prompt(normalized: str, *, ends_with_question: bool = 
         "why should ",
         "can you analyze",
     )
-    if any(marker in normalized for marker in cognition_markers):
+    if has_cognition_marker:
         return True
     has_governed_cognition_subject = any(marker in normalized for marker in ("sapianta", "aigol"))
     has_cognition_scope = any(
