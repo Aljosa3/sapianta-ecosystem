@@ -1,0 +1,95 @@
+{
+  "artifact_id": "AIGOL_SECTION_LABELED_COGNITION_PARSING_FIX_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "section_labeled_cognition_parsing",
+  "implemented_files": [
+    "aigol/runtime/cognition_artifact_runtime.py",
+    "tests/test_cognition_artifact_runtime_v1.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+  ],
+  "normalization_behavior": {
+    "section_labeled_cognition_detected_in": "findings[]",
+    "multiline_label_colon_sections_parsed": true,
+    "flattened_label_colon_sections_parsed": true,
+    "label_dash_sections_parsed": true,
+    "bullet_items_parsed": true,
+    "numbered_items_parsed": true,
+    "plain_text_without_multi_section_document_preserved": true,
+    "nested_json_handling_preserved": true
+  },
+  "canonical_fields_populated": {
+    "findings": true,
+    "assumptions": true,
+    "risks": true,
+    "uncertainties": true,
+    "clarification_questions": true,
+    "recommended_next_milestone": true
+  },
+  "preservation": {
+    "replay_compatible": true,
+    "governance_compatible": true,
+    "provider_non_authority_preserved": true,
+    "authority_boundary_checks_preserved": true,
+    "existing_nested_json_handling_preserved": true,
+    "technical_summary_preserved": true
+  },
+  "regression_cases": {
+    "CASE_A_MULTILINE_SECTION_LABELED_TEXT": "passed",
+    "CASE_B_FLATTENED_SECTION_LABELED_TEXT": "passed",
+    "CASE_C_DASH_LABELED_SECTION_TEXT": "passed",
+    "CASE_D_MIXED_PLAIN_AND_SECTION_LABELED_FINDINGS": "passed",
+    "CASE_E_SINGLE_LABEL_PLAIN_FINDING_PRESERVED": "passed",
+    "CASE_F_END_TO_END_OPERATOR_RENDERING": "passed"
+  },
+  "real_operator_validation": {
+    "session_id": "AIGOL-SECTION-LABELED-COGNITION-000003",
+    "turn_id": "TURN-000001",
+    "runtime_root": "/tmp/aigol_section_labeled_cognition_runtime_3",
+    "replay_reference": "/tmp/aigol_section_labeled_cognition_runtime_3/AIGOL-SECTION-LABELED-COGNITION-000003/TURN-000001/ocs_llm_cognition_end_to_end",
+    "workflow_id": "OCS_LLM_COGNITION",
+    "provider": "openai",
+    "provider_count": 1,
+    "successful_provider_count": 1,
+    "workflow_status": "COMPLETED",
+    "turn_completed": true,
+    "operator_sections": {
+      "findings": true,
+      "assumptions": true,
+      "risks": true,
+      "uncertainties": true,
+      "clarification_questions": true,
+      "recommended_next_milestone": true
+    },
+    "operator_output_checks": {
+      "json_blob_visible": false,
+      "none_recorded_for_populated_assumptions": false,
+      "none_recorded_for_populated_risks": false,
+      "none_recorded_for_populated_uncertainties": false,
+      "technical_summary_after_cognition": true
+    }
+  },
+  "validation": {
+    "focused_cognition_and_ocs_tests": {
+      "command": "python -m pytest tests/test_cognition_artifact_runtime_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py",
+      "result": "31 passed"
+    },
+    "routing_and_conversational_alignment_tests": {
+      "command": "python -m pytest tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py",
+      "result": "33 passed"
+    }
+  },
+  "known_limitations": [
+    "A separate non-concise real provider run returned a truncated JSON-looking payload; this fix targets section-labeled cognition text and preserves existing invalid JSON behavior."
+  ],
+  "final_outputs": {
+    "SECTION_LABELED_COGNITION_DETECTED": true,
+    "SECTIONS_PARSED": true,
+    "ASSUMPTIONS_RECOVERED": true,
+    "RISKS_RECOVERED": true,
+    "UNCERTAINTIES_RECOVERED": true,
+    "CLARIFICATION_QUESTIONS_RECOVERED": true,
+    "NEXT_MILESTONE_RECOVERED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED_SECTION_LABELED_COGNITION_RENDERED"
+  }
+}

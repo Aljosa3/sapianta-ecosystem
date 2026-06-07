@@ -1,0 +1,63 @@
+{
+  "certification_id": "AIGOL_SECTION_LABELED_COGNITION_PARSING_FIX_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_SECTION_LABELED_COGNITION_PARSING_FIX",
+  "status": "CERTIFIED",
+  "runtime_artifact": "AIGOL_SECTION_LABELED_COGNITION_PARSING_FIX_V1.md",
+  "acceptance_evidence": "AIGOL_SECTION_LABELED_COGNITION_PARSING_FIX_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Detect known cognition section labels inside provider finding text",
+    "Parse multiline, flattened, and dash-labeled cognition sections",
+    "Populate canonical cognition fields for findings, assumptions, risks, uncertainties, clarification questions, and recommended next milestone",
+    "Preserve existing nested JSON cognition handling",
+    "Preserve replay compatibility, governance compatibility, provider non-authority, and technical summary behavior",
+    "Validate real OpenAI-backed section-labeled operator output"
+  ],
+  "certified_non_goals": [
+    "No routing change",
+    "No dispatch change",
+    "No provider invocation change",
+    "No provider authority promotion",
+    "No approval authority creation",
+    "No execution authority creation",
+    "No governance mutation",
+    "No replay mutation semantics change",
+    "No parsing of arbitrary malformed or truncated JSON beyond existing policies"
+  ],
+  "certification_findings": {
+    "section_labeled_cognition_detected": true,
+    "sections_parsed": true,
+    "findings_recovered": true,
+    "assumptions_recovered": true,
+    "risks_recovered": true,
+    "uncertainties_recovered": true,
+    "clarification_questions_recovered": true,
+    "recommended_next_milestone_recovered": true,
+    "operator_output_structured": true,
+    "json_blob_visible_in_final_section_labeled_validation": false,
+    "technical_summary_preserved": true,
+    "replay_compatible": true,
+    "governance_compatible": true,
+    "provider_non_authority_preserved": true
+  },
+  "validation_summary": {
+    "focused_tests_passed": true,
+    "focused_test_count": 31,
+    "routing_alignment_tests_passed": true,
+    "routing_alignment_test_count": 33,
+    "real_operator_validation_passed": true
+  },
+  "known_limitations": [
+    "Malformed or truncated JSON-looking provider output remains a separate provider-output normalization concern."
+  ],
+  "final_outputs": {
+    "SECTION_LABELED_COGNITION_DETECTED": true,
+    "SECTIONS_PARSED": true,
+    "ASSUMPTIONS_RECOVERED": true,
+    "RISKS_RECOVERED": true,
+    "UNCERTAINTIES_RECOVERED": true,
+    "CLARIFICATION_QUESTIONS_RECOVERED": true,
+    "NEXT_MILESTONE_RECOVERED": true,
+    "OPERATOR_OUTPUT_STATUS": "STRUCTURED_SECTION_LABELED_COGNITION_RENDERED"
+  }
+}
