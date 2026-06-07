@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable
@@ -316,8 +317,6 @@ def render_operator_visible_ocs_llm_cognition(result: dict[str, Any]) -> str:
             *_render_bullets(human_result.get("clarification_questions")),
             "Recommended Next Milestone:",
             *_render_bullets([human_result.get("recommended_next_milestone")]),
-            f"non_authoritative: {human_result.get('non_authoritative') is True}",
-            f"allowed_next_step: {human_result.get('allowed_next_step')}",
         ]
     )
 
@@ -334,20 +333,40 @@ def _render_bullets(items: Any) -> list[str]:
 
 def _render_item(item: Any) -> str:
     if isinstance(item, str):
-        return item.strip()
+        return _clean_operator_text(item)
     if not isinstance(item, dict):
         return ""
     if isinstance(item.get("question"), str):
-        return item["question"].strip()
+        return _clean_operator_text(item["question"])
     if isinstance(item.get("text"), str):
-        return item["text"].strip()
+        return _clean_operator_text(item["text"])
     if isinstance(item.get("summary"), str):
-        return item["summary"].strip()
+        return _clean_operator_text(item["summary"])
     if isinstance(item.get("reason"), str):
-        return item["reason"].strip()
+        return _clean_operator_text(item["reason"])
     if isinstance(item.get("missing"), str):
-        return f"Missing {item['missing']}"
+        return _clean_operator_text(f"Missing {item['missing']}")
     return ""
+
+
+def _clean_operator_text(value: str) -> str:
+    text = " ".join(str(value).split())
+    if not text:
+        return ""
+    if _looks_like_json(text):
+        return ""
+    return text
+
+
+def _looks_like_json(value: str) -> bool:
+    stripped = value.strip()
+    if not ((stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]"))):
+        return False
+    try:
+        parsed = json.loads(stripped)
+    except (TypeError, json.JSONDecodeError):
+        return False
+    return isinstance(parsed, (dict, list))
 
 
 def _end_to_end_artifact(
@@ -367,7 +386,7 @@ def _end_to_end_artifact(
     single_provider_primary_mode: bool,
 ) -> dict[str, Any]:
     provider_results = result_bundle.get("provider_results", [])
-    human_result = _human_facing_result(comparison_artifact, clarification_artifact)
+    human_result = _human_facing_result(result_bundle, comparison_artifact, clarification_artifact)
     artifact = {
         "artifact_type": OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -443,17 +462,22 @@ def _end_to_end_artifact(
     return artifact
 
 
-def _human_facing_result(comparison_artifact: dict[str, Any], clarification_artifact: dict[str, Any]) -> dict[str, Any]:
+def _human_facing_result(
+    result_bundle: dict[str, Any],
+    comparison_artifact: dict[str, Any],
+    clarification_artifact: dict[str, Any],
+) -> dict[str, Any]:
     clarification_candidates = deepcopy(clarification_artifact.get("clarification_candidates", []))
+    cognition_artifacts = _source_cognition_artifacts(result_bundle)
     return {
         "result_type": "HUMAN_FACING_COGNITION_RESULT",
         "summary": "Provider-assisted cognition completed. Human review remains required before any downstream action.",
         "comparison_confidence": comparison_artifact.get("comparison_confidence"),
         "comparison_findings": deepcopy(comparison_artifact.get("comparison_findings", [])),
-        "findings": _operator_findings(comparison_artifact),
-        "assumptions": deepcopy(comparison_artifact.get("conflicting_assumptions", [])),
-        "risks": deepcopy(comparison_artifact.get("conflicting_risks", [])),
-        "uncertainties": _operator_uncertainties(comparison_artifact),
+        "findings": _operator_cognition_items(cognition_artifacts, "findings"),
+        "assumptions": _operator_cognition_items(cognition_artifacts, "assumptions"),
+        "risks": _operator_cognition_items(cognition_artifacts, "risks"),
+        "uncertainties": _operator_cognition_items(cognition_artifacts, "uncertainties"),
         "comparison_performed": comparison_artifact.get("single_provider_primary_mode") is not True,
         "single_provider_primary_mode": comparison_artifact.get("single_provider_primary_mode") is True,
         "clarification_required": clarification_artifact.get("clarification_required") is True,
@@ -472,17 +496,71 @@ def _human_facing_result(comparison_artifact: dict[str, Any], clarification_arti
     }
 
 
-def _operator_findings(comparison_artifact: dict[str, Any]) -> list[Any]:
-    findings = list(deepcopy(comparison_artifact.get("comparison_findings", [])))
-    findings.extend(deepcopy(comparison_artifact.get("agreement", [])))
-    findings.extend(deepcopy(comparison_artifact.get("disagreement", [])))
-    return findings
+def _source_cognition_artifacts(result_bundle: dict[str, Any]) -> list[dict[str, Any]]:
+    provider_results = result_bundle.get("provider_results", [])
+    if not isinstance(provider_results, list):
+        return []
+    artifacts = []
+    for item in provider_results:
+        if not isinstance(item, dict):
+            continue
+        artifact = item.get("llm_cognition_artifact")
+        if isinstance(artifact, dict):
+            artifacts.append(artifact)
+    return artifacts
 
 
-def _operator_uncertainties(comparison_artifact: dict[str, Any]) -> list[Any]:
-    uncertainties = list(deepcopy(comparison_artifact.get("uncertainty", [])))
-    uncertainties.extend(deepcopy(comparison_artifact.get("missing_information", [])))
-    return uncertainties
+def _operator_cognition_items(cognition_artifacts: list[dict[str, Any]], field_name: str) -> list[str]:
+    items: list[str] = []
+    for artifact in cognition_artifacts:
+        items.extend(_operator_items_from_value(artifact.get(field_name), field_name))
+    return _dedupe_operator_items(items)
+
+
+def _operator_items_from_value(value: Any, field_name: str) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        items: list[str] = []
+        for item in value:
+            items.extend(_operator_items_from_value(item, field_name))
+        return items
+    if isinstance(value, str):
+        parsed = _parse_operator_json(value)
+        if parsed is not None:
+            return _operator_items_from_value(parsed.get(field_name), field_name) if isinstance(parsed, dict) else []
+        cleaned = _clean_operator_text(value)
+        return [cleaned] if cleaned else []
+    if isinstance(value, dict):
+        if field_name in value:
+            return _operator_items_from_value(value.get(field_name), field_name)
+        for key in ("text", "question", "summary", "reason"):
+            if isinstance(value.get(key), str):
+                cleaned = _clean_operator_text(value[key])
+                return [cleaned] if cleaned else []
+    return []
+
+
+def _parse_operator_json(value: str) -> Any | None:
+    stripped = value.strip()
+    if not ((stripped.startswith("{") and stripped.endswith("}")) or (stripped.startswith("[") and stripped.endswith("]"))):
+        return None
+    try:
+        return json.loads(stripped)
+    except (TypeError, json.JSONDecodeError):
+        return None
+
+
+def _dedupe_operator_items(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        normalized = " ".join(item.split())
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        deduped.append(normalized)
+    return deduped
 
 
 def _failed_end_to_end_artifact(
