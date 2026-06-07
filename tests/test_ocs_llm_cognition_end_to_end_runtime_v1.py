@@ -88,6 +88,14 @@ def _transports(failing: set[str] | None = None):
     return transports
 
 
+def _single_provider_transport(response_text: str):
+    def call(_payload: dict, metadata: dict) -> dict:
+        assert metadata["provider_role"] == "COGNITION_PROVIDER"
+        return {"output_text": response_text}
+
+    return {"provider-a": call}
+
+
 def _run(tmp_path: Path, **overrides):
     args = {
         "end_to_end_id": "OCS-LLM-COGNITION-E2E-001",
@@ -151,7 +159,107 @@ def test_operator_visible_cognition_rendering_precedes_technical_summary(tmp_pat
     assert "Human review of normalized cognition output." in operator_section
     assert "replay_reference:" in technical_summary
     assert "provider_count:" in technical_summary
-    assert "non_authoritative: True" in operator_section
+    assert "non_authoritative:" not in operator_section
+    assert "allowed_next_step:" not in operator_section
+
+
+@pytest.mark.parametrize(
+    ("case_id", "response_payload", "expected_lines"),
+    [
+        (
+            "structured",
+            {
+                "findings": [
+                    "Structured finding is operator readable.",
+                    json.dumps({"findings": ["Nested JSON finding is extracted cleanly."]}, sort_keys=True),
+                ],
+                "assumptions": ["Structured assumption is operator readable."],
+                "risks": ["Structured risk is operator readable."],
+                "uncertainties": ["Structured uncertainty is operator readable."],
+                "confidence": "MEDIUM",
+            },
+            [
+                "Structured finding is operator readable.",
+                "Nested JSON finding is extracted cleanly.",
+                "Structured assumption is operator readable.",
+                "Structured risk is operator readable.",
+                "Structured uncertainty is operator readable.",
+            ],
+        ),
+        (
+            "partial",
+            {
+                "findings": ["Partial finding is still rendered."],
+                "assumptions": ["Partial assumption is still rendered."],
+                "confidence": "LOW",
+            },
+            [
+                "Partial finding is still rendered.",
+                "Partial assumption is still rendered.",
+                "- (none recorded)",
+            ],
+        ),
+        (
+            "missing_optional",
+            {
+                "findings": ["Required finding survives missing optional fields."],
+                "confidence": "UNKNOWN",
+            },
+            [
+                "Required finding survives missing optional fields.",
+                "- (none recorded)",
+            ],
+        ),
+        (
+            "large",
+            {
+                "findings": [f"Large clean finding {index:02d}." for index in range(40)],
+                "assumptions": ["Large payload assumption remains readable."],
+                "risks": ["Large payload risk remains readable."],
+                "uncertainties": ["Large payload uncertainty remains readable."],
+                "confidence": "MEDIUM",
+            },
+            [
+                "Large clean finding 00.",
+                "Large clean finding 39.",
+                "Large payload assumption remains readable.",
+                "Large payload risk remains readable.",
+                "Large payload uncertainty remains readable.",
+            ],
+        ),
+    ],
+)
+def test_operator_cognition_renderer_outputs_clean_human_text(tmp_path, case_id, response_payload, expected_lines):
+    result = _run(
+        tmp_path,
+        end_to_end_id=f"OCS-LLM-COGNITION-CLEANUP-{case_id.upper()}",
+        provider_contracts=_contracts(("provider-a",)),
+        transport_registry=_single_provider_transport(json.dumps(response_payload, sort_keys=True)),
+        single_provider_primary_mode=True,
+    )
+    operator_section = render_operator_visible_ocs_llm_cognition(result)
+    technical_summary = render_ocs_llm_cognition_end_to_end_summary(result)
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+    for line in expected_lines:
+        assert line in operator_section
+    forbidden_fragments = (
+        '{"findings"',
+        '"assumptions"',
+        "artifact_type",
+        "runtime_version",
+        "provider_metadata",
+        "raw_response",
+        "response_hash",
+        "replay_reference:",
+        "non_authoritative:",
+        "allowed_next_step:",
+    )
+    for fragment in forbidden_fragments:
+        assert fragment not in operator_section
+    assert "AIGOL OCS LLM COGNITION END-TO-END" in technical_summary
+    assert "replay_reference:" in technical_summary
+    assert replay["final_status"] == STATUS_COMPLETED
 
 
 def test_end_to_end_reconstructs_each_stage_replay(tmp_path):
