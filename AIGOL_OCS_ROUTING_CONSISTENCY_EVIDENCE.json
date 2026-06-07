@@ -1,0 +1,158 @@
+{
+  "artifact_id": "AIGOL_OCS_ROUTING_CONSISTENCY_EVIDENCE_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "REVIEW_ONLY",
+  "runtime_code_changed": false,
+  "provider_behavior_changed": false,
+  "workflow_behavior_changed": false,
+  "goal": "Determine why prompts previously classified as OCS_LLM_COGNITION route into DEFAULT_PROVIDER_ASSISTED_CONVERSATION after SINGLE_PROVIDER_PRIMARY_MODE_V1.",
+  "trace": {
+    "human_prompt_to_routing": {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_start": 1761,
+      "line_end": 1772,
+      "evidence": "run_interactive_conversation calls route_conversational_cli_intent once for ordinary prompts and stores workflow_selection_artifact.workflow_id as authoritative_workflow_id."
+    },
+    "routing_visibility": {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_start": 793,
+      "line_end": 845,
+      "evidence": "When conversational_routing_capture exists, routing visibility is rendered from the authoritative routing capture instead of an independent classifier."
+    },
+    "ocs_dispatch": {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_start": 2779,
+      "line_end": 2812,
+      "evidence": "OCS dispatch runs only when authoritative_workflow_id equals OCS_LLM_COGNITION."
+    },
+    "default_dispatch": {
+      "file": "aigol/cli/aigol_cli.py",
+      "line_start": 2813,
+      "line_end": 2823,
+      "evidence": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION dispatch runs when authoritative_workflow_id equals DEFAULT_PROVIDER_ASSISTED_CONVERSATION."
+    }
+  },
+  "current_routing_rules": {
+    "file": "aigol/runtime/conversational_cli_runtime.py",
+    "line_start": 211,
+    "line_end": 242,
+    "priority_order": [
+      "fail_closed_unrestricted_autonomous_agent",
+      "DOMAIN_ADAPTATION_REFERENCE",
+      "OCS_LLM_COGNITION",
+      "OPERATOR_DECISION_SUPPORT",
+      "CREATE_DOMAIN_TRADING",
+      "CREATE_DOMAIN_MARKETING",
+      "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "SHOW_LATEST_REPLAY_CHAIN",
+      "REVIEW_LATEST_AUDIT",
+      "IMPROVE_PROVIDER_LAYER",
+      "SHOW_STATUS",
+      "SHOW_DASHBOARD",
+      "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+      "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
+    ]
+  },
+  "ocs_trigger_conditions": {
+    "file": "aigol/runtime/conversational_cli_runtime.py",
+    "line_start": 288,
+    "line_end": 324,
+    "exclusions": [
+      "unrestricted + autonomous agent",
+      "domain + any of create/new/add"
+    ],
+    "literal_markers": [
+      "first real aigol product",
+      "commercialization",
+      "managed services",
+      "license the platform",
+      "sell domains",
+      "should sapianta",
+      "continue the aigol",
+      "continue ",
+      "help me decide",
+      "what should"
+    ],
+    "question_start_markers": [
+      "should ",
+      "what should ",
+      "how should ",
+      "why should ",
+      "can you analyze"
+    ],
+    "defect": "Question-start detection checks normalized.endswith('?') after the caller strips terminal punctuation with rstrip('.?!'), making this path unreachable for normal question prompts."
+  },
+  "default_provider_trigger_conditions": {
+    "file": "aigol/runtime/conversational_cli_runtime.py",
+    "line": 242,
+    "condition": "All earlier certified workflow predicates fail.",
+    "matched_terms": [
+      "provider",
+      "conversation",
+      "fallback"
+    ]
+  },
+  "classifier_probe": {
+    "command": "python classifier probe using route_conversational_cli_intent with replay_dir under /tmp/aigol-routing-consistency-*",
+    "results": [
+      {
+        "prompt_id": "aigol_test",
+        "prompt": "I want to create the first real AiGOL product.",
+        "is_ocs_llm_cognition_prompt": true,
+        "selected_workflow": "OCS_LLM_COGNITION",
+        "matched_terms": [
+          "ocs",
+          "llm",
+          "cognition"
+        ]
+      },
+      {
+        "prompt_id": "analyze_sapianta",
+        "prompt": "Can you analyze the first real commercial Sapianta product opportunity?",
+        "is_ocs_llm_cognition_prompt": false,
+        "selected_workflow": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+        "matched_terms": [
+          "provider",
+          "conversation",
+          "fallback"
+        ]
+      },
+      {
+        "prompt_id": "cognition_only",
+        "prompt": "Provide cognition output only.",
+        "is_ocs_llm_cognition_prompt": false,
+        "selected_workflow": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+        "matched_terms": [
+          "provider",
+          "conversation",
+          "fallback"
+        ]
+      }
+    ]
+  },
+  "first_decision_point_causing_divergence": {
+    "file": "aigol/runtime/conversational_cli_runtime.py",
+    "function": "_classify_workflow",
+    "line_start": 213,
+    "line_end": 242,
+    "specific_predicate": "_is_ocs_llm_cognition_prompt",
+    "specific_predicate_lines": "291-324",
+    "reason": "OCS predicate returns false for representative cognition prompts; the router then reaches DEFAULT_PROVIDER_ASSISTED_CONVERSATION."
+  },
+  "single_provider_primary_mode_relationship": {
+    "causal": false,
+    "reason": "Single-provider primary mode is invoked only after OCS dispatch. Prompts selected as DEFAULT_PROVIDER_ASSISTED_CONVERSATION never enter the OCS single-provider runtime."
+  },
+  "minimal_safe_fix": [
+    "Preserve question punctuation or pass an explicit ends_with_question flag into _is_ocs_llm_cognition_prompt.",
+    "Add narrow certified OCS markers for first real sapianta product, commercial sapianta product, sapianta product opportunity, and cognition output only.",
+    "Add regression tests for routing decision, workflow selection, routing visibility, and dispatch alignment.",
+    "Keep DEFAULT_PROVIDER_ASSISTED_CONVERSATION as the fallback for non-cognition prompts."
+  ],
+  "final_outputs": {
+    "EXPECTED_WORKFLOW": "OCS_LLM_COGNITION",
+    "ACTUAL_WORKFLOW": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "ROUTING_DIVERGENCE_LOCATION": "aigol/runtime/conversational_cli_runtime.py::_classify_workflow -> _is_ocs_llm_cognition_prompt",
+    "MINIMAL_SAFE_FIX": "repair OCS predicate punctuation handling, add narrow Sapianta/cognition markers, and certify routing visibility/workflow selection/dispatch alignment with tests"
+  }
+}
