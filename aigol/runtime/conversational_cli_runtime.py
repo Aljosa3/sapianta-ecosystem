@@ -210,12 +210,16 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
 
 def _classify_workflow(human_prompt: str) -> dict[str, Any]:
     prompt = _require_string(human_prompt, "human_prompt")
-    normalized = prompt.lower().strip().rstrip(".?!")
+    normalized_with_punctuation = prompt.lower().strip()
+    normalized = normalized_with_punctuation.rstrip(".?!")
     if "unrestricted" in normalized and "autonomous agent" in normalized:
         raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
-    if _is_ocs_llm_cognition_prompt(normalized):
+    if _is_ocs_llm_cognition_prompt(
+        normalized,
+        ends_with_question=normalized_with_punctuation.endswith("?"),
+    ):
         return _analysis(OCS_LLM_COGNITION, "MEDIUM", ["ocs", "llm", "cognition"])
     if _is_operator_decision_support_prompt(normalized):
         return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["operator", "decision", "support"])
@@ -289,13 +293,17 @@ def is_ocs_llm_cognition_prompt(human_prompt: str) -> bool:
     """Return whether a prompt should enter broad OCS LLM cognition."""
 
     try:
-        normalized = _require_string(human_prompt, "human_prompt").lower().strip().rstrip(".?!")
+        normalized_with_punctuation = _require_string(human_prompt, "human_prompt").lower().strip()
     except FailClosedRuntimeError:
         return False
-    return _is_ocs_llm_cognition_prompt(normalized)
+    normalized = normalized_with_punctuation.rstrip(".?!")
+    return _is_ocs_llm_cognition_prompt(
+        normalized,
+        ends_with_question=normalized_with_punctuation.endswith("?"),
+    )
 
 
-def _is_ocs_llm_cognition_prompt(normalized: str) -> bool:
+def _is_ocs_llm_cognition_prompt(normalized: str, *, ends_with_question: bool = False) -> bool:
     if "unrestricted" in normalized and "autonomous agent" in normalized:
         return False
     if "domain" in normalized and any(term in normalized for term in ("create", "new", "add")):
@@ -306,6 +314,11 @@ def _is_ocs_llm_cognition_prompt(normalized: str) -> bool:
         "managed services",
         "license the platform",
         "sell domains",
+        "first real commercial sapianta product",
+        "first real sapianta product",
+        "commercial sapianta product",
+        "sapianta product opportunity",
+        "cognition output only",
         "should sapianta",
         "continue the aigol",
         "continue ",
@@ -321,7 +334,18 @@ def _is_ocs_llm_cognition_prompt(normalized: str) -> bool:
     )
     if any(marker in normalized for marker in cognition_markers):
         return True
-    return normalized.endswith("?") and normalized.startswith(question_starts)
+    has_governed_cognition_subject = any(marker in normalized for marker in ("sapianta", "aigol"))
+    has_cognition_scope = any(
+        marker in normalized
+        for marker in ("commercialization", "commercial", "architecture", "governance", "cognition")
+    )
+    has_analysis_intent = any(
+        marker in normalized
+        for marker in ("first real", "product", "opportunity", "analyze", "analysis", "evaluate", "decide")
+    )
+    if has_governed_cognition_subject and has_cognition_scope and has_analysis_intent:
+        return True
+    return ends_with_question and normalized.startswith(question_starts)
 
 
 def _is_native_development_context_prompt(prompt: str) -> bool:
