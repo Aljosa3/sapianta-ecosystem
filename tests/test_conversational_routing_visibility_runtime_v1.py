@@ -88,6 +88,33 @@ def test_ocs_cognition_prompt_renders_and_reconstructs_competing_visibility(tmp_
     assert "[1/8] Routing" in output[0]
 
 
+def test_sapianta_commercial_product_prompt_renders_ocs_visibility(tmp_path) -> None:
+    session_id = "SESSION-ROUTING-VISIBILITY-SAPIANTA-OCS-000001"
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        _args(tmp_path, session_id=session_id),
+        input_func=_input_sequence(
+            [
+                "I want to create the first real commercial Sapianta product.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+
+    replay = _routing_replay(tmp_path, session_id)
+    turn = result["turns"][0]
+
+    assert turn["routing_visibility_artifact_type"] == CONVERSATIONAL_ROUTING_VISIBILITY_ARTIFACT_V1
+    assert turn["routing_visibility_workflow_id"] == OCS_LLM_COGNITION
+    assert replay["workflow_id"] == OCS_LLM_COGNITION
+    assert replay["routing_status"] == ROUTING_SELECTED
+    assert replay["routing_confidence"] == MEDIUM
+    assert replay["matched_signals"] == ["ocs", "llm", "cognition"]
+    assert "workflow: OCS_LLM_COGNITION" in output[0]
+
+
 def test_operator_decision_support_prompt_renders_visibility(tmp_path) -> None:
     session_id = "SESSION-ROUTING-VISIBILITY-OPERATOR-000001"
     output: list[str] = []

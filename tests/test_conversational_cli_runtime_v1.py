@@ -96,6 +96,8 @@ def _input_sequence(values: list[str]):
         ("Create a healthcare version of the trading domain.", DOMAIN_ADAPTATION_REFERENCE),
         ("I want to create the first real AiGOL product domain.", OPERATOR_DECISION_SUPPORT),
         ("I want to create the first real AiGOL product.", OCS_LLM_COGNITION),
+        ("I want to create the first real commercial Sapianta product.", OCS_LLM_COGNITION),
+        ("Can you analyze the first real commercial Sapianta product opportunity?", OCS_LLM_COGNITION),
         ("Should Sapianta primarily sell domains, license the platform, or offer managed services?", OCS_LLM_COGNITION),
     ],
 )

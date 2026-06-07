@@ -16,7 +16,7 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
 
 CREATED_AT = "2026-06-06T00:00:00Z"
 SESSION_ID = "SESSION-CONVERSATIONAL-OCS-COGNITION-000001"
-PROMPT = "I want to create the first real AiGOL product."
+PROMPT = "I want to create the first real commercial Sapianta product."
 PROGRESS_LINES = [
     "[1/8] Routing",
     "[2/8] Cognition",
