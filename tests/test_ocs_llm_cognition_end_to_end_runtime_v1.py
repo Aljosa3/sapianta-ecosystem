@@ -277,6 +277,41 @@ def test_operator_cognition_renderer_outputs_clean_human_text(tmp_path, case_id,
     assert replay["final_status"] == STATUS_COMPLETED
 
 
+def test_section_labeled_provider_cognition_renders_complete_operator_sections(tmp_path):
+    response_text = (
+        "Findings: - Operator section finding is recovered. "
+        "Assumptions: - Operator section assumption is recovered. "
+        "Risks: - Operator section risk is recovered. "
+        "Uncertainties: - Operator section uncertainty is recovered. "
+        "Clarification Questions: - What acceptance evidence should be attached? "
+        "Recommended Next Milestone: - Validate real operator output again."
+    )
+    result = _run(
+        tmp_path,
+        end_to_end_id="OCS-LLM-COGNITION-SECTION-LABELED",
+        provider_contracts=_contracts(("provider-a",)),
+        transport_registry=_single_provider_transport(response_text),
+        single_provider_primary_mode=True,
+    )
+    artifact = result["ocs_llm_cognition_end_to_end_artifact"]
+    human_result = artifact["human_facing_cognition_result"]
+    operator_section = render_operator_visible_ocs_llm_cognition(result)
+
+    assert human_result["findings"] == ["Operator section finding is recovered."]
+    assert human_result["assumptions"] == ["Operator section assumption is recovered."]
+    assert human_result["risks"] == ["Operator section risk is recovered."]
+    assert human_result["uncertainties"] == ["Operator section uncertainty is recovered."]
+    assert "Operator section finding is recovered." in operator_section
+    assert "Operator section assumption is recovered." in operator_section
+    assert "Operator section risk is recovered." in operator_section
+    assert "Operator section uncertainty is recovered." in operator_section
+    assert "What acceptance evidence should be attached?" in operator_section
+    assert "Validate real operator output again." in operator_section
+    assert "Assumptions:\n- (none recorded)" not in operator_section
+    assert "Risks:\n- (none recorded)" not in operator_section
+    assert "Uncertainties:\n- (none recorded)" not in operator_section
+
+
 def test_end_to_end_reconstructs_each_stage_replay(tmp_path):
     _run(tmp_path)
     replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")

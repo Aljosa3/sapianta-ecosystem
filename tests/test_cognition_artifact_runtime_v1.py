@@ -208,6 +208,110 @@ def test_invalid_json_string_in_findings_remains_plain_finding(tmp_path, monkeyp
     assert artifact["risks"] == ["Provider output may omit governance constraints."]
 
 
+def test_multiline_section_labeled_cognition_text_populates_canonical_fields(tmp_path, monkeypatch):
+    provider_text = "\n".join(
+        [
+            "Findings:",
+            "- Section finding is recovered.",
+            "Assumptions:",
+            "- Section assumption is recovered.",
+            "Risks:",
+            "- Section risk is recovered.",
+            "Uncertainties:",
+            "- Section uncertainty is recovered.",
+            "Clarification Questions:",
+            "- Which buyer should be prioritized?",
+            "Recommended Next Milestone:",
+            "- Human review of section-labeled cognition.",
+        ]
+    )
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Section finding is recovered."]
+    assert artifact["assumptions"] == ["Section assumption is recovered."]
+    assert artifact["risks"] == ["Section risk is recovered."]
+    assert artifact["uncertainties"] == ["Section uncertainty is recovered."]
+    assert artifact["clarification_questions"] == ["Which buyer should be prioritized?"]
+    assert artifact["recommended_next_milestone"] == "Human review of section-labeled cognition."
+    assert artifact["normalization"]["source_format"] == "plain_text"
+
+
+def test_flattened_section_labeled_cognition_text_populates_canonical_fields(tmp_path, monkeypatch):
+    provider_text = (
+        "findings: - Flattened finding is recovered. "
+        "assumptions: - Flattened assumption is recovered. "
+        "risks: - Flattened risk is recovered. "
+        "uncertainties: - Flattened uncertainty is recovered. "
+        "clarification questions: 1. What evidence should be attached next? "
+        "recommended next milestone: - Review recovered flattened cognition."
+    )
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Flattened finding is recovered."]
+    assert artifact["assumptions"] == ["Flattened assumption is recovered."]
+    assert artifact["risks"] == ["Flattened risk is recovered."]
+    assert artifact["uncertainties"] == ["Flattened uncertainty is recovered."]
+    assert artifact["clarification_questions"] == ["What evidence should be attached next?"]
+    assert artifact["recommended_next_milestone"] == "Review recovered flattened cognition."
+
+
+def test_dash_labeled_cognition_text_populates_canonical_fields(tmp_path, monkeypatch):
+    provider_text = (
+        "Findings - Dash finding is recovered. "
+        "Assumptions - Dash assumption is recovered. "
+        "Risks - Dash risk is recovered. "
+        "Uncertainties - Dash uncertainty is recovered. "
+        "Clarification Questions - What dash-labeled evidence should be reviewed? "
+        "Recommended Next Milestone - Review recovered dash-labeled cognition."
+    )
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Dash finding is recovered."]
+    assert artifact["assumptions"] == ["Dash assumption is recovered."]
+    assert artifact["risks"] == ["Dash risk is recovered."]
+    assert artifact["uncertainties"] == ["Dash uncertainty is recovered."]
+    assert artifact["clarification_questions"] == ["What dash-labeled evidence should be reviewed?"]
+    assert artifact["recommended_next_milestone"] == "Review recovered dash-labeled cognition."
+
+
+def test_mixed_findings_merges_section_labeled_text_and_preserves_plain_findings(tmp_path, monkeypatch):
+    provider_text = _provider_text(
+        findings=[
+            "Plain finding remains.",
+            (
+                "Findings: - Section mixed finding is recovered. "
+                "Assumptions: - Section mixed assumption is recovered. "
+                "Risks: - Section mixed risk is recovered. "
+                "Uncertainties: - Section mixed uncertainty is recovered."
+            ),
+        ],
+        assumptions=[],
+        risks=[],
+        uncertainties=[],
+    )
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == ["Plain finding remains.", "Section mixed finding is recovered."]
+    assert artifact["assumptions"] == ["Section mixed assumption is recovered."]
+    assert artifact["risks"] == ["Section mixed risk is recovered."]
+    assert artifact["uncertainties"] == ["Section mixed uncertainty is recovered."]
+    assert artifact["normalization"]["source_format"] == "json"
+
+
+def test_single_section_label_without_cognition_document_remains_plain_finding(tmp_path, monkeypatch):
+    provider_text = "Finding: OCS context is adequate, but provider output remains advisory."
+    result = _run_artifact(tmp_path, monkeypatch, provider_text=provider_text)
+    artifact = result["llm_cognition_artifact"]
+
+    assert artifact["findings"] == [provider_text]
+    assert artifact["assumptions"] == []
+    assert artifact["risks"] == []
+
+
 def test_plain_text_provider_response_becomes_bounded_finding_with_unknown_confidence(tmp_path, monkeypatch):
     result = _run_artifact(
         tmp_path,
