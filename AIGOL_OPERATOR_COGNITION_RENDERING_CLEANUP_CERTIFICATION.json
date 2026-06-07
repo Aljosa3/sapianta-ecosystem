@@ -1,0 +1,55 @@
+{
+  "certification_id": "AIGOL_OPERATOR_COGNITION_RENDERING_CLEANUP_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_OPERATOR_COGNITION_RENDERING_CLEANUP",
+  "status": "CERTIFIED",
+  "runtime_artifact": "AIGOL_OPERATOR_COGNITION_RENDERING_CLEANUP_V1.md",
+  "acceptance_evidence": "AIGOL_OPERATOR_COGNITION_RENDERING_CLEANUP_ACCEPTANCE_EVIDENCE.json",
+  "certified_scope": [
+    "Render operator-facing OCS cognition sections from normalized cognition artifacts",
+    "Suppress raw provider payloads, JSON-looking structures, internal metadata, artifact schemas, provider implementation details, and replay implementation details from the operator cognition section",
+    "Preserve technical summary and replay references outside the operator cognition section"
+  ],
+  "certified_non_goals": [
+    "No provider invocation change",
+    "No cognition artifact schema removal",
+    "No replay mutation semantics change",
+    "No routing or dispatch change",
+    "No provider authority promotion",
+    "No approval, execution, worker, or governance mutation creation"
+  ],
+  "certification_findings": {
+    "canonical_cognition_source_used": true,
+    "raw_provider_payload_suppressed": true,
+    "json_structures_suppressed": true,
+    "technical_metadata_suppressed_from_operator_section": true,
+    "findings_rendered": true,
+    "assumptions_rendered": true,
+    "risks_rendered": true,
+    "uncertainties_rendered": true,
+    "clarification_questions_rendered": true,
+    "next_milestone_rendered": true,
+    "technical_summary_preserved": true,
+    "replay_compatible": true,
+    "governance_compatible": true
+  },
+  "validation_summary": {
+    "focused_tests_passed": true,
+    "focused_test_count": 47,
+    "diff_check_passed": true
+  },
+  "final_outputs": {
+    "RAW_PROVIDER_PAYLOAD_VISIBLE": false,
+    "JSON_VISIBLE_TO_OPERATOR": false,
+    "TECHNICAL_METADATA_VISIBLE": false,
+    "FINDINGS_RENDERED": true,
+    "ASSUMPTIONS_RENDERED": true,
+    "RISKS_RENDERED": true,
+    "UNCERTAINTIES_RENDERED": true,
+    "CLARIFICATION_QUESTIONS_RENDERED": true,
+    "NEXT_MILESTONE_RENDERED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "OPERATOR_OUTPUT_STATUS": "CLEAN"
+  }
+}

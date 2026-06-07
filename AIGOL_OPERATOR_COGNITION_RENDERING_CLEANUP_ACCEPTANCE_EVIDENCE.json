@@ -1,0 +1,77 @@
+{
+  "artifact_id": "AIGOL_OPERATOR_COGNITION_RENDERING_CLEANUP_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "operator_cognition_rendering_cleanup",
+  "implemented_files": [
+    "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py"
+  ],
+  "rendering_trace": {
+    "provider_response": "captured and normalized before rendering",
+    "cognition_artifact": "LLM_COGNITION_ARTIFACT_V1",
+    "human_facing_result": "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1.human_facing_cognition_result",
+    "operator_renderer": "render_operator_visible_ocs_llm_cognition",
+    "cli_output": "operator cognition section before technical summary"
+  },
+  "leak_points_identified": {
+    "embedded_json_entry": "normalized cognition findings could contain JSON-looking strings",
+    "technical_metadata_entry": "single-provider comparison findings contained runtime status statements",
+    "artifact_structure_entry": "generic dict/string rendering could expose internal fields if passed through"
+  },
+  "canonical_operator_sources": {
+    "findings": "llm_cognition_artifact.findings",
+    "assumptions": "llm_cognition_artifact.assumptions",
+    "risks": "llm_cognition_artifact.risks",
+    "uncertainties": "llm_cognition_artifact.uncertainties",
+    "clarification_questions": "cognition_clarification_artifact.clarification_candidates[].question",
+    "recommended_next_milestone": "deterministic human-review milestone"
+  },
+  "suppressed_from_operator_section": {
+    "raw_provider_payloads": true,
+    "json_structures": true,
+    "artifact_schemas": true,
+    "internal_runtime_fields": true,
+    "provider_implementation_details": true,
+    "replay_implementation_details": true,
+    "authority_flags": true
+  },
+  "preserved": {
+    "replay_integrity": true,
+    "governance_boundaries": true,
+    "provider_non_authority": true,
+    "existing_cognition_artifacts": true,
+    "existing_technical_summary": true,
+    "deterministic_replay_reconstruction": true
+  },
+  "regression_cases": {
+    "CASE_A_STRUCTURED_COGNITION_PAYLOAD": "clean human-readable output",
+    "CASE_B_PARTIAL_COGNITION_PAYLOAD": "clean human-readable output with empty optional sections",
+    "CASE_C_MISSING_OPTIONAL_FIELDS": "clean human-readable output with empty optional sections",
+    "CASE_D_LARGE_COGNITION_PAYLOAD": "clean human-readable output"
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_dispatch_authority_unification_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py",
+      "result": "47 passed"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  },
+  "final_outputs": {
+    "RAW_PROVIDER_PAYLOAD_VISIBLE": false,
+    "JSON_VISIBLE_TO_OPERATOR": false,
+    "TECHNICAL_METADATA_VISIBLE": false,
+    "FINDINGS_RENDERED": true,
+    "ASSUMPTIONS_RENDERED": true,
+    "RISKS_RENDERED": true,
+    "UNCERTAINTIES_RENDERED": true,
+    "CLARIFICATION_QUESTIONS_RENDERED": true,
+    "NEXT_MILESTONE_RENDERED": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "OPERATOR_OUTPUT_STATUS": "CLEAN"
+  }
+}
