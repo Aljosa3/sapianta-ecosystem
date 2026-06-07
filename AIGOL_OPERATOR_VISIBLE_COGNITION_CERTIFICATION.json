@@ -1,0 +1,40 @@
+{
+  "certification_id": "AIGOL_OPERATOR_VISIBLE_COGNITION_CERTIFICATION",
+  "version": "V1",
+  "classification": "CERTIFIED_OPERATOR_VISIBLE_COGNITION_RUNTIME",
+  "status": "CERTIFIED",
+  "certified_scope": [
+    "Render normalized OCS cognition content to the human operator",
+    "Preserve existing technical OCS end-to-end summary",
+    "Preserve replay references and governance non-authority boundaries"
+  ],
+  "certified_non_goals": [
+    "No raw provider payload rendering",
+    "No provider authority promotion",
+    "No workflow dispatch change",
+    "No routing authority change",
+    "No approval, execution, worker, or governance mutation creation"
+  ],
+  "runtime_artifact": "AIGOL_OPERATOR_VISIBLE_COGNITION_RUNTIME_V1.md",
+  "acceptance_evidence": "AIGOL_OPERATOR_VISIBLE_COGNITION_ACCEPTANCE_EVIDENCE.json",
+  "certification_findings": {
+    "operator_visible_cognition_section_added": true,
+    "normalized_cognition_only": true,
+    "technical_summary_preserved": true,
+    "replay_reference_preserved": true,
+    "provider_non_authority_preserved": true,
+    "governance_boundaries_preserved": true
+  },
+  "validation_summary": {
+    "focused_tests_passed": true,
+    "focused_test_count": 15,
+    "diff_check_passed": true,
+    "known_caveat": "A broader output-budget regression command exposed an absent openai-comparison budget artifact in single-provider conversational OCS mode; this is not introduced by operator-visible cognition rendering and remains outside this certified scope."
+  },
+  "final_outputs": {
+    "COGNITION_VISIBLE_TO_OPERATOR": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "TECHNICAL_SUMMARY_PRESERVED": true
+  }
+}

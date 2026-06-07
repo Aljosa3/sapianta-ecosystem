@@ -1,0 +1,56 @@
+{
+  "artifact_id": "AIGOL_OPERATOR_VISIBLE_COGNITION_ACCEPTANCE_EVIDENCE",
+  "version": "V1",
+  "status": "ACCEPTED",
+  "change_type": "operator_visible_runtime_rendering",
+  "implemented_files": [
+    "aigol/runtime/ocs_llm_cognition_end_to_end_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py",
+    "tests/test_conversational_ocs_cognition_binding_v1.py"
+  ],
+  "operator_visible_sections": [
+    "Findings",
+    "Assumptions",
+    "Risks",
+    "Uncertainties",
+    "Clarification Questions",
+    "Recommended Next Milestone"
+  ],
+  "normalized_source": {
+    "source_artifact": "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1",
+    "source_field": "human_facing_cognition_result",
+    "raw_provider_payload_rendered": false,
+    "provider_authority_granted": false
+  },
+  "preserved_behavior": {
+    "technical_summary_preserved": true,
+    "replay_references_preserved": true,
+    "provider_non_authority_preserved": true,
+    "approval_created": false,
+    "execution_requested": false,
+    "worker_invoked": false,
+    "routing_behavior_changed": false,
+    "provider_behavior_changed": false
+  },
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_dispatch_authority_unification_v1.py",
+      "result": "15 passed"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    "broader_observation": {
+      "command": "python -m pytest tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_conversational_openai_output_budget_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py tests/test_conversational_dispatch_authority_unification_v1.py",
+      "result": "1 unrelated existing-style expectation failed before renderer assertions: expected openai-comparison output budget artifact was absent in single-provider conversational OCS mode"
+    }
+  },
+  "acceptance_results": {
+    "COGNITION_VISIBLE_TO_OPERATOR": true,
+    "REPLAY_COMPATIBLE": true,
+    "GOVERNANCE_COMPATIBLE": true,
+    "TECHNICAL_SUMMARY_PRESERVED": true
+  }
+}
