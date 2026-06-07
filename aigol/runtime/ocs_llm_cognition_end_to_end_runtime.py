@@ -296,6 +296,60 @@ def render_ocs_llm_cognition_end_to_end_summary(result: dict[str, Any]) -> str:
     )
 
 
+def render_operator_visible_ocs_llm_cognition(result: dict[str, Any]) -> str:
+    artifact = result.get("ocs_llm_cognition_end_to_end_artifact") or {}
+    human_result = artifact.get("human_facing_cognition_result")
+    if not isinstance(human_result, dict):
+        human_result = {}
+    return "\n".join(
+        [
+            "AIGOL OCS COGNITION",
+            "Findings:",
+            *_render_bullets(human_result.get("findings")),
+            "Assumptions:",
+            *_render_bullets(human_result.get("assumptions")),
+            "Risks:",
+            *_render_bullets(human_result.get("risks")),
+            "Uncertainties:",
+            *_render_bullets(human_result.get("uncertainties")),
+            "Clarification Questions:",
+            *_render_bullets(human_result.get("clarification_questions")),
+            "Recommended Next Milestone:",
+            *_render_bullets([human_result.get("recommended_next_milestone")]),
+            f"non_authoritative: {human_result.get('non_authoritative') is True}",
+            f"allowed_next_step: {human_result.get('allowed_next_step')}",
+        ]
+    )
+
+
+def _render_bullets(items: Any) -> list[str]:
+    if not isinstance(items, list):
+        items = []
+    rendered = [_render_item(item) for item in items]
+    rendered = [item for item in rendered if item]
+    if not rendered:
+        return ["- (none recorded)"]
+    return [f"- {item}" for item in rendered]
+
+
+def _render_item(item: Any) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    if not isinstance(item, dict):
+        return ""
+    if isinstance(item.get("question"), str):
+        return item["question"].strip()
+    if isinstance(item.get("text"), str):
+        return item["text"].strip()
+    if isinstance(item.get("summary"), str):
+        return item["summary"].strip()
+    if isinstance(item.get("reason"), str):
+        return item["reason"].strip()
+    if isinstance(item.get("missing"), str):
+        return f"Missing {item['missing']}"
+    return ""
+
+
 def _end_to_end_artifact(
     *,
     end_to_end_id: str,
@@ -390,23 +444,45 @@ def _end_to_end_artifact(
 
 
 def _human_facing_result(comparison_artifact: dict[str, Any], clarification_artifact: dict[str, Any]) -> dict[str, Any]:
+    clarification_candidates = deepcopy(clarification_artifact.get("clarification_candidates", []))
     return {
         "result_type": "HUMAN_FACING_COGNITION_RESULT",
         "summary": "Provider-assisted cognition completed. Human review remains required before any downstream action.",
         "comparison_confidence": comparison_artifact.get("comparison_confidence"),
         "comparison_findings": deepcopy(comparison_artifact.get("comparison_findings", [])),
+        "findings": _operator_findings(comparison_artifact),
+        "assumptions": deepcopy(comparison_artifact.get("conflicting_assumptions", [])),
+        "risks": deepcopy(comparison_artifact.get("conflicting_risks", [])),
+        "uncertainties": _operator_uncertainties(comparison_artifact),
         "comparison_performed": comparison_artifact.get("single_provider_primary_mode") is not True,
         "single_provider_primary_mode": comparison_artifact.get("single_provider_primary_mode") is True,
         "clarification_required": clarification_artifact.get("clarification_required") is True,
         "clarification_status": clarification_artifact.get("clarification_status"),
-        "clarification_candidate_count": len(clarification_artifact.get("clarification_candidates", [])),
-        "clarification_candidates": deepcopy(clarification_artifact.get("clarification_candidates", [])),
+        "clarification_candidate_count": len(clarification_candidates),
+        "clarification_candidates": clarification_candidates,
+        "clarification_questions": [
+            item["question"] for item in clarification_candidates if isinstance(item, dict) and item.get("question")
+        ],
+        "recommended_next_milestone": "Human review of normalized cognition output.",
         "allowed_next_step": "HUMAN_REVIEW",
         "approval_created": False,
         "execution_requested": False,
         "worker_invoked": False,
         "non_authoritative": True,
     }
+
+
+def _operator_findings(comparison_artifact: dict[str, Any]) -> list[Any]:
+    findings = list(deepcopy(comparison_artifact.get("comparison_findings", [])))
+    findings.extend(deepcopy(comparison_artifact.get("agreement", [])))
+    findings.extend(deepcopy(comparison_artifact.get("disagreement", [])))
+    return findings
+
+
+def _operator_uncertainties(comparison_artifact: dict[str, Any]) -> list[Any]:
+    uncertainties = list(deepcopy(comparison_artifact.get("uncertainty", [])))
+    uncertainties.extend(deepcopy(comparison_artifact.get("missing_information", [])))
+    return uncertainties
 
 
 def _failed_end_to_end_artifact(

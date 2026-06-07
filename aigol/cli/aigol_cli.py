@@ -336,6 +336,7 @@ from aigol.provider.providers.openai_provider import (
 from aigol.runtime.llm_cognition_provider_runtime import create_default_openai_cognition_provider_contract
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     STATUS_COMPLETED as OCS_LLM_COGNITION_COMPLETED,
+    render_operator_visible_ocs_llm_cognition,
     render_ocs_llm_cognition_end_to_end_summary,
     run_ocs_llm_cognition_end_to_end,
 )
@@ -2794,6 +2795,7 @@ def run_interactive_conversation(
                     output_writer(
                         "\n".join(
                             [
+                                render_operator_visible_ocs_llm_cognition(ocs_cognition_capture),
                                 render_ocs_llm_cognition_end_to_end_summary(ocs_cognition_capture),
                                 "REAL_LLM_PROVIDER_USED_BY_OCS = "
                                 f"{str(_real_llm_provider_used_by_ocs(ocs_cognition_capture)).lower()}",
