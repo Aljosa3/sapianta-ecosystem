@@ -1,0 +1,83 @@
+{
+  "artifact_id": "AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_EVIDENCE_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "PASSED",
+  "validation_mode": "real_conversational_runtime_with_deterministic_openai_adapter",
+  "external_network_required": false,
+  "prompt": "I want to create the first real commercial Sapianta product.",
+  "runtime_root": "/tmp/aigol_single_provider_ocs_e2e_validation",
+  "session_id": "SESSION-SINGLE-PROVIDER-OCS-E2E-VALIDATION-000001",
+  "turn_id": "TURN-000001",
+  "flow": {
+    "human_prompt": true,
+    "routing": true,
+    "ocs_cognition": true,
+    "openai_provider": true,
+    "cognition_artifact": true,
+    "continuity": true,
+    "clarification": true,
+    "replay": true,
+    "turn_completed": true
+  },
+  "routing": {
+    "routing_workflow": "OCS_LLM_COGNITION",
+    "visibility_workflow": "OCS_LLM_COGNITION",
+    "dispatch_workflow": "OCS_LLM_COGNITION",
+    "alignment": true
+  },
+  "provider": {
+    "default_provider": "OPENAI",
+    "provider_ids": [
+      "openai"
+    ],
+    "successful_provider_count": 1,
+    "real_llm_provider_used_by_ocs": true,
+    "output_contains_real_provider_line": true
+  },
+  "cognition": {
+    "response_source": "OCS_LLM_COGNITION_END_TO_END",
+    "response_status": "COMPLETED",
+    "cognition_artifact_created": true,
+    "cognition_artifact_count": 1,
+    "replay_cognition_artifact_count": 1
+  },
+  "single_provider_primary_mode": {
+    "single_provider_primary_mode": true,
+    "comparison_required": false,
+    "comparison_performed": false,
+    "multi_provider_comparison_required_for_success": false
+  },
+  "replay": {
+    "replay_created": true,
+    "replay_provider_count": 1,
+    "stage_statuses": {
+      "multi_provider_cognition": "COMPLETED",
+      "cognition_comparison": "COMPLETED",
+      "context": "OCS_CONTEXT_ASSEMBLED",
+      "continuity_and_clarification": "COMPLETED"
+    },
+    "turn_root": "/tmp/aigol_single_provider_ocs_e2e_validation/interactive_runtime/SESSION-SINGLE-PROVIDER-OCS-E2E-VALIDATION-000001/TURN-000001"
+  },
+  "turn": {
+    "turn_completed": true,
+    "result_delivered": true,
+    "fail_closed": false,
+    "failed_turns": 0,
+    "output_contains_turn_completed": true
+  },
+  "validation_commands": [
+    "python direct harness invoking run_interactive_conversation and replay reconstructors",
+    "python -m json.tool AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_EVIDENCE.json",
+    "python -m json.tool AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_CERTIFICATION.json",
+    "git diff --check"
+  ],
+  "final_outputs": {
+    "WORKFLOW": "OCS_LLM_COGNITION",
+    "PROVIDER": "OPENAI",
+    "COGNITION_ARTIFACT_CREATED": true,
+    "REPLAY_CREATED": true,
+    "TURN_COMPLETED": true,
+    "FAIL_CLOSED": false,
+    "E2E_STATUS": "PASSED"
+  }
+}

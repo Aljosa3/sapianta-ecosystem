@@ -1,0 +1,43 @@
+{
+  "certification_id": "AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_CERTIFICATION_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "PASSED",
+  "scope": "End-to-end conversational OCS validation after Single Provider Primary Mode and OCS Routing Consistency Fix.",
+  "validation_mode": "real_conversational_runtime_with_deterministic_openai_adapter",
+  "external_network_required": false,
+  "default_provider": "OPENAI",
+  "workflow": "OCS_LLM_COGNITION",
+  "provider": "OPENAI",
+  "single_provider_primary_mode_active": true,
+  "comparison_required": false,
+  "comparison_performed": false,
+  "multi_provider_comparison_required_for_success": false,
+  "real_llm_provider_used_by_ocs": true,
+  "successful_provider_count": 1,
+  "cognition_artifact_created": true,
+  "replay_created": true,
+  "turn_completed": true,
+  "fail_closed": false,
+  "governance_preserved": true,
+  "replay_compatibility_preserved": true,
+  "fail_closed_behavior_preserved": true,
+  "provider_non_authority_preserved": true,
+  "evidence_artifacts": [
+    "AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_V1.md",
+    "AIGOL_SINGLE_PROVIDER_OCS_E2E_VALIDATION_EVIDENCE.json"
+  ],
+  "validation": {
+    "runtime_harness": "PASSED",
+    "json_parse": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "WORKFLOW": "OCS_LLM_COGNITION",
+    "PROVIDER": "OPENAI",
+    "COGNITION_ARTIFACT_CREATED": true,
+    "REPLAY_CREATED": true,
+    "TURN_COMPLETED": true,
+    "FAIL_CLOSED": false,
+    "E2E_STATUS": "PASSED"
+  }
+}
