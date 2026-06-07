@@ -1,0 +1,69 @@
+{
+  "artifact_id": "AIGOL_OCS_ROUTING_CONSISTENCY_FIX_ACCEPTANCE_EVIDENCE_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "ACCEPTED",
+  "runtime_code_changed": true,
+  "provider_behavior_changed": false,
+  "workflow_behavior_changed": false,
+  "goal": "Repair conversational OCS workflow selection so cognition-intended human prompts route consistently to OCS_LLM_COGNITION.",
+  "root_cause": {
+    "file": "aigol/runtime/conversational_cli_runtime.py",
+    "function": "_is_ocs_llm_cognition_prompt",
+    "reason": "The predicate recognized first real AiGOL product but did not recognize the equivalent first real commercial Sapianta product cognition prompt. The question-start path also checked for '?' after punctuation had already been stripped."
+  },
+  "implementation": {
+    "classification_entry": {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "line_start": 211,
+      "line_end": 246,
+      "summary": "Preserves original question punctuation state and passes ends_with_question into OCS classification before falling through to unrelated workflow predicates."
+    },
+    "ocs_predicate": {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "line_start": 292,
+      "line_end": 348,
+      "summary": "Adds narrow Sapianta/AiGOL governed-cognition markers and restores question-start cognition routing without changing the normalized text used by other workflow checks."
+    },
+    "preserved_exclusion": {
+      "file": "aigol/runtime/conversational_cli_runtime.py",
+      "line_start": 307,
+      "line_end": 310,
+      "summary": "Domain creation prompts containing domain plus create/new/add remain excluded from OCS routing."
+    }
+  },
+  "regression_tests": {
+    "workflow_selection": {
+      "file": "tests/test_conversational_cli_runtime_v1.py",
+      "line_start": 88,
+      "line_end": 118,
+      "assertion": "The exact prompt 'I want to create the first real commercial Sapianta product.' routes to OCS_LLM_COGNITION and reconstructs workflow selection replay with the same workflow."
+    },
+    "routing_visibility": {
+      "file": "tests/test_conversational_routing_visibility_runtime_v1.py",
+      "line_start": 91,
+      "line_end": 115,
+      "assertion": "Interactive routing visibility displays and replays OCS_LLM_COGNITION for the exact prompt."
+    },
+    "dispatch": {
+      "file": "tests/test_conversational_ocs_cognition_binding_v1.py",
+      "line_start": 19,
+      "line_end": 160,
+      "assertion": "The exact prompt dispatches to OCS_LLM_COGNITION_END_TO_END and records conversational_workflow_id OCS_LLM_COGNITION."
+    }
+  },
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py",
+      "result": "25 passed"
+    },
+    "json_parse": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "EXPECTED_WORKFLOW": "OCS_LLM_COGNITION",
+    "ACTUAL_WORKFLOW": "OCS_LLM_COGNITION",
+    "ROUTING_ALIGNMENT": true,
+    "DISPATCH_ALIGNMENT": true,
+    "REGRESSION_TEST_STATUS": "PASSED"
+  }
+}

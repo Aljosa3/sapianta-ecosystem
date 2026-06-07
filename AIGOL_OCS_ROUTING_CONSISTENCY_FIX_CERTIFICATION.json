@@ -1,0 +1,42 @@
+{
+  "certification_id": "AIGOL_OCS_ROUTING_CONSISTENCY_FIX_CERTIFICATION_V1",
+  "created_at": "2026-06-07T00:00:00Z",
+  "status": "PASSED",
+  "scope": "Conversational OCS routing consistency fix for Sapianta/AiGOL cognition-intended prompts.",
+  "runtime_code_changed": true,
+  "provider_behavior_changed": false,
+  "ocs_execution_behavior_changed": false,
+  "default_provider_fallback_preserved": true,
+  "unrelated_workflow_priority_preserved": true,
+  "governance_preserved": true,
+  "replay_compatibility_preserved": true,
+  "fail_closed_behavior_preserved": true,
+  "provider_non_authority_preserved": true,
+  "certified_findings": {
+    "expected_workflow": "OCS_LLM_COGNITION",
+    "actual_workflow": "OCS_LLM_COGNITION",
+    "routing_alignment": true,
+    "dispatch_alignment": true,
+    "regression_test_status": "PASSED",
+    "minimal_safe_fix": "Repair OCS predicate punctuation handling and add narrow Sapianta/AiGOL governed-cognition markers without changing unrelated workflow dispatch."
+  },
+  "evidence_artifacts": [
+    "AIGOL_OCS_ROUTING_CONSISTENCY_FIX_V1.md",
+    "AIGOL_OCS_ROUTING_CONSISTENCY_FIX_ACCEPTANCE_EVIDENCE.json"
+  ],
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_conversational_routing_visibility_runtime_v1.py tests/test_conversational_ocs_cognition_binding_v1.py",
+      "result": "25 passed"
+    },
+    "json_parse": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "EXPECTED_WORKFLOW": "OCS_LLM_COGNITION",
+    "ACTUAL_WORKFLOW": "OCS_LLM_COGNITION",
+    "ROUTING_ALIGNMENT": true,
+    "DISPATCH_ALIGNMENT": true,
+    "REGRESSION_TEST_STATUS": "PASSED"
+  }
+}
