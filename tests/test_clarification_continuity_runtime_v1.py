@@ -130,6 +130,71 @@ def test_interactive_clarification_reply_resumes_without_provider_fallback(tmp_p
     assert "Clarification Resolved" in output[1]
 
 
+def test_new_domain_request_does_not_attach_to_unrelated_active_clarification(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "Create a compliance domain.",
+                "Create a new governed domain called FreshDomain.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    first, second = result["turns"]
+    lifecycle = resolve_clarification_lifecycle(session_root=tmp_path / "interactive_runtime" / SESSION_ID)
+
+    assert result["turn_count"] == 2
+    assert result["failed_turns"] == 0
+    assert first["response_source"] == "UNKNOWN_DOMAIN_CLARIFICATION_WORKFLOW"
+    assert first["proposed_domain"] == "COMPLIANCE"
+    assert second["response_source"] == "UNKNOWN_DOMAIN_CLARIFICATION_WORKFLOW"
+    assert second["proposed_domain"] == "FreshDomain"
+    assert second["clarification_required"] is True
+    assert "Clarification Resolved" not in output[1]
+    assert "Proposed Domain: FreshDomain" in output[1]
+    assert [state["lifecycle_status"] for state in lifecycle["lifecycle_summary"]] == [
+        CLARIFICATION_SUPERSEDED,
+        CLARIFICATION_ACTIVE,
+    ]
+    assert lifecycle["active_clarification"]["clarification_request_artifact"]["proposed_domain"] == "FreshDomain"
+
+
+def test_later_reply_binds_to_fresh_domain_not_prior_compliance(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "Create a compliance domain.",
+                "Create a new governed domain called FreshDomain.",
+                REPLY,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    first, second, third = result["turns"]
+    lifecycle = resolve_clarification_lifecycle(session_root=tmp_path / "interactive_runtime" / SESSION_ID)
+
+    assert result["turn_count"] == 3
+    assert result["failed_turns"] == 0
+    assert first["proposed_domain"] == "COMPLIANCE"
+    assert second["proposed_domain"] == "FreshDomain"
+    assert third["response_source"] == "CLARIFICATION_CONTINUITY_RUNTIME"
+    assert third["proposed_domain"] == "FreshDomain"
+    assert third["clarification_resolved"] is True
+    assert third["workflow_resumed"] is True
+    assert third["provider_invoked"] is False
+    assert third["worker_invoked"] is False
+    assert third["domain_created"] is False
+    assert "Proposed Domain: FreshDomain" in output[2]
+    assert "Proposed Domain: COMPLIANCE" not in output[2]
+    assert lifecycle["active_clarification_count"] == 0
+
+
 def test_clarification_continuity_fails_closed_without_state(tmp_path) -> None:
     capture = _run_continuity(tmp_path, tmp_path / "missing_session")
 
