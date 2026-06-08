@@ -1,0 +1,127 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_V1",
+  "status": "IMPLEMENTED",
+  "runtime_changes_made": true,
+  "execution_result_processing_implemented": false,
+  "repair_implemented": false,
+  "retry_implemented": false,
+  "replay_review_implemented": false,
+  "termination_implemented": false,
+  "changed_files": [
+    {
+      "path": "aigol/runtime/execution_runtime.py",
+      "line_regions": [
+        "12-15",
+        "302-451",
+        "454-516"
+      ],
+      "changes": [
+        "Imported current worker dispatch artifact constants.",
+        "Normalized current worker invocation fields to execution runtime internal canonical fields.",
+        "Normalized current worker invocation result replay artifact to invocation returned event semantics.",
+        "Normalized current worker dispatch artifact to execution runtime dispatch intake semantics.",
+        "Normalized current worker assignment status and request lineage to execution runtime assignment intake semantics.",
+        "Preserved original hash verification before normalization.",
+        "Rejected authority-bearing fields even when absent fields are tolerated for current-chain compatibility."
+      ]
+    },
+    {
+      "path": "tests/test_execution_runtime_v1.py",
+      "line_regions": [
+        "22-26",
+        "223-391",
+        "429-517"
+      ],
+      "changes": [
+        "Added deterministic current-chain worker assignment, dispatch, invocation, and invocation replay fixtures.",
+        "Added regression proving current WORKER_INVOCATION_ARTIFACT_V1 enters execution runtime.",
+        "Added fail-closed regression for current invocation replay lineage mismatch.",
+        "Added fail-closed regression for current invocation provider authority violation."
+      ]
+    }
+  ],
+  "compatibility_gap": {
+    "identified": true,
+    "classification": "FIELD_AND_REPLAY_SHAPE_MISMATCH",
+    "blocked_before_fix": true,
+    "architectural_change_required": false,
+    "mappings": [
+      {
+        "current_field": "chain_id",
+        "execution_runtime_field": "canonical_chain_id"
+      },
+      {
+        "current_field": "worker_dispatch_reference",
+        "execution_runtime_field": "dispatch_reference"
+      },
+      {
+        "current_field": "worker_dispatch_hash",
+        "execution_runtime_field": "dispatch_hash"
+      },
+      {
+        "current_field": "worker_id",
+        "execution_runtime_field": "worker_reference"
+      },
+      {
+        "current_field": "worker_invocation_request_reference",
+        "execution_runtime_field": "execution_request_reference"
+      },
+      {
+        "current_field": "execution_packet_reference",
+        "execution_runtime_field": "readiness_reference"
+      },
+      {
+        "current_field": "worker_role",
+        "execution_runtime_field": "capability_id"
+      },
+      {
+        "current_field": "WORKER_DISPATCH_ARTIFACT_V1.worker_dispatch_id",
+        "execution_runtime_field": "dispatch_id"
+      },
+      {
+        "current_field": "WORKER_INVOCATION_RESULT_ARTIFACT_V1",
+        "execution_runtime_field": "WORKER_INVOCATION_RETURNED replay semantics"
+      }
+    ]
+  },
+  "preserved_boundaries": {
+    "provider_authority_rejected": true,
+    "worker_self_start_rejected": true,
+    "duplicate_execution_rejected": true,
+    "completion_rejected": true,
+    "result_certification_rejected": true,
+    "governance_mutation_rejected": true,
+    "replay_mutation_rejected": true,
+    "scope_expansion_rejected": true,
+    "execution_result_processing_absent": true,
+    "repair_absent": true,
+    "retry_absent": true,
+    "replay_review_absent": true,
+    "termination_absent": true
+  },
+  "validation": {
+    "execution_runtime_tests": {
+      "command": "python -m pytest tests/test_execution_runtime_v1.py",
+      "result": "19 passed"
+    },
+    "adjacent_worker_invocation_tests": {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_compatibility_wrapper_uses_current_chain tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_dispatch_mismatch tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_runtime_does_not_validate_results_or_terminate",
+      "result": "6 passed"
+    },
+    "diff_check": {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    "json_artifacts_valid": true
+  },
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "EXECUTION_RUNTIME_ACCEPTS_CURRENT_INVOCATION": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_RESULT_CAPTURE_REVIEW": "TRUE"
+  }
+}

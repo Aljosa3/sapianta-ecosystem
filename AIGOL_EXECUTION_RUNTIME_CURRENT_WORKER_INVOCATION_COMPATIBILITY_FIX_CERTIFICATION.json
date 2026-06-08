@@ -1,0 +1,47 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_V1",
+  "certification_status": "CERTIFIED",
+  "scope": {
+    "compatibility_fix_implemented": true,
+    "architectural_redesign_performed": false,
+    "execution_result_processing_implemented": false,
+    "repair_implemented": false,
+    "retry_implemented": false,
+    "replay_review_implemented": false,
+    "termination_implemented": false
+  },
+  "certified_claims": {
+    "compatibility_gap_identified": true,
+    "field_mismatch_fixed": true,
+    "replay_shape_mismatch_fixed": true,
+    "legacy_execution_path_preserved": true,
+    "current_worker_invocation_path_supported": true,
+    "execution_runtime_accepts_current_invocation": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_integrity_preserved": true,
+    "authority_boundaries_preserved": true,
+    "execution_starts_without_result_processing": true
+  },
+  "validation": {
+    "execution_runtime_tests": {
+      "command": "python -m pytest tests/test_execution_runtime_v1.py",
+      "result": "19 passed"
+    },
+    "adjacent_worker_invocation_tests": {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_compatibility_wrapper_uses_current_chain tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_dispatch_mismatch tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_runtime_does_not_validate_results_or_terminate",
+      "result": "6 passed"
+    },
+    "diff_check": "passed",
+    "json_validation": "passed"
+  },
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "EXECUTION_RUNTIME_ACCEPTS_CURRENT_INVOCATION": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_RESULT_CAPTURE_REVIEW": "TRUE"
+  }
+}
