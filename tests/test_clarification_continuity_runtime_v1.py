@@ -1,0 +1,200 @@
+"""Tests for AIGOL_CLARIFICATION_CONTINUITY_RUNTIME_V1."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.runtime.clarification_continuity_runtime import (
+    FAILED_CLOSED,
+    WORKFLOW_RESUME_READY,
+    reconstruct_clarification_continuity_replay,
+    run_clarification_continuity,
+)
+from aigol.runtime.conversational_cli_runtime import route_conversational_cli_intent
+from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
+from aigol.runtime.unknown_domain_clarification_runtime import run_unknown_domain_clarification_workflow
+
+
+CREATED_AT = "2026-06-08T00:00:00Z"
+SESSION_ID = "SESSION-CLARIFICATION-CONTINUITY-000001"
+PROMPT = "Create a new governed domain called PilotDomain."
+REPLY = "\n".join(
+    [
+        "Primary purpose: prove governed pilot domain intake.",
+        "Expected capabilities: domain scaffolding review and bounded execution planning.",
+        "Target users: internal operators.",
+    ]
+)
+
+
+def _input_sequence(values: list[str]):
+    iterator = iter(values)
+
+    def read(_prompt: str) -> str:
+        return next(iterator)
+
+    return read
+
+
+def _conversation_args(tmp_path):
+    parser = build_parser()
+    return parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            SESSION_ID,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+            "--workspace",
+            str(tmp_path),
+        ]
+    )
+
+
+def _seed_open_clarification(session_root: Path, turn_id: str = "TURN-000001") -> str:
+    prompt_id = f"{SESSION_ID}:{turn_id}"
+    turn_root = session_root / turn_id
+    route_conversational_cli_intent(
+        routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
+        prompt_id=prompt_id,
+        human_prompt=PROMPT,
+        canonical_chain_id=prompt_id,
+        created_at=CREATED_AT,
+        replay_dir=turn_root / "conversational_cli_routing",
+    )
+    run_unknown_domain_clarification_workflow(
+        clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
+        prompt_id=prompt_id,
+        human_prompt=PROMPT,
+        canonical_chain_id=prompt_id,
+        created_at=CREATED_AT,
+        replay_dir=turn_root / "unknown_domain_clarification",
+    )
+    return prompt_id
+
+
+def _run_continuity(tmp_path, session_root: Path, *, current_chain_id: str | None = None):
+    return run_clarification_continuity(
+        continuity_id=f"{SESSION_ID}:TURN-000002:CLARIFICATION-CONTINUITY",
+        session_root=session_root,
+        turn_id="TURN-000002",
+        prompt_id=f"{SESSION_ID}:TURN-000002",
+        operator_reply=REPLY,
+        current_chain_id=current_chain_id,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "continuity",
+    )
+
+
+def test_interactive_clarification_reply_resumes_without_provider_fallback(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, "exit"]),
+        output_func=output.append,
+    )
+    first, second = result["turns"]
+    replay = reconstruct_clarification_continuity_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000002"
+        / "clarification_continuity"
+    )
+
+    assert result["turn_count"] == 2
+    assert result["failed_turns"] == 0
+    assert first["clarification_required"] is True
+    assert second["response_status"] == WORKFLOW_RESUME_READY
+    assert second["response_source"] == "CLARIFICATION_CONTINUITY_RUNTIME"
+    assert second["open_clarification_detected"] is True
+    assert second["operator_reply_bound"] is True
+    assert second["clarification_resolved"] is True
+    assert second["workflow_resumed"] is True
+    assert second["proposed_domain"] == "PilotDomain"
+    assert second["provider_invoked"] is False
+    assert second["worker_invoked"] is False
+    assert second["authorization_created"] is False
+    assert second["execution_requested"] is False
+    assert replay["workflow_resumed"] is True
+    assert "Clarification Resolved" in output[1]
+
+
+def test_clarification_continuity_fails_closed_without_state(tmp_path) -> None:
+    capture = _run_continuity(tmp_path, tmp_path / "missing_session")
+
+    assert capture["response_status"] == FAILED_CLOSED
+    assert "missing clarification state" in capture["failure_reason"]
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+
+
+def test_clarification_continuity_fails_closed_with_multiple_active_clarifications(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    _seed_open_clarification(session_root, "TURN-000001")
+    _seed_open_clarification(session_root, "TURN-000002")
+
+    capture = _run_continuity(tmp_path, session_root)
+
+    assert capture["response_status"] == FAILED_CLOSED
+    assert "multiple active clarifications" in capture["failure_reason"]
+    assert capture["execution_requested"] is False
+
+
+def test_clarification_continuity_fails_closed_on_chain_mismatch(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    _seed_open_clarification(session_root)
+
+    capture = _run_continuity(tmp_path, session_root, current_chain_id="OTHER-CHAIN")
+
+    assert capture["response_status"] == FAILED_CLOSED
+    assert "clarification chain mismatch" in capture["failure_reason"]
+
+
+def test_clarification_continuity_fails_closed_on_replay_mismatch(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    _seed_open_clarification(session_root)
+    request_path = (
+        session_root
+        / "TURN-000001"
+        / "unknown_domain_clarification"
+        / "001_clarification_request_recorded.json"
+    )
+    wrapper = json.loads(request_path.read_text(encoding="utf-8"))
+    wrapper["artifact"]["proposed_domain"] = "CORRUPTED"
+    request_path.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    capture = _run_continuity(tmp_path, session_root)
+
+    assert capture["response_status"] == FAILED_CLOSED
+    assert "replay mismatch" in capture["failure_reason"]
+
+
+def test_clarification_continuity_fails_closed_on_workflow_mismatch(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    _seed_open_clarification(session_root)
+    routing_path = (
+        session_root
+        / "TURN-000001"
+        / "conversational_cli_routing"
+        / "001_conversational_workflow_selection_recorded.json"
+    )
+    wrapper = json.loads(routing_path.read_text(encoding="utf-8"))
+    artifact = wrapper["artifact"]
+    artifact["workflow_id"] = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
+    artifact_hash_input = dict(artifact)
+    artifact_hash_input.pop("artifact_hash")
+    artifact["artifact_hash"] = replay_hash(artifact_hash_input)
+    wrapper_hash_input = dict(wrapper)
+    wrapper_hash_input.pop("replay_hash")
+    wrapper["replay_hash"] = replay_hash(wrapper_hash_input)
+    routing_path.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    capture = _run_continuity(tmp_path, session_root)
+
+    assert capture["response_status"] == FAILED_CLOSED
+    assert "workflow mismatch" in capture["failure_reason"]
