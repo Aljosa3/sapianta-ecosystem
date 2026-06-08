@@ -18,7 +18,13 @@ from aigol.runtime.post_execution_replay_review_runtime import (
     review_validated_worker_result,
 )
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
-from test_worker_result_validation_runtime_v1 import CREATED_AT, _args, _input_sequence, _validate
+from test_worker_result_validation_runtime_v1 import (
+    CREATED_AT,
+    _args,
+    _execution_bound_result_capture,
+    _input_sequence,
+    _validate,
+)
 
 
 def _review(tmp_path, *, prompt: str, suffix: str, validation: dict | None = None) -> dict:
@@ -90,6 +96,72 @@ def test_post_execution_replay_review_persists_replay_events(tmp_path) -> None:
     assert (replay_dir / "001_review_classification_recorded.json").exists()
     assert (replay_dir / "002_review_artifact_recorded.json").exists()
     assert (replay_dir / "003_review_result_recorded.json").exists()
+
+
+def test_post_execution_replay_review_accepts_execution_bound_result_validation(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+    )
+    validation = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+        capture=capture,
+    )
+
+    result = _review(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+        validation=validation,
+    )
+    artifact = result["post_execution_replay_review_artifact"]
+    reconstructed = reconstruct_post_execution_replay_review(
+        tmp_path / "post_execution_replay_review_execution-bound"
+    )
+
+    assert result["review_status"] == REVIEW_COMPLETED
+    assert artifact["execution_reference"] == "EXECUTION-execution-bound"
+    assert artifact["execution_hash"] == capture["_execution_capture"]["execution_artifact"]["artifact_hash"]
+    assert artifact["execution_status"] == "EXECUTING"
+    assert artifact["execution_started"] is True
+    assert artifact["post_execution_replay_reviewed"] is True
+    assert artifact["terminated"] is False
+    assert result["review_evidence_artifact"]["lineage_checks"]["execution_binding_lineage"] is True
+    assert reconstructed["execution_reference"] == artifact["execution_reference"]
+    assert reconstructed["execution_started"] is True
+
+
+def test_post_execution_replay_review_fails_closed_on_execution_binding_drift(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+    )
+    validation = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+        capture=capture,
+    )
+    validation["worker_result_validation_artifact"] = _rewrite_validation_artifact(
+        tmp_path,
+        suffix="execution-binding-drift",
+        changes={"execution_hash": "sha256:other-execution"},
+    )
+
+    result = _review(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+        validation=validation,
+    )
+
+    assert result["review_status"] == "FAILED_CLOSED"
+    assert result["post_execution_replay_review_artifact"] is None
+    assert "lineage continuity invalid" in result["failure_reason"]
 
 
 @pytest.mark.parametrize(
