@@ -1,0 +1,81 @@
+{
+  "artifact_type": "AIGOL_WORKER_REQUEST_TO_ASSIGNMENT_INTEGRATION_REVIEW_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_WORKER_REQUEST_TO_ASSIGNMENT_INTEGRATION_REVIEW_V1",
+  "created_at": "2026-06-08T00:00:00Z",
+  "status": "ACCEPTED",
+  "review_scope": {
+    "worker_request_runtime": "aigol/runtime/worker_invocation_request_runtime.py",
+    "worker_assignment_runtime": "aigol/runtime/worker_assignment_runtime.py",
+    "worker_assignment_tests": "tests/test_worker_assignment_runtime_v1.py"
+  },
+  "worker_request_output_fields": [
+    "worker_invocation_request_id",
+    "request_status",
+    "chain_id",
+    "authorization_reference",
+    "authorization_hash",
+    "execution_packet_reference",
+    "execution_packet_hash",
+    "worker_role",
+    "target_worker_family",
+    "allowed_outputs",
+    "forbidden_operations",
+    "validation_requirements",
+    "replay_references",
+    "request_hash"
+  ],
+  "worker_assignment_required_inputs": [
+    "worker_invocation_request_artifact",
+    "worker_invocation_request_replay_reference",
+    "worker_registry_artifacts",
+    "assigned_by",
+    "assigned_at"
+  ],
+  "compatibility_checks": {
+    "request_artifact_hash_verified": true,
+    "request_replay_reconstructed": true,
+    "request_status_required": "WORKER_INVOCATION_REQUEST_CREATED",
+    "request_hash_verified": true,
+    "authorization_lineage_preserved": true,
+    "execution_packet_lineage_preserved": true,
+    "worker_role_required": true,
+    "target_worker_family_required": true,
+    "worker_registry_required": true,
+    "single_compatible_worker_required": true,
+    "pre_assignment_authority_flags_required": true
+  },
+  "missing_bindings": {
+    "runtime_blocking": [],
+    "artifact_field_blocking": [],
+    "non_blocking_future_refinements": [
+      "persistent worker registry sourcing beyond deterministic in-memory registry evidence"
+    ]
+  },
+  "duplicate_logic": {
+    "found": true,
+    "classification": "TRUE_NON_BLOCKING",
+    "locations": [
+      "request hash validation",
+      "replay wrapper hash verification",
+      "authority boundary flag repetition",
+      "local lineage checks"
+    ],
+    "recommendation": "preserve local fail-closed checks"
+  },
+  "required_fixes": {
+    "runtime_boundary_fixes_required": false,
+    "architectural_change_required": false
+  },
+  "validation": {
+    "command": "python -m pytest tests/test_worker_assignment_runtime_v1.py::test_worker_invocation_request_becomes_worker_assigned tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_persists_replay_evidence tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_fails_closed_when_no_worker_exists tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_fails_closed_on_worker_family_mismatch tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_fails_closed_on_worker_role_mismatch tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_fails_closed_on_packet_mismatch tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_fails_closed_on_authority_violation tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_reconstruction_detects_replay_corruption tests/test_worker_assignment_runtime_v1.py::test_worker_assignment_runtime_preserves_authority_boundaries",
+    "result": "11 passed"
+  },
+  "final_outputs": {
+    "WORKER_ASSIGNMENT_COMPATIBLE": true,
+    "ARCHITECTURAL_CHANGE_REQUIRED": false,
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_WORKER_ASSIGNMENT_TO_DISPATCH_INTEGRATION_REVIEW_V1",
+    "READY_FOR_WORKER_ASSIGNMENT": true
+  }
+}
