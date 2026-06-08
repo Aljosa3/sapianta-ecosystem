@@ -125,6 +125,7 @@ def _input_sequence(values: list[str]):
         ("Show latest replay chain.", SHOW_LATEST_REPLAY_CHAIN),
         ("Improve provider layer.", IMPROVE_PROVIDER_LAYER),
         ("Create a compliance domain.", CREATE_DOMAIN_COMPLIANCE_CLARIFICATION),
+        ("Create a new governed domain called PilotDomain.", CREATE_DOMAIN_COMPLIANCE_CLARIFICATION),
         ("Create a healthcare version of the trading domain.", DOMAIN_ADAPTATION_REFERENCE),
         ("I want to create the first real AiGOL product domain.", OPERATOR_DECISION_SUPPORT),
         ("I want to create the first real AiGOL product.", OCS_LLM_COGNITION),
@@ -203,6 +204,44 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
     assert "coverage: 13/13" in rendered
+
+
+def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:
+    capture = _route(tmp_path, "Create a new governed domain called PilotDomain.")
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+    selection = capture["workflow_selection_artifact"]
+    decision = capture["routing_decision_artifact"]
+
+    assert capture["workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
+    assert capture["routing_status"] == CLARIFICATION_REQUIRED
+    assert decision["confidence"] == "HIGH"
+    assert "governed" in decision["matched_terms"]
+    assert "domain" in decision["matched_terms"]
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert replay["workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
+    assert replay["execution_requested"] is False
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "Create a governed artifact called PilotArtifact.",
+        "Trigger a governed execution workflow.",
+    ],
+)
+def test_generic_governed_execution_intent_fails_closed_without_provider_fallback(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] == FAILED_CLOSED
+    assert capture["workflow_id"] is None
+    assert capture["fail_closed"] is True
+    assert "generic governed execution intent requires a certified workflow mapping" in capture["failure_reason"]
+    assert replay["provider_invoked"] is False
+    assert replay["worker_invoked"] is False
+    assert replay["execution_requested"] is False
 
 
 def test_interactive_conversation_routes_readonly_provider_layer_prompt(tmp_path) -> None:

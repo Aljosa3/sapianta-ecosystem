@@ -110,6 +110,32 @@ def test_regulatory_compliance_new_domain_requests_missing_details(tmp_path) -> 
     assert "Operator Response Required" in capture["response_text"]
 
 
+def test_generic_governed_domain_creation_requests_missing_details(tmp_path) -> None:
+    capture = _workflow(tmp_path, "Create a new governed domain called PilotDomain.")
+    reconstructed = reconstruct_unknown_domain_clarification_replay(tmp_path / "unknown_domain")
+    unknown = capture["unknown_domain_artifact"]
+    request = capture["clarification_request_artifact"]
+
+    assert capture["response_status"] == CLARIFICATION_REQUIRED
+    assert capture["fail_closed"] is False
+    assert unknown["unknown_domain_status"] == UNKNOWN_DOMAIN
+    assert unknown["requested_domain"] == "PilotDomain"
+    assert "generic governed domain creation intent" in unknown["detection_reasons"]
+    assert request["originating_intent"] == CREATE_DOMAIN
+    assert request["proposed_domain"] == "PilotDomain"
+    assert request["clarification_mode"] == "DOMAIN_DETAILS"
+    assert request["missing_information"] == ["primary purpose", "expected capabilities", "target users"]
+    assert request["provider_invoked"] is False
+    assert request["worker_invoked"] is False
+    assert request["authorization_created"] is False
+    assert request["execution_requested"] is False
+    assert request["domain_created"] is False
+    assert "Clarification Required" in capture["response_text"]
+    assert "Proposed Domain: PilotDomain" in capture["response_text"]
+    assert reconstructed["proposed_domain"] == "PilotDomain"
+    assert reconstructed["execution_requested"] is False
+
+
 def test_interactive_conversation_uses_unknown_domain_clarification_without_provider(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
@@ -138,6 +164,36 @@ def test_interactive_conversation_uses_unknown_domain_clarification_without_prov
     assert turn["worker_invoked"] is False
     assert turn["domain_created"] is False
     assert "Unknown Domain Detected" in output[0]
+    assert replay_path.exists()
+
+
+def test_interactive_conversation_uses_generic_domain_clarification_without_provider(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(["Create a new governed domain called PilotDomain.", "exit"]),
+        output_func=output.append,
+    )
+    turn = result["turns"][0]
+    replay_path = (
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000001"
+        / "unknown_domain_clarification"
+        / "000_unknown_domain_recorded.json"
+    )
+
+    assert result["turn_count"] == 1
+    assert result["failed_turns"] == 0
+    assert turn["response_status"] == CLARIFICATION_REQUIRED
+    assert turn["response_source"] == "UNKNOWN_DOMAIN_CLARIFICATION_WORKFLOW"
+    assert turn["proposed_domain"] == "PilotDomain"
+    assert turn["provider_invoked"] is False
+    assert turn["worker_invoked"] is False
+    assert turn["domain_created"] is False
+    assert "Clarification Required" in output[0]
+    assert "Proposed Domain: PilotDomain" in output[0]
     assert replay_path.exists()
 
 
