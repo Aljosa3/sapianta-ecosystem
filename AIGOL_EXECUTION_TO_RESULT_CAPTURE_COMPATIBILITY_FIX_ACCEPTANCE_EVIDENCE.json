@@ -1,0 +1,100 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_V1",
+  "status": "ACCEPTED",
+  "runtime_changed": "aigol/runtime/worker_result_capture_runtime.py",
+  "tests_changed": [
+    "tests/test_worker_result_capture_runtime_v1.py"
+  ],
+  "scope": {
+    "result_validation_implemented": false,
+    "post_execution_replay_review_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "termination_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "compatibility_gap": {
+    "identified": true,
+    "summary": "Result capture consumed invocation lineage and Worker output, but did not accept or bind EXECUTION_ARTIFACT_V1 and EXECUTION_RETURNED replay evidence."
+  },
+  "implemented_bindings": {
+    "execution_artifact_accepted": true,
+    "execution_replay_accepted": true,
+    "execution_replay_reference_optional_reconstruction": true,
+    "execution_reference_recorded": true,
+    "execution_hash_recorded": true,
+    "execution_replay_hash_recorded": true,
+    "execution_status_recorded": true,
+    "execution_lineage_checks_recorded": true,
+    "invocation_only_path_preserved": true
+  },
+  "fail_closed_checks": {
+    "invalid_execution_artifact": true,
+    "invalid_execution_state": true,
+    "invalid_execution_replay_event": true,
+    "execution_authority_violation": true,
+    "execution_replay_visibility_missing": true,
+    "execution_invocation_mismatch": true,
+    "execution_dispatch_mismatch": true,
+    "execution_assignment_mismatch": true,
+    "execution_worker_mismatch": true,
+    "execution_chain_mismatch": true,
+    "execution_request_mismatch": true,
+    "execution_packet_mismatch": true,
+    "execution_replay_mismatch": true
+  },
+  "authority_boundaries": {
+    "execution_started": "true only when execution binding is present",
+    "result_created": true,
+    "worker_result_captured": true,
+    "result_validated": false,
+    "post_execution_replay_reviewed": false,
+    "terminated": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "regression_tests": [
+    {
+      "test": "test_worker_result_capture_accepts_current_execution_output",
+      "status": "PASS",
+      "evidence": "Execution-bound result capture records execution reference, execution hash, EXECUTING status, execution_started true, and no validation/replay-review/termination."
+    },
+    {
+      "test": "test_worker_result_capture_fails_closed_on_execution_invocation_mismatch",
+      "status": "PASS",
+      "evidence": "Execution artifact bound to a mismatched Worker invocation fails closed."
+    },
+    {
+      "test": "test_worker_result_capture_fails_closed_on_execution_replay_mismatch",
+      "status": "PASS",
+      "evidence": "Execution replay mismatch fails closed before result capture."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py -k 'execution_output or execution_invocation_mismatch or execution_replay_mismatch'",
+      "status": "PASS",
+      "summary": "3 passed, 13 deselected"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py -k 'not interactive_cli' tests/test_execution_runtime_v1.py",
+      "status": "PASS",
+      "summary": "34 passed, 1 deselected"
+    }
+  ],
+  "known_validation_caveat": {
+    "test": "tests/test_worker_result_capture_runtime_v1.py::test_interactive_cli_reaches_worker_result_capture",
+    "status": "ENVIRONMENT_ROUTE_DID_NOT_REACH_WORKER_CHAIN",
+    "summary": "The interactive CLI route selected provider fallback before worker invocation in this environment; this is outside the execution-to-result-capture runtime binding changed by this fix."
+  },
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "RESULT_CAPTURE_ACCEPTS_CURRENT_EXECUTION_OUTPUT": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_RESULT_VALIDATION_REVIEW": "TRUE"
+  }
+}

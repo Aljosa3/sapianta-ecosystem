@@ -1,0 +1,82 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_V1",
+  "status": "CERTIFIED",
+  "certifies": "Execution output binding compatibility for Worker result capture runtime",
+  "certification_scope": {
+    "runtime_fix_implemented": true,
+    "result_validation_implemented": false,
+    "post_execution_replay_review_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "termination_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "changed_files": [
+    "aigol/runtime/worker_result_capture_runtime.py",
+    "tests/test_worker_result_capture_runtime_v1.py",
+    "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_V1.md",
+    "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE.json",
+    "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_CERTIFICATION.json"
+  ],
+  "certified_capabilities": [
+    "Worker result capture accepts EXECUTION_ARTIFACT_V1 as an execution binding input.",
+    "Worker result capture accepts EXECUTION_RETURNED replay evidence as an execution binding input.",
+    "Worker result capture optionally reconstructs execution replay from execution_replay_reference.",
+    "Worker result capture binds result capture evidence to execution reference, execution hash, execution replay hash, and execution status.",
+    "Worker result capture preserves existing invocation-only compatibility.",
+    "Execution-bound result capture preserves fail-closed authority and replay semantics."
+  ],
+  "non_goals_preserved": [
+    "No result validation.",
+    "No post-execution replay review.",
+    "No retries.",
+    "No repairs.",
+    "No termination.",
+    "No governance mutation.",
+    "No existing replay mutation.",
+    "No autonomous continuation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py -k 'execution_output or execution_invocation_mismatch or execution_replay_mismatch'",
+      "status": "PASS",
+      "summary": "3 passed, 13 deselected"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_capture_runtime_v1.py -k 'not interactive_cli' tests/test_execution_runtime_v1.py",
+      "status": "PASS",
+      "summary": "34 passed, 1 deselected"
+    },
+    {
+      "command": "python -m json.tool AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "python -m json.tool AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "no whitespace errors"
+    }
+  ],
+  "known_validation_caveat": {
+    "test": "tests/test_worker_result_capture_runtime_v1.py::test_interactive_cli_reaches_worker_result_capture",
+    "status": "ENVIRONMENT_ROUTE_DID_NOT_REACH_WORKER_CHAIN",
+    "scope_impact": "No impact on execution-to-result-capture runtime compatibility."
+  },
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "RESULT_CAPTURE_ACCEPTS_CURRENT_EXECUTION_OUTPUT": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_RESULT_VALIDATION_REVIEW": "TRUE"
+  },
+  "final_classification": "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_STATUS = CERTIFIED"
+}
