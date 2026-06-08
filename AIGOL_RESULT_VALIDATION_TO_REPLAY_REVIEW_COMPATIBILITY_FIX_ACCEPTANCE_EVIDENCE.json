@@ -1,0 +1,91 @@
+{
+  "artifact_type": "AIGOL_RESULT_VALIDATION_TO_REPLAY_REVIEW_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_RESULT_VALIDATION_TO_REPLAY_REVIEW_COMPATIBILITY_FIX_V1",
+  "status": "ACCEPTANCE_EVIDENCE_RECORDED",
+  "review_source": "AIGOL_RESULT_VALIDATION_TO_REPLAY_REVIEW_INTEGRATION_REVIEW_V1",
+  "review_result": {
+    "REPLAY_REVIEW_COMPATIBLE": "PARTIAL_INVOCATION_VALIDATION_TRUE_EXECUTION_BOUND_VALIDATION_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE"
+  },
+  "compatibility_gap": {
+    "identified": true,
+    "description": "POST_EXECUTION_REPLAY_REVIEW_RUNTIME_V1 required execution_started=false while current execution-bound WORKER_RESULT_VALIDATION_ARTIFACT_V1 outputs correctly carry execution_started=true with execution binding fields.",
+    "blocking_field": "execution_started",
+    "missing_bindings": [
+      "execution_reference",
+      "execution_hash",
+      "execution_replay_hash",
+      "execution_replay_reference",
+      "execution_status"
+    ]
+  },
+  "modified_files": [
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "tests/test_post_execution_replay_review_runtime_v1.py"
+  ],
+  "runtime_fix": {
+    "implemented": true,
+    "architectural_change_performed": false,
+    "authority_boundary_preserved": true,
+    "fail_closed_preserved": true,
+    "replay_integrity_preserved": true,
+    "invocation_only_compatibility_preserved": true,
+    "execution_bound_validation_supported": true,
+    "termination_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false
+  },
+  "binding_checks": {
+    "execution_started_true_requires_execution_binding": true,
+    "execution_binding_fields_required_when_execution_bound": true,
+    "validation_evidence_binding_checked": true,
+    "validation_classification_binding_checked": true,
+    "validation_artifact_binding_checked": true,
+    "validation_result_binding_checked": true,
+    "review_reconstruction_binding_checked": true,
+    "mismatched_execution_binding_fails_closed": true
+  },
+  "propagated_fields": [
+    "execution_reference",
+    "execution_hash",
+    "execution_replay_hash",
+    "execution_replay_reference",
+    "execution_status"
+  ],
+  "regression_tests": [
+    {
+      "test": "test_post_execution_replay_review_accepts_execution_bound_result_validation",
+      "purpose": "Current execution-bound result validation output enters replay review and reconstructs with execution binding preserved."
+    },
+    {
+      "test": "test_post_execution_replay_review_fails_closed_on_execution_binding_drift",
+      "purpose": "Execution binding mismatch fails closed before replay review certification."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/post_execution_replay_review_runtime.py",
+      "status": "PASS",
+      "summary": "Replay review runtime compiled successfully."
+    },
+    {
+      "command": "python -m pytest tests/test_post_execution_replay_review_runtime_v1.py -k 'execution_bound_result_validation or execution_binding_drift'",
+      "status": "PASS",
+      "summary": "2 passed, 13 deselected."
+    },
+    {
+      "command": "python -m pytest tests/test_post_execution_replay_review_runtime_v1.py -k 'not interactive_cli' tests/test_worker_result_validation_runtime_v1.py -k 'not interactive_cli'",
+      "status": "PASS",
+      "summary": "31 passed, 2 deselected."
+    }
+  ],
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "REPLAY_REVIEW_ACCEPTS_CURRENT_RESULT_VALIDATION": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_GOVERNED_TERMINATION_REVIEW": "TRUE"
+  }
+}
