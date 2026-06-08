@@ -15,6 +15,7 @@ from aigol.runtime.governed_implementation_dry_run import (
     reconstruct_governed_implementation_dry_run_replay,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.ocs_execution_readiness_runtime import reconstruct_ocs_execution_readiness_replay
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -176,7 +177,10 @@ def render_execution_authorization_summary(capture: dict[str, Any]) -> str:
 
 
 def _load_execution_ready_lineage(replay_path: Path) -> dict[str, dict[str, Any]]:
-    reconstructed = reconstruct_governed_implementation_dry_run_replay(replay_path)
+    try:
+        reconstructed = reconstruct_governed_implementation_dry_run_replay(replay_path)
+    except FailClosedRuntimeError:
+        reconstructed = reconstruct_ocs_execution_readiness_replay(replay_path)
     if reconstructed.get("execution_status") != EXECUTION_READY:
         raise FailClosedRuntimeError("execution authorization failed closed: execution is not ready")
     artifacts: list[dict[str, Any]] = []
