@@ -1,0 +1,57 @@
+{
+  "artifact_type": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "certification_scope": {
+    "routing_gap_fixed": true,
+    "generic_governed_domain_creation_supported": true,
+    "support_mode": "GOVERNED_CLARIFICATION_NOT_DIRECT_EXECUTION",
+    "generic_governed_artifact_creation_detected": true,
+    "generic_governed_execution_request_detected": true,
+    "unsupported_generic_execution_intents_fail_closed": true,
+    "domain_creation_runtime_implemented": false,
+    "execution_authority_granted": false,
+    "architecture_changed": false
+  },
+  "certified_behavior": {
+    "pilot_domain_prompt_routes_to_clarification": true,
+    "pilot_domain_prompt_avoids_provider_fallback": true,
+    "pilot_domain_prompt_preserves_authority_boundaries": true,
+    "existing_domain_specific_routes_preserved": true,
+    "fail_closed_preserved": true,
+    "replay_integrity_preserved": true
+  },
+  "authority_boundary_certification": {
+    "provider_authority": false,
+    "ocs_authority": false,
+    "approval_authority": false,
+    "execution_authority": false,
+    "worker_authority": false,
+    "domain_creation_authority": false,
+    "replay_mutation_authority": false
+  },
+  "validation": {
+    "targeted_tests": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+      "result": "PASSED",
+      "tests_passed": 33
+    }
+  },
+  "non_goals_preserved": {
+    "no_result_validation": true,
+    "no_replay_review": true,
+    "no_retry_behavior": true,
+    "no_repair_behavior": true,
+    "no_termination_change": true,
+    "no_architectural_redesign": true,
+    "no_new_worker": true
+  },
+  "final_outputs": {
+    "EXECUTION_INTENT_DETECTED": "TRUE",
+    "GENERIC_DOMAIN_CREATION_SUPPORTED": "TRUE_AS_GOVERNED_CLARIFICATION_NOT_DIRECT_EXECUTION",
+    "ROUTING_GAP_FIXED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "READY_FOR_HUMAN_EXECUTION_WORKFLOW": "TRUE_WITH_CLARIFICATION_GATE"
+  }
+}

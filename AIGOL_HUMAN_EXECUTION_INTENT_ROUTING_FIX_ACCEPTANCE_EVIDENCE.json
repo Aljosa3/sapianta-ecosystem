@@ -1,0 +1,122 @@
+{
+  "artifact_type": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_ACCEPTANCE_EVIDENCE_V1",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "source_audit": "AIGOL_HUMAN_TO_EXECUTION_INTENT_AUDIT_V1",
+  "top_routing_gap": "GENERIC_GOVERNED_DOMAIN_CREATION_INTENT_NOT_BOUND_TO_EXECUTION_ENTRY",
+  "implemented_files": [
+    "aigol/runtime/human_execution_intent_detection.py",
+    "aigol/runtime/conversational_cli_runtime.py",
+    "aigol/runtime/unknown_domain_clarification_runtime.py",
+    "tests/test_conversational_cli_runtime_v1.py",
+    "tests/test_unknown_domain_and_clarification_ux_v1.py"
+  ],
+  "canonical_detection_rule": {
+    "generic_governed_domain_creation": {
+      "required_subject": "domain",
+      "creation_terms": [
+        "create",
+        "new",
+        "add",
+        "build",
+        "make"
+      ],
+      "governance_or_naming_terms": [
+        "governed",
+        "called",
+        "named"
+      ],
+      "intent_class": "GENERIC_GOVERNED_DOMAIN_CREATION",
+      "routing_action": "GOVERNED_UNKNOWN_DOMAIN_CLARIFICATION",
+      "execution_authority_granted": false
+    },
+    "generic_governed_artifact_creation": {
+      "required_subject": "artifact",
+      "required_governance_marker": "governed",
+      "intent_class": "GENERIC_GOVERNED_ARTIFACT_CREATION",
+      "routing_action": "FAIL_CLOSED_NO_CERTIFIED_ARTIFACT_CREATION_ENTRYPOINT",
+      "execution_authority_granted": false
+    },
+    "generic_governed_execution_request": {
+      "execution_subject_markers": [
+        "governed execution",
+        "execution workflow",
+        "execution chain",
+        "governed workflow"
+      ],
+      "execution_terms": [
+        "execute",
+        "run",
+        "trigger",
+        "start"
+      ],
+      "intent_class": "GENERIC_GOVERNED_EXECUTION_REQUEST",
+      "routing_action": "FAIL_CLOSED_NO_CERTIFIED_GENERIC_EXECUTION_ENTRYPOINT",
+      "execution_authority_granted": false
+    }
+  },
+  "acceptance_cases": [
+    {
+      "prompt": "Create a new governed domain called PilotDomain.",
+      "before_workflow": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "after_workflow": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "routing_status": "CLARIFICATION_REQUIRED",
+      "confidence": "HIGH",
+      "proposed_domain": "PilotDomain",
+      "provider_invoked": false,
+      "worker_invoked": false,
+      "authorization_created": false,
+      "execution_requested": false,
+      "domain_created": false,
+      "accepted": true
+    },
+    {
+      "prompt": "Create a governed artifact called PilotArtifact.",
+      "after_workflow": null,
+      "routing_status": "FAILED_CLOSED",
+      "provider_invoked": false,
+      "worker_invoked": false,
+      "execution_requested": false,
+      "accepted": true
+    },
+    {
+      "prompt": "Trigger a governed execution workflow.",
+      "after_workflow": null,
+      "routing_status": "FAILED_CLOSED",
+      "provider_invoked": false,
+      "worker_invoked": false,
+      "execution_requested": false,
+      "accepted": true
+    },
+    {
+      "prompt": "Create a trading domain.",
+      "after_workflow": "CREATE_DOMAIN_TRADING",
+      "existing_behavior_preserved": true,
+      "accepted": true
+    }
+  ],
+  "test_evidence": {
+    "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "result": "PASSED",
+    "tests_collected": 33,
+    "tests_passed": 33
+  },
+  "governance_preservation": {
+    "fail_closed_preserved": true,
+    "authority_boundaries_preserved": true,
+    "provider_fallback_avoided_for_detected_execution_intent": true,
+    "replay_visible_clarification_preserved": true,
+    "direct_execution_created": false,
+    "domain_created": false,
+    "worker_invoked": false,
+    "authorization_created": false
+  },
+  "final_outputs": {
+    "EXECUTION_INTENT_DETECTED": "TRUE",
+    "GENERIC_DOMAIN_CREATION_SUPPORTED": "TRUE_AS_GOVERNED_CLARIFICATION_NOT_DIRECT_EXECUTION",
+    "ROUTING_GAP_FIXED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "READY_FOR_HUMAN_EXECUTION_WORKFLOW": "TRUE_WITH_CLARIFICATION_GATE"
+  }
+}
