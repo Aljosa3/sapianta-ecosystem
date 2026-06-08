@@ -1,0 +1,174 @@
+{
+  "artifact_type": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_EVIDENCE",
+  "artifact_version": 1,
+  "review_id": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_V1",
+  "status": "REVIEW_COMPLETE",
+  "review_scope": {
+    "from": "WORKER_RESULT_CAPTURE_RUNTIME_V1",
+    "to": "WORKER_RESULT_VALIDATION_RUNTIME_V1",
+    "runtime_change_performed": false,
+    "replay_review_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "termination_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "reviewed_runtime_files": [
+    "aigol/runtime/worker_result_capture_runtime.py",
+    "aigol/runtime/worker_result_validation_runtime.py"
+  ],
+  "reviewed_test_files": [
+    "tests/test_worker_result_capture_runtime_v1.py",
+    "tests/test_worker_result_validation_runtime_v1.py"
+  ],
+  "reviewed_governance_artifacts": [
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_WORKER_RESULT_CAPTURE_RUNTIME_CERTIFICATION.json",
+    "governance/AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_V1.md",
+    "governance/AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_CERTIFICATION.json",
+    "AIGOL_EXECUTION_TO_RESULT_CAPTURE_COMPATIBILITY_FIX_V1.md"
+  ],
+  "result_capture_outputs": {
+    "output_artifacts": [
+      "WORKER_RESULT_CAPTURE_EVIDENCE_ARTIFACT_V1",
+      "WORKER_RESULT_CAPTURE_CLASSIFICATION_ARTIFACT_V1",
+      "WORKER_RESULT_CAPTURE_ARTIFACT_V1",
+      "WORKER_RESULT_CAPTURE_RESULT_ARTIFACT_V1"
+    ],
+    "invocation_only_capture": {
+      "result_capture_status": "WORKER_RESULT_CAPTURED",
+      "execution_started": false,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": false,
+      "post_execution_replay_reviewed": false,
+      "terminated": false,
+      "compatible_with_existing_validation": true
+    },
+    "execution_bound_capture": {
+      "result_capture_status": "WORKER_RESULT_CAPTURED",
+      "execution_reference": true,
+      "execution_hash": true,
+      "execution_replay_hash": true,
+      "execution_replay_reference": true,
+      "execution_status": "EXECUTING",
+      "execution_started": true,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": false,
+      "post_execution_replay_reviewed": false,
+      "terminated": false,
+      "compatible_with_existing_validation": false
+    }
+  },
+  "result_validation_intake_requirements": {
+    "function": "validate_worker_result",
+    "requires_worker_result_capture_artifact": true,
+    "requires_worker_result_capture_replay_reference": true,
+    "requires_result_capture_status": "WORKER_RESULT_CAPTURED",
+    "requires_replay_reconstruction": true,
+    "requires_allowed_outputs": true,
+    "requires_produced_outputs_within_allowed_outputs": true,
+    "requires_forbidden_operations": true,
+    "requires_validation_requirements": true,
+    "pre_validation_authority_flags": {
+      "approval_created": false,
+      "worker_assigned": true,
+      "worker_dispatched": true,
+      "dispatch_requested": true,
+      "worker_invoked": true,
+      "execution_started": false,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": false,
+      "post_execution_replay_reviewed": false,
+      "terminated": false,
+      "governance_mutated": false,
+      "replay_mutated": false
+    }
+  },
+  "compatibility_matrix": [
+    {
+      "result_capture_output": "invocation_only_WORKER_RESULT_CAPTURE_ARTIFACT_V1",
+      "validation_support": "SUPPORTED",
+      "compatible": true
+    },
+    {
+      "result_capture_output": "execution_bound_WORKER_RESULT_CAPTURE_ARTIFACT_V1",
+      "validation_support": "BLOCKED_BY_EXECUTION_STARTED_FLAG",
+      "compatible": false
+    },
+    {
+      "result_capture_output": "execution_reference",
+      "validation_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "result_capture_output": "execution_hash",
+      "validation_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "result_capture_output": "execution_replay_hash",
+      "validation_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "result_capture_output": "execution_status",
+      "validation_support": "NOT_PROPAGATED",
+      "compatible": false
+    }
+  ],
+  "missing_bindings": [
+    "Pre-validation authority model for execution-bound result capture.",
+    "Execution reference and hash validation in result validation evidence.",
+    "Execution replay hash validation in result validation evidence.",
+    "Execution status propagation into validation artifact.",
+    "Fail-closed rejection of execution_started true without valid execution binding.",
+    "Fail-closed rejection of mismatched execution binding fields.",
+    "Replay reconstruction continuity for execution-bound result capture."
+  ],
+  "duplicate_logic": {
+    "found": true,
+    "classification": "TRUE_NON_BLOCKING",
+    "areas": [
+      "artifact hash verification",
+      "replay wrapper hash verification",
+      "result capture lineage continuity",
+      "invocation lineage continuity",
+      "dispatch continuity",
+      "assignment continuity",
+      "authorization continuity",
+      "execution packet continuity",
+      "worker identity continuity",
+      "chain continuity",
+      "output scope validation",
+      "forbidden operation validation",
+      "validation requirement checks",
+      "authority flag checks"
+    ],
+    "governance_assessment": "Duplication is governance-preserving and should remain unless replaced by shared fail-closed validators with identical semantics."
+  },
+  "required_fixes": [
+    {
+      "milestone": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_V1",
+      "required": true,
+      "scope": [
+        "Accept execution-bound result capture only when execution binding fields are present and valid.",
+        "Preserve invocation-only capture compatibility.",
+        "Propagate execution reference, execution hash, execution replay hash, execution replay reference, and execution status into validation evidence and validation artifact.",
+        "Preserve fail-closed validation semantics.",
+        "Do not implement replay review, retries, repairs, termination, or architectural redesign."
+      ]
+    }
+  ],
+  "final_outputs": {
+    "RESULT_VALIDATION_COMPATIBLE": "PARTIAL_INVOCATION_CAPTURE_TRUE_EXECUTION_BOUND_CAPTURE_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_RESULT_VALIDATION": "FALSE_PENDING_EXECUTION_BOUND_CAPTURE_COMPATIBILITY_FIX"
+  }
+}

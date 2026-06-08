@@ -1,0 +1,79 @@
+{
+  "artifact_type": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "certifies": "Result capture to result validation integration boundary review",
+  "certification_scope": {
+    "runtime_implemented": false,
+    "compatibility_fix_implemented": false,
+    "replay_review_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "termination_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "review_artifacts": [
+    "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_V1.md",
+    "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_EVIDENCE.json",
+    "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_CERTIFICATION.json"
+  ],
+  "reviewed_runtime_files": [
+    "aigol/runtime/worker_result_capture_runtime.py",
+    "aigol/runtime/worker_result_validation_runtime.py"
+  ],
+  "reviewed_tests": [
+    "tests/test_worker_result_capture_runtime_v1.py",
+    "tests/test_worker_result_validation_runtime_v1.py"
+  ],
+  "certification_findings": {
+    "result_capture_outputs_reviewed": true,
+    "result_validation_requirements_reviewed": true,
+    "invocation_only_capture_compatible": true,
+    "execution_bound_capture_compatible": false,
+    "missing_bindings_identified": true,
+    "duplicate_logic_identified": true,
+    "required_fix_identified": true,
+    "architectural_redesign_required": false
+  },
+  "compatibility_classification": {
+    "RESULT_VALIDATION_COMPATIBLE": "PARTIAL_INVOCATION_CAPTURE_TRUE_EXECUTION_BOUND_CAPTURE_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_RESULT_VALIDATION": "FALSE_PENDING_EXECUTION_BOUND_CAPTURE_COMPATIBILITY_FIX"
+  },
+  "required_next_milestone": {
+    "milestone": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_V1",
+    "purpose": "Allow result validation to consume execution-bound WORKER_RESULT_CAPTURE_ARTIFACT_V1 outputs while preserving invocation-only compatibility, fail-closed semantics, and downstream boundary separation.",
+    "architectural_change_required": false
+  },
+  "non_goals_preserved": [
+    "No post-execution replay review.",
+    "No retries.",
+    "No repairs.",
+    "No termination.",
+    "No governance mutation.",
+    "No existing replay mutation.",
+    "No architectural redesign.",
+    "No autonomous continuation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m json.tool AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "python -m json.tool AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "valid JSON"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "no whitespace errors"
+    }
+  ],
+  "final_classification": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_INTEGRATION_REVIEW_STATUS = CERTIFIED_REVIEW_ONLY_PENDING_COMPATIBILITY_FIX"
+}
