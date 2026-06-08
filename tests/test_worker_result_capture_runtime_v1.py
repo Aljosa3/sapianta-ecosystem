@@ -18,6 +18,7 @@ from aigol.runtime.conversation_to_ppp_handoff_execution import (
     run_conversation_to_ppp_handoff_execution,
 )
 from aigol.runtime.execution_authorization_runtime import authorize_execution_ready
+from aigol.runtime.execution_runtime import start_execution
 from aigol.runtime.governed_implementation_dry_run import prepare_governed_implementation_dry_run
 from aigol.runtime.implementation_approval_resume import (
     create_human_implementation_approval,
@@ -213,6 +214,68 @@ def _capture(tmp_path, *, prompt: str, suffix: str, invocation_capture: dict | N
     )
 
 
+def _execution_bound_capture(tmp_path, *, prompt: str, suffix: str, execution_overrides: dict | None = None) -> dict:
+    assignment_capture = _assignment(tmp_path, prompt=prompt, suffix=suffix)
+    dispatch_capture = dispatch_assigned_worker(
+        worker_dispatch_id=f"WORKER-DISPATCH-{suffix}",
+        worker_assignment_artifact=assignment_capture["worker_assignment_artifact"],
+        worker_assignment_replay_reference=assignment_capture["worker_assignment_replay_reference"],
+        dispatched_by="AIGOL_GOVERNANCE",
+        dispatched_at=CREATED_AT,
+        replay_dir=tmp_path / f"dispatch_{suffix}",
+    )
+    invocation_capture = invoke_dispatched_worker(
+        worker_invocation_id=f"WORKER-INVOCATION-{suffix}",
+        worker_dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=dispatch_capture["worker_dispatch_replay_reference"],
+        invoked_by="AIGOL_GOVERNANCE",
+        invoked_at=CREATED_AT,
+        replay_dir=tmp_path / f"invocation_{suffix}",
+    )
+    invocation = invocation_capture["worker_invocation_artifact"]
+    execution_args = {
+        "execution_id": f"EXECUTION-{suffix}",
+        "invocation_artifact": invocation,
+        "invocation_replay": invocation_capture["invocation_result_artifact"],
+        "dispatch_artifact": dispatch_capture["worker_dispatch_artifact"],
+        "worker_assignment_artifact": assignment_capture["worker_assignment_artifact"],
+        "canonical_chain_id": invocation["chain_id"],
+        "execution_metadata": {
+            "execution_mode": "START_ONLY",
+            "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+            "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+        },
+        "execution_context": {
+            "worker_reference": invocation["worker_id"],
+            "request_type": "WORKER_INVOCATION_REQUEST",
+            "capability_id": invocation["worker_role"],
+            "allowed_effects": ["RECORD_EXECUTION_START"],
+        },
+        "started_by": "AIGOL",
+        "started_at": CREATED_AT,
+        "replay_reference": f"REPLAY-EXECUTION-{suffix}",
+        "replay_dir": tmp_path / f"execution_{suffix}",
+    }
+    if execution_overrides:
+        execution_args.update(execution_overrides)
+    execution_capture = start_execution(**execution_args)
+    result_capture = capture_worker_result(
+        worker_result_capture_id=f"WORKER-RESULT-CAPTURE-{suffix}",
+        worker_invocation_artifact=invocation,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        worker_output=default_worker_output_for_invocation(invocation, captured_at=CREATED_AT),
+        captured_by="AIGOL_GOVERNANCE",
+        captured_at=CREATED_AT,
+        replay_dir=tmp_path / f"result_capture_{suffix}",
+        execution_artifact=execution_capture["execution_artifact"],
+        execution_replay=execution_capture["execution_replay"],
+        execution_replay_reference=str(tmp_path / f"execution_{suffix}"),
+    )
+    result_capture["_execution_capture"] = execution_capture
+    result_capture["_invocation_capture"] = invocation_capture
+    return result_capture
+
+
 @pytest.mark.parametrize(
     ("prompt", "suffix"),
     [
@@ -249,6 +312,79 @@ def test_worker_result_capture_persists_replay_events(tmp_path) -> None:
     assert (replay_dir / "001_result_capture_classification_recorded.json").exists()
     assert (replay_dir / "002_result_capture_artifact_recorded.json").exists()
     assert (replay_dir / "003_result_capture_result_recorded.json").exists()
+
+
+def test_worker_result_capture_accepts_current_execution_output(tmp_path) -> None:
+    result = _execution_bound_capture(tmp_path, prompt="Create a filesystem worker.", suffix="execution-bound")
+    artifact = result["worker_result_capture_artifact"]
+    reconstructed = reconstruct_worker_result_capture_replay(tmp_path / "result_capture_execution-bound")
+
+    assert result["result_capture_status"] == WORKER_RESULT_CAPTURED
+    assert artifact["execution_reference"] == "EXECUTION-execution-bound"
+    assert artifact["execution_hash"] == result["_execution_capture"]["execution_artifact"]["artifact_hash"]
+    assert artifact["execution_status"] == "EXECUTING"
+    assert artifact["execution_started"] is True
+    assert artifact["result_validated"] is False
+    assert artifact["post_execution_replay_reviewed"] is False
+    assert artifact["terminated"] is False
+    assert reconstructed["execution_reference"] == artifact["execution_reference"]
+    assert reconstructed["execution_started"] is True
+
+
+def test_worker_result_capture_fails_closed_on_execution_invocation_mismatch(tmp_path) -> None:
+    result = _execution_bound_capture(tmp_path, prompt="Create a filesystem worker.", suffix="execution-mismatch")
+    execution = deepcopy(result["_execution_capture"]["execution_artifact"])
+    replay = deepcopy(result["_execution_capture"]["execution_replay"])
+    execution["worker_invocation_reference"] = "OTHER-INVOCATION"
+    execution.pop("artifact_hash")
+    execution["artifact_hash"] = replay_hash(execution)
+    replay["execution_hash"] = execution["artifact_hash"]
+    replay["worker_invocation_reference"] = "OTHER-INVOCATION"
+    replay.pop("artifact_hash")
+    replay["artifact_hash"] = replay_hash(replay)
+
+    invocation_capture = result["_invocation_capture"]
+    invocation = invocation_capture["worker_invocation_artifact"]
+    failed = capture_worker_result(
+        worker_result_capture_id="WORKER-RESULT-CAPTURE-execution-mismatch-second",
+        worker_invocation_artifact=invocation,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        worker_output=default_worker_output_for_invocation(invocation, captured_at=CREATED_AT),
+        captured_by="AIGOL_GOVERNANCE",
+        captured_at=CREATED_AT,
+        replay_dir=tmp_path / "result_capture_execution-mismatch-second",
+        execution_artifact=execution,
+        execution_replay=replay,
+    )
+
+    assert failed["result_capture_status"] == "FAILED_CLOSED"
+    assert "execution invocation mismatch" in failed["failure_reason"]
+
+
+def test_worker_result_capture_fails_closed_on_execution_replay_mismatch(tmp_path) -> None:
+    result = _execution_bound_capture(tmp_path, prompt="Create a filesystem worker.", suffix="execution-replay-mismatch")
+    execution = deepcopy(result["_execution_capture"]["execution_artifact"])
+    replay = deepcopy(result["_execution_capture"]["execution_replay"])
+    replay["execution_reference"] = "OTHER-EXECUTION"
+    replay.pop("artifact_hash")
+    replay["artifact_hash"] = replay_hash(replay)
+    invocation_capture = result["_invocation_capture"]
+    invocation = invocation_capture["worker_invocation_artifact"]
+
+    failed = capture_worker_result(
+        worker_result_capture_id="WORKER-RESULT-CAPTURE-execution-replay-mismatch-second",
+        worker_invocation_artifact=invocation,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        worker_output=default_worker_output_for_invocation(invocation, captured_at=CREATED_AT),
+        captured_by="AIGOL_GOVERNANCE",
+        captured_at=CREATED_AT,
+        replay_dir=tmp_path / "result_capture_execution-replay-mismatch-second",
+        execution_artifact=execution,
+        execution_replay=replay,
+    )
+
+    assert failed["result_capture_status"] == "FAILED_CLOSED"
+    assert "execution replay mismatch" in failed["failure_reason"]
 
 
 def test_worker_result_capture_fails_closed_on_output_outside_allowed_scope(tmp_path) -> None:
