@@ -22,6 +22,7 @@ from aigol.runtime.proposal_approval_runtime import decide_proposal_approval
 from aigol.runtime.proposal_runtime import create_proposal
 from aigol.runtime.ready_for_dispatch_runtime import mark_ready_for_dispatch
 from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.worker_dispatch_runtime import WORKER_DISPATCHED, WORKER_DISPATCH_ARTIFACT_V1
 from aigol.runtime.worker_invocation_runtime import invoke_worker
 from aigol.runtime.worker_runtime import assign_worker, register_worker
 
@@ -219,6 +220,177 @@ def _execution(tmp_path, **overrides) -> dict:
     return start_execution(**args)
 
 
+def _current_assignment() -> dict:
+    artifact = {
+        "artifact_type": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+        "worker_runtime_version": "AIGOL_WORKER_ASSIGNMENT_RUNTIME_V1",
+        "worker_assignment_id": "WORKER-ASSIGNMENT-CURRENT-000001",
+        "assignment_status": "WORKER_ASSIGNED",
+        "worker_id": "WORKER-CURRENT-000001",
+        "worker_hash": "sha256:worker-current-000001",
+        "worker_family": "FILESYSTEM_WORKER",
+        "worker_role": "FILESYSTEM_MUTATION_WORKER",
+        "capability_id": "FILESYSTEM_MUTATION_WORKER",
+        "worker_invocation_request_reference": "WORKER-INVOCATION-REQUEST-CURRENT-000001",
+        "worker_invocation_request_hash": "sha256:worker-invocation-request-current-000001",
+        "authorization_reference": "AUTHORIZATION-CURRENT-000001",
+        "authorization_hash": "sha256:authorization-current-000001",
+        "execution_packet_reference": "EXECUTION-PACKET-CURRENT-000001",
+        "execution_packet_hash": "sha256:execution-packet-current-000001",
+        "allowed_outputs": ["execution start artifact"],
+        "forbidden_operations": ["result certification", "repair", "retry"],
+        "validation_requirements": ["replay lineage continuity"],
+        "worker_state_before": "AVAILABLE",
+        "worker_state_after": "ASSIGNED",
+        "canonical_chain_id": CANONICAL_CHAIN_ID,
+        "replay_reference": "REPLAY-AUTHORIZATION-CURRENT-000001",
+        "replay_visible": True,
+        "approval_created": False,
+        "worker_assigned": True,
+        "worker_dispatched": False,
+        "worker_invoked": False,
+        "execution_started": False,
+        "result_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _current_dispatch(assignment: dict) -> dict:
+    artifact = {
+        "artifact_type": WORKER_DISPATCH_ARTIFACT_V1,
+        "runtime_version": "AIGOL_WORKER_DISPATCH_RUNTIME_V1",
+        "worker_dispatch_id": "WORKER-DISPATCH-CURRENT-000001",
+        "dispatch_status": WORKER_DISPATCHED,
+        "worker_assignment_reference": assignment["worker_assignment_id"],
+        "worker_assignment_hash": assignment["artifact_hash"],
+        "worker_invocation_request_reference": assignment["worker_invocation_request_reference"],
+        "worker_invocation_request_hash": assignment["worker_invocation_request_hash"],
+        "authorization_reference": assignment["authorization_reference"],
+        "authorization_hash": assignment["authorization_hash"],
+        "execution_packet_reference": assignment["execution_packet_reference"],
+        "execution_packet_hash": assignment["execution_packet_hash"],
+        "worker_id": assignment["worker_id"],
+        "worker_hash": assignment["worker_hash"],
+        "worker_family": assignment["worker_family"],
+        "worker_role": assignment["worker_role"],
+        "allowed_outputs": assignment["allowed_outputs"],
+        "forbidden_operations": assignment["forbidden_operations"],
+        "validation_requirements": assignment["validation_requirements"],
+        "dispatched_by": "AIGOL_GOVERNANCE",
+        "dispatched_at": CREATED_AT,
+        "assignment_status_before": "WORKER_ASSIGNED",
+        "worker_state_before_dispatch": "ASSIGNED",
+        "chain_id": CANONICAL_CHAIN_ID,
+        "replay_reference": assignment["replay_reference"],
+        "replay_visible": True,
+        "approval_created": False,
+        "worker_assigned": True,
+        "worker_dispatched": True,
+        "dispatch_requested": True,
+        "worker_invoked": False,
+        "execution_started": False,
+        "result_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _current_invocation(dispatch: dict) -> dict:
+    artifact = {
+        "artifact_type": "WORKER_INVOCATION_ARTIFACT_V1",
+        "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+        "worker_invocation_id": "WORKER-INVOCATION-CURRENT-000001",
+        "invocation_status": "WORKER_INVOKED",
+        "worker_dispatch_reference": dispatch["worker_dispatch_id"],
+        "worker_dispatch_hash": dispatch["artifact_hash"],
+        "worker_assignment_reference": dispatch["worker_assignment_reference"],
+        "worker_assignment_hash": dispatch["worker_assignment_hash"],
+        "worker_invocation_request_reference": dispatch["worker_invocation_request_reference"],
+        "worker_invocation_request_hash": dispatch["worker_invocation_request_hash"],
+        "authorization_reference": dispatch["authorization_reference"],
+        "authorization_hash": dispatch["authorization_hash"],
+        "execution_packet_reference": dispatch["execution_packet_reference"],
+        "execution_packet_hash": dispatch["execution_packet_hash"],
+        "worker_id": dispatch["worker_id"],
+        "worker_hash": dispatch["worker_hash"],
+        "worker_family": dispatch["worker_family"],
+        "worker_role": dispatch["worker_role"],
+        "allowed_outputs": dispatch["allowed_outputs"],
+        "forbidden_operations": dispatch["forbidden_operations"],
+        "validation_requirements": dispatch["validation_requirements"],
+        "invoked_by": "AIGOL_GOVERNANCE",
+        "invoked_at": CREATED_AT,
+        "dispatch_status_before": dispatch["dispatch_status"],
+        "worker_state_before_invocation": dispatch["worker_state_before_dispatch"],
+        "chain_id": CANONICAL_CHAIN_ID,
+        "replay_reference": dispatch["replay_reference"],
+        "replay_visible": True,
+        "approval_created": False,
+        "worker_assigned": True,
+        "worker_dispatched": True,
+        "dispatch_requested": True,
+        "worker_invoked": True,
+        "execution_started": False,
+        "result_created": False,
+        "result_validated": False,
+        "post_execution_replay_reviewed": False,
+        "terminated": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _current_invocation_replay(invocation: dict) -> dict:
+    artifact = {
+        "artifact_type": "WORKER_INVOCATION_RESULT_ARTIFACT_V1",
+        "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+        "invocation_result_id": f"{invocation['worker_invocation_id']}:RESULT",
+        "invocation_status": invocation["invocation_status"],
+        "worker_invocation_reference": invocation["worker_invocation_id"],
+        "worker_invocation_hash": invocation["artifact_hash"],
+        "worker_dispatch_reference": invocation["worker_dispatch_reference"],
+        "worker_dispatch_hash": invocation["worker_dispatch_hash"],
+        "worker_assignment_reference": invocation["worker_assignment_reference"],
+        "worker_assignment_hash": invocation["worker_assignment_hash"],
+        "worker_reference": invocation["worker_id"],
+        "worker_hash": invocation["worker_hash"],
+        "chain_id": invocation["chain_id"],
+        "completed_at": CREATED_AT,
+        "replay_visible": True,
+        "approval_created": False,
+        "worker_assigned": True,
+        "worker_dispatched": True,
+        "dispatch_requested": True,
+        "worker_invoked": True,
+        "execution_started": False,
+        "result_created": False,
+        "result_validated": False,
+        "post_execution_replay_reviewed": False,
+        "terminated": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "failure_reason": None,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _current_execution_context(invocation: dict) -> dict:
+    return {
+        "worker_reference": invocation["worker_id"],
+        "request_type": "WORKER_INVOCATION_REQUEST",
+        "capability_id": invocation["worker_role"],
+        "allowed_effects": ["RECORD_EXECUTION_START"],
+    }
+
+
 def test_execution_runtime_creates_replay_visible_executing_artifact(tmp_path) -> None:
     assignment_capture = _assignment(tmp_path)
     dispatch_capture = _dispatch(tmp_path, assignment_capture=assignment_capture)
@@ -252,6 +424,96 @@ def test_execution_runtime_creates_replay_visible_executing_artifact(tmp_path) -
     assert reconstructed["execution_status"] == EXECUTING
     assert reconstructed["completion_recorded"] is False
     assert reconstructed["result_certified"] is False
+
+
+def test_execution_runtime_accepts_current_worker_invocation_chain(tmp_path) -> None:
+    assignment = _current_assignment()
+    dispatch = _current_dispatch(assignment)
+    invocation = _current_invocation(dispatch)
+    invocation_replay = _current_invocation_replay(invocation)
+
+    capture = start_execution(
+        execution_id="EXECUTION-CURRENT-000001",
+        invocation_artifact=invocation,
+        invocation_replay=invocation_replay,
+        dispatch_artifact=dispatch,
+        worker_assignment_artifact=assignment,
+        canonical_chain_id=CANONICAL_CHAIN_ID,
+        execution_metadata=_metadata(),
+        execution_context=_current_execution_context(invocation),
+        started_by="AIGOL",
+        started_at=CREATED_AT,
+        replay_reference="REPLAY-EXECUTION-CURRENT-000001",
+        replay_dir=tmp_path / "execution_current",
+    )
+    execution = capture["execution_artifact"]
+    reconstructed = reconstruct_execution_replay(tmp_path / "execution_current")
+
+    assert execution["execution_status"] == EXECUTING
+    assert execution["worker_invocation_reference"] == invocation["worker_invocation_id"]
+    assert execution["dispatch_reference"] == dispatch["worker_dispatch_id"]
+    assert execution["worker_reference"] == invocation["worker_id"]
+    assert execution["execution_request_reference"] == invocation["worker_invocation_request_reference"]
+    assert execution["request_type"] == "WORKER_INVOCATION_REQUEST"
+    assert execution["capability_id"] == invocation["worker_role"]
+    assert execution["completion_recorded"] is False
+    assert execution["result_certified"] is False
+    assert reconstructed["execution_status"] == EXECUTING
+
+
+def test_execution_runtime_fails_closed_on_current_worker_invocation_lineage_mismatch(tmp_path) -> None:
+    assignment = _current_assignment()
+    dispatch = _current_dispatch(assignment)
+    invocation = _current_invocation(dispatch)
+    invocation_replay = _current_invocation_replay(invocation)
+    invocation["worker_id"] = "OTHER-WORKER"
+    invocation.pop("artifact_hash")
+    invocation["artifact_hash"] = replay_hash(invocation)
+
+    with pytest.raises(FailClosedRuntimeError, match="invocation replay hash mismatch"):
+        start_execution(
+            execution_id="EXECUTION-CURRENT-MISMATCH-000001",
+            invocation_artifact=invocation,
+            invocation_replay=invocation_replay,
+            dispatch_artifact=dispatch,
+            worker_assignment_artifact=assignment,
+            canonical_chain_id=CANONICAL_CHAIN_ID,
+            execution_metadata=_metadata(),
+            execution_context=_current_execution_context(invocation),
+            started_by="AIGOL",
+            started_at=CREATED_AT,
+            replay_reference="REPLAY-EXECUTION-CURRENT-MISMATCH-000001",
+            replay_dir=tmp_path / "execution_current_mismatch",
+        )
+
+
+def test_execution_runtime_fails_closed_on_current_worker_invocation_authority_violation(tmp_path) -> None:
+    assignment = _current_assignment()
+    dispatch = _current_dispatch(assignment)
+    invocation = _current_invocation(dispatch)
+    invocation_replay = _current_invocation_replay(invocation)
+    invocation["provider_authority"] = True
+    invocation.pop("artifact_hash")
+    invocation["artifact_hash"] = replay_hash(invocation)
+    invocation_replay["worker_invocation_hash"] = invocation["artifact_hash"]
+    invocation_replay.pop("artifact_hash")
+    invocation_replay["artifact_hash"] = replay_hash(invocation_replay)
+
+    with pytest.raises(FailClosedRuntimeError, match="provider authority introduced"):
+        start_execution(
+            execution_id="EXECUTION-CURRENT-AUTHORITY-000001",
+            invocation_artifact=invocation,
+            invocation_replay=invocation_replay,
+            dispatch_artifact=dispatch,
+            worker_assignment_artifact=assignment,
+            canonical_chain_id=CANONICAL_CHAIN_ID,
+            execution_metadata=_metadata(),
+            execution_context=_current_execution_context(invocation),
+            started_by="AIGOL",
+            started_at=CREATED_AT,
+            replay_reference="REPLAY-EXECUTION-CURRENT-AUTHORITY-000001",
+            replay_dir=tmp_path / "execution_current_authority",
+        )
 
 
 def test_execution_runtime_persists_replay_events(tmp_path) -> None:
