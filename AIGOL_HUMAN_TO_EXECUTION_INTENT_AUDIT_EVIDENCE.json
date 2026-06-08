@@ -1,0 +1,154 @@
+{
+  "artifact_type": "AIGOL_HUMAN_TO_EXECUTION_INTENT_AUDIT_EVIDENCE_V1",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_HUMAN_TO_EXECUTION_INTENT_AUDIT_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "scope": {
+    "boundary_reviewed": "Human Intent -> ACLI -> Routing",
+    "execution_chain_validation": false,
+    "routing_fix_implemented": false,
+    "provider_behavior_changed": false,
+    "worker_behavior_changed": false
+  },
+  "human_prompt": "I want to create a new governed domain called PilotDomain.",
+  "expected_path": [
+    "Human Intent",
+    "ACLI",
+    "execution-capable workflow recognition",
+    "OCS cognition",
+    "handoff",
+    "execution chain"
+  ],
+  "observed_path": [
+    "Human Intent",
+    "ACLI",
+    "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "provider-assisted conversation fallback",
+    "FAILED_CLOSED"
+  ],
+  "observed_failure": {
+    "failure_status": "FAILED_CLOSED",
+    "failure_reason": "conversation provider clarification fallback failed closed: provider unavailable not detected"
+  },
+  "prompt_analysis": {
+    "detected_intent": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "expected_intent": "CREATE_GOVERNED_DOMAIN",
+    "normalized_intent": "Create a new governed domain named PilotDomain, requiring bounded governance review and an execution-capable workflow entrypoint.",
+    "execution_indicators": [
+      "create",
+      "new",
+      "governed",
+      "domain",
+      "called PilotDomain"
+    ],
+    "domain_creation_indicators": [
+      "create",
+      "new governed domain",
+      "named domain target"
+    ],
+    "workflow_selection_indicators": [
+      "domain creation intent",
+      "unknown named domain handling",
+      "execution-capable workflow review",
+      "OCS or governed clarification entrypoint"
+    ]
+  },
+  "reproduction": {
+    "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "routing_status": "WORKFLOW_SELECTED",
+    "confidence": "LOW",
+    "matched_terms": [
+      "provider",
+      "conversation",
+      "fallback"
+    ],
+    "operator_summary": "Use provider-assisted conversation integration with fail-closed fallback.",
+    "predicate_results": {
+      "is_conversation_native_development_intent": false,
+      "is_unknown_domain_clarification_eligible": false,
+      "is_ocs_llm_cognition_prompt": false
+    }
+  },
+  "routing_rule_evidence": {
+    "recognized_domain_creation_routes": [
+      {
+        "terms": [
+          "create",
+          "trading",
+          "domain"
+        ],
+        "workflow_id": "CREATE_DOMAIN_TRADING",
+        "confidence": "HIGH"
+      },
+      {
+        "terms": [
+          "create",
+          "marketing",
+          "domain"
+        ],
+        "workflow_id": "CREATE_DOMAIN_MARKETING",
+        "confidence": "HIGH"
+      },
+      {
+        "terms": [
+          "create",
+          "compliance_or_regulatory",
+          "domain"
+        ],
+        "workflow_id": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+        "confidence": "HIGH"
+      }
+    ],
+    "default_route": {
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "confidence": "LOW",
+      "matched_terms": [
+        "provider",
+        "conversation",
+        "fallback"
+      ]
+    },
+    "catalog_gap": "PilotDomain is not a catalogued specific domain and is not recognized by unknown-domain clarification eligibility."
+  },
+  "gap_classification": {
+    "missing_intent_detection": true,
+    "missing_execution_detection": true,
+    "missing_domain_creation_detection": true,
+    "missing_workflow_selection_criteria": true,
+    "operator_experience_issue": true,
+    "top_routing_gap": "GENERIC_GOVERNED_DOMAIN_CREATION_INTENT_NOT_BOUND_TO_EXECUTION_ENTRY"
+  },
+  "duplicate_logic_review": {
+    "duplicate_logic_found": true,
+    "affected_layers": [
+      "conversational_cli_runtime",
+      "interactive_routing_visibility",
+      "conversation_native_development_intent_routing",
+      "unknown_domain_clarification_runtime"
+    ],
+    "risk": "Domain creation intent is represented with different term sets across routing layers.",
+    "removal_recommended_in_this_audit": false
+  },
+  "operator_experience": {
+    "human_request_reasonable": true,
+    "human_would_expect_execution_or_clarification": true,
+    "current_behavior_intuitive": false,
+    "fail_closed_preserved": true
+  },
+  "recommendation": {
+    "new_milestone_required": true,
+    "recommended_next_milestone": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+    "recommended_objective": "Implement minimal routing support for generic governed domain creation intent, routing to governed clarification or OCS/handoff entry without bypassing approval, authorization, replay, or execution-readiness boundaries."
+  },
+  "final_outputs": {
+    "HUMAN_REQUEST_REASONABLE": "TRUE",
+    "EXECUTION_INTENT_PRESENT": "TRUE",
+    "EXECUTION_INTENT_DETECTED": "FALSE",
+    "ROUTING_DECISION_CORRECT": "FALSE",
+    "ROUTING_GAP_IDENTIFIED": "TRUE",
+    "OPERATOR_EXPERIENCE_ACCEPTABLE": "FALSE",
+    "TOP_ROUTING_GAP": "GENERIC_GOVERNED_DOMAIN_CREATION_INTENT_NOT_BOUND_TO_EXECUTION_ENTRY",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+    "READY_FOR_HUMAN_EXECUTION_WORKFLOW": "FALSE_PENDING_ROUTING_FIX"
+  }
+}

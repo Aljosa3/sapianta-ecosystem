@@ -1,0 +1,52 @@
+{
+  "artifact_type": "AIGOL_HUMAN_TO_EXECUTION_INTENT_AUDIT_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_HUMAN_TO_EXECUTION_INTENT_AUDIT_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "certification_scope": {
+    "human_intent_to_acli_routing_audited": true,
+    "execution_chain_revalidated": false,
+    "routing_fix_implemented": false,
+    "provider_fix_implemented": false,
+    "architecture_changed": false
+  },
+  "certified_findings": {
+    "human_request_reasonable": true,
+    "execution_intent_present": true,
+    "execution_intent_detected": false,
+    "routing_decision_correct": false,
+    "routing_gap_identified": true,
+    "operator_experience_acceptable": false,
+    "fail_closed_preserved": true
+  },
+  "root_cause": {
+    "classification": "ROUTING_GAP",
+    "description": "Generic governed domain creation intent is not bound to an execution-capable workflow entrypoint or governed unknown-domain clarification route.",
+    "secondary_issue": "Provider-unavailable clarification fallback produced provider-unavailable-not-detected diagnostics after the wrong route entered provider-assisted conversation."
+  },
+  "top_routing_gap": "GENERIC_GOVERNED_DOMAIN_CREATION_INTENT_NOT_BOUND_TO_EXECUTION_ENTRY",
+  "required_next_milestone": {
+    "milestone_id": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+    "required": true,
+    "implementation_allowed_by_this_certification": false
+  },
+  "non_goals_preserved": {
+    "no_execution_runtime_validation": true,
+    "no_domain_creation_runtime": true,
+    "no_retry_behavior": true,
+    "no_repair_behavior": true,
+    "no_architectural_redesign": true,
+    "no_governance_bypass": true
+  },
+  "final_outputs": {
+    "HUMAN_REQUEST_REASONABLE": "TRUE",
+    "EXECUTION_INTENT_PRESENT": "TRUE",
+    "EXECUTION_INTENT_DETECTED": "FALSE",
+    "ROUTING_DECISION_CORRECT": "FALSE",
+    "ROUTING_GAP_IDENTIFIED": "TRUE",
+    "OPERATOR_EXPERIENCE_ACCEPTABLE": "FALSE",
+    "TOP_ROUTING_GAP": "GENERIC_GOVERNED_DOMAIN_CREATION_INTENT_NOT_BOUND_TO_EXECUTION_ENTRY",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_HUMAN_EXECUTION_INTENT_ROUTING_FIX_V1",
+    "READY_FOR_HUMAN_EXECUTION_WORKFLOW": "FALSE_PENDING_ROUTING_FIX"
+  }
+}
