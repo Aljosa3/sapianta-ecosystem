@@ -1,0 +1,143 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_TO_EXECUTION_INTEGRATION_REVIEW_EVIDENCE",
+  "artifact_version": 1,
+  "review_id": "AIGOL_WORKER_INVOCATION_TO_EXECUTION_INTEGRATION_REVIEW_V1",
+  "status": "REVIEW_ONLY",
+  "runtime_changes_made": false,
+  "execution_result_processing_implemented": false,
+  "repair_implemented": false,
+  "retry_implemented": false,
+  "replay_review_implemented": false,
+  "termination_implemented": false,
+  "reviewed_boundary": {
+    "upstream_artifact": "WORKER_INVOCATION_ARTIFACT_V1",
+    "downstream_runtime": "EXECUTION_RUNTIME_V1",
+    "execution_runtime": "aigol/runtime/execution_runtime.py::start_execution"
+  },
+  "reviewed_files": [
+    {
+      "path": "aigol/runtime/worker_invocation_runtime.py",
+      "line_regions": [
+        "39-103",
+        "538-584",
+        "587-685",
+        "688-726",
+        "743-768"
+      ],
+      "evidence": "Current worker invocation runtime creates WORKER_INVOCATION_ARTIFACT_V1 with worker_dispatch_reference, worker_id, execution_packet_reference, chain_id, current replay capture, and pre-execution authority flags."
+    },
+    {
+      "path": "aigol/runtime/execution_runtime.py",
+      "line_regions": [
+        "45-87",
+        "90-140",
+        "147-222",
+        "298-364",
+        "367-442",
+        "454-506"
+      ],
+      "evidence": "Execution runtime consumes invocation, invocation replay, dispatch artifact, and worker assignment artifact, but expects legacy fields including canonical_chain_id, dispatch_reference, worker_reference, execution_request_reference, request_type, capability_id, and legacy dispatch_id."
+    },
+    {
+      "path": "tests/test_execution_runtime_v1.py",
+      "line_regions": [
+        "58-87",
+        "104-165",
+        "186-219",
+        "222-265",
+        "268-408"
+      ],
+      "evidence": "Existing execution tests validate the legacy proposal/approval/execution-request/ready-for-dispatch/dispatch/invocation execution chain."
+    },
+    {
+      "path": "tests/test_worker_invocation_runtime_v1.py",
+      "line_regions": [
+        "207-227",
+        "230-251",
+        "254-421"
+      ],
+      "evidence": "Current worker invocation tests validate current-chain dispatch-to-invocation and preserve no execution, no result, no replay review, and no termination boundaries."
+    }
+  ],
+  "compatibility_findings": {
+    "legacy_execution_chain_compatible": true,
+    "current_worker_invocation_chain_directly_compatible": false,
+    "execution_runtime_stable": true,
+    "architectural_change_required": false,
+    "compatibility_mapping_required": true,
+    "fail_closed_semantics_present": true,
+    "authority_boundaries_present": true,
+    "result_processing_present": false,
+    "repair_present": false,
+    "retry_present": false,
+    "replay_review_present": false,
+    "termination_present": false
+  },
+  "blocking_field_mismatches": [
+    {
+      "execution_runtime_requires": "canonical_chain_id",
+      "current_worker_invocation_provides": "chain_id"
+    },
+    {
+      "execution_runtime_requires": "dispatch_reference",
+      "current_worker_invocation_provides": "worker_dispatch_reference"
+    },
+    {
+      "execution_runtime_requires": "dispatch_hash",
+      "current_worker_invocation_provides": "worker_dispatch_hash"
+    },
+    {
+      "execution_runtime_requires": "worker_reference",
+      "current_worker_invocation_provides": "worker_id"
+    },
+    {
+      "execution_runtime_requires": "execution_request_reference",
+      "current_worker_invocation_provides": "worker_invocation_request_reference and execution_packet_reference"
+    },
+    {
+      "execution_runtime_requires": "request_type",
+      "current_worker_invocation_provides": "no direct current-chain field"
+    },
+    {
+      "execution_runtime_requires": "capability_id",
+      "current_worker_invocation_provides": "no direct current-chain field"
+    },
+    {
+      "execution_runtime_requires": "legacy dispatch artifact with dispatch_id",
+      "current_worker_chain_provides": "WORKER_DISPATCH_ARTIFACT_V1 with worker_dispatch_id"
+    },
+    {
+      "execution_runtime_requires": "direct WORKER_INVOCATION_RETURNED replay artifact",
+      "current_worker_chain_provides": "four-step invocation replay capture with invocation_result_artifact"
+    }
+  ],
+  "duplicate_logic": {
+    "found": true,
+    "classification": "TRUE_NON_BLOCKING",
+    "items": [
+      "Execution runtime revalidates invocation authority flags already enforced by invocation runtime.",
+      "Execution runtime revalidates dispatch and assignment continuity already checked by dispatch and invocation runtimes.",
+      "Execution runtime independently verifies replay hash and artifact hash continuity."
+    ],
+    "requires_architectural_change": false
+  },
+  "required_fixes": [
+    {
+      "milestone": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_V1",
+      "scope": "Map current worker invocation, dispatch, assignment, and replay lineage into execution runtime intake while preserving legacy compatibility and fail-closed behavior."
+    }
+  ],
+  "validation": {
+    "legacy_execution_runtime_command": "python -m pytest tests/test_execution_runtime_v1.py",
+    "legacy_execution_runtime_result": "16 passed",
+    "json_artifacts_valid": true,
+    "diff_check_clean": true
+  },
+  "final_outputs": {
+    "EXECUTION_COMPATIBLE": "PARTIAL_LEGACY_TRUE_CURRENT_WORKER_INVOCATION_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_EXECUTION": "FALSE_PENDING_COMPATIBILITY_FIX"
+  }
+}

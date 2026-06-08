@@ -1,0 +1,57 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_TO_EXECUTION_INTEGRATION_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_WORKER_INVOCATION_TO_EXECUTION_INTEGRATION_REVIEW_V1",
+  "certification_status": "PARTIAL_CERTIFIED_LEGACY_EXECUTION_TRUE_CURRENT_WORKER_INVOCATION_BLOCKED",
+  "scope": {
+    "review_only": true,
+    "runtime_changes_made": false,
+    "execution_result_processing_implemented": false,
+    "repair_implemented": false,
+    "retry_implemented": false,
+    "replay_review_implemented": false,
+    "termination_implemented": false
+  },
+  "certified_boundary": {
+    "from": "WORKER_INVOCATION_ARTIFACT_V1",
+    "to": "EXECUTION_RUNTIME_V1",
+    "runtime": "EXECUTION_RUNTIME_V1"
+  },
+  "certified_claims": {
+    "legacy_execution_runtime_compatible": true,
+    "current_worker_invocation_direct_execution_compatible": false,
+    "architectural_change_required": false,
+    "compatibility_fix_required": true,
+    "execution_runtime_fail_closed": true,
+    "execution_runtime_preserves_no_completion": true,
+    "execution_runtime_preserves_no_result_certification": true,
+    "execution_runtime_preserves_no_replay_review": true,
+    "execution_runtime_preserves_no_repair": true,
+    "execution_runtime_preserves_no_retry": true,
+    "execution_runtime_preserves_no_termination": true
+  },
+  "blocking_gaps": [
+    "Current WORKER_INVOCATION_ARTIFACT_V1 uses chain_id while execution runtime requires canonical_chain_id.",
+    "Current WORKER_INVOCATION_ARTIFACT_V1 uses worker_dispatch_reference/worker_dispatch_hash while execution runtime requires dispatch_reference/dispatch_hash.",
+    "Current WORKER_INVOCATION_ARTIFACT_V1 uses worker_id while execution runtime requires worker_reference.",
+    "Current chain uses worker invocation request and execution packet lineage while execution runtime requires execution_request_reference.",
+    "Execution runtime requires request_type and capability_id fields that are not directly present on current worker invocation artifacts.",
+    "Execution runtime validates legacy dispatch artifacts, not current WORKER_DISPATCH_ARTIFACT_V1 directly.",
+    "Execution runtime expects a direct WORKER_INVOCATION_RETURNED replay artifact, not the current four-step invocation replay capture."
+  ],
+  "validation": {
+    "legacy_execution_runtime_tests": {
+      "command": "python -m pytest tests/test_execution_runtime_v1.py",
+      "result": "16 passed"
+    },
+    "json_validation": "passed",
+    "diff_check": "passed"
+  },
+  "final_outputs": {
+    "EXECUTION_COMPATIBLE": "PARTIAL_LEGACY_TRUE_CURRENT_WORKER_INVOCATION_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_EXECUTION_RUNTIME_CURRENT_WORKER_INVOCATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_EXECUTION": "FALSE_PENDING_COMPATIBILITY_FIX"
+  }
+}
