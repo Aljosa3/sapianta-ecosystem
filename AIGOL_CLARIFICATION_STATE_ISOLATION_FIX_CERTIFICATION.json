@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_STATE_ISOLATION_FIX_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_CLARIFICATION_STATE_ISOLATION_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "certification_scope": {
+    "state_isolation_fix_implemented": true,
+    "reply_scope_gate_implemented": true,
+    "lifecycle_reactivation_fix_implemented": true,
+    "provider_changes": false,
+    "worker_changes": false,
+    "execution_changes": false,
+    "domain_creation_changes": false,
+    "repair_changes": false,
+    "retry_changes": false
+  },
+  "certified_behavior": {
+    "freshdomain_isolated_from_compliance": true,
+    "new_domain_request_creates_new_clarification_context": true,
+    "clarification_reply_binds_to_originating_clarification": true,
+    "unrelated_clarification_binding_prevented": true,
+    "clarification_scope_preserved": true,
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true
+  },
+  "authority_boundary_certification": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "validation": {
+    "targeted_tests": {
+      "command": "python -m pytest tests/test_clarification_continuity_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+      "result": "PASSED",
+      "tests_passed": 42
+    }
+  },
+  "non_goals_preserved": {
+    "no_provider_changes": true,
+    "no_worker_changes": true,
+    "no_execution": true,
+    "no_domain_creation": true,
+    "no_repair_runtime": true,
+    "no_retries": true,
+    "no_architectural_redesign": true
+  },
+  "final_outputs": {
+    "STATE_ISOLATION_DEFECT_IDENTIFIED": "TRUE",
+    "CLARIFICATION_SCOPE_PRESERVED": "TRUE",
+    "UNRELATED_CLARIFICATION_BINDING_PREVENTED": "TRUE",
+    "REPLAY_CONTINUITY_PRESERVED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "FRESHDOMAIN_ISOLATED_FROM_COMPLIANCE": "TRUE",
+    "READY_FOR_REAL_HUMAN_CLARIFICATION_WORKFLOW": "TRUE"
+  }
+}

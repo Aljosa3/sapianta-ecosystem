@@ -1,0 +1,71 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_STATE_ISOLATION_FIX_ACCEPTANCE_EVIDENCE_V1",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_CLARIFICATION_STATE_ISOLATION_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "certified_dependencies": [
+    "AIGOL_CLARIFICATION_CONTINUITY_RUNTIME_V1",
+    "AIGOL_CLARIFICATION_LIFECYCLE_RESOLUTION_RUNTIME_V1"
+  ],
+  "defect": {
+    "description": "New human request attached to unrelated active clarification context.",
+    "observed_prompt": "Create a new governed domain called FreshDomain.",
+    "incorrect_attachment": "COMPLIANCE",
+    "root_cause": "Pre-routing gate treated active clarification presence as sufficient for reply binding."
+  },
+  "implemented_files": [
+    "aigol/runtime/clarification_continuity_runtime.py",
+    "aigol/runtime/clarification_lifecycle_resolution_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_clarification_continuity_runtime_v1.py"
+  ],
+  "clarification_state_discovery_audit": {
+    "active_discovery_scope": "session_root",
+    "selection_basis_before_fix": "active clarification presence",
+    "selection_basis_after_fix": "active clarification presence plus reply-scope match",
+    "replay_order_used": true,
+    "clarification_identity_preserved": true,
+    "session_boundary_enforced": true
+  },
+  "isolation_rules": {
+    "reply_must_bind_to_originating_clarification": true,
+    "new_request_must_not_attach_to_unrelated_clarification": true,
+    "clarification_identity_preserved_by_reference_and_hash": true,
+    "clarification_scope_reconstructable_from_replay": true,
+    "older_open_clarifications_do_not_reactivate_after_later_resolution": true
+  },
+  "acceptance_flow": {
+    "first_prompt": "Create a compliance domain.",
+    "first_proposed_domain": "COMPLIANCE",
+    "second_prompt": "Create a new governed domain called FreshDomain.",
+    "second_proposed_domain": "FreshDomain",
+    "second_attached_to_compliance": false,
+    "operator_reply_bound_to": "FreshDomain",
+    "workflow_resume_ready": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "domain_created": false
+  },
+  "regression_evidence": {
+    "freshdomain_does_not_attach_to_compliance": true,
+    "multiple_clarification_histories_remain_isolated": true,
+    "clarification_replies_bind_correctly": true,
+    "unrelated_prompts_create_new_clarification_context": true,
+    "replay_continuity_preserved": true
+  },
+  "test_evidence": {
+    "command": "python -m pytest tests/test_clarification_continuity_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "result": "PASSED",
+    "tests_collected": 42,
+    "tests_passed": 42
+  },
+  "final_outputs": {
+    "STATE_ISOLATION_DEFECT_IDENTIFIED": "TRUE",
+    "CLARIFICATION_SCOPE_PRESERVED": "TRUE",
+    "UNRELATED_CLARIFICATION_BINDING_PREVENTED": "TRUE",
+    "REPLAY_CONTINUITY_PRESERVED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "FRESHDOMAIN_ISOLATED_FROM_COMPLIANCE": "TRUE",
+    "READY_FOR_REAL_HUMAN_CLARIFICATION_WORKFLOW": "TRUE"
+  }
+}
