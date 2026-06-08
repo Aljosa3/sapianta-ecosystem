@@ -20,7 +20,13 @@ from aigol.runtime.governed_termination_runtime import (
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 from test_post_execution_replay_review_runtime_v1 import _review
-from test_worker_result_validation_runtime_v1 import CREATED_AT, _args, _input_sequence
+from test_worker_result_validation_runtime_v1 import (
+    CREATED_AT,
+    _args,
+    _execution_bound_result_capture,
+    _input_sequence,
+    _validate,
+)
 
 
 def _terminate(tmp_path, *, prompt: str, suffix: str, review: dict | None = None) -> dict:
@@ -93,6 +99,83 @@ def test_governed_termination_persists_replay_events(tmp_path) -> None:
     assert (replay_dir / "001_termination_classification_recorded.json").exists()
     assert (replay_dir / "002_termination_artifact_recorded.json").exists()
     assert (replay_dir / "003_termination_result_recorded.json").exists()
+
+
+def test_governed_termination_accepts_execution_bound_replay_review(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+    )
+    validation = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+        capture=capture,
+    )
+    review = _review(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+        validation=validation,
+    )
+
+    result = _terminate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+        review=review,
+    )
+    artifact = result["governed_termination_artifact"]
+    reconstructed = reconstruct_governed_termination_replay(tmp_path / "governed_termination_execution-bound")
+
+    assert result["termination_status"] == TERMINATED
+    assert artifact["execution_reference"] == "EXECUTION-execution-bound"
+    assert artifact["execution_hash"] == capture["_execution_capture"]["execution_artifact"]["artifact_hash"]
+    assert artifact["execution_status"] == "EXECUTING"
+    assert artifact["execution_started"] is True
+    assert artifact["terminated"] is True
+    assert artifact["retry_created"] is False
+    assert artifact["continuation_created"] is False
+    assert result["termination_evidence_artifact"]["closure_preconditions"]["execution_binding_continuous"] is True
+    assert reconstructed["execution_reference"] == artifact["execution_reference"]
+    assert reconstructed["execution_started"] is True
+
+
+def test_governed_termination_fails_closed_on_execution_binding_drift(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+    )
+    validation = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+        capture=capture,
+    )
+    review = _review(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+        validation=validation,
+    )
+    review["post_execution_replay_review_artifact"] = _rewrite_review_artifact(
+        tmp_path,
+        suffix="execution-binding-drift",
+        changes={"execution_hash": "sha256:other-execution"},
+    )
+
+    result = _terminate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-drift",
+        review=review,
+    )
+
+    assert result["termination_status"] == "FAILED_CLOSED"
+    assert result["governed_termination_artifact"] is None
+    assert "validation mismatch" in result["failure_reason"]
 
 
 @pytest.mark.parametrize(
