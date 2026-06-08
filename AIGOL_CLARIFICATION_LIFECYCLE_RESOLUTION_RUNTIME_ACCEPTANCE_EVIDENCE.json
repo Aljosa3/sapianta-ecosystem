@@ -1,0 +1,85 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_LIFECYCLE_RESOLUTION_RUNTIME_ACCEPTANCE_EVIDENCE_V1",
+  "artifact_version": 1,
+  "runtime_id": "AIGOL_CLARIFICATION_LIFECYCLE_RESOLUTION_RUNTIME_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "source_failure": {
+    "failure_reason": "clarification continuity failed closed: multiple active clarifications",
+    "root_cause": "Active discovery treated every unresolved clarification request as active and did not lifecycle-classify older unresolved requests as superseded."
+  },
+  "implemented_files": [
+    "aigol/runtime/clarification_lifecycle_resolution_runtime.py",
+    "aigol/runtime/clarification_continuity_runtime.py",
+    "tests/test_clarification_continuity_runtime_v1.py"
+  ],
+  "lifecycle_audit": {
+    "clarification_creation_runtime": "unknown_domain_clarification_runtime",
+    "clarification_storage": "TURN-*/unknown_domain_clarification",
+    "clarification_identifier": "clarification_request_artifact.clarification_id",
+    "clarification_replay_evidence": [
+      "000_unknown_domain_recorded.json",
+      "001_clarification_request_recorded.json",
+      "002_clarification_workflow_returned.json"
+    ],
+    "response_handling_runtime": "clarification_continuity_runtime",
+    "resolution_evidence": [
+      "000_clarification_reply_binding_recorded.json",
+      "001_clarification_response_recorded.json",
+      "002_clarification_resolution_recorded.json",
+      "003_clarification_workflow_resume_recorded.json"
+    ]
+  },
+  "lifecycle_model": {
+    "states": [
+      "OPEN",
+      "ACTIVE",
+      "SUPERSEDED",
+      "RESPONDED",
+      "RESOLVED"
+    ],
+    "active_selection_rule": "Only the latest unresolved clarification is ACTIVE.",
+    "superseded_rule": "Older unresolved clarifications are SUPERSEDED and excluded from active discovery.",
+    "resolved_rule": "Clarifications with a resolution artifact are RESOLVED and excluded from active discovery.",
+    "operator_reply_transition": "OPEN -> RESPONDED -> RESOLVED -> WORKFLOW_RESUME_READY"
+  },
+  "acceptance_case": {
+    "prompt": "Create a new governed domain called PilotDomain.",
+    "clarification_requested": true,
+    "operator_reply_bound": true,
+    "clarification_response_recorded": true,
+    "clarification_resolved": true,
+    "workflow_continuation_ready": true,
+    "failed_closed_multiple_active_clarifications": false,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false
+  },
+  "regression_evidence": {
+    "latest_open_clarification_active": true,
+    "older_open_clarification_superseded": true,
+    "resolved_clarification_not_active": true,
+    "missing_state_fails_closed": true,
+    "chain_mismatch_fails_closed": true,
+    "replay_mismatch_fails_closed": true,
+    "workflow_mismatch_fails_closed": true
+  },
+  "test_evidence": {
+    "command": "python -m pytest tests/test_clarification_continuity_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "result": "PASSED",
+    "tests_collected": 40,
+    "tests_passed": 40
+  },
+  "final_outputs": {
+    "MULTIPLE_ACTIVE_CLARIFICATIONS_FIXED": "TRUE",
+    "AT_MOST_ONE_ACTIVE_CLARIFICATION_PER_SESSION": "TRUE",
+    "OPEN_TO_RESPONDED_TO_RESOLVED": "TRUE",
+    "RESOLVED_CLARIFICATIONS_EXCLUDED_FROM_ACTIVE": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "PROVIDER_INVOCATION_PREVENTED": "TRUE",
+    "WORKER_INVOCATION_PREVENTED": "TRUE",
+    "DOMAIN_CREATION_PREVENTED": "TRUE",
+    "READY_FOR_HUMAN_CLARIFICATION_ACCEPTANCE": "TRUE"
+  }
+}
