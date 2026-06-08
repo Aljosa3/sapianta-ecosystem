@@ -6,6 +6,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.human_execution_intent_detection import (
+    GENERIC_GOVERNED_DOMAIN_CREATION,
+    detect_human_execution_intent,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -204,6 +208,7 @@ def render_unknown_domain_clarification_workflow(capture: dict[str, Any]) -> str
 def _analyze_prompt(human_prompt: str) -> dict[str, Any]:
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".")
+    execution_intent = detect_human_execution_intent(prompt)
     if "domain" not in normalized or not any(term in normalized for term in ("create", "new", "add")):
         return {"eligible": False}
     if "trading" in normalized:
@@ -222,6 +227,28 @@ def _analyze_prompt(human_prompt: str) -> dict[str, Any]:
             "missing_information": ["primary purpose", "expected capabilities", "target users"],
             "clarification_mode": "DOMAIN_DETAILS" if "new domain" in normalized or "regulatory" in normalized else "DOMAIN_OPTIONS",
             "detection_reasons": ["unknown domain", "missing domain mapping", "missing capability mapping"],
+        }
+    if execution_intent["intent_class"] == GENERIC_GOVERNED_DOMAIN_CREATION:
+        proposed_domain = execution_intent.get("target_name") or "UNSPECIFIED_DOMAIN"
+        missing_information = ["primary purpose", "expected capabilities", "target users"]
+        if execution_intent.get("target_name") is None:
+            missing_information = ["domain name", *missing_information]
+        return {
+            "eligible": True,
+            "originating_intent": CREATE_DOMAIN,
+            "requested_domain": proposed_domain,
+            "proposed_domain": proposed_domain,
+            "domain_known": False,
+            "domain_mapping_missing": True,
+            "capability_mapping_missing": True,
+            "missing_information": missing_information,
+            "clarification_mode": "DOMAIN_DETAILS",
+            "detection_reasons": [
+                "generic governed domain creation intent",
+                "unknown domain",
+                "missing domain mapping",
+                "missing capability mapping",
+            ],
         }
     return {"eligible": False}
 

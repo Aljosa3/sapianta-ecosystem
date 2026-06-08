@@ -6,6 +6,12 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.human_execution_intent_detection import (
+    GENERIC_GOVERNED_ARTIFACT_CREATION,
+    GENERIC_GOVERNED_DOMAIN_CREATION,
+    GENERIC_GOVERNED_EXECUTION_REQUEST,
+    detect_human_execution_intent,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -231,6 +237,20 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         "compliance" in normalized or "regulatory" in normalized
     ):
         return _analysis(CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "HIGH", ["create", "compliance", "domain"])
+    execution_intent = detect_human_execution_intent(prompt)
+    if execution_intent["intent_class"] == GENERIC_GOVERNED_DOMAIN_CREATION:
+        return _analysis(
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+            execution_intent["confidence"],
+            execution_intent["matched_terms"] or ["create", "governed", "domain"],
+        )
+    if execution_intent["intent_class"] in {
+        GENERIC_GOVERNED_ARTIFACT_CREATION,
+        GENERIC_GOVERNED_EXECUTION_REQUEST,
+    }:
+        raise FailClosedRuntimeError(
+            "conversational CLI routing failed closed: generic governed execution intent requires a certified workflow mapping"
+        )
     if "latest" in normalized and ("replay chain" in normalized or "chain" in normalized):
         return _analysis(SHOW_LATEST_REPLAY_CHAIN, "HIGH", ["latest", "replay", "chain"])
     if "review" in normalized and "audit" in normalized:
