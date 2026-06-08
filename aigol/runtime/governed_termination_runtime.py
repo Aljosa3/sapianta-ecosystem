@@ -134,13 +134,18 @@ def reconstruct_governed_termination_replay(replay_dir: str | Path) -> dict[str,
         "terminal_operation_state": termination["terminal_operation_state"],
         "post_execution_replay_review_reference": termination["post_execution_replay_review_reference"],
         "worker_result_validation_reference": termination["worker_result_validation_reference"],
+        "execution_reference": termination.get("execution_reference"),
+        "execution_hash": termination.get("execution_hash"),
+        "execution_replay_hash": termination.get("execution_replay_hash"),
+        "execution_replay_reference": termination.get("execution_replay_reference"),
+        "execution_status": termination.get("execution_status"),
         "worker_id": termination["worker_id"],
         "chain_id": termination["chain_id"],
         "future_improvement_intent_handoff_status": termination["future_improvement_intent_handoff_status"],
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
-        **_post_termination_boundary_flags(),
+        **_post_termination_boundary_flags(execution_bound=_review_execution_bound(termination)),
         "failure_reason": result["failure_reason"],
     }
 
@@ -202,6 +207,15 @@ def _load_review_lineage(
             raise FailClosedRuntimeError("governed termination failed closed: replay review mismatch")
         if termination.get("post_execution_replay_review_hash") != review["artifact_hash"]:
             raise FailClosedRuntimeError("governed termination failed closed: replay review mismatch")
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        ):
+            if termination.get(field) != review.get(field):
+                raise FailClosedRuntimeError("governed termination failed closed: replay review mismatch")
     checks = {
         "review_continuity": result["post_execution_replay_review_hash"] == review["artifact_hash"],
         "review_evidence_continuity": classification["review_evidence_hash"] == evidence["artifact_hash"],
@@ -217,6 +231,7 @@ def _load_review_lineage(
         "chain_continuity": len({evidence["chain_id"], classification["chain_id"], review["chain_id"], result["chain_id"]}) == 1,
         "replay_continuity": reconstructed["review_status"] == REVIEW_COMPLETED,
         "authority_continuity": _review_authority_continuity(review),
+        "execution_binding_lineage": _review_execution_binding_continuity(evidence, review, result),
         "hash_continuity": all(bool(wrapper["artifact"].get("artifact_hash")) for wrapper in wrappers),
         "terminal_precondition": review.get("terminated") is False,
     }
@@ -232,6 +247,7 @@ def _evidence_artifact(
     review_replay_reference: str,
     terminated_at: str,
 ) -> dict[str, Any]:
+    execution_binding_continuous = _review_execution_binding_continuity(review, review, review)
     artifact = {
         "artifact_type": GOVERNED_TERMINATION_EVIDENCE_ARTIFACT_V1,
         "runtime_version": AIGOL_GOVERNED_TERMINATION_RUNTIME_VERSION,
@@ -247,6 +263,11 @@ def _evidence_artifact(
         "authorization_hash": review["authorization_hash"],
         "execution_packet_reference": review["execution_packet_reference"],
         "execution_packet_hash": review["execution_packet_hash"],
+        "execution_reference": review.get("execution_reference"),
+        "execution_hash": review.get("execution_hash"),
+        "execution_replay_hash": review.get("execution_replay_hash"),
+        "execution_replay_reference": review.get("execution_replay_reference"),
+        "execution_status": review.get("execution_status"),
         "worker_id": review["worker_id"],
         "worker_hash": review["worker_hash"],
         "chain_id": review["chain_id"],
@@ -256,11 +277,12 @@ def _evidence_artifact(
             "authority_integrity_verified": review["authority_integrity_assessment"] == INTEGRITY_VERIFIED,
             "execution_integrity_verified": review["execution_integrity_assessment"] == INTEGRITY_VERIFIED,
             "validation_integrity_verified": review["validation_integrity_assessment"] == INTEGRITY_VERIFIED,
+            "execution_binding_continuous": execution_binding_continuous,
             "not_previously_terminated": review["terminated"] is False,
         },
         "recorded_at": _require_string(terminated_at, "terminated_at"),
         "replay_visible": True,
-        **_post_termination_boundary_flags(),
+        **_post_termination_boundary_flags(execution_bound=_review_execution_bound(review)),
     }
     if not all(artifact["closure_preconditions"].values()):
         raise FailClosedRuntimeError("governed termination failed closed: closure precondition invalid")
@@ -287,7 +309,7 @@ def _classification_artifact(
         "improvement_intent_handoff_requires_separate_governed_request": True,
         "classified_at": _require_string(terminated_at, "terminated_at"),
         "replay_visible": True,
-        **_post_termination_boundary_flags(),
+        **_post_termination_boundary_flags(execution_bound=evidence.get("execution_started") is True),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -320,6 +342,11 @@ def _termination_artifact(
         "authorization_hash": review["authorization_hash"],
         "execution_packet_reference": review["execution_packet_reference"],
         "execution_packet_hash": review["execution_packet_hash"],
+        "execution_reference": review.get("execution_reference"),
+        "execution_hash": review.get("execution_hash"),
+        "execution_replay_hash": review.get("execution_replay_hash"),
+        "execution_replay_reference": review.get("execution_replay_reference"),
+        "execution_status": review.get("execution_status"),
         "worker_id": review["worker_id"],
         "worker_hash": review["worker_hash"],
         "chain_id": review["chain_id"],
@@ -332,7 +359,7 @@ def _termination_artifact(
         "terminated_by": _require_string(terminated_by, "terminated_by"),
         "terminated_at": _require_string(terminated_at, "terminated_at"),
         "replay_visible": True,
-        **_post_termination_boundary_flags(),
+        **_post_termination_boundary_flags(execution_bound=_review_execution_bound(review)),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_termination_artifact(artifact)
@@ -362,10 +389,15 @@ def _result_artifact(
         "governed_termination_hash": termination["artifact_hash"],
         "post_execution_replay_review_reference": termination["post_execution_replay_review_reference"],
         "post_execution_replay_review_hash": termination["post_execution_replay_review_hash"],
+        "execution_reference": termination.get("execution_reference"),
+        "execution_hash": termination.get("execution_hash"),
+        "execution_replay_hash": termination.get("execution_replay_hash"),
+        "execution_replay_reference": termination.get("execution_replay_reference"),
+        "execution_status": termination.get("execution_status"),
         "chain_id": termination["chain_id"],
         "completed_at": _require_string(terminated_at, "terminated_at"),
         "replay_visible": True,
-        **_post_termination_boundary_flags(),
+        **_post_termination_boundary_flags(execution_bound=_review_execution_bound(termination)),
         "failure_reason": failure_reason,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -422,6 +454,9 @@ def _capture(
             "post_execution_replay_review_reference": (
                 termination.get("post_execution_replay_review_reference") if termination else None
             ),
+            "execution_reference": termination.get("execution_reference") if termination else None,
+            "execution_hash": termination.get("execution_hash") if termination else None,
+            "execution_replay_reference": termination.get("execution_replay_reference") if termination else None,
             "worker_id": termination.get("worker_id") if termination else None,
             "terminal_operation_state": termination.get("terminal_operation_state") if termination else None,
             "future_improvement_intent_handoff_status": (
@@ -448,9 +483,21 @@ def _validate_review_artifact(review: dict[str, Any]) -> None:
     ):
         if review.get(assessment) != INTEGRITY_VERIFIED:
             raise FailClosedRuntimeError("governed termination failed closed: replay review integrity invalid")
-    for field, expected in _pre_termination_boundary_flags().items():
+    execution_bound = _review_execution_bound(review)
+    for field, expected in _pre_termination_boundary_flags(execution_bound=execution_bound).items():
         if review.get(field) is not expected:
             raise FailClosedRuntimeError("governed termination failed closed: authority boundary invalid")
+    if execution_bound:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        ):
+            _require_string(review.get(field), field)
+        if review.get("execution_status") != "EXECUTING":
+            raise FailClosedRuntimeError("governed termination failed closed: invalid execution state")
 
 
 def _validate_termination_artifact(termination: dict[str, Any]) -> None:
@@ -460,7 +507,8 @@ def _validate_termination_artifact(termination: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("governed termination failed closed: invalid termination status")
     if termination.get("terminal_operation_state") != TERMINAL_OPERATION_STATE:
         raise FailClosedRuntimeError("governed termination failed closed: invalid terminal operation state")
-    for field, expected in _post_termination_boundary_flags().items():
+    execution_bound = _review_execution_bound(termination)
+    for field, expected in _post_termination_boundary_flags(execution_bound=execution_bound).items():
         if termination.get(field) is not expected:
             raise FailClosedRuntimeError("governed termination failed closed: authority boundary invalid")
     for field in (
@@ -480,6 +528,17 @@ def _validate_termination_artifact(termination: dict[str, Any]) -> None:
         "terminated_at",
     ):
         _require_string(termination.get(field), field)
+    if execution_bound:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        ):
+            _require_string(termination.get(field), field)
+        if termination.get("execution_status") != "EXECUTING":
+            raise FailClosedRuntimeError("governed termination failed closed: invalid execution state")
     if termination.get("future_improvement_intent_handoff_status") != SEPARATE_GOVERNED_REQUEST_REQUIRED:
         raise FailClosedRuntimeError("governed termination failed closed: invalid future handoff boundary")
     for field in (
@@ -493,17 +552,81 @@ def _validate_termination_artifact(termination: dict[str, Any]) -> None:
 
 
 def _review_authority_continuity(review: dict[str, Any]) -> bool:
-    return all(review.get(field) is expected for field, expected in _pre_termination_boundary_flags().items())
+    execution_bound = _review_execution_bound(review)
+    return all(
+        review.get(field) is expected
+        for field, expected in _pre_termination_boundary_flags(execution_bound=execution_bound).items()
+    )
 
 
-def _pre_termination_boundary_flags() -> dict[str, bool]:
+def _review_execution_binding_continuity(
+    evidence: dict[str, Any],
+    review: dict[str, Any],
+    result: dict[str, Any],
+) -> bool:
+    execution_bound = _review_execution_bound(review)
+    if not execution_bound:
+        return not _has_execution_binding(evidence, review, result)
+    required = (
+        "execution_reference",
+        "execution_hash",
+        "execution_replay_hash",
+        "execution_replay_reference",
+        "execution_status",
+    )
+    if any(not _nonempty_string(review.get(field)) for field in required):
+        return False
+    if review.get("execution_started") is not True:
+        return False
+    for artifact in (evidence, result):
+        if artifact.get("execution_reference") != review["execution_reference"]:
+            return False
+        if artifact.get("execution_hash") != review["execution_hash"]:
+            return False
+    if evidence.get("execution_replay_hash") != review["execution_replay_hash"]:
+        return False
+    if evidence.get("execution_replay_reference") != review["execution_replay_reference"]:
+        return False
+    if result.get("execution_replay_reference") != review["execution_replay_reference"]:
+        return False
+    if evidence.get("execution_status") != review["execution_status"]:
+        return False
+    if result.get("execution_status") != review["execution_status"]:
+        return False
+    if review.get("execution_status") != "EXECUTING":
+        return False
+    return True
+
+
+def _review_execution_bound(review: dict[str, Any]) -> bool:
+    if review.get("execution_started") is True:
+        return True
+    return _has_execution_binding(review)
+
+
+def _has_execution_binding(*artifacts: dict[str, Any]) -> bool:
+    fields = (
+        "execution_reference",
+        "execution_hash",
+        "execution_replay_hash",
+        "execution_replay_reference",
+        "execution_status",
+    )
+    return any(artifact.get(field) is not None for artifact in artifacts for field in fields)
+
+
+def _nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _pre_termination_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
     return {
         "approval_created": False,
         "worker_assigned": True,
         "worker_dispatched": True,
         "dispatch_requested": True,
         "worker_invoked": True,
-        "execution_started": False,
+        "execution_started": execution_bound,
         "result_created": True,
         "worker_result_captured": True,
         "result_validated": True,
@@ -514,8 +637,8 @@ def _pre_termination_boundary_flags() -> dict[str, bool]:
     }
 
 
-def _post_termination_boundary_flags() -> dict[str, bool]:
-    flags = _pre_termination_boundary_flags()
+def _post_termination_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
+    flags = _pre_termination_boundary_flags(execution_bound=execution_bound)
     flags["terminated"] = True
     return flags
 
