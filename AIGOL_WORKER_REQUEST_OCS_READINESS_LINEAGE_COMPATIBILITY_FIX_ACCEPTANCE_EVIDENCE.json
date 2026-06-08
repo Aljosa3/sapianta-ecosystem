@@ -1,0 +1,49 @@
+{
+  "artifact_type": "AIGOL_WORKER_REQUEST_OCS_READINESS_LINEAGE_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_WORKER_REQUEST_OCS_READINESS_LINEAGE_COMPATIBILITY_FIX_V1",
+  "created_at": "2026-06-08T00:00:00Z",
+  "status": "ACCEPTED",
+  "root_cause": "worker_invocation_request_runtime._load_execution_ready_lineage reconstructed only governed implementation dry-run replay",
+  "runtime_changes": [
+    {
+      "file": "aigol/runtime/worker_invocation_request_runtime.py",
+      "change": "Added OCS execution readiness replay reconstruction fallback while preserving legacy dry-run reconstruction."
+    }
+  ],
+  "test_changes": [
+    {
+      "file": "tests/test_worker_invocation_request_runtime_v1.py",
+      "change": "Added OCS readiness authorization to worker invocation request regression coverage."
+    }
+  ],
+  "lineage_sources": {
+    "legacy_governed_implementation_dry_run": true,
+    "ocs_execution_readiness": true
+  },
+  "preserved_boundaries": {
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "validation": {
+    "focused_worker_request_compatibility": {
+      "command": "python -m pytest tests/test_worker_invocation_request_runtime_v1.py::test_ocs_readiness_authorization_becomes_worker_invocation_request_created tests/test_worker_invocation_request_runtime_v1.py::test_execution_authorized_becomes_worker_invocation_request_created tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_when_authorization_missing tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_when_authorization_expired tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_on_authority_violation tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_reconstruction_detects_replay_corruption",
+      "result": "8 passed"
+    },
+    "cross_boundary_certification": {
+      "command": "python -m pytest tests/test_ocs_execution_readiness_runtime_v1.py tests/test_execution_authorization_runtime_v1.py::test_execution_ready_becomes_execution_authorized tests/test_execution_authorization_runtime_v1.py::test_execution_authorization_fails_closed_on_packet_corruption tests/test_execution_authorization_runtime_v1.py::test_execution_authorization_reconstruction_detects_corruption tests/test_worker_invocation_request_runtime_v1.py::test_ocs_readiness_authorization_becomes_worker_invocation_request_created tests/test_worker_invocation_request_runtime_v1.py::test_execution_authorized_becomes_worker_invocation_request_created tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_when_authorization_missing tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_when_authorization_expired tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_fails_closed_on_authority_violation tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_reconstruction_detects_replay_corruption",
+      "result": "18 passed"
+    }
+  },
+  "final_outputs": {
+    "LEGACY_LINEAGE_COMPATIBLE": true,
+    "OCS_READINESS_LINEAGE_COMPATIBLE": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "REPLAY_INTEGRITY_PRESERVED": true,
+    "READY_FOR_WORKER_REQUEST_RUNTIME": true
+  }
+}
