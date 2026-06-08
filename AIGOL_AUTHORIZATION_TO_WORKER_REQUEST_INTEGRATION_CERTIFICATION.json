@@ -1,0 +1,52 @@
+{
+  "artifact_type": "AIGOL_AUTHORIZATION_TO_WORKER_REQUEST_INTEGRATION_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_AUTHORIZATION_TO_WORKER_REQUEST_INTEGRATION_REVIEW_V1",
+  "created_at": "2026-06-08T00:00:00Z",
+  "certification_status": "CERTIFIED_WITH_COMPATIBILITY_GAP",
+  "source_certifications": [
+    "AIGOL_OCS_FOUNDATION_FREEZE_V2",
+    "AIGOL_OCS_TO_EXECUTION_HANDOFF_RUNTIME_V1",
+    "AIGOL_EXECUTION_READINESS_RUNTIME_V1",
+    "AIGOL_EXECUTION_AUTHORIZATION_INTEGRATION_REVIEW_V1"
+  ],
+  "certified_boundary": {
+    "from": "EXECUTION_AUTHORIZATION_RUNTIME",
+    "to": "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+    "legacy_path_compatible": true,
+    "ocs_readiness_path_compatible": false,
+    "architectural_change_required": false
+  },
+  "governance_assertions": {
+    "authorization_does_not_assign_worker": true,
+    "worker_request_does_not_assign_worker": true,
+    "worker_request_does_not_dispatch_worker": true,
+    "worker_request_does_not_invoke_worker": true,
+    "worker_request_does_not_execute": true,
+    "replay_lineage_required": true,
+    "fail_closed_validation_preserved": true
+  },
+  "compatibility_result": {
+    "authorization_outputs_sufficient": true,
+    "worker_request_model_exists": true,
+    "worker_request_runtime_exists": true,
+    "legacy_authorization_to_worker_request": true,
+    "ocs_readiness_authorization_to_worker_request": false,
+    "runtime_blocking_missing_bindings": true,
+    "artifact_field_blocking_missing_bindings": false,
+    "duplicate_logic_found": "TRUE_NON_BLOCKING"
+  },
+  "minimal_next_milestone": "AIGOL_WORKER_REQUEST_OCS_READINESS_LINEAGE_COMPATIBILITY_FIX_V1",
+  "validation": {
+    "legacy_worker_request_tests": "7 passed",
+    "json_artifacts_parseable": true,
+    "diff_check_clean": true
+  },
+  "final_outputs": {
+    "WORKER_REQUEST_COMPATIBLE": "PARTIAL_LEGACY_TRUE_OCS_READINESS_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_WORKER_REQUEST_OCS_READINESS_LINEAGE_COMPATIBILITY_FIX_V1",
+    "READY_FOR_WORKER_REQUEST_RUNTIME": "FALSE_PENDING_COMPATIBILITY_FIX"
+  }
+}
