@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from pathlib import Path
 
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
 from aigol.runtime.conversation_native_development_intent_routing import (
@@ -22,6 +23,10 @@ from aigol.runtime.implementation_approval_resume import (
 )
 from aigol.runtime.implementation_handoff_visibility import create_implementation_handoff_visibility_summary
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
+from aigol.runtime.ocs_execution_readiness_runtime import evaluate_ocs_execution_readiness
+from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import run_ocs_llm_cognition_end_to_end
+from aigol.runtime.ocs_to_execution_handoff_runtime import create_ocs_execution_handoff
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 from aigol.runtime.worker_invocation_request_runtime import (
     WORKER_INVOCATION_REQUEST_ARTIFACT_V1,
@@ -149,6 +154,101 @@ def _invocation_request(tmp_path, *, prompt: str, suffix: str, expires_at: str =
     )
 
 
+def _ocs_source_context() -> dict:
+    artifact = {
+        "artifact_type": "HUMAN_REQUEST_ARTIFACT_V1",
+        "artifact_id": "HUMAN-REQUEST-WORKER-REQUEST-OCS-001",
+        "status": "REPLAY_VISIBLE",
+        "summary": "Human asks OCS to create a bounded execution intake candidate.",
+        "replay_visible": True,
+        "authority": False,
+        "execution_requested": False,
+        "worker_invoked": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return {"conversation_context": [artifact]}
+
+
+def _ocs_authorization(tmp_path: Path, *, suffix: str) -> dict:
+    response = json.dumps(
+        {
+            "findings": ["OCS found a bounded execution candidate for human review."],
+            "assumptions": ["Execution remains downstream of human approval and authorization."],
+            "risks": ["Worker selection must remain bounded."],
+            "uncertainties": ["Exact worker implementation scope requires review."],
+            "clarification_questions": ["Should this become a worker request candidate?"],
+            "recommended_next_milestone": "Create OCS execution handoff artifact.",
+            "confidence": "MEDIUM",
+        },
+        sort_keys=True,
+    )
+
+    def transport(_payload: dict, metadata: dict) -> dict:
+        assert metadata["provider_role"] == "COGNITION_PROVIDER"
+        return {
+            "model": "gpt-5.1",
+            "output_text": response,
+            "usage": {"input_tokens": 100, "output_tokens": 50, "total_tokens": 150},
+        }
+
+    ocs = run_ocs_llm_cognition_end_to_end(
+        end_to_end_id=f"OCS-WORKER-REQUEST-E2E-{suffix}",
+        human_question="Turn this OCS cognition into a bounded execution candidate.",
+        source_context=_ocs_source_context(),
+        provider_contracts=[create_default_cognition_provider_contract(provider_id="openai", created_at=CREATED_AT)],
+        transport_registry={"openai": transport},
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"ocs_e2e_{suffix}",
+        source_chain_id=f"CHAIN-OCS-WORKER-REQUEST-{suffix}",
+        source_request_reference="HUMAN-REQUEST-WORKER-REQUEST-OCS-001",
+        single_provider_primary_mode=True,
+    )
+    handoff = create_ocs_execution_handoff(
+        handoff_id=f"OCS-HANDOFF-WORKER-REQUEST-{suffix}",
+        ocs_cognition_replay_reference=ocs["replay_reference"],
+        execution_intake_id=f"OCS-EXECUTION-INTAKE-WORKER-REQUEST-{suffix}",
+        execution_intent_summary="Prepare a bounded worker request candidate.",
+        execution_candidate_scope={
+            "mode": "EXECUTION_INTAKE_ONLY",
+            "domain": "product_build",
+            "execution_authorized": False,
+        },
+        requested_outcomes=["worker invocation request candidate"],
+        non_goals=["approval creation", "worker assignment", "worker dispatch", "worker invocation"],
+        allowed_outputs=["worker invocation request proposal"],
+        forbidden_operations=["AUTHORIZE_EXECUTION", "INVOKE_WORKER", "DISPATCH_WORKER", "RETRY", "REPAIR"],
+        worker_role_requirements=["bounded implementation worker"],
+        target_worker_family="IMPLEMENTATION",
+        candidate_worker_constraints={"single_worker_only": True, "human_review_required": True},
+        worker_capability_requirements=["bounded file generation after downstream authorization"],
+        worker_exclusion_rules=["no provider-as-worker", "no unregistered worker"],
+        worker_registry_requirements=["registered worker identity required"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"ocs_handoff_{suffix}",
+        source_chain_id=f"CHAIN-OCS-WORKER-REQUEST-{suffix}",
+    )
+    readiness = evaluate_ocs_execution_readiness(
+        readiness_id=f"OCS-READINESS-WORKER-REQUEST-{suffix}",
+        ocs_handoff_replay_reference=handoff["ocs_execution_handoff_replay_reference"],
+        approval_status="APPROVED",
+        approval_reference=f"HUMAN-APPROVAL-OCS-WORKER-REQUEST-{suffix}",
+        approval_hash=f"sha256:approvalhash{suffix:0>52}"[:71],
+        approving_actor="human_operator",
+        approved_at=CREATED_AT,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"ocs_readiness_{suffix}",
+    )
+    return authorize_execution_ready(
+        authorization_id=f"AUTHORIZATION-OCS-WORKER-REQUEST-{suffix}",
+        execution_ready_replay_reference=readiness["ocs_execution_readiness_replay_reference"],
+        authorizing_actor="AIGOL_GOVERNANCE",
+        authorized_at=CREATED_AT,
+        replay_dir=tmp_path / f"ocs_authorization_{suffix}",
+    )
+
+
 @pytest.mark.parametrize(
     ("prompt", "suffix"),
     [
@@ -192,6 +292,31 @@ def test_worker_invocation_request_persists_replay_evidence(tmp_path) -> None:
     assert (replay_dir / "001_invocation_request_classification_recorded.json").exists()
     assert (replay_dir / "002_invocation_request_artifact_recorded.json").exists()
     assert (replay_dir / "003_invocation_request_result_recorded.json").exists()
+
+
+def test_ocs_readiness_authorization_becomes_worker_invocation_request_created(tmp_path) -> None:
+    authorization = _ocs_authorization(tmp_path, suffix="compat")
+    capture = create_worker_invocation_request(
+        invocation_request_id="WORKER-INVOCATION-REQUEST-OCS-COMPAT",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="AIGOL_GOVERNANCE",
+        requested_at=CREATED_AT,
+        replay_dir=tmp_path / "invocation_request_ocs_compat",
+    )
+    request = capture["worker_invocation_request_artifact"]
+    reconstructed = reconstruct_worker_invocation_request_replay(tmp_path / "invocation_request_ocs_compat")
+
+    assert capture["request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert request["authorization_reference"] == "AUTHORIZATION-OCS-WORKER-REQUEST-compat"
+    assert request["execution_packet_reference"].endswith(":PACKET")
+    assert request["worker_role"] == "bounded implementation worker"
+    assert request["target_worker_family"] == "IMPLEMENTATION"
+    assert request["worker_assigned"] is False
+    assert request["worker_dispatched"] is False
+    assert request["worker_invoked"] is False
+    assert request["execution_started"] is False
+    assert reconstructed["request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert reconstructed["request_hash"] == request["request_hash"]
 
 
 def test_worker_invocation_request_fails_closed_when_authorization_missing(tmp_path) -> None:
