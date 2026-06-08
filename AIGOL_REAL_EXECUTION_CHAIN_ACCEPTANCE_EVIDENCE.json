@@ -1,0 +1,94 @@
+{
+  "artifact_type": "AIGOL_REAL_EXECUTION_CHAIN_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "acceptance_id": "AIGOL_REAL_EXECUTION_CHAIN_ACCEPTANCE_V1",
+  "status": "ACCEPTANCE_COMPLETE",
+  "acceptance_hash": "sha256:8cae9c789b550eecd54b75d7e10f85e113b39729409b57c520487486e23c25c1",
+  "scope": {
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "architectural_change_performed": false,
+    "new_worker_created": false
+  },
+  "proof_worker": {
+    "prompt": "Create a filesystem worker.",
+    "worker_id": "AIGOL-WORKER-IMPLEMENTATION",
+    "worker_family": "IMPLEMENTATION",
+    "worker_role": "bounded implementation worker",
+    "allowed_effects": [
+      "RECORD_EXECUTION_START"
+    ]
+  },
+  "ocs_to_readiness": {
+    "handoff_reference": "OCS-HANDOFF-READINESS-001",
+    "readiness_status": "EXECUTION_READY",
+    "readiness_replay_status": "EXECUTION_READY",
+    "approval_status": "APPROVED",
+    "authorization_created_before_authorization": false,
+    "execution_started_before_authorization": false
+  },
+  "execution_chain": {
+    "chain_id": "CHAIN-OCS-READINESS-001",
+    "authorization_status": "EXECUTION_AUTHORIZED",
+    "authorization_replay_status": "EXECUTION_AUTHORIZED",
+    "worker_request_status": "WORKER_INVOCATION_REQUEST_CREATED",
+    "worker_request_replay_status": "WORKER_INVOCATION_REQUEST_CREATED",
+    "worker_assignment_status": "WORKER_ASSIGNED",
+    "worker_dispatch_status": "WORKER_DISPATCHED",
+    "worker_invocation_status": "WORKER_INVOKED",
+    "execution_status": "EXECUTING",
+    "execution_replay_status": "EXECUTING",
+    "result_capture_status": "WORKER_RESULT_CAPTURED",
+    "validation_status": "RESULT_VALIDATED",
+    "validation_replay_status": "RESULT_VALIDATED",
+    "review_status": "REVIEW_COMPLETED",
+    "review_replay_status": "REVIEW_COMPLETED",
+    "termination_status": "TERMINATED",
+    "termination_replay_status": "TERMINATED"
+  },
+  "artifact_bindings": {
+    "execution_reference": "EXECUTION-real-execution-chain-acceptance",
+    "execution_hash": "sha256:5531580de41924a7e6e8f7cb624fce01eca1e505c1d17b78423070dc249a7d51",
+    "result_capture_hash": "sha256:746be35f17981bbc3cd335eed7646257d8139096e8bb9028d1f8ea3bf5cec7b1",
+    "validation_hash": "sha256:9e8db165de509f8f5514f617dc5880769600156ddebeca08982adae9ca5786a2",
+    "review_hash": "sha256:a9e87ad899b149a68614b7d2fd3abfa183ccb45b85efb9fef9b6bd17fbdeb34a",
+    "termination_hash": "sha256:42311678e8b840049237b75ca667d422271eba5b360af15964fe236c9db8204f"
+  },
+  "continuity": {
+    "chain_id_continuous": true,
+    "execution_hash_preserved_to_capture": true,
+    "execution_hash_preserved_to_validation": true,
+    "execution_hash_preserved_to_review": true,
+    "execution_hash_preserved_to_termination": true,
+    "validation_hash_preserved_to_review": true,
+    "review_hash_preserved_to_termination": true
+  },
+  "authority": {
+    "execution_started": true,
+    "result_created": true,
+    "worker_result_captured": true,
+    "result_validated": true,
+    "post_execution_replay_reviewed": true,
+    "terminated": true,
+    "governance_mutated": false,
+    "replay_mutated": false,
+    "retry_created": false,
+    "continuation_created": false,
+    "improvement_intent_created": false,
+    "improvement_intent_handoff_executed": false
+  },
+  "fail_closed_probe": {
+    "scenario": "execution-bound replay review execution_hash drift before governed termination",
+    "termination_status": "FAILED_CLOSED",
+    "fail_closed": true,
+    "failure_reason": "post-execution replay review failed closed: validation mismatch"
+  },
+  "final_outputs": {
+    "END_TO_END_EXECUTION_COMPLETED": "TRUE",
+    "AUTHORITY_CHAIN_PRESERVED": "TRUE",
+    "REPLAY_CHAIN_PRESERVED": "TRUE",
+    "TERMINATION_COMPLETED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REAL_EXECUTION_CHAIN_ACCEPTED": "TRUE"
+  }
+}
