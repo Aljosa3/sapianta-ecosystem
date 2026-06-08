@@ -147,6 +147,11 @@ from aigol.moc.runtime_dispatch import render_runtime_dispatch_summary
 from aigol.moc.worker_preparation import render_worker_preparation_summary
 from aigol.runtime.prompt_to_conversation_integration import submit_prompt_to_conversation
 from aigol.runtime.conversation_session_resume_runtime import resume_conversation_session
+from aigol.runtime.clarification_continuity_runtime import (
+    detect_active_clarification,
+    render_clarification_continuity_summary,
+    run_clarification_continuity,
+)
 from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
@@ -1776,8 +1781,14 @@ def run_interactive_conversation(
                 turn_root=turn_root,
             )
             human_decision = normalize_human_decision(human_prompt)
+            active_clarification_capture = detect_active_clarification(session_root=session_root)
+            active_clarification_detected = active_clarification_capture.get("open_clarification_detected") is True
             stateful_pre_routing_gate = (
-                (pending_approval_required is not None and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION})
+                active_clarification_detected
+                or (
+                    pending_approval_required is not None
+                    and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+                )
                 or (
                     recommendation_continuity_artifact is not None
                     and _is_recommendation_decision_prompt(human_prompt)
@@ -1833,7 +1844,34 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if pending_approval_required is not None and human_decision in {REJECT, REQUEST_MODIFICATION}:
+            if active_clarification_detected:
+                clarification_continuity_capture = run_clarification_continuity(
+                    continuity_id=f"{prompt_id}:CLARIFICATION-CONTINUITY",
+                    session_root=session_root,
+                    turn_id=turn_id,
+                    prompt_id=prompt_id,
+                    operator_reply=human_prompt,
+                    current_chain_id=current_chain_id,
+                    created_at=created_at,
+                    replay_dir=turn_root / "clarification_continuity",
+                )
+                current_chain_id = clarification_continuity_capture.get("current_chain_id") or current_chain_id
+                latest_chain_id = clarification_continuity_capture.get("latest_chain_id") or current_chain_id
+                if clarification_continuity_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_clarification_continuity_summary(clarification_continuity_capture))
+                turns.append(
+                    _interactive_clarification_continuity_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        clarification_continuity_capture=clarification_continuity_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif pending_approval_required is not None and human_decision in {REJECT, REQUEST_MODIFICATION}:
                 human_decision_capture = record_human_decision(
                     human_decision_id=f"{prompt_id}:HUMAN-DECISION",
                     approval_required_artifact=pending_approval_required[
@@ -3209,6 +3247,59 @@ def _interactive_unknown_domain_clarification_turn_summary(
         "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
             "conversational_cli_routing_replay_reference"
         ),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_clarification_continuity_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    clarification_continuity_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    resume = clarification_continuity_capture.get("clarification_workflow_resume_artifact")
+    if not isinstance(resume, dict):
+        resume = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": clarification_continuity_capture.get("response_status"),
+        "response_source": clarification_continuity_capture.get("response_source"),
+        "fail_closed": clarification_continuity_capture.get("fail_closed") is True,
+        "failure_reason": clarification_continuity_capture.get("failure_reason"),
+        "replay_reference": clarification_continuity_capture.get("clarification_continuity_replay_reference"),
+        "conversation_replay_reference": clarification_continuity_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": clarification_continuity_capture.get("canonical_chain_id"),
+        "current_chain_id": clarification_continuity_capture.get("current_chain_id"),
+        "latest_chain_id": clarification_continuity_capture.get("latest_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "open_clarification_detected": clarification_continuity_capture.get("open_clarification_detected") is True,
+        "operator_reply_bound": clarification_continuity_capture.get("operator_reply_bound") is True,
+        "clarification_resolved": clarification_continuity_capture.get("clarification_resolved") is True,
+        "workflow_resumed": clarification_continuity_capture.get("workflow_resumed") is True,
+        "originating_workflow_id": clarification_continuity_capture.get("originating_workflow_id")
+        or resume.get("originating_workflow_id"),
+        "originating_intent": clarification_continuity_capture.get("originating_intent")
+        or resume.get("originating_intent"),
+        "proposed_domain": clarification_continuity_capture.get("proposed_domain") or resume.get("proposed_domain"),
+        "clarification_continuity_artifact_type": (
+            clarification_continuity_capture.get("clarification_reply_binding_artifact") or {}
+        ).get("artifact_type"),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
