@@ -18,6 +18,7 @@ from aigol.runtime.conversation_to_ppp_handoff_execution import (
     run_conversation_to_ppp_handoff_execution,
 )
 from aigol.runtime.execution_authorization_runtime import authorize_execution_ready
+from aigol.runtime.execution_runtime import start_execution
 from aigol.runtime.governed_implementation_dry_run import prepare_governed_implementation_dry_run
 from aigol.runtime.implementation_approval_resume import (
     create_human_implementation_approval,
@@ -217,6 +218,64 @@ def _result_capture(tmp_path, *, prompt: str, suffix: str) -> dict:
     )
 
 
+def _execution_bound_result_capture(tmp_path, *, prompt: str, suffix: str) -> dict:
+    assignment_capture = _assignment(tmp_path, prompt=prompt, suffix=suffix)
+    dispatch_capture = dispatch_assigned_worker(
+        worker_dispatch_id=f"WORKER-DISPATCH-{suffix}",
+        worker_assignment_artifact=assignment_capture["worker_assignment_artifact"],
+        worker_assignment_replay_reference=assignment_capture["worker_assignment_replay_reference"],
+        dispatched_by="AIGOL_GOVERNANCE",
+        dispatched_at=CREATED_AT,
+        replay_dir=tmp_path / f"dispatch_{suffix}",
+    )
+    invocation_capture = invoke_dispatched_worker(
+        worker_invocation_id=f"WORKER-INVOCATION-{suffix}",
+        worker_dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=dispatch_capture["worker_dispatch_replay_reference"],
+        invoked_by="AIGOL_GOVERNANCE",
+        invoked_at=CREATED_AT,
+        replay_dir=tmp_path / f"invocation_{suffix}",
+    )
+    invocation = invocation_capture["worker_invocation_artifact"]
+    execution_capture = start_execution(
+        execution_id=f"EXECUTION-{suffix}",
+        invocation_artifact=invocation,
+        invocation_replay=invocation_capture["invocation_result_artifact"],
+        dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_assignment_artifact=assignment_capture["worker_assignment_artifact"],
+        canonical_chain_id=invocation["chain_id"],
+        execution_metadata={
+            "execution_mode": "START_ONLY",
+            "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+            "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+        },
+        execution_context={
+            "worker_reference": invocation["worker_id"],
+            "request_type": "WORKER_INVOCATION_REQUEST",
+            "capability_id": invocation["worker_role"],
+            "allowed_effects": ["RECORD_EXECUTION_START"],
+        },
+        started_by="AIGOL",
+        started_at=CREATED_AT,
+        replay_reference=f"REPLAY-EXECUTION-{suffix}",
+        replay_dir=tmp_path / f"execution_{suffix}",
+    )
+    capture = capture_worker_result(
+        worker_result_capture_id=f"WORKER-RESULT-CAPTURE-{suffix}",
+        worker_invocation_artifact=invocation,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        worker_output=default_worker_output_for_invocation(invocation, captured_at=CREATED_AT),
+        captured_by="AIGOL_GOVERNANCE",
+        captured_at=CREATED_AT,
+        replay_dir=tmp_path / f"result_capture_{suffix}",
+        execution_artifact=execution_capture["execution_artifact"],
+        execution_replay=execution_capture["execution_replay"],
+        execution_replay_reference=str(tmp_path / f"execution_{suffix}"),
+    )
+    capture["_execution_capture"] = execution_capture
+    return capture
+
+
 def _validate(tmp_path, *, prompt: str, suffix: str, capture: dict | None = None) -> dict:
     if capture is None:
         capture = _result_capture(tmp_path, prompt=prompt, suffix=suffix)
@@ -249,6 +308,19 @@ def _replace_result_capture_replay_artifact(tmp_path, *, suffix: str, artifact: 
     result_wrapper.pop("replay_hash", None)
     result_wrapper["replay_hash"] = replay_hash(result_wrapper)
     result_path.write_text(canonical_serialize(result_wrapper) + "\n", encoding="utf-8")
+    return artifact
+
+
+def _replace_result_capture_evidence_artifact(tmp_path, *, suffix: str, artifact: dict) -> dict:
+    artifact = deepcopy(artifact)
+    artifact.pop("artifact_hash", None)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    artifact_path = tmp_path / f"result_capture_{suffix}" / "000_result_capture_evidence_recorded.json"
+    wrapper = json.loads(artifact_path.read_text(encoding="utf-8"))
+    wrapper["artifact"] = artifact
+    wrapper.pop("replay_hash", None)
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    artifact_path.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
     return artifact
 
 
@@ -286,6 +358,83 @@ def test_worker_result_validation_persists_replay_events(tmp_path) -> None:
     assert (replay_dir / "001_validation_classification_recorded.json").exists()
     assert (replay_dir / "002_validation_artifact_recorded.json").exists()
     assert (replay_dir / "003_validation_result_recorded.json").exists()
+
+
+def test_worker_result_validation_accepts_execution_bound_result_capture(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-bound",
+    )
+    result = _validate(tmp_path, prompt="Create a filesystem worker.", suffix="execution-bound", capture=capture)
+    artifact = result["worker_result_validation_artifact"]
+    reconstructed = reconstruct_worker_result_validation_replay(tmp_path / "result_validation_execution-bound")
+
+    assert result["validation_status"] == RESULT_VALIDATED
+    assert artifact["execution_reference"] == "EXECUTION-execution-bound"
+    assert artifact["execution_hash"] == capture["_execution_capture"]["execution_artifact"]["artifact_hash"]
+    assert artifact["execution_status"] == "EXECUTING"
+    assert artifact["execution_started"] is True
+    assert artifact["result_validated"] is True
+    assert artifact["post_execution_replay_reviewed"] is False
+    assert artifact["terminated"] is False
+    assert reconstructed["execution_reference"] == artifact["execution_reference"]
+    assert reconstructed["execution_started"] is True
+
+
+def test_worker_result_validation_fails_closed_on_missing_execution_binding(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="missing-execution-binding",
+    )
+    artifact = deepcopy(capture["worker_result_capture_artifact"])
+    artifact["execution_reference"] = None
+    artifact = _replace_result_capture_replay_artifact(
+        tmp_path,
+        suffix="missing-execution-binding",
+        artifact=artifact,
+    )
+    capture["worker_result_capture_artifact"] = artifact
+
+    result = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="missing-execution-binding",
+        capture=capture,
+    )
+
+    assert result["validation_status"] == "FAILED_CLOSED"
+    assert "authority violation" in result["failure_reason"]
+
+
+def test_worker_result_validation_fails_closed_on_execution_binding_mismatch(tmp_path) -> None:
+    capture = _execution_bound_result_capture(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-mismatch",
+    )
+    evidence = json.loads(
+        (tmp_path / "result_capture_execution-binding-mismatch" / "000_result_capture_evidence_recorded.json").read_text(
+            encoding="utf-8"
+        )
+    )["artifact"]
+    evidence["execution_hash"] = "sha256:other-execution"
+    _replace_result_capture_evidence_artifact(
+        tmp_path,
+        suffix="execution-binding-mismatch",
+        artifact=evidence,
+    )
+
+    result = _validate(
+        tmp_path,
+        prompt="Create a filesystem worker.",
+        suffix="execution-binding-mismatch",
+        capture=capture,
+    )
+
+    assert result["validation_status"] == "FAILED_CLOSED"
+    assert "result capture replay evidence lineage mismatch" in result["failure_reason"]
 
 
 def test_worker_result_validation_fails_closed_on_output_outside_allowed_scope(tmp_path) -> None:
