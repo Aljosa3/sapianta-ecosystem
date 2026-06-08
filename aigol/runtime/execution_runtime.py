@@ -9,6 +9,10 @@ from typing import Any
 from aigol.runtime.dispatch_runtime import DISPATCH_ARTIFACT_V1, DISPATCHED
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.worker_dispatch_runtime import (
+    WORKER_DISPATCH_ARTIFACT_V1,
+    WORKER_DISPATCHED,
+)
 from aigol.runtime.worker_invocation_runtime import (
     INVOKED,
     WORKER_INVOCATION_ARTIFACT_V1,
@@ -303,65 +307,67 @@ def _validate_invocation_artifact(invocation: dict[str, Any], canonical_chain_id
         raise FailClosedRuntimeError("execution failed closed: invalid invocation artifact")
     if invocation.get("invocation_status") != INVOKED:
         raise FailClosedRuntimeError("execution failed closed: invalid invocation state")
-    if invocation.get("invoked_by") != "AIGOL":
+    if invocation.get("invoked_by") not in {"AIGOL", "AIGOL_GOVERNANCE"}:
         raise FailClosedRuntimeError("execution failed closed: invocation must be AiGOL-created")
-    if invocation.get("canonical_chain_id") != canonical_chain_id:
+    normalized = _normalize_invocation_for_execution(invocation)
+    if normalized.get("canonical_chain_id") != canonical_chain_id:
         raise FailClosedRuntimeError("execution failed closed: chain mismatch")
-    if invocation.get("worker_state_before_invocation") != ASSIGNED:
+    if normalized.get("worker_state_before_invocation") != ASSIGNED:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if invocation.get("replay_visible") is not True:
+    if normalized.get("replay_visible") is not True:
         raise FailClosedRuntimeError("execution failed closed: invocation replay visibility missing")
-    if invocation.get("provider_authority") is not False:
+    if not _false_or_absent(invocation, "provider_authority"):
         raise FailClosedRuntimeError("execution failed closed: provider authority introduced")
-    if invocation.get("worker_self_invoked") is not False:
+    if not _false_or_absent(invocation, "worker_self_invoked"):
         raise FailClosedRuntimeError("execution failed closed: worker self invocation introduced")
-    if invocation.get("execution_started") is not False:
+    if normalized.get("execution_started") is not False:
         raise FailClosedRuntimeError("execution failed closed: duplicate execution")
-    if invocation.get("execution_performed") is not False:
+    if not _false_or_absent(invocation, "execution_performed"):
         raise FailClosedRuntimeError("execution failed closed: execution already performed")
-    if invocation.get("completion_recorded") is not False:
+    if not _false_or_absent(invocation, "completion_recorded"):
         raise FailClosedRuntimeError("execution failed closed: completion recorded")
-    if invocation.get("automatic_authorization") is not False:
+    if not _false_or_absent(invocation, "automatic_authorization"):
         raise FailClosedRuntimeError("execution failed closed: automatic authorization introduced")
-    if invocation.get("scope_expansion") is not False:
+    if not _false_or_absent(invocation, "scope_expansion"):
         raise FailClosedRuntimeError("execution failed closed: scope expansion introduced")
-    _require_string(invocation.get("worker_invocation_id"), "worker_invocation_id")
-    _require_string(invocation.get("dispatch_reference"), "dispatch_reference")
-    _require_string(invocation.get("dispatch_hash"), "dispatch_hash")
-    _require_string(invocation.get("worker_assignment_reference"), "worker_assignment_reference")
-    _require_string(invocation.get("worker_assignment_hash"), "worker_assignment_hash")
-    _require_string(invocation.get("worker_reference"), "worker_reference")
-    _require_string(invocation.get("worker_hash"), "worker_hash")
-    _require_string(invocation.get("execution_request_reference"), "execution_request_reference")
-    _require_string(invocation.get("request_type"), "request_type")
-    _require_string(invocation.get("capability_id"), "capability_id")
-    _require_string(invocation.get("invoked_at"), "invoked_at")
-    return deepcopy(invocation)
+    _require_string(normalized.get("worker_invocation_id"), "worker_invocation_id")
+    _require_string(normalized.get("dispatch_reference"), "dispatch_reference")
+    _require_string(normalized.get("dispatch_hash"), "dispatch_hash")
+    _require_string(normalized.get("worker_assignment_reference"), "worker_assignment_reference")
+    _require_string(normalized.get("worker_assignment_hash"), "worker_assignment_hash")
+    _require_string(normalized.get("worker_reference"), "worker_reference")
+    _require_string(normalized.get("worker_hash"), "worker_hash")
+    _require_string(normalized.get("execution_request_reference"), "execution_request_reference")
+    _require_string(normalized.get("request_type"), "request_type")
+    _require_string(normalized.get("capability_id"), "capability_id")
+    _require_string(normalized.get("invoked_at"), "invoked_at")
+    return normalized
 
 
 def _validate_invocation_replay(replay: dict[str, Any], invocation: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(replay, dict):
         raise FailClosedRuntimeError("execution failed closed: invocation replay is required")
     _verify_artifact_hash(replay, "worker invocation replay artifact")
-    if replay.get("event_type") != WORKER_INVOCATION_RETURNED:
+    normalized = _normalize_invocation_replay_for_execution(replay)
+    if normalized.get("event_type") != WORKER_INVOCATION_RETURNED:
         raise FailClosedRuntimeError("execution failed closed: invalid invocation replay event")
-    if replay.get("worker_invocation_reference") != invocation["worker_invocation_id"]:
+    if normalized.get("worker_invocation_reference") != invocation["worker_invocation_id"]:
         raise FailClosedRuntimeError("execution failed closed: invocation replay reference mismatch")
-    if replay.get("worker_invocation_hash") != invocation["artifact_hash"]:
+    if normalized.get("worker_invocation_hash") != invocation["artifact_hash"]:
         raise FailClosedRuntimeError("execution failed closed: invocation replay hash mismatch")
-    if replay.get("dispatch_reference") != invocation["dispatch_reference"]:
+    if normalized.get("dispatch_reference") != invocation["dispatch_reference"]:
         raise FailClosedRuntimeError("execution failed closed: dispatch continuity mismatch")
-    if replay.get("canonical_chain_id") != invocation["canonical_chain_id"]:
+    if normalized.get("canonical_chain_id") != invocation["canonical_chain_id"]:
         raise FailClosedRuntimeError("execution failed closed: chain mismatch")
-    if replay.get("worker_reference") != invocation["worker_reference"]:
+    if normalized.get("worker_reference") != invocation["worker_reference"]:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if replay.get("execution_started") is not False:
+    if normalized.get("execution_started") is not False:
         raise FailClosedRuntimeError("execution failed closed: duplicate execution")
-    if replay.get("execution_performed") is not False:
+    if not _false_or_absent(normalized, "execution_performed"):
         raise FailClosedRuntimeError("execution failed closed: execution already performed")
-    if replay.get("completion_recorded") is not False:
+    if not _false_or_absent(normalized, "completion_recorded"):
         raise FailClosedRuntimeError("execution failed closed: completion recorded")
-    return deepcopy(replay)
+    return normalized
 
 
 def _validate_dispatch_artifact(
@@ -372,35 +378,36 @@ def _validate_dispatch_artifact(
     if not isinstance(dispatch, dict):
         raise FailClosedRuntimeError("execution failed closed: dispatch is required")
     _verify_artifact_hash(dispatch, "dispatch artifact")
-    if dispatch.get("artifact_type") != DISPATCH_ARTIFACT_V1:
+    normalized = _normalize_dispatch_for_execution(dispatch)
+    if normalized.get("artifact_type") != DISPATCH_ARTIFACT_V1:
         raise FailClosedRuntimeError("execution failed closed: invalid dispatch artifact")
-    if dispatch.get("dispatch_status") != DISPATCHED:
+    if normalized.get("dispatch_status") != DISPATCHED:
         raise FailClosedRuntimeError("execution failed closed: invalid dispatch state")
-    if dispatch.get("canonical_chain_id") != canonical_chain_id:
+    if normalized.get("canonical_chain_id") != canonical_chain_id:
         raise FailClosedRuntimeError("execution failed closed: chain mismatch")
-    if dispatch.get("dispatch_id") != invocation["dispatch_reference"]:
+    if normalized.get("dispatch_id") != invocation["dispatch_reference"]:
         raise FailClosedRuntimeError("execution failed closed: dispatch continuity mismatch")
-    if dispatch.get("artifact_hash") != invocation["dispatch_hash"]:
+    if normalized.get("artifact_hash") != invocation["dispatch_hash"]:
         raise FailClosedRuntimeError("execution failed closed: dispatch hash mismatch")
-    if dispatch.get("worker_assignment_reference") != invocation["worker_assignment_reference"]:
+    if normalized.get("worker_assignment_reference") != invocation["worker_assignment_reference"]:
         raise FailClosedRuntimeError("execution failed closed: assignment continuity mismatch")
-    if dispatch.get("worker_reference") != invocation["worker_reference"]:
+    if normalized.get("worker_reference") != invocation["worker_reference"]:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if dispatch.get("worker_hash") != invocation["worker_hash"]:
+    if normalized.get("worker_hash") != invocation["worker_hash"]:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if dispatch.get("execution_request_reference") != invocation["execution_request_reference"]:
+    if normalized.get("execution_request_reference") != invocation["execution_request_reference"]:
         raise FailClosedRuntimeError("execution failed closed: execution request mismatch")
-    if dispatch.get("provider_authority") is not False:
+    if not _false_or_absent(dispatch, "provider_authority"):
         raise FailClosedRuntimeError("execution failed closed: provider authority introduced")
-    if dispatch.get("worker_self_dispatched") is not False:
+    if not _false_or_absent(dispatch, "worker_self_dispatched"):
         raise FailClosedRuntimeError("execution failed closed: worker self dispatch introduced")
-    if dispatch.get("worker_invoked") is not False:
+    if normalized.get("worker_invoked") is not False:
         raise FailClosedRuntimeError("execution failed closed: duplicate invocation marker")
-    if dispatch.get("execution_performed") is not False:
+    if not _false_or_absent(dispatch, "execution_performed"):
         raise FailClosedRuntimeError("execution failed closed: execution already performed")
-    if dispatch.get("completion_recorded") is not False:
+    if not _false_or_absent(dispatch, "completion_recorded"):
         raise FailClosedRuntimeError("execution failed closed: completion recorded")
-    return deepcopy(dispatch)
+    return normalized
 
 
 def _validate_worker_assignment_artifact(
@@ -412,35 +419,97 @@ def _validate_worker_assignment_artifact(
     if not isinstance(assignment, dict):
         raise FailClosedRuntimeError("execution failed closed: worker assignment is required")
     _verify_artifact_hash(assignment, "worker assignment artifact")
+    normalized = _normalize_assignment_for_execution(assignment)
     if assignment.get("artifact_type") != WORKER_ASSIGNMENT_ARTIFACT_V1:
         raise FailClosedRuntimeError("execution failed closed: invalid worker assignment artifact")
-    if assignment.get("assignment_status") != ASSIGNED:
+    if normalized.get("assignment_status") != ASSIGNED:
         raise FailClosedRuntimeError("execution failed closed: invalid assignment state")
-    if assignment.get("canonical_chain_id") != canonical_chain_id:
+    if normalized.get("canonical_chain_id") != canonical_chain_id:
         raise FailClosedRuntimeError("execution failed closed: chain mismatch")
-    if assignment.get("worker_assignment_id") != invocation["worker_assignment_reference"]:
+    if normalized.get("worker_assignment_id") != invocation["worker_assignment_reference"]:
         raise FailClosedRuntimeError("execution failed closed: assignment continuity mismatch")
-    if assignment.get("artifact_hash") != invocation["worker_assignment_hash"]:
+    if normalized.get("artifact_hash") != invocation["worker_assignment_hash"]:
         raise FailClosedRuntimeError("execution failed closed: assignment hash mismatch")
-    if assignment.get("worker_assignment_id") != dispatch["worker_assignment_reference"]:
+    if normalized.get("worker_assignment_id") != dispatch["worker_assignment_reference"]:
         raise FailClosedRuntimeError("execution failed closed: assignment continuity mismatch")
-    if assignment.get("worker_id") != invocation["worker_reference"]:
+    if normalized.get("worker_id") != invocation["worker_reference"]:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if assignment.get("worker_hash") != invocation["worker_hash"]:
+    if normalized.get("worker_hash") != invocation["worker_hash"]:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if assignment.get("worker_state_after") != ASSIGNED:
+    if normalized.get("worker_state_after") != ASSIGNED:
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
-    if assignment.get("execution_request_reference") != invocation["execution_request_reference"]:
+    if normalized.get("execution_request_reference") != invocation["execution_request_reference"]:
         raise FailClosedRuntimeError("execution failed closed: execution request mismatch")
-    if assignment.get("provider_authority") is not False:
+    if not _false_or_absent(assignment, "provider_authority"):
         raise FailClosedRuntimeError("execution failed closed: provider authority introduced")
-    if assignment.get("worker_self_assigned") is not False:
+    if not _false_or_absent(assignment, "worker_self_assigned"):
         raise FailClosedRuntimeError("execution failed closed: worker self assignment introduced")
-    if assignment.get("execution_performed") is not False:
+    if not _false_or_absent(assignment, "execution_performed"):
         raise FailClosedRuntimeError("execution failed closed: execution already performed")
-    if assignment.get("completion_recorded") is not False:
+    if not _false_or_absent(assignment, "completion_recorded"):
         raise FailClosedRuntimeError("execution failed closed: completion recorded")
-    return deepcopy(assignment)
+    return normalized
+
+
+def _normalize_invocation_for_execution(invocation: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(invocation)
+    normalized.setdefault("canonical_chain_id", invocation.get("chain_id"))
+    normalized.setdefault("dispatch_reference", invocation.get("worker_dispatch_reference"))
+    normalized.setdefault("dispatch_hash", invocation.get("worker_dispatch_hash"))
+    normalized.setdefault("worker_reference", invocation.get("worker_id"))
+    normalized.setdefault("execution_request_reference", invocation.get("worker_invocation_request_reference"))
+    normalized.setdefault("readiness_reference", invocation.get("execution_packet_reference"))
+    normalized.setdefault("request_type", "WORKER_INVOCATION_REQUEST")
+    normalized.setdefault("capability_id", invocation.get("worker_role"))
+    normalized.setdefault("execution_performed", False)
+    normalized.setdefault("completion_recorded", False)
+    normalized.setdefault("automatic_authorization", False)
+    normalized.setdefault("scope_expansion", False)
+    return normalized
+
+
+def _normalize_invocation_replay_for_execution(replay: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(replay)
+    if replay.get("artifact_type") == "WORKER_INVOCATION_RESULT_ARTIFACT_V1":
+        normalized.setdefault("event_type", WORKER_INVOCATION_RETURNED)
+        normalized.setdefault("dispatch_reference", replay.get("worker_dispatch_reference"))
+        normalized.setdefault("dispatch_hash", replay.get("worker_dispatch_hash"))
+        normalized.setdefault("canonical_chain_id", replay.get("chain_id"))
+        normalized.setdefault("worker_reference", replay.get("worker_reference"))
+        normalized.setdefault("execution_started", False)
+        normalized.setdefault("execution_performed", False)
+        normalized.setdefault("completion_recorded", False)
+    return normalized
+
+
+def _normalize_dispatch_for_execution(dispatch: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(dispatch)
+    if dispatch.get("artifact_type") == WORKER_DISPATCH_ARTIFACT_V1:
+        normalized["artifact_type"] = DISPATCH_ARTIFACT_V1
+        normalized["dispatch_id"] = dispatch.get("worker_dispatch_id")
+        normalized["dispatch_status"] = (
+            DISPATCHED if dispatch.get("dispatch_status") == WORKER_DISPATCHED else dispatch.get("dispatch_status")
+        )
+        normalized["canonical_chain_id"] = dispatch.get("chain_id")
+        normalized["worker_reference"] = dispatch.get("worker_id")
+        normalized["execution_request_reference"] = dispatch.get("worker_invocation_request_reference")
+        normalized.setdefault("execution_performed", False)
+        normalized.setdefault("completion_recorded", False)
+    return normalized
+
+
+def _normalize_assignment_for_execution(assignment: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(assignment)
+    if assignment.get("assignment_status") == "WORKER_ASSIGNED":
+        normalized["assignment_status"] = ASSIGNED
+    normalized.setdefault("execution_request_reference", assignment.get("worker_invocation_request_reference"))
+    normalized.setdefault("execution_performed", False)
+    normalized.setdefault("completion_recorded", False)
+    return normalized
+
+
+def _false_or_absent(artifact: dict[str, Any], field_name: str) -> bool:
+    return artifact.get(field_name) is False or field_name not in artifact
 
 
 def _validate_execution_map(value: dict[str, Any], field_name: str) -> dict[str, Any]:
