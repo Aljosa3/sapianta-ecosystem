@@ -200,6 +200,7 @@ from aigol.runtime.execution_authorization_runtime import (
     authorize_execution_ready,
     render_execution_authorization_summary,
 )
+from aigol.runtime.execution_runtime import start_execution
 from aigol.runtime.worker_invocation_request_runtime import (
     create_worker_invocation_request,
     render_worker_invocation_request_summary,
@@ -741,6 +742,26 @@ def _interactive_turn_providers(turn_summary: dict[str, Any]) -> list[str]:
             return [source.strip()]
         return ["PROVIDER_INVOKED"]
     return []
+
+
+def _render_execution_runtime_summary(execution_capture: dict[str, Any]) -> str:
+    execution = execution_capture.get("execution_artifact")
+    if not isinstance(execution, dict):
+        return "Execution Runtime\n\nExecution Status: UNAVAILABLE"
+    return "\n".join(
+        [
+            "Execution Runtime",
+            "",
+            f"Execution Status: {execution.get('execution_status')}",
+            f"Execution Reference: {execution.get('execution_id')}",
+            f"Worker Invocation Reference: {execution.get('worker_invocation_reference')}",
+            f"Replay Reference: {execution.get('replay_reference')}",
+            "",
+            "No completion recorded.",
+            "No result certification recorded.",
+            "No repair or retry started.",
+        ]
+    )
 
 
 def _delivered_output_line_count(*chunks: str) -> int:
@@ -2023,6 +2044,36 @@ def run_interactive_conversation(
                                                 )
                                                 output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                                             else:
+                                                execution_capture = start_execution(
+                                                    execution_id=f"{prompt_id}:EXECUTION",
+                                                    invocation_artifact=invocation_capture[
+                                                        "worker_invocation_artifact"
+                                                    ],
+                                                    invocation_replay=invocation_capture["invocation_result_artifact"],
+                                                    dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+                                                    worker_assignment_artifact=assignment_capture[
+                                                        "worker_assignment_artifact"
+                                                    ],
+                                                    canonical_chain_id=invocation_capture[
+                                                        "worker_invocation_artifact"
+                                                    ]["chain_id"],
+                                                    execution_metadata={
+                                                        "execution_mode": "START_ONLY",
+                                                        "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+                                                        "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+                                                    },
+                                                    execution_context={
+                                                        "worker_reference": invocation_capture["worker_id"],
+                                                        "request_type": "WORKER_INVOCATION_REQUEST",
+                                                        "capability_id": invocation_capture["worker_role"],
+                                                        "allowed_effects": ["RECORD_EXECUTION_START"],
+                                                    },
+                                                    started_by="AIGOL",
+                                                    started_at=created_at,
+                                                    replay_reference=str(turn_root / "execution_runtime"),
+                                                    replay_dir=turn_root / "execution_runtime",
+                                                )
+                                                approval_resume_capture["execution_runtime"] = execution_capture
                                                 result_capture = capture_worker_result(
                                                     worker_result_capture_id=f"{prompt_id}:WORKER-RESULT-CAPTURE",
                                                     worker_invocation_artifact=invocation_capture[
@@ -2038,6 +2089,9 @@ def run_interactive_conversation(
                                                     captured_by="AIGOL_GOVERNANCE",
                                                     captured_at=created_at,
                                                     replay_dir=turn_root / "worker_result_capture",
+                                                    execution_artifact=execution_capture["execution_artifact"],
+                                                    execution_replay=execution_capture["execution_replay"],
+                                                    execution_replay_reference=str(turn_root / "execution_runtime"),
                                                 )
                                                 approval_resume_capture["worker_result_capture"] = result_capture
                                                 if result_capture.get("fail_closed") is True:
@@ -2166,6 +2220,8 @@ def run_interactive_conversation(
                                                                         + render_worker_dispatch_summary(dispatch_capture)
                                                                         + "\n"
                                                                         + render_worker_invocation_summary(invocation_capture)
+                                                                        + "\n"
+                                                                        + _render_execution_runtime_summary(execution_capture)
                                                                         + "\n"
                                                                         + render_worker_result_capture_summary(result_capture)
                                                                         + "\n"
@@ -2579,6 +2635,40 @@ def run_interactive_conversation(
                                                         failed_turns += 1
                                                         output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                                     else:
+                                                        execution_capture = start_execution(
+                                                            execution_id=f"{prompt_id}:EXECUTION",
+                                                            invocation_artifact=invocation_capture[
+                                                                "worker_invocation_artifact"
+                                                            ],
+                                                            invocation_replay=invocation_capture[
+                                                                "invocation_result_artifact"
+                                                            ],
+                                                            dispatch_artifact=dispatch_capture[
+                                                                "worker_dispatch_artifact"
+                                                            ],
+                                                            worker_assignment_artifact=assignment_capture[
+                                                                "worker_assignment_artifact"
+                                                            ],
+                                                            canonical_chain_id=invocation_capture[
+                                                                "worker_invocation_artifact"
+                                                            ]["chain_id"],
+                                                            execution_metadata={
+                                                                "execution_mode": "START_ONLY",
+                                                                "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+                                                                "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+                                                            },
+                                                            execution_context={
+                                                                "worker_reference": invocation_capture["worker_id"],
+                                                                "request_type": "WORKER_INVOCATION_REQUEST",
+                                                                "capability_id": invocation_capture["worker_role"],
+                                                                "allowed_effects": ["RECORD_EXECUTION_START"],
+                                                            },
+                                                            started_by="AIGOL",
+                                                            started_at=created_at,
+                                                            replay_reference=str(turn_root / "execution_runtime"),
+                                                            replay_dir=turn_root / "execution_runtime",
+                                                        )
+                                                        routing_capture["execution_runtime"] = execution_capture
                                                         result_capture = capture_worker_result(
                                                             worker_result_capture_id=f"{prompt_id}:WORKER-RESULT-CAPTURE",
                                                             worker_invocation_artifact=invocation_capture[
@@ -2594,6 +2684,9 @@ def run_interactive_conversation(
                                                             captured_by="AIGOL_GOVERNANCE",
                                                             captured_at=created_at,
                                                             replay_dir=turn_root / "worker_result_capture",
+                                                            execution_artifact=execution_capture["execution_artifact"],
+                                                            execution_replay=execution_capture["execution_replay"],
+                                                            execution_replay_reference=str(turn_root / "execution_runtime"),
                                                         )
                                                         routing_capture["worker_result_capture"] = result_capture
                                                         if result_capture.get("fail_closed") is True:
@@ -2721,6 +2814,8 @@ def run_interactive_conversation(
                                                                                 + render_worker_dispatch_summary(dispatch_capture)
                                                                                 + "\n"
                                                                                 + render_worker_invocation_summary(invocation_capture)
+                                                                                + "\n"
+                                                                                + _render_execution_runtime_summary(execution_capture)
                                                                                 + "\n"
                                                                                 + render_worker_result_capture_summary(result_capture)
                                                                                 + "\n"
@@ -2976,6 +3071,7 @@ def run_interactive_conversation(
         "worker_assigned": any(turn.get("worker_assigned") is True for turn in turns),
         "worker_dispatched": any(turn.get("worker_dispatched") is True for turn in turns),
         "worker_invoked": any(turn.get("worker_invoked") is True for turn in turns),
+        "execution_started": any(turn.get("execution_started") is True for turn in turns),
         "worker_result_captured": any(turn.get("worker_result_captured") is True for turn in turns),
         "worker_result_validated": any(turn.get("worker_result_validated") is True for turn in turns),
         "output_bound": any(turn.get("output_bound") is True for turn in turns),
@@ -2990,7 +3086,7 @@ def run_interactive_conversation(
             turn.get("post_execution_replay_reviewed") is True for turn in turns
         ),
         "terminated": any(turn.get("terminated") is True for turn in turns),
-        "execution_requested": False,
+        "execution_requested": any(turn.get("execution_started") is True for turn in turns),
         "dispatch_requested": any(turn.get("dispatch_requested") is True for turn in turns),
         "invocation_requested": any(turn.get("invocation_requested") is True for turn in turns),
         "turns": turns,
@@ -3514,6 +3610,12 @@ def _interactive_native_development_intent_routing_turn_summary(
     invocation_capture = routing_capture.get("worker_invocation")
     if not isinstance(invocation_capture, dict):
         invocation_capture = {}
+    execution_capture = routing_capture.get("execution_runtime")
+    if not isinstance(execution_capture, dict):
+        execution_capture = {}
+    execution_artifact = execution_capture.get("execution_artifact")
+    if not isinstance(execution_artifact, dict):
+        execution_artifact = {}
     result_capture = routing_capture.get("worker_result_capture")
     if not isinstance(result_capture, dict):
         result_capture = {}
@@ -3591,6 +3693,10 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_dispatch_replay_reference": dispatch_capture.get("worker_dispatch_replay_reference"),
         "worker_invocation_status": invocation_capture.get("invocation_status"),
         "worker_invocation_replay_reference": invocation_capture.get("worker_invocation_replay_reference"),
+        "execution_runtime_status": execution_artifact.get("execution_status"),
+        "execution_runtime_replay_reference": execution_artifact.get("replay_reference"),
+        "execution_reference": execution_artifact.get("execution_id"),
+        "execution_hash": execution_artifact.get("artifact_hash"),
         "worker_result_capture_status": result_capture.get("result_capture_status"),
         "worker_result_capture_replay_reference": result_capture.get("worker_result_capture_replay_reference"),
         "worker_result_validation_status": validation_capture.get("validation_status"),
@@ -3609,6 +3715,7 @@ def _interactive_native_development_intent_routing_turn_summary(
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
         "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
+        "execution_started": execution_artifact.get("execution_started") is True,
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
         "executable_bundle_authorized": executable_bundle_capture.get("executable_bundle_authorization_status")
@@ -3658,6 +3765,12 @@ def _interactive_approval_resume_turn_summary(
     invocation_capture = approval_resume_capture.get("worker_invocation")
     if not isinstance(invocation_capture, dict):
         invocation_capture = {}
+    execution_capture = approval_resume_capture.get("execution_runtime")
+    if not isinstance(execution_capture, dict):
+        execution_capture = {}
+    execution_artifact = execution_capture.get("execution_artifact")
+    if not isinstance(execution_artifact, dict):
+        execution_artifact = {}
     result_capture = approval_resume_capture.get("worker_result_capture")
     if not isinstance(result_capture, dict):
         result_capture = {}
@@ -3723,6 +3836,10 @@ def _interactive_approval_resume_turn_summary(
         "worker_dispatch_replay_reference": dispatch_capture.get("worker_dispatch_replay_reference"),
         "worker_invocation_status": invocation_capture.get("invocation_status"),
         "worker_invocation_replay_reference": invocation_capture.get("worker_invocation_replay_reference"),
+        "execution_runtime_status": execution_artifact.get("execution_status"),
+        "execution_runtime_replay_reference": execution_artifact.get("replay_reference"),
+        "execution_reference": execution_artifact.get("execution_id"),
+        "execution_hash": execution_artifact.get("artifact_hash"),
         "worker_result_capture_status": result_capture.get("result_capture_status"),
         "worker_result_capture_replay_reference": result_capture.get("worker_result_capture_replay_reference"),
         "worker_result_validation_status": validation_capture.get("validation_status"),
@@ -3740,6 +3857,7 @@ def _interactive_approval_resume_turn_summary(
         "worker_assigned": assignment_capture.get("assignment_status") == "WORKER_ASSIGNED",
         "worker_dispatched": dispatch_capture.get("dispatch_status") == "WORKER_DISPATCHED",
         "worker_invoked": invocation_capture.get("invocation_status") == "WORKER_INVOKED",
+        "execution_started": execution_artifact.get("execution_started") is True,
         "worker_result_captured": result_capture.get("result_capture_status") == "WORKER_RESULT_CAPTURED",
         "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
         "executable_bundle_authorized": executable_bundle_capture.get("executable_bundle_authorization_status")
