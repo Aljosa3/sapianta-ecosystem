@@ -1,0 +1,90 @@
+{
+  "artifact_type": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+  "status": "ACCEPTANCE_EVIDENCE_RECORDED",
+  "review_source": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_V1",
+  "review_result": {
+    "TERMINATION_COMPATIBLE": "PARTIAL_INVOCATION_REPLAY_REVIEW_TRUE_EXECUTION_BOUND_REPLAY_REVIEW_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE"
+  },
+  "compatibility_gap": {
+    "identified": true,
+    "description": "GOVERNED_TERMINATION_RUNTIME_V1 required execution_started=false while current execution-bound POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1 outputs correctly carry execution_started=true with execution binding fields.",
+    "blocking_field": "execution_started",
+    "missing_bindings": [
+      "execution_reference",
+      "execution_hash",
+      "execution_replay_hash",
+      "execution_replay_reference",
+      "execution_status"
+    ]
+  },
+  "modified_files": [
+    "aigol/runtime/governed_termination_runtime.py",
+    "tests/test_governed_termination_runtime_v1.py"
+  ],
+  "runtime_fix": {
+    "implemented": true,
+    "architectural_change_performed": false,
+    "authority_boundary_preserved": true,
+    "fail_closed_preserved": true,
+    "replay_integrity_preserved": true,
+    "invocation_only_compatibility_preserved": true,
+    "execution_bound_replay_review_supported": true,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "new_work_created": false
+  },
+  "binding_checks": {
+    "execution_started_true_requires_execution_binding": true,
+    "execution_binding_fields_required_when_execution_bound": true,
+    "replay_review_evidence_binding_checked": true,
+    "replay_review_artifact_binding_checked": true,
+    "replay_review_result_binding_checked": true,
+    "termination_reconstruction_binding_checked": true,
+    "mismatched_execution_binding_fails_closed": true
+  },
+  "propagated_fields": [
+    "execution_reference",
+    "execution_hash",
+    "execution_replay_hash",
+    "execution_replay_reference",
+    "execution_status"
+  ],
+  "regression_tests": [
+    {
+      "test": "test_governed_termination_accepts_execution_bound_replay_review",
+      "purpose": "Current execution-bound replay review output enters governed termination and reconstructs with execution binding preserved."
+    },
+    {
+      "test": "test_governed_termination_fails_closed_on_execution_binding_drift",
+      "purpose": "Execution binding mismatch fails closed before governed termination certification."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/governed_termination_runtime.py",
+      "status": "PASS",
+      "summary": "Governed termination runtime compiled successfully."
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -k 'execution_bound_replay_review or execution_binding_drift'",
+      "status": "PASS",
+      "summary": "2 passed, 15 deselected."
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -k 'not interactive_cli' tests/test_post_execution_replay_review_runtime_v1.py -k 'not interactive_cli'",
+      "status": "PASS",
+      "summary": "30 passed, 2 deselected."
+    }
+  ],
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "TERMINATION_ACCEPTS_CURRENT_REPLAY_REVIEW": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_REAL_EXECUTION_CHAIN_ACCEPTANCE": "TRUE"
+  }
+}

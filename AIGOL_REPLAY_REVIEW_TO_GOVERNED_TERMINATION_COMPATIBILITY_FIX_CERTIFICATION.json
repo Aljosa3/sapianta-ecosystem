@@ -1,0 +1,86 @@
+{
+  "artifact_type": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+  "status": "CERTIFIED_COMPATIBILITY_FIX_IMPLEMENTED",
+  "certifies": "Execution-bound POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1 outputs are accepted by GOVERNED_TERMINATION_RUNTIME_V1 without architectural redesign.",
+  "certification_scope": {
+    "runtime_fix_implemented": true,
+    "regression_coverage_added": true,
+    "architectural_redesign_performed": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "new_work_created": false
+  },
+  "certification_artifacts": [
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1.md",
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE.json",
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_CERTIFICATION.json"
+  ],
+  "modified_files": [
+    "aigol/runtime/governed_termination_runtime.py",
+    "tests/test_governed_termination_runtime_v1.py"
+  ],
+  "certification_findings": {
+    "compatibility_gap_identified": true,
+    "compatibility_fix_implemented": true,
+    "current_replay_review_accepted_by_governed_termination": true,
+    "invocation_only_replay_review_still_supported": true,
+    "execution_bound_replay_review_supported": true,
+    "fail_closed_behavior_preserved": true,
+    "replay_integrity_preserved": true,
+    "authority_boundaries_preserved": true,
+    "termination_invariants_preserved": true,
+    "architectural_change_required": false
+  },
+  "non_goals_preserved": [
+    "No retries.",
+    "No repairs.",
+    "No governance mutation.",
+    "No existing replay mutation.",
+    "No architectural redesign.",
+    "No autonomous continuation.",
+    "No new work creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m py_compile aigol/runtime/governed_termination_runtime.py",
+      "status": "PASS",
+      "summary": "Governed termination runtime compiled successfully."
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -k 'execution_bound_replay_review or execution_binding_drift'",
+      "status": "PASS",
+      "summary": "2 passed, 15 deselected."
+    },
+    {
+      "command": "python -m pytest tests/test_governed_termination_runtime_v1.py -k 'not interactive_cli' tests/test_post_execution_replay_review_runtime_v1.py -k 'not interactive_cli'",
+      "status": "PASS",
+      "summary": "30 passed, 2 deselected."
+    },
+    {
+      "command": "python -m json.tool AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Acceptance evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors detected."
+    }
+  ],
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "TERMINATION_ACCEPTS_CURRENT_REPLAY_REVIEW": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_REAL_EXECUTION_CHAIN_ACCEPTANCE": "TRUE"
+  },
+  "final_classification": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_STATUS = CERTIFIED_READY_FOR_REAL_EXECUTION_CHAIN_ACCEPTANCE"
+}
