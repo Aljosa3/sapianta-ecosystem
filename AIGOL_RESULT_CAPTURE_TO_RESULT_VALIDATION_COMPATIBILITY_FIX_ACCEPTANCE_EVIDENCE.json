@@ -1,0 +1,93 @@
+{
+  "artifact_type": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_RESULT_CAPTURE_TO_RESULT_VALIDATION_COMPATIBILITY_FIX_V1",
+  "status": "ACCEPTED",
+  "runtime_changed": "aigol/runtime/worker_result_validation_runtime.py",
+  "tests_changed": [
+    "tests/test_worker_result_validation_runtime_v1.py"
+  ],
+  "scope": {
+    "post_execution_replay_review_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "termination_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "compatibility_gap": {
+    "identified": true,
+    "summary": "Result validation required execution_started false, while current execution-bound result capture correctly provides execution_started true with execution binding fields."
+  },
+  "implemented_bindings": {
+    "execution_bound_capture_detected": true,
+    "execution_reference_validated": true,
+    "execution_hash_validated": true,
+    "execution_replay_hash_validated": true,
+    "execution_status_validated": true,
+    "execution_binding_fields_propagated_to_validation_evidence": true,
+    "execution_binding_fields_propagated_to_validation_artifact": true,
+    "invocation_only_path_preserved": true
+  },
+  "fail_closed_checks": {
+    "execution_bound_capture_missing_binding": true,
+    "execution_binding_mismatch": true,
+    "invalid_execution_status": true,
+    "result_capture_replay_evidence_mismatch": true,
+    "authority_violation": true,
+    "output_outside_allowed_scope": true,
+    "forbidden_operation_detected": true,
+    "validation_requirement_missing": true
+  },
+  "authority_boundaries": {
+    "execution_started": "true only for execution-bound validation lineage",
+    "result_created": true,
+    "worker_result_captured": true,
+    "result_validated": true,
+    "post_execution_replay_reviewed": false,
+    "terminated": false,
+    "governance_mutated": false,
+    "replay_mutated": false
+  },
+  "regression_tests": [
+    {
+      "test": "test_worker_result_validation_accepts_execution_bound_result_capture",
+      "status": "PASS",
+      "evidence": "Execution-bound result capture validates and preserves execution reference, execution hash, EXECUTING status, execution_started true, and no replay review or termination."
+    },
+    {
+      "test": "test_worker_result_validation_fails_closed_on_missing_execution_binding",
+      "status": "PASS",
+      "evidence": "Execution-bound capture with missing execution reference fails closed."
+    },
+    {
+      "test": "test_worker_result_validation_fails_closed_on_execution_binding_mismatch",
+      "status": "PASS",
+      "evidence": "Capture replay evidence with mismatched execution hash fails closed before validation."
+    }
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m pytest tests/test_worker_result_validation_runtime_v1.py -k 'execution_bound_result_capture or missing_execution_binding or execution_binding_mismatch'",
+      "status": "PASS",
+      "summary": "3 passed, 15 deselected"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_result_validation_runtime_v1.py -k 'not interactive_cli' tests/test_worker_result_capture_runtime_v1.py -k 'not interactive_cli'",
+      "status": "PASS",
+      "summary": "32 passed, 2 deselected"
+    }
+  ],
+  "known_validation_caveat": {
+    "scope": "interactive_cli",
+    "status": "EXCLUDED_FROM_FOCUSED_RUNTIME_COMPATIBILITY_VALIDATION",
+    "summary": "Interactive CLI routing can select provider fallback before worker-chain execution in this environment."
+  },
+  "final_outputs": {
+    "COMPATIBILITY_GAP_IDENTIFIED": "TRUE",
+    "COMPATIBILITY_FIX_IMPLEMENTED": "TRUE",
+    "RESULT_VALIDATION_ACCEPTS_CURRENT_RESULT_CAPTURE": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "REPLAY_INTEGRITY_PRESERVED": "TRUE",
+    "READY_FOR_REPLAY_REVIEW_INTEGRATION_REVIEW": "TRUE"
+  }
+}
