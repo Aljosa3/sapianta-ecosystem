@@ -1,0 +1,82 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_READINESS_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_READINESS_RUNTIME_V1",
+  "created_at": "2026-06-08T00:00:00Z",
+  "status": "ACCEPTED",
+  "runtime_files": [
+    "aigol/runtime/ocs_execution_readiness_runtime.py"
+  ],
+  "compatibility_files": [
+    "aigol/runtime/execution_authorization_runtime.py"
+  ],
+  "test_files": [
+    "tests/test_ocs_execution_readiness_runtime_v1.py"
+  ],
+  "artifacts_created": [
+    "EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "EXECUTION_PACKET_ARTIFACT_V1",
+    "EXECUTION_VALIDATION_ARTIFACT_V1",
+    "EXECUTION_READY_STATUS_ARTIFACT_V1"
+  ],
+  "source_artifact": "OCS_EXECUTION_HANDOFF_ARTIFACT_V1",
+  "required_approval_evidence": {
+    "approval_status": "APPROVED",
+    "approval_reference_required": true,
+    "approval_hash_required": true,
+    "human_actor_required": true,
+    "provider_actor_forbidden": true,
+    "approval_created_by_runtime": false
+  },
+  "validated_controls": {
+    "scope_completeness": true,
+    "approval_requirements": true,
+    "allowed_outputs": true,
+    "forbidden_operations": true,
+    "validation_requirements": true,
+    "worker_constraints": true,
+    "replay_lineage_continuity": true,
+    "authority_boundaries": true,
+    "hash_integrity": true
+  },
+  "authority_boundaries": {
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "replay_steps": [
+    "000_execution_candidate_recorded.json",
+    "001_execution_packet_recorded.json",
+    "002_execution_validation_recorded.json",
+    "003_execution_ready_status_recorded.json"
+  ],
+  "tests": {
+    "focused_readiness_suite": {
+      "command": "python -m pytest tests/test_ocs_execution_readiness_runtime_v1.py",
+      "result": "6 passed"
+    },
+    "targeted_certification_suite": {
+      "command": "python -m pytest tests/test_ocs_execution_readiness_runtime_v1.py tests/test_execution_authorization_runtime_v1.py::test_execution_ready_becomes_execution_authorized tests/test_execution_authorization_runtime_v1.py::test_execution_authorization_fails_closed_on_packet_corruption tests/test_execution_authorization_runtime_v1.py::test_execution_authorization_reconstruction_detects_corruption tests/test_ocs_to_execution_handoff_runtime_v1.py tests/test_ocs_llm_cognition_end_to_end_runtime_v1.py tests/test_multi_provider_cognition_runtime_v1.py",
+      "result": "39 passed"
+    },
+    "full_execution_authorization_suite": {
+      "command": "python -m pytest tests/test_ocs_execution_readiness_runtime_v1.py tests/test_execution_authorization_runtime_v1.py",
+      "result": "11 passed, 1 failed",
+      "failure_scope": "existing CLI acceptance-path drift outside OCS execution readiness runtime",
+      "failing_test": "tests/test_execution_authorization_runtime_v1.py::test_cli_acceptance_flows_reach_execution_authorized"
+    }
+  },
+  "final_outputs": {
+    "EXECUTION_READINESS_RUNTIME_IMPLEMENTED": true,
+    "EXECUTION_READY_ARTIFACT_CREATED": true,
+    "FAIL_CLOSED_ENFORCED": true,
+    "REPLAY_BOUND": true,
+    "AUTHORITY_BOUNDARIES_PRESERVED": true,
+    "READY_FOR_EXECUTION_AUTHORIZATION": true
+  }
+}

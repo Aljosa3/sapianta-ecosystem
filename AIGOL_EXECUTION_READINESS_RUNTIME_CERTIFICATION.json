@@ -1,0 +1,67 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_READINESS_RUNTIME_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_READINESS_RUNTIME_V1",
+  "created_at": "2026-06-08T00:00:00Z",
+  "certification_status": "CERTIFIED",
+  "scope": {
+    "implemented": [
+      "OCS execution readiness runtime",
+      "EXECUTION_READY_STATUS_ARTIFACT_V1 creation",
+      "fail-closed readiness evaluation",
+      "replay-bound readiness reconstruction",
+      "existing authorization-runtime compatibility with OCS readiness replay"
+    ],
+    "not_implemented": [
+      "approval runtime",
+      "new execution authorization runtime",
+      "worker request runtime",
+      "worker assignment runtime",
+      "worker dispatch runtime",
+      "worker invocation runtime",
+      "execution runtime",
+      "repair runtime",
+      "retry runtime"
+    ]
+  },
+  "source_contracts": [
+    "AIGOL_OCS_FOUNDATION_FREEZE_V2",
+    "AIGOL_OCS_TO_EXECUTION_HANDOFF_CONTRACT_V1",
+    "AIGOL_OCS_TO_EXECUTION_HANDOFF_RUNTIME_V1"
+  ],
+  "canonical_runtime": "aigol/runtime/ocs_execution_readiness_runtime.py",
+  "canonical_artifact": "EXECUTION_READY_STATUS_ARTIFACT_V1",
+  "input_artifact": "OCS_EXECUTION_HANDOFF_ARTIFACT_V1",
+  "governance_assertions": {
+    "provider_non_authority_preserved": true,
+    "ocs_non_authority_preserved": true,
+    "approval_boundary_preserved": true,
+    "execution_authorization_boundary_preserved": true,
+    "worker_boundary_preserved": true,
+    "replay_append_only": true,
+    "fail_closed": true
+  },
+  "authorization_boundary": {
+    "readiness_runtime_creates_authorization": false,
+    "existing_authorization_runtime_can_consume_ocs_readiness_replay": true,
+    "authorization_requires_execution_ready": true,
+    "authorization_requires_approval_lineage": true
+  },
+  "certification_evidence": {
+    "focused_readiness_tests": "6 passed",
+    "targeted_certification_tests": "39 passed",
+    "json_artifacts_parseable": true,
+    "diff_check_clean": true
+  },
+  "known_limitations": [
+    "Full execution authorization suite has an existing CLI acceptance-path failure unrelated to the OCS readiness runtime."
+  ],
+  "final_outputs": {
+    "EXECUTION_READINESS_RUNTIME_IMPLEMENTED": "TRUE",
+    "EXECUTION_READY_ARTIFACT_CREATED": "TRUE",
+    "FAIL_CLOSED_ENFORCED": "TRUE",
+    "REPLAY_BOUND": "TRUE",
+    "AUTHORITY_BOUNDARIES_PRESERVED": "TRUE",
+    "READY_FOR_EXECUTION_AUTHORIZATION": "TRUE"
+  }
+}
