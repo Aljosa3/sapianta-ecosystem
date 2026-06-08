@@ -1,0 +1,98 @@
+{
+  "artifact": "AIGOL_ACLI_REAL_EXECUTION_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone": "AIGOL_ACLI_REAL_EXECUTION_ACCEPTANCE_V1",
+  "status": "ACCEPTED",
+  "operator_entrypoint": {
+    "command": "python -m aigol.cli.aigol_cli conversation --session-id SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001 --created-at 2026-06-08T00:00:00+00:00 --runtime-root /tmp/aigol_acli_real_execution_acceptance_v1 --workspace /tmp/aigol_acli_real_execution_acceptance_v1_workspace",
+    "stdin": "Create a trading domain.\\n.\\n",
+    "session_id": "SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001",
+    "turn_id": "TURN-000001",
+    "operator_prompt": "Create a trading domain.",
+    "runtime_root": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001",
+    "workspace_root": "/tmp/aigol_acli_real_execution_acceptance_v1_workspace"
+  },
+  "proof_worker": {
+    "worker_id": "AIGOL-WORKER-CLAUDE-CODE--PROVIDER-ROLE",
+    "worker_family": "CLAUDE_CODE (PROVIDER_ROLE)",
+    "worker_role": "CLAUDE_CODE (PROVIDER_ROLE)"
+  },
+  "lifecycle_statuses": {
+    "routing": "CREATE_DOMAIN_TRADING",
+    "handoff": "IMPLEMENTATION_HANDOFF_CREATED",
+    "readiness": "EXECUTION_READY",
+    "authorization": "EXECUTION_AUTHORIZED",
+    "worker_request": "WORKER_INVOCATION_REQUEST_CREATED",
+    "assignment": "WORKER_ASSIGNED",
+    "dispatch": "WORKER_DISPATCHED",
+    "invocation": "WORKER_INVOKED",
+    "execution": "EXECUTING",
+    "result_capture": "WORKER_RESULT_CAPTURED",
+    "result_validation": "RESULT_VALIDATED",
+    "replay_review": "REVIEW_COMPLETED",
+    "termination": "TERMINATED",
+    "turn_completion": "COMPLETED"
+  },
+  "execution_binding": {
+    "execution_reference": "SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001:TURN-000001:EXECUTION",
+    "execution_hash": "sha256:e12941e8fb0cdffda3b88bf1c7992eb2018bc8a86d085d104af30079675ffa16",
+    "capture_bound_to_execution": true,
+    "validation_bound_to_execution": true,
+    "review_bound_to_execution": true,
+    "termination_bound_to_execution": true
+  },
+  "replay_references": {
+    "routing": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/conversational_cli_routing",
+    "handoff": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/conversation_to_ppp_handoff_execution",
+    "readiness": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/governed_implementation_dry_run",
+    "authorization": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/execution_authorization",
+    "worker_request": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_invocation_request",
+    "assignment": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_assignment",
+    "dispatch": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_dispatch",
+    "invocation": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_invocation",
+    "execution": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/execution_runtime",
+    "result_capture": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_result_capture",
+    "result_validation": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/worker_result_validation",
+    "replay_review": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/post_execution_replay_review",
+    "termination": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/governed_termination",
+    "turn_completion": "/tmp/aigol_acli_real_execution_acceptance_v1/SESSION-ACLI-REAL-EXECUTION-ACCEPTANCE-000001/TURN-000001/turn_completion"
+  },
+  "authority_checks": {
+    "provider_authority_preserved_false": true,
+    "worker_authority_preserved_false": true,
+    "governance_mutated_false": true,
+    "replay_mutated_false": true,
+    "retry_created_false": true,
+    "repair_started_false": true,
+    "continuation_created_false": true
+  },
+  "operator_visible_output_checks": {
+    "routing_visible": true,
+    "readiness_visible": true,
+    "authorization_visible": true,
+    "worker_assignment_visible": true,
+    "worker_dispatch_visible": true,
+    "worker_invocation_visible": true,
+    "execution_visible": true,
+    "result_capture_visible": true,
+    "result_validation_visible": true,
+    "replay_review_visible": true,
+    "termination_visible": true,
+    "turn_completed_visible": true
+  },
+  "regression_coverage": {
+    "focused_tests": [
+      "tests/test_worker_result_capture_runtime_v1.py::test_interactive_cli_reaches_worker_result_capture",
+      "tests/test_worker_result_validation_runtime_v1.py::test_interactive_cli_reaches_worker_result_validation",
+      "tests/test_post_execution_replay_review_runtime_v1.py::test_interactive_cli_reaches_post_execution_replay_review",
+      "tests/test_governed_termination_runtime_v1.py::test_interactive_cli_reaches_terminated"
+    ],
+    "result": "4 passed"
+  },
+  "non_goals_preserved": {
+    "retries_implemented": false,
+    "repairs_implemented": false,
+    "new_workers_implemented": false,
+    "architecture_redesigned": false
+  }
+}

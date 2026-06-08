@@ -1,0 +1,28 @@
+{
+  "artifact": "AIGOL_ACLI_REAL_EXECUTION_ACCEPTANCE_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone": "AIGOL_ACLI_REAL_EXECUTION_ACCEPTANCE_V1",
+  "certification_status": "CERTIFIED",
+  "certified_at": "2026-06-08T00:00:00+00:00",
+  "basis": [
+    "Actual acli module entrypoint completed a governed lifecycle from operator prompt to governed termination.",
+    "Execution runtime output was created between worker invocation and result capture.",
+    "Execution reference and execution hash were preserved through result capture, validation, replay review, and governed termination.",
+    "Operator-visible lifecycle output included routing, readiness, authorization, worker stages, result stages, replay review, termination, and turn completion.",
+    "Focused regression coverage passed."
+  ],
+  "final_outputs": {
+    "ACLI_EXECUTION_COMPLETED": true,
+    "AUTHORITY_CHAIN_PRESERVED": true,
+    "REPLAY_CHAIN_PRESERVED": true,
+    "TERMINATION_COMPLETED": true,
+    "REAL_OPERATOR_EXECUTION_ACCEPTED": true
+  },
+  "scope_limits": {
+    "retries": "NOT_IMPLEMENTED",
+    "repairs": "NOT_IMPLEMENTED",
+    "new_workers": "NOT_IMPLEMENTED",
+    "architecture_changes": "NOT_IMPLEMENTED"
+  },
+  "ready_for_next_milestone": true
+}
