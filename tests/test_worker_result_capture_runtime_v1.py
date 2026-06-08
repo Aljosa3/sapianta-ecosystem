@@ -524,11 +524,13 @@ def test_interactive_cli_reaches_worker_result_capture(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
         _args(tmp_path, session_id="SESSION-CLI-WORKER-RESULT-CAPTURE-000001"),
-        input_func=_input_sequence(["Create a filesystem worker.", "exit"]),
+        input_func=_input_sequence(["Create a trading domain.", "exit"]),
         output_func=output.append,
     )
 
+    assert result["execution_started"] is True
     assert result["worker_result_captured"] is True
-    assert any("Worker Result Capture" in chunk for chunk in output)
-    assert any("Result Capture Status: WORKER_RESULT_CAPTURED" in chunk for chunk in output)
-    assert any("No semantic validation yet." in chunk for chunk in output)
+    assert result["turns"][0]["execution_runtime_status"] == "EXECUTING"
+    assert result["turns"][0]["worker_result_capture_status"] == "WORKER_RESULT_CAPTURED"
+    assert result["turns"][0]["worker_result_capture_replay_reference"]
+    assert result["turns"][0]["worker_result_validation_status"] == "RESULT_VALIDATED"

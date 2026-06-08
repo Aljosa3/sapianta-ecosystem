@@ -226,14 +226,16 @@ def test_interactive_cli_reaches_post_execution_replay_review(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
         _args(tmp_path, session_id="SESSION-CLI-POST-EXECUTION-REPLAY-REVIEW-000001"),
-        input_func=_input_sequence(["Create a filesystem worker.", "exit"]),
+        input_func=_input_sequence(["Create a trading domain.", "exit"]),
         output_func=output.append,
     )
 
+    assert result["execution_started"] is True
     assert result["worker_result_validated"] is True
     assert result["post_execution_replay_reviewed"] is True
+    assert result["turns"][0]["execution_runtime_status"] == "EXECUTING"
     assert any("Worker Result Validation" in chunk for chunk in output)
     assert any("Validation Status: RESULT_VALIDATED" in chunk for chunk in output)
     assert any("Post-Execution Replay Review" in chunk for chunk in output)
     assert any("Replay Review Status: REVIEW_COMPLETED" in chunk for chunk in output)
-    assert any("Termination is a separate downstream stage." in chunk for chunk in output)
+    assert any("Termination Status: TERMINATED" in chunk for chunk in output)

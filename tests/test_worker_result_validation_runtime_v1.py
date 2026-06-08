@@ -569,11 +569,16 @@ def test_interactive_cli_reaches_worker_result_validation(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
         _args(tmp_path, session_id="SESSION-CLI-WORKER-RESULT-VALIDATION-000001"),
-        input_func=_input_sequence(["Create a filesystem worker.", "exit"]),
+        input_func=_input_sequence(["Create a trading domain.", "exit"]),
         output_func=output.append,
     )
 
     assert result["worker_result_validated"] is True
+    assert result["execution_started"] is True
+    assert result["turns"][0]["execution_runtime_status"] == "EXECUTING"
+    assert any("Execution Runtime" in chunk for chunk in output)
+    assert any("Execution Status: EXECUTING" in chunk for chunk in output)
     assert any("Worker Result Validation" in chunk for chunk in output)
     assert any("Validation Status: RESULT_VALIDATED" in chunk for chunk in output)
-    assert any("No replay review yet." in chunk for chunk in output)
+    assert result["turns"][0]["execution_reference"]
+    assert result["turns"][0]["execution_hash"]
