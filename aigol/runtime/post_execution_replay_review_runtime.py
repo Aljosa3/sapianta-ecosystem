@@ -195,6 +195,11 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
         "review_status": result["review_status"],
         "worker_result_validation_reference": review["worker_result_validation_reference"],
         "worker_result_capture_reference": review["worker_result_capture_reference"],
+        "execution_reference": review.get("execution_reference"),
+        "execution_hash": review.get("execution_hash"),
+        "execution_replay_hash": review.get("execution_replay_hash"),
+        "execution_replay_reference": review.get("execution_replay_reference"),
+        "execution_status": review.get("execution_status"),
         "worker_invocation_reference": review["worker_invocation_reference"],
         "worker_dispatch_reference": review["worker_dispatch_reference"],
         "authorization_reference": review["authorization_reference"],
@@ -209,7 +214,7 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
-        **_post_review_boundary_flags(),
+        **_post_review_boundary_flags(execution_bound=_validation_execution_bound(review)),
         "failure_reason": result["failure_reason"],
     }
 
@@ -269,6 +274,15 @@ def _load_validation_lineage(
             raise FailClosedRuntimeError("post-execution replay review failed closed: validation mismatch")
         if review.get("worker_result_validation_hash") != validation["artifact_hash"]:
             raise FailClosedRuntimeError("post-execution replay review failed closed: validation mismatch")
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        ):
+            if review.get(field) != validation.get(field):
+                raise FailClosedRuntimeError("post-execution replay review failed closed: validation mismatch")
 
     chain = _load_chain_artifacts(validation_evidence)
     checks = {
@@ -299,6 +313,12 @@ def _load_validation_lineage(
         == 1,
         "replay_continuity": reconstructed["validation_status"] == RESULT_VALIDATED,
         "authority_continuity": _validation_authority_continuity(validation),
+        "execution_binding_lineage": _validation_execution_binding_continuity(
+            validation_evidence,
+            validation_classification,
+            validation,
+            validation_result,
+        ),
         "hash_continuity": all(bool(artifact.get("artifact_hash")) for artifact in chain.values())
         and validation_classification["validation_evidence_hash"] == validation_evidence["artifact_hash"],
     }
@@ -534,6 +554,11 @@ def _evidence_artifact(
         "authorization_hash": validation["authorization_hash"],
         "execution_packet_reference": validation["execution_packet_reference"],
         "execution_packet_hash": validation["execution_packet_hash"],
+        "execution_reference": validation.get("execution_reference"),
+        "execution_hash": validation.get("execution_hash"),
+        "execution_replay_hash": validation.get("execution_replay_hash"),
+        "execution_replay_reference": validation.get("execution_replay_reference"),
+        "execution_status": validation.get("execution_status"),
         "handoff_reference": chain["request_evidence"]["handoff_reference"],
         "handoff_hash": chain["request_evidence"]["handoff_hash"],
         "worker_id": validation["worker_id"],
@@ -568,7 +593,7 @@ def _evidence_artifact(
         "lineage_checks": deepcopy(lineage["lineage_checks"]),
         "recorded_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
-        **_post_review_boundary_flags(),
+        **_post_review_boundary_flags(execution_bound=_validation_execution_bound(validation)),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -598,6 +623,7 @@ def _classification_artifact(*, review_id: str, evidence: dict[str, Any], review
                 "packet_continuity",
                 "worker_continuity",
                 "chain_continuity",
+                "execution_binding_lineage",
             )
         )
         else FAILED_CLOSED,
@@ -605,7 +631,7 @@ def _classification_artifact(*, review_id: str, evidence: dict[str, Any], review
         "output_binding_integrity_assessment": INTEGRITY_VERIFIED,
         "classified_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
-        **_post_review_boundary_flags(),
+        **_post_review_boundary_flags(execution_bound=evidence.get("execution_started") is True),
     }
     if FAILED_CLOSED in (
         artifact["replay_integrity_assessment"],
@@ -652,6 +678,11 @@ def _review_artifact(
         "authorization_hash": validation["authorization_hash"],
         "execution_packet_reference": validation["execution_packet_reference"],
         "execution_packet_hash": validation["execution_packet_hash"],
+        "execution_reference": validation.get("execution_reference"),
+        "execution_hash": validation.get("execution_hash"),
+        "execution_replay_hash": validation.get("execution_replay_hash"),
+        "execution_replay_reference": validation.get("execution_replay_reference"),
+        "execution_status": validation.get("execution_status"),
         "handoff_reference": evidence["handoff_reference"],
         "handoff_hash": evidence["handoff_hash"],
         "worker_id": validation["worker_id"],
@@ -676,7 +707,7 @@ def _review_artifact(
         "reviewed_by": _require_string(reviewed_by, "reviewed_by"),
         "reviewed_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
-        **_post_review_boundary_flags(),
+        **_post_review_boundary_flags(execution_bound=_validation_execution_bound(validation)),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_review_artifact(artifact)
@@ -706,10 +737,15 @@ def _result_artifact(
         "post_execution_replay_review_hash": review["artifact_hash"],
         "worker_result_validation_reference": review["worker_result_validation_reference"],
         "worker_result_validation_hash": review["worker_result_validation_hash"],
+        "execution_reference": review.get("execution_reference"),
+        "execution_hash": review.get("execution_hash"),
+        "execution_replay_hash": review.get("execution_replay_hash"),
+        "execution_replay_reference": review.get("execution_replay_reference"),
+        "execution_status": review.get("execution_status"),
         "chain_id": review["chain_id"],
         "completed_at": _require_string(reviewed_at, "reviewed_at"),
         "replay_visible": True,
-        **_post_review_boundary_flags(),
+        **_post_review_boundary_flags(execution_bound=_validation_execution_bound(review)),
         "failure_reason": failure_reason,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -764,6 +800,9 @@ def _capture(
             "review_result_artifact": deepcopy(result),
             "post_execution_replay_review_reference": review.get("post_execution_replay_review_id") if review else None,
             "worker_result_validation_reference": review.get("worker_result_validation_reference") if review else None,
+            "execution_reference": review.get("execution_reference") if review else None,
+            "execution_hash": review.get("execution_hash") if review else None,
+            "execution_replay_reference": review.get("execution_replay_reference") if review else None,
             "worker_id": review.get("worker_id") if review else None,
             "post_execution_replay_review_replay_reference": str(replay_path),
             "fail_closed": result["review_status"] == FAILED_CLOSED,
@@ -778,7 +817,8 @@ def _validate_review_artifact(review: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("post-execution replay review failed closed: invalid review artifact")
     if review.get("review_status") != REVIEW_COMPLETED:
         raise FailClosedRuntimeError("post-execution replay review failed closed: invalid review status")
-    for field, expected in _post_review_boundary_flags().items():
+    execution_bound = _validation_execution_bound(review)
+    for field, expected in _post_review_boundary_flags(execution_bound=execution_bound).items():
         if review.get(field) is not expected:
             raise FailClosedRuntimeError("post-execution replay review failed closed: authority drift")
     for field in (
@@ -804,6 +844,17 @@ def _validate_review_artifact(review: dict[str, Any]) -> None:
         "reviewed_at",
     ):
         _require_string(review.get(field), field)
+    if execution_bound:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        ):
+            _require_string(review.get(field), field)
+        if review.get("execution_status") != "EXECUTING":
+            raise FailClosedRuntimeError("post-execution replay review failed closed: invalid execution state")
     for assessment in (
         "replay_integrity_assessment",
         "authority_integrity_assessment",
@@ -816,17 +867,80 @@ def _validate_review_artifact(review: dict[str, Any]) -> None:
 
 
 def _validation_authority_continuity(validation: dict[str, Any]) -> bool:
-    return all(validation.get(field) is expected for field, expected in _pre_review_boundary_flags().items())
+    execution_bound = _validation_execution_bound(validation)
+    return all(
+        validation.get(field) is expected
+        for field, expected in _pre_review_boundary_flags(execution_bound=execution_bound).items()
+    )
 
 
-def _pre_review_boundary_flags() -> dict[str, bool]:
+def _validation_execution_binding_continuity(
+    validation_evidence: dict[str, Any],
+    validation_classification: dict[str, Any],
+    validation: dict[str, Any],
+    validation_result: dict[str, Any],
+) -> bool:
+    execution_bound = _validation_execution_bound(validation)
+    if not execution_bound:
+        return not _has_execution_binding(validation_evidence, validation_classification, validation, validation_result)
+    required = (
+        "execution_reference",
+        "execution_hash",
+        "execution_replay_hash",
+        "execution_replay_reference",
+        "execution_status",
+    )
+    if any(not _nonempty_string(validation.get(field)) for field in required):
+        return False
+    if validation.get("execution_started") is not True:
+        return False
+    for artifact in (validation_evidence, validation_classification, validation_result):
+        if artifact.get("execution_reference") != validation["execution_reference"]:
+            return False
+        if artifact.get("execution_hash") != validation["execution_hash"]:
+            return False
+    if validation_evidence.get("execution_replay_hash") != validation["execution_replay_hash"]:
+        return False
+    if validation_evidence.get("execution_replay_reference") != validation["execution_replay_reference"]:
+        return False
+    if validation_result.get("execution_replay_reference") != validation["execution_replay_reference"]:
+        return False
+    if validation_evidence.get("execution_status") != validation["execution_status"]:
+        return False
+    if validation.get("execution_status") != "EXECUTING":
+        return False
+    return True
+
+
+def _validation_execution_bound(validation: dict[str, Any]) -> bool:
+    if validation.get("execution_started") is True:
+        return True
+    return _has_execution_binding(validation)
+
+
+def _has_execution_binding(*artifacts: dict[str, Any]) -> bool:
+    fields = (
+        "execution_reference",
+        "execution_hash",
+        "execution_replay_hash",
+        "execution_replay_reference",
+        "execution_status",
+    )
+    return any(artifact.get(field) is not None for artifact in artifacts for field in fields)
+
+
+def _nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _pre_review_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
     return {
         "approval_created": False,
         "worker_assigned": True,
         "worker_dispatched": True,
         "dispatch_requested": True,
         "worker_invoked": True,
-        "execution_started": False,
+        "execution_started": execution_bound,
         "result_created": True,
         "worker_result_captured": True,
         "result_validated": True,
@@ -837,8 +951,8 @@ def _pre_review_boundary_flags() -> dict[str, bool]:
     }
 
 
-def _post_review_boundary_flags() -> dict[str, bool]:
-    flags = _pre_review_boundary_flags()
+def _post_review_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
+    flags = _pre_review_boundary_flags(execution_bound=execution_bound)
     flags["post_execution_replay_reviewed"] = True
     return flags
 
