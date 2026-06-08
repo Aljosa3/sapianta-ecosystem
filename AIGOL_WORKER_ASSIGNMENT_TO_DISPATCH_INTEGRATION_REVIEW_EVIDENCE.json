@@ -1,0 +1,102 @@
+{
+  "artifact_type": "AIGOL_WORKER_ASSIGNMENT_TO_DISPATCH_INTEGRATION_REVIEW_EVIDENCE",
+  "artifact_version": 1,
+  "review_id": "AIGOL_WORKER_ASSIGNMENT_TO_DISPATCH_INTEGRATION_REVIEW_V1",
+  "status": "REVIEW_ONLY",
+  "runtime_changes_made": false,
+  "worker_invocation_implemented": false,
+  "execution_implemented": false,
+  "repair_implemented": false,
+  "retry_implemented": false,
+  "reviewed_boundary": {
+    "upstream_artifact": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "downstream_artifact": "WORKER_DISPATCH_ARTIFACT_V1",
+    "dispatch_runtime": "aigol/runtime/worker_dispatch_runtime.py::dispatch_assigned_worker"
+  },
+  "reviewed_files": [
+    {
+      "path": "aigol/runtime/worker_assignment_runtime.py",
+      "line_regions": [
+        "463-498",
+        "511-533",
+        "571-594",
+        "597-620"
+      ],
+      "evidence": "Worker assignment artifact provides assignment status, worker identity, invocation request lineage, authorization lineage, execution packet lineage, chain continuity, replay visibility, and pre-dispatch authority flags."
+    },
+    {
+      "path": "aigol/runtime/worker_dispatch_runtime.py",
+      "line_regions": [
+        "35-99",
+        "102-145",
+        "177-235",
+        "238-260",
+        "355-399",
+        "402-470",
+        "473-529"
+      ],
+      "evidence": "Dispatch runtime reconstructs assignment replay, verifies provided assignment hash, verifies invocation request replay continuity, creates dispatch artifact, persists replay, and fails closed on mismatch or authority violation."
+    },
+    {
+      "path": "tests/test_worker_dispatch_runtime_v1.py",
+      "line_regions": [
+        "192-209",
+        "212-219",
+        "222-295",
+        "298-321",
+        "324-348",
+        "351-360"
+      ],
+      "evidence": "Tests cover successful assignment-to-dispatch, replay persistence, mismatch fail-closed cases, replay corruption detection, CLI smoke behavior, and authority boundary preservation."
+    }
+  ],
+  "compatibility_findings": {
+    "assignment_artifact_consumed_by_dispatch_runtime": true,
+    "assignment_replay_reference_required": true,
+    "assignment_hash_bound": true,
+    "worker_identity_bound": true,
+    "worker_invocation_request_lineage_bound": true,
+    "authorization_lineage_bound": true,
+    "execution_packet_lineage_bound": true,
+    "chain_continuity_bound": true,
+    "replay_continuity_bound": true,
+    "authority_flags_preserved": true,
+    "worker_invocation_created": false,
+    "execution_started": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "missing_bindings": [],
+  "duplicate_logic": {
+    "found": true,
+    "classification": "TRUE_NON_BLOCKING",
+    "items": [
+      "Dispatch runtime revalidates assignment artifact structure and assignment authority flags.",
+      "Dispatch runtime reconstructs assignment replay and worker invocation request replay before dispatch.",
+      "Replay wrapper hash and artifact hash verification patterns repeat across worker runtimes."
+    ],
+    "requires_architectural_change": false
+  },
+  "non_blocking_downstream_issue": {
+    "scope": "CLI status propagation",
+    "test": "tests/test_worker_dispatch_runtime_v1.py::test_cli_acceptance_flows_reach_worker_dispatched",
+    "observed_failure": "KeyError: worker_dispatch_status",
+    "blocking_for_assignment_to_dispatch_runtime_boundary": false
+  },
+  "validation": {
+    "runtime_boundary_command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_persists_replay_evidence tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_worker_identity_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_assignment_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_packet_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_authority_violation tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_reconstruction_detects_replay_corruption tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_reconstruction_detects_chain_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_runtime_preserves_authority_boundaries",
+    "runtime_boundary_result": "11 passed",
+    "full_dispatch_test_command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py",
+    "full_dispatch_test_result": "11 passed, 1 failed",
+    "full_dispatch_failure": "test_cli_acceptance_flows_reach_worker_dispatched failed with KeyError: worker_dispatch_status",
+    "json_artifacts_valid": true,
+    "diff_check_clean": true
+  },
+  "final_outputs": {
+    "WORKER_DISPATCH_COMPATIBLE": "TRUE",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_WORKER_DISPATCH_TO_INVOCATION_INTEGRATION_REVIEW_V1",
+    "READY_FOR_WORKER_DISPATCH": "TRUE"
+  }
+}

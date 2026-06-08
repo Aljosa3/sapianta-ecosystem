@@ -1,0 +1,62 @@
+{
+  "artifact_type": "AIGOL_WORKER_ASSIGNMENT_TO_DISPATCH_INTEGRATION_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_WORKER_ASSIGNMENT_TO_DISPATCH_INTEGRATION_REVIEW_V1",
+  "certification_status": "CERTIFIED_WITH_NON_BLOCKING_CLI_VISIBILITY_GAP",
+  "scope": {
+    "review_only": true,
+    "runtime_changes_made": false,
+    "worker_invocation_implemented": false,
+    "execution_implemented": false,
+    "repair_implemented": false,
+    "retry_implemented": false
+  },
+  "certified_boundary": {
+    "from": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "to": "WORKER_DISPATCH_ARTIFACT_V1",
+    "runtime": "AIGOL_WORKER_DISPATCH_RUNTIME_V1"
+  },
+  "certified_claims": {
+    "worker_assignment_outputs_consumable_by_dispatch_runtime": true,
+    "architectural_change_required": false,
+    "assignment_hash_binding_present": true,
+    "assignment_replay_binding_present": true,
+    "worker_identity_binding_present": true,
+    "worker_invocation_request_lineage_binding_present": true,
+    "authorization_lineage_binding_present": true,
+    "execution_packet_lineage_binding_present": true,
+    "chain_continuity_binding_present": true,
+    "fail_closed_behavior_present": true,
+    "authority_boundaries_preserved": true,
+    "dispatch_does_not_invoke_worker": true,
+    "dispatch_does_not_execute_worker": true,
+    "dispatch_does_not_create_results": true
+  },
+  "limitations": [
+    {
+      "classification": "NON_BLOCKING_DOWNSTREAM_VISIBILITY_GAP",
+      "description": "The full dispatch test file has one CLI smoke failure because the returned turn payload does not expose worker_dispatch_status in that path.",
+      "blocking_for_runtime_boundary": false
+    }
+  ],
+  "validation": {
+    "runtime_boundary_tests": {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_persists_replay_evidence tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_worker_identity_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_assignment_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_packet_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_fails_closed_on_authority_violation tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_reconstruction_detects_replay_corruption tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_reconstruction_detects_chain_mismatch tests/test_worker_dispatch_runtime_v1.py::test_worker_dispatch_runtime_preserves_authority_boundaries",
+      "result": "11 passed"
+    },
+    "full_dispatch_test_file": {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py",
+      "result": "11 passed, 1 failed",
+      "failure": "tests/test_worker_dispatch_runtime_v1.py::test_cli_acceptance_flows_reach_worker_dispatched"
+    },
+    "json_validation": "passed",
+    "diff_check": "passed"
+  },
+  "final_outputs": {
+    "WORKER_DISPATCH_COMPATIBLE": "TRUE",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_WORKER_DISPATCH_TO_INVOCATION_INTEGRATION_REVIEW_V1",
+    "READY_FOR_WORKER_DISPATCH": "TRUE"
+  }
+}
