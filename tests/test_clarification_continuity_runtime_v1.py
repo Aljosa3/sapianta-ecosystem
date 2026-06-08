@@ -6,6 +6,12 @@ import json
 from pathlib import Path
 
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.runtime.clarification_lifecycle_resolution_runtime import (
+    CLARIFICATION_ACTIVE,
+    CLARIFICATION_RESOLVED,
+    CLARIFICATION_SUPERSEDED,
+    resolve_clarification_lifecycle,
+)
 from aigol.runtime.clarification_continuity_runtime import (
     FAILED_CLOSED,
     WORKFLOW_RESUME_READY,
@@ -55,13 +61,13 @@ def _conversation_args(tmp_path):
     )
 
 
-def _seed_open_clarification(session_root: Path, turn_id: str = "TURN-000001") -> str:
+def _seed_open_clarification(session_root: Path, turn_id: str = "TURN-000001", prompt: str = PROMPT) -> str:
     prompt_id = f"{SESSION_ID}:{turn_id}"
     turn_root = session_root / turn_id
     route_conversational_cli_intent(
         routing_id=f"{prompt_id}:CONVERSATIONAL-CLI-ROUTING",
         prompt_id=prompt_id,
-        human_prompt=PROMPT,
+        human_prompt=prompt,
         canonical_chain_id=prompt_id,
         created_at=CREATED_AT,
         replay_dir=turn_root / "conversational_cli_routing",
@@ -69,7 +75,7 @@ def _seed_open_clarification(session_root: Path, turn_id: str = "TURN-000001") -
     run_unknown_domain_clarification_workflow(
         clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
         prompt_id=prompt_id,
-        human_prompt=PROMPT,
+        human_prompt=prompt,
         canonical_chain_id=prompt_id,
         created_at=CREATED_AT,
         replay_dir=turn_root / "unknown_domain_clarification",
@@ -133,16 +139,40 @@ def test_clarification_continuity_fails_closed_without_state(tmp_path) -> None:
     assert capture["worker_invoked"] is False
 
 
-def test_clarification_continuity_fails_closed_with_multiple_active_clarifications(tmp_path) -> None:
+def test_lifecycle_resolution_allows_only_latest_open_clarification_to_be_active(tmp_path) -> None:
     session_root = tmp_path / "runtime" / SESSION_ID
     _seed_open_clarification(session_root, "TURN-000001")
-    _seed_open_clarification(session_root, "TURN-000002")
+    _seed_open_clarification(
+        session_root,
+        "TURN-000002",
+        "Create a new governed domain called SecondDomain.",
+    )
+    lifecycle = resolve_clarification_lifecycle(session_root=session_root)
 
     capture = _run_continuity(tmp_path, session_root)
 
-    assert capture["response_status"] == FAILED_CLOSED
-    assert "multiple active clarifications" in capture["failure_reason"]
+    assert lifecycle["active_clarification_count"] == 1
+    assert [state["lifecycle_status"] for state in lifecycle["lifecycle_summary"]] == [
+        CLARIFICATION_SUPERSEDED,
+        CLARIFICATION_ACTIVE,
+    ]
+    assert capture["response_status"] == WORKFLOW_RESUME_READY
+    assert capture["proposed_domain"] == "SecondDomain"
     assert capture["execution_requested"] is False
+
+
+def test_resolved_clarifications_are_not_considered_active(tmp_path) -> None:
+    output: list[str] = []
+    run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, "exit"]),
+        output_func=output.append,
+    )
+    session_root = tmp_path / "interactive_runtime" / SESSION_ID
+    lifecycle = resolve_clarification_lifecycle(session_root=session_root)
+
+    assert lifecycle["active_clarification_count"] == 0
+    assert lifecycle["lifecycle_summary"][0]["lifecycle_status"] == CLARIFICATION_RESOLVED
 
 
 def test_clarification_continuity_fails_closed_on_chain_mismatch(tmp_path) -> None:
