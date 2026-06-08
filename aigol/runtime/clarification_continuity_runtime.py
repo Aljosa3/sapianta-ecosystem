@@ -6,6 +6,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.clarification_lifecycle_resolution_runtime import (
+    active_clarification_state,
+    resolve_clarification_lifecycle,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.unknown_domain_clarification_runtime import (
@@ -43,11 +47,13 @@ def detect_active_clarification(
 ) -> dict[str, Any]:
     """Detect exactly one unresolved clarification in session replay."""
 
-    state = _active_clarification_state(Path(session_root))
+    lifecycle = resolve_clarification_lifecycle(session_root=session_root)
+    state = lifecycle.get("active_clarification")
     return {
         "open_clarification_detected": state is not None,
-        "active_clarification_count": 1 if state is not None else 0,
+        "active_clarification_count": lifecycle["active_clarification_count"],
         "active_clarification": deepcopy(state),
+        "clarification_lifecycle": deepcopy(lifecycle),
         "fail_closed": False,
         "failure_reason": None,
     }
@@ -195,12 +201,7 @@ def render_clarification_continuity_summary(capture: dict[str, Any]) -> str:
 
 
 def _active_clarification_state(session_root: Path) -> dict[str, Any] | None:
-    if not session_root.exists():
-        return None
-    states = _unresolved_clarification_states(session_root)
-    if len(states) > 1:
-        raise FailClosedRuntimeError("clarification continuity failed closed: multiple active clarifications")
-    return states[0] if states else None
+    return active_clarification_state(session_root=session_root)
 
 
 def _require_active_clarification(session_root: Path) -> dict[str, Any]:
@@ -208,61 +209,6 @@ def _require_active_clarification(session_root: Path) -> dict[str, Any]:
     if state is None:
         raise FailClosedRuntimeError("clarification continuity failed closed: missing clarification state")
     return state
-
-
-def _unresolved_clarification_states(session_root: Path) -> list[dict[str, Any]]:
-    resolved = _resolved_clarification_refs(session_root)
-    states = []
-    for turn_root in sorted((path for path in session_root.glob("TURN-*") if path.is_dir()), key=lambda path: path.name):
-        clarification_root = turn_root / "unknown_domain_clarification"
-        request_path = clarification_root / "001_clarification_request_recorded.json"
-        unknown_path = clarification_root / "000_unknown_domain_recorded.json"
-        routing_path = turn_root / "conversational_cli_routing" / "001_conversational_workflow_selection_recorded.json"
-        if not request_path.exists() or not unknown_path.exists():
-            continue
-        unknown_wrapper = _load_verified_wrapper(unknown_path, 0, "unknown_domain_recorded")
-        request_wrapper = _load_verified_wrapper(request_path, 1, "clarification_request_recorded")
-        unknown = _verified_artifact(unknown_wrapper, "unknown domain")
-        request = _verified_artifact(request_wrapper, "clarification request")
-        if unknown.get("artifact_type") != UNKNOWN_DOMAIN_ARTIFACT_V1:
-            raise FailClosedRuntimeError("clarification continuity failed closed: workflow mismatch")
-        if request.get("clarification_status") != CLARIFICATION_REQUIRED:
-            continue
-        if request.get("unknown_domain_reference") != unknown.get("unknown_domain_id"):
-            raise FailClosedRuntimeError("clarification continuity failed closed: clarification reference mismatch")
-        if request.get("unknown_domain_hash") != unknown.get("artifact_hash"):
-            raise FailClosedRuntimeError("clarification continuity failed closed: replay mismatch")
-        if request.get("clarification_id") in resolved:
-            continue
-        workflow_id = None
-        if routing_path.exists():
-            routing_wrapper = _load_verified_wrapper(routing_path, 1, "conversational_workflow_selection_recorded")
-            routing = _verified_artifact(routing_wrapper, "workflow selection")
-            workflow_id = routing.get("workflow_id")
-        states.append(
-            {
-                "turn_id": turn_root.name,
-                "turn_root": str(turn_root),
-                "unknown_domain_artifact": deepcopy(unknown),
-                "clarification_request_artifact": deepcopy(request),
-                "originating_workflow_id": workflow_id,
-                "originating_replay_reference": str(clarification_root),
-                "clarification_request_hash": request["artifact_hash"],
-                "unknown_domain_hash": unknown["artifact_hash"],
-            }
-        )
-    return states
-
-
-def _resolved_clarification_refs(session_root: Path) -> set[str]:
-    refs: set[str] = set()
-    for path in session_root.glob("TURN-*/clarification_continuity/002_clarification_resolution_recorded.json"):
-        wrapper = _load_verified_wrapper(path, 2, "clarification_resolution_recorded")
-        resolution = _verified_artifact(wrapper, "clarification resolution")
-        reference = resolution.get("clarification_request_reference")
-        if isinstance(reference, str):
-            refs.add(reference)
-    return refs
 
 
 def _validate_state(
