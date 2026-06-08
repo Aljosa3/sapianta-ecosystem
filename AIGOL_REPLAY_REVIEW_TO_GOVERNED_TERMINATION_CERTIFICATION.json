@@ -1,0 +1,76 @@
+{
+  "artifact_type": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_V1",
+  "status": "CERTIFIED_REVIEW_ONLY",
+  "certifies": "Post-execution replay review to governed termination integration boundary review",
+  "certification_scope": {
+    "runtime_implemented": false,
+    "compatibility_fix_implemented": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "review_artifacts": [
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_V1.md",
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_EVIDENCE.json",
+    "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_CERTIFICATION.json"
+  ],
+  "reviewed_runtime_files": [
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "aigol/runtime/governed_termination_runtime.py"
+  ],
+  "reviewed_tests": [
+    "tests/test_post_execution_replay_review_runtime_v1.py",
+    "tests/test_governed_termination_runtime_v1.py"
+  ],
+  "certification_findings": {
+    "replay_review_outputs_reviewed": true,
+    "governed_termination_requirements_reviewed": true,
+    "invocation_only_replay_review_compatible": true,
+    "execution_bound_replay_review_compatible": false,
+    "missing_bindings_identified": true,
+    "duplicate_logic_identified": true,
+    "required_fix_identified": true,
+    "architectural_redesign_required": false
+  },
+  "compatibility_classification": {
+    "TERMINATION_COMPATIBLE": "PARTIAL_INVOCATION_REPLAY_REVIEW_TRUE_EXECUTION_BOUND_REPLAY_REVIEW_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_GOVERNED_TERMINATION": "FALSE_PENDING_EXECUTION_BOUND_REPLAY_REVIEW_COMPATIBILITY_FIX"
+  },
+  "required_next_milestone": {
+    "milestone": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+    "purpose": "Allow governed termination to consume execution-bound POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1 outputs while preserving invocation-only compatibility, fail-closed semantics, and terminal closure separation.",
+    "architectural_change_required": false
+  },
+  "non_goals_preserved": [
+    "No retries.",
+    "No repairs.",
+    "No governance mutation.",
+    "No existing replay mutation.",
+    "No architectural redesign.",
+    "No autonomous continuation.",
+    "No new work creation."
+  ],
+  "validation_commands": [
+    {
+      "command": "python -m json.tool AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_EVIDENCE.json",
+      "status": "PASS",
+      "summary": "Evidence JSON parsed successfully."
+    },
+    {
+      "command": "python -m json.tool AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_CERTIFICATION.json",
+      "status": "PASS",
+      "summary": "Certification JSON parsed successfully."
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASS",
+      "summary": "No whitespace errors detected."
+    }
+  ],
+  "final_classification": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_STATUS = CERTIFIED_REVIEW_ONLY_PENDING_COMPATIBILITY_FIX"
+}

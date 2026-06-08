@@ -1,0 +1,169 @@
+{
+  "artifact_type": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_EVIDENCE",
+  "artifact_version": 1,
+  "review_id": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_INTEGRATION_REVIEW_V1",
+  "status": "REVIEW_COMPLETE",
+  "review_scope": {
+    "from": "POST_EXECUTION_REPLAY_REVIEW_RUNTIME_V1",
+    "to": "GOVERNED_TERMINATION_RUNTIME_V1",
+    "runtime_change_performed": false,
+    "retry_implemented": false,
+    "repair_implemented": false,
+    "architectural_redesign_performed": false
+  },
+  "reviewed_runtime_files": [
+    "aigol/runtime/post_execution_replay_review_runtime.py",
+    "aigol/runtime/governed_termination_runtime.py"
+  ],
+  "reviewed_test_files": [
+    "tests/test_post_execution_replay_review_runtime_v1.py",
+    "tests/test_governed_termination_runtime_v1.py"
+  ],
+  "reviewed_governance_artifacts": [
+    "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_V1.md",
+    "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_CERTIFICATION.json",
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_V1.md",
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_ACCEPTANCE_EVIDENCE.json",
+    "governance/AIGOL_GOVERNED_TERMINATION_RUNTIME_CERTIFICATION.json",
+    "AIGOL_RESULT_VALIDATION_TO_REPLAY_REVIEW_COMPATIBILITY_FIX_V1.md"
+  ],
+  "replay_review_outputs": {
+    "output_artifacts": [
+      "POST_EXECUTION_REPLAY_REVIEW_EVIDENCE_ARTIFACT_V1",
+      "POST_EXECUTION_REPLAY_REVIEW_CLASSIFICATION_ARTIFACT_V1",
+      "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1",
+      "POST_EXECUTION_REPLAY_REVIEW_RESULT_ARTIFACT_V1"
+    ],
+    "invocation_only_replay_review": {
+      "review_status": "REVIEW_COMPLETED",
+      "execution_started": false,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": true,
+      "post_execution_replay_reviewed": true,
+      "terminated": false,
+      "compatible_with_existing_governed_termination": true
+    },
+    "execution_bound_replay_review": {
+      "review_status": "REVIEW_COMPLETED",
+      "execution_reference": true,
+      "execution_hash": true,
+      "execution_replay_hash": true,
+      "execution_replay_reference": true,
+      "execution_status": "EXECUTING",
+      "execution_started": true,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": true,
+      "post_execution_replay_reviewed": true,
+      "terminated": false,
+      "compatible_with_existing_governed_termination": false
+    }
+  },
+  "governed_termination_intake_requirements": {
+    "function": "terminate_reviewed_operation",
+    "requires_post_execution_replay_review_artifact": true,
+    "requires_post_execution_replay_review_replay_reference": true,
+    "requires_review_status": "REVIEW_COMPLETED",
+    "requires_replay_review_reconstruction": true,
+    "requires_terminal_precondition": "terminated=false",
+    "pre_termination_authority_flags": {
+      "approval_created": false,
+      "worker_assigned": true,
+      "worker_dispatched": true,
+      "dispatch_requested": true,
+      "worker_invoked": true,
+      "execution_started": false,
+      "result_created": true,
+      "worker_result_captured": true,
+      "result_validated": true,
+      "post_execution_replay_reviewed": true,
+      "terminated": false,
+      "governance_mutated": false,
+      "replay_mutated": false
+    }
+  },
+  "compatibility_matrix": [
+    {
+      "replay_review_output": "invocation_only_POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1",
+      "governed_termination_support": "SUPPORTED",
+      "compatible": true
+    },
+    {
+      "replay_review_output": "execution_bound_POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1",
+      "governed_termination_support": "BLOCKED_BY_EXECUTION_STARTED_FLAG",
+      "compatible": false
+    },
+    {
+      "replay_review_output": "execution_reference",
+      "governed_termination_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "replay_review_output": "execution_hash",
+      "governed_termination_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "replay_review_output": "execution_replay_hash",
+      "governed_termination_support": "NOT_PROPAGATED",
+      "compatible": false
+    },
+    {
+      "replay_review_output": "execution_status",
+      "governed_termination_support": "NOT_PROPAGATED",
+      "compatible": false
+    }
+  ],
+  "missing_bindings": [
+    "Pre-termination authority model for execution-bound replay review.",
+    "Execution reference and hash continuity in governed termination evidence.",
+    "Execution replay hash continuity in governed termination evidence.",
+    "Execution status propagation into governed termination artifact.",
+    "Fail-closed rejection of execution_started true without valid execution binding.",
+    "Fail-closed rejection of mismatched execution binding fields.",
+    "Termination reconstruction continuity for execution-bound replay review."
+  ],
+  "duplicate_logic": {
+    "found": true,
+    "classification": "TRUE_NON_BLOCKING",
+    "areas": [
+      "artifact hash verification",
+      "replay wrapper hash verification",
+      "replay review replay reconstruction",
+      "review continuity",
+      "review evidence continuity",
+      "validation continuity",
+      "authorization continuity",
+      "execution packet continuity",
+      "worker identity continuity",
+      "chain continuity",
+      "authority flag checks",
+      "terminal precondition checks",
+      "closure precondition checks",
+      "hidden continuation checks"
+    ],
+    "governance_assessment": "Duplication is governance-preserving and should remain unless replaced by shared fail-closed validators with identical semantics."
+  },
+  "required_fixes": [
+    {
+      "milestone": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+      "required": true,
+      "scope": [
+        "Accept execution-bound replay review only when execution binding fields are present and valid.",
+        "Preserve invocation-only replay review compatibility.",
+        "Propagate execution reference, execution hash, execution replay hash, execution replay reference, and execution status into termination evidence and termination artifact.",
+        "Preserve fail-closed governed termination semantics.",
+        "Do not implement retries, repairs, resurrection, new work, or architectural redesign."
+      ]
+    }
+  ],
+  "final_outputs": {
+    "TERMINATION_COMPATIBLE": "PARTIAL_INVOCATION_REPLAY_REVIEW_TRUE_EXECUTION_BOUND_REPLAY_REVIEW_BLOCKED",
+    "ARCHITECTURAL_CHANGE_REQUIRED": "FALSE",
+    "DUPLICATE_LOGIC_FOUND": "TRUE_NON_BLOCKING",
+    "MINIMAL_NEXT_MILESTONE": "AIGOL_REPLAY_REVIEW_TO_GOVERNED_TERMINATION_COMPATIBILITY_FIX_V1",
+    "READY_FOR_GOVERNED_TERMINATION": "FALSE_PENDING_EXECUTION_BOUND_REPLAY_REVIEW_COMPATIBILITY_FIX"
+  }
+}
