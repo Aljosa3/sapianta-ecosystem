@@ -8,6 +8,7 @@ from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.execution_runtime import EXECUTING
 from aigol.runtime.worker_result_capture_runtime import (
     WORKER_RESULT_CAPTURED,
     WORKER_RESULT_CAPTURE_ARTIFACT_V1,
@@ -141,6 +142,9 @@ def reconstruct_worker_result_validation_replay(replay_dir: str | Path) -> dict[
         "worker_result_validation_id": validation["worker_result_validation_id"],
         "validation_status": result["validation_status"],
         "worker_result_capture_reference": validation["worker_result_capture_reference"],
+        "execution_reference": validation.get("execution_reference"),
+        "execution_hash": validation.get("execution_hash"),
+        "execution_replay_reference": validation.get("execution_replay_reference"),
         "worker_invocation_reference": validation["worker_invocation_reference"],
         "worker_dispatch_reference": validation["worker_dispatch_reference"],
         "authorization_reference": validation["authorization_reference"],
@@ -153,7 +157,7 @@ def reconstruct_worker_result_validation_replay(replay_dir: str | Path) -> dict[
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
-        **_post_validation_boundary_flags(),
+        **_post_validation_boundary_flags(execution_bound=bool(validation.get("execution_reference"))),
         "failure_reason": result["failure_reason"],
     }
 
@@ -224,6 +228,12 @@ def _load_result_capture_lineage(
         "assignment_lineage": result_capture["worker_assignment_hash"] == evidence["worker_assignment_hash"],
         "authorization_lineage": result_capture["authorization_hash"] == evidence["authorization_hash"],
         "execution_packet_lineage": result_capture["execution_packet_hash"] == evidence["execution_packet_hash"],
+        "execution_binding_lineage": _result_capture_execution_binding_continuity(
+            result_capture,
+            evidence,
+            classification,
+            result,
+        ),
         "worker_identity_continuity": result_capture["worker_id"] == evidence["worker_id"]
         and result_capture["worker_hash"] == evidence["worker_hash"],
         "chain_continuity": result_capture["chain_id"] == evidence["chain_id"],
@@ -246,7 +256,8 @@ def _validate_result_capture_artifact(result_capture: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("worker result validation failed closed: invalid result capture artifact")
     if result_capture.get("result_capture_status") != WORKER_RESULT_CAPTURED:
         raise FailClosedRuntimeError("worker result validation failed closed: result capture invalid")
-    for field, expected in _pre_validation_boundary_flags().items():
+    execution_bound = _result_capture_execution_bound(result_capture)
+    for field, expected in _pre_validation_boundary_flags(execution_bound=execution_bound).items():
         if result_capture.get(field) is not expected:
             raise FailClosedRuntimeError("worker result validation failed closed: authority violation")
     if not _string_list(result_capture.get("allowed_outputs")):
@@ -283,6 +294,64 @@ def _validate_result_capture_artifact(result_capture: dict[str, Any]) -> None:
         "worker_output_hash",
     ):
         _require_string(result_capture.get(field), field)
+    if execution_bound:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_status",
+        ):
+            _require_string(result_capture.get(field), field)
+        if result_capture.get("execution_status") != EXECUTING:
+            raise FailClosedRuntimeError("worker result validation failed closed: invalid execution state")
+
+
+def _result_capture_execution_binding_continuity(
+    result_capture: dict[str, Any],
+    evidence: dict[str, Any],
+    classification: dict[str, Any],
+    result: dict[str, Any],
+) -> bool:
+    execution_bound = _result_capture_execution_bound(result_capture)
+    if not execution_bound:
+        return (
+            not _has_execution_binding(evidence)
+            and not _has_execution_binding(classification)
+            and not _has_execution_binding(result)
+        )
+    required = ("execution_reference", "execution_hash", "execution_replay_hash", "execution_status")
+    if any(not isinstance(result_capture.get(field), str) or not result_capture[field].strip() for field in required):
+        return False
+    if result_capture.get("execution_status") != EXECUTING:
+        return False
+    if result_capture.get("execution_started") is not True:
+        return False
+    if evidence.get("execution_reference") != result_capture["execution_reference"]:
+        return False
+    if evidence.get("execution_hash") != result_capture["execution_hash"]:
+        return False
+    if evidence.get("execution_replay_hash") != result_capture["execution_replay_hash"]:
+        return False
+    if evidence.get("execution_replay_reference") != result_capture.get("execution_replay_reference"):
+        return False
+    if evidence.get("execution_status") != result_capture["execution_status"]:
+        return False
+    if classification.get("execution_reference") != result_capture["execution_reference"]:
+        return False
+    if classification.get("execution_hash") != result_capture["execution_hash"]:
+        return False
+    if classification.get("execution_bound") is not True:
+        return False
+    if classification.get("execution_lineage_continuous") is not True:
+        return False
+    if result.get("execution_reference") != result_capture["execution_reference"]:
+        return False
+    if result.get("execution_hash") != result_capture["execution_hash"]:
+        return False
+    if result.get("execution_replay_reference") != result_capture.get("execution_replay_reference"):
+        return False
+    execution_checks = evidence.get("execution_lineage_checks")
+    return isinstance(execution_checks, dict) and bool(execution_checks) and all(execution_checks.values())
 
 
 def _evidence_artifact(
@@ -304,6 +373,11 @@ def _evidence_artifact(
             worker_result_capture_replay_reference,
             "worker_result_capture_replay_reference",
         ),
+        "execution_reference": result_capture.get("execution_reference"),
+        "execution_hash": result_capture.get("execution_hash"),
+        "execution_replay_hash": result_capture.get("execution_replay_hash"),
+        "execution_replay_reference": result_capture.get("execution_replay_reference"),
+        "execution_status": result_capture.get("execution_status"),
         "worker_invocation_reference": result_capture["worker_invocation_reference"],
         "worker_invocation_hash": result_capture["worker_invocation_hash"],
         "worker_dispatch_reference": result_capture["worker_dispatch_reference"],
@@ -328,7 +402,7 @@ def _evidence_artifact(
         "lineage_checks": deepcopy(lineage["lineage_checks"]),
         "recorded_at": _require_string(validated_at, "validated_at"),
         "replay_visible": True,
-        **_post_validation_boundary_flags(),
+        **_post_validation_boundary_flags(execution_bound=_result_capture_execution_bound(result_capture)),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -348,6 +422,10 @@ def _classification_artifact(
         "validation_evidence_reference": evidence["validation_evidence_id"],
         "validation_evidence_hash": evidence["artifact_hash"],
         "chain_id": result_capture["chain_id"],
+        "execution_reference": result_capture.get("execution_reference"),
+        "execution_hash": result_capture.get("execution_hash"),
+        "execution_bound": _result_capture_execution_bound(result_capture),
+        "execution_binding_continuous": evidence["lineage_checks"]["execution_binding_lineage"],
         "result_capture_lineage_continuous": evidence["lineage_checks"]["result_capture_lineage"],
         "invocation_lineage_continuous": evidence["lineage_checks"]["invocation_lineage"],
         "dispatch_lineage_continuous": evidence["lineage_checks"]["dispatch_lineage"],
@@ -368,9 +446,10 @@ def _classification_artifact(
         "classification_status": "WORKER_RESULT_VALIDATION_SCOPE_CLASSIFIED",
         "classified_at": _require_string(validated_at, "validated_at"),
         "replay_visible": True,
-        **_post_validation_boundary_flags(),
+        **_post_validation_boundary_flags(execution_bound=_result_capture_execution_bound(result_capture)),
     }
     checks = (
+        artifact["execution_binding_continuous"],
         artifact["result_capture_lineage_continuous"],
         artifact["invocation_lineage_continuous"],
         artifact["dispatch_lineage_continuous"],
@@ -413,6 +492,11 @@ def _validation_artifact(
         "validation_classification_hash": classification["artifact_hash"],
         "worker_result_capture_reference": result_capture["worker_result_capture_id"],
         "worker_result_capture_hash": result_capture["artifact_hash"],
+        "execution_reference": result_capture.get("execution_reference"),
+        "execution_hash": result_capture.get("execution_hash"),
+        "execution_replay_hash": result_capture.get("execution_replay_hash"),
+        "execution_replay_reference": result_capture.get("execution_replay_reference"),
+        "execution_status": result_capture.get("execution_status"),
         "worker_invocation_reference": result_capture["worker_invocation_reference"],
         "worker_invocation_hash": result_capture["worker_invocation_hash"],
         "worker_dispatch_reference": result_capture["worker_dispatch_reference"],
@@ -439,7 +523,7 @@ def _validation_artifact(
         "chain_id": result_capture["chain_id"],
         "replay_reference": result_capture["replay_reference"],
         "replay_visible": True,
-        **_post_validation_boundary_flags(),
+        **_post_validation_boundary_flags(execution_bound=_result_capture_execution_bound(result_capture)),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_validation_artifact(artifact)
@@ -469,12 +553,15 @@ def _result_artifact(
         "worker_result_validation_hash": validation["artifact_hash"],
         "worker_result_capture_reference": validation["worker_result_capture_reference"],
         "worker_result_capture_hash": validation["worker_result_capture_hash"],
+        "execution_reference": validation.get("execution_reference"),
+        "execution_hash": validation.get("execution_hash"),
+        "execution_replay_reference": validation.get("execution_replay_reference"),
         "worker_reference": validation["worker_id"],
         "worker_hash": validation["worker_hash"],
         "chain_id": validation["chain_id"],
         "completed_at": _require_string(validated_at, "validated_at"),
         "replay_visible": True,
-        **_post_validation_boundary_flags(),
+        **_post_validation_boundary_flags(execution_bound=bool(validation.get("execution_reference"))),
         "failure_reason": failure_reason,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -535,6 +622,9 @@ def _capture(
             "worker_result_capture_reference": validation.get("worker_result_capture_reference")
             if validation
             else None,
+            "execution_reference": validation.get("execution_reference") if validation else None,
+            "execution_hash": validation.get("execution_hash") if validation else None,
+            "execution_replay_reference": validation.get("execution_replay_reference") if validation else None,
             "worker_id": validation.get("worker_id") if validation else None,
             "worker_family": validation.get("worker_family") if validation else None,
             "worker_role": validation.get("worker_role") if validation else None,
@@ -551,7 +641,8 @@ def _validate_validation_artifact(validation: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("worker result validation failed closed: invalid validation artifact")
     if validation.get("validation_status") != RESULT_VALIDATED:
         raise FailClosedRuntimeError("worker result validation failed closed: invalid validation status")
-    for field, expected in _post_validation_boundary_flags().items():
+    execution_bound = bool(validation.get("execution_reference"))
+    for field, expected in _post_validation_boundary_flags(execution_bound=execution_bound).items():
         if validation.get(field) is not expected:
             raise FailClosedRuntimeError("worker result validation failed closed: authority violation")
     if not set(validation.get("produced_outputs", [])).issubset(set(validation.get("allowed_outputs", []))):
@@ -581,15 +672,27 @@ def _validate_validation_artifact(validation: dict[str, Any]) -> None:
         "validated_at",
     ):
         _require_string(validation.get(field), field)
+    if execution_bound:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_status",
+        ):
+            _require_string(validation.get(field), field)
+        if validation.get("execution_status") != EXECUTING:
+            raise FailClosedRuntimeError("worker result validation failed closed: invalid execution state")
 
 
 def _result_capture_authority_continuity(result_capture: dict[str, Any]) -> bool:
+    execution_bound = _result_capture_execution_bound(result_capture)
     return (
         result_capture.get("approval_created") is False
         and result_capture.get("worker_assigned") is True
         and result_capture.get("worker_dispatched") is True
         and result_capture.get("dispatch_requested") is True
         and result_capture.get("worker_invoked") is True
+        and result_capture.get("execution_started") is execution_bound
         and result_capture.get("result_created") is True
         and result_capture.get("worker_result_captured") is True
         and result_capture.get("result_validated") is False
@@ -600,14 +703,33 @@ def _result_capture_authority_continuity(result_capture: dict[str, Any]) -> bool
     )
 
 
-def _pre_validation_boundary_flags() -> dict[str, bool]:
+def _result_capture_execution_bound(result_capture: dict[str, Any]) -> bool:
+    if result_capture.get("execution_started") is True:
+        return True
+    return _has_execution_binding(result_capture)
+
+
+def _has_execution_binding(artifact: dict[str, Any]) -> bool:
+    return any(
+        artifact.get(field) is not None
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_replay_reference",
+            "execution_status",
+        )
+    )
+
+
+def _pre_validation_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
     return {
         "approval_created": False,
         "worker_assigned": True,
         "worker_dispatched": True,
         "dispatch_requested": True,
         "worker_invoked": True,
-        "execution_started": False,
+        "execution_started": execution_bound,
         "result_created": True,
         "worker_result_captured": True,
         "result_validated": False,
@@ -618,14 +740,14 @@ def _pre_validation_boundary_flags() -> dict[str, bool]:
     }
 
 
-def _post_validation_boundary_flags() -> dict[str, bool]:
+def _post_validation_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
     return {
         "approval_created": False,
         "worker_assigned": True,
         "worker_dispatched": True,
         "dispatch_requested": True,
         "worker_invoked": True,
-        "execution_started": False,
+        "execution_started": execution_bound,
         "result_created": True,
         "worker_result_captured": True,
         "result_validated": True,
