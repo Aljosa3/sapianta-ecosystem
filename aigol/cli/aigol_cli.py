@@ -151,6 +151,7 @@ from aigol.runtime.clarification_continuity_runtime import (
     detect_active_clarification,
     render_clarification_continuity_summary,
     run_clarification_continuity,
+    should_bind_operator_reply_to_active_clarification,
 )
 from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
@@ -1783,8 +1784,19 @@ def run_interactive_conversation(
             human_decision = normalize_human_decision(human_prompt)
             active_clarification_capture = detect_active_clarification(session_root=session_root)
             active_clarification_detected = active_clarification_capture.get("open_clarification_detected") is True
+            clarification_reply_gate_capture = (
+                should_bind_operator_reply_to_active_clarification(
+                    session_root=session_root,
+                    human_prompt=human_prompt,
+                )
+                if active_clarification_detected
+                else {"should_bind_reply": False}
+            )
+            active_clarification_reply_detected = (
+                clarification_reply_gate_capture.get("should_bind_reply") is True
+            )
             stateful_pre_routing_gate = (
-                active_clarification_detected
+                active_clarification_reply_detected
                 or (
                     pending_approval_required is not None
                     and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
@@ -1844,7 +1856,7 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if active_clarification_detected:
+            if active_clarification_reply_detected:
                 clarification_continuity_capture = run_clarification_continuity(
                     continuity_id=f"{prompt_id}:CLARIFICATION-CONTINUITY",
                     session_root=session_root,

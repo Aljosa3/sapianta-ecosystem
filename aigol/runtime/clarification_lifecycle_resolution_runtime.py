@@ -106,16 +106,22 @@ def _clarification_states(session_root: Path) -> list[dict[str, Any]]:
 
 
 def _apply_lifecycle_resolution(states: list[dict[str, Any]]) -> None:
-    open_states = [state for state in states if state["lifecycle_status"] == CLARIFICATION_OPEN]
-    if not open_states:
+    open_indexes = [index for index, state in enumerate(states) if state["lifecycle_status"] == CLARIFICATION_OPEN]
+    if not open_indexes:
         return
-    active = open_states[-1]
-    for state in open_states[:-1]:
+    last_open_index = open_indexes[-1]
+    for index in open_indexes:
+        state = states[index]
+        if index == last_open_index and index == len(states) - 1:
+            continue
         state["lifecycle_status"] = CLARIFICATION_SUPERSEDED
         state["active"] = False
-        state["superseded_by_clarification_reference"] = active["clarification_id"]
-    active["lifecycle_status"] = CLARIFICATION_ACTIVE
-    active["active"] = True
+        superseding_state = states[index + 1] if index + 1 < len(states) else states[last_open_index]
+        state["superseded_by_clarification_reference"] = superseding_state["clarification_id"]
+    if last_open_index == len(states) - 1:
+        active = states[last_open_index]
+        active["lifecycle_status"] = CLARIFICATION_ACTIVE
+        active["active"] = True
 
 
 def _resolved_refs(session_root: Path) -> set[str]:

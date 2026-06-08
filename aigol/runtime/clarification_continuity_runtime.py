@@ -10,6 +10,10 @@ from aigol.runtime.clarification_lifecycle_resolution_runtime import (
     active_clarification_state,
     resolve_clarification_lifecycle,
 )
+from aigol.runtime.human_execution_intent_detection import (
+    NO_EXECUTION_INTENT,
+    detect_human_execution_intent,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.unknown_domain_clarification_runtime import (
@@ -57,6 +61,25 @@ def detect_active_clarification(
         "fail_closed": False,
         "failure_reason": None,
     }
+
+
+def should_bind_operator_reply_to_active_clarification(
+    *,
+    session_root: str | Path,
+    human_prompt: str,
+) -> dict[str, Any]:
+    """Return whether a prompt is a reply to the active clarification."""
+
+    lifecycle = resolve_clarification_lifecycle(session_root=session_root)
+    state = lifecycle.get("active_clarification")
+    if not isinstance(state, dict):
+        return _reply_gate_capture(lifecycle, False, "NO_ACTIVE_CLARIFICATION")
+    prompt = _require_string(human_prompt, "human_prompt")
+    if _looks_like_new_governed_request(prompt):
+        return _reply_gate_capture(lifecycle, False, "NEW_REQUEST_DETECTED")
+    if _matches_missing_information(prompt, state):
+        return _reply_gate_capture(lifecycle, True, "MISSING_INFORMATION_REPLY_MATCH")
+    return _reply_gate_capture(lifecycle, False, "REPLY_DOES_NOT_MATCH_ACTIVE_CLARIFICATION_SCOPE")
 
 
 def run_clarification_continuity(
@@ -198,6 +221,51 @@ def render_clarification_continuity_summary(capture: dict[str, Any]) -> str:
             "Workflow Resume Ready",
         ]
     )
+
+
+def _reply_gate_capture(lifecycle: dict[str, Any], should_bind: bool, reason: str) -> dict[str, Any]:
+    return {
+        "open_clarification_detected": lifecycle.get("active_clarification_count") == 1,
+        "active_clarification_count": lifecycle.get("active_clarification_count"),
+        "active_clarification": deepcopy(lifecycle.get("active_clarification")),
+        "should_bind_reply": should_bind,
+        "binding_decision_reason": reason,
+        "clarification_lifecycle": deepcopy(lifecycle),
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+
+
+def _looks_like_new_governed_request(human_prompt: str) -> bool:
+    normalized = human_prompt.lower().strip()
+    execution_intent = detect_human_execution_intent(human_prompt)
+    if execution_intent.get("intent_class") != NO_EXECUTION_INTENT:
+        return True
+    return "domain" in normalized and any(term in normalized for term in ("create", "new", "add", "build", "make"))
+
+
+def _matches_missing_information(human_prompt: str, state: dict[str, Any]) -> bool:
+    request = state.get("clarification_request_artifact")
+    if not isinstance(request, dict):
+        return False
+    missing_information = request.get("missing_information")
+    if not isinstance(missing_information, list) or not missing_information:
+        return False
+    normalized = human_prompt.lower()
+    required_markers = {
+        "primary purpose": ("purpose",),
+        "expected capabilities": ("capability", "capabilities"),
+        "target users": ("user", "users"),
+        "domain name": ("domain", "name", "called", "named"),
+    }
+    matched = 0
+    for item in missing_information:
+        markers = required_markers.get(str(item).lower())
+        if markers is None:
+            continue
+        if any(marker in normalized for marker in markers):
+            matched += 1
+    return matched > 0
 
 
 def _active_clarification_state(session_root: Path) -> dict[str, Any] | None:
