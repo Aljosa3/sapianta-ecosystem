@@ -6,6 +6,12 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.execution_runtime import (
+    EXECUTING,
+    EXECUTION_ARTIFACT_V1,
+    EXECUTION_RETURNED,
+    reconstruct_execution_replay,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_runtime import (
@@ -57,6 +63,9 @@ def capture_worker_result(
     captured_by: str,
     captured_at: str,
     replay_dir: str | Path,
+    execution_artifact: dict[str, Any] | None = None,
+    execution_replay: dict[str, Any] | None = None,
+    execution_replay_reference: str | None = None,
 ) -> dict[str, Any]:
     """Capture Worker output without semantic validation, replay review, or termination."""
 
@@ -65,12 +74,19 @@ def capture_worker_result(
         _ensure_replay_available(replay_path)
         lineage = _load_invocation_lineage(Path(worker_invocation_replay_reference), worker_invocation_artifact)
         invocation = lineage["invocation"]
+        execution_binding = _validate_execution_binding(
+            execution_artifact=execution_artifact,
+            execution_replay=execution_replay,
+            execution_replay_reference=execution_replay_reference,
+            invocation=invocation,
+        )
         output = _validate_worker_output(worker_output, invocation)
         evidence = _evidence_artifact(
             worker_result_capture_id=worker_result_capture_id,
             invocation=invocation,
             lineage=lineage,
             worker_invocation_replay_reference=worker_invocation_replay_reference,
+            execution_binding=execution_binding,
             worker_output=output,
             captured_at=captured_at,
         )
@@ -78,6 +94,7 @@ def capture_worker_result(
             worker_result_capture_id=worker_result_capture_id,
             evidence=evidence,
             invocation=invocation,
+            execution_binding=execution_binding,
             worker_output=output,
             captured_at=captured_at,
         )
@@ -86,6 +103,7 @@ def capture_worker_result(
             evidence=evidence,
             classification=classification,
             invocation=invocation,
+            execution_binding=execution_binding,
             worker_output=output,
             captured_by=captured_by,
             captured_at=captured_at,
@@ -162,6 +180,9 @@ def reconstruct_worker_result_capture_replay(replay_dir: str | Path) -> dict[str
         "worker_invocation_reference": capture_artifact["worker_invocation_reference"],
         "worker_dispatch_reference": capture_artifact["worker_dispatch_reference"],
         "worker_assignment_reference": capture_artifact["worker_assignment_reference"],
+        "execution_reference": capture_artifact.get("execution_reference"),
+        "execution_hash": capture_artifact.get("execution_hash"),
+        "execution_replay_reference": capture_artifact.get("execution_replay_reference"),
         "authorization_reference": capture_artifact["authorization_reference"],
         "execution_packet_reference": capture_artifact["execution_packet_reference"],
         "worker_id": capture_artifact["worker_id"],
@@ -174,7 +195,7 @@ def reconstruct_worker_result_capture_replay(replay_dir: str | Path) -> dict[str
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
-        **_post_capture_boundary_flags(),
+        **_post_capture_boundary_flags(execution_bound=bool(capture_artifact.get("execution_reference"))),
         "failure_reason": result["failure_reason"],
     }
 
@@ -290,6 +311,107 @@ def _load_invocation_lineage(
     }
 
 
+def _validate_execution_binding(
+    *,
+    execution_artifact: dict[str, Any] | None,
+    execution_replay: dict[str, Any] | None,
+    execution_replay_reference: str | None,
+    invocation: dict[str, Any],
+) -> dict[str, Any] | None:
+    if execution_artifact is None and execution_replay is None and execution_replay_reference is None:
+        return None
+    if execution_artifact is None or execution_replay is None:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution binding incomplete")
+    _verify_artifact_hash(execution_artifact, "execution artifact")
+    _verify_artifact_hash(execution_replay, "execution replay artifact")
+    if execution_artifact.get("artifact_type") != EXECUTION_ARTIFACT_V1:
+        raise FailClosedRuntimeError("worker result capture failed closed: invalid execution artifact")
+    if execution_artifact.get("execution_status") != EXECUTING:
+        raise FailClosedRuntimeError("worker result capture failed closed: invalid execution state")
+    if execution_replay.get("event_type") != EXECUTION_RETURNED:
+        raise FailClosedRuntimeError("worker result capture failed closed: invalid execution replay event")
+    for field in (
+        "provider_authority",
+        "worker_self_started",
+        "completion_recorded",
+        "result_certified",
+        "self_improvement_performed",
+        "governance_mutated",
+        "replay_mutated",
+        "scope_expansion",
+    ):
+        if execution_artifact.get(field) is not False:
+            raise FailClosedRuntimeError("worker result capture failed closed: execution authority violation")
+    if execution_artifact.get("execution_started") is not True:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution start missing")
+    if execution_artifact.get("replay_visible") is not True or execution_replay.get("replay_visible") is not True:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution replay visibility missing")
+    if execution_artifact.get("worker_invocation_reference") != invocation["worker_invocation_id"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution invocation mismatch")
+    if execution_artifact.get("worker_invocation_hash") != invocation["artifact_hash"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution invocation mismatch")
+    if execution_artifact.get("dispatch_reference") != invocation["worker_dispatch_reference"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution dispatch mismatch")
+    if execution_artifact.get("dispatch_hash") != invocation["worker_dispatch_hash"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution dispatch mismatch")
+    if execution_artifact.get("worker_assignment_reference") != invocation["worker_assignment_reference"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution assignment mismatch")
+    if execution_artifact.get("worker_assignment_hash") != invocation["worker_assignment_hash"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution assignment mismatch")
+    if execution_artifact.get("worker_reference") != invocation["worker_id"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution worker mismatch")
+    if execution_artifact.get("worker_hash") != invocation["worker_hash"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution worker mismatch")
+    if execution_artifact.get("canonical_chain_id") != invocation["chain_id"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution chain mismatch")
+    if execution_artifact.get("execution_request_reference") != invocation["worker_invocation_request_reference"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution request mismatch")
+    if execution_artifact.get("readiness_reference") != invocation["execution_packet_reference"]:
+        raise FailClosedRuntimeError("worker result capture failed closed: execution packet mismatch")
+
+    replay_checks = {
+        "execution_reference": execution_replay.get("execution_reference") == execution_artifact["execution_id"],
+        "execution_hash": execution_replay.get("execution_hash") == execution_artifact["artifact_hash"],
+        "worker_invocation_reference": execution_replay.get("worker_invocation_reference")
+        == execution_artifact["worker_invocation_reference"],
+        "worker_invocation_hash": execution_replay.get("worker_invocation_hash")
+        == execution_artifact["worker_invocation_hash"],
+        "dispatch_reference": execution_replay.get("dispatch_reference") == execution_artifact["dispatch_reference"],
+        "dispatch_hash": execution_replay.get("dispatch_hash") == execution_artifact["dispatch_hash"],
+        "worker_assignment_reference": execution_replay.get("worker_assignment_reference")
+        == execution_artifact["worker_assignment_reference"],
+        "worker_reference": execution_replay.get("worker_reference") == execution_artifact["worker_reference"],
+        "worker_hash": execution_replay.get("worker_hash") == execution_artifact["worker_hash"],
+        "chain_continuity": execution_replay.get("canonical_chain_id") == execution_artifact["canonical_chain_id"],
+        "execution_started": execution_replay.get("execution_started") is True,
+        "completion_absent": execution_replay.get("completion_recorded") is False,
+        "result_certification_absent": execution_replay.get("result_certified") is False,
+        "authority_continuity": execution_replay.get("provider_authority") is False
+        and execution_replay.get("worker_self_started") is False
+        and execution_replay.get("governance_mutated") is False
+        and execution_replay.get("replay_mutated") is False
+        and execution_replay.get("scope_expansion") is False,
+    }
+    if not all(replay_checks.values()):
+        raise FailClosedRuntimeError("worker result capture failed closed: execution replay mismatch")
+    if execution_replay_reference is not None:
+        reconstructed = reconstruct_execution_replay(Path(execution_replay_reference))
+        if reconstructed.get("execution_id") != execution_artifact["execution_id"]:
+            raise FailClosedRuntimeError("worker result capture failed closed: execution replay mismatch")
+        if reconstructed.get("worker_invocation_reference") != invocation["worker_invocation_id"]:
+            raise FailClosedRuntimeError("worker result capture failed closed: execution replay mismatch")
+        if reconstructed.get("canonical_chain_id") != invocation["chain_id"]:
+            raise FailClosedRuntimeError("worker result capture failed closed: execution replay mismatch")
+    return {
+        "execution_reference": execution_artifact["execution_id"],
+        "execution_hash": execution_artifact["artifact_hash"],
+        "execution_replay_hash": execution_replay["artifact_hash"],
+        "execution_replay_reference": execution_replay_reference,
+        "execution_status": execution_artifact["execution_status"],
+        "execution_lineage_checks": replay_checks,
+    }
+
+
 def _validate_invocation_artifact(invocation: dict[str, Any]) -> None:
     if invocation.get("artifact_type") != WORKER_INVOCATION_ARTIFACT_V1:
         raise FailClosedRuntimeError("worker result capture failed closed: invalid invocation artifact")
@@ -368,6 +490,7 @@ def _evidence_artifact(
     invocation: dict[str, Any],
     lineage: dict[str, dict[str, Any]],
     worker_invocation_replay_reference: str,
+    execution_binding: dict[str, Any] | None,
     worker_output: dict[str, Any],
     captured_at: str,
 ) -> dict[str, Any]:
@@ -382,6 +505,11 @@ def _evidence_artifact(
             worker_invocation_replay_reference,
             "worker_invocation_replay_reference",
         ),
+        "execution_reference": _optional_binding_value(execution_binding, "execution_reference"),
+        "execution_hash": _optional_binding_value(execution_binding, "execution_hash"),
+        "execution_replay_hash": _optional_binding_value(execution_binding, "execution_replay_hash"),
+        "execution_replay_reference": _optional_binding_value(execution_binding, "execution_replay_reference"),
+        "execution_status": _optional_binding_value(execution_binding, "execution_status"),
         "worker_dispatch_reference": invocation["worker_dispatch_reference"],
         "worker_dispatch_hash": invocation["worker_dispatch_hash"],
         "worker_assignment_reference": invocation["worker_assignment_reference"],
@@ -404,9 +532,10 @@ def _evidence_artifact(
         "worker_output_reference": worker_output["worker_output_id"],
         "worker_output_hash": worker_output["artifact_hash"],
         "lineage_checks": deepcopy(lineage["lineage_checks"]),
+        "execution_lineage_checks": deepcopy(_optional_binding_value(execution_binding, "execution_lineage_checks")),
         "recorded_at": _require_string(captured_at, "captured_at"),
         "replay_visible": True,
-        **_post_capture_boundary_flags(),
+        **_post_capture_boundary_flags(execution_bound=execution_binding is not None),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -417,6 +546,7 @@ def _classification_artifact(
     worker_result_capture_id: str,
     evidence: dict[str, Any],
     invocation: dict[str, Any],
+    execution_binding: dict[str, Any] | None,
     worker_output: dict[str, Any],
     captured_at: str,
 ) -> dict[str, Any]:
@@ -427,6 +557,11 @@ def _classification_artifact(
         "result_capture_evidence_reference": evidence["result_capture_evidence_id"],
         "result_capture_evidence_hash": evidence["artifact_hash"],
         "chain_id": invocation["chain_id"],
+        "execution_reference": _optional_binding_value(execution_binding, "execution_reference"),
+        "execution_hash": _optional_binding_value(execution_binding, "execution_hash"),
+        "execution_bound": execution_binding is not None,
+        "execution_lineage_continuous": execution_binding is None
+        or all(execution_binding["execution_lineage_checks"].values()),
         "worker_identity_continuous": evidence["lineage_checks"]["worker_identity_continuity"],
         "invocation_lineage_continuous": evidence["lineage_checks"]["invocation_lineage"],
         "dispatch_lineage_continuous": evidence["lineage_checks"]["dispatch_lineage"],
@@ -443,9 +578,10 @@ def _classification_artifact(
         "classification_status": "WORKER_RESULT_CAPTURE_SCOPE_CLASSIFIED",
         "classified_at": _require_string(captured_at, "captured_at"),
         "replay_visible": True,
-        **_post_capture_boundary_flags(),
+        **_post_capture_boundary_flags(execution_bound=execution_binding is not None),
     }
     checks = (
+        artifact["execution_lineage_continuous"],
         artifact["worker_identity_continuous"],
         artifact["invocation_lineage_continuous"],
         artifact["dispatch_lineage_continuous"],
@@ -472,6 +608,7 @@ def _result_capture_artifact(
     evidence: dict[str, Any],
     classification: dict[str, Any],
     invocation: dict[str, Any],
+    execution_binding: dict[str, Any] | None,
     worker_output: dict[str, Any],
     captured_by: str,
     captured_at: str,
@@ -487,6 +624,11 @@ def _result_capture_artifact(
         "result_capture_classification_hash": classification["artifact_hash"],
         "worker_invocation_reference": invocation["worker_invocation_id"],
         "worker_invocation_hash": invocation["artifact_hash"],
+        "execution_reference": _optional_binding_value(execution_binding, "execution_reference"),
+        "execution_hash": _optional_binding_value(execution_binding, "execution_hash"),
+        "execution_replay_hash": _optional_binding_value(execution_binding, "execution_replay_hash"),
+        "execution_replay_reference": _optional_binding_value(execution_binding, "execution_replay_reference"),
+        "execution_status": _optional_binding_value(execution_binding, "execution_status"),
         "worker_dispatch_reference": invocation["worker_dispatch_reference"],
         "worker_dispatch_hash": invocation["worker_dispatch_hash"],
         "worker_assignment_reference": invocation["worker_assignment_reference"],
@@ -514,7 +656,7 @@ def _result_capture_artifact(
         "chain_id": invocation["chain_id"],
         "replay_reference": invocation["replay_reference"],
         "replay_visible": True,
-        **_post_capture_boundary_flags(),
+        **_post_capture_boundary_flags(execution_bound=execution_binding is not None),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_result_capture_artifact(artifact)
@@ -544,13 +686,16 @@ def _result_artifact(
         "worker_result_capture_hash": capture_artifact["artifact_hash"],
         "worker_invocation_reference": capture_artifact["worker_invocation_reference"],
         "worker_invocation_hash": capture_artifact["worker_invocation_hash"],
+        "execution_reference": capture_artifact.get("execution_reference"),
+        "execution_hash": capture_artifact.get("execution_hash"),
+        "execution_replay_reference": capture_artifact.get("execution_replay_reference"),
         "worker_dispatch_reference": capture_artifact["worker_dispatch_reference"],
         "worker_reference": capture_artifact["worker_id"],
         "worker_hash": capture_artifact["worker_hash"],
         "chain_id": capture_artifact["chain_id"],
         "completed_at": _require_string(captured_at, "captured_at"),
         "replay_visible": True,
-        **_post_capture_boundary_flags(),
+        **_post_capture_boundary_flags(execution_bound=bool(capture_artifact.get("execution_reference"))),
         "failure_reason": failure_reason,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
@@ -612,6 +757,11 @@ def _capture(
             "worker_invocation_reference": capture_artifact.get("worker_invocation_reference")
             if capture_artifact
             else None,
+            "execution_reference": capture_artifact.get("execution_reference") if capture_artifact else None,
+            "execution_hash": capture_artifact.get("execution_hash") if capture_artifact else None,
+            "execution_replay_reference": capture_artifact.get("execution_replay_reference")
+            if capture_artifact
+            else None,
             "worker_dispatch_reference": capture_artifact.get("worker_dispatch_reference")
             if capture_artifact
             else None,
@@ -631,7 +781,9 @@ def _validate_result_capture_artifact(capture_artifact: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("worker result capture failed closed: invalid result capture artifact")
     if capture_artifact.get("result_capture_status") != WORKER_RESULT_CAPTURED:
         raise FailClosedRuntimeError("worker result capture failed closed: invalid result capture status")
-    for field, expected in _post_capture_boundary_flags().items():
+    for field, expected in _post_capture_boundary_flags(
+        execution_bound=bool(capture_artifact.get("execution_reference"))
+    ).items():
         if capture_artifact.get(field) is not expected:
             raise FailClosedRuntimeError("worker result capture failed closed: authority violation")
     if not set(capture_artifact.get("produced_outputs", [])).issubset(set(capture_artifact.get("allowed_outputs", []))):
@@ -661,6 +813,16 @@ def _validate_result_capture_artifact(capture_artifact: dict[str, Any]) -> None:
         "captured_at",
     ):
         _require_string(capture_artifact.get(field), field)
+    if capture_artifact.get("execution_reference") is not None:
+        for field in (
+            "execution_reference",
+            "execution_hash",
+            "execution_replay_hash",
+            "execution_status",
+        ):
+            _require_string(capture_artifact.get(field), field)
+        if capture_artifact.get("execution_status") != EXECUTING:
+            raise FailClosedRuntimeError("worker result capture failed closed: invalid execution state")
 
 
 def _invocation_authority_continuity(invocation: dict[str, Any]) -> bool:
@@ -697,14 +859,14 @@ def _pre_capture_boundary_flags() -> dict[str, bool]:
     }
 
 
-def _post_capture_boundary_flags() -> dict[str, bool]:
+def _post_capture_boundary_flags(*, execution_bound: bool = False) -> dict[str, bool]:
     return {
         "approval_created": False,
         "worker_assigned": True,
         "worker_dispatched": True,
         "dispatch_requested": True,
         "worker_invoked": True,
-        "execution_started": False,
+        "execution_started": execution_bound,
         "result_created": True,
         "worker_result_captured": True,
         "result_validated": False,
@@ -764,6 +926,12 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
 
 def _string_list(value: Any) -> bool:
     return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item.strip() for item in value)
+
+
+def _optional_binding_value(binding: dict[str, Any] | None, field: str) -> Any:
+    if binding is None:
+        return None
+    return binding.get(field)
 
 
 def _require_string(value: Any, field: str) -> str:
