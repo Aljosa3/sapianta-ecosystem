@@ -16,6 +16,7 @@ from aigol.runtime.conversational_cli_runtime import (
     DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
     DOMAIN_WORKER_ASSIGNMENT,
     DOMAIN_WORKER_DISPATCH,
+    DOMAIN_WORKER_INVOCATION,
     DOMAIN_WORKER_REQUEST,
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
@@ -157,6 +158,9 @@ def _input_sequence(values: list[str]):
         ("Dispatch worker for FreshDomain.", DOMAIN_WORKER_DISPATCH),
         ("Continue FreshDomain to worker dispatch.", DOMAIN_WORKER_DISPATCH),
         ("Create worker dispatch for FreshDomain.", DOMAIN_WORKER_DISPATCH),
+        ("Invoke worker for FreshDomain.", DOMAIN_WORKER_INVOCATION),
+        ("Continue FreshDomain to worker invocation.", DOMAIN_WORKER_INVOCATION),
+        ("Create worker invocation for FreshDomain.", DOMAIN_WORKER_INVOCATION),
     ],
 )
 def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: str, workflow_id: str) -> None:
@@ -263,9 +267,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 19
-    assert coverage["conversationally_accessible_workflows"] == 19
-    assert coverage["coverage_ratio"] == "19/19"
+    assert coverage["registered_workflows"] == 20
+    assert coverage["conversationally_accessible_workflows"] == 20
+    assert coverage["coverage_ratio"] == "20/20"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -276,6 +280,7 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     assert DOMAIN_WORKER_REQUEST in coverage["workflow_ids"]
     assert DOMAIN_WORKER_ASSIGNMENT in coverage["workflow_ids"]
     assert DOMAIN_WORKER_DISPATCH in coverage["workflow_ids"]
+    assert DOMAIN_WORKER_INVOCATION in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -298,7 +303,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 19/19" in rendered
+    assert "coverage: 20/20" in rendered
 
 
 def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:
