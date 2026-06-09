@@ -5,8 +5,13 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+import re
 from typing import Any
 
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    DOMAIN_EXECUTION_READY_BRIDGED,
+    reconstruct_domain_execution_ready_bridge_replay,
+)
 from aigol.runtime.execution_authorization_runtime import (
     EXECUTION_AUTHORIZATION_ARTIFACT_V1,
     EXECUTION_AUTHORIZED,
@@ -41,6 +46,102 @@ REPLAY_STEPS = (
     "invocation_request_artifact_recorded",
     "invocation_request_result_recorded",
 )
+
+
+def detect_domain_worker_request_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain worker request creation."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^create\s+worker\s+request\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+worker\s+request$",
+        r"^create\s+authorized\s+worker\s+request\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_WORKER_REQUEST"
+            elif "authorized" in lowered:
+                action = "CREATE_AUTHORIZED_WORKER_REQUEST"
+            else:
+                action = "CREATE_WORKER_REQUEST"
+            return {
+                "worker_request_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "worker_request_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "worker_request_entry_intent_detected": False,
+        "domain_name": None,
+        "worker_request_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_execution_authorization(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest unconsumed execution authorization replay for a domain."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("worker invocation request failed closed: session root missing")
+    candidates: list[dict[str, Any]] = []
+    bridge_index = _domain_execution_ready_bridge_index(root, domain)
+    for path in sorted(root.glob("TURN-*/execution_authorization")):
+        try:
+            reconstructed = reconstruct_execution_authorization_replay(path)
+            request_wrapper = load_json(path / "000_authorization_request_recorded.json")
+            _verify_wrapper_hash(request_wrapper)
+            auth_request = request_wrapper.get("artifact")
+            if not isinstance(auth_request, dict):
+                continue
+            _verify_artifact_hash(auth_request, "execution authorization request artifact")
+            authorization_wrapper = load_json(path / "002_authorization_artifact_recorded.json")
+            _verify_wrapper_hash(authorization_wrapper)
+            authorization = authorization_wrapper.get("artifact")
+            if not isinstance(authorization, dict):
+                continue
+            _verify_artifact_hash(authorization, "execution authorization artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("authorization_status") != EXECUTION_AUTHORIZED:
+            continue
+        bridge = _matching_bridge_for_authorization(auth_request, bridge_index)
+        if bridge is None:
+            continue
+        if _execution_authorization_already_requested(
+            root,
+            execution_authorization_replay_reference=str(path),
+            authorization_reference=str(reconstructed.get("authorization_id") or ""),
+            authorization_hash=str(authorization.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "execution_authorization_replay_reference": str(path),
+                "execution_authorization_artifact": deepcopy(authorization),
+                "authorization_reference": reconstructed["authorization_id"],
+                "authorization_hash": authorization["artifact_hash"],
+                "domain_execution_ready_bridge_replay_reference": bridge[
+                    "domain_execution_ready_bridge_replay_reference"
+                ],
+                "execution_ready_replay_reference": auth_request["execution_ready_replay_reference"],
+                "execution_ready_replay_hash": auth_request["execution_ready_hash"],
+                "domain_name": bridge["approved_domain"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("worker invocation request failed closed: matching execution authorization not found")
+    return candidates[-1]
 
 
 def create_worker_invocation_request(
@@ -516,6 +617,72 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
     for field, expected in _boundary_flags().items():
         if request.get(field) is not expected:
             raise FailClosedRuntimeError("worker invocation request failed closed: authority violation")
+
+
+def _domain_execution_ready_bridge_index(root: Path, domain_name: str) -> list[dict[str, Any]]:
+    bridges: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/domain_execution_ready_bridge")):
+        try:
+            reconstructed = reconstruct_domain_execution_ready_bridge_replay(path)
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("bridge_status") != DOMAIN_EXECUTION_READY_BRIDGED:
+            continue
+        if str(reconstructed.get("approved_domain") or "").lower() != domain_name.lower():
+            continue
+        bridges.append(
+            {
+                "domain_execution_ready_bridge_replay_reference": str(path),
+                "approved_domain": reconstructed["approved_domain"],
+                "execution_ready_replay_reference": reconstructed["execution_ready_replay_reference"],
+                "execution_ready_replay_hash": reconstructed["execution_ready_replay_hash"],
+            }
+        )
+    return bridges
+
+
+def _matching_bridge_for_authorization(
+    auth_request: dict[str, Any],
+    bridge_index: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    ready_reference = str(auth_request.get("execution_ready_replay_reference") or "")
+    ready_hash = str(auth_request.get("execution_ready_hash") or "")
+    for bridge in bridge_index:
+        if bridge["execution_ready_replay_reference"] == ready_reference:
+            return bridge
+        if bridge["execution_ready_replay_hash"] == ready_hash:
+            return bridge
+    return None
+
+
+def _execution_authorization_already_requested(
+    session_root: Path,
+    *,
+    execution_authorization_replay_reference: str,
+    authorization_reference: str,
+    authorization_hash: str,
+) -> bool:
+    for path in sorted(session_root.glob("TURN-*/worker_invocation_request")):
+        try:
+            reconstructed = reconstruct_worker_invocation_request_replay(path)
+            wrapper = load_json(path / "002_invocation_request_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            request = wrapper.get("artifact")
+            if not isinstance(request, dict):
+                continue
+            _verify_artifact_hash(request, "worker invocation request artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("request_status") != WORKER_INVOCATION_REQUEST_CREATED:
+            continue
+        replay_references = request.get("replay_references") or {}
+        if replay_references.get("execution_authorization_replay_reference") == execution_authorization_replay_reference:
+            return True
+        if request.get("authorization_reference") == authorization_reference:
+            return True
+        if request.get("authorization_hash") == authorization_hash:
+            return True
+    return False
 
 
 def _request_hash(request: dict[str, Any]) -> str:
