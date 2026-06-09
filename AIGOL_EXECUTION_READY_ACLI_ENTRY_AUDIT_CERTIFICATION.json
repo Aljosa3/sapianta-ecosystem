@@ -1,0 +1,52 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AUDIT_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AUDIT_V1",
+  "certification_status": "CERTIFIED_BLOCKER_IDENTIFIED",
+  "certified_at": "2026-06-09T00:00:00Z",
+  "certification_scope": {
+    "execution_ready_runtime_located": true,
+    "expected_operator_prompt_identified": true,
+    "canonical_acli_entry_exists": false,
+    "canonical_acli_entry_working": false,
+    "execution_ready_packet_reachable_from_acli": false,
+    "execution_ready_packet_reachable_direct_runtime": true,
+    "next_blocking_component_identified": true
+  },
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "execution_authorization_created": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "certification_basis": [
+    "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1 is implemented",
+    "bridge_domain_approval_entry_to_execution_ready creates execution_ready_replay_reference",
+    "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1 consumes execution_ready_replay_reference",
+    "ACLI has no canonical routing or dispatch binding for the bridge runtime",
+    "observed operator prompts do not route to the bridge runtime"
+  ],
+  "next_blocking_component": "CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING",
+  "recommended_next_milestone": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_FIX_V1",
+  "validation": {
+    "repository_search": "PASSED",
+    "prompt_probe": "PASSED",
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "EXECUTION_READY_RUNTIME_LOCATED": true,
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_SUPPORTED__INTENDED_CREATE_EXECUTION_READY_AUTHORIZATION_PACKET_FOR_FRESHDOMAIN",
+    "CANONICAL_ACLI_ENTRY_EXISTS": false,
+    "CANONICAL_ACLI_ENTRY_WORKING": false,
+    "EXECUTION_READY_PACKET_REACHABLE": "FALSE_FROM_ACLI_TRUE_DIRECT_RUNTIME",
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING",
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": false
+  }
+}

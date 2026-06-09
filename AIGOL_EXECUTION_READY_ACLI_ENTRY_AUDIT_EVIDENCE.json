@@ -1,0 +1,76 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "audit_only": true,
+    "runtime_changes_implemented": false,
+    "routing_changes_implemented": false,
+    "worker_changes_implemented": false,
+    "execution_authorization_changes_implemented": false
+  },
+  "runtime_location": {
+    "execution_ready_bridge_runtime_located": true,
+    "runtime_version": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1",
+    "path": "aigol/runtime/domain_approval_entry_to_execution_ready_authorization_bridge_runtime.py",
+    "entrypoint": "bridge_domain_approval_entry_to_execution_ready",
+    "reconstructor": "reconstruct_domain_execution_ready_bridge_replay",
+    "summary_renderer": "render_domain_execution_ready_bridge_summary"
+  },
+  "execution_authorization_runtime": {
+    "runtime_version": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+    "path": "aigol/runtime/execution_authorization_runtime.py",
+    "entrypoint": "authorize_execution_ready",
+    "required_input": "execution_ready_replay_reference"
+  },
+  "bridge_outputs": [
+    "execution_ready_replay_reference",
+    "execution_ready_replay_hash",
+    "canonical execution-ready replay packet"
+  ],
+  "acli_reachability": {
+    "canonical_acli_entry_exists": false,
+    "canonical_acli_entry_working": false,
+    "cli_import_found": false,
+    "cli_dispatch_binding_found": false,
+    "execution_ready_packet_reachable_from_acli": false,
+    "execution_ready_packet_reachable_direct_runtime": true
+  },
+  "prompt_probe_results": [
+    {
+      "prompt": "Continue FreshDomain to execution authorization.",
+      "canonical_router_workflow_id": "OCS_LLM_COGNITION",
+      "reaches_execution_ready_bridge": false
+    },
+    {
+      "prompt": "Create execution-ready authorization packet for FreshDomain.",
+      "canonical_router_workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "reaches_execution_ready_bridge": false
+    }
+  ],
+  "expected_operator_prompt": {
+    "currently_supported": false,
+    "intended_prompts": [
+      "Create execution-ready authorization packet for FreshDomain.",
+      "Continue FreshDomain to execution authorization."
+    ]
+  },
+  "next_blocking_component": "CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING",
+  "recommended_next_milestone": "AIGOL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_FIX_V1",
+  "validation": {
+    "repository_search": "PASSED",
+    "prompt_probe": "PASSED",
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "EXECUTION_READY_RUNTIME_LOCATED": true,
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_SUPPORTED__INTENDED_CREATE_EXECUTION_READY_AUTHORIZATION_PACKET_FOR_FRESHDOMAIN",
+    "CANONICAL_ACLI_ENTRY_EXISTS": false,
+    "CANONICAL_ACLI_ENTRY_WORKING": false,
+    "EXECUTION_READY_PACKET_REACHABLE": "FALSE_FROM_ACLI_TRUE_DIRECT_RUNTIME",
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING",
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": false
+  }
+}
