@@ -30,6 +30,14 @@ from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 from aigol.runtime.unknown_domain_clarification_runtime import run_unknown_domain_clarification_workflow
+from aigol.runtime.worker_assignment_runtime import (
+    WORKER_ASSIGNED,
+    assign_worker_from_invocation_request,
+    default_worker_registry_for_request,
+    detect_domain_worker_assignment_entry_intent,
+    find_latest_domain_worker_invocation_request,
+    reconstruct_worker_assignment_runtime_replay,
+)
 from aigol.runtime.worker_invocation_request_runtime import (
     WORKER_INVOCATION_REQUEST_CREATED,
     create_worker_invocation_request,
@@ -53,6 +61,7 @@ APPROVAL_PROMPT = "Approve FreshDomain for domain artifact creation."
 EXECUTION_READY_PROMPT = "Create execution-ready authorization packet for FreshDomain."
 EXECUTION_AUTHORIZATION_PROMPT = "Authorize execution-ready packet for FreshDomain."
 WORKER_REQUEST_PROMPT = "Create worker request for FreshDomain."
+WORKER_ASSIGNMENT_PROMPT = "Assign worker for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -420,6 +429,114 @@ def test_acli_worker_request_prompt_creates_request_without_assignment_or_invoca
     assert "Request Status: WORKER_INVOCATION_REQUEST_CREATED" in output[5]
     assert "No Worker has been assigned, dispatched, invoked, or executed." in output[5]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[5]
+
+
+def test_worker_assignment_entry_intent_detection_supports_required_prompts() -> None:
+    prompts = {
+        "Assign worker for FreshDomain.": "ASSIGN_WORKER",
+        "Continue FreshDomain to worker assignment.": "CONTINUE_TO_WORKER_ASSIGNMENT",
+        "Create worker assignment for FreshDomain.": "CREATE_WORKER_ASSIGNMENT",
+    }
+
+    for prompt, action in prompts.items():
+        detected = detect_domain_worker_assignment_entry_intent(prompt)
+
+        assert detected["worker_assignment_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+        assert detected["worker_assignment_action"] == action
+
+
+def test_find_latest_domain_worker_invocation_request_excludes_assigned_entries(tmp_path) -> None:
+    session_root = tmp_path / "session"
+    approval = _approval_entry(
+        tmp_path,
+        replay_dir=session_root / "TURN-000003" / "domain_approval_binding",
+    )
+    bridge = bridge_domain_approval_entry_to_execution_ready(
+        bridge_id="DOMAIN-READY-BRIDGE-FRESHDOMAIN-000001",
+        domain_approval_binding_replay_reference=approval["domain_approval_binding_replay_reference"],
+        approved_domain="FreshDomain",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000004" / "domain_execution_ready_bridge",
+    )
+    authorization = authorize_execution_ready(
+        authorization_id="DOMAIN-AUTHORIZATION-FRESHDOMAIN-000001",
+        execution_ready_replay_reference=bridge["execution_ready_replay_reference"],
+        authorizing_actor="HUMAN_OPERATOR",
+        authorized_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000005" / "execution_authorization",
+    )
+    worker_request = create_worker_invocation_request(
+        invocation_request_id="DOMAIN-WORKER-REQUEST-FRESHDOMAIN-000001",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="HUMAN_OPERATOR",
+        requested_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000006" / "worker_invocation_request",
+    )
+
+    latest = find_latest_domain_worker_invocation_request(session_root=session_root, domain_name="FreshDomain")
+
+    assert latest["worker_invocation_request_replay_reference"] == worker_request[
+        "worker_invocation_request_replay_reference"
+    ]
+    assert latest["domain_name"] == "FreshDomain"
+
+    assign_worker_from_invocation_request(
+        worker_assignment_id="DOMAIN-WORKER-ASSIGNMENT-FRESHDOMAIN-000001",
+        worker_invocation_request_artifact=worker_request["worker_invocation_request_artifact"],
+        worker_invocation_request_replay_reference=worker_request["worker_invocation_request_replay_reference"],
+        worker_registry_artifacts=default_worker_registry_for_request(
+            worker_request["worker_invocation_request_artifact"],
+            created_at=CREATED_AT,
+        ),
+        assigned_by="HUMAN_OPERATOR",
+        assigned_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000007" / "worker_assignment",
+    )
+
+    with pytest.raises(FailClosedRuntimeError, match="matching invocation request not found"):
+        find_latest_domain_worker_invocation_request(session_root=session_root, domain_name="FreshDomain")
+
+
+def test_acli_worker_assignment_prompt_assigns_worker_without_dispatch_or_invocation(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                WORKER_ASSIGNMENT_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    seventh = result["turns"][6]
+    replay = reconstruct_worker_assignment_runtime_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000007"
+        / "worker_assignment"
+    )
+
+    assert result["failed_turns"] == 0
+    assert seventh["response_source"] == "DOMAIN_WORKER_ASSIGNMENT"
+    assert seventh["worker_assignment_status"] == WORKER_ASSIGNED
+    assert seventh["worker_assigned"] is True
+    assert seventh["worker_dispatched"] is False
+    assert seventh["worker_invoked"] is False
+    assert seventh["execution_started"] is False
+    assert seventh["domain_created"] is False
+    assert replay["assignment_status"] == WORKER_ASSIGNED
+    assert "Assignment Status: WORKER_ASSIGNED" in output[6]
+    assert "No Worker has been dispatched, invoked, or executed." in output[6]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[6]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
