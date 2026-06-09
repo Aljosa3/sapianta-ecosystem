@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
 from aigol.runtime.clarification_continuity_runtime import run_clarification_continuity
 from aigol.runtime.clarified_domain_intent_handoff_review_runtime import (
     WORKER_BINDING_APPROVED,
@@ -13,6 +14,8 @@ from aigol.runtime.conversational_cli_runtime import route_conversational_cli_in
 from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
     DOMAIN_EXECUTION_READY_BRIDGED,
     bridge_domain_approval_entry_to_execution_ready,
+    detect_domain_execution_ready_entry_intent,
+    find_latest_domain_approval_binding,
     reconstruct_domain_execution_ready_bridge_replay,
 )
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import bind_domain_handoff_review_approval
@@ -34,6 +37,33 @@ REPLY = "\n".join(
     ]
 )
 APPROVAL_PROMPT = "Approve FreshDomain for domain artifact creation."
+EXECUTION_READY_PROMPT = "Create execution-ready authorization packet for FreshDomain."
+
+
+def _input_sequence(values: list[str]):
+    iterator = iter(values)
+
+    def read(_prompt: str) -> str:
+        return next(iterator)
+
+    return read
+
+
+def _conversation_args(tmp_path):
+    parser = build_parser()
+    return parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            SESSION_ID,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+            "--workspace",
+            str(tmp_path),
+        ]
+    )
 
 
 def _seed_open_clarification(session_root, turn_id: str = "TURN-000001") -> str:
@@ -58,7 +88,7 @@ def _seed_open_clarification(session_root, turn_id: str = "TURN-000001") -> str:
     return prompt_id
 
 
-def _approval_entry(tmp_path):
+def _approval_entry(tmp_path, *, replay_dir=None):
     session_root = tmp_path / "runtime" / SESSION_ID
     prompt_id = _seed_open_clarification(session_root)
     continuity = run_clarification_continuity(
@@ -86,7 +116,7 @@ def _approval_entry(tmp_path):
         approved_domain="FreshDomain",
         approving_actor="HUMAN_OPERATOR",
         approved_at=CREATED_AT,
-        replay_dir=tmp_path / "approval_binding",
+        replay_dir=replay_dir or tmp_path / "approval_binding",
         latest_handoff_review_replay_reference=review["handoff_review_replay_reference"],
     )
 
@@ -119,6 +149,41 @@ def test_domain_approval_entry_converts_to_execution_ready_packet(tmp_path) -> N
     assert replay["authorization_runtime_compatible"] is True
 
 
+def test_execution_ready_entry_intent_detection_supports_required_prompts() -> None:
+    prompts = [
+        "Continue FreshDomain to execution authorization.",
+        "Create execution-ready authorization packet for FreshDomain.",
+        "Continue FreshDomain authorization workflow.",
+    ]
+
+    for prompt in prompts:
+        detected = detect_domain_execution_ready_entry_intent(prompt)
+        assert detected["execution_ready_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+
+
+def test_find_latest_domain_approval_binding_excludes_already_bridged_entries(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    approval = _approval_entry(
+        tmp_path,
+        replay_dir=session_root / "TURN-000003" / "domain_approval_binding",
+    )
+
+    found = find_latest_domain_approval_binding(session_root=session_root, domain_name="FreshDomain")
+    assert found["domain_approval_binding_replay_reference"] == approval["domain_approval_binding_replay_reference"]
+
+    bridge_domain_approval_entry_to_execution_ready(
+        bridge_id="DOMAIN-READY-BRIDGE-FRESHDOMAIN-000001",
+        domain_approval_binding_replay_reference=approval["domain_approval_binding_replay_reference"],
+        approved_domain="FreshDomain",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000004" / "domain_execution_ready_bridge",
+    )
+
+    with pytest.raises(FailClosedRuntimeError, match="matching approval binding not found"):
+        find_latest_domain_approval_binding(session_root=session_root, domain_name="FreshDomain")
+
+
 def test_bridge_output_feeds_existing_execution_authorization_runtime(tmp_path) -> None:
     bridge = _bridge(tmp_path)
     authorization = authorize_execution_ready(
@@ -134,6 +199,36 @@ def test_bridge_output_feeds_existing_execution_authorization_runtime(tmp_path) 
     assert authorization["approval_reference"] == "DOMAIN-APPROVAL-FRESHDOMAIN-000001"
     assert authorization["worker_invoked"] is False
     assert authorization["execution_started"] is False
+
+
+def test_acli_execution_ready_prompt_bridges_reviewed_freshdomain_without_authorization(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, APPROVAL_PROMPT, EXECUTION_READY_PROMPT, "exit"]),
+        output_func=output.append,
+    )
+    fourth = result["turns"][3]
+    replay = reconstruct_domain_execution_ready_bridge_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000004"
+        / "domain_execution_ready_bridge"
+    )
+
+    assert result["failed_turns"] == 0
+    assert fourth["response_source"] == "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE"
+    assert fourth["bridge_status"] == DOMAIN_EXECUTION_READY_BRIDGED
+    assert fourth["approved_domain"] == "FreshDomain"
+    assert fourth["execution_ready_replay_reference"]
+    assert fourth["authorization_runtime_compatible"] is True
+    assert fourth["authorization_created"] is False
+    assert fourth["worker_invoked"] is False
+    assert fourth["domain_created"] is False
+    assert replay["bridge_status"] == DOMAIN_EXECUTION_READY_BRIDGED
+    assert "Domain Execution-Ready Bridge" in output[3]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[3]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
