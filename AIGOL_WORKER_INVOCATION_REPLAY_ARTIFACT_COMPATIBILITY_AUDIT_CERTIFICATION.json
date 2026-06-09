@@ -1,0 +1,53 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_REPLAY_ARTIFACT_COMPATIBILITY_AUDIT_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_WORKER_INVOCATION_REPLAY_ARTIFACT_COMPATIBILITY_AUDIT_V1",
+  "certification_status": "CERTIFIED_WITH_BLOCKER_IDENTIFIED",
+  "certified_findings": {
+    "dispatch_artifact_produced": true,
+    "dispatch_artifact_expected": true,
+    "artifact_name_match": true,
+    "artifact_location_match_when_real_dispatch_reference_supplied": true,
+    "replay_reference_match_in_observed_failure": false,
+    "replay_reconstruction_compatible_when_real_dispatch_reference_supplied": true,
+    "replay_contract_compatible": true,
+    "worker_invoked_reachable_direct_runtime": true,
+    "root_cause_identified": true
+  },
+  "root_cause": {
+    "classification": "MISSING_CONSUMABLE_LATEST_WORKER_DISPATCH_REPLAY_BINDING",
+    "observed_worker_dispatch_replay_reference": "MISSING_WORKER_DISPATCH_REPLAY",
+    "not_artifact_naming_mismatch": true,
+    "not_dispatch_runtime_output_mismatch": true,
+    "not_invocation_runtime_reconstruction_mismatch_with_real_dispatch_reference": true
+  },
+  "non_goals_preserved": {
+    "fixes_implemented": false,
+    "renames_implemented": false,
+    "migrations_implemented": false,
+    "runtime_changes_implemented": false,
+    "acli_changes_implemented": false,
+    "replay_changes_implemented": false,
+    "worker_changes_implemented": false,
+    "architecture_changes_implemented": false
+  },
+  "validation": {
+    "focused_regression_tests": "PASSED",
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "DISPATCH_ARTIFACT_PRODUCED": "TRUE",
+    "DISPATCH_ARTIFACT_EXPECTED": "TRUE",
+    "ARTIFACT_NAME_MATCH": "TRUE",
+    "ARTIFACT_LOCATION_MATCH": "TRUE_WHEN_REAL_WORKER_DISPATCH_REPLAY_REFERENCE_SUPPLIED",
+    "REPLAY_REFERENCE_MATCH": "FALSE_IN_OBSERVED_LIVE_FAILURE_TRUE_DIRECT_RUNTIME",
+    "REPLAY_RECONSTRUCTION_COMPATIBLE": "TRUE_WHEN_REAL_WORKER_DISPATCH_REPLAY_REFERENCE_SUPPLIED",
+    "REPLAY_CONTRACT_COMPATIBLE": "TRUE",
+    "WORKER_INVOKED_REACHABLE_DIRECT_RUNTIME": "TRUE",
+    "ROOT_CAUSE_IDENTIFIED": "TRUE",
+    "NEXT_BLOCKING_COMPONENT": "LATEST_WORKER_DISPATCH_REPLAY_BINDING_FOR_OBSERVED_SESSION_STATE",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_WORKER_INVOCATION_LATEST_DISPATCH_REPLAY_BINDING_FIX_V1",
+    "READY_FOR_REAL_WORKER_INVOCATION_ACCEPTANCE": "FALSE_UNTIL_LIVE_SESSION_DISPATCH_REPLAY_BINDING_ACCEPTANCE_PASSES"
+  }
+}

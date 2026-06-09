@@ -1,0 +1,80 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_REPLAY_ARTIFACT_COMPATIBILITY_AUDIT_EVIDENCE_V1",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_WORKER_INVOCATION_REPLAY_ARTIFACT_COMPATIBILITY_AUDIT_V1",
+  "audit_scope": {
+    "from_status": "WORKER_DISPATCHED",
+    "to_status": "WORKER_INVOKED",
+    "audit_only": true,
+    "runtime_changes": false,
+    "acli_changes": false,
+    "replay_changes": false,
+    "worker_changes": false
+  },
+  "dispatch_runtime_outputs": {
+    "runtime": "AIGOL_WORKER_DISPATCH_RUNTIME_V1",
+    "replay_directory": "worker_dispatch",
+    "produced_files": [
+      "000_dispatch_evidence_recorded.json",
+      "001_dispatch_classification_recorded.json",
+      "002_dispatch_artifact_recorded.json",
+      "003_dispatch_result_recorded.json"
+    ],
+    "live_artifact_confirmed": true,
+    "example_live_path": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000109/worker_dispatch/000_dispatch_evidence_recorded.json"
+  },
+  "invocation_runtime_inputs": {
+    "runtime": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+    "required_inputs": [
+      "worker_dispatch_artifact",
+      "worker_dispatch_replay_reference"
+    ],
+    "expected_dispatch_replay_files": [
+      "000_dispatch_evidence_recorded.json",
+      "001_dispatch_classification_recorded.json",
+      "002_dispatch_artifact_recorded.json",
+      "003_dispatch_result_recorded.json"
+    ],
+    "reconstruction_entry": "reconstruct_worker_dispatch_replay",
+    "lineage_loader": "_load_dispatch_lineage"
+  },
+  "observed_failure": {
+    "workflow_id": "DOMAIN_WORKER_INVOCATION",
+    "failure_reason": "runtime artifact missing: 000_dispatch_evidence_recorded.json",
+    "failed_replay_path": ".aigol_conversation_runtime/AIGOL-INTERACTIVE-CONVERSATION-000001/TURN-000207/worker_invocation/003_invocation_result_recorded.json",
+    "recorded_worker_dispatch_replay_reference": "MISSING_WORKER_DISPATCH_REPLAY",
+    "preceding_turn_worker_dispatch_replay_present": false,
+    "preceding_turn_observed_workflow": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "preceding_turn_observed_coverage_ratio": "19/19"
+  },
+  "compatibility_assessment": {
+    "artifact_name_match": true,
+    "artifact_location_match_when_real_dispatch_reference_supplied": true,
+    "replay_reference_match_in_observed_failure": false,
+    "replay_reconstruction_compatible_when_real_dispatch_reference_supplied": true,
+    "replay_contract_compatible": true,
+    "worker_invoked_reachable_direct_runtime": true
+  },
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_find_latest_domain_worker_dispatch_excludes_invoked_entries tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_acli_worker_invocation_prompt_invokes_worker_without_execution_or_result_validation",
+      "result": "8 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "DISPATCH_ARTIFACT_PRODUCED": "TRUE",
+    "DISPATCH_ARTIFACT_EXPECTED": "TRUE",
+    "ARTIFACT_NAME_MATCH": "TRUE",
+    "ARTIFACT_LOCATION_MATCH": "TRUE_WHEN_REAL_WORKER_DISPATCH_REPLAY_REFERENCE_SUPPLIED",
+    "REPLAY_REFERENCE_MATCH": "FALSE_IN_OBSERVED_LIVE_FAILURE_TRUE_DIRECT_RUNTIME",
+    "REPLAY_RECONSTRUCTION_COMPATIBLE": "TRUE_WHEN_REAL_WORKER_DISPATCH_REPLAY_REFERENCE_SUPPLIED",
+    "REPLAY_CONTRACT_COMPATIBLE": "TRUE",
+    "WORKER_INVOKED_REACHABLE_DIRECT_RUNTIME": "TRUE",
+    "ROOT_CAUSE_IDENTIFIED": "TRUE",
+    "NEXT_BLOCKING_COMPONENT": "LATEST_WORKER_DISPATCH_REPLAY_BINDING_FOR_OBSERVED_SESSION_STATE",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_WORKER_INVOCATION_LATEST_DISPATCH_REPLAY_BINDING_FIX_V1",
+    "READY_FOR_REAL_WORKER_INVOCATION_ACCEPTANCE": "FALSE_UNTIL_LIVE_SESSION_DISPATCH_REPLAY_BINDING_ACCEPTANCE_PASSES"
+  }
+}
