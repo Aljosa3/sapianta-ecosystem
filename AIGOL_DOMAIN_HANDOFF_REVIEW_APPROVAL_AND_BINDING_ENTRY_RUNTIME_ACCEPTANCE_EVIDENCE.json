@@ -1,0 +1,82 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "milestone_id": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1",
+  "implemented_files": [
+    "aigol/runtime/domain_handoff_review_approval_binding_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_domain_handoff_review_approval_binding_runtime_v1.py"
+  ],
+  "runtime": {
+    "runtime_version": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1",
+    "input_artifact": "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "required_review_decision": "WORKER_BINDING_APPROVED",
+    "output_artifacts": [
+      "DOMAIN_APPROVAL_BINDING_ARTIFACT_V1",
+      "DOMAIN_AUTHORIZATION_ENTRY_ARTIFACT_V1",
+      "DOMAIN_EXECUTION_READY_CONTINUATION_ARTIFACT_V1",
+      "DOMAIN_APPROVAL_ENTRY_RETURNED_ARTIFACT_V1"
+    ],
+    "supported_prompts": [
+      "Approve FreshDomain for domain artifact creation.",
+      "Approve reviewed FreshDomain workflow.",
+      "Continue FreshDomain to authorization."
+    ]
+  },
+  "freshdomain_acceptance": {
+    "initial_prompt": "Create a new governed domain called FreshDomain.",
+    "clarification_reply_bound": true,
+    "handoff_review_decision": "WORKER_BINDING_APPROVED",
+    "approval_prompt": "Approve FreshDomain for domain artifact creation.",
+    "approval_status": "DOMAIN_APPROVAL_BOUND",
+    "approved_domain": "FreshDomain",
+    "authorization_entry_status": "AUTHORIZATION_ENTRY_CREATED",
+    "execution_ready_continuation_status": "EXECUTION_READY_CONTINUATION_CREATED",
+    "next_runtime": "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false
+  },
+  "replay": {
+    "steps": [
+      "000_domain_approval_binding_recorded.json",
+      "001_domain_authorization_entry_recorded.json",
+      "002_domain_execution_ready_continuation_recorded.json",
+      "003_domain_approval_entry_returned.json"
+    ],
+    "ordering_verified": true,
+    "wrapper_hash_verified": true,
+    "artifact_hash_verified": true,
+    "handoff_review_hash_verified": true,
+    "corruption_detection_tested": true
+  },
+  "regression_tests": {
+    "focused_command": "python -m pytest tests/test_domain_handoff_review_approval_binding_runtime_v1.py",
+    "focused_result": "7 passed in 0.23s",
+    "integrated_command": "python -m pytest tests/test_domain_handoff_review_approval_binding_runtime_v1.py tests/test_clarified_domain_intent_handoff_review_runtime_v1.py tests/test_clarification_continuity_runtime_v1.py tests/test_approval_command_group_v1.py",
+    "integrated_result": "33 passed in 0.66s",
+    "covered_cases": [
+      "approval success",
+      "replay continuity",
+      "approval-domain mismatch",
+      "stale review rejection",
+      "fail-closed approval rejection",
+      "ACLI FreshDomain approval binding path",
+      "approval command group remains read-only"
+    ]
+  },
+  "final_outputs": {
+    "APPROVAL_ENTRY_RUNTIME_IMPLEMENTED": true,
+    "FRESHDOMAIN_APPROVAL_SUPPORTED": true,
+    "AUTHORIZATION_ENTRY_CREATED": true,
+    "EXECUTION_READY_CONTINUATION_CREATED": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_AUTHORIZATION_PATH": "TRUE_WITH_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_REQUIRED"
+  }
+}
