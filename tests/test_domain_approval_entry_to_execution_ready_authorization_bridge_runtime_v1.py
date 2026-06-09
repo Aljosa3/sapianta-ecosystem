@@ -19,7 +19,13 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
     reconstruct_domain_execution_ready_bridge_replay,
 )
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import bind_domain_handoff_review_approval
-from aigol.runtime.execution_authorization_runtime import authorize_execution_ready
+from aigol.runtime.execution_authorization_runtime import (
+    EXECUTION_AUTHORIZED,
+    authorize_execution_ready,
+    detect_domain_execution_authorization_entry_intent,
+    find_latest_domain_execution_ready_bridge,
+    reconstruct_execution_authorization_replay,
+)
 from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
@@ -38,6 +44,7 @@ REPLY = "\n".join(
 )
 APPROVAL_PROMPT = "Approve FreshDomain for domain artifact creation."
 EXECUTION_READY_PROMPT = "Create execution-ready authorization packet for FreshDomain."
+EXECUTION_AUTHORIZATION_PROMPT = "Authorize execution-ready packet for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -201,6 +208,48 @@ def test_bridge_output_feeds_existing_execution_authorization_runtime(tmp_path) 
     assert authorization["execution_started"] is False
 
 
+def test_execution_authorization_entry_intent_detection_supports_required_prompts() -> None:
+    prompts = [
+        "Authorize execution-ready packet for FreshDomain.",
+        "Continue FreshDomain execution authorization.",
+        "Authorize FreshDomain execution-ready workflow.",
+    ]
+
+    for prompt in prompts:
+        detected = detect_domain_execution_authorization_entry_intent(prompt)
+        assert detected["execution_authorization_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+
+
+def test_find_latest_domain_execution_ready_bridge_excludes_authorized_entries(tmp_path) -> None:
+    session_root = tmp_path / "runtime" / SESSION_ID
+    approval = _approval_entry(
+        tmp_path,
+        replay_dir=session_root / "TURN-000003" / "domain_approval_binding",
+    )
+    bridge = bridge_domain_approval_entry_to_execution_ready(
+        bridge_id="DOMAIN-READY-BRIDGE-FRESHDOMAIN-000001",
+        domain_approval_binding_replay_reference=approval["domain_approval_binding_replay_reference"],
+        approved_domain="FreshDomain",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000004" / "domain_execution_ready_bridge",
+    )
+
+    found = find_latest_domain_execution_ready_bridge(session_root=session_root, domain_name="FreshDomain")
+    assert found["execution_ready_replay_reference"] == bridge["execution_ready_replay_reference"]
+
+    authorize_execution_ready(
+        authorization_id="DOMAIN-AUTHORIZATION-FRESHDOMAIN-000001",
+        execution_ready_replay_reference=bridge["execution_ready_replay_reference"],
+        authorizing_actor="HUMAN_OPERATOR",
+        authorized_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000005" / "execution_authorization",
+    )
+
+    with pytest.raises(FailClosedRuntimeError, match="matching execution-ready bridge not found"):
+        find_latest_domain_execution_ready_bridge(session_root=session_root, domain_name="FreshDomain")
+
+
 def test_acli_execution_ready_prompt_bridges_reviewed_freshdomain_without_authorization(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
@@ -229,6 +278,44 @@ def test_acli_execution_ready_prompt_bridges_reviewed_freshdomain_without_author
     assert replay["bridge_status"] == DOMAIN_EXECUTION_READY_BRIDGED
     assert "Domain Execution-Ready Bridge" in output[3]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[3]
+
+
+def test_acli_execution_authorization_prompt_authorizes_freshdomain_without_worker_request(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    fifth = result["turns"][4]
+    replay = reconstruct_execution_authorization_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000005"
+        / "execution_authorization"
+    )
+
+    assert result["failed_turns"] == 0
+    assert fifth["response_source"] == "DOMAIN_EXECUTION_AUTHORIZATION"
+    assert fifth["execution_authorization_status"] == EXECUTION_AUTHORIZED
+    assert fifth["authorization_created"] is True
+    assert fifth["worker_request_created"] is False
+    assert fifth["worker_invoked"] is False
+    assert fifth["execution_started"] is False
+    assert fifth["domain_created"] is False
+    assert replay["authorization_status"] == EXECUTION_AUTHORIZED
+    assert "Authorization Status: EXECUTION_AUTHORIZED" in output[4]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[4]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
