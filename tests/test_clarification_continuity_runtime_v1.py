@@ -33,6 +33,18 @@ REPLY = "\n".join(
         "Target users: internal operators.",
     ]
 )
+STRUCTURED_REPLY_WITH_GOVERNED_DOMAIN_TEXT = "\n".join(
+    [
+        "Primary purpose:",
+        "Create a safe pilot governed domain.",
+        "",
+        "Expected capabilities:",
+        "Clarification handling and bounded workflow resume.",
+        "",
+        "Target users:",
+        "Internal operators.",
+    ]
+)
 
 
 def _input_sequence(values: list[str]):
@@ -127,7 +139,72 @@ def test_interactive_clarification_reply_resumes_without_provider_fallback(tmp_p
     assert second["authorization_created"] is False
     assert second["execution_requested"] is False
     assert replay["workflow_resumed"] is True
+    assert "Reply Bound" in output[1]
     assert "Clarification Resolved" in output[1]
+    assert "Workflow Resumed" in output[1]
+
+
+def test_structured_fresh_domain_reply_binds_and_resumes_even_with_governed_domain_text(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "Create a new governed domain called FreshDomain.",
+                STRUCTURED_REPLY_WITH_GOVERNED_DOMAIN_TEXT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    first, second = result["turns"]
+    replay = reconstruct_clarification_continuity_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000002"
+        / "clarification_continuity"
+    )
+
+    assert result["failed_turns"] == 0
+    assert first["proposed_domain"] == "FreshDomain"
+    assert second["response_source"] == "CLARIFICATION_CONTINUITY_RUNTIME"
+    assert second["proposed_domain"] == "FreshDomain"
+    assert second["operator_reply_bound"] is True
+    assert second["clarification_resolved"] is True
+    assert second["workflow_resumed"] is True
+    assert second["provider_invoked"] is False
+    assert second["worker_invoked"] is False
+    assert second["domain_created"] is False
+    assert replay["workflow_resumed"] is True
+    assert "Reply Bound" in output[1]
+    assert "Clarification Resolved" in output[1]
+    assert "Workflow Resumed" in output[1]
+
+
+def test_unrelated_reply_to_active_clarification_fails_closed_without_provider_fallback(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "Create a new governed domain called FreshDomain.",
+                "This is unrelated text that does not answer the requested fields.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    first, second = result["turns"]
+
+    assert result["failed_turns"] == 1
+    assert first["proposed_domain"] == "FreshDomain"
+    assert second["response_status"] == "FAILED_CLOSED"
+    assert second["response_source"] == "UNAVAILABLE"
+    assert "reply does not match active clarification scope" in second["failure_reason"]
+    assert second["provider_invoked"] is False
+    assert second["worker_invoked"] is False
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[1]
 
 
 def test_new_domain_request_does_not_attach_to_unrelated_active_clarification(tmp_path) -> None:
