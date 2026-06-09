@@ -1,0 +1,39 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "milestone": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "certified_claims": {
+    "canonical_worker_invocation_acli_entry_registered": true,
+    "required_prompts_supported": true,
+    "default_provider_fallback_prevented": true,
+    "worker_dispatch_replay_bound": true,
+    "existing_worker_invocation_runtime_used": true,
+    "worker_invoked_reachable_from_acli": true,
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true,
+    "authority_boundaries_preserved": true
+  },
+  "non_goals_certified_absent": {
+    "worker_execution_changes": true,
+    "result_capture_changes": true,
+    "result_validation_changes": true,
+    "post_execution_replay_review_changes": true,
+    "termination_runtime_changes": true,
+    "repair_runtime": true,
+    "retry_runtime": true,
+    "architecture_redesign": true
+  },
+  "validation": {
+    "focused_regression_tests": "PASSED",
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_REGISTERED": "TRUE",
+    "WORKER_INVOKED": "TRUE",
+    "REPLAY_CONTINUITY_PRESERVED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "READY_FOR_REAL_WORKER_EXECUTION_ACCEPTANCE": "TRUE"
+  }
+}

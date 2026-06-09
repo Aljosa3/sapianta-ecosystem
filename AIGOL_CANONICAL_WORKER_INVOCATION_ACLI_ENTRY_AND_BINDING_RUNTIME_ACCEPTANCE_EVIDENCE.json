@@ -1,0 +1,65 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE_V1",
+  "artifact_version": 1,
+  "milestone": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "status": "ACCEPTED",
+  "implemented_scope": {
+    "canonical_acli_entry_registered": true,
+    "worker_invocation_intent_detection_registered": true,
+    "latest_worker_dispatch_replay_binding_created": true,
+    "existing_worker_invocation_runtime_invoked": true,
+    "worker_invoked_created": true
+  },
+  "supported_operator_prompts": [
+    "Invoke worker for FreshDomain.",
+    "Continue FreshDomain to worker invocation.",
+    "Create worker invocation for FreshDomain."
+  ],
+  "runtime_bindings": {
+    "canonical_workflow_id": "DOMAIN_WORKER_INVOCATION",
+    "existing_runtime": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+    "runtime_entry_point": "invoke_dispatched_worker",
+    "replay_binding_entry_point": "find_latest_domain_worker_dispatch",
+    "intent_detection_entry_point": "detect_domain_worker_invocation_entry_intent"
+  },
+  "replay_binding": {
+    "input_status": "WORKER_DISPATCHED",
+    "output_status": "WORKER_INVOKED",
+    "lineage": [
+      "domain_execution_ready_bridge",
+      "execution_authorization",
+      "worker_invocation_request",
+      "worker_assignment",
+      "worker_dispatch",
+      "worker_invocation"
+    ],
+    "duplicate_invocation_protection": true,
+    "domain_identity_binding": true
+  },
+  "authority_boundaries": {
+    "worker_execution_changed": false,
+    "execution_started": false,
+    "result_created": false,
+    "result_validated": false,
+    "post_execution_replay_reviewed": false,
+    "terminated": false,
+    "repair_started": false,
+    "retry_started": false,
+    "architecture_redesigned": false
+  },
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_runtime_does_not_validate_results_or_terminate",
+      "result": "84 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_REGISTERED": true,
+    "WORKER_INVOKED": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_WORKER_EXECUTION_ACCEPTANCE": true
+  }
+}
