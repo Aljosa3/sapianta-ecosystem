@@ -164,12 +164,19 @@ from aigol.runtime.domain_handoff_review_approval_binding_runtime import (
     find_latest_domain_handoff_review,
     render_domain_handoff_review_approval_binding_summary,
 )
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    bridge_domain_approval_entry_to_execution_ready,
+    detect_domain_execution_ready_entry_intent,
+    find_latest_domain_approval_binding,
+    render_domain_execution_ready_bridge_summary,
+)
 from aigol.runtime.conversational_cli_runtime import (
     AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW as CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
     CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE as CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
+    DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE as CONVERSATIONAL_DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION as CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
@@ -2527,6 +2534,45 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE:
+                execution_ready_entry_intent = detect_domain_execution_ready_entry_intent(human_prompt)
+                try:
+                    latest_approval_binding = find_latest_domain_approval_binding(
+                        session_root=session_root,
+                        domain_name=execution_ready_entry_intent["domain_name"],
+                    )
+                    execution_ready_bridge_capture = bridge_domain_approval_entry_to_execution_ready(
+                        bridge_id=f"{prompt_id}:DOMAIN-EXECUTION-READY-BRIDGE",
+                        domain_approval_binding_replay_reference=latest_approval_binding[
+                            "domain_approval_binding_replay_reference"
+                        ],
+                        approved_domain=execution_ready_entry_intent["domain_name"],
+                        created_at=created_at,
+                        replay_dir=turn_root / "domain_execution_ready_bridge",
+                    )
+                except Exception:
+                    execution_ready_bridge_capture = bridge_domain_approval_entry_to_execution_ready(
+                        bridge_id=f"{prompt_id}:DOMAIN-EXECUTION-READY-BRIDGE",
+                        domain_approval_binding_replay_reference="MISSING_DOMAIN_APPROVAL_BINDING",
+                        approved_domain=execution_ready_entry_intent.get("domain_name") or "UNKNOWN_DOMAIN",
+                        created_at=created_at,
+                        replay_dir=turn_root / "domain_execution_ready_bridge",
+                    )
+                if execution_ready_bridge_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {execution_ready_bridge_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_domain_execution_ready_bridge_summary(execution_ready_bridge_capture))
+                turns.append(
+                    _interactive_domain_execution_ready_bridge_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        execution_ready_bridge_capture=execution_ready_bridge_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE:
                 domain_reference_capture = run_semantic_similarity_domain_reference_resolution(
                     resolution_id=f"{prompt_id}:SEMANTIC-SIMILARITY-DOMAIN-REFERENCE",
@@ -3489,6 +3535,49 @@ def _interactive_domain_approval_binding_turn_summary(
             "execution_ready_continuation_reference"
         ),
         "next_runtime": domain_approval_capture.get("next_runtime"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "execution_requested": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_execution_ready_bridge_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    execution_ready_bridge_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": execution_ready_bridge_capture.get("bridge_status"),
+        "response_source": "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+        "fail_closed": execution_ready_bridge_capture.get("fail_closed") is True,
+        "failure_reason": execution_ready_bridge_capture.get("failure_reason"),
+        "replay_reference": execution_ready_bridge_capture.get("domain_execution_ready_bridge_replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "approved_domain": execution_ready_bridge_capture.get("approved_domain"),
+        "bridge_status": execution_ready_bridge_capture.get("bridge_status"),
+        "execution_status": execution_ready_bridge_capture.get("execution_status"),
+        "execution_ready_replay_reference": execution_ready_bridge_capture.get("execution_ready_replay_reference"),
+        "execution_ready_replay_hash": execution_ready_bridge_capture.get("execution_ready_replay_hash"),
+        "authorization_runtime_compatible": execution_ready_bridge_capture.get("authorization_runtime_compatible"),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,

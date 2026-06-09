@@ -13,6 +13,9 @@ from aigol.runtime.human_execution_intent_detection import (
     detect_human_execution_intent,
 )
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import detect_domain_approval_entry_intent
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    detect_domain_execution_ready_entry_intent,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -40,6 +43,7 @@ SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
 AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW = "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW"
+DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE = "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 
 REPLAY_STEPS = (
@@ -214,6 +218,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "domain_handoff_review_approval_binding_runtime",
         ),
         _workflow(
+            DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
+            "aigol conversation",
+            "domain_approval_entry_to_execution_ready_authorization_bridge_runtime",
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -229,6 +238,18 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    execution_ready_entry_intent = detect_domain_execution_ready_entry_intent(prompt)
+    if execution_ready_entry_intent.get("execution_ready_entry_intent_detected") is True:
+        return _analysis(
+            DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
+            "HIGH",
+            [
+                "execution-ready",
+                "authorization",
+                "packet",
+                str(execution_ready_entry_intent.get("domain_name") or ""),
+            ],
+        )
     approval_entry_intent = detect_domain_approval_entry_intent(prompt)
     if approval_entry_intent.get("approval_entry_intent_detected") is True:
         return _analysis(
@@ -642,6 +663,9 @@ def _operator_summary(workflow_id: str) -> str:
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
         AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW: (
             "Route reviewed domain approval prompts to the authorization-entry binding path without execution."
+        ),
+        DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE: (
+            "Convert approved domain authorization-entry evidence into an execution-ready packet without execution."
         ),
         DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }

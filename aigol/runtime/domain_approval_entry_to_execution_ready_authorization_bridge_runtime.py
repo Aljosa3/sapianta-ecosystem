@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.conversation_to_implementation_handoff_runtime import (
@@ -84,6 +85,86 @@ BOUNDARY_FLAGS = {
     "governance_mutated": False,
     "replay_mutated": False,
 }
+
+
+def detect_domain_execution_ready_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain execution-ready bridge entry."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+execution\s+authorization$",
+        r"^create\s+execution[-\s]ready\s+authorization\s+packet\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+authorization\s+workflow$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("create"):
+                action = "CREATE_EXECUTION_READY_AUTHORIZATION_PACKET"
+            elif "authorization workflow" in lowered:
+                action = "CONTINUE_AUTHORIZATION_WORKFLOW"
+            else:
+                action = "CONTINUE_TO_EXECUTION_AUTHORIZATION"
+            return {
+                "execution_ready_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "execution_ready_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "execution_ready_entry_intent_detected": False,
+        "domain_name": None,
+        "execution_ready_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_approval_binding(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest unbridged domain approval binding for a domain in a session."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("domain execution-ready bridge failed closed: session root missing")
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/domain_approval_binding")):
+        try:
+            reconstructed = reconstruct_domain_handoff_review_approval_binding_replay(path)
+            wrapper = load_json(path / "000_domain_approval_binding_recorded.json")
+            _verify_wrapper_hash(wrapper, "domain approval binding replay")
+            artifact = wrapper.get("artifact")
+            if not isinstance(artifact, dict):
+                continue
+            _verify_artifact_hash(artifact, "domain approval binding artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("approval_status") != DOMAIN_APPROVAL_BOUND:
+            continue
+        if reconstructed.get("authorization_entry_status") != AUTHORIZATION_ENTRY_CREATED:
+            continue
+        if reconstructed.get("execution_ready_continuation_status") != EXECUTION_READY_CONTINUATION_CREATED:
+            continue
+        if str(reconstructed.get("approved_domain") or "").lower() != domain.lower():
+            continue
+        if _approval_binding_already_bridged(root, artifact["artifact_hash"]):
+            continue
+        candidates.append(
+            {
+                "domain_approval_binding_replay_reference": str(path),
+                "domain_approval_binding_artifact": deepcopy(artifact),
+                "turn_id": path.parent.name,
+                "created_at": artifact.get("approved_at"),
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("domain execution-ready bridge failed closed: matching approval binding not found")
+    return candidates[-1]
 
 
 def bridge_domain_approval_entry_to_execution_ready(
@@ -765,6 +846,21 @@ def _capture(
     }
     capture["domain_execution_ready_bridge_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _approval_binding_already_bridged(session_root: Path, binding_hash: str) -> bool:
+    for path in sorted(session_root.glob("TURN-*/domain_execution_ready_bridge/bridge/000_domain_execution_ready_bridge_recorded.json")):
+        try:
+            wrapper = load_json(path)
+            _verify_wrapper_hash(wrapper, "domain execution-ready bridge replay")
+            artifact = wrapper.get("artifact")
+            if isinstance(artifact, dict):
+                _verify_artifact_hash(artifact, "domain execution-ready bridge artifact")
+                if artifact.get("domain_approval_binding_hash") == binding_hash and artifact.get("bridge_status") != FAILED_CLOSED:
+                    return True
+        except FailClosedRuntimeError:
+            continue
+    return False
 
 
 def _load_execution_ready_artifacts(replay_path: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
