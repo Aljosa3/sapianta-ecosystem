@@ -75,10 +75,10 @@ def should_bind_operator_reply_to_active_clarification(
     if not isinstance(state, dict):
         return _reply_gate_capture(lifecycle, False, "NO_ACTIVE_CLARIFICATION")
     prompt = _require_string(human_prompt, "human_prompt")
-    if _looks_like_new_governed_request(prompt):
-        return _reply_gate_capture(lifecycle, False, "NEW_REQUEST_DETECTED")
     if _matches_missing_information(prompt, state):
         return _reply_gate_capture(lifecycle, True, "MISSING_INFORMATION_REPLY_MATCH")
+    if _looks_like_new_governed_request(prompt):
+        return _reply_gate_capture(lifecycle, False, "NEW_REQUEST_DETECTED")
     return _reply_gate_capture(lifecycle, False, "REPLY_DOES_NOT_MATCH_ACTIVE_CLARIFICATION_SCOPE")
 
 
@@ -212,13 +212,16 @@ def render_clarification_continuity_summary(capture: dict[str, Any]) -> str:
         return f"FAILED_CLOSED: {capture.get('failure_reason')}"
     return "\n".join(
         [
+            "Reply Bound",
+            "",
             "Clarification Resolved",
             "",
             f"Originating Workflow: {capture.get('originating_workflow_id')}",
             f"Originating Intent: {capture.get('originating_intent')}",
             f"Proposed Domain: {capture.get('proposed_domain')}",
             "",
-            "Workflow Resume Ready",
+            "Workflow Resumed",
+            "Next Governed Workflow Stage: OCS_OR_EXECUTION_HANDOFF_REVIEW",
         ]
     )
 
@@ -258,14 +261,16 @@ def _matches_missing_information(human_prompt: str, state: dict[str, Any]) -> bo
         "target users": ("user", "users"),
         "domain name": ("domain", "name", "called", "named"),
     }
+    known_requirements = 0
     matched = 0
     for item in missing_information:
         markers = required_markers.get(str(item).lower())
         if markers is None:
             continue
+        known_requirements += 1
         if any(marker in normalized for marker in markers):
             matched += 1
-    return matched > 0
+    return known_requirements > 0 and matched == known_requirements
 
 
 def _active_clarification_state(session_root: Path) -> dict[str, Any] | None:

@@ -1795,8 +1795,14 @@ def run_interactive_conversation(
             active_clarification_reply_detected = (
                 clarification_reply_gate_capture.get("should_bind_reply") is True
             )
+            active_clarification_reply_mismatch_detected = (
+                active_clarification_detected
+                and clarification_reply_gate_capture.get("binding_decision_reason")
+                == "REPLY_DOES_NOT_MATCH_ACTIVE_CLARIFICATION_SCOPE"
+            )
             stateful_pre_routing_gate = (
                 active_clarification_reply_detected
+                or active_clarification_reply_mismatch_detected
                 or (
                     pending_approval_required is not None
                     and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
@@ -1856,7 +1862,21 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if active_clarification_reply_detected:
+            if active_clarification_reply_mismatch_detected:
+                failed_turns += 1
+                failure_reason = (
+                    "clarification continuity failed closed: reply does not match active clarification scope"
+                )
+                output_writer(f"FAILED_CLOSED: {failure_reason}")
+                turns.append(
+                    _interactive_failed_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        failure_reason=failure_reason,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif active_clarification_reply_detected:
                 clarification_continuity_capture = run_clarification_continuity(
                     continuity_id=f"{prompt_id}:CLARIFICATION-CONTINUITY",
                     session_root=session_root,
@@ -3205,6 +3225,7 @@ def _interactive_failed_turn_summary(
         "suggested_inspection_commands": [],
         "conversation_chain_continuity_replay_reference": None,
         "source_router_replay_reference": source_router_replay_reference,
+        "provider_invoked": False,
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,
