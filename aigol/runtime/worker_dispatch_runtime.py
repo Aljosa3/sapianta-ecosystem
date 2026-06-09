@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    DOMAIN_EXECUTION_READY_BRIDGED,
+    reconstruct_domain_execution_ready_bridge_replay,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_assignment_runtime import (
@@ -30,6 +35,94 @@ REPLAY_STEPS = (
     "dispatch_artifact_recorded",
     "dispatch_result_recorded",
 )
+
+
+def detect_domain_worker_dispatch_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain worker dispatch."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^dispatch\s+worker\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+worker\s+dispatch$",
+        r"^create\s+worker\s+dispatch\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_WORKER_DISPATCH"
+            elif lowered.startswith("create"):
+                action = "CREATE_WORKER_DISPATCH"
+            else:
+                action = "DISPATCH_WORKER"
+            return {
+                "worker_dispatch_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "worker_dispatch_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "worker_dispatch_entry_intent_detected": False,
+        "domain_name": None,
+        "worker_dispatch_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_worker_assignment(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest undispatched Worker assignment replay for a domain."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("worker dispatch failed closed: session root missing")
+    bridge_index = _domain_execution_ready_bridge_index(root, domain)
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/worker_assignment")):
+        try:
+            reconstructed = reconstruct_worker_assignment_runtime_replay(path)
+            wrapper = load_json(path / "002_assignment_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            assignment = wrapper.get("artifact")
+            if not isinstance(assignment, dict):
+                continue
+            _verify_artifact_hash(assignment, "worker assignment artifact")
+            _validate_assignment_artifact(assignment)
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("assignment_status") != WORKER_ASSIGNED:
+            continue
+        bridge = _matching_bridge_for_assignment(path, assignment, bridge_index)
+        if bridge is None:
+            continue
+        if _worker_assignment_already_dispatched(
+            root,
+            worker_assignment_reference=str(assignment.get("worker_assignment_id") or ""),
+            worker_assignment_hash=str(assignment.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "worker_assignment_replay_reference": str(path),
+                "worker_assignment_artifact": deepcopy(assignment),
+                "worker_assignment_reference": reconstructed["worker_assignment_id"],
+                "assignment_hash": assignment["artifact_hash"],
+                "domain_execution_ready_bridge_replay_reference": bridge[
+                    "domain_execution_ready_bridge_replay_reference"
+                ],
+                "domain_name": bridge["approved_domain"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("worker dispatch failed closed: matching worker assignment not found")
+    return candidates[-1]
 
 
 def dispatch_assigned_worker(
@@ -527,6 +620,98 @@ def _validate_dispatch_artifact(dispatch: dict[str, Any]) -> None:
         "dispatched_at",
     ):
         _require_string(dispatch.get(field), field)
+
+
+def _domain_execution_ready_bridge_index(root: Path, domain_name: str) -> list[dict[str, Any]]:
+    bridges: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/domain_execution_ready_bridge")):
+        try:
+            reconstructed = reconstruct_domain_execution_ready_bridge_replay(path)
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("bridge_status") != DOMAIN_EXECUTION_READY_BRIDGED:
+            continue
+        if str(reconstructed.get("approved_domain") or "").lower() != domain_name.lower():
+            continue
+        bridges.append(
+            {
+                "domain_execution_ready_bridge_replay_reference": str(path),
+                "approved_domain": reconstructed["approved_domain"],
+                "execution_ready_replay_reference": reconstructed["execution_ready_replay_reference"],
+                "execution_ready_replay_hash": reconstructed["execution_ready_replay_hash"],
+            }
+        )
+    return bridges
+
+
+def _matching_bridge_for_assignment(
+    assignment_replay_path: Path,
+    assignment: dict[str, Any],
+    bridge_index: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    try:
+        evidence_wrapper = load_json(assignment_replay_path / "000_assignment_evidence_recorded.json")
+        _verify_wrapper_hash(evidence_wrapper)
+        evidence = evidence_wrapper.get("artifact")
+        if not isinstance(evidence, dict):
+            return None
+        _verify_artifact_hash(evidence, "worker assignment evidence artifact")
+        request_wrapper = load_json(
+            Path(evidence["worker_invocation_request_replay_reference"])
+            / "002_invocation_request_artifact_recorded.json"
+        )
+        _verify_wrapper_hash(request_wrapper)
+        request = request_wrapper.get("artifact")
+        if not isinstance(request, dict):
+            return None
+        _verify_artifact_hash(request, "worker invocation request artifact")
+        if request.get("worker_invocation_request_id") != assignment["worker_invocation_request_reference"]:
+            return None
+        auth_reference = (request.get("replay_references") or {}).get("execution_authorization_replay_reference")
+        if not auth_reference:
+            return None
+        auth_wrapper = load_json(Path(auth_reference) / "000_authorization_request_recorded.json")
+        _verify_wrapper_hash(auth_wrapper)
+        auth_request = auth_wrapper.get("artifact")
+        if not isinstance(auth_request, dict):
+            return None
+        _verify_artifact_hash(auth_request, "execution authorization request artifact")
+    except (FailClosedRuntimeError, KeyError):
+        return None
+    ready_reference = str(auth_request.get("execution_ready_replay_reference") or "")
+    ready_hash = str(auth_request.get("execution_ready_hash") or "")
+    for bridge in bridge_index:
+        if bridge["execution_ready_replay_reference"] == ready_reference:
+            return bridge
+        if bridge["execution_ready_replay_hash"] == ready_hash:
+            return bridge
+    return None
+
+
+def _worker_assignment_already_dispatched(
+    session_root: Path,
+    *,
+    worker_assignment_reference: str,
+    worker_assignment_hash: str,
+) -> bool:
+    for path in sorted(session_root.glob("TURN-*/worker_dispatch")):
+        try:
+            reconstructed = reconstruct_worker_dispatch_replay(path)
+            wrapper = load_json(path / "002_dispatch_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            dispatch = wrapper.get("artifact")
+            if not isinstance(dispatch, dict):
+                continue
+            _verify_artifact_hash(dispatch, "worker dispatch artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("dispatch_status") != WORKER_DISPATCHED:
+            continue
+        if dispatch.get("worker_assignment_reference") == worker_assignment_reference:
+            return True
+        if dispatch.get("worker_assignment_hash") == worker_assignment_hash:
+            return True
+    return False
 
 
 def _assignment_authority_continuity(assignment: dict[str, Any]) -> bool:
