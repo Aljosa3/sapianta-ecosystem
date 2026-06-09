@@ -153,6 +153,11 @@ from aigol.runtime.clarification_continuity_runtime import (
     run_clarification_continuity,
     should_bind_operator_reply_to_active_clarification,
 )
+from aigol.runtime.clarified_domain_intent_handoff_review_runtime import (
+    WORKER_BINDING_APPROVED as CLARIFIED_DOMAIN_WORKER_BINDING_APPROVED,
+    render_clarified_domain_intent_handoff_review_summary,
+    review_clarified_domain_intent,
+)
 from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
@@ -1893,7 +1898,33 @@ def run_interactive_conversation(
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
                 else:
-                    output_writer(render_clarification_continuity_summary(clarification_continuity_capture))
+                    handoff_review_capture = review_clarified_domain_intent(
+                        review_id=f"{prompt_id}:CLARIFIED-DOMAIN-HANDOFF-REVIEW",
+                        clarification_continuity_replay_reference=clarification_continuity_capture[
+                            "clarification_continuity_replay_reference"
+                        ],
+                        review_decision=CLARIFIED_DOMAIN_WORKER_BINDING_APPROVED,
+                        reviewed_by="AIGOL_GOVERNANCE_REVIEW",
+                        created_at=created_at,
+                        replay_dir=turn_root / "clarified_domain_handoff_review",
+                    )
+                    clarification_continuity_capture["handoff_review"] = handoff_review_capture
+                    if handoff_review_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        clarification_continuity_capture["fail_closed"] = True
+                        clarification_continuity_capture["failure_reason"] = handoff_review_capture.get(
+                            "failure_reason"
+                        )
+                        output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
+                    else:
+                        output_writer(
+                            "\n\n".join(
+                                [
+                                    render_clarification_continuity_summary(clarification_continuity_capture),
+                                    render_clarified_domain_intent_handoff_review_summary(handoff_review_capture),
+                                ]
+                            )
+                        )
                 turns.append(
                     _interactive_clarification_continuity_turn_summary(
                         turn_id=turn_id,
@@ -3303,6 +3334,9 @@ def _interactive_clarification_continuity_turn_summary(
     resume = clarification_continuity_capture.get("clarification_workflow_resume_artifact")
     if not isinstance(resume, dict):
         resume = {}
+    handoff_review = clarification_continuity_capture.get("handoff_review")
+    if not isinstance(handoff_review, dict):
+        handoff_review = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -3330,6 +3364,10 @@ def _interactive_clarification_continuity_turn_summary(
         "originating_intent": clarification_continuity_capture.get("originating_intent")
         or resume.get("originating_intent"),
         "proposed_domain": clarification_continuity_capture.get("proposed_domain") or resume.get("proposed_domain"),
+        "handoff_review_decision": handoff_review.get("review_decision"),
+        "handoff_review_reference": handoff_review.get("review_reference"),
+        "handoff_review_replay_reference": handoff_review.get("handoff_review_replay_reference"),
+        "handoff_review_next_certified_stage": handoff_review.get("next_certified_stage"),
         "clarification_continuity_artifact_type": (
             clarification_continuity_capture.get("clarification_reply_binding_artifact") or {}
         ).get("artifact_type"),
