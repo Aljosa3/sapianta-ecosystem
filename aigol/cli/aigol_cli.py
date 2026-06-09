@@ -2757,11 +2757,75 @@ def run_interactive_conversation(
                 )
             elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_WORKER_INVOCATION:
                 worker_invocation_entry_intent = detect_domain_worker_invocation_entry_intent(human_prompt)
+                worker_assignment_capture: dict[str, Any] | None = None
+                worker_dispatch_capture: dict[str, Any] | None = None
                 try:
-                    latest_worker_dispatch = find_latest_domain_worker_dispatch(
-                        session_root=session_root,
-                        domain_name=worker_invocation_entry_intent["domain_name"],
-                    )
+                    try:
+                        latest_worker_dispatch = find_latest_domain_worker_dispatch(
+                            session_root=session_root,
+                            domain_name=worker_invocation_entry_intent["domain_name"],
+                        )
+                    except Exception:
+                        try:
+                            latest_worker_assignment = find_latest_domain_worker_assignment(
+                                session_root=session_root,
+                                domain_name=worker_invocation_entry_intent["domain_name"],
+                            )
+                        except Exception:
+                            latest_worker_request = find_latest_domain_worker_invocation_request(
+                                session_root=session_root,
+                                domain_name=worker_invocation_entry_intent["domain_name"],
+                            )
+                            worker_assignment_capture = assign_worker_from_invocation_request(
+                                worker_assignment_id=f"{prompt_id}:WORKER-ASSIGNMENT",
+                                worker_invocation_request_artifact=latest_worker_request[
+                                    "worker_invocation_request_artifact"
+                                ],
+                                worker_invocation_request_replay_reference=latest_worker_request[
+                                    "worker_invocation_request_replay_reference"
+                                ],
+                                worker_registry_artifacts=default_worker_registry_for_request(
+                                    latest_worker_request["worker_invocation_request_artifact"],
+                                    created_at=created_at,
+                                ),
+                                assigned_by=args.operator_context or "HUMAN_OPERATOR",
+                                assigned_at=created_at,
+                                replay_dir=turn_root / "worker_assignment",
+                            )
+                            if worker_assignment_capture.get("fail_closed") is True:
+                                raise FailClosedRuntimeError(
+                                    worker_assignment_capture.get("failure_reason")
+                                    or "worker assignment failed closed"
+                                )
+                            latest_worker_assignment = {
+                                "worker_assignment_artifact": worker_assignment_capture[
+                                    "worker_assignment_artifact"
+                                ],
+                                "worker_assignment_replay_reference": worker_assignment_capture[
+                                    "worker_assignment_replay_reference"
+                                ],
+                            }
+                        worker_dispatch_capture = dispatch_assigned_worker(
+                            worker_dispatch_id=f"{prompt_id}:WORKER-DISPATCH",
+                            worker_assignment_artifact=latest_worker_assignment["worker_assignment_artifact"],
+                            worker_assignment_replay_reference=latest_worker_assignment[
+                                "worker_assignment_replay_reference"
+                            ],
+                            dispatched_by=args.operator_context or "HUMAN_OPERATOR",
+                            dispatched_at=created_at,
+                            replay_dir=turn_root / "worker_dispatch",
+                        )
+                        if worker_dispatch_capture.get("fail_closed") is True:
+                            raise FailClosedRuntimeError(
+                                worker_dispatch_capture.get("failure_reason")
+                                or "worker dispatch failed closed"
+                            )
+                        latest_worker_dispatch = {
+                            "worker_dispatch_artifact": worker_dispatch_capture["worker_dispatch_artifact"],
+                            "worker_dispatch_replay_reference": worker_dispatch_capture[
+                                "worker_dispatch_replay_reference"
+                            ],
+                        }
                     worker_invocation_capture = invoke_dispatched_worker(
                         worker_invocation_id=f"{prompt_id}:WORKER-INVOCATION",
                         worker_dispatch_artifact=latest_worker_dispatch["worker_dispatch_artifact"],
@@ -2783,7 +2847,13 @@ def run_interactive_conversation(
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {worker_invocation_capture.get('failure_reason')}")
                 else:
-                    output_writer(render_worker_invocation_summary(worker_invocation_capture))
+                    rendered_summaries = []
+                    if worker_assignment_capture is not None:
+                        rendered_summaries.append(render_worker_assignment_summary(worker_assignment_capture))
+                    if worker_dispatch_capture is not None:
+                        rendered_summaries.append(render_worker_dispatch_summary(worker_dispatch_capture))
+                    rendered_summaries.append(render_worker_invocation_summary(worker_invocation_capture))
+                    output_writer("\n".join(rendered_summaries))
                 turns.append(
                     _interactive_domain_worker_invocation_turn_summary(
                         turn_id=turn_id,
