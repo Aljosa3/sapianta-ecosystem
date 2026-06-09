@@ -12,6 +12,7 @@ from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE,
+    DOMAIN_EXECUTION_AUTHORIZATION,
     DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
@@ -141,6 +142,9 @@ def _input_sequence(values: list[str]):
         ("Continue FreshDomain to execution authorization.", DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE),
         ("Create execution-ready authorization packet for FreshDomain.", DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE),
         ("Continue FreshDomain authorization workflow.", DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE),
+        ("Authorize execution-ready packet for FreshDomain.", DOMAIN_EXECUTION_AUTHORIZATION),
+        ("Continue FreshDomain execution authorization.", DOMAIN_EXECUTION_AUTHORIZATION),
+        ("Authorize FreshDomain execution-ready workflow.", DOMAIN_EXECUTION_AUTHORIZATION),
     ],
 )
 def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: str, workflow_id: str) -> None:
@@ -206,6 +210,27 @@ def test_execution_ready_entry_prompts_route_to_bridge_without_provider_fallback
 @pytest.mark.parametrize(
     "prompt",
     [
+        "Authorize execution-ready packet for FreshDomain.",
+        "Continue FreshDomain execution authorization.",
+        "Authorize FreshDomain execution-ready workflow.",
+    ],
+)
+def test_execution_authorization_entry_prompts_route_without_provider_fallback(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    selection = capture["workflow_selection_artifact"]
+
+    assert capture["workflow_id"] == DOMAIN_EXECUTION_AUTHORIZATION
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert selection["existing_runtime"] == "execution_authorization_runtime"
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert selection["execution_requested"] is False
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
         OCS_GENERALIZATION_CASE_A,
         OCS_GENERALIZATION_CASE_B,
         OCS_GENERALIZATION_CASE_C,
@@ -226,15 +251,16 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 15
-    assert coverage["conversationally_accessible_workflows"] == 15
-    assert coverage["coverage_ratio"] == "15/15"
+    assert coverage["registered_workflows"] == 16
+    assert coverage["conversationally_accessible_workflows"] == 16
+    assert coverage["coverage_ratio"] == "16/16"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
     assert OCS_LLM_COGNITION in coverage["workflow_ids"]
     assert AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW in coverage["workflow_ids"]
     assert DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE in coverage["workflow_ids"]
+    assert DOMAIN_EXECUTION_AUTHORIZATION in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -257,7 +283,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 15/15" in rendered
+    assert "coverage: 16/16" in rendered
 
 
 def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:
