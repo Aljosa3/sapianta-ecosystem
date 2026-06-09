@@ -1,0 +1,95 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_WORKER_INVOCATION_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09",
+  "scope": {
+    "from_stage": "WORKER_DISPATCHED",
+    "to_stage": "WORKER_INVOKED",
+    "workflow": "FreshDomain",
+    "mode": "audit_only"
+  },
+  "located_runtimes": {
+    "worker_invocation_runtime": {
+      "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+      "module": "aigol/runtime/worker_invocation_runtime.py",
+      "entry_point": "invoke_dispatched_worker",
+      "compatibility_wrapper": "invoke_worker",
+      "input_replay": "worker_dispatch_replay_reference",
+      "required_status": "WORKER_DISPATCHED",
+      "success_status": "WORKER_INVOKED"
+    }
+  },
+  "runtime_outputs": {
+    "invocation_status": "WORKER_INVOKED",
+    "artifacts": [
+      "WORKER_INVOCATION_EVIDENCE_ARTIFACT_V1",
+      "WORKER_INVOCATION_CLASSIFICATION_ARTIFACT_V1",
+      "WORKER_INVOCATION_ARTIFACT_V1",
+      "WORKER_INVOCATION_RESULT_ARTIFACT_V1"
+    ],
+    "result_validation_performed": false,
+    "post_execution_replay_review_performed": false,
+    "termination_performed": false,
+    "repair_performed": false,
+    "retry_performed": false
+  },
+  "freshdomain_acli_routing_probe": [
+    {
+      "prompt": "Invoke worker for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain to worker invocation.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    },
+    {
+      "prompt": "Create worker invocation for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Invoke FreshDomain worker.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain worker dispatch to invocation.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    }
+  ],
+  "registered_freshdomain_continuation_workflows": [
+    "DOMAIN_WORKER_REQUEST",
+    "DOMAIN_WORKER_ASSIGNMENT",
+    "DOMAIN_WORKER_DISPATCH"
+  ],
+  "direct_runtime_validation": {
+    "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_runtime_does_not_validate_results_or_terminate tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_replay_corruption tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_authority_violation",
+    "result": "6 passed"
+  },
+  "audit_findings": {
+    "worker_invocation_runtime_located": true,
+    "worker_invocation_runtime_implemented": true,
+    "worker_invoked_direct_runtime_reachable": true,
+    "canonical_freshdomain_worker_invocation_acli_entry_exists": false,
+    "canonical_freshdomain_worker_invocation_acli_entry_working": false,
+    "latest_worker_dispatch_replay_compatible": "TRUE_DIRECT_RUNTIME",
+    "additional_prerequisites_exist": false,
+    "invocation_automatically_triggers_execution": false,
+    "duplicate_invocation_protection_in_acli_lookup": false,
+    "next_blocking_component": "CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_REPLAY_BINDING"
+  },
+  "recommended_next_milestone": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "non_goals_preserved": {
+    "new_runtime_implemented": false,
+    "new_acli_route_implemented": false,
+    "new_replay_format_implemented": false,
+    "worker_execution_implemented": false,
+    "worker_changes_implemented": false,
+    "architecture_changes_implemented": false,
+    "repairs_implemented": false
+  }
+}

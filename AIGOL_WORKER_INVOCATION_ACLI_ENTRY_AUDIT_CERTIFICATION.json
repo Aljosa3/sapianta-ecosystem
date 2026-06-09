@@ -1,0 +1,46 @@
+{
+  "artifact_type": "AIGOL_WORKER_INVOCATION_ACLI_ENTRY_AUDIT_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_WORKER_INVOCATION_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09",
+  "certification_scope": {
+    "audit_only": true,
+    "new_runtime": false,
+    "new_acli_route": false,
+    "new_replay_format": false,
+    "worker_execution": false,
+    "worker_changes": false,
+    "architecture_changes": false,
+    "repairs": false
+  },
+  "certified_findings": {
+    "WORKER_INVOCATION_RUNTIME_LOCATED": true,
+    "WORKER_INVOCATION_RUNTIME_IMPLEMENTED": true,
+    "WORKER_INVOKED_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_CANONICAL_FRESHDOMAIN_ACLI",
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_REGISTERED_FOR_FRESHDOMAIN_WORKER_INVOCATION",
+    "CANONICAL_ACLI_ENTRY_EXISTS": false,
+    "CANONICAL_ACLI_ENTRY_WORKING": false,
+    "LATEST_WORKER_DISPATCH_REPLAY_COMPATIBLE": "TRUE_DIRECT_RUNTIME",
+    "ADDITIONAL_PREREQUISITES_EXIST": false,
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_REPLAY_BINDING",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_CANONICAL_WORKER_INVOCATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+    "READY_FOR_REAL_WORKER_INVOCATION_ACCEPTANCE": false
+  },
+  "authority_boundary_certification": {
+    "invocation_runtime_validates_results": false,
+    "invocation_runtime_performs_replay_review": false,
+    "invocation_runtime_terminates_workflow": false,
+    "invocation_runtime_repairs": false,
+    "invocation_runtime_retries": false,
+    "invocation_runtime_executes_completion": false,
+    "freshdomain_acli_worker_invoked": false
+  },
+  "validation": {
+    "focused_runtime_tests": {
+      "command": "python -m pytest tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_runtime_does_not_validate_results_or_terminate tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_replay_corruption tests/test_worker_invocation_runtime_v1.py::test_worker_invocation_fails_closed_on_authority_violation",
+      "result": "6 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  }
+}
