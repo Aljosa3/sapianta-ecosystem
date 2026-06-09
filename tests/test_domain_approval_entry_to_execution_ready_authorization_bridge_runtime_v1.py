@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -749,6 +750,106 @@ def test_find_latest_domain_worker_dispatch_excludes_invoked_entries(tmp_path) -
 
     with pytest.raises(FailClosedRuntimeError, match="matching worker dispatch not found"):
         find_latest_domain_worker_dispatch(session_root=session_root, domain_name="FreshDomain")
+
+
+def test_worker_invocation_binds_latest_dispatch_with_relative_replay_references(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    session_root = Path("runtime") / SESSION_ID
+    prompt_id = _seed_open_clarification(session_root)
+    continuity = run_clarification_continuity(
+        continuity_id=f"{SESSION_ID}:TURN-000002:CLARIFICATION-CONTINUITY",
+        session_root=session_root,
+        turn_id="TURN-000002",
+        prompt_id=f"{SESSION_ID}:TURN-000002",
+        operator_reply=REPLY,
+        current_chain_id=prompt_id,
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000002" / "clarification_continuity",
+    )
+    review = review_clarified_domain_intent(
+        review_id=f"{SESSION_ID}:TURN-000002:CLARIFIED-DOMAIN-HANDOFF-REVIEW",
+        clarification_continuity_replay_reference=continuity["clarification_continuity_replay_reference"],
+        review_decision=WORKER_BINDING_APPROVED,
+        reviewed_by="AIGOL_GOVERNANCE_REVIEW",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000002" / "clarified_domain_handoff_review",
+    )
+    approval = bind_domain_handoff_review_approval(
+        approval_entry_id=f"{SESSION_ID}:TURN-000003:DOMAIN-APPROVAL-BINDING",
+        handoff_review_replay_reference=review["handoff_review_replay_reference"],
+        operator_prompt=APPROVAL_PROMPT,
+        approved_domain="FreshDomain",
+        approving_actor="HUMAN_OPERATOR",
+        approved_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000003" / "domain_approval_binding",
+        latest_handoff_review_replay_reference=review["handoff_review_replay_reference"],
+    )
+    bridge = bridge_domain_approval_entry_to_execution_ready(
+        bridge_id=f"{SESSION_ID}:TURN-000004:DOMAIN-EXECUTION-READY-BRIDGE",
+        domain_approval_binding_replay_reference=approval["domain_approval_binding_replay_reference"],
+        approved_domain="FreshDomain",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000004" / "domain_execution_ready_bridge",
+    )
+    authorization = authorize_execution_ready(
+        authorization_id=f"{SESSION_ID}:TURN-000005:EXECUTION-AUTHORIZATION",
+        execution_ready_replay_reference=bridge["execution_ready_replay_reference"],
+        authorizing_actor="HUMAN_OPERATOR",
+        authorized_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000005" / "execution_authorization",
+    )
+    worker_request = create_worker_invocation_request(
+        invocation_request_id=f"{SESSION_ID}:TURN-000006:WORKER-INVOCATION-REQUEST",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="HUMAN_OPERATOR",
+        requested_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000006" / "worker_invocation_request",
+    )
+    assignment = assign_worker_from_invocation_request(
+        worker_assignment_id=f"{SESSION_ID}:TURN-000007:WORKER-ASSIGNMENT",
+        worker_invocation_request_artifact=worker_request["worker_invocation_request_artifact"],
+        worker_invocation_request_replay_reference=worker_request["worker_invocation_request_replay_reference"],
+        worker_registry_artifacts=default_worker_registry_for_request(
+            worker_request["worker_invocation_request_artifact"],
+            created_at=CREATED_AT,
+        ),
+        assigned_by="HUMAN_OPERATOR",
+        assigned_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000007" / "worker_assignment",
+    )
+    dispatch = dispatch_assigned_worker(
+        worker_dispatch_id=f"{SESSION_ID}:TURN-000008:WORKER-DISPATCH",
+        worker_assignment_artifact=assignment["worker_assignment_artifact"],
+        worker_assignment_replay_reference=assignment["worker_assignment_replay_reference"],
+        dispatched_by="HUMAN_OPERATOR",
+        dispatched_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000008" / "worker_dispatch",
+    )
+
+    other_cwd = tmp_path / "other"
+    other_cwd.mkdir()
+    monkeypatch.chdir(other_cwd)
+    absolute_session_root = tmp_path / "runtime" / SESSION_ID
+
+    latest = find_latest_domain_worker_dispatch(
+        session_root=absolute_session_root,
+        domain_name="FreshDomain",
+    )
+    invocation = invoke_dispatched_worker(
+        worker_invocation_id=f"{SESSION_ID}:TURN-000009:WORKER-INVOCATION",
+        worker_dispatch_artifact=latest["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=latest["worker_dispatch_replay_reference"],
+        invoked_by="HUMAN_OPERATOR",
+        invoked_at=CREATED_AT,
+        replay_dir=absolute_session_root / "TURN-000009" / "worker_invocation",
+    )
+
+    assert latest["worker_dispatch_replay_reference"] == str(
+        tmp_path / dispatch["worker_dispatch_replay_reference"]
+    )
+    assert invocation["invocation_status"] == WORKER_INVOKED
+    assert invocation["worker_dispatch_reference"] == dispatch["worker_dispatch_reference"]
+    assert invocation["execution_started"] is False
 
 
 def test_acli_worker_invocation_prompt_invokes_worker_without_execution_or_result_validation(tmp_path) -> None:
