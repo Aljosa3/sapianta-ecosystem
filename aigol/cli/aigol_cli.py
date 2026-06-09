@@ -158,6 +158,12 @@ from aigol.runtime.clarified_domain_intent_handoff_review_runtime import (
     render_clarified_domain_intent_handoff_review_summary,
     review_clarified_domain_intent,
 )
+from aigol.runtime.domain_handoff_review_approval_binding_runtime import (
+    bind_domain_handoff_review_approval,
+    detect_domain_approval_entry_intent,
+    find_latest_domain_handoff_review,
+    render_domain_handoff_review_approval_binding_summary,
+)
 from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
@@ -828,9 +834,10 @@ def _record_interactive_routing_visibility(
     pending_approval_required: dict[str, Any] | None,
     recommendation_continuity_artifact: dict[str, Any] | None,
     recommendation_approval_artifact: dict[str, Any] | None,
-    conversational_routing_capture: dict[str, Any] | None = None,
     created_at: str,
     turn_root: Path,
+    domain_approval_entry_intent: dict[str, Any] | None = None,
+    conversational_routing_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if conversational_routing_capture is None:
         analysis = _interactive_routing_visibility_analysis(
@@ -838,6 +845,7 @@ def _record_interactive_routing_visibility(
             pending_approval_required=pending_approval_required,
             recommendation_continuity_artifact=recommendation_continuity_artifact,
             recommendation_approval_artifact=recommendation_approval_artifact,
+            domain_approval_entry_intent=domain_approval_entry_intent,
         )
     else:
         analysis = _authoritative_routing_visibility_analysis(conversational_routing_capture)
@@ -894,8 +902,21 @@ def _interactive_routing_visibility_analysis(
     pending_approval_required: dict[str, Any] | None,
     recommendation_continuity_artifact: dict[str, Any] | None,
     recommendation_approval_artifact: dict[str, Any] | None,
+    domain_approval_entry_intent: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     human_decision = normalize_human_decision(human_prompt)
+    if domain_approval_entry_intent and domain_approval_entry_intent.get("approval_entry_intent_detected") is True:
+        return _routing_visibility_selected(
+            workflow_id="DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY",
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=[
+                "approve",
+                str(domain_approval_entry_intent.get("domain_name") or ""),
+                str(domain_approval_entry_intent.get("approval_action") or ""),
+            ],
+            competing_signals=[],
+            routing_reason="Domain handoff review approval entry intent detected.",
+        )
     if pending_approval_required is not None and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}:
         return _routing_visibility_selected(
             workflow_id=(
@@ -1805,9 +1826,14 @@ def run_interactive_conversation(
                 and clarification_reply_gate_capture.get("binding_decision_reason")
                 == "REPLY_DOES_NOT_MATCH_ACTIVE_CLARIFICATION_SCOPE"
             )
+            domain_approval_entry_intent = detect_domain_approval_entry_intent(human_prompt)
+            domain_approval_entry_detected = (
+                domain_approval_entry_intent.get("approval_entry_intent_detected") is True
+            )
             stateful_pre_routing_gate = (
                 active_clarification_reply_detected
                 or active_clarification_reply_mismatch_detected
+                or domain_approval_entry_detected
                 or (
                     pending_approval_required is not None
                     and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
@@ -1842,6 +1868,7 @@ def run_interactive_conversation(
                 pending_approval_required=pending_approval_required,
                 recommendation_continuity_artifact=recommendation_continuity_artifact,
                 recommendation_approval_artifact=recommendation_approval_artifact,
+                domain_approval_entry_intent=domain_approval_entry_intent,
                 conversational_routing_capture=conversational_routing_capture,
                 created_at=created_at,
                 turn_root=turn_root,
@@ -1931,6 +1958,48 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         clarification_continuity_capture=clarification_continuity_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif domain_approval_entry_detected:
+                try:
+                    latest_review = find_latest_domain_handoff_review(
+                        session_root=session_root,
+                        domain_name=domain_approval_entry_intent["domain_name"],
+                    )
+                    domain_approval_capture = bind_domain_handoff_review_approval(
+                        approval_entry_id=f"{prompt_id}:DOMAIN-APPROVAL-BINDING",
+                        handoff_review_replay_reference=latest_review["handoff_review_replay_reference"],
+                        operator_prompt=human_prompt,
+                        approved_domain=domain_approval_entry_intent["domain_name"],
+                        approving_actor=args.operator_context or "HUMAN_OPERATOR",
+                        approved_at=created_at,
+                        replay_dir=turn_root / "domain_approval_binding",
+                        latest_handoff_review_replay_reference=latest_review["handoff_review_replay_reference"],
+                    )
+                except Exception:
+                    domain_approval_capture = bind_domain_handoff_review_approval(
+                        approval_entry_id=f"{prompt_id}:DOMAIN-APPROVAL-BINDING",
+                        handoff_review_replay_reference="MISSING_HANDOFF_REVIEW",
+                        operator_prompt=human_prompt,
+                        approved_domain=domain_approval_entry_intent.get("domain_name") or "UNKNOWN_DOMAIN",
+                        approving_actor=args.operator_context or "HUMAN_OPERATOR",
+                        approved_at=created_at,
+                        replay_dir=turn_root / "domain_approval_binding",
+                    )
+                current_chain_id = domain_approval_capture.get("canonical_chain_id") or current_chain_id
+                latest_chain_id = current_chain_id
+                if domain_approval_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {domain_approval_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_domain_handoff_review_approval_binding_summary(domain_approval_capture))
+                turns.append(
+                    _interactive_domain_approval_binding_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        domain_approval_capture=domain_approval_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -3376,6 +3445,54 @@ def _interactive_clarification_continuity_turn_summary(
         "authorization_created": False,
         "execution_requested": False,
         "approval_created": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_approval_binding_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    domain_approval_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": domain_approval_capture.get("approval_status"),
+        "response_source": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY",
+        "fail_closed": domain_approval_capture.get("fail_closed") is True,
+        "failure_reason": domain_approval_capture.get("failure_reason"),
+        "replay_reference": domain_approval_capture.get("domain_approval_binding_replay_reference"),
+        "canonical_chain_id": domain_approval_capture.get("canonical_chain_id"),
+        "current_chain_id": domain_approval_capture.get("canonical_chain_id"),
+        "latest_chain_id": domain_approval_capture.get("canonical_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "source_router_replay_reference": source_router_replay_reference,
+        "approval_status": domain_approval_capture.get("approval_status"),
+        "approval_reference": domain_approval_capture.get("approval_reference"),
+        "approved_domain": domain_approval_capture.get("approved_domain"),
+        "authorization_entry_status": domain_approval_capture.get("authorization_entry_status"),
+        "authorization_entry_reference": domain_approval_capture.get("authorization_entry_reference"),
+        "execution_ready_continuation_status": domain_approval_capture.get(
+            "execution_ready_continuation_status"
+        ),
+        "execution_ready_continuation_reference": domain_approval_capture.get(
+            "execution_ready_continuation_reference"
+        ),
+        "next_runtime": domain_approval_capture.get("next_runtime"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "execution_requested": False,
         "domain_created": False,
         "governance_mutated": False,
         "replay_mutated": False,
