@@ -1,0 +1,131 @@
+{
+  "artifact_type": "AIGOL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW_AUDIT_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "audit_only": true,
+    "authorization_runtime_changes": false,
+    "worker_request_creation": false,
+    "worker_invocation": false,
+    "execution": false,
+    "repair": false,
+    "retry": false,
+    "architecture_redesign": false
+  },
+  "located_stage": {
+    "stage": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "located": true,
+    "emitted_by_runtime": "aigol/runtime/clarified_domain_intent_handoff_review_runtime.py",
+    "emitting_artifact": "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "emitting_condition": "review_decision == WORKER_BINDING_APPROVED",
+    "emitted_field": "next_certified_stage",
+    "emitted_value": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "source_lines": {
+      "next_stage_mapping": "aigol/runtime/clarified_domain_intent_handoff_review_runtime.py:373"
+    }
+  },
+  "implementation_status": {
+    "implemented": "TRUE_AS_APPROVAL_ENTRY_BINDING_STAGE",
+    "consuming_runtime": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py",
+    "runtime_version": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1",
+    "implementation_boundary": "creates approval binding, authorization-entry, and execution-ready-continuation artifacts without creating execution authorization or worker request",
+    "source_lines": {
+      "approval_prompt_detection": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:60",
+      "handoff_review_stage_validation": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:278",
+      "authorization_entry_artifact": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:367",
+      "execution_ready_continuation_artifact": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:392"
+    }
+  },
+  "required_inputs": [
+    "reviewed domain identity",
+    "handoff review replay reference",
+    "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "review_decision == WORKER_BINDING_APPROVED",
+    "next_certified_stage == AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "domain-preserving worker binding",
+    "operator approval prompt",
+    "valid human approving actor",
+    "handoff review replay lineage"
+  ],
+  "expected_outputs": [
+    "DOMAIN_APPROVAL_BINDING_ARTIFACT_V1",
+    "DOMAIN_AUTHORIZATION_ENTRY_ARTIFACT_V1",
+    "DOMAIN_EXECUTION_READY_CONTINUATION_ARTIFACT_V1",
+    "DOMAIN_APPROVAL_ENTRY_RETURNED_ARTIFACT_V1"
+  ],
+  "acli_continuation": {
+    "prompt_exists": true,
+    "supported_prompts": [
+      "Approve FreshDomain for domain artifact creation.",
+      "Approve reviewed FreshDomain workflow.",
+      "Continue FreshDomain to authorization."
+    ],
+    "routing_behavior": "stateful pre-routing gate detects domain approval entry before default provider-assisted conversation",
+    "entrypoint": "aigol/cli/aigol_cli.py",
+    "source_lines": {
+      "stateful_gate": "aigol/cli/aigol_cli.py:1829",
+      "binding_call": "aigol/cli/aigol_cli.py:1964",
+      "turn_summary": "aigol/cli/aigol_cli.py:3454"
+    }
+  },
+  "intended_path": [
+    "WORKER_BINDING_APPROVED",
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "DOMAIN_APPROVAL_BOUND",
+    "AUTHORIZATION_ENTRY_CREATED",
+    "EXECUTION_READY_CONTINUATION_CREATED",
+    "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1"
+  ],
+  "authorization_runtime": {
+    "entrypoint_located": true,
+    "entrypoint": "authorize_execution_ready",
+    "runtime": "aigol/runtime/execution_authorization_runtime.py",
+    "requires": "execution_ready_replay_reference",
+    "creates": "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "source_line": "aigol/runtime/execution_authorization_runtime.py:39"
+  },
+  "worker_request_runtime": {
+    "entrypoint_located": true,
+    "entrypoint": "create_worker_invocation_request",
+    "runtime": "aigol/runtime/worker_invocation_request_runtime.py",
+    "requires": "execution_authorization_replay_reference",
+    "creates": "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+    "source_line": "aigol/runtime/worker_invocation_request_runtime.py:46"
+  },
+  "next_blocking_component": {
+    "component": "DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+    "recommended_milestone": "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "reason": "domain approval-entry artifacts are created, but no dedicated bridge converts them into the execution-ready packet consumed by AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1"
+  },
+  "duplicate_logic_assessment": {
+    "duplicate_logic_found": "PARTIAL_APPROVAL_SEMANTIC_OVERLAP_NO_DUPLICATE_FRESHDOMAIN_AUTHORIZATION_ENTRY_BRIDGE",
+    "notes": [
+      "Existing approval and authorization runtimes have related semantics.",
+      "No existing runtime was found that performs the FreshDomain-specific authorized domain artifact request bridge.",
+      "No existing runtime was found that creates a compatible execution-ready packet from the domain approval-entry artifacts."
+    ]
+  },
+  "authority_boundary": {
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "final_outputs": {
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW_LOCATED": true,
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW_IMPLEMENTED": "TRUE_AS_APPROVAL_ENTRY_BINDING_STAGE",
+    "AUTHORIZATION_ENTRY_PATH_IDENTIFIED": true,
+    "ACLI_CONTINUATION_PROMPT_EXISTS": true,
+    "NEXT_BLOCKING_COMPONENT": "DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+    "DUPLICATE_LOGIC_FOUND": "PARTIAL_APPROVAL_SEMANTIC_OVERLAP_NO_DUPLICATE_FRESHDOMAIN_AUTHORIZATION_ENTRY_BRIDGE",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "READY_FOR_REAL_AUTHORIZATION_ENTRY_ACCEPTANCE": true
+  }
+}
