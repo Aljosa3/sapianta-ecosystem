@@ -1,0 +1,59 @@
+{
+  "artifact_type": "AIGOL_REAL_HUMAN_DOMAIN_WORKFLOW_ACCEPTANCE_CERTIFICATION",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "acceptance_id": "AIGOL_REAL_HUMAN_DOMAIN_WORKFLOW_ACCEPTANCE_V1",
+  "certification_status": "CERTIFIED_WITH_NEXT_STAGE_BOUNDARY",
+  "scope": {
+    "validated_flow": [
+      "Human",
+      "Domain Request",
+      "Clarification",
+      "Reply",
+      "Resume",
+      "Next Governed Workflow Stage"
+    ],
+    "excluded_from_scope": [
+      "provider invocation",
+      "worker invocation",
+      "authorization",
+      "execution",
+      "domain creation",
+      "repair runtime",
+      "retry runtime",
+      "architecture redesign"
+    ]
+  },
+  "certified_observations": {
+    "domain_request_routed_to_clarification": true,
+    "clarification_reply_bound": true,
+    "clarification_resolved": true,
+    "workflow_resumed": true,
+    "domain_identity_preserved": true,
+    "replay_continuity_preserved": true,
+    "operator_visible_lifecycle": true,
+    "fail_closed_behavior_preserved": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false
+  },
+  "next_blocking_component": {
+    "component": "CLARIFIED_DOMAIN_INTENT_TO_OCS_OR_EXECUTION_HANDOFF_REVIEW",
+    "reason": "The workflow reaches an explicit resume-ready boundary and exposes OCS_OR_EXECUTION_HANDOFF_REVIEW as the next governed stage. This acceptance did not implement or certify conversion of clarified domain intent into an OCS or execution handoff candidate."
+  },
+  "readiness": {
+    "ready_for_real_operator_usage": "TRUE_WITH_NEXT_STAGE_BOUNDARY_VISIBLE",
+    "ready_for_domain_creation_execution": false,
+    "ready_for_ocs_or_execution_handoff_review_milestone": true
+  },
+  "evidence_artifact": "AIGOL_REAL_HUMAN_DOMAIN_WORKFLOW_ACCEPTANCE_EVIDENCE.json",
+  "final_outputs": {
+    "DOMAIN_WORKFLOW_ACCEPTED": "TRUE_TO_WORKFLOW_RESUME_READY",
+    "DOMAIN_IDENTITY_PRESERVED": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "NEXT_BLOCKING_COMPONENT": "CLARIFIED_DOMAIN_INTENT_TO_OCS_OR_EXECUTION_HANDOFF_REVIEW",
+    "READY_FOR_REAL_OPERATOR_USAGE": "TRUE_WITH_NEXT_STAGE_BOUNDARY_VISIBLE"
+  }
+}
