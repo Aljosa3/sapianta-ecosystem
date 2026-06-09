@@ -140,7 +140,9 @@ def authorize_execution_ready(
     replay_path = Path(replay_dir)
     try:
         _ensure_replay_available(replay_path)
-        lineage = _load_execution_ready_lineage(Path(execution_ready_replay_reference))
+        lineage = _load_execution_ready_lineage(
+            _resolve_replay_reference(execution_ready_replay_reference, anchor=replay_path)
+        )
         request = _authorization_request(
             authorization_id=authorization_id,
             execution_ready_replay_reference=execution_ready_replay_reference,
@@ -226,7 +228,9 @@ def reconstruct_execution_authorization_replay(replay_dir: str | Path) -> dict[s
         }
     ) != 1:
         raise FailClosedRuntimeError("execution authorization replay packet lineage mismatch")
-    _load_execution_ready_lineage(Path(request["execution_ready_replay_reference"]))
+    _load_execution_ready_lineage(
+        _resolve_replay_reference(request["execution_ready_replay_reference"], anchor=replay_path)
+    )
     return {
         "authorization_id": authorization["authorization_id"],
         "authorization_status": result["authorization_status"],
@@ -319,6 +323,17 @@ def _load_execution_ready_lineage(replay_path: Path) -> dict[str, dict[str, Any]
         "validation": validation,
         "ready": ready,
     }
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _authorization_request(

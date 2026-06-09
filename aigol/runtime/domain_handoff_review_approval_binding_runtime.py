@@ -242,7 +242,10 @@ def reconstruct_domain_handoff_review_approval_binding_replay(replay_dir: str | 
     if returned.get("approval_binding_hash") != binding["artifact_hash"]:
         raise FailClosedRuntimeError("domain approval entry returned binding mismatch")
     if binding["approval_status"] != FAIL_CLOSED:
-        review = _load_handoff_review(Path(binding["handoff_review_replay_reference"]), binding["approved_domain"])
+        review = _load_handoff_review(
+            _resolve_replay_reference(binding["handoff_review_replay_reference"], anchor=replay_path),
+            binding["approved_domain"],
+        )
         if review["artifact_hash"] != binding["handoff_review_hash"]:
             raise FailClosedRuntimeError("domain approval entry handoff review hash mismatch")
     return {
@@ -280,6 +283,17 @@ def render_domain_handoff_review_approval_binding_summary(capture: dict[str, Any
             "No authorization, worker request, dispatch, invocation, execution, repair, or retry was created.",
         ]
     )
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _load_handoff_review(replay_path: Path, approved_domain: str) -> dict[str, Any]:

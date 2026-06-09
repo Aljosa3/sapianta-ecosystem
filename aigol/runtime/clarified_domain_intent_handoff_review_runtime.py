@@ -141,7 +141,12 @@ def reconstruct_clarified_domain_intent_handoff_review_replay(replay_dir: str | 
     if returned.get("review_decision_hash") != decision["artifact_hash"]:
         raise FailClosedRuntimeError("clarified domain handoff review returned hash mismatch")
     if decision["review_decision"] != FAIL_CLOSED:
-        resume = _load_resume_artifact(Path(decision["clarification_continuity_replay_reference"]))
+        resume = _load_resume_artifact(
+            _resolve_replay_reference(
+                decision["clarification_continuity_replay_reference"],
+                anchor=replay_path,
+            )
+        )
         if resume["artifact_hash"] != decision["clarification_workflow_resume_hash"]:
             raise FailClosedRuntimeError("clarified domain handoff review resume hash mismatch")
     _validate_authority_flags(decision)
@@ -180,6 +185,17 @@ def render_clarified_domain_intent_handoff_review_summary(capture: dict[str, Any
             "No approval, authorization, worker request, dispatch, invocation, execution, repair, or retry was created.",
         ]
     )
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _load_resume_artifact(replay_path: Path) -> dict[str, Any]:
@@ -508,4 +524,3 @@ def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "clarified domain handoff review failed closed"
-

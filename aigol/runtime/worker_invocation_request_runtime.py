@@ -234,7 +234,11 @@ def reconstruct_worker_invocation_request_replay(replay_dir: str | Path) -> dict
     if evidence["execution_packet_hash"] != request["execution_packet_hash"]:
         raise FailClosedRuntimeError("worker invocation request replay packet lineage mismatch")
     _validate_request_artifact(request)
-    _load_authorized_lineage(Path(evidence["execution_authorization_replay_reference"]), request["requested_at"])
+    authorization_replay_path = _resolve_replay_reference(
+        evidence["execution_authorization_replay_reference"],
+        anchor=replay_path,
+    )
+    _load_authorized_lineage(authorization_replay_path, request["requested_at"])
     return {
         "worker_invocation_request_id": request["worker_invocation_request_id"],
         "request_status": result["request_status"],
@@ -306,7 +310,9 @@ def _load_authorized_lineage(auth_replay_path: Path, requested_at: str) -> dict[
         raise FailClosedRuntimeError("worker invocation request failed closed: authorization invalid")
     _validate_not_expired(authorization.get("authorization_expires_at"), requested_at)
 
-    ready_lineage = _load_execution_ready_lineage(Path(auth_request["execution_ready_replay_reference"]))
+    ready_lineage = _load_execution_ready_lineage(
+        _resolve_replay_reference(auth_request["execution_ready_replay_reference"], anchor=auth_replay_path)
+    )
     candidate = ready_lineage["candidate"]
     packet = ready_lineage["packet"]
     validation = ready_lineage["validation"]
@@ -334,6 +340,17 @@ def _load_authorized_lineage(auth_replay_path: Path, requested_at: str) -> dict[
         "ready": ready,
         "checks": checks,
     }
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _load_execution_ready_lineage(replay_path: Path) -> dict[str, dict[str, Any]]:

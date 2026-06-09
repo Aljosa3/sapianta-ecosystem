@@ -223,7 +223,11 @@ def reconstruct_worker_dispatch_replay(replay_dir: str | Path) -> dict[str, Any]
     if evidence["worker_assignment_hash"] != dispatch["worker_assignment_hash"]:
         raise FailClosedRuntimeError("worker dispatch replay assignment lineage mismatch")
     _validate_dispatch_artifact(dispatch)
-    _load_assignment_lineage(Path(evidence["worker_assignment_replay_reference"]), None, dispatch=dispatch)
+    assignment_replay_path = _resolve_replay_reference(
+        evidence["worker_assignment_replay_reference"],
+        anchor=replay_path,
+    )
+    _load_assignment_lineage(assignment_replay_path, None, dispatch=dispatch)
     return {
         "worker_dispatch_id": dispatch["worker_dispatch_id"],
         "dispatch_status": result["dispatch_status"],
@@ -303,7 +307,10 @@ def _load_assignment_lineage(
             raise FailClosedRuntimeError("worker dispatch failed closed: assignment mismatch")
     if result.get("worker_assignment_hash") != assignment["artifact_hash"]:
         raise FailClosedRuntimeError("worker dispatch failed closed: assignment lineage invalid")
-    request_replay = Path(evidence["worker_invocation_request_replay_reference"])
+    request_replay = _resolve_replay_reference(
+        evidence["worker_invocation_request_replay_reference"],
+        anchor=assignment_replay_path,
+    )
     request_reconstructed = reconstruct_worker_invocation_request_replay(request_replay)
     if request_reconstructed.get("worker_invocation_request_id") != assignment["worker_invocation_request_reference"]:
         raise FailClosedRuntimeError("worker dispatch failed closed: invocation request lineage mismatch")
@@ -656,9 +663,12 @@ def _matching_bridge_for_assignment(
         if not isinstance(evidence, dict):
             return None
         _verify_artifact_hash(evidence, "worker assignment evidence artifact")
+        request_replay_path = _resolve_replay_reference(
+            evidence["worker_invocation_request_replay_reference"],
+            anchor=assignment_replay_path,
+        )
         request_wrapper = load_json(
-            Path(evidence["worker_invocation_request_replay_reference"])
-            / "002_invocation_request_artifact_recorded.json"
+            request_replay_path / "002_invocation_request_artifact_recorded.json"
         )
         _verify_wrapper_hash(request_wrapper)
         request = request_wrapper.get("artifact")
@@ -670,7 +680,8 @@ def _matching_bridge_for_assignment(
         auth_reference = (request.get("replay_references") or {}).get("execution_authorization_replay_reference")
         if not auth_reference:
             return None
-        auth_wrapper = load_json(Path(auth_reference) / "000_authorization_request_recorded.json")
+        auth_replay_path = _resolve_replay_reference(auth_reference, anchor=request_replay_path)
+        auth_wrapper = load_json(auth_replay_path / "000_authorization_request_recorded.json")
         _verify_wrapper_hash(auth_wrapper)
         auth_request = auth_wrapper.get("artifact")
         if not isinstance(auth_request, dict):
@@ -712,6 +723,17 @@ def _worker_assignment_already_dispatched(
         if dispatch.get("worker_assignment_hash") == worker_assignment_hash:
             return True
     return False
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _assignment_authority_continuity(assignment: dict[str, Any]) -> bool:

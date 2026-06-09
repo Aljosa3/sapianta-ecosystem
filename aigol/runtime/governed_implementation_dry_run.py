@@ -149,7 +149,7 @@ def reconstruct_governed_implementation_dry_run_replay(replay_dir: str | Path) -
         raise FailClosedRuntimeError("governed implementation dry run candidate hash mismatch")
     if packet["packet_hash"] != _packet_hash(packet):
         raise FailClosedRuntimeError("governed implementation dry run packet hash mismatch")
-    handoff = _load_handoff(Path(candidate["handoff_replay_reference"]))
+    handoff = _load_handoff(_resolve_replay_reference(candidate["handoff_replay_reference"], anchor=replay_path))
     if handoff["handoff_id"] != candidate["handoff_reference"]:
         raise FailClosedRuntimeError("governed implementation dry run handoff continuity mismatch")
     return {
@@ -187,6 +187,17 @@ def render_governed_implementation_dry_run_summary(capture: dict[str, Any]) -> s
     if capture.get("failure_reason"):
         lines.append(f"failure_reason: {capture['failure_reason']}")
     return "\n".join(lines)
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _load_handoff(replay_path: Path) -> dict[str, Any]:

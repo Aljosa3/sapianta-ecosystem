@@ -308,9 +308,15 @@ def reconstruct_domain_execution_ready_bridge_replay(replay_dir: str | Path) -> 
     if returned.get("bridge_hash") != bridge["artifact_hash"]:
         raise FailClosedRuntimeError("domain execution-ready bridge returned lineage mismatch")
     if bridge["bridge_status"] != FAILED_CLOSED:
-        execution_ready_replay_path = Path(bridge["execution_ready_replay_reference"])
+        execution_ready_replay_path = _resolve_replay_reference(
+            bridge["execution_ready_replay_reference"],
+            anchor=replay_path,
+        )
         _load_domain_approval_entry_lineage(
-            Path(bridge["domain_approval_binding_replay_reference"]),
+            _resolve_replay_reference(
+                bridge["domain_approval_binding_replay_reference"],
+                anchor=replay_path,
+            ),
             approved_domain=bridge["approved_domain"],
         )
         _load_execution_ready_artifacts(execution_ready_replay_path)
@@ -349,6 +355,17 @@ def render_domain_execution_ready_bridge_summary(capture: dict[str, Any]) -> str
             "No authorization, worker request, dispatch, invocation, execution, repair, or retry was created.",
         ]
     )
+
+
+def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
+    replay_path = Path(_require_string(reference, "replay_reference"))
+    if replay_path.is_absolute() or replay_path.exists():
+        return replay_path
+    for parent in (anchor, *anchor.parents):
+        candidate = parent / replay_path
+        if candidate.exists():
+            return candidate
+    return replay_path
 
 
 def _load_domain_approval_entry_lineage(replay_path: Path, *, approved_domain: str) -> dict[str, Any]:
