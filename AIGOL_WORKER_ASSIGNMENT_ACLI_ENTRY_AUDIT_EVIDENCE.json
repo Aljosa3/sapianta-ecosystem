@@ -1,0 +1,96 @@
+{
+  "artifact_type": "AIGOL_WORKER_ASSIGNMENT_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_WORKER_ASSIGNMENT_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09",
+  "scope": {
+    "from_stage": "WORKER_INVOCATION_REQUEST_CREATED",
+    "to_stage": "WORKER_ASSIGNED",
+    "workflow": "FreshDomain",
+    "mode": "audit_only"
+  },
+  "located_runtimes": {
+    "worker_assignment_runtime": {
+      "runtime_version": "AIGOL_WORKER_ASSIGNMENT_RUNTIME_V1",
+      "module": "aigol/runtime/worker_assignment_runtime.py",
+      "entry_point": "assign_worker_from_invocation_request",
+      "input_replay": "worker_invocation_request_replay_reference",
+      "required_status": "WORKER_INVOCATION_REQUEST_CREATED",
+      "success_status": "WORKER_ASSIGNED"
+    },
+    "worker_dispatch_runtime": {
+      "runtime_version": "AIGOL_WORKER_DISPATCH_RUNTIME_V1",
+      "module": "aigol/runtime/worker_dispatch_runtime.py",
+      "entry_point": "dispatch_assigned_worker",
+      "required_status": "WORKER_ASSIGNED",
+      "success_status": "WORKER_DISPATCHED"
+    },
+    "worker_invocation_runtime": {
+      "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+      "module": "aigol/runtime/worker_invocation_runtime.py",
+      "entry_point": "invoke_dispatched_worker",
+      "required_status": "WORKER_DISPATCHED",
+      "success_status": "WORKER_INVOKED"
+    }
+  },
+  "freshdomain_acli_routing_probe": [
+    {
+      "prompt": "Assign worker for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Assign FreshDomain worker.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain to worker assignment.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    },
+    {
+      "prompt": "Create worker assignment for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Assign worker from FreshDomain worker request.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain worker request to assignment.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    }
+  ],
+  "registered_freshdomain_continuation_workflows": [
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+    "DOMAIN_EXECUTION_AUTHORIZATION",
+    "DOMAIN_WORKER_REQUEST"
+  ],
+  "direct_runtime_validation": {
+    "command": "python -m pytest tests/test_worker_assignment_runtime_v1.py::test_worker_invocation_request_becomes_worker_assigned tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked",
+    "result": "9 passed"
+  },
+  "audit_findings": {
+    "worker_assignment_runtime_located": true,
+    "worker_assigned_direct_runtime_reachable": true,
+    "worker_dispatch_direct_runtime_reachable": true,
+    "worker_invocation_direct_runtime_reachable": true,
+    "canonical_freshdomain_worker_assignment_acli_entry_exists": false,
+    "canonical_freshdomain_worker_assignment_acli_entry_working": false,
+    "freshdomain_worker_assigned_from_acli": false,
+    "freshdomain_worker_dispatched_from_acli": false,
+    "freshdomain_worker_invoked_from_acli": false,
+    "next_blocking_component": "CANONICAL_WORKER_ASSIGNMENT_ACLI_ENTRY_AND_REPLAY_BINDING"
+  },
+  "non_goals_preserved": {
+    "worker_execution_implemented": false,
+    "worker_behavior_changes_implemented": false,
+    "dispatch_changes_implemented": false,
+    "architecture_redesign_implemented": false
+  }
+}
