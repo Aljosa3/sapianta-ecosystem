@@ -1,0 +1,75 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_ACLI_ENTRY_FIX_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_CANONICAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_ACLI_ENTRY_FIX_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "implemented": [
+      "canonical conversational route registration for AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+      "approval-entry detection for Authorize <Domain> domain artifact request",
+      "interactive ACLI binding to the existing domain handoff review approval path",
+      "routing visibility alignment with the canonical stage"
+    ],
+    "not_implemented": [
+      "new worker",
+      "worker execution",
+      "worker invocation",
+      "repair runtime",
+      "retry behavior",
+      "architecture redesign"
+    ]
+  },
+  "supported_prompts": [
+    "Approve FreshDomain for domain artifact creation.",
+    "Approve reviewed FreshDomain workflow.",
+    "Continue FreshDomain to authorization.",
+    "Authorize FreshDomain domain artifact request."
+  ],
+  "routing_evidence": {
+    "canonical_workflow_id": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "existing_runtime": "domain_handoff_review_approval_binding_runtime",
+    "default_provider_fallback_prevented": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created_by_router": false,
+    "execution_requested_by_router": false
+  },
+  "binding_evidence": {
+    "approval_status": "DOMAIN_APPROVAL_BOUND",
+    "authorization_entry_status": "AUTHORIZATION_ENTRY_CREATED",
+    "execution_ready_continuation_status": "EXECUTION_READY_CONTINUATION_CREATED",
+    "domain_created": false,
+    "worker_invoked": false,
+    "execution_started": false
+  },
+  "regression_tests": [
+    {
+      "test": "tests/test_conversational_cli_runtime_v1.py::test_authorized_domain_artifact_request_prompts_do_not_fall_back_to_provider",
+      "result": "PASSED"
+    },
+    {
+      "test": "tests/test_domain_handoff_review_approval_binding_runtime_v1.py::test_acli_authorize_prompt_binds_reviewed_freshdomain_without_provider_fallback",
+      "result": "PASSED"
+    },
+    {
+      "test": "tests/test_domain_handoff_review_approval_binding_runtime_v1.py::test_approval_entry_intent_detection_supports_required_prompts",
+      "result": "PASSED"
+    }
+  ],
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_domain_handoff_review_approval_binding_runtime_v1.py",
+      "result": "41 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_ACLI_ENTRY_REGISTERED": true,
+    "AUTHORIZE_PROMPT_SUPPORTED": true,
+    "DEFAULT_PROVIDER_FALLBACK_PREVENTED": true,
+    "AUTHORIZATION_ENTRY_REACHABLE_FROM_ACLI": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "READY_FOR_REAL_AUTHORIZATION_ENTRY_ACCEPTANCE": true
+  }
+}
