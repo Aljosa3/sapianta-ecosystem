@@ -1,0 +1,66 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_WORKER_REQUEST_ACLI_ENTRY_AND_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_CANONICAL_WORKER_REQUEST_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "created_at": "2026-06-09",
+  "implemented_scope": {
+    "canonical_acli_entry_registered": true,
+    "worker_request_intent_detection_registered": true,
+    "latest_execution_authorization_binding_registered": true,
+    "existing_worker_request_runtime_invoked": true,
+    "worker_request_created": true
+  },
+  "supported_prompts": [
+    "Create worker request for FreshDomain.",
+    "Continue FreshDomain to worker request.",
+    "Create authorized worker request for FreshDomain."
+  ],
+  "runtime_bindings": {
+    "conversational_workflow_id": "DOMAIN_WORKER_REQUEST",
+    "conversational_runtime": "aigol/runtime/conversational_cli_runtime.py",
+    "acli_runtime": "aigol/cli/aigol_cli.py",
+    "worker_request_runtime": "AIGOL_WORKER_INVOCATION_REQUEST_RUNTIME_V1",
+    "worker_request_entry_point": "create_worker_invocation_request",
+    "binding_lookup": "find_latest_domain_execution_authorization"
+  },
+  "replay_binding": {
+    "input_stage": "EXECUTION_AUTHORIZED",
+    "input_replay": "execution_authorization",
+    "domain_identity_source": "domain_execution_ready_bridge.approved_domain",
+    "output_stage": "WORKER_INVOCATION_REQUEST_CREATED",
+    "output_replay": "worker_invocation_request",
+    "duplicate_request_guard": true
+  },
+  "authority_boundaries": {
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "worker_execution_changed": false,
+    "repair_runtime_implemented": false,
+    "retry_runtime_implemented": false
+  },
+  "regression_coverage": [
+    "canonical worker-request route prompts",
+    "worker-request entry intent detection",
+    "latest domain execution authorization lookup",
+    "already-requested authorization exclusion",
+    "full ACLI FreshDomain worker request creation",
+    "authority boundary preservation"
+  ],
+  "validation": {
+    "focused_tests": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py tests/test_worker_invocation_request_runtime_v1.py::test_execution_authorized_becomes_worker_invocation_request_created tests/test_worker_invocation_request_runtime_v1.py::test_worker_invocation_request_runtime_preserves_authority_boundaries",
+      "result": "66 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_WORKER_REQUEST_ACLI_ENTRY_REGISTERED": true,
+    "WORKER_REQUEST_CREATED": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_WORKER_ASSIGNMENT_ACCEPTANCE": true
+  }
+}
