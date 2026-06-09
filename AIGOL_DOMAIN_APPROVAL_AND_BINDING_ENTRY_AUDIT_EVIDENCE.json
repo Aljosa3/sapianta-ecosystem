@@ -1,0 +1,109 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_APPROVAL_AND_BINDING_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "audit_id": "AIGOL_DOMAIN_APPROVAL_AND_BINDING_ENTRY_AUDIT_V1",
+  "scope": {
+    "runtime_changes_implemented": false,
+    "new_worker_implemented": false,
+    "repair_runtime_implemented": false,
+    "retries_implemented": false,
+    "architecture_redesign_performed": false
+  },
+  "observed_prompt": {
+    "prompt": "Approve FreshDomain for domain artifact creation.",
+    "routing_status": "WORKFLOW_SELECTED",
+    "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "existing_runtime": "prompt_to_conversation_integration",
+    "expected_workflow": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY"
+  },
+  "approval_entry_points": {
+    "read_only_approval_command_group": {
+      "file": "aigol/cli/commands/approval.py",
+      "exists": true,
+      "creates_approval": false,
+      "supported_artifact_types": [
+        "PROPOSAL_APPROVAL_ARTIFACT_V1",
+        "IMPROVEMENT_APPROVAL_ARTIFACT_V1"
+      ],
+      "supports_freshdomain_handoff_review": false
+    },
+    "generic_approval_engine": {
+      "path": "aigol/runtime/approval/",
+      "exists": true,
+      "creates_human_domain_approval_binding": false,
+      "supports_freshdomain_handoff_review": false
+    },
+    "proposal_approval_runtime": {
+      "file": "aigol/runtime/proposal_approval_runtime.py",
+      "exists": true,
+      "input_artifact": "PROPOSAL_RUNTIME_ARTIFACT_V1",
+      "output_artifact": "PROPOSAL_APPROVAL_ARTIFACT_V1",
+      "supports_freshdomain_handoff_review": false
+    },
+    "improvement_approval_runtime": {
+      "file": "aigol/runtime/improvement_approval_runtime.py",
+      "exists": true,
+      "output_artifact": "IMPROVEMENT_APPROVAL_ARTIFACT_V1",
+      "supports_freshdomain_handoff_review": false
+    },
+    "implementation_approval_resume": {
+      "file": "aigol/runtime/implementation_approval_resume.py",
+      "exists": true,
+      "requires_pending_approval_required_state": true,
+      "freshdomain_creates_pending_approval_required_state": false,
+      "supports_freshdomain_handoff_review": false
+    }
+  },
+  "authorization_entry_points": {
+    "execution_authorization_runtime": {
+      "file": "aigol/runtime/execution_authorization_runtime.py",
+      "function": "authorize_execution_ready",
+      "exists": true,
+      "required_input": "execution_ready_replay_reference",
+      "freshdomain_has_required_input": false
+    }
+  },
+  "worker_request_entry_points": {
+    "worker_invocation_request_runtime": {
+      "file": "aigol/runtime/worker_invocation_request_runtime.py",
+      "function": "create_worker_invocation_request",
+      "exists": true,
+      "required_input": "execution_authorization_replay_reference",
+      "freshdomain_has_required_input": false
+    }
+  },
+  "freshdomain_expected_path": [
+    "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "DOMAIN_APPROVAL_BINDING_ARTIFACT_V1",
+    "OCS_EXECUTION_HANDOFF_ARTIFACT_V1_OR_EQUIVALENT_EXECUTION_INTAKE",
+    "EXECUTION_READY_STATUS_ARTIFACT_V1",
+    "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "WORKER_INVOCATION_REQUEST_ARTIFACT_V1"
+  ],
+  "routing_gap": {
+    "domain_approval_prompt_detected": false,
+    "domain_approval_workflow_registered": false,
+    "handoff_review_approval_state_created": false,
+    "operator_prompt_can_continue_freshdomain": false,
+    "fallback_selected": true
+  },
+  "minimal_missing_component": {
+    "component": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME",
+    "recommended_milestone": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1",
+    "required_outputs": [
+      "DOMAIN_APPROVAL_BINDING_ARTIFACT_V1",
+      "readiness-compatible approval_reference",
+      "readiness-compatible approval_hash",
+      "scope preservation evidence"
+    ]
+  },
+  "final_outputs": {
+    "DOMAIN_APPROVAL_ENTRY_EXISTS": "FALSE_FOR_FRESHDOMAIN_HANDOFF_REVIEW",
+    "DOMAIN_APPROVAL_ROUTING_EXISTS": false,
+    "ACLI_CAN_CONTINUE_FRESHDOMAIN": false,
+    "EXPECTED_APPROVAL_PATH_IDENTIFIED": true,
+    "NEXT_BLOCKING_COMPONENT": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1"
+  }
+}
