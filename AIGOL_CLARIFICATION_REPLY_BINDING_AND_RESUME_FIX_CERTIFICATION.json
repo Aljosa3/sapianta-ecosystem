@@ -1,0 +1,63 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_REPLY_BINDING_AND_RESUME_FIX_CERTIFICATION_V1",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_CLARIFICATION_REPLY_BINDING_AND_RESUME_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "certification_scope": {
+    "clarification_reply_detection_fixed": true,
+    "clarification_reply_binding_fixed": true,
+    "clarification_resolution_fixed": true,
+    "workflow_resume_event_fixed": true,
+    "provider_execution_implemented": false,
+    "worker_execution_implemented": false,
+    "authorization_implemented": false,
+    "domain_creation_implemented": false,
+    "repair_implemented": false,
+    "retry_implemented": false
+  },
+  "certified_behavior": {
+    "freshdomain_clarification_completes_successfully": true,
+    "structured_reply_with_governed_domain_text_binds_as_reply": true,
+    "reply_bound_to_active_clarification": true,
+    "clarification_identity_preserved": true,
+    "workflow_resume_ready_recorded": true,
+    "unrelated_reply_fails_closed": true,
+    "default_provider_fallback_prevented_for_unrelated_reply": true,
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true
+  },
+  "authority_boundary_certification": {
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "validation": {
+    "targeted_tests": {
+      "command": "python -m pytest tests/test_clarification_continuity_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+      "result": "PASSED",
+      "tests_passed": 44
+    }
+  },
+  "non_goals_preserved": {
+    "no_provider_execution": true,
+    "no_worker_execution": true,
+    "no_authorization": true,
+    "no_domain_creation": true,
+    "no_repair_runtime": true,
+    "no_retries": true,
+    "no_architectural_redesign": true
+  },
+  "final_outputs": {
+    "CLARIFICATION_REPLY_DETECTED": "TRUE",
+    "CLARIFICATION_REPLY_BOUND": "TRUE",
+    "CLARIFICATION_RESOLVED": "TRUE",
+    "WORKFLOW_RESUMED": "TRUE_AS_RESUME_READY_NO_EXECUTION_STARTED",
+    "REPLAY_CONTINUITY_PRESERVED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "READY_FOR_REAL_HUMAN_DOMAIN_WORKFLOW": "TRUE"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_REPLY_BINDING_AND_RESUME_FIX_ACCEPTANCE_EVIDENCE_V1",
+  "artifact_version": 1,
+  "fix_id": "AIGOL_CLARIFICATION_REPLY_BINDING_AND_RESUME_FIX_V1",
+  "created_at": "2026-06-08T00:00:00+00:00",
+  "source_context": {
+    "clarification_request_creation": "WORKING",
+    "clarification_state_isolation": "WORKING",
+    "reply_binding_before_fix": "STRUCTURED_REPLY_COULD_ROUTE_AS_NEW_REQUEST_OR_DEFAULT_CONVERSATION",
+    "workflow_resume_before_fix": "NOT_REACHED_FOR_STRUCTURED_REPLY"
+  },
+  "root_cause": "Reply gate checked new governed request detection before complete missing-information reply detection.",
+  "implemented_files": [
+    "aigol/runtime/clarification_continuity_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_clarification_continuity_runtime_v1.py"
+  ],
+  "reply_binding_requirements": {
+    "active_clarification_required": true,
+    "missing_information_scope_must_match": true,
+    "clarification_identity_preserved": true,
+    "clarification_replay_lineage_preserved": true,
+    "clarification_response_reconstructable_from_replay": true
+  },
+  "success_scenario": {
+    "initial_prompt": "Create a new governed domain called FreshDomain.",
+    "clarification_required": true,
+    "proposed_domain": "FreshDomain",
+    "operator_reply_contains": [
+      "primary purpose",
+      "expected capabilities",
+      "target users"
+    ],
+    "reply_contains_governed_domain_words": true,
+    "clarification_reply_detected": true,
+    "clarification_reply_bound": true,
+    "clarification_resolved": true,
+    "workflow_resumed": true,
+    "next_governed_workflow_stage": "OCS_OR_EXECUTION_HANDOFF_REVIEW",
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false
+  },
+  "fail_closed_evidence": {
+    "unrelated_reply_to_active_clarification": "FAILED_CLOSED",
+    "failure_reason": "clarification continuity failed closed: reply does not match active clarification scope",
+    "default_provider_conversation_invoked": false
+  },
+  "replay_evidence": {
+    "reply_binding_artifact": "CLARIFICATION_REPLY_BINDING_ARTIFACT_V1",
+    "response_artifact": "CLARIFICATION_RESPONSE_ARTIFACT_V1",
+    "resolution_artifact": "CLARIFICATION_RESOLUTION_ARTIFACT_V1",
+    "resume_artifact": "CLARIFICATION_WORKFLOW_RESUME_ARTIFACT_V1",
+    "replay_order": [
+      "clarification_reply_binding_recorded",
+      "clarification_response_recorded",
+      "clarification_resolution_recorded",
+      "clarification_workflow_resume_recorded"
+    ]
+  },
+  "test_evidence": {
+    "command": "python -m pytest tests/test_clarification_continuity_runtime_v1.py tests/test_conversational_cli_runtime_v1.py tests/test_unknown_domain_and_clarification_ux_v1.py",
+    "result": "PASSED",
+    "tests_collected": 44,
+    "tests_passed": 44
+  },
+  "final_outputs": {
+    "CLARIFICATION_REPLY_DETECTED": "TRUE",
+    "CLARIFICATION_REPLY_BOUND": "TRUE",
+    "CLARIFICATION_RESOLVED": "TRUE",
+    "WORKFLOW_RESUMED": "TRUE_AS_RESUME_READY_NO_EXECUTION_STARTED",
+    "REPLAY_CONTINUITY_PRESERVED": "TRUE",
+    "FAIL_CLOSED_PRESERVED": "TRUE",
+    "READY_FOR_REAL_HUMAN_DOMAIN_WORKFLOW": "TRUE"
+  }
+}
