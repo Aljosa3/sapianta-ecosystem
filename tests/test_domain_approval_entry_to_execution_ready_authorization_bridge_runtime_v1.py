@@ -30,6 +30,13 @@ from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 from aigol.runtime.unknown_domain_clarification_runtime import run_unknown_domain_clarification_workflow
+from aigol.runtime.worker_invocation_request_runtime import (
+    WORKER_INVOCATION_REQUEST_CREATED,
+    create_worker_invocation_request,
+    detect_domain_worker_request_entry_intent,
+    find_latest_domain_execution_authorization,
+    reconstruct_worker_invocation_request_replay,
+)
 
 
 CREATED_AT = "2026-06-09T00:00:00Z"
@@ -45,6 +52,7 @@ REPLY = "\n".join(
 APPROVAL_PROMPT = "Approve FreshDomain for domain artifact creation."
 EXECUTION_READY_PROMPT = "Create execution-ready authorization packet for FreshDomain."
 EXECUTION_AUTHORIZATION_PROMPT = "Authorize execution-ready packet for FreshDomain."
+WORKER_REQUEST_PROMPT = "Create worker request for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -316,6 +324,102 @@ def test_acli_execution_authorization_prompt_authorizes_freshdomain_without_work
     assert replay["authorization_status"] == EXECUTION_AUTHORIZED
     assert "Authorization Status: EXECUTION_AUTHORIZED" in output[4]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[4]
+
+
+def test_worker_request_entry_intent_detection_supports_required_prompts() -> None:
+    prompts = {
+        "Create worker request for FreshDomain.": "CREATE_WORKER_REQUEST",
+        "Continue FreshDomain to worker request.": "CONTINUE_TO_WORKER_REQUEST",
+        "Create authorized worker request for FreshDomain.": "CREATE_AUTHORIZED_WORKER_REQUEST",
+    }
+
+    for prompt, action in prompts.items():
+        detected = detect_domain_worker_request_entry_intent(prompt)
+
+        assert detected["worker_request_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+        assert detected["worker_request_action"] == action
+
+
+def test_find_latest_domain_execution_authorization_excludes_requested_entries(tmp_path) -> None:
+    session_root = tmp_path / "session"
+    approval = _approval_entry(
+        tmp_path,
+        replay_dir=session_root / "TURN-000003" / "domain_approval_binding",
+    )
+    bridge = bridge_domain_approval_entry_to_execution_ready(
+        bridge_id="DOMAIN-READY-BRIDGE-FRESHDOMAIN-000001",
+        domain_approval_binding_replay_reference=approval["domain_approval_binding_replay_reference"],
+        approved_domain="FreshDomain",
+        created_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000004" / "domain_execution_ready_bridge",
+    )
+    authorization = authorize_execution_ready(
+        authorization_id="DOMAIN-AUTHORIZATION-FRESHDOMAIN-000001",
+        execution_ready_replay_reference=bridge["execution_ready_replay_reference"],
+        authorizing_actor="HUMAN_OPERATOR",
+        authorized_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000005" / "execution_authorization",
+    )
+
+    latest = find_latest_domain_execution_authorization(session_root=session_root, domain_name="FreshDomain")
+
+    assert latest["execution_authorization_replay_reference"] == authorization[
+        "execution_authorization_replay_reference"
+    ]
+    assert latest["domain_name"] == "FreshDomain"
+
+    create_worker_invocation_request(
+        invocation_request_id="DOMAIN-WORKER-REQUEST-FRESHDOMAIN-000001",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="HUMAN_OPERATOR",
+        requested_at=CREATED_AT,
+        replay_dir=session_root / "TURN-000006" / "worker_invocation_request",
+    )
+
+    with pytest.raises(FailClosedRuntimeError, match="matching execution authorization not found"):
+        find_latest_domain_execution_authorization(session_root=session_root, domain_name="FreshDomain")
+
+
+def test_acli_worker_request_prompt_creates_request_without_assignment_or_invocation(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    sixth = result["turns"][5]
+    replay = reconstruct_worker_invocation_request_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000006"
+        / "worker_invocation_request"
+    )
+
+    assert result["failed_turns"] == 0
+    assert sixth["response_source"] == "DOMAIN_WORKER_REQUEST"
+    assert sixth["worker_invocation_request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert sixth["worker_request_created"] is True
+    assert sixth["worker_assigned"] is False
+    assert sixth["worker_dispatched"] is False
+    assert sixth["worker_invoked"] is False
+    assert sixth["execution_started"] is False
+    assert sixth["domain_created"] is False
+    assert replay["request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert "Request Status: WORKER_INVOCATION_REQUEST_CREATED" in output[5]
+    assert "No Worker has been assigned, dispatched, invoked, or executed." in output[5]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[5]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
