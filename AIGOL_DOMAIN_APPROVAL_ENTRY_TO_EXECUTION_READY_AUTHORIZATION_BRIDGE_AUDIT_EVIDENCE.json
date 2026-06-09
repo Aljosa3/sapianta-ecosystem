@@ -1,0 +1,140 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_AUDIT_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "audit_only": true,
+    "execution_authorization_runtime_changes": false,
+    "worker_request_creation": false,
+    "worker_invocation": false,
+    "execution": false,
+    "repair": false,
+    "retry": false
+  },
+  "execution_authorization_inputs": {
+    "identified": true,
+    "runtime": "aigol/runtime/execution_authorization_runtime.py",
+    "runtime_version": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+    "entrypoint": "authorize_execution_ready",
+    "required_parameters": [
+      "authorization_id",
+      "execution_ready_replay_reference",
+      "authorizing_actor",
+      "authorized_at",
+      "replay_dir",
+      "authorization_expires_at"
+    ],
+    "critical_input": "execution_ready_replay_reference",
+    "source_lines": {
+      "entrypoint": "aigol/runtime/execution_authorization_runtime.py:39",
+      "lineage_loader": "aigol/runtime/execution_authorization_runtime.py:179"
+    }
+  },
+  "execution_ready_packet": {
+    "identified": true,
+    "required_replay_files": [
+      "000_execution_candidate_recorded.json",
+      "001_execution_packet_recorded.json",
+      "002_execution_validation_recorded.json",
+      "003_execution_ready_status_recorded.json"
+    ],
+    "required_artifact_types": [
+      "EXECUTION_CANDIDATE_ARTIFACT_V1",
+      "EXECUTION_PACKET_ARTIFACT_V1",
+      "EXECUTION_VALIDATION_ARTIFACT_V1",
+      "EXECUTION_READY_STATUS_ARTIFACT_V1"
+    ],
+    "required_status": "EXECUTION_READY",
+    "accepted_reconstructors": [
+      "reconstruct_governed_implementation_dry_run_replay",
+      "reconstruct_ocs_execution_readiness_replay"
+    ],
+    "required_authority_state": {
+      "execution_authorized": false,
+      "execution_state": "NOT_STARTED",
+      "execution_started": false
+    },
+    "source_lines": {
+      "expected_replay_shape": "aigol/runtime/execution_authorization_runtime.py:179",
+      "lineage_checks": "aigol/runtime/execution_authorization_runtime.py:204"
+    }
+  },
+  "domain_approval_entry_outputs": {
+    "runtime": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py",
+    "artifacts": [
+      "DOMAIN_APPROVAL_BINDING_ARTIFACT_V1",
+      "DOMAIN_AUTHORIZATION_ENTRY_ARTIFACT_V1",
+      "DOMAIN_EXECUTION_READY_CONTINUATION_ARTIFACT_V1",
+      "DOMAIN_APPROVAL_ENTRY_RETURNED_ARTIFACT_V1"
+    ],
+    "authorization_entry_status": "AUTHORIZATION_ENTRY_CREATED",
+    "execution_ready_continuation_status": "EXECUTION_READY_CONTINUATION_CREATED",
+    "execution_ready_replay_reference": null,
+    "execution_ready_created": false,
+    "authorization_created": false,
+    "source_lines": {
+      "authorization_entry": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:367",
+      "execution_ready_continuation": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py:392"
+    }
+  },
+  "trace": {
+    "current_path": [
+      "AUTHORIZATION_ENTRY_CREATED",
+      "DOMAIN_EXECUTION_READY_CONTINUATION_ARTIFACT_V1",
+      "execution_ready_replay_reference = null",
+      "STOP"
+    ],
+    "required_path": [
+      "AUTHORIZATION_ENTRY_CREATED",
+      "DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+      "EXECUTION_CANDIDATE_ARTIFACT_V1",
+      "EXECUTION_PACKET_ARTIFACT_V1",
+      "EXECUTION_VALIDATION_ARTIFACT_V1",
+      "EXECUTION_READY_STATUS_ARTIFACT_V1",
+      "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1"
+    ]
+  },
+  "gap_classification": {
+    "routing_gap": false,
+    "binding_gap": true,
+    "replay_conversion_gap": true,
+    "artifact_conversion_gap": true,
+    "execution_authorization_runtime_gap": false,
+    "worker_request_gap": false
+  },
+  "duplication_assessment": {
+    "duplicate_logic_found": "PARTIAL_REUSABLE_EXECUTION_READINESS_PATTERN_NO_DOMAIN_APPROVAL_ENTRY_BRIDGE",
+    "related_runtimes": [
+      "AIGOL_EXECUTION_READINESS_RUNTIME_V1",
+      "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+      "AIGOL_DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY_RUNTIME_V1"
+    ],
+    "bridge_already_exists_but_unreachable": false,
+    "notes": [
+      "OCS execution readiness already creates canonical execution-ready replay from OCS handoff artifacts.",
+      "Execution authorization already consumes canonical execution-ready replay.",
+      "No runtime was found that converts domain approval-entry artifacts into canonical execution-ready replay."
+    ]
+  },
+  "recommended_next_milestone": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1",
+  "authority_boundary": {
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "final_outputs": {
+    "EXECUTION_AUTHORIZATION_INPUTS_IDENTIFIED": true,
+    "EXECUTION_READY_PACKET_IDENTIFIED": true,
+    "AUTHORIZATION_ENTRY_CONVERSION_EXISTS": false,
+    "NEXT_BLOCKING_COMPONENT": "DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_PACKET_CONVERSION_RUNTIME",
+    "DUPLICATE_LOGIC_FOUND": "PARTIAL_REUSABLE_EXECUTION_READINESS_PATTERN_NO_DOMAIN_APPROVAL_ENTRY_BRIDGE",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1",
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": false
+  }
+}
