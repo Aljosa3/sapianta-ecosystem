@@ -176,6 +176,7 @@ from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
     CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE as CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE,
+    DOMAIN_EXECUTION_AUTHORIZATION as CONVERSATIONAL_DOMAIN_EXECUTION_AUTHORIZATION,
     DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE as CONVERSATIONAL_DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
@@ -223,6 +224,8 @@ from aigol.runtime.governed_implementation_dry_run import (
 )
 from aigol.runtime.execution_authorization_runtime import (
     authorize_execution_ready,
+    detect_domain_execution_authorization_entry_intent,
+    find_latest_domain_execution_ready_bridge,
     render_execution_authorization_summary,
 )
 from aigol.runtime.execution_runtime import start_execution
@@ -2573,6 +2576,45 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_EXECUTION_AUTHORIZATION:
+                execution_authorization_entry_intent = detect_domain_execution_authorization_entry_intent(human_prompt)
+                try:
+                    latest_execution_ready_bridge = find_latest_domain_execution_ready_bridge(
+                        session_root=session_root,
+                        domain_name=execution_authorization_entry_intent["domain_name"],
+                    )
+                    execution_authorization_capture = authorize_execution_ready(
+                        authorization_id=f"{prompt_id}:EXECUTION-AUTHORIZATION",
+                        execution_ready_replay_reference=latest_execution_ready_bridge[
+                            "execution_ready_replay_reference"
+                        ],
+                        authorizing_actor=args.operator_context or "HUMAN_OPERATOR",
+                        authorized_at=created_at,
+                        replay_dir=turn_root / "execution_authorization",
+                    )
+                except Exception:
+                    execution_authorization_capture = authorize_execution_ready(
+                        authorization_id=f"{prompt_id}:EXECUTION-AUTHORIZATION",
+                        execution_ready_replay_reference="MISSING_EXECUTION_READY_REPLAY",
+                        authorizing_actor=args.operator_context or "HUMAN_OPERATOR",
+                        authorized_at=created_at,
+                        replay_dir=turn_root / "execution_authorization",
+                    )
+                if execution_authorization_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {execution_authorization_capture.get('failure_reason')}")
+                else:
+                    output_writer(render_execution_authorization_summary(execution_authorization_capture))
+                turns.append(
+                    _interactive_domain_execution_authorization_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        execution_authorization_capture=execution_authorization_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE:
                 domain_reference_capture = run_semantic_similarity_domain_reference_resolution(
                     resolution_id=f"{prompt_id}:SEMANTIC-SIMILARITY-DOMAIN-REFERENCE",
@@ -3583,6 +3625,51 @@ def _interactive_domain_execution_ready_bridge_turn_summary(
         "authorization_created": False,
         "worker_request_created": False,
         "execution_requested": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_execution_authorization_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    execution_authorization_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": execution_authorization_capture.get("authorization_status"),
+        "response_source": "DOMAIN_EXECUTION_AUTHORIZATION",
+        "fail_closed": execution_authorization_capture.get("fail_closed") is True,
+        "failure_reason": execution_authorization_capture.get("failure_reason"),
+        "replay_reference": execution_authorization_capture.get("execution_authorization_replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "execution_authorization_status": execution_authorization_capture.get("authorization_status"),
+        "execution_authorization_replay_reference": execution_authorization_capture.get(
+            "execution_authorization_replay_reference"
+        ),
+        "authorization_reference": execution_authorization_capture.get("authorization_reference"),
+        "approval_status": execution_authorization_capture.get("approval_status"),
+        "approval_reference": execution_authorization_capture.get("approval_reference"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": execution_authorization_capture.get("fail_closed") is not True,
+        "worker_request_created": False,
+        "execution_requested": False,
+        "execution_started": False,
         "domain_created": False,
         "governance_mutated": False,
         "replay_mutated": False,

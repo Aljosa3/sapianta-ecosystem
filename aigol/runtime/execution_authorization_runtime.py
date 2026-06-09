@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    DOMAIN_EXECUTION_READY_BRIDGED,
+    reconstruct_domain_execution_ready_bridge_replay,
+)
 from aigol.runtime.governed_implementation_dry_run import (
     EXECUTION_CANDIDATE_ARTIFACT_V1,
     EXECUTION_PACKET_ARTIFACT_V1,
@@ -34,6 +39,91 @@ REPLAY_STEPS = (
     "authorization_artifact_recorded",
     "authorization_result_recorded",
 )
+
+
+def detect_domain_execution_authorization_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain execution authorization."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^authorize\s+execution[-\s]ready\s+packet\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+execution\s+authorization$",
+        r"^authorize\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+execution[-\s]ready\s+workflow$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("authorize execution"):
+                action = "AUTHORIZE_EXECUTION_READY_PACKET"
+            elif lowered.startswith("continue"):
+                action = "CONTINUE_EXECUTION_AUTHORIZATION"
+            else:
+                action = "AUTHORIZE_EXECUTION_READY_WORKFLOW"
+            return {
+                "execution_authorization_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "execution_authorization_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "execution_authorization_entry_intent_detected": False,
+        "domain_name": None,
+        "execution_authorization_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_execution_ready_bridge(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest unconsumed execution-ready bridge replay for a domain."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("execution authorization failed closed: session root missing")
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/domain_execution_ready_bridge")):
+        try:
+            reconstructed = reconstruct_domain_execution_ready_bridge_replay(path)
+            wrapper = load_json(path / "bridge" / "000_domain_execution_ready_bridge_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            artifact = wrapper.get("artifact")
+            if not isinstance(artifact, dict):
+                continue
+            _verify_artifact_hash(artifact, "domain execution-ready bridge artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("bridge_status") != DOMAIN_EXECUTION_READY_BRIDGED:
+            continue
+        if reconstructed.get("execution_status") != EXECUTION_READY:
+            continue
+        if str(reconstructed.get("approved_domain") or "").lower() != domain.lower():
+            continue
+        if reconstructed.get("authorization_runtime_compatible") is not True:
+            continue
+        if _execution_ready_bridge_already_authorized(
+            root,
+            execution_ready_replay_reference=str(reconstructed.get("execution_ready_replay_reference") or ""),
+            execution_ready_replay_hash=str(reconstructed.get("execution_ready_replay_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "domain_execution_ready_bridge_replay_reference": str(path),
+                "domain_execution_ready_bridge_artifact": deepcopy(artifact),
+                "execution_ready_replay_reference": reconstructed["execution_ready_replay_reference"],
+                "execution_ready_replay_hash": reconstructed["execution_ready_replay_hash"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("execution authorization failed closed: matching execution-ready bridge not found")
+    return candidates[-1]
 
 
 def authorize_execution_ready(
@@ -458,6 +548,32 @@ def _capture(
     )
     capture["execution_authorization_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _execution_ready_bridge_already_authorized(
+    session_root: Path,
+    *,
+    execution_ready_replay_reference: str,
+    execution_ready_replay_hash: str,
+) -> bool:
+    for path in sorted(session_root.glob("TURN-*/execution_authorization")):
+        try:
+            reconstructed = reconstruct_execution_authorization_replay(path)
+            wrapper = load_json(path / "000_authorization_request_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            artifact = wrapper.get("artifact")
+            if not isinstance(artifact, dict):
+                continue
+            _verify_artifact_hash(artifact, "execution authorization request artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("authorization_status") != EXECUTION_AUTHORIZED:
+            continue
+        if artifact.get("execution_ready_replay_reference") == execution_ready_replay_reference:
+            return True
+        if artifact.get("execution_ready_replay_hash") == execution_ready_replay_hash:
+            return True
+    return False
 
 
 def _boundary_flags() -> dict[str, bool]:
