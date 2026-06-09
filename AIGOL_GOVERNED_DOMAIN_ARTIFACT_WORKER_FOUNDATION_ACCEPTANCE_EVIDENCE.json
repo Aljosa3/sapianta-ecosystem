@@ -1,0 +1,94 @@
+{
+  "artifact_type": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "milestone_id": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+  "implemented_files": [
+    "aigol/workers/domain_artifact_worker.py",
+    "aigol/workers/__init__.py",
+    "tests/test_governed_domain_artifact_worker_v1.py"
+  ],
+  "worker": {
+    "worker_id": "GOVERNED_DOMAIN_ARTIFACT_WORKER",
+    "worker_version": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+    "authorized_scope": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING",
+    "operation": "AUTHOR_DOMAIN_ARTIFACTS",
+    "request_type": "AUTHORIZED_WORKER_REQUEST_V1"
+  },
+  "allowed_outputs": [
+    "DOMAIN_DEFINITION_ARTIFACT_V1",
+    "DOMAIN_METADATA_ARTIFACT_V1",
+    "DOMAIN_REGISTRATION_ARTIFACT_V1",
+    "DOMAIN_GOVERNANCE_EVIDENCE_ARTIFACT_V1"
+  ],
+  "forbidden_operations": [
+    "domain approval",
+    "domain activation",
+    "live domain registry mutation",
+    "provider invocation",
+    "worker self-authorization",
+    "worker dispatch",
+    "worker invocation",
+    "orchestration",
+    "planning",
+    "memory mutation",
+    "replay mutation",
+    "autonomous continuation"
+  ],
+  "acceptance_sample": {
+    "domain_name": "FreshDomain",
+    "source_clarification_status": "WORKFLOW_RESUME_READY",
+    "next_governed_workflow_stage": "OCS_OR_EXECUTION_HANDOFF_REVIEW",
+    "execution_status": "SUCCEEDED",
+    "domain_definition_created": true,
+    "domain_metadata_created": true,
+    "domain_registration_created": true,
+    "governance_evidence_created": true,
+    "replay_reconstruction_domain": "FreshDomain",
+    "replay_reconstruction_status": "SUCCEEDED",
+    "domain_approved": false,
+    "domain_activated": false,
+    "live_registry_mutated": false,
+    "provider_invoked": false,
+    "worker_invoked": false
+  },
+  "replay": {
+    "steps": [
+      "000_domain_artifact_worker_request.json",
+      "001_domain_artifact_worker_result.json"
+    ],
+    "ordering_verified": true,
+    "wrapper_hash_verified": true,
+    "artifact_hash_verified": true,
+    "request_hash_continuity_verified": true,
+    "request_artifact_hash_continuity_verified": true,
+    "corruption_detection_tested": true
+  },
+  "regression_tests": {
+    "focused_command": "python -m pytest tests/test_governed_domain_artifact_worker_v1.py",
+    "focused_result": "9 passed in 0.10s",
+    "neighboring_lifecycle_command": "python -m pytest tests/test_governed_domain_artifact_worker_v1.py tests/test_first_real_domain_worker_v1.py tests/test_worker_runtime_v1.py tests/test_minimal_governed_worker_authorization_runtime_v1.py",
+    "neighboring_lifecycle_result": "52 passed in 0.19s",
+    "covered_cases": [
+      "domain artifacts authored",
+      "authorization replay reconstructs",
+      "domain worker replay reconstructs",
+      "scope mismatch fails closed",
+      "invalid domain name fails closed",
+      "missing expected capabilities fails closed",
+      "authority-bearing request rejected",
+      "worker unavailable fails closed",
+      "append-only replay violation fails closed",
+      "replay corruption detected"
+    ]
+  },
+  "final_outputs": {
+    "DOMAIN_ARTIFACT_WORKER_IMPLEMENTED": true,
+    "DOMAIN_DEFINITION_SUPPORTED": true,
+    "DOMAIN_METADATA_SUPPORTED": true,
+    "DOMAIN_REGISTRATION_SUPPORTED": "TRUE_AS_REGISTRATION_CANDIDATE_ARTIFACT",
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_FRESHDOMAIN_EXECUTION": "TRUE_WITH_GOVERNED_AUTHORIZATION_AND_REQUEST_BINDING_REQUIRED"
+  }
+}

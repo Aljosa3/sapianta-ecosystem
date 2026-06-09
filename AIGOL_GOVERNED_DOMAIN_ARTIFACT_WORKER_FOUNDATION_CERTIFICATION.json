@@ -1,0 +1,74 @@
+{
+  "artifact_type": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_CERTIFICATION",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "milestone_id": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+  "certification_status": "CERTIFIED",
+  "scope": {
+    "implemented": [
+      "governed domain artifact worker",
+      "authorized domain artifact request creation",
+      "domain artifact request validation",
+      "domain definition artifact output",
+      "domain metadata artifact output",
+      "domain registration candidate artifact output",
+      "domain governance evidence artifact output",
+      "append-only replay",
+      "replay reconstruction",
+      "fail-closed regression coverage"
+    ],
+    "not_implemented": [
+      "repair runtime",
+      "retries",
+      "autonomous domain approval",
+      "domain activation",
+      "live domain registry mutation",
+      "automatic ACLI-to-worker execution bridge",
+      "architecture redesign"
+    ]
+  },
+  "certified_worker": {
+    "worker_id": "GOVERNED_DOMAIN_ARTIFACT_WORKER",
+    "authorized_scope": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING",
+    "operation": "AUTHOR_DOMAIN_ARTIFACTS",
+    "request_type": "AUTHORIZED_WORKER_REQUEST_V1",
+    "domain_approval_authority": false,
+    "domain_activation_authority": false,
+    "live_registry_mutation_authority": false,
+    "provider_authority": false,
+    "worker_self_authorization": false,
+    "replay_mutation_authority": false
+  },
+  "certified_outputs": {
+    "domain_definition_supported": true,
+    "domain_metadata_supported": true,
+    "domain_registration_supported": "TRUE_AS_REGISTRATION_CANDIDATE_ARTIFACT",
+    "governance_evidence_supported": true,
+    "domain_identity_preserved": true,
+    "freshdomain_sample_succeeded": true
+  },
+  "boundary_guarantees": {
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true,
+    "authorization_boundaries_preserved": true,
+    "no_provider_invocation": true,
+    "no_worker_invocation": true,
+    "no_autonomous_domain_approval": true,
+    "no_live_registry_mutation": true
+  },
+  "readiness": {
+    "ready_for_freshdomain_execution": "TRUE_WITH_GOVERNED_AUTHORIZATION_AND_REQUEST_BINDING_REQUIRED",
+    "remaining_binding_gap": "CLARIFIED_DOMAIN_INTENT_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST",
+    "ready_for_unmediated_operator_domain_creation": false
+  },
+  "evidence_artifact": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_ACCEPTANCE_EVIDENCE.json",
+  "final_outputs": {
+    "DOMAIN_ARTIFACT_WORKER_IMPLEMENTED": true,
+    "DOMAIN_DEFINITION_SUPPORTED": true,
+    "DOMAIN_METADATA_SUPPORTED": true,
+    "DOMAIN_REGISTRATION_SUPPORTED": "TRUE_AS_REGISTRATION_CANDIDATE_ARTIFACT",
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_FRESHDOMAIN_EXECUTION": "TRUE_WITH_GOVERNED_AUTHORIZATION_AND_REQUEST_BINDING_REQUIRED"
+  }
+}
