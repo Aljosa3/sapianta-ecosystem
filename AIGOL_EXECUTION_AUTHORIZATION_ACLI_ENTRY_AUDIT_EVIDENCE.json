@@ -1,0 +1,97 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "audit_only": true,
+    "runtime_changes_implemented": false,
+    "acli_routing_changes_implemented": false,
+    "worker_request_created": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "execution_authorization_runtime": {
+    "located": true,
+    "runtime_version": "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+    "path": "aigol/runtime/execution_authorization_runtime.py",
+    "entrypoint": "authorize_execution_ready",
+    "output_status": "EXECUTION_AUTHORIZED"
+  },
+  "required_input": {
+    "execution_ready_replay_reference_identified": true,
+    "produced_by": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1",
+    "required_artifacts": [
+      "EXECUTION_CANDIDATE_ARTIFACT_V1",
+      "EXECUTION_PACKET_ARTIFACT_V1",
+      "EXECUTION_VALIDATION_ARTIFACT_V1",
+      "EXECUTION_READY_STATUS_ARTIFACT_V1"
+    ],
+    "required_status": "EXECUTION_READY"
+  },
+  "prompt_probe_results": [
+    {
+      "prompt": "Authorize FreshDomain execution-ready packet.",
+      "canonical_router_workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "reaches_execution_authorization": false
+    },
+    {
+      "prompt": "Authorize FreshDomain for execution.",
+      "canonical_router_workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "reaches_execution_authorization": false
+    },
+    {
+      "prompt": "Authorize execution-ready packet for FreshDomain.",
+      "canonical_router_workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "reaches_execution_authorization": false
+    },
+    {
+      "prompt": "Create execution authorization for FreshDomain.",
+      "canonical_router_workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "reaches_execution_authorization": false
+    },
+    {
+      "prompt": "Continue FreshDomain to execution authorization.",
+      "canonical_router_workflow_id": "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+      "reaches_execution_authorization": false,
+      "note": "routes to execution-ready bridge, not execution authorization"
+    }
+  ],
+  "reachability": {
+    "execution_authorized_reachable_direct_runtime": true,
+    "execution_authorized_reachable_from_acli": false,
+    "canonical_acli_entry_exists": false,
+    "canonical_acli_entry_working": false,
+    "replay_binding_exists": false
+  },
+  "approval_requirement": {
+    "additional_approval_required_after_execution_ready": false,
+    "approval_lineage_required_in_execution_ready_replay": true,
+    "fail_closed_if_approval_lineage_missing": true
+  },
+  "validation": {
+    "repository_search": "PASSED",
+    "prompt_probe": "PASSED",
+    "focused_pytest": {
+      "command": "python -m pytest tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_bridge_output_feeds_existing_execution_authorization_runtime tests/test_execution_authorization_runtime_v1.py::test_execution_ready_becomes_execution_authorized",
+      "result": "3 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "next_blocking_component": "CANONICAL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING",
+  "recommended_next_milestone": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "final_outputs": {
+    "EXECUTION_AUTHORIZATION_RUNTIME_LOCATED": true,
+    "EXECUTION_AUTHORIZATION_INPUT_REPLAY_IDENTIFIED": true,
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_SUPPORTED__INTENDED_AUTHORIZE_EXECUTION_READY_PACKET_FOR_FRESHDOMAIN",
+    "CANONICAL_ACLI_ENTRY_EXISTS": false,
+    "CANONICAL_ACLI_ENTRY_WORKING": false,
+    "EXECUTION_AUTHORIZED_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_ACLI",
+    "ADDITIONAL_APPROVAL_REQUIRED": false,
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING",
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": false
+  }
+}

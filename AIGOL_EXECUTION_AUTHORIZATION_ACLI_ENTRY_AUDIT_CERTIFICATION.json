@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AUDIT_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AUDIT_V1",
+  "certification_status": "CERTIFIED_BLOCKER_IDENTIFIED",
+  "certified_at": "2026-06-09T00:00:00Z",
+  "certification_scope": {
+    "execution_authorization_runtime_located": true,
+    "execution_authorization_input_replay_identified": true,
+    "canonical_acli_entry_exists": false,
+    "canonical_acli_entry_working": false,
+    "execution_authorized_reachable_direct_runtime": true,
+    "execution_authorized_reachable_from_acli": false,
+    "additional_approval_required": false,
+    "next_blocking_component_identified": true
+  },
+  "authority_boundaries": {
+    "runtime_changes_implemented": false,
+    "acli_routing_changes_implemented": false,
+    "provider_invoked": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "certification_basis": [
+    "AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1 is implemented",
+    "authorize_execution_ready consumes execution_ready_replay_reference",
+    "the FreshDomain execution-ready bridge output can feed the authorization runtime directly",
+    "no canonical conversational ACLI entry routes authorization prompts to authorize_execution_ready",
+    "no ACLI binding currently selects the latest execution-ready bridge replay for authorization"
+  ],
+  "validation": {
+    "repository_search": "PASSED",
+    "prompt_probe": "PASSED",
+    "focused_pytest": {
+      "command": "python -m pytest tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_bridge_output_feeds_existing_execution_authorization_runtime tests/test_execution_authorization_runtime_v1.py::test_execution_ready_becomes_execution_authorized",
+      "result": "3 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "next_blocking_component": "CANONICAL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING",
+  "recommended_next_milestone": "AIGOL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "final_outputs": {
+    "EXECUTION_AUTHORIZATION_RUNTIME_LOCATED": true,
+    "EXECUTION_AUTHORIZATION_INPUT_REPLAY_IDENTIFIED": true,
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_SUPPORTED__INTENDED_AUTHORIZE_EXECUTION_READY_PACKET_FOR_FRESHDOMAIN",
+    "CANONICAL_ACLI_ENTRY_EXISTS": false,
+    "CANONICAL_ACLI_ENTRY_WORKING": false,
+    "EXECUTION_AUTHORIZED_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_ACLI",
+    "ADDITIONAL_APPROVAL_REQUIRED": false,
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_EXECUTION_AUTHORIZATION_ACLI_ENTRY_AND_BINDING",
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": false
+  }
+}
