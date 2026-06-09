@@ -899,6 +899,51 @@ def test_acli_worker_invocation_prompt_invokes_worker_without_execution_or_resul
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[8]
 
 
+def test_acli_worker_invocation_continuation_creates_missing_assignment_and_dispatch(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                WORKER_INVOCATION_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    seventh = result["turns"][6]
+    session_root = tmp_path / "interactive_runtime" / SESSION_ID
+    assignment = reconstruct_worker_assignment_runtime_replay(
+        session_root / "TURN-000007" / "worker_assignment"
+    )
+    dispatch = reconstruct_worker_dispatch_replay(
+        session_root / "TURN-000007" / "worker_dispatch"
+    )
+    invocation = reconstruct_worker_invocation_replay(
+        session_root / "TURN-000007" / "worker_invocation"
+    )
+
+    assert result["failed_turns"] == 0
+    assert seventh["response_source"] == "DOMAIN_WORKER_INVOCATION"
+    assert assignment["assignment_status"] == WORKER_ASSIGNED
+    assert dispatch["dispatch_status"] == WORKER_DISPATCHED
+    assert invocation["invocation_status"] == WORKER_INVOKED
+    assert seventh["worker_invocation_status"] == WORKER_INVOKED
+    assert seventh["worker_assigned"] is True
+    assert seventh["worker_dispatched"] is True
+    assert seventh["worker_invoked"] is True
+    assert seventh["execution_started"] is False
+    assert "Assignment Status: WORKER_ASSIGNED" in output[6]
+    assert "Dispatch Status: WORKER_DISPATCHED" in output[6]
+    assert "Invocation Status: WORKER_INVOKED" in output[6]
+
+
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
     _bridge(tmp_path)
     path = tmp_path / "ready_bridge" / "execution_ready" / "000_execution_candidate_recorded.json"
