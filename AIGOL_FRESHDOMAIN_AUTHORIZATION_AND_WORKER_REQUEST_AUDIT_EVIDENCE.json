@@ -1,0 +1,101 @@
+{
+  "artifact_type": "AIGOL_FRESHDOMAIN_AUTHORIZATION_AND_WORKER_REQUEST_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "audit_id": "AIGOL_FRESHDOMAIN_AUTHORIZATION_AND_WORKER_REQUEST_AUDIT_V1",
+  "scope": {
+    "implemented_runtime_changes": false,
+    "worker_execution_implemented": false,
+    "repair_runtime_implemented": false,
+    "retries_implemented": false,
+    "architecture_redesign_performed": false
+  },
+  "located_entry_points": {
+    "authorization": {
+      "located": true,
+      "file": "aigol/runtime/execution_authorization_runtime.py",
+      "function": "authorize_execution_ready",
+      "required_input": "execution_ready_replay_reference",
+      "required_reconstructed_status": "EXECUTION_READY",
+      "required_terminal_artifact": "EXECUTION_READY_STATUS_ARTIFACT_V1",
+      "produced_artifacts": [
+        "EXECUTION_AUTHORIZATION_REQUEST_ARTIFACT_V1",
+        "EXECUTION_AUTHORIZATION_DECISION_ARTIFACT_V1",
+        "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+        "EXECUTION_AUTHORIZATION_RESULT_ARTIFACT_V1"
+      ]
+    },
+    "worker_request": {
+      "located": true,
+      "file": "aigol/runtime/worker_invocation_request_runtime.py",
+      "function": "create_worker_invocation_request",
+      "required_input": "execution_authorization_replay_reference",
+      "required_reconstructed_status": "EXECUTION_AUTHORIZED",
+      "required_terminal_artifact": "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+      "produced_artifacts": [
+        "WORKER_INVOCATION_REQUEST_EVIDENCE_ARTIFACT_V1",
+        "WORKER_INVOCATION_REQUEST_CLASSIFICATION_ARTIFACT_V1",
+        "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+        "WORKER_INVOCATION_REQUEST_RESULT_ARTIFACT_V1"
+      ]
+    }
+  },
+  "freshdomain_current_state": {
+    "reviewed": true,
+    "review_artifact": "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "review_decision": "WORKER_BINDING_APPROVED",
+    "next_certified_stage": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "target_worker_id": "GOVERNED_DOMAIN_ARTIFACT_WORKER",
+    "approval_created": false,
+    "execution_ready_created": false,
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_invoked": false,
+    "domain_created": false
+  },
+  "required_path": [
+    "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+    "OCS_EXECUTION_HANDOFF_ARTIFACT_V1",
+    "HUMAN_APPROVAL_BINDING_ARTIFACT_V1",
+    "EXECUTION_READY_STATUS_ARTIFACT_V1",
+    "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "WORKER_INVOCATION_REQUEST_ARTIFACT_V1"
+  ],
+  "gap_analysis": {
+    "authorization_runtime_sufficient_after_execution_ready": true,
+    "worker_request_runtime_sufficient_after_authorization": true,
+    "freshdomain_can_directly_reach_authorization": false,
+    "freshdomain_authorization_blocker": "FreshDomain has no execution-ready replay reference.",
+    "freshdomain_can_directly_reach_worker_request": false,
+    "freshdomain_worker_request_blocker": "FreshDomain has no execution authorization replay reference.",
+    "minimal_missing_component": "HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_BINDING_RUNTIME"
+  },
+  "governance_findings": {
+    "handoff_review_is_not_approval": true,
+    "worker_binding_review_is_not_authorization": true,
+    "authorization_must_remain_downstream": true,
+    "worker_request_must_remain_downstream_of_authorization": true,
+    "fail_closed_preserved_by_current_block": true
+  },
+  "recommendation": {
+    "recommended_next_milestone": "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "stop_point": "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+    "do_not_include": [
+      "worker execution",
+      "worker invocation",
+      "repair runtime",
+      "retries",
+      "architecture redesign",
+      "autonomous approval"
+    ]
+  },
+  "final_outputs": {
+    "AUTHORIZATION_ENTRY_LOCATED": true,
+    "WORKER_REQUEST_ENTRY_LOCATED": true,
+    "FRESHDOMAIN_CAN_REACH_AUTHORIZATION": "FALSE_MISSING_HANDOFF_REVIEW_TO_EXECUTION_READY_BINDING",
+    "FRESHDOMAIN_CAN_REACH_WORKER_REQUEST": "FALSE_MISSING_EXECUTION_AUTHORIZATION_REPLAY",
+    "NEXT_BLOCKING_COMPONENT": "HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_BINDING_RUNTIME",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_HANDOFF_REVIEW_TO_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_RUNTIME_V1",
+    "READY_FOR_REAL_WORKER_REQUEST_CREATION": "FALSE_PENDING_BINDING_RUNTIME_AND_EXPLICIT_APPROVAL"
+  }
+}
