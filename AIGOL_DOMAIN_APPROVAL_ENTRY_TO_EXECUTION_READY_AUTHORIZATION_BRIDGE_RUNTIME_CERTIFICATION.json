@@ -1,0 +1,45 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_DOMAIN_APPROVAL_ENTRY_TO_EXECUTION_READY_AUTHORIZATION_BRIDGE_RUNTIME_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "certification_status": "CERTIFIED",
+  "scope_certified": {
+    "conversion_bridge_implemented": true,
+    "execution_ready_packet_created": true,
+    "execution_ready_replay_reference_created": true,
+    "execution_ready_replay_hash_created": true,
+    "execution_authorization_runtime_compatible": true,
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true,
+    "authority_boundaries_preserved": true,
+    "regression_coverage_added": true
+  },
+  "scope_not_certified": {
+    "execution_authorization_runtime_changed": false,
+    "execution_authorization_created_by_bridge": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "validation": {
+    "targeted_bridge_tests": "PASSED",
+    "authorization_compatibility_test": "PASSED",
+    "json_validation_required": true,
+    "git_diff_check_required": true,
+    "known_residual": "Broad authorization test file still contains unrelated CLI summary-key failure: KeyError execution_authorization_status"
+  },
+  "certified_outputs": {
+    "EXECUTION_READY_PACKET_CREATED": true,
+    "EXECUTION_READY_REPLAY_REFERENCE_CREATED": true,
+    "EXECUTION_AUTHORIZATION_RUNTIME_COMPATIBLE": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": true
+  }
+}
