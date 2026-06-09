@@ -128,6 +128,7 @@ def test_approval_entry_intent_detection_supports_required_prompts() -> None:
         "Approve FreshDomain for domain artifact creation.",
         "Approve reviewed FreshDomain workflow.",
         "Continue FreshDomain to authorization.",
+        "Authorize FreshDomain domain artifact request.",
     ]
 
     for prompt in prompts:
@@ -213,3 +214,33 @@ def test_acli_approval_prompt_binds_reviewed_freshdomain_without_execution(tmp_p
     assert third["domain_created"] is False
     assert replay["approval_status"] == DOMAIN_APPROVAL_BOUND
     assert "Domain Approval Binding" in output[2]
+
+
+def test_acli_authorize_prompt_binds_reviewed_freshdomain_without_provider_fallback(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, "Authorize FreshDomain domain artifact request.", "exit"]),
+        output_func=output.append,
+    )
+    third = result["turns"][2]
+    replay = reconstruct_domain_handoff_review_approval_binding_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000003"
+        / "domain_approval_binding"
+    )
+
+    assert result["failed_turns"] == 0
+    assert third["response_source"] == "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY"
+    assert third["approval_status"] == DOMAIN_APPROVAL_BOUND
+    assert third["approved_domain"] == "FreshDomain"
+    assert third["authorization_entry_status"] == AUTHORIZATION_ENTRY_CREATED
+    assert third["execution_ready_continuation_status"] == EXECUTION_READY_CONTINUATION_CREATED
+    assert third["authorization_created"] is False
+    assert third["worker_invoked"] is False
+    assert third["domain_created"] is False
+    assert replay["approval_status"] == DOMAIN_APPROVAL_BOUND
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[2]
+    assert "FAILED_CLOSED" not in output[2]

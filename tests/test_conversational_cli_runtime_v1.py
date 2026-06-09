@@ -8,6 +8,7 @@ import pytest
 
 from aigol.cli.aigol_cli import build_parser, render_command_result, run_command, run_interactive_conversation
 from aigol.runtime.conversational_cli_runtime import (
+    AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE,
@@ -132,6 +133,10 @@ def _input_sequence(values: list[str]):
         ("I want to create the first real commercial Sapianta product.", OCS_LLM_COGNITION),
         ("Can you analyze the first real commercial Sapianta product opportunity?", OCS_LLM_COGNITION),
         ("Should Sapianta primarily sell domains, license the platform, or offer managed services?", OCS_LLM_COGNITION),
+        ("Approve FreshDomain for domain artifact creation.", AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW),
+        ("Approve reviewed FreshDomain workflow.", AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW),
+        ("Continue FreshDomain to authorization.", AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW),
+        ("Authorize FreshDomain domain artifact request.", AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW),
     ],
 )
 def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: str, workflow_id: str) -> None:
@@ -149,6 +154,28 @@ def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: s
     assert selection["authorization_created"] is False
     assert selection["approval_bypassed"] is False
     assert replay["workflow_id"] == workflow_id
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "Approve FreshDomain for domain artifact creation.",
+        "Approve reviewed FreshDomain workflow.",
+        "Continue FreshDomain to authorization.",
+        "Authorize FreshDomain domain artifact request.",
+    ],
+)
+def test_authorized_domain_artifact_request_prompts_do_not_fall_back_to_provider(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    selection = capture["workflow_selection_artifact"]
+
+    assert capture["workflow_id"] == AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert selection["existing_runtime"] == "domain_handoff_review_approval_binding_runtime"
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert selection["execution_requested"] is False
 
 
 @pytest.mark.parametrize(
@@ -174,13 +201,14 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 13
-    assert coverage["conversationally_accessible_workflows"] == 13
-    assert coverage["coverage_ratio"] == "13/13"
+    assert coverage["registered_workflows"] == 14
+    assert coverage["conversationally_accessible_workflows"] == 14
+    assert coverage["coverage_ratio"] == "14/14"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
     assert OCS_LLM_COGNITION in coverage["workflow_ids"]
+    assert AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -203,7 +231,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 13/13" in rendered
+    assert "coverage: 14/14" in rendered
 
 
 def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:
