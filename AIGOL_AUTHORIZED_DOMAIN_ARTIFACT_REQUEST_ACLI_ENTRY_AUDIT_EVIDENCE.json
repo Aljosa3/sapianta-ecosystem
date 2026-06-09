@@ -1,0 +1,95 @@
+{
+  "artifact_type": "AIGOL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "audit_only": true,
+    "runtime_changes": false,
+    "routing_changes": false,
+    "worker_request_creation": false,
+    "execution_authorization": false,
+    "worker_invocation": false,
+    "execution": false,
+    "repair": false,
+    "retry": false
+  },
+  "stage_location": {
+    "stage": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "emitted_by": "aigol/runtime/clarified_domain_intent_handoff_review_runtime.py",
+    "emitting_condition": "review_decision == WORKER_BINDING_APPROVED",
+    "consumed_by": "aigol/runtime/domain_handoff_review_approval_binding_runtime.py",
+    "binding_runtime_exists": true
+  },
+  "expected_intent": {
+    "intent_id": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY",
+    "supported_prompts": [
+      "Approve FreshDomain for domain artifact creation.",
+      "Approve reviewed FreshDomain workflow.",
+      "Continue FreshDomain to authorization."
+    ],
+    "unsupported_attempted_prompt": "Authorize FreshDomain domain artifact request."
+  },
+  "prompt_detection": {
+    "Approve FreshDomain for domain artifact creation.": {
+      "detected": true,
+      "domain_name": "FreshDomain",
+      "approval_action": "APPROVE_DOMAIN_ARTIFACT_CREATION"
+    },
+    "Authorize FreshDomain domain artifact request.": {
+      "detected": false,
+      "domain_name": null,
+      "approval_action": null
+    },
+    "Approve reviewed FreshDomain workflow.": {
+      "detected": true,
+      "domain_name": "FreshDomain",
+      "approval_action": "APPROVE_DOMAIN_ARTIFACT_CREATION"
+    },
+    "Continue FreshDomain to authorization.": {
+      "detected": true,
+      "domain_name": "FreshDomain",
+      "approval_action": "CONTINUE_TO_AUTHORIZATION"
+    }
+  },
+  "canonical_router_behavior": {
+    "router": "aigol/runtime/conversational_cli_runtime.py",
+    "Approve FreshDomain for domain artifact creation.": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "Authorize FreshDomain domain artifact request.": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+    "stage_registered_as_canonical_workflow": false,
+    "source_lines": {
+      "fallback": "aigol/runtime/conversational_cli_runtime.py:266",
+      "operator_summary_registry": "aigol/runtime/conversational_cli_runtime.py:623"
+    }
+  },
+  "interactive_stateful_gate_behavior": {
+    "entrypoint": "aigol/cli/aigol_cli.py",
+    "detects_supported_approval_prompt": true,
+    "routes_to": "DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY",
+    "requires_matching_unbound_review": true,
+    "source_lines": {
+      "intent_detection": "aigol/cli/aigol_cli.py:1829",
+      "stateful_gate": "aigol/cli/aigol_cli.py:1833",
+      "binding_call": "aigol/cli/aigol_cli.py:1964",
+      "routing_visibility": "aigol/cli/aigol_cli.py:905"
+    }
+  },
+  "reachability": {
+    "runtime_reachable_from_interactive_conversation": true,
+    "runtime_reachable_from_canonical_router": false,
+    "stage_only_replay_visible": "PARTIAL_NO_CANONICAL_ROUTER_ENTRY",
+    "binding_missing": false,
+    "routing_missing": true
+  },
+  "root_cause": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW_IS_NOT_REGISTERED_AS_A_CANONICAL_ACLI_ROUTING_WORKFLOW",
+  "secondary_gap": "AUTHORIZE_DOMAIN_ARTIFACT_REQUEST_PROMPT_NOT_SUPPORTED",
+  "next_blocking_component": "CANONICAL_ACLI_ROUTING_ENTRY_FOR_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+  "final_outputs": {
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_ACLI_ENTRY_EXISTS": "PARTIAL_INTERACTIVE_PRE_ROUTING_ONLY",
+    "EXPECTED_OPERATOR_PROMPT": "Approve FreshDomain for domain artifact creation. | Approve reviewed FreshDomain workflow. | Continue FreshDomain to authorization.",
+    "ACLI_ROUTING_EXISTS": "PARTIAL_STATEFUL_INTERACTIVE_GATE_ONLY",
+    "ACLI_ROUTING_WORKING": "FALSE_FOR_CANONICAL_ROUTER_AND_AUTHORIZE_PROMPT",
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_ACLI_ROUTING_ENTRY_FOR_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "READY_FOR_REAL_AUTHORIZATION_ENTRY_ACCEPTANCE": "FALSE_UNTIL_CANONICAL_ACLI_ENTRY_IS_REGISTERED_AND_ACCEPTED"
+  }
+}
