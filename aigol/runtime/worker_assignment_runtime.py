@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
+from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
+    DOMAIN_EXECUTION_READY_BRIDGED,
+    reconstruct_domain_execution_ready_bridge_replay,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_request_runtime import (
@@ -29,6 +34,93 @@ REPLAY_STEPS = (
     "assignment_artifact_recorded",
     "assignment_result_recorded",
 )
+
+
+def detect_domain_worker_assignment_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain worker assignment."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^assign\s+worker\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+worker\s+assignment$",
+        r"^create\s+worker\s+assignment\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_WORKER_ASSIGNMENT"
+            elif lowered.startswith("create"):
+                action = "CREATE_WORKER_ASSIGNMENT"
+            else:
+                action = "ASSIGN_WORKER"
+            return {
+                "worker_assignment_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "worker_assignment_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "worker_assignment_entry_intent_detected": False,
+        "domain_name": None,
+        "worker_assignment_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_worker_invocation_request(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest unassigned Worker invocation request replay for a domain."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("worker assignment failed closed: session root missing")
+    bridge_index = _domain_execution_ready_bridge_index(root, domain)
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/worker_invocation_request")):
+        try:
+            reconstructed = reconstruct_worker_invocation_request_replay(path)
+            wrapper = load_json(path / "002_invocation_request_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            request = wrapper.get("artifact")
+            if not isinstance(request, dict):
+                continue
+            request = _validate_request_artifact(request)
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("request_status") != WORKER_INVOCATION_REQUEST_CREATED:
+            continue
+        bridge = _matching_bridge_for_request(request, bridge_index)
+        if bridge is None:
+            continue
+        if _worker_invocation_request_already_assigned(
+            root,
+            worker_invocation_request_reference=str(request.get("worker_invocation_request_id") or ""),
+            worker_invocation_request_hash=str(request.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "worker_invocation_request_replay_reference": str(path),
+                "worker_invocation_request_artifact": deepcopy(request),
+                "worker_invocation_request_reference": reconstructed["worker_invocation_request_id"],
+                "request_hash": request["artifact_hash"],
+                "domain_execution_ready_bridge_replay_reference": bridge[
+                    "domain_execution_ready_bridge_replay_reference"
+                ],
+                "domain_name": bridge["approved_domain"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("worker assignment failed closed: matching invocation request not found")
+    return candidates[-1]
 
 
 def assign_worker_from_invocation_request(
@@ -282,6 +374,80 @@ def _validate_request_artifact(request_artifact: dict[str, Any]) -> dict[str, An
     ):
         _require_string(request.get(field), field)
     return request
+
+
+def _domain_execution_ready_bridge_index(root: Path, domain_name: str) -> list[dict[str, Any]]:
+    bridges: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/domain_execution_ready_bridge")):
+        try:
+            reconstructed = reconstruct_domain_execution_ready_bridge_replay(path)
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("bridge_status") != DOMAIN_EXECUTION_READY_BRIDGED:
+            continue
+        if str(reconstructed.get("approved_domain") or "").lower() != domain_name.lower():
+            continue
+        bridges.append(
+            {
+                "domain_execution_ready_bridge_replay_reference": str(path),
+                "approved_domain": reconstructed["approved_domain"],
+                "execution_ready_replay_reference": reconstructed["execution_ready_replay_reference"],
+                "execution_ready_replay_hash": reconstructed["execution_ready_replay_hash"],
+            }
+        )
+    return bridges
+
+
+def _matching_bridge_for_request(
+    request: dict[str, Any],
+    bridge_index: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    auth_reference = (request.get("replay_references") or {}).get("execution_authorization_replay_reference")
+    if not auth_reference:
+        return None
+    try:
+        wrapper = load_json(Path(auth_reference) / "000_authorization_request_recorded.json")
+        _verify_wrapper_hash(wrapper)
+        auth_request = wrapper.get("artifact")
+        if not isinstance(auth_request, dict):
+            return None
+        _verify_artifact_hash(auth_request, "execution authorization request artifact")
+    except FailClosedRuntimeError:
+        return None
+    ready_reference = str(auth_request.get("execution_ready_replay_reference") or "")
+    ready_hash = str(auth_request.get("execution_ready_hash") or "")
+    for bridge in bridge_index:
+        if bridge["execution_ready_replay_reference"] == ready_reference:
+            return bridge
+        if bridge["execution_ready_replay_hash"] == ready_hash:
+            return bridge
+    return None
+
+
+def _worker_invocation_request_already_assigned(
+    session_root: Path,
+    *,
+    worker_invocation_request_reference: str,
+    worker_invocation_request_hash: str,
+) -> bool:
+    for path in sorted(session_root.glob("TURN-*/worker_assignment")):
+        try:
+            reconstructed = reconstruct_worker_assignment_runtime_replay(path)
+            wrapper = load_json(path / "002_assignment_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            assignment = wrapper.get("artifact")
+            if not isinstance(assignment, dict):
+                continue
+            _verify_artifact_hash(assignment, "worker assignment artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("assignment_status") != WORKER_ASSIGNED:
+            continue
+        if assignment.get("worker_invocation_request_reference") == worker_invocation_request_reference:
+            return True
+        if assignment.get("worker_invocation_request_hash") == worker_invocation_request_hash:
+            return True
+    return False
 
 
 def _select_compatible_worker(workers: list[dict[str, Any]], request: dict[str, Any]) -> dict[str, Any]:
