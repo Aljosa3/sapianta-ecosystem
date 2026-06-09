@@ -1,0 +1,90 @@
+{
+  "artifact_type": "AIGOL_CLARIFIED_DOMAIN_INTENT_HANDOFF_REVIEW_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "milestone_id": "AIGOL_CLARIFIED_DOMAIN_INTENT_HANDOFF_REVIEW_RUNTIME_V1",
+  "implemented_files": [
+    "aigol/runtime/clarified_domain_intent_handoff_review_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_clarified_domain_intent_handoff_review_runtime_v1.py"
+  ],
+  "runtime": {
+    "runtime_version": "AIGOL_CLARIFIED_DOMAIN_INTENT_HANDOFF_REVIEW_RUNTIME_V1",
+    "input_artifact": "CLARIFICATION_WORKFLOW_RESUME_ARTIFACT_V1",
+    "output_artifacts": [
+      "HANDOFF_REVIEW_DECISION_ARTIFACT_V1",
+      "HANDOFF_REVIEW_RETURNED_ARTIFACT_V1"
+    ],
+    "allowed_review_outputs": [
+      "OCS_HANDOFF_APPROVED",
+      "WORKER_BINDING_APPROVED",
+      "CLARIFICATION_REQUIRED",
+      "FAIL_CLOSED"
+    ]
+  },
+  "freshdomain_acceptance": {
+    "initial_prompt": "Create a new governed domain called FreshDomain.",
+    "clarification_reply_bound": true,
+    "clarification_resolved": true,
+    "workflow_resumed": true,
+    "review_decision": "WORKER_BINDING_APPROVED",
+    "proposed_domain": "FreshDomain",
+    "next_certified_stage": "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "target_worker_id": "GOVERNED_DOMAIN_ARTIFACT_WORKER",
+    "allowed_outputs": [
+      "DOMAIN_DEFINITION_ARTIFACT_V1",
+      "DOMAIN_METADATA_ARTIFACT_V1",
+      "DOMAIN_REGISTRATION_ARTIFACT_V1",
+      "DOMAIN_GOVERNANCE_EVIDENCE_ARTIFACT_V1"
+    ],
+    "approval_created": false,
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false
+  },
+  "supported_paths": {
+    "ocs_handoff_approved": true,
+    "worker_binding_approved": true,
+    "clarification_required": true,
+    "fail_closed": true
+  },
+  "replay": {
+    "steps": [
+      "000_handoff_review_decision_recorded.json",
+      "001_handoff_review_returned.json"
+    ],
+    "ordering_verified": true,
+    "wrapper_hash_verified": true,
+    "artifact_hash_verified": true,
+    "clarification_resume_hash_verified": true,
+    "corruption_detection_tested": true
+  },
+  "regression_tests": {
+    "focused_command": "python -m pytest tests/test_clarified_domain_intent_handoff_review_runtime_v1.py",
+    "focused_result": "7 passed in 0.24s",
+    "integrated_command": "python -m pytest tests/test_clarified_domain_intent_handoff_review_runtime_v1.py tests/test_clarification_continuity_runtime_v1.py tests/test_ocs_to_execution_handoff_runtime_v1.py tests/test_ocs_execution_readiness_runtime_v1.py tests/test_governed_domain_artifact_worker_v1.py",
+    "integrated_result": "38 passed in 0.56s",
+    "covered_cases": [
+      "successful worker binding review",
+      "OCS handoff approved review path",
+      "clarification re-entry path",
+      "clarification required without questions fails closed",
+      "invalid review decision fails closed",
+      "replay corruption detected",
+      "ACLI FreshDomain reaches handoff review without execution"
+    ]
+  },
+  "final_outputs": {
+    "HANDOFF_REVIEW_RUNTIME_IMPLEMENTED": true,
+    "FRESHDOMAIN_REVIEWED": true,
+    "OCS_HANDOFF_APPROVED": "TRUE_SUPPORTED_BY_RUNTIME",
+    "WORKER_BINDING_APPROVED": "TRUE_FOR_FRESHDOMAIN",
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_DOMAIN_WORKER_EXECUTION": "TRUE_WITH_GOVERNED_APPROVAL_AUTHORIZATION_AND_REQUEST_BINDING_REQUIRED"
+  }
+}
