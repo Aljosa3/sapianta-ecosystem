@@ -1,0 +1,104 @@
+{
+  "artifact_type": "AIGOL_WORKER_REQUEST_ACLI_ENTRY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "audit_id": "AIGOL_WORKER_REQUEST_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09",
+  "scope": {
+    "from_stage": "EXECUTION_AUTHORIZED",
+    "to_stage": "WORKER_REQUEST_CREATED",
+    "workflow": "FreshDomain",
+    "mode": "audit_only"
+  },
+  "located_runtimes": {
+    "worker_request_runtime": {
+      "runtime_version": "AIGOL_WORKER_INVOCATION_REQUEST_RUNTIME_V1",
+      "module": "aigol/runtime/worker_invocation_request_runtime.py",
+      "entry_point": "create_worker_invocation_request",
+      "input_replay": "execution_authorization_replay_reference",
+      "required_status": "EXECUTION_AUTHORIZED",
+      "success_status": "WORKER_INVOCATION_REQUEST_CREATED"
+    },
+    "worker_assignment_runtime": {
+      "runtime_version": "AIGOL_WORKER_ASSIGNMENT_RUNTIME_V1",
+      "module": "aigol/runtime/worker_assignment_runtime.py",
+      "entry_point": "assign_worker_from_invocation_request",
+      "required_status": "WORKER_INVOCATION_REQUEST_CREATED",
+      "success_status": "WORKER_ASSIGNED"
+    },
+    "worker_dispatch_runtime": {
+      "runtime_version": "AIGOL_WORKER_DISPATCH_RUNTIME_V1",
+      "module": "aigol/runtime/worker_dispatch_runtime.py",
+      "entry_point": "dispatch_assigned_worker",
+      "required_status": "WORKER_ASSIGNED",
+      "success_status": "WORKER_DISPATCHED"
+    },
+    "worker_invocation_runtime": {
+      "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+      "module": "aigol/runtime/worker_invocation_runtime.py",
+      "entry_point": "invoke_dispatched_worker",
+      "required_status": "WORKER_DISPATCHED",
+      "success_status": "WORKER_INVOKED"
+    }
+  },
+  "freshdomain_acli_routing_probe": [
+    {
+      "prompt": "Create worker request for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Create worker invocation request for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain to worker request.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    },
+    {
+      "prompt": "Request worker for FreshDomain.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Create worker invocation request from FreshDomain execution authorization.",
+      "workflow_id": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+      "existing_runtime": "prompt_to_conversation_integration"
+    },
+    {
+      "prompt": "Continue FreshDomain to worker assignment.",
+      "workflow_id": "OCS_LLM_COGNITION",
+      "existing_runtime": "ocs_llm_cognition_end_to_end_runtime"
+    }
+  ],
+  "registered_freshdomain_continuation_workflows": [
+    "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW",
+    "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+    "DOMAIN_EXECUTION_AUTHORIZATION"
+  ],
+  "direct_runtime_validation": {
+    "command": "python -m pytest tests/test_worker_invocation_request_runtime_v1.py::test_execution_authorized_becomes_worker_invocation_request_created tests/test_worker_assignment_runtime_v1.py::test_worker_invocation_request_becomes_worker_assigned tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked",
+    "result": "12 passed"
+  },
+  "audit_findings": {
+    "worker_request_runtime_located": true,
+    "worker_request_direct_runtime_reachable": true,
+    "worker_assignment_direct_runtime_reachable": true,
+    "worker_dispatch_direct_runtime_reachable": true,
+    "worker_invocation_direct_runtime_reachable": true,
+    "canonical_freshdomain_worker_request_acli_entry_exists": false,
+    "canonical_freshdomain_worker_request_acli_entry_working": false,
+    "freshdomain_worker_request_created_from_acli": false,
+    "worker_assigned_from_freshdomain_acli": false,
+    "worker_invoked_from_freshdomain_acli": false,
+    "next_blocking_component": "CANONICAL_WORKER_REQUEST_ACLI_ENTRY_AND_REPLAY_BINDING"
+  },
+  "non_goals_preserved": {
+    "worker_execution_implemented": false,
+    "worker_changes_implemented": false,
+    "dispatch_changes_implemented": false,
+    "authorization_changes_implemented": false,
+    "architecture_redesign_implemented": false
+  }
+}

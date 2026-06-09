@@ -1,0 +1,38 @@
+{
+  "artifact_type": "AIGOL_WORKER_REQUEST_ACLI_ENTRY_AUDIT_CERTIFICATION",
+  "artifact_version": 1,
+  "certification_id": "AIGOL_WORKER_REQUEST_ACLI_ENTRY_AUDIT_V1",
+  "created_at": "2026-06-09",
+  "certification_scope": {
+    "audit_only": true,
+    "runtime_changes": false,
+    "worker_changes": false,
+    "dispatch_changes": false,
+    "authorization_changes": false,
+    "architecture_redesign": false
+  },
+  "certified_findings": {
+    "WORKER_REQUEST_RUNTIME_LOCATED": true,
+    "EXPECTED_OPERATOR_PROMPT": "NONE_CURRENTLY_REGISTERED_FOR_FRESHDOMAIN_WORKER_REQUEST",
+    "WORKER_REQUEST_CREATED_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_CANONICAL_FRESHDOMAIN_ACLI",
+    "WORKER_ASSIGNMENT_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_CANONICAL_FRESHDOMAIN_ACLI",
+    "WORKER_INVOCATION_REACHABLE": "TRUE_DIRECT_RUNTIME_FALSE_CANONICAL_FRESHDOMAIN_ACLI",
+    "NEXT_BLOCKING_COMPONENT": "CANONICAL_WORKER_REQUEST_ACLI_ENTRY_AND_REPLAY_BINDING",
+    "READY_FOR_REAL_WORKER_REQUEST_ACCEPTANCE": false
+  },
+  "authority_boundary_certification": {
+    "worker_request_runtime_assigns_worker": false,
+    "worker_request_runtime_dispatches_worker": false,
+    "worker_request_runtime_invokes_worker": false,
+    "worker_request_runtime_executes_worker": false,
+    "freshdomain_acli_worker_request_created": false
+  },
+  "validation": {
+    "focused_runtime_tests": {
+      "command": "python -m pytest tests/test_worker_invocation_request_runtime_v1.py::test_execution_authorized_becomes_worker_invocation_request_created tests/test_worker_assignment_runtime_v1.py::test_worker_invocation_request_becomes_worker_assigned tests/test_worker_dispatch_runtime_v1.py::test_worker_assigned_becomes_worker_dispatched tests/test_worker_invocation_runtime_v1.py::test_worker_dispatched_becomes_worker_invoked",
+      "result": "12 passed"
+    },
+        "json_validation": "PASSED",
+        "git_diff_check": "PASSED"
+  }
+}
