@@ -1,0 +1,92 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_RUNTIME_ACCEPTANCE_EVIDENCE",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "created_at": "2026-06-09T00:00:00Z",
+  "scope": {
+    "implemented": [
+      "canonical conversational route registration for DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+      "execution-ready operator intent detection",
+      "ACLI binding from latest unbridged domain approval binding to the existing execution-ready bridge runtime",
+      "interactive FreshDomain continuation to execution-ready packet creation"
+    ],
+    "not_implemented": [
+      "execution authorization runtime changes",
+      "worker request creation",
+      "worker invocation",
+      "worker execution",
+      "repair runtime",
+      "retry behavior",
+      "architecture redesign"
+    ]
+  },
+  "supported_prompts": [
+    "Continue FreshDomain to execution authorization.",
+    "Create execution-ready authorization packet for FreshDomain.",
+    "Continue FreshDomain authorization workflow."
+  ],
+  "routing_evidence": {
+    "canonical_workflow_id": "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE",
+    "existing_runtime": "domain_approval_entry_to_execution_ready_authorization_bridge_runtime",
+    "provider_fallback_prevented": true,
+    "ocs_cognition_misroute_prevented": true,
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created_by_router": false,
+    "execution_requested_by_router": false
+  },
+  "binding_evidence": {
+    "input_statuses": {
+      "approval_status": "DOMAIN_APPROVAL_BOUND",
+      "authorization_entry_status": "AUTHORIZATION_ENTRY_CREATED",
+      "execution_ready_continuation_status": "EXECUTION_READY_CONTINUATION_CREATED"
+    },
+    "bridge_status": "DOMAIN_EXECUTION_READY_BRIDGED",
+    "execution_status": "EXECUTION_READY",
+    "execution_ready_replay_reference_created": true,
+    "execution_ready_replay_hash_created": true,
+    "authorization_runtime_compatible": true
+  },
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "regression_tests": [
+    {
+      "test": "tests/test_conversational_cli_runtime_v1.py::test_execution_ready_entry_prompts_route_to_bridge_without_provider_fallback",
+      "result": "PASSED"
+    },
+    {
+      "test": "tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_acli_execution_ready_prompt_bridges_reviewed_freshdomain_without_authorization",
+      "result": "PASSED"
+    },
+    {
+      "test": "tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py::test_find_latest_domain_approval_binding_excludes_already_bridged_entries",
+      "result": "PASSED"
+    }
+  ],
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_domain_handoff_review_approval_binding_runtime_v1.py tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py",
+      "result": "55 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_EXECUTION_READY_ACLI_ENTRY_REGISTERED": true,
+    "EXECUTION_READY_PACKET_CREATED": true,
+    "EXECUTION_AUTHORIZATION_RUNTIME_REACHABLE": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": true
+  }
+}

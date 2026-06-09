@@ -1,0 +1,51 @@
+{
+  "artifact_type": "AIGOL_CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_RUNTIME_CERTIFICATION",
+  "artifact_version": 1,
+  "milestone_id": "AIGOL_CANONICAL_EXECUTION_READY_ACLI_ENTRY_AND_BINDING_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "certified_at": "2026-06-09T00:00:00Z",
+  "certification_scope": {
+    "canonical_execution_ready_acli_entry_registered": true,
+    "execution_ready_packet_created": true,
+    "execution_authorization_runtime_reachable": true,
+    "replay_continuity_preserved": true,
+    "fail_closed_preserved": true,
+    "authority_boundaries_preserved": true
+  },
+  "certification_basis": [
+    "canonical conversational routing recognizes execution-ready bridge prompts",
+    "ACLI dispatch binds the latest unbridged domain approval binding to the existing bridge runtime",
+    "the bridge creates execution_ready_replay_reference and execution_ready_replay_hash",
+    "the resulting replay is compatible with AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_V1",
+    "duplicate bridge attempts are excluded from active binding discovery",
+    "authorization, worker request, worker invocation, execution, repair, and retry remain unstarted"
+  ],
+  "authority_boundaries": {
+    "provider_invoked": false,
+    "authorization_created": false,
+    "worker_request_created": false,
+    "worker_assigned": false,
+    "worker_dispatched": false,
+    "worker_invoked": false,
+    "execution_started": false,
+    "domain_created": false,
+    "repair_started": false,
+    "retry_started": false
+  },
+  "validation": {
+    "pytest": {
+      "command": "python -m pytest tests/test_conversational_cli_runtime_v1.py tests/test_domain_handoff_review_approval_binding_runtime_v1.py tests/test_domain_approval_entry_to_execution_ready_authorization_bridge_runtime_v1.py",
+      "result": "55 passed"
+    },
+    "json_validation": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "final_outputs": {
+    "CANONICAL_EXECUTION_READY_ACLI_ENTRY_REGISTERED": true,
+    "EXECUTION_READY_PACKET_CREATED": true,
+    "EXECUTION_AUTHORIZATION_RUNTIME_REACHABLE": true,
+    "REPLAY_CONTINUITY_PRESERVED": true,
+    "FAIL_CLOSED_PRESERVED": true,
+    "READY_FOR_REAL_EXECUTION_AUTHORIZATION_ACCEPTANCE": true
+  }
+}
