@@ -12,6 +12,7 @@ from aigol.runtime.human_execution_intent_detection import (
     GENERIC_GOVERNED_EXECUTION_REQUEST,
     detect_human_execution_intent,
 )
+from aigol.runtime.domain_handoff_review_approval_binding_runtime import detect_domain_approval_entry_intent
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -38,6 +39,7 @@ SHOW_STATUS = "SHOW_STATUS"
 SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW = "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 
 REPLAY_STEPS = (
@@ -207,6 +209,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
         ),
         _workflow(OCS_LLM_COGNITION, "aigol conversation", "ocs_llm_cognition_end_to_end_runtime"),
         _workflow(
+            AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
+            "aigol conversation",
+            "domain_handoff_review_approval_binding_runtime",
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -222,6 +229,19 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    approval_entry_intent = detect_domain_approval_entry_intent(prompt)
+    if approval_entry_intent.get("approval_entry_intent_detected") is True:
+        return _analysis(
+            AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
+            "HIGH",
+            [
+                "authorized",
+                "domain",
+                "artifact",
+                "request",
+                str(approval_entry_intent.get("domain_name") or ""),
+            ],
+        )
     if _is_ocs_llm_cognition_prompt(
         normalized,
         ends_with_question=normalized_with_punctuation.endswith("?"),
@@ -620,6 +640,9 @@ def _operator_summary(workflow_id: str) -> str:
         SHOW_DASHBOARD: "Show read-only operator dashboard.",
         NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION: "Assemble native development context without provider or execution.",
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
+        AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW: (
+            "Route reviewed domain approval prompts to the authorization-entry binding path without execution."
+        ),
         DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }
     return summaries.get(workflow_id, "")

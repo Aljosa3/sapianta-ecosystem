@@ -67,15 +67,22 @@ def detect_domain_approval_entry_intent(human_prompt: str) -> dict[str, Any]:
         r"^approve\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+for\s+domain\s+artifact\s+creation$",
         r"^approve\s+reviewed\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+workflow$",
         r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+authorization$",
+        r"^authorize\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+domain\s+artifact\s+request$",
     )
     for pattern in patterns:
         match = re.match(pattern, normalized, flags=re.IGNORECASE)
         if match:
             domain = match.group("domain")
+            if lowered.startswith("authorize"):
+                approval_action = "AUTHORIZE_DOMAIN_ARTIFACT_REQUEST"
+            elif lowered.startswith("approve"):
+                approval_action = "APPROVE_DOMAIN_ARTIFACT_CREATION"
+            else:
+                approval_action = "CONTINUE_TO_AUTHORIZATION"
             return {
                 "approval_entry_intent_detected": True,
                 "domain_name": domain,
-                "approval_action": "APPROVE_DOMAIN_ARTIFACT_CREATION" if lowered.startswith("approve") else "CONTINUE_TO_AUTHORIZATION",
+                "approval_action": approval_action,
                 "matched_prompt": normalized,
             }
     return {

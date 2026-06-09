@@ -165,6 +165,7 @@ from aigol.runtime.domain_handoff_review_approval_binding_runtime import (
     render_domain_handoff_review_approval_binding_summary,
 )
 from aigol.runtime.conversational_cli_runtime import (
+    AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW as CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
     CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
@@ -907,10 +908,10 @@ def _interactive_routing_visibility_analysis(
     human_decision = normalize_human_decision(human_prompt)
     if domain_approval_entry_intent and domain_approval_entry_intent.get("approval_entry_intent_detected") is True:
         return _routing_visibility_selected(
-            workflow_id="DOMAIN_HANDOFF_REVIEW_APPROVAL_AND_BINDING_ENTRY",
+            workflow_id=CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
             routing_confidence=ROUTING_VISIBILITY_HIGH,
             matched_signals=[
-                "approve",
+                "authorized_domain_artifact_request_review",
                 str(domain_approval_entry_intent.get("domain_name") or ""),
                 str(domain_approval_entry_intent.get("approval_action") or ""),
             ],
