@@ -1,0 +1,242 @@
+{
+  "artifact_type": "AIGOL_WORKER_CAPABILITY_AUDIT_EVIDENCE",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "audit_id": "AIGOL_WORKER_CAPABILITY_AUDIT_V1",
+  "context": {
+    "prior_acceptance": "AIGOL_REAL_HUMAN_DOMAIN_WORKFLOW_ACCEPTANCE_V1",
+    "prior_next_blocking_component": "CLARIFIED_DOMAIN_INTENT_TO_OCS_OR_EXECUTION_HANDOFF_REVIEW",
+    "provider_invoked": false,
+    "worker_invoked": false,
+    "authorization_created": false,
+    "execution_requested": false,
+    "domain_created": false
+  },
+  "registry_sources": [
+    {
+      "path": "aigol/runtime/worker_runtime.py",
+      "role": "generic replay-visible worker registration and assignment runtime",
+      "registry_status": "runtime registration available, not a canonical production portfolio registry"
+    },
+    {
+      "path": "aigol/runtime/worker_assignment_runtime.py",
+      "role": "worker assignment and dynamic in-memory compatible worker candidate creation",
+      "registry_status": "request-derived compatibility candidates"
+    },
+    {
+      "path": "aigol/runtime/domain_and_worker_resolution_registry.py",
+      "role": "deterministic domain and worker-family resolution registry",
+      "registry_status": "domain and worker-family metadata, not executable worker registration"
+    },
+    {
+      "path": "aigol/runtime/capabilities/capability_registry.py",
+      "role": "bounded capability allowlist",
+      "registry_status": "capability primitives, not domain worker registry"
+    }
+  ],
+  "workers_discovered": [
+    {
+      "worker_id": "FILESYSTEM_CREATE_WORKER",
+      "source": "aigol/workers/filesystem_worker.py",
+      "classification": [
+        "filesystem_worker",
+        "proof_worker"
+      ],
+      "declared_capabilities": [
+        "CREATE_FILE"
+      ],
+      "authorized_scope": "FILESYSTEM_CREATE_FILE",
+      "allowed_outputs": [
+        "local file creation under governed authorization",
+        "filesystem worker replay evidence"
+      ],
+      "forbidden_or_absent": [
+        "domain definition schema",
+        "domain metadata schema",
+        "domain registration authority",
+        "governance evidence contract for domain creation"
+      ],
+      "production_capable": false,
+      "can_create_domain_definition_artifact": false,
+      "can_create_domain_metadata_artifact": false,
+      "can_create_domain_registration_artifact": false,
+      "can_create_governance_evidence_artifact": false
+    },
+    {
+      "worker_id": "GITHUB_ISSUE_DRAFT_WORKER",
+      "source": "aigol/workers/github_worker.py",
+      "classification": [
+        "domain_worker",
+        "external_integration_worker",
+        "draft_artifact_worker"
+      ],
+      "declared_capabilities": [
+        "CREATE_ISSUE_DRAFT"
+      ],
+      "authorized_scope": "GITHUB_CREATE_ISSUE_DRAFT",
+      "allowed_outputs": [
+        "deterministic GitHub issue draft artifact",
+        "GitHub worker replay evidence"
+      ],
+      "forbidden_or_absent": [
+        "GitHub API invocation",
+        "repository mutation",
+        "generic governed domain creation",
+        "domain registration"
+      ],
+      "production_capable": "PARTIAL_DRAFT_ONLY",
+      "can_create_domain_definition_artifact": false,
+      "can_create_domain_metadata_artifact": false,
+      "can_create_domain_registration_artifact": false,
+      "can_create_governance_evidence_artifact": false
+    },
+    {
+      "worker_id": "REPLAY_INSPECTOR_WORKER_V1",
+      "source": "aigol/runtime/replay_inspector_worker.py",
+      "classification": [
+        "proof_worker",
+        "replay_worker"
+      ],
+      "declared_capabilities": [
+        "CHAIN_SUMMARY",
+        "ARTIFACT_VALIDATION",
+        "REFERENCE_CONTINUITY",
+        "RECENT_ACTIVITY_SUMMARY"
+      ],
+      "authorized_scope": "read-only replay inspection",
+      "allowed_outputs": [
+        "REPLAY_INSPECTION_REPORT_V1"
+      ],
+      "forbidden_or_absent": [
+        "filesystem modification",
+        "runtime state modification",
+        "execution history mutation",
+        "domain creation"
+      ],
+      "production_capable": "PARTIAL_INSPECTION_ONLY",
+      "can_create_domain_definition_artifact": false,
+      "can_create_domain_metadata_artifact": false,
+      "can_create_domain_registration_artifact": false,
+      "can_create_governance_evidence_artifact": "ONLY_REPLAY_INSPECTION_REPORT_NOT_DOMAIN_CREATION_EVIDENCE"
+    },
+    {
+      "worker_id": "EXTERNAL_RUNTIME_INSPECTION_WORKER",
+      "source": "aigol/runtime/external_runtime_inspection_worker.py",
+      "classification": [
+        "external_integration_worker",
+        "proof_worker"
+      ],
+      "declared_capabilities": [
+        "read_only_runtime_inspection"
+      ],
+      "authorized_scope": "READ_ONLY_EXECUTION_BRIDGE",
+      "allowed_outputs": [
+        "runtime metadata inspection evidence",
+        "worker result capture",
+        "termination record"
+      ],
+      "forbidden_or_absent": [
+        "write authority",
+        "network authority",
+        "shell authority",
+        "api authority",
+        "domain creation"
+      ],
+      "production_capable": "PARTIAL_INSPECTION_ONLY",
+      "can_create_domain_definition_artifact": false,
+      "can_create_domain_metadata_artifact": false,
+      "can_create_domain_registration_artifact": false,
+      "can_create_governance_evidence_artifact": "ONLY_RUNTIME_INSPECTION_EVIDENCE_NOT_DOMAIN_CREATION_EVIDENCE"
+    },
+    {
+      "worker_id": "AIGOL-WORKER-{target_worker_family}",
+      "source": "aigol/runtime/worker_assignment_runtime.py::default_worker_registry_for_request",
+      "classification": [
+        "execution_worker",
+        "proof_worker",
+        "dynamic_assignment_candidate"
+      ],
+      "declared_capabilities": [
+        "request-derived worker_role"
+      ],
+      "authorized_scope": "request-derived",
+      "allowed_outputs": [
+        "request-derived allowed_outputs"
+      ],
+      "forbidden_or_absent": [
+        "durable registration",
+        "production worker identity",
+        "domain creation contract"
+      ],
+      "production_capable": false,
+      "can_create_domain_definition_artifact": false,
+      "can_create_domain_metadata_artifact": false,
+      "can_create_domain_registration_artifact": false,
+      "can_create_governance_evidence_artifact": false
+    }
+  ],
+  "domain_worker_family_registry": {
+    "source": "aigol/runtime/domain_and_worker_resolution_registry.py",
+    "domains": [
+      "TRADING",
+      "MARKETING",
+      "HEALTHCARE",
+      "PUBLIC_SERVICES",
+      "SERVER_MANAGEMENT"
+    ],
+    "worker_families": [
+      "MARKET_EVIDENCE_NORMALIZATION",
+      "RISK_ANALYSIS",
+      "PORTFOLIO_CONTEXT",
+      "STRATEGY_EVALUATION",
+      "DECISION_EXPLANATION",
+      "FILESYSTEM",
+      "MONITORING"
+    ],
+    "classification": "worker-family metadata registry, not executable domain creation worker registry"
+  },
+  "capability_registry": {
+    "source": "aigol/runtime/capabilities/capability_registry.py",
+    "allowed_capabilities": [
+      "analyze_text",
+      "inspect_json",
+      "mock_write_preview",
+      "read_text"
+    ],
+    "forbidden_capabilities": [
+      "delete_file",
+      "filesystem_write",
+      "orchestration",
+      "recursive_dispatch",
+      "shell_execution",
+      "subprocess_spawn",
+      "unrestricted_network",
+      "worker_spawn"
+    ],
+    "domain_creation_capability_present": false
+  },
+  "freshdomain_assessment": {
+    "freshdomain_can_continue_to_existing_worker": false,
+    "reason": "No discovered worker declares an input contract for clarified generic domain intent or output contracts for domain definition, metadata, registration, and governance evidence artifacts.",
+    "next_required_capability": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING_AND_REGISTRATION"
+  },
+  "validation": {
+    "focused_pytest_command": "python -m pytest tests/test_first_real_domain_worker_v1.py tests/test_replay_inspector_worker_v1.py tests/test_external_runtime_inspection_worker_v1.py tests/test_worker_runtime_v1.py tests/test_worker_assignment_runtime_v1.py tests/test_domain_and_worker_resolution_registry_v1.py",
+    "focused_pytest_result": "86 passed, 1 failed",
+    "failure": {
+      "test": "tests/test_worker_assignment_runtime_v1.py::test_cli_acceptance_flows_reach_worker_assigned",
+      "error": "KeyError: 'worker_assignment_status'",
+      "audit_interpretation": "Current CLI worker-assignment acceptance surface has a regression or drift. This is separate from the FreshDomain domain-creation worker gap."
+    }
+  },
+  "final_outputs": {
+    "WORKER_REGISTRY_DISCOVERED": "PARTIAL",
+    "WORKER_CAPABILITIES_DISCOVERED": true,
+    "PROOF_WORKERS_ONLY": false,
+    "DOMAIN_CREATION_WORKER_EXISTS": false,
+    "FRESHDOMAIN_CAN_CONTINUE_TO_EXISTING_WORKER": false,
+    "TOP_WORKER_GAP": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING_AND_REGISTRATION_WORKER_MISSING",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+    "READY_FOR_REAL_DOMAIN_CREATION_EXECUTION": false
+  }
+}

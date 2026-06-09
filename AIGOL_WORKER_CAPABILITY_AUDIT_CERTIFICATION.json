@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_WORKER_CAPABILITY_AUDIT_CERTIFICATION",
+  "artifact_version": 1,
+  "created_at": "2026-06-09T00:00:00Z",
+  "audit_id": "AIGOL_WORKER_CAPABILITY_AUDIT_V1",
+  "certification_status": "CERTIFIED_GAP_IDENTIFIED",
+  "scope": {
+    "included": [
+      "registered worker discovery",
+      "worker capability classification",
+      "domain artifact capability assessment",
+      "FreshDomain continuation assessment",
+      "minimal next milestone recommendation"
+    ],
+    "excluded": [
+      "new worker implementation",
+      "repair runtime",
+      "domain creation",
+      "execution changes",
+      "architecture redesign"
+    ]
+  },
+  "certified_findings": {
+    "worker_registry_discovered": "PARTIAL",
+    "worker_capabilities_discovered": true,
+    "proof_workers_only": false,
+    "domain_creation_worker_exists": false,
+    "freshdomain_can_continue_to_existing_worker": false,
+    "top_worker_gap": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING_AND_REGISTRATION_WORKER_MISSING",
+    "ready_for_real_domain_creation_execution": false
+  },
+  "capability_decision": {
+    "filesystem_worker_can_create_domain_artifacts": false,
+    "github_issue_draft_worker_can_create_domain_artifacts": false,
+    "replay_inspector_can_create_domain_artifacts": false,
+    "external_runtime_inspection_worker_can_create_domain_artifacts": false,
+    "dynamic_assignment_candidate_can_create_domain_artifacts": false
+  },
+  "known_validation_signal": {
+    "focused_worker_suite_status": "FAILED_WITH_ONE_CLI_ASSIGNMENT_DRIFT",
+    "passed": 86,
+    "failed": 1,
+    "failure": "tests/test_worker_assignment_runtime_v1.py::test_cli_acceptance_flows_reach_worker_assigned raised KeyError: 'worker_assignment_status'"
+  },
+  "recommended_next_milestone": {
+    "milestone": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+    "reason": "FreshDomain requires a governed domain artifact authoring and registration worker capability before real domain creation execution can be certified."
+  },
+  "evidence_artifact": "AIGOL_WORKER_CAPABILITY_AUDIT_EVIDENCE.json",
+  "final_outputs": {
+    "WORKER_REGISTRY_DISCOVERED": "PARTIAL",
+    "WORKER_CAPABILITIES_DISCOVERED": true,
+    "PROOF_WORKERS_ONLY": false,
+    "DOMAIN_CREATION_WORKER_EXISTS": false,
+    "FRESHDOMAIN_CAN_CONTINUE_TO_EXISTING_WORKER": false,
+    "TOP_WORKER_GAP": "GOVERNED_DOMAIN_ARTIFACT_AUTHORING_AND_REGISTRATION_WORKER_MISSING",
+    "RECOMMENDED_NEXT_MILESTONE": "AIGOL_GOVERNED_DOMAIN_ARTIFACT_WORKER_FOUNDATION_V1",
+    "READY_FOR_REAL_DOMAIN_CREATION_EXECUTION": false
+  }
+}
