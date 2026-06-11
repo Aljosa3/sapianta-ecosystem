@@ -899,6 +899,8 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
         return "APPROVAL"
     if turn_summary.get("clarification_resolved") is True and turn_summary.get("workflow_resumed") is True:
         return "APPROVAL"
+    if turn_summary.get("execution_ready_continuation_status") == "EXECUTION_READY_CONTINUATION_CREATED":
+        return "EXECUTION_READY"
     ordered_flags = (
         ("terminated", "TERMINATED"),
         ("post_execution_replay_reviewed", "REPLAY_REVIEWED"),
@@ -958,6 +960,8 @@ def _interactive_next_expected_action(
         return "Informational only: provide an explicit operator approval or rejection decision."
 
     domain = _interactive_workflow_domain_text(turn_summary)
+    if turn_summary.get("execution_ready_continuation_status") == "EXECUTION_READY_CONTINUATION_CREATED":
+        return f"Create execution-ready authorization packet for {domain}."
     actions = {
         "CLARIFICATION": f"Authorize {domain} domain artifact request.",
         "APPROVAL": f"Authorize {domain} domain artifact request.",
