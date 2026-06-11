@@ -99,8 +99,11 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert turn["result_delivered"] is True
     assert turn["turn_completion_artifact_type"] == TURN_COMPLETED_ARTIFACT_V1
     assert turn["result_delivered_artifact_type"] == RESULT_DELIVERED_ARTIFACT_V1
+    assert turn["workflow_status"]["workflow_name"] == "SELF_RESOLUTION"
+    assert turn["workflow_status"]["workflow_state"] == "COMPLETED"
+    assert turn["workflow_status"]["workflow_complete"] is True
     assert _progress_lines(output[0])[:8] == PROGRESS_LINES
-    assert output[0].splitlines()[-8:] == [
+    assert output[0].splitlines()[-17:-9] == [
         "================================",
         "TURN COMPLETED",
         "turn_id: TURN-000001",
@@ -109,6 +112,17 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
         "result_delivered: TRUE",
         "elapsed: 3s",
         "============",
+    ]
+    assert output[0].splitlines()[-9:] == [
+        "Workflow Name: SELF_RESOLUTION",
+        "Workflow State: COMPLETED",
+        "Current Lifecycle Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+        "Next Expected Action: No further operator action required.",
+        "Workflow Complete: TRUE",
+        "Lifecycle Progress:",
+        "Completed Stages: NONE",
+        "Current Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
+        "Remaining Stages: NONE",
     ]
     assert any("governed AI operation path" in line for line in output)
     assert (session_root / "TURN-000001" / "source_router" / "000_source_of_truth_router_selected.json").exists()
@@ -187,9 +201,22 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
         :6
     ] == PROGRESS_LINES[:6]
     assert "[8/8] Replay" in rendered
-    assert output[-1] == "FAILED_CLOSED: synthetic runtime failure"
+    assert output[-2] == "FAILED_CLOSED: synthetic runtime failure"
+    assert output[-1].splitlines() == [
+        "Workflow Name: UNAVAILABLE",
+        "Workflow State: FAILED_CLOSED",
+        "Current Lifecycle Stage: FAILED_CLOSED",
+        "Next Expected Action: Inspect fail-closed reason: synthetic runtime failure",
+        "Workflow Complete: FALSE",
+        "Lifecycle Progress:",
+        "Completed Stages: NONE",
+        "Current Stage: FAILED_CLOSED",
+        "Remaining Stages: NONE",
+    ]
     assert turn["response_status"] == "FAILED_CLOSED"
     assert turn["fail_closed"] is True
+    assert turn["workflow_status"]["workflow_state"] == "FAILED_CLOSED"
+    assert turn["workflow_status"]["workflow_complete"] is False
     assert turn["worker_invoked"] is False
     assert turn["execution_requested"] is False
     assert turn["dispatch_requested"] is False

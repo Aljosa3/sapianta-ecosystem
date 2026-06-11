@@ -1059,6 +1059,11 @@ def test_acli_worker_execution_prompt_starts_execution_without_result_validation
     assert tenth["worker_result_captured"] is False
     assert tenth["worker_result_validated"] is False
     assert tenth["post_execution_replay_reviewed"] is False
+    assert tenth["workflow_status"]["workflow_name"] == "DOMAIN_WORKER_EXECUTION"
+    assert tenth["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert tenth["workflow_status"]["current_lifecycle_stage"] == "EXECUTING"
+    assert tenth["workflow_status"]["next_expected_action"] == "Capture worker result for FreshDomain."
+    assert tenth["workflow_status"]["workflow_complete"] is False
     assert replay["execution_status"] == EXECUTING
     assert invocation_artifact["invoked_by"] == "AIGOL_GOVERNANCE"
     assert replay["worker_invocation_reference"] == invocation["worker_invocation_id"]
@@ -1068,6 +1073,9 @@ def test_acli_worker_execution_prompt_starts_execution_without_result_validation
     assert "Execution Status: EXECUTING" in output[9]
     assert "No completion recorded." in output[9]
     assert "No result certification recorded." in output[9]
+    assert "Workflow State: CONTINUATION_AVAILABLE" in output[9]
+    assert "Current Lifecycle Stage: EXECUTING" in output[9]
+    assert "Next Expected Action: Capture worker result for FreshDomain." in output[9]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[9]
 
 
@@ -1118,6 +1126,11 @@ def test_acli_worker_result_capture_prompt_captures_result_without_validation(tm
     assert eleventh["worker_result_captured"] is True
     assert eleventh["worker_result_validated"] is False
     assert eleventh["post_execution_replay_reviewed"] is False
+    assert eleventh["workflow_status"]["workflow_name"] == "DOMAIN_WORKER_RESULT_CAPTURE"
+    assert eleventh["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert eleventh["workflow_status"]["current_lifecycle_stage"] == "RESULT_CREATED"
+    assert eleventh["workflow_status"]["next_expected_action"] == "Validate worker result for FreshDomain."
+    assert eleventh["workflow_status"]["workflow_complete"] is False
     assert replay["result_capture_status"] == WORKER_RESULT_CAPTURED
     assert replay["execution_reference"] == execution["execution_id"]
     assert replay["execution_started"] is True
@@ -1128,6 +1141,9 @@ def test_acli_worker_result_capture_prompt_captures_result_without_validation(tm
     assert "No semantic validation yet." in output[10]
     assert "No replay review yet." in output[10]
     assert "No termination yet." in output[10]
+    assert "Workflow State: CONTINUATION_AVAILABLE" in output[10]
+    assert "Current Lifecycle Stage: RESULT_CREATED" in output[10]
+    assert "Next Expected Action: Validate worker result for FreshDomain." in output[10]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[10]
 
 
