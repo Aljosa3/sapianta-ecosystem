@@ -4636,6 +4636,7 @@ def _interactive_domain_worker_invocation_turn_summary(
         "worker_invocation_reference": worker_invocation_capture.get("worker_invocation_reference"),
         "worker_dispatch_reference": worker_invocation_capture.get("worker_dispatch_reference"),
         "worker_assignment_reference": worker_invocation_capture.get("worker_assignment_reference"),
+        "approved_domain": worker_invocation_capture.get("approved_domain"),
         "worker_id": worker_invocation_capture.get("worker_id"),
         "worker_family": worker_invocation_capture.get("worker_family"),
         "worker_role": worker_invocation_capture.get("worker_role"),
