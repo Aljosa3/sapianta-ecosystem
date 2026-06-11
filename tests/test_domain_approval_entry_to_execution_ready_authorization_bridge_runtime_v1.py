@@ -972,6 +972,10 @@ def test_acli_worker_invocation_prompt_invokes_worker_without_execution_or_resul
     assert ninth["worker_invoked"] is True
     assert ninth["execution_started"] is False
     assert ninth["domain_created"] is False
+    assert ninth["approved_domain"] == "FreshDomain"
+    assert ninth["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert ninth["workflow_status"]["current_lifecycle_stage"] == "WORKER_INVOKED"
+    assert ninth["workflow_status"]["next_expected_action"] == "Execute worker for FreshDomain."
     assert replay["invocation_status"] == WORKER_INVOKED
     assert replay["execution_started"] is False
     assert replay["result_created"] is False
