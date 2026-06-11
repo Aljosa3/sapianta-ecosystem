@@ -134,6 +134,24 @@ def _conversation_args(tmp_path):
     )
 
 
+def _auto_continue_conversation_args(tmp_path):
+    parser = build_parser()
+    return parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            SESSION_ID,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+            "--workspace",
+            str(tmp_path),
+            "--auto-continue",
+        ]
+    )
+
+
 def _seed_open_clarification(session_root, turn_id: str = "TURN-000001") -> str:
     prompt_id = f"{SESSION_ID}:{turn_id}"
     turn_root = session_root / turn_id
@@ -1283,6 +1301,60 @@ def test_copied_next_expected_actions_continue_result_lifecycle_to_termination(t
     assert "Validation Status: RESULT_VALIDATED" in output[11]
     assert "Replay Review Status: REVIEW_COMPLETED" in output[12]
     assert "Termination Status: TERMINATED" in output[13]
+
+
+def test_auto_continue_stops_at_operator_clarification_gate(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _auto_continue_conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, "exit"]),
+        output_func=output.append,
+    )
+
+    first = result["turns"][0]
+
+    assert result["auto_continue_enabled"] is True
+    assert result["auto_continue_turns"] == 0
+    assert result["auto_continue_stop_reason"] == "WAITING_FOR_OPERATOR"
+    assert result["failed_turns"] == 0
+    assert first["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert first["workflow_status"]["current_lifecycle_stage"] == "CLARIFICATION"
+    assert first["workflow_status"]["next_expected_action"].startswith("Informational only:")
+    assert "Authorize FreshDomain domain artifact request." not in output[0]
+
+
+def test_auto_continue_uses_only_emitted_next_actions_after_clarification(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _auto_continue_conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, "exit"]),
+        output_func=output.append,
+    )
+
+    turns = result["turns"]
+    termination_turn = turns[-1]
+
+    assert result["auto_continue_enabled"] is True
+    assert result["auto_continue_turns"] == 12
+    assert result["auto_continue_stop_reason"] == "WORKFLOW_COMPLETE"
+    assert result["failed_turns"] == 0
+    assert len(turns) == 14
+    assert turns[0]["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert turns[1]["workflow_status"]["current_lifecycle_stage"] == "APPROVAL"
+    for previous, current in zip(turns[1:-1], turns[2:]):
+        assert current["auto_continued"] is True
+        assert (
+            current["auto_continued_from_next_expected_action"]
+            == previous["workflow_status"]["next_expected_action"]
+        )
+        assert "the active domain" not in current["auto_continued_from_next_expected_action"]
+        assert not current["auto_continued_from_next_expected_action"].startswith("Informational only:")
+    assert termination_turn["response_source"] == "DOMAIN_GOVERNED_TERMINATION"
+    assert termination_turn["governed_termination_status"] == TERMINATED
+    assert termination_turn["workflow_status"]["workflow_state"] == "COMPLETED"
+    assert termination_turn["workflow_status"]["current_lifecycle_stage"] == "TERMINATED"
+    assert termination_turn["workflow_status"]["workflow_complete"] is True
+    assert result["terminated"] is True
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in "\n".join(output[11:14])
 
 
