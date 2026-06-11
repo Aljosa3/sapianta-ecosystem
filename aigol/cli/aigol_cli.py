@@ -990,6 +990,65 @@ def _interactive_workflow_domain_text(turn_summary: dict[str, Any]) -> str:
     return "the active domain"
 
 
+def _certified_auto_continuation_action(status: dict[str, Any]) -> str | None:
+    if status.get("workflow_state") != WORKFLOW_STATUS_CONTINUATION_AVAILABLE:
+        return None
+    action = status.get("next_expected_action")
+    stage = status.get("current_lifecycle_stage")
+    if not isinstance(action, str) or not action.strip():
+        return None
+    action = action.strip()
+    if action.startswith("Informational only:"):
+        return None
+    if "the active domain" in action:
+        return None
+    if not isinstance(stage, str) or stage not in WORKFLOW_LIFECYCLE_STAGES:
+        return None
+    certified_prefixes = {
+        "CLARIFICATION": ("Authorize ",),
+        "APPROVAL": ("Authorize ",),
+        "EXECUTION_READY": (
+            "Create execution-ready authorization packet for ",
+            "Authorize execution-ready packet for ",
+        ),
+        "EXECUTION_AUTHORIZED": ("Create worker request for ",),
+        "WORKER_REQUESTED": ("Assign worker for ",),
+        "WORKER_ASSIGNED": ("Dispatch worker for ",),
+        "WORKER_DISPATCHED": ("Invoke worker for ",),
+        "WORKER_INVOKED": ("Execute worker for ",),
+        "EXECUTING": ("Capture worker result for ",),
+        "RESULT_CREATED": ("Validate worker result for ",),
+        "RESULT_VALIDATED": ("Review post-execution replay for ",),
+        "REPLAY_REVIEWED": ("Terminate reviewed operation for ",),
+    }
+    prefixes = certified_prefixes.get(stage)
+    if prefixes is None:
+        return None
+    if not action.endswith("."):
+        return None
+    if not any(action.startswith(prefix) for prefix in prefixes):
+        return None
+    return action
+
+
+def _auto_continue_stop_reason(status: dict[str, Any]) -> str:
+    workflow_state = status.get("workflow_state")
+    if workflow_state == WORKFLOW_STATUS_COMPLETED:
+        return "WORKFLOW_COMPLETE"
+    if workflow_state == WORKFLOW_STATUS_FAILED_CLOSED:
+        return "FAILED_CLOSED"
+    if workflow_state == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
+        return "WAITING_FOR_OPERATOR"
+    if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
+        return "WAITING_FOR_APPROVAL"
+    action = status.get("next_expected_action")
+    if not isinstance(action, str) or not action.strip():
+        return "MISSING_CONTINUATION"
+    if action.startswith("Informational only:"):
+        return "MISSING_CONTINUATION"
+    return "AMBIGUOUS_CONTINUATION"
+
+
 def _interactive_required_input(turn_summary: dict[str, Any]) -> list[str]:
     missing_information = turn_summary.get("missing_information")
     if isinstance(missing_information, list) and missing_information:
@@ -1841,6 +1900,7 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--runtime-root", default=".aigol_conversation_runtime")
     conversation.add_argument("--operator-context", default="interactive_conversation_cli")
     conversation.add_argument("--workspace", default=".")
+    conversation.add_argument("--auto-continue", action="store_true")
 
     show_latest_chain = subcommands.add_parser("show-latest-chain")
     show_latest_chain.add_argument("--replay-root", default=".")
@@ -2060,18 +2120,34 @@ def run_interactive_conversation(
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
     latest_workflow_status: dict[str, Any] | None = None
+    auto_continue_enabled = bool(getattr(args, "auto_continue", False))
+    pending_auto_continuation: str | None = None
+    auto_continue_turns = 0
+    auto_continue_stop_reason: str | None = None
     if input_func is None and output_func is None:
         output_writer(INTERACTIVE_CONVERSATION_MULTILINE_BANNER)
 
     while True:
-        try:
-            prompt_capture = _read_interactive_prompt_capture(
-                input_reader=input_reader,
-                workflow_status=latest_workflow_status,
-            )
-        except EOFError:
-            exit_reason = "EOF"
-            break
+        auto_continuation_prompt = pending_auto_continuation
+        pending_auto_continuation = None
+        if auto_continuation_prompt is not None:
+            prompt_capture = {
+                "human_prompt": auto_continuation_prompt,
+                "prompt_lines": [auto_continuation_prompt],
+                "line_count": 1,
+                "input_mode": "AUTO_CONTINUE",
+                "terminator": MULTILINE_PROMPT_TERMINATOR,
+                "terminator_seen": False,
+            }
+        else:
+            try:
+                prompt_capture = _read_interactive_prompt_capture(
+                    input_reader=input_reader,
+                    workflow_status=latest_workflow_status,
+                )
+            except EOFError:
+                exit_reason = "EOF"
+                break
 
         human_prompt = prompt_capture["human_prompt"]
         if not human_prompt:
@@ -4022,6 +4098,10 @@ def run_interactive_conversation(
                 routing_visibility_capture=routing_visibility_capture,
             )
             workflow_status = _attach_interactive_workflow_status(turns[-1])
+            if auto_continuation_prompt is not None:
+                turns[-1]["auto_continued"] = True
+                turns[-1]["auto_continued_from_next_expected_action"] = auto_continuation_prompt
+                auto_continue_turns += 1
             latest_workflow_status = workflow_status
             workflow_status_output = _render_interactive_workflow_status(workflow_status)
             _emit_interactive_conversation_progress(
@@ -4068,6 +4148,12 @@ def run_interactive_conversation(
             if turns[-1].get("fail_closed") is True:
                 terminal_output_writer(workflow_status_output)
             output_writer = terminal_output_writer
+            if auto_continue_enabled:
+                certified_action = _certified_auto_continuation_action(workflow_status)
+                if certified_action is not None:
+                    pending_auto_continuation = certified_action
+                else:
+                    auto_continue_stop_reason = _auto_continue_stop_reason(workflow_status)
         except Exception as exc:
             output_writer = terminal_output_writer
             failed_turns += 1
@@ -4109,6 +4195,9 @@ def run_interactive_conversation(
         "session_resumed": initial_resume["session_resumed"],
         "existing_turn_count": initial_resume["existing_turn_count"],
         "next_turn_id_at_start": initial_resume["next_turn_id"],
+        "auto_continue_enabled": auto_continue_enabled,
+        "auto_continue_turns": auto_continue_turns,
+        "auto_continue_stop_reason": auto_continue_stop_reason,
         "current_chain_id": current_chain_id,
         "latest_chain_id": latest_chain_id,
         "replay_visible": True,
