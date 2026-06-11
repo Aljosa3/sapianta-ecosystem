@@ -1,0 +1,62 @@
+{
+  "artifact_type": "AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "milestone": "AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_V1",
+  "certification_status": "CERTIFIED",
+  "certified_at": "2026-06-11T00:00:00Z",
+  "certification_statement": "The governed bridge from approved worker dispatch candidates to worker invocation candidates is certified as replay-preserving, human-approval-gated, and non-invoking.",
+  "certified_outputs": {
+    "WORKER_INVOCATION_CANDIDATE_GENERATED": true,
+    "REPLAY_LINEAGE_PRESERVED": true,
+    "HUMAN_APPROVAL_REQUIRED": true,
+    "INVOCATION_PREVENTED": true,
+    "EXECUTION_PREVENTED": true,
+    "CODE_MODIFICATION_PREVENTED": true,
+    "CERTIFICATION_STATUS": "CERTIFIED",
+    "READY_FOR_WORKER_EXECUTION_GOVERNANCE": true
+  },
+  "certified_artifacts": {
+    "runtime": "aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+    "tests": "tests/test_worker_dispatch_to_worker_invocation_governance_runtime_v1.py",
+    "generated_artifact_type": "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1",
+    "accepted_artifact_type": "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1"
+  },
+  "validation_evidence": [
+    {
+      "command": "python -m py_compile aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+      "result": "PASSED"
+    },
+    {
+      "command": "python -m pytest tests/test_worker_dispatch_to_worker_invocation_governance_runtime_v1.py",
+      "result": "6 passed"
+    },
+    {
+      "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_to_ppp_bridge_runtime_v1.py tests/test_governed_implementation_request_runtime_v1.py tests/test_implementation_request_to_worker_request_bridge_runtime_v1.py tests/test_worker_request_to_worker_dispatch_governance_runtime_v1.py tests/test_worker_dispatch_to_worker_invocation_governance_runtime_v1.py",
+      "result": "44 passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASSED"
+    }
+  ],
+  "governance_constraints": {
+    "explicit_human_approval_required": true,
+    "replay_lineage_validation_required": true,
+    "certification_validation_required": true,
+    "worker_invocation_allowed": false,
+    "implementation_execution_allowed": false,
+    "code_modification_allowed": false,
+    "governance_modification_allowed": false,
+    "provider_invocation_allowed": false,
+    "fail_closed_required": true
+  },
+  "boundary_guarantees": {
+    "worker_invoked": false,
+    "implementation_executed": false,
+    "code_modified": false,
+    "governance_modified": false,
+    "authorization_artifact_created": false,
+    "execution_requested": false
+  },
+  "certification_rationale": "Certification is based on deterministic tests proving accepted artifact type enforcement, explicit human approval enforcement, replay hash continuity, fail-closed handling for invalid and over-scoped inputs, and absence of worker invocation, execution, provider, subprocess, and mutation surfaces in the governed bridge."
+}
