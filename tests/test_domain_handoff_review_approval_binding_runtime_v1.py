@@ -241,6 +241,12 @@ def test_acli_authorize_prompt_binds_reviewed_freshdomain_without_provider_fallb
     assert third["authorization_created"] is False
     assert third["worker_invoked"] is False
     assert third["domain_created"] is False
+    assert third["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert third["workflow_status"]["current_lifecycle_stage"] == "EXECUTION_READY"
+    assert (
+        third["workflow_status"]["next_expected_action"]
+        == "Create execution-ready authorization packet for FreshDomain."
+    )
     assert replay["approval_status"] == DOMAIN_APPROVAL_BOUND
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[2]
     assert "FAILED_CLOSED" not in output[2]

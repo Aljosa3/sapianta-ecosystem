@@ -341,6 +341,46 @@ def test_acli_execution_ready_prompt_bridges_reviewed_freshdomain_without_author
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[3]
 
 
+def test_acli_emitted_execution_ready_action_routes_after_authorized_domain_artifact_review(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                "Authorize FreshDomain domain artifact request.",
+                "Create execution-ready authorization packet for FreshDomain.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    third = result["turns"][2]
+    fourth = result["turns"][3]
+    replay = reconstruct_domain_execution_ready_bridge_replay(
+        tmp_path
+        / "interactive_runtime"
+        / SESSION_ID
+        / "TURN-000004"
+        / "domain_execution_ready_bridge"
+    )
+
+    assert result["failed_turns"] == 0
+    assert third["workflow_status"]["current_lifecycle_stage"] == "EXECUTION_READY"
+    assert (
+        third["workflow_status"]["next_expected_action"]
+        == "Create execution-ready authorization packet for FreshDomain."
+    )
+    assert fourth["response_source"] == "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE"
+    assert fourth["bridge_status"] == DOMAIN_EXECUTION_READY_BRIDGED
+    assert fourth["approved_domain"] == "FreshDomain"
+    assert fourth["authorization_runtime_compatible"] is True
+    assert replay["bridge_status"] == DOMAIN_EXECUTION_READY_BRIDGED
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[3]
+    assert "FAILED_CLOSED" not in output[3]
+
+
 def test_acli_execution_authorization_prompt_authorizes_freshdomain_without_worker_request(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
