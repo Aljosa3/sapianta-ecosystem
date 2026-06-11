@@ -17,6 +17,7 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
     detect_domain_execution_ready_entry_intent,
 )
 from aigol.runtime.execution_authorization_runtime import detect_domain_execution_authorization_entry_intent
+from aigol.runtime.execution_runtime import detect_domain_worker_execution_entry_intent
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_assignment_runtime import detect_domain_worker_assignment_entry_intent
@@ -54,6 +55,7 @@ DOMAIN_WORKER_REQUEST = "DOMAIN_WORKER_REQUEST"
 DOMAIN_WORKER_ASSIGNMENT = "DOMAIN_WORKER_ASSIGNMENT"
 DOMAIN_WORKER_DISPATCH = "DOMAIN_WORKER_DISPATCH"
 DOMAIN_WORKER_INVOCATION = "DOMAIN_WORKER_INVOCATION"
+DOMAIN_WORKER_EXECUTION = "DOMAIN_WORKER_EXECUTION"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 
 REPLAY_STEPS = (
@@ -258,6 +260,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "worker_invocation_runtime",
         ),
         _workflow(
+            DOMAIN_WORKER_EXECUTION,
+            "aigol conversation",
+            "execution_runtime",
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -273,6 +280,17 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    worker_execution_entry_intent = detect_domain_worker_execution_entry_intent(prompt)
+    if worker_execution_entry_intent.get("worker_execution_entry_intent_detected") is True:
+        return _analysis(
+            DOMAIN_WORKER_EXECUTION,
+            "HIGH",
+            [
+                "worker-execution",
+                "worker-invocation",
+                str(worker_execution_entry_intent.get("domain_name") or ""),
+            ],
+        )
     worker_invocation_entry_intent = detect_domain_worker_invocation_entry_intent(prompt)
     if worker_invocation_entry_intent.get("worker_invocation_entry_intent_detected") is True:
         return _analysis(
@@ -763,6 +781,7 @@ def _operator_summary(workflow_id: str) -> str:
         DOMAIN_WORKER_ASSIGNMENT: "Assign a compatible worker from the latest worker request without dispatch.",
         DOMAIN_WORKER_DISPATCH: "Dispatch the latest assigned worker without invocation.",
         DOMAIN_WORKER_INVOCATION: "Invoke the latest dispatched worker without execution or result validation.",
+        DOMAIN_WORKER_EXECUTION: "Start execution from the latest invoked worker without completion or result validation.",
         DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }
     return summaries.get(workflow_id, "")

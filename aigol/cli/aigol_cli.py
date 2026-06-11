@@ -180,6 +180,7 @@ from aigol.runtime.conversational_cli_runtime import (
     DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE as CONVERSATIONAL_DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
     DOMAIN_WORKER_ASSIGNMENT as CONVERSATIONAL_DOMAIN_WORKER_ASSIGNMENT,
     DOMAIN_WORKER_DISPATCH as CONVERSATIONAL_DOMAIN_WORKER_DISPATCH,
+    DOMAIN_WORKER_EXECUTION as CONVERSATIONAL_DOMAIN_WORKER_EXECUTION,
     DOMAIN_WORKER_INVOCATION as CONVERSATIONAL_DOMAIN_WORKER_INVOCATION,
     DOMAIN_WORKER_REQUEST as CONVERSATIONAL_DOMAIN_WORKER_REQUEST,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
@@ -232,7 +233,11 @@ from aigol.runtime.execution_authorization_runtime import (
     find_latest_domain_execution_ready_bridge,
     render_execution_authorization_summary,
 )
-from aigol.runtime.execution_runtime import start_execution
+from aigol.runtime.execution_runtime import (
+    detect_domain_worker_execution_entry_intent,
+    find_latest_domain_worker_invocation_for_execution,
+    start_execution,
+)
 from aigol.runtime.worker_invocation_request_runtime import (
     create_worker_invocation_request,
     detect_domain_worker_request_entry_intent,
@@ -2830,7 +2835,7 @@ def run_interactive_conversation(
                         worker_invocation_id=f"{prompt_id}:WORKER-INVOCATION",
                         worker_dispatch_artifact=latest_worker_dispatch["worker_dispatch_artifact"],
                         worker_dispatch_replay_reference=latest_worker_dispatch["worker_dispatch_replay_reference"],
-                        invoked_by=args.operator_context or "HUMAN_OPERATOR",
+                        invoked_by="AIGOL_GOVERNANCE",
                         invoked_at=created_at,
                         replay_dir=turn_root / "worker_invocation",
                     )
@@ -2839,7 +2844,7 @@ def run_interactive_conversation(
                         worker_invocation_id=f"{prompt_id}:WORKER-INVOCATION",
                         worker_dispatch_artifact={},
                         worker_dispatch_replay_reference="MISSING_WORKER_DISPATCH_REPLAY",
-                        invoked_by=args.operator_context or "HUMAN_OPERATOR",
+                        invoked_by="AIGOL_GOVERNANCE",
                         invoked_at=created_at,
                         replay_dir=turn_root / "worker_invocation",
                     )
@@ -2861,6 +2866,58 @@ def run_interactive_conversation(
                         router_capture=router_capture,
                         conversational_routing_capture=conversational_routing_capture,
                         worker_invocation_capture=worker_invocation_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_WORKER_EXECUTION:
+                worker_execution_entry_intent = detect_domain_worker_execution_entry_intent(human_prompt)
+                try:
+                    latest_worker_invocation = find_latest_domain_worker_invocation_for_execution(
+                        session_root=session_root,
+                        domain_name=worker_execution_entry_intent["domain_name"],
+                    )
+                    execution_capture = start_execution(
+                        execution_id=f"{prompt_id}:EXECUTION",
+                        invocation_artifact=latest_worker_invocation["worker_invocation_artifact"],
+                        invocation_replay=latest_worker_invocation["invocation_result_artifact"],
+                        dispatch_artifact=latest_worker_invocation["worker_dispatch_artifact"],
+                        worker_assignment_artifact=latest_worker_invocation["worker_assignment_artifact"],
+                        canonical_chain_id=latest_worker_invocation["chain_id"],
+                        execution_metadata={
+                            "execution_mode": "START_ONLY",
+                            "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+                            "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+                        },
+                        execution_context={
+                            "worker_reference": latest_worker_invocation["worker_id"],
+                            "request_type": "WORKER_INVOCATION_REQUEST",
+                            "capability_id": latest_worker_invocation["worker_role"],
+                            "allowed_effects": ["RECORD_EXECUTION_START"],
+                        },
+                        started_by="AIGOL",
+                        started_at=created_at,
+                        replay_reference=str(turn_root / "execution_runtime"),
+                        replay_dir=turn_root / "execution_runtime",
+                    )
+                    output_writer(_render_execution_runtime_summary(execution_capture))
+                except Exception as exc:
+                    failed_turns += 1
+                    execution_capture = {
+                        "execution_artifact": None,
+                        "execution_replay": None,
+                        "fail_closed": True,
+                        "failure_reason": str(exc)
+                        if isinstance(exc, FailClosedRuntimeError)
+                        else "execution failed closed",
+                    }
+                    output_writer(f"FAILED_CLOSED: {execution_capture['failure_reason']}")
+                turns.append(
+                    _interactive_domain_worker_execution_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        execution_capture=execution_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -4108,6 +4165,61 @@ def _interactive_domain_worker_invocation_turn_summary(
         "execution_requested": False,
         "execution_started": False,
         "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_worker_execution_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    execution_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    execution_artifact = execution_capture.get("execution_artifact")
+    if not isinstance(execution_artifact, dict):
+        execution_artifact = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": execution_artifact.get("execution_status"),
+        "response_source": "DOMAIN_WORKER_EXECUTION",
+        "fail_closed": execution_capture.get("fail_closed") is True,
+        "failure_reason": execution_capture.get("failure_reason"),
+        "replay_reference": execution_artifact.get("replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "execution_runtime_status": execution_artifact.get("execution_status"),
+        "execution_runtime_replay_reference": execution_artifact.get("replay_reference"),
+        "execution_reference": execution_artifact.get("execution_id"),
+        "execution_hash": execution_artifact.get("artifact_hash"),
+        "worker_invocation_reference": execution_artifact.get("worker_invocation_reference"),
+        "worker_dispatch_reference": execution_artifact.get("dispatch_reference"),
+        "worker_assignment_reference": execution_artifact.get("worker_assignment_reference"),
+        "worker_id": execution_artifact.get("worker_reference"),
+        "provider_invoked": False,
+        "worker_invoked": execution_capture.get("fail_closed") is not True,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "worker_assigned": execution_capture.get("fail_closed") is not True,
+        "worker_dispatched": execution_capture.get("fail_closed") is not True,
+        "execution_requested": False,
+        "execution_started": execution_artifact.get("execution_started") is True,
+        "domain_created": False,
+        "worker_result_captured": False,
+        "worker_result_validated": False,
+        "post_execution_replay_reviewed": False,
+        "terminated": False,
         "governance_mutated": False,
         "replay_mutated": False,
     }
