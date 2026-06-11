@@ -4493,6 +4493,7 @@ def _interactive_domain_worker_request_turn_summary(
             "worker_invocation_request_replay_reference"
         ),
         "worker_invocation_request_reference": worker_request_capture.get("worker_invocation_request_reference"),
+        "approved_domain": worker_request_capture.get("approved_domain"),
         "authorization_reference": worker_request_capture.get("authorization_reference"),
         "execution_packet_reference": worker_request_capture.get("execution_packet_reference"),
         "provider_invoked": False,
