@@ -792,6 +792,202 @@ def _interactive_turn_providers(turn_summary: dict[str, Any]) -> list[str]:
     return []
 
 
+WORKFLOW_STATUS_WAITING_FOR_OPERATOR = "WAITING_FOR_OPERATOR"
+WORKFLOW_STATUS_WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL"
+WORKFLOW_STATUS_CONTINUATION_AVAILABLE = "CONTINUATION_AVAILABLE"
+WORKFLOW_STATUS_COMPLETED = "COMPLETED"
+WORKFLOW_STATUS_FAILED_CLOSED = "FAILED_CLOSED"
+
+WORKFLOW_LIFECYCLE_STAGES = (
+    "CLARIFICATION",
+    "APPROVAL",
+    "EXECUTION_READY",
+    "EXECUTION_AUTHORIZED",
+    "WORKER_REQUESTED",
+    "WORKER_ASSIGNED",
+    "WORKER_DISPATCHED",
+    "WORKER_INVOKED",
+    "EXECUTING",
+    "RESULT_CREATED",
+    "RESULT_VALIDATED",
+    "REPLAY_REVIEWED",
+    "TERMINATED",
+)
+
+
+def _attach_interactive_workflow_status(turn_summary: dict[str, Any]) -> dict[str, Any]:
+    status = _interactive_workflow_status(turn_summary)
+    turn_summary["workflow_status"] = status
+    return status
+
+
+def _interactive_workflow_status(turn_summary: dict[str, Any]) -> dict[str, Any]:
+    current_stage = _interactive_current_lifecycle_stage(turn_summary)
+    completed_stages = _interactive_completed_lifecycle_stages(current_stage)
+    remaining_stages = _interactive_remaining_lifecycle_stages(current_stage)
+    workflow_state = _interactive_workflow_state(turn_summary, current_stage)
+    workflow_complete = workflow_state == WORKFLOW_STATUS_COMPLETED
+    next_expected_action = _interactive_next_expected_action(
+        turn_summary=turn_summary,
+        workflow_state=workflow_state,
+        current_stage=current_stage,
+    )
+    return {
+        "workflow_name": _interactive_workflow_name(turn_summary),
+        "workflow_state": workflow_state,
+        "current_lifecycle_stage": current_stage,
+        "next_expected_action": next_expected_action,
+        "workflow_complete": workflow_complete,
+        "completed_stages": completed_stages,
+        "current_stage": current_stage,
+        "remaining_stages": remaining_stages,
+    }
+
+
+def _render_interactive_workflow_status(status: dict[str, Any]) -> str:
+    completed = status.get("completed_stages")
+    if not isinstance(completed, list):
+        completed = []
+    remaining = status.get("remaining_stages")
+    if not isinstance(remaining, list):
+        remaining = []
+    return "\n".join(
+        [
+            "Workflow Name: " + _workflow_status_value(status.get("workflow_name")),
+            "Workflow State: " + _workflow_status_value(status.get("workflow_state")),
+            "Current Lifecycle Stage: " + _workflow_status_value(status.get("current_lifecycle_stage")),
+            "Next Expected Action: " + _workflow_status_value(status.get("next_expected_action")),
+            "Workflow Complete: " + ("TRUE" if status.get("workflow_complete") is True else "FALSE"),
+            "Lifecycle Progress:",
+            "Completed Stages: " + _workflow_stage_list(completed),
+            "Current Stage: " + _workflow_status_value(status.get("current_stage")),
+            "Remaining Stages: " + _workflow_stage_list(remaining),
+        ]
+    )
+
+
+def _interactive_workflow_name(turn_summary: dict[str, Any]) -> str:
+    for key in ("conversational_workflow_id", "originating_workflow_id", "response_source", "selected_source"):
+        value = turn_summary.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return "UNKNOWN_WORKFLOW"
+
+
+def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
+    if turn_summary.get("fail_closed") is True:
+        return WORKFLOW_STATUS_FAILED_CLOSED
+    ordered_flags = (
+        ("terminated", "TERMINATED"),
+        ("post_execution_replay_reviewed", "REPLAY_REVIEWED"),
+        ("worker_result_validated", "RESULT_VALIDATED"),
+        ("worker_result_captured", "RESULT_CREATED"),
+        ("execution_started", "EXECUTING"),
+        ("worker_invoked", "WORKER_INVOKED"),
+        ("worker_dispatched", "WORKER_DISPATCHED"),
+        ("worker_assigned", "WORKER_ASSIGNED"),
+        ("worker_request_created", "WORKER_REQUESTED"),
+        ("authorization_created", "EXECUTION_AUTHORIZED"),
+    )
+    for flag, stage in ordered_flags:
+        if turn_summary.get(flag) is True:
+            return stage
+    response_source = str(turn_summary.get("response_source") or "")
+    if response_source == "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE":
+        return "EXECUTION_READY"
+    if turn_summary.get("approval_created") is True or "APPROVAL" in response_source:
+        return "APPROVAL"
+    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+        return "CLARIFICATION"
+    if turn_summary.get("domain_created") is True:
+        return "APPROVAL"
+    return str(turn_summary.get("response_status") or "TURN_COMPLETED")
+
+
+def _interactive_workflow_state(turn_summary: dict[str, Any], current_stage: str) -> str:
+    if turn_summary.get("fail_closed") is True:
+        return WORKFLOW_STATUS_FAILED_CLOSED
+    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+        return WORKFLOW_STATUS_WAITING_FOR_OPERATOR
+    response_status = str(turn_summary.get("response_status") or "")
+    if "APPROVAL_REQUIRED" in response_status or turn_summary.get("approval_required") is True:
+        return WORKFLOW_STATUS_WAITING_FOR_APPROVAL
+    if current_stage in WORKFLOW_LIFECYCLE_STAGES and current_stage != "TERMINATED":
+        return WORKFLOW_STATUS_CONTINUATION_AVAILABLE
+    if current_stage == "TERMINATED":
+        return WORKFLOW_STATUS_COMPLETED
+    return WORKFLOW_STATUS_COMPLETED
+
+
+def _interactive_next_expected_action(
+    *,
+    turn_summary: dict[str, Any],
+    workflow_state: str,
+    current_stage: str,
+) -> str:
+    if workflow_state == WORKFLOW_STATUS_FAILED_CLOSED:
+        reason = turn_summary.get("failure_reason")
+        if isinstance(reason, str) and reason.strip():
+            return f"Inspect fail-closed reason: {reason.strip()}"
+        return "Inspect fail-closed replay evidence before retrying."
+    if workflow_state == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
+        return "Provide the requested operator clarification."
+    if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
+        return "Provide an explicit operator approval or rejection decision."
+
+    domain = _interactive_workflow_domain_text(turn_summary)
+    actions = {
+        "CLARIFICATION": f"Approve domain handoff for {domain}.",
+        "APPROVAL": f"Mark execution-ready packet for {domain}.",
+        "EXECUTION_READY": f"Authorize execution-ready packet for {domain}.",
+        "EXECUTION_AUTHORIZED": f"Create worker request for {domain}.",
+        "WORKER_REQUESTED": f"Assign worker for {domain}.",
+        "WORKER_ASSIGNED": f"Dispatch worker for {domain}.",
+        "WORKER_DISPATCHED": f"Invoke worker for {domain}.",
+        "WORKER_INVOKED": f"Execute worker for {domain}.",
+        "EXECUTING": f"Capture worker result for {domain}.",
+        "RESULT_CREATED": f"Validate worker result for {domain}.",
+        "RESULT_VALIDATED": f"Review post-execution replay for {domain}.",
+        "REPLAY_REVIEWED": f"Terminate reviewed operation for {domain}.",
+        "TERMINATED": "No further operator action required.",
+    }
+    if workflow_state == WORKFLOW_STATUS_COMPLETED:
+        return "No further operator action required."
+    return actions.get(current_stage, "No governed continuation is currently available.")
+
+
+def _interactive_workflow_domain_text(turn_summary: dict[str, Any]) -> str:
+    for key in ("approved_domain", "proposed_domain", "requested_domain", "domain_name"):
+        value = turn_summary.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return "the active domain"
+
+
+def _interactive_completed_lifecycle_stages(current_stage: str) -> list[str]:
+    if current_stage == WORKFLOW_STATUS_FAILED_CLOSED:
+        return []
+    if current_stage not in WORKFLOW_LIFECYCLE_STAGES:
+        return []
+    return list(WORKFLOW_LIFECYCLE_STAGES[: WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + 1])
+
+
+def _interactive_remaining_lifecycle_stages(current_stage: str) -> list[str]:
+    if current_stage not in WORKFLOW_LIFECYCLE_STAGES:
+        return []
+    return list(WORKFLOW_LIFECYCLE_STAGES[WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + 1 :])
+
+
+def _workflow_stage_list(stages: list[Any]) -> str:
+    return ", ".join(str(stage) for stage in stages) if stages else "NONE"
+
+
+def _workflow_status_value(value: Any) -> str:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return "UNKNOWN"
+
+
 def _render_execution_runtime_summary(execution_capture: dict[str, Any]) -> str:
     execution = execution_capture.get("execution_artifact")
     if not isinstance(execution, dict):
@@ -2914,6 +3110,7 @@ def run_interactive_conversation(
                         else "execution failed closed",
                     }
                     output_writer(f"FAILED_CLOSED: {execution_capture['failure_reason']}")
+                execution_capture["domain_name"] = worker_execution_entry_intent.get("domain_name")
                 turns.append(
                     _interactive_domain_worker_execution_turn_summary(
                         turn_id=turn_id,
@@ -2965,6 +3162,7 @@ def run_interactive_conversation(
                         else "worker result capture failed closed",
                     }
                     output_writer(f"FAILED_CLOSED: {result_capture['failure_reason']}")
+                result_capture["domain_name"] = worker_result_capture_entry_intent.get("domain_name")
                 turns.append(
                     _interactive_domain_worker_result_capture_turn_summary(
                         turn_id=turn_id,
@@ -3604,6 +3802,8 @@ def run_interactive_conversation(
                 turn_summary=turns[-1],
                 routing_visibility_capture=routing_visibility_capture,
             )
+            workflow_status = _attach_interactive_workflow_status(turns[-1])
+            workflow_status_output = _render_interactive_workflow_status(workflow_status)
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,
                 stage=CONVERSATIONAL_PROGRESS_RESULT_ASSEMBLY,
@@ -3636,14 +3836,17 @@ def run_interactive_conversation(
                         monotonic_now=monotonic_now,
                     ),
                     delivered_output_line_count=_delivered_output_line_count(
-                        "\n".join(turn_progress_buffer + normal_output),
+                        "\n".join(turn_progress_buffer + normal_output + [workflow_status_output]),
                     ),
                 )
                 normal_output.append(completion_capture["operator_completion_summary"])
+                normal_output.append(workflow_status_output)
             rendered_normal_output = "\n".join(turn_progress_buffer + normal_output)
             terminal_output_writer(rendered_normal_output)
             for failure_line in failure_output:
                 terminal_output_writer(failure_line)
+            if turns[-1].get("fail_closed") is True:
+                terminal_output_writer(workflow_status_output)
             output_writer = terminal_output_writer
         except Exception as exc:
             output_writer = terminal_output_writer
@@ -3663,15 +3866,16 @@ def run_interactive_conversation(
                     pass
             if turn_progress_buffer:
                 output_writer("\n".join(turn_progress_buffer))
-            output_writer(f"FAILED_CLOSED: {failure_reason}")
-            turns.append(
-                _interactive_failed_turn_summary(
-                    turn_id=turn_id,
-                    prompt_id=prompt_id,
-                    source_router_replay_reference=str(turn_root / "source_router"),
-                    failure_reason=failure_reason,
-                )
+            failed_summary = _interactive_failed_turn_summary(
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                source_router_replay_reference=str(turn_root / "source_router"),
+                failure_reason=failure_reason,
             )
+            failed_workflow_status = _attach_interactive_workflow_status(failed_summary)
+            output_writer(f"FAILED_CLOSED: {failure_reason}")
+            output_writer(_render_interactive_workflow_status(failed_workflow_status))
+            turns.append(failed_summary)
 
     return {
         "command": "aigol conversation",
@@ -4257,6 +4461,7 @@ def _interactive_domain_worker_execution_turn_summary(
         "execution_runtime_replay_reference": execution_artifact.get("replay_reference"),
         "execution_reference": execution_artifact.get("execution_id"),
         "execution_hash": execution_artifact.get("artifact_hash"),
+        "domain_name": execution_capture.get("domain_name"),
         "worker_invocation_reference": execution_artifact.get("worker_invocation_reference"),
         "worker_dispatch_reference": execution_artifact.get("dispatch_reference"),
         "worker_assignment_reference": execution_artifact.get("worker_assignment_reference"),
@@ -4311,6 +4516,7 @@ def _interactive_domain_worker_result_capture_turn_summary(
         "worker_result_capture_status": capture_artifact.get("result_capture_status"),
         "worker_result_capture_replay_reference": result_capture.get("worker_result_capture_replay_reference"),
         "worker_result_capture_reference": capture_artifact.get("worker_result_capture_id"),
+        "domain_name": result_capture.get("domain_name"),
         "execution_reference": capture_artifact.get("execution_reference"),
         "execution_hash": capture_artifact.get("execution_hash"),
         "worker_invocation_reference": capture_artifact.get("worker_invocation_reference"),
