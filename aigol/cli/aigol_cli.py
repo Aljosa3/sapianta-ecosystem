@@ -4539,6 +4539,7 @@ def _interactive_domain_worker_assignment_turn_summary(
         "worker_assignment_status": worker_assignment_capture.get("assignment_status"),
         "worker_assignment_replay_reference": worker_assignment_capture.get("worker_assignment_replay_reference"),
         "worker_assignment_reference": worker_assignment_capture.get("worker_assignment_reference"),
+        "approved_domain": worker_assignment_capture.get("approved_domain"),
         "worker_id": worker_assignment_capture.get("worker_id"),
         "worker_family": worker_assignment_capture.get("worker_family"),
         "worker_role": worker_assignment_capture.get("worker_role"),
