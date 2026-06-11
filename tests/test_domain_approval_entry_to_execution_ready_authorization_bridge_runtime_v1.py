@@ -744,6 +744,10 @@ def test_acli_worker_dispatch_prompt_dispatches_worker_without_invocation_or_exe
     assert eighth["worker_invoked"] is False
     assert eighth["execution_started"] is False
     assert eighth["domain_created"] is False
+    assert eighth["approved_domain"] == "FreshDomain"
+    assert eighth["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert eighth["workflow_status"]["current_lifecycle_stage"] == "WORKER_DISPATCHED"
+    assert eighth["workflow_status"]["next_expected_action"] == "Invoke worker for FreshDomain."
     assert replay["dispatch_status"] == WORKER_DISPATCHED
     assert "Dispatch Status: WORKER_DISPATCHED" in output[7]
     assert "No Worker has been invoked, executed, or produced results." in output[7]
