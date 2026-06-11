@@ -65,6 +65,11 @@ from aigol.runtime.worker_invocation_request_runtime import (
     find_latest_domain_execution_authorization,
     reconstruct_worker_invocation_request_replay,
 )
+from aigol.runtime.worker_result_capture_runtime import (
+    WORKER_RESULT_CAPTURED,
+    detect_domain_worker_result_capture_entry_intent,
+    reconstruct_worker_result_capture_replay,
+)
 
 
 CREATED_AT = "2026-06-09T00:00:00Z"
@@ -85,6 +90,7 @@ WORKER_ASSIGNMENT_PROMPT = "Assign worker for FreshDomain."
 WORKER_DISPATCH_PROMPT = "Dispatch worker for FreshDomain."
 WORKER_INVOCATION_PROMPT = "Invoke worker for FreshDomain."
 WORKER_EXECUTION_PROMPT = "Execute worker for FreshDomain."
+WORKER_RESULT_CAPTURE_PROMPT = "Capture worker result for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -975,6 +981,31 @@ def test_worker_execution_entry_intent_detection_supports_required_prompts(tmp_p
         assert routed["workflow_id"] == "DOMAIN_WORKER_EXECUTION"
 
 
+def test_worker_result_capture_entry_intent_detection_supports_required_prompts(tmp_path) -> None:
+    cases = {
+        "Capture worker result for FreshDomain.": "CAPTURE_WORKER_RESULT",
+        "Capture result for FreshDomain.": "CAPTURE_WORKER_RESULT",
+        "Continue FreshDomain to result capture.": "CONTINUE_TO_WORKER_RESULT_CAPTURE",
+        "Create worker result capture for FreshDomain.": "CREATE_WORKER_RESULT_CAPTURE",
+    }
+
+    for index, (prompt, action) in enumerate(cases.items()):
+        detected = detect_domain_worker_result_capture_entry_intent(prompt)
+        routed = route_conversational_cli_intent(
+            routing_id=f"ROUTE-{action}",
+            prompt_id=f"PROMPT-{action}",
+            human_prompt=prompt,
+            canonical_chain_id=f"CHAIN-{action}",
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / f"routing_result_capture_{index}_{action}",
+        )
+
+        assert detected["worker_result_capture_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+        assert detected["worker_result_capture_action"] == action
+        assert routed["workflow_id"] == "DOMAIN_WORKER_RESULT_CAPTURE"
+
+
 def test_acli_worker_execution_prompt_starts_execution_without_result_validation(tmp_path) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
@@ -1038,6 +1069,66 @@ def test_acli_worker_execution_prompt_starts_execution_without_result_validation
     assert "No completion recorded." in output[9]
     assert "No result certification recorded." in output[9]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[9]
+
+
+def test_acli_worker_result_capture_prompt_captures_result_without_validation(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                WORKER_ASSIGNMENT_PROMPT,
+                WORKER_DISPATCH_PROMPT,
+                WORKER_INVOCATION_PROMPT,
+                WORKER_EXECUTION_PROMPT,
+                WORKER_RESULT_CAPTURE_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    eleventh = result["turns"][10]
+    session_root = tmp_path / "interactive_runtime" / SESSION_ID
+    execution = reconstruct_execution_replay(
+        session_root
+        / "TURN-000010"
+        / "execution_runtime"
+    )
+    replay = reconstruct_worker_result_capture_replay(
+        session_root
+        / "TURN-000011"
+        / "worker_result_capture"
+    )
+    result_capture_artifact = load_json(
+        session_root
+        / "TURN-000011"
+        / "worker_result_capture"
+        / "002_result_capture_artifact_recorded.json"
+    )["artifact"]
+
+    assert result["failed_turns"] == 0
+    assert eleventh["response_source"] == "DOMAIN_WORKER_RESULT_CAPTURE"
+    assert eleventh["worker_result_capture_status"] == WORKER_RESULT_CAPTURED
+    assert eleventh["worker_result_captured"] is True
+    assert eleventh["worker_result_validated"] is False
+    assert eleventh["post_execution_replay_reviewed"] is False
+    assert replay["result_capture_status"] == WORKER_RESULT_CAPTURED
+    assert replay["execution_reference"] == execution["execution_id"]
+    assert replay["execution_started"] is True
+    assert result_capture_artifact["artifact_type"] == "WORKER_RESULT_CAPTURE_ARTIFACT_V1"
+    assert result_capture_artifact["result_created"] is True
+    assert result_capture_artifact["result_validated"] is False
+    assert "Result Capture Status: WORKER_RESULT_CAPTURED" in output[10]
+    assert "No semantic validation yet." in output[10]
+    assert "No replay review yet." in output[10]
+    assert "No termination yet." in output[10]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[10]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
