@@ -70,6 +70,18 @@ from aigol.runtime.worker_result_capture_runtime import (
     detect_domain_worker_result_capture_entry_intent,
     reconstruct_worker_result_capture_replay,
 )
+from aigol.runtime.worker_result_validation_runtime import (
+    RESULT_VALIDATED,
+    reconstruct_worker_result_validation_replay,
+)
+from aigol.runtime.post_execution_replay_review_runtime import (
+    REVIEW_COMPLETED,
+    reconstruct_post_execution_replay_review,
+)
+from aigol.runtime.governed_termination_runtime import (
+    TERMINATED,
+    reconstruct_governed_termination_replay,
+)
 
 
 CREATED_AT = "2026-06-09T00:00:00Z"
@@ -91,6 +103,9 @@ WORKER_DISPATCH_PROMPT = "Dispatch worker for FreshDomain."
 WORKER_INVOCATION_PROMPT = "Invoke worker for FreshDomain."
 WORKER_EXECUTION_PROMPT = "Execute worker for FreshDomain."
 WORKER_RESULT_CAPTURE_PROMPT = "Capture worker result for FreshDomain."
+WORKER_RESULT_VALIDATION_PROMPT = "Validate worker result for FreshDomain."
+POST_EXECUTION_REPLAY_REVIEW_PROMPT = "Review post-execution replay for FreshDomain."
+GOVERNED_TERMINATION_PROMPT = "Terminate reviewed operation for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -1145,6 +1160,70 @@ def test_acli_worker_result_capture_prompt_captures_result_without_validation(tm
     assert "Current Lifecycle Stage: RESULT_CREATED" in output[10]
     assert "Next Expected Action: Validate worker result for FreshDomain." in output[10]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[10]
+
+
+def test_copied_next_expected_actions_continue_result_lifecycle_to_termination(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                WORKER_ASSIGNMENT_PROMPT,
+                WORKER_DISPATCH_PROMPT,
+                WORKER_INVOCATION_PROMPT,
+                WORKER_EXECUTION_PROMPT,
+                WORKER_RESULT_CAPTURE_PROMPT,
+                WORKER_RESULT_VALIDATION_PROMPT,
+                POST_EXECUTION_REPLAY_REVIEW_PROMPT,
+                GOVERNED_TERMINATION_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    session_root = tmp_path / "interactive_runtime" / SESSION_ID
+    validation_turn = result["turns"][11]
+    review_turn = result["turns"][12]
+    termination_turn = result["turns"][13]
+    validation_replay = reconstruct_worker_result_validation_replay(
+        session_root / "TURN-000012" / "worker_result_validation"
+    )
+    review_replay = reconstruct_post_execution_replay_review(
+        session_root / "TURN-000013" / "post_execution_replay_review"
+    )
+    termination_replay = reconstruct_governed_termination_replay(
+        session_root / "TURN-000014" / "governed_termination"
+    )
+
+    assert result["failed_turns"] == 0
+    assert validation_turn["response_source"] == "DOMAIN_WORKER_RESULT_VALIDATION"
+    assert validation_turn["worker_result_validation_status"] == RESULT_VALIDATED
+    assert validation_turn["workflow_status"]["current_lifecycle_stage"] == "RESULT_VALIDATED"
+    assert (
+        validation_turn["workflow_status"]["next_expected_action"]
+        == POST_EXECUTION_REPLAY_REVIEW_PROMPT
+    )
+    assert review_turn["response_source"] == "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
+    assert review_turn["post_execution_replay_review_status"] == REVIEW_COMPLETED
+    assert review_turn["workflow_status"]["current_lifecycle_stage"] == "REPLAY_REVIEWED"
+    assert review_turn["workflow_status"]["next_expected_action"] == GOVERNED_TERMINATION_PROMPT
+    assert termination_turn["response_source"] == "DOMAIN_GOVERNED_TERMINATION"
+    assert termination_turn["governed_termination_status"] == TERMINATED
+    assert termination_turn["workflow_status"]["workflow_state"] == "COMPLETED"
+    assert termination_turn["workflow_status"]["next_expected_action"].startswith("Informational only:")
+    assert validation_replay["validation_status"] == RESULT_VALIDATED
+    assert review_replay["review_status"] == REVIEW_COMPLETED
+    assert termination_replay["termination_status"] == TERMINATED
+    assert "Validation Status: RESULT_VALIDATED" in output[11]
+    assert "Replay Review Status: REVIEW_COMPLETED" in output[12]
+    assert "Termination Status: TERMINATED" in output[13]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in "\n".join(output[11:14])
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
