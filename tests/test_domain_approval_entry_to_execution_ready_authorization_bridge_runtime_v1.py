@@ -625,6 +625,10 @@ def test_acli_worker_assignment_prompt_assigns_worker_without_dispatch_or_invoca
     assert seventh["worker_invoked"] is False
     assert seventh["execution_started"] is False
     assert seventh["domain_created"] is False
+    assert seventh["approved_domain"] == "FreshDomain"
+    assert seventh["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert seventh["workflow_status"]["current_lifecycle_stage"] == "WORKER_ASSIGNED"
+    assert seventh["workflow_status"]["next_expected_action"] == "Dispatch worker for FreshDomain."
     assert replay["assignment_status"] == WORKER_ASSIGNED
     assert "Assignment Status: WORKER_ASSIGNED" in output[6]
     assert "No Worker has been dispatched, invoked, or executed." in output[6]
