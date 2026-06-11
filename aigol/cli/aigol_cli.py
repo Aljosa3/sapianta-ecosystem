@@ -4446,6 +4446,7 @@ def _interactive_domain_execution_authorization_turn_summary(
         "execution_authorization_replay_reference": execution_authorization_capture.get(
             "execution_authorization_replay_reference"
         ),
+        "approved_domain": execution_authorization_capture.get("approved_domain"),
         "authorization_reference": execution_authorization_capture.get("authorization_reference"),
         "approval_status": execution_authorization_capture.get("approval_status"),
         "approval_reference": execution_authorization_capture.get("approval_reference"),
