@@ -257,4 +257,5 @@ def test_default_fallback_prompt_renders_authoritative_visibility_before_failure
     assert output[0].splitlines()[3:4] == [
         "confidence: LOW",
     ]
-    assert output[-1].startswith("FAILED_CLOSED:")
+    assert output[-2].startswith("FAILED_CLOSED:")
+    assert output[-1].startswith("Workflow Name:")

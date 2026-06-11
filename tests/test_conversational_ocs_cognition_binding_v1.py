@@ -174,14 +174,19 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert '{"findings"' not in output[0]
     assert "AIGOL OCS LLM COGNITION END-TO-END" in output[0]
     assert "REAL_LLM_PROVIDER_USED_BY_OCS = true" in output[0]
-    assert output[0].splitlines()[-8:-2] == [
+    lines = output[0].splitlines()
+    turn_completed_index = lines.index("TURN COMPLETED")
+    assert lines[turn_completed_index - 1 : turn_completed_index + 6] == [
         "================================",
         "TURN COMPLETED",
         "turn_id: TURN-000001",
         "providers: openai",
         "status: COMPLETED",
         "result_delivered: TRUE",
+        "elapsed: 0s",
     ]
+    assert "Workflow State: WAITING_FOR_OPERATOR" in output[0]
+    assert "WAITING FOR OPERATOR INPUT" in output[0]
     assert replay["final_status"] == STATUS_COMPLETED
     assert replay["provider_count"] == 1
     assert replay["cognition_artifact_count"] == 1

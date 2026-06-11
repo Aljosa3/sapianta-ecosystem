@@ -66,6 +66,16 @@ def _input_sequence(values: list[str]):
     return read
 
 
+class PromptRecorder:
+    def __init__(self, values: list[str]):
+        self.values = list(values)
+        self.prompts: list[str] = []
+
+    def __call__(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        return self.values.pop(0)
+
+
 def test_create_compliance_domain_enters_unknown_domain_clarification(tmp_path) -> None:
     capture = _workflow(tmp_path, "Create a compliance domain.")
     reconstructed = reconstruct_unknown_domain_clarification_replay(tmp_path / "unknown_domain")
@@ -163,15 +173,25 @@ def test_interactive_conversation_uses_unknown_domain_clarification_without_prov
     assert turn["provider_invoked"] is False
     assert turn["worker_invoked"] is False
     assert turn["domain_created"] is False
+    assert turn["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert turn["workflow_status"]["current_lifecycle_stage"] == "CLARIFICATION"
+    assert "CLARIFICATION" not in turn["workflow_status"]["completed_stages"]
+    assert turn["workflow_status"]["remaining_stages"][0] == "CLARIFICATION"
     assert "Unknown Domain Detected" in output[0]
+    assert "WAITING FOR OPERATOR INPUT" in output[0]
+    assert "Required input:" in output[0]
+    assert "- primary purpose" in output[0]
+    assert "- expected capabilities" in output[0]
+    assert "- target users" in output[0]
     assert replay_path.exists()
 
 
 def test_interactive_conversation_uses_generic_domain_clarification_without_provider(tmp_path) -> None:
     output: list[str] = []
+    prompts = PromptRecorder(["Create a new governed domain called PilotDomain.", "exit"])
     result = run_interactive_conversation(
         _conversation_args(tmp_path),
-        input_func=_input_sequence(["Create a new governed domain called PilotDomain.", "exit"]),
+        input_func=prompts,
         output_func=output.append,
     )
     turn = result["turns"][0]
@@ -194,6 +214,10 @@ def test_interactive_conversation_uses_generic_domain_clarification_without_prov
     assert turn["domain_created"] is False
     assert "Clarification Required" in output[0]
     assert "Proposed Domain: PilotDomain" in output[0]
+    assert prompts.prompts == [
+        "AiGOL [COMPLETED] > ",
+        "AiGOL [WAITING_FOR_OPERATOR: CLARIFICATION] > ",
+    ]
     assert replay_path.exists()
 
 

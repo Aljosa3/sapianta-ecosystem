@@ -155,7 +155,8 @@ def test_case_b_multiline_paste_creates_one_turn_without_fragmentation(tmp_path,
     assert len(list((turn_root / "turn_completion").glob("*turn_completed.json"))) == 1
     assert len(list(session_root.glob("TURN-*"))) == 1
     assert "TURN COMPLETED" in output[0]
-    assert pasted.prompts.count("AiGOL > ") == 2
+    assert pasted.prompts[0] == "AiGOL [COMPLETED] > "
+    assert sum(prompt.startswith("AiGOL [") for prompt in pasted.prompts) == 2
     assert pasted.prompts.count("... ") == len(CASE_B_LINES)
 
 
@@ -209,7 +210,7 @@ def test_multiline_reentry_does_not_consume_sentinel_as_second_turn(tmp_path, mo
     assert result["turns"][0]["fragment_turns_created"] is False
     assert prompt_replay["terminator_included"] is False
     assert prompt_replay["single_turn_guarantee"] is True
-    assert pasted.prompts == ["AiGOL > ", "... ", "... ", "AiGOL > "]
+    assert pasted.prompts == ["AiGOL [COMPLETED] > ", "... ", "... ", "AiGOL [COMPLETED] > "]
     assert "TURN COMPLETED" in output[0]
 
 

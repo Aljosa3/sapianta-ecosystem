@@ -118,12 +118,13 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
         "Workflow State: COMPLETED",
         "Current Lifecycle Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
         "Next Expected Action: No further operator action required.",
-        "Workflow Complete: TRUE",
+        "WORKFLOW COMPLETE: TRUE",
         "Lifecycle Progress:",
         "Completed Stages: NONE",
         "Current Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
         "Remaining Stages: NONE",
     ]
+    assert "Routing ...\nCognition ...\nProvider Invocation ...\nReplay ..." in output[0]
     assert any("governed AI operation path" in line for line in output)
     assert (session_root / "TURN-000001" / "source_router" / "000_source_of_truth_router_selected.json").exists()
     assert (
@@ -207,7 +208,7 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
         "Workflow State: FAILED_CLOSED",
         "Current Lifecycle Stage: FAILED_CLOSED",
         "Next Expected Action: Inspect fail-closed reason: synthetic runtime failure",
-        "Workflow Complete: FALSE",
+        "WORKFLOW COMPLETE: FALSE",
         "Lifecycle Progress:",
         "Completed Stages: NONE",
         "Current Stage: FAILED_CLOSED",
