@@ -892,6 +892,13 @@ def _interactive_workflow_name(turn_summary: dict[str, Any]) -> str:
 def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
     if turn_summary.get("fail_closed") is True:
         return WORKFLOW_STATUS_FAILED_CLOSED
+    if (
+        turn_summary.get("handoff_review_next_certified_stage")
+        == CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW
+    ):
+        return "APPROVAL"
+    if turn_summary.get("clarification_resolved") is True and turn_summary.get("workflow_resumed") is True:
+        return "APPROVAL"
     ordered_flags = (
         ("terminated", "TERMINATED"),
         ("post_execution_replay_reviewed", "REPLAY_REVIEWED"),
@@ -912,7 +919,7 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
         return "EXECUTION_READY"
     if turn_summary.get("approval_created") is True or "APPROVAL" in response_source:
         return "APPROVAL"
-    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+    if _interactive_waiting_for_clarification(turn_summary):
         return "CLARIFICATION"
     if turn_summary.get("domain_created") is True:
         return "APPROVAL"
@@ -922,7 +929,7 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
 def _interactive_workflow_state(turn_summary: dict[str, Any], current_stage: str) -> str:
     if turn_summary.get("fail_closed") is True:
         return WORKFLOW_STATUS_FAILED_CLOSED
-    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+    if _interactive_waiting_for_clarification(turn_summary):
         return WORKFLOW_STATUS_WAITING_FOR_OPERATOR
     response_status = str(turn_summary.get("response_status") or "")
     if "APPROVAL_REQUIRED" in response_status or turn_summary.get("approval_required") is True:
@@ -952,8 +959,8 @@ def _interactive_next_expected_action(
 
     domain = _interactive_workflow_domain_text(turn_summary)
     actions = {
-        "CLARIFICATION": f"Approve {domain} for domain artifact creation.",
-        "APPROVAL": f"Create execution-ready authorization packet for {domain}.",
+        "CLARIFICATION": f"Authorize {domain} domain artifact request.",
+        "APPROVAL": f"Authorize {domain} domain artifact request.",
         "EXECUTION_READY": f"Authorize execution-ready packet for {domain}.",
         "EXECUTION_AUTHORIZED": f"Create worker request for {domain}.",
         "WORKER_REQUESTED": f"Assign worker for {domain}.",
@@ -983,9 +990,15 @@ def _interactive_required_input(turn_summary: dict[str, Any]) -> list[str]:
     missing_information = turn_summary.get("missing_information")
     if isinstance(missing_information, list) and missing_information:
         return [str(item) for item in missing_information]
-    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+    if _interactive_waiting_for_clarification(turn_summary):
         return ["operator clarification"]
     return []
+
+
+def _interactive_waiting_for_clarification(turn_summary: dict[str, Any]) -> bool:
+    if turn_summary.get("clarification_resolved") is True or turn_summary.get("workflow_resumed") is True:
+        return False
+    return turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True
 
 
 def _interactive_prompt_label(workflow_status: dict[str, Any] | None) -> str:

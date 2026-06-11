@@ -244,3 +244,28 @@ def test_acli_authorize_prompt_binds_reviewed_freshdomain_without_provider_fallb
     assert replay["approval_status"] == DOMAIN_APPROVAL_BOUND
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[2]
     assert "FAILED_CLOSED" not in output[2]
+
+
+def test_acli_status_projection_advances_after_clarification_handoff_review(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([PROMPT, REPLY, "exit"]),
+        output_func=output.append,
+    )
+    second = result["turns"][1]
+    workflow_status = second["workflow_status"]
+
+    assert result["failed_turns"] == 0
+    assert second["clarification_resolved"] is True
+    assert second["workflow_resumed"] is True
+    assert second["handoff_review_decision"] == WORKER_BINDING_APPROVED
+    assert second["handoff_review_next_certified_stage"] == "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW"
+    assert workflow_status["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert workflow_status["current_lifecycle_stage"] == "APPROVAL"
+    assert workflow_status["next_expected_action"] == "Authorize FreshDomain domain artifact request."
+    assert workflow_status["required_input"] == []
+    assert "Workflow State: CONTINUATION_AVAILABLE" in output[1]
+    assert "Current Lifecycle Stage: APPROVAL" in output[1]
+    assert "Next Expected Action: Authorize FreshDomain domain artifact request." in output[1]
+    assert "WAITING FOR OPERATOR INPUT" not in output[1]
