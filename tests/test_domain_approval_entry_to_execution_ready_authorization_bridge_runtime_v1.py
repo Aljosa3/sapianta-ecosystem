@@ -27,6 +27,11 @@ from aigol.runtime.execution_authorization_runtime import (
     find_latest_domain_execution_ready_bridge,
     reconstruct_execution_authorization_replay,
 )
+from aigol.runtime.execution_runtime import (
+    EXECUTING,
+    detect_domain_worker_execution_entry_intent,
+    reconstruct_execution_replay,
+)
 from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
@@ -79,6 +84,7 @@ WORKER_REQUEST_PROMPT = "Create worker request for FreshDomain."
 WORKER_ASSIGNMENT_PROMPT = "Assign worker for FreshDomain."
 WORKER_DISPATCH_PROMPT = "Dispatch worker for FreshDomain."
 WORKER_INVOCATION_PROMPT = "Invoke worker for FreshDomain."
+WORKER_EXECUTION_PROMPT = "Execute worker for FreshDomain."
 
 
 def _input_sequence(values: list[str]):
@@ -942,6 +948,89 @@ def test_acli_worker_invocation_continuation_creates_missing_assignment_and_disp
     assert "Assignment Status: WORKER_ASSIGNED" in output[6]
     assert "Dispatch Status: WORKER_DISPATCHED" in output[6]
     assert "Invocation Status: WORKER_INVOKED" in output[6]
+
+
+def test_worker_execution_entry_intent_detection_supports_required_prompts(tmp_path) -> None:
+    cases = {
+        "Execute worker for FreshDomain.": "EXECUTE_WORKER",
+        "Start worker execution for FreshDomain.": "START_WORKER_EXECUTION",
+        "Continue FreshDomain to worker execution.": "CONTINUE_TO_WORKER_EXECUTION",
+        "Create worker execution for FreshDomain.": "CREATE_WORKER_EXECUTION",
+    }
+
+    for prompt, action in cases.items():
+        detected = detect_domain_worker_execution_entry_intent(prompt)
+        routed = route_conversational_cli_intent(
+            routing_id=f"ROUTE-{action}",
+            prompt_id=f"PROMPT-{action}",
+            human_prompt=prompt,
+            canonical_chain_id=f"CHAIN-{action}",
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / f"routing_{action}",
+        )
+
+        assert detected["worker_execution_entry_intent_detected"] is True
+        assert detected["domain_name"] == "FreshDomain"
+        assert detected["worker_execution_action"] == action
+        assert routed["workflow_id"] == "DOMAIN_WORKER_EXECUTION"
+
+
+def test_acli_worker_execution_prompt_starts_execution_without_result_validation(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                PROMPT,
+                REPLY,
+                APPROVAL_PROMPT,
+                EXECUTION_READY_PROMPT,
+                EXECUTION_AUTHORIZATION_PROMPT,
+                WORKER_REQUEST_PROMPT,
+                WORKER_ASSIGNMENT_PROMPT,
+                WORKER_DISPATCH_PROMPT,
+                WORKER_INVOCATION_PROMPT,
+                WORKER_EXECUTION_PROMPT,
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+    tenth = result["turns"][9]
+    session_root = tmp_path / "interactive_runtime" / SESSION_ID
+    invocation = reconstruct_worker_invocation_replay(
+        session_root
+        / "TURN-000009"
+        / "worker_invocation"
+    )
+    dispatch = reconstruct_worker_dispatch_replay(
+        session_root
+        / "TURN-000008"
+        / "worker_dispatch"
+    )
+    replay = reconstruct_execution_replay(
+        session_root
+        / "TURN-000010"
+        / "execution_runtime"
+    )
+
+    assert result["failed_turns"] == 0
+    assert tenth["response_source"] == "DOMAIN_WORKER_EXECUTION"
+    assert tenth["execution_runtime_status"] == EXECUTING
+    assert tenth["execution_started"] is True
+    assert tenth["worker_invoked"] is True
+    assert tenth["worker_result_captured"] is False
+    assert tenth["worker_result_validated"] is False
+    assert tenth["post_execution_replay_reviewed"] is False
+    assert replay["execution_status"] == EXECUTING
+    assert replay["worker_invocation_reference"] == invocation["worker_invocation_id"]
+    assert replay["dispatch_reference"] == dispatch["worker_dispatch_id"]
+    assert replay["completion_recorded"] is False
+    assert replay["result_certified"] is False
+    assert "Execution Status: EXECUTING" in output[9]
+    assert "No completion recorded." in output[9]
+    assert "No result certification recorded." in output[9]
+    assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[9]
 
 
 def test_bridge_replay_tampering_is_detected(tmp_path) -> None:
