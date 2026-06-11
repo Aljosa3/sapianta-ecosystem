@@ -513,6 +513,10 @@ def test_acli_worker_request_prompt_creates_request_without_assignment_or_invoca
     assert sixth["worker_invoked"] is False
     assert sixth["execution_started"] is False
     assert sixth["domain_created"] is False
+    assert sixth["approved_domain"] == "FreshDomain"
+    assert sixth["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert sixth["workflow_status"]["current_lifecycle_stage"] == "WORKER_REQUESTED"
+    assert sixth["workflow_status"]["next_expected_action"] == "Assign worker for FreshDomain."
     assert replay["request_status"] == WORKER_INVOCATION_REQUEST_CREATED
     assert "Request Status: WORKER_INVOCATION_REQUEST_CREATED" in output[5]
     assert "No Worker has been assigned, dispatched, invoked, or executed." in output[5]
