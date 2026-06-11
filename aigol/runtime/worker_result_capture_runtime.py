@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.execution_runtime import (
@@ -17,6 +18,9 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 from aigol.runtime.worker_invocation_runtime import (
     WORKER_INVOCATION_ARTIFACT_V1,
     WORKER_INVOKED,
+    _domain_execution_ready_bridge_index,
+    _matching_bridge_for_dispatch,
+    _resolve_replay_reference,
     reconstruct_worker_invocation_replay,
 )
 
@@ -52,6 +56,120 @@ FORBIDDEN_OUTPUT_FIELDS = frozenset(
         "secret",
     }
 )
+
+
+def detect_domain_worker_result_capture_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for domain Worker result capture."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^capture\s+worker\s+result\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^capture\s+result\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+result\s+capture$",
+        r"^create\s+worker\s+result\s+capture\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^create\s+result\s+capture\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_WORKER_RESULT_CAPTURE"
+            elif lowered.startswith("create"):
+                action = "CREATE_WORKER_RESULT_CAPTURE"
+            else:
+                action = "CAPTURE_WORKER_RESULT"
+            return {
+                "worker_result_capture_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "worker_result_capture_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "worker_result_capture_entry_intent_detected": False,
+        "domain_name": None,
+        "worker_result_capture_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_execution_for_result_capture(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest execution replay for a domain without result capture."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("worker result capture failed closed: session root missing")
+    bridge_index = _domain_execution_ready_bridge_index(root, domain)
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/execution_runtime")):
+        try:
+            reconstructed = reconstruct_execution_replay(path)
+            execution_wrapper = load_json(path / "000_execution_started.json")
+            replay_wrapper = load_json(path / "001_execution_returned.json")
+            _verify_wrapper_hash(execution_wrapper)
+            _verify_wrapper_hash(replay_wrapper)
+            execution = execution_wrapper.get("artifact")
+            execution_replay = replay_wrapper.get("artifact")
+            if not isinstance(execution, dict) or not isinstance(execution_replay, dict):
+                continue
+            _verify_artifact_hash(execution, "execution artifact")
+            _verify_artifact_hash(execution_replay, "execution replay artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("execution_status") != EXECUTING:
+            continue
+        try:
+            invocation_path, invocation, invocation_evidence = _invocation_for_execution(root, execution)
+            dispatch_replay_path = _resolve_replay_reference(
+                invocation_evidence.get("worker_dispatch_replay_reference"),
+                anchor=invocation_path,
+            )
+            dispatch_wrapper = load_json(dispatch_replay_path / "002_dispatch_artifact_recorded.json")
+            _verify_wrapper_hash(dispatch_wrapper)
+            dispatch = dispatch_wrapper.get("artifact")
+            if not isinstance(dispatch, dict):
+                continue
+            _verify_artifact_hash(dispatch, "worker dispatch artifact")
+        except FailClosedRuntimeError:
+            continue
+        bridge = _matching_bridge_for_dispatch(dispatch_replay_path, dispatch, bridge_index)
+        if bridge is None:
+            continue
+        if _execution_already_result_captured(
+            root,
+            execution_reference=str(execution.get("execution_id") or ""),
+            execution_hash=str(execution.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "execution_replay_reference": str(path),
+                "execution_artifact": deepcopy(execution),
+                "execution_replay": deepcopy(execution_replay),
+                "worker_invocation_artifact": deepcopy(invocation),
+                "worker_invocation_replay_reference": str(invocation_path),
+                "domain_execution_ready_bridge_replay_reference": bridge[
+                    "domain_execution_ready_bridge_replay_reference"
+                ],
+                "domain_name": bridge["approved_domain"],
+                "execution_reference": execution["execution_id"],
+                "execution_hash": execution["artifact_hash"],
+                "worker_invocation_reference": invocation["worker_invocation_id"],
+                "chain_id": invocation["chain_id"],
+                "worker_id": invocation["worker_id"],
+                "worker_role": invocation["worker_role"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("worker result capture failed closed: matching execution not found")
+    return candidates[-1]
 
 
 def capture_worker_result(
@@ -774,6 +892,58 @@ def _capture(
     )
     capture["worker_result_capture_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _invocation_for_execution(root: Path, execution: dict[str, Any]) -> tuple[Path, dict[str, Any], dict[str, Any]]:
+    for path in sorted(root.glob("TURN-*/worker_invocation")):
+        try:
+            reconstructed = reconstruct_worker_invocation_replay(path)
+            evidence_wrapper = load_json(path / "000_invocation_evidence_recorded.json")
+            invocation_wrapper = load_json(path / "002_invocation_artifact_recorded.json")
+            _verify_wrapper_hash(evidence_wrapper)
+            _verify_wrapper_hash(invocation_wrapper)
+            evidence = evidence_wrapper.get("artifact")
+            invocation = invocation_wrapper.get("artifact")
+            if not isinstance(evidence, dict) or not isinstance(invocation, dict):
+                continue
+            _verify_artifact_hash(evidence, "worker invocation evidence artifact")
+            _verify_artifact_hash(invocation, "worker invocation artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("invocation_status") != WORKER_INVOKED:
+            continue
+        if invocation.get("worker_invocation_id") != execution.get("worker_invocation_reference"):
+            continue
+        if invocation.get("artifact_hash") != execution.get("worker_invocation_hash"):
+            continue
+        return path, deepcopy(invocation), deepcopy(evidence)
+    raise FailClosedRuntimeError("worker result capture failed closed: matching invocation not found")
+
+
+def _execution_already_result_captured(
+    session_root: Path,
+    *,
+    execution_reference: str,
+    execution_hash: str,
+) -> bool:
+    for path in sorted(session_root.glob("TURN-*/worker_result_capture")):
+        try:
+            reconstructed = reconstruct_worker_result_capture_replay(path)
+            wrapper = load_json(path / "002_result_capture_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            capture_artifact = wrapper.get("artifact")
+            if not isinstance(capture_artifact, dict):
+                continue
+            _verify_artifact_hash(capture_artifact, "worker result capture artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("result_capture_status") != WORKER_RESULT_CAPTURED:
+            continue
+        if capture_artifact.get("execution_reference") == execution_reference:
+            return True
+        if capture_artifact.get("execution_hash") == execution_hash:
+            return True
+    return False
 
 
 def _validate_result_capture_artifact(capture_artifact: dict[str, Any]) -> None:
