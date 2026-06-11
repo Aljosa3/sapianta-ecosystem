@@ -409,11 +409,15 @@ def test_acli_execution_authorization_prompt_authorizes_freshdomain_without_work
     assert result["failed_turns"] == 0
     assert fifth["response_source"] == "DOMAIN_EXECUTION_AUTHORIZATION"
     assert fifth["execution_authorization_status"] == EXECUTION_AUTHORIZED
+    assert fifth["approved_domain"] == "FreshDomain"
     assert fifth["authorization_created"] is True
     assert fifth["worker_request_created"] is False
     assert fifth["worker_invoked"] is False
     assert fifth["execution_started"] is False
     assert fifth["domain_created"] is False
+    assert fifth["workflow_status"]["workflow_state"] == "CONTINUATION_AVAILABLE"
+    assert fifth["workflow_status"]["current_lifecycle_stage"] == "EXECUTION_AUTHORIZED"
+    assert fifth["workflow_status"]["next_expected_action"] == "Create worker request for FreshDomain."
     assert replay["authorization_status"] == EXECUTION_AUTHORIZED
     assert "Authorization Status: EXECUTION_AUTHORIZED" in output[4]
     assert "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" not in output[4]
