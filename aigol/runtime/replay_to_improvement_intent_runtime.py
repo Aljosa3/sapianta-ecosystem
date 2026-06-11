@@ -40,6 +40,12 @@ IMPROVEMENT_CLASS_BY_GAP = {
     "REPLAY_INTEGRITY_GAP": "REPLAY_RECONSTRUCTION",
     "DOMAIN_EFFECTIVENESS_GAP": "DOMAIN_MODEL",
     "REPEATED_FAILURE_PATTERN": "OPERATOR_WORKFLOW",
+    "ROUTING_MISMATCH": "OPERATOR_WORKFLOW",
+    "REPLAY_CONTINUITY_BREAK": "REPLAY_RECONSTRUCTION",
+    "MISSING_CONTINUATION": "OPERATOR_WORKFLOW",
+    "FAIL_CLOSED_INTERRUPTION": "RUNTIME_HARDENING",
+    "PROJECTION_INCONSISTENCY": "OPERATOR_WORKFLOW",
+    "LIFECYCLE_STAGE_DEVIATION": "OPERATOR_WORKFLOW",
 }
 
 INTENT_SUMMARY_BY_GAP = {
@@ -49,6 +55,12 @@ INTENT_SUMMARY_BY_GAP = {
     "REPLAY_INTEGRITY_GAP": "Replay integrity analysis required.",
     "DOMAIN_EFFECTIVENESS_GAP": "Domain effectiveness improvement required.",
     "REPEATED_FAILURE_PATTERN": "Failure pattern analysis required.",
+    "ROUTING_MISMATCH": "Lifecycle routing mismatch review required.",
+    "REPLAY_CONTINUITY_BREAK": "Replay continuity reconstruction review required.",
+    "MISSING_CONTINUATION": "Lifecycle continuation review required.",
+    "FAIL_CLOSED_INTERRUPTION": "Fail-closed interruption review required.",
+    "PROJECTION_INCONSISTENCY": "Workflow status projection review required.",
+    "LIFECYCLE_STAGE_DEVIATION": "Lifecycle stage progression review required.",
 }
 
 FORBIDDEN_INTENT_TERMS = (
@@ -654,6 +666,12 @@ def _primary_gap(categories: list[str]) -> str:
         "REPLAY_INTEGRITY_GAP",
         "POLICY_GAP",
         "VALIDATION_GAP",
+        "REPLAY_CONTINUITY_BREAK",
+        "FAIL_CLOSED_INTERRUPTION",
+        "PROJECTION_INCONSISTENCY",
+        "ROUTING_MISMATCH",
+        "MISSING_CONTINUATION",
+        "LIFECYCLE_STAGE_DEVIATION",
         "REPEATED_FAILURE_PATTERN",
         "DOMAIN_EFFECTIVENESS_GAP",
         "PERFORMANCE_GAP",
