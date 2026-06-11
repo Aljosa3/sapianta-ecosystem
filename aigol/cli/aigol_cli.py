@@ -4587,6 +4587,7 @@ def _interactive_domain_worker_dispatch_turn_summary(
         "worker_dispatch_replay_reference": worker_dispatch_capture.get("worker_dispatch_replay_reference"),
         "worker_dispatch_reference": worker_dispatch_capture.get("worker_dispatch_reference"),
         "worker_assignment_reference": worker_dispatch_capture.get("worker_assignment_reference"),
+        "approved_domain": worker_dispatch_capture.get("approved_domain"),
         "worker_id": worker_dispatch_capture.get("worker_id"),
         "worker_family": worker_dispatch_capture.get("worker_family"),
         "worker_role": worker_dispatch_capture.get("worker_role"),
