@@ -34,7 +34,7 @@ from aigol.runtime.execution_runtime import (
 )
 from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import canonical_serialize
+from aigol.runtime.transport.serialization import canonical_serialize, load_json
 from aigol.runtime.unknown_domain_clarification_runtime import run_unknown_domain_clarification_workflow
 from aigol.runtime.worker_assignment_runtime import (
     WORKER_ASSIGNED,
@@ -1013,6 +1013,12 @@ def test_acli_worker_execution_prompt_starts_execution_without_result_validation
         / "TURN-000010"
         / "execution_runtime"
     )
+    invocation_artifact = load_json(
+        session_root
+        / "TURN-000009"
+        / "worker_invocation"
+        / "002_invocation_artifact_recorded.json"
+    )["artifact"]
 
     assert result["failed_turns"] == 0
     assert tenth["response_source"] == "DOMAIN_WORKER_EXECUTION"
@@ -1023,6 +1029,7 @@ def test_acli_worker_execution_prompt_starts_execution_without_result_validation
     assert tenth["worker_result_validated"] is False
     assert tenth["post_execution_replay_reviewed"] is False
     assert replay["execution_status"] == EXECUTING
+    assert invocation_artifact["invoked_by"] == "AIGOL_GOVERNANCE"
     assert replay["worker_invocation_reference"] == invocation["worker_invocation_id"]
     assert replay["dispatch_reference"] == dispatch["worker_dispatch_id"]
     assert replay["completion_recorded"] is False
