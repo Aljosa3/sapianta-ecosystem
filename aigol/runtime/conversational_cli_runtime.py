@@ -19,6 +19,9 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
 from aigol.runtime.execution_authorization_runtime import detect_domain_execution_authorization_entry_intent
 from aigol.runtime.execution_runtime import detect_domain_worker_execution_entry_intent
 from aigol.runtime.worker_result_capture_runtime import detect_domain_worker_result_capture_entry_intent
+from aigol.runtime.worker_result_validation_runtime import detect_domain_worker_result_validation_entry_intent
+from aigol.runtime.post_execution_replay_review_runtime import detect_domain_post_execution_replay_review_entry_intent
+from aigol.runtime.governed_termination_runtime import detect_domain_governed_termination_entry_intent
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_assignment_runtime import detect_domain_worker_assignment_entry_intent
@@ -58,6 +61,9 @@ DOMAIN_WORKER_DISPATCH = "DOMAIN_WORKER_DISPATCH"
 DOMAIN_WORKER_INVOCATION = "DOMAIN_WORKER_INVOCATION"
 DOMAIN_WORKER_EXECUTION = "DOMAIN_WORKER_EXECUTION"
 DOMAIN_WORKER_RESULT_CAPTURE = "DOMAIN_WORKER_RESULT_CAPTURE"
+DOMAIN_WORKER_RESULT_VALIDATION = "DOMAIN_WORKER_RESULT_VALIDATION"
+DOMAIN_POST_EXECUTION_REPLAY_REVIEW = "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
+DOMAIN_GOVERNED_TERMINATION = "DOMAIN_GOVERNED_TERMINATION"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 
 REPLAY_STEPS = (
@@ -272,6 +278,21 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "worker_result_capture_runtime",
         ),
         _workflow(
+            DOMAIN_WORKER_RESULT_VALIDATION,
+            "aigol conversation",
+            "worker_result_validation_runtime",
+        ),
+        _workflow(
+            DOMAIN_POST_EXECUTION_REPLAY_REVIEW,
+            "aigol conversation",
+            "post_execution_replay_review_runtime",
+        ),
+        _workflow(
+            DOMAIN_GOVERNED_TERMINATION,
+            "aigol conversation",
+            "governed_termination_runtime",
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -287,6 +308,27 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         raise FailClosedRuntimeError("conversational CLI routing failed closed: no certified workflow mapping")
     if _is_domain_adaptation_reference_prompt(normalized):
         return _analysis(DOMAIN_ADAPTATION_REFERENCE, "HIGH", ["domain", "reference", "adaptation"])
+    governed_termination_entry_intent = detect_domain_governed_termination_entry_intent(prompt)
+    if governed_termination_entry_intent.get("governed_termination_entry_intent_detected") is True:
+        return _analysis(
+            DOMAIN_GOVERNED_TERMINATION,
+            "HIGH",
+            ["governed-termination", str(governed_termination_entry_intent.get("domain_name") or "")],
+        )
+    replay_review_entry_intent = detect_domain_post_execution_replay_review_entry_intent(prompt)
+    if replay_review_entry_intent.get("post_execution_replay_review_entry_intent_detected") is True:
+        return _analysis(
+            DOMAIN_POST_EXECUTION_REPLAY_REVIEW,
+            "HIGH",
+            ["post-execution-replay-review", str(replay_review_entry_intent.get("domain_name") or "")],
+        )
+    worker_result_validation_entry_intent = detect_domain_worker_result_validation_entry_intent(prompt)
+    if worker_result_validation_entry_intent.get("worker_result_validation_entry_intent_detected") is True:
+        return _analysis(
+            DOMAIN_WORKER_RESULT_VALIDATION,
+            "HIGH",
+            ["worker-result-validation", str(worker_result_validation_entry_intent.get("domain_name") or "")],
+        )
     worker_execution_entry_intent = detect_domain_worker_execution_entry_intent(prompt)
     if worker_execution_entry_intent.get("worker_execution_entry_intent_detected") is True:
         return _analysis(
@@ -801,6 +843,9 @@ def _operator_summary(workflow_id: str) -> str:
         DOMAIN_WORKER_INVOCATION: "Invoke the latest dispatched worker without execution or result validation.",
         DOMAIN_WORKER_EXECUTION: "Start execution from the latest invoked worker without completion or result validation.",
         DOMAIN_WORKER_RESULT_CAPTURE: "Capture output from the latest execution without validation or replay review.",
+        DOMAIN_WORKER_RESULT_VALIDATION: "Validate the latest captured worker result without replay review.",
+        DOMAIN_POST_EXECUTION_REPLAY_REVIEW: "Review the latest validated worker result replay without termination.",
+        DOMAIN_GOVERNED_TERMINATION: "Terminate the latest reviewed operation without new work.",
         DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }
     return summaries.get(workflow_id, "")

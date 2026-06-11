@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
@@ -32,6 +33,96 @@ REPLAY_STEPS = (
     "termination_artifact_recorded",
     "termination_result_recorded",
 )
+
+
+def detect_domain_governed_termination_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for governed operation termination."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^terminate\s+reviewed\s+operation\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^terminate\s+operation\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+termination$",
+        r"^create\s+governed\s+termination\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_GOVERNED_TERMINATION"
+            elif lowered.startswith("create"):
+                action = "CREATE_GOVERNED_TERMINATION"
+            else:
+                action = "TERMINATE_REVIEWED_OPERATION"
+            return {
+                "governed_termination_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "governed_termination_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "governed_termination_entry_intent_detected": False,
+        "domain_name": None,
+        "governed_termination_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_replay_review_for_termination(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest reviewed replay for a domain without governed termination."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("governed termination failed closed: session root missing")
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/post_execution_replay_review")):
+        try:
+            reconstructed = reconstruct_post_execution_replay_review(path)
+            evidence_wrapper = load_json(path / "000_review_evidence_recorded.json")
+            _verify_wrapper_hash(evidence_wrapper)
+            evidence = evidence_wrapper.get("artifact")
+            if not isinstance(evidence, dict):
+                continue
+            _verify_artifact_hash(evidence, "post-execution replay review evidence")
+            wrapper = load_json(path / "002_review_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            review = wrapper.get("artifact")
+            if not isinstance(review, dict):
+                continue
+            _verify_artifact_hash(review, "post-execution replay review artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("review_status") != REVIEW_COMPLETED:
+            continue
+        if _review_domain(root, evidence, domain=domain, anchor=path) != domain.lower():
+            continue
+        if _review_already_terminated(
+            root,
+            review_reference=str(review.get("post_execution_replay_review_id") or ""),
+            review_hash=str(review.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "post_execution_replay_review_replay_reference": str(path),
+                "post_execution_replay_review_artifact": deepcopy(review),
+                "domain_name": domain_name,
+                "post_execution_replay_review_reference": review["post_execution_replay_review_id"],
+                "post_execution_replay_review_hash": review["artifact_hash"],
+                "chain_id": review["chain_id"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("governed termination failed closed: matching replay review not found")
+    return candidates[-1]
 
 
 def terminate_reviewed_operation(
@@ -468,6 +559,74 @@ def _capture(
     )
     capture["governed_termination_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _review_domain(root: Path, evidence: dict[str, Any], *, domain: str, anchor: Path) -> str | None:
+    try:
+        from aigol.runtime.post_execution_replay_review_runtime import _load_artifact
+        from aigol.runtime.worker_invocation_runtime import (
+            _domain_execution_ready_bridge_index,
+            _matching_bridge_for_dispatch,
+            _resolve_replay_reference,
+        )
+
+        validation_replay = _resolve_replay_reference(
+            evidence.get("worker_result_validation_replay_reference"),
+            anchor=anchor,
+        )
+        validation_evidence = _load_artifact(validation_replay, 0, "validation_evidence_recorded")
+        result_capture_replay = _resolve_replay_reference(
+            validation_evidence.get("worker_result_capture_replay_reference"),
+            anchor=validation_replay,
+        )
+        result_capture_evidence = _load_artifact(result_capture_replay, 0, "result_capture_evidence_recorded")
+        invocation_replay = _resolve_replay_reference(
+            result_capture_evidence.get("worker_invocation_replay_reference"),
+            anchor=result_capture_replay,
+        )
+        invocation_evidence = _load_artifact(invocation_replay, 0, "invocation_evidence_recorded")
+        dispatch_replay = _resolve_replay_reference(
+            invocation_evidence.get("worker_dispatch_replay_reference"),
+            anchor=invocation_replay,
+        )
+        dispatch = _load_artifact(dispatch_replay, 2, "dispatch_artifact_recorded")
+        bridge = _matching_bridge_for_dispatch(
+            dispatch_replay,
+            dispatch,
+            _domain_execution_ready_bridge_index(root, domain),
+        )
+        if bridge is not None:
+            return str(bridge["approved_domain"]).lower()
+    except FailClosedRuntimeError:
+        return None
+    return None
+
+
+def _review_already_terminated(
+    root: Path,
+    *,
+    review_reference: str,
+    review_hash: str,
+) -> bool:
+    for path in root.glob("TURN-*/governed_termination"):
+        try:
+            reconstructed = reconstruct_governed_termination_replay(path)
+            wrapper = load_json(path / "002_termination_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            termination = wrapper.get("artifact")
+            if not isinstance(termination, dict):
+                continue
+            _verify_artifact_hash(termination, "governed termination artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("termination_status") != TERMINATED:
+            continue
+        if (
+            termination.get("post_execution_replay_review_reference") == review_reference
+            and termination.get("post_execution_replay_review_hash") == review_hash
+        ):
+            return True
+    return False
 
 
 def _validate_review_artifact(review: dict[str, Any]) -> None:

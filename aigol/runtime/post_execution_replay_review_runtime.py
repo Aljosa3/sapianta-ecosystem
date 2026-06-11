@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
@@ -28,6 +29,11 @@ from aigol.runtime.worker_result_validation_runtime import (
     WORKER_RESULT_VALIDATION_ARTIFACT_V1,
     reconstruct_worker_result_validation_replay,
 )
+from aigol.runtime.worker_invocation_runtime import (
+    _domain_execution_ready_bridge_index,
+    _matching_bridge_for_dispatch,
+    _resolve_replay_reference,
+)
 
 
 AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_VERSION = "AIGOL_POST_EXECUTION_REPLAY_REVIEW_RUNTIME_V1"
@@ -45,6 +51,94 @@ REPLAY_STEPS = (
     "review_artifact_recorded",
     "review_result_recorded",
 )
+
+
+def detect_domain_post_execution_replay_review_entry_intent(human_prompt: str) -> dict[str, Any]:
+    """Detect narrow operator prompts for post-execution replay review."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = " ".join(prompt.strip().rstrip(".?!").split())
+    lowered = normalized.lower()
+    patterns = (
+        r"^review\s+post[-\s]execution\s+replay\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^review\s+execution\s+replay\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+        r"^continue\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)\s+to\s+replay\s+review$",
+        r"^create\s+post[-\s]execution\s+replay\s+review\s+for\s+(?P<domain>[A-Za-z][A-Za-z0-9_-]*)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            if lowered.startswith("continue"):
+                action = "CONTINUE_TO_POST_EXECUTION_REPLAY_REVIEW"
+            elif lowered.startswith("create"):
+                action = "CREATE_POST_EXECUTION_REPLAY_REVIEW"
+            else:
+                action = "REVIEW_POST_EXECUTION_REPLAY"
+            return {
+                "post_execution_replay_review_entry_intent_detected": True,
+                "domain_name": match.group("domain"),
+                "post_execution_replay_review_action": action,
+                "matched_prompt": normalized,
+            }
+    return {
+        "post_execution_replay_review_entry_intent_detected": False,
+        "domain_name": None,
+        "post_execution_replay_review_action": None,
+        "matched_prompt": normalized,
+    }
+
+
+def find_latest_domain_result_validation_for_replay_review(
+    *,
+    session_root: str | Path,
+    domain_name: str,
+) -> dict[str, Any]:
+    """Find the latest validated Worker result for a domain without replay review."""
+
+    root = Path(session_root)
+    domain = _require_string(domain_name, "domain_name")
+    if not root.exists():
+        raise FailClosedRuntimeError("post-execution replay review failed closed: session root missing")
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(root.glob("TURN-*/worker_result_validation")):
+        try:
+            reconstructed = reconstruct_worker_result_validation_replay(path)
+            evidence_wrapper = load_json(path / "000_validation_evidence_recorded.json")
+            wrapper = load_json(path / "002_validation_artifact_recorded.json")
+            _verify_wrapper_hash(evidence_wrapper)
+            _verify_wrapper_hash(wrapper)
+            evidence = evidence_wrapper.get("artifact")
+            validation = wrapper.get("artifact")
+            if not isinstance(evidence, dict) or not isinstance(validation, dict):
+                continue
+            _verify_artifact_hash(evidence, "worker result validation evidence")
+            _verify_artifact_hash(validation, "worker result validation artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("validation_status") != RESULT_VALIDATED:
+            continue
+        if _validation_domain(root, evidence, domain=domain, anchor=path) != domain.lower():
+            continue
+        if _validation_already_reviewed(
+            root,
+            validation_reference=str(validation.get("worker_result_validation_id") or ""),
+            validation_hash=str(validation.get("artifact_hash") or ""),
+        ):
+            continue
+        candidates.append(
+            {
+                "worker_result_validation_replay_reference": str(path),
+                "worker_result_validation_artifact": deepcopy(validation),
+                "domain_name": domain_name,
+                "worker_result_validation_reference": validation["worker_result_validation_id"],
+                "worker_result_validation_hash": validation["artifact_hash"],
+                "chain_id": validation["chain_id"],
+                "turn_id": path.parent.name,
+            }
+        )
+    if not candidates:
+        raise FailClosedRuntimeError("post-execution replay review failed closed: matching validation not found")
+    return candidates[-1]
 
 
 def review_validated_worker_result(
@@ -810,6 +904,62 @@ def _capture(
     )
     capture["post_execution_replay_review_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _validation_domain(root: Path, evidence: dict[str, Any], *, domain: str, anchor: Path) -> str | None:
+    try:
+        result_capture_replay = _resolve_replay_reference(
+            evidence.get("worker_result_capture_replay_reference"),
+            anchor=anchor,
+        )
+        result_capture_evidence = _load_artifact(result_capture_replay, 0, "result_capture_evidence_recorded")
+        invocation_replay = _resolve_replay_reference(
+            result_capture_evidence.get("worker_invocation_replay_reference"),
+            anchor=result_capture_replay,
+        )
+        invocation_evidence = _load_artifact(invocation_replay, 0, "invocation_evidence_recorded")
+        dispatch_replay = _resolve_replay_reference(
+            invocation_evidence.get("worker_dispatch_replay_reference"),
+            anchor=invocation_replay,
+        )
+        dispatch = _load_artifact(dispatch_replay, 2, "dispatch_artifact_recorded")
+        bridge = _matching_bridge_for_dispatch(
+            dispatch_replay,
+            dispatch,
+            _domain_execution_ready_bridge_index(root, domain),
+        )
+        if bridge is not None:
+            return str(bridge["approved_domain"]).lower()
+    except FailClosedRuntimeError:
+        return None
+    return None
+
+
+def _validation_already_reviewed(
+    root: Path,
+    *,
+    validation_reference: str,
+    validation_hash: str,
+) -> bool:
+    for path in root.glob("TURN-*/post_execution_replay_review"):
+        try:
+            reconstructed = reconstruct_post_execution_replay_review(path)
+            wrapper = load_json(path / "002_review_artifact_recorded.json")
+            _verify_wrapper_hash(wrapper)
+            review = wrapper.get("artifact")
+            if not isinstance(review, dict):
+                continue
+            _verify_artifact_hash(review, "post-execution replay review artifact")
+        except FailClosedRuntimeError:
+            continue
+        if reconstructed.get("review_status") != REVIEW_COMPLETED:
+            continue
+        if (
+            review.get("worker_result_validation_reference") == validation_reference
+            and review.get("worker_result_validation_hash") == validation_hash
+        ):
+            return True
+    return False
 
 
 def _validate_review_artifact(review: dict[str, Any]) -> None:

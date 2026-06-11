@@ -181,8 +181,11 @@ from aigol.runtime.conversational_cli_runtime import (
     DOMAIN_WORKER_ASSIGNMENT as CONVERSATIONAL_DOMAIN_WORKER_ASSIGNMENT,
     DOMAIN_WORKER_DISPATCH as CONVERSATIONAL_DOMAIN_WORKER_DISPATCH,
     DOMAIN_WORKER_EXECUTION as CONVERSATIONAL_DOMAIN_WORKER_EXECUTION,
+    DOMAIN_GOVERNED_TERMINATION as CONVERSATIONAL_DOMAIN_GOVERNED_TERMINATION,
     DOMAIN_WORKER_INVOCATION as CONVERSATIONAL_DOMAIN_WORKER_INVOCATION,
+    DOMAIN_POST_EXECUTION_REPLAY_REVIEW as CONVERSATIONAL_DOMAIN_POST_EXECUTION_REPLAY_REVIEW,
     DOMAIN_WORKER_RESULT_CAPTURE as CONVERSATIONAL_DOMAIN_WORKER_RESULT_CAPTURE,
+    DOMAIN_WORKER_RESULT_VALIDATION as CONVERSATIONAL_DOMAIN_WORKER_RESULT_VALIDATION,
     DOMAIN_WORKER_REQUEST as CONVERSATIONAL_DOMAIN_WORKER_REQUEST,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
@@ -272,6 +275,8 @@ from aigol.runtime.worker_result_capture_runtime import (
     render_worker_result_capture_summary,
 )
 from aigol.runtime.worker_result_validation_runtime import (
+    detect_domain_worker_result_validation_entry_intent,
+    find_latest_domain_result_capture_for_validation,
     render_worker_result_validation_summary,
     validate_worker_result,
 )
@@ -281,10 +286,14 @@ from aigol.runtime.executable_domain_bundle_runtime import (
 )
 from aigol.runtime.generic_domain_factory_runtime import create_generic_executable_domain_bundle
 from aigol.runtime.post_execution_replay_review_runtime import (
+    detect_domain_post_execution_replay_review_entry_intent,
+    find_latest_domain_result_validation_for_replay_review,
     render_post_execution_replay_review_summary,
     review_validated_worker_result,
 )
 from aigol.runtime.governed_termination_runtime import (
+    detect_domain_governed_termination_entry_intent,
+    find_latest_domain_replay_review_for_termination,
     render_governed_termination_summary,
     terminate_reviewed_operation,
 )
@@ -934,17 +943,17 @@ def _interactive_next_expected_action(
     if workflow_state == WORKFLOW_STATUS_FAILED_CLOSED:
         reason = turn_summary.get("failure_reason")
         if isinstance(reason, str) and reason.strip():
-            return f"Inspect fail-closed reason: {reason.strip()}"
-        return "Inspect fail-closed replay evidence before continuing."
+            return f"Informational only: inspect fail-closed reason: {reason.strip()}"
+        return "Informational only: inspect fail-closed replay evidence before continuing."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
-        return "Provide the requested operator clarification."
+        return "Informational only: provide the requested operator clarification."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
-        return "Provide an explicit operator approval or rejection decision."
+        return "Informational only: provide an explicit operator approval or rejection decision."
 
     domain = _interactive_workflow_domain_text(turn_summary)
     actions = {
-        "CLARIFICATION": f"Approve domain handoff for {domain}.",
-        "APPROVAL": f"Mark execution-ready packet for {domain}.",
+        "CLARIFICATION": f"Approve {domain} for domain artifact creation.",
+        "APPROVAL": f"Create execution-ready authorization packet for {domain}.",
         "EXECUTION_READY": f"Authorize execution-ready packet for {domain}.",
         "EXECUTION_AUTHORIZED": f"Create worker request for {domain}.",
         "WORKER_REQUESTED": f"Assign worker for {domain}.",
@@ -955,11 +964,11 @@ def _interactive_next_expected_action(
         "RESULT_CREATED": f"Validate worker result for {domain}.",
         "RESULT_VALIDATED": f"Review post-execution replay for {domain}.",
         "REPLAY_REVIEWED": f"Terminate reviewed operation for {domain}.",
-        "TERMINATED": "No further operator action required.",
+        "TERMINATED": "Informational only: no further operator action required.",
     }
     if workflow_state == WORKFLOW_STATUS_COMPLETED:
-        return "No further operator action required."
-    return actions.get(current_stage, "No governed continuation is currently available.")
+        return "Informational only: no further operator action required."
+    return actions.get(current_stage, "Informational only: no governed continuation is currently available.")
 
 
 def _interactive_workflow_domain_text(turn_summary: dict[str, Any]) -> str:
@@ -3227,6 +3236,145 @@ def run_interactive_conversation(
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_WORKER_RESULT_VALIDATION:
+                worker_result_validation_entry_intent = detect_domain_worker_result_validation_entry_intent(human_prompt)
+                try:
+                    latest_result_capture = find_latest_domain_result_capture_for_validation(
+                        session_root=session_root,
+                        domain_name=worker_result_validation_entry_intent["domain_name"],
+                    )
+                    validation_capture = validate_worker_result(
+                        worker_result_validation_id=f"{prompt_id}:WORKER-RESULT-VALIDATION",
+                        worker_result_capture_artifact=latest_result_capture["worker_result_capture_artifact"],
+                        worker_result_capture_replay_reference=latest_result_capture[
+                            "worker_result_capture_replay_reference"
+                        ],
+                        validated_by="AIGOL_GOVERNANCE",
+                        validated_at=created_at,
+                        replay_dir=turn_root / "worker_result_validation",
+                    )
+                    if validation_capture.get("fail_closed") is True:
+                        raise FailClosedRuntimeError(
+                            validation_capture.get("failure_reason")
+                            or "worker result validation failed closed"
+                        )
+                    output_writer(render_worker_result_validation_summary(validation_capture))
+                except Exception as exc:
+                    failed_turns += 1
+                    validation_capture = {
+                        "worker_result_validation_artifact": None,
+                        "validation_result_artifact": None,
+                        "fail_closed": True,
+                        "failure_reason": str(exc)
+                        if isinstance(exc, FailClosedRuntimeError)
+                        else "worker result validation failed closed",
+                    }
+                    output_writer(f"FAILED_CLOSED: {validation_capture['failure_reason']}")
+                validation_capture["domain_name"] = worker_result_validation_entry_intent.get("domain_name")
+                turns.append(
+                    _interactive_domain_worker_result_validation_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        validation_capture=validation_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_POST_EXECUTION_REPLAY_REVIEW:
+                replay_review_entry_intent = detect_domain_post_execution_replay_review_entry_intent(human_prompt)
+                try:
+                    latest_validation = find_latest_domain_result_validation_for_replay_review(
+                        session_root=session_root,
+                        domain_name=replay_review_entry_intent["domain_name"],
+                    )
+                    review_capture = review_validated_worker_result(
+                        post_execution_replay_review_id=f"{prompt_id}:POST-EXECUTION-REPLAY-REVIEW",
+                        worker_result_validation_artifact=latest_validation[
+                            "worker_result_validation_artifact"
+                        ],
+                        worker_result_validation_replay_reference=latest_validation[
+                            "worker_result_validation_replay_reference"
+                        ],
+                        reviewed_by="AIGOL_GOVERNANCE",
+                        reviewed_at=created_at,
+                        replay_dir=turn_root / "post_execution_replay_review",
+                    )
+                    if review_capture.get("fail_closed") is True:
+                        raise FailClosedRuntimeError(
+                            review_capture.get("failure_reason")
+                            or "post-execution replay review failed closed"
+                        )
+                    output_writer(render_post_execution_replay_review_summary(review_capture))
+                except Exception as exc:
+                    failed_turns += 1
+                    review_capture = {
+                        "post_execution_replay_review_artifact": None,
+                        "review_result_artifact": None,
+                        "fail_closed": True,
+                        "failure_reason": str(exc)
+                        if isinstance(exc, FailClosedRuntimeError)
+                        else "post-execution replay review failed closed",
+                    }
+                    output_writer(f"FAILED_CLOSED: {review_capture['failure_reason']}")
+                review_capture["domain_name"] = replay_review_entry_intent.get("domain_name")
+                turns.append(
+                    _interactive_domain_post_execution_replay_review_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        review_capture=review_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_GOVERNED_TERMINATION:
+                governed_termination_entry_intent = detect_domain_governed_termination_entry_intent(human_prompt)
+                try:
+                    latest_review = find_latest_domain_replay_review_for_termination(
+                        session_root=session_root,
+                        domain_name=governed_termination_entry_intent["domain_name"],
+                    )
+                    termination_capture = terminate_reviewed_operation(
+                        governed_termination_id=f"{prompt_id}:GOVERNED-TERMINATION",
+                        post_execution_replay_review_artifact=latest_review[
+                            "post_execution_replay_review_artifact"
+                        ],
+                        post_execution_replay_review_replay_reference=latest_review[
+                            "post_execution_replay_review_replay_reference"
+                        ],
+                        terminated_by="AIGOL_GOVERNANCE",
+                        terminated_at=created_at,
+                        replay_dir=turn_root / "governed_termination",
+                    )
+                    if termination_capture.get("fail_closed") is True:
+                        raise FailClosedRuntimeError(
+                            termination_capture.get("failure_reason")
+                            or "governed termination failed closed"
+                        )
+                    output_writer(render_governed_termination_summary(termination_capture))
+                except Exception as exc:
+                    failed_turns += 1
+                    termination_capture = {
+                        "governed_termination_artifact": None,
+                        "termination_result_artifact": None,
+                        "fail_closed": True,
+                        "failure_reason": str(exc)
+                        if isinstance(exc, FailClosedRuntimeError)
+                        else "governed termination failed closed",
+                    }
+                    output_writer(f"FAILED_CLOSED: {termination_capture['failure_reason']}")
+                termination_capture["domain_name"] = governed_termination_entry_intent.get("domain_name")
+                turns.append(
+                    _interactive_domain_governed_termination_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        conversational_routing_capture=conversational_routing_capture,
+                        termination_capture=termination_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif authoritative_workflow_id == CONVERSATIONAL_DOMAIN_ADAPTATION_REFERENCE:
                 domain_reference_capture = run_semantic_similarity_domain_reference_resolution(
                     resolution_id=f"{prompt_id}:SEMANTIC-SIMILARITY-DOMAIN-REFERENCE",
@@ -4591,6 +4739,175 @@ def _interactive_domain_worker_result_capture_turn_summary(
         "worker_result_validated": False,
         "post_execution_replay_reviewed": False,
         "terminated": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_worker_result_validation_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    validation_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    validation_artifact = validation_capture.get("worker_result_validation_artifact")
+    if not isinstance(validation_artifact, dict):
+        validation_artifact = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": validation_capture.get("validation_status"),
+        "response_source": "DOMAIN_WORKER_RESULT_VALIDATION",
+        "fail_closed": validation_capture.get("fail_closed") is True,
+        "failure_reason": validation_capture.get("failure_reason"),
+        "replay_reference": validation_capture.get("worker_result_validation_replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "worker_result_validation_status": validation_capture.get("validation_status"),
+        "worker_result_validation_replay_reference": validation_capture.get(
+            "worker_result_validation_replay_reference"
+        ),
+        "worker_result_validation_reference": validation_capture.get("worker_result_validation_reference"),
+        "worker_result_capture_reference": validation_capture.get("worker_result_capture_reference"),
+        "domain_name": validation_capture.get("domain_name"),
+        "execution_reference": validation_capture.get("execution_reference"),
+        "execution_hash": validation_capture.get("execution_hash"),
+        "worker_id": validation_capture.get("worker_id"),
+        "provider_invoked": False,
+        "worker_invoked": validation_capture.get("fail_closed") is not True,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "worker_assigned": validation_capture.get("fail_closed") is not True,
+        "worker_dispatched": validation_capture.get("fail_closed") is not True,
+        "execution_requested": False,
+        "execution_started": validation_artifact.get("execution_started") is True,
+        "domain_created": False,
+        "worker_result_captured": validation_capture.get("fail_closed") is not True,
+        "worker_result_validated": validation_capture.get("validation_status") == "RESULT_VALIDATED",
+        "post_execution_replay_reviewed": False,
+        "terminated": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_post_execution_replay_review_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    review_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    review_artifact = review_capture.get("post_execution_replay_review_artifact")
+    if not isinstance(review_artifact, dict):
+        review_artifact = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": review_capture.get("review_status"),
+        "response_source": "DOMAIN_POST_EXECUTION_REPLAY_REVIEW",
+        "fail_closed": review_capture.get("fail_closed") is True,
+        "failure_reason": review_capture.get("failure_reason"),
+        "replay_reference": review_capture.get("post_execution_replay_review_replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "post_execution_replay_review_status": review_capture.get("review_status"),
+        "post_execution_replay_review_replay_reference": review_capture.get(
+            "post_execution_replay_review_replay_reference"
+        ),
+        "post_execution_replay_review_reference": review_capture.get("post_execution_replay_review_reference"),
+        "worker_result_validation_reference": review_capture.get("worker_result_validation_reference"),
+        "domain_name": review_capture.get("domain_name"),
+        "execution_reference": review_capture.get("execution_reference"),
+        "execution_hash": review_capture.get("execution_hash"),
+        "worker_id": review_capture.get("worker_id"),
+        "provider_invoked": False,
+        "worker_invoked": review_capture.get("fail_closed") is not True,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "worker_assigned": review_capture.get("fail_closed") is not True,
+        "worker_dispatched": review_capture.get("fail_closed") is not True,
+        "execution_requested": False,
+        "execution_started": review_artifact.get("execution_started") is True,
+        "domain_created": False,
+        "worker_result_captured": review_capture.get("fail_closed") is not True,
+        "worker_result_validated": review_capture.get("fail_closed") is not True,
+        "post_execution_replay_reviewed": review_capture.get("review_status") == "REVIEW_COMPLETED",
+        "terminated": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
+def _interactive_domain_governed_termination_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None,
+    termination_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_selection = (conversational_routing_capture or {}).get("workflow_selection_artifact", {})
+    termination_artifact = termination_capture.get("governed_termination_artifact")
+    if not isinstance(termination_artifact, dict):
+        termination_artifact = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": termination_capture.get("termination_status"),
+        "response_source": "DOMAIN_GOVERNED_TERMINATION",
+        "fail_closed": termination_capture.get("fail_closed") is True,
+        "failure_reason": termination_capture.get("failure_reason"),
+        "replay_reference": termination_capture.get("governed_termination_replay_reference"),
+        "conversational_workflow_id": workflow_selection.get("workflow_id"),
+        "conversational_routing_replay_reference": (
+            (conversational_routing_capture or {}).get("conversational_cli_routing_replay_reference")
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "governed_termination_status": termination_capture.get("termination_status"),
+        "governed_termination_replay_reference": termination_capture.get("governed_termination_replay_reference"),
+        "governed_termination_reference": termination_capture.get("governed_termination_reference"),
+        "post_execution_replay_review_reference": termination_capture.get("post_execution_replay_review_reference"),
+        "domain_name": termination_capture.get("domain_name"),
+        "execution_reference": termination_capture.get("execution_reference"),
+        "execution_hash": termination_capture.get("execution_hash"),
+        "worker_id": termination_capture.get("worker_id"),
+        "provider_invoked": False,
+        "worker_invoked": termination_capture.get("fail_closed") is not True,
+        "authorization_created": False,
+        "worker_request_created": False,
+        "worker_assigned": termination_capture.get("fail_closed") is not True,
+        "worker_dispatched": termination_capture.get("fail_closed") is not True,
+        "execution_requested": False,
+        "execution_started": termination_artifact.get("execution_started") is True,
+        "domain_created": False,
+        "worker_result_captured": termination_capture.get("fail_closed") is not True,
+        "worker_result_validated": termination_capture.get("fail_closed") is not True,
+        "post_execution_replay_reviewed": termination_capture.get("fail_closed") is not True,
+        "terminated": termination_capture.get("termination_status") == "TERMINATED",
         "governance_mutated": False,
         "replay_mutated": False,
     }
