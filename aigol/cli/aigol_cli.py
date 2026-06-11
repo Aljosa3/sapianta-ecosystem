@@ -823,9 +823,13 @@ def _attach_interactive_workflow_status(turn_summary: dict[str, Any]) -> dict[st
 
 def _interactive_workflow_status(turn_summary: dict[str, Any]) -> dict[str, Any]:
     current_stage = _interactive_current_lifecycle_stage(turn_summary)
-    completed_stages = _interactive_completed_lifecycle_stages(current_stage)
-    remaining_stages = _interactive_remaining_lifecycle_stages(current_stage)
     workflow_state = _interactive_workflow_state(turn_summary, current_stage)
+    current_stage_completed = workflow_state not in {
+        WORKFLOW_STATUS_WAITING_FOR_OPERATOR,
+        WORKFLOW_STATUS_WAITING_FOR_APPROVAL,
+    }
+    completed_stages = _interactive_completed_lifecycle_stages(current_stage, current_stage_completed)
+    remaining_stages = _interactive_remaining_lifecycle_stages(current_stage, current_stage_completed)
     workflow_complete = workflow_state == WORKFLOW_STATUS_COMPLETED
     next_expected_action = _interactive_next_expected_action(
         turn_summary=turn_summary,
@@ -838,6 +842,7 @@ def _interactive_workflow_status(turn_summary: dict[str, Any]) -> dict[str, Any]
         "current_lifecycle_stage": current_stage,
         "next_expected_action": next_expected_action,
         "workflow_complete": workflow_complete,
+        "required_input": _interactive_required_input(turn_summary),
         "completed_stages": completed_stages,
         "current_stage": current_stage,
         "remaining_stages": remaining_stages,
@@ -851,19 +856,20 @@ def _render_interactive_workflow_status(status: dict[str, Any]) -> str:
     remaining = status.get("remaining_stages")
     if not isinstance(remaining, list):
         remaining = []
-    return "\n".join(
-        [
-            "Workflow Name: " + _workflow_status_value(status.get("workflow_name")),
-            "Workflow State: " + _workflow_status_value(status.get("workflow_state")),
-            "Current Lifecycle Stage: " + _workflow_status_value(status.get("current_lifecycle_stage")),
-            "Next Expected Action: " + _workflow_status_value(status.get("next_expected_action")),
-            "Workflow Complete: " + ("TRUE" if status.get("workflow_complete") is True else "FALSE"),
-            "Lifecycle Progress:",
-            "Completed Stages: " + _workflow_stage_list(completed),
-            "Current Stage: " + _workflow_status_value(status.get("current_stage")),
-            "Remaining Stages: " + _workflow_stage_list(remaining),
-        ]
-    )
+    lines = [
+        "Workflow Name: " + _workflow_status_value(status.get("workflow_name")),
+        "Workflow State: " + _workflow_status_value(status.get("workflow_state")),
+        "Current Lifecycle Stage: " + _workflow_status_value(status.get("current_lifecycle_stage")),
+        "Next Expected Action: " + _workflow_status_value(status.get("next_expected_action")),
+        "WORKFLOW COMPLETE: " + ("TRUE" if status.get("workflow_complete") is True else "FALSE"),
+        "Lifecycle Progress:",
+        "Completed Stages: " + _workflow_stage_list(completed),
+        "Current Stage: " + _workflow_status_value(status.get("current_stage")),
+        "Remaining Stages: " + _workflow_stage_list(remaining),
+    ]
+    if status.get("workflow_state") == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
+        lines.extend(_render_waiting_for_operator_banner(status))
+    return "\n".join(lines)
 
 
 def _interactive_workflow_name(turn_summary: dict[str, Any]) -> str:
@@ -929,7 +935,7 @@ def _interactive_next_expected_action(
         reason = turn_summary.get("failure_reason")
         if isinstance(reason, str) and reason.strip():
             return f"Inspect fail-closed reason: {reason.strip()}"
-        return "Inspect fail-closed replay evidence before retrying."
+        return "Inspect fail-closed replay evidence before continuing."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
         return "Provide the requested operator clarification."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
@@ -964,18 +970,52 @@ def _interactive_workflow_domain_text(turn_summary: dict[str, Any]) -> str:
     return "the active domain"
 
 
-def _interactive_completed_lifecycle_stages(current_stage: str) -> list[str]:
+def _interactive_required_input(turn_summary: dict[str, Any]) -> list[str]:
+    missing_information = turn_summary.get("missing_information")
+    if isinstance(missing_information, list) and missing_information:
+        return [str(item) for item in missing_information]
+    if turn_summary.get("clarification_required") is True or turn_summary.get("open_clarification_detected") is True:
+        return ["operator clarification"]
+    return []
+
+
+def _interactive_prompt_label(workflow_status: dict[str, Any] | None) -> str:
+    if not isinstance(workflow_status, dict):
+        return f"AiGOL [{WORKFLOW_STATUS_COMPLETED}] > "
+    workflow_state = _workflow_status_value(workflow_status.get("workflow_state"))
+    current_stage = _workflow_status_value(workflow_status.get("current_lifecycle_stage"))
+    if workflow_state in {WORKFLOW_STATUS_FAILED_CLOSED, WORKFLOW_STATUS_COMPLETED}:
+        return f"AiGOL [{workflow_state}] > "
+    if current_stage != "UNKNOWN":
+        return f"AiGOL [{workflow_state}: {current_stage}] > "
+    return f"AiGOL [{workflow_state}] > "
+
+
+def _interactive_completed_lifecycle_stages(current_stage: str, current_stage_completed: bool) -> list[str]:
     if current_stage == WORKFLOW_STATUS_FAILED_CLOSED:
         return []
     if current_stage not in WORKFLOW_LIFECYCLE_STAGES:
         return []
-    return list(WORKFLOW_LIFECYCLE_STAGES[: WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + 1])
+    offset = 1 if current_stage_completed else 0
+    return list(WORKFLOW_LIFECYCLE_STAGES[: WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + offset])
 
 
-def _interactive_remaining_lifecycle_stages(current_stage: str) -> list[str]:
+def _interactive_remaining_lifecycle_stages(current_stage: str, current_stage_completed: bool) -> list[str]:
     if current_stage not in WORKFLOW_LIFECYCLE_STAGES:
         return []
-    return list(WORKFLOW_LIFECYCLE_STAGES[WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + 1 :])
+    offset = 1 if current_stage_completed else 0
+    return list(WORKFLOW_LIFECYCLE_STAGES[WORKFLOW_LIFECYCLE_STAGES.index(current_stage) + offset :])
+
+
+def _render_waiting_for_operator_banner(status: dict[str, Any]) -> list[str]:
+    required_input = status.get("required_input")
+    if not isinstance(required_input, list) or not required_input:
+        required_input = ["operator clarification"]
+    return [
+        "WAITING FOR OPERATOR INPUT",
+        "Required input:",
+        *[f"- {item}" for item in required_input],
+    ]
 
 
 def _workflow_stage_list(stages: list[Any]) -> str:
@@ -986,6 +1026,15 @@ def _workflow_status_value(value: Any) -> str:
     if isinstance(value, str) and value.strip():
         return value.strip()
     return "UNKNOWN"
+
+
+def _interactive_live_progress_lines() -> list[str]:
+    return [
+        "Routing ...",
+        "Cognition ...",
+        "Provider Invocation ...",
+        "Replay ...",
+    ]
 
 
 def _render_execution_runtime_summary(execution_capture: dict[str, Any]) -> str:
@@ -1003,7 +1052,7 @@ def _render_execution_runtime_summary(execution_capture: dict[str, Any]) -> str:
             "",
             "No completion recorded.",
             "No result certification recorded.",
-            "No repair or retry started.",
+            "No repair or reattempt started.",
         ]
     )
 
@@ -1410,8 +1459,8 @@ def _matched_terms(human_prompt: str, terms: tuple[str, ...]) -> list[str]:
     return [term for term in terms if term in normalized]
 
 
-def _read_interactive_prompt_capture(*, input_reader: Any) -> dict[str, Any]:
-    raw_prompt = input_reader("AiGOL > ")
+def _read_interactive_prompt_capture(*, input_reader: Any, workflow_status: dict[str, Any] | None = None) -> dict[str, Any]:
+    raw_prompt = input_reader(_interactive_prompt_label(workflow_status))
     if not _has_buffered_multiline_input(input_reader):
         return {
             "human_prompt": raw_prompt.strip(),
@@ -1984,12 +2033,16 @@ def run_interactive_conversation(
     pending_approval_required: dict[str, Any] | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
+    latest_workflow_status: dict[str, Any] | None = None
     if input_func is None and output_func is None:
         output_writer(INTERACTIVE_CONVERSATION_MULTILINE_BANNER)
 
     while True:
         try:
-            prompt_capture = _read_interactive_prompt_capture(input_reader=input_reader)
+            prompt_capture = _read_interactive_prompt_capture(
+                input_reader=input_reader,
+                workflow_status=latest_workflow_status,
+            )
         except EOFError:
             exit_reason = "EOF"
             break
@@ -2101,6 +2154,7 @@ def run_interactive_conversation(
                 turn_root=turn_root,
             )
             turn_progress_buffer.append(routing_visibility_capture["operator_routing_summary"])
+            turn_progress_buffer.extend(_interactive_live_progress_lines())
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,
                 stage=CONVERSATIONAL_PROGRESS_ROUTING,
@@ -3803,6 +3857,7 @@ def run_interactive_conversation(
                 routing_visibility_capture=routing_visibility_capture,
             )
             workflow_status = _attach_interactive_workflow_status(turns[-1])
+            latest_workflow_status = workflow_status
             workflow_status_output = _render_interactive_workflow_status(workflow_status)
             _emit_interactive_conversation_progress(
                 binding_capture=progress_binding_capture,
@@ -3873,6 +3928,7 @@ def run_interactive_conversation(
                 failure_reason=failure_reason,
             )
             failed_workflow_status = _attach_interactive_workflow_status(failed_summary)
+            latest_workflow_status = failed_workflow_status
             output_writer(f"FAILED_CLOSED: {failure_reason}")
             output_writer(_render_interactive_workflow_status(failed_workflow_status))
             turns.append(failed_summary)
