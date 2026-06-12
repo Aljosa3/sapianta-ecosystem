@@ -1,0 +1,227 @@
+{
+  "artifact_type": "CODEX_DEPENDENCY_REDUCTION_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_CODEX_DEPENDENCY_REDUCTION_ANALYSIS_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "source_artifacts": [
+    ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+    ".github/governance/review/SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1.json",
+    ".github/governance/review/GOVERNANCE_COST_REDUCTION_IMPLEMENTATION_REPORT_V1.json"
+  ],
+  "classification_model": {
+    "AIGOL_ONLY": "Certified AiGOL runtime or artifact path can produce, validate, replay, or certify the capability without Codex repository mutation.",
+    "AIGOL_PLUS_CODEX": "AiGOL provides governance, routing, artifacts, constraints, or review evidence, while Codex remains needed for implementation or local command execution.",
+    "CODEX_REQUIRED": "Current activity requires Codex to edit files, create tests, scaffold new runtime code, run local validation commands, or interpret non-runtime repository state."
+  },
+  "capability_breakdown": [
+    {
+      "capability": "Replay gap detection from certified replay evidence",
+      "activity_area": "replay_activities",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_V1 certified in production readiness review."
+    },
+    {
+      "capability": "Replay-derived improvement intent generation",
+      "activity_area": "governance_decisions",
+      "classification": "AIGOL_ONLY",
+      "evidence": "Replay -> Gap Artifact -> Improvement Intent path certified without repair or execution."
+    },
+    {
+      "capability": "Improvement intent to PPP candidate",
+      "activity_area": "governance_decisions",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_IMPROVEMENT_INTENT_TO_PPP_BRIDGE_V1 generated PPP candidates without implementation."
+    },
+    {
+      "capability": "PPP candidate to implementation request",
+      "activity_area": "implementation_requests",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_GOVERNED_IMPLEMENTATION_REQUEST_RUNTIME_V1 accepts certified PPP candidates and emits implementation request artifacts."
+    },
+    {
+      "capability": "Implementation request to worker request",
+      "activity_area": "worker_requests",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_IMPLEMENTATION_REQUEST_TO_WORKER_REQUEST_BRIDGE_V1 emits worker request artifacts without dispatch or execution."
+    },
+    {
+      "capability": "Worker request to dispatch candidate",
+      "activity_area": "worker_requests",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_WORKER_REQUEST_TO_WORKER_DISPATCH_GOVERNANCE_V1 emits dispatch-ready mandates without invoking workers."
+    },
+    {
+      "capability": "Dispatch candidate to invocation candidate",
+      "activity_area": "worker_requests",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_V1 certified with invocation prevented."
+    },
+    {
+      "capability": "Invocation candidate to execution candidate",
+      "activity_area": "worker_requests",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_WORKER_INVOCATION_TO_EXECUTION_GOVERNANCE_V1 emits execution candidates without execution."
+    },
+    {
+      "capability": "Governed worker execution result capture",
+      "activity_area": "implementation_requests",
+      "classification": "AIGOL_PLUS_CODEX",
+      "evidence": "AIGOL_GOVERNED_WORKER_EXECUTION_RUNTIME_V1 exists, but real Sapianta repository mutation still depends on Codex implementation."
+    },
+    {
+      "capability": "Execution result validation artifact generation",
+      "activity_area": "validation_activities",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_RESULT_VALIDATION_RUNTIME_V1 validates worker execution results deterministically."
+    },
+    {
+      "capability": "Replay certification artifact generation",
+      "activity_area": "replay_activities",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_REPLAY_CERTIFICATION_RUNTIME_V1 emits REPLAY_CERTIFICATION_ARTIFACT_V1 without modifying validation results."
+    },
+    {
+      "capability": "ACLI lifecycle regression execution and certification",
+      "activity_area": "validation_activities",
+      "classification": "AIGOL_ONLY",
+      "evidence": "ACLI regression certification executed 28 prompts with termination_rate 1.0 and replay lineage integrity true."
+    },
+    {
+      "capability": "Production governance readiness decision",
+      "activity_area": "governance_decisions",
+      "classification": "AIGOL_PLUS_CODEX",
+      "evidence": "Readiness criteria are governed by AiGOL artifacts, but report generation and guard tests were created by Codex."
+    },
+    {
+      "capability": "Supervised production adoption comparison",
+      "activity_area": "governance_decisions",
+      "classification": "AIGOL_PLUS_CODEX",
+      "evidence": "AiGOL provides the governed route and evidence model; Codex generated the report and tests."
+    },
+    {
+      "capability": "Token and operator economics measurement",
+      "activity_area": "validation_activities",
+      "classification": "AIGOL_ONLY",
+      "evidence": "AIGOL_TOKEN_AND_OPERATOR_ECONOMICS_RUNTIME_V1 now emits deterministic ECONOMICS_REPORT_V1 replay evidence."
+    },
+    {
+      "capability": "Governance cost reduction measurement",
+      "activity_area": "governance_decisions",
+      "classification": "AIGOL_PLUS_CODEX",
+      "evidence": "AiGOL economics runtime measures before and after states; Codex implemented the runtime refinement and implementation report."
+    },
+    {
+      "capability": "Repository code edits and test creation",
+      "activity_area": "implementation_requests",
+      "classification": "CODEX_REQUIRED",
+      "evidence": "Production readiness report states Codex remains required for repository mutation and test creation."
+    },
+    {
+      "capability": "New runtime scaffolding for uncertified governance capabilities",
+      "activity_area": "implementation_requests",
+      "classification": "CODEX_REQUIRED",
+      "evidence": "Readiness report lists runtime scaffolding for new governance capabilities as a remaining Codex dependency."
+    },
+    {
+      "capability": "Local pytest and governance conformance command execution",
+      "activity_area": "validation_activities",
+      "classification": "CODEX_REQUIRED",
+      "evidence": "Validated evidence is currently produced by Codex running repository-local commands."
+    },
+    {
+      "capability": "Manual interpretation of hook conformance drift and repository release posture",
+      "activity_area": "governance_decisions",
+      "classification": "CODEX_REQUIRED",
+      "evidence": "Production readiness report keeps hook conformance drift visible and identifies manual remediation and interpretation dependencies."
+    }
+  ],
+  "quantified_breakdown": {
+    "total_capabilities_analyzed": 20,
+    "aigol_only_capabilities": 12,
+    "partial_autonomy_capabilities": 4,
+    "codex_required_capabilities": 4,
+    "aigol_only_percent": 60.0,
+    "partial_autonomy_percent": 20.0,
+    "codex_required_percent": 20.0
+  },
+  "activity_area_breakdown": {
+    "implementation_requests": {
+      "aigol_only": 1,
+      "aigol_plus_codex": 1,
+      "codex_required": 2,
+      "area_autonomy_score": 37.5
+    },
+    "worker_requests": {
+      "aigol_only": 4,
+      "aigol_plus_codex": 0,
+      "codex_required": 0,
+      "area_autonomy_score": 100.0
+    },
+    "governance_decisions": {
+      "aigol_only": 2,
+      "aigol_plus_codex": 3,
+      "codex_required": 1,
+      "area_autonomy_score": 58.3
+    },
+    "validation_activities": {
+      "aigol_only": 4,
+      "aigol_plus_codex": 0,
+      "codex_required": 1,
+      "area_autonomy_score": 80.0
+    },
+    "replay_activities": {
+      "aigol_only": 2,
+      "aigol_plus_codex": 0,
+      "codex_required": 0,
+      "area_autonomy_score": 100.0
+    }
+  },
+  "autonomy_estimates": {
+    "governance_autonomy_level": "MEDIUM_HIGH",
+    "implementation_autonomy_level": "LOW",
+    "worker_request_autonomy_level": "HIGH",
+    "validation_autonomy_level": "HIGH_FOR_ARTIFACT_VALIDATION_MEDIUM_FOR_LOCAL_COMMAND_EXECUTION",
+    "replay_autonomy_level": "HIGH",
+    "remaining_codex_dependency": "MEDIUM_HIGH",
+    "autonomy_score_formula": "AIGOL_ONLY=1.0, AIGOL_PLUS_CODEX=0.5, CODEX_REQUIRED=0.0",
+    "autonomy_score": 70.0
+  },
+  "dependency_reduction_opportunities": [
+    {
+      "opportunity_id": "CODEX-DEP-REDUCE-001",
+      "target": "Report generation for governance analysis artifacts",
+      "current_classification": "AIGOL_PLUS_CODEX",
+      "recommended_path": "Create dedicated AiGOL report-writer runtimes for readiness, adoption, cost, and dependency reports.",
+      "expected_dependency_shift": "AIGOL_PLUS_CODEX_TO_AIGOL_ONLY",
+      "governance_risk": "LOW"
+    },
+    {
+      "opportunity_id": "CODEX-DEP-REDUCE-002",
+      "target": "Local validation command execution",
+      "current_classification": "CODEX_REQUIRED",
+      "recommended_path": "Add governed validation-command execution runtime that records command, result, environment, and replay hash without changing code.",
+      "expected_dependency_shift": "CODEX_REQUIRED_TO_AIGOL_PLUS_CODEX",
+      "governance_risk": "MEDIUM"
+    },
+    {
+      "opportunity_id": "CODEX-DEP-REDUCE-003",
+      "target": "Repository mutation",
+      "current_classification": "CODEX_REQUIRED",
+      "recommended_path": "Keep Codex as implementation executor until worker implementation authority is separately certified; reduce dependency first through implementation request precision and validation automation.",
+      "expected_dependency_shift": "CODEX_REQUIRED_TO_AIGOL_PLUS_CODEX",
+      "governance_risk": "HIGH"
+    }
+  ],
+  "non_goals": [
+    "Do not claim AiGOL can autonomously mutate repository code.",
+    "Do not remove Codex from implementation execution until governed worker implementation authority is separately certified.",
+    "Do not remove human approval gates.",
+    "Do not hide partial governance conformance drift."
+  ],
+  "final_outputs": {
+    "AIGOL_ONLY_CAPABILITIES": "12_OF_20",
+    "PARTIAL_AUTONOMY_CAPABILITIES": "4_OF_20",
+    "CODEX_REQUIRED_CAPABILITIES": "4_OF_20",
+    "AUTONOMY_SCORE": "70.0"
+  }
+}
