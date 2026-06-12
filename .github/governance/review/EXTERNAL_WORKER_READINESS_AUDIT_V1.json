@@ -1,0 +1,303 @@
+{
+  "artifact_type": "EXTERNAL_WORKER_READINESS_AUDIT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_EXTERNAL_WORKER_READINESS_AUDIT_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "audit_scope": {
+    "canonical_lifecycle": [
+      "IMPLEMENTATION_REQUEST",
+      "WORKER_REQUEST",
+      "WORKER_ASSIGNMENT",
+      "WORKER_DISPATCH",
+      "WORKER_INVOCATION",
+      "WORKER_EXECUTION",
+      "RESULT_VALIDATION",
+      "REPLAY_CERTIFICATION"
+    ],
+    "external_worker_boundary": "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 -> external worker adapter -> WORKER_EXECUTION_RESULT_ARTIFACT_V1"
+  },
+  "worker_related_runtime_inventory": [
+    {
+      "runtime": "aigol/runtime/governed_implementation_request_runtime.py",
+      "role": "PPP candidate to IMPLEMENTATION_REQUEST_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/implementation_request_to_worker_request_bridge_runtime.py",
+      "role": "IMPLEMENTATION_REQUEST_ARTIFACT_V1 to WORKER_REQUEST_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/worker_assignment_runtime.py",
+      "role": "Domain worker invocation request to worker assignment"
+    },
+    {
+      "runtime": "aigol/runtime/worker_runtime.py",
+      "role": "Worker artifact and assignment primitives"
+    },
+    {
+      "runtime": "aigol/runtime/worker_request_to_worker_dispatch_governance_runtime.py",
+      "role": "WORKER_REQUEST_ARTIFACT_V1 to WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/worker_dispatch_runtime.py",
+      "role": "Legacy/domain worker dispatch artifact runtime"
+    },
+    {
+      "runtime": "aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+      "role": "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1 to WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/worker_invocation_runtime.py",
+      "role": "Legacy/domain worker invocation artifact runtime"
+    },
+    {
+      "runtime": "aigol/runtime/worker_invocation_to_execution_governance_runtime.py",
+      "role": "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1 to WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/governed_worker_execution_runtime.py",
+      "role": "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to deterministic WORKER_EXECUTION_RESULT_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/worker_result_capture_runtime.py",
+      "role": "Legacy/domain worker result capture runtime"
+    },
+    {
+      "runtime": "aigol/runtime/worker_result_validation_runtime.py",
+      "role": "Legacy/domain worker result validation runtime"
+    },
+    {
+      "runtime": "aigol/runtime/result_validation_runtime.py",
+      "role": "WORKER_EXECUTION_RESULT_ARTIFACT_V1 to RESULT_VALIDATION_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/replay_certification_runtime.py",
+      "role": "RESULT_VALIDATION_ARTIFACT_V1 to REPLAY_CERTIFICATION_ARTIFACT_V1"
+    },
+    {
+      "runtime": "aigol/runtime/domain_and_worker_resolution_registry.py",
+      "role": "Domain and worker milestone resolution registry"
+    }
+  ],
+  "worker_related_artifact_inventory": [
+    "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+    "WORKER_REQUEST_ARTIFACT_V1",
+    "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1",
+    "WORKER_DISPATCH_ARTIFACT_V1",
+    "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1",
+    "WORKER_INVOCATION_ARTIFACT_V1",
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "REPLAY_CERTIFICATION_ARTIFACT_V1",
+    "GOVERNED_EXECUTION_CONNECTORS_V1",
+    "GOVERNED_CODEX_EXECUTION_ADAPTER_V1"
+  ],
+  "worker_related_certification_inventory": [
+    {
+      "certification": ".github/governance/finalize/AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_CERTIFICATION_V1.json",
+      "status": "CERTIFIED"
+    },
+    {
+      "certification": "runtime/finalization_evidence/GOVERNED_PRE_EXECUTION_STACK_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "certification": "runtime/finalization_evidence/GOVERNED_EXECUTION_RUNTIME_CERTIFICATION.json",
+      "status": "PASS"
+    },
+    {
+      "certification": "REGRESSION_CERTIFICATION_ARTIFACT_V1",
+      "status": "CERTIFIED"
+    },
+    {
+      "certification": "REPLAY_CERTIFICATION_ARTIFACT_V1",
+      "status": "CERTIFIED"
+    }
+  ],
+  "lifecycle_stage_map": [
+    {
+      "stage": "IMPLEMENTATION_REQUEST",
+      "runtime": "aigol/runtime/governed_implementation_request_runtime.py",
+      "artifact": "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified artifact-generation gate; no implementation execution."
+    },
+    {
+      "stage": "WORKER_REQUEST",
+      "runtime": "aigol/runtime/implementation_request_to_worker_request_bridge_runtime.py",
+      "artifact": "WORKER_REQUEST_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified bridge generates worker request without dispatch or execution."
+    },
+    {
+      "stage": "WORKER_ASSIGNMENT",
+      "runtime": "aigol/runtime/worker_assignment_runtime.py",
+      "artifact": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+      "classification": "IMPLEMENTED",
+      "implemented": true,
+      "certified": false,
+      "production_ready": false,
+      "notes": "Assignment exists in the domain worker invocation-request path, but is not yet integrated as a certified stage in the implementation-request-to-external-worker bridge."
+    },
+    {
+      "stage": "WORKER_DISPATCH",
+      "runtime": "aigol/runtime/worker_request_to_worker_dispatch_governance_runtime.py",
+      "artifact": "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified governance candidate stage; actual external dispatch remains prevented until separately authorized."
+    },
+    {
+      "stage": "WORKER_INVOCATION",
+      "runtime": "aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+      "artifact": "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified candidate stage; invocation remains prevented until governed execution authorization."
+    },
+    {
+      "stage": "WORKER_EXECUTION",
+      "runtime": "aigol/runtime/governed_worker_execution_runtime.py",
+      "artifact": "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+      "classification": "CERTIFIED",
+      "implemented": true,
+      "certified": true,
+      "production_ready": false,
+      "notes": "Deterministic governed execution result runtime is certified; external LLM worker adapter is not yet implemented as a provider-neutral production adapter."
+    },
+    {
+      "stage": "RESULT_VALIDATION",
+      "runtime": "aigol/runtime/result_validation_runtime.py",
+      "artifact": "RESULT_VALIDATION_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified validation runtime for governed worker execution results."
+    },
+    {
+      "stage": "REPLAY_CERTIFICATION",
+      "runtime": "aigol/runtime/replay_certification_runtime.py",
+      "artifact": "REPLAY_CERTIFICATION_ARTIFACT_V1",
+      "classification": "PRODUCTION_READY",
+      "implemented": true,
+      "certified": true,
+      "production_ready": true,
+      "notes": "Certified replay certification runtime for validated execution results."
+    }
+  ],
+  "lifecycle_completeness": {
+    "total_stages": 8,
+    "implemented_stages": 8,
+    "certified_stages": 7,
+    "production_ready_stages": 6,
+    "implemented_percent": 100.0,
+    "certified_percent": 87.5,
+    "production_ready_percent": 75.0,
+    "worker_lifecycle_completeness": "8_OF_8_IMPLEMENTED_7_OF_8_CERTIFIED_6_OF_8_PRODUCTION_READY"
+  },
+  "missing_components": {
+    "missing_artifacts": [
+      "EXTERNAL_WORKER_ADAPTER_ARTIFACT_V1",
+      "EXTERNAL_WORKER_EXECUTION_RECEIPT_ARTIFACT_V1",
+      "PROVIDER_NEUTRAL_WORKER_CAPABILITY_DECLARATION_ARTIFACT_V1"
+    ],
+    "missing_runtimes": [
+      "external_worker_adapter_runtime.py",
+      "worker_execution_candidate_to_external_worker_adapter_runtime.py"
+    ],
+    "missing_certifications": [
+      "EXTERNAL_WORKER_ADAPTER_CERTIFICATION_V1",
+      "WORKER_ASSIGNMENT_BRIDGE_CERTIFICATION_V1",
+      "PROVIDER_NEUTRAL_WORKER_EXECUTION_CERTIFICATION_V1"
+    ],
+    "missing_adapters": [
+      "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to Codex worker adapter",
+      "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to Claude Code worker adapter",
+      "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to Mistral worker adapter",
+      "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to generic local worker adapter"
+    ]
+  },
+  "external_worker_readiness": [
+    {
+      "worker_type": "Codex Worker",
+      "readiness_score": 80,
+      "readiness": "HIGH_WITH_ADAPTER_BINDING_GAP",
+      "existing_components": [
+        "GOVERNED_CODEX_EXECUTION_ADAPTER_V1",
+        "GOVERNED_EXECUTION_RUNTIME_CERTIFICATION",
+        "bounded_codex_dispatch"
+      ],
+      "minimal_gap": "Bind WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 to the governed Codex adapter and emit WORKER_EXECUTION_RESULT_ARTIFACT_V1 with replay hash."
+    },
+    {
+      "worker_type": "Claude Code Worker",
+      "readiness_score": 70,
+      "readiness": "MEDIUM_HIGH_WITH_NEW_ADAPTER",
+      "existing_components": [
+        "GOVERNED_EXECUTION_CONNECTORS_V1 includes Claude Code execution connector",
+        "generic governance candidate chain"
+      ],
+      "minimal_gap": "Create Claude Code adapter conforming to the same external worker adapter artifact contract."
+    },
+    {
+      "worker_type": "Mistral Worker",
+      "readiness_score": 55,
+      "readiness": "MEDIUM_REQUIRES_TOOL_EXECUTION_WORKER",
+      "existing_components": [
+        "generic governance candidate chain",
+        "provider independence report marks Mistral feasible with external tool execution"
+      ],
+      "minimal_gap": "Create Mistral cognition adapter plus governed local execution worker for filesystem and command operations."
+    },
+    {
+      "worker_type": "Generic Local Worker",
+      "readiness_score": 75,
+      "readiness": "HIGH_FOR_COMMAND_AND_FILESYSTEM_WORKER_AFTER_CERTIFICATION",
+      "existing_components": [
+        "GOVERNED_EXECUTION_CONNECTORS_V1 includes local execution and bounded tool connectors",
+        "deterministic filesystem connector",
+        "governed execution runtime certification"
+      ],
+      "minimal_gap": "Create provider-neutral local worker adapter with allowlisted command execution, filesystem mutation receipt, and replay-preserving result artifact."
+    }
+  ],
+  "minimal_integration_gap": {
+    "gap_id": "EXTERNAL-WORKER-GAP-000001",
+    "description": "A certified provider-neutral adapter is missing between WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 and WORKER_EXECUTION_RESULT_ARTIFACT_V1 for real external worker execution.",
+    "secondary_gap": "Worker assignment exists but is not yet certified inside the implementation-request-to-external-worker lifecycle.",
+    "minimal_next_runtime": "aigol/runtime/external_worker_adapter_runtime.py",
+    "minimal_next_artifact": "EXTERNAL_WORKER_ADAPTER_ARTIFACT_V1",
+    "required_properties": [
+      "accept only WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+      "require explicit human approval",
+      "validate replay lineage and certification",
+      "select a declared worker adapter without hidden provider routing",
+      "emit WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+      "preserve fail-closed behavior and deterministic replay"
+    ]
+  },
+  "audit_decision": {
+    "external_worker_ready": "YES_CONDITIONAL",
+    "rationale": "The lifecycle is implemented end-to-end as governance artifacts and deterministic execution-result handling, but production external LLM worker readiness depends on one provider-neutral adapter contract plus certification of the assignment bridge."
+  },
+  "final_outputs": {
+    "WORKER_LIFECYCLE_COMPLETENESS": "8_OF_8_IMPLEMENTED_7_OF_8_CERTIFIED_6_OF_8_PRODUCTION_READY",
+    "CERTIFIED_COMPONENTS": "7_LIFECYCLE_STAGES_PLUS_5_CERTIFICATION_ARTIFACT_GROUPS",
+    "MISSING_COMPONENTS": "3_ARTIFACTS_2_RUNTIMES_3_CERTIFICATIONS_4_ADAPTER_BINDINGS",
+    "MINIMAL_INTEGRATION_GAP": "CERTIFIED_PROVIDER_NEUTRAL_EXTERNAL_WORKER_ADAPTER_FROM_WORKER_EXECUTION_CANDIDATE_TO_WORKER_EXECUTION_RESULT",
+    "EXTERNAL_WORKER_READINESS_SCORE": "75.0",
+    "RECOMMENDED_NEXT_IMPLEMENTATION": "AIGOL_EXTERNAL_WORKER_ADAPTER_RUNTIME_V1"
+  }
+}
