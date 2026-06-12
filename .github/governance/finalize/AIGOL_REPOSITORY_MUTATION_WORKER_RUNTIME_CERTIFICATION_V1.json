@@ -1,0 +1,53 @@
+{
+  "artifact_type": "REPOSITORY_MUTATION_WORKER_RUNTIME_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certification_id": "AIGOL_REPOSITORY_MUTATION_WORKER_RUNTIME_CERTIFICATION_V1",
+  "certified_runtime": "AIGOL_REPOSITORY_MUTATION_WORKER_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "input_artifacts": [
+      "PATCH_PROPOSAL_ARTIFACT_V1",
+      "CERTIFIED_WORKER_EXECUTION_RESULT_ARTIFACT_V1"
+    ],
+    "output_artifact": "REPOSITORY_MUTATION_ARTIFACT_V1",
+    "allowed_operations": [
+      "CREATE_OR_REPLACE",
+      "REPLACE_CONTENT"
+    ],
+    "approved_file_mutations_only": true,
+    "governance_artifact_mutation_allowed": false,
+    "replay_artifact_mutation_allowed": false,
+    "arbitrary_shell_allowed": false,
+    "provider_invocation_allowed": false
+  },
+  "governance_guarantees": {
+    "repository_mutation_worker_implemented": true,
+    "repository_mutation_artifact_generated": true,
+    "before_after_hashes_recorded": true,
+    "original_snapshots_preserved": true,
+    "replay_lineage_preserved": true,
+    "human_authority_preserved": true,
+    "authorization_boundaries_preserved": true,
+    "unauthorized_mutation_prevented": true,
+    "fail_closed_preserved": true,
+    "ready_for_governed_repository_changes": true
+  },
+  "certification_evidence": {
+    "focused_tests": "tests/test_repository_mutation_worker_runtime_v1.py",
+    "certification_tests": "tests/test_repository_mutation_worker_certification_v1.py",
+    "latest_validation_result": "8 passed",
+    "py_compile": "python -m py_compile aigol/runtime/repository_mutation_worker_runtime.py",
+    "runtime": "aigol/runtime/repository_mutation_worker_runtime.py"
+  },
+  "certification_rationale": "The runtime accepts only certified patch proposals or certified worker execution results carrying approved file mutations, validates replay lineage, authorization scope, certification status, target paths, and mutation scope, then applies only approved file content changes while recording snapshots, before/after hashes, mutation evidence, replay references, and authorization references. It fails closed for unauthorized paths, governance artifacts, replay artifacts, malformed hashes, unapproved mutations, providers, workers, and arbitrary shell execution.",
+  "remaining_boundary": "Repository mutation is restricted to explicitly approved file content changes under human authority; validation and replay certification remain separate governed stages.",
+  "final_outputs": {
+    "REPOSITORY_MUTATION_WORKER_IMPLEMENTED": "YES",
+    "REPOSITORY_MUTATION_ARTIFACT_GENERATED": "YES",
+    "REPLAY_LINEAGE_PRESERVED": "YES",
+    "UNAUTHORIZED_MUTATION_PREVENTED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES",
+    "READY_FOR_GOVERNED_REPOSITORY_CHANGES": "YES"
+  }
+}
