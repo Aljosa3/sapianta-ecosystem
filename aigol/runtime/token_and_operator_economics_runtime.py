@@ -35,6 +35,8 @@ def generate_token_and_operator_economics_report(
     approval_actions: list[str],
     baseline_chatgpt_actions: list[str],
     replay_dir: str | Path,
+    validation_artifacts: list[str] | None = None,
+    measurement_prompt_authorized: bool = False,
 ) -> dict[str, Any]:
     """Generate deterministic proxy economics evidence without provider or worker execution."""
 
@@ -51,6 +53,8 @@ def generate_token_and_operator_economics_report(
             certification_artifacts=certification_artifacts,
             approval_actions=approval_actions,
             baseline_chatgpt_actions=baseline_chatgpt_actions,
+            validation_artifacts=validation_artifacts or [],
+            measurement_prompt_authorized=measurement_prompt_authorized,
             measurement_status=ECONOMICS_MEASUREMENT_COMPLETED,
             failure_reason=None,
         )
@@ -124,6 +128,8 @@ def _inputs_artifact(
     certification_artifacts: list[str],
     approval_actions: list[str],
     baseline_chatgpt_actions: list[str],
+    validation_artifacts: list[str],
+    measurement_prompt_authorized: bool,
     measurement_status: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
@@ -134,6 +140,11 @@ def _inputs_artifact(
     certifications = _require_string_list(certification_artifacts, "certification_artifacts")
     approvals = _require_string_list(approval_actions, "approval_actions")
     baseline_actions = _require_string_list(baseline_chatgpt_actions, "baseline_chatgpt_actions")
+    validations = _optional_string_list(validation_artifacts, "validation_artifacts")
+    if not isinstance(measurement_prompt_authorized, bool):
+        raise FailClosedRuntimeError(
+            "economics measurement failed closed: measurement_prompt_authorized must be boolean"
+        )
 
     artifact = {
         "artifact_type": "ECONOMICS_INPUTS_ARTIFACT_V1",
@@ -149,6 +160,7 @@ def _inputs_artifact(
             "certification_artifacts": _hashed_items(certifications),
             "approval_actions": _hashed_items(approvals),
             "baseline_chatgpt_actions": _hashed_items(baseline_actions),
+            "validation_artifacts": _hashed_items(validations),
         },
         "raw_counts": {
             "human_prompts": len(prompts),
@@ -158,13 +170,17 @@ def _inputs_artifact(
             "certification_artifacts": len(certifications),
             "approval_actions": len(approvals),
             "baseline_chatgpt_actions": len(baseline_actions),
+            "validation_artifacts": len(validations),
         },
         "measurement_method": {
             "token_estimation": "DETERMINISTIC_PROXY_TOKENS_FROM_CANONICAL_JSON_CHARS_DIVIDED_BY_4",
             "operator_effort": "COUNTED_HUMAN_PROMPTS_CODEX_REQUESTS_AND_APPROVAL_ACTIONS",
             "governance_overhead": "COUNTED_AIGOL_ACTIONS_REPLAY_ARTIFACTS_CERTIFICATION_ARTIFACTS_AND_APPROVALS",
+            "validation_artifact_scope": "VALIDATION_ARTIFACTS_ARE_RECORDED_BUT_NOT_COUNTED_AS_REPLAY_OVERHEAD",
+            "measurement_authorization": "EXPLICIT_HUMAN_PROMPT_CAN_AUTHORIZE_MEASUREMENT_WITHOUT_DUPLICATE_APPROVAL",
             "billable_provider_telemetry_available": False,
         },
+        "measurement_prompt_authorized": measurement_prompt_authorized,
         "governance_constraints": {
             "read_only_measurement": True,
             "provider_invocation_allowed": False,
@@ -193,6 +209,7 @@ def _economics_report(inputs: dict[str, Any]) -> dict[str, Any]:
         "replay_artifacts": recorded["replay_artifacts"],
         "certification_artifacts": recorded["certification_artifacts"],
         "approval_actions": recorded["approval_actions"],
+        "validation_artifacts": recorded.get("validation_artifacts", []),
     }
     baseline_tokens = _estimate_tokens(baseline_sections)
     aigol_tokens = _estimate_tokens(aigol_sections)
@@ -250,6 +267,8 @@ def _economics_report(inputs: dict[str, Any]) -> dict[str, Any]:
             "overhead_actions": overhead_actions,
             "overhead_estimated_tokens": overhead_tokens,
             "overhead_classification": _overhead_classification(overhead_actions),
+            "validation_artifacts_recorded_outside_replay_overhead": counts.get("validation_artifacts", 0),
+            "measurement_prompt_authorized": inputs.get("measurement_prompt_authorized", False),
         },
         "comparison": {
             "token_impact": _impact_label(token_delta, "TOKEN"),
@@ -528,6 +547,12 @@ def _require_string_list(value: Any, field_name: str) -> list[str]:
     if not items:
         raise FailClosedRuntimeError(f"economics measurement failed closed: {field_name} requires at least one item")
     return items
+
+
+def _optional_string_list(value: Any, field_name: str) -> list[str]:
+    if not isinstance(value, list):
+        raise FailClosedRuntimeError(f"economics measurement failed closed: {field_name} must be a list")
+    return [_require_string(item, field_name) for item in value]
 
 
 def _failure_reason(exc: Exception) -> str:
