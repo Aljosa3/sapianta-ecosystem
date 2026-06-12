@@ -1,0 +1,60 @@
+{
+  "artifact_type": "ACLI_PRODUCTION_PILOT_REPORT_V1",
+  "schema_version": "1.0",
+  "pilot_id": "AIGOL_ACLI_PRODUCTION_PILOT_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "task": "Create AIGOL_PROVIDER_CAPABILITY_CATALOG_V1 as a non-critical governance review artifact.",
+  "created_artifacts": [
+    "docs/governance/PROVIDER_CAPABILITY_CATALOG_V1.json",
+    "tests/test_provider_capability_catalog_v1.py"
+  ],
+  "workflow_route": [
+    "Implementation Request",
+    "OpenAI Worker",
+    "Repository Mutation",
+    "Validation Runner",
+    "Result Validation",
+    "Replay Certification"
+  ],
+  "workflow_evidence": {
+    "implementation_request_used": true,
+    "openai_worker_used": true,
+    "repository_mutation_used": true,
+    "validation_used": true,
+    "result_validation_used": true,
+    "replay_certification_used": true,
+    "provider_output_authoritative": false,
+    "repository_mutation_authority": "CERTIFIED_PATCH_PROPOSAL_ONLY",
+    "protected_governance_directory_mutated_by_worker": false,
+    "replay_preservation": true,
+    "fail_closed_preserved": true
+  },
+  "measurement": {
+    "operator_actions": 5,
+    "copy_paste_actions": 0,
+    "validation_success": true,
+    "replay_preservation": true,
+    "operator_action_notes": [
+      "Task authorization and objective supplied by operator.",
+      "OpenAI worker used as proposal-only provider path.",
+      "Repository mutation remained bounded to certified file mutation artifacts.",
+      "Validation runner executed deterministic JSON validation.",
+      "Result validation and replay certification completed through existing runtimes."
+    ]
+  },
+  "final_outputs": {
+    "ACLI_PILOT_COMPLETED": "YES",
+    "OPENAI_WORKER_USED": "YES",
+    "REPOSITORY_MUTATION_USED": "YES",
+    "VALIDATION_USED": "YES",
+    "REPLAY_CERTIFICATION_USED": "YES",
+    "OPERATOR_ACTIONS": 5,
+    "COPY_PASTE_ACTIONS": 0,
+    "READY_FOR_LARGER_ACLI_MILESTONE": "YES_SUPERVISED_NON_CRITICAL_TASKS"
+  },
+  "known_limitations": [
+    "The pilot test uses an injected OpenAI-compatible client for deterministic offline validation.",
+    "The repository mutation runtime intentionally forbids .github/governance mutation, so the provider capability catalog is stored under docs/governance while this pilot report records governance review evidence under .github/governance/review.",
+    "This pilot does not certify Claude or Mistral for real worker execution."
+  ]
+}
