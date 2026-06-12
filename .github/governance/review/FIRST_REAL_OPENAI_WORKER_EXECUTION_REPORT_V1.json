@@ -1,0 +1,80 @@
+{
+  "artifact_type": "FIRST_REAL_OPENAI_WORKER_EXECUTION_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_FIRST_REAL_OPENAI_WORKER_EXECUTION_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "selected_real_repository_task": {
+    "task_id": "AIGOL_FIRST_REAL_OPENAI_WORKER_EXECUTION_V1",
+    "task_description": "Create and validate a tiny Python repository artifact through the OpenAI-backed external worker lifecycle.",
+    "provider_worker": "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+    "task_package": "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "result_package": "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "repository_mutation_authority": "AIGOL_REPOSITORY_MUTATION_WORKER_RUNTIME_V1",
+    "provider_task_authority": "PROPOSAL_ONLY"
+  },
+  "execution_flow": [
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+    "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+    "REPOSITORY_MUTATION",
+    "VALIDATION_COMMAND_RUNNER",
+    "RESULT_VALIDATION_RUNTIME_V1",
+    "REPLAY_CERTIFICATION_RUNTIME_V1"
+  ],
+  "certified_components_reused": [
+    "AIGOL_EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+    "AIGOL_OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+    "AIGOL_REPOSITORY_MUTATION_WORKER_RUNTIME_V1",
+    "AIGOL_VALIDATION_COMMAND_RUNNER_RUNTIME_V1",
+    "AIGOL_RESULT_VALIDATION_RUNTIME_V1",
+    "AIGOL_REPLAY_CERTIFICATION_RUNTIME_V1"
+  ],
+  "measurement": {
+    "provider_response_quality_score": 100.0,
+    "provider_response_quality_basis": [
+      "response is proposal-only",
+      "response provides a bounded implementation summary",
+      "provider does not claim execution authority",
+      "provider does not perform repository mutation",
+      "provider output remains non-authoritative evidence"
+    ],
+    "replay_integrity": true,
+    "governance_integrity": true,
+    "validation_success": true,
+    "repository_mutation_success": true,
+    "result_validation_success": true,
+    "replay_certification_success": true,
+    "operator_effort": {
+      "baseline_manual_actions": 8,
+      "openai_worker_lifecycle_actions": 6,
+      "actions_reduced": 2,
+      "reduction_percent": 25.0,
+      "operator_actions_reduced": true
+    }
+  },
+  "governance_boundary": {
+    "worker_governance_reimplemented": false,
+    "provider_authority_granted": false,
+    "provider_output_authoritative": false,
+    "repository_mutation_performed_by_provider": false,
+    "repository_mutation_performed_by_certified_mutation_worker": true,
+    "validation_performed_by_certified_validation_runner": true,
+    "human_authority_preserved": true,
+    "fail_closed_preserved": true,
+    "provider_neutrality_above_adapter_preserved": true
+  },
+  "known_limits": [
+    "The automated test uses an injected OpenAI-compatible client to avoid network dependency while exercising the OpenAI-backed adapter boundary.",
+    "Routine usage remains supervised; provider output is proposal evidence, not autonomous repository mutation authority.",
+    "Provider billable telemetry is not measured by this milestone."
+  ],
+  "final_outputs": {
+    "REAL_OPENAI_WORKER_EXECUTION_COMPLETED": "YES",
+    "REPLAY_INTEGRITY_PRESERVED": "YES",
+    "GOVERNANCE_INTEGRITY_PRESERVED": "YES",
+    "VALIDATION_PASSED": "YES",
+    "READY_FOR_ROUTINE_OPENAI_WORKER_USAGE": "YES_SUPERVISED"
+  }
+}
