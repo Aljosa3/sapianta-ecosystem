@@ -1,0 +1,48 @@
+{
+  "artifact_type": "FIRST_EXTERNAL_LLM_WORKER_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certification_id": "AIGOL_FIRST_EXTERNAL_LLM_WORKER_CERTIFICATION_V1",
+  "certified_runtime": "AIGOL_FIRST_EXTERNAL_LLM_WORKER_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "input_artifact": "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "output_artifact": "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "proposal_authority": "PROPOSAL_ONLY",
+    "repository_mutation_allowed": false,
+    "command_execution_allowed": false,
+    "provider_specific_logic_allowed": false
+  },
+  "supported_proposal_types": [
+    "patch proposal generation",
+    "file proposal generation",
+    "test proposal generation"
+  ],
+  "governance_guarantees": {
+    "task_package_consumed": true,
+    "result_package_generated": true,
+    "adapter_compatibility_confirmed": true,
+    "result_validation_compatibility_confirmed": true,
+    "replay_compatibility_confirmed": true,
+    "provider_neutrality_confirmed": true,
+    "repository_mutation_performed": false,
+    "command_execution_performed": false,
+    "proposal_only_authority_preserved": true
+  },
+  "certification_evidence": {
+    "focused_tests": "tests/test_first_external_llm_worker_runtime_v1.py",
+    "adapter_tests": "tests/test_external_worker_adapter_runtime_v1.py",
+    "latest_validation_result": "9 passed",
+    "py_compile": "python -m py_compile aigol/runtime/first_external_llm_worker_runtime.py"
+  },
+  "certification_rationale": "The runtime consumes EXTERNAL_WORKER_TASK_PACKAGE_V1, produces EXTERNAL_WORKER_RESULT_PACKAGE_V1 with patch, file, and test proposals, and completes the governed adapter-to-result-validation path without repository mutation, command execution, or provider-specific logic.",
+  "remaining_boundary": "This is a deterministic proposal-only worker. Real provider-backed worker evaluation remains a later governed integration.",
+  "final_outputs": {
+    "FIRST_EXTERNAL_WORKER_IMPLEMENTED": "YES",
+    "TASK_PACKAGE_CONSUMED": "YES",
+    "RESULT_PACKAGE_GENERATED": "YES",
+    "REPLAY_COMPATIBILITY_CONFIRMED": "YES",
+    "PROVIDER_NEUTRALITY_CONFIRMED": "YES",
+    "READY_FOR_REAL_WORKER_EVALUATION": "YES"
+  }
+}
