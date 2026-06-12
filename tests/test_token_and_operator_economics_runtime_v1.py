@@ -88,6 +88,62 @@ def test_economics_runtime_generates_report_with_measurable_proxy_evidence(tmp_p
     assert reconstructed["roi_estimate_available"] is True
 
 
+def test_economics_runtime_supports_cost_reduction_optimized_accounting(tmp_path) -> None:
+    capture = generate_token_and_operator_economics_report(
+        report_id="AIGOL_GOVERNANCE_COST_REDUCTION_IMPLEMENTATION_V1",
+        generated_at=GENERATED_AT,
+        human_prompts=[
+            "AIGOL_PRODUCTION_GOVERNANCE_READINESS_V1",
+            "AIGOL_SUPERVISED_PRODUCTION_ADOPTION_V1",
+            "AIGOL_TOKEN_AND_OPERATOR_ECONOMICS_RUNTIME_V1",
+        ],
+        aigol_governance_actions=[
+            "Review certified runtime and certification ledger",
+            "Review ACLI regression certification",
+            "Record economics measurement inputs",
+            "Generate deterministic economics report",
+        ],
+        codex_requests=[
+            "Create production governance readiness report and guard tests",
+            "Create supervised production adoption report and guard tests",
+            "Create token and operator economics runtime and tests",
+        ],
+        replay_artifacts=[
+            ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+            ".github/governance/review/SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1.json",
+        ],
+        certification_artifacts=[
+            "REGRESSION_CERTIFICATION_ARTIFACT_V1",
+            "REPLAY_CERTIFICATION_ARTIFACT_V1",
+        ],
+        approval_actions=[
+            "Human approved supervised production adoption milestone",
+        ],
+        baseline_chatgpt_actions=[
+            "Discuss readiness and adoption scope with ChatGPT",
+            "Request Codex implementation guidance through ChatGPT",
+        ],
+        replay_dir=tmp_path / "optimized",
+        validation_artifacts=[
+            "tests/test_token_and_operator_economics_runtime_v1.py",
+        ],
+        measurement_prompt_authorized=True,
+    )
+    report = capture["economics_report"]
+
+    assert report["governance_overhead"]["aigol_governance_actions"] == 4
+    assert report["governance_overhead"]["approval_actions"] == 1
+    assert report["governance_overhead"]["replay_artifacts"] == 2
+    assert report["governance_overhead"]["certification_artifacts"] == 2
+    assert report["governance_overhead"]["overhead_actions"] == 9
+    assert report["governance_overhead"]["validation_artifacts_recorded_outside_replay_overhead"] == 1
+    assert report["governance_overhead"]["measurement_prompt_authorized"] is True
+    assert report["operator_effort"]["aigol_operator_actions"] == 7
+    assert report["final_outputs"]["TOKEN_IMPACT_MEASURED"] is True
+    assert report["replay_lineage_preserved"] is True
+    assert report["fail_closed_preserved"] is True
+
+
 def test_economics_runtime_fails_closed_without_human_prompts(tmp_path) -> None:
     capture = generate_token_and_operator_economics_report(
         report_id="AIGOL_TOKEN_AND_OPERATOR_ECONOMICS_RUNTIME_EMPTY",
