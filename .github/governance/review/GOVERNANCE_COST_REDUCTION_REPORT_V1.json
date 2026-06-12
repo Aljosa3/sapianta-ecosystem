@@ -1,0 +1,194 @@
+{
+  "artifact_type": "GOVERNANCE_COST_REDUCTION_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_GOVERNANCE_COST_REDUCTION_ANALYSIS_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "source_economics_report": ".github/governance/evidence/token_and_operator_economics_v1/001_economics_report_recorded.json",
+  "source_economics_report_hash": "sha256:2f3906c82d9e908a5c3ad72827ddd4992a21528ee6dd288726c4c09082be3bea",
+  "source_inputs_hash": "sha256:fcb29eedab367b4ee4774c8c2206c268133d8b7b885ce5c0b7e2204587a620f4",
+  "baseline_overhead": {
+    "governance_actions": 5,
+    "approval_actions": 2,
+    "replay_artifacts": 3,
+    "certification_artifacts": 2,
+    "total_overhead_actions": 12,
+    "overhead_estimated_tokens": 561,
+    "overhead_classification": "HIGH"
+  },
+  "classification_summary": {
+    "mandatory_governance": 8,
+    "optional_governance": 1,
+    "duplicated_governance": 1,
+    "redundant_governance": 1,
+    "reducible_actions": 3,
+    "non_reducible_actions": 9
+  },
+  "classified_actions": [
+    {
+      "action": "Review certified runtimes",
+      "source_category": "governance_action",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 7,
+      "rationale": "Current certified runtime state is required before production governance conclusions."
+    },
+    {
+      "action": "Review certification artifacts",
+      "source_category": "governance_action",
+      "classification": "DUPLICATED_GOVERNANCE",
+      "estimated_tokens": 8,
+      "rationale": "This duplicates the explicit ACLI regression certification review and certification artifact references.",
+      "recommended_change": "Fold into a single certification-ledger review action."
+    },
+    {
+      "action": "Review ACLI regression certification",
+      "source_category": "governance_action",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 10,
+      "rationale": "Regression certification is a direct readiness gate and should remain explicit."
+    },
+    {
+      "action": "Record economics measurement inputs",
+      "source_category": "governance_action",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 10,
+      "rationale": "Input capture is required for deterministic reconstruction and replay continuity."
+    },
+    {
+      "action": "Generate deterministic economics report",
+      "source_category": "governance_action",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 11,
+      "rationale": "The requested artifact is the governed output of the economics runtime."
+    },
+    {
+      "action": "Human approved supervised production adoption milestone",
+      "source_category": "approval_action",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 15,
+      "rationale": "Human authority must remain explicit for supervised production adoption."
+    },
+    {
+      "action": "Human requested economics runtime measurement",
+      "source_category": "approval_action",
+      "classification": "REDUNDANT_GOVERNANCE",
+      "estimated_tokens": 12,
+      "rationale": "The human prompt already authorizes measurement; tracking it again as a separate approval inflates operator effort.",
+      "recommended_change": "Represent measurement authorization as the originating human prompt, not an additional approval action."
+    },
+    {
+      "action": ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+      "source_category": "replay_artifact",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 19,
+      "rationale": "Readiness evidence is a source governance artifact for the supervised adoption chain."
+    },
+    {
+      "action": ".github/governance/review/SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1.json",
+      "source_category": "replay_artifact",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 19,
+      "rationale": "Adoption evidence is the source artifact that exposed the economics gap."
+    },
+    {
+      "action": "tests/test_token_and_operator_economics_runtime_v1.py",
+      "source_category": "replay_artifact",
+      "classification": "OPTIONAL_GOVERNANCE",
+      "estimated_tokens": 14,
+      "rationale": "The test is necessary validation evidence, but it can be referenced from validation evidence rather than counted as replay overhead in the economics comparison.",
+      "recommended_change": "Move guard-test references to validation evidence and keep replay artifact lists focused on source governance artifacts."
+    },
+    {
+      "action": "REGRESSION_CERTIFICATION_ARTIFACT_V1",
+      "source_category": "certification_artifact",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 10,
+      "rationale": "Regression certification must remain an explicit governance gate."
+    },
+    {
+      "action": "REPLAY_CERTIFICATION_ARTIFACT_V1",
+      "source_category": "certification_artifact",
+      "classification": "MANDATORY_GOVERNANCE",
+      "estimated_tokens": 9,
+      "rationale": "Replay certification must remain explicit to preserve replay-derived loop integrity."
+    }
+  ],
+  "quantified_opportunities": {
+    "reducible_actions": 3,
+    "overhead_action_reduction_percent": 25.0,
+    "direct_reducible_estimated_tokens": 34,
+    "scaled_overhead_token_reduction_estimate": 132,
+    "scaled_overhead_token_reduction_percent": 23.5,
+    "operator_action_reduction": 1,
+    "operator_action_reduction_percent": 12.5,
+    "approval_action_reduction": 1,
+    "approval_action_reduction_percent": 50.0,
+    "projected_overhead_actions_after_optimization": 9,
+    "projected_overhead_estimated_tokens_after_optimization": 429
+  },
+  "recommended_optimizations": [
+    {
+      "optimization_id": "GOV-COST-OPT-001",
+      "name": "Certification Ledger Review Consolidation",
+      "action": "Replace separate certified-runtime, certification-artifact, and ACLI-regression review prompts with one checklist-driven certification-ledger review while preserving all source artifact references.",
+      "expected_action_reduction": 1,
+      "expected_direct_token_reduction": 8,
+      "governance_risk": "LOW",
+      "required_preservation": [
+        "REGRESSION_CERTIFICATION_ARTIFACT_V1 reference",
+        "REPLAY_CERTIFICATION_ARTIFACT_V1 reference",
+        "human-readable certification rationale"
+      ]
+    },
+    {
+      "optimization_id": "GOV-COST-OPT-002",
+      "name": "Prompt-as-Approval Measurement Authorization",
+      "action": "Treat explicit human measurement requests as authorization evidence instead of creating a second approval action for the same measurement.",
+      "expected_action_reduction": 1,
+      "expected_operator_action_reduction": 1,
+      "expected_direct_token_reduction": 12,
+      "governance_risk": "LOW",
+      "required_preservation": [
+        "human prompt hash",
+        "approval requirement for production adoption",
+        "fail-closed handling when approval is absent"
+      ]
+    },
+    {
+      "optimization_id": "GOV-COST-OPT-003",
+      "name": "Replay Artifact Scope Separation",
+      "action": "Keep replay artifact lists focused on source governance artifacts and move guard-test references into validation evidence fields.",
+      "expected_action_reduction": 1,
+      "expected_direct_token_reduction": 14,
+      "governance_risk": "LOW",
+      "required_preservation": [
+        "validation test evidence",
+        "replay source artifact hashes",
+        "diff hygiene evidence"
+      ]
+    }
+  ],
+  "non_goals": [
+    "Do not remove replay certification.",
+    "Do not remove regression certification.",
+    "Do not remove human approval for supervised production adoption.",
+    "Do not reduce fail-closed validation.",
+    "Do not replace deterministic evidence with provider-side assertions."
+  ],
+  "implementation_guidance": {
+    "recommended_mode": "CONSOLIDATE_AND_RECLASSIFY_ONLY",
+    "requires_code_change": true,
+    "requires_governance_change": false,
+    "requires_human_approval": true,
+    "next_step": "Update the economics runtime input model to distinguish source replay artifacts from validation artifacts and to collapse prompt-authorized measurements into human prompt evidence."
+  },
+  "final_outputs": {
+    "REDUNDANT_ACTIONS_IDENTIFIED": "YES",
+    "TOKEN_REDUCTION_OPPORTUNITY": "132_ESTIMATED_PROXY_TOKENS_OR_23.5_PERCENT_OF_GOVERNANCE_OVERHEAD",
+    "OPERATOR_EFFORT_REDUCTION_OPPORTUNITY": "1_OPERATOR_ACTION_OR_12.5_PERCENT",
+    "RECOMMENDED_OPTIMIZATIONS": [
+      "CERTIFICATION_LEDGER_REVIEW_CONSOLIDATION",
+      "PROMPT_AS_APPROVAL_MEASUREMENT_AUTHORIZATION",
+      "REPLAY_ARTIFACT_SCOPE_SEPARATION"
+    ]
+  }
+}
