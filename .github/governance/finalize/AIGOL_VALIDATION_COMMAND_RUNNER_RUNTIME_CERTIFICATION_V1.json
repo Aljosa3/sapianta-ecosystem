@@ -1,0 +1,45 @@
+{
+  "artifact_type": "VALIDATION_COMMAND_RUNNER_RUNTIME_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certification_id": "AIGOL_VALIDATION_COMMAND_RUNNER_RUNTIME_CERTIFICATION_V1",
+  "certified_runtime": "AIGOL_VALIDATION_COMMAND_RUNNER_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "input_artifact": "VALIDATION_COMMAND_REQUEST_ARTIFACT_V1",
+    "output_artifact": "VALIDATION_COMMAND_RESULT_ARTIFACT_V1",
+    "allowlisted_commands": [
+      "python -m pytest",
+      "python -m py_compile",
+      "python -m json.tool",
+      "git diff --check"
+    ],
+    "arbitrary_shell_allowed": false,
+    "repair_allowed": false
+  },
+  "governance_guarantees": {
+    "validation_command_runner_implemented": true,
+    "allowlist_enforced": true,
+    "replay_preserved": true,
+    "arbitrary_execution_prevented": true,
+    "shell_false_required": true,
+    "repair_prevented": true,
+    "provider_invocation_prevented": true,
+    "worker_invocation_prevented": true,
+    "ready_for_supervised_validation_automation": true
+  },
+  "certification_evidence": {
+    "focused_tests": "tests/test_validation_command_runner_runtime_v1.py",
+    "latest_validation_result": "6 passed",
+    "py_compile": "python -m py_compile aigol/runtime/validation_command_runner_runtime.py"
+  },
+  "certification_rationale": "The runtime accepts only VALIDATION_COMMAND_REQUEST_ARTIFACT_V1, enforces a narrow validation command allowlist, executes with shell=False, captures stdout, stderr, exit code, and replay references, and fails closed for arbitrary or malformed commands.",
+  "remaining_boundary": "This runner is for supervised validation automation only; it does not repair failures or authorize repository mutation.",
+  "final_outputs": {
+    "VALIDATION_COMMAND_RUNNER_IMPLEMENTED": "YES",
+    "ALLOWLIST_ENFORCED": "YES",
+    "REPLAY_PRESERVED": "YES",
+    "ARBITRARY_EXECUTION_PREVENTED": "YES",
+    "READY_FOR_SUPERVISED_VALIDATION_AUTOMATION": "YES"
+  }
+}
