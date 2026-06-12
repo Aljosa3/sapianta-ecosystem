@@ -1,0 +1,54 @@
+{
+  "artifact_type": "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certified_runtime": "AIGOL_OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "input_artifact": "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "provider": "OpenAI",
+    "existing_provider_mechanism_reused": "OPENAI_PROVIDER_ADAPTER_V1",
+    "output_artifact": "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "routes_through_external_worker_adapter_runtime": true,
+    "routes_through_result_validation_runtime": true,
+    "routes_through_replay_certification_runtime": true,
+    "worker_governance_reimplemented": false
+  },
+  "governance_guarantees": {
+    "task_package_consumed": true,
+    "openai_provider_connected": true,
+    "result_package_generated": true,
+    "replay_lineage_preserved": true,
+    "authorization_boundaries_preserved": true,
+    "fail_closed_preserved": true,
+    "provider_neutrality_above_adapter_preserved": true,
+    "repository_mutation_performed_by_adapter": false,
+    "command_execution_performed_by_adapter": false,
+    "provider_authority_granted": false
+  },
+  "do_not_implement_again": [
+    "EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+    "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "RESULT_VALIDATION_RUNTIME_V1",
+    "REPLAY_CERTIFICATION_RUNTIME_V1"
+  ],
+  "validation": {
+    "tests": [
+      "tests/test_openai_external_worker_provider_adapter_v1.py"
+    ],
+    "network_calls_required_by_tests": false,
+    "provider_failure_tested": true,
+    "invalid_task_prevents_provider_call": true,
+    "full_chain_to_replay_certification_tested": true
+  },
+  "final_outputs": {
+    "OPENAI_PROVIDER_CONNECTED": "YES",
+    "TASK_PACKAGE_CONSUMED": "YES",
+    "RESULT_PACKAGE_GENERATED": "YES",
+    "REPLAY_LINEAGE_PRESERVED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES",
+    "READY_FOR_FIRST_REAL_OPENAI_WORKER_EXECUTION": "YES"
+  }
+}
