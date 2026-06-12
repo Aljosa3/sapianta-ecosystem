@@ -382,6 +382,9 @@ from aigol.runtime.conversational_routing_visibility_runtime import (
     ROUTING_SELECTED,
     record_conversational_routing_visibility,
 )
+from aigol.runtime.universal_intake_layer_runtime import (
+    record_universal_intake,
+)
 from aigol.runtime.multiline_prompt_support_runtime import (
     record_multiline_prompt_capture,
 )
@@ -1232,6 +1235,37 @@ def _attach_interactive_routing_visibility(
     turn_summary["matched_signals"] = artifact["matched_signals"]
     turn_summary["competing_signals"] = artifact["competing_signals"]
     turn_summary["routing_reason"] = artifact["routing_reason"]
+
+
+def _attach_interactive_universal_intake(
+    *,
+    turn_summary: dict[str, Any],
+    universal_intake_capture: dict[str, Any] | None,
+) -> None:
+    if not isinstance(universal_intake_capture, dict):
+        return
+    artifact = universal_intake_capture.get("universal_intake_artifact")
+    if not isinstance(artifact, dict):
+        return
+    turn_summary["universal_intake_replay_reference"] = universal_intake_capture[
+        "universal_intake_replay_reference"
+    ]
+    turn_summary["universal_intake_artifact_type"] = artifact.get("artifact_type")
+    turn_summary["universal_intake_status"] = artifact.get("intake_status")
+    turn_summary["universal_intake_classification"] = artifact.get("intake_classification")
+    turn_summary["universal_intake_cognition_required"] = artifact.get("cognition_required")
+    turn_summary["universal_intake_provider_necessity"] = artifact.get("provider_necessity")
+    turn_summary["universal_intake_domain_reference"] = artifact.get("domain_reference")
+    turn_summary["universal_intake_worker_family_reference"] = artifact.get("worker_family_reference")
+    turn_summary["universal_intake_approval_status"] = artifact.get("approval_status")
+    turn_summary["universal_intake_next_backbone_target"] = artifact.get("next_backbone_target")
+    turn_summary["universal_intake_source_workflow_id"] = artifact.get("source_workflow_id")
+    turn_summary["universal_intake_provider_invoked"] = artifact.get("provider_invoked") is True
+    turn_summary["universal_intake_worker_invoked"] = artifact.get("worker_invoked") is True
+    turn_summary["universal_intake_approval_created"] = artifact.get("approval_created") is True
+    turn_summary["universal_intake_ppp_artifact_mutated"] = artifact.get("ppp_artifact_mutated") is True
+    turn_summary["universal_intake_governance_mutated"] = artifact.get("governance_mutated") is True
+    turn_summary["universal_intake_fail_closed"] = artifact.get("fail_closed") is True
 
 
 def _record_interactive_routing_visibility(
@@ -2208,6 +2242,7 @@ def run_interactive_conversation(
         prompt_id = f"{session_id}:{turn_id}"
         turn_root = session_root / turn_id
         progress_binding_capture: dict[str, Any] | None = None
+        universal_intake_capture: dict[str, Any] | None = None
         turn_progress_buffer: list[str] = []
         turn_output_buffer: list[str] = []
         try:
@@ -2319,6 +2354,27 @@ def run_interactive_conversation(
                 created_at=created_at,
                 replay_dir=turn_root / "source_router",
             )
+            universal_intake_capture = record_universal_intake(
+                intake_id=f"{prompt_id}:UNIVERSAL-INTAKE",
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                human_prompt=human_prompt,
+                chain_id=current_chain_id or prompt_id,
+                workflow_id=authoritative_workflow_id or NO_CERTIFIED_WORKFLOW_MATCHED,
+                routing_visibility_artifact=routing_visibility_capture[
+                    "conversational_routing_visibility_artifact"
+                ],
+                routing_visibility_replay_reference=routing_visibility_capture[
+                    "conversational_routing_visibility_replay_reference"
+                ],
+                source_router_replay_reference=str(turn_root / "source_router"),
+                created_at=created_at,
+                replay_dir=turn_root / "universal_intake",
+            )
+            if universal_intake_capture.get("fail_closed") is True:
+                raise FailClosedRuntimeError(
+                    universal_intake_capture.get("failure_reason") or "universal intake failed closed"
+                )
             _emit_interactive_conversation_cognition_progress(
                 binding_capture=progress_binding_capture,
                 snapshot_at=created_at,
@@ -4184,6 +4240,10 @@ def run_interactive_conversation(
                 turn_summary=turns[-1],
                 routing_visibility_capture=routing_visibility_capture,
             )
+            _attach_interactive_universal_intake(
+                turn_summary=turns[-1],
+                universal_intake_capture=universal_intake_capture,
+            )
             workflow_status = _attach_interactive_workflow_status(turns[-1])
             if auto_continuation_prompt is not None:
                 turns[-1]["auto_continued"] = True
@@ -4264,6 +4324,10 @@ def run_interactive_conversation(
                 prompt_id=prompt_id,
                 source_router_replay_reference=str(turn_root / "source_router"),
                 failure_reason=failure_reason,
+            )
+            _attach_interactive_universal_intake(
+                turn_summary=failed_summary,
+                universal_intake_capture=universal_intake_capture,
             )
             failed_workflow_status = _attach_interactive_workflow_status(failed_summary)
             latest_workflow_status = failed_workflow_status
