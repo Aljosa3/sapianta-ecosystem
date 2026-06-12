@@ -210,6 +210,10 @@ from aigol.runtime.conversation_to_ppp_handoff_execution import (
     render_conversation_to_ppp_handoff_execution_summary,
     run_conversation_to_ppp_handoff_execution,
 )
+from aigol.runtime.context_assembled_to_ppp_routing_continuation import (
+    POST_CONTEXT_CONTINUATION_REACHED_PPP,
+    continue_context_assembled_to_ppp_routing,
+)
 from aigol.runtime.implementation_handoff_visibility import (
     create_implementation_handoff_visibility_summary,
     render_implementation_handoff_visibility_summary,
@@ -561,6 +565,49 @@ def _conversation_openai_provider_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
     registry.register_provider(openai_provider_metadata())
     return registry
+
+
+def _post_context_continuation_provider_registry() -> ProviderRegistry:
+    return _conversation_openai_provider_registry()
+
+
+def _post_context_continuation_provider_adapter() -> OpenAIProviderAdapter:
+    return OpenAIProviderAdapter()
+
+
+def _post_context_continuation_should_run(
+    *,
+    native_context_capture: dict[str, Any],
+    auto_continue_enabled: bool,
+    human_prompt: str,
+) -> bool:
+    if native_context_capture.get("fail_closed") is True:
+        return False
+    if native_context_capture.get("context_status") != "CONTEXT_ASSEMBLED":
+        return False
+    provider_necessity = str(native_context_capture.get("provider_necessity_classification") or "")
+    if "PROVIDER_REQUIRED" not in provider_necessity:
+        return False
+    if auto_continue_enabled:
+        return True
+    normalized_prompt = " ".join(human_prompt.lower().split())
+    return "continue" in normalized_prompt and "ppp" in normalized_prompt
+
+
+def _post_context_continuation_output(capture: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "",
+            "Post-Context Continuation",
+            "",
+            f"continuation_status: {capture.get('continuation_status')}",
+            f"ppp_route_status: {capture.get('ppp_route_status')}",
+            f"domain_reference: {capture.get('domain_reference')}",
+            f"worker_reference: {capture.get('worker_reference')}",
+            f"implementation_handoff_reference: {capture.get('implementation_handoff_reference')}",
+            f"replay_reference: {capture.get('post_context_continuation_replay_reference')}",
+        ]
+    )
 
 
 def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path) -> dict[str, Any]:
@@ -3983,7 +4030,47 @@ def run_interactive_conversation(
                     )
                     output_writer(f"FAILED_CLOSED: {failure_reason}")
                 else:
-                    output_writer(render_conversation_native_development_context_summary(native_context_capture))
+                    native_output = render_conversation_native_development_context_summary(native_context_capture)
+                    if _post_context_continuation_should_run(
+                        native_context_capture=native_context_capture,
+                        auto_continue_enabled=auto_continue_enabled,
+                        human_prompt=human_prompt,
+                    ):
+                        post_context_continuation_capture = continue_context_assembled_to_ppp_routing(
+                            continuation_id=f"{prompt_id}:POST-CONTEXT-CONTINUATION",
+                            prompt_id=prompt_id,
+                            human_prompt=human_prompt,
+                            provider_id=OPENAI_PROVIDER_ID,
+                            created_at=created_at,
+                            replay_dir=turn_root / "post_context_continuation",
+                            registry=_post_context_continuation_provider_registry(),
+                            adapter=_post_context_continuation_provider_adapter(),
+                            governance_root="governance",
+                            session_id=session_id,
+                            turn_id=turn_id,
+                            current_chain_id=current_chain_id,
+                            latest_chain_id=latest_chain_id,
+                        )
+                        native_context_capture["post_context_continuation"] = post_context_continuation_capture
+                        native_context_capture["ppp_route_status"] = post_context_continuation_capture.get(
+                            "ppp_route_status"
+                        )
+                        native_context_capture["post_context_continuation_replay_reference"] = (
+                            post_context_continuation_capture.get("post_context_continuation_replay_reference")
+                        )
+                        if post_context_continuation_capture.get("fail_closed") is True:
+                            native_context_capture["fail_closed"] = True
+                            native_context_capture["failure_reason"] = post_context_continuation_capture.get(
+                                "failure_reason"
+                            )
+                            failed_turns += 1
+                            output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                        else:
+                            native_output += "\n" + _post_context_continuation_output(
+                                post_context_continuation_capture
+                            )
+                    if native_context_capture.get("fail_closed") is not True:
+                        output_writer(native_output)
                 turns.append(
                     _interactive_native_development_turn_summary(
                         turn_id=turn_id,
@@ -5729,6 +5816,12 @@ def _interactive_native_development_turn_summary(
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
+    post_context_continuation = native_context_capture.get("post_context_continuation")
+    if not isinstance(post_context_continuation, dict):
+        post_context_continuation = {}
+    conversation_ppp_routing = post_context_continuation.get("conversation_ppp_routing")
+    if not isinstance(conversation_ppp_routing, dict):
+        conversation_ppp_routing = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -5775,6 +5868,13 @@ def _interactive_native_development_turn_summary(
         "ambiguous_context": native_context_capture.get("ambiguous_context", []),
         "provider_necessity_classification": native_context_capture.get("provider_necessity_classification"),
         "suggested_next_actions": native_context_capture.get("suggested_next_actions", []),
+        "post_context_continuation_status": post_context_continuation.get("continuation_status"),
+        "post_context_continuation_replay_reference": post_context_continuation.get(
+            "post_context_continuation_replay_reference"
+        ),
+        "ppp_route_status": post_context_continuation.get("ppp_route_status"),
+        "ppp_routing_replay_reference": conversation_ppp_routing.get("conversation_ppp_routing_replay_reference"),
+        "implementation_handoff_reference": post_context_continuation.get("implementation_handoff_reference"),
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,

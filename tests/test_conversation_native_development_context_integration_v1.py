@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import inspect
 import json
 from pathlib import Path
 import shutil
+from typing import Any
 
 import pytest
 
 from aigol.cli import aigol_cli
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
+from aigol.provider.provider_registry import AVAILABLE, ProviderRegistry
+from aigol.provider.providers.openai_provider import (
+    OPENAI_PROVIDER_ID,
+    OPENAI_PROVIDER_VERSION,
+    openai_provider_metadata,
+)
+from aigol.runtime.context_assembled_to_ppp_routing_continuation import POST_CONTEXT_CONTINUATION_REACHED_PPP
+from aigol.runtime.conversation_ppp_routing_integration import CONVERSATION_PPP_HANDOFF_CREATED
 from aigol.runtime.conversation_native_development_context_integration import (
     CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATED,
     reconstruct_conversation_native_development_context_integration_replay,
@@ -24,6 +35,26 @@ ROOT = Path(__file__).resolve().parents[1]
 GOVERNANCE_ROOT = ROOT / "governance"
 CREATED_AT = "2026-06-02T16:00:00+00:00"
 MILESTONE_ID = "TRADING_MARKET_EVIDENCE_NORMALIZATION_WORKER_FOUNDATION_V1"
+CLAUDE_MILESTONE_ID = "CLAUDE_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1"
+
+
+@dataclass
+class FakeProviderAdapter:
+    response: dict[str, Any]
+    provider_id: str = OPENAI_PROVIDER_ID
+    provider_version: str = OPENAI_PROVIDER_VERSION
+    calls: int = 0
+
+    def generate_proposal(self, request: Any, *, proposal_id: str, timestamp: str):
+        self.calls += 1
+        return create_provider_proposal_envelope(
+            proposal_id=proposal_id,
+            provider_id=self.provider_id,
+            provider_version=self.provider_version,
+            request=request,
+            response=self.response,
+            timestamp=timestamp,
+        )
 
 
 def _prompt() -> str:
@@ -31,6 +62,42 @@ def _prompt() -> str:
         f"Implement {MILESTONE_ID}. Foundation only. No broker integration. "
         "No exchange integration. No order placement. No live trading. No dispatch. No execution."
     )
+
+
+def _claude_prompt() -> str:
+    return (
+        f"Implement {CLAUDE_MILESTONE_ID}. Goal: Extend the certified provider-neutral external worker "
+        "architecture with Claude support while reusing existing governance, replay, validation, mutation, "
+        "and worker lifecycle infrastructure."
+    )
+
+
+def _valid_provider_response() -> dict[str, Any]:
+    return {
+        "proposal_summary": "Create a proposal-only Claude external worker provider adapter.",
+        "proposed_outputs": [
+            "aigol/runtime/claude_external_worker_provider_adapter.py",
+            "tests/test_claude_external_worker_provider_adapter_v1.py",
+        ],
+        "constraints_acknowledged": [
+            "NO_DISPATCH",
+            "NO_INVOCATION",
+            "NO_EXECUTION",
+            "PROPOSAL_ONLY",
+        ],
+        "assumptions": [
+            "Adapter remains provider-neutral above the adapter layer.",
+        ],
+        "known_gaps": [
+            "Real Claude endpoint invocation remains separately certified.",
+        ],
+    }
+
+
+def _available_openai_registry() -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(openai_provider_metadata(status=AVAILABLE))
+    return registry
 
 
 def _input_sequence(values: list[str]):
@@ -125,6 +192,63 @@ def test_interactive_conversation_development_prompt_outputs_context_status(tmp_
     ).exists()
 
 
+def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_path, monkeypatch) -> None:
+    adapter = FakeProviderAdapter(_valid_provider_response())
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_registry",
+        _available_openai_registry,
+    )
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_adapter",
+        lambda: adapter,
+    )
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            "SESSION-NATIVE-CONTEXT-CLI-AUTO-CONTINUE-000001",
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+            "--auto-continue",
+        ]
+    )
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence([_claude_prompt(), "exit"]),
+        output_func=output.append,
+    )
+    turn = result["turns"][0]
+
+    assert result["failed_turns"] == 0
+    assert result["auto_continue_enabled"] is True
+    assert turn["context_status"] == "CONTEXT_ASSEMBLED"
+    assert turn["provider_necessity_classification"] == "PROVIDER_REQUIRED_FOR_PROPOSAL"
+    assert turn["post_context_continuation_status"] == POST_CONTEXT_CONTINUATION_REACHED_PPP
+    assert turn["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert turn["post_context_continuation_replay_reference"]
+    assert turn["ppp_routing_replay_reference"]
+    assert turn["implementation_handoff_reference"]
+    assert adapter.calls == 1
+    assert "Post-Context Continuation" in output[0]
+    assert (
+        tmp_path
+        / "interactive_runtime"
+        / "SESSION-NATIVE-CONTEXT-CLI-AUTO-CONTINUE-000001"
+        / "TURN-000001"
+        / "post_context_continuation"
+        / "conversation_ppp_routing"
+        / "conversation_ppp_route"
+        / "000_conversation_ppp_route_recorded.json"
+    ).exists()
+
+
 def test_conversation_native_development_context_fails_closed_when_context_missing(tmp_path) -> None:
     governance_root = _copy_governance_subset(tmp_path)
     (governance_root / "TRADING_DOMAIN_FOUNDATION_V1.md").unlink()
@@ -178,10 +302,11 @@ def test_conversation_native_development_context_has_no_provider_worker_or_execu
     runtime_source = inspect.getsource(runtime)
     cli_source = inspect.getsource(aigol_cli)
 
-    for source in (runtime_source, cli_source):
-        assert "OpenAIProviderAdapter" not in source
-        assert "run_provider_attachment(" not in source
-        assert "dispatch_worker(" not in source
-        assert "invoke_worker(" not in source
-        assert "create_execution_request(" not in source
-        assert "start_execution(" not in source
+    assert "OpenAIProviderAdapter" not in runtime_source
+    assert "run_provider_attachment(" not in runtime_source
+    assert "dispatch_worker(" not in runtime_source
+    assert "invoke_worker(" not in runtime_source
+    assert "create_execution_request(" not in runtime_source
+    assert "start_execution(" not in runtime_source
+    assert "_post_context_continuation_should_run" in cli_source
+    assert "continue_context_assembled_to_ppp_routing(" in cli_source
