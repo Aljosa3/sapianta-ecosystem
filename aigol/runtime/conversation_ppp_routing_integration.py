@@ -430,6 +430,8 @@ def _milestone_type(intake: dict[str, Any]) -> str:
     task_kind = intake.get("task_kind")
     if task_kind == "WORKER_FOUNDATION":
         return "WORKER_FOUNDATION"
+    if task_kind == "WORKER":
+        return "WORKER_FOUNDATION"
     if isinstance(task_kind, str) and "WORKER" in task_kind and "FOUNDATION" in task_kind:
         return "WORKER_FOUNDATION"
     if isinstance(task_kind, str) and task_kind.strip():

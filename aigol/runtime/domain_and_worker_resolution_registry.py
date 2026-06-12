@@ -30,6 +30,14 @@ DEFAULT_DOMAINS = (
         "aliases": ("TRADING",),
     },
     {
+        "domain_id": "AIGOL",
+        "display_name": "AiGOL",
+        "status": "CERTIFIED",
+        "foundation_artifact": "AIGOL_PROVIDER_ECOSYSTEM_FOUNDATION_V1",
+        "certification_artifact": "AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION",
+        "aliases": ("AIGOL", "SAPIANTA"),
+    },
+    {
         "domain_id": "MARKETING",
         "display_name": "Marketing",
         "status": "REGISTERED_FUTURE_DOMAIN",
@@ -108,6 +116,20 @@ DEFAULT_WORKER_FAMILIES = (
         "status": "FOUNDATION_CANDIDATE",
         "aliases": ("DECISION EXPLANATION",),
         "authority": "EXPLANATION_ONLY",
+    },
+    {
+        "domain_id": "AIGOL",
+        "worker_family_id": "CLAUDE_EXTERNAL",
+        "display_name": "Claude External Worker Provider Adapter",
+        "worker_class": "EXTERNAL_WORKER_PROVIDER_ADAPTER",
+        "status": "FOUNDATION_CANDIDATE",
+        "aliases": (
+            "CLAUDE_EXTERNAL",
+            "CLAUDE EXTERNAL",
+            "CLAUDE_EXTERNAL_WORKER_PROVIDER_ADAPTER",
+            "CLAUDE EXTERNAL WORKER PROVIDER ADAPTER",
+        ),
+        "authority": "PROPOSAL_ONLY_PROVIDER_ADAPTER",
     },
     {
         "domain_id": "SERVER_MANAGEMENT",
