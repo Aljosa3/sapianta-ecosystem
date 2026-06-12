@@ -1,0 +1,92 @@
+{
+  "artifact_type": "REAL_OPENAI_PROVIDER_CALL_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certification_id": "AIGOL_REAL_OPENAI_PROVIDER_CALL_CERTIFICATION_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "goal": "Prove that the OpenAI-backed worker path can execute against a real OpenAI provider endpoint while preserving governance, replay, validation, and fail-closed guarantees.",
+    "components_reused_only": true,
+    "runtime_components": [
+      "EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+      "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+      "OpenAIHTTPClient",
+      "RESULT_VALIDATION_RUNTIME_V1",
+      "REPLAY_CERTIFICATION_RUNTIME_V1"
+    ],
+    "executed_path": [
+      "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+      "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+      "Real OpenAI Responses API",
+      "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+      "EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+      "RESULT_VALIDATION_RUNTIME_V1",
+      "REPLAY_CERTIFICATION_RUNTIME_V1"
+    ]
+  },
+  "live_provider_evidence": {
+    "real_endpoint_invoked": true,
+    "endpoint": "https://api.openai.com/v1/responses",
+    "model_requested": "gpt-5.1",
+    "model_returned": "gpt-5.1-2025-11-13",
+    "response_id_present": true,
+    "response_id_redacted": true,
+    "request_metadata_recorded": true,
+    "response_metadata_recorded": true,
+    "token_usage_recorded": true,
+    "token_usage_recorded_by_live_test": true,
+    "token_usage_shape": "OpenAI Responses API usage object present",
+    "api_key_captured": false,
+    "streaming": false,
+    "tool_use": false,
+    "function_calling": false,
+    "automatic_retries": false
+  },
+  "replay_evidence": {
+    "task_package_replay": "real_openai_provider_call_external_adapter/000_external_worker_task_package_recorded.json",
+    "provider_worker_replay": "real_openai_provider_call_worker",
+    "external_worker_adapter_replay": "real_openai_provider_call_external_adapter",
+    "result_validation_replay": "real_openai_provider_call_result_validation",
+    "replay_certification_replay": "real_openai_provider_call_replay_certification",
+    "replay_references_recorded": true,
+    "replay_lineage_preserved": true
+  },
+  "failure_handling_evidence": {
+    "missing_dependency_detected_before_live_run": "official openai package absent; existing stdlib OpenAIHTTPClient used instead",
+    "sandbox_dns_failure_detected": true,
+    "sandbox_dns_failure_result": "OpenAI provider unavailable",
+    "rerun_with_network_approval_succeeded": true,
+    "provider_failure_path_covered_by": "tests/test_openai_external_worker_provider_adapter_v1.py::test_openai_external_worker_fails_closed_on_provider_failure",
+    "fail_closed_preserved": true
+  },
+  "governance_guarantees": {
+    "fail_closed_preserved": true,
+    "replay_lineage_preserved": true,
+    "authorization_boundaries_preserved": true,
+    "provider_authority_granted": false,
+    "provider_output_authoritative": false,
+    "repository_mutation_performed_by_provider": false,
+    "worker_governance_reimplemented": false,
+    "api_key_captured": false
+  },
+  "validation": {
+    "live_certification_test": "tests/test_real_openai_provider_call_certification_v1.py::test_real_openai_provider_call_completes_worker_lifecycle",
+    "live_test_requires": "AIGOL_RUN_REAL_OPENAI_PROVIDER_CALL=1 and OPENAI_API_KEY",
+    "report_guard_test": "tests/test_real_openai_provider_call_certification_v1.py::test_real_openai_provider_call_certification_records_outputs",
+    "live_endpoint_call_completed": true,
+    "result_validation_completed": true,
+    "replay_certification_completed": true
+  },
+  "known_limits": [
+    "Production usage remains supervised; this certification does not grant provider execution or mutation authority.",
+    "The live test is opt-in to avoid making ordinary offline regression runs depend on network availability or provider billing.",
+    "Token usage is recorded as present from the OpenAI Responses API usage object; the certification artifact does not persist secret-bearing raw provider payloads."
+  ],
+  "final_outputs": {
+    "REAL_OPENAI_API_CALL_COMPLETED": "YES",
+    "REPLAY_INTEGRITY_PRESERVED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES",
+    "TOKEN_USAGE_RECORDED": "YES",
+    "READY_FOR_PRODUCTION_OPENAI_WORKER_USAGE": "YES_SUPERVISED"
+  }
+}
