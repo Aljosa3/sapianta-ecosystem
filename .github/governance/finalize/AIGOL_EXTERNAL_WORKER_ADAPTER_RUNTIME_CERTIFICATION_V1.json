@@ -1,0 +1,51 @@
+{
+  "artifact_type": "EXTERNAL_WORKER_ADAPTER_RUNTIME_CERTIFICATION_V1",
+  "schema_version": "1.0",
+  "certification_id": "AIGOL_EXTERNAL_WORKER_ADAPTER_RUNTIME_CERTIFICATION_V1",
+  "certified_runtime": "AIGOL_EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+  "certification_status": "CERTIFIED",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "certification_scope": {
+    "input_artifact": "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "task_package_artifact": "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "result_package_artifact": "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "output_artifact": "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "provider_specific_logic_allowed": false
+  },
+  "certification_evidence": {
+    "focused_tests": "tests/test_external_worker_adapter_runtime_v1.py",
+    "downstream_validation_tests": [
+      "tests/test_result_validation_runtime_v1.py",
+      "tests/test_replay_certification_runtime_v1.py"
+    ],
+    "latest_validation_result": "16 passed",
+    "py_compile": "python -m py_compile aigol/runtime/external_worker_adapter_runtime.py"
+  },
+  "governance_guarantees": {
+    "accepts_only_worker_execution_candidate": true,
+    "task_package_generated": true,
+    "result_package_accepted": true,
+    "worker_execution_result_generated": true,
+    "replay_lineage_preserved": true,
+    "fail_closed_preserved": true,
+    "provider_neutrality_preserved": true,
+    "human_authority_preserved": true,
+    "provider_specific_logic_used": false
+  },
+  "supported_future_workers_without_runtime_modification": [
+    "Codex Worker",
+    "Claude Code Worker",
+    "Mistral Worker",
+    "Local Worker"
+  ],
+  "certification_rationale": "The runtime converts governed worker execution candidates into provider-neutral external worker task packages, accepts provider-neutral result packages, validates lineage, authorization, task integrity, and certification integrity, then emits WORKER_EXECUTION_RESULT_ARTIFACT_V1 compatible with result validation and replay certification.",
+  "remaining_boundary": "The adapter defines and validates the provider-neutral contract; concrete external worker launchers remain separate governed implementations.",
+  "final_outputs": {
+    "EXTERNAL_WORKER_ADAPTER_IMPLEMENTED": "YES",
+    "TASK_PACKAGE_GENERATED": "YES",
+    "RESULT_PACKAGE_ACCEPTED": "YES",
+    "REPLAY_LINEAGE_PRESERVED": "YES",
+    "PROVIDER_NEUTRALITY_PRESERVED": "YES",
+    "READY_FOR_FIRST_EXTERNAL_WORKER": "YES"
+  }
+}
