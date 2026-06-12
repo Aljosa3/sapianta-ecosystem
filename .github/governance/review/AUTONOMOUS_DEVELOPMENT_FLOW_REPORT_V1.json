@@ -1,0 +1,72 @@
+{
+  "artifact_type": "AUTONOMOUS_DEVELOPMENT_FLOW_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_GOVERNED_AUTONOMOUS_DEVELOPMENT_FLOW_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "flow": [
+    "IMPLEMENTATION_REQUEST",
+    "WORKER_REQUEST",
+    "WORKER_DISPATCH",
+    "EXTERNAL_WORKER",
+    "REPOSITORY_MUTATION",
+    "VALIDATION_COMMAND_RUNNER",
+    "RESULT_VALIDATION",
+    "REPLAY_CERTIFICATION"
+  ],
+  "certified_components_used": [
+    "AIGOL_GOVERNED_IMPLEMENTATION_REQUEST_RUNTIME_V1",
+    "AIGOL_IMPLEMENTATION_REQUEST_TO_WORKER_REQUEST_BRIDGE_V1",
+    "AIGOL_WORKER_REQUEST_TO_WORKER_DISPATCH_GOVERNANCE_V1",
+    "AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_V1",
+    "AIGOL_WORKER_INVOCATION_TO_EXECUTION_GOVERNANCE_V1",
+    "AIGOL_EXTERNAL_WORKER_ADAPTER_RUNTIME_V1",
+    "AIGOL_FIRST_EXTERNAL_LLM_WORKER_V1",
+    "AIGOL_REPOSITORY_MUTATION_WORKER_RUNTIME_V1",
+    "AIGOL_VALIDATION_COMMAND_RUNNER_RUNTIME_V1",
+    "AIGOL_RESULT_VALIDATION_RUNTIME_V1",
+    "AIGOL_REPLAY_CERTIFICATION_RUNTIME_V1"
+  ],
+  "governance_boundary": {
+    "new_governance_primitives_introduced": false,
+    "temporary_repository_fixture_used_for_mutation_demonstration": true,
+    "human_authority_preserved": true,
+    "fail_closed_preserved": true,
+    "provider_neutral_external_worker_used": true
+  },
+  "measurement": {
+    "operator_actions": {
+      "baseline_manual_actions": 8,
+      "governed_flow_actions": 6,
+      "actions_reduced": 2,
+      "operator_actions_reduced": true
+    },
+    "replay_integrity": true,
+    "governance_integrity": true,
+    "repository_mutation_success": true,
+    "validation_success": true,
+    "replay_certification_success": true
+  },
+  "replay_references": [
+    "gap",
+    "intent",
+    "candidate",
+    "implementation_request",
+    "worker_request",
+    "dispatch_candidate",
+    "invocation_candidate",
+    "execution_candidate",
+    "autonomous_development_flow_adapter",
+    "autonomous_development_flow_mutation",
+    "autonomous_development_flow_validation_command",
+    "autonomous_development_flow_result_validation",
+    "autonomous_development_flow_replay_certification"
+  ],
+  "certification_rationale": "The demonstration executes the governed development lifecycle using existing certified components only. The external worker remains proposal-only, repository mutation is performed only through the certified repository mutation worker from an approved patch proposal, validation uses the allowlisted validation command runner, and result validation plus replay certification preserve lineage and fail-closed governance.",
+  "final_outputs": {
+    "AUTONOMOUS_DEVELOPMENT_FLOW_COMPLETED": "YES",
+    "REPLAY_INTEGRITY_PRESERVED": "YES",
+    "GOVERNANCE_INTEGRITY_PRESERVED": "YES",
+    "OPERATOR_ACTIONS_REDUCED": "YES_2_ACTIONS",
+    "READY_FOR_SUPERVISED_PRODUCTION_DEVELOPMENT": "YES"
+  }
+}
