@@ -8,6 +8,10 @@ import re
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.native_development_domain_resolution_bridge import (
+    DOMAIN_RESOLVED,
+    resolve_native_development_domain,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -178,11 +182,19 @@ def _analyze_prompt(prompt: str) -> dict[str, Any]:
     task_kind = _task_kind(prompt, milestone_id)
     if task_kind == "AMBIGUOUS":
         raise FailClosedRuntimeError("native development task intake failed closed: requested scope is ambiguous")
-    domain = _detect_domain(prompt, milestone_id)
+    domain_resolution = resolve_native_development_domain(
+        human_prompt=prompt,
+        requested_milestone_id=milestone_id,
+        detected_domain=_detect_domain(prompt, milestone_id),
+    )
+    if domain_resolution["resolution_status"] != DOMAIN_RESOLVED:
+        raise FailClosedRuntimeError(domain_resolution["failure_reason"])
+    domain = domain_resolution["resolved_domain"]
     worker_family = _detect_worker_family(milestone_id)
     return {
         "requested_milestone_id": milestone_id,
         "requested_domain": domain,
+        "domain_resolution_bridge": domain_resolution,
         "requested_worker_family": worker_family,
         "requested_output_scope": _output_scope(task_kind, milestone_id),
         "explicit_constraints": _constraints(prompt),
@@ -203,6 +215,7 @@ def _intake_artifact(
     turn_id: str | None,
     requested_milestone_id: str | None,
     requested_domain: str | None,
+    domain_resolution_bridge: dict[str, Any] | None,
     requested_worker_family: str | None,
     requested_output_scope: list[str],
     explicit_constraints: list[str],
@@ -223,6 +236,7 @@ def _intake_artifact(
         "turn_id": turn_id,
         "requested_milestone_id": requested_milestone_id,
         "requested_domain": requested_domain,
+        "domain_resolution_bridge": deepcopy(domain_resolution_bridge),
         "requested_worker_family": requested_worker_family,
         "requested_output_scope": list(requested_output_scope),
         "explicit_constraints": list(explicit_constraints),
@@ -268,6 +282,7 @@ def _failed_artifact(
         turn_id=turn_id,
         requested_milestone_id=milestone_ids[0] if len(milestone_ids) == 1 else None,
         requested_domain=_detect_domain(prompt, milestone_ids[0]) if len(milestone_ids) == 1 else None,
+        domain_resolution_bridge=None,
         requested_worker_family=_detect_worker_family(milestone_ids[0]) if len(milestone_ids) == 1 else None,
         requested_output_scope=[],
         explicit_constraints=_constraints(prompt) if isinstance(prompt, str) else [],
@@ -471,4 +486,3 @@ def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "native development task intake failed closed"
-

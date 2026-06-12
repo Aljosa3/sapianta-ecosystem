@@ -65,7 +65,22 @@ TRADING_CONTEXT_FILES = (
     ("fixture_and_test_scenario_context", "TRADING_DECISION_FIXTURE_COVERAGE_V1.md", True),
 )
 
+AIGOL_CONTEXT_FILES = (
+    ("domain_foundation_context", "AIGOL_PROVIDER_ECOSYSTEM_FOUNDATION_V1.md", True),
+    ("worker_taxonomy_context", "AIGOL_PROVIDER_CAPABILITY_MODEL_V1.md", True),
+    ("domain_decision_model_context", "AIGOL_PROVIDER_SELECTION_POLICY_V1.md", True),
+    ("policy_and_acceptance_context", "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_V1.md", True),
+    ("policy_and_acceptance_context", "AIGOL_PROVIDER_WORKER_BOUNDARY_ANALYSIS_V1.md", True),
+    ("fixture_and_test_scenario_context", "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_V1.md", True),
+    ("fixture_and_test_scenario_context", "AIGOL_PROVIDER_PROPOSAL_REPAIR_AND_RETRY_RUNTIME_V1.md", True),
+    ("certification_context", "AIGOL_PROVIDER_ECOSYSTEM_CERTIFICATION.json", True),
+    ("certification_context", "AIGOL_PROVIDER_NECESSITY_POLICY_RUNTIME_CERTIFICATION.json", True),
+    ("certification_context", "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_CERTIFICATION.json", True),
+    ("known_gap_context", "AIGOL_NATIVE_DEVELOPMENT_GAP_ANALYSIS_V1.md", True),
+)
+
 DOMAIN_CONTEXT_FILES = {
+    "AIGOL": AIGOL_CONTEXT_FILES,
     "TRADING": TRADING_CONTEXT_FILES,
 }
 

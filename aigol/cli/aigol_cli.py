@@ -5767,6 +5767,9 @@ def _interactive_native_development_turn_summary(
         "task_intake_reference": native_context_capture.get("task_intake_reference"),
         "context_assembly_reference": native_context_capture.get("context_assembly_reference"),
         "context_status": native_context_capture.get("context_status"),
+        "requested_domain": native_context_capture.get("development_context_assembly", {}).get("requested_domain")
+        if isinstance(native_context_capture.get("development_context_assembly"), dict)
+        else None,
         "context_hash": native_context_capture.get("context_hash"),
         "missing_context": native_context_capture.get("missing_context", []),
         "ambiguous_context": native_context_capture.get("ambiguous_context", []),
