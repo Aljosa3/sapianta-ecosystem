@@ -1,0 +1,57 @@
+{
+  "artifact_type": "PROVIDER_CAPABILITY_CATALOG_V1",
+  "schema_version": "1.0",
+  "catalog_id": "AIGOL_PROVIDER_CAPABILITY_CATALOG_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "purpose": "Governance review catalog of currently supported provider capabilities for supervised AiGOL worker and cognition use.",
+  "scope": {
+    "provider_neutral_above_adapter_layer": true,
+    "unrestricted_autonomy_introduced": false,
+    "governance_semantics_changed": false,
+    "hidden_repository_mutation_introduced": false
+  },
+  "providers": [
+    {
+      "provider_name": "OpenAI",
+      "provider_type": "REMOTE_LLM_PROVIDER",
+      "worker_capable": true,
+      "cognition_capable": true,
+      "function_calling_support": false,
+      "replay_compatible": true,
+      "certification_status": "CERTIFIED_SUPERVISED_EXTERNAL_WORKER_AND_REAL_PROVIDER_CALL",
+      "notes": "OpenAI is connected through OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1 for EXTERNAL_WORKER_TASK_PACKAGE_V1 to EXTERNAL_WORKER_RESULT_PACKAGE_V1. Function calling, tool use, streaming, and automatic retries are intentionally disabled in the governed worker adapter."
+    },
+    {
+      "provider_name": "Claude",
+      "provider_type": "REMOTE_LLM_PROVIDER_STRUCTURAL_ADAPTER",
+      "worker_capable": false,
+      "cognition_capable": false,
+      "function_calling_support": false,
+      "replay_compatible": true,
+      "certification_status": "STRUCTURAL_ADAPTER_ONLY_NOT_CERTIFIED_FOR_EXTERNAL_WORKER_EXECUTION",
+      "notes": "The repository contains a structural Claude adapter contract, but no certified Claude external worker provider adapter, real API boundary, credential policy, or provider-backed worker certification."
+    },
+    {
+      "provider_name": "Mistral",
+      "provider_type": "REMOTE_OR_LOCAL_LLM_PROVIDER_CANDIDATE",
+      "worker_capable": false,
+      "cognition_capable": false,
+      "function_calling_support": false,
+      "replay_compatible": true,
+      "certification_status": "ARCHITECTURE_COMPATIBLE_NOT_IMPLEMENTED_OR_CERTIFIED",
+      "notes": "Mistral is compatible with the provider-neutral worker architecture, but the repository does not yet contain a certified Mistral adapter, API integration, credential contract, or external worker certification."
+    }
+  ],
+  "catalog_summary": {
+    "provider_count": 3,
+    "worker_capable_provider_count": 1,
+    "cognition_capable_provider_count": 1,
+    "replay_compatible_provider_count": 3,
+    "certified_real_provider_worker_count": 1
+  },
+  "known_limitations": [
+    "Provider capability is cataloged from repository-certified surfaces only.",
+    "Function calling is marked false for governed worker usage because the certified OpenAI external worker adapter disables tool use and function calling.",
+    "Claude and Mistral remain provider-neutral architecture candidates until adapter, API, validation, and replay certification artifacts exist."
+  ]
+}
