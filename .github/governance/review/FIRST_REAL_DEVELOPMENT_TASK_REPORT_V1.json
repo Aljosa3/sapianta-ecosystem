@@ -1,0 +1,101 @@
+{
+  "artifact_type": "FIRST_REAL_DEVELOPMENT_TASK_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_FIRST_REAL_DEVELOPMENT_TASK_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "selected_real_repository_task": {
+    "task_id": "AIGOL_VALIDATION_COMMAND_RUNNER_PROPOSAL_V1",
+    "task_summary": "Generate a proposal for a governed validation-command runner runtime that can reduce Codex dependency for allowlisted validation command execution.",
+    "repository_relevance": "This directly addresses CODEX-DEP-REDUCE-002 from CODEX_DEPENDENCY_REDUCTION_REPORT_V1 and supports limited production usage without granting mutation authority.",
+    "task_authority": "PROPOSAL_ONLY",
+    "repository_mutation_authorized": false,
+    "command_execution_authorized": false
+  },
+  "governed_lifecycle_path": [
+    "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "AIGOL_FIRST_EXTERNAL_LLM_WORKER_V1",
+    "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "REPLAY_CERTIFICATION_ARTIFACT_V1"
+  ],
+  "execution_result": {
+    "development_task_completed": true,
+    "completion_mode": "GOVERNED_PROPOSAL_COMPLETED",
+    "patch_proposal_generated": true,
+    "file_proposal_generated": true,
+    "test_proposal_generated": true,
+    "repository_mutation_performed": false,
+    "command_execution_performed": false,
+    "ready_for_human_review": true
+  },
+  "measurement": {
+    "governance_integrity": true,
+    "replay_integrity": true,
+    "proposal_usefulness_score": 100.0,
+    "worker_reliability_score": 100.0,
+    "baseline_operator_actions": 4,
+    "aigol_operator_actions": 3,
+    "operator_effort_delta": -1,
+    "operator_effort_reduction_percent": 25.0,
+    "operator_effort_reduced": true
+  },
+  "proposal_usefulness_basis": [
+    "The worker generated patch proposal data.",
+    "The worker generated file proposal data.",
+    "The worker generated test proposal data.",
+    "The proposal targets a real repository dependency-reduction task.",
+    "The proposal remained replay-compatible and certification-compatible.",
+    "The proposal performed no repository mutation and no command execution."
+  ],
+  "operator_effort_basis": {
+    "baseline_workflow": [
+      "Human selects task.",
+      "Human asks Codex to design and implement.",
+      "Human reviews generated changes.",
+      "Human asks Codex to run validation."
+    ],
+    "aigol_worker_workflow": [
+      "Human selects task.",
+      "Human approves external worker task package.",
+      "Human reviews validated proposal artifact."
+    ],
+    "reduction_rationale": "The AiGOL path packages governance, worker output, validation, and replay certification into one reviewable evidence chain, reducing one operator handoff while preserving human approval."
+  },
+  "governance_integrity_basis": [
+    "Human approval remained explicit for task-package generation.",
+    "Worker authority remained proposal-only.",
+    "External adapter preserved provider neutrality.",
+    "Result validation consumed the generated execution result.",
+    "Replay certification consumed the validation artifact.",
+    "No hidden repository mutation or command execution occurred."
+  ],
+  "replay_integrity_basis": [
+    "Task package hash bound the worker result package.",
+    "Result package hash bound the execution result artifact.",
+    "Execution result artifact passed result validation.",
+    "Validation artifact passed replay certification."
+  ],
+  "remaining_limits": [
+    "This completes a real development proposal, not an applied code change.",
+    "Limited production usage must remain supervised until a mutation-capable external worker is separately certified.",
+    "Operator effort reduction is action-count based, not wall-clock labor telemetry."
+  ],
+  "acceptance": {
+    "real_repository_development_task_selected": true,
+    "implementation_request_generated": true,
+    "complete_worker_lifecycle_executed": true,
+    "governance_integrity_preserved": true,
+    "replay_integrity_preserved": true,
+    "operator_effort_reduced": true
+  },
+  "final_outputs": {
+    "REAL_DEVELOPMENT_TASK_COMPLETED": "YES_PROPOSAL_COMPLETED",
+    "REPLAY_INTEGRITY_PRESERVED": "YES",
+    "GOVERNANCE_INTEGRITY_PRESERVED": "YES",
+    "OPERATOR_EFFORT_REDUCED": "YES_1_ACTION_OR_25.0_PERCENT",
+    "READY_FOR_LIMITED_PRODUCTION_USAGE": "YES_SUPERVISED_PROPOSAL_ONLY"
+  }
+}
