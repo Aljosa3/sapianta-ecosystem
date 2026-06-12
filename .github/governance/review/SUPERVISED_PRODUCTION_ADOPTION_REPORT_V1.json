@@ -1,0 +1,159 @@
+{
+  "artifact_type": "SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_SUPERVISED_PRODUCTION_ADOPTION_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "selected_real_development_milestone": {
+    "milestone_id": "AIGOL_PRODUCTION_GOVERNANCE_READINESS_V1",
+    "primary_artifact": ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+    "guard_test": "tests/test_production_governance_readiness_report_v1.py",
+    "selection_rationale": "The milestone is a real Sapianta governance decision artifact used to determine supervised production adoption boundaries."
+  },
+  "supervised_route": {
+    "human": {
+      "input": "AIGOL_PRODUCTION_GOVERNANCE_READINESS_V1 request",
+      "operator_authority_preserved": true
+    },
+    "aigol_governance": {
+      "governance_artifact": ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+      "decision": "CONDITIONALLY_READY_FOR_SUPERVISED_PRIMARY_GOVERNANCE",
+      "governance_constraints_preserved": true
+    },
+    "implementation_request": {
+      "implementation_scope": "Create readiness report and guard test only",
+      "implementation_execution_authorized_by_human_prompt": true,
+      "unbounded_autonomy_authorized": false
+    },
+    "codex": {
+      "role": "implementation executor",
+      "files_created": [
+        ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+        "tests/test_production_governance_readiness_report_v1.py"
+      ],
+      "codex_remains_required_for_repository_mutation": true
+    },
+    "validation": {
+      "commands": [
+        "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_to_ppp_bridge_runtime_v1.py tests/test_governed_implementation_request_runtime_v1.py tests/test_implementation_request_to_worker_request_bridge_runtime_v1.py tests/test_worker_request_to_worker_dispatch_governance_runtime_v1.py tests/test_worker_dispatch_to_worker_invocation_governance_runtime_v1.py tests/test_worker_invocation_to_execution_governance_runtime_v1.py tests/test_governed_worker_execution_runtime_v1.py tests/test_result_validation_runtime_v1.py tests/test_replay_certification_runtime_v1.py tests/test_acli_human_prompt_regression_suite_certification_v1.py",
+        "python -m runtime.governance.governance_conformance_engine",
+        "python -m json.tool .github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+        "python -m pytest tests/test_production_governance_readiness_report_v1.py",
+        "git diff --check"
+      ],
+      "validation_artifacts": [
+        "pytest evidence: 69 passed",
+        "governance conformance evidence: PARTIALLY_CONFORMANT, 18 passed, 2 failed, 0 critical",
+        "report guard evidence: 3 passed",
+        "diff hygiene evidence: clean"
+      ]
+    },
+    "replay": {
+      "replay_artifacts": [
+        ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+        "tests/test_production_governance_readiness_report_v1.py"
+      ],
+      "replay_lineage_preserved": true,
+      "artifact_hashing_runtime_available": true
+    }
+  },
+  "captured_evidence": {
+    "governance_artifacts": [
+      ".github/governance/review/PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+      ".github/governance/review/SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1.json"
+    ],
+    "replay_artifacts": [
+      "PRODUCTION_GOVERNANCE_READINESS_REPORT_V1.json",
+      "SUPERVISED_PRODUCTION_ADOPTION_REPORT_V1.json"
+    ],
+    "validation_artifacts": [
+      "tests/test_production_governance_readiness_report_v1.py",
+      "tests/test_supervised_production_adoption_report_v1.py"
+    ],
+    "operator_effort": {
+      "human_prompts": 1,
+      "clarification_rounds": 0,
+      "manual_approval_decisions": 1,
+      "manual_baseline_comparison_required": true,
+      "effort_assessment": "MODERATE_INCREASE"
+    },
+    "token_consumption": {
+      "codex_session_token_telemetry_available": false,
+      "aigol_runtime_token_metering_available": false,
+      "measured_token_consumption": null,
+      "baseline_token_consumption": null,
+      "token_reduction": "NOT_MEASURED",
+      "measurement_gap": "No repository-local token ledger exists for Human -> ChatGPT -> Codex or Human -> AiGOL Governance -> Codex workflows."
+    }
+  },
+  "baseline_comparison": {
+    "baseline_workflow": "Human -> ChatGPT -> Codex",
+    "supervised_aigol_workflow": "Human -> AiGOL Governance -> Implementation Request -> Codex -> Validation -> Replay",
+    "comparison_summary": {
+      "governance_evidence": "IMPROVED",
+      "replay_traceability": "IMPROVED",
+      "fail_closed_visibility": "IMPROVED",
+      "operator_effort": "INCREASED_MODERATELY",
+      "codex_dependency": "UNCHANGED_HIGH",
+      "token_consumption": "NOT_MEASURED"
+    },
+    "baseline_limitations": [
+      "Baseline workflow has no comparable in-repository governance artifact ledger.",
+      "Baseline token usage is not available as deterministic local evidence.",
+      "Baseline operator effort is inferred from workflow shape rather than measured with a timer or action logger."
+    ]
+  },
+  "adoption_metrics": {
+    "governance_overhead": {
+      "classification": "MODERATE",
+      "added_artifacts": 2,
+      "added_guard_tests": 1,
+      "additional_validation_commands": 4,
+      "rationale": "The supervised route adds durable governance and replay evidence, at the cost of report production, guard tests, and explicit conformance validation."
+    },
+    "token_reduction": {
+      "classification": "NOT_MEASURED",
+      "measured_percent": null,
+      "reason": "No local token telemetry exists for either supervised AiGOL or baseline ChatGPT workflows."
+    },
+    "operator_effort_change": {
+      "classification": "INCREASED_MODERATELY",
+      "rationale": "The operator receives stronger governance evidence but must review readiness boundaries, partial conformance, and adoption recommendations explicitly."
+    },
+    "recommended_adoption_expansion": {
+      "classification": "YES_LIMITED",
+      "scope": "Expand to supervised, promotion-relevant Sapianta development milestones that need governance evidence and replay certification.",
+      "excluded_scope": "Do not expand to unsupervised autonomous governance, constitutional mutation, or direct production release authority."
+    }
+  },
+  "remaining_gaps": [
+    {
+      "gap_id": "ADOPTION-GAP-TOKEN-TELEMETRY-000001",
+      "severity": "MEDIUM",
+      "description": "Token consumption cannot yet be compared because neither AiGOL nor baseline ChatGPT workflows emit a deterministic local token ledger.",
+      "recommendation": "Add a governed token and operator-effort telemetry artifact before claiming token reduction."
+    },
+    {
+      "gap_id": "ADOPTION-GAP-CODEX-DEPENDENCY-000001",
+      "severity": "HIGH",
+      "description": "Codex remains required for repository mutation and test execution.",
+      "recommendation": "Keep Codex as the implementation executor under AiGOL governance until worker implementation authority is separately certified."
+    },
+    {
+      "gap_id": "ADOPTION-GAP-CONFORMANCE-000001",
+      "severity": "HIGH",
+      "description": "Governance conformance remains PARTIALLY_CONFORMANT due to hook drift.",
+      "recommendation": "Resolve hook drift before widening adoption beyond supervised primary governance."
+    }
+  ],
+  "adoption_decision": {
+    "recommended": true,
+    "mode": "LIMITED_SUPERVISED_EXPANSION",
+    "rationale": "AiGOL materially improves governance evidence, replay continuity, and fail-closed visibility for real Sapianta development, but still has unmeasured token economics, Codex implementation dependency, and partial conformance drift."
+  },
+  "final_outputs": {
+    "GOVERNANCE_OVERHEAD": "MODERATE",
+    "TOKEN_REDUCTION": "NOT_MEASURED",
+    "OPERATOR_EFFORT_CHANGE": "INCREASED_MODERATELY",
+    "RECOMMENDED_ADOPTION_EXPANSION": "YES_LIMITED_SUPERVISED_MILESTONES"
+  }
+}
