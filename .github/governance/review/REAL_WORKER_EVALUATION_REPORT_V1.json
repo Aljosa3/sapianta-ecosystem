@@ -1,0 +1,88 @@
+{
+  "artifact_type": "REAL_WORKER_EVALUATION_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_REAL_WORKER_EVALUATION_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "selected_real_task": {
+    "task_id": "AIGOL_REAL_WORKER_EVALUATION_V1",
+    "task_summary": "Evaluate the first provider-neutral proposal-only external worker against a real Sapianta implementation-governance task.",
+    "selection_rationale": "This is the first real supervised project usage gate after certification of the external worker adapter and first external worker."
+  },
+  "governed_path": [
+    "IMPLEMENTATION_REQUEST",
+    "WORKER_EXECUTION_CANDIDATE",
+    "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "AIGOL_FIRST_EXTERNAL_LLM_WORKER_V1",
+    "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "REPLAY_CERTIFICATION_ARTIFACT_V1"
+  ],
+  "artifacts_generated_or_validated": {
+    "implementation_request": "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+    "task_package": "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "result_package": "EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+    "execution_result": "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "validation": "RESULT_VALIDATION_ARTIFACT_V1",
+    "replay_certification": "REPLAY_CERTIFICATION_ARTIFACT_V1"
+  },
+  "measurement": {
+    "replay_integrity": true,
+    "governance_integrity": true,
+    "proposal_quality_score": 100.0,
+    "worker_reliability_score": 100.0,
+    "task_package_consumed": true,
+    "result_package_generated": true,
+    "result_package_accepted": true,
+    "validation_completed": true,
+    "replay_certification_completed": true,
+    "provider_neutrality_preserved": true,
+    "repository_mutation_performed": false,
+    "command_execution_performed": false,
+    "proposal_only_authority_preserved": true
+  },
+  "proposal_quality_basis": [
+    "Patch proposal generated.",
+    "File proposal generated.",
+    "Test proposal generated.",
+    "Proposal authority remained PROPOSAL_ONLY.",
+    "No repository mutation was performed.",
+    "No command execution was performed.",
+    "Replay compatibility was preserved.",
+    "Certification compatibility was preserved."
+  ],
+  "worker_reliability_basis": [
+    "Task package consumed successfully.",
+    "Result package generated successfully.",
+    "Adapter accepted result package successfully.",
+    "Execution result artifact generated successfully.",
+    "Result validation completed successfully.",
+    "Replay certification completed successfully."
+  ],
+  "governance_integrity_basis": [
+    "Human approval remained explicit for external task package generation.",
+    "Worker stayed provider-neutral.",
+    "Worker stayed proposal-only.",
+    "External adapter preserved replay lineage.",
+    "Result validation consumed the generated worker execution result.",
+    "Replay certification consumed the validation artifact."
+  ],
+  "remaining_limits": [
+    "The worker is deterministic and proposal-only; it does not call a live LLM provider.",
+    "The evaluation demonstrates the governed worker path, not repository mutation.",
+    "Supervised real project usage should keep human review before any proposal is converted into implementation."
+  ],
+  "acceptance": {
+    "first_governed_real_world_worker_execution_path_demonstrated": true,
+    "implementation_request_generated": true,
+    "complete_path_executed": true,
+    "validation_and_replay_completed": true
+  },
+  "final_outputs": {
+    "REAL_WORKER_EVALUATION_PASSED": "YES",
+    "REPLAY_INTEGRITY_PRESERVED": "YES",
+    "GOVERNANCE_INTEGRITY_PRESERVED": "YES",
+    "WORKER_RELIABILITY_SCORE": "100.0",
+    "READY_FOR_SUPERVISED_REAL_PROJECT_USAGE": "YES"
+  }
+}
