@@ -1,0 +1,209 @@
+{
+  "artifact_type": "PRODUCTION_GOVERNANCE_READINESS_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_PRODUCTION_GOVERNANCE_READINESS_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "readiness_decision": "CONDITIONALLY_READY_FOR_SUPERVISED_PRIMARY_GOVERNANCE",
+  "production_governance_ready": "YES_CONDITIONAL",
+  "readiness_score": 86.0,
+  "readiness_score_basis": {
+    "closed_loop_runtime_chain_certified": true,
+    "acli_regression_certified": true,
+    "replay_lineage_preserved": true,
+    "fail_closed_preserved": true,
+    "deterministic_runtime_tests_passed": true,
+    "governance_conformance_status": "PARTIALLY_CONFORMANT",
+    "manual_authority_required": true,
+    "codex_dependency_remaining": true
+  },
+  "review_scope": {
+    "certified_runtime_chain": [
+      "AIGOL_REPLAY_GAP_DETECTION_RUNTIME_V1",
+      "AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_V1",
+      "AIGOL_GAP_TO_IMPROVEMENT_INTENT_E2E_V1",
+      "AIGOL_IMPROVEMENT_INTENT_TO_PPP_BRIDGE_V1",
+      "AIGOL_GOVERNED_IMPLEMENTATION_REQUEST_RUNTIME_V1",
+      "AIGOL_IMPLEMENTATION_REQUEST_TO_WORKER_REQUEST_BRIDGE_V1",
+      "AIGOL_WORKER_REQUEST_TO_WORKER_DISPATCH_GOVERNANCE_V1",
+      "AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_V1",
+      "AIGOL_WORKER_INVOCATION_TO_EXECUTION_GOVERNANCE_V1",
+      "AIGOL_GOVERNED_WORKER_EXECUTION_RUNTIME_V1",
+      "AIGOL_RESULT_VALIDATION_RUNTIME_V1",
+      "AIGOL_REPLAY_CERTIFICATION_RUNTIME_V1",
+      "AIGOL_ACLI_HUMAN_PROMPT_REGRESSION_SUITE_CERTIFICATION_V1"
+    ],
+    "certification_artifacts_reviewed": [
+      ".github/governance/finalize/AIGOL_WORKER_DISPATCH_TO_WORKER_INVOCATION_GOVERNANCE_CERTIFICATION_V1.json",
+      "REGRESSION_RUN_ARTIFACT_V1",
+      "REGRESSION_CERTIFICATION_ARTIFACT_V1",
+      "runtime/finalization_evidence/GOVERNED_EXECUTION_RUNTIME_CERTIFICATION.json",
+      "runtime/finalization_evidence/GOVERNED_PRE_EXECUTION_STACK_CERTIFICATION.json",
+      ".github/governance/finalize/AIGOL_CLI_GOVERNED_RUNTIME_CERTIFICATION.json",
+      ".github/governance/finalize/AIGOL_CLI_GOVERNED_RUNTIME_REPLAY_CERTIFICATION.json"
+    ],
+    "acli_regression_certification": {
+      "minimum_prompts_required": 25,
+      "prompts_executed": 28,
+      "termination_rate": 1.0,
+      "fail_closed_rate": 0.0,
+      "production_readiness_score": 100.0,
+      "replay_lineage_integrity": true,
+      "no_lifecycle_regressions": true
+    },
+    "validation_evidence": [
+      {
+        "command": "python -m pytest tests/test_replay_gap_detection_runtime_v1.py tests/test_replay_to_improvement_intent_runtime_v1.py tests/test_improvement_intent_to_ppp_bridge_runtime_v1.py tests/test_governed_implementation_request_runtime_v1.py tests/test_implementation_request_to_worker_request_bridge_runtime_v1.py tests/test_worker_request_to_worker_dispatch_governance_runtime_v1.py tests/test_worker_dispatch_to_worker_invocation_governance_runtime_v1.py tests/test_worker_invocation_to_execution_governance_runtime_v1.py tests/test_governed_worker_execution_runtime_v1.py tests/test_result_validation_runtime_v1.py tests/test_replay_certification_runtime_v1.py tests/test_acli_human_prompt_regression_suite_certification_v1.py",
+        "result": "69 passed"
+      },
+      {
+        "command": "python -m runtime.governance.governance_conformance_engine",
+        "result": "PARTIALLY_CONFORMANT",
+        "checks_passed": 18,
+        "checks_failed": 2,
+        "critical_violations": 0
+      }
+    ]
+  },
+  "remaining_gaps": [
+    {
+      "gap_id": "GAP-GOVERNANCE-HOOK-CONFORMANCE-000001",
+      "severity": "HIGH",
+      "description": "Governance conformance remains partial because required pre-commit hook tokens are missing in the system hook surface.",
+      "evidence": "python -m runtime.governance.governance_conformance_engine reported HOOK_MISMATCH for sapianta_system/.git/hooks/pre-commit.",
+      "blocks_unsupervised_production": true,
+      "blocks_supervised_primary_governance": false
+    },
+    {
+      "gap_id": "GAP-ROOT-HOOK-CONFORMANCE-000001",
+      "severity": "WARNING",
+      "description": "Root pre-commit hook evidence is missing expected governance tokens.",
+      "evidence": "python -m runtime.governance.governance_conformance_engine reported HOOK_MISMATCH for .git/hooks/pre-commit.",
+      "blocks_unsupervised_production": false,
+      "blocks_supervised_primary_governance": false
+    },
+    {
+      "gap_id": "GAP-CODEX-IMPLEMENTATION-DEPENDENCY-000001",
+      "severity": "MEDIUM",
+      "description": "AiGOL can govern and certify implementation requests, worker requests, execution candidates, execution results, validation, and replay certification, but code changes are still implemented by Codex-assisted development.",
+      "blocks_unsupervised_production": true,
+      "blocks_supervised_primary_governance": false
+    },
+    {
+      "gap_id": "GAP-HUMAN-AUTHORITY-OPERATIONS-000001",
+      "severity": "MEDIUM",
+      "description": "Human approval remains mandatory at governance gates; this is constitutionally desired but remains an operational dependency for throughput.",
+      "blocks_unsupervised_production": true,
+      "blocks_supervised_primary_governance": false
+    }
+  ],
+  "remaining_risks": [
+    {
+      "risk_id": "RISK-PARTIAL-CONFORMANCE-000001",
+      "severity": "HIGH",
+      "description": "Partial governance conformance must remain visible during adoption; it cannot be reframed as full constitutional conformance."
+    },
+    {
+      "risk_id": "RISK-OPERATOR-SEQUENCING-000001",
+      "severity": "MEDIUM",
+      "description": "ACLI lifecycle certification depends on correct operator prompt sequencing and copied next actions."
+    },
+    {
+      "risk_id": "RISK-IMPLEMENTATION-AUTHORITY-000001",
+      "severity": "MEDIUM",
+      "description": "AiGOL currently produces governed implementation and worker artifacts, but Codex still performs repository edits and test execution."
+    },
+    {
+      "risk_id": "RISK-PRODUCTION-SCOPE-OVERREAD-000001",
+      "severity": "MEDIUM",
+      "description": "Production readiness is for supervised Sapianta development governance, not autonomous constitutional mutation or unrestricted execution."
+    }
+  ],
+  "remaining_manual_dependencies": [
+    "Human approval at PPP candidate, implementation request, dispatch candidate, invocation candidate, execution candidate, and governed execution gates.",
+    "Human review of readiness reports, certification decisions, and release promotion.",
+    "Operator sequencing for full ACLI lifecycle prompts where copied next actions are still required.",
+    "Manual remediation of governance hook conformance drift.",
+    "Manual decision to promote local PC artifacts into governed GitHub release registry."
+  ],
+  "remaining_codex_dependencies": {
+    "dependency_level": "HIGH",
+    "dependencies": [
+      "Repository code edits and test creation.",
+      "Runtime scaffolding for new governance capabilities.",
+      "Local pytest and conformance execution.",
+      "Report generation when no dedicated AiGOL report writer exists.",
+      "Manual interpretation of conformance drift and adoption recommendations."
+    ],
+    "non_dependencies": [
+      "Runtime artifact hashing.",
+      "Replay lineage preservation inside certified runtimes.",
+      "Fail-closed validation behavior inside certified runtimes.",
+      "ACLI lifecycle execution and replay artifact generation once runtime code is present."
+    ]
+  },
+  "migration_recommendations": [
+    {
+      "phase": "PHASE_1",
+      "name": "Supervised Primary Governance",
+      "recommendation": "Use AiGOL as the primary governance record and certification layer for Sapianta development while Codex remains the implementation executor.",
+      "entry_criteria": [
+        "ACLI regression certification remains at termination_rate >= 0.95.",
+        "Replay lineage preservation remains true.",
+        "Human approval gates remain mandatory."
+      ]
+    },
+    {
+      "phase": "PHASE_2",
+      "name": "Conformance Closure",
+      "recommendation": "Resolve hook conformance drift before claiming full production governance readiness.",
+      "entry_criteria": [
+        "governance_conformance_engine status becomes CONFORMANT.",
+        "No HIGH severity governance conformance warnings remain."
+      ]
+    },
+    {
+      "phase": "PHASE_3",
+      "name": "Governed Implementation Queue",
+      "recommendation": "Route Sapianta work through AiGOL-generated implementation requests and worker request artifacts before Codex implementation.",
+      "entry_criteria": [
+        "PPP candidate, implementation request, and worker request artifacts are required for non-trivial changes.",
+        "Replay certification is attached to closed-loop improvement proposals."
+      ]
+    }
+  ],
+  "production_adoption_plan": [
+    {
+      "step": 1,
+      "action": "Adopt AiGOL as the required governance evidence layer for Sapianta development requests.",
+      "mode": "SUPERVISED"
+    },
+    {
+      "step": 2,
+      "action": "Require replay certification and ACLI regression certification for promotion-relevant runtime changes.",
+      "mode": "GATED"
+    },
+    {
+      "step": 3,
+      "action": "Keep Codex as the implementation agent, with AiGOL artifacts serving as the governing intake, approval, execution, validation, and certification spine.",
+      "mode": "CODEX_ASSISTED"
+    },
+    {
+      "step": 4,
+      "action": "Remediate governance hook conformance drift before broadening claims from conditional readiness to full production readiness.",
+      "mode": "CONFORMANCE_REMEDIATION"
+    }
+  ],
+  "final_outputs": {
+    "PRODUCTION_GOVERNANCE_READY": "YES_CONDITIONAL",
+    "REMAINING_BLOCKERS": {
+      "supervised_primary_governance": 0,
+      "full_unsupervised_or_autonomous_governance": 2,
+      "blockers": [
+        "HIGH severity governance hook conformance drift",
+        "HIGH Codex implementation dependency for repository mutation"
+      ]
+    },
+    "CODEX_DEPENDENCY_LEVEL": "HIGH",
+    "RECOMMENDED_ADOPTION_MODE": "SUPERVISED_PRIMARY_GOVERNANCE_WITH_CODEX_IMPLEMENTATION"
+  }
+}
