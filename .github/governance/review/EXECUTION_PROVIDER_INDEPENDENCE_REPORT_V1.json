@@ -1,0 +1,214 @@
+{
+  "artifact_type": "EXECUTION_PROVIDER_INDEPENDENCE_REPORT_V1",
+  "schema_version": "1.0",
+  "report_id": "AIGOL_EXECUTION_PROVIDER_INDEPENDENCE_ANALYSIS_V1",
+  "generated_at": "2026-06-12T00:00:00Z",
+  "source_report": ".github/governance/review/CODEX_DEPENDENCY_REDUCTION_REPORT_V1.json",
+  "source_scope": {
+    "source_codex_required_capabilities": 4,
+    "source_autonomy_score": 70.0,
+    "analyzed_capabilities": [
+      "Repository code edits and test creation",
+      "New runtime scaffolding for uncertified governance capabilities",
+      "Local pytest and governance conformance command execution",
+      "Manual interpretation of hook conformance drift and repository release posture"
+    ]
+  },
+  "provider_source_evidence": [
+    {
+      "provider": "OpenAI API",
+      "source": "https://developers.openai.com/api/docs/guides/tools",
+      "evidence_summary": "OpenAI API docs expose code generation, structured output, function calling, tool use, Agents SDK, shell, apply-patch, and local shell tool surfaces."
+    },
+    {
+      "provider": "Claude API",
+      "source": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview",
+      "evidence_summary": "Claude API docs expose tool-use infrastructure including programmatic tool calling, code execution, bash, text editor, and computer-use tool categories."
+    },
+    {
+      "provider": "Claude Code",
+      "source": "https://code.claude.com/docs/en/overview",
+      "evidence_summary": "Claude Code is documented as an agentic coding tool that can read codebases, edit files, run commands, and work from terminal and IDE surfaces."
+    },
+    {
+      "provider": "Mistral",
+      "source": "https://docs.mistral.ai/studio-api/conversations/function-calling",
+      "evidence_summary": "Mistral function calling allows models to connect to external local tools, with developer-defined functions or APIs and developer-executed tool results."
+    },
+    {
+      "provider": "Mistral local/open models",
+      "source": "https://docs.mistral.ai/models/overview",
+      "evidence_summary": "Mistral model catalog includes open-weight general, coding, and code-agent models including Mistral Large 3 Open, Mistral Small 4 Open, and Devstral 2 Open."
+    }
+  ],
+  "reclassified_capabilities": [
+    {
+      "capability": "Repository code edits and test creation",
+      "previous_classification": "CODEX_REQUIRED",
+      "primary_reclassification": "GENERIC_EXECUTION_WORKER",
+      "secondary_reclassifications": [
+        "GENERIC_COGNITION_PROVIDER",
+        "HUMAN_AUTHORITY_REQUIRED"
+      ],
+      "codex_specific": false,
+      "rationale": "The capability needs governed diff synthesis, filesystem mutation, and test creation. Codex is one execution surface, but the core need is a governed coding model plus a mutation-capable worker under human approval.",
+      "governance_constraints": [
+        "Human approval remains mandatory before repository mutation.",
+        "Replay lineage and diff evidence must be preserved.",
+        "Fail-closed validation must block unapproved changes."
+      ]
+    },
+    {
+      "capability": "New runtime scaffolding for uncertified governance capabilities",
+      "previous_classification": "CODEX_REQUIRED",
+      "primary_reclassification": "GENERIC_COGNITION_PROVIDER",
+      "secondary_reclassifications": [
+        "GENERIC_EXECUTION_WORKER",
+        "HUMAN_AUTHORITY_REQUIRED"
+      ],
+      "codex_specific": false,
+      "rationale": "Runtime scaffolding requires design synthesis and code generation, then governed file creation. The cognition component can be provider-neutral if output is validated before mutation.",
+      "governance_constraints": [
+        "Generated runtime scope must be bounded by implementation request artifacts.",
+        "Tests and replay evidence remain mandatory.",
+        "Human authority remains final for acceptance."
+      ]
+    },
+    {
+      "capability": "Local pytest and governance conformance command execution",
+      "previous_classification": "CODEX_REQUIRED",
+      "primary_reclassification": "GENERIC_EXECUTION_WORKER",
+      "secondary_reclassifications": [],
+      "codex_specific": false,
+      "rationale": "The capability is command execution plus result capture. It does not require Codex cognition if a governed local worker can run allowlisted commands and preserve logs.",
+      "governance_constraints": [
+        "Commands must be allowlisted or explicitly approved.",
+        "Execution logs must be replay-preserved.",
+        "No hidden repair or mutation may be triggered by validation failure."
+      ]
+    },
+    {
+      "capability": "Manual interpretation of hook conformance drift and repository release posture",
+      "previous_classification": "CODEX_REQUIRED",
+      "primary_reclassification": "HUMAN_AUTHORITY_REQUIRED",
+      "secondary_reclassifications": [
+        "GENERIC_COGNITION_PROVIDER"
+      ],
+      "codex_specific": false,
+      "rationale": "The final decision is constitutional and operational, so human authority is required. A generic cognition provider can summarize evidence, but cannot replace final authority.",
+      "governance_constraints": [
+        "Partial conformance must remain visible.",
+        "Human release authority cannot be delegated.",
+        "Provider summaries must remain advisory."
+      ]
+    }
+  ],
+  "reclassification_totals": {
+    "analyzed_codex_required_capabilities": 4,
+    "generic_cognition_provider_capabilities": 3,
+    "generic_execution_worker_capabilities": 3,
+    "codex_specific_capabilities": 0,
+    "human_authority_required_capabilities": 3,
+    "provider_replaceable_capabilities": 4,
+    "execution_worker_required_capabilities": 3
+  },
+  "provider_replacement_matrix": [
+    {
+      "provider": "OpenAI API",
+      "provider_type": "GENERIC_COGNITION_PROVIDER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 75,
+      "replacement_readiness": "HIGH_WITH_GOVERNED_EXECUTION_WORKER",
+      "limitations": [
+        "API model can propose code and tool calls, but repository mutation still requires a governed worker.",
+        "Human approval and replay capture must be externalized through AiGOL."
+      ]
+    },
+    {
+      "provider": "Claude",
+      "provider_type": "GENERIC_COGNITION_PROVIDER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 75,
+      "replacement_readiness": "HIGH_WITH_GOVERNED_TOOL_RUNNER",
+      "limitations": [
+        "API tool use requires developer-provided tools and result handling.",
+        "Governed mutation must be supplied by AiGOL worker controls."
+      ]
+    },
+    {
+      "provider": "Claude Code",
+      "provider_type": "GENERIC_EXECUTION_WORKER_AND_COGNITION_PROVIDER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 90,
+      "replacement_readiness": "VERY_HIGH_FOR_CODEX_LIKE_DEVELOPMENT_EXECUTION",
+      "limitations": [
+        "Still needs AiGOL governance wrappers for approval, replay, certification, and fail-closed boundaries.",
+        "Provider substitution does not remove human authority requirements."
+      ]
+    },
+    {
+      "provider": "Mistral",
+      "provider_type": "GENERIC_COGNITION_PROVIDER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 65,
+      "replacement_readiness": "MEDIUM_HIGH_WITH_EXTERNAL_TOOL_EXECUTION",
+      "limitations": [
+        "Function calling connects to external local tools but the developer or runtime executes the tools.",
+        "Repository mutation and command execution require a separate governed worker."
+      ]
+    },
+    {
+      "provider": "Local Mistral + Worker",
+      "provider_type": "LOCAL_COGNITION_PROVIDER_PLUS_GENERIC_EXECUTION_WORKER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 70,
+      "replacement_readiness": "MEDIUM_HIGH_WITH_MODEL_SELECTION_AND_VALIDATION",
+      "limitations": [
+        "Local model quality and context capacity must be certified against Sapianta runtime tasks.",
+        "A governed local mutation worker remains required."
+      ]
+    },
+    {
+      "provider": "Future local models",
+      "provider_type": "LOCAL_COGNITION_PROVIDER_PLUS_GENERIC_EXECUTION_WORKER",
+      "replaceable_capabilities": 4,
+      "readiness_score": 70,
+      "replacement_readiness": "MEDIUM_HIGH_IF_CERTIFIED",
+      "limitations": [
+        "Future local models require capability certification before production use.",
+        "Provider independence does not eliminate execution governance."
+      ]
+    }
+  ],
+  "quantified_independence": {
+    "provider_independence_score": 100.0,
+    "execution_independence_score": 75.0,
+    "local_model_feasibility_score": 70.0,
+    "openai_replacement_readiness_score": 75.0,
+    "codex_specific_dependency_percent": 0.0,
+    "generic_provider_dependency_percent": 75.0,
+    "generic_execution_worker_dependency_percent": 75.0,
+    "human_authority_dependency_percent": 75.0
+  },
+  "interpretation": {
+    "summary": "The remaining dependency is not Codex-specific. All four previously Codex-required capabilities can be reframed as generic cognition, generic execution worker, and human authority requirements.",
+    "provider_independence": "HIGH",
+    "execution_independence": "MEDIUM_HIGH",
+    "local_model_feasibility": "MEDIUM_HIGH",
+    "openai_replacement_readiness": "HIGH_WITH_GOVERNED_WORKER",
+    "blocking_condition": "AiGOL still needs a certified generic execution worker for repository mutation and allowlisted command execution before Codex can be removed from implementation execution."
+  },
+  "non_goals": [
+    "Do not claim provider substitution authorizes autonomous repository mutation.",
+    "Do not remove human approval gates.",
+    "Do not treat model output as certification evidence without AiGOL replay validation.",
+    "Do not hide that local model feasibility requires task-specific certification."
+  ],
+  "final_outputs": {
+    "GENERIC_PROVIDER_CAPABILITIES": "3_OF_4",
+    "CODEX_SPECIFIC_CAPABILITIES": "0_OF_4",
+    "LOCAL_MISTRAL_FEASIBLE_CAPABILITIES": "4_OF_4_WITH_GOVERNED_WORKER_AND_CERTIFICATION",
+    "OPENAI_REPLACEMENT_READINESS": "75.0_HIGH_WITH_GOVERNED_EXECUTION_WORKER",
+    "PROVIDER_INDEPENDENCE_SCORE": "100.0"
+  }
+}
