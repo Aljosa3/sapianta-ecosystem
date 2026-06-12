@@ -19,6 +19,20 @@ from aigol.runtime.domain_and_worker_resolution_registry import (
     RESOLUTION_SUCCEEDED,
     resolve_domain_worker_milestone,
 )
+from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED, authorize_execution_ready
+from aigol.runtime.governed_implementation_dry_run import (
+    EXECUTION_READY,
+    prepare_governed_implementation_dry_run,
+)
+from aigol.runtime.implementation_handoff_visibility import (
+    IMPLEMENTATION_HANDOFF_SUMMARY_CREATED,
+    create_implementation_handoff_visibility_summary,
+)
+from aigol.runtime.worker_invocation_request_runtime import (
+    WORKER_INVOCATION_REQUEST_CREATED,
+    create_worker_invocation_request,
+)
+from aigol.runtime.transport.serialization import replay_hash
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -170,3 +184,120 @@ def test_post_context_continuation_preserves_fail_closed_provider_unavailable(tm
     assert capture["execution_requested"] is False
     assert capture["dispatch_requested"] is False
     assert reconstructed["continuation_status"] == "FAILED_CLOSED"
+
+
+def test_claude_ppp_handoff_continues_to_domain_worker_request(tmp_path) -> None:
+    capture = continue_context_assembled_to_ppp_routing(
+        continuation_id="POST-CONTEXT-WORKER-REQUEST-CONTINUATION-000001",
+        prompt_id="PROMPT-CLAUDE-WORKER-REQUEST-CONTINUATION-000001",
+        human_prompt=_prompt(),
+        provider_id=PROVIDER_ID,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "continuation",
+        registry=_registry(),
+        adapter=FakeProviderAdapter(_valid_response()),
+        governance_root=GOVERNANCE_ROOT,
+        session_id="SESSION-CLAUDE-WORKER-REQUEST-CONTINUATION-000001",
+        turn_id="TURN-000001",
+        current_chain_id="CHAIN-CLAUDE-WORKER-REQUEST-CONTINUATION-000001",
+        latest_chain_id="CHAIN-CLAUDE-WORKER-REQUEST-CONTINUATION-000001",
+    )
+    ppp = capture["conversation_ppp_routing"]
+    route = ppp["conversation_ppp_routing_artifact"]
+    handoff_replay_reference = (
+        tmp_path
+        / "continuation"
+        / "conversation_ppp_routing"
+        / "final_implementation_handoff"
+    )
+
+    visibility = create_implementation_handoff_visibility_summary(
+        visibility_id="VISIBILITY-CLAUDE-WORKER-REQUEST-000001",
+        handoff_replay_reference=str(handoff_replay_reference),
+        approval_status="APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "visibility",
+    )
+    dry_run = prepare_governed_implementation_dry_run(
+        dry_run_id="DRY-RUN-CLAUDE-WORKER-REQUEST-000001",
+        handoff_replay_reference=str(handoff_replay_reference),
+        handoff_visibility_artifact=visibility["implementation_handoff_visibility_artifact"],
+        upstream_lineage_artifact=route,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "dry_run",
+    )
+    authorization = authorize_execution_ready(
+        authorization_id="AUTHORIZATION-CLAUDE-WORKER-REQUEST-000001",
+        execution_ready_replay_reference=dry_run["governed_implementation_dry_run_replay_reference"],
+        authorizing_actor="AIGOL_GOVERNANCE",
+        authorized_at=CREATED_AT,
+        replay_dir=tmp_path / "authorization",
+    )
+    worker_request = create_worker_invocation_request(
+        invocation_request_id="WORKER-REQUEST-CLAUDE-000001",
+        execution_authorization_replay_reference=authorization["execution_authorization_replay_reference"],
+        requested_by="AIGOL_GOVERNANCE",
+        requested_at=CREATED_AT,
+        replay_dir=tmp_path / "worker_request",
+    )
+
+    assert capture["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert visibility["summary_status"] == IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
+    assert visibility["planned_artifacts"] == _valid_response()["proposed_outputs"]
+    assert dry_run["execution_status"] == EXECUTION_READY
+    assert dry_run["execution_requested"] is False
+    assert dry_run["dispatch_requested"] is False
+    assert dry_run["worker_invoked"] is False
+    assert authorization["authorization_status"] == EXECUTION_AUTHORIZED
+    assert worker_request["request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert worker_request["target_worker_family"] == "CLAUDE_EXTERNAL"
+    assert worker_request["worker_invoked"] is False
+
+
+def test_ppp_routing_dry_run_lineage_preserves_fail_closed_when_approval_required(tmp_path) -> None:
+    capture = continue_context_assembled_to_ppp_routing(
+        continuation_id="POST-CONTEXT-WORKER-REQUEST-FAIL-CLOSED-000001",
+        prompt_id="PROMPT-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+        human_prompt=_prompt(),
+        provider_id=PROVIDER_ID,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "continuation",
+        registry=_registry(),
+        adapter=FakeProviderAdapter(_valid_response()),
+        governance_root=GOVERNANCE_ROOT,
+        session_id="SESSION-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+        turn_id="TURN-000001",
+        current_chain_id="CHAIN-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+        latest_chain_id="CHAIN-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+    )
+    route = dict(capture["conversation_ppp_routing"]["conversation_ppp_routing_artifact"])
+    route["approval_required"] = True
+    route.pop("artifact_hash")
+    route["artifact_hash"] = replay_hash(route)
+    handoff_replay_reference = (
+        tmp_path
+        / "continuation"
+        / "conversation_ppp_routing"
+        / "final_implementation_handoff"
+    )
+    visibility = create_implementation_handoff_visibility_summary(
+        visibility_id="VISIBILITY-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+        handoff_replay_reference=str(handoff_replay_reference),
+        approval_status="APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "visibility",
+    )
+
+    dry_run = prepare_governed_implementation_dry_run(
+        dry_run_id="DRY-RUN-CLAUDE-WORKER-REQUEST-FAIL-CLOSED-000001",
+        handoff_replay_reference=str(handoff_replay_reference),
+        handoff_visibility_artifact=visibility["implementation_handoff_visibility_artifact"],
+        upstream_lineage_artifact=route,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "dry_run",
+    )
+
+    assert visibility["summary_status"] == IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
+    assert dry_run["fail_closed"] is True
+    assert dry_run["execution_status"] == "FAILED_CLOSED"
+    assert "approval lineage invalid" in dry_run["failure_reason"]

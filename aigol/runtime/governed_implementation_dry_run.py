@@ -32,6 +32,8 @@ EXECUTION_READY = "EXECUTION_READY"
 FAILED_CLOSED = "FAILED_CLOSED"
 
 CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ARTIFACT_V1 = "CONVERSATION_TO_PPP_HANDOFF_EXECUTION_ARTIFACT_V1"
+CONVERSATION_PPP_ROUTING_ARTIFACT_V1 = "CONVERSATION_PPP_ROUTING_ARTIFACT_V1"
+CONVERSATION_PPP_HANDOFF_CREATED = "CONVERSATION_PPP_HANDOFF_CREATED"
 
 FORBIDDEN_OPERATIONS = (
     "INVOKE_WORKER",
@@ -275,7 +277,65 @@ def _validate_upstream_lineage(upstream_artifact: dict[str, Any], handoff: dict[
             "upstream_reference": upstream["resume_id"],
             "upstream_hash": upstream["artifact_hash"],
         }
+    if artifact_type == CONVERSATION_PPP_ROUTING_ARTIFACT_V1:
+        _validate_conversation_ppp_routing_lineage(upstream, handoff)
+        return {
+            "chain_id": upstream["canonical_chain_id"],
+            "approval_status": "APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
+            "approval_reference": None,
+            "approval_hash": _conversation_ppp_routing_approval_hash(upstream),
+            "upstream_reference": upstream["route_id"],
+            "upstream_hash": upstream["artifact_hash"],
+        }
     raise FailClosedRuntimeError("governed implementation dry run failed closed: approval lineage invalid")
+
+
+def _validate_conversation_ppp_routing_lineage(upstream: dict[str, Any], handoff: dict[str, Any]) -> None:
+    if upstream.get("route_status") != CONVERSATION_PPP_HANDOFF_CREATED:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: approval lineage invalid")
+    if upstream.get("implementation_handoff_reference") != handoff["handoff_id"]:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: handoff lineage invalid")
+    if upstream.get("implementation_handoff_hash") != handoff["artifact_hash"]:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: handoff lineage invalid")
+    if upstream.get("approval_required") is not False:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: approval lineage invalid")
+    if upstream.get("clarification_required") is not False:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: approval lineage invalid")
+    for flag in (
+        "provider_authority",
+        "worker_created",
+        "domain_created",
+        "worker_invoked",
+        "execution_requested",
+        "dispatch_requested",
+        "governance_modified",
+    ):
+        if upstream.get(flag) is not False:
+            raise FailClosedRuntimeError("governed implementation dry run failed closed: authority boundary invalid")
+    if upstream.get("proposal_only") is not True:
+        raise FailClosedRuntimeError("governed implementation dry run failed closed: authority boundary invalid")
+    for field in (
+        "canonical_chain_id",
+        "route_id",
+        "artifact_hash",
+        "context_hash",
+        "domain_reference",
+        "worker_reference",
+    ):
+        _require_string(upstream.get(field), field)
+
+
+def _conversation_ppp_routing_approval_hash(upstream: dict[str, Any]) -> str:
+    return replay_hash(
+        {
+            "approval_status": "APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
+            "approval_basis": CONVERSATION_PPP_HANDOFF_CREATED,
+            "route_reference": upstream.get("route_id"),
+            "route_hash": upstream.get("artifact_hash"),
+            "implementation_handoff_reference": upstream.get("implementation_handoff_reference"),
+            "implementation_handoff_hash": upstream.get("implementation_handoff_hash"),
+        }
+    )
 
 
 def _candidate_artifact(

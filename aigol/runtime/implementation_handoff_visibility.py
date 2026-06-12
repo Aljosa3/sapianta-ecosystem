@@ -322,8 +322,10 @@ def _target_worker(handoff: dict[str, Any], target_resource: str) -> str | None:
 
 def _planned_artifacts(handoff: dict[str, Any], target_resource: str) -> list[str]:
     source_targets = list(handoff.get("output_targets", []))
-    stem = _stem_from_targets(source_targets)
     if target_resource == "WORKER":
+        if any(target.startswith(("aigol/runtime/", "tests/")) for target in source_targets):
+            return source_targets
+        stem = _stem_from_targets(source_targets)
         runtime_name = stem.lower().replace("_worker_foundation_v1", "_worker_runtime")
         return [
             f"governance/{stem}.md",
@@ -334,6 +336,7 @@ def _planned_artifacts(handoff: dict[str, Any], target_resource: str) -> list[st
             f"tests/test_{stem.lower()}.py",
         ]
     if target_resource == "DOMAIN":
+        stem = _stem_from_targets(source_targets)
         if any(target.startswith("aigol/runtime/") for target in source_targets) or any(
             target.startswith("tests/") for target in source_targets
         ):
@@ -352,6 +355,7 @@ def _planned_artifacts(handoff: dict[str, Any], target_resource: str) -> list[st
             )
         return artifacts
     if target_resource == "PROVIDER":
+        stem = _stem_from_targets(source_targets)
         return [
             f"governance/{stem}.md",
             f"governance/{stem.replace('ATTACHMENT_V1', 'CAPABILITY_MODEL_V1')}.md",
