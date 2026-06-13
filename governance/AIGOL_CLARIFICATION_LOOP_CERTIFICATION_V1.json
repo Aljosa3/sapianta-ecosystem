@@ -1,0 +1,92 @@
+{
+  "artifact_type": "AIGOL_CLARIFICATION_LOOP_CERTIFICATION_V1",
+  "version": "AIGOL_CLARIFICATION_LOOP_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certification_date": "2026-06-13",
+  "scope": {
+    "ocs_redesigned": false,
+    "ppp_redesigned": false,
+    "worker_lifecycle_redesigned": false,
+    "providers_added": false,
+    "certification_focus": "Clarification-required cognition outcomes and replay-visible human clarification loop"
+  },
+  "certified_flow": [
+    "Human Prompt",
+    "Universal Intake / OCS context evidence",
+    "OCS",
+    "Cognition Comparison",
+    "CLARIFICATION_REQUIRED",
+    "Human Clarification",
+    "Updated Context",
+    "OCS Decision",
+    "PPP or FAIL_CLOSED"
+  ],
+  "certified_cases": {
+    "conflict_clarification": {
+      "certified": true,
+      "test": "test_conflict_between_cognition_artifacts_requires_clarification_without_execution",
+      "evidence": "Provider cognition conflict creates cognition clarification candidates and blocks worker execution, dispatch, authorization, and approval creation."
+    },
+    "insufficient_information_clarification": {
+      "certified": true,
+      "test": "test_insufficient_information_requires_clarification_without_execution",
+      "evidence": "Provider failure or missing evidence creates clarification candidates and blocks execution."
+    },
+    "clarification_to_ppp": {
+      "certified": true,
+      "test": "test_human_clarification_resolves_ambiguity_and_proceeds_to_ppp",
+      "evidence": "Human clarification resolves AIGOL/CLAUDE_EXTERNAL ambiguity, creates CLARIFIED_COGNITION_INPUT_ARTIFACT_V1, updates OCS context, and reaches OCS_TO_PPP_CONTINUATION_REACHED_PPP."
+    },
+    "unresolved_clarification_fail_closed": {
+      "certified": true,
+      "test": "test_unresolved_human_clarification_fails_closed_before_ppp",
+      "evidence": "Unresolved human clarification fails closed during clarification-to-cognition integration and no OCS-to-PPP continuation is created."
+    }
+  },
+  "verified_boundaries": {
+    "no_worker_execution_before_clarification_resolved": true,
+    "no_authorization_before_clarification_resolved": true,
+    "clarification_required_blocks_execution": true,
+    "unresolved_clarification_fails_closed": true,
+    "fail_closed_behavior_preserved": true,
+    "provider_layer_not_expanded": true
+  },
+  "replay_lineage_evidence": {
+    "original_prompt": "HUMAN_REQUEST_ARTIFACT_V1",
+    "cognition_artifacts": "LLM_COGNITION_ARTIFACT_V1",
+    "comparison": "COGNITION_COMPARISON_ARTIFACT_V1",
+    "clarification_request": "HUMAN_CLARIFICATION_REQUEST_ARTIFACT_V1",
+    "human_response": "HUMAN_CLARIFICATION_RESPONSE_ARTIFACT_V1",
+    "clarification_resolution": "HUMAN_CLARIFICATION_RESOLUTION_ARTIFACT_V1",
+    "updated_context_input": "CLARIFIED_COGNITION_INPUT_ARTIFACT_V1",
+    "final_decision": [
+      "OCS_TO_PPP_CONTINUATION_ARTIFACT_V1",
+      "FAILED_CLOSED clarification cognition integration artifact"
+    ]
+  },
+  "test_evidence": {
+    "test_file": "tests/test_clarification_loop_certification_v1.py",
+    "deterministic": true,
+    "live_provider_required": false,
+    "tests": [
+      "test_conflict_between_cognition_artifacts_requires_clarification_without_execution",
+      "test_insufficient_information_requires_clarification_without_execution",
+      "test_human_clarification_resolves_ambiguity_and_proceeds_to_ppp",
+      "test_unresolved_human_clarification_fails_closed_before_ppp"
+    ]
+  },
+  "validation_commands": [
+    "python -m py_compile tests/test_clarification_loop_certification_v1.py",
+    "python -m pytest tests/test_clarification_loop_certification_v1.py",
+    "python -m pytest tests/test_clarification_loop_certification_v1.py tests/test_intent_clarification_dialog_runtime_v1.py tests/test_intent_clarification_cognition_integration_v1.py tests/test_ocs_llm_cognition_continuity_and_clarification_runtime_v1.py",
+    "python -m json.tool governance/AIGOL_CLARIFICATION_LOOP_CERTIFICATION_V1.json",
+    "git diff --check"
+  ],
+  "final_decision_fields": {
+    "CONFLICT_CLARIFICATION_CERTIFIED": "YES",
+    "INSUFFICIENT_INFORMATION_CLARIFICATION_CERTIFIED": "YES",
+    "CLARIFICATION_TO_PPP_CERTIFIED": "YES",
+    "UNRESOLVED_CLARIFICATION_FAIL_CLOSED_CERTIFIED": "YES",
+    "CLARIFICATION_LOOP_CERTIFIED": "YES"
+  }
+}
