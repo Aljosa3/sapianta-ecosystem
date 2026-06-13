@@ -15,7 +15,15 @@ from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED
 from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.implementation_handoff_visibility import IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
 from aigol.runtime.ocs_to_ppp_continuation_adapter_runtime import OCS_TO_PPP_CONTINUATION_REACHED_PPP
+from aigol.runtime.external_worker_adapter_runtime import EXTERNAL_WORKER_TASK_PACKAGE_CREATED
+from aigol.runtime.openai_external_worker_provider_adapter import OPENAI_EXTERNAL_WORKER_COMPLETED
+from aigol.runtime.replay_certification_runtime import REPLAY_CERTIFICATION_COMPLETED
+from aigol.runtime.result_validation_runtime import RESULT_VALIDATION_COMPLETED
+from aigol.runtime.worker_assignment_runtime import WORKER_ASSIGNED
+from aigol.runtime.worker_dispatch_runtime import WORKER_DISPATCHED
+from aigol.runtime.worker_invocation_runtime import WORKER_INVOKED
 from aigol.runtime.worker_invocation_request_runtime import WORKER_INVOCATION_REQUEST_CREATED
+from aigol.runtime.worker_invocation_to_execution_candidate_bridge_runtime import WORKER_EXECUTION_CANDIDATE_CREATED
 
 
 CREATED_AT = "2026-06-13T00:00:00Z"
@@ -25,7 +33,7 @@ NATIVE_PROMPT = (
     "replay, validation, mutation, and worker lifecycle infrastructure."
 )
 OCS_EXECUTION_PROMPT = (
-    "What should Sapianta do with the replay-derived TRADING MARKET_EVIDENCE_NORMALIZATION "
+    "What should Sapianta do with the replay-derived AIGOL CLAUDE_EXTERNAL "
     "worker improvement to enter governed execution next?"
 )
 OCS_PROPOSAL_ONLY_PROMPT = "I want to create the first real commercial Sapianta product."
@@ -138,8 +146,23 @@ def _install_fake_ocs_provider(monkeypatch) -> None:
     )
 
 
-def test_development_acli_auto_continue_reaches_domain_worker_request(tmp_path, monkeypatch) -> None:
+def _install_fake_external_worker_openai_client(monkeypatch) -> None:
+    def fake_external_worker_client(request_metadata: dict[str, Any]) -> dict[str, Any]:
+        assert request_metadata["provider_identity"] == "OPENAI"
+        assert request_metadata["tool_use"] is False
+        assert request_metadata["function_calling"] is False
+        assert request_metadata["streaming"] is False
+        return {
+            "id": "resp-acli-worker-lifecycle-openai-001",
+            "output_text": "Inspect runtime metadata and return bounded findings.",
+        }
+
+    monkeypatch.setattr(aigol_cli, "_external_worker_openai_client", lambda: fake_external_worker_client)
+
+
+def test_development_acli_auto_continue_reaches_replay_certification(tmp_path, monkeypatch) -> None:
     proposal_adapter = _install_fake_proposal_adapter(monkeypatch)
+    _install_fake_external_worker_openai_client(monkeypatch)
     output: list[str] = []
 
     result = run_interactive_conversation(
@@ -157,14 +180,32 @@ def test_development_acli_auto_continue_reaches_domain_worker_request(tmp_path, 
     assert turn["execution_authorization_status"] == EXECUTION_AUTHORIZED
     assert turn["worker_invocation_request_status"] == WORKER_INVOCATION_REQUEST_CREATED
     assert turn["worker_request_reached"] is True
-    assert turn["worker_invoked"] is False
-    assert turn["execution_requested"] is False
+    assert turn["worker_assignment_status"] == WORKER_ASSIGNED
+    assert turn["worker_dispatch_status"] == WORKER_DISPATCHED
+    assert turn["worker_invocation_status"] == WORKER_INVOKED
+    assert turn["worker_execution_candidate_status"] == WORKER_EXECUTION_CANDIDATE_CREATED
+    assert turn["external_worker_task_status"] == EXTERNAL_WORKER_TASK_PACKAGE_CREATED
+    assert turn["openai_external_worker_status"] == OPENAI_EXTERNAL_WORKER_COMPLETED
+    assert turn["result_validation_status"] == RESULT_VALIDATION_COMPLETED
+    assert turn["replay_certification_status"] == REPLAY_CERTIFICATION_COMPLETED
+    assert turn["worker_assignment_reached"] is True
+    assert turn["worker_dispatch_reached"] is True
+    assert turn["worker_invocation_reached"] is True
+    assert turn["worker_execution_candidate_reached"] is True
+    assert turn["external_task_package_reached"] is True
+    assert turn["openai_provider_reached"] is True
+    assert turn["result_validation_reached"] is True
+    assert turn["replay_certification_reached"] is True
+    assert turn["worker_invoked"] is True
+    assert turn["execution_requested"] is True
+    assert turn["replay_lineage_preserved"] is True
     assert proposal_adapter.calls == 1
 
 
 def test_ocs_acli_reaches_ppp_only_when_execution_explicitly_required(tmp_path, monkeypatch) -> None:
     _install_fake_ocs_provider(monkeypatch)
     proposal_adapter = _install_fake_proposal_adapter(monkeypatch)
+    _install_fake_external_worker_openai_client(monkeypatch)
     output: list[str] = []
 
     result = run_interactive_conversation(
@@ -179,8 +220,19 @@ def test_ocs_acli_reaches_ppp_only_when_execution_explicitly_required(tmp_path, 
     assert turn["ocs_to_ppp_continuation_status"] == OCS_TO_PPP_CONTINUATION_REACHED_PPP
     assert turn["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert turn["ppp_invoked"] is True
-    assert turn["worker_invoked"] is False
-    assert turn["execution_requested"] is False
+    assert turn["execution_authorization_status"] == EXECUTION_AUTHORIZED
+    assert turn["worker_invocation_request_status"] == WORKER_INVOCATION_REQUEST_CREATED
+    assert turn["worker_assignment_status"] == WORKER_ASSIGNED
+    assert turn["worker_dispatch_status"] == WORKER_DISPATCHED
+    assert turn["worker_invocation_status"] == WORKER_INVOKED
+    assert turn["worker_execution_candidate_status"] == WORKER_EXECUTION_CANDIDATE_CREATED
+    assert turn["external_worker_task_status"] == EXTERNAL_WORKER_TASK_PACKAGE_CREATED
+    assert turn["openai_external_worker_status"] == OPENAI_EXTERNAL_WORKER_COMPLETED
+    assert turn["result_validation_status"] == RESULT_VALIDATION_COMPLETED
+    assert turn["replay_certification_status"] == REPLAY_CERTIFICATION_COMPLETED
+    assert turn["worker_invoked"] is True
+    assert turn["execution_requested"] is True
+    assert turn["replay_lineage_preserved"] is True
     assert proposal_adapter.calls == 1
 
 
