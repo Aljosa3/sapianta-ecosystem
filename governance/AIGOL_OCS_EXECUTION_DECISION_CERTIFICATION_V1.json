@@ -1,0 +1,78 @@
+{
+  "artifact_type": "AIGOL_OCS_EXECUTION_DECISION_CERTIFICATION_V1",
+  "version": "AIGOL_OCS_EXECUTION_DECISION_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certification_date": "2026-06-13",
+  "scope": {
+    "ocs_redesigned": false,
+    "ppp_redesigned": false,
+    "worker_lifecycle_redesigned": false,
+    "certification_focus": "OCS execution decision behavior before PPP execution",
+    "decision_boundary": "Human Prompt -> Universal Intake -> OCS -> Decision"
+  },
+  "decision_outcomes": {
+    "EXECUTE": {
+      "certified": true,
+      "evidence": "Deterministic low-risk AIGOL CLAUDE_EXTERNAL request continues to PPP handoff with approval_required false and without worker invocation or execution request.",
+      "test": "test_ocs_decides_execute_for_deterministic_low_risk_request"
+    },
+    "CLARIFICATION_REQUIRED": {
+      "certified": true,
+      "evidence": "Ambiguous regulated request records OCS clarification-required replay evidence and blocks PPP, worker invocation, execution request, and approval creation.",
+      "test": "test_ocs_decides_clarification_required_for_ambiguous_request"
+    },
+    "APPROVAL_REQUIRED": {
+      "certified": true,
+      "evidence": "High-risk TRADING MARKET_EVIDENCE_NORMALIZATION request reaches PPP routing with approval_required true, human_final_authority true, and no execution authorization or worker invocation.",
+      "test": "test_ocs_decides_approval_required_for_high_risk_request"
+    },
+    "FAIL_CLOSED": {
+      "certified": true,
+      "evidence": "Policy-violating/corrupt OCS handoff fails closed before PPP invocation, provider proposal generation, worker invocation, execution request, or dispatch request.",
+      "test": "test_ocs_decides_fail_closed_for_policy_violation_before_ppp_execution"
+    }
+  },
+  "verified_boundaries": {
+    "no_execution_before_authorization": true,
+    "clarification_blocks_execution": true,
+    "approval_blocks_execution_until_granted": true,
+    "fail_closed_blocks_execution_entirely": true,
+    "replay_records_decision_lineage": true,
+    "provider_direct_invocation_by_decision_layer": false,
+    "worker_direct_invocation_by_decision_layer": false
+  },
+  "replay_evidence": {
+    "universal_intake_artifact": "UNIVERSAL_INTAKE_ARTIFACT_V1",
+    "ocs_context_artifact": "OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1",
+    "ocs_cognition_artifact": "OCS_COGNITION_ARTIFACT_V1",
+    "ocs_semantic_resolution_artifact": "OCS_SEMANTIC_RESOLUTION_ARTIFACT_V1",
+    "ocs_clarification_artifact": "OCS_CLARIFICATION_ARTIFACT_V1",
+    "ocs_to_ppp_handoff_artifact": "OCS_TO_PPP_HANDOFF_ARTIFACT_V1",
+    "ocs_to_ppp_continuation_artifact": "OCS_TO_PPP_CONTINUATION_ARTIFACT_V1",
+    "ppp_route_artifact": "CONVERSATION_PPP_ROUTING_ARTIFACT_V1"
+  },
+  "test_evidence": {
+    "test_file": "tests/test_ocs_execution_decision_certification_v1.py",
+    "deterministic": true,
+    "live_provider_required": false,
+    "tests": [
+      "test_ocs_decides_execute_for_deterministic_low_risk_request",
+      "test_ocs_decides_clarification_required_for_ambiguous_request",
+      "test_ocs_decides_approval_required_for_high_risk_request",
+      "test_ocs_decides_fail_closed_for_policy_violation_before_ppp_execution"
+    ]
+  },
+  "validation_commands": [
+    "python -m py_compile tests/test_ocs_execution_decision_certification_v1.py",
+    "python -m pytest tests/test_ocs_execution_decision_certification_v1.py",
+    "python -m json.tool governance/AIGOL_OCS_EXECUTION_DECISION_CERTIFICATION_V1.json",
+    "git diff --check"
+  ],
+  "final_decision_fields": {
+    "EXECUTE_PATH_CERTIFIED": "YES",
+    "CLARIFICATION_PATH_CERTIFIED": "YES",
+    "APPROVAL_PATH_CERTIFIED": "YES",
+    "FAIL_CLOSED_PATH_CERTIFIED": "YES",
+    "OCS_EXECUTION_DECISION_CERTIFIED": "YES"
+  }
+}
