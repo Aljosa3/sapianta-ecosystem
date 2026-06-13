@@ -1,0 +1,99 @@
+{
+  "artifact_type": "AIGOL_COGNITION_COMPARISON_CERTIFICATION_V1",
+  "version": "AIGOL_COGNITION_COMPARISON_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certification_date": "2026-06-13",
+  "scope": {
+    "providers_redesigned": false,
+    "ocs_redesigned": false,
+    "ppp_redesigned": false,
+    "certification_focus": "Governance behavior when multiple cognition providers produce different conclusions",
+    "runtime_under_certification": "AIGOL_COGNITION_COMPARISON_RUNTIME_V1"
+  },
+  "certified_flow": [
+    "Provider A -> LLM_COGNITION_ARTIFACT_V1",
+    "Provider B -> LLM_COGNITION_ARTIFACT_V1",
+    "Provider C -> LLM_COGNITION_ARTIFACT_V1",
+    "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "COGNITION_COMPARISON_ARTIFACT_V1",
+    "Governance decision interpretation"
+  ],
+  "decision_mapping": {
+    "CONSENSUS": "At least one finding is shared by all successful providers and no provider-specific finding remains.",
+    "PARTIAL_CONSENSUS": "At least one finding is shared by a provider majority but not all providers.",
+    "CONFLICT": "Successful providers produce provider-specific conclusions without full or majority consensus.",
+    "INSUFFICIENT_INFORMATION": "Provider failure or missing cognition fields are present in comparison uncertainty or missing_information evidence."
+  },
+  "certified_outcomes": {
+    "CONSENSUS": {
+      "certified": true,
+      "test": "test_cognition_comparison_certifies_consensus_when_all_providers_agree",
+      "evidence": "All three providers emit the same conclusion; comparison records agreement across provider_count 3 and no disagreement."
+    },
+    "PARTIAL_CONSENSUS": {
+      "certified": true,
+      "test": "test_cognition_comparison_certifies_partial_consensus_when_majority_agrees",
+      "evidence": "Two providers share a conclusion while the third differs; the certified decision interpreter identifies majority agreement."
+    },
+    "CONFLICT": {
+      "certified": true,
+      "test": "test_cognition_comparison_certifies_conflict_when_providers_disagree",
+      "evidence": "Three providers emit different conclusions; comparison records provider-specific disagreement and preserves human review requirement."
+    },
+    "INSUFFICIENT_INFORMATION": {
+      "certified": true,
+      "test": "test_cognition_comparison_certifies_insufficient_information_for_missing_evidence",
+      "evidence": "One provider fails and remaining artifacts omit supporting fields; comparison records provider failure uncertainty and missing complete provider set."
+    }
+  },
+  "verified_boundaries": {
+    "no_worker_execution_during_comparison": true,
+    "no_execution_authorization_created_during_comparison": true,
+    "no_dispatch_requested_during_comparison": true,
+    "no_provider_authority_granted_by_comparison": true,
+    "no_governance_mutation": true,
+    "no_replay_mutation": true,
+    "comparison_remains_non_authoritative": true,
+    "human_review_required": true,
+    "clarification_can_be_requested_for_conflict_or_insufficient_information": true
+  },
+  "replay_evidence": {
+    "multi_provider_bundle": "MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1",
+    "source_cognition_artifacts": "LLM_COGNITION_ARTIFACT_V1",
+    "comparison_artifact": "COGNITION_COMPARISON_ARTIFACT_V1",
+    "comparison_returned": "COGNITION_COMPARISON_RETURNED_V1",
+    "lineage_fields": [
+      "multi_provider_result_bundle_hash",
+      "multi_provider_result_bundle_result_hash",
+      "context_hash",
+      "source_cognition_artifact_hashes",
+      "source_cognition_hashes",
+      "provider_identity_hashes"
+    ]
+  },
+  "test_evidence": {
+    "test_file": "tests/test_cognition_comparison_certification_v1.py",
+    "deterministic": true,
+    "live_provider_required": false,
+    "tests": [
+      "test_cognition_comparison_certifies_consensus_when_all_providers_agree",
+      "test_cognition_comparison_certifies_partial_consensus_when_majority_agrees",
+      "test_cognition_comparison_certifies_conflict_when_providers_disagree",
+      "test_cognition_comparison_certifies_insufficient_information_for_missing_evidence"
+    ]
+  },
+  "validation_commands": [
+    "python -m py_compile tests/test_cognition_comparison_certification_v1.py",
+    "python -m pytest tests/test_cognition_comparison_certification_v1.py",
+    "python -m pytest tests/test_cognition_comparison_runtime_v1.py tests/test_cognition_comparison_certification_v1.py",
+    "python -m json.tool governance/AIGOL_COGNITION_COMPARISON_CERTIFICATION_V1.json",
+    "git diff --check"
+  ],
+  "final_decision_fields": {
+    "CONSENSUS_CERTIFIED": "YES",
+    "PARTIAL_CONSENSUS_CERTIFIED": "YES",
+    "CONFLICT_CERTIFIED": "YES",
+    "INSUFFICIENT_INFORMATION_CERTIFIED": "YES",
+    "COGNITION_COMPARISON_CERTIFIED": "YES"
+  }
+}
