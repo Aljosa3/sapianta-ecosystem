@@ -1,0 +1,54 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_PROPOSAL_GOVERNANCE_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certified_at": "2026-06-13",
+  "scope": "Governance behavior for creation of new domain proposals only",
+  "objective": "Certify Need to Domain Proposal to Human Review to Approval or Rejection without autonomous domain creation.",
+  "runtime": "aigol/runtime/domain_proposal_governance_runtime.py",
+  "certified_flow": [
+    "Need",
+    "DOMAIN_PROPOSAL_ARTIFACT_V1",
+    "DOMAIN_REVIEW_DECISION_ARTIFACT_V1",
+    "DOMAIN_CANDIDATE_ARTIFACT_V1 or DOMAIN_PROPOSAL_ARCHIVE_ARTIFACT_V1"
+  ],
+  "certified_cases": {
+    "human_requests_new_domain_to_domain_proposal": "CERTIFIED",
+    "replay_derived_improvement_suggests_domain_to_domain_proposal": "CERTIFIED",
+    "domain_proposal_without_approval_no_domain_creation": "CERTIFIED",
+    "approved_proposal_to_domain_candidate": "CERTIFIED",
+    "rejected_proposal_to_proposal_archive": "CERTIFIED"
+  },
+  "governance_evidence": {
+    "proposal_is_non_authoritative": true,
+    "approval_required": true,
+    "no_automatic_domain_creation": true,
+    "domain_candidate_is_not_live_domain": true,
+    "rejected_proposal_archived": true,
+    "self_authorization_allowed": false
+  },
+  "replay_evidence": {
+    "proposal_replay_visible": true,
+    "review_replay_visible": true,
+    "replay_derived_source_lineage_required": true,
+    "proposal_hash_preserved": true,
+    "review_outcome_hash_preserved": true
+  },
+  "approval_evidence": {
+    "human_approval_reference_required": true,
+    "missing_approval_fails_closed": true,
+    "approval_does_not_create_domain": true,
+    "approval_creates_candidate_only": true,
+    "rejection_creates_archive_only": true
+  },
+  "test_evidence": {
+    "test_file": "tests/test_domain_proposal_governance_certification_v1.py",
+    "required_command": "python -m pytest tests/test_domain_proposal_governance_certification_v1.py"
+  },
+  "final_decision_fields": {
+    "HUMAN_DOMAIN_PROPOSAL_CERTIFIED": "YES",
+    "REPLAY_DOMAIN_PROPOSAL_CERTIFIED": "YES",
+    "APPROVAL_BOUNDARY_CERTIFIED": "YES",
+    "DOMAIN_CANDIDATE_CERTIFIED": "YES",
+    "DOMAIN_PROPOSAL_GOVERNANCE_CERTIFIED": "YES"
+  }
+}
