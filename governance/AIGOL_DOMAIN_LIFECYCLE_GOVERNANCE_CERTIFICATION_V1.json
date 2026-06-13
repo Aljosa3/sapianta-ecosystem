@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_DOMAIN_LIFECYCLE_GOVERNANCE_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certified_at": "2026-06-13",
+  "scope": "Governance behavior for domain lifecycle management",
+  "objective": "Certify DOMAIN_PROPOSAL to DOMAIN_CANDIDATE to DOMAIN_APPROVAL to DOMAIN_ACTIVATION to DOMAIN_OPERATION to DOMAIN_RETIREMENT without autonomous domain activation.",
+  "runtime": "aigol/runtime/domain_lifecycle_governance_runtime.py",
+  "certified_flow": [
+    "DOMAIN_PROPOSAL_ARTIFACT_V1",
+    "DOMAIN_CANDIDATE_ARTIFACT_V1",
+    "HUMAN_APPROVAL_ARTIFACT_V1",
+    "DOMAIN_ACTIVATION_CANDIDATE_ARTIFACT_V1",
+    "DOMAIN_ACTIVE_ARTIFACT_V1",
+    "DOMAIN_OPERATION_ARTIFACT_V1",
+    "DOMAIN_RETIREMENT_CANDIDATE_ARTIFACT_V1",
+    "DOMAIN_RETIRED_ARTIFACT_V1"
+  ],
+  "certified_cases": {
+    "candidate_without_approval_no_activation": "CERTIFIED",
+    "approved_candidate_to_domain_activation_candidate": "CERTIFIED",
+    "activation_approved_to_domain_active": "CERTIFIED",
+    "retirement_requested_to_domain_retirement_candidate": "CERTIFIED",
+    "retirement_approved_to_domain_retired": "CERTIFIED"
+  },
+  "governance_evidence": {
+    "candidate_is_non_authoritative": true,
+    "activation_approval_required": true,
+    "retirement_approval_required": true,
+    "operation_evidence_requires_active_domain": true,
+    "live_registry_mutation_allowed": false,
+    "self_authorization_allowed": false,
+    "fail_closed_preserved": true
+  },
+  "replay_evidence": {
+    "activation_candidate_replay_visible": true,
+    "activation_replay_visible": true,
+    "operation_replay_visible": true,
+    "retirement_candidate_replay_visible": true,
+    "retirement_replay_visible": true,
+    "lineage_hashes_required": true
+  },
+  "approval_evidence": {
+    "activation_candidate_scope": "CREATE_DOMAIN_ACTIVATION_CANDIDATE_ONLY",
+    "activation_scope": "ACTIVATE_DOMAIN_ONLY",
+    "retirement_scope": "RETIRE_DOMAIN_ONLY",
+    "missing_approval_fails_closed": true,
+    "approval_does_not_allow_live_registry_mutation": true
+  },
+  "test_evidence": {
+    "test_file": "tests/test_domain_lifecycle_governance_certification_v1.py",
+    "required_command": "python -m pytest tests/test_domain_lifecycle_governance_certification_v1.py"
+  },
+  "final_decision_fields": {
+    "DOMAIN_CANDIDATE_CERTIFIED": "YES",
+    "DOMAIN_ACTIVATION_CERTIFIED": "YES",
+    "DOMAIN_OPERATION_CERTIFIED": "YES",
+    "DOMAIN_RETIREMENT_CERTIFIED": "YES",
+    "DOMAIN_LIFECYCLE_CERTIFIED": "YES"
+  }
+}
