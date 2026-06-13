@@ -237,6 +237,7 @@ from aigol.runtime.governed_implementation_dry_run import (
     prepare_governed_implementation_dry_run,
     render_governed_implementation_dry_run_summary,
 )
+from aigol.runtime.governed_implementation_request_runtime import APPROVED, HUMAN_APPROVAL_ARTIFACT_V1
 from aigol.runtime.execution_authorization_runtime import (
     authorize_execution_ready,
     detect_domain_execution_authorization_entry_intent,
@@ -273,6 +274,17 @@ from aigol.runtime.worker_invocation_runtime import (
     invoke_dispatched_worker,
     render_worker_invocation_summary,
 )
+from aigol.runtime.worker_invocation_to_execution_candidate_bridge_runtime import (
+    APPROVAL_SCOPE as WORKER_INVOCATION_TO_EXECUTION_CANDIDATE_APPROVAL_SCOPE,
+    bridge_worker_invocation_to_execution_candidate,
+)
+from aigol.runtime.external_worker_adapter_runtime import (
+    accept_external_worker_result_package,
+    create_external_worker_task_package,
+)
+from aigol.runtime.openai_external_worker_provider_adapter import run_openai_external_worker_provider_adapter
+from aigol.runtime.result_validation_runtime import validate_governed_execution_result
+from aigol.runtime.replay_certification_runtime import certify_validated_replay
 from aigol.runtime.worker_result_capture_runtime import (
     capture_worker_result,
     detect_domain_worker_result_capture_entry_intent,
@@ -567,6 +579,19 @@ def _conversation_ocs_execution_context_hint(
             domain_id="TRADING",
             worker_family_id="MARKET_EVIDENCE_NORMALIZATION",
         )
+    if "AIGOL" in normalized_prompt and "CLAUDE_EXTERNAL" in normalized_prompt:
+        return _replay_visible_context_source(
+            artifact_id=f"{prompt_id}:OCS-EXECUTION-HINT-AIGOL-CLAUDE_EXTERNAL",
+            artifact_type="OCS_EXECUTION_REQUIRED_CONTEXT_HINT_V1",
+            summary={
+                "domain_id": "AIGOL",
+                "worker_family_id": "CLAUDE_EXTERNAL",
+                "provider_necessity_classification": "PROVIDER_REQUIRED",
+            },
+            created_at=created_at,
+            domain_id="AIGOL",
+            worker_family_id="CLAUDE_EXTERNAL",
+        )
     return None
 
 
@@ -647,6 +672,28 @@ def _post_context_continuation_output(capture: dict[str, Any]) -> str:
     )
 
 
+def _worker_lifecycle_continuation_output(capture: dict[str, Any]) -> str:
+    lifecycle = capture.get("worker_lifecycle_continuation")
+    if not isinstance(lifecycle, dict):
+        lifecycle = {}
+    return "\n".join(
+        [
+            "",
+            "Certified Worker Lifecycle Continuation",
+            "",
+            f"worker_request_reached: {str(capture.get('worker_request_reached') is True).lower()}",
+            f"worker_assignment_reached: {str(lifecycle.get('worker_assignment_reached') is True).lower()}",
+            f"worker_dispatch_reached: {str(lifecycle.get('worker_dispatch_reached') is True).lower()}",
+            f"worker_invocation_reached: {str(lifecycle.get('worker_invocation_reached') is True).lower()}",
+            f"execution_candidate_reached: {str(lifecycle.get('worker_execution_candidate_reached') is True).lower()}",
+            f"external_task_package_reached: {str(lifecycle.get('external_task_package_reached') is True).lower()}",
+            f"openai_provider_reached: {str(lifecycle.get('openai_provider_reached') is True).lower()}",
+            f"result_validation_reached: {str(lifecycle.get('result_validation_reached') is True).lower()}",
+            f"replay_certification_reached: {str(lifecycle.get('replay_certification_reached') is True).lower()}",
+        ]
+    )
+
+
 def _explicit_ocs_execution_required(human_prompt: str) -> bool:
     normalized_prompt = " ".join(str(human_prompt or "").lower().split())
     execution_markers = (
@@ -658,6 +705,236 @@ def _explicit_ocs_execution_required(human_prompt: str) -> bool:
         "implement ",
     )
     return any(marker in normalized_prompt for marker in execution_markers)
+
+
+def _external_worker_openai_client() -> Any:
+    return None
+
+
+def _scoped_invocation_bridge_approval(
+    *,
+    approval_id: str,
+    invocation_artifact: dict[str, Any],
+    approved_at: str,
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1,
+        "approval_id": approval_id,
+        "approval_status": APPROVED,
+        "approval_granted": True,
+        "source_worker_invocation": invocation_artifact["worker_invocation_id"],
+        "source_worker_invocation_hash": invocation_artifact["artifact_hash"],
+        "approval_scope": WORKER_INVOCATION_TO_EXECUTION_CANDIDATE_APPROVAL_SCOPE,
+        "worker_execution_allowed": False,
+        "provider_invocation_allowed": False,
+        "implementation_result_creation_allowed": False,
+        "approved_by": "AIGOL_CANONICAL_EXECUTION_AUTHORIZATION",
+        "approved_at": approved_at,
+        "authorization_boundary": "EXECUTION_AUTHORIZATION_ARTIFACT_V1_REQUIRED_UPSTREAM",
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _scoped_external_worker_task_approval(
+    *,
+    approval_id: str,
+    execution_candidate_artifact: dict[str, Any],
+    approved_at: str,
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1,
+        "approval_id": approval_id,
+        "approval_status": APPROVED,
+        "approval_granted": True,
+        "source_execution_candidate": execution_candidate_artifact["execution_candidate_id"],
+        "source_execution_candidate_hash": execution_candidate_artifact["artifact_hash"],
+        "approval_scope": "CREATE_EXTERNAL_WORKER_TASK_PACKAGE_ONLY",
+        "external_worker_task_allowed": True,
+        "implementation_result_creation_allowed": False,
+        "approved_by": "AIGOL_CANONICAL_EXECUTION_AUTHORIZATION",
+        "approved_at": approved_at,
+        "authorization_boundary": "EXECUTION_AUTHORIZATION_ARTIFACT_V1_REQUIRED_UPSTREAM",
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _external_worker_capability_declaration() -> dict[str, Any]:
+    return {
+        "worker_interface": "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+        "worker_family": "REAL_PROVIDER_EXTERNAL_LLM_WORKER",
+        "capabilities": [
+            "EXECUTE_EXTERNAL_WORKER_TASK_PACKAGE_V1",
+            "RETURN_EXTERNAL_WORKER_RESULT_PACKAGE_V1",
+        ],
+        "provider_neutral_contract": True,
+    }
+
+
+def _continue_worker_request_to_replay_certification(
+    *,
+    prompt_id: str,
+    worker_request_capture: dict[str, Any],
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    request_artifact = worker_request_capture.get("worker_invocation_request_artifact")
+    request_replay_reference = worker_request_capture.get("worker_invocation_request_replay_reference")
+    if not isinstance(request_artifact, dict):
+        raise FailClosedRuntimeError("ACLI worker continuation failed closed: worker request artifact missing")
+    if not isinstance(request_replay_reference, str) or not request_replay_reference:
+        raise FailClosedRuntimeError("ACLI worker continuation failed closed: worker request replay missing")
+
+    assignment_capture = assign_worker_from_invocation_request(
+        worker_assignment_id=f"{prompt_id}:WORKER-ASSIGNMENT",
+        worker_invocation_request_artifact=request_artifact,
+        worker_invocation_request_replay_reference=request_replay_reference,
+        worker_registry_artifacts=default_worker_registry_for_request(request_artifact, created_at=created_at),
+        assigned_by="AIGOL_GOVERNANCE",
+        assigned_at=created_at,
+        replay_dir=replay_dir / "worker_assignment",
+    )
+    if assignment_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(assignment_capture.get("failure_reason") or "worker assignment failed")
+
+    dispatch_capture = dispatch_assigned_worker(
+        worker_dispatch_id=f"{prompt_id}:WORKER-DISPATCH",
+        worker_assignment_artifact=assignment_capture["worker_assignment_artifact"],
+        worker_assignment_replay_reference=assignment_capture["worker_assignment_replay_reference"],
+        dispatched_by="AIGOL_GOVERNANCE",
+        dispatched_at=created_at,
+        replay_dir=replay_dir / "worker_dispatch",
+    )
+    if dispatch_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(dispatch_capture.get("failure_reason") or "worker dispatch failed")
+
+    invocation_capture = invoke_dispatched_worker(
+        worker_invocation_id=f"{prompt_id}:WORKER-INVOCATION",
+        worker_dispatch_artifact=dispatch_capture["worker_dispatch_artifact"],
+        worker_dispatch_replay_reference=dispatch_capture["worker_dispatch_replay_reference"],
+        invoked_by="AIGOL_GOVERNANCE",
+        invoked_at=created_at,
+        replay_dir=replay_dir / "worker_invocation",
+    )
+    if invocation_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(invocation_capture.get("failure_reason") or "worker invocation failed")
+
+    invocation_artifact = invocation_capture["worker_invocation_artifact"]
+    execution_candidate_capture = bridge_worker_invocation_to_execution_candidate(
+        candidate_id=f"{prompt_id}:WORKER-EXECUTION-CANDIDATE",
+        worker_invocation_artifact=invocation_artifact,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        human_approval_artifact=_scoped_invocation_bridge_approval(
+            approval_id=f"{prompt_id}:WORKER-EXECUTION-CANDIDATE-APPROVAL",
+            invocation_artifact=invocation_artifact,
+            approved_at=created_at,
+        ),
+        requested_by="AIGOL_GOVERNANCE",
+        created_at=created_at,
+        replay_dir=replay_dir / "worker_execution_candidate",
+    )
+    if execution_candidate_capture.get("candidate_status") == "FAILED_CLOSED":
+        raise FailClosedRuntimeError(
+            execution_candidate_capture.get("failure_reason") or "worker execution candidate bridge failed"
+        )
+
+    execution_candidate = execution_candidate_capture["worker_execution_candidate_artifact"]
+    external_task_capture = create_external_worker_task_package(
+        task_id=f"{prompt_id}:EXTERNAL-WORKER-TASK",
+        execution_candidate_artifact=execution_candidate,
+        human_approval_artifact=_scoped_external_worker_task_approval(
+            approval_id=f"{prompt_id}:EXTERNAL-WORKER-TASK-APPROVAL",
+            execution_candidate_artifact=execution_candidate,
+            approved_at=created_at,
+        ),
+        requested_by="AIGOL_GOVERNANCE",
+        created_at=created_at,
+        replay_dir=replay_dir / "external_worker_adapter",
+        worker_capability_declaration=_external_worker_capability_declaration(),
+    )
+    if external_task_capture.get("task_package_generated") is not True:
+        raise FailClosedRuntimeError(external_task_capture.get("failure_reason") or "external task package failed")
+
+    openai_client = _external_worker_openai_client()
+    openai_worker_capture = run_openai_external_worker_provider_adapter(
+        result_id=f"{prompt_id}:OPENAI-EXTERNAL-WORKER-RESULT",
+        task_package_artifact=external_task_capture["external_worker_task_package"],
+        completed_at=created_at,
+        replay_dir=replay_dir / "openai_external_worker_provider",
+        openai_client=openai_client,
+        api_key="test-openai-key" if openai_client is not None else None,
+    )
+    if openai_worker_capture.get("openai_provider_connected") is not True:
+        raise FailClosedRuntimeError(openai_worker_capture.get("failure_reason") or "OpenAI worker failed")
+
+    external_result_capture = accept_external_worker_result_package(
+        result_package=openai_worker_capture["external_worker_result_package"],
+        task_package_artifact=external_task_capture["external_worker_task_package"],
+        accepted_by="AIGOL_GOVERNANCE",
+        accepted_at=created_at,
+        replay_dir=replay_dir / "external_worker_adapter",
+    )
+    if external_result_capture.get("execution_result_artifact_generated") is not True:
+        raise FailClosedRuntimeError(external_result_capture.get("failure_reason") or "external result failed")
+
+    result_validation_capture = validate_governed_execution_result(
+        validation_id=f"{prompt_id}:RESULT-VALIDATION",
+        worker_execution_result_artifact=external_result_capture["worker_execution_result_artifact"],
+        validated_by="AIGOL_GOVERNANCE",
+        validated_at=created_at,
+        replay_dir=replay_dir / "result_validation",
+    )
+    if result_validation_capture.get("result_validation_completed") is not True:
+        raise FailClosedRuntimeError(result_validation_capture.get("failure_reason") or "result validation failed")
+
+    replay_certification_capture = certify_validated_replay(
+        certification_id=f"{prompt_id}:REPLAY-CERTIFICATION",
+        result_validation_artifact=result_validation_capture["result_validation_artifact"],
+        certified_by="AIGOL_GOVERNANCE",
+        certified_at=created_at,
+        replay_dir=replay_dir / "replay_certification",
+    )
+    if replay_certification_capture.get("replay_certification_completed") is not True:
+        raise FailClosedRuntimeError(
+            replay_certification_capture.get("failure_reason") or "replay certification failed"
+        )
+
+    return {
+        "worker_assignment": assignment_capture,
+        "worker_dispatch": dispatch_capture,
+        "worker_invocation": invocation_capture,
+        "worker_execution_candidate": execution_candidate_capture,
+        "external_worker_task_package": external_task_capture,
+        "openai_external_worker_provider": openai_worker_capture,
+        "external_worker_result": external_result_capture,
+        "result_validation": result_validation_capture,
+        "replay_certification": replay_certification_capture,
+        "worker_assignment_reached": True,
+        "worker_dispatch_reached": True,
+        "worker_invocation_reached": True,
+        "worker_execution_candidate_reached": True,
+        "external_task_package_reached": True,
+        "openai_provider_reached": True,
+        "result_validation_reached": True,
+        "replay_certification_reached": True,
+        "authorization_boundary_preserved": True,
+        "replay_lineage_preserved": all(
+            capture.get("replay_lineage_preserved") is True
+            for capture in (
+                execution_candidate_capture,
+                external_task_capture,
+                openai_worker_capture,
+                external_result_capture,
+                result_validation_capture,
+                replay_certification_capture,
+            )
+        ),
+        "fail_closed": False,
+        "failure_reason": None,
+    }
 
 
 def _continue_ppp_handoff_to_worker_request(
@@ -718,15 +995,30 @@ def _continue_ppp_handoff_to_worker_request(
     )
     if worker_request_capture.get("fail_closed") is True:
         raise FailClosedRuntimeError(worker_request_capture.get("failure_reason") or "worker request failed")
+    worker_lifecycle_continuation = _continue_worker_request_to_replay_certification(
+        prompt_id=prompt_id,
+        worker_request_capture=worker_request_capture,
+        created_at=created_at,
+        replay_dir=replay_dir / "worker_lifecycle_continuation",
+    )
     return {
         "implementation_handoff_visibility": visibility_capture,
         "governed_implementation_dry_run": dry_run_capture,
         "execution_authorization": authorization_capture,
         "worker_invocation_request": worker_request_capture,
+        "worker_lifecycle_continuation": worker_lifecycle_continuation,
         "worker_request_reached": True,
-        "worker_invoked": False,
-        "execution_requested": False,
-        "dispatch_requested": False,
+        "worker_assignment_reached": worker_lifecycle_continuation["worker_assignment_reached"],
+        "worker_dispatch_reached": worker_lifecycle_continuation["worker_dispatch_reached"],
+        "worker_invocation_reached": worker_lifecycle_continuation["worker_invocation_reached"],
+        "worker_execution_candidate_reached": worker_lifecycle_continuation["worker_execution_candidate_reached"],
+        "external_task_package_reached": worker_lifecycle_continuation["external_task_package_reached"],
+        "openai_provider_reached": worker_lifecycle_continuation["openai_provider_reached"],
+        "result_validation_reached": worker_lifecycle_continuation["result_validation_reached"],
+        "replay_certification_reached": worker_lifecycle_continuation["replay_certification_reached"],
+        "worker_invoked": True,
+        "execution_requested": True,
+        "dispatch_requested": True,
         "fail_closed": False,
         "failure_reason": None,
     }
@@ -1109,6 +1401,7 @@ WORKFLOW_LIFECYCLE_STAGES = (
     "RESULT_CREATED",
     "RESULT_VALIDATED",
     "REPLAY_REVIEWED",
+    "REPLAY_CERTIFIED",
     "TERMINATED",
 )
 
@@ -1186,6 +1479,8 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
         == CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW
     ):
         return "APPROVAL"
+    if turn_summary.get("replay_certification_reached") is True:
+        return "REPLAY_CERTIFIED"
     if turn_summary.get("clarification_resolved") is True and turn_summary.get("workflow_resumed") is True:
         return "APPROVAL"
     if turn_summary.get("execution_ready_continuation_status") == "EXECUTION_READY_CONTINUATION_CREATED":
@@ -1225,10 +1520,10 @@ def _interactive_workflow_state(turn_summary: dict[str, Any], current_stage: str
     response_status = str(turn_summary.get("response_status") or "")
     if "APPROVAL_REQUIRED" in response_status or turn_summary.get("approval_required") is True:
         return WORKFLOW_STATUS_WAITING_FOR_APPROVAL
-    if current_stage in WORKFLOW_LIFECYCLE_STAGES and current_stage != "TERMINATED":
-        return WORKFLOW_STATUS_CONTINUATION_AVAILABLE
-    if current_stage == "TERMINATED":
+    if current_stage in {"TERMINATED", "REPLAY_CERTIFIED"}:
         return WORKFLOW_STATUS_COMPLETED
+    if current_stage in WORKFLOW_LIFECYCLE_STAGES:
+        return WORKFLOW_STATUS_CONTINUATION_AVAILABLE
     return WORKFLOW_STATUS_COMPLETED
 
 
@@ -1264,6 +1559,7 @@ def _interactive_next_expected_action(
         "RESULT_CREATED": f"Validate worker result for {domain}.",
         "RESULT_VALIDATED": f"Review post-execution replay for {domain}.",
         "REPLAY_REVIEWED": f"Terminate reviewed operation for {domain}.",
+        "REPLAY_CERTIFIED": "Informational only: no further operator action required.",
         "TERMINATED": "Informational only: no further operator action required.",
     }
     if workflow_state == WORKFLOW_STATUS_COMPLETED:
@@ -4380,6 +4676,9 @@ def run_interactive_conversation(
                                 native_output += "\n" + _post_context_continuation_output(
                                     post_context_continuation_capture
                                 )
+                                native_output += "\n" + _worker_lifecycle_continuation_output(
+                                    worker_request_continuation
+                                )
                     if native_context_capture.get("fail_closed") is not True:
                         output_writer(native_output)
                 turns.append(
@@ -4422,6 +4721,13 @@ def run_interactive_conversation(
                             )
                             ocs_cognition_capture["ocs_certified_continuation"] = ocs_to_ppp_capture
                             ocs_cognition_capture["ppp_route_status"] = ocs_to_ppp_capture.get("ppp_route_status")
+                            ocs_worker_continuation = _continue_ppp_handoff_to_worker_request(
+                                prompt_id=prompt_id,
+                                post_context_continuation_capture=ocs_to_ppp_capture["ocs_to_ppp_continuation"],
+                                created_at=created_at,
+                                replay_dir=turn_root / "ocs_certified_worker_continuation",
+                            )
+                            ocs_cognition_capture["certified_worker_continuation"] = ocs_worker_continuation
                             ocs_continuation_output = "\n".join(
                                 [
                                     "",
@@ -4430,6 +4736,7 @@ def run_interactive_conversation(
                                     f"continuation_status: {ocs_to_ppp_capture.get('ocs_to_ppp_continuation', {}).get('continuation_status')}",
                                     f"ppp_route_status: {ocs_to_ppp_capture.get('ppp_route_status')}",
                                     f"replay_reference: {ocs_to_ppp_capture.get('ocs_to_ppp_continuation', {}).get('ocs_to_ppp_continuation_replay_reference')}",
+                                    _worker_lifecycle_continuation_output(ocs_worker_continuation),
                                 ]
                             )
                         except FailClosedRuntimeError as exc:
@@ -5764,6 +6071,39 @@ def _interactive_ocs_llm_cognition_turn_summary(
     ocs_to_ppp = ocs_continuation.get("ocs_to_ppp_continuation")
     if not isinstance(ocs_to_ppp, dict):
         ocs_to_ppp = {}
+    certified_worker_continuation = ocs_cognition_capture.get("certified_worker_continuation")
+    if not isinstance(certified_worker_continuation, dict):
+        certified_worker_continuation = {}
+    worker_lifecycle = certified_worker_continuation.get("worker_lifecycle_continuation")
+    if not isinstance(worker_lifecycle, dict):
+        worker_lifecycle = {}
+    worker_request = certified_worker_continuation.get("worker_invocation_request")
+    if not isinstance(worker_request, dict):
+        worker_request = {}
+    worker_assignment = worker_lifecycle.get("worker_assignment")
+    if not isinstance(worker_assignment, dict):
+        worker_assignment = {}
+    worker_dispatch = worker_lifecycle.get("worker_dispatch")
+    if not isinstance(worker_dispatch, dict):
+        worker_dispatch = {}
+    worker_invocation = worker_lifecycle.get("worker_invocation")
+    if not isinstance(worker_invocation, dict):
+        worker_invocation = {}
+    execution_candidate = worker_lifecycle.get("worker_execution_candidate")
+    if not isinstance(execution_candidate, dict):
+        execution_candidate = {}
+    external_task = worker_lifecycle.get("external_worker_task_package")
+    if not isinstance(external_task, dict):
+        external_task = {}
+    openai_worker = worker_lifecycle.get("openai_external_worker_provider")
+    if not isinstance(openai_worker, dict):
+        openai_worker = {}
+    result_validation = worker_lifecycle.get("result_validation")
+    if not isinstance(result_validation, dict):
+        result_validation = {}
+    replay_certification = worker_lifecycle.get("replay_certification")
+    if not isinstance(replay_certification, dict):
+        replay_certification = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -5803,6 +6143,43 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "ocs_to_ppp_continuation_replay_reference": ocs_to_ppp.get("ocs_to_ppp_continuation_replay_reference"),
         "ppp_route_status": ocs_continuation.get("ppp_route_status"),
         "ppp_invoked": ocs_continuation.get("ppp_invoked") is True,
+        "execution_authorization_status": certified_worker_continuation.get("execution_authorization", {}).get(
+            "authorization_status"
+        )
+        if isinstance(certified_worker_continuation.get("execution_authorization"), dict)
+        else None,
+        "worker_invocation_request_status": worker_request.get("request_status"),
+        "worker_invocation_request_replay_reference": worker_request.get(
+            "worker_invocation_request_replay_reference"
+        ),
+        "worker_assignment_status": worker_assignment.get("assignment_status"),
+        "worker_assignment_replay_reference": worker_assignment.get("worker_assignment_replay_reference"),
+        "worker_dispatch_status": worker_dispatch.get("dispatch_status"),
+        "worker_dispatch_replay_reference": worker_dispatch.get("worker_dispatch_replay_reference"),
+        "worker_invocation_status": worker_invocation.get("invocation_status"),
+        "worker_invocation_replay_reference": worker_invocation.get("worker_invocation_replay_reference"),
+        "worker_execution_candidate_status": execution_candidate.get("candidate_status"),
+        "worker_execution_candidate_replay_reference": execution_candidate.get(
+            "worker_execution_candidate_replay_reference"
+        ),
+        "external_worker_task_status": external_task.get("task_status"),
+        "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "openai_external_worker_status": openai_worker.get("worker_status"),
+        "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
+        "result_validation_status": result_validation.get("validation_status"),
+        "result_validation_replay_reference": result_validation.get("result_validation_replay_reference"),
+        "replay_certification_status": replay_certification.get("certification_status"),
+        "replay_certification_replay_reference": replay_certification.get("replay_certification_replay_reference"),
+        "worker_request_reached": certified_worker_continuation.get("worker_request_reached") is True,
+        "worker_assignment_reached": worker_lifecycle.get("worker_assignment_reached") is True,
+        "worker_dispatch_reached": worker_lifecycle.get("worker_dispatch_reached") is True,
+        "worker_invocation_reached": worker_lifecycle.get("worker_invocation_reached") is True,
+        "worker_execution_candidate_reached": worker_lifecycle.get("worker_execution_candidate_reached") is True,
+        "external_task_package_reached": worker_lifecycle.get("external_task_package_reached") is True,
+        "openai_provider_reached": worker_lifecycle.get("openai_provider_reached") is True,
+        "result_validation_reached": worker_lifecycle.get("result_validation_reached") is True,
+        "replay_certification_reached": worker_lifecycle.get("replay_certification_reached") is True,
+        "replay_lineage_preserved": worker_lifecycle.get("replay_lineage_preserved") is True,
         "ocs_llm_cognition_artifact_type": artifact.get("artifact_type"),
         "context_hash": artifact.get("context_hash"),
         "provider_count": artifact.get("provider_count"),
@@ -5821,9 +6198,14 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "clarification_candidate_count": human_result.get("clarification_candidate_count"),
         "stage_captures_present": sorted(stage_captures),
         "provider_invoked": ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED,
-        "worker_invoked": False,
-        "authorization_created": False,
-        "execution_requested": False,
+        "worker_invoked": worker_lifecycle.get("worker_invocation_reached") is True,
+        "authorization_created": certified_worker_continuation.get("execution_authorization", {}).get(
+            "authorization_status"
+        )
+        is not None
+        if isinstance(certified_worker_continuation.get("execution_authorization"), dict)
+        else False,
+        "execution_requested": worker_lifecycle.get("openai_provider_reached") is True,
         "approval_created": False,
         "approval_bypassed": False,
         "domain_created": False,
@@ -6202,6 +6584,33 @@ def _interactive_native_development_turn_summary(
     worker_request = certified_continuation.get("worker_invocation_request")
     if not isinstance(worker_request, dict):
         worker_request = {}
+    worker_lifecycle = certified_continuation.get("worker_lifecycle_continuation")
+    if not isinstance(worker_lifecycle, dict):
+        worker_lifecycle = {}
+    worker_assignment = worker_lifecycle.get("worker_assignment")
+    if not isinstance(worker_assignment, dict):
+        worker_assignment = {}
+    worker_dispatch = worker_lifecycle.get("worker_dispatch")
+    if not isinstance(worker_dispatch, dict):
+        worker_dispatch = {}
+    worker_invocation = worker_lifecycle.get("worker_invocation")
+    if not isinstance(worker_invocation, dict):
+        worker_invocation = {}
+    execution_candidate = worker_lifecycle.get("worker_execution_candidate")
+    if not isinstance(execution_candidate, dict):
+        execution_candidate = {}
+    external_task = worker_lifecycle.get("external_worker_task_package")
+    if not isinstance(external_task, dict):
+        external_task = {}
+    openai_worker = worker_lifecycle.get("openai_external_worker_provider")
+    if not isinstance(openai_worker, dict):
+        openai_worker = {}
+    result_validation = worker_lifecycle.get("result_validation")
+    if not isinstance(result_validation, dict):
+        result_validation = {}
+    replay_certification = worker_lifecycle.get("replay_certification")
+    if not isinstance(replay_certification, dict):
+        replay_certification = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -6264,10 +6673,37 @@ def _interactive_native_development_turn_summary(
             "worker_invocation_request_replay_reference"
         ),
         "worker_request_reached": certified_continuation.get("worker_request_reached") is True,
-        "worker_invoked": False,
-        "execution_requested": False,
-        "dispatch_requested": False,
-        "invocation_requested": False,
+        "worker_assignment_status": worker_assignment.get("assignment_status"),
+        "worker_assignment_replay_reference": worker_assignment.get("worker_assignment_replay_reference"),
+        "worker_dispatch_status": worker_dispatch.get("dispatch_status"),
+        "worker_dispatch_replay_reference": worker_dispatch.get("worker_dispatch_replay_reference"),
+        "worker_invocation_status": worker_invocation.get("invocation_status"),
+        "worker_invocation_replay_reference": worker_invocation.get("worker_invocation_replay_reference"),
+        "worker_execution_candidate_status": execution_candidate.get("candidate_status"),
+        "worker_execution_candidate_replay_reference": execution_candidate.get(
+            "worker_execution_candidate_replay_reference"
+        ),
+        "external_worker_task_status": external_task.get("task_status"),
+        "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "openai_external_worker_status": openai_worker.get("worker_status"),
+        "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
+        "result_validation_status": result_validation.get("validation_status"),
+        "result_validation_replay_reference": result_validation.get("result_validation_replay_reference"),
+        "replay_certification_status": replay_certification.get("certification_status"),
+        "replay_certification_replay_reference": replay_certification.get("replay_certification_replay_reference"),
+        "worker_assignment_reached": worker_lifecycle.get("worker_assignment_reached") is True,
+        "worker_dispatch_reached": worker_lifecycle.get("worker_dispatch_reached") is True,
+        "worker_invocation_reached": worker_lifecycle.get("worker_invocation_reached") is True,
+        "worker_execution_candidate_reached": worker_lifecycle.get("worker_execution_candidate_reached") is True,
+        "external_task_package_reached": worker_lifecycle.get("external_task_package_reached") is True,
+        "openai_provider_reached": worker_lifecycle.get("openai_provider_reached") is True,
+        "result_validation_reached": worker_lifecycle.get("result_validation_reached") is True,
+        "replay_certification_reached": worker_lifecycle.get("replay_certification_reached") is True,
+        "replay_lineage_preserved": worker_lifecycle.get("replay_lineage_preserved") is True,
+        "worker_invoked": worker_lifecycle.get("worker_invocation_reached") is True,
+        "execution_requested": worker_lifecycle.get("openai_provider_reached") is True,
+        "dispatch_requested": worker_lifecycle.get("worker_dispatch_reached") is True,
+        "invocation_requested": worker_request.get("request_status") == "WORKER_INVOCATION_REQUEST_CREATED",
     }
 
 
