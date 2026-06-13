@@ -1,0 +1,115 @@
+{
+  "artifact_type": "AIGOL_REPLAY_IMPROVEMENT_AUTHORIZATION_POLICY_BOUNDARY_CERTIFICATION",
+  "version": "AIGOL_REPLAY_IMPROVEMENT_AUTHORIZATION_POLICY_BOUNDARY_V1",
+  "status": "CERTIFIED",
+  "certification_date": "2026-06-13",
+  "scope": {
+    "runtime_changes": false,
+    "certification_artifact_only": true,
+    "canonical_execution_authorization_artifact": "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "replay_derived_candidate_path": [
+      "IMPROVEMENT_INTENT_ARTIFACT_V1",
+      "PPP_CANDIDATE_ARTIFACT_V1",
+      "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+      "WORKER_REQUEST_ARTIFACT_V1",
+      "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1",
+      "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1",
+      "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1"
+    ]
+  },
+  "policy_boundary": {
+    "scoped_approvals_may_stage_candidates": true,
+    "scoped_approvals_may_silently_replace_canonical_authorization": false,
+    "final_worker_or_provider_execution_requires_explicit_authority": true,
+    "final_execution_authority_options": [
+      "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+      "AUTHORIZATION_EQUIVALENT_SCOPED_EXECUTION_BOUNDARY"
+    ],
+    "self_authorization_allowed": false,
+    "replay_visibility_required": true,
+    "human_authorization_required": true
+  },
+  "authorization_equivalent_scope": {
+    "defined": true,
+    "required_marker_field": "authorization_boundary_class",
+    "allowed_values": [
+      "CANONICAL_EXECUTION_AUTHORIZATION",
+      "AUTHORIZATION_EQUIVALENT_SCOPED_EXECUTION",
+      "CANDIDATE_STAGING_ONLY"
+    ],
+    "certification_reference_required_for_authorization_equivalent_scoped_execution": true,
+    "minimum_lineage_required": [
+      "source_replay_reference_and_hash",
+      "improvement_intent_reference_and_hash",
+      "ppp_candidate_reference_and_hash",
+      "implementation_request_reference_and_hash",
+      "worker_request_reference_and_hash",
+      "worker_execution_candidate_reference_and_hash",
+      "human_authorizing_actor",
+      "approval_or_authorization_timestamp",
+      "approval_or_authorization_scope",
+      "execution_capability_allowed",
+      "forbidden_operations",
+      "validity_or_expiration_semantics",
+      "revocation_or_invalidation_semantics",
+      "replay_certification_requirement"
+    ]
+  },
+  "current_runtime_assessment": {
+    "candidate_staging_scoped_approvals_constitutionally_valid": true,
+    "current_final_execution_approval_has_authorization_equivalent_marker": false,
+    "current_final_execution_approval_qualifies_as_authorization_equivalent": false,
+    "reason": "The final scoped approval is human-authorized and replay-visible, but it lacks an explicit authorization_boundary_class marker and certification reference proving equivalence to canonical execution authorization.",
+    "canonical_execution_authorization_required_until_equivalent_boundary_exists": true
+  },
+  "authority_assessment": {
+    "authority_difference_identified": true,
+    "canonical_path_emits_execution_authorization_artifact": true,
+    "replay_derived_path_uses_scoped_candidate_approvals": true,
+    "approval_evidence_alone_is_not_execution_authority": true,
+    "candidate_state_is_not_execution_authority": true,
+    "provider_authority": false,
+    "worker_self_authority": false,
+    "replay_authority": false,
+    "improvement_intent_authority": false
+  },
+  "replay_assessment": {
+    "replay_lineage_difference_identified": true,
+    "canonical_path_binds_execution_ready_packet_to_authorization": true,
+    "replay_derived_path_binds_source_replay_to_candidate_chain": true,
+    "replay_visibility_required": true,
+    "hash_integrity_required": true,
+    "chain_continuity_required": true,
+    "fail_closed_on_missing_or_corrupt_lineage": true
+  },
+  "risk_assessment": {
+    "risk_before_policy": "MEDIUM",
+    "risk_after_policy": "MEDIUM_LOW",
+    "remaining_risk": "Final scoped execution approval lacks explicit authorization-equivalent marker or canonical execution authorization artifact.",
+    "risk_resolution": "Add canonical execution authorization consumption or add an explicitly certified authorization-equivalent scoped execution boundary marker."
+  },
+  "certification_evidence": [
+    "governance/AIGOL_REPLAY_IMPROVEMENT_AUTHORIZATION_POLICY_BOUNDARY_V1.md",
+    "governance/AIGOL_EXECUTION_AUTHORITY_MODEL_V1.md",
+    "governance/GOVERNED_WORKER_AUTHORIZATION_MODEL_V1.md",
+    "governance/AIGOL_REPLAY_IMPROVEMENT_BOUNDARY_GUARANTEES_V1.md",
+    "aigol/runtime/governed_implementation_request_runtime.py",
+    "aigol/runtime/implementation_request_to_worker_request_bridge_runtime.py",
+    "aigol/runtime/worker_request_to_worker_dispatch_governance_runtime.py",
+    "aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+    "aigol/runtime/worker_invocation_to_execution_governance_runtime.py",
+    "aigol/runtime/governed_worker_execution_runtime.py",
+    "aigol/runtime/execution_authorization_runtime.py"
+  ],
+  "final_outputs": {
+    "POLICY_BOUNDARY_CERTIFIED": "YES",
+    "SCOPED_APPROVAL_LIMITED_TO_CANDIDATE_STAGING": "YES",
+    "FINAL_EXECUTION_AUTHORIZATION_REQUIRED": "YES",
+    "AUTHORIZATION_EQUIVALENT_SCOPE_DEFINED": "YES",
+    "SELF_AUTHORIZATION_PREVENTED": "YES",
+    "REPLAY_VISIBILITY_REQUIRED": "YES",
+    "GOVERNANCE_RISK_AFTER_POLICY": "MEDIUM_LOW",
+    "NEXT_RUNTIME_CHANGE_REQUIRED": "YES"
+  },
+  "recommended_next_runtime_change": "Add authorization_boundary_class to the final replay-derived execution approval path, or route final replay-derived worker/provider execution through EXECUTION_AUTHORIZATION_ARTIFACT_V1."
+}
