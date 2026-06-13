@@ -1,0 +1,110 @@
+{
+  "artifact_type": "AIGOL_ACLI_END_TO_END_HUMAN_PROMPT_CERTIFICATION_V1",
+  "version": "AIGOL_ACLI_END_TO_END_HUMAN_PROMPT_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certification_date": "2026-06-13",
+  "scope": {
+    "architecture_redesigned": false,
+    "providers_added": false,
+    "ppp_rebuilt": false,
+    "worker_lifecycle_rebuilt": false,
+    "provider_layer_rebuilt": false,
+    "validation_rebuilt": false,
+    "replay_rebuilt": false,
+    "continuation_used": "AIGOL_ACLI_WORKER_LIFECYCLE_CONTINUATION_V1"
+  },
+  "certified_paths": {
+    "development_path": [
+      "Human Prompt",
+      "ACLI",
+      "Universal Intake",
+      "Native Development Intake",
+      "PPP",
+      "Execution Authorization",
+      "Worker Request",
+      "Worker Assignment",
+      "Worker Dispatch",
+      "Worker Invocation",
+      "Worker Execution Candidate",
+      "External Worker Task Package",
+      "OpenAI External Worker Provider",
+      "Result Validation",
+      "Replay Certification"
+    ],
+    "ocs_execution_required_path": [
+      "Human Prompt",
+      "ACLI",
+      "Universal Intake",
+      "OCS Cognition Intake",
+      "OCS-to-PPP Handoff",
+      "PPP",
+      "Execution Authorization",
+      "Worker Request",
+      "Worker Assignment",
+      "Worker Dispatch",
+      "Worker Invocation",
+      "Worker Execution Candidate",
+      "External Worker Task Package",
+      "OpenAI External Worker Provider",
+      "Result Validation",
+      "Replay Certification"
+    ]
+  },
+  "acceptance_tests": {
+    "test_file": "tests/test_acli_end_to_end_human_prompt_certification_v1.py",
+    "tests": [
+      "test_development_human_prompt_reaches_replay_certified_and_stops",
+      "test_ocs_execution_required_human_prompt_reaches_replay_certified_and_stops",
+      "test_high_risk_ocs_prompt_fails_closed_before_execution_authorization"
+    ],
+    "deterministic_provider_fixtures": true,
+    "live_provider_invocation_required": false
+  },
+  "evidence": {
+    "development_prompt_reaches_replay_certification": true,
+    "ocs_execution_required_prompt_reaches_replay_certification": true,
+    "authorization_boundary_preserved": true,
+    "execution_authorization_artifact_required_before_worker_request": true,
+    "scoped_execution_candidate_approval_does_not_invoke_provider": true,
+    "external_task_package_approval_preserves_no_repository_mutation": true,
+    "replay_lineage_contains_required_artifacts": true,
+    "acli_does_not_continue_past_replay_certified": true,
+    "fail_closed_boundary_verified": true,
+    "high_risk_ocs_candidate_stops_before_ppp_execution_authorization": true
+  },
+  "replay_lineage_required_artifacts": [
+    "UNIVERSAL_INTAKE_ARTIFACT_V1",
+    "CONVERSATION_PPP_ROUTING_ARTIFACT_V1",
+    "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+    "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+    "WORKER_ASSIGNMENT_ARTIFACT_V1",
+    "WORKER_DISPATCH_ARTIFACT_V1",
+    "WORKER_INVOCATION_ARTIFACT_V1",
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "EXTERNAL_WORKER_TASK_PACKAGE_V1",
+    "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "REPLAY_CERTIFICATION_ARTIFACT_V1"
+  ],
+  "observations": [
+    "The Development path reaches REPLAY_CERTIFIED with workflow_state COMPLETED and auto_continue_stop_reason WORKFLOW_COMPLETE.",
+    "The OCS execution-required path reaches REPLAY_CERTIFIED and ACLI does not create an additional turn; OCS cognition metadata may preserve an operator-waiting stop reason without continuing past replay certification.",
+    "A high-risk OCS prompt fails closed before execution authorization and before worker/provider execution."
+  ],
+  "validation_commands": [
+    "python -m py_compile aigol/cli/aigol_cli.py aigol/runtime/ocs_cognition_runtime.py tests/test_acli_certified_continuation_orchestration_v1.py tests/test_acli_end_to_end_human_prompt_certification_v1.py",
+    "python -m pytest tests/test_acli_end_to_end_human_prompt_certification_v1.py",
+    "python -m pytest tests/test_acli_certified_continuation_orchestration_v1.py tests/test_acli_end_to_end_human_prompt_certification_v1.py",
+    "python -m pytest tests/test_worker_invocation_to_execution_candidate_bridge_runtime_v1.py tests/test_external_worker_adapter_runtime_v1.py tests/test_openai_external_worker_provider_adapter_v1.py tests/test_result_validation_runtime_v1.py tests/test_replay_certification_runtime_v1.py",
+    "python -m json.tool governance/AIGOL_ACLI_END_TO_END_HUMAN_PROMPT_CERTIFICATION_V1.json",
+    "git diff --check"
+  ],
+  "final_decision_fields": {
+    "DEVELOPMENT_PROMPT_TO_REPLAY_CERTIFIED": "YES",
+    "OCS_PROMPT_TO_REPLAY_CERTIFIED": "YES",
+    "AUTHORIZATION_BOUNDARY_PRESERVED": "YES",
+    "REPLAY_LINEAGE_COMPLETE": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES",
+    "FULL_ACLI_HUMAN_PROMPT_WORKFLOW_CERTIFIED": "YES"
+  }
+}
