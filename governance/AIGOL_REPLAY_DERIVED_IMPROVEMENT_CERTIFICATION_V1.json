@@ -1,0 +1,67 @@
+{
+  "artifact_type": "AIGOL_REPLAY_DERIVED_IMPROVEMENT_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certified_at": "2026-06-13",
+  "scope": "Replay-derived improvement governance workflow certification",
+  "objective": "Certify Execution to Replay to Gap Detection to Improvement Intent to Human Approval to PPP Candidate to Worker Candidate to Validation to Replay without redesigning PPP, OCS, workers, or replay.",
+  "certified_flow": [
+    "Execution replay evidence",
+    "GAP_DETECTION_ARTIFACT_V1",
+    "IMPROVEMENT_INTENT_ARTIFACT_V1",
+    "HUMAN_APPROVAL_ARTIFACT_V1",
+    "PPP_CANDIDATE_ARTIFACT_V1",
+    "IMPLEMENTATION_REQUEST_ARTIFACT_V1",
+    "WORKER_REQUEST_ARTIFACT_V1",
+    "WORKER_DISPATCH_CANDIDATE_ARTIFACT_V1",
+    "WORKER_INVOCATION_CANDIDATE_ARTIFACT_V1",
+    "WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1",
+    "WORKER_EXECUTION_RESULT_ARTIFACT_V1",
+    "RESULT_VALIDATION_ARTIFACT_V1",
+    "REPLAY_CERTIFICATION_ARTIFACT_V1"
+  ],
+  "certified_cases": {
+    "replay_contains_execution_failure_to_gap_detection": "CERTIFIED",
+    "gap_detection_to_improvement_intent": "CERTIFIED",
+    "improvement_intent_without_approval_no_execution": "CERTIFIED",
+    "improvement_intent_with_approval_to_ppp_candidate_and_implementation_request": "CERTIFIED",
+    "ppp_candidate_to_worker_candidate": "CERTIFIED",
+    "worker_candidate_to_validation": "CERTIFIED",
+    "validation_to_replay": "CERTIFIED"
+  },
+  "governance_findings": {
+    "replay_derived_intent_is_non_authoritative": true,
+    "approval_required": true,
+    "worker_execution_before_approval_prevented": true,
+    "scoped_candidate_approvals_do_not_create_final_execution_authority": true,
+    "final_worker_execution_requires_explicit_human_approval": true,
+    "fail_closed_behavior_preserved": true
+  },
+  "replay_evidence": {
+    "source_replay_references_required": true,
+    "source_replay_hashes_required": true,
+    "lineage_carried_from_gap_to_worker_candidate": true,
+    "lineage_carried_from_worker_candidate_to_validation": true,
+    "lineage_carried_from_validation_to_replay_certification": true,
+    "replay_lineage_complete": true
+  },
+  "approval_evidence": {
+    "implementation_request_scope": "CREATE_IMPLEMENTATION_REQUEST_ONLY",
+    "worker_dispatch_candidate_scope": "CREATE_WORKER_DISPATCH_CANDIDATE_ONLY",
+    "worker_invocation_candidate_scope": "CREATE_WORKER_INVOCATION_CANDIDATE_ONLY",
+    "worker_execution_candidate_scope": "CREATE_WORKER_EXECUTION_CANDIDATE_ONLY",
+    "final_execution_scope": "RUN_GOVERNED_WORKER_EXECUTION_ONLY",
+    "self_authorization_allowed": false
+  },
+  "test_evidence": {
+    "test_file": "tests/test_replay_derived_improvement_certification_v1.py",
+    "required_command": "python -m pytest tests/test_replay_derived_improvement_certification_v1.py"
+  },
+  "final_decision_fields": {
+    "GAP_DETECTION_CERTIFIED": "YES",
+    "IMPROVEMENT_INTENT_CERTIFIED": "YES",
+    "APPROVAL_BOUNDARY_CERTIFIED": "YES",
+    "PPP_CANDIDATE_CERTIFIED": "YES",
+    "WORKER_CANDIDATE_CERTIFIED": "YES",
+    "REPLAY_DERIVED_IMPROVEMENT_CERTIFIED": "YES"
+  }
+}
