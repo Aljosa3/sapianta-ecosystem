@@ -214,6 +214,8 @@ from aigol.runtime.context_assembled_to_ppp_routing_continuation import (
     POST_CONTEXT_CONTINUATION_REACHED_PPP,
     continue_context_assembled_to_ppp_routing,
 )
+from aigol.runtime.ocs_end_to_end_runtime import run_ocs_end_to_end
+from aigol.runtime.ocs_to_ppp_continuation_adapter_runtime import continue_ocs_to_ppp_routing
 from aigol.runtime.implementation_handoff_visibility import (
     create_implementation_handoff_visibility_summary,
     render_implementation_handoff_visibility_summary,
@@ -501,6 +503,15 @@ def _conversation_ocs_cognition_source_context(
     created_at: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture.get("source_of_truth_router_artifact") or {}
+    execution_hint = _conversation_ocs_execution_context_hint(
+        prompt_id=prompt_id,
+        human_prompt=human_prompt,
+        created_at=created_at,
+    )
+    ppp_context = [execution_hint] if execution_hint else []
+    registry_context = []
+    if execution_hint:
+        registry_context.append(execution_hint)
     return {
         "conversation_context": [
             _replay_visible_context_source(
@@ -521,9 +532,7 @@ def _conversation_ocs_cognition_source_context(
                 created_at=created_at,
                 selected_source=source_artifact.get("selected_source"),
                 source_router_hash=source_artifact.get("artifact_hash"),
-            )
-        ],
-        "registry_context": [
+            ),
             _replay_visible_context_source(
                 artifact_id=f"{prompt_id}:OCS-COGNITION-BINDING-CONTEXT",
                 artifact_type="CONVERSATIONAL_OCS_COGNITION_BINDING_CONTEXT_V1",
@@ -531,9 +540,34 @@ def _conversation_ocs_cognition_source_context(
                 created_at=created_at,
                 binding_milestone="AIGOL_CONVERSATIONAL_OCS_COGNITION_BINDING_V1",
                 target_runtime="AIGOL_OCS_LLM_COGNITION_END_TO_END_V1",
-            )
+            ),
         ],
+        "ppp_context": ppp_context,
+        "registry_context": registry_context,
     }
+
+
+def _conversation_ocs_execution_context_hint(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    created_at: str,
+) -> dict[str, Any] | None:
+    normalized_prompt = str(human_prompt or "").upper()
+    if "TRADING" in normalized_prompt and "MARKET_EVIDENCE" in normalized_prompt:
+        return _replay_visible_context_source(
+            artifact_id=f"{prompt_id}:OCS-EXECUTION-HINT-TRADING-MARKET_EVIDENCE_NORMALIZATION",
+            artifact_type="OCS_EXECUTION_REQUIRED_CONTEXT_HINT_V1",
+            summary={
+                "domain_id": "TRADING",
+                "worker_family_id": "MARKET_EVIDENCE_NORMALIZATION",
+                "provider_necessity_classification": "PROVIDER_REQUIRED",
+            },
+            created_at=created_at,
+            domain_id="TRADING",
+            worker_family_id="MARKET_EVIDENCE_NORMALIZATION",
+        )
+    return None
 
 
 def _conversation_ocs_cognition_provider_contracts(created_at: str) -> list[dict[str, Any]]:
@@ -611,6 +645,211 @@ def _post_context_continuation_output(capture: dict[str, Any]) -> str:
             f"replay_reference: {capture.get('post_context_continuation_replay_reference')}",
         ]
     )
+
+
+def _explicit_ocs_execution_required(human_prompt: str) -> bool:
+    normalized_prompt = " ".join(str(human_prompt or "").lower().split())
+    execution_markers = (
+        "enter governed execution",
+        "continue to ppp",
+        "continue into ppp",
+        "execution required",
+        "requires execution",
+        "implement ",
+    )
+    return any(marker in normalized_prompt for marker in execution_markers)
+
+
+def _continue_ppp_handoff_to_worker_request(
+    *,
+    prompt_id: str,
+    post_context_continuation_capture: dict[str, Any],
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    ppp_capture = post_context_continuation_capture.get("conversation_ppp_routing")
+    if not isinstance(ppp_capture, dict):
+        raise FailClosedRuntimeError("ACLI continuation failed closed: PPP routing capture missing")
+    if ppp_capture.get("route_status") != "CONVERSATION_PPP_HANDOFF_CREATED":
+        raise FailClosedRuntimeError("ACLI continuation failed closed: implementation handoff not created")
+    if ppp_capture.get("approval_required") is True:
+        raise FailClosedRuntimeError("ACLI continuation failed closed: human approval required before worker request")
+    ppp_replay_reference = ppp_capture.get("conversation_ppp_routing_replay_reference")
+    if not isinstance(ppp_replay_reference, str) or not ppp_replay_reference:
+        raise FailClosedRuntimeError("ACLI continuation failed closed: PPP replay reference missing")
+    route_artifact = ppp_capture.get("conversation_ppp_routing_artifact")
+    if not isinstance(route_artifact, dict):
+        raise FailClosedRuntimeError("ACLI continuation failed closed: PPP route artifact missing")
+    handoff_replay_reference = str(Path(ppp_replay_reference).parent / "final_implementation_handoff")
+    visibility_capture = create_implementation_handoff_visibility_summary(
+        visibility_id=f"{prompt_id}:IMPLEMENTATION-HANDOFF-VISIBILITY",
+        handoff_replay_reference=handoff_replay_reference,
+        approval_status=ppp_capture.get("approval_status") or "APPROVAL_NOT_REQUIRED_FOR_HANDOFF",
+        created_at=created_at,
+        replay_dir=replay_dir / "implementation_handoff_visibility",
+    )
+    if visibility_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(visibility_capture.get("failure_reason") or "implementation handoff visibility failed")
+    dry_run_capture = prepare_governed_implementation_dry_run(
+        dry_run_id=f"{prompt_id}:GOVERNED-IMPLEMENTATION-DRY-RUN",
+        handoff_replay_reference=handoff_replay_reference,
+        handoff_visibility_artifact=visibility_capture["implementation_handoff_visibility_artifact"],
+        upstream_lineage_artifact=route_artifact,
+        created_at=created_at,
+        replay_dir=replay_dir / "governed_implementation_dry_run",
+    )
+    if dry_run_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(dry_run_capture.get("failure_reason") or "governed implementation dry run failed")
+    authorization_capture = authorize_execution_ready(
+        authorization_id=f"{prompt_id}:EXECUTION-AUTHORIZATION",
+        execution_ready_replay_reference=dry_run_capture["governed_implementation_dry_run_replay_reference"],
+        authorizing_actor="AIGOL_GOVERNANCE",
+        authorized_at=created_at,
+        replay_dir=replay_dir / "execution_authorization",
+    )
+    if authorization_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(authorization_capture.get("failure_reason") or "execution authorization failed")
+    worker_request_capture = create_worker_invocation_request(
+        invocation_request_id=f"{prompt_id}:WORKER-INVOCATION-REQUEST",
+        execution_authorization_replay_reference=authorization_capture["execution_authorization_replay_reference"],
+        requested_by="AIGOL_GOVERNANCE",
+        requested_at=created_at,
+        replay_dir=replay_dir / "worker_invocation_request",
+    )
+    if worker_request_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(worker_request_capture.get("failure_reason") or "worker request failed")
+    return {
+        "implementation_handoff_visibility": visibility_capture,
+        "governed_implementation_dry_run": dry_run_capture,
+        "execution_authorization": authorization_capture,
+        "worker_invocation_request": worker_request_capture,
+        "worker_request_reached": True,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+
+
+def _continue_ocs_cognition_to_ppp(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    router_capture: dict[str, Any],
+    current_chain_id: str | None,
+    created_at: str,
+    replay_dir: Path,
+    execution_required: bool,
+    session_id: str,
+    turn_id: str,
+) -> dict[str, Any]:
+    ocs_end_to_end_capture = run_ocs_end_to_end(
+        ocs_run_id=f"{prompt_id}:OCS-END-TO-END",
+        created_at=created_at,
+        replay_dir=replay_dir / "ocs_end_to_end",
+        source_context=_conversation_ocs_cognition_source_context(
+            prompt_id=prompt_id,
+            human_prompt=human_prompt,
+            router_capture=router_capture,
+            created_at=created_at,
+        ),
+        source_chain_id=current_chain_id or prompt_id,
+        source_request_reference=prompt_id,
+        failure_history=_ocs_execution_required_failure_history(
+            prompt_id=prompt_id,
+            human_prompt=human_prompt,
+            created_at=created_at,
+        )
+        if execution_required
+        else None,
+        validation_history=_ocs_execution_required_validation_history(
+            prompt_id=prompt_id,
+            human_prompt=human_prompt,
+            created_at=created_at,
+        )
+        if execution_required
+        else None,
+    )
+    if ocs_end_to_end_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(ocs_end_to_end_capture.get("failure_reason") or "OCS end-to-end failed")
+    handoff_artifact = _load_ocs_to_ppp_handoff_from_end_to_end_replay(ocs_end_to_end_capture)
+    continuation_capture = continue_ocs_to_ppp_routing(
+        continuation_id=f"{prompt_id}:OCS-TO-PPP-CONTINUATION",
+        ocs_to_ppp_handoff_artifact=handoff_artifact,
+        execution_required=execution_required,
+        provider_id=OPENAI_PROVIDER_ID,
+        created_at=created_at,
+        replay_dir=replay_dir / "ocs_to_ppp_continuation",
+        registry=_post_context_continuation_provider_registry(),
+        adapter=_post_context_continuation_provider_adapter(),
+        governance_root="governance",
+        prompt_id=prompt_id,
+        session_id=session_id,
+        turn_id=turn_id,
+        current_chain_id=current_chain_id or prompt_id,
+        latest_chain_id=current_chain_id or prompt_id,
+    )
+    if continuation_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(continuation_capture.get("failure_reason") or "OCS-to-PPP continuation failed")
+    return {
+        "ocs_end_to_end": ocs_end_to_end_capture,
+        "ocs_to_ppp_handoff_artifact": handoff_artifact,
+        "ocs_to_ppp_continuation": continuation_capture,
+        "execution_required": execution_required,
+        "ppp_route_status": continuation_capture.get("ppp_route_status"),
+        "ppp_invoked": continuation_capture.get("ppp_invoked") is True,
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+
+
+def _load_ocs_to_ppp_handoff_from_end_to_end_replay(ocs_end_to_end_capture: dict[str, Any]) -> dict[str, Any]:
+    replay_reference = ocs_end_to_end_capture.get("ocs_end_to_end_replay_reference")
+    if not isinstance(replay_reference, str) or not replay_reference:
+        raise FailClosedRuntimeError("ACLI OCS continuation failed closed: OCS end-to-end replay reference missing")
+    wrapper = load_json(Path(replay_reference) / "007_ocs_to_ppp_handoff" / "000_ocs_to_ppp_handoff_recorded.json")
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("ACLI OCS continuation failed closed: OCS-to-PPP handoff artifact missing")
+    return artifact
+
+
+def _ocs_execution_required_failure_history(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    created_at: str,
+) -> list[dict[str, Any]]:
+    return [
+        _replay_visible_context_source(
+            artifact_id=f"{prompt_id}:OCS-EXECUTION-FAILURE-{index:06d}",
+            artifact_type="OCS_EXECUTION_REQUIRED_FAILURE_EVIDENCE_V1",
+            summary=f"Execution-required OCS continuation evidence for: {human_prompt}",
+            created_at=created_at,
+            failure_reason="missing replay artifact",
+        )
+        for index in range(2)
+    ]
+
+
+def _ocs_execution_required_validation_history(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    created_at: str,
+) -> list[dict[str, Any]]:
+    return [
+        _replay_visible_context_source(
+            artifact_id=f"{prompt_id}:OCS-EXECUTION-VALIDATION-{index:06d}",
+            artifact_type="OCS_EXECUTION_REQUIRED_VALIDATION_EVIDENCE_V1",
+            summary=f"Execution-required OCS validation evidence for: {human_prompt}",
+            created_at=created_at,
+            validation_status="FAILED",
+            error_code="MISSING_HASH",
+        )
+        for index in range(2)
+    ]
 
 
 def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path) -> dict[str, Any]:
@@ -4122,9 +4361,25 @@ def run_interactive_conversation(
                             failed_turns += 1
                             output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
                         else:
-                            native_output += "\n" + _post_context_continuation_output(
-                                post_context_continuation_capture
-                            )
+                            try:
+                                worker_request_continuation = _continue_ppp_handoff_to_worker_request(
+                                    prompt_id=prompt_id,
+                                    post_context_continuation_capture=post_context_continuation_capture,
+                                    created_at=created_at,
+                                    replay_dir=turn_root / "certified_development_continuation",
+                                )
+                                native_context_capture["certified_development_continuation"] = (
+                                    worker_request_continuation
+                                )
+                            except FailClosedRuntimeError as exc:
+                                native_context_capture["fail_closed"] = True
+                                native_context_capture["failure_reason"] = str(exc)
+                                failed_turns += 1
+                                output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                            else:
+                                native_output += "\n" + _post_context_continuation_output(
+                                    post_context_continuation_capture
+                                )
                     if native_context_capture.get("fail_closed") is not True:
                         output_writer(native_output)
                 turns.append(
@@ -4151,6 +4406,40 @@ def run_interactive_conversation(
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {ocs_cognition_capture.get('failure_reason')}")
                 else:
+                    ocs_continuation_output = ""
+                    if _explicit_ocs_execution_required(human_prompt):
+                        try:
+                            ocs_to_ppp_capture = _continue_ocs_cognition_to_ppp(
+                                prompt_id=prompt_id,
+                                human_prompt=human_prompt,
+                                router_capture=router_capture,
+                                current_chain_id=current_chain_id,
+                                created_at=created_at,
+                                replay_dir=turn_root / "ocs_certified_continuation",
+                                execution_required=True,
+                                session_id=session_id,
+                                turn_id=turn_id,
+                            )
+                            ocs_cognition_capture["ocs_certified_continuation"] = ocs_to_ppp_capture
+                            ocs_cognition_capture["ppp_route_status"] = ocs_to_ppp_capture.get("ppp_route_status")
+                            ocs_continuation_output = "\n".join(
+                                [
+                                    "",
+                                    "OCS-to-PPP Continuation",
+                                    "",
+                                    f"continuation_status: {ocs_to_ppp_capture.get('ocs_to_ppp_continuation', {}).get('continuation_status')}",
+                                    f"ppp_route_status: {ocs_to_ppp_capture.get('ppp_route_status')}",
+                                    f"replay_reference: {ocs_to_ppp_capture.get('ocs_to_ppp_continuation', {}).get('ocs_to_ppp_continuation_replay_reference')}",
+                                ]
+                            )
+                        except FailClosedRuntimeError as exc:
+                            ocs_cognition_capture["fail_closed"] = True
+                            ocs_cognition_capture["failure_reason"] = str(exc)
+                            failed_turns += 1
+                            output_writer(f"FAILED_CLOSED: {ocs_cognition_capture['failure_reason']}")
+                    else:
+                        ocs_cognition_capture["ocs_proposal_only_preserved"] = True
+                        ocs_cognition_capture["ppp_route_status"] = None
                     output_writer(
                         "\n".join(
                             [
@@ -4158,6 +4447,7 @@ def run_interactive_conversation(
                                 render_ocs_llm_cognition_end_to_end_summary(ocs_cognition_capture),
                                 "REAL_LLM_PROVIDER_USED_BY_OCS = "
                                 f"{str(_real_llm_provider_used_by_ocs(ocs_cognition_capture)).lower()}",
+                                ocs_continuation_output,
                             ]
                         )
                     )
@@ -5468,6 +5758,12 @@ def _interactive_ocs_llm_cognition_turn_summary(
     request_bundle = multi_provider_capture.get("request_bundle")
     if not isinstance(request_bundle, dict):
         request_bundle = {}
+    ocs_continuation = ocs_cognition_capture.get("ocs_certified_continuation")
+    if not isinstance(ocs_continuation, dict):
+        ocs_continuation = {}
+    ocs_to_ppp = ocs_continuation.get("ocs_to_ppp_continuation")
+    if not isinstance(ocs_to_ppp, dict):
+        ocs_to_ppp = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -5502,6 +5798,11 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "existing_cli_command": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
             "existing_cli_command"
         ),
+        "ocs_proposal_only_preserved": ocs_cognition_capture.get("ocs_proposal_only_preserved") is True,
+        "ocs_to_ppp_continuation_status": ocs_to_ppp.get("continuation_status"),
+        "ocs_to_ppp_continuation_replay_reference": ocs_to_ppp.get("ocs_to_ppp_continuation_replay_reference"),
+        "ppp_route_status": ocs_continuation.get("ppp_route_status"),
+        "ppp_invoked": ocs_continuation.get("ppp_invoked") is True,
         "ocs_llm_cognition_artifact_type": artifact.get("artifact_type"),
         "context_hash": artifact.get("context_hash"),
         "provider_count": artifact.get("provider_count"),
@@ -5886,6 +6187,21 @@ def _interactive_native_development_turn_summary(
     conversation_ppp_routing = post_context_continuation.get("conversation_ppp_routing")
     if not isinstance(conversation_ppp_routing, dict):
         conversation_ppp_routing = {}
+    certified_continuation = native_context_capture.get("certified_development_continuation")
+    if not isinstance(certified_continuation, dict):
+        certified_continuation = {}
+    handoff_visibility = certified_continuation.get("implementation_handoff_visibility")
+    if not isinstance(handoff_visibility, dict):
+        handoff_visibility = {}
+    dry_run = certified_continuation.get("governed_implementation_dry_run")
+    if not isinstance(dry_run, dict):
+        dry_run = {}
+    authorization = certified_continuation.get("execution_authorization")
+    if not isinstance(authorization, dict):
+        authorization = {}
+    worker_request = certified_continuation.get("worker_invocation_request")
+    if not isinstance(worker_request, dict):
+        worker_request = {}
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -5939,6 +6255,15 @@ def _interactive_native_development_turn_summary(
         "ppp_route_status": post_context_continuation.get("ppp_route_status"),
         "ppp_routing_replay_reference": conversation_ppp_routing.get("conversation_ppp_routing_replay_reference"),
         "implementation_handoff_reference": post_context_continuation.get("implementation_handoff_reference"),
+        "implementation_handoff_visibility_status": handoff_visibility.get("summary_status"),
+        "execution_preparation_status": dry_run.get("execution_status"),
+        "execution_authorization_status": authorization.get("authorization_status"),
+        "execution_authorization_replay_reference": authorization.get("execution_authorization_replay_reference"),
+        "worker_invocation_request_status": worker_request.get("request_status"),
+        "worker_invocation_request_replay_reference": worker_request.get(
+            "worker_invocation_request_replay_reference"
+        ),
+        "worker_request_reached": certified_continuation.get("worker_request_reached") is True,
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,
