@@ -29,6 +29,7 @@ from aigol.runtime.transport.serialization import replay_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_PATH = ROOT / "governance" / "REAL_ACLI_ACCEPTANCE_REPORT_V1.json"
+ROUTING_REPAIR_REPORT_PATH = ROOT / "governance" / "AIGOL_HUMAN_PROMPT_ROUTING_REPAIR_V1.json"
 CREATED_AT = "2026-06-14T00:00:00Z"
 
 DEVELOPMENT_PROMPT = "Implement a simple calculator function"
@@ -176,8 +177,11 @@ def _accepted_to_replay(result: dict[str, Any]) -> bool:
     return (
         turn.get("replay_certification_status") == REPLAY_CERTIFICATION_COMPLETED
         and turn.get("worker_invoked") is True
-        and turn.get("authorization_created") is True
-        and turn.get("approval_bypassed") is False
+        and (
+            turn.get("authorization_created") is True
+            or turn.get("execution_authorization_status") == "EXECUTION_AUTHORIZED"
+        )
+        and turn.get("approval_bypassed") is not True
     )
 
 
@@ -195,12 +199,14 @@ def _approval_required(result: dict[str, Any]) -> bool:
     return turn.get("approval_status") == "APPROVAL_REQUIRED" and turn.get("worker_invoked") is False
 
 
-def _domain_prompt_reaches_candidate(result: dict[str, Any]) -> bool:
+def _domain_prompt_reaches_proposal_boundary(result: dict[str, Any]) -> bool:
     if result.get("turn_count") != 1 or not result.get("turns"):
         return False
     turn = result["turns"][0]
     return (
-        turn.get("domain_candidate_created") is True
+        turn.get("domain_proposal_status") == "DOMAIN_PROPOSAL_CREATED"
+        and turn.get("approval_required") is True
+        and turn.get("domain_candidate_created") is False
         and turn.get("domain_created") is False
         and turn.get("worker_invoked") is False
     )
@@ -301,8 +307,10 @@ def test_real_acli_acceptance_report_matches_current_prompt_behavior(tmp_path, m
     replay_improvement = _run_replay_improvement_acceptance(tmp_path)
     domain_proposal = _run_domain_proposal_acceptance(tmp_path)
     report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+    repair_report = json.loads(ROUTING_REPAIR_REPORT_PATH.read_text(encoding="utf-8"))
 
     assert report["artifact_type"] == "REAL_ACLI_ACCEPTANCE_REPORT_V1"
+    assert repair_report["artifact_type"] == "AIGOL_HUMAN_PROMPT_ROUTING_REPAIR_V1"
     assert report["final_fields"]["DEVELOPMENT_PROMPT_ACCEPTED"] == _yes_no(_accepted_to_replay(development))
     assert report["final_fields"]["CLARIFICATION_PROMPT_ACCEPTED"] == _yes_no(_clarification_required(clarification))
     assert report["final_fields"]["APPROVAL_PROMPT_ACCEPTED"] == _yes_no(_approval_required(approval))
@@ -310,12 +318,19 @@ def test_real_acli_acceptance_report_matches_current_prompt_behavior(tmp_path, m
         _replay_improvement_accepted(replay_improvement)
     )
     assert report["final_fields"]["DOMAIN_PROPOSAL_ACCEPTED"] == _yes_no(
-        _domain_prompt_reaches_candidate(domain_prompt)
+        _domain_prompt_reaches_proposal_boundary(domain_prompt)
     )
     assert domain_proposal["domain_review_outcome_artifact"]["artifact_type"] == DOMAIN_CANDIDATE_ARTIFACT_V1
     assert domain_proposal["domain_review_outcome_artifact"]["outcome_status"] == DOMAIN_CANDIDATE_CREATED
-    assert report["final_fields"]["END_TO_END_WORKFLOW_OPERATIONAL"] == "NO"
-    assert report["final_fields"]["FIRST_FAILURE_STAGE"] == "DEVELOPMENT_PROMPT_ROUTING"
+    assert report["final_fields"]["END_TO_END_WORKFLOW_OPERATIONAL"] == "YES"
+    assert report["final_fields"]["FIRST_FAILURE_STAGE"] == "NONE"
+    assert repair_report["final_fields"] == {
+        "DEVELOPMENT_ROUTING_FIXED": "YES",
+        "OCS_ROUTING_FIXED": "YES",
+        "APPROVAL_ROUTING_FIXED": "YES",
+        "DOMAIN_ROUTING_FIXED": "YES",
+        "REAL_HUMAN_PROMPT_ROUTING_OPERATIONAL": "YES",
+    }
 
 
 def test_real_acli_plain_development_prompt_does_not_bypass_routing_or_authorization(tmp_path, monkeypatch) -> None:
@@ -327,10 +342,10 @@ def test_real_acli_plain_development_prompt_does_not_bypass_routing_or_authoriza
     )
     turn = result["turns"][0]
 
-    assert _accepted_to_replay(result) is False
-    assert turn.get("selected_workflow_id") != "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
-    assert turn.get("authorization_created") is not True
-    assert turn.get("worker_invoked") is not True
+    assert _accepted_to_replay(result) is True
+    assert turn.get("routing_visibility_workflow_id") == "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+    assert turn.get("execution_authorization_status") == "EXECUTION_AUTHORIZED"
+    assert turn.get("worker_invoked") is True
     assert turn.get("approval_bypassed") is not True
 
 
