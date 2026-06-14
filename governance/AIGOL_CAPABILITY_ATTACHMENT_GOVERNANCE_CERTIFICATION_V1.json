@@ -1,0 +1,59 @@
+{
+  "artifact_type": "AIGOL_CAPABILITY_ATTACHMENT_GOVERNANCE_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certified_at": "2026-06-14",
+  "scope": "Governance behavior for capability attachment and detachment",
+  "objective": "Certify CAPABILITY to ATTACHMENT_CANDIDATE to ATTACHMENT_APPROVAL to ATTACHED, and ATTACHED to DETACHMENT_CANDIDATE to DETACHMENT_APPROVAL to DETACHED.",
+  "runtime": "aigol/runtime/capability_attachment_governance_runtime.py",
+  "certified_flow": [
+    "CAPABILITY_ACTIVE_ARTIFACT_V1",
+    "DOMAIN_ACTIVE_ARTIFACT_V1",
+    "ATTACHMENT_CANDIDATE_ARTIFACT_V1",
+    "HUMAN_APPROVAL_ARTIFACT_V1",
+    "CAPABILITY_ATTACHED_ARTIFACT_V1",
+    "DETACHMENT_CANDIDATE_ARTIFACT_V1",
+    "HUMAN_APPROVAL_ARTIFACT_V1",
+    "CAPABILITY_DETACHED_ARTIFACT_V1"
+  ],
+  "certified_cases": {
+    "capability_attachment_without_approval_no_attachment": "CERTIFIED",
+    "approved_attachment_to_attached": "CERTIFIED",
+    "capability_attached_to_domain_scope_preserved": "CERTIFIED",
+    "detachment_without_approval_remains_attached": "CERTIFIED",
+    "approved_detachment_to_detached": "CERTIFIED"
+  },
+  "governance_evidence": {
+    "attachment_candidate_is_non_authoritative": true,
+    "attachment_approval_required": true,
+    "detachment_approval_required": true,
+    "scope_preserved": true,
+    "capability_executor_invocation_allowed": false,
+    "self_authorization_allowed": false,
+    "fail_closed_preserved": true
+  },
+  "replay_evidence": {
+    "attachment_candidate_replay_visible": true,
+    "attachment_replay_visible": true,
+    "detachment_candidate_replay_visible": true,
+    "detachment_replay_visible": true,
+    "lineage_hashes_required": true
+  },
+  "approval_evidence": {
+    "attachment_scope": "ATTACH_CAPABILITY_TO_DOMAIN_ONLY",
+    "detachment_scope": "DETACH_CAPABILITY_FROM_DOMAIN_ONLY",
+    "missing_attachment_approval_fails_closed": true,
+    "missing_detachment_approval_fails_closed": true,
+    "approval_does_not_allow_capability_executor_invocation": true
+  },
+  "test_evidence": {
+    "test_file": "tests/test_capability_attachment_governance_certification_v1.py",
+    "required_command": "python -m pytest tests/test_capability_attachment_governance_certification_v1.py"
+  },
+  "final_decision_fields": {
+    "ATTACHMENT_CANDIDATE_CERTIFIED": "YES",
+    "ATTACHMENT_APPROVAL_CERTIFIED": "YES",
+    "CAPABILITY_ATTACHMENT_CERTIFIED": "YES",
+    "CAPABILITY_DETACHMENT_CERTIFIED": "YES",
+    "CAPABILITY_ATTACHMENT_GOVERNANCE_CERTIFIED": "YES"
+  }
+}
