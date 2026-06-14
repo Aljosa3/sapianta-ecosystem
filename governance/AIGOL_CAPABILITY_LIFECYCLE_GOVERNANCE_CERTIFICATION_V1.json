@@ -1,0 +1,61 @@
+{
+  "artifact_type": "AIGOL_CAPABILITY_LIFECYCLE_GOVERNANCE_CERTIFICATION_V1",
+  "status": "CERTIFIED",
+  "certified_at": "2026-06-13",
+  "scope": "Governance behavior for capability lifecycle management",
+  "objective": "Certify CAPABILITY_PROPOSAL to CAPABILITY_CANDIDATE to CAPABILITY_APPROVAL to CAPABILITY_ACTIVATION to CAPABILITY_OPERATION to CAPABILITY_RETIREMENT without redesigning OCS, PPP, or workers.",
+  "runtime": "aigol/runtime/capability_lifecycle_governance_runtime.py",
+  "certified_flow": [
+    "PROPOSAL_RUNTIME_ARTIFACT_V1 with proposal_type CAPABILITY_PROPOSAL",
+    "CAPABILITY_CANDIDATE_ARTIFACT_V1",
+    "HUMAN_APPROVAL_ARTIFACT_V1",
+    "CAPABILITY_ACTIVATION_CANDIDATE_ARTIFACT_V1",
+    "CAPABILITY_ACTIVE_ARTIFACT_V1",
+    "CAPABILITY_OPERATION_ARTIFACT_V1",
+    "CAPABILITY_RETIREMENT_CANDIDATE_ARTIFACT_V1",
+    "CAPABILITY_RETIRED_ARTIFACT_V1"
+  ],
+  "certified_cases": {
+    "capability_candidate_without_approval_no_activation": "CERTIFIED",
+    "approved_candidate_to_capability_activation_candidate": "CERTIFIED",
+    "activation_approved_to_capability_active": "CERTIFIED",
+    "retirement_requested_to_capability_retirement_candidate": "CERTIFIED",
+    "retirement_approved_to_capability_retired": "CERTIFIED"
+  },
+  "governance_evidence": {
+    "capability_candidate_is_non_authoritative": true,
+    "activation_approval_required": true,
+    "retirement_approval_required": true,
+    "operation_evidence_requires_active_capability": true,
+    "capability_executor_invocation_allowed": false,
+    "self_authorization_allowed": false,
+    "fail_closed_preserved": true
+  },
+  "replay_evidence": {
+    "candidate_replay_visible": true,
+    "activation_candidate_replay_visible": true,
+    "activation_replay_visible": true,
+    "operation_replay_visible": true,
+    "retirement_candidate_replay_visible": true,
+    "retirement_replay_visible": true,
+    "lineage_hashes_required": true
+  },
+  "approval_evidence": {
+    "activation_candidate_scope": "CREATE_CAPABILITY_ACTIVATION_CANDIDATE_ONLY",
+    "activation_scope": "ACTIVATE_CAPABILITY_ONLY",
+    "retirement_scope": "RETIRE_CAPABILITY_ONLY",
+    "missing_approval_fails_closed": true,
+    "approval_does_not_allow_capability_executor_invocation": true
+  },
+  "test_evidence": {
+    "test_file": "tests/test_capability_lifecycle_governance_certification_v1.py",
+    "required_command": "python -m pytest tests/test_capability_lifecycle_governance_certification_v1.py"
+  },
+  "final_decision_fields": {
+    "CAPABILITY_CANDIDATE_CERTIFIED": "YES",
+    "CAPABILITY_ACTIVATION_CERTIFIED": "YES",
+    "CAPABILITY_OPERATION_CERTIFIED": "YES",
+    "CAPABILITY_RETIREMENT_CERTIFIED": "YES",
+    "CAPABILITY_LIFECYCLE_CERTIFIED": "YES"
+  }
+}
