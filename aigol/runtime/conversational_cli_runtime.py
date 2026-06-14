@@ -28,6 +28,7 @@ from aigol.runtime.worker_assignment_runtime import detect_domain_worker_assignm
 from aigol.runtime.worker_dispatch_runtime import detect_domain_worker_dispatch_entry_intent
 from aigol.runtime.worker_invocation_runtime import detect_domain_worker_invocation_entry_intent
 from aigol.runtime.worker_invocation_request_runtime import detect_domain_worker_request_entry_intent
+from aigol.runtime.native_development_task_intake_runtime import is_plain_native_development_prompt
 
 
 MILESTONE_ID = "AIGOL_CONVERSATIONAL_CLI_RUNTIME_V1"
@@ -437,6 +438,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         ends_with_question=normalized_with_punctuation.endswith("?"),
     ):
         return _analysis(OCS_LLM_COGNITION, "MEDIUM", ["ocs", "llm", "cognition"])
+    if _is_plain_domain_proposal_prompt(normalized):
+        return _analysis(CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "HIGH", ["create", "new", "domain"])
+    if _is_plain_ocs_intake_prompt(normalized):
+        return _analysis(OCS_LLM_COGNITION, "HIGH", ["plain", "ocs", "cognition"])
+    if is_plain_native_development_prompt(prompt):
+        return _analysis(NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, "HIGH", ["plain", "native", "development"])
     if _is_operator_decision_support_prompt(normalized):
         return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["operator", "decision", "support"])
     if "create" in normalized and "trading" in normalized and "domain" in normalized:
@@ -582,7 +589,29 @@ def _is_ocs_llm_cognition_prompt(normalized: str, *, ends_with_question: bool = 
     )
     if has_governed_cognition_subject and has_cognition_scope and has_analysis_intent:
         return True
+    if _is_plain_ocs_intake_prompt(normalized):
+        return True
     return ends_with_question and normalized.startswith(question_starts)
+
+
+def _is_plain_ocs_intake_prompt(normalized: str) -> bool:
+    return (
+        "suitable for my business" in normalized
+        or "external users" in normalized
+        or ("deploy" in normalized and "production" in normalized)
+        or ("reporting system" in normalized and "business" in normalized)
+    )
+
+
+def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
+    return (
+        "domain" in normalized
+        and "create" in normalized
+        and "governed" not in normalized
+        and "called" not in normalized
+        and "named" not in normalized
+        and any(term in normalized for term in ("new", "evaluation", "hr"))
+    )
 
 
 def _is_native_development_context_prompt(prompt: str) -> bool:

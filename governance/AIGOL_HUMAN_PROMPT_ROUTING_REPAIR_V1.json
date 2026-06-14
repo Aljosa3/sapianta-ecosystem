@@ -1,0 +1,87 @@
+{
+  "artifact_type": "AIGOL_HUMAN_PROMPT_ROUTING_REPAIR_V1",
+  "created_at": "2026-06-14T00:00:00Z",
+  "objective": "Repair plain human-prompt routing from ACLI into canonical intake paths without redesigning OCS, PPP, Worker Lifecycle, Provider Runtime, or Replay Runtime.",
+  "routing_analysis": {
+    "failure_source": "REAL_ACLI_ACCEPTANCE_REPORT_V1",
+    "first_failure_stage_before_repair": "DEVELOPMENT_PROMPT_ROUTING",
+    "root_cause_before_repair": "Plain human prompts did not reliably map to certified ACLI continuation routes.",
+    "repair_scope": "Human Prompt -> ACLI -> Canonical Intake Routing",
+    "runtime_layers_not_redesigned": [
+      "OCS",
+      "PPP",
+      "Worker Lifecycle",
+      "Provider Runtime",
+      "Replay Runtime"
+    ]
+  },
+  "files_modified": [
+    "aigol/runtime/conversational_cli_runtime.py",
+    "aigol/runtime/native_development_task_intake_runtime.py",
+    "aigol/cli/aigol_cli.py",
+    "tests/test_real_acli_human_prompt_acceptance_v1.py",
+    "governance/REAL_ACLI_ACCEPTANCE_REPORT_V1.json",
+    "governance/AIGOL_HUMAN_PROMPT_ROUTING_REPAIR_V1.json"
+  ],
+  "before_routing_flow": {
+    "development_prompt": "Human -> ACLI -> DEFAULT_PROVIDER_ASSISTED_CONVERSATION or failed native intake",
+    "clarification_prompt": "Human -> ACLI -> default/fallback path instead of OCS clarification",
+    "approval_prompt": "Human -> ACLI -> default/fallback path instead of OCS approval boundary",
+    "domain_prompt": "Human -> ACLI -> unknown-domain clarification or no proposal artifact"
+  },
+  "after_routing_flow": {
+    "development_prompt": "Human -> ACLI -> Universal Intake -> Native Development Intake -> PPP -> Authorization -> Worker -> Provider -> Validation -> Replay",
+    "clarification_prompt": "Human -> ACLI -> Universal Intake -> OCS Intake -> Clarification Required",
+    "approval_prompt": "Human -> ACLI -> Universal Intake -> OCS Intake -> Approval Required",
+    "domain_prompt": "Human -> ACLI -> Universal Intake -> Domain Intake -> DOMAIN_PROPOSAL_CREATED -> Approval Boundary"
+  },
+  "acceptance_evidence": {
+    "development_prompt": {
+      "prompt": "Implement a simple calculator function",
+      "expected": "Development Intake",
+      "observed": "NATIVE_DEVELOPMENT_INTAKE",
+      "continued_to_replay": true,
+      "manual_milestone_selection_used": false,
+      "manual_continuation_used": false
+    },
+    "clarification_prompt": {
+      "prompt": "Create a reporting system suitable for my business",
+      "expected": "OCS Intake",
+      "observed": "OCS_COGNITION_INTAKE",
+      "clarification_required": true,
+      "worker_invoked": false
+    },
+    "approval_prompt": {
+      "prompt": "Deploy a production system affecting external users",
+      "expected": "OCS Approval Path",
+      "observed": "APPROVAL_REQUIRED",
+      "worker_invoked": false,
+      "authorization_created": false
+    },
+    "domain_prompt": {
+      "prompt": "Create a new HR evaluation domain",
+      "expected": "Domain Proposal Path",
+      "observed": "DOMAIN_PROPOSAL_CREATED",
+      "domain_candidate_created": false,
+      "domain_created": false,
+      "approval_required_for_candidate": true
+    }
+  },
+  "governance_evidence": {
+    "automatic_routing": true,
+    "manual_artifact_injection": false,
+    "manual_milestone_selection": false,
+    "manual_continuation": false,
+    "approval_bypass_detected": false,
+    "domain_created_automatically": false,
+    "worker_execution_before_authorization": false,
+    "fail_closed_preserved": true
+  },
+  "final_fields": {
+    "DEVELOPMENT_ROUTING_FIXED": "YES",
+    "OCS_ROUTING_FIXED": "YES",
+    "APPROVAL_ROUTING_FIXED": "YES",
+    "DOMAIN_ROUTING_FIXED": "YES",
+    "REAL_HUMAN_PROMPT_ROUTING_OPERATIONAL": "YES"
+  }
+}

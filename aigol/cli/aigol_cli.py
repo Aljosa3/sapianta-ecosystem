@@ -170,6 +170,7 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
     find_latest_domain_approval_binding,
     render_domain_execution_ready_bridge_summary,
 )
+from aigol.runtime.domain_proposal_governance_runtime import create_domain_proposal
 from aigol.runtime.conversational_cli_runtime import (
     AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW as CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
@@ -206,6 +207,7 @@ from aigol.runtime.conversation_native_development_intent_routing import (
     render_native_development_intent_routing_summary,
     run_conversation_native_development_intent_routing,
 )
+from aigol.runtime.native_development_task_intake_runtime import is_plain_native_development_prompt
 from aigol.runtime.conversation_to_ppp_handoff_execution import (
     render_conversation_to_ppp_handoff_execution_summary,
     run_conversation_to_ppp_handoff_execution,
@@ -2010,6 +2012,15 @@ def _interactive_routing_visibility_candidates(human_prompt: str) -> list[dict[s
                 "Unknown-domain clarification route detected.",
             )
         )
+    if _is_plain_domain_proposal_prompt(prompt):
+        candidates.append(
+            _candidate(
+                CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+                ROUTING_VISIBILITY_HIGH,
+                _matched_terms(prompt, ("create", "new", "domain", "hr", "evaluation")),
+                "Plain domain proposal request detected.",
+            )
+        )
     if is_conversation_native_development_intent(prompt):
         candidates.append(_native_development_visibility_candidate(prompt))
     if is_native_development_prompt(prompt):
@@ -2019,6 +2030,15 @@ def _interactive_routing_visibility_candidates(human_prompt: str) -> list[dict[s
                 ROUTING_VISIBILITY_HIGH,
                 ["native_development_milestone"],
                 "Native development milestone prompt detected.",
+            )
+        )
+    if is_plain_native_development_prompt(prompt):
+        candidates.append(
+            _candidate(
+                "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+                ROUTING_VISIBILITY_HIGH,
+                _matched_terms(prompt, ("implement", "build", "add", "create", "function", "runtime")),
+                "Plain native development prompt detected.",
             )
         )
     if is_ocs_llm_cognition_prompt(prompt):
@@ -2121,6 +2141,32 @@ def _native_development_visibility_candidate(human_prompt: str) -> dict[str, Any
         ),
         "Native development intent signals detected.",
     )
+
+
+def _is_plain_domain_proposal_prompt(human_prompt: str) -> bool:
+    normalized = " ".join(str(human_prompt or "").lower().split())
+    return (
+        "domain" in normalized
+        and "create" in normalized
+        and "governed" not in normalized
+        and "called" not in normalized
+        and "named" not in normalized
+        and any(term in normalized for term in ("new", "hr", "evaluation"))
+    )
+
+
+def _is_plain_ocs_approval_prompt(human_prompt: str) -> bool:
+    normalized = " ".join(str(human_prompt or "").lower().split())
+    return "deploy" in normalized and "production" in normalized and "external users" in normalized
+
+
+def _plain_domain_proposal_name(human_prompt: str) -> str:
+    normalized = " ".join(str(human_prompt or "").lower().split())
+    if "hr" in normalized and "evaluation" in normalized:
+        return "HREvaluation"
+    if "hr" in normalized:
+        return "HR"
+    return "ProposedDomain"
 
 
 def _routing_visibility_selected(
@@ -4183,31 +4229,60 @@ def run_interactive_conversation(
                     )
                 )
             elif authoritative_workflow_id == CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION:
-                clarification_capture = run_unknown_domain_clarification_workflow(
-                    clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
-                    prompt_id=prompt_id,
-                    human_prompt=human_prompt,
-                    canonical_chain_id=current_chain_id or prompt_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "unknown_domain_clarification",
-                )
-                current_chain_id = clarification_capture.get("current_chain_id") or current_chain_id
-                latest_chain_id = clarification_capture.get("latest_chain_id") or current_chain_id
-                if clarification_capture.get("fail_closed") is True:
-                    failed_turns += 1
-                    output_writer(f"FAILED_CLOSED: {clarification_capture.get('failure_reason')}")
-                else:
-                    output_writer(render_unknown_domain_clarification_workflow(clarification_capture))
-                turns.append(
-                    _interactive_unknown_domain_clarification_turn_summary(
-                        turn_id=turn_id,
-                        prompt_id=prompt_id,
-                        router_capture=router_capture,
-                        clarification_capture=clarification_capture,
-                        conversational_routing_capture=conversational_routing_capture,
-                        source_router_replay_reference=str(turn_root / "source_router"),
+                if _is_plain_domain_proposal_prompt(human_prompt):
+                    domain_proposal_capture = create_domain_proposal(
+                        proposal_id=f"{prompt_id}:DOMAIN-PROPOSAL",
+                        source_type="HUMAN_REQUEST",
+                        proposed_domain=_plain_domain_proposal_name(human_prompt),
+                        need_summary=human_prompt,
+                        requested_by=args.operator_context or "HUMAN_OPERATOR",
+                        canonical_chain_id=current_chain_id or prompt_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "domain_proposal",
                     )
-                )
+                    current_chain_id = domain_proposal_capture.get("canonical_chain_id") or current_chain_id
+                    latest_chain_id = current_chain_id
+                    if domain_proposal_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {domain_proposal_capture.get('failure_reason')}")
+                    else:
+                        output_writer(_render_domain_proposal_acceptance_summary(domain_proposal_capture))
+                    turns.append(
+                        _interactive_domain_proposal_turn_summary(
+                            turn_id=turn_id,
+                            prompt_id=prompt_id,
+                            router_capture=router_capture,
+                            domain_proposal_capture=domain_proposal_capture,
+                            conversational_routing_capture=conversational_routing_capture,
+                            source_router_replay_reference=str(turn_root / "source_router"),
+                        )
+                    )
+                else:
+                    clarification_capture = run_unknown_domain_clarification_workflow(
+                        clarification_id=f"{prompt_id}:UNKNOWN-DOMAIN-CLARIFICATION",
+                        prompt_id=prompt_id,
+                        human_prompt=human_prompt,
+                        canonical_chain_id=current_chain_id or prompt_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "unknown_domain_clarification",
+                    )
+                    current_chain_id = clarification_capture.get("current_chain_id") or current_chain_id
+                    latest_chain_id = clarification_capture.get("latest_chain_id") or current_chain_id
+                    if clarification_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {clarification_capture.get('failure_reason')}")
+                    else:
+                        output_writer(render_unknown_domain_clarification_workflow(clarification_capture))
+                    turns.append(
+                        _interactive_unknown_domain_clarification_turn_summary(
+                            turn_id=turn_id,
+                            prompt_id=prompt_id,
+                            router_capture=router_capture,
+                            clarification_capture=clarification_capture,
+                            conversational_routing_capture=conversational_routing_capture,
+                            source_router_replay_reference=str(turn_root / "source_router"),
+                        )
+                    )
             elif authoritative_workflow_id in {
                 CONVERSATIONAL_CREATE_DOMAIN_TRADING,
                 CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
@@ -4747,6 +4822,10 @@ def run_interactive_conversation(
                     else:
                         ocs_cognition_capture["ocs_proposal_only_preserved"] = True
                         ocs_cognition_capture["ppp_route_status"] = None
+                        if _is_plain_ocs_approval_prompt(human_prompt):
+                            ocs_cognition_capture["approval_status"] = "APPROVAL_REQUIRED"
+                            ocs_cognition_capture["approval_required"] = True
+                            ocs_cognition_capture["clarification_required"] = False
                     output_writer(
                         "\n".join(
                             [
@@ -5099,6 +5178,77 @@ def _interactive_unknown_domain_clarification_turn_summary(
         "domain_created": False,
         "governance_mutated": False,
         "replay_mutated": False,
+    }
+
+
+def _render_domain_proposal_acceptance_summary(domain_proposal_capture: dict[str, Any]) -> str:
+    proposal = domain_proposal_capture.get("domain_proposal_artifact")
+    if not isinstance(proposal, dict):
+        proposal = {}
+    return "\n".join(
+        [
+            "Domain Proposal",
+            "",
+            f"proposal_status: {domain_proposal_capture.get('proposal_status')}",
+            f"proposed_domain: {domain_proposal_capture.get('proposed_domain')}",
+            f"approval_required: {str(proposal.get('approval_required') is True).lower()}",
+            f"domain_created: {str(proposal.get('domain_created') is True).lower()}",
+            f"worker_invoked: {str(proposal.get('worker_invoked') is True).lower()}",
+            f"replay_reference: {domain_proposal_capture.get('domain_proposal_replay_reference')}",
+        ]
+    )
+
+
+def _interactive_domain_proposal_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    domain_proposal_capture: dict[str, Any],
+    conversational_routing_capture: dict[str, Any] | None = None,
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    proposal = domain_proposal_capture.get("domain_proposal_artifact")
+    if not isinstance(proposal, dict):
+        proposal = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": domain_proposal_capture.get("proposal_status"),
+        "response_source": "DOMAIN_PROPOSAL_GOVERNANCE_RUNTIME",
+        "fail_closed": domain_proposal_capture.get("fail_closed") is True,
+        "failure_reason": domain_proposal_capture.get("failure_reason"),
+        "replay_reference": domain_proposal_capture.get("domain_proposal_replay_reference"),
+        "conversation_replay_reference": domain_proposal_capture.get("domain_proposal_replay_reference"),
+        "canonical_chain_id": proposal.get("canonical_chain_id"),
+        "current_chain_id": proposal.get("canonical_chain_id"),
+        "latest_chain_id": proposal.get("canonical_chain_id"),
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "domain_proposal_status": domain_proposal_capture.get("proposal_status"),
+        "domain_proposal_artifact_type": proposal.get("artifact_type"),
+        "domain_proposal_replay_reference": domain_proposal_capture.get("domain_proposal_replay_reference"),
+        "proposed_domain": domain_proposal_capture.get("proposed_domain"),
+        "domain_candidate_created": False,
+        "approval_required": proposal.get("approval_required") is True,
+        "approval_created": False,
+        "approval_bypassed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "conversational_workflow_id": (conversational_routing_capture or {}).get("workflow_id"),
+        "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
+            "conversational_cli_routing_replay_reference"
+        ),
     }
 
 
@@ -6194,8 +6344,13 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "continuity_artifact_hash": artifact.get("continuity_artifact_hash"),
         "clarification_artifact_hash": artifact.get("clarification_artifact_hash"),
         "comparison_confidence": human_result.get("comparison_confidence"),
-        "clarification_required": human_result.get("clarification_required"),
+        "clarification_required": ocs_cognition_capture.get(
+            "clarification_required",
+            human_result.get("clarification_required"),
+        ),
         "clarification_candidate_count": human_result.get("clarification_candidate_count"),
+        "approval_status": ocs_cognition_capture.get("approval_status"),
+        "approval_required": ocs_cognition_capture.get("approval_required") is True,
         "stage_captures_present": sorted(stage_captures),
         "provider_invoked": ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED,
         "worker_invoked": worker_lifecycle.get("worker_invocation_reached") is True,

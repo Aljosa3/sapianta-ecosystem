@@ -22,6 +22,7 @@ FAILED_CLOSED = "FAILED_CLOSED"
 REPLAY_STEPS = ("native_development_task_intake_recorded", "native_development_task_intake_returned")
 
 MILESTONE_PATTERN = re.compile(r"\b([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+_V\d+)\b")
+GENERIC_DEVELOPMENT_MILESTONE_ID = "AIGOL_GENERIC_DEVELOPMENT_TASK_V1"
 SUPPORTED_DOMAINS = ("TRADING", "MARKETING", "GOVERNANCE", "COGNITION", "AIGOL")
 FORBIDDEN_AUTHORITY_TERMS = (
     "dispatch",
@@ -58,8 +59,26 @@ def is_native_development_prompt(human_prompt: str) -> bool:
 
     prompt = _normalize_text(human_prompt, "human_prompt")
     lowered = prompt.lower()
-    return bool(MILESTONE_PATTERN.search(prompt)) and any(
-        marker in lowered for marker in ("implement", "create", "open", "foundation", "runtime", "worker", "domain")
+    return (
+        bool(MILESTONE_PATTERN.search(prompt))
+        and any(marker in lowered for marker in ("implement", "create", "open", "foundation", "runtime", "worker", "domain"))
+    ) or is_plain_native_development_prompt(prompt)
+
+
+def is_plain_native_development_prompt(human_prompt: str) -> bool:
+    """Return whether a non-milestone prompt is a low-risk deterministic development request."""
+
+    prompt = _normalize_text(human_prompt, "human_prompt")
+    lowered = prompt.lower()
+    if MILESTONE_PATTERN.search(prompt):
+        return False
+    if _has_unacceptable_authority(prompt):
+        return False
+    if any(term in lowered for term in ("deploy", "production", "external users", "domain", "business")):
+        return False
+    return (
+        lowered.startswith(("implement ", "build ", "add ", "create "))
+        and any(term in lowered for term in ("function", "test", "runtime", "helper", "validator", "parser"))
     )
 
 
@@ -174,6 +193,27 @@ def render_native_development_task_summary(capture: dict[str, Any]) -> str:
 def _analyze_prompt(prompt: str) -> dict[str, Any]:
     milestone_ids = MILESTONE_PATTERN.findall(prompt)
     unique_milestones = sorted(set(milestone_ids))
+    if not unique_milestones and is_plain_native_development_prompt(prompt):
+        milestone_id = GENERIC_DEVELOPMENT_MILESTONE_ID
+        domain_resolution = resolve_native_development_domain(
+            human_prompt=prompt,
+            requested_milestone_id=milestone_id,
+            detected_domain="AIGOL",
+        )
+        if domain_resolution["resolution_status"] != DOMAIN_RESOLVED:
+            raise FailClosedRuntimeError(domain_resolution["failure_reason"])
+        return {
+            "requested_milestone_id": milestone_id,
+            "requested_domain": domain_resolution["resolved_domain"],
+            "domain_resolution_bridge": domain_resolution,
+            "requested_worker_family": "CLAUDE_EXTERNAL",
+            "requested_output_scope": _output_scope("WORKER", milestone_id),
+            "explicit_constraints": _constraints(prompt),
+            "task_kind": "WORKER",
+            "safe_for_native_development": True,
+            "codex_assisted_handoff_required": True,
+            "suggested_next_safe_handoff": "Codex-assisted implementation handoff for generic development task",
+        }
     if len(unique_milestones) != 1:
         raise FailClosedRuntimeError("native development task intake failed closed: milestone id cannot be identified")
     if _has_unacceptable_authority(prompt):

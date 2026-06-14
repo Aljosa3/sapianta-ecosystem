@@ -29,9 +29,9 @@
         "Validation",
         "Replay"
       ],
-      "accepted": false,
-      "observed_blocking_stage": "DEVELOPMENT_PROMPT_ROUTING",
-      "root_cause": "Plain development prompt lacks a canonical milestone/catalog mapping required by current deterministic native-development routing, so normal ACLI does not enter the certified worker backbone."
+      "accepted": true,
+      "observed_status": "REPLAY_CERTIFICATION_COMPLETED",
+      "root_cause": null
     },
     {
       "case_id": "CLARIFICATION_PROMPT",
@@ -43,9 +43,9 @@
         "OCS",
         "Clarification Required"
       ],
-      "accepted": false,
-      "observed_blocking_stage": "OCS_ROUTING",
-      "root_cause": "Prompt does not match the current OCS cognition routing markers, so normal ACLI does not reach OCS clarification handling."
+      "accepted": true,
+      "observed_status": "OCS_CLARIFICATION_REQUIRED",
+      "root_cause": null
     },
     {
       "case_id": "APPROVAL_PROMPT",
@@ -57,9 +57,9 @@
         "OCS",
         "Approval Required"
       ],
-      "accepted": false,
-      "observed_blocking_stage": "OCS_ROUTING",
-      "root_cause": "Prompt does not match the current OCS cognition routing markers or certified approval-entry workflow, so normal ACLI does not produce APPROVAL_REQUIRED."
+      "accepted": true,
+      "observed_status": "APPROVAL_REQUIRED",
+      "root_cause": null
     },
     {
       "case_id": "REPLAY_IMPROVEMENT",
@@ -82,10 +82,10 @@
         "Proposal",
         "Candidate"
       ],
-      "accepted": false,
-      "observed_blocking_stage": "DOMAIN_PROPOSAL_ROUTING",
-      "root_cause": "The proposal runtime is certified, but normal ACLI conversation routing is not currently wired to create a DOMAIN_PROPOSAL from this prompt without explicit runtime entry.",
-      "supporting_runtime_evidence": "domain_proposal_governance_runtime creates DOMAIN_CANDIDATE after explicit human review."
+      "accepted": true,
+      "observed_status": "DOMAIN_PROPOSAL_CREATED",
+      "root_cause": null,
+      "supporting_runtime_evidence": "Normal ACLI creates a non-authoritative domain proposal and stops at the approval boundary. DOMAIN_CANDIDATE still requires explicit human review."
     }
   ],
   "governance_evidence": {
@@ -98,13 +98,13 @@
     "fail_closed_preserved": true
   },
   "final_fields": {
-    "DEVELOPMENT_PROMPT_ACCEPTED": "NO",
-    "CLARIFICATION_PROMPT_ACCEPTED": "NO",
-    "APPROVAL_PROMPT_ACCEPTED": "NO",
+    "DEVELOPMENT_PROMPT_ACCEPTED": "YES",
+    "CLARIFICATION_PROMPT_ACCEPTED": "YES",
+    "APPROVAL_PROMPT_ACCEPTED": "YES",
     "REPLAY_IMPROVEMENT_ACCEPTED": "YES",
-    "DOMAIN_PROPOSAL_ACCEPTED": "NO",
-    "FIRST_FAILURE_STAGE": "DEVELOPMENT_PROMPT_ROUTING",
-    "ROOT_CAUSE": "Plain human prompts do not all map to certified ACLI continuation routes; native development currently requires canonical milestone/catalog routing and OCS decision prompts require explicit OCS cognition markers.",
-    "END_TO_END_WORKFLOW_OPERATIONAL": "NO"
+    "DOMAIN_PROPOSAL_ACCEPTED": "YES",
+    "FIRST_FAILURE_STAGE": "NONE",
+    "ROOT_CAUSE": "NONE",
+    "END_TO_END_WORKFLOW_OPERATIONAL": "YES"
   }
 }
