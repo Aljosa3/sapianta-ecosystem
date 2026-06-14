@@ -249,7 +249,7 @@ from aigol.runtime.execution_authorization_runtime import (
 from aigol.runtime.execution_runtime import (
     detect_domain_worker_execution_entry_intent,
     find_latest_domain_worker_invocation_for_execution,
-    start_execution,
+    start_execution as _record_execution_start,
 )
 from aigol.runtime.worker_invocation_request_runtime import (
     create_worker_invocation_request,
@@ -1726,6 +1726,46 @@ def _render_execution_runtime_summary(execution_capture: dict[str, Any]) -> str:
             "No result certification recorded.",
             "No repair or reattempt started.",
         ]
+    )
+
+
+def _record_authorized_worker_execution_start(
+    *,
+    execution_id: str,
+    invocation_artifact: dict[str, Any],
+    invocation_replay: dict[str, Any],
+    dispatch_artifact: dict[str, Any],
+    worker_assignment_artifact: dict[str, Any],
+    canonical_chain_id: str,
+    worker_reference: str,
+    worker_role: str,
+    started_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    """Bridge ACLI continuation to the certified execution-start runtime."""
+
+    return _record_execution_start(
+        execution_id=execution_id,
+        invocation_artifact=invocation_artifact,
+        invocation_replay=invocation_replay,
+        dispatch_artifact=dispatch_artifact,
+        worker_assignment_artifact=worker_assignment_artifact,
+        canonical_chain_id=canonical_chain_id,
+        execution_metadata={
+            "execution_mode": "START_ONLY",
+            "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
+            "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
+        },
+        execution_context={
+            "worker_reference": worker_reference,
+            "request_type": "WORKER_INVOCATION_REQUEST",
+            "capability_id": worker_role,
+            "allowed_effects": ["RECORD_EXECUTION_START"],
+        },
+        started_by="AIGOL",
+        started_at=started_at,
+        replay_reference=str(replay_dir),
+        replay_dir=replay_dir,
     )
 
 
@@ -3281,7 +3321,7 @@ def run_interactive_conversation(
                                                 )
                                                 output_writer(f"FAILED_CLOSED: {approval_resume_capture['failure_reason']}")
                                             else:
-                                                execution_capture = start_execution(
+                                                execution_capture = _record_authorized_worker_execution_start(
                                                     execution_id=f"{prompt_id}:EXECUTION",
                                                     invocation_artifact=invocation_capture[
                                                         "worker_invocation_artifact"
@@ -3294,20 +3334,9 @@ def run_interactive_conversation(
                                                     canonical_chain_id=invocation_capture[
                                                         "worker_invocation_artifact"
                                                     ]["chain_id"],
-                                                    execution_metadata={
-                                                        "execution_mode": "START_ONLY",
-                                                        "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
-                                                        "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
-                                                    },
-                                                    execution_context={
-                                                        "worker_reference": invocation_capture["worker_id"],
-                                                        "request_type": "WORKER_INVOCATION_REQUEST",
-                                                        "capability_id": invocation_capture["worker_role"],
-                                                        "allowed_effects": ["RECORD_EXECUTION_START"],
-                                                    },
-                                                    started_by="AIGOL",
+                                                    worker_reference=invocation_capture["worker_id"],
+                                                    worker_role=invocation_capture["worker_role"],
                                                     started_at=created_at,
-                                                    replay_reference=str(turn_root / "execution_runtime"),
                                                     replay_dir=turn_root / "execution_runtime",
                                                 )
                                                 approval_resume_capture["execution_runtime"] = execution_capture
@@ -3915,27 +3944,16 @@ def run_interactive_conversation(
                         session_root=session_root,
                         domain_name=worker_execution_entry_intent["domain_name"],
                     )
-                    execution_capture = start_execution(
+                    execution_capture = _record_authorized_worker_execution_start(
                         execution_id=f"{prompt_id}:EXECUTION",
                         invocation_artifact=latest_worker_invocation["worker_invocation_artifact"],
                         invocation_replay=latest_worker_invocation["invocation_result_artifact"],
                         dispatch_artifact=latest_worker_invocation["worker_dispatch_artifact"],
                         worker_assignment_artifact=latest_worker_invocation["worker_assignment_artifact"],
                         canonical_chain_id=latest_worker_invocation["chain_id"],
-                        execution_metadata={
-                            "execution_mode": "START_ONLY",
-                            "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
-                            "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
-                        },
-                        execution_context={
-                            "worker_reference": latest_worker_invocation["worker_id"],
-                            "request_type": "WORKER_INVOCATION_REQUEST",
-                            "capability_id": latest_worker_invocation["worker_role"],
-                            "allowed_effects": ["RECORD_EXECUTION_START"],
-                        },
-                        started_by="AIGOL",
+                        worker_reference=latest_worker_invocation["worker_id"],
+                        worker_role=latest_worker_invocation["worker_role"],
                         started_at=created_at,
-                        replay_reference=str(turn_root / "execution_runtime"),
                         replay_dir=turn_root / "execution_runtime",
                     )
                     output_writer(_render_execution_runtime_summary(execution_capture))
@@ -4460,7 +4478,7 @@ def run_interactive_conversation(
                                                         failed_turns += 1
                                                         output_writer(f"FAILED_CLOSED: {routing_capture['failure_reason']}")
                                                     else:
-                                                        execution_capture = start_execution(
+                                                        execution_capture = _record_authorized_worker_execution_start(
                                                             execution_id=f"{prompt_id}:EXECUTION",
                                                             invocation_artifact=invocation_capture[
                                                                 "worker_invocation_artifact"
@@ -4477,20 +4495,9 @@ def run_interactive_conversation(
                                                             canonical_chain_id=invocation_capture[
                                                                 "worker_invocation_artifact"
                                                             ]["chain_id"],
-                                                            execution_metadata={
-                                                                "execution_mode": "START_ONLY",
-                                                                "runtime_boundary": "WORKER_INVOKED_TO_EXECUTING",
-                                                                "result_handling": "RESULT_CAPTURE_BOUNDARY_ONLY",
-                                                            },
-                                                            execution_context={
-                                                                "worker_reference": invocation_capture["worker_id"],
-                                                                "request_type": "WORKER_INVOCATION_REQUEST",
-                                                                "capability_id": invocation_capture["worker_role"],
-                                                                "allowed_effects": ["RECORD_EXECUTION_START"],
-                                                            },
-                                                            started_by="AIGOL",
+                                                            worker_reference=invocation_capture["worker_id"],
+                                                            worker_role=invocation_capture["worker_role"],
                                                             started_at=created_at,
-                                                            replay_reference=str(turn_root / "execution_runtime"),
                                                             replay_dir=turn_root / "execution_runtime",
                                                         )
                                                         routing_capture["execution_runtime"] = execution_capture
