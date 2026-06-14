@@ -1,0 +1,110 @@
+{
+  "artifact_type": "REAL_ACLI_ACCEPTANCE_REPORT_V1",
+  "certification_id": "AIGOL_REAL_ACLI_HUMAN_PROMPT_ACCEPTANCE_V1",
+  "created_at": "2026-06-14T00:00:00Z",
+  "scope": "Real ACLI human-prompt acceptance testing without new governance runtimes or routing redesign.",
+  "restrictions_preserved": {
+    "new_governance_runtimes_created": false,
+    "ocs_redesigned": false,
+    "ppp_redesigned": false,
+    "worker_lifecycle_redesigned": false,
+    "manual_routing_used_for_acli_prompts": false,
+    "manual_continuation_used_for_acli_prompts": false,
+    "manual_artifact_injection_used_for_acli_prompts": false,
+    "approval_bypass_detected": false
+  },
+  "acceptance_cases": [
+    {
+      "case_id": "DEVELOPMENT_PROMPT",
+      "prompt": "Implement a simple calculator function",
+      "entrypoint": "run_interactive_conversation",
+      "expected_path": [
+        "Human",
+        "ACLI",
+        "Development Intake",
+        "PPP",
+        "Authorization",
+        "Worker",
+        "Provider",
+        "Validation",
+        "Replay"
+      ],
+      "accepted": false,
+      "observed_blocking_stage": "DEVELOPMENT_PROMPT_ROUTING",
+      "root_cause": "Plain development prompt lacks a canonical milestone/catalog mapping required by current deterministic native-development routing, so normal ACLI does not enter the certified worker backbone."
+    },
+    {
+      "case_id": "CLARIFICATION_PROMPT",
+      "prompt": "Create a reporting system suitable for my business",
+      "entrypoint": "run_interactive_conversation",
+      "expected_path": [
+        "Human",
+        "ACLI",
+        "OCS",
+        "Clarification Required"
+      ],
+      "accepted": false,
+      "observed_blocking_stage": "OCS_ROUTING",
+      "root_cause": "Prompt does not match the current OCS cognition routing markers, so normal ACLI does not reach OCS clarification handling."
+    },
+    {
+      "case_id": "APPROVAL_PROMPT",
+      "prompt": "Deploy a production system affecting external users",
+      "entrypoint": "run_interactive_conversation",
+      "expected_path": [
+        "Human",
+        "ACLI",
+        "OCS",
+        "Approval Required"
+      ],
+      "accepted": false,
+      "observed_blocking_stage": "OCS_ROUTING",
+      "root_cause": "Prompt does not match the current OCS cognition routing markers or certified approval-entry workflow, so normal ACLI does not produce APPROVAL_REQUIRED."
+    },
+    {
+      "case_id": "REPLAY_IMPROVEMENT",
+      "prompt": "Existing replay candidate",
+      "entrypoint": "run_gap_to_improvement_intent_e2e",
+      "expected_path": [
+        "Replay",
+        "Improvement Intent",
+        "Approval Boundary"
+      ],
+      "accepted": true,
+      "observed_status": "GAP_TO_IMPROVEMENT_INTENT_E2E_PASSED",
+      "root_cause": null
+    },
+    {
+      "case_id": "DOMAIN_PROPOSAL_PROMPT",
+      "prompt": "Create a new HR evaluation domain",
+      "entrypoint": "run_interactive_conversation",
+      "expected_path": [
+        "Proposal",
+        "Candidate"
+      ],
+      "accepted": false,
+      "observed_blocking_stage": "DOMAIN_PROPOSAL_ROUTING",
+      "root_cause": "The proposal runtime is certified, but normal ACLI conversation routing is not currently wired to create a DOMAIN_PROPOSAL from this prompt without explicit runtime entry.",
+      "supporting_runtime_evidence": "domain_proposal_governance_runtime creates DOMAIN_CANDIDATE after explicit human review."
+    }
+  ],
+  "governance_evidence": {
+    "authorization_boundary_preserved": true,
+    "worker_execution_before_authorization": false,
+    "approval_bypass_detected": false,
+    "replay_improvement_non_authoritative_until_review": true,
+    "domain_candidate_non_authoritative": true,
+    "domain_created_automatically": false,
+    "fail_closed_preserved": true
+  },
+  "final_fields": {
+    "DEVELOPMENT_PROMPT_ACCEPTED": "NO",
+    "CLARIFICATION_PROMPT_ACCEPTED": "NO",
+    "APPROVAL_PROMPT_ACCEPTED": "NO",
+    "REPLAY_IMPROVEMENT_ACCEPTED": "YES",
+    "DOMAIN_PROPOSAL_ACCEPTED": "NO",
+    "FIRST_FAILURE_STAGE": "DEVELOPMENT_PROMPT_ROUTING",
+    "ROOT_CAUSE": "Plain human prompts do not all map to certified ACLI continuation routes; native development currently requires canonical milestone/catalog routing and OCS decision prompts require explicit OCS cognition markers.",
+    "END_TO_END_WORKFLOW_OPERATIONAL": "NO"
+  }
+}
