@@ -8,12 +8,17 @@ import pytest
 
 from aigol.cli.aigol_cli import build_parser, render_command_result, run_command, run_interactive_conversation
 from aigol.runtime.conversational_cli_runtime import (
+    AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+    AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
+    AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
     AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
+    CAPABILITY_LIFECYCLE_GOVERNANCE,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_TRADING,
     DOMAIN_ADAPTATION_REFERENCE,
     DOMAIN_EXECUTION_AUTHORIZATION,
     DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE,
+    DOMAIN_LIFECYCLE_GOVERNANCE,
     DOMAIN_WORKER_ASSIGNMENT,
     DOMAIN_WORKER_DISPATCH,
     DOMAIN_WORKER_EXECUTION,
@@ -26,10 +31,14 @@ from aigol.runtime.conversational_cli_runtime import (
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
+    FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
     IMPROVE_PROVIDER_LAYER,
+    IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
+    IMPROVEMENT_PROPOSAL_RUNTIME,
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
+    PROPOSAL_RUNTIME,
     REVIEW_LATEST_AUDIT,
     SHOW_LATEST_REPLAY_CHAIN,
     WORKFLOW_SELECTED,
@@ -308,9 +317,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 26
-    assert coverage["conversationally_accessible_workflows"] == 26
-    assert coverage["coverage_ratio"] == "26/26"
+    assert coverage["registered_workflows"] == 35
+    assert coverage["conversationally_accessible_workflows"] == 35
+    assert coverage["coverage_ratio"] == "35/35"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -327,6 +336,15 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     assert DOMAIN_WORKER_RESULT_VALIDATION in coverage["workflow_ids"]
     assert DOMAIN_POST_EXECUTION_REPLAY_REVIEW in coverage["workflow_ids"]
     assert DOMAIN_GOVERNED_TERMINATION in coverage["workflow_ids"]
+    assert DOMAIN_LIFECYCLE_GOVERNANCE in coverage["workflow_ids"]
+    assert CAPABILITY_LIFECYCLE_GOVERNANCE in coverage["workflow_ids"]
+    assert PROPOSAL_RUNTIME in coverage["workflow_ids"]
+    assert IMPROVEMENT_PROPOSAL_RUNTIME in coverage["workflow_ids"]
+    assert FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH in coverage["workflow_ids"]
+    assert IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST in coverage["workflow_ids"]
+    assert AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION in coverage["workflow_ids"]
+    assert AI_DECISION_VALIDATOR_CAPABILITY_MODEL in coverage["workflow_ids"]
+    assert AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -349,7 +367,84 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 26/26" in rendered
+    assert "coverage: 35/35" in rendered
+
+
+@pytest.mark.parametrize(
+    ("prompt", "workflow_id", "existing_runtime"),
+    [
+        (
+            "Define the AI Decision Validator domain foundation for Product 1.",
+            AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
+            "AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION_V1.md",
+        ),
+        (
+            "Define the decision model for Product 1 AI Decision Validator.",
+            AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
+            "AI_DECISION_VALIDATOR_CAPABILITY_MODEL_V1.md",
+        ),
+        (
+            "Define the capability lifecycle for Product 1 AI Decision Validator.",
+            AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+            "AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE_V1.md",
+        ),
+        (
+            "Create a domain activation candidate for Product 1 AI Decision Validator.",
+            DOMAIN_LIFECYCLE_GOVERNANCE,
+            "domain_lifecycle_governance_runtime",
+        ),
+        (
+            "Create a capability activation candidate for Product 1 AI Decision Validator.",
+            CAPABILITY_LIFECYCLE_GOVERNANCE,
+            "capability_lifecycle_governance_runtime",
+        ),
+        (
+            "Create a governed proposal artifact for Product 1 decision validation.",
+            PROPOSAL_RUNTIME,
+            "proposal_runtime",
+        ),
+        (
+            "Create an improvement proposal for Product 1 replay evidence requirements.",
+            IMPROVEMENT_PROPOSAL_RUNTIME,
+            "improvement_proposal_runtime",
+        ),
+        (
+            "Run the first real implementation generation epoch for Product 1 evidence requirements.",
+            FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+            "first_real_implementation_generation_epoch_runtime",
+        ),
+        (
+            "Convert the implementation plan to an execution request for Product 1 decision model work.",
+            IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
+            "implementation_plan_to_execution_request_runtime",
+        ),
+    ],
+)
+def test_development_entrypoint_reachability_repair_routes_previously_unreachable_entrypoints(
+    tmp_path,
+    prompt: str,
+    workflow_id: str,
+    existing_runtime: str,
+) -> None:
+    capture = _route(tmp_path, prompt)
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["workflow_id"] == workflow_id
+    assert capture["workflow_id"] != DEFAULT_PROVIDER_ASSISTED_CONVERSATION
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert selection["existing_runtime"] == existing_runtime
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert selection["execution_requested"] is False
+    assert selection["approval_bypassed"] is False
+    assert selection["governance_mutated"] is False
+    assert selection["replay_mutated"] is False
+    assert replay["workflow_id"] == workflow_id
+    assert replay["provider_invoked"] is False
+    assert replay["worker_invoked"] is False
+    assert replay["execution_requested"] is False
 
 
 def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:

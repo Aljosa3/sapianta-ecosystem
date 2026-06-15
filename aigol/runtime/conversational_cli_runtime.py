@@ -55,6 +55,15 @@ SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 NATIVE_DEVELOPMENT_INTENT_ROUTING = "NATIVE_DEVELOPMENT_INTENT_ROUTING"
 NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+DOMAIN_LIFECYCLE_GOVERNANCE = "DOMAIN_LIFECYCLE_GOVERNANCE_RUNTIME"
+CAPABILITY_LIFECYCLE_GOVERNANCE = "CAPABILITY_LIFECYCLE_GOVERNANCE_RUNTIME"
+PROPOSAL_RUNTIME = "PROPOSAL_RUNTIME"
+IMPROVEMENT_PROPOSAL_RUNTIME = "IMPROVEMENT_PROPOSAL_RUNTIME"
+FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH = "FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH"
+IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST = "IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST_RUNTIME"
+AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION = "AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION"
+AI_DECISION_VALIDATOR_CAPABILITY_MODEL = "AI_DECISION_VALIDATOR_CAPABILITY_MODEL"
+AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE = "AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE"
 AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW = "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW"
 DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE = "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE"
 DOMAIN_EXECUTION_AUTHORIZATION = "DOMAIN_EXECUTION_AUTHORIZATION"
@@ -238,6 +247,47 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
             "aigol conversation",
             "conversation_native_development_context_integration",
+        ),
+        _workflow(
+            DOMAIN_LIFECYCLE_GOVERNANCE,
+            "aigol conversation",
+            "domain_lifecycle_governance_runtime",
+        ),
+        _workflow(
+            CAPABILITY_LIFECYCLE_GOVERNANCE,
+            "aigol conversation",
+            "capability_lifecycle_governance_runtime",
+        ),
+        _workflow(PROPOSAL_RUNTIME, "aigol conversation", "proposal_runtime"),
+        _workflow(
+            IMPROVEMENT_PROPOSAL_RUNTIME,
+            "aigol conversation",
+            "improvement_proposal_runtime",
+        ),
+        _workflow(
+            FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+            "aigol conversation",
+            "first_real_implementation_generation_epoch_runtime",
+        ),
+        _workflow(
+            IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
+            "aigol conversation",
+            "implementation_plan_to_execution_request_runtime",
+        ),
+        _workflow(
+            AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
+            "aigol conversation",
+            "AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION_V1.md",
+        ),
+        _workflow(
+            AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
+            "aigol conversation",
+            "AI_DECISION_VALIDATOR_CAPABILITY_MODEL_V1.md",
+        ),
+        _workflow(
+            AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+            "aigol conversation",
+            "AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE_V1.md",
         ),
         _workflow(OCS_LLM_COGNITION, "aigol conversation", "ocs_llm_cognition_end_to_end_runtime"),
         _workflow(
@@ -454,6 +504,44 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["native", "development", "intent"],
         )
+    if _is_product_1_domain_foundation_prompt(normalized):
+        return _analysis(
+            AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
+            "HIGH",
+            ["product-1", "ai-decision-validator", "domain-foundation"],
+        )
+    if _is_product_1_capability_lifecycle_prompt(normalized):
+        return _analysis(
+            AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+            "HIGH",
+            ["product-1", "ai-decision-validator", "capability-lifecycle"],
+        )
+    if _is_product_1_capability_model_prompt(normalized):
+        return _analysis(
+            AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
+            "HIGH",
+            ["product-1", "ai-decision-validator", "capability-model"],
+        )
+    if _is_domain_lifecycle_governance_prompt(normalized):
+        return _analysis(DOMAIN_LIFECYCLE_GOVERNANCE, "HIGH", ["domain", "lifecycle", "governance"])
+    if _is_capability_lifecycle_governance_prompt(normalized):
+        return _analysis(CAPABILITY_LIFECYCLE_GOVERNANCE, "HIGH", ["capability", "lifecycle", "governance"])
+    if _is_improvement_proposal_runtime_prompt(normalized):
+        return _analysis(IMPROVEMENT_PROPOSAL_RUNTIME, "HIGH", ["improvement", "proposal", "governance"])
+    if _is_proposal_runtime_prompt(normalized):
+        return _analysis(PROPOSAL_RUNTIME, "HIGH", ["proposal", "artifact", "governance"])
+    if _is_first_real_implementation_generation_prompt(normalized):
+        return _analysis(
+            FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+            "HIGH",
+            ["first-real", "implementation", "generation"],
+        )
+    if _is_implementation_plan_to_execution_request_prompt(normalized):
+        return _analysis(
+            IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
+            "HIGH",
+            ["implementation-plan", "execution-request"],
+        )
     if _is_task_completion_domain_prompt(normalized):
         return _analysis(CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "HIGH", ["domain", "proposal", "product"])
     if _is_task_completion_provider_prompt(normalized):
@@ -663,6 +751,97 @@ def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
                 "foundation",
             )
         )
+    )
+
+
+def _is_product_1_prompt(normalized: str) -> bool:
+    return "product 1" in normalized and "ai decision validator" in normalized
+
+
+def _is_product_1_domain_foundation_prompt(normalized: str) -> bool:
+    return (
+        _is_product_1_prompt(normalized)
+        and "domain" in normalized
+        and "foundation" in normalized
+        and any(term in normalized for term in ("define", "extend", "create", "add"))
+    )
+
+
+def _is_product_1_capability_model_prompt(normalized: str) -> bool:
+    return (
+        _is_product_1_prompt(normalized)
+        and any(term in normalized for term in ("capability model", "decision model", "validation model"))
+        and any(term in normalized for term in ("define", "extend", "create", "add"))
+    )
+
+
+def _is_product_1_capability_lifecycle_prompt(normalized: str) -> bool:
+    return (
+        _is_product_1_prompt(normalized)
+        and "capability" in normalized
+        and "lifecycle" in normalized
+        and any(term in normalized for term in ("define", "extend", "create", "add"))
+    )
+
+
+def _is_domain_lifecycle_governance_prompt(normalized: str) -> bool:
+    if "domain" not in normalized:
+        return False
+    lifecycle_terms = (
+        "domain lifecycle",
+        "domain activation candidate",
+        "activate domain",
+        "retire domain",
+        "domain retirement",
+    )
+    return any(term in normalized for term in lifecycle_terms) and any(
+        term in normalized for term in ("create", "define", "add", "prepare")
+    )
+
+
+def _is_capability_lifecycle_governance_prompt(normalized: str) -> bool:
+    if "capability" not in normalized:
+        return False
+    lifecycle_terms = (
+        "capability lifecycle",
+        "capability activation candidate",
+        "activate capability",
+        "retire capability",
+        "capability retirement",
+    )
+    return any(term in normalized for term in lifecycle_terms) and any(
+        term in normalized for term in ("create", "define", "add", "prepare")
+    )
+
+
+def _is_proposal_runtime_prompt(normalized: str) -> bool:
+    return (
+        "proposal" in normalized
+        and "artifact" in normalized
+        and any(term in normalized for term in ("governed", "governance", "certified"))
+        and any(term in normalized for term in ("create", "define", "prepare"))
+    )
+
+
+def _is_improvement_proposal_runtime_prompt(normalized: str) -> bool:
+    return (
+        "improvement proposal" in normalized
+        and any(term in normalized for term in ("create", "define", "prepare"))
+    )
+
+
+def _is_first_real_implementation_generation_prompt(normalized: str) -> bool:
+    return (
+        "first real implementation generation" in normalized
+        and any(term in normalized for term in ("run", "create", "start", "prepare"))
+    )
+
+
+def _is_implementation_plan_to_execution_request_prompt(normalized: str) -> bool:
+    return (
+        "implementation plan" in normalized
+        and "execution request" in normalized
+        and any(term in normalized for term in ("convert", "create", "prepare", "turn"))
     )
 
 
@@ -982,6 +1161,27 @@ def _operator_summary(workflow_id: str) -> str:
         SHOW_STATUS: "Show AiGOL status.",
         SHOW_DASHBOARD: "Show read-only operator dashboard.",
         NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION: "Assemble native development context without provider or execution.",
+        DOMAIN_LIFECYCLE_GOVERNANCE: "Select certified domain lifecycle governance entrypoint without execution.",
+        CAPABILITY_LIFECYCLE_GOVERNANCE: (
+            "Select certified capability lifecycle governance entrypoint without execution."
+        ),
+        PROPOSAL_RUNTIME: "Select certified proposal runtime entrypoint without execution.",
+        IMPROVEMENT_PROPOSAL_RUNTIME: "Select certified improvement proposal runtime entrypoint without execution.",
+        FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH: (
+            "Select certified first real implementation generation entrypoint without execution."
+        ),
+        IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST: (
+            "Select certified implementation-plan-to-execution-request entrypoint without execution."
+        ),
+        AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION: (
+            "Select Product 1 AI Decision Validator domain foundation entrypoint without execution."
+        ),
+        AI_DECISION_VALIDATOR_CAPABILITY_MODEL: (
+            "Select Product 1 AI Decision Validator capability model entrypoint without execution."
+        ),
+        AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE: (
+            "Select Product 1 AI Decision Validator capability lifecycle entrypoint without execution."
+        ),
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
         AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW: (
             "Route reviewed domain approval prompts to the authorization-entry binding path without execution."
