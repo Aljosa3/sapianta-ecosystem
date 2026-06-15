@@ -170,7 +170,12 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
     find_latest_domain_approval_binding,
     render_domain_execution_ready_bridge_summary,
 )
-from aigol.runtime.domain_proposal_governance_runtime import create_domain_proposal
+from aigol.runtime.domain_proposal_governance_runtime import (
+    APPROVED as DOMAIN_PROPOSAL_APPROVED,
+    REJECTED as DOMAIN_PROPOSAL_REJECTED,
+    create_domain_proposal,
+    review_domain_proposal,
+)
 from aigol.runtime.conversational_cli_runtime import (
     AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW as CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
@@ -2839,6 +2844,8 @@ def run_interactive_conversation(
     current_chain_id: str | None = None
     latest_chain_id: str | None = None
     pending_approval_required: dict[str, Any] | None = None
+    pending_domain_proposal: dict[str, Any] | None = None
+    pending_domain_review: dict[str, Any] | None = None
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
     latest_workflow_status: dict[str, Any] | None = None
@@ -2913,6 +2920,7 @@ def run_interactive_conversation(
                 turn_root=turn_root,
             )
             human_decision = normalize_human_decision(human_prompt)
+            domain_proposal_decision = _domain_proposal_review_decision(human_prompt, human_decision)
             active_clarification_capture = detect_active_clarification(session_root=session_root)
             active_clarification_detected = active_clarification_capture.get("open_clarification_detected") is True
             clarification_reply_gate_capture = (
@@ -2939,6 +2947,14 @@ def run_interactive_conversation(
                 active_clarification_reply_detected
                 or active_clarification_reply_mismatch_detected
                 or domain_approval_entry_detected
+                or (
+                    pending_domain_proposal is not None
+                    and domain_proposal_decision is not None
+                )
+                or (
+                    pending_domain_review is not None
+                    and _is_domain_candidate_continuation_prompt(human_prompt)
+                )
                 or (
                     pending_approval_required is not None
                     and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
@@ -3127,6 +3143,67 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         domain_approval_capture=domain_approval_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif pending_domain_proposal is not None and domain_proposal_decision is not None:
+                domain_review_capture = review_domain_proposal(
+                    review_id=f"{prompt_id}:DOMAIN-PROPOSAL-REVIEW",
+                    domain_proposal_artifact=pending_domain_proposal["domain_proposal_artifact"],
+                    decision=domain_proposal_decision,
+                    decision_reason=f"Operator selected {domain_proposal_decision}.",
+                    reviewed_by=args.operator_context or "HUMAN_OPERATOR",
+                    reviewed_at=created_at,
+                    human_approval_reference=prompt_id,
+                    replay_dir=turn_root / "domain_proposal_review",
+                )
+                if domain_review_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {domain_review_capture.get('failure_reason')}")
+                else:
+                    review = domain_review_capture.get("domain_review_decision_artifact")
+                    if isinstance(review, dict):
+                        current_chain_id = review.get("canonical_chain_id") or current_chain_id
+                        latest_chain_id = current_chain_id
+                    pending_domain_proposal = None
+                    pending_domain_review = (
+                        domain_review_capture
+                        if domain_review_capture.get("domain_candidate_created") is True
+                        else None
+                    )
+                    output_writer(_render_domain_proposal_review_summary(domain_review_capture))
+                turns.append(
+                    _interactive_domain_proposal_review_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        domain_review_capture=domain_review_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif pending_domain_review is not None and _is_domain_candidate_continuation_prompt(human_prompt):
+                continuation_capture = _record_domain_candidate_continuation_boundary(
+                    boundary_id=f"{prompt_id}:DOMAIN-CANDIDATE-CONTINUATION-BOUNDARY",
+                    domain_review_capture=pending_domain_review,
+                    operator_prompt=human_prompt,
+                    created_at=created_at,
+                    replay_dir=turn_root / "domain_candidate_continuation_boundary",
+                )
+                current_chain_id = (
+                    continuation_capture.get("domain_candidate_continuation_boundary_artifact", {}).get(
+                        "canonical_chain_id"
+                    )
+                    or current_chain_id
+                )
+                latest_chain_id = current_chain_id
+                pending_domain_review = None
+                output_writer(_render_domain_candidate_continuation_boundary_summary(continuation_capture))
+                turns.append(
+                    _interactive_domain_candidate_continuation_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        continuation_capture=continuation_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -4284,6 +4361,8 @@ def run_interactive_conversation(
                         failed_turns += 1
                         output_writer(f"FAILED_CLOSED: {domain_proposal_capture.get('failure_reason')}")
                     else:
+                        pending_domain_proposal = domain_proposal_capture
+                        pending_domain_review = None
                         output_writer(_render_domain_proposal_acceptance_summary(domain_proposal_capture))
                     turns.append(
                         _interactive_domain_proposal_turn_summary(
@@ -5227,6 +5306,137 @@ def _render_domain_proposal_acceptance_summary(domain_proposal_capture: dict[str
     )
 
 
+def _render_domain_proposal_review_summary(domain_review_capture: dict[str, Any]) -> str:
+    review = domain_review_capture.get("domain_review_decision_artifact")
+    if not isinstance(review, dict):
+        review = {}
+    outcome = domain_review_capture.get("domain_review_outcome_artifact")
+    if not isinstance(outcome, dict):
+        outcome = {}
+    return "\n".join(
+        [
+            "Domain Proposal Review",
+            "",
+            f"review_status: {domain_review_capture.get('review_status')}",
+            f"proposed_domain: {review.get('proposed_domain') or outcome.get('proposed_domain')}",
+            f"domain_candidate_created: {str(domain_review_capture.get('domain_candidate_created') is True).lower()}",
+            f"domain_created: {str(domain_review_capture.get('domain_created') is True).lower()}",
+            f"worker_invoked: {str(outcome.get('worker_invoked') is True).lower()}",
+            f"required_next_step: {outcome.get('required_next_step')}",
+            f"replay_reference: {domain_review_capture.get('domain_review_replay_reference')}",
+        ]
+    )
+
+
+def _is_domain_candidate_continuation_prompt(human_prompt: str) -> bool:
+    normalized = " ".join(human_prompt.lower().split())
+    if "continue" not in normalized:
+        return False
+    return any(
+        marker in normalized
+        for marker in (
+            "next governed step",
+            "next step",
+            "governed step",
+            "continue with",
+            "continue the",
+        )
+    )
+
+
+def _domain_proposal_review_decision(human_prompt: str, human_decision: str) -> str | None:
+    if human_decision == APPROVE:
+        return DOMAIN_PROPOSAL_APPROVED
+    if human_decision in {REJECT, REQUEST_MODIFICATION}:
+        return DOMAIN_PROPOSAL_REJECTED
+    normalized = " ".join(human_prompt.lower().split())
+    if any(marker in normalized for marker in ("reject", "do not approve", "decline")) and "proposal" in normalized:
+        return DOMAIN_PROPOSAL_REJECTED
+    if "approve" in normalized and "proposal" in normalized:
+        return DOMAIN_PROPOSAL_APPROVED
+    return None
+
+
+def _record_domain_candidate_continuation_boundary(
+    *,
+    boundary_id: str,
+    domain_review_capture: dict[str, Any],
+    operator_prompt: str,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    review = domain_review_capture.get("domain_review_decision_artifact")
+    if not isinstance(review, dict):
+        review = {}
+    outcome = domain_review_capture.get("domain_review_outcome_artifact")
+    if not isinstance(outcome, dict):
+        outcome = {}
+    artifact = {
+        "artifact_type": "DOMAIN_CANDIDATE_CONTINUATION_BOUNDARY_ARTIFACT_V1",
+        "boundary_id": boundary_id,
+        "response_status": "WAITING_FOR_SEPARATE_DOMAIN_CREATION_AUTHORIZATION",
+        "operator_prompt": operator_prompt,
+        "domain_review_reference": outcome.get("domain_review_reference") or review.get("domain_review_id"),
+        "domain_review_hash": outcome.get("domain_review_hash") or review.get("artifact_hash"),
+        "domain_candidate_reference": outcome.get("domain_candidate_id"),
+        "domain_candidate_hash": outcome.get("artifact_hash"),
+        "proposed_domain": outcome.get("proposed_domain") or review.get("proposed_domain"),
+        "canonical_chain_id": outcome.get("canonical_chain_id") or review.get("canonical_chain_id"),
+        "required_next_step": "SEPARATE_DOMAIN_CREATION_AUTHORIZATION",
+        "conversation_state_preserved": True,
+        "replay_lineage_preserved": domain_review_capture.get("replay_lineage_preserved") is True,
+        "authorization_boundary_preserved": True,
+        "manual_routing_used": False,
+        "manual_artifact_lookup_used": False,
+        "domain_created": False,
+        "worker_invoked": False,
+        "provider_invoked": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "created_at": created_at,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    replay_dir.mkdir(parents=True, exist_ok=True)
+    wrapper = {
+        "step": "domain_candidate_continuation_boundary_recorded",
+        "artifact": artifact,
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_dir / "000_domain_candidate_continuation_boundary_recorded.json", wrapper)
+    capture = {
+        "response_source": "DOMAIN_CANDIDATE_CONTINUATION_BOUNDARY",
+        "response_status": artifact["response_status"],
+        "domain_candidate_continuation_boundary_artifact": artifact,
+        "domain_candidate_continuation_replay_reference": str(replay_dir),
+        "conversation_state_preserved": True,
+        "replay_lineage_preserved": artifact["replay_lineage_preserved"],
+        "authorization_boundary_preserved": True,
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+    capture["domain_candidate_continuation_capture_hash"] = replay_hash(capture)
+    return capture
+
+
+def _render_domain_candidate_continuation_boundary_summary(capture: dict[str, Any]) -> str:
+    artifact = capture.get("domain_candidate_continuation_boundary_artifact")
+    if not isinstance(artifact, dict):
+        artifact = {}
+    return "\n".join(
+        [
+            "Domain Candidate Continuation",
+            "",
+            f"response_status: {capture.get('response_status')}",
+            f"proposed_domain: {artifact.get('proposed_domain')}",
+            f"required_next_step: {artifact.get('required_next_step')}",
+            f"authorization_boundary_preserved: {str(artifact.get('authorization_boundary_preserved') is True).lower()}",
+            f"domain_created: {str(artifact.get('domain_created') is True).lower()}",
+            f"worker_invoked: {str(artifact.get('worker_invoked') is True).lower()}",
+            f"replay_reference: {capture.get('domain_candidate_continuation_replay_reference')}",
+        ]
+    )
+
+
 def _interactive_domain_proposal_turn_summary(
     *,
     turn_id: str,
@@ -5277,6 +5487,110 @@ def _interactive_domain_proposal_turn_summary(
         "conversational_cli_routing_replay_reference": (conversational_routing_capture or {}).get(
             "conversational_cli_routing_replay_reference"
         ),
+    }
+
+
+def _interactive_domain_proposal_review_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    domain_review_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    review = domain_review_capture.get("domain_review_decision_artifact")
+    if not isinstance(review, dict):
+        review = {}
+    outcome = domain_review_capture.get("domain_review_outcome_artifact")
+    if not isinstance(outcome, dict):
+        outcome = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": domain_review_capture.get("review_status"),
+        "response_source": "DOMAIN_PROPOSAL_REVIEW_RUNTIME",
+        "fail_closed": domain_review_capture.get("fail_closed") is True,
+        "failure_reason": domain_review_capture.get("failure_reason"),
+        "replay_reference": domain_review_capture.get("domain_review_replay_reference"),
+        "conversation_replay_reference": domain_review_capture.get("domain_review_replay_reference"),
+        "canonical_chain_id": outcome.get("canonical_chain_id") or review.get("canonical_chain_id"),
+        "current_chain_id": outcome.get("canonical_chain_id") or review.get("canonical_chain_id"),
+        "latest_chain_id": outcome.get("canonical_chain_id") or review.get("canonical_chain_id"),
+        "related_chain_id": review.get("domain_proposal_reference"),
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": domain_review_capture.get("domain_review_replay_reference"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "domain_review_status": domain_review_capture.get("review_status"),
+        "domain_review_replay_reference": domain_review_capture.get("domain_review_replay_reference"),
+        "domain_candidate_artifact_type": outcome.get("artifact_type"),
+        "domain_candidate_created": domain_review_capture.get("domain_candidate_created") is True,
+        "domain_candidate_reference": outcome.get("domain_candidate_id"),
+        "proposed_domain": outcome.get("proposed_domain") or review.get("proposed_domain"),
+        "approval_required": False,
+        "approval_created": True,
+        "approval_bypassed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "replay_lineage_preserved": domain_review_capture.get("replay_lineage_preserved") is True,
+    }
+
+
+def _interactive_domain_candidate_continuation_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    continuation_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    artifact = continuation_capture.get("domain_candidate_continuation_boundary_artifact")
+    if not isinstance(artifact, dict):
+        artifact = {}
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": continuation_capture.get("response_status"),
+        "response_source": continuation_capture.get("response_source"),
+        "fail_closed": continuation_capture.get("fail_closed") is True,
+        "failure_reason": continuation_capture.get("failure_reason"),
+        "replay_reference": continuation_capture.get("domain_candidate_continuation_replay_reference"),
+        "conversation_replay_reference": continuation_capture.get("domain_candidate_continuation_replay_reference"),
+        "canonical_chain_id": artifact.get("canonical_chain_id"),
+        "current_chain_id": artifact.get("canonical_chain_id"),
+        "latest_chain_id": artifact.get("canonical_chain_id"),
+        "related_chain_id": artifact.get("domain_review_reference"),
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": continuation_capture.get(
+            "domain_candidate_continuation_replay_reference"
+        ),
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversation_state_preserved": continuation_capture.get("conversation_state_preserved") is True,
+        "replay_lineage_preserved": continuation_capture.get("replay_lineage_preserved") is True,
+        "authorization_boundary_preserved": continuation_capture.get("authorization_boundary_preserved") is True,
+        "domain_candidate_reference": artifact.get("domain_candidate_reference"),
+        "proposed_domain": artifact.get("proposed_domain"),
+        "required_next_step": artifact.get("required_next_step"),
+        "approval_required": False,
+        "approval_created": False,
+        "approval_bypassed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "domain_created": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
     }
 
 

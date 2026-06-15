@@ -1,0 +1,63 @@
+{
+  "artifact_type": "AIGOL_CONVERSATIONAL_SESSION_CONTINUITY_V1",
+  "status": "ACCEPTED",
+  "objective": "Verify governance-aware ACLI conversational continuity across multiple human interactions.",
+  "scope": {
+    "redesign_acli": false,
+    "redesign_ocs": false,
+    "redesign_ppp": false,
+    "redesign_worker_lifecycle": false,
+    "redesign_replay": false,
+    "focus": "conversation_continuity"
+  },
+  "messages": [
+    "Prepare the foundation for the first AI Decision Validator domain.",
+    "I approve the proposal.",
+    "Continue with the next governed step."
+  ],
+  "observed_route": [
+    {
+      "message": 1,
+      "route": "ACLI -> DOMAIN_PROPOSAL_GOVERNANCE_RUNTIME",
+      "terminal_status": "DOMAIN_PROPOSAL_CREATED",
+      "workflow_state": "WAITING_FOR_APPROVAL"
+    },
+    {
+      "message": 2,
+      "route": "ACLI_SESSION_STATE -> DOMAIN_PROPOSAL_REVIEW_RUNTIME",
+      "terminal_status": "APPROVED",
+      "terminal_artifact": "DOMAIN_CANDIDATE_ARTIFACT_V1"
+    },
+    {
+      "message": 3,
+      "route": "ACLI_SESSION_STATE -> DOMAIN_CANDIDATE_CONTINUATION_BOUNDARY",
+      "terminal_status": "WAITING_FOR_SEPARATE_DOMAIN_CREATION_AUTHORIZATION",
+      "terminal_artifact": "DOMAIN_CANDIDATE_CONTINUATION_BOUNDARY_ARTIFACT_V1"
+    }
+  ],
+  "evidence_summary": {
+    "proposal_status": "DOMAIN_PROPOSAL_CREATED",
+    "approval_status": "APPROVED",
+    "domain_candidate_created": true,
+    "continuation_status": "WAITING_FOR_SEPARATE_DOMAIN_CREATION_AUTHORIZATION",
+    "canonical_chain_id_preserved": true,
+    "conversation_state_preserved": true,
+    "replay_lineage_preserved": true,
+    "authorization_boundary_preserved": true,
+    "domain_created": false,
+    "worker_invoked": false,
+    "provider_authority_granted": false
+  },
+  "manual_routing_used": false,
+  "manual_artifact_lookup_used": false,
+  "manual_artifact_injection_used": false,
+  "manual_downstream_runtime_invocation_used": false,
+  "governance_bypass_used": false,
+  "governance_impact_statement": "ACLI now preserves in-session domain proposal approval state and records a replay-visible continuation boundary without activating a domain, invoking a worker, granting provider authority, or bypassing separate domain creation authorization.",
+  "final_fields": {
+    "SESSION_CONTINUITY_PRESERVED": "YES",
+    "REPLAY_LINEAGE_CONTINUOUS": "YES",
+    "APPROVAL_CONTINUITY_WORKING": "YES",
+    "CONVERSATIONAL_WORKFLOW_CONTINUITY": "YES"
+  }
+}
