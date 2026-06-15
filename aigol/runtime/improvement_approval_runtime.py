@@ -12,6 +12,10 @@ from aigol.runtime.improvement_proposal_runtime import (
 )
 from aigol.runtime.improvement_review_runtime import IMPROVEMENT_REVIEW_ARTIFACT_V1, IMPROVEMENT_REVIEWED
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.execution_summary_runtime import (
+    create_execution_summary,
+    create_execution_summary_confirmation,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -137,6 +141,40 @@ def _approval_artifact(
     if normalized_decision not in VALID_DECISIONS:
         raise FailClosedRuntimeError("improvement approval failed closed: invalid decision")
     implementation_authorized = normalized_decision == APPROVED
+    summary = None
+    confirmation = None
+    if implementation_authorized:
+        summary = create_execution_summary(
+            summary_id=f"{improvement_approval_id}:EXECUTION-SUMMARY",
+            original_request=proposal["proposal_text"],
+            interpreted_intent={
+                "intent_type": "REPLAY_DERIVED_IMPROVEMENT_IMPLEMENTATION",
+                "improvement_proposal_reference": proposal["improvement_proposal_id"],
+            },
+            selected_route={"route_type": "IMPROVEMENT_APPROVAL_RUNTIME"},
+            planned_actions=[{"action": "AUTHORIZE_IMPROVEMENT_IMPLEMENTATION_PLANNING"}],
+            expected_outputs=[{"artifact_type": IMPROVEMENT_APPROVAL_ARTIFACT_V1, "status": APPROVED}],
+            assumptions=["Human approval is required before replay-derived improvement implementation planning."],
+            constraints=["No execution request, worker dispatch, worker invocation, or implementation occurs in approval."],
+            risk_classification={
+                "risk_level": "REPLAY_DERIVED_IMPROVEMENT",
+                "reason": "Approval can enable later implementation planning and execution request derivation.",
+            },
+            execution_scope={
+                "improvement_review_reference": review["improvement_review_id"],
+                "improvement_proposal_reference": proposal["improvement_proposal_id"],
+            },
+            replay_references=[_require_string(replay_reference, "replay_reference")],
+            created_by=_normalize_token(recorded_by, "recorded_by"),
+            created_at=_require_string(recorded_at, "recorded_at"),
+        )
+        confirmation = create_execution_summary_confirmation(
+            confirmation_id=f"{improvement_approval_id}:EXECUTION-SUMMARY-CONFIRMATION",
+            execution_summary_artifact=summary,
+            decision="APPROVE",
+            confirmed_by=_normalize_token(recorded_by, "recorded_by"),
+            confirmed_at=_require_string(recorded_at, "recorded_at"),
+        )
     artifact = {
         "artifact_type": IMPROVEMENT_APPROVAL_ARTIFACT_V1,
         "improvement_approval_version": IMPROVEMENT_APPROVAL_RUNTIME_VERSION,
@@ -159,6 +197,10 @@ def _approval_artifact(
             human_authorization_reference,
             "human_authorization_reference",
         ),
+        "execution_summary_reference": summary["summary_id"] if summary else None,
+        "execution_summary_hash": summary["artifact_hash"] if summary else None,
+        "human_confirmation_reference": confirmation["confirmation_id"] if confirmation else None,
+        "human_confirmation_hash": confirmation["artifact_hash"] if confirmation else None,
         "approval_status": normalized_decision,
         "implementation_authorized": implementation_authorized,
         "implementation_reference": None,

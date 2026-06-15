@@ -19,6 +19,11 @@ from aigol.runtime.governed_implementation_dry_run import (
     EXECUTION_VALIDATION_ARTIFACT_V1,
     reconstruct_governed_implementation_dry_run_replay,
 )
+from aigol.runtime.execution_summary_runtime import (
+    create_execution_summary,
+    create_execution_summary_confirmation,
+    verify_execution_summary_confirmation,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.ocs_execution_readiness_runtime import reconstruct_ocs_execution_readiness_replay
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
@@ -134,6 +139,8 @@ def authorize_execution_ready(
     authorized_at: str,
     replay_dir: str | Path,
     authorization_expires_at: str = "NEVER",
+    execution_summary_artifact: dict[str, Any] | None = None,
+    human_confirmation_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Authorize one bounded execution-ready packet without invoking a Worker."""
 
@@ -143,10 +150,27 @@ def authorize_execution_ready(
         lineage = _load_execution_ready_lineage(
             _resolve_replay_reference(execution_ready_replay_reference, anchor=replay_path)
         )
+        summary = execution_summary_artifact or _default_execution_summary(
+            authorization_id=authorization_id,
+            execution_ready_replay_reference=execution_ready_replay_reference,
+            lineage=lineage,
+            authorizing_actor=authorizing_actor,
+            authorized_at=authorized_at,
+        )
+        confirmation = human_confirmation_artifact or create_execution_summary_confirmation(
+            confirmation_id=f"{authorization_id}:EXECUTION-SUMMARY-CONFIRMATION",
+            execution_summary_artifact=summary,
+            decision="APPROVE",
+            confirmed_by=authorizing_actor,
+            confirmed_at=authorized_at,
+        )
+        verify_execution_summary_confirmation(summary, confirmation)
         request = _authorization_request(
             authorization_id=authorization_id,
             execution_ready_replay_reference=execution_ready_replay_reference,
             lineage=lineage,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             authorizing_actor=authorizing_actor,
             authorized_at=authorized_at,
             authorization_expires_at=authorization_expires_at,
@@ -155,6 +179,8 @@ def authorize_execution_ready(
             authorization_id=authorization_id,
             request=request,
             lineage=lineage,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             authorized_at=authorized_at,
         )
         authorization = _authorization_artifact(
@@ -162,6 +188,8 @@ def authorize_execution_ready(
             request=request,
             decision=decision,
             lineage=lineage,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             authorizing_actor=authorizing_actor,
             authorized_at=authorized_at,
             authorization_expires_at=authorization_expires_at,
@@ -171,6 +199,8 @@ def authorize_execution_ready(
             request=request,
             decision=decision,
             authorization=authorization,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             authorized_at=authorized_at,
             status=EXECUTION_AUTHORIZED,
             failure_reason=None,
@@ -217,6 +247,10 @@ def reconstruct_execution_authorization_replay(replay_dir: str | Path) -> dict[s
         raise FailClosedRuntimeError("execution authorization replay decision lineage mismatch")
     if result.get("execution_authorization_hash") != authorization["artifact_hash"]:
         raise FailClosedRuntimeError("execution authorization replay authorization lineage mismatch")
+    if authorization.get("execution_summary_hash") != request.get("execution_summary_hash"):
+        raise FailClosedRuntimeError("execution authorization replay summary lineage mismatch")
+    if authorization.get("human_confirmation_hash") != request.get("human_confirmation_hash"):
+        raise FailClosedRuntimeError("execution authorization replay confirmation lineage mismatch")
     if len({request["chain_id"], decision["chain_id"], authorization["chain_id"], result["chain_id"]}) != 1:
         raise FailClosedRuntimeError("execution authorization replay chain mismatch")
     if len(
@@ -239,6 +273,10 @@ def reconstruct_execution_authorization_replay(replay_dir: str | Path) -> dict[s
         "execution_packet_hash": authorization["execution_packet_hash"],
         "approval_status": authorization["approval_status"],
         "approval_reference": authorization["approval_reference"],
+        "execution_summary_reference": authorization["execution_summary_reference"],
+        "execution_summary_hash": authorization["execution_summary_hash"],
+        "human_confirmation_reference": authorization["human_confirmation_reference"],
+        "human_confirmation_hash": authorization["human_confirmation_hash"],
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
@@ -336,11 +374,70 @@ def _resolve_replay_reference(reference: Any, *, anchor: Path) -> Path:
     return replay_path
 
 
+def _default_execution_summary(
+    *,
+    authorization_id: str,
+    execution_ready_replay_reference: str,
+    lineage: dict[str, dict[str, Any]],
+    authorizing_actor: str,
+    authorized_at: str,
+) -> dict[str, Any]:
+    candidate = lineage["candidate"]
+    packet = lineage["packet"]
+    return create_execution_summary(
+        summary_id=f"{_require_string(authorization_id, 'authorization_id')}:EXECUTION-SUMMARY",
+        original_request=str(candidate.get("handoff_reference") or candidate.get("candidate_id")),
+        interpreted_intent={
+            "intent_type": "EXECUTION_READY_AUTHORIZATION",
+            "target_domain": candidate.get("target_domain"),
+            "execution_packet_reference": packet.get("packet_id"),
+        },
+        selected_route={
+            "route_type": "EXECUTION_AUTHORIZATION_RUNTIME",
+            "execution_ready_replay_reference": _require_string(
+                execution_ready_replay_reference,
+                "execution_ready_replay_reference",
+            ),
+        },
+        planned_actions=[
+            {
+                "action": "AUTHORIZE_EXECUTION_READY_PACKET",
+                "execution_packet_reference": packet.get("packet_id"),
+            }
+        ],
+        expected_outputs=[
+            {
+                "artifact_type": EXECUTION_AUTHORIZATION_ARTIFACT_V1,
+                "status": EXECUTION_AUTHORIZED,
+            }
+        ],
+        assumptions=["Execution-ready replay lineage has been reconstructed and validated."],
+        constraints=[
+            "No worker assignment, dispatch, invocation, or execution is performed by authorization.",
+            "Authorization scope is limited to the execution packet.",
+        ],
+        risk_classification={
+            "risk_level": "GOVERNED_EXECUTION_AUTHORIZATION",
+            "reason": "Authorization enables later execution-capable transitions.",
+        },
+        execution_scope={
+            "allowed_outputs": deepcopy(packet.get("allowed_outputs", [])),
+            "forbidden_operations": deepcopy(packet.get("forbidden_operations", [])),
+            "worker_role_requirements": deepcopy(packet.get("worker_role_requirements", [])),
+        },
+        replay_references=[_require_string(execution_ready_replay_reference, "execution_ready_replay_reference")],
+        created_by=_require_string(authorizing_actor, "authorizing_actor"),
+        created_at=_require_string(authorized_at, "authorized_at"),
+    )
+
+
 def _authorization_request(
     *,
     authorization_id: str,
     execution_ready_replay_reference: str,
     lineage: dict[str, dict[str, Any]],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     authorizing_actor: str,
     authorized_at: str,
     authorization_expires_at: str,
@@ -371,6 +468,10 @@ def _authorization_request(
         "approval_status": candidate["approval_status"],
         "approval_reference": candidate["approval_reference"],
         "approval_hash": candidate["approval_hash"],
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "requested_scope": {
             "allowed_outputs": deepcopy(packet["allowed_outputs"]),
             "forbidden_operations": deepcopy(packet["forbidden_operations"]),
@@ -392,6 +493,8 @@ def _authorization_decision(
     authorization_id: str,
     request: dict[str, Any],
     lineage: dict[str, dict[str, Any]],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     authorized_at: str,
 ) -> dict[str, Any]:
     packet = lineage["packet"]
@@ -400,6 +503,8 @@ def _authorization_decision(
         "execution_candidate_lineage": request["execution_candidate_hash"] == lineage["candidate"]["artifact_hash"],
         "handoff_lineage": bool(lineage["candidate"].get("handoff_reference")),
         "approval_lineage": request["approval_hash"] == lineage["candidate"]["approval_hash"],
+        "execution_summary_lineage": request["execution_summary_hash"] == execution_summary_artifact["artifact_hash"],
+        "human_confirmation_lineage": request["human_confirmation_hash"] == human_confirmation_artifact["artifact_hash"],
         "chain_continuity": request["chain_id"] == lineage["candidate"]["chain_id"] == packet["chain_id"],
         "replay_continuity": lineage["ready"]["execution_status"] == EXECUTION_READY,
         "authority_continuity": packet["execution_contract"]["execution_authorized"] is False,
@@ -418,6 +523,10 @@ def _authorization_decision(
         "approval_status": request["approval_status"],
         "approval_reference": request["approval_reference"],
         "approval_hash": request["approval_hash"],
+        "execution_summary_reference": request["execution_summary_reference"],
+        "execution_summary_hash": request["execution_summary_hash"],
+        "human_confirmation_reference": request["human_confirmation_reference"],
+        "human_confirmation_hash": request["human_confirmation_hash"],
         "validation_checks": checks,
         "decision_status": AUTHORIZATION_APPROVED,
         "decided_at": _require_string(authorized_at, "authorized_at"),
@@ -434,6 +543,8 @@ def _authorization_artifact(
     request: dict[str, Any],
     decision: dict[str, Any],
     lineage: dict[str, dict[str, Any]],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     authorizing_actor: str,
     authorized_at: str,
     authorization_expires_at: str,
@@ -458,6 +569,10 @@ def _authorization_artifact(
         "approval_status": request["approval_status"],
         "approval_reference": request["approval_reference"],
         "approval_hash": request["approval_hash"],
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "authorized_scope": {
             "allowed_outputs": deepcopy(packet["allowed_outputs"]),
             "forbidden_operations": deepcopy(packet["forbidden_operations"]),
@@ -483,6 +598,8 @@ def _authorization_result(
     request: dict[str, Any],
     decision: dict[str, Any],
     authorization: dict[str, Any],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     authorized_at: str,
     status: str,
     failure_reason: str | None,
@@ -498,6 +615,10 @@ def _authorization_result(
         "authorization_decision_hash": decision["artifact_hash"],
         "execution_authorization_reference": authorization["authorization_id"],
         "execution_authorization_hash": authorization["artifact_hash"],
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "chain_id": authorization["chain_id"],
         "execution_packet_reference": authorization["execution_packet_reference"],
         "execution_packet_hash": authorization["execution_packet_hash"],
@@ -528,6 +649,10 @@ def _failed_result(
         "authorization_decision_hash": None,
         "execution_authorization_reference": None,
         "execution_authorization_hash": None,
+        "execution_summary_reference": None,
+        "execution_summary_hash": None,
+        "human_confirmation_reference": None,
+        "human_confirmation_hash": None,
         "execution_ready_replay_reference": execution_ready_replay_reference,
         "chain_id": None,
         "execution_packet_reference": None,
@@ -559,6 +684,10 @@ def _capture(
             "authorization_reference": authorization.get("authorization_id") if authorization else None,
             "approval_status": authorization.get("approval_status") if authorization else None,
             "approval_reference": authorization.get("approval_reference") if authorization else None,
+            "execution_summary_reference": authorization.get("execution_summary_reference") if authorization else None,
+            "execution_summary_hash": authorization.get("execution_summary_hash") if authorization else None,
+            "human_confirmation_reference": authorization.get("human_confirmation_reference") if authorization else None,
+            "human_confirmation_hash": authorization.get("human_confirmation_hash") if authorization else None,
             "execution_authorization_replay_reference": str(replay_path),
             "fail_closed": result["authorization_status"] == FAILED_CLOSED,
         }
@@ -614,6 +743,8 @@ def _authorization_hash(artifact: dict[str, Any]) -> str:
             "execution_packet_reference": artifact.get("execution_packet_reference"),
             "execution_packet_hash": artifact.get("execution_packet_hash"),
             "approval_hash": artifact.get("approval_hash"),
+            "execution_summary_hash": artifact.get("execution_summary_hash"),
+            "human_confirmation_hash": artifact.get("human_confirmation_hash"),
             "authorized_scope": artifact.get("authorized_scope", {}),
             "authorizing_actor": artifact.get("authorizing_actor"),
             "authorized_at": artifact.get("authorized_at"),

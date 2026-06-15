@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.governed_implementation_request_runtime import APPROVED, HUMAN_APPROVAL_ARTIFACT_V1
+from aigol.runtime.execution_summary_runtime import (
+    create_execution_summary,
+    create_execution_summary_confirmation,
+    verify_execution_summary_confirmation,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_to_execution_governance_runtime import (
@@ -36,6 +41,8 @@ def run_governed_worker_execution(
     executed_at: str,
     replay_dir: str | Path,
     validation_inputs: dict[str, Any] | None = None,
+    execution_summary_artifact: dict[str, Any] | None = None,
+    human_confirmation_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run a deterministic governed worker execution and persist replay evidence."""
 
@@ -46,10 +53,27 @@ def run_governed_worker_execution(
         approval = deepcopy(human_approval_artifact)
         _validate_execution_candidate(candidate)
         _validate_human_approval(approval, candidate)
+        summary = execution_summary_artifact or _default_execution_summary(
+            execution_id=execution_id,
+            candidate=candidate,
+            approval=approval,
+            executed_by=executed_by,
+            executed_at=executed_at,
+        )
+        confirmation = human_confirmation_artifact or create_execution_summary_confirmation(
+            confirmation_id=f"{execution_id}:EXECUTION-SUMMARY-CONFIRMATION",
+            execution_summary_artifact=summary,
+            decision="APPROVE",
+            confirmed_by=approval["approved_by"],
+            confirmed_at=approval["approved_at"],
+        )
+        verify_execution_summary_confirmation(summary, confirmation)
         inputs = _validation_inputs(
             execution_id=execution_id,
             candidate=candidate,
             approval=approval,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             executed_by=executed_by,
             executed_at=executed_at,
             validation_inputs=validation_inputs,
@@ -59,6 +83,8 @@ def run_governed_worker_execution(
             candidate=candidate,
             approval=approval,
             validation_inputs_artifact=inputs,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             executed_by=executed_by,
             executed_at=executed_at,
             execution_status=WORKER_EXECUTION_COMPLETED,
@@ -109,6 +135,10 @@ def reconstruct_governed_worker_execution_replay(replay_dir: str | Path) -> dict
         _verify_artifact_hash(inputs)
         if result.get("validation_inputs_hash") != inputs["artifact_hash"]:
             raise FailClosedRuntimeError("governed worker execution validation input hash mismatch")
+        if result.get("execution_summary_hash") != inputs.get("execution_summary_hash"):
+            raise FailClosedRuntimeError("governed worker execution summary lineage mismatch")
+        if result.get("human_confirmation_hash") != inputs.get("human_confirmation_hash"):
+            raise FailClosedRuntimeError("governed worker execution confirmation lineage mismatch")
         replay_artifact_count = 3
     else:
         replay_artifact_count = 2
@@ -214,6 +244,8 @@ def _validation_inputs(
     execution_id: str,
     candidate: dict[str, Any],
     approval: dict[str, Any],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     executed_by: str,
     executed_at: str,
     validation_inputs: dict[str, Any] | None,
@@ -228,6 +260,10 @@ def _validation_inputs(
         "source_execution_candidate_hash": candidate["artifact_hash"],
         "human_approval_reference": approval["approval_id"],
         "human_approval_hash": approval["artifact_hash"],
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "execution_objective": candidate["execution_objective"],
         "execution_constraints": deepcopy(candidate["execution_constraints"]),
         "governance_constraints": deepcopy(candidate["governance_constraints"]),
@@ -247,6 +283,8 @@ def _execution_result_artifact(
     candidate: dict[str, Any],
     approval: dict[str, Any],
     validation_inputs_artifact: dict[str, Any],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     executed_by: str,
     executed_at: str,
     execution_status: str,
@@ -287,6 +325,10 @@ def _execution_result_artifact(
         "replay_hashes": deepcopy(candidate["replay_hashes"]),
         "human_approval_reference": approval["approval_id"],
         "human_approval_hash": approval["artifact_hash"],
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "validation_inputs": deepcopy(validation_inputs_artifact),
         "validation_inputs_hash": validation_inputs_artifact["artifact_hash"],
         "execution_objective": candidate["execution_objective"],
@@ -350,6 +392,10 @@ def _failed_execution_result_artifact(
         "human_approval_hash": human_approval_artifact.get("artifact_hash")
         if isinstance(human_approval_artifact, dict)
         else None,
+        "execution_summary_reference": None,
+        "execution_summary_hash": None,
+        "human_confirmation_reference": None,
+        "human_confirmation_hash": None,
         "validation_inputs": {},
         "validation_inputs_hash": None,
         "execution_objective": None,
@@ -381,6 +427,10 @@ def _returned_artifact(result: dict[str, Any]) -> dict[str, Any]:
         "execution_status": result["execution_status"],
         "execution_outcome": result["execution_outcome"],
         "source_execution_candidate": result["source_execution_candidate"],
+        "execution_summary_reference": result.get("execution_summary_reference"),
+        "execution_summary_hash": result.get("execution_summary_hash"),
+        "human_confirmation_reference": result.get("human_confirmation_reference"),
+        "human_confirmation_hash": result.get("human_confirmation_hash"),
         "replay_lineage_preserved": result["replay_lineage_preserved"],
         "fail_closed_preserved": result["fail_closed_preserved"],
         "ready_for_result_validation_runtime": result["ready_for_result_validation_runtime"],
@@ -413,10 +463,66 @@ def _capture(
         "replay_lineage_preserved": result["replay_lineage_preserved"],
         "fail_closed_preserved": result["fail_closed_preserved"],
         "ready_for_result_validation_runtime": result["ready_for_result_validation_runtime"],
+        "execution_summary_reference": result.get("execution_summary_reference"),
+        "execution_summary_hash": result.get("execution_summary_hash"),
+        "human_confirmation_reference": result.get("human_confirmation_reference"),
+        "human_confirmation_hash": result.get("human_confirmation_hash"),
         "failure_reason": result["failure_reason"],
     }
     capture["governed_worker_execution_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _default_execution_summary(
+    *,
+    execution_id: str,
+    candidate: dict[str, Any],
+    approval: dict[str, Any],
+    executed_by: str,
+    executed_at: str,
+) -> dict[str, Any]:
+    return create_execution_summary(
+        summary_id=f"{_require_string(execution_id, 'execution_id')}:EXECUTION-SUMMARY",
+        original_request=str(candidate.get("source_implementation_request") or candidate["execution_candidate_id"]),
+        interpreted_intent={
+            "intent_type": "RUN_GOVERNED_WORKER_EXECUTION",
+            "execution_candidate_reference": candidate["execution_candidate_id"],
+            "execution_objective": candidate["execution_objective"],
+        },
+        selected_route={
+            "route_type": "GOVERNED_WORKER_EXECUTION_RUNTIME",
+            "source_execution_candidate": candidate["execution_candidate_id"],
+        },
+        planned_actions=[
+            {
+                "action": "RUN_GOVERNED_WORKER_EXECUTION",
+                "execution_candidate_reference": candidate["execution_candidate_id"],
+            }
+        ],
+        expected_outputs=[
+            {
+                "artifact_type": WORKER_EXECUTION_RESULT_ARTIFACT_V1,
+                "status": WORKER_EXECUTION_COMPLETED,
+            }
+        ],
+        assumptions=["Human execution approval has been validated against the execution candidate."],
+        constraints=[
+            "Implementation result creation remains withheld.",
+            "Provider invocation, code modification, and governance mutation remain prohibited.",
+        ],
+        risk_classification={
+            "risk_level": "GOVERNED_WORKER_EXECUTION",
+            "reason": "The transition performs bounded worker execution.",
+        },
+        execution_scope={
+            "execution_constraints": deepcopy(candidate["execution_constraints"]),
+            "governance_constraints": deepcopy(candidate["governance_constraints"]),
+            "approval_scope": approval["approval_scope"],
+        },
+        replay_references=deepcopy(candidate["replay_references"]),
+        created_by=_require_string(executed_by, "executed_by"),
+        created_at=_require_string(executed_at, "executed_at"),
+    )
 
 
 def _persist_step(replay_path: Path, index: int, step: str, artifact: dict[str, Any]) -> None:

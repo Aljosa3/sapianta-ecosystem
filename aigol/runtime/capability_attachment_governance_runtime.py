@@ -742,8 +742,16 @@ def _validate_human_approval(
         raise FailClosedRuntimeError("capability attachment governance failed closed: approval scope invalid")
     if approval.get("capability_executor_invocation_allowed") is not False:
         raise FailClosedRuntimeError("capability attachment governance failed closed: executor invocation not allowed")
+    _require_summary_bound_confirmation(approval)
     _require_string(approval.get("approved_by"), "approved_by")
     _require_string(approval.get("approved_at"), "approved_at")
+
+
+def _require_summary_bound_confirmation(approval: dict[str, Any]) -> None:
+    _require_string(approval.get("execution_summary_reference"), "execution_summary_reference")
+    _require_replay_hash(approval.get("execution_summary_hash"), "execution_summary_hash")
+    _require_string(approval.get("human_confirmation_reference"), "human_confirmation_reference")
+    _require_replay_hash(approval.get("human_confirmation_hash"), "human_confirmation_hash")
 
 
 def _load_wrappers(replay_path: Path, steps: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -836,6 +844,13 @@ def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"capability attachment governance failed closed: {field_name} is required")
     return value.strip()
+
+
+def _require_replay_hash(value: Any, field_name: str) -> str:
+    text = _require_string(value, field_name)
+    if not text.startswith("sha256:"):
+        raise FailClosedRuntimeError(f"capability attachment governance failed closed: {field_name} must be a replay hash")
+    return text
 
 
 def _failure_reason(exc: Exception) -> str:

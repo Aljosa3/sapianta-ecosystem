@@ -425,6 +425,7 @@ def _validate_improvement_approval_artifact(
         raise FailClosedRuntimeError("implementation plan execution request failed closed: approval must be APPROVED")
     if approval.get("implementation_authorized") is not True:
         raise FailClosedRuntimeError("implementation plan execution request failed closed: implementation is not authorized")
+    _require_summary_bound_confirmation(approval)
     if approval.get("improvement_approval_id") != plan["improvement_approval_reference"]:
         raise FailClosedRuntimeError("implementation plan execution request failed closed: approval reference mismatch")
     if approval.get("artifact_hash") != plan["improvement_approval_hash"]:
@@ -463,6 +464,13 @@ def _validate_improvement_approval_artifact(
     _require_string(approval.get("improvement_approval_id"), "improvement_approval_id")
     _require_string(approval.get("human_authorization_reference"), "human_authorization_reference")
     return deepcopy(approval)
+
+
+def _require_summary_bound_confirmation(approval: dict[str, Any]) -> None:
+    _require_string(approval.get("execution_summary_reference"), "execution_summary_reference")
+    _require_hash(approval.get("execution_summary_hash"), "execution_summary_hash")
+    _require_string(approval.get("human_confirmation_reference"), "human_confirmation_reference")
+    _require_hash(approval.get("human_confirmation_hash"), "human_confirmation_hash")
 
 
 def _validate_request_payload(request_payload: dict[str, Any]) -> dict[str, Any]:
@@ -625,3 +633,10 @@ def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"{field_name} is required")
     return value
+
+
+def _require_hash(value: Any, field_name: str) -> str:
+    text = _require_string(value, field_name)
+    if not text.startswith("sha256:"):
+        raise FailClosedRuntimeError(f"{field_name} must be a replay hash")
+    return text

@@ -15,6 +15,11 @@ from typing import Any, Callable
 from urllib import error, request
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.execution_summary_runtime import (
+    create_execution_summary,
+    create_execution_summary_confirmation,
+    verify_execution_summary_confirmation,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -55,6 +60,8 @@ def run_native_provider_execution(
     credential_env: str = "AIGOL_OPENAI_API_KEY",
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     transport: ProviderTransport | None = None,
+    execution_summary_artifact: dict[str, Any] | None = None,
+    human_confirmation_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Invoke a provider once and persist replay-visible evidence."""
 
@@ -68,6 +75,44 @@ def run_native_provider_execution(
         )
         if approval["human_approved"] is not True:
             raise FailClosedRuntimeError("explicit human approval is required before provider invocation")
+        summary = execution_summary_artifact or create_execution_summary(
+            summary_id=f"{execution_id}:EXECUTION-SUMMARY",
+            original_request=human_request,
+            interpreted_intent={
+                "intent_type": "NATIVE_PROVIDER_EXECUTION",
+                "provider_id": provider_id,
+                "model": model,
+            },
+            selected_route={"route_type": "NATIVE_PROVIDER_EXECUTION_RUNTIME"},
+            planned_actions=[{"action": "INVOKE_PROVIDER_ONCE", "provider_id": provider_id}],
+            expected_outputs=[{"artifact_type": "PROVIDER_RESPONSE_ARTIFACT", "status": "PROVIDER_RESPONSE_CAPTURED"}],
+            assumptions=["The human request is approved for one bounded provider invocation."],
+            constraints=[
+                "Provider output is non-authoritative.",
+                "Provider invocation does not grant governance, implementation, or replay authority.",
+            ],
+            risk_classification={
+                "risk_level": "BOUNDED_PROVIDER_INVOCATION",
+                "reason": "External provider invocation is execution-capable.",
+            },
+            execution_scope={
+                "provider_id": provider_id,
+                "model": model,
+                "single_invocation": True,
+                "automatic_retries": False,
+            },
+            replay_references=[execution_id],
+            created_by=approved_by,
+            created_at=created_at,
+        )
+        confirmation = human_confirmation_artifact or create_execution_summary_confirmation(
+            confirmation_id=f"{execution_id}:EXECUTION-SUMMARY-CONFIRMATION",
+            execution_summary_artifact=summary,
+            decision="APPROVE",
+            confirmed_by=approved_by,
+            confirmed_at=created_at,
+        )
+        verify_execution_summary_confirmation(summary, confirmation)
         credential_policy = load_governed_provider_credentials(
             provider_id=provider_id,
             credential_env=credential_env,
@@ -81,6 +126,8 @@ def run_native_provider_execution(
             created_at=created_at,
             credential_policy=credential_policy,
             approval_evidence=approval,
+            execution_summary_artifact=summary,
+            human_confirmation_artifact=confirmation,
             timeout_seconds=timeout_seconds,
         )
         _persist_step(replay_path, 1, "provider_request", provider_request)
@@ -165,6 +212,8 @@ def create_provider_request(
     created_at: str,
     credential_policy: dict[str, Any],
     approval_evidence: dict[str, Any],
+    execution_summary_artifact: dict[str, Any],
+    human_confirmation_artifact: dict[str, Any],
     timeout_seconds: int,
 ) -> dict[str, Any]:
     _verify_artifact_hash(_public_artifact(credential_policy))
@@ -195,11 +244,17 @@ def create_provider_request(
         },
         "credential_policy_hash": credential_policy["artifact_hash"],
         "approval_evidence": approval_evidence,
+        "execution_summary_reference": execution_summary_artifact["summary_id"],
+        "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+        "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
+        "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         "created_at": _require_string(created_at, "created_at"),
         "lineage_refs": {
             "human_request_hash": replay_hash(request_text),
             "credential_policy_hash": credential_policy["artifact_hash"],
             "approval_evidence_hash": replay_hash(approval_evidence),
+            "execution_summary_hash": execution_summary_artifact["artifact_hash"],
+            "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
         },
         "provider_authority": False,
         "implementation_authority": False,
