@@ -12,6 +12,7 @@ import pytest
 
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, UNAVAILABLE, ProviderMetadata, ProviderRegistry
+from aigol.provider.providers.openai_provider import OPENAI_PROVIDER_ID, OpenAIProviderAdapter, openai_provider_metadata
 from aigol.runtime.conversation_to_implementation_handoff_runtime import create_conversation_to_implementation_handoff
 from aigol.runtime.development_context_assembly_runtime import assemble_development_context
 from aigol.runtime.development_proposal_contract_runtime import (
@@ -24,6 +25,7 @@ from aigol.runtime.native_development_task_intake_runtime import run_native_deve
 from aigol.runtime.provider_necessity_policy_runtime import PROVIDER_PROHIBITED, classify_provider_necessity
 from aigol.runtime.provider_proposal_production_runtime import (
     PROVIDER_PROPOSAL_PRODUCED,
+    PROVIDER_REQUEST_PROMPT_PROJECTION_V1,
     PROVIDER_REQUEST_PACKET_V1,
     PROVIDER_RESPONSE_ARTIFACT_V1,
     produce_provider_development_proposal,
@@ -69,6 +71,12 @@ def _registry(*, status: str = AVAILABLE) -> ProviderRegistry:
             capability="proposal_generation",
         )
     )
+    return registry
+
+
+def _openai_registry(*, status: str = AVAILABLE) -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(openai_provider_metadata(status=status))
     return registry
 
 
@@ -223,6 +231,58 @@ def test_provider_proposal_production_generates_validated_proposal(tmp_path) -> 
     assert capture["worker_created"] is False
     assert reconstructed["production_status"] == PROVIDER_PROPOSAL_PRODUCED
     assert reconstructed["replay_artifact_count"] == 4
+    assert reconstructed["provider_request_prompt_projection_present"] is True
+
+
+def test_provider_proposal_production_projects_prompt_for_openai_adapter(tmp_path) -> None:
+    handoff, context, resolution, policy = _evidence_chain(tmp_path)
+    provider_response = _provider_response()
+    calls: list[dict[str, Any]] = []
+
+    def fake_openai_client(payload: dict[str, Any], *, api_key: str, endpoint: str, timeout_seconds: int) -> dict[str, Any]:
+        calls.append(
+            {
+                "payload": payload,
+                "api_key_seen": bool(api_key),
+                "endpoint": endpoint,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        assert "DEVELOPMENT_PROPOSAL_ARTIFACT_V1-compatible JSON object" in payload["input"]
+        assert "Proposal must remain proposal-only" in payload["input"]
+        return {"id": "resp-provider-projection-000001", "output_text": json.dumps(provider_response)}
+
+    capture = produce_provider_development_proposal(
+        production_id="PROVIDER-PRODUCTION-OPENAI-PROJECTION-000001",
+        provider_id=OPENAI_PROVIDER_ID,
+        handoff_artifact=handoff,
+        context_assembly_artifact=context,
+        registry_resolution_artifact=resolution,
+        provider_necessity_policy_artifact=policy,
+        canonical_chain_id="CHAIN-PROVIDER-PRODUCTION-OPENAI-PROJECTION-000001",
+        created_at=CREATED_AT,
+        registry=_openai_registry(),
+        adapter=OpenAIProviderAdapter(api_key="test-openai-key", client=fake_openai_client),
+        replay_dir=tmp_path / "openai_projection",
+    )
+    reconstructed = reconstruct_provider_proposal_production_replay(tmp_path / "openai_projection")
+    projection = capture["provider_request_prompt_projection"]
+
+    assert capture["production_status"] == PROVIDER_PROPOSAL_PRODUCED
+    assert capture["provider_invocation_status"] == "PROVIDER_INVOKED"
+    assert projection["artifact_type"] == PROVIDER_REQUEST_PROMPT_PROJECTION_V1
+    assert projection["provider_request_packet_hash"] == capture["provider_request_packet"]["artifact_hash"]
+    assert projection["prompt"] == projection["human_prompt"] == projection["request"]
+    assert projection["provider_authority"] is False
+    assert projection["execution_requested"] is False
+    assert projection["dispatch_requested"] is False
+    assert projection["worker_created"] is False
+    assert projection["domain_created"] is False
+    assert capture["provider_response_artifact"]["provider_response_payload"] == provider_response
+    assert capture["development_proposal_artifact"]["proposal_summary"] == provider_response["proposal_summary"]
+    assert reconstructed["provider_request_prompt_projection_present"] is True
+    assert reconstructed["provider_request_prompt_projection_hash"] == projection["artifact_hash"]
+    assert calls and calls[0]["api_key_seen"] is True
 
 
 def test_provider_proposal_production_fails_closed_when_provider_unavailable(tmp_path) -> None:

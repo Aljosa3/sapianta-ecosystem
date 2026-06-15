@@ -18,6 +18,7 @@ from aigol.provider.provider_registry import AVAILABLE, ProviderRegistry
 from aigol.provider.providers.openai_provider import (
     OPENAI_PROVIDER_ID,
     OPENAI_PROVIDER_VERSION,
+    OpenAIProviderAdapter,
     openai_provider_metadata,
 )
 from aigol.runtime.context_assembled_to_ppp_routing_continuation import POST_CONTEXT_CONTINUATION_REACHED_PPP
@@ -194,7 +195,30 @@ def test_interactive_conversation_development_prompt_outputs_context_status(tmp_
 
 
 def test_interactive_conversation_post_entry_clarification_resumes_continuation(tmp_path, monkeypatch) -> None:
-    adapter = FakeProviderAdapter(_valid_provider_response())
+    provider_response = _valid_provider_response()
+    calls: list[dict[str, Any]] = []
+
+    def fake_provider_client(
+        payload: dict[str, Any],
+        *,
+        api_key: str,
+        endpoint: str,
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        calls.append(
+            {
+                "payload": payload,
+                "api_key_seen": bool(api_key),
+                "endpoint": endpoint,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        assert "DEVELOPMENT_PROPOSAL_ARTIFACT_V1-compatible JSON object" in payload["input"]
+        assert "Proposal must remain proposal-only" in payload["input"]
+        return {
+            "id": "resp-native-context-provider-projection-001",
+            "output_text": json.dumps(provider_response),
+        }
 
     def fake_external_worker_client(request_metadata: dict[str, Any]) -> dict[str, Any]:
         assert request_metadata["provider_identity"] == "OPENAI"
@@ -214,7 +238,7 @@ def test_interactive_conversation_post_entry_clarification_resumes_continuation(
     monkeypatch.setattr(
         aigol_cli,
         "_post_context_continuation_provider_adapter",
-        lambda: adapter,
+        lambda: OpenAIProviderAdapter(api_key="test-openai-key", client=fake_provider_client),
     )
     monkeypatch.setattr(aigol_cli, "_external_worker_openai_client", lambda: fake_external_worker_client)
     parser = build_parser()
@@ -255,7 +279,7 @@ def test_interactive_conversation_post_entry_clarification_resumes_continuation(
     assert second["execution_authorization_status"] == "EXECUTION_AUTHORIZED"
     assert second["worker_request_reached"] is True
     assert second["worker_invocation_request_status"] == "WORKER_INVOCATION_REQUEST_CREATED"
-    assert adapter.calls == 1
+    assert calls and calls[0]["api_key_seen"] is True
     assert "Workflow State: WAITING_FOR_OPERATOR" in output[0]
     assert "WAITING FOR OPERATOR INPUT" in output[0]
     assert "Post-Context Continuation" in output[1]

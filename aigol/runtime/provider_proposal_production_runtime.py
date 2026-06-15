@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,7 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 
 AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_VERSION = "AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_V1"
 PROVIDER_REQUEST_PACKET_V1 = "PROVIDER_REQUEST_PACKET_V1"
+PROVIDER_REQUEST_PROMPT_PROJECTION_V1 = "PROVIDER_REQUEST_PROMPT_PROJECTION_V1"
 PROVIDER_RESPONSE_ARTIFACT_V1 = "PROVIDER_RESPONSE_ARTIFACT_V1"
 PROVIDER_PROPOSAL_PRODUCTION_ARTIFACT_V1 = "PROVIDER_PROPOSAL_PRODUCTION_ARTIFACT_V1"
 PROVIDER_PROPOSAL_PRODUCED = "PROVIDER_PROPOSAL_PRODUCED"
@@ -113,9 +115,17 @@ def produce_provider_development_proposal(
             created_at=created_at,
         )
         _persist_step(replay_path, 0, REPLAY_STEPS[0], request_packet)
+        prompt_projection = _provider_request_prompt_projection(
+            request_packet=request_packet,
+            handoff=handoff,
+            context=context,
+            resolution=resolution,
+            created_at=created_at,
+        )
+        _persist_prompt_projection(replay_path, prompt_projection)
         provider_capture = run_provider_attachment(
             provider_id=provider_id,
-            request=request_packet,
+            request=prompt_projection,
             proposal_id=f"{production_id}:PROVIDER-ENVELOPE",
             timestamp=created_at,
             registry=registry,
@@ -164,6 +174,7 @@ def produce_provider_development_proposal(
         _persist_step(replay_path, 3, REPLAY_STEPS[3], returned)
         return _capture(
             request_packet=request_packet,
+            prompt_projection=prompt_projection,
             response_artifact=response_artifact,
             proposal=proposal,
             produced=produced,
@@ -194,6 +205,7 @@ def produce_provider_development_proposal(
         _persist_failure_sequence(replay_path, request_packet, response_artifact, produced, returned)
         return _capture(
             request_packet=request_packet if isinstance(request_packet, dict) else None,
+            prompt_projection=prompt_projection if isinstance(locals().get("prompt_projection"), dict) else None,
             response_artifact=response_artifact if isinstance(response_artifact, dict) else None,
             proposal=proposal if isinstance(proposal, dict) else None,
             produced=produced,
@@ -231,6 +243,19 @@ def reconstruct_provider_proposal_production_replay(replay_dir: str | Path) -> d
         raise FailClosedRuntimeError("provider proposal production replay reference mismatch")
     if returned.get("production_hash") != produced["artifact_hash"]:
         raise FailClosedRuntimeError("provider proposal production replay hash mismatch")
+    prompt_projection = None
+    prompt_projection_path = replay_path / "000_provider_request_prompt_projection.json"
+    if prompt_projection_path.exists():
+        prompt_projection_wrapper = load_json(prompt_projection_path)
+        if prompt_projection_wrapper.get("replay_step") != "provider_request_prompt_projection":
+            raise FailClosedRuntimeError("provider proposal production prompt projection replay step mismatch")
+        _verify_wrapper_hash(prompt_projection_wrapper)
+        prompt_projection = prompt_projection_wrapper.get("artifact")
+        if not isinstance(prompt_projection, dict):
+            raise FailClosedRuntimeError("provider proposal production prompt projection must be a JSON object")
+        _verify_artifact_hash(prompt_projection, "provider request prompt projection")
+        if prompt_projection.get("provider_request_packet_hash") != request["artifact_hash"]:
+            raise FailClosedRuntimeError("provider proposal production prompt projection lineage mismatch")
     return {
         "production_id": produced["production_id"],
         "production_status": produced["production_status"],
@@ -251,6 +276,10 @@ def reconstruct_provider_proposal_production_replay(replay_dir: str | Path) -> d
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
+        "provider_request_prompt_projection_present": prompt_projection is not None,
+        "provider_request_prompt_projection_hash": prompt_projection.get("artifact_hash")
+        if isinstance(prompt_projection, dict)
+        else None,
     }
 
 
@@ -383,6 +412,81 @@ def _provider_request_packet(
     return packet
 
 
+def _provider_request_prompt_projection(
+    *,
+    request_packet: dict[str, Any],
+    handoff: dict[str, Any],
+    context: dict[str, Any],
+    resolution: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    prompt_lines = [
+        "Produce one DEVELOPMENT_PROPOSAL_ARTIFACT_V1-compatible JSON object.",
+        "The proposal must remain proposal-only and non-authoritative.",
+        "",
+        "Task reference: " + _require_string(request_packet.get("task_reference"), "task_reference"),
+        "Domain: " + _require_string(request_packet.get("domain_reference"), "domain_reference"),
+        "Worker family: " + _require_string(request_packet.get("worker_reference"), "worker_reference"),
+        "Milestone: " + _require_string(request_packet.get("milestone_reference"), "milestone_reference"),
+        "Output targets: " + ", ".join(_require_nonempty_string_list(request_packet.get("output_targets"), "output_targets")),
+        "",
+        "Request instructions:",
+        *["- " + item for item in _require_nonempty_string_list(request_packet.get("request_instructions"), "request_instructions")],
+        "",
+        "Constraints:",
+        *["- " + item for item in _require_string_list(request_packet.get("constraints", []), "constraints")],
+        "",
+        "Assumptions:",
+        *["- " + item for item in _require_string_list(request_packet.get("assumptions", []), "assumptions")],
+        "",
+        "Known gaps:",
+        *["- " + item for item in _require_string_list(request_packet.get("known_gaps", []), "known_gaps")],
+        "",
+        "Return JSON with exactly these proposal fields:",
+        "- proposal_summary",
+        "- proposed_outputs",
+        "- constraints_acknowledged",
+        "- assumptions",
+        "- known_gaps",
+        "",
+        "Do not include authorization, execution, dispatch, worker creation, domain creation, governance mutation, or replay mutation fields.",
+    ]
+    prompt = "\n".join(prompt_lines)
+    projection = {
+        "artifact_type": PROVIDER_REQUEST_PROMPT_PROJECTION_V1,
+        "runtime_version": AIGOL_PROVIDER_PROPOSAL_PRODUCTION_RUNTIME_VERSION,
+        "production_id": request_packet["production_id"],
+        "provider_id": request_packet["provider_id"],
+        "canonical_chain_id": request_packet["canonical_chain_id"],
+        "provider_request_packet_reference": request_packet["production_id"],
+        "provider_request_packet_hash": request_packet["artifact_hash"],
+        "provider_request_hash": request_packet["provider_request_hash"],
+        "handoff_reference": handoff["handoff_id"],
+        "handoff_hash": handoff["artifact_hash"],
+        "context_reference": context["context_assembly_id"],
+        "context_hash": context["context_hash"],
+        "registry_resolution_reference": resolution["resolution_id"],
+        "registry_resolution_hash": resolution["artifact_hash"],
+        "prompt": prompt,
+        "human_prompt": prompt,
+        "request": prompt,
+        "adapter_request_shape": "OPENAI_PROVIDER_PROMPT_REQUEST",
+        "proposal_only": True,
+        "provider_authority": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "worker_created": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+    }
+    projection["prompt_hash"] = replay_hash(prompt)
+    projection["artifact_hash"] = replay_hash(projection)
+    return projection
+
+
 def _provider_response_artifact(
     *,
     production_id: str,
@@ -397,7 +501,7 @@ def _provider_response_artifact(
         raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
     if returned.get("failure_reason"):
         raise FailClosedRuntimeError(returned["failure_reason"])
-    response = envelope.get("response")
+    response = _normalize_provider_response_payload(envelope.get("response"))
     if not isinstance(response, dict):
         raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
     _assert_no_authority(response)
@@ -427,6 +531,33 @@ def _provider_response_artifact(
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
+
+
+def _normalize_provider_response_payload(response: Any) -> dict[str, Any]:
+    if not isinstance(response, dict):
+        raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
+    if all(
+        field in response
+        for field in (
+            "proposal_summary",
+            "proposed_outputs",
+            "constraints_acknowledged",
+            "assumptions",
+            "known_gaps",
+        )
+    ):
+        return deepcopy(response)
+    response_text = response.get("response_text")
+    if isinstance(response_text, str) and response_text.strip():
+        try:
+            parsed = json.loads(response_text)
+        except json.JSONDecodeError as exc:
+            raise FailClosedRuntimeError(
+                "provider proposal production failed closed: provider response invalid"
+            ) from exc
+        if isinstance(parsed, dict):
+            return parsed
+    raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
 
 
 def _development_proposal_from_response(
@@ -608,6 +739,7 @@ def _returned_artifact(produced: dict[str, Any]) -> dict[str, Any]:
 def _capture(
     *,
     request_packet: dict[str, Any] | None,
+    prompt_projection: dict[str, Any] | None,
     response_artifact: dict[str, Any] | None,
     proposal: dict[str, Any] | None,
     produced: dict[str, Any],
@@ -616,6 +748,7 @@ def _capture(
 ) -> dict[str, Any]:
     capture = {
         "provider_request_packet": deepcopy(request_packet),
+        "provider_request_prompt_projection": deepcopy(prompt_projection),
         "provider_response_artifact": deepcopy(response_artifact),
         "development_proposal_artifact": deepcopy(proposal),
         "provider_proposal_production_artifact": deepcopy(produced),
@@ -658,6 +791,18 @@ def _persist_failure_sequence(
     _persist_failure_if_possible(replay_path, 1, REPLAY_STEPS[1], fallback_response)
     _persist_failure_if_possible(replay_path, 2, REPLAY_STEPS[2], produced)
     _persist_failure_if_possible(replay_path, 3, REPLAY_STEPS[3], returned)
+
+
+def _persist_prompt_projection(replay_path: Path, artifact: dict[str, Any]) -> None:
+    _verify_artifact_hash(artifact, "provider request prompt projection")
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "provider_request_prompt_projection",
+        "event_type": "PROVIDER_REQUEST_PROMPT_PROJECTION",
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / "000_provider_request_prompt_projection.json", wrapper)
 
 
 def _failure_step_artifact(event_type: str) -> dict[str, Any]:
@@ -757,4 +902,3 @@ def _failure_reason(exc: Exception) -> str:
     if isinstance(exc, FailClosedRuntimeError):
         return str(exc)
     return "provider proposal production failed closed"
-
