@@ -193,6 +193,90 @@ def test_interactive_conversation_development_prompt_outputs_context_status(tmp_
     ).exists()
 
 
+def test_interactive_conversation_post_entry_clarification_resumes_continuation(tmp_path, monkeypatch) -> None:
+    adapter = FakeProviderAdapter(_valid_provider_response())
+
+    def fake_external_worker_client(request_metadata: dict[str, Any]) -> dict[str, Any]:
+        assert request_metadata["provider_identity"] == "OPENAI"
+        assert request_metadata["tool_use"] is False
+        assert request_metadata["function_calling"] is False
+        assert request_metadata["streaming"] is False
+        return {
+            "id": "resp-native-context-openai-worker-clarification-001",
+            "output_text": "Return bounded findings for post-entry clarification continuation.",
+        }
+
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_registry",
+        _available_openai_registry,
+    )
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_adapter",
+        lambda: adapter,
+    )
+    monkeypatch.setattr(aigol_cli, "_external_worker_openai_client", lambda: fake_external_worker_client)
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            "SESSION-NATIVE-CONTEXT-CLI-CLARIFICATION-000001",
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(tmp_path / "interactive_runtime"),
+        ]
+    )
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence([_claude_prompt(), "continue ppp", "exit"]),
+        output_func=output.append,
+    )
+    first, second = result["turns"]
+
+    assert result["failed_turns"] == 0
+    assert first["post_entry_continuation_gate_status"] == "CLARIFICATION_REQUIRED"
+    assert first["post_entry_continuation_allowed"] is False
+    assert first["clarification_required"] is True
+    assert first["open_clarification_detected"] is True
+    assert first["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert first["workflow_status"]["workflow_complete"] is False
+    assert second["canonical_chain_id"] == first["canonical_chain_id"]
+    assert second["post_entry_continuation_gate_status"] == CONTINUATION_ALLOWED
+    assert second["post_entry_continuation_allowed"] is True
+    assert second["post_context_continuation_status"] == POST_CONTEXT_CONTINUATION_REACHED_PPP
+    assert second["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert second["execution_summary_reference"]
+    assert second["human_confirmation_reference"]
+    assert second["execution_authorization_status"] == "EXECUTION_AUTHORIZED"
+    assert second["worker_request_reached"] is True
+    assert second["worker_invocation_request_status"] == "WORKER_INVOCATION_REQUEST_CREATED"
+    assert adapter.calls == 1
+    assert "Workflow State: WAITING_FOR_OPERATOR" in output[0]
+    assert "WAITING FOR OPERATOR INPUT" in output[0]
+    assert "Post-Context Continuation" in output[1]
+    assert (
+        tmp_path
+        / "interactive_runtime"
+        / "SESSION-NATIVE-CONTEXT-CLI-CLARIFICATION-000001"
+        / "TURN-000002"
+        / "post_entry_continuation_gate"
+        / "000_post_entry_continuation_gate_recorded.json"
+    ).exists()
+    assert (
+        tmp_path
+        / "interactive_runtime"
+        / "SESSION-NATIVE-CONTEXT-CLI-CLARIFICATION-000001"
+        / "TURN-000002"
+        / "post_context_continuation"
+        / "000_post_context_continuation_recorded.json"
+    ).exists()
+
+
 def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_path, monkeypatch) -> None:
     adapter = FakeProviderAdapter(_valid_provider_response())
 

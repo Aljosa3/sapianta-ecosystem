@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 import select
 import sys
@@ -223,6 +224,7 @@ from aigol.runtime.context_assembled_to_ppp_routing_continuation import (
     continue_context_assembled_to_ppp_routing,
 )
 from aigol.runtime.post_entry_continuation_gate_runtime import (
+    CLARIFICATION_REQUIRED as POST_ENTRY_CLARIFICATION_REQUIRED,
     CONTINUATION_ALLOWED as POST_ENTRY_CONTINUATION_ALLOWED,
     evaluate_post_entry_continuation_gate,
 )
@@ -664,6 +666,11 @@ def _post_context_continuation_should_run(
         return False
     if auto_continue_enabled:
         return True
+    normalized_prompt = " ".join(human_prompt.lower().split())
+    return "continue" in normalized_prompt and "ppp" in normalized_prompt
+
+
+def _post_entry_continuation_clarification_matches(human_prompt: str) -> bool:
     normalized_prompt = " ".join(human_prompt.lower().split())
     return "continue" in normalized_prompt and "ppp" in normalized_prompt
 
@@ -2855,6 +2862,7 @@ def run_interactive_conversation(
     latest_workflow_status: dict[str, Any] | None = None
     auto_continue_enabled = bool(getattr(args, "auto_continue", False))
     pending_auto_continuation: str | None = None
+    pending_post_entry_continuation: dict[str, Any] | None = None
     auto_continue_turns = 0
     auto_continue_stop_reason: str | None = None
     if input_func is None and output_func is None:
@@ -2972,6 +2980,10 @@ def run_interactive_conversation(
                     and recommendation_approval_artifact is not None
                     and is_recommendation_followup_prompt(human_prompt)
                 )
+                or (
+                    pending_post_entry_continuation is not None
+                    and _post_entry_continuation_clarification_matches(human_prompt)
+                )
             )
             conversational_routing_capture: dict[str, Any] | None = None
             if not stateful_pre_routing_gate:
@@ -3041,7 +3053,119 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if active_clarification_reply_mismatch_detected:
+            if (
+                pending_post_entry_continuation is not None
+                and _post_entry_continuation_clarification_matches(human_prompt)
+            ):
+                pending_native_context = pending_post_entry_continuation["native_context_capture"]
+                current_chain_id = pending_post_entry_continuation.get("current_chain_id") or current_chain_id
+                latest_chain_id = pending_post_entry_continuation.get("latest_chain_id") or current_chain_id
+                native_context_capture = deepcopy(pending_native_context)
+                native_context_capture["post_entry_clarification_resolved"] = True
+                native_context_capture["clarification_required"] = False
+                native_context_capture["open_clarification_detected"] = False
+                native_context_capture["current_chain_id"] = current_chain_id
+                native_context_capture["latest_chain_id"] = latest_chain_id
+                native_output = render_conversation_native_development_context_summary(native_context_capture)
+                post_entry_gate_capture = evaluate_post_entry_continuation_gate(
+                    gate_id=f"{prompt_id}:POST-ENTRY-CONTINUATION-GATE",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    workflow_id=CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+                    lifecycle_entry_status=str(native_context_capture.get("context_status") or ""),
+                    provider_necessity_classification=native_context_capture.get(
+                        "provider_necessity_classification"
+                    ),
+                    auto_continue_enabled=False,
+                    created_at=created_at,
+                    replay_dir=turn_root / "post_entry_continuation_gate",
+                    lifecycle_replay_reference=native_context_capture.get("conversation_replay_reference"),
+                )
+                native_context_capture["post_entry_continuation_gate"] = post_entry_gate_capture
+                native_context_capture["post_entry_continuation_gate_status"] = post_entry_gate_capture.get(
+                    "gate_status"
+                )
+                native_context_capture["post_entry_continuation_gate_replay_reference"] = (
+                    post_entry_gate_capture.get("post_entry_continuation_gate_replay_reference")
+                )
+                if post_entry_gate_capture.get("fail_closed") is True:
+                    native_context_capture["fail_closed"] = True
+                    native_context_capture["failure_reason"] = post_entry_gate_capture.get("failure_reason")
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                elif (
+                    post_entry_gate_capture.get("gate_status") == POST_ENTRY_CONTINUATION_ALLOWED
+                    and _post_context_continuation_should_run(
+                        native_context_capture=native_context_capture,
+                        auto_continue_enabled=False,
+                        human_prompt=human_prompt,
+                    )
+                ):
+                    post_context_continuation_capture = continue_context_assembled_to_ppp_routing(
+                        continuation_id=f"{prompt_id}:POST-CONTEXT-CONTINUATION",
+                        prompt_id=prompt_id,
+                        human_prompt=pending_post_entry_continuation["original_human_prompt"],
+                        provider_id=OPENAI_PROVIDER_ID,
+                        created_at=created_at,
+                        replay_dir=turn_root / "post_context_continuation",
+                        registry=_post_context_continuation_provider_registry(),
+                        adapter=_post_context_continuation_provider_adapter(),
+                        governance_root="governance",
+                        session_id=session_id,
+                        turn_id=turn_id,
+                        current_chain_id=current_chain_id,
+                        latest_chain_id=latest_chain_id,
+                    )
+                    native_context_capture["post_context_continuation"] = post_context_continuation_capture
+                    native_context_capture["ppp_route_status"] = post_context_continuation_capture.get(
+                        "ppp_route_status"
+                    )
+                    native_context_capture["post_context_continuation_replay_reference"] = (
+                        post_context_continuation_capture.get("post_context_continuation_replay_reference")
+                    )
+                    if post_context_continuation_capture.get("fail_closed") is True:
+                        native_context_capture["fail_closed"] = True
+                        native_context_capture["failure_reason"] = post_context_continuation_capture.get(
+                            "failure_reason"
+                        )
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                    else:
+                        try:
+                            worker_request_continuation = _continue_ppp_handoff_to_worker_request(
+                                prompt_id=prompt_id,
+                                post_context_continuation_capture=post_context_continuation_capture,
+                                created_at=created_at,
+                                replay_dir=turn_root / "certified_development_continuation",
+                            )
+                            native_context_capture["certified_development_continuation"] = (
+                                worker_request_continuation
+                            )
+                        except FailClosedRuntimeError as exc:
+                            native_context_capture["fail_closed"] = True
+                            native_context_capture["failure_reason"] = str(exc)
+                            failed_turns += 1
+                            output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                        else:
+                            pending_post_entry_continuation = None
+                            native_output += "\n" + _post_context_continuation_output(
+                                post_context_continuation_capture
+                            )
+                            native_output += "\n" + _worker_lifecycle_continuation_output(
+                                worker_request_continuation
+                            )
+                if native_context_capture.get("fail_closed") is not True:
+                    output_writer(native_output)
+                turns.append(
+                    _interactive_native_development_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        native_context_capture=native_context_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif active_clarification_reply_mismatch_detected:
                 failed_turns += 1
                 failure_reason = (
                     "clarification continuity failed closed: reply does not match active clarification scope"
@@ -4834,6 +4958,19 @@ def run_interactive_conversation(
                         native_context_capture["failure_reason"] = post_entry_gate_capture.get("failure_reason")
                         failed_turns += 1
                         output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                    elif post_entry_gate_capture.get("gate_status") == POST_ENTRY_CLARIFICATION_REQUIRED:
+                        native_context_capture["clarification_required"] = True
+                        native_context_capture["open_clarification_detected"] = True
+                        native_context_capture["missing_information"] = [
+                            "explicit post-entry continuation confirmation: continue ppp"
+                        ]
+                        native_context_capture["post_entry_clarification_pending"] = True
+                        pending_post_entry_continuation = {
+                            "native_context_capture": deepcopy(native_context_capture),
+                            "original_human_prompt": human_prompt,
+                            "current_chain_id": current_chain_id,
+                            "latest_chain_id": latest_chain_id,
+                        }
                     elif (
                         post_entry_gate_capture.get("gate_status") == POST_ENTRY_CONTINUATION_ALLOWED
                         and _post_context_continuation_should_run(
@@ -7195,6 +7332,11 @@ def _interactive_native_development_turn_summary(
         "post_entry_continuation_gate_replay_reference": post_entry_gate.get(
             "post_entry_continuation_gate_replay_reference"
         ),
+        "clarification_required": native_context_capture.get("clarification_required") is True,
+        "open_clarification_detected": native_context_capture.get("open_clarification_detected") is True,
+        "missing_information": native_context_capture.get("missing_information", []),
+        "post_entry_clarification_pending": native_context_capture.get("post_entry_clarification_pending") is True,
+        "post_entry_clarification_resolved": native_context_capture.get("post_entry_clarification_resolved") is True,
         "post_entry_execution_summary_required": post_entry_gate.get("execution_summary_required") is True,
         "post_entry_human_confirmation_required": post_entry_gate.get("human_confirmation_required") is True,
         "post_entry_authorization_required": post_entry_gate.get("authorization_required") is True,
