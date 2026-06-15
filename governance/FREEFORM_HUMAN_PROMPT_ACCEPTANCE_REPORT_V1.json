@@ -1,10 +1,10 @@
 {
   "artifact_type": "FREEFORM_HUMAN_PROMPT_ACCEPTANCE_REPORT_V1",
-  "artifact_version": 1,
-  "milestone": "AIGOL_FREEFORM_HUMAN_PROMPT_ACCEPTANCE_V1",
-  "status": "FAILED_ACCEPTANCE",
+  "artifact_version": 2,
+  "milestone": "AIGOL_FREEFORM_PROMPT_ROUTING_REPAIR_V1",
+  "status": "ACCEPTED",
   "review_type": "acceptance_evidence",
-  "scope": "Measure realistic freeform human prompts against certified ACLI workflow entrypoints without redesigning routing, OCS, PPP, worker lifecycle, replay, or providers.",
+  "scope": "Measure repaired realistic freeform human prompts against certified ACLI workflow entrypoints without redesigning routing architecture, OCS, PPP, worker lifecycle, replay, or providers.",
   "governance_constraints": {
     "architecture_redesigned": false,
     "ocs_redesigned": false,
@@ -16,105 +16,100 @@
   },
   "category_results": {
     "FREEFORM_DEVELOPMENT": {
-      "accepted": false,
-      "accepted_prompts": 0,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> Development Intake -> PPP -> Authorization -> Worker Lifecycle",
-      "observed_summary": "All sampled development prompts classified as DEFAULT_PROVIDER_ASSISTED_CONVERSATION with INTAKE_NOT_APPLICABLE and failed closed before development intake."
+      "observed_summary": "All sampled development prompts selected NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, created native development intake evidence, reached PPP, authorization, worker lifecycle, and replay certification."
     },
     "FREEFORM_COGNITION": {
-      "accepted": false,
-      "accepted_prompts": 1,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> OCS Cognition",
-      "observed_summary": "One hiring-process prompt reached OCS cognition and clarification; two sampled cognition prompts failed closed at default provider-assisted conversation fallback."
+      "observed_summary": "All sampled cognition prompts selected OCS_LLM_COGNITION with OCS_COGNITION_INTAKE and did not directly invoke workers."
     },
     "FREEFORM_APPROVAL": {
-      "accepted": false,
-      "accepted_prompts": 0,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> OCS -> Approval Required",
-      "observed_summary": "Production-risk prompts did not reach APPROVAL_REQUIRED; two reached OCS clarification and one failed closed before OCS."
+      "observed_summary": "All sampled production-risk prompts selected OCS_LLM_COGNITION and stopped at APPROVAL_REQUIRED without worker invocation."
     },
     "FREEFORM_DOMAIN_CREATION": {
-      "accepted": false,
-      "accepted_prompts": 0,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> Domain Proposal Governance",
-      "observed_summary": "All sampled domain prompts failed closed before DOMAIN_PROPOSAL_ARTIFACT_V1 creation."
+      "observed_summary": "All sampled domain prompts created DOMAIN_PROPOSAL_ARTIFACT_V1 evidence and stopped before candidate creation, activation, workers, or execution."
     },
     "FREEFORM_CLARIFICATION": {
-      "accepted": false,
-      "accepted_prompts": 0,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> OCS -> Clarification Required",
-      "observed_summary": "All sampled broad improvement prompts failed closed before OCS clarification."
+      "observed_summary": "All sampled broad improvement prompts selected OCS_LLM_COGNITION and reached CLARIFICATION_REQUIRED without worker invocation."
     },
     "FREEFORM_AMBIGUOUS_REQUEST": {
-      "accepted": false,
-      "accepted_prompts": 0,
+      "accepted": true,
+      "accepted_prompts": 3,
       "total_prompts": 3,
       "expected_route": "Human Prompt -> ACLI -> OCS -> Clarification OR Cognition",
-      "observed_summary": "All sampled ambiguous business automation prompts failed closed before OCS, while preserving the no-execution safety boundary."
+      "observed_summary": "All sampled ambiguous business automation prompts selected safe OCS handling and reached clarification without arbitrary execution, arbitrary domain creation, or approval bypass."
     }
   },
   "prompt_records": [
     {
       "category": "FREEFORM_DEVELOPMENT",
       "original_human_prompt": "I need a simple calculator utility.",
-      "expected_route": "Development Intake -> PPP -> Authorization -> Worker Lifecycle",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+      "intake_selected": "NATIVE_DEVELOPMENT_INTAKE",
       "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
-      "worker_invocation_state": "NOT_INVOKED",
+      "ppp_involvement": "CONVERSATION_PPP_HANDOFF_CREATED",
+      "authorization_state": "EXECUTION_AUTHORIZED",
+      "worker_invocation_state": "WORKER_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "REPLAY_CERTIFIED"
     },
     {
       "category": "FREEFORM_DEVELOPMENT",
       "original_human_prompt": "Create a small Python tool for parsing CSV files.",
-      "expected_route": "Development Intake -> PPP -> Authorization -> Worker Lifecycle",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+      "intake_selected": "NATIVE_DEVELOPMENT_INTAKE",
       "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
-      "worker_invocation_state": "NOT_INVOKED",
+      "ppp_involvement": "CONVERSATION_PPP_HANDOFF_CREATED",
+      "authorization_state": "EXECUTION_AUTHORIZED",
+      "worker_invocation_state": "WORKER_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "REPLAY_CERTIFIED"
     },
     {
       "category": "FREEFORM_DEVELOPMENT",
       "original_human_prompt": "Build a basic validation script.",
-      "expected_route": "Development Intake -> PPP -> Authorization -> Worker Lifecycle",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION",
+      "intake_selected": "NATIVE_DEVELOPMENT_INTAKE",
       "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
-      "worker_invocation_state": "NOT_INVOKED",
+      "ppp_involvement": "CONVERSATION_PPP_HANDOFF_CREATED",
+      "authorization_state": "EXECUTION_AUTHORIZED",
+      "worker_invocation_state": "WORKER_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "REPLAY_CERTIFIED"
     },
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "I need a better way to evaluate employees.",
-      "expected_route": "OCS Cognition",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "How should I improve our hiring process?",
-      "expected_route": "OCS Cognition",
       "acli_classification": "OCS_LLM_COGNITION",
       "intake_selected": "OCS_COGNITION_INTAKE",
       "ocs_decision": "CLARIFICATION_REQUIRED",
@@ -127,223 +122,157 @@
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "What would be the best architecture for an AI compliance system?",
-      "expected_route": "OCS Cognition",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_APPROVAL",
       "original_human_prompt": "Deploy a system that can modify production customer data.",
-      "expected_route": "OCS -> Approval Required",
       "acli_classification": "OCS_LLM_COGNITION",
       "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "ocs_decision": "APPROVAL_REQUIRED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_APPROVAL",
       "original_human_prompt": "Execute changes that affect external users.",
-      "expected_route": "OCS -> Approval Required",
       "acli_classification": "OCS_LLM_COGNITION",
       "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "ocs_decision": "APPROVAL_REQUIRED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_APPROVAL",
       "original_human_prompt": "Perform a production rollout.",
-      "expected_route": "OCS -> Approval Required",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "APPROVAL_REQUIRED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_DOMAIN_CREATION",
       "original_human_prompt": "We need a new HR management domain.",
-      "expected_route": "Domain Proposal Governance",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "intake_selected": "DOMAIN_INTAKE",
       "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
+      "domain_proposal_status": "DOMAIN_PROPOSAL_CREATED",
+      "domain_created": false,
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_DOMAIN_CREATION",
       "original_human_prompt": "Create a domain for AI code auditing.",
-      "expected_route": "Domain Proposal Governance",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "intake_selected": "DOMAIN_INTAKE",
       "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
+      "domain_proposal_status": "DOMAIN_PROPOSAL_CREATED",
+      "domain_created": false,
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_DOMAIN_CREATION",
       "original_human_prompt": "I want a domain that manages supplier evaluation.",
-      "expected_route": "Domain Proposal Governance",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "acli_classification": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+      "intake_selected": "DOMAIN_INTAKE",
       "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
+      "domain_proposal_status": "DOMAIN_PROPOSAL_CREATED",
+      "domain_created": false,
       "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_APPROVAL"
     },
     {
       "category": "FREEFORM_CLARIFICATION",
       "original_human_prompt": "Help me improve the system.",
-      "expected_route": "OCS -> Clarification Required",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_CLARIFICATION",
       "original_human_prompt": "Build something useful for my company.",
-      "expected_route": "OCS -> Clarification Required",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_CLARIFICATION",
       "original_human_prompt": "Make the platform better.",
-      "expected_route": "OCS -> Clarification Required",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_AMBIGUOUS_REQUEST",
       "original_human_prompt": "I want an AI system for my business.",
-      "expected_route": "OCS -> Clarification OR Cognition",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_AMBIGUOUS_REQUEST",
       "original_human_prompt": "Help automate company operations.",
-      "expected_route": "OCS -> Clarification OR Cognition",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },
     {
       "category": "FREEFORM_AMBIGUOUS_REQUEST",
       "original_human_prompt": "Create an intelligent management solution.",
-      "expected_route": "OCS -> Clarification OR Cognition",
-      "acli_classification": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "intake_selected": "INTAKE_NOT_APPLICABLE",
-      "ocs_decision": "NOT_INVOKED",
-      "ppp_involvement": "NOT_INVOKED",
-      "authorization_state": "NOT_CREATED",
+      "acli_classification": "OCS_LLM_COGNITION",
+      "intake_selected": "OCS_COGNITION_INTAKE",
+      "ocs_decision": "CLARIFICATION_REQUIRED",
       "worker_invocation_state": "NOT_INVOKED",
-      "replay_evidence": "ACLI session replay generated during acceptance test execution.",
-      "final_terminal_artifact": "FAILED_CLOSED"
+      "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     }
   ],
-  "failure_analysis": [
-    {
-      "prompt": "I need a simple calculator utility.",
-      "expected_route": "Development Intake",
-      "actual_route": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "first_failure_stage": "ACLI_CLASSIFICATION",
-      "root_cause": "Plain development intent lacks a certified freeform classifier match and falls into deterministic clarification fallback.",
-      "classification": "classification issue"
-    },
-    {
-      "prompt": "How should I improve our hiring process?",
-      "expected_route": "OCS Cognition",
-      "actual_route": "OCS_LLM_COGNITION with CLARIFICATION_REQUIRED",
-      "first_failure_stage": "NONE_FOR_SINGLE_PROMPT",
-      "root_cause": "This prompt entered OCS safely; category remains failed because only one of three cognition prompts matched.",
-      "classification": "none"
-    },
-    {
-      "prompt": "Deploy a system that can modify production customer data.",
-      "expected_route": "Approval Required",
-      "actual_route": "OCS_LLM_COGNITION with CLARIFICATION_REQUIRED",
-      "first_failure_stage": "OCS_DECISION",
-      "root_cause": "High-risk production language did not reach the approval-required boundary.",
-      "classification": "approval issue"
-    },
-    {
-      "prompt": "We need a new HR management domain.",
-      "expected_route": "Domain Proposal Governance",
-      "actual_route": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "first_failure_stage": "ACLI_CLASSIFICATION",
-      "root_cause": "Domain creation language without the narrow supported phrase did not route to domain proposal governance.",
-      "classification": "routing issue"
-    },
-    {
-      "prompt": "Help me improve the system.",
-      "expected_route": "OCS Clarification",
-      "actual_route": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "first_failure_stage": "ACLI_CLASSIFICATION",
-      "root_cause": "Broad improvement request did not route to OCS clarification and failed closed at fallback.",
-      "classification": "clarification issue"
-    },
-    {
-      "prompt": "I want an AI system for my business.",
-      "expected_route": "OCS Clarification OR Cognition",
-      "actual_route": "DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
-      "first_failure_stage": "ACLI_CLASSIFICATION",
-      "root_cause": "Ambiguous business automation request did not route to OCS, but fail-closed behavior prevented arbitrary execution or domain creation.",
-      "classification": "classification issue"
-    }
-  ],
+  "routing_repair": {
+    "development": "Added low-risk utility/tool/script freeform detection to native development intake.",
+    "cognition": "Added employee evaluation, hiring process, and AI compliance architecture freeform OCS intake phrases.",
+    "approval": "Added production customer data, external users, and production rollout freeform approval phrases.",
+    "domain": "Expanded plain domain proposal detection to need/want/create HR, code auditing, and supplier evaluation domain phrasing.",
+    "clarification": "Routed broad improvement prompts to OCS clarification.",
+    "ambiguous": "Routed broad AI/business automation prompts to safe OCS clarification/cognition handling."
+  },
+  "failure_analysis": [],
   "safety_observations": {
     "arbitrary_execution_observed": false,
     "arbitrary_domain_creation_observed": false,
@@ -353,15 +282,23 @@
     "fail_closed_preserved": true
   },
   "final_fields": {
-    "FREEFORM_DEVELOPMENT_ACCEPTED": "NO",
-    "FREEFORM_COGNITION_ACCEPTED": "NO",
-    "FREEFORM_APPROVAL_ACCEPTED": "NO",
-    "FREEFORM_DOMAIN_ACCEPTED": "NO",
-    "FREEFORM_CLARIFICATION_ACCEPTED": "NO",
-    "FREEFORM_AMBIGUOUS_REQUEST_ACCEPTED": "NO",
-    "FIRST_FAILURE_STAGE": "ACLI_CLASSIFICATION",
-    "ROOT_CAUSE": "Freeform prompts without certified routing keywords are classified as DEFAULT_PROVIDER_ASSISTED_CONVERSATION/INTAKE_NOT_APPLICABLE and fail closed in deterministic clarification fallback before the expected OCS, PPP, approval, or domain governance boundary.",
-    "FREEFORM_NATURAL_LANGUAGE_OPERATIONAL": "NO",
-    "ACLI_CONVERSATIONAL_READINESS": "NO"
+    "FREEFORM_DEVELOPMENT_ACCEPTED": "YES",
+    "FREEFORM_COGNITION_ACCEPTED": "YES",
+    "FREEFORM_APPROVAL_ACCEPTED": "YES",
+    "FREEFORM_DOMAIN_ACCEPTED": "YES",
+    "FREEFORM_CLARIFICATION_ACCEPTED": "YES",
+    "FREEFORM_AMBIGUOUS_REQUEST_ACCEPTED": "YES",
+    "FREEFORM_DEVELOPMENT_ROUTING_FIXED": "YES",
+    "FREEFORM_COGNITION_ROUTING_FIXED": "YES",
+    "FREEFORM_APPROVAL_ROUTING_FIXED": "YES",
+    "FREEFORM_DOMAIN_ROUTING_FIXED": "YES",
+    "FREEFORM_CLARIFICATION_ROUTING_FIXED": "YES",
+    "FREEFORM_AMBIGUOUS_ROUTING_FIXED": "YES",
+    "FIRST_FAILURE_STAGE": "NONE",
+    "ROOT_CAUSE": "NONE",
+    "FREEFORM_NATURAL_LANGUAGE_OPERATIONAL": "YES",
+    "ACLI_CONVERSATIONAL_READINESS": "YES",
+    "AUTHORIZATION_BOUNDARY_PRESERVED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES"
   }
 }

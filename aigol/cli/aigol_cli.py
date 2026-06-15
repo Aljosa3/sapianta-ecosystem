@@ -190,6 +190,7 @@ from aigol.runtime.conversational_cli_runtime import (
     DOMAIN_WORKER_REQUEST as CONVERSATIONAL_DOMAIN_WORKER_REQUEST,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
+    NATIVE_DEVELOPMENT_INTENT_ROUTING as CONVERSATIONAL_NATIVE_DEVELOPMENT_INTENT_ROUTING,
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION as CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION as CONVERSATIONAL_OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT as CONVERSATIONAL_OPERATOR_DECISION_SUPPORT,
@@ -2187,17 +2188,23 @@ def _is_plain_domain_proposal_prompt(human_prompt: str) -> bool:
     normalized = " ".join(str(human_prompt or "").lower().split())
     return (
         "domain" in normalized
-        and "create" in normalized
+        and ("create" in normalized or "need" in normalized or "want" in normalized)
         and "governed" not in normalized
         and "called" not in normalized
         and "named" not in normalized
-        and any(term in normalized for term in ("new", "hr", "evaluation"))
+        and any(term in normalized for term in ("new", "hr", "evaluation", "code auditing", "supplier"))
     )
 
 
 def _is_plain_ocs_approval_prompt(human_prompt: str) -> bool:
     normalized = " ".join(str(human_prompt or "").lower().split())
-    return "deploy" in normalized and "production" in normalized and "external users" in normalized
+    return (
+        ("deploy" in normalized and "production" in normalized)
+        or "modify production customer data" in normalized
+        or "production customer data" in normalized
+        or "external users" in normalized
+        or "production rollout" in normalized
+    )
 
 
 def _plain_domain_proposal_name(human_prompt: str) -> str:
@@ -4304,6 +4311,7 @@ def run_interactive_conversation(
             elif authoritative_workflow_id in {
                 CONVERSATIONAL_CREATE_DOMAIN_TRADING,
                 CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
+                CONVERSATIONAL_NATIVE_DEVELOPMENT_INTENT_ROUTING,
             }:
                 routing_capture = run_conversation_native_development_intent_routing(
                     routing_id=f"{prompt_id}:NATIVE_DEVELOPMENT_INTENT_ROUTING",

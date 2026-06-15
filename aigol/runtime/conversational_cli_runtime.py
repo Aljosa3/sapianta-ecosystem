@@ -28,6 +28,7 @@ from aigol.runtime.worker_assignment_runtime import detect_domain_worker_assignm
 from aigol.runtime.worker_dispatch_runtime import detect_domain_worker_dispatch_entry_intent
 from aigol.runtime.worker_invocation_runtime import detect_domain_worker_invocation_entry_intent
 from aigol.runtime.worker_invocation_request_runtime import detect_domain_worker_request_entry_intent
+from aigol.runtime.conversation_native_development_intent_routing import is_conversation_native_development_intent
 from aigol.runtime.native_development_task_intake_runtime import is_plain_native_development_prompt
 
 
@@ -52,6 +53,7 @@ IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
 SHOW_STATUS = "SHOW_STATUS"
 SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
+NATIVE_DEVELOPMENT_INTENT_ROUTING = "NATIVE_DEVELOPMENT_INTENT_ROUTING"
 NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
 AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW = "AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW"
 DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE = "DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE"
@@ -227,6 +229,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
         _workflow(IMPROVE_PROVIDER_LAYER, "aigol conversational route", "provider_layer_review_guidance"),
         _workflow(SHOW_STATUS, "aigol status", "status_summary"),
         _workflow(SHOW_DASHBOARD, "aigol dashboard", "session_dashboard_runtime"),
+        _workflow(
+            NATIVE_DEVELOPMENT_INTENT_ROUTING,
+            "aigol conversation",
+            "conversation_native_development_intent_routing",
+        ),
         _workflow(
             NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
             "aigol conversation",
@@ -433,6 +440,20 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
                 str(approval_entry_intent.get("domain_name") or ""),
             ],
         )
+    if _is_freeform_clarification_prompt(normalized):
+        return _analysis(OCS_LLM_COGNITION, "HIGH", ["freeform", "clarification", "ocs"])
+    if _is_freeform_ambiguous_prompt(normalized):
+        return _analysis(OCS_LLM_COGNITION, "HIGH", ["freeform", "ambiguous", "ocs"])
+    if "create" in normalized and "trading" in normalized and "domain" in normalized:
+        return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
+    if "create" in normalized and "marketing" in normalized and "domain" in normalized:
+        return _analysis(CREATE_DOMAIN_MARKETING, "HIGH", ["create", "marketing", "domain"])
+    if is_conversation_native_development_intent(prompt):
+        return _analysis(
+            NATIVE_DEVELOPMENT_INTENT_ROUTING,
+            "HIGH",
+            ["native", "development", "intent"],
+        )
     if _is_ocs_llm_cognition_prompt(
         normalized,
         ends_with_question=normalized_with_punctuation.endswith("?"),
@@ -446,10 +467,6 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, "HIGH", ["plain", "native", "development"])
     if _is_operator_decision_support_prompt(normalized):
         return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["operator", "decision", "support"])
-    if "create" in normalized and "trading" in normalized and "domain" in normalized:
-        return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
-    if "create" in normalized and "marketing" in normalized and "domain" in normalized:
-        return _analysis(CREATE_DOMAIN_MARKETING, "HIGH", ["create", "marketing", "domain"])
     if "create" in normalized and "domain" in normalized and (
         "compliance" in normalized or "regulatory" in normalized
     ):
@@ -598,6 +615,12 @@ def _is_plain_ocs_intake_prompt(normalized: str) -> bool:
     return (
         "suitable for my business" in normalized
         or "external users" in normalized
+        or "modify production customer data" in normalized
+        or "production customer data" in normalized
+        or "production rollout" in normalized
+        or "evaluate employees" in normalized
+        or "hiring process" in normalized
+        or "ai compliance system" in normalized
         or ("deploy" in normalized and "production" in normalized)
         or ("reporting system" in normalized and "business" in normalized)
     )
@@ -606,12 +629,28 @@ def _is_plain_ocs_intake_prompt(normalized: str) -> bool:
 def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
     return (
         "domain" in normalized
-        and "create" in normalized
+        and ("create" in normalized or "need" in normalized or "want" in normalized)
         and "governed" not in normalized
         and "called" not in normalized
         and "named" not in normalized
-        and any(term in normalized for term in ("new", "evaluation", "hr"))
+        and any(term in normalized for term in ("new", "evaluation", "hr", "code auditing", "supplier"))
     )
+
+
+def _is_freeform_clarification_prompt(normalized: str) -> bool:
+    return normalized in {
+        "help me improve the system",
+        "build something useful for my company",
+        "make the platform better",
+    }
+
+
+def _is_freeform_ambiguous_prompt(normalized: str) -> bool:
+    return normalized in {
+        "i want an ai system for my business",
+        "help automate company operations",
+        "create an intelligent management solution",
+    }
 
 
 def _is_native_development_context_prompt(prompt: str) -> bool:

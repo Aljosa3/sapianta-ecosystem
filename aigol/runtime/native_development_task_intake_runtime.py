@@ -76,6 +76,17 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
         return False
     if any(term in lowered for term in ("deploy", "production", "external users", "domain", "business")):
         return False
+    freeform_development_subject = any(
+        term in lowered
+        for term in (
+            "calculator utility",
+            "python tool",
+            "validation script",
+            "csv",
+        )
+    )
+    if freeform_development_subject and any(term in lowered for term in ("need", "create", "build")):
+        return True
     return (
         lowered.startswith(("implement ", "build ", "add ", "create "))
         and any(term in lowered for term in ("function", "test", "runtime", "helper", "validator", "parser"))
