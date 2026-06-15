@@ -52,6 +52,10 @@ def _approval(**fields: object) -> dict:
         "approved_by": "HUMAN_OPERATOR",
         "approved_at": CREATED_AT,
         "capability_executor_invocation_allowed": False,
+        "execution_summary_reference": "EXECUTION-SUMMARY-CAPABILITY-ATTACHMENT-000001",
+        "execution_summary_hash": replay_hash({"summary": "capability-attachment"}),
+        "human_confirmation_reference": "EXECUTION-SUMMARY-CONFIRMATION-CAPABILITY-ATTACHMENT-000001",
+        "human_confirmation_hash": replay_hash({"confirmation": "capability-attachment"}),
         "replay_visible": True,
     }
     artifact.update(fields)

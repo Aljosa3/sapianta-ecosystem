@@ -45,6 +45,10 @@ def _approval(**fields: object) -> dict:
         "approved_by": "HUMAN_OPERATOR",
         "approved_at": CREATED_AT,
         "live_registry_mutation_allowed": False,
+        "execution_summary_reference": "EXECUTION-SUMMARY-DOMAIN-LIFECYCLE-000001",
+        "execution_summary_hash": replay_hash({"summary": "domain-lifecycle"}),
+        "human_confirmation_reference": "EXECUTION-SUMMARY-CONFIRMATION-DOMAIN-LIFECYCLE-000001",
+        "human_confirmation_hash": replay_hash({"confirmation": "domain-lifecycle"}),
         "replay_visible": True,
     }
     artifact.update(fields)
