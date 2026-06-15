@@ -27,6 +27,7 @@ from aigol.runtime.conversation_native_development_context_integration import (
     reconstruct_conversation_native_development_context_integration_replay,
     run_conversation_native_development_context_integration,
 )
+from aigol.runtime.post_entry_continuation_gate_runtime import CONTINUATION_ALLOWED
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 
@@ -194,6 +195,17 @@ def test_interactive_conversation_development_prompt_outputs_context_status(tmp_
 
 def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_path, monkeypatch) -> None:
     adapter = FakeProviderAdapter(_valid_provider_response())
+
+    def fake_external_worker_client(request_metadata: dict[str, Any]) -> dict[str, Any]:
+        assert request_metadata["provider_identity"] == "OPENAI"
+        assert request_metadata["tool_use"] is False
+        assert request_metadata["function_calling"] is False
+        assert request_metadata["streaming"] is False
+        return {
+            "id": "resp-native-context-openai-worker-001",
+            "output_text": "Return bounded findings for native context continuation.",
+        }
+
     monkeypatch.setattr(
         aigol_cli,
         "_post_context_continuation_provider_registry",
@@ -204,6 +216,7 @@ def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_pa
         "_post_context_continuation_provider_adapter",
         lambda: adapter,
     )
+    monkeypatch.setattr(aigol_cli, "_external_worker_openai_client", lambda: fake_external_worker_client)
     parser = build_parser()
     args = parser.parse_args(
         [
@@ -230,6 +243,12 @@ def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_pa
     assert result["auto_continue_enabled"] is True
     assert turn["context_status"] == "CONTEXT_ASSEMBLED"
     assert turn["provider_necessity_classification"] == "PROVIDER_REQUIRED_FOR_PROPOSAL"
+    assert turn["post_entry_continuation_gate_status"] == CONTINUATION_ALLOWED
+    assert turn["post_entry_continuation_allowed"] is True
+    assert turn["post_entry_execution_summary_required"] is True
+    assert turn["post_entry_human_confirmation_required"] is True
+    assert turn["post_entry_authorization_required"] is True
+    assert turn["post_entry_continuation_gate_replay_reference"]
     assert turn["post_context_continuation_status"] == POST_CONTEXT_CONTINUATION_REACHED_PPP
     assert turn["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert turn["post_context_continuation_replay_reference"]
@@ -237,6 +256,14 @@ def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_pa
     assert turn["implementation_handoff_reference"]
     assert adapter.calls == 1
     assert "Post-Context Continuation" in output[0]
+    assert (
+        tmp_path
+        / "interactive_runtime"
+        / "SESSION-NATIVE-CONTEXT-CLI-AUTO-CONTINUE-000001"
+        / "TURN-000001"
+        / "post_entry_continuation_gate"
+        / "000_post_entry_continuation_gate_recorded.json"
+    ).exists()
     assert (
         tmp_path
         / "interactive_runtime"

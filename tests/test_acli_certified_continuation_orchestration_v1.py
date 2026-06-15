@@ -14,6 +14,7 @@ from aigol.runtime.conversation_ppp_routing_integration import CONVERSATION_PPP_
 from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED
 from aigol.runtime.governed_implementation_dry_run import EXECUTION_READY
 from aigol.runtime.implementation_handoff_visibility import IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
+from aigol.runtime.post_entry_continuation_gate_runtime import CONTINUATION_ALLOWED
 from aigol.runtime.ocs_to_ppp_continuation_adapter_runtime import OCS_TO_PPP_CONTINUATION_REACHED_PPP
 from aigol.runtime.external_worker_adapter_runtime import EXTERNAL_WORKER_TASK_PACKAGE_CREATED
 from aigol.runtime.openai_external_worker_provider_adapter import OPENAI_EXTERNAL_WORKER_COMPLETED
@@ -174,10 +175,20 @@ def test_development_acli_auto_continue_reaches_replay_certification(tmp_path, m
     turn = result["turns"][0]
 
     assert result["failed_turns"] == 0
+    assert turn["post_entry_continuation_gate_status"] == CONTINUATION_ALLOWED
+    assert turn["post_entry_continuation_allowed"] is True
+    assert turn["post_entry_execution_summary_required"] is True
+    assert turn["post_entry_human_confirmation_required"] is True
+    assert turn["post_entry_authorization_required"] is True
+    assert turn["post_entry_continuation_gate_replay_reference"]
     assert turn["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert turn["implementation_handoff_visibility_status"] == IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
     assert turn["execution_preparation_status"] == EXECUTION_READY
     assert turn["execution_authorization_status"] == EXECUTION_AUTHORIZED
+    assert turn["execution_summary_reference"]
+    assert turn["execution_summary_hash"].startswith("sha256:")
+    assert turn["human_confirmation_reference"]
+    assert turn["human_confirmation_hash"].startswith("sha256:")
     assert turn["worker_invocation_request_status"] == WORKER_INVOCATION_REQUEST_CREATED
     assert turn["worker_request_reached"] is True
     assert turn["worker_assignment_status"] == WORKER_ASSIGNED

@@ -222,6 +222,10 @@ from aigol.runtime.context_assembled_to_ppp_routing_continuation import (
     POST_CONTEXT_CONTINUATION_REACHED_PPP,
     continue_context_assembled_to_ppp_routing,
 )
+from aigol.runtime.post_entry_continuation_gate_runtime import (
+    CONTINUATION_ALLOWED as POST_ENTRY_CONTINUATION_ALLOWED,
+    evaluate_post_entry_continuation_gate,
+)
 from aigol.runtime.ocs_end_to_end_runtime import run_ocs_end_to_end
 from aigol.runtime.ocs_to_ppp_continuation_adapter_runtime import continue_ocs_to_ppp_routing
 from aigol.runtime.implementation_handoff_visibility import (
@@ -4804,10 +4808,39 @@ def run_interactive_conversation(
                     output_writer(f"FAILED_CLOSED: {failure_reason}")
                 else:
                     native_output = render_conversation_native_development_context_summary(native_context_capture)
-                    if _post_context_continuation_should_run(
-                        native_context_capture=native_context_capture,
-                        auto_continue_enabled=auto_continue_enabled,
+                    post_entry_gate_capture = evaluate_post_entry_continuation_gate(
+                        gate_id=f"{prompt_id}:POST-ENTRY-CONTINUATION-GATE",
+                        prompt_id=prompt_id,
                         human_prompt=human_prompt,
+                        workflow_id=CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+                        lifecycle_entry_status=str(native_context_capture.get("context_status") or ""),
+                        provider_necessity_classification=native_context_capture.get(
+                            "provider_necessity_classification"
+                        ),
+                        auto_continue_enabled=auto_continue_enabled,
+                        created_at=created_at,
+                        replay_dir=turn_root / "post_entry_continuation_gate",
+                        lifecycle_replay_reference=native_context_capture.get("conversation_replay_reference"),
+                    )
+                    native_context_capture["post_entry_continuation_gate"] = post_entry_gate_capture
+                    native_context_capture["post_entry_continuation_gate_status"] = post_entry_gate_capture.get(
+                        "gate_status"
+                    )
+                    native_context_capture["post_entry_continuation_gate_replay_reference"] = (
+                        post_entry_gate_capture.get("post_entry_continuation_gate_replay_reference")
+                    )
+                    if post_entry_gate_capture.get("fail_closed") is True:
+                        native_context_capture["fail_closed"] = True
+                        native_context_capture["failure_reason"] = post_entry_gate_capture.get("failure_reason")
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {native_context_capture['failure_reason']}")
+                    elif (
+                        post_entry_gate_capture.get("gate_status") == POST_ENTRY_CONTINUATION_ALLOWED
+                        and _post_context_continuation_should_run(
+                            native_context_capture=native_context_capture,
+                            auto_continue_enabled=auto_continue_enabled,
+                            human_prompt=human_prompt,
+                        )
                     ):
                         post_context_continuation_capture = continue_context_assembled_to_ppp_routing(
                             continuation_id=f"{prompt_id}:POST-CONTEXT-CONTINUATION",
@@ -7063,6 +7096,9 @@ def _interactive_native_development_turn_summary(
     post_context_continuation = native_context_capture.get("post_context_continuation")
     if not isinstance(post_context_continuation, dict):
         post_context_continuation = {}
+    post_entry_gate = native_context_capture.get("post_entry_continuation_gate")
+    if not isinstance(post_entry_gate, dict):
+        post_entry_gate = {}
     conversation_ppp_routing = post_context_continuation.get("conversation_ppp_routing")
     if not isinstance(conversation_ppp_routing, dict):
         conversation_ppp_routing = {}
@@ -7154,6 +7190,14 @@ def _interactive_native_development_turn_summary(
         "ambiguous_context": native_context_capture.get("ambiguous_context", []),
         "provider_necessity_classification": native_context_capture.get("provider_necessity_classification"),
         "suggested_next_actions": native_context_capture.get("suggested_next_actions", []),
+        "post_entry_continuation_gate_status": post_entry_gate.get("gate_status"),
+        "post_entry_continuation_allowed": post_entry_gate.get("continuation_allowed") is True,
+        "post_entry_continuation_gate_replay_reference": post_entry_gate.get(
+            "post_entry_continuation_gate_replay_reference"
+        ),
+        "post_entry_execution_summary_required": post_entry_gate.get("execution_summary_required") is True,
+        "post_entry_human_confirmation_required": post_entry_gate.get("human_confirmation_required") is True,
+        "post_entry_authorization_required": post_entry_gate.get("authorization_required") is True,
         "post_context_continuation_status": post_context_continuation.get("continuation_status"),
         "post_context_continuation_replay_reference": post_context_continuation.get(
             "post_context_continuation_replay_reference"
@@ -7164,6 +7208,10 @@ def _interactive_native_development_turn_summary(
         "implementation_handoff_visibility_status": handoff_visibility.get("summary_status"),
         "execution_preparation_status": dry_run.get("execution_status"),
         "execution_authorization_status": authorization.get("authorization_status"),
+        "execution_summary_reference": authorization.get("execution_summary_reference"),
+        "execution_summary_hash": authorization.get("execution_summary_hash"),
+        "human_confirmation_reference": authorization.get("human_confirmation_reference"),
+        "human_confirmation_hash": authorization.get("human_confirmation_hash"),
         "execution_authorization_replay_reference": authorization.get("execution_authorization_replay_reference"),
         "worker_invocation_request_status": worker_request.get("request_status"),
         "worker_invocation_request_replay_reference": worker_request.get(
