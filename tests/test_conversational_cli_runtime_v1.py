@@ -32,6 +32,7 @@ from aigol.runtime.conversational_cli_runtime import (
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
     FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+    HUMAN_INTENT_CLARIFICATION_INTAKE,
     IMPROVE_PROVIDER_LAYER,
     IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
     IMPROVEMENT_PROPOSAL_RUNTIME,
@@ -317,9 +318,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 35
-    assert coverage["conversationally_accessible_workflows"] == 35
-    assert coverage["coverage_ratio"] == "35/35"
+    assert coverage["registered_workflows"] == 36
+    assert coverage["conversationally_accessible_workflows"] == 36
+    assert coverage["coverage_ratio"] == "36/36"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -345,6 +346,7 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     assert AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION in coverage["workflow_ids"]
     assert AI_DECISION_VALIDATOR_CAPABILITY_MODEL in coverage["workflow_ids"]
     assert AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE in coverage["workflow_ids"]
+    assert HUMAN_INTENT_CLARIFICATION_INTAKE in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
 
 
@@ -367,7 +369,99 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 35/35" in rendered
+    assert "coverage: 36/36" in rendered
+
+
+@pytest.mark.parametrize(
+    ("prompt", "intent_family"),
+    [
+        (
+            "I want to build a tool that helps managers trust AI recommendations.",
+            "BUSINESS_GOAL_INTENT",
+        ),
+        (
+            "Our AI sometimes gives answers that contradict company policy.",
+            "PROBLEM_STATEMENT_INTENT",
+        ),
+        (
+            "Automate review of AI-generated summaries before they are sent out.",
+            "AUTOMATION_INTENT",
+        ),
+        (
+            "We need to show auditors how AI decisions were reviewed.",
+            "COMPLIANCE_INTENT",
+        ),
+        (
+            "I need help with AI.",
+            "AMBIGUOUS_INTENT",
+        ),
+    ],
+)
+def test_human_intent_clarification_intake_routes_supported_families_before_provider_fallback(
+    tmp_path,
+    prompt: str,
+    intent_family: str,
+) -> None:
+    capture = _route(tmp_path, prompt)
+    decision = capture["routing_decision_artifact"]
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert capture["workflow_id"] != DEFAULT_PROVIDER_ASSISTED_CONVERSATION
+    assert capture["routing_status"] == CLARIFICATION_REQUIRED
+    assert decision["intent_family"] == intent_family
+    assert selection["intent_family"] == intent_family
+    assert decision["clarification_questions"]
+    assert selection["clarification_questions"] == decision["clarification_questions"]
+    assert selection["expected_workflow_targets"] == ["CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"]
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert selection["execution_requested"] is False
+    assert selection["approval_bypassed"] is False
+    assert selection["governance_mutated"] is False
+    assert selection["replay_mutated"] is False
+    assert replay["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert replay["provider_invoked"] is False
+    assert replay["worker_invoked"] is False
+    assert replay["execution_requested"] is False
+
+
+def test_human_intent_unknown_prompt_clarifies_instead_of_provider_fallback(tmp_path) -> None:
+    capture = _route(tmp_path, "Something unclear about my company needs help.")
+    decision = capture["routing_decision_artifact"]
+    selection = capture["workflow_selection_artifact"]
+
+    assert capture["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert capture["routing_status"] == CLARIFICATION_REQUIRED
+    assert selection["intent_family"] == "AMBIGUOUS_INTENT"
+    assert decision["matched_terms"] == ["unknown-human-intent"]
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["execution_requested"] is False
+
+
+def test_interactive_human_intent_clarification_intake_renders_questions_without_execution(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "I want to build a tool that helps managers trust AI recommendations.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+
+    rendered = "\n".join(output)
+    assert result["failed_turns"] == 0
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" in rendered
+    assert "Intent Family: BUSINESS_GOAL_INTENT" in rendered
+    assert "No provider invoked." in rendered
+    assert "No worker invoked." in rendered
+    assert "No execution requested." in rendered
 
 
 @pytest.mark.parametrize(

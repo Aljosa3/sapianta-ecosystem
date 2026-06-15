@@ -12,6 +12,10 @@ from aigol.runtime.human_execution_intent_detection import (
     GENERIC_GOVERNED_EXECUTION_REQUEST,
     detect_human_execution_intent,
 )
+from aigol.runtime.human_intent_clarification_intake_runtime import (
+    HUMAN_INTENT_CLARIFICATION_INTAKE,
+    classify_human_intent_for_clarification,
+)
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import detect_domain_approval_entry_intent
 from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
     detect_domain_execution_ready_entry_intent,
@@ -351,6 +355,12 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "governed_termination_runtime",
         ),
         _workflow(
+            HUMAN_INTENT_CLARIFICATION_INTAKE,
+            "aigol conversation",
+            "human_intent_clarification_intake_runtime",
+            clarification=True,
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -490,6 +500,9 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
                 str(approval_entry_intent.get("domain_name") or ""),
             ],
         )
+    early_human_intent = classify_human_intent_for_clarification(prompt, include_unknown=False)
+    if early_human_intent.get("intake_matched") is True:
+        return _human_intent_analysis(early_human_intent)
     if _is_freeform_clarification_prompt(normalized):
         return _analysis(OCS_LLM_COGNITION, "HIGH", ["freeform", "clarification", "ocs"])
     if _is_freeform_ambiguous_prompt(normalized):
@@ -560,6 +573,9 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["task-completion", "native", "development"],
         )
+    early_human_intent = classify_human_intent_for_clarification(prompt, include_unknown=False)
+    if early_human_intent.get("intake_matched") is True:
+        return _human_intent_analysis(early_human_intent)
     if _is_ocs_llm_cognition_prompt(
         normalized,
         ends_with_question=normalized_with_punctuation.endswith("?"),
@@ -603,10 +619,28 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(SHOW_DASHBOARD, "HIGH", ["dashboard"])
     if _is_native_development_context_prompt(prompt):
         return _analysis(NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, "HIGH", ["native", "development", "context"])
+    human_intent = classify_human_intent_for_clarification(prompt, include_unknown=True)
+    if human_intent.get("intake_matched") is True:
+        return _human_intent_analysis(human_intent)
     return _analysis(DEFAULT_PROVIDER_ASSISTED_CONVERSATION, "LOW", ["provider", "conversation", "fallback"])
 
 
-def _analysis(workflow_id: str, confidence: str, matched_terms: list[str]) -> dict[str, Any]:
+def _human_intent_analysis(intake: dict[str, Any]) -> dict[str, Any]:
+    return _analysis(
+        HUMAN_INTENT_CLARIFICATION_INTAKE,
+        str(intake.get("intent_confidence") or "LOW"),
+        list(intake.get("intent_signals") or []),
+        human_intent_intake=intake,
+    )
+
+
+def _analysis(
+    workflow_id: str,
+    confidence: str,
+    matched_terms: list[str],
+    *,
+    human_intent_intake: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     entry = _workflow_by_id(workflow_id)
     return {
         "workflow_id": workflow_id,
@@ -616,6 +650,14 @@ def _analysis(workflow_id: str, confidence: str, matched_terms: list[str]) -> di
         "existing_runtime": entry["existing_runtime"],
         "existing_cli_command": entry["existing_cli_command"],
         "operator_summary": _operator_summary(workflow_id),
+        "human_intent_intake": deepcopy(human_intent_intake) if human_intent_intake else None,
+        "intent_family": human_intent_intake.get("intent_family") if human_intent_intake else None,
+        "clarification_questions": deepcopy(human_intent_intake.get("clarification_questions", []))
+        if human_intent_intake
+        else [],
+        "expected_workflow_targets": deepcopy(human_intent_intake.get("expected_workflow_targets", []))
+        if human_intent_intake
+        else [],
     }
 
 
@@ -948,6 +990,10 @@ def _routing_decision_artifact(
         "routing_status": analysis["routing_status"],
         "confidence": analysis["confidence"],
         "matched_terms": deepcopy(analysis["matched_terms"]),
+        "human_intent_intake": deepcopy(analysis.get("human_intent_intake")),
+        "intent_family": analysis.get("intent_family"),
+        "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
+        "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
         "replay_visible": True,
@@ -986,6 +1032,10 @@ def _workflow_selection_artifact(
         "existing_runtime": analysis["existing_runtime"],
         "existing_cli_command": analysis["existing_cli_command"],
         "operator_summary": analysis["operator_summary"],
+        "human_intent_intake": deepcopy(analysis.get("human_intent_intake")),
+        "intent_family": analysis.get("intent_family"),
+        "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
+        "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
         "coverage": _coverage(),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1054,6 +1104,10 @@ def _failed_decision_artifact(
         "routing_status": FAILED_CLOSED,
         "confidence": "NONE",
         "matched_terms": [],
+        "human_intent_intake": None,
+        "intent_family": None,
+        "clarification_questions": [],
+        "expected_workflow_targets": [],
         "created_at": created_at if isinstance(created_at, str) else "",
         "replay_reference": replay_reference,
         "replay_visible": True,
@@ -1087,6 +1141,10 @@ def _failed_selection_artifact(
             "existing_runtime": None,
             "existing_cli_command": None,
             "operator_summary": "",
+            "human_intent_intake": None,
+            "intent_family": None,
+            "clarification_questions": [],
+            "expected_workflow_targets": [],
         },
         created_at=created_at,
         replay_reference=replay_reference,
@@ -1199,6 +1257,9 @@ def _operator_summary(workflow_id: str) -> str:
         DOMAIN_WORKER_RESULT_VALIDATION: "Validate the latest captured worker result without replay review.",
         DOMAIN_POST_EXECUTION_REPLAY_REVIEW: "Review the latest validated worker result replay without termination.",
         DOMAIN_GOVERNED_TERMINATION: "Terminate the latest reviewed operation without new work.",
+        HUMAN_INTENT_CLARIFICATION_INTAKE: (
+            "Ask deterministic clarification questions for normal human intent before provider fallback."
+        ),
         DEFAULT_PROVIDER_ASSISTED_CONVERSATION: "Use provider-assisted conversation integration with fail-closed fallback.",
     }
     return summaries.get(workflow_id, "")

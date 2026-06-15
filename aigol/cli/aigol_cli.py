@@ -204,6 +204,7 @@ from aigol.runtime.conversational_cli_runtime import (
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
     IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST as CONVERSATIONAL_IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
     IMPROVEMENT_PROPOSAL_RUNTIME as CONVERSATIONAL_IMPROVEMENT_PROPOSAL_RUNTIME,
+    HUMAN_INTENT_CLARIFICATION_INTAKE as CONVERSATIONAL_HUMAN_INTENT_CLARIFICATION_INTAKE,
     NATIVE_DEVELOPMENT_INTENT_ROUTING as CONVERSATIONAL_NATIVE_DEVELOPMENT_INTENT_ROUTING,
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION as CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION as CONVERSATIONAL_OCS_LLM_COGNITION,
@@ -3854,6 +3855,7 @@ def run_interactive_conversation(
                 CONVERSATIONAL_AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
                 CONVERSATIONAL_AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
                 CONVERSATIONAL_AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+                CONVERSATIONAL_HUMAN_INTENT_CLARIFICATION_INTAKE,
             }:
                 workflow_capture = _run_conversational_cli_selected_readonly_workflow(
                     prompt_id=prompt_id,
@@ -7598,6 +7600,32 @@ def _run_conversational_cli_selected_readonly_workflow(
                     "selection_only": True,
                     "existing_runtime": selection.get("existing_runtime"),
                 },
+            )
+        if workflow_id == CONVERSATIONAL_HUMAN_INTENT_CLARIFICATION_INTAKE:
+            selection = routing_capture.get("workflow_selection_artifact") or {}
+            questions = selection.get("clarification_questions") or []
+            response_text = "\n".join(
+                [
+                    "HUMAN INTENT CLARIFICATION REQUIRED",
+                    f"Intent Family: {selection.get('intent_family')}",
+                    "Clarification Questions:",
+                    *(f"- {question}" for question in questions),
+                    "No provider invoked.",
+                    "No worker invoked.",
+                    "No execution requested.",
+                    "Authorization boundary preserved.",
+                ]
+            )
+            return _conversational_workflow_capture(
+                prompt_id=prompt_id,
+                workflow_id=workflow_id,
+                response_text=response_text,
+                existing_result={
+                    "clarification_required": True,
+                    "intent_family": selection.get("intent_family"),
+                    "clarification_questions": questions,
+                },
+                response_status="CLARIFICATION_REQUIRED",
             )
         raise ValueError(f"unsupported conversational read-only workflow: {workflow_id}")
     except Exception as exc:
