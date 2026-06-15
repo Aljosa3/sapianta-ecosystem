@@ -307,9 +307,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 25
-    assert coverage["conversationally_accessible_workflows"] == 25
-    assert coverage["coverage_ratio"] == "25/25"
+    assert coverage["registered_workflows"] == 26
+    assert coverage["conversationally_accessible_workflows"] == 26
+    assert coverage["coverage_ratio"] == "26/26"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -348,7 +348,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 25/25" in rendered
+    assert "coverage: 26/26" in rendered
 
 
 def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> None:

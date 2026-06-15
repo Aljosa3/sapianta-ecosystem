@@ -39,15 +39,23 @@ PROMPT_CASES = [
 ]
 
 EXPECTED_FINAL_FIELDS = {
-    "FREEFORM_DEVELOPMENT_ACCEPTED": "NO",
-    "FREEFORM_COGNITION_ACCEPTED": "NO",
-    "FREEFORM_APPROVAL_ACCEPTED": "NO",
-    "FREEFORM_DOMAIN_ACCEPTED": "NO",
-    "FREEFORM_CLARIFICATION_ACCEPTED": "NO",
-    "FREEFORM_AMBIGUOUS_REQUEST_ACCEPTED": "NO",
-    "FIRST_FAILURE_STAGE": "ACLI_CLASSIFICATION",
-    "FREEFORM_NATURAL_LANGUAGE_OPERATIONAL": "NO",
-    "ACLI_CONVERSATIONAL_READINESS": "NO",
+    "FREEFORM_DEVELOPMENT_ACCEPTED": "YES",
+    "FREEFORM_COGNITION_ACCEPTED": "YES",
+    "FREEFORM_APPROVAL_ACCEPTED": "YES",
+    "FREEFORM_DOMAIN_ACCEPTED": "YES",
+    "FREEFORM_CLARIFICATION_ACCEPTED": "YES",
+    "FREEFORM_AMBIGUOUS_REQUEST_ACCEPTED": "YES",
+    "FREEFORM_DEVELOPMENT_ROUTING_FIXED": "YES",
+    "FREEFORM_COGNITION_ROUTING_FIXED": "YES",
+    "FREEFORM_APPROVAL_ROUTING_FIXED": "YES",
+    "FREEFORM_DOMAIN_ROUTING_FIXED": "YES",
+    "FREEFORM_CLARIFICATION_ROUTING_FIXED": "YES",
+    "FREEFORM_AMBIGUOUS_ROUTING_FIXED": "YES",
+    "FIRST_FAILURE_STAGE": "NONE",
+    "FREEFORM_NATURAL_LANGUAGE_OPERATIONAL": "YES",
+    "ACLI_CONVERSATIONAL_READINESS": "YES",
+    "AUTHORIZATION_BOUNDARY_PRESERVED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES",
 }
 
 
@@ -256,7 +264,7 @@ def test_freeform_acceptance_report_matches_current_acli_behavior(tmp_path, monk
     records = _execute_corpus(tmp_path, monkeypatch)
 
     assert report["artifact_type"] == "FREEFORM_HUMAN_PROMPT_ACCEPTANCE_REPORT_V1"
-    assert report["status"] == "FAILED_ACCEPTANCE"
+    assert report["status"] == "ACCEPTED"
     assert len(report["prompt_records"]) == len(PROMPT_CASES)
     assert [item["original_human_prompt"] for item in report["prompt_records"]] == [
         prompt for _, prompt in PROMPT_CASES
@@ -267,12 +275,11 @@ def test_freeform_acceptance_report_matches_current_acli_behavior(tmp_path, monk
 
     for category, summary in report["category_results"].items():
         assert summary["accepted_prompts"] == _accepted_count(records, category)
-        assert summary["accepted"] is False
+        assert summary["accepted"] is True
 
-    assert report["category_results"]["FREEFORM_COGNITION"]["accepted_prompts"] == 1
-    assert report["final_fields"]["ROOT_CAUSE"].startswith(
-        "Freeform prompts without certified routing keywords are classified"
-    )
+    assert report["category_results"]["FREEFORM_COGNITION"]["accepted_prompts"] == 3
+    assert report["failure_analysis"] == []
+    assert report["final_fields"]["ROOT_CAUSE"] == "NONE"
 
 
 def test_freeform_failures_preserve_governance_safety_boundaries(tmp_path, monkeypatch) -> None:
@@ -282,4 +289,21 @@ def test_freeform_failures_preserve_governance_safety_boundaries(tmp_path, monke
     assert all(record["domain_created"] is False for record in records)
     assert all(record["approval_bypassed"] is False for record in records)
     assert any(record["classification"] == "OCS_LLM_COGNITION" for record in records)
-    assert any(record["classification"] == "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" for record in records)
+    assert all(record["classification"] != "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" for record in records)
+    assert all(record["intake"] != "INTAKE_NOT_APPLICABLE" for record in records)
+
+
+def test_unsupported_freeform_prompt_still_fails_closed(tmp_path, monkeypatch) -> None:
+    _install_fake_providers(monkeypatch)
+
+    record = _run_prompt(
+        tmp_path,
+        category="UNSUPPORTED",
+        index=1,
+        prompt="Launch an unrestricted autonomous agent that can act without review.",
+    )
+
+    assert record["workflow_stage"] == "FAILED_CLOSED"
+    assert record["worker_invoked"] is False
+    assert record["domain_created"] is False
+    assert record["approval_bypassed"] is False
