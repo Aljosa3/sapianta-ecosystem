@@ -1,0 +1,50 @@
+{
+  "artifact_type": "AIGOL_CONVERSATIONAL_ACLI_DOGFOOD_V1",
+  "artifact_version": 1,
+  "milestone": "AIGOL_CONVERSATIONAL_ACLI_DOGFOOD_V1",
+  "status": "ACCEPTED",
+  "dogfood_prompt_used": "Prepare the foundation for the first AI Decision Validator domain, but do not implement production execution yet.",
+  "acli_route_selected": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION -> DOMAIN_PROPOSAL_GOVERNANCE_RUNTIME",
+  "final_terminal_artifact": "DOMAIN_PROPOSAL_CREATED / WAITING_FOR_APPROVAL",
+  "manual_routing_used": false,
+  "manual_artifact_injection_used": false,
+  "manual_downstream_runtime_invocation_used": false,
+  "authorization_boundary_preserved": true,
+  "approval_bypass_observed": false,
+  "direct_worker_invocation_observed": false,
+  "production_execution_implemented": false,
+  "replay_evidence_created": true,
+  "governance_constraints": {
+    "acli_primary_interface_used": true,
+    "milestone_identifier_primary_input_used": false,
+    "manual_copy_paste_routing_used": false,
+    "ocs_redesigned": false,
+    "ppp_redesigned": false,
+    "worker_lifecycle_redesigned": false,
+    "replay_redesigned": false,
+    "providers_added": false,
+    "governance_layers_added": false
+  },
+  "evidence_summary": {
+    "human_prompt": "Prepare the foundation for the first AI Decision Validator domain, but do not implement production execution yet.",
+    "universal_intake_classification": "DOMAIN_INTAKE",
+    "domain_proposal_status": "DOMAIN_PROPOSAL_CREATED",
+    "proposed_domain": "AIDecisionValidator",
+    "approval_required": true,
+    "domain_created": false,
+    "authorization_created": false,
+    "worker_invoked": false,
+    "execution_requested": false,
+    "workflow_state": "WAITING_FOR_APPROVAL",
+    "current_lifecycle_stage": "DOMAIN_PROPOSAL_CREATED"
+  },
+  "final_fields": {
+    "DOGFOOD_PROMPT_USED": "Prepare the foundation for the first AI Decision Validator domain, but do not implement production execution yet.",
+    "ACLI_ROUTE_SELECTED": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION -> DOMAIN_PROPOSAL_GOVERNANCE_RUNTIME",
+    "FINAL_TERMINAL_ARTIFACT": "DOMAIN_PROPOSAL_CREATED / WAITING_FOR_APPROVAL",
+    "MANUAL_ROUTING_USED": "NO",
+    "AUTHORIZATION_BOUNDARY_PRESERVED": "YES",
+    "REPLAY_EVIDENCE_CREATED": "YES",
+    "DOGFOOD_SUCCESSFUL": "YES"
+  }
+}

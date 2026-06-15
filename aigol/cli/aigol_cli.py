@@ -2188,11 +2188,22 @@ def _is_plain_domain_proposal_prompt(human_prompt: str) -> bool:
     normalized = " ".join(str(human_prompt or "").lower().split())
     return (
         "domain" in normalized
-        and ("create" in normalized or "need" in normalized or "want" in normalized)
+        and ("create" in normalized or "need" in normalized or "want" in normalized or "prepare" in normalized)
         and "governed" not in normalized
         and "called" not in normalized
         and "named" not in normalized
-        and any(term in normalized for term in ("new", "hr", "evaluation", "code auditing", "supplier"))
+        and any(
+            term in normalized
+            for term in (
+                "new",
+                "hr",
+                "evaluation",
+                "code auditing",
+                "supplier",
+                "ai decision validator",
+                "foundation",
+            )
+        )
     )
 
 
@@ -2209,6 +2220,8 @@ def _is_plain_ocs_approval_prompt(human_prompt: str) -> bool:
 
 def _plain_domain_proposal_name(human_prompt: str) -> str:
     normalized = " ".join(str(human_prompt or "").lower().split())
+    if "ai decision validator" in normalized:
+        return "AIDecisionValidator"
     if "hr" in normalized and "evaluation" in normalized:
         return "HREvaluation"
     if "hr" in normalized:
@@ -5205,7 +5218,7 @@ def _render_domain_proposal_acceptance_summary(domain_proposal_capture: dict[str
             "Domain Proposal",
             "",
             f"proposal_status: {domain_proposal_capture.get('proposal_status')}",
-            f"proposed_domain: {domain_proposal_capture.get('proposed_domain')}",
+            f"proposed_domain: {proposal.get('proposed_domain')}",
             f"approval_required: {str(proposal.get('approval_required') is True).lower()}",
             f"domain_created: {str(proposal.get('domain_created') is True).lower()}",
             f"worker_invoked: {str(proposal.get('worker_invoked') is True).lower()}",
@@ -5248,7 +5261,7 @@ def _interactive_domain_proposal_turn_summary(
         "domain_proposal_status": domain_proposal_capture.get("proposal_status"),
         "domain_proposal_artifact_type": proposal.get("artifact_type"),
         "domain_proposal_replay_reference": domain_proposal_capture.get("domain_proposal_replay_reference"),
-        "proposed_domain": domain_proposal_capture.get("proposed_domain"),
+        "proposed_domain": proposal.get("proposed_domain"),
         "domain_candidate_created": False,
         "approval_required": proposal.get("approval_required") is True,
         "approval_created": False,

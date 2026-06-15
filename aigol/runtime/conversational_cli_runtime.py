@@ -629,11 +629,22 @@ def _is_plain_ocs_intake_prompt(normalized: str) -> bool:
 def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
     return (
         "domain" in normalized
-        and ("create" in normalized or "need" in normalized or "want" in normalized)
+        and ("create" in normalized or "need" in normalized or "want" in normalized or "prepare" in normalized)
         and "governed" not in normalized
         and "called" not in normalized
         and "named" not in normalized
-        and any(term in normalized for term in ("new", "evaluation", "hr", "code auditing", "supplier"))
+        and any(
+            term in normalized
+            for term in (
+                "new",
+                "evaluation",
+                "hr",
+                "code auditing",
+                "supplier",
+                "ai decision validator",
+                "foundation",
+            )
+        )
     )
 
 
