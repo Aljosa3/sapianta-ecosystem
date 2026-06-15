@@ -27,6 +27,7 @@ from aigol.runtime.conversational_cli_runtime import (
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
     IMPROVE_PROVIDER_LAYER,
+    NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
     REVIEW_LATEST_AUDIT,
@@ -366,6 +367,74 @@ def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> N
     assert selection["worker_invoked"] is False
     assert selection["authorization_created"] is False
     assert replay["workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
+    assert replay["execution_requested"] is False
+
+
+@pytest.mark.parametrize(
+    ("prompt", "workflow_id"),
+    [
+        (
+            "Prepare a governance validation report for ACLI primary interface adoption evidence.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Prepare a proposal for improving replay lineage validation visibility in ACLI.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Create a supplier evaluation domain proposal for Product 1 demo preparation.",
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+        ),
+        (
+            "Help improve the platform operator experience for ACLI adoption.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "What is the best approach for EU AI Act aligned AI Decision Validator evidence presentation?",
+            OPERATOR_DECISION_SUPPORT,
+        ),
+        (
+            "Prepare an execution summary boundary check for external-user-impacting deployment requests.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Identify recurring governance failures from replay and propose bounded improvements.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Continue the approved AI Decision Validator domain proposal to the next governed boundary.",
+            AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
+        ),
+        (
+            "Add a capability candidate for document validation evidence extraction.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Improve provider abstraction documentation so provider identity cannot be confused with governance authority.",
+            IMPROVE_PROVIDER_LAYER,
+        ),
+    ],
+)
+def test_task_completion_repair_routes_real_development_prompts_before_provider_fallback(
+    tmp_path,
+    prompt: str,
+    workflow_id: str,
+) -> None:
+    capture = _route(tmp_path, prompt)
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["workflow_id"] == workflow_id
+    assert capture["workflow_id"] != DEFAULT_PROVIDER_ASSISTED_CONVERSATION
+    assert capture["routing_status"] in {WORKFLOW_SELECTED, CLARIFICATION_REQUIRED}
+    assert selection["provider_invoked"] is False
+    assert selection["worker_invoked"] is False
+    assert selection["authorization_created"] is False
+    assert selection["execution_requested"] is False
+    assert selection["approval_bypassed"] is False
+    assert replay["workflow_id"] == workflow_id
+    assert replay["provider_invoked"] is False
+    assert replay["worker_invoked"] is False
     assert replay["execution_requested"] is False
 
 

@@ -454,6 +454,24 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["native", "development", "intent"],
         )
+    if _is_task_completion_domain_prompt(normalized):
+        return _analysis(CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "HIGH", ["domain", "proposal", "product"])
+    if _is_task_completion_provider_prompt(normalized):
+        return _analysis(IMPROVE_PROVIDER_LAYER, "HIGH", ["provider", "boundary", "improvement"])
+    if _is_task_completion_product_foundation_prompt(normalized):
+        return _analysis(OPERATOR_DECISION_SUPPORT, "HIGH", ["product", "evidence", "decision-support"])
+    if _is_task_completion_domain_continuation_prompt(normalized):
+        return _analysis(
+            AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
+            "HIGH",
+            ["approved", "domain", "proposal", "continuation"],
+        )
+    if _is_task_completion_native_development_prompt(normalized):
+        return _analysis(
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            "HIGH",
+            ["task-completion", "native", "development"],
+        )
     if _is_ocs_llm_cognition_prompt(
         normalized,
         ends_with_question=normalized_with_punctuation.endswith("?"),
@@ -646,6 +664,62 @@ def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
             )
         )
     )
+
+
+def _is_task_completion_domain_prompt(normalized: str) -> bool:
+    return (
+        "domain" in normalized
+        and any(term in normalized for term in ("proposal", "foundation", "demo preparation", "product 1"))
+        and any(term in normalized for term in ("create", "prepare", "add"))
+    )
+
+
+def _is_task_completion_provider_prompt(normalized: str) -> bool:
+    return (
+        "provider" in normalized
+        and any(term in normalized for term in ("improve", "boundary", "abstraction", "identity", "authority"))
+    )
+
+
+def _is_task_completion_product_foundation_prompt(normalized: str) -> bool:
+    return (
+        ("ai decision validator" in normalized or "product 1" in normalized)
+        and any(term in normalized for term in ("evidence", "presentation", "demo", "eu ai act", "approach"))
+    )
+
+
+def _is_task_completion_domain_continuation_prompt(normalized: str) -> bool:
+    return (
+        "continue" in normalized
+        and "approved" in normalized
+        and "domain" in normalized
+        and any(term in normalized for term in ("proposal", "next governed boundary", "governed boundary"))
+    )
+
+
+def _is_task_completion_native_development_prompt(normalized: str) -> bool:
+    action_terms = ("prepare", "improve", "identify", "add", "create")
+    if normalized.startswith(("what should ", "should ", "how should ", "can you analyze ")):
+        return False
+    if not any(term in normalized for term in action_terms):
+        return False
+    if any(term in normalized for term in ("production customer data", "unrestricted", "autonomous agent")):
+        return False
+    development_subjects = (
+        "governance validation report",
+        "governance failures",
+        "governance improvement",
+        "replay lineage",
+        "replay-derived",
+        "replay improvement",
+        "execution summary boundary",
+        "capability candidate",
+        "document validation",
+        "operator experience",
+        "acli adoption",
+        "task completion",
+    )
+    return any(subject in normalized for subject in development_subjects)
 
 
 def _is_freeform_clarification_prompt(normalized: str) -> bool:
