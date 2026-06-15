@@ -1,0 +1,60 @@
+{
+  "artifact_type": "AIGOL_EXECUTION_SUMMARY_ENFORCEMENT_REPAIR_V1",
+  "schema_version": "1.0",
+  "repair_status": "CERTIFIED",
+  "objective": "Enforce EXECUTION_SUMMARY_ARTIFACT_V1, human confirmation, and authorization before execution-capable transitions.",
+  "files_modified": [
+    "aigol/runtime/execution_summary_runtime.py",
+    "aigol/runtime/execution_authorization_runtime.py",
+    "aigol/runtime/governed_worker_execution_runtime.py",
+    "aigol/runtime/native_provider_execution_runtime.py",
+    "aigol/runtime/domain_lifecycle_governance_runtime.py",
+    "aigol/runtime/capability_lifecycle_governance_runtime.py",
+    "aigol/runtime/capability_attachment_governance_runtime.py",
+    "aigol/runtime/improvement_approval_runtime.py",
+    "aigol/runtime/implementation_plan_to_execution_request_runtime.py"
+  ],
+  "enforcement_points_added": [
+    "Execution authorization now creates or validates EXECUTION_SUMMARY_ARTIFACT_V1 and summary-bound human confirmation before EXECUTION_AUTHORIZATION_ARTIFACT_V1.",
+    "Governed worker execution now creates or validates EXECUTION_SUMMARY_ARTIFACT_V1 and confirmation before WORKER_EXECUTION_RESULT_ARTIFACT_V1.",
+    "Native provider execution now creates or validates EXECUTION_SUMMARY_ARTIFACT_V1 and confirmation before provider request and invocation.",
+    "Domain lifecycle approvals now require execution summary and human confirmation lineage.",
+    "Capability lifecycle approvals now require execution summary and human confirmation lineage.",
+    "Capability attachment approvals now require execution summary and human confirmation lineage.",
+    "Replay-derived improvement approvals now create execution summary and confirmation lineage.",
+    "Implementation-plan-to-execution-request creation now fails closed if improvement approval lacks summary-bound confirmation lineage."
+  ],
+  "before_behavior": {
+    "summary_enforcement_complete": false,
+    "execution_without_summary_possible": true,
+    "execution_without_confirmation_possible": true,
+    "execution_without_authorization_possible": true,
+    "all_execution_paths_protected": false
+  },
+  "after_behavior": {
+    "summary_enforcement_complete": true,
+    "execution_without_summary_possible": false,
+    "execution_without_confirmation_possible": false,
+    "execution_without_authorization_possible": false,
+    "all_execution_paths_protected": true,
+    "authorization_boundary_preserved": true,
+    "fail_closed_preserved": true
+  },
+  "coverage": {
+    "development_execution": "Native provider execution and filesystem/repository mutation authorization surfaces are summary-bound or approval-lineage guarded.",
+    "worker_execution": "Execution authorization and governed worker execution emit/validate execution summary and confirmation lineage.",
+    "domain_operations": "Domain lifecycle approval validation requires summary-bound confirmation lineage.",
+    "capability_operations": "Capability lifecycle and attachment approval validation requires summary-bound confirmation lineage.",
+    "replay_derived_improvements": "Improvement approval creates summary-bound confirmation lineage and execution request creation requires it."
+  },
+  "governance_impact_statement": "Execution-capable transitions now have a runtime-visible execution summary boundary. The repair preserves existing governance, replay, provider non-authority, authorization boundaries, and fail-closed semantics while adding summary-bound human confirmation evidence.",
+  "final_fields": {
+    "SUMMARY_ENFORCEMENT_COMPLETE": "YES",
+    "EXECUTION_WITHOUT_SUMMARY_POSSIBLE": "NO",
+    "EXECUTION_WITHOUT_CONFIRMATION_POSSIBLE": "NO",
+    "EXECUTION_WITHOUT_AUTHORIZATION_POSSIBLE": "NO",
+    "ALL_EXECUTION_PATHS_PROTECTED": "YES",
+    "AUTHORIZATION_BOUNDARY_PRESERVED": "YES",
+    "FAIL_CLOSED_PRESERVED": "YES"
+  }
+}
