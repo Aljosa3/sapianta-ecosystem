@@ -44,12 +44,19 @@ CERTIFIED_CLASSIFICATION = "CERTIFIED_OCS_LLM_COGNITION_END_TO_END"
 OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1 = "OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1"
 OCS_LLM_COGNITION_END_TO_END_RETURNED_V1 = "OCS_LLM_COGNITION_END_TO_END_RETURNED_V1"
 OCS_PROVIDER_COGNITION_AVAILABILITY_ARTIFACT_V1 = "OCS_PROVIDER_COGNITION_AVAILABILITY_ARTIFACT_V1"
+OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1 = (
+    "OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1"
+)
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED_CLOSED = "FAILED_CLOSED"
 STATUS_AVAILABLE = "PROVIDER_COGNITION_AVAILABLE"
 STATUS_UNAVAILABLE = "PROVIDER_COGNITION_UNAVAILABLE"
 OCS_PROVIDER_COGNITION_AVAILABILITY_GATE = "OCS_PROVIDER_COGNITION_AVAILABILITY_GATE"
+OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION = "OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION"
+MODE_SINGLE_PROVIDER_PRIMARY = "SINGLE_PROVIDER_PRIMARY"
+MODE_MULTI_PROVIDER_COMPARISON = "MULTI_PROVIDER_COMPARISON"
+MODE_SELECTION_FAILED_CLOSED = "MODE_SELECTION_FAILED_CLOSED"
 
 REPLAY_STEPS = (
     "ocs_llm_cognition_end_to_end_artifact",
@@ -160,7 +167,60 @@ def run_ocs_llm_cognition_end_to_end(
             )
 
         comparison_id = f"{end_to_end}:COGNITION_COMPARISON"
-        if single_provider_primary_mode and len(result_bundle.get("provider_results", [])) == 1:
+        mode_selection_artifact = _single_provider_primary_mode_selection_artifact(
+            mode_selection_id=f"{end_to_end}:SINGLE_PROVIDER_PRIMARY_MODE_SELECTION",
+            result_bundle=result_bundle,
+            provider_contracts=provider_contracts,
+            availability_artifact=availability_artifact,
+            requested_single_provider_primary_mode=single_provider_primary_mode,
+            created_at=timestamp,
+        )
+        _persist_mode_selection_artifact(stage_paths["mode_selection"], mode_selection_artifact)
+        if mode_selection_artifact["mode_selection_status"] == STATUS_FAILED_CLOSED:
+            failure_reason = (
+                "OCS single-provider mode selection failed closed: "
+                f"{mode_selection_artifact['failure_reason']}"
+            )
+            artifact = _mode_selection_failed_end_to_end_artifact(
+                end_to_end_id=end_to_end,
+                human_question=question,
+                created_at=timestamp,
+                context_artifact=context_artifact,
+                result_bundle=result_bundle,
+                availability_artifact=availability_artifact,
+                mode_selection_artifact=mode_selection_artifact,
+                stage_replay_references={key: str(value) for key, value in stage_paths.items()},
+                failure_reason=failure_reason,
+            )
+            returned = _returned_artifact(artifact)
+            _persist_step(replay_path, 0, REPLAY_STEPS[0], artifact)
+            _persist_step(replay_path, 1, REPLAY_STEPS[1], returned)
+            return _capture(
+                final_status=STATUS_FAILED_CLOSED,
+                artifact=artifact,
+                returned=returned,
+                replay_path=replay_path,
+                failure_reason=failure_reason,
+                stage_captures={
+                    "context": context_capture,
+                    "multi_provider_cognition": multi_capture,
+                    "provider_cognition_availability": {
+                        "provider_cognition_availability_artifact": deepcopy(availability_artifact),
+                        "availability_status": availability_artifact["availability_status"],
+                        "fail_closed": False,
+                        "failure_reason": "",
+                        "replay_reference": str(stage_paths["provider_cognition_availability"]),
+                    },
+                    "mode_selection": {
+                        "mode_selection_artifact": deepcopy(mode_selection_artifact),
+                        "selected_mode": mode_selection_artifact["selected_mode"],
+                        "fail_closed": True,
+                        "failure_reason": mode_selection_artifact["failure_reason"],
+                        "replay_reference": str(stage_paths["mode_selection"]),
+                    },
+                },
+            )
+        if mode_selection_artifact["selected_mode"] == MODE_SINGLE_PROVIDER_PRIMARY:
             comparison_capture = _single_provider_primary_comparison_capture(
                 cognition_comparison_id=comparison_id,
                 result_bundle=result_bundle,
@@ -199,6 +259,7 @@ def run_ocs_llm_cognition_end_to_end(
             context_artifact=context_artifact,
             result_bundle=result_bundle,
             availability_artifact=availability_artifact,
+            mode_selection_artifact=mode_selection_artifact,
             comparison_artifact=comparison_artifact,
             continuity_artifact=continuity_capture["cognition_continuity_artifact"],
             clarification_artifact=continuity_capture["cognition_clarification_artifact"],
@@ -226,6 +287,13 @@ def run_ocs_llm_cognition_end_to_end(
                     "fail_closed": False,
                     "failure_reason": "",
                     "replay_reference": str(stage_paths["provider_cognition_availability"]),
+                },
+                "mode_selection": {
+                    "mode_selection_artifact": deepcopy(mode_selection_artifact),
+                    "selected_mode": mode_selection_artifact["selected_mode"],
+                    "fail_closed": False,
+                    "failure_reason": "",
+                    "replay_reference": str(stage_paths["mode_selection"]),
                 },
                 "cognition_comparison": comparison_capture,
                 "continuity_and_clarification": continuity_capture,
@@ -284,6 +352,7 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         availability_replay = reconstruct_provider_cognition_availability_replay(
             stage_refs["provider_cognition_availability"]
         )
+        mode_selection_replay = reconstruct_single_provider_primary_mode_selection_replay(stage_refs["mode_selection"])
         comparison_replay = reconstruct_cognition_comparison_replay(stage_refs["cognition_comparison"])
         continuity_replay = reconstruct_ocs_llm_cognition_continuity_and_clarification_replay(
             stage_refs["continuity_and_clarification"]
@@ -293,21 +362,33 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
             context_replay,
             multi_replay,
             availability_replay,
+            mode_selection_replay,
             comparison_replay,
             continuity_replay,
         )
+    elif artifact.get("first_failed_stage") == OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION:
+        context_replay = reconstruct_ocs_context_assembly_replay(stage_refs["context"])
+        multi_replay = reconstruct_multi_provider_cognition_replay(stage_refs["multi_provider_cognition"])
+        availability_replay = reconstruct_provider_cognition_availability_replay(
+            stage_refs["provider_cognition_availability"]
+        )
+        mode_selection_replay = reconstruct_single_provider_primary_mode_selection_replay(stage_refs["mode_selection"])
+        comparison_replay = {}
+        continuity_replay = {}
     elif artifact.get("first_failed_stage") == OCS_PROVIDER_COGNITION_AVAILABILITY_GATE:
         context_replay = reconstruct_ocs_context_assembly_replay(stage_refs["context"])
         multi_replay = reconstruct_multi_provider_cognition_replay(stage_refs["multi_provider_cognition"])
         availability_replay = reconstruct_provider_cognition_availability_replay(
             stage_refs["provider_cognition_availability"]
         )
+        mode_selection_replay = {}
         comparison_replay = {}
         continuity_replay = {}
     else:
         context_replay = {}
         multi_replay = {}
         availability_replay = {}
+        mode_selection_replay = {}
         comparison_replay = {}
         continuity_replay = {}
 
@@ -323,6 +404,8 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         "successful_provider_count": artifact.get("successful_provider_count"),
         "failed_provider_count": artifact.get("failed_provider_count"),
         "provider_availability_status": artifact.get("provider_availability_status"),
+        "selected_cognition_mode": artifact.get("selected_cognition_mode"),
+        "mode_selection_status": artifact.get("mode_selection_status"),
         "first_failed_stage": artifact.get("first_failed_stage"),
         "comparison_attempted": artifact.get("comparison_attempted"),
         "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
@@ -336,6 +419,7 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
             "context": context_replay,
             "multi_provider_cognition": multi_replay,
             "provider_cognition_availability": availability_replay,
+            "mode_selection": mode_selection_replay,
             "cognition_comparison": comparison_replay,
             "continuity_and_clarification": continuity_replay,
         },
@@ -593,6 +677,193 @@ def _persist_availability_artifact(replay_path: Path, artifact: dict[str, Any]) 
     write_json_immutable(replay_path / "000_ocs_provider_cognition_availability_recorded.json", wrapper)
 
 
+def _single_provider_primary_mode_selection_artifact(
+    *,
+    mode_selection_id: str,
+    result_bundle: dict[str, Any],
+    provider_contracts: list[dict[str, Any]],
+    availability_artifact: dict[str, Any],
+    requested_single_provider_primary_mode: bool,
+    created_at: str,
+) -> dict[str, Any]:
+    successful_provider_ids = _successful_provider_ids(result_bundle)
+    contract_mode_flags = _provider_contract_mode_flags(provider_contracts)
+    successful_provider_count = result_bundle["successful_provider_count"]
+    selected_mode = MODE_SELECTION_FAILED_CLOSED
+    selected_next_stage = "FAILED_CLOSED"
+    comparison_required = True
+    failure_reason = ""
+
+    if availability_artifact["availability_status"] != STATUS_AVAILABLE:
+        failure_reason = "provider cognition is unavailable"
+    elif successful_provider_count >= 2:
+        selected_mode = MODE_MULTI_PROVIDER_COMPARISON
+        selected_next_stage = "COGNITION_COMPARISON"
+    elif successful_provider_count == 1:
+        provider_id = successful_provider_ids[0]
+        flags = contract_mode_flags.get(provider_id, {})
+        provider_declares_single = flags.get("single_provider_only") is True
+        provider_excludes_multi = flags.get("multi_provider_cognition_scope") is False
+        if requested_single_provider_primary_mode or (provider_declares_single and provider_excludes_multi):
+            selected_mode = MODE_SINGLE_PROVIDER_PRIMARY
+            selected_next_stage = "SINGLE_PROVIDER_PRIMARY_COMPATIBILITY"
+            comparison_required = False
+        else:
+            failure_reason = "one provider cognition artifact requires deterministic single-provider primary mode"
+    else:
+        failure_reason = "no successful provider cognition artifacts"
+
+    status = STATUS_FAILED_CLOSED if selected_mode == MODE_SELECTION_FAILED_CLOSED else STATUS_COMPLETED
+    artifact = {
+        "artifact_type": OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1,
+        "runtime_version": MILESTONE_ID,
+        "mode_selection_id": _require_string(mode_selection_id, "mode_selection_id"),
+        "mode_selection_status": status,
+        "multi_provider_result_bundle_reference": result_bundle["multi_provider_cognition_bundle_id"],
+        "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
+        "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
+        "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
+        "provider_availability_status": availability_artifact["availability_status"],
+        "provider_count": result_bundle["provider_count"],
+        "successful_provider_count": successful_provider_count,
+        "failed_provider_count": result_bundle["failed_provider_count"],
+        "successful_provider_ids": successful_provider_ids,
+        "provider_contract_hashes": [contract.get("artifact_hash") for contract in provider_contracts],
+        "provider_contract_mode_flags": contract_mode_flags,
+        "requested_single_provider_primary_mode": bool(requested_single_provider_primary_mode),
+        "selection_reason": _mode_selection_reason(
+            selected_mode=selected_mode,
+            requested_single_provider_primary_mode=requested_single_provider_primary_mode,
+            successful_provider_count=successful_provider_count,
+            contract_mode_flags=contract_mode_flags,
+            successful_provider_ids=successful_provider_ids,
+            failure_reason=failure_reason,
+        ),
+        "selected_mode": selected_mode,
+        "selected_next_stage": selected_next_stage,
+        "comparison_required": comparison_required,
+        "comparison_performed": False,
+        "fail_closed": status == STATUS_FAILED_CLOSED,
+        "failure_reason": failure_reason,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "approval_created": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def reconstruct_single_provider_primary_mode_selection_replay(replay_dir: str | Path) -> dict[str, Any]:
+    replay_path = Path(replay_dir)
+    wrapper = load_json(replay_path / "000_ocs_single_provider_primary_mode_selection_recorded.json")
+    if (
+        wrapper.get("replay_index") != 0
+        or wrapper.get("replay_step") != "ocs_single_provider_primary_mode_selection_recorded"
+    ):
+        raise FailClosedRuntimeError("OCS single-provider primary mode selection replay ordering mismatch")
+    _verify_replay_wrapper_hash(wrapper)
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("OCS single-provider primary mode selection artifact must be a JSON object")
+    _verify_artifact_hash(artifact, "OCS single-provider primary mode selection artifact")
+    if artifact.get("artifact_type") != OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1:
+        raise FailClosedRuntimeError("invalid OCS single-provider primary mode selection artifact")
+    _reject_boundary_flags(artifact, "OCS single-provider primary mode selection artifact")
+    return {
+        "artifact_type": artifact["artifact_type"],
+        "mode_selection_status": artifact["mode_selection_status"],
+        "selected_mode": artifact["selected_mode"],
+        "selection_reason": artifact["selection_reason"],
+        "provider_availability_artifact_hash": artifact["provider_availability_artifact_hash"],
+        "provider_availability_status": artifact["provider_availability_status"],
+        "multi_provider_result_bundle_hash": artifact["multi_provider_result_bundle_hash"],
+        "provider_count": artifact["provider_count"],
+        "successful_provider_count": artifact["successful_provider_count"],
+        "failed_provider_count": artifact["failed_provider_count"],
+        "successful_provider_ids": deepcopy(artifact["successful_provider_ids"]),
+        "provider_contract_hashes": deepcopy(artifact["provider_contract_hashes"]),
+        "provider_contract_mode_flags": deepcopy(artifact["provider_contract_mode_flags"]),
+        "requested_single_provider_primary_mode": artifact["requested_single_provider_primary_mode"],
+        "selected_next_stage": artifact["selected_next_stage"],
+        "comparison_required": artifact["comparison_required"],
+        "comparison_performed": artifact["comparison_performed"],
+        "fail_closed": artifact["fail_closed"],
+        "failure_reason": artifact["failure_reason"],
+        "replay_visible": True,
+        "replay_hash": replay_hash(wrapper),
+    }
+
+
+def _persist_mode_selection_artifact(replay_path: Path, artifact: dict[str, Any]) -> None:
+    _verify_artifact_hash(artifact, "OCS single-provider primary mode selection artifact")
+    _reject_boundary_flags(artifact, "OCS single-provider primary mode selection artifact")
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "ocs_single_provider_primary_mode_selection_recorded",
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / "000_ocs_single_provider_primary_mode_selection_recorded.json", wrapper)
+
+
+def _successful_provider_ids(result_bundle: dict[str, Any]) -> list[str]:
+    provider_ids = []
+    for result in result_bundle.get("provider_results", []):
+        artifact = result.get("llm_cognition_artifact") if isinstance(result, dict) else None
+        identity = artifact.get("provider_identity") if isinstance(artifact, dict) else None
+        provider_id = identity.get("provider_id") if isinstance(identity, dict) else None
+        if isinstance(provider_id, str) and provider_id:
+            provider_ids.append(provider_id)
+    return provider_ids
+
+
+def _provider_contract_mode_flags(provider_contracts: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    flags = {}
+    for contract in provider_contracts:
+        if not isinstance(contract, dict):
+            continue
+        provider_id = contract.get("provider_id")
+        if not isinstance(provider_id, str) or not provider_id:
+            continue
+        flags[provider_id] = {
+            "provider_contract_hash": contract.get("artifact_hash"),
+            "single_provider_only": contract.get("single_provider_only") is True,
+            "multi_provider_cognition_scope": contract.get("multi_provider_cognition_scope"),
+        }
+    return flags
+
+
+def _mode_selection_reason(
+    *,
+    selected_mode: str,
+    requested_single_provider_primary_mode: bool,
+    successful_provider_count: int,
+    contract_mode_flags: dict[str, dict[str, Any]],
+    successful_provider_ids: list[str],
+    failure_reason: str,
+) -> str:
+    if selected_mode == MODE_MULTI_PROVIDER_COMPARISON:
+        return "two or more successful provider cognition artifacts require standard comparison"
+    if selected_mode == MODE_SINGLE_PROVIDER_PRIMARY:
+        if requested_single_provider_primary_mode:
+            return "caller requested certified single-provider primary mode"
+        provider_id = successful_provider_ids[0] if successful_provider_ids else ""
+        flags = contract_mode_flags.get(provider_id, {})
+        if flags.get("single_provider_only") is True and flags.get("multi_provider_cognition_scope") is False:
+            return "successful provider contract declares single-provider-only cognition scope"
+        return "single-provider primary mode selected"
+    return failure_reason or f"unsupported provider cognition count: {successful_provider_count}"
+
+
 def _end_to_end_artifact(
     *,
     end_to_end_id: str,
@@ -601,6 +872,7 @@ def _end_to_end_artifact(
     context_artifact: dict[str, Any],
     result_bundle: dict[str, Any],
     availability_artifact: dict[str, Any],
+    mode_selection_artifact: dict[str, Any],
     comparison_artifact: dict[str, Any],
     continuity_artifact: dict[str, Any],
     clarification_artifact: dict[str, Any],
@@ -636,8 +908,11 @@ def _end_to_end_artifact(
         "provider_failure_hashes": result_bundle["provider_failure_hashes"],
         "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
         "provider_availability_status": availability_artifact["availability_status"],
-        "single_provider_primary_mode": bool(single_provider_primary_mode),
-        "comparison_required": not bool(single_provider_primary_mode),
+        "mode_selection_artifact_hash": mode_selection_artifact["artifact_hash"],
+        "selected_cognition_mode": mode_selection_artifact["selected_mode"],
+        "mode_selection_status": mode_selection_artifact["mode_selection_status"],
+        "single_provider_primary_mode": mode_selection_artifact["selected_mode"] == MODE_SINGLE_PROVIDER_PRIMARY,
+        "comparison_required": mode_selection_artifact["comparison_required"],
         "comparison_attempted": True,
         "comparison_performed": comparison_artifact.get("single_provider_primary_mode") is not True,
         "comparison_artifact_hash": comparison_artifact["artifact_hash"],
@@ -658,6 +933,7 @@ def _end_to_end_artifact(
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
             "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
             "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
+            "mode_selection_artifact_hash": mode_selection_artifact["artifact_hash"],
             "comparison_artifact_hash": comparison_artifact["artifact_hash"],
             "history_reference_hash": history_reference["artifact_hash"],
             "continuity_artifact_hash": continuity_artifact["artifact_hash"],
@@ -765,6 +1041,9 @@ def _provider_unavailable_end_to_end_artifact(
         "provider_failure_hashes": result_bundle["provider_failure_hashes"],
         "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
         "provider_availability_status": availability_artifact["availability_status"],
+        "mode_selection_artifact_hash": None,
+        "selected_cognition_mode": None,
+        "mode_selection_status": None,
         "single_provider_primary_mode": False,
         "comparison_required": True,
         "comparison_attempted": False,
@@ -800,6 +1079,7 @@ def _provider_unavailable_end_to_end_artifact(
             "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
             "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
+            "mode_selection_artifact_hash": None,
             "comparison_artifact_hash": None,
             "history_reference_hash": None,
             "continuity_artifact_hash": None,
@@ -828,6 +1108,116 @@ def _provider_unavailable_end_to_end_artifact(
         "governance_modified": False,
         "replay_modified": False,
         "first_failed_stage": OCS_PROVIDER_COGNITION_AVAILABILITY_GATE,
+        "failure_reason": failure_reason,
+        "created_at": created_at,
+    }
+    artifact["end_to_end_hash"] = _compute_end_to_end_hash(artifact)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _mode_selection_failed_end_to_end_artifact(
+    *,
+    end_to_end_id: str,
+    human_question: str,
+    created_at: str,
+    context_artifact: dict[str, Any],
+    result_bundle: dict[str, Any],
+    availability_artifact: dict[str, Any],
+    mode_selection_artifact: dict[str, Any],
+    stage_replay_references: dict[str, str],
+    failure_reason: str,
+) -> dict[str, Any]:
+    provider_results = result_bundle.get("provider_results", [])
+    artifact = {
+        "artifact_type": OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1,
+        "runtime_version": MILESTONE_ID,
+        "classification": CERTIFIED_CLASSIFICATION,
+        "end_to_end_id": end_to_end_id,
+        "workflow_status": STATUS_FAILED_CLOSED,
+        "human_question": human_question,
+        "human_question_hash": replay_hash(human_question),
+        "context_artifact_type": context_artifact["artifact_type"],
+        "context_assembly_id": context_artifact["context_assembly_id"],
+        "context_hash": context_artifact["context_hash"],
+        "context_artifact_hash": context_artifact["artifact_hash"],
+        "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
+        "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
+        "provider_count": result_bundle["provider_count"],
+        "successful_provider_count": result_bundle["successful_provider_count"],
+        "failed_provider_count": result_bundle["failed_provider_count"],
+        "provider_request_artifact_hashes": [item["provider_request_artifact_hash"] for item in provider_results],
+        "provider_response_artifact_hashes": [item["provider_response_artifact_hash"] for item in provider_results],
+        "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
+        "cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
+        "provider_failure_hashes": result_bundle["provider_failure_hashes"],
+        "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
+        "provider_availability_status": availability_artifact["availability_status"],
+        "mode_selection_artifact_hash": mode_selection_artifact["artifact_hash"],
+        "selected_cognition_mode": mode_selection_artifact["selected_mode"],
+        "mode_selection_status": mode_selection_artifact["mode_selection_status"],
+        "single_provider_primary_mode": False,
+        "comparison_required": mode_selection_artifact["comparison_required"],
+        "comparison_attempted": False,
+        "comparison_performed": False,
+        "comparison_artifact_hash": None,
+        "comparison_hash": None,
+        "history_reference_hash": None,
+        "history_hash": None,
+        "continuity_artifact_hash": None,
+        "continuity_hash": None,
+        "clarification_artifact_hash": None,
+        "clarification_hash": None,
+        "human_facing_cognition_result": {
+            "result_type": "HUMAN_FACING_COGNITION_RESULT",
+            "summary": "OCS cognition could not select a valid comparison mode for the available provider evidence.",
+            "clarification_required": False,
+            "clarification_candidate_count": 0,
+            "clarification_candidates": [],
+            "allowed_next_step": "HUMAN_REVIEW_OF_MODE_SELECTION_FAILURE",
+            "approval_created": False,
+            "execution_requested": False,
+            "worker_invoked": False,
+            "non_authoritative": True,
+        },
+        "stage_replay_references": deepcopy(stage_replay_references),
+        "lineage_refs": {
+            "human_question_hash": replay_hash(human_question),
+            "context_hash": context_artifact["context_hash"],
+            "context_artifact_hash": context_artifact["artifact_hash"],
+            "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
+            "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
+            "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
+            "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
+            "mode_selection_artifact_hash": mode_selection_artifact["artifact_hash"],
+            "comparison_artifact_hash": None,
+            "history_reference_hash": None,
+            "continuity_artifact_hash": None,
+            "clarification_artifact_hash": None,
+        },
+        "governance_preservation": {
+            "llm_proposes": True,
+            "aigol_governs": True,
+            "worker_executes": True,
+            "replay_records": True,
+            "human_review_required": True,
+            "provider_output_authoritative": False,
+            "comparison_output_authoritative": False,
+            "clarification_output_authoritative": False,
+        },
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "non_authoritative": True,
+        "human_review_required": True,
+        "replay_visible": True,
+        "provider_invoked": True,
+        "approval_created": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "domain_created": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "first_failed_stage": OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION,
         "failure_reason": failure_reason,
         "created_at": created_at,
     }
@@ -945,6 +1335,9 @@ def _failed_end_to_end_artifact(
         "provider_failure_hashes": [],
         "provider_availability_artifact_hash": None,
         "provider_availability_status": None,
+        "mode_selection_artifact_hash": None,
+        "selected_cognition_mode": None,
+        "mode_selection_status": None,
         "single_provider_primary_mode": False,
         "comparison_required": True,
         "comparison_attempted": False,
@@ -977,6 +1370,7 @@ def _failed_end_to_end_artifact(
             "multi_provider_result_bundle_hash": None,
             "source_cognition_artifact_hashes": [],
             "provider_availability_artifact_hash": None,
+            "mode_selection_artifact_hash": None,
             "comparison_artifact_hash": None,
             "history_reference_hash": None,
             "continuity_artifact_hash": None,
@@ -1308,6 +1702,9 @@ def _compute_end_to_end_hash(artifact: dict[str, Any]) -> str:
             "provider_failure_hashes": artifact["provider_failure_hashes"],
             "provider_availability_artifact_hash": artifact.get("provider_availability_artifact_hash"),
             "provider_availability_status": artifact.get("provider_availability_status"),
+            "mode_selection_artifact_hash": artifact.get("mode_selection_artifact_hash"),
+            "selected_cognition_mode": artifact.get("selected_cognition_mode"),
+            "mode_selection_status": artifact.get("mode_selection_status"),
             "single_provider_primary_mode": artifact["single_provider_primary_mode"],
             "comparison_required": artifact["comparison_required"],
             "comparison_attempted": artifact.get("comparison_attempted"),
@@ -1335,6 +1732,7 @@ def _stage_replay_paths(replay_path: Path) -> dict[str, Path]:
         "context": replay_path / "stages" / "context",
         "multi_provider_cognition": replay_path / "stages" / "multi_provider_cognition",
         "provider_cognition_availability": replay_path / "stages" / "provider_cognition_availability",
+        "mode_selection": replay_path / "stages" / "mode_selection",
         "cognition_comparison": replay_path / "stages" / "cognition_comparison",
         "continuity_and_clarification": replay_path / "stages" / "continuity_and_clarification",
     }
@@ -1387,6 +1785,7 @@ def _verify_stage_hashes(
     context_replay: dict[str, Any],
     multi_replay: dict[str, Any],
     availability_replay: dict[str, Any],
+    mode_selection_replay: dict[str, Any],
     comparison_replay: dict[str, Any],
     continuity_replay: dict[str, Any],
 ) -> None:
@@ -1400,6 +1799,20 @@ def _verify_stage_hashes(
         raise FailClosedRuntimeError("end-to-end provider availability cognition artifact hash mismatch")
     if availability_replay.get("availability_status") != artifact.get("provider_availability_status"):
         raise FailClosedRuntimeError("end-to-end provider availability status mismatch")
+    if mode_selection_replay.get("provider_availability_artifact_hash") != artifact.get(
+        "provider_availability_artifact_hash"
+    ):
+        raise FailClosedRuntimeError("end-to-end mode selection availability hash mismatch")
+    if mode_selection_replay.get("multi_provider_result_bundle_hash") != artifact.get(
+        "multi_provider_result_bundle_hash"
+    ):
+        raise FailClosedRuntimeError("end-to-end mode selection result bundle hash mismatch")
+    if mode_selection_replay.get("successful_provider_count") != artifact["successful_provider_count"]:
+        raise FailClosedRuntimeError("end-to-end mode selection provider count mismatch")
+    if mode_selection_replay.get("selected_mode") != artifact.get("selected_cognition_mode"):
+        raise FailClosedRuntimeError("end-to-end mode selection selected mode mismatch")
+    if mode_selection_replay.get("comparison_required") != artifact["comparison_required"]:
+        raise FailClosedRuntimeError("end-to-end mode selection comparison requirement mismatch")
     if comparison_replay.get("context_hash") != artifact["context_hash"]:
         raise FailClosedRuntimeError("end-to-end comparison context hash mismatch")
     if comparison_replay.get("comparison_confidence") != artifact["human_facing_cognition_result"]["comparison_confidence"]:

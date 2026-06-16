@@ -374,6 +374,8 @@ def test_end_to_end_reconstructs_each_stage_replay(tmp_path):
 
     assert stage_replay["context"]["context_status"] == "OCS_CONTEXT_ASSEMBLED"
     assert stage_replay["multi_provider_cognition"]["successful_provider_count"] == 3
+    assert stage_replay["mode_selection"]["selected_mode"] == "MULTI_PROVIDER_COMPARISON"
+    assert stage_replay["mode_selection"]["comparison_required"] is True
     assert stage_replay["cognition_comparison"]["source_cognition_artifact_count"] == 3
     assert stage_replay["continuity_and_clarification"]["clarification_candidate_count"] >= 3
 
@@ -390,8 +392,10 @@ def test_provider_failure_is_isolated_when_two_providers_succeed(tmp_path):
     assert artifact["successful_provider_count"] == 2
     assert artifact["failed_provider_count"] == 1
     assert len(artifact["provider_failure_hashes"]) == 1
+    assert artifact["selected_cognition_mode"] == "MULTI_PROVIDER_COMPARISON"
     assert replay["successful_provider_count"] == 2
     assert replay["failed_provider_count"] == 1
+    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "MULTI_PROVIDER_COMPARISON"
 
 
 def test_single_provider_primary_mode_completes_without_comparison_requirement(tmp_path):
@@ -409,11 +413,19 @@ def test_single_provider_primary_mode_completes_without_comparison_requirement(t
     assert artifact["successful_provider_count"] == 1
     assert artifact["cognition_artifact_hashes"]
     assert artifact["single_provider_primary_mode"] is True
+    assert artifact["selected_cognition_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert artifact["mode_selection_status"] == STATUS_COMPLETED
+    assert artifact["mode_selection_artifact_hash"]
     assert artifact["comparison_required"] is False
     assert artifact["comparison_performed"] is False
     assert replay["final_status"] == STATUS_COMPLETED
     assert replay["provider_count"] == 1
     assert replay["cognition_artifact_count"] == 1
+    assert replay["selected_cognition_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert replay["mode_selection_status"] == STATUS_COMPLETED
+    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert replay["stage_replay"]["mode_selection"]["comparison_required"] is False
+    assert replay["stage_replay"]["mode_selection"]["requested_single_provider_primary_mode"] is True
     assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
 
 
@@ -453,6 +465,7 @@ def test_provider_availability_gate_stops_before_comparison_when_no_cognition_ar
     assert replay["stage_replay"]["provider_cognition_availability"]["availability_status"] == (
         "PROVIDER_COGNITION_UNAVAILABLE"
     )
+    assert replay["stage_replay"]["mode_selection"] == {}
     assert replay["stage_replay"]["cognition_comparison"] == {}
 
 
@@ -466,9 +479,17 @@ def test_end_to_end_fails_closed_when_comparison_lacks_two_cognition_artifacts(t
     assert result["final_status"] == STATUS_FAILED_CLOSED
     assert result["fail_closed"] is True
     assert artifact["workflow_status"] == STATUS_FAILED_CLOSED
-    assert "at least two cognition artifacts are required for comparison" in result["failure_reason"]
+    assert artifact["first_failed_stage"] == "OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION"
+    assert "one provider cognition artifact requires deterministic single-provider primary mode" in result[
+        "failure_reason"
+    ]
     replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
     assert replay["final_status"] == STATUS_FAILED_CLOSED
+    assert replay["first_failed_stage"] == "OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION"
+    assert replay["comparison_attempted"] is False
+    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "MODE_SELECTION_FAILED_CLOSED"
+    assert replay["stage_replay"]["mode_selection"]["fail_closed"] is True
+    assert replay["stage_replay"]["cognition_comparison"] == {}
 
 
 def test_prior_history_is_reused_by_end_to_end_continuity(tmp_path):
@@ -523,6 +544,23 @@ def test_replay_tampering_is_detected(tmp_path):
     path.write_text(json.dumps(wrapper, sort_keys=True), encoding="utf-8")
 
     with pytest.raises(FailClosedRuntimeError, match="replay hash mismatch"):
+        reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+
+def test_mode_selection_replay_tampering_is_detected(tmp_path):
+    _run(tmp_path)
+    path = (
+        tmp_path
+        / "e2e"
+        / "stages"
+        / "mode_selection"
+        / "000_ocs_single_provider_primary_mode_selection_recorded.json"
+    )
+    wrapper = json.loads(path.read_text(encoding="utf-8"))
+    wrapper["artifact"]["selected_mode"] = "SINGLE_PROVIDER_PRIMARY"
+    path.write_text(json.dumps(wrapper, sort_keys=True), encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="hash mismatch"):
         reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
 
 

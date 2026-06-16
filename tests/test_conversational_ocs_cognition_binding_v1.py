@@ -190,6 +190,14 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert replay["final_status"] == STATUS_COMPLETED
     assert replay["provider_count"] == 1
     assert replay["cognition_artifact_count"] == 1
+    assert replay["selected_cognition_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert replay["mode_selection_status"] == STATUS_COMPLETED
+    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert replay["stage_replay"]["mode_selection"]["requested_single_provider_primary_mode"] is True
+    assert (
+        replay["stage_replay"]["mode_selection"]["provider_contract_mode_flags"]["openai"]["single_provider_only"]
+        is True
+    )
     assert replay["stage_replay"]["cognition_comparison"]["final_status"] == STATUS_COMPLETED
     assert replay["stage_replay"]["context"]["context_status"] == "OCS_CONTEXT_ASSEMBLED"
     assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
