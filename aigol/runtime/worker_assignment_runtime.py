@@ -11,6 +11,12 @@ from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge
     DOMAIN_EXECUTION_READY_BRIDGED,
     reconstruct_domain_execution_ready_bridge_replay,
 )
+from aigol.runtime.external_resource_registry_runtime import (
+    EXECUTION_WORKER,
+    default_err_v0_registry,
+    reconstruct_err_v0_selection_replay,
+    select_resource_for_capability,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_request_runtime import (
@@ -128,10 +134,13 @@ def assign_worker_from_invocation_request(
     worker_assignment_id: str,
     worker_invocation_request_artifact: dict[str, Any],
     worker_invocation_request_replay_reference: str,
-    worker_registry_artifacts: list[dict[str, Any]],
+    worker_registry_artifacts: list[dict[str, Any]] | None,
     assigned_by: str,
     assigned_at: str,
     replay_dir: str | Path,
+    use_err_worker_lookup: bool = False,
+    err_required_capability: str = "file_write",
+    err_registry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assign one compatible Worker without dispatching, invoking, or executing it."""
 
@@ -142,13 +151,38 @@ def assign_worker_from_invocation_request(
             worker_invocation_request_artifact,
             Path(worker_invocation_request_replay_reference),
         )
-        worker = _select_compatible_worker(worker_registry_artifacts, request)
+        if use_err_worker_lookup:
+            err_selection_capture = select_resource_for_capability(
+                selection_id=f"{worker_assignment_id}:ERR_WORKER_SELECTION",
+                required_capability=err_required_capability,
+                replay_dir=replay_path / "stages" / "err_worker_selection",
+                created_at=assigned_at,
+                registry=deepcopy(err_registry) if err_registry is not None else default_err_v0_registry(),
+                resource_type=EXECUTION_WORKER,
+                hirr_output={
+                    "worker_assignment_runtime": AIGOL_WORKER_ASSIGNMENT_RUNTIME_VERSION,
+                    "required_capability": err_required_capability,
+                    "resource_type": EXECUTION_WORKER,
+                },
+            )
+            worker_registry = [
+                _worker_artifact_from_err_selection(
+                    err_selection_capture=err_selection_capture,
+                    request=request,
+                    created_at=assigned_at,
+                )
+            ]
+        else:
+            err_selection_capture = None
+            worker_registry = worker_registry_artifacts or []
+        worker = _select_compatible_worker(worker_registry, request)
         evidence = _evidence_artifact(
             worker_assignment_id=worker_assignment_id,
             request=request,
             worker=worker,
             worker_invocation_request_replay_reference=worker_invocation_request_replay_reference,
             assigned_at=assigned_at,
+            err_selection_capture=err_selection_capture,
         )
         classification = _classification_artifact(
             worker_assignment_id=worker_assignment_id,
@@ -179,7 +213,14 @@ def assign_worker_from_invocation_request(
         _persist_step(replay_path, 1, REPLAY_STEPS[1], classification)
         _persist_step(replay_path, 2, REPLAY_STEPS[2], assignment)
         _persist_step(replay_path, 3, REPLAY_STEPS[3], result)
-        return _capture(evidence, classification, assignment, result, replay_path)
+        return _capture(
+            evidence,
+            classification,
+            assignment,
+            result,
+            replay_path,
+            err_selection_capture=err_selection_capture,
+        )
     except Exception as exc:
         result = _failed_result(
             worker_assignment_id=worker_assignment_id,
@@ -193,7 +234,14 @@ def assign_worker_from_invocation_request(
             failure_reason=_failure_reason(exc),
         )
         _persist_failure_if_possible(replay_path, 3, REPLAY_STEPS[3], result)
-        return _capture(None, None, None, result, replay_path)
+        return _capture(
+            None,
+            None,
+            None,
+            result,
+            replay_path,
+            err_selection_capture=locals().get("err_selection_capture"),
+        )
 
 
 def reconstruct_worker_assignment_runtime_replay(replay_dir: str | Path) -> dict[str, Any]:
@@ -245,6 +293,10 @@ def reconstruct_worker_assignment_runtime_replay(replay_dir: str | Path) -> dict
         "worker_invocation_request_reference": assignment["worker_invocation_request_reference"],
         "authorization_reference": assignment["authorization_reference"],
         "execution_packet_reference": assignment["execution_packet_reference"],
+        "err_worker_selection_enabled": bool(evidence.get("err_worker_selection_replay_reference")),
+        "err_selected_resource_id": evidence.get("err_selected_resource_id"),
+        "err_required_capability": evidence.get("err_required_capability"),
+        "err_worker_selection_replay": _reconstruct_optional_err_worker_selection(evidence),
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
@@ -308,6 +360,46 @@ def default_worker_registry_for_request(request: dict[str, Any], *, created_at: 
     }
     worker["artifact_hash"] = replay_hash(worker)
     return [worker]
+
+
+def _worker_artifact_from_err_selection(
+    *,
+    err_selection_capture: dict[str, Any],
+    request: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    worker = {
+        "artifact_type": WORKER_ARTIFACT_V1,
+        "worker_runtime_version": AIGOL_WORKER_ASSIGNMENT_RUNTIME_VERSION,
+        "worker_id": _require_string(err_selection_capture.get("selected_resource_id"), "selected_resource_id"),
+        "worker_type": request["target_worker_family"],
+        "worker_version": "ERR_V0_SELECTED",
+        "declared_capabilities": [err_selection_capture["required_capability"], request["worker_role"]],
+        "supported_request_types": ["WORKER_INVOCATION_REQUEST"],
+        "capability_id": err_selection_capture["required_capability"],
+        "trust_boundary": "LOCAL_BOUNDED_WORKER",
+        "state": AVAILABLE,
+        "worker_family": request["target_worker_family"],
+        "worker_roles": [request["worker_role"]],
+        "compatible_execution_packets": [request["execution_packet_reference"]],
+        "allowed_outputs": deepcopy(request["allowed_outputs"]),
+        "forbidden_operations": deepcopy(request["forbidden_operations"]),
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_reference": err_selection_capture["replay_reference"],
+        "replay_visible": True,
+        "governance_authority": False,
+        "approval_authority": False,
+        "proposal_authority": False,
+        "provider_authority": False,
+        "self_authorization": False,
+        "replay_mutation_authority": False,
+        "worker_dispatched": False,
+        "worker_invoked": False,
+        "execution_performed": False,
+        "completion_recorded": False,
+    }
+    worker["artifact_hash"] = replay_hash(worker)
+    return worker
 
 
 def _validate_invocation_request(request_artifact: dict[str, Any], replay_path: Path) -> dict[str, Any]:
@@ -550,7 +642,13 @@ def _evidence_artifact(
     worker: dict[str, Any],
     worker_invocation_request_replay_reference: str,
     assigned_at: str,
+    err_selection_capture: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    err_evidence = (
+        err_selection_capture.get("err_selection_evidence_artifact")
+        if isinstance(err_selection_capture, dict)
+        else None
+    )
     artifact = {
         "artifact_type": WORKER_ASSIGNMENT_EVIDENCE_ARTIFACT_V1,
         "runtime_version": AIGOL_WORKER_ASSIGNMENT_RUNTIME_VERSION,
@@ -573,6 +671,16 @@ def _evidence_artifact(
         "worker_hash": worker["artifact_hash"],
         "worker_family": worker["worker_family"],
         "worker_role": request["worker_role"],
+        "err_worker_selection_replay_reference": (
+            err_selection_capture.get("replay_reference") if isinstance(err_selection_capture, dict) else None
+        ),
+        "err_worker_selection_hash": err_evidence.get("artifact_hash") if isinstance(err_evidence, dict) else None,
+        "err_selected_resource_id": (
+            err_selection_capture.get("selected_resource_id") if isinstance(err_selection_capture, dict) else None
+        ),
+        "err_required_capability": (
+            err_selection_capture.get("required_capability") if isinstance(err_selection_capture, dict) else None
+        ),
         "lineage_checks": {
             "invocation_request_lineage": True,
             "authorization_lineage": True,
@@ -757,6 +865,7 @@ def _capture(
     assignment: dict[str, Any] | None,
     result: dict[str, Any],
     replay_path: Path,
+    err_selection_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     capture = deepcopy(result)
     capture.update(
@@ -765,6 +874,7 @@ def _capture(
             "assignment_classification_artifact": deepcopy(classification),
             "worker_assignment_artifact": deepcopy(assignment),
             "assignment_result_artifact": deepcopy(result),
+            "err_worker_selection_capture": deepcopy(err_selection_capture) if err_selection_capture else {},
             "worker_assignment_reference": assignment.get("worker_assignment_id") if assignment else None,
             "approved_domain": assignment.get("target_domain") if assignment else None,
             "worker_id": assignment.get("worker_id") if assignment else None,
@@ -776,6 +886,21 @@ def _capture(
     )
     capture["worker_assignment_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _reconstruct_optional_err_worker_selection(evidence: dict[str, Any]) -> dict[str, Any]:
+    replay_reference = evidence.get("err_worker_selection_replay_reference")
+    if not isinstance(replay_reference, str) or not replay_reference:
+        return {}
+    replay_path = Path(replay_reference)
+    if not (replay_path / "000_err_resource_selection_evidence_recorded.json").exists():
+        return {}
+    replay = reconstruct_err_v0_selection_replay(replay_path)
+    if replay.get("selected_resource_id") != evidence.get("err_selected_resource_id"):
+        raise FailClosedRuntimeError("worker assignment replay ERR worker selection mismatch")
+    if replay.get("required_capability") != evidence.get("err_required_capability"):
+        raise FailClosedRuntimeError("worker assignment replay ERR capability mismatch")
+    return replay
 
 
 def _validate_assignment_artifact(assignment: dict[str, Any]) -> None:
