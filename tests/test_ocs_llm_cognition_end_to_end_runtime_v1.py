@@ -417,6 +417,45 @@ def test_single_provider_primary_mode_completes_without_comparison_requirement(t
     assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
 
 
+def test_provider_availability_gate_stops_before_comparison_when_no_cognition_artifacts_exist(tmp_path):
+    result = _run(
+        tmp_path,
+        transport_registry=_transports(failing={"provider-a", "provider-b", "provider-c"}),
+    )
+    artifact = result["ocs_llm_cognition_end_to_end_artifact"]
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+    assert result["final_status"] == STATUS_FAILED_CLOSED
+    assert result["fail_closed"] is True
+    assert result["failure_reason"] == "OCS cognition failed closed: no provider cognition artifacts available"
+    assert artifact["first_failed_stage"] == "OCS_PROVIDER_COGNITION_AVAILABILITY_GATE"
+    assert artifact["provider_count"] == 3
+    assert artifact["successful_provider_count"] == 0
+    assert artifact["failed_provider_count"] == 3
+    assert artifact["provider_failure_hashes"]
+    assert artifact["provider_availability_status"] == "PROVIDER_COGNITION_UNAVAILABLE"
+    assert artifact["comparison_attempted"] is False
+    assert artifact["comparison_performed"] is False
+    assert artifact["comparison_artifact_hash"] is None
+    assert artifact["human_facing_cognition_result"]["allowed_next_step"] == (
+        "HUMAN_REVIEW_OF_PROVIDER_UNAVAILABILITY"
+    )
+    assert artifact["human_facing_cognition_result"]["provider_failures_visible"] is True
+    assert not (tmp_path / "e2e" / "stages" / "cognition_comparison").exists()
+    assert replay["final_status"] == STATUS_FAILED_CLOSED
+    assert replay["provider_count"] == 3
+    assert replay["successful_provider_count"] == 0
+    assert replay["failed_provider_count"] == 3
+    assert replay["first_failed_stage"] == "OCS_PROVIDER_COGNITION_AVAILABILITY_GATE"
+    assert replay["comparison_attempted"] is False
+    assert replay["stage_replay"]["context"]["context_status"] == "OCS_CONTEXT_ASSEMBLED"
+    assert replay["stage_replay"]["multi_provider_cognition"]["successful_provider_count"] == 0
+    assert replay["stage_replay"]["provider_cognition_availability"]["availability_status"] == (
+        "PROVIDER_COGNITION_UNAVAILABLE"
+    )
+    assert replay["stage_replay"]["cognition_comparison"] == {}
+
+
 def test_end_to_end_fails_closed_when_comparison_lacks_two_cognition_artifacts(tmp_path):
     result = _run(
         tmp_path,
