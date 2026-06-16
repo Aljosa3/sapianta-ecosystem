@@ -8,6 +8,17 @@ from pathlib import Path
 import pytest
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.external_resource_registry_runtime import (
+    ACTIVE,
+    COGNITION_PROVIDER,
+    EXECUTION_WORKER,
+    INACTIVE,
+    MOCK_FILESYSTEM_WORKER_ID,
+    MOCK_PROVIDER_ID,
+    create_err_v0_registry,
+    default_err_v0_registry,
+    register_resource,
+)
 from aigol.runtime.multi_provider_cognition_runtime import create_default_cognition_provider_contract
 from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     CERTIFIED_CLASSIFICATION,
@@ -427,6 +438,98 @@ def test_single_provider_primary_mode_completes_without_comparison_requirement(t
     assert replay["stage_replay"]["mode_selection"]["comparison_required"] is False
     assert replay["stage_replay"]["mode_selection"]["requested_single_provider_primary_mode"] is True
     assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
+
+
+def test_ocs_resolves_cognition_provider_through_err_v0_without_hardcoded_contract(tmp_path):
+    response_text = json.dumps(
+        {
+            "findings": ["ERR selected the cognition provider by capability."],
+            "assumptions": ["OCS requested reasoning rather than a hardcoded provider id."],
+            "alternatives": ["Keep direct provider contracts for legacy call sites during migration."],
+            "risks": ["ERR remains passive and records no worker activity."],
+            "uncertainties": ["Further OCS call sites still need migration."],
+            "confidence": "HIGH",
+        },
+        sort_keys=True,
+    )
+
+    def mock_transport(_payload: dict, metadata: dict) -> dict:
+        assert metadata["provider_id"] == MOCK_PROVIDER_ID
+        assert metadata["provider_role"] == "COGNITION_PROVIDER"
+        return {"output_text": response_text}
+
+    registry = default_err_v0_registry()
+    result = _run(
+        tmp_path,
+        end_to_end_id="OCS-ERR-INTEGRATION-001",
+        provider_contracts=[],
+        transport_registry={MOCK_PROVIDER_ID: mock_transport},
+        single_provider_primary_mode=True,
+        use_err_resource_lookup=True,
+        err_required_capability="reasoning",
+        err_registry=registry,
+    )
+    artifact = result["ocs_llm_cognition_end_to_end_artifact"]
+    err_capture = result["stage_captures"]["err_resource_selection"]
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+    err_replay = replay["stage_replay"]["err_resource_selection"]
+
+    assert result["final_status"] == STATUS_COMPLETED
+    assert err_capture["selected_resource_id"] == MOCK_PROVIDER_ID
+    assert err_capture["required_capability"] == "reasoning"
+    assert artifact["provider_count"] == 1
+    assert artifact["successful_provider_count"] == 1
+    assert artifact["provider_request_artifact_hashes"]
+    assert replay["err_resource_selection_enabled"] is True
+    assert replay["err_selected_resource_id"] == MOCK_PROVIDER_ID
+    assert replay["err_required_capability"] == "reasoning"
+    assert err_replay["selected_resource_id"] == MOCK_PROVIDER_ID
+    assert err_replay["provider_invoked"] is False
+    assert err_replay["worker_invoked"] is False
+    assert err_replay["orchestration_performed"] is False
+    assert replay["stage_replay"]["multi_provider_cognition"]["provider_count"] == 1
+    assert MOCK_FILESYSTEM_WORKER_ID in [resource["resource_id"] for resource in registry["resources"]]
+
+
+def test_ocs_err_lookup_fails_closed_when_required_capability_has_no_active_provider(tmp_path):
+    registry = create_err_v0_registry()
+    register_resource(
+        registry,
+        {
+            "resource_id": MOCK_PROVIDER_ID,
+            "resource_type": COGNITION_PROVIDER,
+            "capabilities": ["reasoning"],
+            "status": INACTIVE,
+        },
+    )
+    register_resource(
+        registry,
+        {
+            "resource_id": MOCK_FILESYSTEM_WORKER_ID,
+            "resource_type": EXECUTION_WORKER,
+            "capabilities": ["file_write"],
+            "status": ACTIVE,
+        },
+    )
+
+    result = _run(
+        tmp_path,
+        end_to_end_id="OCS-ERR-INTEGRATION-NO-ACTIVE-PROVIDER",
+        provider_contracts=[],
+        transport_registry={},
+        single_provider_primary_mode=True,
+        use_err_resource_lookup=True,
+        err_required_capability="reasoning",
+        err_registry=registry,
+    )
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+    assert result["final_status"] == STATUS_FAILED_CLOSED
+    assert result["fail_closed"] is True
+    assert "no active resource for capability" in result["failure_reason"]
+    assert replay["final_status"] == STATUS_FAILED_CLOSED
+    assert replay["err_resource_selection_enabled"] is False
+    assert replay["stage_replay"]["err_resource_selection"] == {}
 
 
 def test_provider_availability_gate_stops_before_comparison_when_no_cognition_artifacts_exist(tmp_path):
