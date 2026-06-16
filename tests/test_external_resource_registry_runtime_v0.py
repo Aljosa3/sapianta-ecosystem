@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import pytest
 
 from aigol.runtime.external_resource_registry_runtime import (
@@ -165,3 +167,24 @@ def test_no_active_capability_match_fails_closed(tmp_path) -> None:
             registry=registry,
             resource_type=EXECUTION_WORKER,
         )
+
+
+def test_err_v0_runtime_preserves_passive_shared_infrastructure_boundary() -> None:
+    import aigol.runtime.external_resource_registry_runtime as runtime
+
+    source = inspect.getsource(runtime)
+    forbidden_fragments = (
+        "invoke_provider(",
+        "invoke_worker(",
+        "dispatch_worker(",
+        "authorize_",
+        "rank_",
+        "optimize_",
+        "ell_",
+        "subprocess",
+        "requests",
+        "httpx",
+    )
+
+    for fragment in forbidden_fragments:
+        assert fragment not in source
