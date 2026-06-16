@@ -16,8 +16,15 @@ from aigol.runtime.cognition_comparison_runtime import (
     run_cognition_comparison_runtime,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.external_resource_registry_runtime import (
+    COGNITION_PROVIDER,
+    default_err_v0_registry,
+    reconstruct_err_v0_selection_replay,
+    select_resource_for_capability,
+)
 from aigol.runtime.multi_provider_cognition_runtime import (
     MULTI_PROVIDER_COGNITION_RESULT_BUNDLE_V1,
+    create_default_cognition_provider_contract,
     reconstruct_multi_provider_cognition_replay,
     run_multi_provider_cognition_runtime,
 )
@@ -93,6 +100,9 @@ def run_ocs_llm_cognition_end_to_end(
     disagreement_threshold: int = 1,
     uncertainty_threshold: int = 1,
     minimum_confidence: str = "HIGH",
+    use_err_resource_lookup: bool = False,
+    err_required_capability: str = "reasoning",
+    err_registry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the complete governed OCS LLM cognition workflow."""
 
@@ -114,12 +124,36 @@ def run_ocs_llm_cognition_end_to_end(
         )
         _require_stage_success(context_capture, "OCS context assembly")
         context_artifact = _validate_context_artifact(context_capture["ocs_context_assembly_artifact"])
+        if use_err_resource_lookup:
+            err_selection_capture = select_resource_for_capability(
+                selection_id=f"{end_to_end}:ERR_RESOURCE_SELECTION",
+                required_capability=err_required_capability,
+                replay_dir=stage_paths["err_resource_selection"],
+                created_at=timestamp,
+                registry=deepcopy(err_registry) if err_registry is not None else default_err_v0_registry(),
+                resource_type=COGNITION_PROVIDER,
+                human_intent=question,
+                hirr_output={
+                    "ocs_workflow": MILESTONE_ID,
+                    "required_capability": err_required_capability,
+                    "resource_type": COGNITION_PROVIDER,
+                },
+            )
+            active_provider_contracts = [
+                create_default_cognition_provider_contract(
+                    provider_id=err_selection_capture["selected_resource_id"],
+                    created_at=timestamp,
+                )
+            ]
+        else:
+            err_selection_capture = None
+            active_provider_contracts = provider_contracts
 
         multi_capture = run_multi_provider_cognition_runtime(
             multi_provider_cognition_bundle_id=f"{end_to_end}:MULTI_PROVIDER_COGNITION",
             human_request=question,
             ocs_context_artifact=context_artifact,
-            provider_contracts=provider_contracts,
+            provider_contracts=active_provider_contracts,
             created_at=timestamp,
             replay_dir=stage_paths["multi_provider_cognition"],
             transport_registry=transport_registry,
@@ -155,6 +189,7 @@ def run_ocs_llm_cognition_end_to_end(
                 failure_reason=failure_reason,
                 stage_captures={
                     "context": context_capture,
+                    "err_resource_selection": err_selection_capture or {},
                     "multi_provider_cognition": multi_capture,
                     "provider_cognition_availability": {
                         "provider_cognition_availability_artifact": deepcopy(availability_artifact),
@@ -170,7 +205,7 @@ def run_ocs_llm_cognition_end_to_end(
         mode_selection_artifact = _single_provider_primary_mode_selection_artifact(
             mode_selection_id=f"{end_to_end}:SINGLE_PROVIDER_PRIMARY_MODE_SELECTION",
             result_bundle=result_bundle,
-            provider_contracts=provider_contracts,
+            provider_contracts=active_provider_contracts,
             availability_artifact=availability_artifact,
             requested_single_provider_primary_mode=single_provider_primary_mode,
             created_at=timestamp,
@@ -203,6 +238,7 @@ def run_ocs_llm_cognition_end_to_end(
                 failure_reason=failure_reason,
                 stage_captures={
                     "context": context_capture,
+                    "err_resource_selection": err_selection_capture or {},
                     "multi_provider_cognition": multi_capture,
                     "provider_cognition_availability": {
                         "provider_cognition_availability_artifact": deepcopy(availability_artifact),
@@ -280,6 +316,7 @@ def run_ocs_llm_cognition_end_to_end(
             failure_reason="",
             stage_captures={
                 "context": context_capture,
+                "err_resource_selection": err_selection_capture or {},
                 "multi_provider_cognition": multi_capture,
                 "provider_cognition_availability": {
                     "provider_cognition_availability_artifact": deepcopy(availability_artifact),
@@ -346,6 +383,7 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         raise FailClosedRuntimeError("OCS LLM cognition end-to-end hash mismatch")
 
     stage_refs = artifact.get("stage_replay_references") or {}
+    err_selection_replay = _reconstruct_optional_err_selection_replay(stage_refs)
     if artifact.get("workflow_status") == STATUS_COMPLETED:
         context_replay = reconstruct_ocs_context_assembly_replay(stage_refs["context"])
         multi_replay = reconstruct_multi_provider_cognition_replay(stage_refs["multi_provider_cognition"])
@@ -406,6 +444,9 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         "provider_availability_status": artifact.get("provider_availability_status"),
         "selected_cognition_mode": artifact.get("selected_cognition_mode"),
         "mode_selection_status": artifact.get("mode_selection_status"),
+        "err_resource_selection_enabled": bool(err_selection_replay),
+        "err_selected_resource_id": err_selection_replay.get("selected_resource_id"),
+        "err_required_capability": err_selection_replay.get("required_capability"),
         "first_failed_stage": artifact.get("first_failed_stage"),
         "comparison_attempted": artifact.get("comparison_attempted"),
         "cognition_artifact_count": len(artifact.get("cognition_artifact_hashes", [])),
@@ -417,6 +458,7 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         "stage_replay_references": deepcopy(stage_refs),
         "stage_replay": {
             "context": context_replay,
+            "err_resource_selection": err_selection_replay,
             "multi_provider_cognition": multi_replay,
             "provider_cognition_availability": availability_replay,
             "mode_selection": mode_selection_replay,
@@ -1730,12 +1772,23 @@ def _compute_end_to_end_hash(artifact: dict[str, Any]) -> str:
 def _stage_replay_paths(replay_path: Path) -> dict[str, Path]:
     return {
         "context": replay_path / "stages" / "context",
+        "err_resource_selection": replay_path / "stages" / "err_resource_selection",
         "multi_provider_cognition": replay_path / "stages" / "multi_provider_cognition",
         "provider_cognition_availability": replay_path / "stages" / "provider_cognition_availability",
         "mode_selection": replay_path / "stages" / "mode_selection",
         "cognition_comparison": replay_path / "stages" / "cognition_comparison",
         "continuity_and_clarification": replay_path / "stages" / "continuity_and_clarification",
     }
+
+
+def _reconstruct_optional_err_selection_replay(stage_refs: dict[str, Any]) -> dict[str, Any]:
+    replay_reference = stage_refs.get("err_resource_selection")
+    if not isinstance(replay_reference, str) or not replay_reference:
+        return {}
+    replay_path = Path(replay_reference)
+    if not (replay_path / "000_err_resource_selection_evidence_recorded.json").exists():
+        return {}
+    return reconstruct_err_v0_selection_replay(replay_path)
 
 
 def _require_stage_success(capture: dict[str, Any], stage_name: str) -> None:
