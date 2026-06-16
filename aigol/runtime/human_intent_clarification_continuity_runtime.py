@@ -27,6 +27,8 @@ HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1 = (
 
 HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
+SUPPORTED_TARGET_WORKFLOWS = frozenset({CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, OCS_LLM_COGNITION})
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 WORKFLOW_SELECTION_AFTER_CLARIFICATION = "WORKFLOW_SELECTION_AFTER_CLARIFICATION"
 FAILED_CLOSED = "FAILED_CLOSED"
@@ -166,9 +168,17 @@ def _validate_state(*, state: dict[str, Any], current_chain_id: str | None) -> N
     chain_id = request.get("canonical_chain_id")
     if current_chain_id is not None and current_chain_id != chain_id:
         raise FailClosedRuntimeError("human intent clarification continuity failed closed: chain mismatch")
+    _selected_workflow_id(request)
+
+
+def _selected_workflow_id(request: dict[str, Any]) -> str:
     targets = request.get("expected_workflow_targets")
-    if not isinstance(targets, list) or CREATE_DOMAIN_COMPLIANCE_CLARIFICATION not in targets:
+    if not isinstance(targets, list) or not targets:
         raise FailClosedRuntimeError("human intent clarification continuity failed closed: target workflow missing")
+    selected = targets[0]
+    if selected not in SUPPORTED_TARGET_WORKFLOWS:
+        raise FailClosedRuntimeError("human intent clarification continuity failed closed: unsupported target workflow")
+    return selected
 
 
 def _binding_artifact(
@@ -250,6 +260,7 @@ def _resolution_artifact(
     created_at: str,
 ) -> dict[str, Any]:
     request = state["clarification_request_artifact"]
+    selected_workflow_id = _selected_workflow_id(request)
     artifact = {
         "artifact_type": HUMAN_INTENT_CLARIFICATION_RESOLUTION_ARTIFACT_V1,
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
@@ -262,7 +273,7 @@ def _resolution_artifact(
         "original_workflow_id": request.get("workflow_id"),
         "clarification_response_hash": replay_hash(_require_string(clarification_response, "clarification_response")),
         "resolution_status": "INTENT_RESOLVED_AFTER_CLARIFICATION",
-        "selected_workflow_id": CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+        "selected_workflow_id": selected_workflow_id,
         "created_at": _require_string(created_at, "created_at"),
         "provider_invoked": False,
         "worker_invoked": False,
@@ -282,6 +293,7 @@ def _selection_artifact(
     created_at: str,
 ) -> dict[str, Any]:
     request = state["clarification_request_artifact"]
+    selected_workflow_id = _selected_workflow_id(request)
     artifact = {
         "artifact_type": HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1,
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
@@ -289,7 +301,7 @@ def _selection_artifact(
         "resolution_reference": resolution["resolution_id"],
         "resolution_hash": resolution["artifact_hash"],
         "canonical_chain_id": request["canonical_chain_id"],
-        "workflow_id": CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+        "workflow_id": selected_workflow_id,
         "routing_status": WORKFLOW_SELECTED,
         "selection_status": WORKFLOW_SELECTION_AFTER_CLARIFICATION,
         "created_at": _require_string(created_at, "created_at"),

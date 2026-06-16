@@ -465,27 +465,37 @@ def test_interactive_human_intent_clarification_intake_renders_questions_without
 
 
 @pytest.mark.parametrize(
-    ("prompt", "reply", "intent_family"),
+    ("prompt", "reply", "intent_family", "expected_workflow"),
     [
         (
             "I want to build a tool that helps managers trust AI recommendations.",
             "Review AI recommendations used by managers before they affect customer support decisions.",
             "BUSINESS_GOAL_INTENT",
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
         ),
         (
             "Automate review of AI-generated summaries before they are sent out.",
             "Automatically check AI-generated customer summaries for missing justification.",
             "AUTOMATION_INTENT",
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
         ),
         (
             "We need to show auditors how AI decisions were reviewed.",
             "We need internal audit evidence for customer-impacting AI recommendations.",
             "COMPLIANCE_INTENT",
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
         ),
         (
             "I need help with AI.",
             "I want to control AI outputs before staff use them in operational decisions.",
             "AMBIGUOUS_INTENT",
+            CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+        ),
+        (
+            "Help improve how our company uses AI.",
+            "Give advisory guidance for safer AI use and better AI review practices before implementation.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
         ),
     ],
 )
@@ -494,6 +504,7 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     prompt: str,
     reply: str,
     intent_family: str,
+    expected_workflow: str,
 ) -> None:
     output: list[str] = []
     result = run_interactive_conversation(
@@ -513,13 +524,13 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     assert second_turn["clarification_resolved"] is True
     assert second_turn["workflow_resumed"] is True
     assert second_turn["intent_family"] == intent_family
-    assert second_turn["workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
+    assert second_turn["workflow_id"] == expected_workflow
     assert second_turn["response_status"] == WORKFLOW_SELECTED
     assert second_turn["provider_invoked"] is False
     assert second_turn["worker_invoked"] is False
     assert second_turn["execution_requested"] is False
     assert "Human Intent Clarification Bound" in rendered
-    assert "Selected Workflow: CREATE_DOMAIN_COMPLIANCE_CLARIFICATION" in rendered
+    assert f"Selected Workflow: {expected_workflow}" in rendered
 
 
 @pytest.mark.parametrize(

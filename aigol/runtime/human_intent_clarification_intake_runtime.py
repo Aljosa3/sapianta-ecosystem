@@ -16,8 +16,10 @@ PROBLEM_STATEMENT_INTENT = "PROBLEM_STATEMENT_INTENT"
 AUTOMATION_INTENT = "AUTOMATION_INTENT"
 COMPLIANCE_INTENT = "COMPLIANCE_INTENT"
 AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
+GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
 
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+OCS_LLM_COGNITION_TARGET = "OCS_LLM_COGNITION"
 
 
 def classify_human_intent_for_clarification(human_prompt: str, *, include_unknown: bool = True) -> dict[str, Any]:
@@ -26,6 +28,7 @@ def classify_human_intent_for_clarification(human_prompt: str, *, include_unknow
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".?!")
     checks = (
+        _general_improvement_intent,
         _compliance_intent,
         _automation_intent,
         _problem_statement_intent,
@@ -69,6 +72,7 @@ def classify_human_intent_for_clarification(human_prompt: str, *, include_unknow
 
 
 def _intake_result(*, intent_family: str, confidence: str, signals: list[str]) -> dict[str, Any]:
+    expected_targets = _expected_workflow_targets(intent_family)
     return {
         "artifact_type": HUMAN_INTENT_CLARIFICATION_INTAKE_ARTIFACT_V1,
         "intake_matched": True,
@@ -78,7 +82,7 @@ def _intake_result(*, intent_family: str, confidence: str, signals: list[str]) -
         "intent_signals": list(signals),
         "clarification_required": True,
         "clarification_questions": _clarification_questions(intent_family),
-        "expected_workflow_targets": [CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET],
+        "expected_workflow_targets": expected_targets,
         "routing_decision": "HUMAN_INTENT_CLARIFICATION_REQUIRED",
         "provider_invoked": False,
         "worker_invoked": False,
@@ -111,6 +115,29 @@ def _business_goal_intent(normalized: str) -> dict[str, Any] | None:
     )
     if len(signals) >= 2 or (_has_word(normalized, "ai") and any(term in normalized for term in ("trust", "safe", "quality"))):
         return {"intent_family": BUSINESS_GOAL_INTENT, "confidence": "MEDIUM", "signals": signals or ["ai-goal"]}
+    return None
+
+
+def _general_improvement_intent(normalized: str) -> dict[str, Any] | None:
+    if _has_workflow_or_control_signals(normalized):
+        return None
+    signals = _matched_terms(
+        normalized,
+        (
+            "improve how",
+            "processes safer",
+            "improve trust",
+            "suggest how",
+            "reduce risk",
+            "where should we start",
+            "first step",
+            "plan a better",
+            "recommend improvements",
+            "easier to explain",
+        ),
+    )
+    if signals and _has_word(normalized, "ai"):
+        return {"intent_family": GENERAL_IMPROVEMENT_INTENT, "confidence": "MEDIUM", "signals": signals}
     return None
 
 
@@ -227,6 +254,11 @@ def _clarification_questions(intent_family: str) -> list[str]:
             "Which AI decision or output is in scope?",
             "Is this for internal review, external audit preparation, or controlled workflow design?",
         ],
+        GENERAL_IMPROVEMENT_INTENT: [
+            "What AI use or process should the advisory guidance focus on?",
+            "Is the immediate need planning, risk reduction, or workflow design?",
+            "Should this remain advisory, or should it become a governed workflow proposal?",
+        ],
         AMBIGUOUS_INTENT: [
             "What are you trying to improve or control?",
             "Does this involve AI outputs, human approval, compliance evidence, or operational decisions?",
@@ -234,6 +266,27 @@ def _clarification_questions(intent_family: str) -> list[str]:
         ],
     }
     return list(questions[intent_family])
+
+
+def _expected_workflow_targets(intent_family: str) -> list[str]:
+    if intent_family == GENERAL_IMPROVEMENT_INTENT:
+        return [OCS_LLM_COGNITION_TARGET]
+    return [CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET]
+
+
+def _has_workflow_or_control_signals(normalized: str) -> bool:
+    return any(
+        signal in normalized
+        for signal in (
+            "human approval",
+            "collect evidence",
+            "before staff use",
+            "before action",
+            "workflow",
+            "controlled",
+            "audit evidence",
+        )
+    )
 
 
 def _matched_terms(normalized: str, terms: tuple[str, ...]) -> list[str]:
