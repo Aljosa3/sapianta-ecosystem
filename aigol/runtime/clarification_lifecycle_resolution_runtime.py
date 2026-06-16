@@ -13,6 +13,7 @@ from aigol.runtime.unknown_domain_clarification_runtime import (
     UNKNOWN_DOMAIN_ARTIFACT_V1,
 )
 
+HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
 
 AIGOL_CLARIFICATION_LIFECYCLE_RESOLUTION_RUNTIME_VERSION = (
     "AIGOL_CLARIFICATION_LIFECYCLE_RESOLUTION_RUNTIME_V1"
@@ -58,6 +59,9 @@ def _clarification_states(session_root: Path) -> list[dict[str, Any]]:
     responded = _responded_refs(session_root)
     states: list[dict[str, Any]] = []
     for turn_root in sorted((path for path in session_root.glob("TURN-*") if path.is_dir()), key=lambda path: path.name):
+        human_intent_state = _human_intent_clarification_state(turn_root)
+        if human_intent_state is not None:
+            states.append(human_intent_state)
         clarification_root = turn_root / "unknown_domain_clarification"
         request_path = clarification_root / "001_clarification_request_recorded.json"
         unknown_path = clarification_root / "000_unknown_domain_recorded.json"
@@ -105,6 +109,40 @@ def _clarification_states(session_root: Path) -> list[dict[str, Any]]:
     return states
 
 
+def _human_intent_clarification_state(turn_root: Path) -> dict[str, Any] | None:
+    routing_path = turn_root / "conversational_cli_routing" / "001_conversational_workflow_selection_recorded.json"
+    if not routing_path.exists():
+        return None
+    selection = _artifact_from_wrapper(
+        _load_verified_wrapper(routing_path, 1, "conversational_workflow_selection_recorded"),
+        "workflow selection",
+    )
+    if selection.get("workflow_id") != HUMAN_INTENT_CLARIFICATION_INTAKE:
+        return None
+    if selection.get("routing_status") != CLARIFICATION_REQUIRED:
+        return None
+    clarification_id = selection["workflow_selection_id"]
+    if clarification_id in _resolved_refs(turn_root.parent):
+        lifecycle_status = CLARIFICATION_RESOLVED
+    elif clarification_id in _responded_refs(turn_root.parent):
+        lifecycle_status = CLARIFICATION_RESPONDED
+    else:
+        lifecycle_status = CLARIFICATION_OPEN
+    return {
+        "turn_id": turn_root.name,
+        "turn_root": str(turn_root),
+        "clarification_id": clarification_id,
+        "clarification_request_hash": selection["artifact_hash"],
+        "unknown_domain_hash": None,
+        "originating_workflow_id": HUMAN_INTENT_CLARIFICATION_INTAKE,
+        "originating_replay_reference": str(turn_root / "conversational_cli_routing"),
+        "lifecycle_status": lifecycle_status,
+        "active": False,
+        "unknown_domain_artifact": None,
+        "clarification_request_artifact": deepcopy(selection),
+    }
+
+
 def _apply_lifecycle_resolution(states: list[dict[str, Any]]) -> None:
     open_indexes = [index for index, state in enumerate(states) if state["lifecycle_status"] == CLARIFICATION_OPEN]
     if not open_indexes:
@@ -134,6 +172,16 @@ def _resolved_refs(session_root: Path) -> set[str]:
         reference = resolution.get("clarification_request_reference")
         if isinstance(reference, str):
             refs.add(reference)
+    for path in session_root.glob(
+        "TURN-*/human_intent_clarification_continuity/002_human_intent_clarification_resolution_recorded.json"
+    ):
+        resolution = _artifact_from_wrapper(
+            _load_verified_wrapper(path, 2, "human_intent_clarification_resolution_recorded"),
+            "human intent clarification resolution",
+        )
+        reference = resolution.get("clarification_request_reference")
+        if isinstance(reference, str):
+            refs.add(reference)
     return refs
 
 
@@ -143,6 +191,16 @@ def _responded_refs(session_root: Path) -> set[str]:
         response = _artifact_from_wrapper(
             _load_verified_wrapper(path, 1, "clarification_response_recorded"),
             "clarification response",
+        )
+        reference = response.get("clarification_request_reference")
+        if isinstance(reference, str):
+            refs.add(reference)
+    for path in session_root.glob(
+        "TURN-*/human_intent_clarification_continuity/001_human_intent_clarification_response_recorded.json"
+    ):
+        response = _artifact_from_wrapper(
+            _load_verified_wrapper(path, 1, "human_intent_clarification_response_recorded"),
+            "human intent clarification response",
         )
         reference = response.get("clarification_request_reference")
         if isinstance(reference, str):

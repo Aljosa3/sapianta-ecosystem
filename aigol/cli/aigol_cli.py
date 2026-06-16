@@ -257,6 +257,10 @@ from aigol.runtime.human_decision_runtime import (
     record_human_decision,
     render_human_decision_summary,
 )
+from aigol.runtime.human_intent_clarification_continuity_runtime import (
+    continue_human_intent_clarification_to_workflow,
+    render_human_intent_clarification_continuity_summary,
+)
 from aigol.runtime.governed_implementation_dry_run import (
     prepare_governed_implementation_dry_run,
     render_governed_implementation_dry_run_summary,
@@ -3203,58 +3207,93 @@ def run_interactive_conversation(
                     )
                 )
             elif active_clarification_reply_detected:
-                clarification_continuity_capture = run_clarification_continuity(
-                    continuity_id=f"{prompt_id}:CLARIFICATION-CONTINUITY",
-                    session_root=session_root,
-                    turn_id=turn_id,
-                    prompt_id=prompt_id,
-                    operator_reply=human_prompt,
-                    current_chain_id=current_chain_id,
-                    created_at=created_at,
-                    replay_dir=turn_root / "clarification_continuity",
-                )
-                current_chain_id = clarification_continuity_capture.get("current_chain_id") or current_chain_id
-                latest_chain_id = clarification_continuity_capture.get("latest_chain_id") or current_chain_id
-                if clarification_continuity_capture.get("fail_closed") is True:
-                    failed_turns += 1
-                    output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
-                else:
-                    handoff_review_capture = review_clarified_domain_intent(
-                        review_id=f"{prompt_id}:CLARIFIED-DOMAIN-HANDOFF-REVIEW",
-                        clarification_continuity_replay_reference=clarification_continuity_capture[
-                            "clarification_continuity_replay_reference"
-                        ],
-                        review_decision=CLARIFIED_DOMAIN_WORKER_BINDING_APPROVED,
-                        reviewed_by="AIGOL_GOVERNANCE_REVIEW",
-                        created_at=created_at,
-                        replay_dir=turn_root / "clarified_domain_handoff_review",
-                    )
-                    clarification_continuity_capture["handoff_review"] = handoff_review_capture
-                    if handoff_review_capture.get("fail_closed") is True:
-                        failed_turns += 1
-                        clarification_continuity_capture["fail_closed"] = True
-                        clarification_continuity_capture["failure_reason"] = handoff_review_capture.get(
-                            "failure_reason"
-                        )
-                        output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
-                    else:
-                        output_writer(
-                            "\n\n".join(
-                                [
-                                    render_clarification_continuity_summary(clarification_continuity_capture),
-                                    render_clarified_domain_intent_handoff_review_summary(handoff_review_capture),
-                                ]
-                            )
-                        )
-                turns.append(
-                    _interactive_clarification_continuity_turn_summary(
+                active_state = clarification_reply_gate_capture.get("active_clarification") or {}
+                if active_state.get("originating_workflow_id") == CONVERSATIONAL_HUMAN_INTENT_CLARIFICATION_INTAKE:
+                    human_intent_continuity_capture = continue_human_intent_clarification_to_workflow(
+                        continuity_id=f"{prompt_id}:HUMAN-INTENT-CLARIFICATION-CONTINUITY",
+                        session_root=session_root,
                         turn_id=turn_id,
                         prompt_id=prompt_id,
-                        router_capture=router_capture,
-                        clarification_continuity_capture=clarification_continuity_capture,
-                        source_router_replay_reference=str(turn_root / "source_router"),
+                        clarification_response=human_prompt,
+                        current_chain_id=current_chain_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "human_intent_clarification_continuity",
                     )
-                )
+                    current_chain_id = human_intent_continuity_capture.get("current_chain_id") or current_chain_id
+                    latest_chain_id = human_intent_continuity_capture.get("latest_chain_id") or current_chain_id
+                    if human_intent_continuity_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        output_writer(
+                            f"FAILED_CLOSED: {human_intent_continuity_capture.get('failure_reason')}"
+                        )
+                    else:
+                        output_writer(
+                            render_human_intent_clarification_continuity_summary(
+                                human_intent_continuity_capture
+                            )
+                        )
+                    turns.append(
+                        _interactive_human_intent_clarification_continuity_turn_summary(
+                            turn_id=turn_id,
+                            prompt_id=prompt_id,
+                            router_capture=router_capture,
+                            continuity_capture=human_intent_continuity_capture,
+                            source_router_replay_reference=str(turn_root / "source_router"),
+                        )
+                    )
+                else:
+                    clarification_continuity_capture = run_clarification_continuity(
+                        continuity_id=f"{prompt_id}:CLARIFICATION-CONTINUITY",
+                        session_root=session_root,
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        operator_reply=human_prompt,
+                        current_chain_id=current_chain_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "clarification_continuity",
+                    )
+                    current_chain_id = clarification_continuity_capture.get("current_chain_id") or current_chain_id
+                    latest_chain_id = clarification_continuity_capture.get("latest_chain_id") or current_chain_id
+                    if clarification_continuity_capture.get("fail_closed") is True:
+                        failed_turns += 1
+                        output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
+                    else:
+                        handoff_review_capture = review_clarified_domain_intent(
+                            review_id=f"{prompt_id}:CLARIFIED-DOMAIN-HANDOFF-REVIEW",
+                            clarification_continuity_replay_reference=clarification_continuity_capture[
+                                "clarification_continuity_replay_reference"
+                            ],
+                            review_decision=CLARIFIED_DOMAIN_WORKER_BINDING_APPROVED,
+                            reviewed_by="AIGOL_GOVERNANCE_REVIEW",
+                            created_at=created_at,
+                            replay_dir=turn_root / "clarified_domain_handoff_review",
+                        )
+                        clarification_continuity_capture["handoff_review"] = handoff_review_capture
+                        if handoff_review_capture.get("fail_closed") is True:
+                            failed_turns += 1
+                            clarification_continuity_capture["fail_closed"] = True
+                            clarification_continuity_capture["failure_reason"] = handoff_review_capture.get(
+                                "failure_reason"
+                            )
+                            output_writer(f"FAILED_CLOSED: {clarification_continuity_capture.get('failure_reason')}")
+                        else:
+                            output_writer(
+                                "\n\n".join(
+                                    [
+                                        render_clarification_continuity_summary(clarification_continuity_capture),
+                                        render_clarified_domain_intent_handoff_review_summary(handoff_review_capture),
+                                    ]
+                                )
+                            )
+                    turns.append(
+                        _interactive_clarification_continuity_turn_summary(
+                            turn_id=turn_id,
+                            prompt_id=prompt_id,
+                            router_capture=router_capture,
+                            clarification_continuity_capture=clarification_continuity_capture,
+                            source_router_replay_reference=str(turn_root / "source_router"),
+                        )
+                    )
             elif domain_approval_entry_detected:
                 try:
                     latest_review = find_latest_domain_handoff_review(
@@ -5857,6 +5896,50 @@ def _interactive_clarification_continuity_turn_summary(
     }
 
 
+def _interactive_human_intent_clarification_continuity_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    continuity_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": continuity_capture.get("response_status"),
+        "response_source": continuity_capture.get("response_source"),
+        "response_text": continuity_capture.get("response_text"),
+        "fail_closed": continuity_capture.get("fail_closed") is True,
+        "failure_reason": continuity_capture.get("failure_reason"),
+        "replay_reference": continuity_capture.get("human_intent_clarification_continuity_replay_reference"),
+        "conversation_replay_reference": continuity_capture.get("conversation_replay_reference"),
+        "canonical_chain_id": continuity_capture.get("canonical_chain_id"),
+        "current_chain_id": continuity_capture.get("current_chain_id"),
+        "latest_chain_id": continuity_capture.get("latest_chain_id"),
+        "source_router_replay_reference": source_router_replay_reference,
+        "open_clarification_detected": True,
+        "operator_reply_bound": continuity_capture.get("clarification_response_bound") is True,
+        "clarification_resolved": continuity_capture.get("intent_resolution_after_clarification") is True,
+        "workflow_resumed": continuity_capture.get("workflow_selection_after_clarification") is True,
+        "originating_workflow_id": continuity_capture.get("originating_workflow_id"),
+        "intent_family": continuity_capture.get("intent_family"),
+        "conversational_workflow_id": continuity_capture.get("workflow_id"),
+        "workflow_id": continuity_capture.get("workflow_id"),
+        "routing_status": continuity_capture.get("routing_status"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+
+
 def _interactive_domain_approval_binding_turn_summary(
     *,
     turn_id: str,
@@ -6725,6 +6808,8 @@ def _interactive_conversational_cli_turn_summary(
             "existing_cli_command"
         ),
         "coverage": conversational_routing_capture.get("coverage"),
+        "clarification_required": workflow_capture.get("existing_result", {}).get("clarification_required") is True,
+        "open_clarification_detected": workflow_capture.get("existing_result", {}).get("clarification_required") is True,
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,

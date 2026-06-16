@@ -465,6 +465,64 @@ def test_interactive_human_intent_clarification_intake_renders_questions_without
 
 
 @pytest.mark.parametrize(
+    ("prompt", "reply", "intent_family"),
+    [
+        (
+            "I want to build a tool that helps managers trust AI recommendations.",
+            "Review AI recommendations used by managers before they affect customer support decisions.",
+            "BUSINESS_GOAL_INTENT",
+        ),
+        (
+            "Automate review of AI-generated summaries before they are sent out.",
+            "Automatically check AI-generated customer summaries for missing justification.",
+            "AUTOMATION_INTENT",
+        ),
+        (
+            "We need to show auditors how AI decisions were reviewed.",
+            "We need internal audit evidence for customer-impacting AI recommendations.",
+            "COMPLIANCE_INTENT",
+        ),
+        (
+            "I need help with AI.",
+            "I want to control AI outputs before staff use them in operational decisions.",
+            "AMBIGUOUS_INTENT",
+        ),
+    ],
+)
+def test_interactive_human_intent_clarification_response_selects_expected_workflow(
+    tmp_path,
+    prompt: str,
+    reply: str,
+    intent_family: str,
+) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence([prompt, reply, "exit"]),
+        output_func=output.append,
+    )
+
+    first_turn = result["turns"][0]
+    second_turn = result["turns"][1]
+    rendered = "\n".join(output)
+
+    assert result["failed_turns"] == 0
+    assert first_turn["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert first_turn["clarification_required"] is True
+    assert second_turn["operator_reply_bound"] is True
+    assert second_turn["clarification_resolved"] is True
+    assert second_turn["workflow_resumed"] is True
+    assert second_turn["intent_family"] == intent_family
+    assert second_turn["workflow_id"] == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION
+    assert second_turn["response_status"] == WORKFLOW_SELECTED
+    assert second_turn["provider_invoked"] is False
+    assert second_turn["worker_invoked"] is False
+    assert second_turn["execution_requested"] is False
+    assert "Human Intent Clarification Bound" in rendered
+    assert "Selected Workflow: CREATE_DOMAIN_COMPLIANCE_CLARIFICATION" in rendered
+
+
+@pytest.mark.parametrize(
     ("prompt", "workflow_id", "existing_runtime"),
     [
         (

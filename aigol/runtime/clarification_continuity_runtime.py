@@ -36,6 +36,7 @@ WORKFLOW_RESUME_READY = "WORKFLOW_RESUME_READY"
 FAILED_CLOSED = "FAILED_CLOSED"
 
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
+HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
 
 REPLAY_STEPS = (
     "clarification_reply_binding_recorded",
@@ -75,6 +76,8 @@ def should_bind_operator_reply_to_active_clarification(
     if not isinstance(state, dict):
         return _reply_gate_capture(lifecycle, False, "NO_ACTIVE_CLARIFICATION")
     prompt = _require_string(human_prompt, "human_prompt")
+    if state.get("originating_workflow_id") == HUMAN_INTENT_CLARIFICATION_INTAKE:
+        return _reply_gate_capture(lifecycle, True, "HUMAN_INTENT_CLARIFICATION_REPLY_MATCH")
     if _matches_missing_information(prompt, state):
         return _reply_gate_capture(lifecycle, True, "MISSING_INFORMATION_REPLY_MATCH")
     if _looks_like_new_governed_request(prompt):
