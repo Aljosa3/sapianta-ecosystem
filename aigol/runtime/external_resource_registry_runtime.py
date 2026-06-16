@@ -25,6 +25,24 @@ RESOURCE_STATUSES = {ACTIVE, INACTIVE}
 MOCK_PROVIDER_ID = "mock_provider"
 MOCK_FILESYSTEM_WORKER_ID = "mock_filesystem_worker"
 
+OPENAI_PROVIDER_ID = "openai"
+CLAUDE_PROVIDER_ID = "claude"
+GEMINI_PROVIDER_ID = "gemini"
+MISTRAL_PROVIDER_ID = "mistral"
+REAL_COGNITION_PROVIDER_IDS = (
+    OPENAI_PROVIDER_ID,
+    CLAUDE_PROVIDER_ID,
+    GEMINI_PROVIDER_ID,
+    MISTRAL_PROVIDER_ID,
+)
+REAL_COGNITION_PROVIDER_CAPABILITIES = (
+    "reasoning",
+    "planning",
+    "summarization",
+    "analysis",
+    "generation",
+)
+
 REPLAY_STEPS = (
     "err_resource_selection_evidence_recorded",
     "err_resource_selection_returned",
@@ -54,6 +72,33 @@ def default_err_v0_registry() -> dict[str, Any]:
         },
     )
     return registry
+
+
+def real_provider_err_v1_registry() -> dict[str, Any]:
+    """Return ERR resource metadata for real cognition providers only."""
+
+    registry = create_err_v0_registry()
+    register_real_cognition_providers(registry)
+    return registry
+
+
+def register_real_cognition_providers(registry: dict[str, Any]) -> list[dict[str, Any]]:
+    """Register real cognition providers as passive ERR metadata."""
+
+    registered = []
+    for provider_id in REAL_COGNITION_PROVIDER_IDS:
+        registered.append(
+            register_resource(
+                registry,
+                {
+                    "resource_id": provider_id,
+                    "resource_type": COGNITION_PROVIDER,
+                    "capabilities": list(REAL_COGNITION_PROVIDER_CAPABILITIES),
+                    "status": ACTIVE,
+                },
+            )
+        )
+    return registered
 
 
 def create_err_v0_registry() -> dict[str, Any]:
