@@ -126,11 +126,17 @@ def test_fallback_fails_closed_without_provider_unavailable_evidence(tmp_path) -
     assert "provider unavailable not detected" in capture["failure_reason"]
 
 
-def test_interactive_conversation_uses_clarification_fallback_when_provider_unavailable(tmp_path, monkeypatch) -> None:
+def test_interactive_conversation_uses_hirr_clarification_before_provider_unavailable_fallback(
+    tmp_path,
+    monkeypatch,
+) -> None:
     args = _args(tmp_path)
     output: list[str] = []
+    provider_call_count = 0
 
     def provider_unavailable(**kwargs):
+        nonlocal provider_call_count
+        provider_call_count += 1
         prompt_id = kwargs["prompt_id"]
         return _provider_failure(
             prompt_id=prompt_id,
@@ -151,12 +157,12 @@ def test_interactive_conversation_uses_clarification_fallback_when_provider_unav
 
     assert result["turn_count"] == 1
     assert result["failed_turns"] == 0
-    assert turn["response_status"] == HUMAN_CLARIFICATION_REQUIRED
-    assert turn["response_source"] == "DETERMINISTIC_CLARIFICATION_FALLBACK"
+    assert turn["response_status"] == "CLARIFICATION_REQUIRED"
+    assert turn["response_source"] == "CONVERSATIONAL_CLI_WORKFLOW"
     assert turn["fail_closed"] is False
-    assert "HUMAN_CLARIFICATION_REQUIRED" in output[0]
-    assert "EMPLOYEE_MANAGEMENT_DOMAIN" in output[0]
-    assert (
+    assert provider_call_count == 0
+    assert any("HUMAN INTENT CLARIFICATION REQUIRED" in item for item in output)
+    assert not (
         session_root
         / "TURN-000001"
         / "provider_unavailable_clarification_fallback"
