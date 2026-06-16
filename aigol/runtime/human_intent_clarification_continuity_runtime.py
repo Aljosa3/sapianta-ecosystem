@@ -20,22 +20,30 @@ HUMAN_INTENT_CLARIFICATION_REPLY_BINDING_ARTIFACT_V1 = (
     "HUMAN_INTENT_CLARIFICATION_REPLY_BINDING_ARTIFACT_V1"
 )
 HUMAN_INTENT_CLARIFICATION_RESPONSE_ARTIFACT_V1 = "HUMAN_INTENT_CLARIFICATION_RESPONSE_ARTIFACT_V1"
+HUMAN_INTENT_WORKFLOW_TARGET_REFINEMENT_ARTIFACT_V1 = (
+    "HUMAN_INTENT_WORKFLOW_TARGET_REFINEMENT_ARTIFACT_V1"
+)
 HUMAN_INTENT_CLARIFICATION_RESOLUTION_ARTIFACT_V1 = "HUMAN_INTENT_CLARIFICATION_RESOLUTION_ARTIFACT_V1"
 HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1 = (
     "HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1"
 )
 
 HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
+AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
+GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 SUPPORTED_TARGET_WORKFLOWS = frozenset({CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, OCS_LLM_COGNITION})
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 WORKFLOW_SELECTION_AFTER_CLARIFICATION = "WORKFLOW_SELECTION_AFTER_CLARIFICATION"
+WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION = "WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION"
+TARGET_PRESERVED_LOW_CONFIDENCE = "TARGET_PRESERVED_LOW_CONFIDENCE"
 FAILED_CLOSED = "FAILED_CLOSED"
 
 REPLAY_STEPS = (
     "human_intent_clarification_reply_binding_recorded",
     "human_intent_clarification_response_recorded",
+    "human_intent_workflow_target_refinement_recorded",
     "human_intent_clarification_resolution_recorded",
     "human_intent_workflow_selection_after_clarification_recorded",
 )
@@ -75,24 +83,34 @@ def continue_human_intent_clarification_to_workflow(
             clarification_response=clarification_response,
             created_at=created_at,
         )
-        resolution = _resolution_artifact(
+        refinement = _target_refinement_artifact(
             continuity_id=continuity_id,
             state=state,
             response=response,
             clarification_response=clarification_response,
             created_at=created_at,
         )
+        resolution = _resolution_artifact(
+            continuity_id=continuity_id,
+            state=state,
+            response=response,
+            refinement=refinement,
+            clarification_response=clarification_response,
+            created_at=created_at,
+        )
         selection = _selection_artifact(
             continuity_id=continuity_id,
             state=state,
+            refinement=refinement,
             resolution=resolution,
             created_at=created_at,
         )
         _persist_step(replay_path, 0, REPLAY_STEPS[0], binding)
         _persist_step(replay_path, 1, REPLAY_STEPS[1], response)
-        _persist_step(replay_path, 2, REPLAY_STEPS[2], resolution)
-        _persist_step(replay_path, 3, REPLAY_STEPS[3], selection)
-        return _capture(binding, response, resolution, selection, state, replay_path)
+        _persist_step(replay_path, 2, REPLAY_STEPS[2], refinement)
+        _persist_step(replay_path, 3, REPLAY_STEPS[3], resolution)
+        _persist_step(replay_path, 4, REPLAY_STEPS[4], selection)
+        return _capture(binding, response, refinement, resolution, selection, state, replay_path)
     except Exception as exc:
         failure_reason = str(exc) if isinstance(exc, FailClosedRuntimeError) else "human intent clarification continuity failed closed"
         return _failed_capture(
@@ -119,12 +137,17 @@ def reconstruct_human_intent_clarification_continuity_replay(replay_dir: str | P
             raise FailClosedRuntimeError("human intent clarification continuity artifact must be a JSON object")
         _verify_artifact_hash(artifact)
         wrappers.append(wrapper)
-    selection = wrappers[3]["artifact"]
+    refinement = wrappers[2]["artifact"]
+    selection = wrappers[4]["artifact"]
     return {
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
         "final_classification": HUMAN_INTENT_CLARIFICATION_CONTINUITY_STATUS,
         "workflow_id": selection["workflow_id"],
         "routing_status": selection["routing_status"],
+        "workflow_target_refinement_status": refinement["refinement_status"],
+        "workflow_target_refinement_reason": refinement["refinement_reason"],
+        "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
+        "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
         "intent_resolution_after_clarification": True,
         "workflow_selection_after_clarification": True,
@@ -146,6 +169,8 @@ def render_human_intent_clarification_continuity_summary(capture: dict[str, Any]
             "Human Intent Clarification Bound",
             f"Intent Family: {capture.get('intent_family')}",
             f"Selected Workflow: {capture.get('workflow_id')}",
+            f"Workflow Target Refinement: {capture.get('workflow_target_refinement_status')}",
+            f"Refinement Reason: {capture.get('workflow_target_refinement_reason')}",
             "Workflow Selection After Clarification: YES",
             "No provider invoked.",
             "No worker invoked.",
@@ -168,16 +193,23 @@ def _validate_state(*, state: dict[str, Any], current_chain_id: str | None) -> N
     chain_id = request.get("canonical_chain_id")
     if current_chain_id is not None and current_chain_id != chain_id:
         raise FailClosedRuntimeError("human intent clarification continuity failed closed: chain mismatch")
-    _selected_workflow_id(request)
+    _initial_workflow_target(request)
 
 
-def _selected_workflow_id(request: dict[str, Any]) -> str:
+def _initial_workflow_target(request: dict[str, Any]) -> str:
     targets = request.get("expected_workflow_targets")
     if not isinstance(targets, list) or not targets:
         raise FailClosedRuntimeError("human intent clarification continuity failed closed: target workflow missing")
     selected = targets[0]
     if selected not in SUPPORTED_TARGET_WORKFLOWS:
         raise FailClosedRuntimeError("human intent clarification continuity failed closed: unsupported target workflow")
+    return selected
+
+
+def _selected_workflow_id(refinement: dict[str, Any]) -> str:
+    selected = refinement.get("selected_workflow_id")
+    if selected not in SUPPORTED_TARGET_WORKFLOWS:
+        raise FailClosedRuntimeError("human intent clarification continuity failed closed: unsupported refined target workflow")
     return selected
 
 
@@ -251,7 +283,7 @@ def _response_artifact(
     return artifact
 
 
-def _resolution_artifact(
+def _target_refinement_artifact(
     *,
     continuity_id: str,
     state: dict[str, Any],
@@ -260,16 +292,155 @@ def _resolution_artifact(
     created_at: str,
 ) -> dict[str, Any]:
     request = state["clarification_request_artifact"]
-    selected_workflow_id = _selected_workflow_id(request)
+    original_target = _initial_workflow_target(request)
+    response_text = _require_string(clarification_response, "clarification_response")
+    decision = _refined_workflow_target(
+        original_intent_family=request.get("intent_family"),
+        original_target=original_target,
+        clarification_response=response_text,
+    )
+    artifact = {
+        "artifact_type": HUMAN_INTENT_WORKFLOW_TARGET_REFINEMENT_ARTIFACT_V1,
+        "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
+        "refinement_id": f"{_require_string(continuity_id, 'continuity_id')}:TARGET-REFINEMENT",
+        "clarification_request_reference": request["workflow_selection_id"],
+        "clarification_request_hash": request["artifact_hash"],
+        "clarification_response_reference": response["response_id"],
+        "clarification_response_hash": response["artifact_hash"],
+        "original_intent_family": request.get("intent_family"),
+        "original_expected_workflow_targets": deepcopy(request.get("expected_workflow_targets", [])),
+        "clarification_response_signals": decision["signals"],
+        "refined_intent_family": decision["refined_intent_family"],
+        "refined_workflow_targets": [decision["selected_workflow_id"]],
+        "selected_workflow_id": decision["selected_workflow_id"],
+        "refinement_status": decision["refinement_status"],
+        "refinement_reason": decision["refinement_reason"],
+        "canonical_chain_id": request["canonical_chain_id"],
+        "created_at": _require_string(created_at, "created_at"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "failure_reason": None,
+    }
+    if artifact["selected_workflow_id"] not in SUPPORTED_TARGET_WORKFLOWS:
+        raise FailClosedRuntimeError("human intent clarification continuity failed closed: unsupported refined target workflow")
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _refined_workflow_target(
+    *,
+    original_intent_family: Any,
+    original_target: str,
+    clarification_response: str,
+) -> dict[str, Any]:
+    normalized = clarification_response.lower().strip()
+    advisory_signals = _matched_terms(
+        normalized,
+        (
+            "advisory",
+            "guidance",
+            "planning",
+            "recommend",
+            "recommendation",
+            "analyze",
+            "how should we",
+            "reduce risk",
+            "safer",
+            "understand",
+            "explain",
+            "wording",
+            "before implementation",
+            "do not start implementation",
+            "no implementation",
+            "without execution",
+            "first step",
+            "next safest",
+            "before any runtime changes",
+        ),
+    )
+    governed_signals = _matched_terms(
+        normalized,
+        (
+            "governed workflow",
+            "workflow proposal",
+            "implementation proposal",
+            "evidence model",
+            "collect evidence",
+            "audit evidence",
+            "approval criteria",
+            "review before use",
+            "review ai recommendations",
+            "automatically check",
+            "missing justification",
+            "before staff use",
+            "before they affect",
+            "controlled workflow",
+            "create a governed",
+            "start with a governed",
+        ),
+    )
+    no_execution_signals = _matched_terms(
+        normalized,
+        (
+            "do not start implementation",
+            "no implementation",
+            "without execution",
+            "before any runtime changes",
+        ),
+    )
+    if governed_signals and not no_execution_signals:
+        return {
+            "selected_workflow_id": CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
+            "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,
+            "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+            "refinement_reason": "clarification response requested governed workflow or evidence handling",
+            "signals": governed_signals,
+        }
+    if advisory_signals:
+        return {
+            "selected_workflow_id": OCS_LLM_COGNITION,
+            "refined_intent_family": GENERAL_IMPROVEMENT_INTENT,
+            "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+            "refinement_reason": "clarification response requested advisory planning without execution",
+            "signals": advisory_signals + no_execution_signals,
+        }
+    return {
+        "selected_workflow_id": original_target,
+        "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,
+        "refinement_status": TARGET_PRESERVED_LOW_CONFIDENCE,
+        "refinement_reason": "clarification response did not contain deterministic target refinement signals",
+        "signals": [],
+    }
+
+
+def _resolution_artifact(
+    *,
+    continuity_id: str,
+    state: dict[str, Any],
+    response: dict[str, Any],
+    refinement: dict[str, Any],
+    clarification_response: str,
+    created_at: str,
+) -> dict[str, Any]:
+    request = state["clarification_request_artifact"]
+    selected_workflow_id = _selected_workflow_id(refinement)
     artifact = {
         "artifact_type": HUMAN_INTENT_CLARIFICATION_RESOLUTION_ARTIFACT_V1,
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
         "resolution_id": f"{_require_string(continuity_id, 'continuity_id')}:RESOLUTION",
         "response_reference": response["response_id"],
         "response_hash": response["artifact_hash"],
+        "target_refinement_reference": refinement["refinement_id"],
+        "target_refinement_hash": refinement["artifact_hash"],
         "clarification_request_reference": request["workflow_selection_id"],
         "clarification_request_hash": request["artifact_hash"],
-        "intent_family": request.get("intent_family"),
+        "intent_family": refinement["refined_intent_family"],
+        "original_intent_family": refinement["original_intent_family"],
         "original_workflow_id": request.get("workflow_id"),
         "clarification_response_hash": replay_hash(_require_string(clarification_response, "clarification_response")),
         "resolution_status": "INTENT_RESOLVED_AFTER_CLARIFICATION",
@@ -289,17 +460,20 @@ def _selection_artifact(
     *,
     continuity_id: str,
     state: dict[str, Any],
+    refinement: dict[str, Any],
     resolution: dict[str, Any],
     created_at: str,
 ) -> dict[str, Any]:
     request = state["clarification_request_artifact"]
-    selected_workflow_id = _selected_workflow_id(request)
+    selected_workflow_id = _selected_workflow_id(refinement)
     artifact = {
         "artifact_type": HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1,
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
         "selection_id": f"{_require_string(continuity_id, 'continuity_id')}:WORKFLOW-SELECTION",
         "resolution_reference": resolution["resolution_id"],
         "resolution_hash": resolution["artifact_hash"],
+        "target_refinement_reference": refinement["refinement_id"],
+        "target_refinement_hash": refinement["artifact_hash"],
         "canonical_chain_id": request["canonical_chain_id"],
         "workflow_id": selected_workflow_id,
         "routing_status": WORKFLOW_SELECTED,
@@ -321,6 +495,7 @@ def _selection_artifact(
 def _capture(
     binding: dict[str, Any],
     response: dict[str, Any],
+    refinement: dict[str, Any],
     resolution: dict[str, Any],
     selection: dict[str, Any],
     state: dict[str, Any],
@@ -336,6 +511,7 @@ def _capture(
         "response_text": "",
         "human_intent_clarification_reply_binding_artifact": deepcopy(binding),
         "human_intent_clarification_response_artifact": deepcopy(response),
+        "human_intent_workflow_target_refinement_artifact": deepcopy(refinement),
         "human_intent_clarification_resolution_artifact": deepcopy(resolution),
         "human_intent_workflow_selection_after_clarification_artifact": deepcopy(selection),
         "human_intent_clarification_continuity_replay_reference": str(replay_path),
@@ -344,7 +520,12 @@ def _capture(
         "current_chain_id": request["canonical_chain_id"],
         "latest_chain_id": request["canonical_chain_id"],
         "originating_workflow_id": HUMAN_INTENT_CLARIFICATION_INTAKE,
-        "intent_family": request.get("intent_family"),
+        "intent_family": refinement["refined_intent_family"],
+        "original_intent_family": refinement["original_intent_family"],
+        "workflow_target_refinement_status": refinement["refinement_status"],
+        "workflow_target_refinement_reason": refinement["refinement_reason"],
+        "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
+        "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
         "intent_resolution_after_clarification": True,
         "workflow_selection_after_clarification": True,
@@ -429,6 +610,10 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
     expected.pop("replay_hash")
     if actual != replay_hash(expected):
         raise FailClosedRuntimeError("human intent clarification continuity replay mismatch")
+
+
+def _matched_terms(normalized: str, terms: tuple[str, ...]) -> list[str]:
+    return [term for term in terms if term in normalized]
 
 
 def _require_string(value: Any, field_name: str) -> str:

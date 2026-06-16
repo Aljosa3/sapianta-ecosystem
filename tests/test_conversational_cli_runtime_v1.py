@@ -46,6 +46,10 @@ from aigol.runtime.conversational_cli_runtime import (
     reconstruct_conversational_cli_routing_replay,
     route_conversational_cli_intent,
 )
+from aigol.runtime.human_intent_clarification_continuity_runtime import (
+    WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+    reconstruct_human_intent_clarification_continuity_replay,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 from aigol.runtime.unknown_domain_clarification_runtime import CLARIFICATION_REQUIRED
@@ -497,6 +501,30 @@ def test_interactive_human_intent_clarification_intake_renders_questions_without
             "GENERAL_IMPROVEMENT_INTENT",
             OCS_LLM_COGNITION,
         ),
+        (
+            "I want to improve how AiGOL handles normal human requests before they become governed work.",
+            "Keep this advisory first: identify the next safest routing improvement and preserve replay evidence before any implementation.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
+        ),
+        (
+            "ACLI misunderstood broad improvement requests last time. How should we reduce that risk?",
+            "Analyze the routing failure and recommend a safer clarification path before changing runtime behavior.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
+        ),
+        (
+            "Make it easier for a product manager to understand why ACLI asked a clarification question.",
+            "Give advisory guidance for wording and evidence visibility; do not start implementation yet.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
+        ),
+        (
+            "I need help making the governed workflow path more understandable to new operators.",
+            "I want operator-facing guidance for the clarification-to-workflow path before any runtime changes.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
+        ),
     ],
 )
 def test_interactive_human_intent_clarification_response_selects_expected_workflow(
@@ -529,8 +557,13 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     assert second_turn["provider_invoked"] is False
     assert second_turn["worker_invoked"] is False
     assert second_turn["execution_requested"] is False
+    replay = reconstruct_human_intent_clarification_continuity_replay(second_turn["replay_reference"])
+    assert replay["workflow_id"] == expected_workflow
+    assert replay["workflow_target_refinement_status"] == WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION
+    assert replay["refined_workflow_targets"] == [expected_workflow]
     assert "Human Intent Clarification Bound" in rendered
     assert f"Selected Workflow: {expected_workflow}" in rendered
+    assert "Workflow Target Refinement: WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION" in rendered
 
 
 @pytest.mark.parametrize(
