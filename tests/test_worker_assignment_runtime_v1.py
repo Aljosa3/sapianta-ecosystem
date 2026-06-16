@@ -18,6 +18,16 @@ from aigol.runtime.conversation_to_ppp_handoff_execution import (
     run_conversation_to_ppp_handoff_execution,
 )
 from aigol.runtime.execution_authorization_runtime import authorize_execution_ready
+from aigol.runtime.external_resource_registry_runtime import (
+    ACTIVE,
+    COGNITION_PROVIDER,
+    EXECUTION_WORKER,
+    INACTIVE,
+    MOCK_FILESYSTEM_WORKER_ID,
+    MOCK_PROVIDER_ID,
+    create_err_v0_registry,
+    register_resource,
+)
 from aigol.runtime.governed_implementation_dry_run import prepare_governed_implementation_dry_run
 from aigol.runtime.implementation_approval_resume import (
     create_human_implementation_approval,
@@ -206,6 +216,94 @@ def test_worker_assignment_persists_replay_evidence(tmp_path) -> None:
     assert (replay_dir / "001_assignment_classification_recorded.json").exists()
     assert (replay_dir / "002_assignment_artifact_recorded.json").exists()
     assert (replay_dir / "003_assignment_result_recorded.json").exists()
+
+
+def test_worker_assignment_resolves_filesystem_worker_through_err_v0(tmp_path) -> None:
+    request_capture = _invocation_request(tmp_path, prompt="Create a filesystem worker.", suffix="err-filesystem")
+    request = request_capture["worker_invocation_request_artifact"]
+    registry = create_err_v0_registry()
+    register_resource(
+        registry,
+        {
+            "resource_id": MOCK_PROVIDER_ID,
+            "resource_type": COGNITION_PROVIDER,
+            "capabilities": ["reasoning"],
+            "status": ACTIVE,
+        },
+    )
+    register_resource(
+        registry,
+        {
+            "resource_id": MOCK_FILESYSTEM_WORKER_ID,
+            "resource_type": EXECUTION_WORKER,
+            "capabilities": ["file_write"],
+            "status": ACTIVE,
+        },
+    )
+
+    capture = assign_worker_from_invocation_request(
+        worker_assignment_id="WORKER-ASSIGNMENT-ERR-FILESYSTEM",
+        worker_invocation_request_artifact=request,
+        worker_invocation_request_replay_reference=request_capture["worker_invocation_request_replay_reference"],
+        worker_registry_artifacts=[],
+        assigned_by="AIGOL_GOVERNANCE",
+        assigned_at=CREATED_AT,
+        replay_dir=tmp_path / "assignment_err_filesystem",
+        use_err_worker_lookup=True,
+        err_required_capability="file_write",
+        err_registry=registry,
+    )
+    reconstructed = reconstruct_worker_assignment_runtime_replay(tmp_path / "assignment_err_filesystem")
+    err_capture = capture["err_worker_selection_capture"]
+
+    assert capture["assignment_status"] == WORKER_ASSIGNED
+    assert capture["worker_id"] == MOCK_FILESYSTEM_WORKER_ID
+    assert capture["worker_assignment_artifact"]["capability_id"] == "file_write"
+    assert err_capture["selected_resource_id"] == MOCK_FILESYSTEM_WORKER_ID
+    assert err_capture["required_capability"] == "file_write"
+    assert err_capture["provider_invoked"] is False
+    assert err_capture["worker_invoked"] is False
+    assert err_capture["orchestration_performed"] is False
+    assert reconstructed["worker_id"] == MOCK_FILESYSTEM_WORKER_ID
+    assert reconstructed["err_worker_selection_enabled"] is True
+    assert reconstructed["err_selected_resource_id"] == MOCK_FILESYSTEM_WORKER_ID
+    assert reconstructed["err_required_capability"] == "file_write"
+    assert reconstructed["err_worker_selection_replay"]["selected_resource_id"] == MOCK_FILESYSTEM_WORKER_ID
+    assert (tmp_path / "assignment_err_filesystem" / "stages" / "err_worker_selection").exists()
+
+
+def test_worker_assignment_err_lookup_fails_closed_without_active_filesystem_worker(tmp_path) -> None:
+    request_capture = _invocation_request(tmp_path, prompt="Create a filesystem worker.", suffix="err-inactive")
+    request = request_capture["worker_invocation_request_artifact"]
+    registry = create_err_v0_registry()
+    register_resource(
+        registry,
+        {
+            "resource_id": MOCK_FILESYSTEM_WORKER_ID,
+            "resource_type": EXECUTION_WORKER,
+            "capabilities": ["file_write"],
+            "status": INACTIVE,
+        },
+    )
+
+    capture = assign_worker_from_invocation_request(
+        worker_assignment_id="WORKER-ASSIGNMENT-ERR-INACTIVE",
+        worker_invocation_request_artifact=request,
+        worker_invocation_request_replay_reference=request_capture["worker_invocation_request_replay_reference"],
+        worker_registry_artifacts=[],
+        assigned_by="AIGOL_GOVERNANCE",
+        assigned_at=CREATED_AT,
+        replay_dir=tmp_path / "assignment_err_inactive",
+        use_err_worker_lookup=True,
+        err_required_capability="file_write",
+        err_registry=registry,
+    )
+
+    assert capture["assignment_status"] == "FAILED_CLOSED"
+    assert capture["fail_closed"] is True
+    assert "no active resource for capability" in capture["failure_reason"]
+    assert capture["worker_id"] is None
+    assert capture["err_worker_selection_capture"] == {}
 
 
 def test_worker_assignment_fails_closed_when_no_worker_exists(tmp_path) -> None:
