@@ -425,6 +425,7 @@ def create_live_transport_execution_evidence(
     request = boundary.get("live_request_envelope_artifact")
     response = boundary.get("live_response_envelope_artifact")
     error = boundary.get("live_error_envelope_artifact")
+    live_provider_call_performed = boundary.get("live_provider_call_performed") is True
     artifact = {
         "artifact_type": FIRST_LIVE_PROVIDER_LIVE_TRANSPORT_EXECUTION_EVIDENCE_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -440,8 +441,8 @@ def create_live_transport_execution_evidence(
         "error_artifact_hash": _artifact_hash_or_none(error),
         "canonical_provider_output_hash": _artifact_hash_or_none(boundary.get("canonical_provider_output")),
         "live_provider_boundary_audit_hash": audit["artifact_hash"],
-        "live_provider_call_performed": boundary.get("live_provider_call_performed") is True,
-        "deterministic_or_injected_transport_used": True,
+        "live_provider_call_performed": live_provider_call_performed,
+        "deterministic_or_injected_transport_used": live_provider_call_performed is not True,
         "credential_secret_replayed": False,
         "authorization_header_replayed": False,
         "provider_invoked": boundary.get("provider_invoked") is True,
@@ -497,6 +498,7 @@ def create_execution_llm_cognition_artifact(
     _verify_artifact_hash(canonical_output_artifact, "canonical provider output")
     _verify_artifact_hash(transport_evidence_artifact, "transport evidence")
     response_text = _require_string(canonical_output_artifact.get("response_text"), "response_text")
+    provider_invoked = transport_evidence_artifact.get("live_provider_call_performed") is True
     artifact = {
         "artifact_type": LLM_COGNITION_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -521,7 +523,7 @@ def create_execution_llm_cognition_artifact(
         "credential_secret_replayed": False,
         "authorization_header_replayed": False,
         "replay_visible": True,
-        "provider_invoked": False,
+        "provider_invoked": provider_invoked,
         "worker_invoked": False,
         "governance_modified": False,
         "replay_modified": False,

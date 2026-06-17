@@ -112,7 +112,7 @@ def run_live_provider_runtime_boundary(
     transport: BoundaryTransport | None = None,
     live_transport_enabled: bool = False,
 ) -> dict[str, Any]:
-    """Prepare the live provider boundary and execute only injected deterministic transport."""
+    """Run the live provider boundary through deterministic or governed live transport."""
 
     replay_path = Path(replay_dir)
     invocation = _require_string(invocation_id, "invocation_id")
@@ -120,7 +120,8 @@ def run_live_provider_runtime_boundary(
     request_envelope: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
-        if live_transport_enabled is True:
+        governed_live_transport = _is_governed_live_transport(transport)
+        if live_transport_enabled is True and governed_live_transport is not True:
             raise FailClosedRuntimeError("live provider boundary failed closed: live OpenAI transport is not implemented")
         approval = validate_live_provider_approval(approval_artifact)
         credential_policy = validate_live_provider_credential_policy(credential_policy_artifact)
@@ -164,6 +165,7 @@ def run_live_provider_runtime_boundary(
             model=model,
             timeout_seconds=timeout_seconds,
             created_at=created_at,
+            live_transport_enabled=live_transport_enabled is True,
         )
         if transport is None:
             raise FailClosedRuntimeError("live provider boundary failed closed: deterministic transport is required")
@@ -172,11 +174,19 @@ def run_live_provider_runtime_boundary(
             credential_retrieval_artifact=retrieval,
             request_envelope_artifact=request_envelope,
             created_at=created_at,
+            live_provider_call_performed=live_transport_enabled is True,
         )
-        raw_response = _invoke_deterministic_transport(
-            transport=transport,
-            request_envelope=request_envelope,
-        )
+        if live_transport_enabled is True:
+            raw_response = _invoke_governed_live_transport(
+                transport=transport,
+                request_envelope=request_envelope,
+                credential_policy_artifact=credential_policy,
+            )
+        else:
+            raw_response = _invoke_deterministic_transport(
+                transport=transport,
+                request_envelope=request_envelope,
+            )
         response_envelope = create_live_response_envelope(
             invocation_id=invocation,
             request_envelope_artifact=request_envelope,
@@ -368,6 +378,7 @@ def create_live_request_envelope(
     model: str,
     timeout_seconds: int,
     created_at: str,
+    live_transport_enabled: bool = False,
 ) -> dict[str, Any]:
     _verify_artifact_hash(credential_retrieval_artifact, "credential retrieval")
     _verify_artifact_hash(canonical_contract, "canonical contract")
@@ -399,8 +410,9 @@ def create_live_request_envelope(
         "tool_use": False,
         "automatic_retries": False,
         "credential_secret_replayed": False,
+        "live_transport_enabled": live_transport_enabled is True,
         "live_provider_call_performed": False,
-        "deterministic_transport_required": True,
+        "deterministic_transport_required": live_transport_enabled is not True,
         "replay_visible": True,
         "provider_invoked": False,
         "worker_invoked": False,
@@ -423,6 +435,7 @@ def create_live_credential_use_boundary(
     credential_retrieval_artifact: dict[str, Any],
     request_envelope_artifact: dict[str, Any],
     created_at: str,
+    live_provider_call_performed: bool = False,
 ) -> dict[str, Any]:
     _verify_artifact_hash(credential_retrieval_artifact, "credential retrieval")
     _verify_artifact_hash(request_envelope_artifact, "request envelope")
@@ -437,8 +450,8 @@ def create_live_credential_use_boundary(
         "credential_secret_replayed": False,
         "credential_value_omitted": True,
         "credential_disposed_after_boundary": True,
-        "live_provider_call_performed": False,
-        "deterministic_transport_only": True,
+        "live_provider_call_performed": live_provider_call_performed is True,
+        "deterministic_transport_only": live_provider_call_performed is not True,
         "replay_visible": True,
         "provider_invoked": False,
         "worker_invoked": False,
@@ -465,6 +478,9 @@ def create_live_response_envelope(
     safe_response = _json_safe(raw_response)
     response_text = _extract_response_text(safe_response)
     _reject_authority_bearing_response(response_text)
+    live_provider_call_performed = safe_response.get("real_openai_called") is True or safe_response.get(
+        "live_provider_call_performed"
+    ) is True
     artifact = {
         "artifact_type": LIVE_PROVIDER_RESPONSE_ENVELOPE_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -483,10 +499,10 @@ def create_live_response_envelope(
         "non_authoritative": True,
         "authority_flags": deepcopy(AUTHORITY_FLAGS),
         "credential_secret_replayed": False,
-        "live_provider_call_performed": False,
-        "deterministic_transport_executed": True,
+        "live_provider_call_performed": live_provider_call_performed,
+        "deterministic_transport_executed": live_provider_call_performed is not True,
         "replay_visible": True,
-        "provider_invoked": False,
+        "provider_invoked": live_provider_call_performed,
         "worker_invoked": False,
         "approval_created": False,
         "execution_requested": False,
@@ -510,6 +526,7 @@ def create_live_error_envelope(
     created_at: str,
 ) -> dict[str, Any]:
     _verify_artifact_hash(request_envelope_artifact, "request envelope")
+    live_provider_call_performed = request_envelope_artifact.get("live_transport_enabled") is True
     artifact = {
         "artifact_type": LIVE_PROVIDER_ERROR_ENVELOPE_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -521,10 +538,10 @@ def create_live_error_envelope(
         "retry_attempted": False,
         "fallback_attempted": False,
         "credential_secret_replayed": False,
-        "live_provider_call_performed": False,
+        "live_provider_call_performed": live_provider_call_performed,
         "final_status": STATUS_FAILED_CLOSED,
         "replay_visible": True,
-        "provider_invoked": False,
+        "provider_invoked": live_provider_call_performed,
         "worker_invoked": False,
         "approval_created": False,
         "execution_requested": False,
@@ -619,7 +636,7 @@ def create_live_canonical_output_view(
         "non_authoritative": True,
         "authority_flags": deepcopy(AUTHORITY_FLAGS),
         "replay_visible": True,
-        "provider_invoked": False,
+        "provider_invoked": response_envelope_artifact.get("live_provider_call_performed") is True,
         "worker_invoked": False,
         "approval_created": False,
         "execution_requested": False,
@@ -658,6 +675,11 @@ def create_live_boundary_audit(
     if canonical_output_artifact is not None:
         _verify_artifact_hash(canonical_output_artifact, "canonical output")
     status = _require_string(final_status, "final_status")
+    live_provider_call_performed = False
+    if response_envelope_artifact is not None:
+        live_provider_call_performed = response_envelope_artifact.get("live_provider_call_performed") is True
+    elif error_envelope_artifact is not None:
+        live_provider_call_performed = error_envelope_artifact.get("live_provider_call_performed") is True
     artifact = {
         "artifact_type": LIVE_PROVIDER_RUNTIME_BOUNDARY_AUDIT_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -672,15 +694,15 @@ def create_live_boundary_audit(
         "response_envelope_artifact_hash": response_envelope_artifact["artifact_hash"] if response_envelope_artifact else None,
         "error_envelope_artifact_hash": error_envelope_artifact["artifact_hash"] if error_envelope_artifact else None,
         "canonical_output_artifact_hash": canonical_output_artifact["artifact_hash"] if canonical_output_artifact else None,
-        "live_provider_call_performed": False,
-        "deterministic_transport_only": True,
+        "live_provider_call_performed": live_provider_call_performed,
+        "deterministic_transport_only": live_provider_call_performed is not True,
         "credential_secret_replayed": False,
         "err_remained_passive": True,
         "no_worker_invocation": True,
         "no_governance_mutation": True,
         "no_replay_mutation": True,
         "replay_visible": True,
-        "provider_invoked": False,
+        "provider_invoked": live_provider_call_performed,
         "worker_invoked": False,
         "approval_created": False,
         "execution_requested": False,
@@ -709,8 +731,8 @@ def reconstruct_live_provider_runtime_boundary_replay(replay_dir: str | Path) ->
         "final_status": status,
         "invocation_id": audit["invocation_id"],
         "provider_id": audit["provider_id"],
-        "live_provider_call_performed": False,
-        "provider_invoked": False,
+        "live_provider_call_performed": audit["live_provider_call_performed"],
+        "provider_invoked": audit["provider_invoked"],
         "worker_invoked": False,
         "governance_modified": False,
         "replay_modified": False,
@@ -746,6 +768,62 @@ def _invoke_deterministic_transport(*, transport: BoundaryTransport, request_env
     if response.get("real_openai_called") is True:
         raise FailClosedRuntimeError("live provider boundary failed closed: live OpenAI call is prohibited")
     return deepcopy(response)
+
+
+def _invoke_governed_live_transport(
+    *,
+    transport: BoundaryTransport,
+    request_envelope: dict[str, Any],
+    credential_policy_artifact: dict[str, Any],
+) -> dict[str, Any]:
+    if _is_governed_live_transport(transport) is not True:
+        raise FailClosedRuntimeError("live provider boundary failed closed: live OpenAI transport is not implemented")
+    payload = deepcopy(request_envelope["request_payload"])
+    metadata = {
+        "provider_id": OPENAI_PROVIDER_ID,
+        "provider_role": COGNITION_PROVIDER,
+        "endpoint": OPENAI_RESPONSES_ENDPOINT,
+        "timeout_seconds": request_envelope["timeout_seconds"],
+        "live_provider_call_performed": True,
+        "credential_secret_replayed": False,
+        "_credential_secret": _read_boundary_credential_secret(credential_policy_artifact),
+    }
+    try:
+        response = transport(payload, metadata)
+    except TimeoutError as exc:
+        raise FailClosedRuntimeError("live provider boundary failed closed: timeout") from exc
+    except Exception as exc:
+        message = str(exc).lower()
+        if "rate" in message and "limit" in message:
+            raise FailClosedRuntimeError("live provider boundary failed closed: rate limit") from exc
+        if "timeout" in message:
+            raise FailClosedRuntimeError("live provider boundary failed closed: timeout") from exc
+        if "malformed response" in message:
+            raise FailClosedRuntimeError("live provider boundary failed closed: malformed response") from exc
+        raise FailClosedRuntimeError("live provider boundary failed closed: transport unavailable") from exc
+    if not isinstance(response, dict):
+        raise FailClosedRuntimeError("live provider boundary failed closed: malformed response")
+    if response.get("real_openai_called") is not True or response.get("live_provider_call_performed") is not True:
+        raise FailClosedRuntimeError("live provider boundary failed closed: malformed response")
+    if response.get("credential_secret_replayed") is not False or response.get("authorization_header_replayed") is not False:
+        raise FailClosedRuntimeError("live provider boundary failed closed: credential secret replay detected")
+    safe_response = deepcopy(response)
+    safe_response.pop("_credential_secret", None)
+    return safe_response
+
+
+def _is_governed_live_transport(transport: Any) -> bool:
+    return getattr(transport, "aigol_governed_live_openai_executor_v1", False) is True
+
+
+def _read_boundary_credential_secret(credential_policy_artifact: dict[str, Any]) -> str:
+    policy = validate_live_provider_credential_policy(credential_policy_artifact)
+    reference = policy["credential_reference"]
+    env_name = reference.removeprefix("env:")
+    secret = os.environ.get(env_name)
+    if not isinstance(secret, str) or not secret.strip():
+        raise FailClosedRuntimeError("live provider boundary failed closed: credential unavailable")
+    return secret
 
 
 def _persist_sequence(replay_path: Path, steps: tuple[str, ...], artifacts: tuple[dict[str, Any], ...]) -> None:
@@ -795,6 +873,7 @@ def _capture(
     canonical_output: dict[str, Any] | None,
     audit: dict[str, Any],
 ) -> dict[str, Any]:
+    live_provider_call_performed = audit.get("live_provider_call_performed") is True
     capture = {
         "milestone_id": MILESTONE_ID,
         "invocation_id": invocation_id,
@@ -809,8 +888,8 @@ def _capture(
         "canonical_provider_input": deepcopy(canonical_input),
         "canonical_provider_output": deepcopy(canonical_output),
         "live_boundary_audit_artifact": deepcopy(audit),
-        "live_provider_call_performed": False,
-        "provider_invoked": False,
+        "live_provider_call_performed": live_provider_call_performed,
+        "provider_invoked": live_provider_call_performed,
         "worker_invoked": False,
         "approval_created": False,
         "execution_requested": False,
