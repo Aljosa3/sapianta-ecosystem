@@ -368,6 +368,8 @@ def _refined_workflow_target(
         (
             "advisory",
             "guidance",
+            "plan",
+            "plan only",
             "planning",
             "recommend",
             "recommendation",
@@ -384,6 +386,10 @@ def _refined_workflow_target(
             "without execution",
             "first step",
             "next safest",
+            "best next step",
+            "najbolje",
+            "narediti naprej",
+            "naslednji korak",
             "before any runtime changes",
         ),
     )

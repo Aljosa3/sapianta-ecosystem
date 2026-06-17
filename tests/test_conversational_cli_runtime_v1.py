@@ -401,6 +401,10 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
             "I need help with AI.",
             "AMBIGUOUS_INTENT",
         ),
+        (
+            "Nadaljuj.",
+            "CONTINUATION_INTENT",
+        ),
     ],
 )
 def test_human_intent_clarification_intake_routes_supported_families_before_provider_fallback(
@@ -533,6 +537,12 @@ def test_interactive_human_intent_clarification_intake_renders_questions_without
             "BOUNDED_FILE_WRITE_PROOF_INTENT",
             BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
         ),
+        (
+            "Kaj bi bilo najbolje narediti naprej?",
+            "Give me a plan only.",
+            "GENERAL_IMPROVEMENT_INTENT",
+            OCS_LLM_COGNITION,
+        ),
     ],
 )
 def test_interactive_human_intent_clarification_response_selects_expected_workflow(
@@ -572,6 +582,29 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     assert "Human Intent Clarification Bound" in rendered
     assert f"Selected Workflow: {expected_workflow}" in rendered
     assert "Workflow Target Refinement: WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION" in rendered
+
+
+def test_bare_slovenian_continuation_prompt_routes_to_continuation_clarification(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(["Nadaljuj.", "exit"]),
+        output_func=output.append,
+    )
+
+    first_turn = result["turns"][0]
+    rendered = "\n".join(output)
+
+    assert result["failed_turns"] == 0
+    assert first_turn["clarification_required"] is True
+    assert first_turn["conversational_workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert first_turn["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert first_turn["provider_invoked"] is False
+    assert first_turn["worker_invoked"] is False
+    assert first_turn["authorization_created"] is False
+    assert first_turn["execution_requested"] is False
+    assert "Intent Family: CONTINUATION_INTENT" in rendered
+    assert "What should AiGOL continue?" in rendered
 
 
 def test_bounded_file_write_confirmation_preserves_approval_boundary(tmp_path) -> None:

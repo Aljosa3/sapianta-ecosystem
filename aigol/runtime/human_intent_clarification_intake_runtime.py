@@ -17,6 +17,7 @@ AUTOMATION_INTENT = "AUTOMATION_INTENT"
 COMPLIANCE_INTENT = "COMPLIANCE_INTENT"
 AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
+CONTINUATION_INTENT = "CONTINUATION_INTENT"
 BOUNDED_FILE_WRITE_PROOF_INTENT = "BOUNDED_FILE_WRITE_PROOF_INTENT"
 
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
@@ -30,6 +31,7 @@ def classify_human_intent_for_clarification(human_prompt: str, *, include_unknow
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".?!")
     checks = (
+        _continuation_intent,
         _bounded_file_write_proof_intent,
         _general_improvement_intent,
         _compliance_intent,
@@ -124,7 +126,7 @@ def _business_goal_intent(normalized: str) -> dict[str, Any] | None:
 def _general_improvement_intent(normalized: str) -> dict[str, Any] | None:
     if _has_workflow_or_control_signals(normalized):
         return None
-    signals = _matched_terms(
+    ai_scoped_signals = _matched_terms(
         normalized,
         (
             "improve how",
@@ -139,8 +141,43 @@ def _general_improvement_intent(normalized: str) -> dict[str, Any] | None:
             "easier to explain",
         ),
     )
-    if signals and _has_word(normalized, "ai"):
-        return {"intent_family": GENERAL_IMPROVEMENT_INTENT, "confidence": "MEDIUM", "signals": signals}
+    standalone_advisory_signals = _matched_terms(
+        normalized,
+        (
+            "kaj bi bilo najbolje",
+            "kaj je najbolje",
+            "najbolje narediti naprej",
+            "kaj naj naredim naprej",
+            "naslednji korak",
+            "najboljsi naslednji korak",
+            "najboljši naslednji korak",
+            "izboljsal sistem",
+            "izboljšal sistem",
+        ),
+    )
+    if standalone_advisory_signals:
+        return {
+            "intent_family": GENERAL_IMPROVEMENT_INTENT,
+            "confidence": "MEDIUM",
+            "signals": standalone_advisory_signals,
+        }
+    if ai_scoped_signals and _has_word(normalized, "ai"):
+        return {"intent_family": GENERAL_IMPROVEMENT_INTENT, "confidence": "MEDIUM", "signals": ai_scoped_signals}
+    return None
+
+
+def _continuation_intent(normalized: str) -> dict[str, Any] | None:
+    continuation_terms = (
+        "nadaljuj",
+        "continue",
+        "continue this",
+        "go on",
+        "resume",
+        "proceed",
+    )
+    signals = [term for term in continuation_terms if normalized == term]
+    if signals:
+        return {"intent_family": CONTINUATION_INTENT, "confidence": "LOW", "signals": signals}
     return None
 
 
@@ -281,6 +318,11 @@ def _clarification_questions(intent_family: str) -> list[str]:
             "What AI use or process should the advisory guidance focus on?",
             "Is the immediate need planning, risk reduction, or workflow design?",
             "Should this remain advisory, or should it become a governed workflow proposal?",
+        ],
+        CONTINUATION_INTENT: [
+            "What should AiGOL continue?",
+            "Which prior replay-visible session, decision, or artifact should be used as context?",
+            "Should this remain clarification-only, advisory, or move to a governed workflow after approval?",
         ],
         BOUNDED_FILE_WRITE_PROOF_INTENT: [
             "Should AiGOL create one small proof file with fixed evidence text?",
