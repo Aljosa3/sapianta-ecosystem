@@ -5930,6 +5930,13 @@ def _interactive_human_intent_clarification_continuity_turn_summary(
         "conversational_workflow_id": continuity_capture.get("workflow_id"),
         "workflow_id": continuity_capture.get("workflow_id"),
         "routing_status": continuity_capture.get("routing_status"),
+        "ambiguity_escalation_reason": continuity_capture.get("ambiguity_escalation_reason"),
+        "unresolved_ambiguity_classification": continuity_capture.get("unresolved_ambiguity_classification"),
+        "proposal_only_cognition_routing": continuity_capture.get("proposal_only_cognition_routing") is True,
+        "human_confirmation_required": continuity_capture.get("human_confirmation_required") is True,
+        "future_deterministic_rule_candidate_status": continuity_capture.get(
+            "future_deterministic_rule_candidate_status"
+        ),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,

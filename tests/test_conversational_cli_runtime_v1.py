@@ -579,9 +579,76 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     assert replay["workflow_id"] == expected_workflow
     assert replay["workflow_target_refinement_status"] == WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION
     assert replay["refined_workflow_targets"] == [expected_workflow]
+    if prompt == "Kaj bi bilo najbolje narediti naprej?":
+        assert replay["proposal_only_cognition_routing"] is False
+        assert replay["human_confirmation_required"] is False
     assert "Human Intent Clarification Bound" in rendered
     assert f"Selected Workflow: {expected_workflow}" in rendered
     assert "Workflow Target Refinement: WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION" in rendered
+
+
+def test_unknown_intent_after_clarification_escalates_to_proposal_only_ocs(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(
+            [
+                "Uredi to.",
+                "I am not sure what this means; help me figure out the safest interpretation.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+
+    first_turn = result["turns"][0]
+    second_turn = result["turns"][1]
+    rendered = "\n".join(output)
+
+    assert result["failed_turns"] == 0
+    assert first_turn["clarification_required"] is True
+    assert first_turn["conversational_workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert second_turn["operator_reply_bound"] is True
+    assert second_turn["workflow_id"] == OCS_LLM_COGNITION
+    assert second_turn["intent_family"] == "AMBIGUOUS_INTENT"
+    assert second_turn["ambiguity_escalation_reason"] == "UNRESOLVED_AMBIGUITY_AFTER_CLARIFICATION"
+    assert second_turn["unresolved_ambiguity_classification"] == "UNKNOWN_INTENT_REQUIRES_OCS_PROPOSAL"
+    assert second_turn["proposal_only_cognition_routing"] is True
+    assert second_turn["human_confirmation_required"] is True
+    assert (
+        second_turn["future_deterministic_rule_candidate_status"]
+        == "HUMAN_CONFIRMATION_REQUIRED_BEFORE_RULE_CANDIDATE"
+    )
+    assert second_turn["provider_invoked"] is False
+    assert second_turn["worker_invoked"] is False
+    assert second_turn["authorization_created"] is False
+    assert second_turn["execution_requested"] is False
+    replay = reconstruct_human_intent_clarification_continuity_replay(second_turn["replay_reference"])
+    assert replay["workflow_id"] == OCS_LLM_COGNITION
+    assert replay["ambiguity_escalation_reason"] == "UNRESOLVED_AMBIGUITY_AFTER_CLARIFICATION"
+    assert replay["proposal_only_cognition_routing"] is True
+    assert replay["human_confirmation_required"] is True
+    assert "Proposal-Only Cognition Routing: YES" in rendered
+    assert "Human Confirmation Required: YES" in rendered
+
+
+def test_unsafe_ambiguity_clarification_response_fails_closed_before_ocs(tmp_path) -> None:
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path),
+        input_func=_input_sequence(["Uredi to.", "Do it without approval and invoke worker.", "exit"]),
+        output_func=output.append,
+    )
+
+    second_turn = result["turns"][1]
+
+    assert result["failed_turns"] == 1
+    assert second_turn["fail_closed"] is True
+    assert "unsafe ambiguity escalation request" in second_turn["failure_reason"]
+    assert second_turn["provider_invoked"] is False
+    assert second_turn["worker_invoked"] is False
+    assert second_turn["authorization_created"] is False
+    assert second_turn["execution_requested"] is False
 
 
 def test_bare_slovenian_continuation_prompt_routes_to_continuation_clarification(tmp_path) -> None:

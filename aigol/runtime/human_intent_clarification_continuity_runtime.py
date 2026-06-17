@@ -31,6 +31,7 @@ HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1 = (
 HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
 AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
+CONTINUATION_INTENT = "CONTINUATION_INTENT"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 BOUNDED_FILE_WRITE_WORKER_USER_SESSION = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
@@ -149,6 +150,11 @@ def reconstruct_human_intent_clarification_continuity_replay(replay_dir: str | P
         "routing_status": selection["routing_status"],
         "workflow_target_refinement_status": refinement["refinement_status"],
         "workflow_target_refinement_reason": refinement["refinement_reason"],
+        "ambiguity_escalation_reason": refinement["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": refinement["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
+        "human_confirmation_required": refinement["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
         "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
         "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
@@ -174,6 +180,11 @@ def render_human_intent_clarification_continuity_summary(capture: dict[str, Any]
             f"Selected Workflow: {capture.get('workflow_id')}",
             f"Workflow Target Refinement: {capture.get('workflow_target_refinement_status')}",
             f"Refinement Reason: {capture.get('workflow_target_refinement_reason')}",
+            f"Ambiguity Escalation: {capture.get('ambiguity_escalation_reason') or 'NO'}",
+            "Proposal-Only Cognition Routing: "
+            + ("YES" if capture.get("proposal_only_cognition_routing") is True else "NO"),
+            "Human Confirmation Required: "
+            + ("YES" if capture.get("human_confirmation_required") is True else "NO"),
             "Workflow Selection After Clarification: YES",
             "No provider invoked.",
             "No worker invoked.",
@@ -318,6 +329,11 @@ def _target_refinement_artifact(
         "selected_workflow_id": decision["selected_workflow_id"],
         "refinement_status": decision["refinement_status"],
         "refinement_reason": decision["refinement_reason"],
+        "ambiguity_escalation_reason": decision["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": decision["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": decision["proposal_only_cognition_routing"],
+        "human_confirmation_required": decision["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": decision["future_deterministic_rule_candidate_status"],
         "canonical_chain_id": request["canonical_chain_id"],
         "created_at": _require_string(created_at, "created_at"),
         "provider_invoked": False,
@@ -342,6 +358,25 @@ def _refined_workflow_target(
     clarification_response: str,
 ) -> dict[str, Any]:
     normalized = clarification_response.lower().strip()
+    unsafe_escalation_signals = _matched_terms(
+        normalized,
+        (
+            "without approval",
+            "bypass approval",
+            "skip approval",
+            "unrestricted autonomous agent",
+            "store my api key",
+            "save my api key",
+            "secret",
+            "credential",
+            "invoke worker",
+            "execute worker",
+        ),
+    )
+    if unsafe_escalation_signals:
+        raise FailClosedRuntimeError(
+            "human intent clarification continuity failed closed: unsafe ambiguity escalation request"
+        )
     confirmation_signals = _matched_terms(
         normalized,
         (
@@ -362,7 +397,24 @@ def _refined_workflow_target(
             "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
             "refinement_reason": "clarification response confirmed bounded file-write proof action",
             "signals": confirmation_signals,
+            **_no_ambiguity_escalation(),
         }
+    unresolved_ambiguity_signals = _matched_terms(
+        normalized,
+        (
+            "not sure",
+            "not certain",
+            "unclear",
+            "i do not know",
+            "i don't know",
+            "help me decide",
+            "help me figure out",
+            "safest interpretation",
+            "safe next step",
+            "what this means",
+            "what should this become",
+        ),
+    )
     advisory_signals = _matched_terms(
         normalized,
         (
@@ -430,6 +482,26 @@ def _refined_workflow_target(
             "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
             "refinement_reason": "clarification response requested governed workflow or evidence handling",
             "signals": governed_signals,
+            **_no_ambiguity_escalation(),
+        }
+    if (
+        original_intent_family in {AMBIGUOUS_INTENT, CONTINUATION_INTENT}
+        and unresolved_ambiguity_signals
+        and not governed_signals
+    ):
+        return {
+            "selected_workflow_id": OCS_LLM_COGNITION,
+            "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,
+            "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+            "refinement_reason": (
+                "clarification response left deterministic target unresolved and requested proposal-only cognition"
+            ),
+            "signals": unresolved_ambiguity_signals + no_execution_signals,
+            "ambiguity_escalation_reason": "UNRESOLVED_AMBIGUITY_AFTER_CLARIFICATION",
+            "unresolved_ambiguity_classification": "UNKNOWN_INTENT_REQUIRES_OCS_PROPOSAL",
+            "proposal_only_cognition_routing": True,
+            "human_confirmation_required": True,
+            "future_deterministic_rule_candidate_status": "HUMAN_CONFIRMATION_REQUIRED_BEFORE_RULE_CANDIDATE",
         }
     if advisory_signals:
         return {
@@ -438,6 +510,7 @@ def _refined_workflow_target(
             "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
             "refinement_reason": "clarification response requested advisory planning without execution",
             "signals": advisory_signals + no_execution_signals,
+            **_no_ambiguity_escalation(),
         }
     return {
         "selected_workflow_id": original_target,
@@ -445,6 +518,7 @@ def _refined_workflow_target(
         "refinement_status": TARGET_PRESERVED_LOW_CONFIDENCE,
         "refinement_reason": "clarification response did not contain deterministic target refinement signals",
         "signals": [],
+        **_no_ambiguity_escalation(),
     }
 
 
@@ -471,6 +545,11 @@ def _resolution_artifact(
         "clarification_request_hash": request["artifact_hash"],
         "intent_family": refinement["refined_intent_family"],
         "original_intent_family": refinement["original_intent_family"],
+        "ambiguity_escalation_reason": refinement["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": refinement["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
+        "human_confirmation_required": refinement["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
         "original_workflow_id": request.get("workflow_id"),
         "clarification_response_hash": replay_hash(_require_string(clarification_response, "clarification_response")),
         "resolution_status": "INTENT_RESOLVED_AFTER_CLARIFICATION",
@@ -508,6 +587,11 @@ def _selection_artifact(
         "workflow_id": selected_workflow_id,
         "routing_status": WORKFLOW_SELECTED,
         "selection_status": WORKFLOW_SELECTION_AFTER_CLARIFICATION,
+        "ambiguity_escalation_reason": refinement["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": refinement["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
+        "human_confirmation_required": refinement["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
         "created_at": _require_string(created_at, "created_at"),
         "provider_invoked": False,
         "worker_invoked": False,
@@ -554,6 +638,11 @@ def _capture(
         "original_intent_family": refinement["original_intent_family"],
         "workflow_target_refinement_status": refinement["refinement_status"],
         "workflow_target_refinement_reason": refinement["refinement_reason"],
+        "ambiguity_escalation_reason": refinement["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": refinement["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
+        "human_confirmation_required": refinement["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
         "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
         "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
@@ -644,6 +733,16 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
 
 def _matched_terms(normalized: str, terms: tuple[str, ...]) -> list[str]:
     return [term for term in terms if term in normalized]
+
+
+def _no_ambiguity_escalation() -> dict[str, Any]:
+    return {
+        "ambiguity_escalation_reason": None,
+        "unresolved_ambiguity_classification": None,
+        "proposal_only_cognition_routing": False,
+        "human_confirmation_required": False,
+        "future_deterministic_rule_candidate_status": None,
+    }
 
 
 def _require_string(value: Any, field_name: str) -> str:

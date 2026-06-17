@@ -1,6 +1,6 @@
 # AIGOL ACLI Ambiguity Escalation Remediation V1
 
-Status: remediation proposal.
+Status: implemented remediation with certification evidence.
 
 Purpose: define the smallest conformant remediation required to align ACLI ambiguity handling with the approved escalation architecture:
 
@@ -13,9 +13,7 @@ Unknown Intent
 -> Future Deterministic Rule
 ```
 
-This artifact defines remediation scope only.
-
-It does not implement functionality.
+This artifact defines the remediation scope and records implementation evidence.
 
 It does not redesign ACLI.
 
@@ -498,5 +496,94 @@ automatic deterministic rule creation
 ## Final Verdict
 
 ```text
-AMBIGUITY_ESCALATION_REMEDIATION_DEFINED
+ACLI_AMBIGUITY_ESCALATION_CERTIFIED
+```
+
+## Implementation Summary
+
+Implementation files:
+
+```text
+aigol/runtime/human_intent_clarification_continuity_runtime.py
+aigol/cli/aigol_cli.py
+tests/test_conversational_cli_runtime_v1.py
+```
+
+Implemented behavior:
+
+```text
+Unknown Intent
+-> HUMAN_INTENT_CLARIFICATION_INTAKE
+-> clarification response binding
+-> unresolved safe ambiguity detection
+-> OCS_LLM_COGNITION
+-> proposal-only cognition routing evidence
+-> human confirmation required before future deterministic rule candidate
+-> replay
+```
+
+No new workflow was created.
+
+No new provider contract was created.
+
+No worker path was changed.
+
+No execution authority was added.
+
+The implementation adds replay-visible fields to human-intent clarification continuity artifacts:
+
+```text
+ambiguity_escalation_reason
+unresolved_ambiguity_classification
+proposal_only_cognition_routing
+human_confirmation_required
+future_deterministic_rule_candidate_status
+```
+
+Unsafe ambiguity clarification responses fail closed before OCS escalation when they request:
+
+```text
+approval bypass
+credential or secret handling
+unrestricted autonomous agent behavior
+worker invocation
+worker execution
+```
+
+## Certification Evidence
+
+Certification root:
+
+```text
+runtime/acli_ambiguity_escalation_certification_v1/
+```
+
+Aggregate certification report:
+
+```text
+runtime/acli_ambiguity_escalation_certification_v1/replay/certification/000_ambiguity_escalation_aggregate_report_recorded.json
+```
+
+Scenario certification reports:
+
+```text
+runtime/acli_ambiguity_escalation_certification_v1/scenarios/AES-001/replay/certification/002_ambiguity_escalation_certification_report_recorded.json
+runtime/acli_ambiguity_escalation_certification_v1/scenarios/AES-002/replay/certification/002_ambiguity_escalation_certification_report_recorded.json
+runtime/acli_ambiguity_escalation_certification_v1/scenarios/AES-003/replay/certification/002_ambiguity_escalation_certification_report_recorded.json
+runtime/acli_ambiguity_escalation_certification_v1/scenarios/AES-004/replay/certification/002_ambiguity_escalation_certification_report_recorded.json
+```
+
+Certification results:
+
+| Scenario | Purpose | Verdict |
+| --- | --- | --- |
+| AES-001 | Unknown intent clarifies first, then unresolved ambiguity escalates to proposal-only OCS with human-confirmation evidence. | `CERTIFIED` |
+| AES-002 | Continuation ambiguity clarifies first, then unresolved context escalates to proposal-only OCS with human-confirmation evidence. | `CERTIFIED` |
+| AES-003 | Unsafe ambiguity clarification fails closed before OCS. | `CERTIFIED` |
+| AES-004 | Existing advisory ambiguity behavior remains OCS-routed without unresolved-ambiguity escalation metadata. | `CERTIFIED` |
+
+Final certification verdict:
+
+```text
+ACLI_AMBIGUITY_ESCALATION_CERTIFIED
 ```
