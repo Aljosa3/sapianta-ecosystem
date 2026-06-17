@@ -33,7 +33,10 @@ AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
-SUPPORTED_TARGET_WORKFLOWS = frozenset({CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, OCS_LLM_COGNITION})
+BOUNDED_FILE_WRITE_WORKER_USER_SESSION = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
+SUPPORTED_TARGET_WORKFLOWS = frozenset(
+    {CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, OCS_LLM_COGNITION, BOUNDED_FILE_WRITE_WORKER_USER_SESSION}
+)
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 WORKFLOW_SELECTION_AFTER_CLARIFICATION = "WORKFLOW_SELECTION_AFTER_CLARIFICATION"
 WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION = "WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION"
@@ -339,6 +342,27 @@ def _refined_workflow_target(
     clarification_response: str,
 ) -> dict[str, Any]:
     normalized = clarification_response.lower().strip()
+    confirmation_signals = _matched_terms(
+        normalized,
+        (
+            "yes",
+            "yes.",
+            "approved",
+            "approve",
+            "go ahead",
+            "confirm",
+            "confirmed",
+            "that is correct",
+        ),
+    )
+    if original_target == BOUNDED_FILE_WRITE_WORKER_USER_SESSION and confirmation_signals:
+        return {
+            "selected_workflow_id": BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
+            "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,
+            "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+            "refinement_reason": "clarification response confirmed bounded file-write proof action",
+            "signals": confirmation_signals,
+        }
     advisory_signals = _matched_terms(
         normalized,
         (

@@ -17,9 +17,11 @@ AUTOMATION_INTENT = "AUTOMATION_INTENT"
 COMPLIANCE_INTENT = "COMPLIANCE_INTENT"
 AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
+BOUNDED_FILE_WRITE_PROOF_INTENT = "BOUNDED_FILE_WRITE_PROOF_INTENT"
 
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION_TARGET = "OCS_LLM_COGNITION"
+BOUNDED_FILE_WRITE_WORKER_USER_SESSION_TARGET = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
 
 
 def classify_human_intent_for_clarification(human_prompt: str, *, include_unknown: bool = True) -> dict[str, Any]:
@@ -28,6 +30,7 @@ def classify_human_intent_for_clarification(human_prompt: str, *, include_unknow
     prompt = _require_string(human_prompt, "human_prompt")
     normalized = prompt.lower().strip().rstrip(".?!")
     checks = (
+        _bounded_file_write_proof_intent,
         _general_improvement_intent,
         _compliance_intent,
         _automation_intent,
@@ -138,6 +141,26 @@ def _general_improvement_intent(normalized: str) -> dict[str, Any] | None:
     )
     if signals and _has_word(normalized, "ai"):
         return {"intent_family": GENERAL_IMPROVEMENT_INTENT, "confidence": "MEDIUM", "signals": signals}
+    return None
+
+
+def _bounded_file_write_proof_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "proof note",
+            "evidence note",
+            "evidence file",
+            "proof file",
+            "write a small proof",
+            "create a small proof",
+            "make a small proof",
+            "did something safely",
+            "system really did something safely",
+        ),
+    )
+    if signals:
+        return {"intent_family": BOUNDED_FILE_WRITE_PROOF_INTENT, "confidence": "MEDIUM", "signals": signals}
     return None
 
 
@@ -259,6 +282,11 @@ def _clarification_questions(intent_family: str) -> list[str]:
             "Is the immediate need planning, risk reduction, or workflow design?",
             "Should this remain advisory, or should it become a governed workflow proposal?",
         ],
+        BOUNDED_FILE_WRITE_PROOF_INTENT: [
+            "Should AiGOL create one small proof file with fixed evidence text?",
+            "Should this use the certified file-write worker path only after approval?",
+            "Should replay evidence be recorded for the bounded file-write action?",
+        ],
         AMBIGUOUS_INTENT: [
             "What are you trying to improve or control?",
             "Does this involve AI outputs, human approval, compliance evidence, or operational decisions?",
@@ -271,6 +299,8 @@ def _clarification_questions(intent_family: str) -> list[str]:
 def _expected_workflow_targets(intent_family: str) -> list[str]:
     if intent_family == GENERAL_IMPROVEMENT_INTENT:
         return [OCS_LLM_COGNITION_TARGET]
+    if intent_family == BOUNDED_FILE_WRITE_PROOF_INTENT:
+        return [BOUNDED_FILE_WRITE_WORKER_USER_SESSION_TARGET]
     return [CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET]
 
 

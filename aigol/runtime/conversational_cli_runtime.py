@@ -57,6 +57,7 @@ IMPROVE_PROVIDER_LAYER = "IMPROVE_PROVIDER_LAYER"
 SHOW_STATUS = "SHOW_STATUS"
 SHOW_DASHBOARD = "SHOW_DASHBOARD"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
+BOUNDED_FILE_WRITE_WORKER_USER_SESSION = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
 NATIVE_DEVELOPMENT_INTENT_ROUTING = "NATIVE_DEVELOPMENT_INTENT_ROUTING"
 NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION = "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
 DOMAIN_LIFECYCLE_GOVERNANCE = "DOMAIN_LIFECYCLE_GOVERNANCE_RUNTIME"
@@ -294,6 +295,12 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE_V1.md",
         ),
         _workflow(OCS_LLM_COGNITION, "aigol conversation", "ocs_llm_cognition_end_to_end_runtime"),
+        _workflow(
+            BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
+            "aigol conversation",
+            "file_write_worker_certified_path",
+            clarification=True,
+        ),
         _workflow(
             AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
             "aigol conversation",
@@ -1241,6 +1248,9 @@ def _operator_summary(workflow_id: str) -> str:
             "Select Product 1 AI Decision Validator capability lifecycle entrypoint without execution."
         ),
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
+        BOUNDED_FILE_WRITE_WORKER_USER_SESSION: (
+            "Select bounded certified FILE_WRITE worker session after clarification and approval."
+        ),
         AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW: (
             "Route reviewed domain approval prompts to the authorization-entry binding path without execution."
         ),
