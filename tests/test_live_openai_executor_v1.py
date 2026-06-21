@@ -120,8 +120,30 @@ def test_live_openai_executor_constructs_https_request_and_returns_secret_free_r
     assert "Bearer " not in canonical_serialize(result)
 
 
+def test_live_openai_executor_passes_timeout_as_keyword_argument():
+    captured: dict = {}
+
+    def opener(http_request: request.Request, *, timeout: int):
+        captured["url"] = http_request.full_url
+        captured["timeout"] = timeout
+        return _FakeHTTPResponse(
+            {
+                "id": "resp_keyword_timeout",
+                "output_text": "Keyword timeout response captured.",
+            }
+        )
+
+    result = create_governed_live_openai_executor(opener=opener)(_payload(), _metadata())
+
+    assert captured["url"] == OPENAI_RESPONSES_ENDPOINT
+    assert captured["timeout"] == 20
+    assert result["output_text"] == "Keyword timeout response captured."
+    assert result["live_provider_call_performed"] is True
+
+
 def test_live_openai_executor_extracts_responses_api_output_content():
-    def opener(_http_request: request.Request, _timeout: int):
+    def opener(_http_request: request.Request, *, timeout: int):
+        assert timeout == 20
         return _FakeHTTPResponse(
             {
                 "id": "resp_nested",
@@ -145,7 +167,8 @@ def test_live_openai_executor_extracts_responses_api_output_content():
 
 
 def test_live_openai_executor_fails_closed_on_rate_limit():
-    def opener(http_request: request.Request, _timeout: int):
+    def opener(http_request: request.Request, *, timeout: int):
+        assert timeout == 20
         raise error.HTTPError(http_request.full_url, 429, "Too Many Requests", hdrs=None, fp=None)
 
     executor = create_governed_live_openai_executor(opener=opener)
@@ -155,7 +178,8 @@ def test_live_openai_executor_fails_closed_on_rate_limit():
 
 
 def test_live_openai_executor_fails_closed_on_timeout():
-    def opener(_http_request: request.Request, _timeout: int):
+    def opener(_http_request: request.Request, *, timeout: int):
+        assert timeout == 20
         raise socket.timeout("timed out")
 
     executor = create_governed_live_openai_executor(opener=opener)
@@ -177,7 +201,7 @@ def test_live_openai_executor_fails_closed_on_malformed_response():
         def read(self) -> bytes:
             return b"not-json"
 
-    executor = create_governed_live_openai_executor(opener=lambda _request, _timeout: BadResponse())
+    executor = create_governed_live_openai_executor(opener=lambda _request, *, timeout: BadResponse())
 
     with pytest.raises(FailClosedRuntimeError, match="malformed response"):
         executor(_payload(), _metadata())

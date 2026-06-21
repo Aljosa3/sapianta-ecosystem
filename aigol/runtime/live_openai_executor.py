@@ -13,7 +13,7 @@ from aigol.runtime.models import FailClosedRuntimeError
 
 MILESTONE_ID = "AIGOL_LIVE_OPENAI_EXECUTOR_V1"
 
-OpenUrl = Callable[[request.Request, int], Any]
+OpenUrl = Callable[..., Any]
 
 
 class GovernedLiveOpenAIExecutor:
@@ -39,7 +39,7 @@ class GovernedLiveOpenAIExecutor:
             method="POST",
         )
         try:
-            with self._opener(http_request, timeout_seconds) as response:
+            with self._opener(http_request, timeout=timeout_seconds) as response:
                 status_code = int(getattr(response, "status", 200))
                 body = response.read()
         except TimeoutError as exc:
