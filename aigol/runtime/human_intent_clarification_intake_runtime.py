@@ -171,11 +171,14 @@ def _continuation_intent(normalized: str) -> dict[str, Any] | None:
         "nadaljuj",
         "continue",
         "continue this",
+        "continue the project",
         "go on",
         "resume",
         "proceed",
     )
     signals = [term for term in continuation_terms if normalized == term]
+    if not signals and normalized in {"continue project", "resume the project", "resume project"}:
+        signals = [normalized]
     if signals:
         return {"intent_family": CONTINUATION_INTENT, "confidence": "LOW", "signals": signals}
     return None
