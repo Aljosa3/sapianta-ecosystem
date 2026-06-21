@@ -18,6 +18,7 @@ from aigol.runtime.first_live_provider_execution_runtime import (
     run_first_live_provider_execution_runtime,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.provider_credential_vault import retrieve_provider_credential
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -56,6 +57,7 @@ def run_first_live_provider_operator_entrypoint(
     model: str = "gpt-5.1",
     timeout_seconds: int = 20,
     live_transport_enabled: bool = False,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run one operator-confirmed OpenAI dispatch through the governed execution runtime."""
 
@@ -71,8 +73,8 @@ def run_first_live_provider_operator_entrypoint(
             created_at=created_at,
             confirm_dispatch=confirm_dispatch,
         )
-        credential_reference = "env:AIGOL_OPENAI_API_KEY"
-        _verify_credential_available(credential_reference)
+        credential_reference = "vault://provider/openai" if vault_path is not None else "env:AIGOL_OPENAI_API_KEY"
+        _verify_credential_available(credential_reference, vault_path=vault_path)
         request_artifact = create_operator_dispatch_request_artifact(
             operator_request_id=request_id,
             operator_id=operator_id,
@@ -95,6 +97,7 @@ def run_first_live_provider_operator_entrypoint(
             model=model,
             timeout_seconds=timeout_seconds,
             live_transport_enabled=live_transport_enabled,
+            vault_path=vault_path,
         )
         result_artifact = create_operator_dispatch_result_artifact(
             operator_request_artifact=request_artifact,
@@ -360,8 +363,16 @@ def _validate_operator_dispatch_request(
     _reject_forbidden_flags(dispatch_authorization_artifact)
 
 
-def _verify_credential_available(credential_reference: str) -> None:
+def _verify_credential_available(credential_reference: str, *, vault_path: str | Path | None = None) -> None:
     reference = _require_string(credential_reference, "credential_reference")
+    if reference == "vault://provider/openai":
+        retrieve_provider_credential(
+            provider_id="openai",
+            authorization_context={"runtime": MILESTONE_ID},
+            vault_path=vault_path,
+            allow_env_fallback=False,
+        )
+        return
     if reference != "env:AIGOL_OPENAI_API_KEY":
         raise FailClosedRuntimeError("first live provider operator entrypoint failed closed: unsupported credential reference")
     value = os.environ.get("AIGOL_OPENAI_API_KEY")

@@ -24,6 +24,7 @@ from aigol.runtime.first_live_provider_operator_entrypoint import (
     reconstruct_first_live_provider_operator_entrypoint_replay,
 )
 from aigol.runtime.live_openai_executor import create_governed_live_openai_executor
+from aigol.runtime.provider_credential_vault import retrieve_provider_credential
 from aigol.runtime.provider_governance_runtime import (
     execute_provider_lifecycle_operation,
     record_cognition_participation,
@@ -50,11 +51,15 @@ def run_first_live_cognition_provider_certification(
     expires_at: str = EXPIRES_AT,
     transport: BoundaryTransport | None = None,
     require_openai_api_key_marker: bool = True,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run the bounded first live cognition-provider certification sequence."""
 
-    preflight = _credential_preflight(require_openai_api_key_marker=require_openai_api_key_marker)
-    if not preflight["aigol_openai_api_key_present"]:
+    preflight = _credential_preflight(
+        require_openai_api_key_marker=require_openai_api_key_marker,
+        vault_path=vault_path,
+    )
+    if not preflight["credential_available"]:
         return _aborted_capture("AIGOL_OPENAI_API_KEY_MISSING", preflight)
     if require_openai_api_key_marker and not preflight["openai_api_key_present"]:
         return _aborted_capture("OPENAI_API_KEY_MISSING", preflight)
@@ -102,6 +107,7 @@ def run_first_live_cognition_provider_certification(
         transport=transport if transport is not None else create_governed_live_openai_executor(),
         confirm_dispatch=True,
         live_transport_enabled=True,
+        vault_path=vault_path,
     )
 
     activation_replay = reconstruct_first_live_provider_activation_package(activation_dir)
@@ -147,6 +153,7 @@ def run_first_live_cognition_provider_certification(
         "authorization_header_replayed": bool(operator_result.get("authorization_header_replayed")),
         "operator_final_status": operator_result.get("final_status"),
         "failure_reason": operator_result.get("failure_reason"),
+        "credential_source": preflight.get("credential_source"),
     }
     provider_governance_replay = _record_provider_governance_observability(
         provider_governance_dir=provider_governance_dir,
@@ -218,6 +225,8 @@ def main() -> int:
     preflight = result["preflight"]
     print(f"AIGOL_OPENAI_API_KEY_PRESENT={preflight['aigol_openai_api_key_present']}")
     print(f"OPENAI_API_KEY_PRESENT={preflight['openai_api_key_present']}")
+    print(f"VAULT_OPENAI_CREDENTIAL_PRESENT={preflight.get('vault_openai_credential_present', False)}")
+    print(f"CREDENTIAL_SOURCE={preflight.get('credential_source')}")
     if result.get("aborted_before_certification"):
         print(f"ABORTED_BEFORE_CERTIFICATION={result['aborted_reason']}")
         return 2
@@ -232,10 +241,33 @@ def main() -> int:
     return 0 if result["final_verdict"] == "FIRST_LIVE_COGNITION_PROVIDER_CERTIFIED" else 1
 
 
-def _credential_preflight(*, require_openai_api_key_marker: bool) -> dict[str, bool]:
+def _credential_preflight(
+    *,
+    require_openai_api_key_marker: bool,
+    vault_path: str | Path | None = None,
+) -> dict[str, Any]:
+    env_present = bool(os.environ.get("AIGOL_OPENAI_API_KEY"))
+    marker_present = bool(os.environ.get("OPENAI_API_KEY")) if require_openai_api_key_marker else True
+    vault_present = False
+    credential_source = "env:AIGOL_OPENAI_API_KEY" if env_present else None
+    if vault_path is not None:
+        try:
+            retrieve_provider_credential(
+                provider_id="openai",
+                authorization_context={"runtime": MILESTONE_ID, "stage": "credential_preflight"},
+                vault_path=vault_path,
+                allow_env_fallback=False,
+            )
+            vault_present = True
+            credential_source = "vault://provider/openai"
+        except Exception:
+            vault_present = False
     return {
-        "aigol_openai_api_key_present": bool(os.environ.get("AIGOL_OPENAI_API_KEY")),
-        "openai_api_key_present": bool(os.environ.get("OPENAI_API_KEY")) if require_openai_api_key_marker else True,
+        "aigol_openai_api_key_present": env_present,
+        "openai_api_key_present": marker_present,
+        "vault_openai_credential_present": vault_present,
+        "credential_source": credential_source,
+        "credential_available": env_present or vault_present,
     }
 
 

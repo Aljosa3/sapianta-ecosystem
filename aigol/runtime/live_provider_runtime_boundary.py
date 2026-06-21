@@ -36,6 +36,7 @@ from aigol.runtime.llm_cognition_provider_runtime import (
     create_default_openai_cognition_provider_contract,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.provider_credential_vault import retrieve_provider_credential
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -148,6 +149,7 @@ def run_live_provider_runtime_boundary(
     timeout_seconds: int = 20,
     transport: BoundaryTransport | None = None,
     live_transport_enabled: bool = False,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run the live provider boundary through deterministic or governed live transport."""
 
@@ -191,6 +193,7 @@ def run_live_provider_runtime_boundary(
             approval_artifact=approval,
             credential_policy_artifact=credential_policy,
             created_at=created_at,
+            vault_path=vault_path,
         )
         request_envelope = create_live_request_envelope(
             invocation_id=invocation,
@@ -219,6 +222,7 @@ def run_live_provider_runtime_boundary(
                 transport=transport,
                 request_envelope=request_envelope,
                 credential_policy_artifact=credential_policy,
+                vault_path=vault_path,
             )
         else:
             raw_response = _invoke_deterministic_transport(
@@ -386,14 +390,23 @@ def retrieve_live_provider_credential(
     approval_artifact: dict[str, Any],
     credential_policy_artifact: dict[str, Any],
     created_at: str,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     approval = validate_live_provider_approval(approval_artifact)
     policy = validate_live_provider_credential_policy(credential_policy_artifact)
     reference = policy["credential_reference"]
-    env_name = reference.removeprefix("env:")
-    secret = os.environ.get(env_name)
-    if not isinstance(secret, str) or not secret.strip():
-        raise FailClosedRuntimeError("live provider boundary failed closed: credential unavailable")
+    if reference == "vault://provider/openai":
+        retrieve_provider_credential(
+            provider_id=OPENAI_PROVIDER_ID,
+            authorization_context={"runtime": MILESTONE_ID, "retrieval_id": retrieval_id},
+            vault_path=vault_path,
+            allow_env_fallback=False,
+        )
+    else:
+        env_name = reference.removeprefix("env:")
+        secret = os.environ.get(env_name)
+        if not isinstance(secret, str) or not secret.strip():
+            raise FailClosedRuntimeError("live provider boundary failed closed: credential unavailable")
     artifact = {
         "artifact_type": LIVE_PROVIDER_CREDENTIAL_RETRIEVAL_ATTEMPT_ARTIFACT_V1,
         "runtime_version": MILESTONE_ID,
@@ -900,6 +913,7 @@ def _invoke_governed_live_transport(
     transport: BoundaryTransport,
     request_envelope: dict[str, Any],
     credential_policy_artifact: dict[str, Any],
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     if _is_governed_live_transport(transport) is not True:
         raise FailClosedRuntimeError("live provider boundary failed closed: live OpenAI transport is not implemented")
@@ -911,7 +925,7 @@ def _invoke_governed_live_transport(
         "timeout_seconds": request_envelope["timeout_seconds"],
         "live_provider_call_performed": True,
         "credential_secret_replayed": False,
-        "_credential_secret": _read_boundary_credential_secret(credential_policy_artifact),
+        "_credential_secret": _read_boundary_credential_secret(credential_policy_artifact, vault_path=vault_path),
     }
     try:
         response = transport(payload, metadata)
@@ -941,9 +955,24 @@ def _is_governed_live_transport(transport: Any) -> bool:
     return getattr(transport, "aigol_governed_live_openai_executor_v1", False) is True
 
 
-def _read_boundary_credential_secret(credential_policy_artifact: dict[str, Any]) -> str:
+def _read_boundary_credential_secret(
+    credential_policy_artifact: dict[str, Any],
+    *,
+    vault_path: str | Path | None = None,
+) -> str:
     policy = validate_live_provider_credential_policy(credential_policy_artifact)
     reference = policy["credential_reference"]
+    if reference == "vault://provider/openai":
+        credential = retrieve_provider_credential(
+            provider_id=OPENAI_PROVIDER_ID,
+            authorization_context={"runtime": MILESTONE_ID, "boundary": "live_provider_transport"},
+            vault_path=vault_path,
+            allow_env_fallback=False,
+        )
+        secret = credential.get("_credential_secret")
+        if not isinstance(secret, str) or not secret.strip():
+            raise FailClosedRuntimeError("live provider boundary failed closed: credential unavailable")
+        return secret
     env_name = reference.removeprefix("env:")
     secret = os.environ.get(env_name)
     if not isinstance(secret, str) or not secret.strip():
@@ -1297,7 +1326,7 @@ def _endpoint_host(endpoint: Any) -> str:
 
 
 def _is_allowed_credential_reference(value: Any) -> bool:
-    return isinstance(value, str) and value == "env:AIGOL_OPENAI_API_KEY"
+    return isinstance(value, str) and value in {"env:AIGOL_OPENAI_API_KEY", "vault://provider/openai"}
 
 
 def _normalize_timeout(value: int) -> int:

@@ -28,6 +28,7 @@ from aigol.runtime.live_provider_runtime_boundary import (
     run_live_provider_runtime_boundary,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.provider_credential_vault import retrieve_provider_credential
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -84,6 +85,7 @@ def run_first_live_provider_execution_runtime(
     model: str = "gpt-5.1",
     timeout_seconds: int = 20,
     live_transport_enabled: bool = False,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Execute one authorized OpenAI dispatch attempt through the governed boundary."""
 
@@ -116,6 +118,7 @@ def run_first_live_provider_execution_runtime(
             credential_policy_artifact=activation_package["credential_policy"],
             credential_availability_artifact=activation_package["credential_availability"],
             created_at=created_at,
+            vault_path=vault_path,
         )
         approval_view = create_live_provider_invocation_approval(
             approval_id=f"{execution}:LIVE_PROVIDER_APPROVAL_VIEW",
@@ -130,7 +133,7 @@ def run_first_live_provider_execution_runtime(
         credential_policy_view = create_live_provider_credential_policy(
             policy_id=f"{execution}:LIVE_PROVIDER_CREDENTIAL_POLICY_VIEW",
             provider_id=OPENAI_PROVIDER_ID,
-            credential_reference="env:AIGOL_OPENAI_API_KEY",
+            credential_reference="vault://provider/openai" if vault_path is not None else "env:AIGOL_OPENAI_API_KEY",
             created_at=created_at,
         )
         boundary = run_live_provider_runtime_boundary(
@@ -144,6 +147,7 @@ def run_first_live_provider_execution_runtime(
             timeout_seconds=timeout_seconds,
             transport=transport,
             live_transport_enabled=live_transport_enabled,
+            vault_path=vault_path,
         )
         transport_evidence = create_live_transport_execution_evidence(
             evidence_id=f"{execution}:LIVE_TRANSPORT_EVIDENCE",
@@ -371,6 +375,7 @@ def create_execution_credential_revalidation(
     credential_policy_artifact: dict[str, Any],
     credential_availability_artifact: dict[str, Any],
     created_at: str,
+    vault_path: str | Path | None = None,
 ) -> dict[str, Any]:
     dispatch_authorization = _validate_dispatch_authorization(dispatch_authorization_artifact, created_at)
     _verify_artifact_hash(credential_policy_artifact, "credential policy")
@@ -378,10 +383,22 @@ def create_execution_credential_revalidation(
     if credential_availability_artifact.get("credential_available") is not True:
         raise FailClosedRuntimeError("first live provider execution failed closed: credential unavailable")
     reference = _require_string(credential_policy_artifact.get("credential_reference"), "credential_reference")
-    if not reference.startswith("env:"):
+    credential_reference_type = "env"
+    credential_present = False
+    if vault_path is not None:
+        retrieve_provider_credential(
+            provider_id=OPENAI_PROVIDER_ID,
+            authorization_context={"runtime": MILESTONE_ID, "revalidation_id": revalidation_id},
+            vault_path=vault_path,
+            allow_env_fallback=False,
+        )
+        credential_present = True
+        credential_reference_type = "vault"
+    elif not reference.startswith("env:"):
         raise FailClosedRuntimeError("first live provider execution failed closed: unsupported credential reference")
-    env_name = "AIGOL_OPENAI_API_KEY" if reference == "env:OPENAI_PROVIDER_CREDENTIAL" else reference.removeprefix("env:")
-    credential_present = isinstance(os.environ.get(env_name), str) and bool(os.environ.get(env_name, "").strip())
+    else:
+        env_name = "AIGOL_OPENAI_API_KEY" if reference == "env:OPENAI_PROVIDER_CREDENTIAL" else reference.removeprefix("env:")
+        credential_present = isinstance(os.environ.get(env_name), str) and bool(os.environ.get(env_name, "").strip())
     if not credential_present:
         raise FailClosedRuntimeError("first live provider execution failed closed: credential unavailable")
     artifact = {
@@ -394,7 +411,7 @@ def create_execution_credential_revalidation(
         "provider_id": OPENAI_PROVIDER_ID,
         "credential_freshness_revalidation": "PASS",
         "credential_available": True,
-        "credential_reference_type": "env",
+        "credential_reference_type": credential_reference_type,
         "credential_value_omitted": True,
         "credential_secret_replayed": False,
         "authorization_header_replayed": False,
