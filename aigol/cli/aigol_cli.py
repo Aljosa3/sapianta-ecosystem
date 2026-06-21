@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from copy import deepcopy
 import json
+import os
 import select
 import sys
 import time
@@ -94,6 +95,17 @@ from aigol.runtime.provider_governance_runtime import (
     query_provider_status,
     query_provider_usage,
     render_provider_governance_query,
+)
+from aigol.runtime.provider_credential_vault import (
+    DEFAULT_VAULT_PATH,
+    add_provider_credential,
+    delete_provider_credential,
+    disable_provider_credential,
+    provider_credential_diagnostic,
+    provider_credential_history,
+    retrieve_provider_credential,
+    rotate_provider_credential,
+    verify_provider_credential,
 )
 from aigol.cli.commands.moc import (
     append_ledger_command,
@@ -2591,6 +2603,27 @@ def build_parser() -> argparse.ArgumentParser:
         provider_governance_query = provider_governance_sub.add_parser(governance_query)
         provider_governance_query.add_argument("--replay-root", default=".")
         provider_governance_query.add_argument("--json", action="store_true")
+    provider_credential = provider_sub.add_parser("credential")
+    provider_credential_sub = provider_credential.add_subparsers(dest="provider_credential_command", required=True)
+    for credential_command in ("add", "rotate"):
+        provider_credential_mutation = provider_credential_sub.add_parser(credential_command)
+        provider_credential_mutation.add_argument("provider_id")
+        provider_credential_mutation.add_argument("--credential-env", default="AIGOL_PROVIDER_CREDENTIAL_INPUT")
+        provider_credential_mutation.add_argument("--vault-path", default=str(DEFAULT_VAULT_PATH))
+        provider_credential_mutation.add_argument("--replay-root", default=".aigol_provider_credential_vault")
+        provider_credential_mutation.add_argument("--created-at", default="2026-06-21T00:00:00Z")
+        provider_credential_mutation.add_argument("--human-approved", action="store_true")
+        provider_credential_mutation.add_argument("--approved-by", default="human.operator")
+        provider_credential_mutation.add_argument("--json", action="store_true")
+    for credential_command in ("verify", "disable", "delete", "history", "status"):
+        provider_credential_query = provider_credential_sub.add_parser(credential_command)
+        provider_credential_query.add_argument("provider_id")
+        provider_credential_query.add_argument("--vault-path", default=str(DEFAULT_VAULT_PATH))
+        provider_credential_query.add_argument("--replay-root", default=".aigol_provider_credential_vault")
+        provider_credential_query.add_argument("--created-at", default="2026-06-21T00:00:00Z")
+        provider_credential_query.add_argument("--human-approved", action="store_true")
+        provider_credential_query.add_argument("--approved-by", default="human.operator")
+        provider_credential_query.add_argument("--json", action="store_true")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -7779,6 +7812,42 @@ def _conversational_workflow_capture(
     }
 
 
+def _provider_credential_value_from_env(env_name: str) -> str:
+    name = _require_cli_string(env_name, "credential_env")
+    value = os.environ.get(name)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} is required for provider credential command")
+    return value.strip()
+
+
+def _provider_credential_approval_artifact(args: argparse.Namespace) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": "PROVIDER_CREDENTIAL_ACLI_HUMAN_APPROVAL_ARTIFACT_V1",
+        "operation": args.provider_credential_command.upper(),
+        "provider_id": args.provider_id,
+        "approval_status": "APPROVED",
+        "approved_by": args.approved_by,
+        "created_at": args.created_at,
+        "credential_value_recorded": False,
+        "credential_hash_recorded": False,
+        "authorization_header_recorded": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _provider_credential_command_result(args: argparse.Namespace, artifact: dict[str, Any], replay_dir: Path) -> dict:
+    return {
+        "command": f"aigol provider credential {args.provider_credential_command}",
+        "operation": args.provider_credential_command.upper(),
+        "provider_id": args.provider_id,
+        "vault_path": args.vault_path,
+        "replay_reference": str(replay_dir),
+        "artifact": artifact,
+        "replay_visible": True,
+    }
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -7948,6 +8017,62 @@ def run_command(args: argparse.Namespace) -> dict:
             "rows": rows,
             "replay_visible": True,
         }
+    if args.command == "provider" and args.provider_command == "credential":
+        credential_command = args.provider_credential_command
+        replay_dir = Path(args.replay_root) / args.provider_id / credential_command
+        approval = _provider_credential_approval_artifact(args) if args.human_approved else None
+        if credential_command == "add":
+            event = add_provider_credential(
+                provider_id=args.provider_id,
+                credential_value=_provider_credential_value_from_env(args.credential_env),
+                created_at=args.created_at,
+                vault_path=args.vault_path,
+                replay_dir=replay_dir,
+                human_approval_artifact=approval,
+            )
+            return _provider_credential_command_result(args, event, replay_dir)
+        if credential_command == "rotate":
+            event = rotate_provider_credential(
+                provider_id=args.provider_id,
+                credential_value=_provider_credential_value_from_env(args.credential_env),
+                created_at=args.created_at,
+                vault_path=args.vault_path,
+                replay_dir=replay_dir,
+                human_approval_artifact=approval,
+            )
+            return _provider_credential_command_result(args, event, replay_dir)
+        if credential_command == "verify":
+            event = verify_provider_credential(
+                provider_id=args.provider_id,
+                created_at=args.created_at,
+                vault_path=args.vault_path,
+                replay_dir=replay_dir,
+            )
+            return _provider_credential_command_result(args, event, replay_dir)
+        if credential_command == "disable":
+            event = disable_provider_credential(
+                provider_id=args.provider_id,
+                created_at=args.created_at,
+                human_approval_artifact=approval,
+                vault_path=args.vault_path,
+                replay_dir=replay_dir,
+            )
+            return _provider_credential_command_result(args, event, replay_dir)
+        if credential_command == "delete":
+            event = delete_provider_credential(
+                provider_id=args.provider_id,
+                created_at=args.created_at,
+                human_approval_artifact=approval,
+                vault_path=args.vault_path,
+                replay_dir=replay_dir,
+            )
+            return _provider_credential_command_result(args, event, replay_dir)
+        if credential_command == "history":
+            history = provider_credential_history(provider_id=args.provider_id, vault_path=args.vault_path)
+            return _provider_credential_command_result(args, history, replay_dir)
+        if credential_command == "status":
+            diagnostic = provider_credential_diagnostic(provider_id=args.provider_id, vault_path=args.vault_path)
+            return _provider_credential_command_result(args, diagnostic, replay_dir)
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -8305,6 +8430,22 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL PROVIDER GOVERNANCE",
             render_provider_governance_query(result.get("query", "status"), result.get("rows", [])).splitlines(),
+        )
+    if command.startswith("aigol provider credential "):
+        artifact = result.get("artifact", {})
+        return render_card(
+            "AIGOL PROVIDER CREDENTIAL",
+            [
+                f"operation: {result.get('operation')}",
+                f"provider_id: {result.get('provider_id')}",
+                f"credential_reference: {artifact.get('credential_reference')}",
+                f"credential_present: {artifact.get('credential_present')}",
+                f"credential_enabled: {artifact.get('credential_enabled')}",
+                f"display_identifier: {artifact.get('display_identifier')}",
+                f"credential_value_recorded: {artifact.get('credential_value_recorded')}",
+                f"credential_hash_recorded: {artifact.get('credential_hash_recorded')}",
+                f"replay_reference: {result.get('replay_reference')}",
+            ],
         )
     if command in {
         "aigol approval list",
