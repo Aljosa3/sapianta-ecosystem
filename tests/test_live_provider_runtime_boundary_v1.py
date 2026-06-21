@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+import socket
+import ssl
+from urllib import error as urllib_error
 
 import pytest
 
@@ -31,6 +34,7 @@ from aigol.runtime.live_provider_runtime_boundary import (
     LIVE_PROVIDER_REQUEST_ENVELOPE_ARTIFACT_V1,
     LIVE_PROVIDER_RESPONSE_ENVELOPE_ARTIFACT_V1,
     LIVE_PROVIDER_RUNTIME_BOUNDARY_AUDIT_ARTIFACT_V1,
+    LIVE_PROVIDER_TRANSPORT_DIAGNOSTIC_ENVELOPE_ARTIFACT_V1,
     MILESTONE_ID,
     STATUS_COMPLETED,
     STATUS_FAILED_CLOSED,
@@ -38,7 +42,7 @@ from aigol.runtime.live_provider_runtime_boundary import (
     run_live_provider_runtime_boundary,
 )
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import load_json
+from aigol.runtime.transport.serialization import canonical_serialize, load_json
 
 
 CREATED_AT = "2026-06-16T00:00:00+00:00"
@@ -82,6 +86,19 @@ def _transport(response_text: str = "Boundary response captured as non-authorita
             "real_openai_called": False,
         }
 
+    return call
+
+
+def _governed_failure_transport(exc: Exception):
+    def call(payload: dict, metadata: dict) -> dict:
+        assert payload["stream"] is False
+        assert metadata["provider_id"] == OPENAI_PROVIDER_ID
+        assert metadata["credential_secret_replayed"] is False
+        assert metadata["live_provider_call_performed"] is True
+        assert "_credential_secret" in metadata
+        raise exc
+
+    call.aigol_governed_live_openai_executor_v1 = True
     return call
 
 
@@ -242,6 +259,98 @@ def test_live_provider_boundary_classifies_authority_bearing_response(tmp_path, 
     assert result["final_status"] == STATUS_FAILED_CLOSED
     assert result["live_error_envelope_artifact"]["error_classification"] == ERROR_AUTHORITY_BOUNDARY_VIOLATION
     assert result["worker_invoked"] is False
+
+
+def test_live_provider_boundary_records_dns_transport_diagnostic(tmp_path, monkeypatch):
+    result = _run(
+        tmp_path,
+        monkeypatch,
+        transport=_governed_failure_transport(
+            urllib_error.URLError(socket.gaierror("Name or service not known"))
+        ),
+        live_transport_enabled=True,
+    )
+    replay = reconstruct_live_provider_runtime_boundary_replay(tmp_path / "live_boundary")
+    diagnostic = result["live_transport_diagnostic_envelope_artifact"]
+
+    assert result["final_status"] == STATUS_FAILED_CLOSED
+    assert diagnostic["artifact_type"] == LIVE_PROVIDER_TRANSPORT_DIAGNOSTIC_ENVELOPE_ARTIFACT_V1
+    assert diagnostic["exception_type"] == "URLError"
+    assert diagnostic["exception_category"] == "DNS_FAILURE"
+    assert diagnostic["transport_stage"] == "DNS_RESOLUTION"
+    assert diagnostic["endpoint_host"] == "api.openai.com"
+    assert diagnostic["dns_resolution_attempted"] is True
+    assert diagnostic["tls_handshake_attempted"] is False
+    assert diagnostic["http_request_attempted"] is False
+    assert diagnostic["response_received"] is False
+    assert diagnostic["dependency_failure_classification"] == "UNREACHABLE_SERVICE"
+    assert result["live_error_envelope_artifact"]["transport_diagnostic_artifact_hash"] == diagnostic["artifact_hash"]
+    assert result["live_boundary_audit_artifact"]["transport_diagnostic_artifact_hash"] == diagnostic["artifact_hash"]
+    assert replay["replay_artifact_count"] == 5
+    assert (tmp_path / "live_boundary" / "002_live_provider_transport_diagnostic_envelope.json").exists()
+
+
+def test_live_provider_boundary_records_tls_transport_diagnostic(tmp_path, monkeypatch):
+    result = _run(
+        tmp_path,
+        monkeypatch,
+        transport=_governed_failure_transport(
+            urllib_error.URLError(ssl.SSLError("CERTIFICATE_VERIFY_FAILED"))
+        ),
+        live_transport_enabled=True,
+    )
+    diagnostic = result["live_transport_diagnostic_envelope_artifact"]
+
+    assert result["final_status"] == STATUS_FAILED_CLOSED
+    assert diagnostic["exception_type"] == "URLError"
+    assert diagnostic["exception_category"] == "TLS_FAILURE"
+    assert diagnostic["transport_stage"] == "TLS_HANDSHAKE"
+    assert diagnostic["dns_resolution_attempted"] is False
+    assert diagnostic["tls_handshake_attempted"] is True
+    assert diagnostic["http_request_attempted"] is False
+    assert diagnostic["response_received"] is False
+
+
+def test_live_provider_boundary_records_generic_transport_diagnostic(tmp_path, monkeypatch):
+    result = _run(
+        tmp_path,
+        monkeypatch,
+        transport=_governed_failure_transport(RuntimeError("opaque transport failed")),
+        live_transport_enabled=True,
+    )
+    diagnostic = result["live_transport_diagnostic_envelope_artifact"]
+
+    assert result["final_status"] == STATUS_FAILED_CLOSED
+    assert diagnostic["exception_type"] == "RuntimeError"
+    assert diagnostic["exception_category"] == "UNKNOWN_TRANSPORT_FAILURE"
+    assert diagnostic["transport_stage"] == "UNKNOWN"
+    assert diagnostic["http_request_attempted"] is True
+    assert diagnostic["response_received"] is False
+    assert diagnostic["dependency_failure_classification"] == "UNKNOWN_DEPENDENCY_FAILURE"
+
+
+def test_live_provider_boundary_transport_diagnostic_does_not_replay_secrets_or_payload(tmp_path, monkeypatch):
+    monkeypatch.setenv("AIGOL_OPENAI_API_KEY", "sk-test-live-secret")
+    result = run_live_provider_runtime_boundary(
+        invocation_id="LIVE-BOUNDARY-SECRET-DIAGNOSTIC",
+        human_request="This prompt content must not appear in the transport diagnostic.",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "live_boundary",
+        approval_artifact=_approval(tmp_path),
+        credential_policy_artifact=_credential_policy(),
+        transport=_governed_failure_transport(RuntimeError("opaque transport failed")),
+        live_transport_enabled=True,
+    )
+    diagnostic = result["live_transport_diagnostic_envelope_artifact"]
+    serialized = canonical_serialize(diagnostic)
+
+    assert diagnostic["credential_secret_replayed"] is False
+    assert diagnostic["authorization_header_replayed"] is False
+    assert diagnostic["request_payload_replayed"] is False
+    assert diagnostic["secret_value_replayed"] is False
+    assert "sk-test-live-secret" not in serialized
+    assert "Bearer" not in serialized
+    assert "This prompt content" not in serialized
 
 
 def test_live_provider_boundary_rejects_transport_that_claims_real_openai_call(tmp_path, monkeypatch):

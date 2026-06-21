@@ -6,6 +6,8 @@ from copy import deepcopy
 import os
 from pathlib import Path
 from typing import Any, Callable
+from urllib import error as urllib_error
+from urllib.parse import urlparse
 
 from aigol.runtime.external_resource_registry_runtime import (
     COGNITION_PROVIDER,
@@ -46,6 +48,9 @@ LIVE_PROVIDER_CREDENTIAL_USE_BOUNDARY_ARTIFACT_V1 = "LIVE_PROVIDER_CREDENTIAL_US
 LIVE_PROVIDER_REQUEST_ENVELOPE_ARTIFACT_V1 = "LIVE_PROVIDER_REQUEST_ENVELOPE_ARTIFACT_V1"
 LIVE_PROVIDER_RESPONSE_ENVELOPE_ARTIFACT_V1 = "LIVE_PROVIDER_RESPONSE_ENVELOPE_ARTIFACT_V1"
 LIVE_PROVIDER_ERROR_ENVELOPE_ARTIFACT_V1 = "LIVE_PROVIDER_ERROR_ENVELOPE_ARTIFACT_V1"
+LIVE_PROVIDER_TRANSPORT_DIAGNOSTIC_ENVELOPE_ARTIFACT_V1 = (
+    "LIVE_PROVIDER_TRANSPORT_DIAGNOSTIC_ENVELOPE_ARTIFACT_V1"
+)
 LIVE_PROVIDER_RUNTIME_BOUNDARY_AUDIT_ARTIFACT_V1 = "LIVE_PROVIDER_RUNTIME_BOUNDARY_AUDIT_ARTIFACT_V1"
 
 STATUS_COMPLETED = "COMPLETED"
@@ -76,6 +81,38 @@ REPLAY_STEPS_ERROR = (
     "live_provider_error_envelope",
     "live_provider_runtime_boundary_audit",
 )
+
+REPLAY_STEPS_ERROR_ENRICHED = (
+    "live_provider_credential_retrieval_attempt",
+    "live_provider_request_envelope",
+    "live_provider_transport_diagnostic_envelope",
+    "live_provider_error_envelope",
+    "live_provider_runtime_boundary_audit",
+)
+
+EXCEPTION_CATEGORY_DNS_FAILURE = "DNS_FAILURE"
+EXCEPTION_CATEGORY_TLS_FAILURE = "TLS_FAILURE"
+EXCEPTION_CATEGORY_PROXY_FAILURE = "PROXY_FAILURE"
+EXCEPTION_CATEGORY_FIREWALL_OR_NETWORK_FAILURE = "FIREWALL_OR_NETWORK_FAILURE"
+EXCEPTION_CATEGORY_TIMEOUT = "TIMEOUT"
+EXCEPTION_CATEGORY_RATE_LIMIT = "RATE_LIMIT"
+EXCEPTION_CATEGORY_HTTP_STATUS_ERROR = "HTTP_STATUS_ERROR"
+EXCEPTION_CATEGORY_AUTHENTICATION_OR_AUTHORIZATION_FAILURE = "AUTHENTICATION_OR_AUTHORIZATION_FAILURE"
+EXCEPTION_CATEGORY_MALFORMED_RESPONSE = "MALFORMED_RESPONSE"
+EXCEPTION_CATEGORY_TRANSPORT_UNAVAILABLE = "TRANSPORT_UNAVAILABLE"
+EXCEPTION_CATEGORY_UNKNOWN_TRANSPORT_FAILURE = "UNKNOWN_TRANSPORT_FAILURE"
+
+DEPENDENCY_FAILURE_UNREACHABLE_SERVICE = "UNREACHABLE_SERVICE"
+DEPENDENCY_FAILURE_AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE"
+DEPENDENCY_FAILURE_DEPENDENCY_UNAVAILABLE = "DEPENDENCY_UNAVAILABLE"
+DEPENDENCY_FAILURE_UNKNOWN = "UNKNOWN_DEPENDENCY_FAILURE"
+
+TRANSPORT_STAGE_DNS_RESOLUTION = "DNS_RESOLUTION"
+TRANSPORT_STAGE_TLS_HANDSHAKE = "TLS_HANDSHAKE"
+TRANSPORT_STAGE_HTTP_REQUEST = "HTTP_REQUEST"
+TRANSPORT_STAGE_HTTP_RESPONSE_STATUS = "HTTP_RESPONSE_STATUS"
+TRANSPORT_STAGE_RESPONSE_VALIDATION = "RESPONSE_VALIDATION"
+TRANSPORT_STAGE_UNKNOWN = "UNKNOWN"
 
 PROHIBITED_RESPONSE_PHRASES = (
     "i approve",
@@ -118,6 +155,7 @@ def run_live_provider_runtime_boundary(
     invocation = _require_string(invocation_id, "invocation_id")
     retrieval: dict[str, Any] | None = None
     request_envelope: dict[str, Any] | None = None
+    transport_diagnostic: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
         governed_live_transport = _is_governed_live_transport(transport)
@@ -231,6 +269,7 @@ def run_live_provider_runtime_boundary(
             use_boundary=use_boundary,
             response_envelope=response_envelope,
             error_envelope=None,
+            transport_diagnostic=None,
             canonical_contract=canonical_contract,
             canonical_input=canonical_input,
             canonical_output=canonical_output,
@@ -252,12 +291,21 @@ def run_live_provider_runtime_boundary(
                 failure_reason=reason,
                 created_at=created_at,
             )
+        if request_envelope.get("live_transport_enabled") is True:
+            transport_diagnostic = create_live_transport_diagnostic_envelope(
+                invocation_id=invocation,
+                request_envelope_artifact=request_envelope,
+                failure_reason=reason,
+                exception=exc,
+                created_at=created_at,
+            )
         error_envelope = create_live_error_envelope(
             invocation_id=invocation,
             request_envelope_artifact=request_envelope,
             error_classification=classification,
             failure_reason=reason,
             created_at=created_at,
+            transport_diagnostic_artifact=transport_diagnostic,
         )
         audit = create_live_boundary_audit(
             invocation_id=invocation,
@@ -268,10 +316,18 @@ def run_live_provider_runtime_boundary(
             credential_use_artifact=None,
             response_envelope_artifact=None,
             error_envelope_artifact=error_envelope,
+            transport_diagnostic_artifact=transport_diagnostic,
             canonical_output_artifact=None,
             failure_reason=reason,
         )
-        _persist_sequence(replay_path, REPLAY_STEPS_ERROR, (retrieval, request_envelope, error_envelope, audit))
+        if transport_diagnostic is not None:
+            _persist_sequence(
+                replay_path,
+                REPLAY_STEPS_ERROR_ENRICHED,
+                (retrieval, request_envelope, transport_diagnostic, error_envelope, audit),
+            )
+        else:
+            _persist_sequence(replay_path, REPLAY_STEPS_ERROR, (retrieval, request_envelope, error_envelope, audit))
         return _capture(
             invocation_id=invocation,
             final_status=STATUS_FAILED_CLOSED,
@@ -282,6 +338,7 @@ def run_live_provider_runtime_boundary(
             use_boundary=None,
             response_envelope=None,
             error_envelope=error_envelope,
+            transport_diagnostic=transport_diagnostic,
             canonical_contract=None,
             canonical_input=None,
             canonical_output=None,
@@ -524,8 +581,11 @@ def create_live_error_envelope(
     error_classification: str,
     failure_reason: str,
     created_at: str,
+    transport_diagnostic_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _verify_artifact_hash(request_envelope_artifact, "request envelope")
+    if transport_diagnostic_artifact is not None:
+        _verify_artifact_hash(transport_diagnostic_artifact, "transport diagnostic envelope")
     live_provider_call_performed = request_envelope_artifact.get("live_transport_enabled") is True
     artifact = {
         "artifact_type": LIVE_PROVIDER_ERROR_ENVELOPE_ARTIFACT_V1,
@@ -533,6 +593,9 @@ def create_live_error_envelope(
         "invocation_id": _require_string(invocation_id, "invocation_id"),
         "provider_id": OPENAI_PROVIDER_ID,
         "request_envelope_artifact_hash": request_envelope_artifact["artifact_hash"],
+        "transport_diagnostic_artifact_hash": (
+            transport_diagnostic_artifact["artifact_hash"] if transport_diagnostic_artifact else None
+        ),
         "error_classification": _require_string(error_classification, "error_classification"),
         "failure_reason": _redact_failure_reason(failure_reason),
         "retry_attempted": False,
@@ -553,6 +616,60 @@ def create_live_error_envelope(
     artifact["error_envelope_hash"] = replay_hash(_error_envelope_hash_input(artifact))
     artifact["artifact_hash"] = replay_hash(artifact)
     _assert_no_secret_material(artifact)
+    return artifact
+
+
+def create_live_transport_diagnostic_envelope(
+    *,
+    invocation_id: str,
+    request_envelope_artifact: dict[str, Any],
+    failure_reason: str,
+    exception: BaseException,
+    created_at: str,
+) -> dict[str, Any]:
+    _verify_artifact_hash(request_envelope_artifact, "request envelope")
+    root = _transport_root_exception(exception)
+    category = _classify_transport_exception(root, failure_reason)
+    stage = _transport_stage_for_category(category)
+    http_status = root.code if isinstance(root, urllib_error.HTTPError) else None
+    artifact = {
+        "artifact_type": LIVE_PROVIDER_TRANSPORT_DIAGNOSTIC_ENVELOPE_ARTIFACT_V1,
+        "runtime_version": MILESTONE_ID,
+        "invocation_id": _require_string(invocation_id, "invocation_id"),
+        "provider_id": OPENAI_PROVIDER_ID,
+        "request_envelope_artifact_hash": request_envelope_artifact["artifact_hash"],
+        "endpoint_host": _endpoint_host(request_envelope_artifact.get("endpoint")),
+        "exception_type": type(root).__name__,
+        "exception_category": category,
+        "transport_stage": stage,
+        "dns_resolution_attempted": stage == TRANSPORT_STAGE_DNS_RESOLUTION,
+        "tls_handshake_attempted": stage == TRANSPORT_STAGE_TLS_HANDSHAKE,
+        "http_request_attempted": _http_request_attempted_for_stage(stage),
+        "response_received": http_status is not None,
+        "http_status_code": http_status,
+        "timeout_seconds": request_envelope_artifact.get("timeout_seconds", 0),
+        "failure_reason": _redact_failure_reason(failure_reason),
+        "dependency_failure_classification": _dependency_failure_for_transport_category(category),
+        "credential_secret_replayed": False,
+        "authorization_header_replayed": False,
+        "request_payload_replayed": False,
+        "secret_value_replayed": False,
+        "retry_attempted": False,
+        "fallback_attempted": False,
+        "provider_invoked": True,
+        "worker_invoked": False,
+        "approval_created": False,
+        "execution_requested": False,
+        "dispatch_requested": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["transport_diagnostic_hash"] = replay_hash(_transport_diagnostic_hash_input(artifact))
+    artifact["artifact_hash"] = replay_hash(artifact)
+    _assert_no_secret_material(artifact)
+    _assert_no_diagnostic_payload_replay(artifact)
     return artifact
 
 
@@ -663,6 +780,7 @@ def create_live_boundary_audit(
     error_envelope_artifact: dict[str, Any] | None,
     canonical_output_artifact: dict[str, Any] | None,
     failure_reason: str,
+    transport_diagnostic_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _verify_artifact_hash(credential_retrieval_artifact, "credential retrieval")
     _verify_artifact_hash(request_envelope_artifact, "request envelope")
@@ -672,6 +790,8 @@ def create_live_boundary_audit(
         _verify_artifact_hash(response_envelope_artifact, "response envelope")
     if error_envelope_artifact is not None:
         _verify_artifact_hash(error_envelope_artifact, "error envelope")
+    if transport_diagnostic_artifact is not None:
+        _verify_artifact_hash(transport_diagnostic_artifact, "transport diagnostic envelope")
     if canonical_output_artifact is not None:
         _verify_artifact_hash(canonical_output_artifact, "canonical output")
     status = _require_string(final_status, "final_status")
@@ -693,6 +813,9 @@ def create_live_boundary_audit(
         "request_envelope_artifact_hash": request_envelope_artifact["artifact_hash"],
         "response_envelope_artifact_hash": response_envelope_artifact["artifact_hash"] if response_envelope_artifact else None,
         "error_envelope_artifact_hash": error_envelope_artifact["artifact_hash"] if error_envelope_artifact else None,
+        "transport_diagnostic_artifact_hash": (
+            transport_diagnostic_artifact["artifact_hash"] if transport_diagnostic_artifact else None
+        ),
         "canonical_output_artifact_hash": canonical_output_artifact["artifact_hash"] if canonical_output_artifact else None,
         "live_provider_call_performed": live_provider_call_performed,
         "deterministic_transport_only": live_provider_call_performed is not True,
@@ -719,6 +842,8 @@ def create_live_boundary_audit(
 def reconstruct_live_provider_runtime_boundary_replay(replay_dir: str | Path) -> dict[str, Any]:
     replay_path = Path(replay_dir)
     wrappers = _load_replay_sequence(replay_path, REPLAY_STEPS_SUCCESS)
+    if not wrappers:
+        wrappers = _load_replay_sequence(replay_path, REPLAY_STEPS_ERROR_ENRICHED)
     if not wrappers:
         wrappers = _load_replay_sequence(replay_path, REPLAY_STEPS_ERROR)
     if not wrappers:
@@ -868,6 +993,7 @@ def _capture(
     use_boundary: dict[str, Any] | None,
     response_envelope: dict[str, Any] | None,
     error_envelope: dict[str, Any] | None,
+    transport_diagnostic: dict[str, Any] | None,
     canonical_contract: dict[str, Any] | None,
     canonical_input: dict[str, Any] | None,
     canonical_output: dict[str, Any] | None,
@@ -884,6 +1010,7 @@ def _capture(
         "live_request_envelope_artifact": deepcopy(request_envelope),
         "live_response_envelope_artifact": deepcopy(response_envelope),
         "live_error_envelope_artifact": deepcopy(error_envelope),
+        "live_transport_diagnostic_envelope_artifact": deepcopy(transport_diagnostic),
         "canonical_provider_contract": deepcopy(canonical_contract),
         "canonical_provider_input": deepcopy(canonical_input),
         "canonical_provider_output": deepcopy(canonical_output),
@@ -965,7 +1092,7 @@ def _failed_request_envelope(*, invocation_id: str, failure_reason: str, created
 
 
 def _ensure_replay_available(replay_path: Path) -> None:
-    for steps in (REPLAY_STEPS_SUCCESS, REPLAY_STEPS_ERROR):
+    for steps in (REPLAY_STEPS_SUCCESS, REPLAY_STEPS_ERROR_ENRICHED, REPLAY_STEPS_ERROR):
         for index, step in enumerate(steps):
             if (replay_path / f"{index:03d}_{step}.json").exists():
                 raise FailClosedRuntimeError("live provider boundary failed closed: replay artifact already exists")
@@ -1029,6 +1156,146 @@ def _classify_error(reason: str) -> str:
     return ERROR_TRANSPORT_UNAVAILABLE
 
 
+def _transport_root_exception(exc: BaseException) -> BaseException:
+    current = exc
+    seen = 0
+    while isinstance(getattr(current, "__cause__", None), BaseException) and seen < 8:
+        current = current.__cause__  # type: ignore[assignment]
+        seen += 1
+    return current
+
+
+def _classify_transport_exception(exc: BaseException, failure_reason: str) -> str:
+    text = f"{type(exc).__name__} {str(exc)}".lower()
+    if isinstance(exc, FailClosedRuntimeError):
+        text = f"{text} {failure_reason}".lower()
+    if isinstance(exc, TimeoutError) or "timeout" in text or "timed out" in text:
+        return EXCEPTION_CATEGORY_TIMEOUT
+    if isinstance(exc, urllib_error.HTTPError):
+        if exc.code == 429:
+            return EXCEPTION_CATEGORY_RATE_LIMIT
+        if exc.code in {401, 403}:
+            return EXCEPTION_CATEGORY_AUTHENTICATION_OR_AUTHORIZATION_FAILURE
+        return EXCEPTION_CATEGORY_HTTP_STATUS_ERROR
+    if isinstance(exc, urllib_error.URLError):
+        reason = getattr(exc, "reason", None)
+        reason_text = f"{type(reason).__name__} {reason}".lower()
+        if _looks_like_dns_failure(reason_text):
+            return EXCEPTION_CATEGORY_DNS_FAILURE
+        if _looks_like_tls_failure(reason_text):
+            return EXCEPTION_CATEGORY_TLS_FAILURE
+        if _looks_like_proxy_failure(reason_text):
+            return EXCEPTION_CATEGORY_PROXY_FAILURE
+        if "timeout" in reason_text or "timed out" in reason_text:
+            return EXCEPTION_CATEGORY_TIMEOUT
+        if _looks_like_network_failure(reason_text):
+            return EXCEPTION_CATEGORY_FIREWALL_OR_NETWORK_FAILURE
+        return EXCEPTION_CATEGORY_TRANSPORT_UNAVAILABLE
+    if _looks_like_dns_failure(text):
+        return EXCEPTION_CATEGORY_DNS_FAILURE
+    if _looks_like_tls_failure(text):
+        return EXCEPTION_CATEGORY_TLS_FAILURE
+    if _looks_like_proxy_failure(text):
+        return EXCEPTION_CATEGORY_PROXY_FAILURE
+    if "rate" in text and "limit" in text:
+        return EXCEPTION_CATEGORY_RATE_LIMIT
+    if "malformed response" in text:
+        return EXCEPTION_CATEGORY_MALFORMED_RESPONSE
+    if _looks_like_network_failure(text):
+        return EXCEPTION_CATEGORY_FIREWALL_OR_NETWORK_FAILURE
+    if "transport unavailable" in text:
+        return EXCEPTION_CATEGORY_TRANSPORT_UNAVAILABLE
+    return EXCEPTION_CATEGORY_UNKNOWN_TRANSPORT_FAILURE
+
+
+def _looks_like_dns_failure(text: str) -> bool:
+    return any(
+        marker in text
+        for marker in (
+            "gaierror",
+            "name or service not known",
+            "temporary failure in name resolution",
+            "nodename nor servname",
+            "getaddrinfo failed",
+            "dns",
+        )
+    )
+
+
+def _looks_like_tls_failure(text: str) -> bool:
+    return any(marker in text for marker in ("ssl", "certificate", "tls", "handshake", "cert_verify_failed"))
+
+
+def _looks_like_proxy_failure(text: str) -> bool:
+    return any(marker in text for marker in ("proxy", "tunnel connection failed"))
+
+
+def _looks_like_network_failure(text: str) -> bool:
+    return any(
+        marker in text
+        for marker in (
+            "connection refused",
+            "network is unreachable",
+            "no route to host",
+            "connection reset",
+            "connection aborted",
+            "connection error",
+            "broken pipe",
+            "firewall",
+            "host unreachable",
+        )
+    )
+
+
+def _transport_stage_for_category(category: str) -> str:
+    if category == EXCEPTION_CATEGORY_DNS_FAILURE:
+        return TRANSPORT_STAGE_DNS_RESOLUTION
+    if category == EXCEPTION_CATEGORY_TLS_FAILURE:
+        return TRANSPORT_STAGE_TLS_HANDSHAKE
+    if category in {
+        EXCEPTION_CATEGORY_PROXY_FAILURE,
+        EXCEPTION_CATEGORY_FIREWALL_OR_NETWORK_FAILURE,
+        EXCEPTION_CATEGORY_TIMEOUT,
+        EXCEPTION_CATEGORY_TRANSPORT_UNAVAILABLE,
+    }:
+        return TRANSPORT_STAGE_HTTP_REQUEST
+    if category in {
+        EXCEPTION_CATEGORY_RATE_LIMIT,
+        EXCEPTION_CATEGORY_HTTP_STATUS_ERROR,
+        EXCEPTION_CATEGORY_AUTHENTICATION_OR_AUTHORIZATION_FAILURE,
+    }:
+        return TRANSPORT_STAGE_HTTP_RESPONSE_STATUS
+    if category == EXCEPTION_CATEGORY_MALFORMED_RESPONSE:
+        return TRANSPORT_STAGE_RESPONSE_VALIDATION
+    return TRANSPORT_STAGE_UNKNOWN
+
+
+def _http_request_attempted_for_stage(stage: str) -> bool:
+    return stage in {
+        TRANSPORT_STAGE_HTTP_REQUEST,
+        TRANSPORT_STAGE_HTTP_RESPONSE_STATUS,
+        TRANSPORT_STAGE_RESPONSE_VALIDATION,
+        TRANSPORT_STAGE_UNKNOWN,
+    }
+
+
+def _dependency_failure_for_transport_category(category: str) -> str:
+    if category == EXCEPTION_CATEGORY_AUTHENTICATION_OR_AUTHORIZATION_FAILURE:
+        return DEPENDENCY_FAILURE_AUTHORIZATION_FAILURE
+    if category == EXCEPTION_CATEGORY_MALFORMED_RESPONSE:
+        return DEPENDENCY_FAILURE_DEPENDENCY_UNAVAILABLE
+    if category == EXCEPTION_CATEGORY_UNKNOWN_TRANSPORT_FAILURE:
+        return DEPENDENCY_FAILURE_UNKNOWN
+    return DEPENDENCY_FAILURE_UNREACHABLE_SERVICE
+
+
+def _endpoint_host(endpoint: Any) -> str:
+    if not isinstance(endpoint, str) or not endpoint.strip():
+        return ""
+    parsed = urlparse(endpoint)
+    return parsed.hostname or ""
+
+
 def _is_allowed_credential_reference(value: Any) -> bool:
     return isinstance(value, str) and value == "env:AIGOL_OPENAI_API_KEY"
 
@@ -1050,6 +1317,12 @@ def _assert_no_secret_material(artifact: dict[str, Any]) -> None:
     serialized = repr(artifact).lower()
     if "sk-" in serialized or "bearer " in serialized or "api_key" in serialized:
         raise FailClosedRuntimeError("live provider boundary failed closed: credential secret replay detected")
+
+
+def _assert_no_diagnostic_payload_replay(artifact: dict[str, Any]) -> None:
+    serialized = repr(artifact).lower()
+    if "bearer" in serialized:
+        raise FailClosedRuntimeError("live provider boundary failed closed: diagnostic payload replay detected")
 
 
 def _reject_mutation_flags(artifact: dict[str, Any]) -> None:
@@ -1145,9 +1418,32 @@ def _error_envelope_hash_input(artifact: dict[str, Any]) -> dict[str, Any]:
         "invocation_id": artifact["invocation_id"],
         "provider_id": artifact["provider_id"],
         "request_envelope_artifact_hash": artifact["request_envelope_artifact_hash"],
+        "transport_diagnostic_artifact_hash": artifact["transport_diagnostic_artifact_hash"],
         "error_classification": artifact["error_classification"],
         "final_status": artifact["final_status"],
         "credential_secret_replayed": artifact["credential_secret_replayed"],
+    }
+
+
+def _transport_diagnostic_hash_input(artifact: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "invocation_id": artifact["invocation_id"],
+        "provider_id": artifact["provider_id"],
+        "request_envelope_artifact_hash": artifact["request_envelope_artifact_hash"],
+        "endpoint_host": artifact["endpoint_host"],
+        "exception_type": artifact["exception_type"],
+        "exception_category": artifact["exception_category"],
+        "transport_stage": artifact["transport_stage"],
+        "dns_resolution_attempted": artifact["dns_resolution_attempted"],
+        "tls_handshake_attempted": artifact["tls_handshake_attempted"],
+        "http_request_attempted": artifact["http_request_attempted"],
+        "response_received": artifact["response_received"],
+        "http_status_code": artifact["http_status_code"],
+        "dependency_failure_classification": artifact["dependency_failure_classification"],
+        "credential_secret_replayed": artifact["credential_secret_replayed"],
+        "authorization_header_replayed": artifact["authorization_header_replayed"],
+        "request_payload_replayed": artifact["request_payload_replayed"],
+        "secret_value_replayed": artifact["secret_value_replayed"],
     }
 
 
@@ -1186,6 +1482,7 @@ def _audit_hash_input(artifact: dict[str, Any]) -> dict[str, Any]:
         "request_envelope_artifact_hash": artifact["request_envelope_artifact_hash"],
         "response_envelope_artifact_hash": artifact["response_envelope_artifact_hash"],
         "error_envelope_artifact_hash": artifact["error_envelope_artifact_hash"],
+        "transport_diagnostic_artifact_hash": artifact["transport_diagnostic_artifact_hash"],
         "canonical_output_artifact_hash": artifact["canonical_output_artifact_hash"],
         "live_provider_call_performed": artifact["live_provider_call_performed"],
         "credential_secret_replayed": artifact["credential_secret_replayed"],
