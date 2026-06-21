@@ -273,7 +273,7 @@ def retrieve_provider_credential(
     replay_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     provider = _provider_id(provider_id)
-    source = "vault"
+    source = PROVIDER_REFERENCES[provider]
     secret_value = None
     diagnostic: dict[str, Any]
     try:
@@ -409,7 +409,7 @@ def _record_event(
         "operation": operation,
         "provider_id": provider_id,
         "credential_reference": PROVIDER_REFERENCES[provider_id],
-        "credential_source": "vault",
+        "credential_source": PROVIDER_REFERENCES[provider_id],
         "credential_present": diagnostic["credential_present"],
         "credential_enabled": diagnostic["credential_enabled"],
         "display_identifier": diagnostic["display_identifier"],
@@ -442,7 +442,7 @@ def _diagnostic(*, provider_id: str, record: dict[str, Any] | None) -> dict[str,
         "runtime_version": MILESTONE_ID,
         "provider_id": provider_id,
         "credential_reference": PROVIDER_REFERENCES[provider_id],
-        "credential_source": "vault",
+        "credential_source": PROVIDER_REFERENCES[provider_id],
         "credential_present": present,
         "credential_enabled": enabled,
         "display_identifier": _display_identifier(record),

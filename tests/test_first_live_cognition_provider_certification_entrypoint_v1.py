@@ -56,6 +56,17 @@ def test_first_live_cognition_provider_entrypoint_certifies_success_path(tmp_pat
     assert (root / "replay_package" / "000_first_live_cognition_provider_replay_package.json").exists()
     assert (root / "certification_report" / "000_first_live_cognition_provider_certification_report.json").exists()
     assert (root / "human_confirmation" / "000_first_live_cognition_provider_human_confirmation.json").exists()
+    assert (root / "provider_governance" / "credential_lifecycle" / "000_provider_governance_event.json").exists()
+    assert (root / "provider_governance" / "usage" / "000_provider_usage_metric.json").exists()
+    assert (
+        root / "provider_governance" / "cognition_participation" / "000_cognition_participation.json"
+    ).exists()
+
+    report = load_json(root / "certification_report" / "000_first_live_cognition_provider_certification_report.json")
+    governance_replay = report["provider_governance_replay"]
+    assert governance_replay["provider_governance_event_count"] == 1
+    assert governance_replay["provider_usage_metric_count"] == 1
+    assert governance_replay["cognition_participation_count"] == 1
 
 
 def test_first_live_cognition_provider_entrypoint_aborts_before_certification_without_credentials(tmp_path, monkeypatch):
