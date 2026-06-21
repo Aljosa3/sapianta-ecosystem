@@ -1,6 +1,6 @@
 # AIGOL_PROVIDER_CREDENTIAL_VAULT_V1
 
-Status: DEFINED
+Status: IMPLEMENTED
 
 Date: 2026-06-21
 
@@ -19,7 +19,7 @@ Governing inputs:
 Final verdict:
 
 ```text
-PROVIDER_CREDENTIAL_VAULT_DEFINED
+PROVIDER_CREDENTIAL_VAULT_IMPLEMENTED
 ```
 
 ## 1. Purpose
@@ -37,7 +37,17 @@ The vault becomes the canonical source of provider credential values while prese
 
 This artifact defines architecture, runtime boundaries, replay model, ACLI interaction model, migration plan, and certification requirements.
 
-It does not implement the vault runtime.
+Implemented runtime:
+
+```text
+aigol/runtime/provider_credential_vault.py
+```
+
+Implemented certification runtime:
+
+```text
+aigol/runtime/provider_credential_vault_certification_v1.py
+```
 
 ## 2. Problem Statement
 
@@ -625,6 +635,12 @@ Add a compatibility backend that can seed vault records from approved environmen
 
 Environment variables remain accepted only as onboarding inputs.
 
+Implementation status:
+
+```text
+COMPLETED
+```
+
 ### Phase 3: ProviderConfig Adapter
 
 Update provider configuration from:
@@ -718,7 +734,41 @@ Must verify:
 - provider governance observability continues to work;
 - cognition participation observability continues to work.
 
-## 14. Future Multi-Provider Support
+## 14. Implementation Certification
+
+Executed certification root:
+
+```text
+runtime/provider_credential_vault_certification_v1/CERT-000001/
+```
+
+Certification artifacts:
+
+```text
+runtime/provider_credential_vault_certification_v1/CERT-000001/evidence_package/000_provider_credential_vault_evidence_package.json
+runtime/provider_credential_vault_certification_v1/CERT-000001/replay_package/000_provider_credential_vault_replay_package.json
+runtime/provider_credential_vault_certification_v1/CERT-000001/certification_report/000_provider_credential_vault_certification_report.json
+```
+
+Certified criteria:
+
+- vault_file_outside_repository: true
+- vault_file_permission_certified: true
+- vault_resolution_certified: true
+- provider_config_vault_resolution_certified: true
+- env_fallback_certified: true
+- disabled_credentials_fail_closed: true
+- deleted_credentials_fail_closed: true
+- display_identifier_safe: true
+- replay_secret_free: true
+- approval_boundaries_certified: true
+
+Preserved certifications:
+
+- CERT-000009 remains valid.
+- Provider Governance Certification remains valid.
+
+## 15. Future Multi-Provider Support
 
 The vault design supports:
 
@@ -739,7 +789,7 @@ Adding a future provider requires:
 
 No new environment-variable convention should be required for steady-state runtime use.
 
-## 15. Answers To Governing Questions
+## 16. Answers To Governing Questions
 
 ### What should be the canonical credential source?
 
@@ -771,7 +821,7 @@ Replay records only operation metadata, provider id, vault reference, status boo
 
 Onboarding uses ACLI clarification, human approval where required, secret input, vault write, verification, provider governance event, and replay-safe evidence.
 
-## 16. Non-Goals
+## 17. Non-Goals
 
 This artifact does not:
 
@@ -784,8 +834,8 @@ This artifact does not:
 - invalidate environment-backed historical evidence;
 - store secrets in governance artifacts.
 
-## 17. Final Verdict
+## 18. Final Verdict
 
 ```text
-PROVIDER_CREDENTIAL_VAULT_DEFINED
+PROVIDER_CREDENTIAL_VAULT_IMPLEMENTED
 ```
