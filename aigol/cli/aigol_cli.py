@@ -86,6 +86,15 @@ from aigol.runtime.native_provider_execution_runtime import (
     render_native_provider_execution_summary,
     run_native_provider_execution,
 )
+from aigol.runtime.provider_governance_runtime import (
+    query_cognition_participation,
+    query_provider_costs,
+    query_provider_credentials,
+    query_provider_failures,
+    query_provider_status,
+    query_provider_usage,
+    render_provider_governance_query,
+)
 from aigol.cli.commands.moc import (
     append_ledger_command,
     approval_gate_command,
@@ -2576,6 +2585,12 @@ def build_parser() -> argparse.ArgumentParser:
     provider_invoke.add_argument("--human-approved", action="store_true")
     provider_invoke.add_argument("--timeout-seconds", type=int, default=20)
     provider_invoke.add_argument("--json", action="store_true")
+    provider_governance = provider_sub.add_parser("governance")
+    provider_governance_sub = provider_governance.add_subparsers(dest="provider_governance_command", required=True)
+    for governance_query in ("status", "credentials", "usage", "failures", "costs", "participation"):
+        provider_governance_query = provider_governance_sub.add_parser(governance_query)
+        provider_governance_query.add_argument("--replay-root", default=".")
+        provider_governance_query.add_argument("--json", action="store_true")
 
     return_cmd = subcommands.add_parser("return")
     return_sub = return_cmd.add_subparsers(dest="return_command", required=True)
@@ -7915,6 +7930,24 @@ def run_command(args: argparse.Namespace) -> dict:
         )
         result["replay_reference"] = str(Path(args.runtime_root) / args.execution_id)
         return result
+    if args.command == "provider" and args.provider_command == "governance":
+        query_name = args.provider_governance_command
+        query_handlers = {
+            "status": query_provider_status,
+            "credentials": query_provider_credentials,
+            "usage": query_provider_usage,
+            "failures": query_provider_failures,
+            "costs": query_provider_costs,
+            "participation": query_cognition_participation,
+        }
+        rows = query_handlers[query_name](args.replay_root)
+        return {
+            "command": f"aigol provider governance {query_name}",
+            "query": query_name,
+            "replay_root": args.replay_root,
+            "rows": rows,
+            "replay_visible": True,
+        }
     if args.command == "return" and args.return_command == "inspect":
         return inspect_return(replay_identity=args.replay_identity, runtime_root=args.runtime_root or None)
     if args.command == "replay" and args.replay_command == "ledger":
@@ -8267,6 +8300,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL NATIVE PROVIDER EXECUTION",
             render_native_provider_execution_summary(result).splitlines()[1:],
+        )
+    if command.startswith("aigol provider governance "):
+        return render_card(
+            "AIGOL PROVIDER GOVERNANCE",
+            render_provider_governance_query(result.get("query", "status"), result.get("rows", [])).splitlines(),
         )
     if command in {
         "aigol approval list",

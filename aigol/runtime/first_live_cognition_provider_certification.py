@@ -24,6 +24,12 @@ from aigol.runtime.first_live_provider_operator_entrypoint import (
     reconstruct_first_live_provider_operator_entrypoint_replay,
 )
 from aigol.runtime.live_openai_executor import create_governed_live_openai_executor
+from aigol.runtime.provider_governance_runtime import (
+    execute_provider_lifecycle_operation,
+    record_cognition_participation,
+    record_provider_usage_metric,
+    reconstruct_provider_governance_replay,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -62,6 +68,7 @@ def run_first_live_cognition_provider_certification(
     execution_dir = root / "execution"
     operator_dir = root / "operator_entrypoint"
     human_confirmation_dir = root / "human_confirmation"
+    provider_governance_dir = root / "provider_governance"
     evidence_dir = root / "evidence_package"
     replay_dir = root / "replay_package"
     report_dir = root / "certification_report"
@@ -141,6 +148,17 @@ def run_first_live_cognition_provider_certification(
         "operator_final_status": operator_result.get("final_status"),
         "failure_reason": operator_result.get("failure_reason"),
     }
+    provider_governance_replay = _record_provider_governance_observability(
+        provider_governance_dir=provider_governance_dir,
+        cert_suffix=cert_suffix,
+        provider_id=str(observed["provider_selected"] or "openai"),
+        model="gpt-5.1",
+        created_at=created_at,
+        provider_invoked=provider_invoked,
+        provider_response_received=provider_response_received,
+        human_confirmation_recorded=human_confirmation_recorded,
+        failure_reason=observed["failure_reason"],
+    )
     final_verdict = (
         "FIRST_LIVE_COGNITION_PROVIDER_CERTIFIED"
         if all(
@@ -165,9 +183,11 @@ def run_first_live_cognition_provider_certification(
         execution_dir=execution_dir,
         operator_dir=operator_dir,
         human_confirmation_dir=human_confirmation_dir,
+        provider_governance_dir=provider_governance_dir,
         observed=observed,
         final_verdict=final_verdict,
         execution_replay=execution_replay,
+        provider_governance_replay=provider_governance_replay,
         provider_response_received=provider_response_received,
         human_confirmation_recorded=human_confirmation_recorded,
     )
@@ -274,6 +294,60 @@ def _record_human_confirmation(
     return True
 
 
+def _record_provider_governance_observability(
+    *,
+    provider_governance_dir: Path,
+    cert_suffix: str,
+    provider_id: str,
+    model: str,
+    created_at: str,
+    provider_invoked: bool,
+    provider_response_received: bool,
+    human_confirmation_recorded: bool,
+    failure_reason: str | None,
+) -> dict[str, Any]:
+    execute_provider_lifecycle_operation(
+        event_id=f"FIRST-LIVE-COGNITION-PROVIDER-CERT-{cert_suffix}:PROVIDER-VERIFY",
+        operation="VERIFY",
+        provider_id=provider_id,
+        requested_by="first_live_cognition_provider_certification",
+        created_at=created_at,
+        replay_dir=provider_governance_dir / "credential_lifecycle",
+    )
+    record_provider_usage_metric(
+        metric_id=f"FIRST-LIVE-COGNITION-PROVIDER-CERT-{cert_suffix}:PROVIDER-USAGE",
+        provider_id=provider_id,
+        model=model,
+        status="SUCCESS" if provider_response_received else "FAILED",
+        availability="AVAILABLE" if provider_response_received else "DEPENDENCY_UNAVAILABLE",
+        success_count=1 if provider_response_received else 0,
+        failure_count=0 if provider_response_received else 1,
+        last_used=created_at if provider_invoked else None,
+        last_failure=None if provider_response_received else failure_reason or "provider response unavailable",
+        token_usage={"source": "provider_response_envelope"},
+        cost_tracking={"hook_status": "AVAILABLE_FOR_PROVIDER_COST_ACCOUNTING"},
+        created_at=created_at,
+        replay_dir=provider_governance_dir / "usage",
+    )
+    record_cognition_participation(
+        participation_id=f"FIRST-LIVE-COGNITION-PROVIDER-CERT-{cert_suffix}:COGNITION-PARTICIPATION",
+        provider_id=provider_id,
+        participation_location="OCS_LLM_COGNITION",
+        participation_role="proposal_only_cognition",
+        workflow_id="OCS_LLM_COGNITION",
+        invocation_reason="first live cognition provider certification",
+        purpose="proposal generation for human confirmation",
+        response_used=provider_response_received,
+        worker_invoked_after=False,
+        human_confirmation_required=True,
+        created_at=created_at,
+        replay_dir=provider_governance_dir / "cognition_participation",
+    )
+    replay = reconstruct_provider_governance_replay(provider_governance_dir)
+    replay["human_confirmation_recorded"] = human_confirmation_recorded
+    return replay
+
+
 def _create_summary_artifacts(
     *,
     root: Path,
@@ -284,9 +358,11 @@ def _create_summary_artifacts(
     execution_dir: Path,
     operator_dir: Path,
     human_confirmation_dir: Path,
+    provider_governance_dir: Path,
     observed: dict[str, Any],
     final_verdict: str,
     execution_replay: dict[str, Any] | None,
+    provider_governance_replay: dict[str, Any],
     provider_response_received: bool,
     human_confirmation_recorded: bool,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -305,7 +381,9 @@ def _create_summary_artifacts(
             "operator_entrypoint": str(operator_dir),
             "execution": str(execution_dir),
             "human_confirmation": str(human_confirmation_dir),
+            "provider_governance": str(provider_governance_dir),
         },
+        "provider_governance_replay": provider_governance_replay,
         "observed": observed,
     }
     evidence_package["artifact_hash"] = replay_hash(evidence_package)
@@ -322,7 +400,9 @@ def _create_summary_artifacts(
             "execution_runtime": execution_replay is not None,
             "provider_response": provider_response_received,
             "human_confirmation": human_confirmation_recorded,
+            "provider_governance": provider_governance_replay.get("append_only_valid") is True,
         },
+        "provider_governance_replay": provider_governance_replay,
         "replay_reconstructed": observed["replay_reconstructed"],
         "observed": observed,
     }
@@ -333,6 +413,7 @@ def _create_summary_artifacts(
         "governing_artifact": "AIGOL_FIRST_LIVE_COGNITION_PROVIDER_CERTIFICATION_V1",
         "created_at": created_at,
         "observed": observed,
+        "provider_governance_replay": provider_governance_replay,
         "blocker_analysis": {
             "architecture_blockers": [],
             "governance_blockers": [],
