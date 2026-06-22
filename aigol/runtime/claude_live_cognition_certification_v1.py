@@ -90,12 +90,12 @@ def run_claude_live_cognition_certification_v1(
         failure_reason = str(exc)
 
     registration = _claude_registration(cert_root / "err_registration")
-    executor = _claude_executor_status(transport)
+    executor, active_transport = _claude_executor_status(transport)
     live_execution = _live_execution_attempt(
         cert_root=cert_root,
         credential_resolution=credential_resolution,
         executor=executor,
-        transport=transport,
+        transport=active_transport,
         prior_failure=failure_reason,
     )
     governance = _provider_governance_observability(cert_root / "provider_governance", live_execution)
@@ -195,13 +195,16 @@ def _claude_registration(replay_dir: Path) -> dict[str, Any]:
     }
 
 
-def _claude_executor_status(transport: Any | None) -> dict[str, Any]:
+def _claude_executor_status(transport: Any | None) -> tuple[dict[str, Any], Any | None]:
     if transport is not None:
-        return {
-            "live_executor_exists": bool(getattr(transport, "aigol_governed_live_claude_executor_v1", False)),
-            "executor_source": "injected_transport",
-            "executor_name": getattr(transport, "__name__", type(transport).__name__),
-        }
+        return (
+            {
+                "live_executor_exists": bool(getattr(transport, "aigol_governed_live_claude_executor_v1", False)),
+                "executor_source": "injected_transport",
+                "executor_name": getattr(transport, "__name__", type(transport).__name__),
+            },
+            transport,
+        )
     for module_name, factory_name in (
         ("aigol.runtime.live_claude_executor", "create_governed_live_claude_executor"),
         ("aigol.runtime.live_anthropic_executor", "create_governed_live_anthropic_executor"),
@@ -212,17 +215,23 @@ def _claude_executor_status(transport: Any | None) -> dict[str, Any]:
             continue
         factory = getattr(module, factory_name, None)
         if callable(factory):
-            return {
-                "live_executor_exists": True,
-                "executor_source": module_name,
-                "executor_name": factory_name,
-            }
-    return {
-        "live_executor_exists": False,
-        "executor_source": None,
-        "executor_name": None,
-        "failure_reason": "governed live Claude executor is not implemented",
-    }
+            return (
+                {
+                    "live_executor_exists": True,
+                    "executor_source": module_name,
+                    "executor_name": factory_name,
+                },
+                factory(),
+            )
+    return (
+        {
+            "live_executor_exists": False,
+            "executor_source": None,
+            "executor_name": None,
+            "failure_reason": "governed live Claude executor is not implemented",
+        },
+        None,
+    )
 
 
 def _live_execution_attempt(
@@ -246,13 +255,7 @@ def _live_execution_attempt(
             cert_root / "live_execution",
         )
     if transport is None:
-        return _live_execution_result(
-            True,
-            False,
-            False,
-            "live Claude executor factory discovery is present but invocation adapter is not wired",
-            cert_root / "live_execution",
-        )
+        return _live_execution_result(True, False, False, "governed live Claude executor is not available", cert_root / "live_execution")
     try:
         raw_response = transport(
             {
@@ -264,6 +267,7 @@ def _live_execution_attempt(
                 "provider_id": CLAUDE_PROVIDER_ID,
                 "_credential_secret": credential_resolution.get("_credential_secret"),
                 "credential_secret_replayed": False,
+                "timeout_seconds": 20,
             },
         )
         response_received = isinstance(raw_response, dict) and bool(raw_response)

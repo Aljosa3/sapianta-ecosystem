@@ -36,9 +36,13 @@ def test_claude_live_cognition_reports_gap_without_executor(tmp_path, monkeypatc
     monkeypatch.setenv("ANTHROPIC_API_KEY", SECRET)
     monkeypatch.delenv("AIGOL_ANTHROPIC_API_KEY", raising=False)
 
+    def ungoverned_transport(_payload: dict, _metadata: dict) -> dict:
+        return {}
+
     result = run_claude_live_cognition_certification_v1(
         runtime_root=tmp_path / "claude_live",
         vault_path=tmp_path / "vault" / "provider-credentials.json",
+        transport=ungoverned_transport,
     )
     replay = reconstruct_claude_live_cognition_certification_v1(result["cert_root"])
 
