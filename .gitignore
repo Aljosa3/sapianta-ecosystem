@@ -33,7 +33,7 @@ manual_test.txt
 .aigol_chain_inspection_runtime/
 
 # Generated runtime artifacts
-runtime/
+/runtime/
 
 # Provider credential vault
 .aigol_provider_credential_vault/
