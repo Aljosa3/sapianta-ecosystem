@@ -367,6 +367,11 @@ def _refined_workflow_target(
             "unrestricted autonomous agent",
             "store my api key",
             "save my api key",
+            "shrani ta kljuc",
+            "shrani ta ključ",
+            "kljuc",
+            "ključ",
+            "sk-",
             "secret",
             "credential",
             "invoke worker",
@@ -382,6 +387,11 @@ def _refined_workflow_target(
         (
             "yes",
             "yes.",
+            "da",
+            "da.",
+            "odobreno",
+            "odobrim",
+            "potrjujem",
             "approved",
             "approve",
             "go ahead",
@@ -439,6 +449,26 @@ def _refined_workflow_target(
             "first step",
             "next safest",
             "best next step",
+            "za uvedbo",
+            "uvedbo orodja",
+            "podporo strankam",
+            "support tool",
+            "customer support tool",
+            "tool rollout",
+            "samo predlog",
+            "nic ne spreminjaj",
+            "nič ne spreminjaj",
+            "pomagaj mi izbrati",
+            "pomagaj mi ugotoviti",
+            "pomagaj mi razmisljati",
+            "pomagaj mi razmišljati",
+            "dobra ideja",
+            "povej samo",
+            "najverjetneje problem",
+            "just advice",
+            "don't change anything",
+            "dont change anything",
+            "whether writing it is a good idea",
             "najbolje",
             "narediti naprej",
             "naslednji korak",
@@ -464,6 +494,27 @@ def _refined_workflow_target(
             "controlled workflow",
             "create a governed",
             "start with a governed",
+            "odgovor stranki",
+            "manjka utemeljitev",
+        ),
+    )
+    bounded_file_signals = _matched_terms(
+        normalized,
+        (
+            "majhno datoteko",
+            "majhna datoteka",
+            "malo datoteko",
+            "tekstovno datoteko",
+            "dokazni zapis",
+            "dokaz",
+            "small text file",
+            "tiny proof",
+            "proof file",
+            "proof note",
+            "i approve",
+            "approved",
+            "odobreno",
+            "odobrim",
         ),
     )
     no_execution_signals = _matched_terms(
@@ -475,7 +526,22 @@ def _refined_workflow_target(
             "before any runtime changes",
         ),
     )
-    if governed_signals and not no_execution_signals:
+    if (
+        original_target == BOUNDED_FILE_WRITE_WORKER_USER_SESSION
+        and (confirmation_signals or bounded_file_signals)
+    ) or (
+        bounded_file_signals
+        and any(signal in bounded_file_signals for signal in ("majhno datoteko", "tekstovno datoteko", "small text file", "tiny proof", "proof file", "proof note"))
+    ):
+        return {
+            "selected_workflow_id": BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
+            "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,
+            "refinement_status": WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
+            "refinement_reason": "clarification response requested bounded proof file worker path",
+            "signals": confirmation_signals + bounded_file_signals,
+            **_no_ambiguity_escalation(),
+        }
+    if governed_signals and not no_execution_signals and not advisory_signals:
         return {
             "selected_workflow_id": CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
             "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,

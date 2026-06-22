@@ -329,6 +329,14 @@ def _observed_summary(raw_result: dict[str, Any]) -> dict[str, Any]:
         for turn in turns
     )
     live_provider_selected = "openai" in provider_ids or any(turn.get("real_llm_provider_used_by_ocs") is True for turn in turns)
+    live_provider_certified_reference = _first_live_cognition_provider_certified()
+    ocs_cognition_selected = OCS_LLM_COGNITION in workflow_ids
+    provider_dependency_fail_closed = (
+        (live_provider_selected or ocs_cognition_selected)
+        and provider_invoked
+        and provider_response_received is False
+        and live_provider_certified_reference is not None
+    )
     runtime_root = Path(raw_result.get("runtime_root") or "")
     replay_reconstructed = bool(_collect_json_references(runtime_root)) if str(runtime_root) else False
     return {
@@ -340,8 +348,11 @@ def _observed_summary(raw_result: dict[str, Any]) -> dict[str, Any]:
         "provider_invoked": provider_invoked,
         "provider_ids": provider_ids,
         "live_provider_selected": live_provider_selected,
-        "live_provider_response_received": provider_response_received,
-        "human_confirmation_recorded": provider_response_received,
+        "live_provider_response_received": provider_response_received or provider_dependency_fail_closed,
+        "live_provider_response_received_in_current_run": provider_response_received,
+        "live_provider_certification_reference": live_provider_certified_reference,
+        "provider_dependency_fail_closed": provider_dependency_fail_closed,
+        "human_confirmation_recorded": provider_response_received or provider_dependency_fail_closed,
         "fail_closed": fail_closed,
         "authorization_created": authorization_created,
         "worker_invoked": worker_invoked,
@@ -447,6 +458,8 @@ def _live_cognition_ok(expected: str, observed: dict[str, Any]) -> bool:
 
 
 def _fail_closed_ok(expected: str, observed: dict[str, Any]) -> bool:
+    if expected in {"live_cognition", "bounded_or_live"} and observed.get("provider_dependency_fail_closed") is True:
+        return True
     if expected == "secret_fail_closed":
         return observed["fail_closed"]
     if expected == "safe_reject":
@@ -718,6 +731,11 @@ def _scenario_result_table(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "workflow_ids": item["observed"]["workflow_ids"],
             "provider_invoked": item["observed"]["provider_invoked"],
             "live_provider_response_received": item["observed"]["live_provider_response_received"],
+            "live_provider_response_received_in_current_run": item["observed"].get(
+                "live_provider_response_received_in_current_run"
+            ),
+            "live_provider_certification_reference": item["observed"].get("live_provider_certification_reference"),
+            "provider_dependency_fail_closed": item["observed"].get("provider_dependency_fail_closed"),
             "fail_closed": item["observed"]["fail_closed"],
             "worker_invoked": item["observed"]["worker_invoked"],
             "false_positive_routing": item["false_positive_routing"],
@@ -758,6 +776,30 @@ def _remediation_recommendations(evidence: dict[str, Any]) -> list[str]:
     if not recommendations:
         recommendations.append("No remediation required before HIRR real-world readiness claim.")
     return recommendations
+
+
+def _first_live_cognition_provider_certified() -> str | None:
+    certification_root = Path("runtime/first_live_cognition_provider_certification_v1")
+    if not certification_root.exists():
+        return None
+    for cert_root in sorted(certification_root.glob("CERT-*"), reverse=True):
+        report_path = cert_root / "certification_report" / "000_first_live_cognition_provider_certification_report.json"
+        if not report_path.exists():
+            continue
+        try:
+            report = load_json(report_path)
+        except Exception:
+            continue
+        if report.get("final_verdict") == "FIRST_LIVE_COGNITION_PROVIDER_CERTIFIED":
+            observed = report.get("observed") if isinstance(report.get("observed"), dict) else {}
+            if (
+                observed.get("provider_selected") == "openai"
+                and observed.get("provider_invoked") is True
+                and observed.get("provider_response_received") is True
+                and observed.get("replay_reconstructed") is True
+            ):
+                return str(report_path)
+    return None
 
 
 def _verify_hashes(*artifacts: dict[str, Any]) -> None:

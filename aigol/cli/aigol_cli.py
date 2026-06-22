@@ -3275,6 +3275,42 @@ def run_interactive_conversation(
                             f"FAILED_CLOSED: {human_intent_continuity_capture.get('failure_reason')}"
                         )
                     else:
+                        if human_intent_continuity_capture.get("workflow_id") == CONVERSATIONAL_OCS_LLM_COGNITION:
+                            ocs_cognition_capture = _run_conversational_ocs_llm_cognition(
+                                prompt_id=prompt_id,
+                                human_prompt=human_prompt,
+                                router_capture=router_capture,
+                                current_chain_id=current_chain_id,
+                                created_at=created_at,
+                                replay_dir=turn_root / "post_clarification_ocs_llm_cognition",
+                            )
+                            human_intent_continuity_capture["post_clarification_ocs_llm_cognition"] = (
+                                ocs_cognition_capture
+                            )
+                            human_intent_continuity_capture["provider_invoked"] = (
+                                ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED
+                            )
+                            human_intent_continuity_capture["provider_ids"] = _ocs_cognition_provider_ids(
+                                ocs_cognition_capture
+                            )
+                            human_intent_continuity_capture["real_llm_provider_used_by_ocs"] = (
+                                _real_llm_provider_used_by_ocs(ocs_cognition_capture)
+                            )
+                            human_intent_continuity_capture["live_provider_response_received"] = (
+                                ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED
+                            )
+                            human_intent_continuity_capture["post_clarification_ocs_replay_reference"] = (
+                                ocs_cognition_capture.get("replay_reference")
+                            )
+                            if ocs_cognition_capture.get("fail_closed") is True:
+                                human_intent_continuity_capture["fail_closed"] = True
+                                human_intent_continuity_capture["failure_reason"] = ocs_cognition_capture.get(
+                                    "failure_reason"
+                                )
+                                failed_turns += 1
+                                output_writer(
+                                    f"FAILED_CLOSED: {human_intent_continuity_capture.get('failure_reason')}"
+                                )
                         output_writer(
                             render_human_intent_clarification_continuity_summary(
                                 human_intent_continuity_capture
@@ -5953,6 +5989,12 @@ def _interactive_human_intent_clarification_continuity_turn_summary(
     source_router_replay_reference: str,
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
+    post_clarification_ocs = continuity_capture.get("post_clarification_ocs_llm_cognition")
+    if not isinstance(post_clarification_ocs, dict):
+        post_clarification_ocs = {}
+    provider_ids = continuity_capture.get("provider_ids")
+    if not isinstance(provider_ids, list):
+        provider_ids = []
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -5981,11 +6023,18 @@ def _interactive_human_intent_clarification_continuity_turn_summary(
         "ambiguity_escalation_reason": continuity_capture.get("ambiguity_escalation_reason"),
         "unresolved_ambiguity_classification": continuity_capture.get("unresolved_ambiguity_classification"),
         "proposal_only_cognition_routing": continuity_capture.get("proposal_only_cognition_routing") is True,
+        "post_clarification_ocs_replay_reference": continuity_capture.get(
+            "post_clarification_ocs_replay_reference"
+        ),
+        "provider_ids": provider_ids,
+        "real_llm_provider_used_by_ocs": continuity_capture.get("real_llm_provider_used_by_ocs") is True,
+        "live_provider_response_received": continuity_capture.get("live_provider_response_received") is True,
         "human_confirmation_required": continuity_capture.get("human_confirmation_required") is True,
         "future_deterministic_rule_candidate_status": continuity_capture.get(
             "future_deterministic_rule_candidate_status"
         ),
-        "provider_invoked": False,
+        "provider_invoked": continuity_capture.get("provider_invoked") is True,
+        "ocs_llm_cognition_final_status": post_clarification_ocs.get("final_status"),
         "worker_invoked": False,
         "authorization_created": False,
         "execution_requested": False,
