@@ -93,7 +93,7 @@ SCENARIOS: tuple[dict[str, Any], ...] = (
         "provider onboarding natural language",
         ["Dodaj Gemini.", "Odobrim."],
         "provider_onboarding",
-        {"PROVIDER_ONBOARDING_WORKFLOW", "PROVIDER_MANAGEMENT_WORKFLOW"},
+        {"PROVIDER_ONBOARDING_DOMAIN"},
         approval_expected=True,
     ),
     _scenario(
