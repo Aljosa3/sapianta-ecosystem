@@ -82,6 +82,7 @@ DOMAIN_WORKER_RESULT_VALIDATION = "DOMAIN_WORKER_RESULT_VALIDATION"
 DOMAIN_POST_EXECUTION_REPLAY_REVIEW = "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
 DOMAIN_GOVERNED_TERMINATION = "DOMAIN_GOVERNED_TERMINATION"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
+PROVIDER_ONBOARDING_DOMAIN = "PROVIDER_ONBOARDING_DOMAIN"
 
 REPLAY_STEPS = (
     "conversational_routing_decision_recorded",
@@ -368,6 +369,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             clarification=True,
         ),
         _workflow(
+            PROVIDER_ONBOARDING_DOMAIN,
+            "aigol conversation",
+            "provider_onboarding_domain_certification_v1",
+        ),
+        _workflow(
             DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
             "aigol conversation",
             "prompt_to_conversation_integration",
@@ -506,6 +512,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
                 "request",
                 str(approval_entry_intent.get("domain_name") or ""),
             ],
+        )
+    if _is_provider_onboarding_domain_prompt(normalized):
+        return _analysis(
+            PROVIDER_ONBOARDING_DOMAIN,
+            "HIGH",
+            ["provider-onboarding", *_provider_onboarding_matched_terms(normalized)],
         )
     early_human_intent = classify_human_intent_for_clarification(prompt, include_unknown=False)
     if early_human_intent.get("intake_matched") is True:
@@ -696,6 +708,37 @@ def _is_operator_decision_support_prompt(normalized: str) -> bool:
         or "priority" in normalized
         or "sequencing" in normalized
     )
+
+
+def _is_provider_onboarding_domain_prompt(normalized: str) -> bool:
+    return bool(_provider_onboarding_matched_terms(normalized))
+
+
+def _provider_onboarding_matched_terms(normalized: str) -> list[str]:
+    normalized_ascii = _normalize_slovenian(normalized)
+    tokens = set(_tokenize_provider_onboarding_prompt(normalized_ascii))
+    provider_terms = {"claude", "anthropic", "gemini", "mistral"}
+    onboarding_terms = {"dodaj", "add", "uporabljati", "use"}
+    management_terms = {"onemogoci", "disable", "izklopi"}
+    if not provider_terms.intersection(tokens):
+        return []
+    if onboarding_terms.intersection(tokens):
+        return ["provider", "onboarding"]
+    if management_terms.intersection(tokens):
+        return ["provider", "management"]
+    return []
+
+
+def _normalize_slovenian(value: str) -> str:
+    return value.translate(str.maketrans({"č": "c", "ć": "c", "š": "s", "ž": "z", "đ": "d"}))
+
+
+def _tokenize_provider_onboarding_prompt(value: str) -> list[str]:
+    separators = ",.;:!?()[]{}\"'"
+    normalized = value
+    for separator in separators:
+        normalized = normalized.replace(separator, " ")
+    return [token for token in normalized.split() if token]
 
 
 def is_ocs_llm_cognition_prompt(human_prompt: str) -> bool:
@@ -1248,6 +1291,7 @@ def _operator_summary(workflow_id: str) -> str:
             "Select Product 1 AI Decision Validator capability lifecycle entrypoint without execution."
         ),
         OCS_LLM_COGNITION: "Run certified OCS LLM cognition end-to-end for human-facing guidance.",
+        PROVIDER_ONBOARDING_DOMAIN: "Route provider add/use/disable requests into certified provider onboarding domain.",
         BOUNDED_FILE_WRITE_WORKER_USER_SESSION: (
             "Select bounded certified FILE_WRITE worker session after clarification and approval."
         ),

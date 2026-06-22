@@ -41,6 +41,7 @@ from aigol.runtime.conversational_cli_runtime import (
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
     PROPOSAL_RUNTIME,
+    PROVIDER_ONBOARDING_DOMAIN,
     REVIEW_LATEST_AUDIT,
     SHOW_LATEST_REPLAY_CHAIN,
     WORKFLOW_SELECTED,
@@ -324,9 +325,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 37
-    assert coverage["conversationally_accessible_workflows"] == 37
-    assert coverage["coverage_ratio"] == "37/37"
+    assert coverage["registered_workflows"] == 38
+    assert coverage["conversationally_accessible_workflows"] == 38
+    assert coverage["coverage_ratio"] == "38/38"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -354,6 +355,7 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     assert AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE in coverage["workflow_ids"]
     assert HUMAN_INTENT_CLARIFICATION_INTAKE in coverage["workflow_ids"]
     assert REVIEW_LATEST_AUDIT in coverage["workflow_ids"]
+    assert PROVIDER_ONBOARDING_DOMAIN in coverage["workflow_ids"]
 
 
 def test_conversational_route_cli_renders_selection(tmp_path) -> None:
@@ -375,7 +377,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 37/37" in rendered
+    assert "coverage: 38/38" in rendered
 
 
 @pytest.mark.parametrize(
@@ -920,6 +922,28 @@ def test_interactive_conversation_routes_readonly_provider_layer_prompt(tmp_path
     assert _progress_lines(output[0])[:8] == PROGRESS_LINES
     assert any("PROVIDER LAYER IMPROVEMENT REVIEW" in line for line in output)
     assert replay_path.exists()
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "Dodaj Claude",
+        "Dodaj Gemini.",
+        "Dodaj Mistral",
+        "Želim uporabljati Claude",
+        "Onemogoči Claude.",
+    ],
+)
+def test_provider_onboarding_natural_language_routes_to_provider_onboarding_domain(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == PROVIDER_ONBOARDING_DOMAIN
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert replay["workflow_id"] == PROVIDER_ONBOARDING_DOMAIN
 
 
 def test_interactive_domain_and_clarification_routes_record_conversational_decisions(tmp_path) -> None:
