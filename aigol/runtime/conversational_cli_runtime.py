@@ -14,6 +14,7 @@ from aigol.runtime.human_execution_intent_detection import (
 )
 from aigol.runtime.human_intent_clarification_intake_runtime import (
     HUMAN_INTENT_CLARIFICATION_INTAKE,
+    classify_development_intent_for_governed_routing,
     classify_human_intent_for_clarification,
 )
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import detect_domain_approval_entry_intent
@@ -565,6 +566,14 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             GOVERNED_DEVELOPMENT_WORKFLOW,
             "HIGH",
             ["governed", "development", "workflow"],
+        )
+    development_intent = classify_development_intent_for_governed_routing(prompt)
+    if development_intent.get("intake_matched") is True:
+        return _analysis(
+            GOVERNED_DEVELOPMENT_WORKFLOW,
+            str(development_intent.get("intent_confidence") or "HIGH"),
+            list(development_intent.get("intent_signals") or ["development", "intent"]),
+            human_intent_intake=development_intent,
         )
     if is_conversation_native_development_intent(prompt):
         return _analysis(

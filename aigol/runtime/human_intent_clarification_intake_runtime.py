@@ -19,10 +19,61 @@ AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
 CONTINUATION_INTENT = "CONTINUATION_INTENT"
 BOUNDED_FILE_WRITE_PROOF_INTENT = "BOUNDED_FILE_WRITE_PROOF_INTENT"
+DEVELOPMENT_INTENT = "DEVELOPMENT_INTENT"
 
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION_TARGET = "OCS_LLM_COGNITION"
 BOUNDED_FILE_WRITE_WORKER_USER_SESSION_TARGET = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
+GOVERNED_DEVELOPMENT_WORKFLOW_TARGET = "GOVERNED_DEVELOPMENT_WORKFLOW"
+
+
+def classify_development_intent_for_governed_routing(human_prompt: str) -> dict[str, Any]:
+    """Resolve concrete development intents for governed development workflow routing."""
+
+    prompt = _require_string(human_prompt, "human_prompt")
+    normalized = prompt.lower().strip().rstrip(".?!")
+    result = _development_intent(normalized)
+    if result is None:
+        return {
+            "artifact_type": HUMAN_INTENT_CLARIFICATION_INTAKE_ARTIFACT_V1,
+            "intake_matched": False,
+            "workflow_id": None,
+            "intent_family": None,
+            "intent_confidence": "NONE",
+            "intent_signals": [],
+            "clarification_required": False,
+            "clarification_questions": [],
+            "expected_workflow_targets": [],
+            "routing_decision": "DEVELOPMENT_INTENT_NO_MATCH_CONTINUE_TO_EXISTING_ROUTER",
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "authorization_created": False,
+            "execution_requested": False,
+            "approval_bypassed": False,
+            "governance_mutated": False,
+            "replay_mutated": False,
+            "failure_reason": None,
+        }
+    return {
+        "artifact_type": HUMAN_INTENT_CLARIFICATION_INTAKE_ARTIFACT_V1,
+        "intake_matched": True,
+        "workflow_id": GOVERNED_DEVELOPMENT_WORKFLOW_TARGET,
+        "intent_family": DEVELOPMENT_INTENT,
+        "intent_confidence": result["confidence"],
+        "intent_signals": result["signals"],
+        "clarification_required": False,
+        "clarification_questions": [],
+        "expected_workflow_targets": [GOVERNED_DEVELOPMENT_WORKFLOW_TARGET],
+        "routing_decision": "DEVELOPMENT_INTENT_RESOLVED_TO_GOVERNED_DEVELOPMENT_WORKFLOW",
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "failure_reason": None,
+    }
 
 
 def classify_human_intent_for_clarification(human_prompt: str, *, include_unknown: bool = True) -> dict[str, Any]:
@@ -299,6 +350,31 @@ def _ambiguous_intent(normalized: str) -> dict[str, Any] | None:
     signals = _matched_terms(normalized, ambiguous_phrases)
     if signals:
         return {"intent_family": AMBIGUOUS_INTENT, "confidence": "LOW", "signals": signals}
+    return None
+
+
+def _development_intent(normalized: str) -> dict[str, Any] | None:
+    action_signals = _matched_terms(normalized, ("add", "implement", "create", "build"))
+    if not action_signals:
+        return None
+    development_subjects = (
+        ("replay", "validation"),
+        ("replay", "validator"),
+        ("worker", "authorization"),
+        ("worker", "auth"),
+        ("comparison", "runtime"),
+        ("audit", "export"),
+    )
+    signals: list[str] = []
+    for required_terms in development_subjects:
+        if all(_contains_term(normalized, term) for term in required_terms):
+            signals.extend(action_signals)
+            signals.extend(required_terms)
+            return {
+                "intent_family": DEVELOPMENT_INTENT,
+                "confidence": "HIGH",
+                "signals": sorted(set(signals)),
+            }
     return None
 
 

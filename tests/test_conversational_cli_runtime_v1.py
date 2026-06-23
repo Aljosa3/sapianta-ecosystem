@@ -57,6 +57,10 @@ from aigol.runtime.human_intent_clarification_continuity_runtime import (
     _initial_workflow_target,
     reconstruct_human_intent_clarification_continuity_replay,
 )
+from aigol.runtime.human_intent_clarification_intake_runtime import (
+    DEVELOPMENT_INTENT,
+    classify_development_intent_for_governed_routing,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize
 from aigol.runtime.unknown_domain_clarification_runtime import CLARIFICATION_REQUIRED
@@ -213,6 +217,52 @@ def test_governed_development_workflow_prompt_routes_without_execution(tmp_path)
     assert capture["approval_bypassed"] is False
     assert capture["governance_mutated"] is False
     assert capture["replay_mutated"] is False
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "Add replay validation",
+        "Implement worker authorization",
+        "Create comparison runtime",
+        "Add audit export",
+    ],
+)
+def test_natural_development_intent_routes_to_governed_development_workflow(tmp_path, prompt: str) -> None:
+    capture = _route(tmp_path, prompt)
+    intake = capture["workflow_selection_artifact"]["human_intent_intake"]
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert intake["intent_family"] == DEVELOPMENT_INTENT
+    assert intake["routing_decision"] == "DEVELOPMENT_INTENT_RESOLVED_TO_GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert intake["expected_workflow_targets"] == [GOVERNED_DEVELOPMENT_WORKFLOW]
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
+    assert capture["governance_mutated"] is False
+    assert capture["replay_mutated"] is False
+
+
+def test_hirr_development_intent_classification_is_replay_safe_and_non_authorizing() -> None:
+    intake = classify_development_intent_for_governed_routing("Implement worker authorization")
+
+    assert intake["intake_matched"] is True
+    assert intake["intent_family"] == DEVELOPMENT_INTENT
+    assert intake["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert intake["clarification_required"] is False
+    assert intake["provider_invoked"] is False
+    assert intake["worker_invoked"] is False
+    assert intake["authorization_created"] is False
+    assert intake["execution_requested"] is False
+    assert intake["approval_bypassed"] is False
+
+
+def test_advisory_improvement_does_not_route_as_natural_development_intent(tmp_path) -> None:
+    capture = _route(tmp_path, "How should we improve worker authorization?")
+
+    assert capture["workflow_id"] != GOVERNED_DEVELOPMENT_WORKFLOW
 
 
 def test_generic_governed_execution_without_artifact_still_fails_closed(tmp_path) -> None:
