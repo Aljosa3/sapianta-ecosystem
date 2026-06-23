@@ -83,6 +83,7 @@ DOMAIN_POST_EXECUTION_REPLAY_REVIEW = "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
 DOMAIN_GOVERNED_TERMINATION = "DOMAIN_GOVERNED_TERMINATION"
 GOVERNANCE_ARTIFACT_CREATION = "GOVERNANCE_ARTIFACT_CREATION"
 GOVERNED_REPOSITORY_MUTATION = "GOVERNED_REPOSITORY_MUTATION"
+GOVERNED_DEVELOPMENT_WORKFLOW = "GOVERNED_DEVELOPMENT_WORKFLOW"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 PROVIDER_ONBOARDING_DOMAIN = "PROVIDER_ONBOARDING_DOMAIN"
 
@@ -375,6 +376,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "governed_repository_mutation_runtime",
         ),
         _workflow(
+            GOVERNED_DEVELOPMENT_WORKFLOW,
+            "aigol conversation",
+            "governed_development_workflow_runtime",
+        ),
+        _workflow(
             HUMAN_INTENT_CLARIFICATION_INTAKE,
             "aigol conversation",
             "human_intent_clarification_intake_runtime",
@@ -553,6 +559,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             GOVERNED_REPOSITORY_MUTATION,
             "HIGH",
             ["governed", "repository", "mutation"],
+        )
+    if _is_governed_development_workflow_prompt(normalized):
+        return _analysis(
+            GOVERNED_DEVELOPMENT_WORKFLOW,
+            "HIGH",
+            ["governed", "development", "workflow"],
         )
     if is_conversation_native_development_intent(prompt):
         return _analysis(
@@ -906,6 +918,17 @@ def _is_governed_repository_mutation_prompt(normalized: str) -> bool:
         "invoke repository mutation worker",
         "apply approved file mutation",
         "apply approved repository mutation",
+    )
+    return any(phrase in normalized for phrase in explicit_phrases)
+
+
+def _is_governed_development_workflow_prompt(normalized: str) -> bool:
+    explicit_phrases = (
+        "governed development workflow",
+        "run governed development",
+        "execute governed development",
+        "start governed development workflow",
+        "orchestrate governed development",
     )
     return any(phrase in normalized for phrase in explicit_phrases)
 
@@ -1376,6 +1399,9 @@ def _operator_summary(workflow_id: str) -> str:
         ),
         GOVERNED_REPOSITORY_MUTATION: (
             "Select the governed repository mutation workflow without mutation or approval bypass."
+        ),
+        GOVERNED_DEVELOPMENT_WORKFLOW: (
+            "Select the governed development orchestration workflow without mutation or approval bypass."
         ),
         HUMAN_INTENT_CLARIFICATION_INTAKE: (
             "Ask deterministic clarification questions for normal human intent before provider fallback."
