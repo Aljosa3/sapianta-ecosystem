@@ -222,6 +222,7 @@ from aigol.runtime.conversational_cli_runtime import (
     DOMAIN_WORKER_REQUEST as CONVERSATIONAL_DOMAIN_WORKER_REQUEST,
     DEFAULT_PROVIDER_ASSISTED_CONVERSATION as CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
     FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH as CONVERSATIONAL_FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+    GOVERNED_DEVELOPMENT_WORKFLOW as CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
     IMPROVE_PROVIDER_LAYER as CONVERSATIONAL_IMPROVE_PROVIDER_LAYER,
     IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST as CONVERSATIONAL_IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
     IMPROVEMENT_PROPOSAL_RUNTIME as CONVERSATIONAL_IMPROVEMENT_PROPOSAL_RUNTIME,
@@ -467,6 +468,13 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     render_operator_visible_ocs_llm_cognition,
     render_ocs_llm_cognition_end_to_end_summary,
     run_ocs_llm_cognition_end_to_end,
+)
+from aigol.runtime.acli_governed_development_execution_bridge import (
+    APPROVAL_REQUIRED as ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED,
+    EXECUTION_COMPLETED as ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
+    approve_and_execute_acli_governed_development,
+    propose_acli_governed_development_execution,
+    render_acli_governed_development_bridge_summary,
 )
 
 
@@ -2940,6 +2948,7 @@ def run_interactive_conversation(
     initial_resume = resume_conversation_session(session_id=session_id, runtime_root=runtime_root, created_at=created_at)
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
     latest_workflow_status: dict[str, Any] | None = None
+    pending_governed_development_bridge: dict[str, Any] | None = None
     auto_continue_enabled = bool(getattr(args, "auto_continue", False))
     pending_auto_continuation: str | None = None
     pending_post_entry_continuation: dict[str, Any] | None = None
@@ -3049,6 +3058,10 @@ def run_interactive_conversation(
                 )
                 or (
                     pending_approval_required is not None
+                    and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+                )
+                or (
+                    pending_governed_development_bridge is not None
                     and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
                 )
                 or (
@@ -3455,6 +3468,39 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         continuation_capture=continuation_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif pending_governed_development_bridge is not None and human_decision in {
+                APPROVE,
+                REJECT,
+                REQUEST_MODIFICATION,
+            }:
+                bridge_decision = "APPROVED" if human_decision == APPROVE else human_decision
+                bridge_capture = approve_and_execute_acli_governed_development(
+                    bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
+                    pending_proposal_capture=pending_governed_development_bridge,
+                    decision=bridge_decision,
+                    decided_by=args.operator_context or "HUMAN_OPERATOR",
+                    decided_at=created_at,
+                    workspace_root=args.workspace,
+                    replay_dir=turn_root / "acli_governed_development_execution_bridge",
+                )
+                if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
+                    pending_governed_development_bridge = None
+                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                elif bridge_capture.get("bridge_status") == "REJECTED":
+                    pending_governed_development_bridge = None
+                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                else:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {bridge_capture.get('failure_reason')}")
+                turns.append(
+                    _interactive_acli_governed_development_bridge_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        bridge_capture=bridge_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
@@ -4659,8 +4705,35 @@ def run_interactive_conversation(
                             clarification_capture=clarification_capture,
                             conversational_routing_capture=conversational_routing_capture,
                             source_router_replay_reference=str(turn_root / "source_router"),
-                        )
                     )
+                )
+            elif authoritative_workflow_id == CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW:
+                bridge_capture = propose_acli_governed_development_execution(
+                    bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
+                    prompt_id=prompt_id,
+                    human_prompt=human_prompt,
+                    conversational_routing_capture=conversational_routing_capture or {},
+                    universal_intake_artifact=universal_intake_capture["universal_intake_artifact"],
+                    workspace_root=args.workspace,
+                    proposed_by=args.operator_context or "HUMAN_OPERATOR",
+                    created_at=created_at,
+                    replay_dir=turn_root / "acli_governed_development_execution_bridge",
+                )
+                if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED:
+                    pending_governed_development_bridge = bridge_capture
+                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                else:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {bridge_capture.get('failure_reason')}")
+                turns.append(
+                    _interactive_acli_governed_development_bridge_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        bridge_capture=bridge_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
             elif authoritative_workflow_id in {
                 CONVERSATIONAL_CREATE_DOMAIN_TRADING,
                 CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
@@ -6898,6 +6971,61 @@ def _interactive_conversational_cli_turn_summary(
         "approval_bypassed": False,
         "governance_mutated": False,
         "replay_mutated": False,
+    }
+
+
+def _interactive_acli_governed_development_bridge_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    bridge_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    workflow_capture = bridge_capture.get("workflow_capture") or {}
+    bridge_status = bridge_capture.get("bridge_status")
+    completed = bridge_status == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": bridge_status,
+        "response_source": "ACLI_GOVERNED_DEVELOPMENT_EXECUTION_BRIDGE",
+        "response_text": render_acli_governed_development_bridge_summary(bridge_capture),
+        "fail_closed": bridge_status == "FAILED_CLOSED",
+        "failure_reason": bridge_capture.get("failure_reason"),
+        "replay_reference": bridge_capture.get("replay_reference"),
+        "conversation_replay_reference": bridge_capture.get("replay_reference"),
+        "canonical_chain_id": prompt_id,
+        "current_chain_id": prompt_id,
+        "latest_chain_id": prompt_id,
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": bridge_capture.get("workflow_id"),
+        "existing_runtime": "acli_governed_development_execution_bridge",
+        "existing_cli_command": "aigol conversation",
+        "coverage": None,
+        "clarification_required": False,
+        "open_clarification_detected": False,
+        "provider_invoked": False,
+        "worker_invoked": bridge_capture.get("worker_invoked") is True,
+        "worker_assigned": False,
+        "worker_dispatched": False,
+        "authorization_created": bridge_capture.get("approval_required") is True,
+        "execution_requested": completed,
+        "execution_started": completed,
+        "dispatch_requested": False,
+        "invocation_requested": bridge_capture.get("worker_invoked") is True,
+        "approval_bypassed": bridge_capture.get("approval_bypassed") is True,
+        "governance_mutated": completed,
+        "repository_mutation_performed": bridge_capture.get("mutation_performed") is True,
+        "validation_executed": bridge_capture.get("validation_executed") is True,
+        "replay_mutated": False,
+        "governed_development_replay_reference": workflow_capture.get("governed_development_replay_reference"),
     }
 
 
