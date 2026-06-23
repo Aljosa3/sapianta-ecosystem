@@ -33,6 +33,7 @@ from aigol.runtime.conversational_cli_runtime import (
     FAILED_CLOSED,
     FINAL_CLASSIFICATION,
     FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
+    GOVERNANCE_ARTIFACT_CREATION,
     HUMAN_INTENT_CLARIFICATION_INTAKE,
     IMPROVE_PROVIDER_LAYER,
     IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
@@ -47,6 +48,7 @@ from aigol.runtime.conversational_cli_runtime import (
     WORKFLOW_SELECTED,
     reconstruct_conversational_cli_routing_replay,
     route_conversational_cli_intent,
+    workflow_registry,
 )
 from aigol.runtime.human_intent_clarification_continuity_runtime import (
     WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION,
@@ -137,6 +139,42 @@ def _conversation_args(tmp_path):
             str(tmp_path),
         ]
     )
+
+
+def test_governance_artifact_creation_workflow_is_registered() -> None:
+    matches = [entry for entry in workflow_registry() if entry["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION]
+
+    assert len(matches) == 1
+    assert matches[0]["existing_cli_command"] == "aigol conversation"
+    assert matches[0]["existing_runtime"] == "governance_artifact_creation_runtime"
+
+
+def test_governance_artifact_creation_prompt_routes_without_execution(tmp_path) -> None:
+    capture = _route(tmp_path, "Create a governance artifact for the new runtime")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
+    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governance_artifact_creation_runtime"
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["governance_mutated"] is False
+    assert capture["replay_mutated"] is False
+
+
+def test_governed_artifact_creation_prompt_routes_to_certified_workflow(tmp_path) -> None:
+    capture = _route(tmp_path, "Create a governed artifact named ExampleArtifact")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
+
+
+def test_generic_governed_execution_without_artifact_still_fails_closed(tmp_path) -> None:
+    capture = _route(tmp_path, "Run the governed execution workflow now")
+
+    assert capture["routing_status"] == FAILED_CLOSED
+    assert capture["workflow_id"] is None
+    assert "certified workflow mapping" in capture["failure_reason"]
 
 
 def _input_sequence(values: list[str]):
@@ -325,9 +363,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 38
-    assert coverage["conversationally_accessible_workflows"] == 38
-    assert coverage["coverage_ratio"] == "38/38"
+    assert coverage["registered_workflows"] == 39
+    assert coverage["conversationally_accessible_workflows"] == 39
+    assert coverage["coverage_ratio"] == "39/39"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -377,7 +415,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 38/38" in rendered
+    assert "coverage: 39/39" in rendered
 
 
 @pytest.mark.parametrize(
@@ -879,7 +917,6 @@ def test_task_completion_repair_routes_real_development_prompts_before_provider_
 @pytest.mark.parametrize(
     "prompt",
     [
-        "Create a governed artifact called PilotArtifact.",
         "Trigger a governed execution workflow.",
     ],
 )

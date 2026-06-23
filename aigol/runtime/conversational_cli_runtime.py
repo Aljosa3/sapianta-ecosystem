@@ -81,6 +81,7 @@ DOMAIN_WORKER_RESULT_CAPTURE = "DOMAIN_WORKER_RESULT_CAPTURE"
 DOMAIN_WORKER_RESULT_VALIDATION = "DOMAIN_WORKER_RESULT_VALIDATION"
 DOMAIN_POST_EXECUTION_REPLAY_REVIEW = "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
 DOMAIN_GOVERNED_TERMINATION = "DOMAIN_GOVERNED_TERMINATION"
+GOVERNANCE_ARTIFACT_CREATION = "GOVERNANCE_ARTIFACT_CREATION"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 PROVIDER_ONBOARDING_DOMAIN = "PROVIDER_ONBOARDING_DOMAIN"
 
@@ -363,6 +364,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "governed_termination_runtime",
         ),
         _workflow(
+            GOVERNANCE_ARTIFACT_CREATION,
+            "aigol conversation",
+            "governance_artifact_creation_runtime",
+        ),
+        _workflow(
             HUMAN_INTENT_CLARIFICATION_INTAKE,
             "aigol conversation",
             "human_intent_clarification_intake_runtime",
@@ -530,6 +536,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
     if "create" in normalized and "marketing" in normalized and "domain" in normalized:
         return _analysis(CREATE_DOMAIN_MARKETING, "HIGH", ["create", "marketing", "domain"])
+    if _is_governance_artifact_creation_prompt(normalized):
+        return _analysis(
+            GOVERNANCE_ARTIFACT_CREATION,
+            "HIGH",
+            ["create", "governance", "artifact"],
+        )
     if is_conversation_native_development_intent(prompt):
         return _analysis(
             NATIVE_DEVELOPMENT_INTENT_ROUTING,
@@ -619,10 +631,13 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             execution_intent["confidence"],
             execution_intent["matched_terms"] or ["create", "governed", "domain"],
         )
-    if execution_intent["intent_class"] in {
-        GENERIC_GOVERNED_ARTIFACT_CREATION,
-        GENERIC_GOVERNED_EXECUTION_REQUEST,
-    }:
+    if execution_intent["intent_class"] == GENERIC_GOVERNED_ARTIFACT_CREATION:
+        return _analysis(
+            GOVERNANCE_ARTIFACT_CREATION,
+            execution_intent["confidence"],
+            execution_intent["matched_terms"] or ["create", "governed", "artifact"],
+        )
+    if execution_intent["intent_class"] == GENERIC_GOVERNED_EXECUTION_REQUEST:
         raise FailClosedRuntimeError(
             "conversational CLI routing failed closed: generic governed execution intent requires a certified workflow mapping"
         )
@@ -848,6 +863,26 @@ def _is_plain_domain_proposal_prompt(normalized: str) -> bool:
 
 def _is_product_1_prompt(normalized: str) -> bool:
     return "product 1" in normalized and "ai decision validator" in normalized
+
+
+def _is_governance_artifact_creation_prompt(normalized: str) -> bool:
+    explicit_phrases = (
+        "create a governance artifact",
+        "create the governance artifact",
+        "create governance artifact",
+        "define a governance artifact",
+        "define the governance artifact",
+        "define governance artifact",
+        "add a governance artifact",
+        "prepare a governance artifact",
+        "create a governed artifact",
+        "create the governed artifact",
+        "create governed artifact",
+        "create a certification artifact",
+        "create a governance workflow artifact",
+        "create a governance analysis artifact",
+    )
+    return any(phrase in normalized for phrase in explicit_phrases)
 
 
 def _is_product_1_domain_foundation_prompt(normalized: str) -> bool:
@@ -1311,6 +1346,9 @@ def _operator_summary(workflow_id: str) -> str:
         DOMAIN_WORKER_RESULT_VALIDATION: "Validate the latest captured worker result without replay review.",
         DOMAIN_POST_EXECUTION_REPLAY_REVIEW: "Review the latest validated worker result replay without termination.",
         DOMAIN_GOVERNED_TERMINATION: "Terminate the latest reviewed operation without new work.",
+        GOVERNANCE_ARTIFACT_CREATION: (
+            "Select the certified governance artifact creation workflow without mutation or approval bypass."
+        ),
         HUMAN_INTENT_CLARIFICATION_INTAKE: (
             "Ask deterministic clarification questions for normal human intent before provider fallback."
         ),
