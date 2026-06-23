@@ -147,11 +147,11 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert turn["conversational_workflow_id"] == OCS_LLM_COGNITION
     assert turn["ocs_llm_cognition_artifact_type"] == OCS_LLM_COGNITION_END_TO_END_ARTIFACT_V1
     assert turn["provider_invoked"] is True
-    assert turn["successful_provider_count"] == 1
-    assert turn["provider_ids"] == ["openai"]
+    assert turn["successful_provider_count"] == 2
+    assert turn["provider_ids"] == ["openai", "openai-comparison"]
     assert "openai" in turn["provider_ids"]
     assert turn["real_llm_provider_used_by_ocs"] is True
-    assert turn["cognition_artifact_count"] == 1
+    assert turn["cognition_artifact_count"] == 2
     assert captured["api_key"] == "test-openai-key"
     assert turn["comparison_artifact_hash"]
     assert turn["continuity_artifact_hash"]
@@ -180,7 +180,7 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
         "================================",
         "TURN COMPLETED",
         "turn_id: TURN-000001",
-        "providers: openai",
+        "providers: openai, openai-comparison",
         "status: COMPLETED",
         "result_delivered: TRUE",
         "elapsed: 0s",
@@ -188,19 +188,19 @@ def test_broad_conversational_prompt_runs_certified_ocs_cognition_path(tmp_path,
     assert "Workflow State: WAITING_FOR_OPERATOR" in output[0]
     assert "WAITING FOR OPERATOR INPUT" in output[0]
     assert replay["final_status"] == STATUS_COMPLETED
-    assert replay["provider_count"] == 1
-    assert replay["cognition_artifact_count"] == 1
-    assert replay["selected_cognition_mode"] == "SINGLE_PROVIDER_PRIMARY"
+    assert replay["provider_count"] == 2
+    assert replay["cognition_artifact_count"] == 2
+    assert replay["selected_cognition_mode"] == "MULTI_PROVIDER_COMPARISON"
     assert replay["mode_selection_status"] == STATUS_COMPLETED
-    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "SINGLE_PROVIDER_PRIMARY"
-    assert replay["stage_replay"]["mode_selection"]["requested_single_provider_primary_mode"] is True
+    assert replay["stage_replay"]["mode_selection"]["selected_mode"] == "MULTI_PROVIDER_COMPARISON"
+    assert replay["stage_replay"]["mode_selection"]["requested_single_provider_primary_mode"] is False
     assert (
         replay["stage_replay"]["mode_selection"]["provider_contract_mode_flags"]["openai"]["single_provider_only"]
-        is True
+        is False
     )
     assert replay["stage_replay"]["cognition_comparison"]["final_status"] == STATUS_COMPLETED
     assert replay["stage_replay"]["context"]["context_status"] == "OCS_CONTEXT_ASSEMBLED"
-    assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 1
+    assert replay["stage_replay"]["cognition_comparison"]["source_cognition_artifact_count"] == 2
     assert replay["stage_replay"]["continuity_and_clarification"]["clarification_candidate_count"] >= 1
 
 

@@ -664,6 +664,11 @@ def _conversation_ocs_cognition_provider_contracts(created_at: str) -> list[dict
             provider_label="OpenAI Responses Provider",
             created_at=created_at,
         ),
+        _conversation_openai_cognition_provider_contract(
+            provider_id="openai-comparison",
+            provider_label="OpenAI Comparison Responses Provider",
+            created_at=created_at,
+        ),
     ]
 
 
@@ -674,8 +679,8 @@ def _conversation_openai_cognition_provider_contract(
     artifact["provider_id"] = provider_id
     artifact["provider_identity"]["provider_id"] = provider_id
     artifact["provider_identity"]["provider_label"] = provider_label
-    artifact["single_provider_only"] = True
-    artifact["multi_provider_cognition_scope"] = False
+    artifact["single_provider_only"] = False
+    artifact["multi_provider_cognition_scope"] = True
     artifact.pop("artifact_hash", None)
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -1214,7 +1219,7 @@ def _ocs_execution_required_validation_history(
 def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path) -> dict[str, Any]:
     def _transport(payload: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
         provider_id = str(metadata.get("provider_id") or payload.get("provider_id") or "")
-        if provider_id != OPENAI_PROVIDER_ID:
+        if provider_id not in {OPENAI_PROVIDER_ID, "openai-comparison"}:
             raise FailClosedRuntimeError("conversational OCS provider is not registered for real OpenAI attachment")
         provider_replay_dir = replay_dir / "real_openai_provider_attachment" / provider_id
         _record_conversational_openai_output_budget(
@@ -1251,7 +1256,7 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
             provider_response["usage"] = raw_response["usage"]
         return provider_response
 
-    return {OPENAI_PROVIDER_ID: _transport}
+    return {OPENAI_PROVIDER_ID: _transport, "openai-comparison": _transport}
 
 
 def _record_conversational_openai_output_budget(
@@ -1313,7 +1318,7 @@ def _run_conversational_ocs_llm_cognition(
         replay_dir=replay_dir,
         source_chain_id=current_chain_id or prompt_id,
         source_request_reference=prompt_id,
-        single_provider_primary_mode=True,
+        single_provider_primary_mode=False,
     )
 
 
