@@ -6,7 +6,7 @@ from aigol.cli import aigol_cli
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
 from aigol.runtime.conversational_cli_runtime import (
     CREATE_DOMAIN_MARKETING,
-    DEFAULT_PROVIDER_ASSISTED_CONVERSATION,
+    HUMAN_INTENT_CLARIFICATION_INTAKE,
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
     SHOW_LATEST_REPLAY_CHAIN,
@@ -206,8 +206,8 @@ def test_replay_review_prompt_renders_visibility(tmp_path) -> None:
     assert "workflow: SHOW_LATEST_REPLAY_CHAIN" in output[0]
 
 
-def test_default_fallback_prompt_renders_authoritative_visibility_before_failure(tmp_path, monkeypatch) -> None:
-    session_id = "SESSION-ROUTING-VISIBILITY-FAILED-000001"
+def test_vague_prompt_renders_hirr_visibility_without_provider_failure(tmp_path, monkeypatch) -> None:
+    session_id = "SESSION-ROUTING-VISIBILITY-HIRR-000001"
     output: list[str] = []
 
     def provider_unavailable(**kwargs):
@@ -242,20 +242,19 @@ def test_default_fallback_prompt_renders_authoritative_visibility_before_failure
     replay = _routing_replay(tmp_path, session_id)
 
     assert result["turn_count"] == 1
-    assert result["failed_turns"] == 1
-    assert replay["workflow_id"] == DEFAULT_PROVIDER_ASSISTED_CONVERSATION
+    assert result["failed_turns"] == 0
+    assert replay["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
     assert replay["routing_status"] == ROUTING_SELECTED
     assert replay["routing_confidence"] == "LOW"
-    assert replay["matched_signals"] == ["provider", "conversation", "fallback"]
+    assert replay["matched_signals"] == ["unknown-human-intent"]
     assert replay["competing_signals"] == []
-    assert "provider-assisted conversation" in replay["routing_reason"]
+    assert "clarification questions" in replay["routing_reason"]
     assert output[0].splitlines()[0:3] == [
         "================================",
         "ROUTING DECISION",
-        "workflow: DEFAULT_PROVIDER_ASSISTED_CONVERSATION",
+        "workflow: HUMAN_INTENT_CLARIFICATION_INTAKE",
     ]
     assert output[0].splitlines()[3:4] == [
         "confidence: LOW",
     ]
-    assert output[-2].startswith("FAILED_CLOSED:")
-    assert output[-1].startswith("Workflow Name:")
+    assert "Workflow Name: HUMAN_INTENT_CLARIFICATION_INTAKE" in output[-1]

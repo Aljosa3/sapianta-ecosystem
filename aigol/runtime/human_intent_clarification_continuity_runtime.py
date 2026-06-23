@@ -541,7 +541,11 @@ def _refined_workflow_target(
             "signals": confirmation_signals + bounded_file_signals,
             **_no_ambiguity_escalation(),
         }
-    if governed_signals and not no_execution_signals and not advisory_signals:
+    if (
+        governed_signals
+        and not no_execution_signals
+        and (not advisory_signals or original_target == CREATE_DOMAIN_COMPLIANCE_CLARIFICATION)
+    ):
         return {
             "selected_workflow_id": CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
             "refined_intent_family": original_intent_family or AMBIGUOUS_INTENT,

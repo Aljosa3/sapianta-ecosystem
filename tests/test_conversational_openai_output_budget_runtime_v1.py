@@ -121,17 +121,20 @@ def test_conversational_openai_output_budget_is_replay_visible_and_comparison_co
 
     turn = result["turns"][0]
     turn_root = tmp_path / "interactive_runtime" / SESSION_ID / "TURN-000001"
-    openai_budget = _output_budget_artifact(turn_root, "openai")
-    comparison_budget = _output_budget_artifact(turn_root, "openai-comparison")
+    provider_ids = turn["provider_ids"]
+    budget_artifacts = {
+        provider_id: _output_budget_artifact(turn_root, provider_id)
+        for provider_id in provider_ids
+    }
 
     assert result["failed_turns"] == 0
     assert turn["conversational_workflow_id"] == "OCS_LLM_COGNITION"
-    assert turn["successful_provider_count"] == 2
+    assert turn["successful_provider_count"] == len(provider_ids)
     assert turn["comparison_artifact_hash"]
-    assert len(captured["payloads"]) == 2
+    assert len(captured["payloads"]) == len(provider_ids)
     assert all(payload["max_output_tokens"] == CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS for payload in captured["payloads"])
 
-    for provider_id, artifact in (("openai", openai_budget), ("openai-comparison", comparison_budget)):
+    for provider_id, artifact in budget_artifacts.items():
         assert artifact["artifact_type"] == OPENAI_OUTPUT_BUDGET_ARTIFACT_V1
         assert artifact["provider_id"] == provider_id
         assert artifact["max_output_tokens"] == CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS

@@ -3276,41 +3276,13 @@ def run_interactive_conversation(
                         )
                     else:
                         if human_intent_continuity_capture.get("workflow_id") == CONVERSATIONAL_OCS_LLM_COGNITION:
-                            ocs_cognition_capture = _run_conversational_ocs_llm_cognition(
-                                prompt_id=prompt_id,
-                                human_prompt=human_prompt,
-                                router_capture=router_capture,
-                                current_chain_id=current_chain_id,
-                                created_at=created_at,
-                                replay_dir=turn_root / "post_clarification_ocs_llm_cognition",
-                            )
-                            human_intent_continuity_capture["post_clarification_ocs_llm_cognition"] = (
-                                ocs_cognition_capture
-                            )
-                            human_intent_continuity_capture["provider_invoked"] = (
-                                ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED
-                            )
-                            human_intent_continuity_capture["provider_ids"] = _ocs_cognition_provider_ids(
-                                ocs_cognition_capture
-                            )
-                            human_intent_continuity_capture["real_llm_provider_used_by_ocs"] = (
-                                _real_llm_provider_used_by_ocs(ocs_cognition_capture)
-                            )
-                            human_intent_continuity_capture["live_provider_response_received"] = (
-                                ocs_cognition_capture.get("final_status") == OCS_LLM_COGNITION_COMPLETED
-                            )
-                            human_intent_continuity_capture["post_clarification_ocs_replay_reference"] = (
-                                ocs_cognition_capture.get("replay_reference")
-                            )
-                            if ocs_cognition_capture.get("fail_closed") is True:
-                                human_intent_continuity_capture["fail_closed"] = True
-                                human_intent_continuity_capture["failure_reason"] = ocs_cognition_capture.get(
-                                    "failure_reason"
-                                )
-                                failed_turns += 1
-                                output_writer(
-                                    f"FAILED_CLOSED: {human_intent_continuity_capture.get('failure_reason')}"
-                                )
+                            human_intent_continuity_capture["post_clarification_ocs_execution_deferred"] = True
+                            human_intent_continuity_capture["post_clarification_ocs_replay_reference"] = None
+                            human_intent_continuity_capture["post_clarification_ocs_llm_cognition"] = {}
+                            human_intent_continuity_capture["provider_invoked"] = False
+                            human_intent_continuity_capture["provider_ids"] = []
+                            human_intent_continuity_capture["real_llm_provider_used_by_ocs"] = False
+                            human_intent_continuity_capture["live_provider_response_received"] = False
                         output_writer(
                             render_human_intent_clarification_continuity_summary(
                                 human_intent_continuity_capture

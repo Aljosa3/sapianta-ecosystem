@@ -239,5 +239,5 @@ def test_legacy_provider_unavailable_fallback_remains_available_for_narrow_promp
     )
 
     assert result["failed_turns"] == 0
-    assert result["turns"][0]["response_status"] == "HUMAN_CLARIFICATION_REQUIRED"
-    assert "HUMAN_CLARIFICATION_REQUIRED" in output[0]
+    assert result["turns"][0]["response_status"] == "CLARIFICATION_REQUIRED"
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" in output[0]
