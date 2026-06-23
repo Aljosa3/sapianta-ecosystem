@@ -34,6 +34,7 @@ from aigol.runtime.conversational_cli_runtime import (
     FINAL_CLASSIFICATION,
     FIRST_REAL_IMPLEMENTATION_GENERATION_EPOCH,
     GOVERNANCE_ARTIFACT_CREATION,
+    GOVERNED_REPOSITORY_MUTATION,
     HUMAN_INTENT_CLARIFICATION_INTAKE,
     IMPROVE_PROVIDER_LAYER,
     IMPLEMENTATION_PLAN_TO_EXECUTION_REQUEST,
@@ -167,6 +168,28 @@ def test_governed_artifact_creation_prompt_routes_to_certified_workflow(tmp_path
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
     assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
+
+
+def test_governed_repository_mutation_workflow_is_registered() -> None:
+    matches = [entry for entry in workflow_registry() if entry["workflow_id"] == GOVERNED_REPOSITORY_MUTATION]
+
+    assert len(matches) == 1
+    assert matches[0]["existing_cli_command"] == "aigol conversation"
+    assert matches[0]["existing_runtime"] == "governed_repository_mutation_runtime"
+
+
+def test_governed_repository_mutation_prompt_routes_without_execution(tmp_path) -> None:
+    capture = _route(tmp_path, "Run a governed repository mutation for the approved patch")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == GOVERNED_REPOSITORY_MUTATION
+    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governed_repository_mutation_runtime"
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
+    assert capture["governance_mutated"] is False
+    assert capture["replay_mutated"] is False
 
 
 def test_generic_governed_execution_without_artifact_still_fails_closed(tmp_path) -> None:
@@ -363,9 +386,9 @@ def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]
 
-    assert coverage["registered_workflows"] == 39
-    assert coverage["conversationally_accessible_workflows"] == 39
-    assert coverage["coverage_ratio"] == "39/39"
+    assert coverage["registered_workflows"] == 40
+    assert coverage["conversationally_accessible_workflows"] == 40
+    assert coverage["coverage_ratio"] == "40/40"
     assert CREATE_DOMAIN_TRADING in coverage["workflow_ids"]
     assert DOMAIN_ADAPTATION_REFERENCE in coverage["workflow_ids"]
     assert OPERATOR_DECISION_SUPPORT in coverage["workflow_ids"]
@@ -415,7 +438,7 @@ def test_conversational_route_cli_renders_selection(tmp_path) -> None:
     assert result["command"] == "aigol conversational route"
     assert result["workflow_id"] == IMPROVE_PROVIDER_LAYER
     assert "AIGOL CONVERSATIONAL ROUTING" in rendered
-    assert "coverage: 39/39" in rendered
+    assert "coverage: 40/40" in rendered
 
 
 @pytest.mark.parametrize(

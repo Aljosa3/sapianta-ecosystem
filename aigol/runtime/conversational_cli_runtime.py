@@ -82,6 +82,7 @@ DOMAIN_WORKER_RESULT_VALIDATION = "DOMAIN_WORKER_RESULT_VALIDATION"
 DOMAIN_POST_EXECUTION_REPLAY_REVIEW = "DOMAIN_POST_EXECUTION_REPLAY_REVIEW"
 DOMAIN_GOVERNED_TERMINATION = "DOMAIN_GOVERNED_TERMINATION"
 GOVERNANCE_ARTIFACT_CREATION = "GOVERNANCE_ARTIFACT_CREATION"
+GOVERNED_REPOSITORY_MUTATION = "GOVERNED_REPOSITORY_MUTATION"
 DEFAULT_PROVIDER_ASSISTED_CONVERSATION = "DEFAULT_PROVIDER_ASSISTED_CONVERSATION"
 PROVIDER_ONBOARDING_DOMAIN = "PROVIDER_ONBOARDING_DOMAIN"
 
@@ -369,6 +370,11 @@ def workflow_registry() -> tuple[dict[str, Any], ...]:
             "governance_artifact_creation_runtime",
         ),
         _workflow(
+            GOVERNED_REPOSITORY_MUTATION,
+            "aigol conversation",
+            "governed_repository_mutation_runtime",
+        ),
+        _workflow(
             HUMAN_INTENT_CLARIFICATION_INTAKE,
             "aigol conversation",
             "human_intent_clarification_intake_runtime",
@@ -541,6 +547,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             GOVERNANCE_ARTIFACT_CREATION,
             "HIGH",
             ["create", "governance", "artifact"],
+        )
+    if _is_governed_repository_mutation_prompt(normalized):
+        return _analysis(
+            GOVERNED_REPOSITORY_MUTATION,
+            "HIGH",
+            ["governed", "repository", "mutation"],
         )
     if is_conversation_native_development_intent(prompt):
         return _analysis(
@@ -881,6 +893,19 @@ def _is_governance_artifact_creation_prompt(normalized: str) -> bool:
         "create a certification artifact",
         "create a governance workflow artifact",
         "create a governance analysis artifact",
+    )
+    return any(phrase in normalized for phrase in explicit_phrases)
+
+
+def _is_governed_repository_mutation_prompt(normalized: str) -> bool:
+    explicit_phrases = (
+        "governed repository mutation",
+        "approved repository mutation",
+        "bounded repository mutation",
+        "run repository mutation worker",
+        "invoke repository mutation worker",
+        "apply approved file mutation",
+        "apply approved repository mutation",
     )
     return any(phrase in normalized for phrase in explicit_phrases)
 
@@ -1348,6 +1373,9 @@ def _operator_summary(workflow_id: str) -> str:
         DOMAIN_GOVERNED_TERMINATION: "Terminate the latest reviewed operation without new work.",
         GOVERNANCE_ARTIFACT_CREATION: (
             "Select the certified governance artifact creation workflow without mutation or approval bypass."
+        ),
+        GOVERNED_REPOSITORY_MUTATION: (
+            "Select the governed repository mutation workflow without mutation or approval bypass."
         ),
         HUMAN_INTENT_CLARIFICATION_INTAKE: (
             "Ask deterministic clarification questions for normal human intent before provider fallback."
