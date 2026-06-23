@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from aigol.runtime.governed_implementation_request_runtime import (
     APPROVED,
     HUMAN_APPROVAL_ARTIFACT_V1,
@@ -20,6 +22,10 @@ from aigol.runtime.improvement_intent_to_ppp_bridge_runtime import (
     PPP_CANDIDATE_CREATED,
     bridge_improvement_intent_to_ppp_candidate,
 )
+from aigol.runtime.replay_derived_improvement_certification_v1 import (
+    MILESTONE_ID,
+    run_replay_derived_improvement_certification_v1,
+)
 from aigol.runtime.replay_certification_runtime import (
     REPLAY_CERTIFICATION_COMPLETED,
     certify_validated_replay,
@@ -33,7 +39,7 @@ from aigol.runtime.result_validation_runtime import (
     RESULT_VALIDATION_COMPLETED,
     validate_governed_execution_result,
 )
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash
 from aigol.runtime.worker_dispatch_to_worker_invocation_governance_runtime import (
     WORKER_INVOCATION_CANDIDATE_CREATED,
     create_worker_invocation_candidate,
@@ -46,7 +52,6 @@ from aigol.runtime.worker_request_to_worker_dispatch_governance_runtime import (
     WORKER_DISPATCH_CANDIDATE_CREATED,
     create_worker_dispatch_candidate,
 )
-
 
 CREATED_AT = "2026-06-13T00:00:00Z"
 CHAIN_ID = "CHAIN-REPLAY-DERIVED-IMPROVEMENT-CERTIFICATION-000001"
@@ -331,3 +336,66 @@ def test_approved_replay_derived_improvement_reaches_worker_candidates_validatio
     assert replay_certification["replay_certification_artifact"]["replay_references"] == execution_candidate["replay_references"]
     assert replay_certification["replay_certification_artifact"]["replay_lineage_preserved"] is True
     assert replay_certification["replay_certification_artifact"]["fail_closed_preserved"] is True
+
+
+def test_replay_derived_improvement_certification_produces_expected_packages(tmp_path) -> None:
+    result = run_replay_derived_improvement_certification_v1(
+        replay_base=tmp_path / "replay_derived_improvement_certification"
+    )
+
+    assert result["milestone_id"] == MILESTONE_ID
+    assert result["final_verdict"] == "REPLAY_DERIVED_IMPROVEMENT_CERTIFIED"
+    assert all(result["assertions"].values())
+    for key in (
+        "coverage_report_path",
+        "evidence_package_path",
+        "replay_package_path",
+        "improvement_proposal_package_path",
+        "certification_report_path",
+    ):
+        assert load_json(Path(result[key]))["runtime_version"] == MILESTONE_ID
+
+
+def test_replay_derived_improvement_certification_is_proposal_only(tmp_path) -> None:
+    result = run_replay_derived_improvement_certification_v1(
+        replay_base=tmp_path / "replay_derived_improvement_certification"
+    )
+    proposal = load_json(Path(result["improvement_proposal_package_path"]))
+
+    assert proposal["proposal_status"] == "PROPOSAL_ONLY"
+    assert proposal["human_approval_required"] is True
+    assert proposal["implementation_executed"] is False
+    assert proposal["code_modified"] is False
+    assert proposal["governance_modified"] is False
+    assert proposal["worker_invoked"] is False
+    assert proposal["provider_invoked"] is False
+    assert proposal["authority_transferred"] is False
+
+
+def test_replay_derived_improvement_certification_replay_closure_is_traceable(tmp_path) -> None:
+    result = run_replay_derived_improvement_certification_v1(
+        replay_base=tmp_path / "replay_derived_improvement_certification"
+    )
+    replay = load_json(Path(result["replay_package_path"]))
+    evidence = load_json(Path(result["evidence_package_path"]))
+
+    assert replay["replay_reconstructed"] is True
+    assert replay["replay_closure"]["improvement_linked_to_originating_replay"] is True
+    assert replay["replay_closure"]["improvement_evidence_traceable"] is True
+    assert evidence["gap_detection"]["status"] == GAPS_DETECTED
+    assert evidence["improvement_intent"]["status"] == IMPROVEMENT_INTENT_CREATED
+    assert evidence["ppp_routing"]["status"] == PPP_CANDIDATE_CREATED
+
+
+def test_replay_derived_improvement_certification_evidence_is_secret_free(tmp_path) -> None:
+    result = run_replay_derived_improvement_certification_v1(
+        replay_base=tmp_path / "replay_derived_improvement_certification"
+    )
+    serialized = ""
+    for path in sorted(Path(result["cert_root"]).rglob("*.json")):
+        serialized += canonical_serialize(load_json(path))
+
+    assert "sk-" not in serialized
+    assert "Bearer " not in serialized
+    assert "OPENAI_API_KEY=" not in serialized
+    assert "ANTHROPIC_API_KEY=" not in serialized
