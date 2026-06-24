@@ -99,9 +99,20 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert "REPLAY VISIBILITY" in rendered
     assert "Type APPROVE to continue." in rendered
     assert "no worker will execute before approval" in rendered
+    assert "Operator Summary" in rendered
+    assert "Diagnostics" in rendered
+    assert "Proposal ready for review." in rendered
+    assert "Nothing has changed yet." in rendered
+    assert "No worker has run yet." in rendered
+    assert "Validation has not run yet because execution has not been approved." in rendered
     assert "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION" in rendered
     assert "approval_boundary: explicit human APPROVE required before mutation" in rendered
     assert "Governed Development Execution" in rendered
+    assert "Approved and executed." in rendered
+    assert "What happened:" in rendered
+    assert "- validation ran successfully" in rendered
+    assert "Safety checks:" in rendered
+    assert "- approval was not bypassed" in rendered
     assert "ROUTING FAILED CLOSED" not in rendered
     assert "Stateful governed development approval decision detected" in rendered
     assert "approval_decision: APPROVED" in rendered
@@ -161,8 +172,10 @@ def test_governance_artifact_operator_prompt_uses_governed_development_bridge(tm
     assert "HUMAN-FRIENDLY EXPLANATION" in rendered
     assert "WHAT I UNDERSTOOD" in rendered
     assert "Governed Development Proposal" in rendered
+    assert "Proposal ready for review." in rendered
     assert "approval_boundary: explicit human APPROVE required before mutation" in rendered
     assert "Governed Development Execution" in rendered
+    assert "Approved and executed." in rendered
     assert "workflow_execution_status: GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED" in rendered
 
     explanation_replay = reconstruct_acli_human_friendly_explanation_replay(
@@ -177,15 +190,17 @@ def test_governance_artifact_operator_prompt_uses_governed_development_bridge(tm
 
 def test_acli_governed_development_bridge_rejection_does_not_mutate(tmp_path) -> None:
     repo = _repo(tmp_path)
+    output: list[str] = []
 
     result = run_interactive_conversation(
         _conversation_args(tmp_path, repo),
         input_func=_input_sequence(["Add replay validation", "REJECT", "exit"]),
-        output_func=lambda _line: None,
+        output_func=output.append,
     )
 
     proposal_turn = result["turns"][0]
     rejection_turn = result["turns"][1]
+    rejection_rendered = output[1]
 
     assert result["failed_turns"] == 0
     assert result["execution_requested"] is False
@@ -193,6 +208,18 @@ def test_acli_governed_development_bridge_rejection_does_not_mutate(tmp_path) ->
     assert proposal_turn["response_status"] == APPROVAL_REQUIRED
     assert rejection_turn["response_status"] == "REJECTED"
     assert rejection_turn["repository_mutation_performed"] is False
+    assert "Governed Development Rejected" in rejection_rendered
+    assert "Operator Summary" in rejection_rendered
+    assert "Diagnostics" in rejection_rendered
+    assert "Proposal rejected." in rejection_rendered
+    assert "The current proposal is canceled." in rejection_rendered
+    assert "Nothing was approved." in rejection_rendered
+    assert "No repository changes were made." in rejection_rendered
+    assert "No worker ran." in rejection_rendered
+    assert "Replay evidence records the rejection." in rejection_rendered
+    assert "bridge_status: REJECTED" in rejection_rendered
+    assert "approval_hash:" not in rejection_rendered
+    assert "failure_reason:" not in rejection_rendered
     assert not any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))
     assert not any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
 
@@ -226,15 +253,24 @@ def test_acli_governed_development_bridge_request_modification_waits_for_revisio
     assert modification_turn["worker_invoked"] is False
     assert modification_turn["validation_executed"] is False
     assert "Governed Development Modification Requested" in modification_rendered
+    assert "Operator Summary" in modification_rendered
+    assert "Diagnostics" in modification_rendered
+    assert "Modification requested." in modification_rendered
+    assert "The current proposal has been stopped." in modification_rendered
+    assert "Nothing was approved." in modification_rendered
+    assert "No repository changes were made." in modification_rendered
+    assert "No worker ran." in modification_rendered
+    assert "Please describe what you want changed in the proposal." in modification_rendered
     assert "bridge_status: MODIFICATION_REQUESTED" in modification_rendered
     assert "workflow_state: WAITING_FOR_OPERATOR_REVISION" in modification_rendered
     assert "approval_granted: false" in modification_rendered
-    assert "approval_hash: " in modification_rendered
+    assert "approval_hash:" not in modification_rendered
     assert "execution_authorized: false" in modification_rendered
     assert "mutation_performed: false" in modification_rendered
     assert "worker_invoked: false" in modification_rendered
     assert "validation_executed: false" in modification_rendered
     assert "next_action: Describe the required proposal change." in modification_rendered
+    assert "failure_reason:" not in modification_rendered
     assert "Current Lifecycle Stage: EXECUTION_AUTHORIZED" not in modification_rendered
     assert "Create worker request" not in modification_rendered
     assert not any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))

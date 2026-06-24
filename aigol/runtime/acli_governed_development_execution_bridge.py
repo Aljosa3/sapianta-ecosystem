@@ -264,97 +264,220 @@ def approve_and_execute_acli_governed_development(
 
 
 def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> str:
-    """Render a compact operator-facing summary for the bridge."""
+    """Render an operator-facing summary with diagnostics separated from plain language."""
 
     proposal = capture.get("proposal_artifact") or {}
     workflow_capture = capture.get("workflow_capture") or {}
     if capture.get("bridge_status") == APPROVAL_REQUIRED:
+        target_paths = [str(path) for path in capture.get("target_paths", [])]
         return "\n".join(
-            [
-                "Governed Development Proposal",
-                "",
-                f"bridge_status: {capture.get('bridge_status')}",
-                f"workflow_id: {capture.get('workflow_id')}",
-                f"proposal_id: {proposal.get('proposal_id')}",
-                f"proposal_hash: {proposal.get('artifact_hash')}",
-                "target_paths:",
-                *[f"- {path}" for path in capture.get("target_paths", [])],
-                "approval_required: true",
-                "approval_boundary: explicit human APPROVE required before mutation",
-                "mutation_performed: false",
-                "worker_invoked: false",
-                "validation_executed: false",
-                f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
-                f"replay_reference: {capture.get('replay_reference')}",
-                "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION",
-            ]
+            _compact_lines(
+                [
+                    "Governed Development Proposal",
+                    "",
+                    "Operator Summary",
+                    "",
+                    "Proposal ready for review.",
+                    "",
+                    "ACLI prepared a governed development proposal for your request.",
+                    "",
+                    "Proposed repository changes:",
+                    *(_bullet_lines(target_paths) if target_paths else ["- No target paths were recorded."]),
+                    "",
+                    "Nothing has changed yet.",
+                    "No worker has run yet.",
+                    "Validation has not run yet because execution has not been approved.",
+                    "",
+                    "What you can type next:",
+                    "- APPROVE to continue.",
+                    "- REJECT to cancel.",
+                    "- REQUEST_MODIFICATION to ask for a changed proposal.",
+                    "",
+                    "Evidence",
+                    "",
+                    f"- proposal replay: {capture.get('replay_reference')}",
+                    "",
+                    "Diagnostics",
+                    "",
+                    f"bridge_status: {capture.get('bridge_status')}",
+                    f"workflow_id: {capture.get('workflow_id')}",
+                    f"proposal_id: {proposal.get('proposal_id')}",
+                    f"proposal_hash: {proposal.get('artifact_hash')}",
+                    "target_paths:",
+                    *[f"- {path}" for path in target_paths],
+                    "approval_required: true",
+                    "approval_boundary: explicit human APPROVE required before mutation",
+                    "mutation_performed: false",
+                    "worker_invoked: false",
+                    "validation_executed: false",
+                    f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                    f"replay_reference: {capture.get('replay_reference')}",
+                    "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION",
+                ]
+            )
         )
     if capture.get("bridge_status") == MODIFICATION_REQUESTED:
         return "\n".join(
-            [
-                "Governed Development Modification Requested",
-                "",
-                f"bridge_status: {capture.get('bridge_status')}",
-                f"workflow_state: {capture.get('workflow_state')}",
-                f"workflow_id: {capture.get('workflow_id')}",
-                f"approval_decision: {capture.get('decision') or ''}",
-                f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
-                f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
-                f"approval_hash: {capture.get('approval_hash') or ''}",
-                f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
-                f"proposal_hash: {capture.get('proposal_hash') or ''}",
-                f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
-                f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
-                f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
-                f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
-                f"bridge_replay_reference: {capture.get('replay_reference')}",
-                "next_action: Describe the required proposal change.",
-                f"failure_reason: {capture.get('failure_reason') or ''}",
-            ]
+            _compact_lines(
+                [
+                    "Governed Development Modification Requested",
+                    "",
+                    "Operator Summary",
+                    "",
+                    "Modification requested.",
+                    "",
+                    "The current proposal has been stopped.",
+                    "Nothing was approved.",
+                    "No repository changes were made.",
+                    "No worker ran.",
+                    "",
+                    "Please describe what you want changed in the proposal.",
+                    "",
+                    "Evidence",
+                    "",
+                    f"- modification replay: {capture.get('replay_reference')}",
+                    "",
+                    "Diagnostics",
+                    "",
+                    f"bridge_status: {capture.get('bridge_status')}",
+                    f"workflow_state: {capture.get('workflow_state')}",
+                    f"workflow_id: {capture.get('workflow_id')}",
+                    f"approval_decision: {capture.get('decision') or ''}",
+                    f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
+                    f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
+                    _optional_field("approval_hash", capture.get("approval_hash")),
+                    f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
+                    f"proposal_hash: {capture.get('proposal_hash') or ''}",
+                    f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
+                    f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
+                    f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
+                    f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                    f"bridge_replay_reference: {capture.get('replay_reference')}",
+                    "next_action: Describe the required proposal change.",
+                    _optional_field("failure_reason", capture.get("failure_reason")),
+                ]
+            )
         )
     if capture.get("bridge_status") == REJECTED:
         return "\n".join(
+            _compact_lines(
+                [
+                    "Governed Development Rejected",
+                    "",
+                    "Operator Summary",
+                    "",
+                    "Proposal rejected.",
+                    "",
+                    "The current proposal is canceled.",
+                    "Nothing was approved.",
+                    "No repository changes were made.",
+                    "No worker ran.",
+                    "Replay evidence records the rejection.",
+                    "",
+                    "Evidence",
+                    "",
+                    f"- rejection replay: {capture.get('replay_reference')}",
+                    "",
+                    "Diagnostics",
+                    "",
+                    f"bridge_status: {capture.get('bridge_status')}",
+                    f"workflow_id: {capture.get('workflow_id')}",
+                    f"approval_decision: {capture.get('decision') or ''}",
+                    f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
+                    f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
+                    _optional_field("approval_hash", capture.get("approval_hash")),
+                    f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
+                    f"proposal_hash: {capture.get('proposal_hash') or ''}",
+                    f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
+                    f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
+                    f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
+                    f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                    f"bridge_replay_reference: {capture.get('replay_reference')}",
+                    _optional_field("failure_reason", capture.get("failure_reason")),
+                ]
+            )
+        )
+    return "\n".join(
+        _compact_lines(
             [
-                "Governed Development Rejected",
+                "Governed Development Execution",
+                "",
+                "Operator Summary",
+                "",
+                "Approved and executed.",
+                "",
+                "ACLI used your approval to run the governed development workflow.",
+                "",
+                "What happened:",
+                "- the approved repository changes were applied",
+                "- the repository mutation worker path was used",
+                "- validation ran successfully",
+                "- replay evidence was recorded",
+                "",
+                "Safety checks:",
+                "- approval was not bypassed",
+                "- worker protections remained active",
+                "- validation ran only through approved checks",
+                "",
+                "Evidence",
+                "",
+                f"- proposal hash: {capture.get('proposal_hash') or ''}",
+                f"- approval hash: {capture.get('approval_hash') or ''}",
+                f"- workflow execution evidence: {workflow_capture.get('governed_development_replay_reference')}",
+                f"- bridge evidence: {capture.get('replay_reference')}",
+                "",
+                "Diagnostics",
                 "",
                 f"bridge_status: {capture.get('bridge_status')}",
                 f"workflow_id: {capture.get('workflow_id')}",
                 f"approval_decision: {capture.get('decision') or ''}",
                 f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
-                f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
-                f"approval_hash: {capture.get('approval_hash') or ''}",
-                f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
                 f"proposal_hash: {capture.get('proposal_hash') or ''}",
+                f"approval_hash: {capture.get('approval_hash') or ''}",
                 f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
                 f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
                 f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
+                f"workflow_execution_status: {workflow_capture.get('execution_status')}",
+                f"worker_protections_preserved: {str(capture.get('repository_mutation_worker_protections_preserved') is True).lower()}",
+                f"validation_allowlists_preserved: {str(capture.get('validation_allowlists_preserved') is True).lower()}",
                 f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                f"workflow_replay_reference: {workflow_capture.get('governed_development_replay_reference')}",
                 f"bridge_replay_reference: {capture.get('replay_reference')}",
-                f"failure_reason: {capture.get('failure_reason') or ''}",
+                _optional_field("failure_reason", capture.get("failure_reason")),
             ]
         )
-    return "\n".join(
-        [
-            "Governed Development Execution",
-            "",
-            f"bridge_status: {capture.get('bridge_status')}",
-            f"workflow_id: {capture.get('workflow_id')}",
-            f"approval_decision: {capture.get('decision') or ''}",
-            f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
-            f"proposal_hash: {capture.get('proposal_hash') or ''}",
-            f"approval_hash: {capture.get('approval_hash') or ''}",
-            f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
-            f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
-            f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
-            f"workflow_execution_status: {workflow_capture.get('execution_status')}",
-            f"worker_protections_preserved: {str(capture.get('repository_mutation_worker_protections_preserved') is True).lower()}",
-            f"validation_allowlists_preserved: {str(capture.get('validation_allowlists_preserved') is True).lower()}",
-            f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
-            f"workflow_replay_reference: {workflow_capture.get('governed_development_replay_reference')}",
-            f"bridge_replay_reference: {capture.get('replay_reference')}",
-            f"failure_reason: {capture.get('failure_reason') or ''}",
-        ]
     )
+
+
+def _bullet_lines(values: list[str]) -> list[str]:
+    return [f"- {value}" for value in values]
+
+
+def _optional_field(name: str, value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return f"{name}: {value}"
+
+
+def _compact_lines(lines: list[str | None]) -> list[str]:
+    compacted: list[str] = []
+    previous_blank = False
+    for line in lines:
+        if line is None:
+            continue
+        if line == "":
+            if previous_blank:
+                continue
+            previous_blank = True
+            compacted.append(line)
+            continue
+        previous_blank = False
+        compacted.append(line)
+    while compacted and compacted[-1] == "":
+        compacted.pop()
+    return compacted
 
 
 def _request_artifact(
