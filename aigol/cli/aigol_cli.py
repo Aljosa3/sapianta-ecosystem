@@ -2038,12 +2038,26 @@ def _interactive_routing_visibility_analysis(
     human_decision = normalize_human_decision(human_prompt)
     if (
         pending_governed_development_bridge is not None
-        and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+        and (
+            human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+            or _is_explicit_governed_development_resume_approval(
+                human_prompt,
+                pending_governed_development_bridge,
+            )
+        )
     ):
+        decision_signal = (
+            APPROVE
+            if _is_explicit_governed_development_resume_approval(
+                human_prompt,
+                pending_governed_development_bridge,
+            )
+            else human_decision
+        )
         return _routing_visibility_selected(
             workflow_id=CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
             routing_confidence=ROUTING_VISIBILITY_HIGH,
-            matched_signals=["governed-development-pending-approval", human_decision],
+            matched_signals=["governed-development-pending-approval", decision_signal],
             competing_signals=[],
             routing_reason=(
                 "Stateful governed development approval decision detected; "
@@ -2997,6 +3011,8 @@ def run_interactive_conversation(
     recommendation_continuity_artifact, recommendation_approval_artifact = _latest_recommendation_state(session_root)
     latest_workflow_status: dict[str, Any] | None = None
     pending_governed_development_bridge: dict[str, Any] | None = None
+    pending_governed_development_bridge_restored = False
+    pending_governed_development_resume_presented = False
     auto_continue_enabled = bool(getattr(args, "auto_continue", False))
     pending_auto_continuation: str | None = None
     pending_post_entry_continuation: dict[str, Any] | None = None
@@ -3073,13 +3089,23 @@ def run_interactive_conversation(
             domain_proposal_decision = _domain_proposal_review_decision(human_prompt, human_decision)
             if (
                 pending_governed_development_bridge is None
-                and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+                and _is_governed_development_resume_decision_prompt(human_prompt)
             ):
                 pending_governed_development_bridge = _restore_pending_governed_development_bridge_from_replay(
                     session_root=session_root,
                     turn_root=turn_root,
                     created_at=created_at,
                 )
+                pending_governed_development_bridge_restored = pending_governed_development_bridge is not None
+                pending_governed_development_resume_presented = False
+            if (
+                pending_governed_development_bridge is not None
+                and _is_explicit_governed_development_resume_approval(
+                    human_prompt,
+                    pending_governed_development_bridge,
+                )
+            ):
+                human_decision = APPROVE
             active_clarification_capture = detect_active_clarification(session_root=session_root)
             active_clarification_detected = active_clarification_capture.get("open_clarification_detected") is True
             clarification_reply_gate_capture = (
@@ -3211,11 +3237,49 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if pending_governed_development_bridge is not None and human_decision in {
+            if (
+                pending_governed_development_bridge is not None
+                and pending_governed_development_bridge_restored
+                and human_decision == APPROVE
+                and not _is_explicit_governed_development_resume_approval(
+                    human_prompt,
+                    pending_governed_development_bridge,
+                )
+            ):
+                safe_resume_capture = _record_safe_governed_development_resume_presentation(
+                    turn_root=turn_root,
+                    pending_proposal_capture=pending_governed_development_bridge,
+                    human_prompt=human_prompt,
+                    created_at=created_at,
+                )
+                pending_governed_development_resume_presented = True
+                output_writer(_render_safe_governed_development_resume_summary(safe_resume_capture))
+                turns.append(
+                    _interactive_acli_governed_development_bridge_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        bridge_capture=pending_governed_development_bridge,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif pending_governed_development_bridge is not None and human_decision in {
                 APPROVE,
                 REJECT,
                 REQUEST_MODIFICATION,
             }:
+                if pending_governed_development_bridge_restored and human_decision == APPROVE:
+                    if not (
+                        pending_governed_development_resume_presented
+                        or _is_explicit_governed_development_resume_approval(
+                            human_prompt,
+                            pending_governed_development_bridge,
+                        )
+                    ):
+                        raise FailClosedRuntimeError(
+                            "ACLI safe approval resume failed closed: restored proposal must be re-presented "
+                            "before execution approval"
+                        )
                 bridge_decision = "APPROVED" if human_decision == APPROVE else human_decision
                 bridge_capture = approve_and_execute_acli_governed_development(
                     bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
@@ -3228,12 +3292,16 @@ def run_interactive_conversation(
                 )
                 if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
                     pending_governed_development_bridge = None
+                    pending_governed_development_bridge_restored = False
+                    pending_governed_development_resume_presented = False
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
                 elif bridge_capture.get("bridge_status") in {
                     "REJECTED",
                     ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
                 }:
                     pending_governed_development_bridge = None
+                    pending_governed_development_bridge_restored = False
+                    pending_governed_development_resume_presented = False
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
                 else:
                     failed_turns += 1
@@ -7826,6 +7894,157 @@ def _require_cli_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} is required")
     return value.strip()
+
+
+def _is_governed_development_resume_decision_prompt(human_prompt: str) -> bool:
+    human_decision = normalize_human_decision(human_prompt)
+    if human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}:
+        return True
+    normalized = str(human_prompt or "").strip().upper().replace("-", "_")
+    return normalized == "APPROVE THIS PROPOSAL" or normalized.startswith("APPROVE ")
+
+
+def _is_explicit_governed_development_resume_approval(
+    human_prompt: str,
+    pending_proposal_capture: dict[str, Any],
+) -> bool:
+    normalized = " ".join(str(human_prompt or "").strip().upper().replace("-", "_").split())
+    if normalized == "APPROVE THIS PROPOSAL":
+        return True
+    identifier = _governed_development_proposal_identifier(pending_proposal_capture)
+    if not identifier:
+        return False
+    return normalized == f"APPROVE {identifier.upper()}"
+
+
+def _governed_development_proposal_identifier(pending_proposal_capture: dict[str, Any]) -> str | None:
+    naming = pending_proposal_capture.get("proposal_naming_decision")
+    if isinstance(naming, dict):
+        identifier = naming.get("selected_artifact_identifier") or naming.get("requested_artifact_identifier")
+        if isinstance(identifier, str) and identifier.strip():
+            return identifier.strip()
+    proposal = pending_proposal_capture.get("proposal_artifact")
+    if isinstance(proposal, dict):
+        artifact = proposal.get("governance_artifact_proposal")
+        if isinstance(artifact, dict):
+            title = artifact.get("artifact_title")
+            if isinstance(title, str) and title.strip():
+                return title.strip()
+    return None
+
+
+def _record_safe_governed_development_resume_presentation(
+    *,
+    turn_root: Path,
+    pending_proposal_capture: dict[str, Any],
+    human_prompt: str,
+    created_at: str,
+) -> dict[str, Any]:
+    proposal = pending_proposal_capture.get("proposal_artifact")
+    if not isinstance(proposal, dict):
+        raise FailClosedRuntimeError("ACLI safe approval resume failed closed: proposal artifact missing")
+    proposal_hash = proposal.get("artifact_hash")
+    if not isinstance(proposal_hash, str) or not proposal_hash:
+        raise FailClosedRuntimeError("ACLI safe approval resume failed closed: proposal hash missing")
+    artifact = {
+        "artifact_type": "ACLI_SAFE_APPROVAL_RESUME_PRESENTATION_V1",
+        "presentation_status": "RESTORED_PROPOSAL_PRESENTED",
+        "operator_prompt": human_prompt,
+        "artifact_identifier": _governed_development_proposal_identifier(pending_proposal_capture),
+        "target_paths": [str(path) for path in pending_proposal_capture.get("target_paths", [])],
+        "proposal_hash": proposal_hash,
+        "proposal_replay_reference": pending_proposal_capture.get("replay_reference"),
+        "approval_granted": False,
+        "execution_authorized": False,
+        "mutation_performed": False,
+        "worker_invoked": False,
+        "validation_executed": False,
+        "next_allowed_approval_commands": _safe_governed_development_resume_approval_commands(
+            pending_proposal_capture
+        ),
+        "replay_visible": True,
+        "created_at": created_at,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "acli_safe_approval_resume_presentation_recorded",
+        "artifact": artifact,
+    }
+    wrapper["wrapper_hash"] = replay_hash(wrapper)
+    replay_path = (
+        turn_root
+        / "acli_safe_approval_resume"
+        / "000_acli_safe_approval_resume_presentation_recorded.json"
+    )
+    write_json_immutable(replay_path, wrapper)
+    return {
+        "safe_resume_presentation_artifact": artifact,
+        "safe_resume_presentation_replay_reference": str(replay_path.parent),
+    }
+
+
+def _safe_governed_development_resume_approval_commands(
+    pending_proposal_capture: dict[str, Any],
+) -> list[str]:
+    commands = ["APPROVE THIS PROPOSAL"]
+    identifier = _governed_development_proposal_identifier(pending_proposal_capture)
+    if identifier:
+        commands.append(f"APPROVE {identifier}")
+    return commands
+
+
+def _render_safe_governed_development_resume_summary(capture: dict[str, Any]) -> str:
+    artifact = capture.get("safe_resume_presentation_artifact") or {}
+    identifier = artifact.get("artifact_identifier") or "not available"
+    target_paths = artifact.get("target_paths") if isinstance(artifact.get("target_paths"), list) else []
+    commands = artifact.get("next_allowed_approval_commands")
+    if not isinstance(commands, list) or not commands:
+        commands = ["APPROVE THIS PROPOSAL"]
+    lines = [
+        "Restored Governed Development Proposal",
+        "",
+        "Operator Summary",
+        "",
+        f"ACLI restored a pending governed development proposal for: {identifier}",
+        "The proposal exists because a prior ACLI session prepared repository changes and stopped before approval.",
+        "",
+        "If approved:",
+        "- ACLI will use the restored proposal",
+        "- repository artifacts may be created or modified",
+        "- validation will run",
+        "- replay evidence will be recorded",
+        "",
+        "What will not happen:",
+        "- no worker has executed yet",
+        "- no repository mutation has occurred yet",
+        "- this summary does not approve execution",
+        "- bare APPROVE will not execute a restored proposal",
+        "",
+        "Nothing has executed yet.",
+        "",
+        "To approve this restored proposal, type exactly one of:",
+        *[f"- {command}" for command in commands],
+        "",
+        "To cancel, type:",
+        "- REJECT",
+        "",
+        "To request changes, type:",
+        "- REQUEST_MODIFICATION",
+        "",
+        "Technical Evidence",
+        "",
+        f"artifact_identifier: {identifier}",
+        "target_paths:",
+        *([f"- {path}" for path in target_paths] if target_paths else ["- none recorded"]),
+        f"proposal_hash: {artifact.get('proposal_hash') or ''}",
+        f"proposal_replay_reference: {artifact.get('proposal_replay_reference') or ''}",
+        f"presentation_replay_reference: {capture.get('safe_resume_presentation_replay_reference') or ''}",
+        "approval_granted: false",
+        "execution_authorized: false",
+        "mutation_performed: false",
+    ]
+    return "\n".join(lines)
 
 
 def _restore_pending_governed_development_bridge_from_replay(

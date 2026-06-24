@@ -135,7 +135,7 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
 
 
-def test_acli_governed_development_approval_continues_after_session_resume(tmp_path) -> None:
+def test_acli_governed_development_bare_approval_after_session_resume_shows_summary_only(tmp_path) -> None:
     repo = _repo(tmp_path)
     first_output: list[str] = []
     second_output: list[str] = []
@@ -153,18 +153,22 @@ def test_acli_governed_development_approval_continues_after_session_resume(tmp_p
     )
 
     proposal_turn = first["turns"][0]
-    execution_turn = second["turns"][0]
+    resume_turn = second["turns"][0]
     rendered = "\n".join(second_output)
 
     assert proposal_turn["response_status"] == APPROVAL_REQUIRED
     assert proposal_turn["repository_mutation_performed"] is False
-    assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
-    assert execution_turn["response_status"] == EXECUTION_COMPLETED
-    assert execution_turn["approval_bypassed"] is False
-    assert execution_turn["repository_mutation_performed"] is True
-    assert execution_turn["validation_executed"] is True
-    assert execution_turn["worker_invoked"] is True
+    assert resume_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert resume_turn["response_status"] == APPROVAL_REQUIRED
+    assert resume_turn["approval_bypassed"] is False
+    assert resume_turn["repository_mutation_performed"] is False
+    assert resume_turn["validation_executed"] is False
+    assert resume_turn["worker_invoked"] is False
     assert "Stateful governed development approval decision detected" in rendered
+    assert "Restored Governed Development Proposal" in rendered
+    assert "bare APPROVE will not execute a restored proposal" in rendered
+    assert "APPROVE THIS PROPOSAL" in rendered
+    assert "Governed Development Execution" not in rendered
     assert "HUMAN INTENT CLARIFICATION REQUIRED" not in rendered
 
     restore_replay = (
@@ -182,7 +186,72 @@ def test_acli_governed_development_approval_continues_after_session_resume(tmp_p
     assert restore_artifact["execution_authorized"] is False
 
 
-def test_restored_governed_development_approval_bypasses_clarification_continuity(
+def test_acli_governed_development_explicit_resume_approval_executes(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    args = _conversation_args(tmp_path, repo)
+
+    first = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["Add replay validation", "exit"]),
+        output_func=lambda _line: None,
+    )
+    assert first["turns"][0]["response_status"] == APPROVAL_REQUIRED
+
+    output: list[str] = []
+    second = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["APPROVE THIS PROPOSAL", "exit"]),
+        output_func=output.append,
+    )
+    rendered = "\n".join(output)
+    execution_turn = second["turns"][0]
+
+    assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert execution_turn["response_status"] == EXECUTION_COMPLETED
+    assert execution_turn["approval_bypassed"] is False
+    assert execution_turn["repository_mutation_performed"] is True
+    assert execution_turn["validation_executed"] is True
+    assert execution_turn["worker_invoked"] is True
+    assert "Governed Development Execution" in rendered
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" not in rendered
+
+
+def test_acli_governed_development_artifact_resume_approval_executes(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    args = _conversation_args(tmp_path, repo)
+
+    first = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(
+            [
+                (
+                    "Create governance artifact ACLI_USAGE_GUIDELINES_V1 documenting recommended operator "
+                    "practices for using ACLI as the primary development interface."
+                ),
+                "exit",
+            ]
+        ),
+        output_func=lambda _line: None,
+    )
+    assert first["turns"][0]["response_status"] == APPROVAL_REQUIRED
+
+    output: list[str] = []
+    second = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["APPROVE ACLI_USAGE_GUIDELINES_V1", "exit"]),
+        output_func=output.append,
+    )
+    execution_turn = second["turns"][0]
+
+    assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert execution_turn["response_status"] == EXECUTION_COMPLETED
+    assert execution_turn["approval_bypassed"] is False
+    assert execution_turn["repository_mutation_performed"] is True
+    assert execution_turn["validation_executed"] is True
+    assert execution_turn["worker_invoked"] is True
+
+
+def test_restored_governed_development_bare_approval_bypasses_clarification_without_execution(
     tmp_path, monkeypatch
 ) -> None:
     repo = _repo(tmp_path)
@@ -225,7 +294,63 @@ def test_restored_governed_development_approval_bypasses_clarification_continuit
         output_func=output.append,
     )
     rendered = "\n".join(output)
-    execution_turn = second["turns"][0]
+    resume_turn = second["turns"][0]
+
+    assert resume_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert resume_turn["response_status"] == APPROVAL_REQUIRED
+    assert resume_turn["repository_mutation_performed"] is False
+    assert resume_turn["validation_executed"] is False
+    assert resume_turn["worker_invoked"] is False
+    assert resume_turn["conversational_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" not in rendered
+    assert "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION" not in rendered
+    assert "Restored Governed Development Proposal" in rendered
+    assert "Governed Development Execution" not in rendered
+
+
+def test_same_session_governed_development_approval_wins_over_clarification_continuity(
+    tmp_path, monkeypatch
+) -> None:
+    repo = _repo(tmp_path)
+    calls = {"count": 0}
+
+    def active_clarification(*, session_root):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return {
+                "open_clarification_detected": False,
+                "active_clarification_count": 0,
+                "active_clarification": None,
+            }
+        return {
+            "open_clarification_detected": True,
+            "active_clarification_count": 1,
+            "active_clarification": {
+                "originating_workflow_id": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+            },
+        }
+
+    monkeypatch.setattr(aigol_cli, "detect_active_clarification", active_clarification)
+    monkeypatch.setattr(
+        aigol_cli,
+        "should_bind_operator_reply_to_active_clarification",
+        lambda *, session_root, human_prompt: {
+            "should_bind_reply": True,
+            "binding_decision_reason": "REPLY_MATCHES_ACTIVE_CLARIFICATION_SCOPE",
+            "active_clarification": {
+                "originating_workflow_id": "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION",
+            },
+        },
+    )
+
+    output: list[str] = []
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path, repo),
+        input_func=_input_sequence(["Add replay validation", "APPROVE", "exit"]),
+        output_func=output.append,
+    )
+    rendered = "\n".join(output)
+    execution_turn = result["turns"][1]
 
     assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert execution_turn["response_status"] == EXECUTION_COMPLETED
