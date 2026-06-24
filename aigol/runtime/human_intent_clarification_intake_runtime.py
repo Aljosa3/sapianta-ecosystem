@@ -354,16 +354,25 @@ def _ambiguous_intent(normalized: str) -> dict[str, Any] | None:
 
 
 def _development_intent(normalized: str) -> dict[str, Any] | None:
-    action_signals = _matched_terms(normalized, ("add", "implement", "create", "build"))
+    action_signals = _matched_terms(normalized, ("add", "implement", "create", "build", "update", "extend"))
     if not action_signals:
         return None
     development_subjects = (
         ("replay", "validation"),
         ("replay", "validator"),
+        ("replay", "evidence"),
         ("worker", "authorization"),
         ("worker", "auth"),
         ("comparison", "runtime"),
         ("audit", "export"),
+        ("governance", "artifact"),
+        ("certification", "artifact"),
+        ("runtime", "wiring"),
+        ("execution", "bridge"),
+        ("validation", "runner"),
+        ("approval", "capture"),
+        ("proposal", "generation"),
+        ("repository", "mutation"),
     )
     signals: list[str] = []
     for required_terms in development_subjects:

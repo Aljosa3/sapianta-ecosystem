@@ -13,9 +13,11 @@ GENERIC_GOVERNED_ARTIFACT_CREATION = "GENERIC_GOVERNED_ARTIFACT_CREATION"
 GENERIC_GOVERNED_EXECUTION_REQUEST = "GENERIC_GOVERNED_EXECUTION_REQUEST"
 NO_EXECUTION_INTENT = "NO_EXECUTION_INTENT"
 
-_CREATION_TERMS = ("create", "new", "add", "build", "make")
+_CREATION_TERMS = ("create", "new", "add", "build", "make", "define", "draft", "prepare", "write", "generate")
 _NAMING_MARKERS = ("called", "named")
-_EXECUTION_TERMS = ("execute", "run", "trigger", "start")
+_EXECUTION_TERMS = ("execute", "run", "trigger", "start", "invoke", "apply")
+_GOVERNANCE_ARTIFACT_TERMS = ("governed", "governance", "certification")
+_ARTIFACT_KIND_TERMS = ("artifact", "doc", "document", "markdown", "specification")
 
 
 def detect_human_execution_intent(human_prompt: str) -> dict[str, Any]:
@@ -40,7 +42,10 @@ def detect_human_execution_intent(human_prompt: str) -> dict[str, Any]:
         }
 
     if _is_generic_governed_artifact_creation(normalized):
-        matched_terms = _matched_terms(normalized, (*_CREATION_TERMS, "governed", "artifact", *_NAMING_MARKERS))
+        matched_terms = _matched_terms(
+            normalized,
+            (*_CREATION_TERMS, *_GOVERNANCE_ARTIFACT_TERMS, *_ARTIFACT_KIND_TERMS, *_NAMING_MARKERS),
+        )
         return {
             "intent_detected": True,
             "intent_class": GENERIC_GOVERNED_ARTIFACT_CREATION,
@@ -93,8 +98,8 @@ def _is_generic_governed_domain_creation(normalized: str) -> bool:
 
 def _is_generic_governed_artifact_creation(normalized: str) -> bool:
     return (
-        "artifact" in normalized
-        and "governed" in normalized
+        any(subject in normalized for subject in _GOVERNANCE_ARTIFACT_TERMS)
+        and any(kind in normalized for kind in _ARTIFACT_KIND_TERMS)
         and any(term in normalized for term in _CREATION_TERMS)
     )
 

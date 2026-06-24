@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.human_execution_intent_detection import (
@@ -549,6 +550,10 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
     if "create" in normalized and "marketing" in normalized and "domain" in normalized:
         return _analysis(CREATE_DOMAIN_MARKETING, "HIGH", ["create", "marketing", "domain"])
+    if _is_improvement_proposal_runtime_prompt(normalized):
+        return _analysis(IMPROVEMENT_PROPOSAL_RUNTIME, "HIGH", ["improvement", "proposal", "governance"])
+    if _is_proposal_runtime_prompt(normalized):
+        return _analysis(PROPOSAL_RUNTIME, "HIGH", ["proposal", "artifact", "governance"])
     if _is_governance_artifact_creation_prompt(normalized):
         return _analysis(
             GOVERNANCE_ARTIFACT_CREATION,
@@ -915,7 +920,16 @@ def _is_governance_artifact_creation_prompt(normalized: str) -> bool:
         "create a governance workflow artifact",
         "create a governance analysis artifact",
     )
-    return any(phrase in normalized for phrase in explicit_phrases)
+    if any(phrase in normalized for phrase in explicit_phrases):
+        return True
+    creation_verbs = ("create", "add", "define", "draft", "prepare", "write", "generate")
+    governance_subjects = ("governance", "governed", "certification")
+    artifact_terms = ("artifact", "doc", "document", "markdown", "specification")
+    return (
+        any(_contains_term(normalized, verb) for verb in creation_verbs)
+        and any(_contains_term(normalized, subject) for subject in governance_subjects)
+        and any(_contains_term(normalized, artifact) for artifact in artifact_terms)
+    )
 
 
 def _is_governed_repository_mutation_prompt(normalized: str) -> bool:
@@ -1462,6 +1476,10 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
     expected_input.pop("replay_hash")
     if actual != replay_hash(expected_input):
         raise FailClosedRuntimeError("conversational CLI routing replay hash mismatch")
+
+
+def _contains_term(normalized: str, term: str) -> bool:
+    return term in normalized if " " in term else re.search(rf"\b{re.escape(term)}\b", normalized) is not None
 
 
 def _require_string(value: Any, field_name: str) -> str:
