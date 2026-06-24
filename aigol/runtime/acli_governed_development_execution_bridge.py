@@ -30,6 +30,9 @@ APPROVAL_REQUIRED = "APPROVAL_REQUIRED"
 EXECUTION_COMPLETED = "EXECUTION_COMPLETED"
 FAILED_CLOSED = "FAILED_CLOSED"
 REJECTED = "REJECTED"
+REQUEST_MODIFICATION = "REQUEST_MODIFICATION"
+MODIFICATION_REQUESTED = "MODIFICATION_REQUESTED"
+WAITING_FOR_OPERATOR_REVISION = "WAITING_FOR_OPERATOR_REVISION"
 
 WORKFLOW_ID = "GOVERNED_DEVELOPMENT_WORKFLOW"
 
@@ -286,6 +289,50 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
                 "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION",
             ]
         )
+    if capture.get("bridge_status") == MODIFICATION_REQUESTED:
+        return "\n".join(
+            [
+                "Governed Development Modification Requested",
+                "",
+                f"bridge_status: {capture.get('bridge_status')}",
+                f"workflow_state: {capture.get('workflow_state')}",
+                f"workflow_id: {capture.get('workflow_id')}",
+                f"approval_decision: {capture.get('decision') or ''}",
+                f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
+                f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
+                f"approval_hash: {capture.get('approval_hash') or ''}",
+                f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
+                f"proposal_hash: {capture.get('proposal_hash') or ''}",
+                f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
+                f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
+                f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
+                f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                f"bridge_replay_reference: {capture.get('replay_reference')}",
+                "next_action: Describe the required proposal change.",
+                f"failure_reason: {capture.get('failure_reason') or ''}",
+            ]
+        )
+    if capture.get("bridge_status") == REJECTED:
+        return "\n".join(
+            [
+                "Governed Development Rejected",
+                "",
+                f"bridge_status: {capture.get('bridge_status')}",
+                f"workflow_id: {capture.get('workflow_id')}",
+                f"approval_decision: {capture.get('decision') or ''}",
+                f"approval_bypassed: {str(capture.get('approval_bypassed') is True).lower()}",
+                f"approval_granted: {str(capture.get('approval_granted') is True).lower()}",
+                f"approval_hash: {capture.get('approval_hash') or ''}",
+                f"execution_authorized: {str(capture.get('execution_authorized') is True).lower()}",
+                f"proposal_hash: {capture.get('proposal_hash') or ''}",
+                f"mutation_performed: {str(capture.get('mutation_performed') is True).lower()}",
+                f"worker_invoked: {str(capture.get('worker_invoked') is True).lower()}",
+                f"validation_executed: {str(capture.get('validation_executed') is True).lower()}",
+                f"replay_lineage_preserved: {str(capture.get('replay_lineage_preserved') is True).lower()}",
+                f"bridge_replay_reference: {capture.get('replay_reference')}",
+                f"failure_reason: {capture.get('failure_reason') or ''}",
+            ]
+        )
     return "\n".join(
         [
             "Governed Development Execution",
@@ -429,22 +476,31 @@ def _rejected_execution_capture(
     decided_at: str,
     replay_path: Path,
 ) -> dict[str, Any]:
+    modification_requested = decision == REQUEST_MODIFICATION
     capture = {
         "artifact_type": ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1,
         "runtime_version": ACLI_GOVERNED_DEVELOPMENT_EXECUTION_BRIDGE_VERSION,
         "bridge_id": bridge_id,
         "prompt_id": pending["prompt_id"],
         "workflow_id": WORKFLOW_ID,
-        "bridge_status": REJECTED,
+        "bridge_status": MODIFICATION_REQUESTED if modification_requested else REJECTED,
+        "workflow_state": WAITING_FOR_OPERATOR_REVISION if modification_requested else REJECTED,
         "decision": decision,
         "decided_by": decided_by,
         "decided_at": decided_at,
         "proposal_hash": pending["proposal_artifact"]["artifact_hash"],
         "approval_required": True,
+        "approval_granted": False,
+        "approval_artifact": None,
+        "approval_hash": None,
         "approval_bypassed": False,
+        "execution_authorized": False,
         "mutation_performed": False,
         "worker_invoked": False,
         "validation_executed": False,
+        "next_operator_action": (
+            "Describe the required proposal change." if modification_requested else "No further action required."
+        ),
         "replay_reference": str(replay_path),
         "replay_lineage_preserved": True,
         "fail_closed_preserved": True,

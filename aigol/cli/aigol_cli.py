@@ -472,6 +472,7 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
 from aigol.runtime.acli_governed_development_execution_bridge import (
     APPROVAL_REQUIRED as ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED,
     EXECUTION_COMPLETED as ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
+    MODIFICATION_REQUESTED as ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
     approve_and_execute_acli_governed_development,
     propose_acli_governed_development_execution,
     render_acli_governed_development_bridge_summary,
@@ -1558,6 +1559,8 @@ def _interactive_workflow_name(turn_summary: dict[str, Any]) -> str:
 def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
     if turn_summary.get("fail_closed") is True:
         return WORKFLOW_STATUS_FAILED_CLOSED
+    if turn_summary.get("operator_revision_requested") is True:
+        return "MODIFICATION_REQUESTED"
     if (
         turn_summary.get("handoff_review_next_certified_stage")
         == CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW
@@ -1599,6 +1602,8 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
 def _interactive_workflow_state(turn_summary: dict[str, Any], current_stage: str) -> str:
     if turn_summary.get("fail_closed") is True:
         return WORKFLOW_STATUS_FAILED_CLOSED
+    if turn_summary.get("operator_revision_requested") is True:
+        return WORKFLOW_STATUS_WAITING_FOR_OPERATOR
     if _interactive_waiting_for_clarification(turn_summary):
         return WORKFLOW_STATUS_WAITING_FOR_OPERATOR
     response_status = str(turn_summary.get("response_status") or "")
@@ -1623,6 +1628,8 @@ def _interactive_next_expected_action(
             return f"Informational only: inspect fail-closed reason: {reason.strip()}"
         return "Informational only: inspect fail-closed replay evidence before continuing."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_OPERATOR:
+        if turn_summary.get("operator_revision_requested") is True:
+            return "Informational only: describe the required proposal change."
         return "Informational only: provide the requested operator clarification."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
         return "Informational only: provide an explicit operator approval or rejection decision."
@@ -1719,6 +1726,8 @@ def _auto_continue_stop_reason(status: dict[str, Any]) -> str:
 
 
 def _interactive_required_input(turn_summary: dict[str, Any]) -> list[str]:
+    if turn_summary.get("operator_revision_requested") is True:
+        return ["proposal revision description"]
     missing_information = turn_summary.get("missing_information")
     if isinstance(missing_information, list) and missing_information:
         return [str(item) for item in missing_information]
@@ -3534,7 +3543,10 @@ def run_interactive_conversation(
                 if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
                     pending_governed_development_bridge = None
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
-                elif bridge_capture.get("bridge_status") == "REJECTED":
+                elif bridge_capture.get("bridge_status") in {
+                    "REJECTED",
+                    ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
+                }:
                     pending_governed_development_bridge = None
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
                 else:
@@ -7051,6 +7063,12 @@ def _interactive_acli_governed_development_bridge_turn_summary(
     workflow_capture = bridge_capture.get("workflow_capture") or {}
     bridge_status = bridge_capture.get("bridge_status")
     completed = bridge_status == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED
+    modification_requested = bridge_status == ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED
+    rejected = bridge_status == "REJECTED"
+    authorization_created = (
+        bridge_capture.get("approval_granted") is True
+        and bridge_capture.get("execution_authorized", completed) is not False
+    )
     return {
         "turn_id": turn_id,
         "prompt_id": prompt_id,
@@ -7080,7 +7098,14 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "worker_invoked": bridge_capture.get("worker_invoked") is True,
         "worker_assigned": False,
         "worker_dispatched": False,
-        "authorization_created": bridge_capture.get("approval_required") is True,
+        "authorization_created": authorization_created,
+        "approval_required": (
+            bridge_capture.get("approval_required") is True
+            and not completed
+            and not modification_requested
+            and not rejected
+        ),
+        "operator_revision_requested": modification_requested,
         "execution_requested": completed,
         "execution_started": completed,
         "dispatch_requested": False,
