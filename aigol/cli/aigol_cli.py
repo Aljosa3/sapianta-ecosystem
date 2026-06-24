@@ -3211,7 +3211,43 @@ def run_interactive_conversation(
                 snapshot_at=created_at,
                 output_writer=turn_progress_buffer.append,
             )
-            if (
+            if pending_governed_development_bridge is not None and human_decision in {
+                APPROVE,
+                REJECT,
+                REQUEST_MODIFICATION,
+            }:
+                bridge_decision = "APPROVED" if human_decision == APPROVE else human_decision
+                bridge_capture = approve_and_execute_acli_governed_development(
+                    bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
+                    pending_proposal_capture=pending_governed_development_bridge,
+                    decision=bridge_decision,
+                    decided_by=args.operator_context or "HUMAN_OPERATOR",
+                    decided_at=created_at,
+                    workspace_root=args.workspace,
+                    replay_dir=turn_root / "acli_governed_development_execution_bridge",
+                )
+                if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
+                    pending_governed_development_bridge = None
+                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                elif bridge_capture.get("bridge_status") in {
+                    "REJECTED",
+                    ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
+                }:
+                    pending_governed_development_bridge = None
+                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                else:
+                    failed_turns += 1
+                    output_writer(f"FAILED_CLOSED: {bridge_capture.get('failure_reason')}")
+                turns.append(
+                    _interactive_acli_governed_development_bridge_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        bridge_capture=bridge_capture,
+                        source_router_replay_reference=str(turn_root / "source_router"),
+                    )
+                )
+            elif (
                 pending_post_entry_continuation is not None
                 and _post_entry_continuation_clarification_matches(human_prompt)
             ):
@@ -3533,42 +3569,6 @@ def run_interactive_conversation(
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         continuation_capture=continuation_capture,
-                        source_router_replay_reference=str(turn_root / "source_router"),
-                    )
-                )
-            elif pending_governed_development_bridge is not None and human_decision in {
-                APPROVE,
-                REJECT,
-                REQUEST_MODIFICATION,
-            }:
-                bridge_decision = "APPROVED" if human_decision == APPROVE else human_decision
-                bridge_capture = approve_and_execute_acli_governed_development(
-                    bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
-                    pending_proposal_capture=pending_governed_development_bridge,
-                    decision=bridge_decision,
-                    decided_by=args.operator_context or "HUMAN_OPERATOR",
-                    decided_at=created_at,
-                    workspace_root=args.workspace,
-                    replay_dir=turn_root / "acli_governed_development_execution_bridge",
-                )
-                if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
-                    pending_governed_development_bridge = None
-                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
-                elif bridge_capture.get("bridge_status") in {
-                    "REJECTED",
-                    ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
-                }:
-                    pending_governed_development_bridge = None
-                    output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
-                else:
-                    failed_turns += 1
-                    output_writer(f"FAILED_CLOSED: {bridge_capture.get('failure_reason')}")
-                turns.append(
-                    _interactive_acli_governed_development_bridge_turn_summary(
-                        turn_id=turn_id,
-                        prompt_id=prompt_id,
-                        router_capture=router_capture,
-                        bridge_capture=bridge_capture,
                         source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
