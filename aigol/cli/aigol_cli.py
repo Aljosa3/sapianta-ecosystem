@@ -470,6 +470,8 @@ from aigol.runtime.ocs_llm_cognition_end_to_end_runtime import (
     run_ocs_llm_cognition_end_to_end,
 )
 from aigol.runtime.acli_governed_development_execution_bridge import (
+    ACLI_GOVERNED_DEVELOPMENT_BRIDGE_PROPOSAL_CAPTURE_V1,
+    ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1,
     APPROVAL_REQUIRED as ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED,
     EXECUTION_COMPLETED as ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
     MODIFICATION_REQUESTED as ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
@@ -3069,6 +3071,15 @@ def run_interactive_conversation(
             )
             human_decision = normalize_human_decision(human_prompt)
             domain_proposal_decision = _domain_proposal_review_decision(human_prompt, human_decision)
+            if (
+                pending_governed_development_bridge is None
+                and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+            ):
+                pending_governed_development_bridge = _restore_pending_governed_development_bridge_from_replay(
+                    session_root=session_root,
+                    turn_root=turn_root,
+                    created_at=created_at,
+                )
             active_clarification_capture = detect_active_clarification(session_root=session_root)
             active_clarification_detected = active_clarification_capture.get("open_clarification_detected") is True
             clarification_reply_gate_capture = (
@@ -7815,6 +7826,157 @@ def _require_cli_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} is required")
     return value.strip()
+
+
+def _restore_pending_governed_development_bridge_from_replay(
+    *,
+    session_root: Path,
+    turn_root: Path,
+    created_at: str,
+) -> dict[str, Any] | None:
+    if not session_root.exists():
+        return None
+    proposal_paths = sorted(
+        session_root.glob(
+            "TURN-*/acli_governed_development_execution_bridge/"
+            "000_acli_governed_development_proposal_recorded.json"
+        )
+    )
+    for proposal_path in reversed(proposal_paths):
+        if _governed_development_proposal_belongs_to_turn(proposal_path, turn_root):
+            continue
+        proposal_capture = _load_verified_governed_development_proposal_capture(proposal_path)
+        proposal_hash = _governed_development_pending_proposal_hash(proposal_capture)
+        if _governed_development_proposal_is_consumed(session_root=session_root, proposal_hash=proposal_hash):
+            continue
+        _record_governed_development_pending_proposal_restore(
+            turn_root=turn_root,
+            proposal_path=proposal_path,
+            proposal_hash=proposal_hash,
+            created_at=created_at,
+        )
+        return proposal_capture
+    return None
+
+
+def _governed_development_proposal_belongs_to_turn(proposal_path: Path, turn_root: Path) -> bool:
+    try:
+        proposal_path.relative_to(turn_root)
+    except ValueError:
+        return False
+    return True
+
+
+def _load_verified_governed_development_proposal_capture(proposal_path: Path) -> dict[str, Any]:
+    wrapper = _load_verified_replay_wrapper(proposal_path)
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: proposal replay artifact missing")
+    if artifact.get("artifact_type") != ACLI_GOVERNED_DEVELOPMENT_BRIDGE_PROPOSAL_CAPTURE_V1:
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: unexpected proposal artifact type")
+    _verify_replay_hashed_artifact(
+        artifact,
+        failure_reason="ACLI approval continuation failed closed: pending proposal hash mismatch",
+    )
+    if artifact.get("bridge_status") != ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED:
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: pending proposal approval required")
+    required_false_fields = (
+        "approval_bypassed",
+        "mutation_performed",
+        "worker_invoked",
+        "validation_executed",
+    )
+    if artifact.get("approval_required") is not True or any(artifact.get(field) is True for field in required_false_fields):
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: invalid pending proposal state")
+    return artifact
+
+
+def _load_verified_replay_wrapper(path: Path) -> dict[str, Any]:
+    try:
+        wrapper = load_json(path)
+    except Exception as exc:
+        raise FailClosedRuntimeError(f"ACLI approval continuation failed closed: unreadable replay {path}") from exc
+    if not isinstance(wrapper, dict):
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: replay wrapper missing")
+    wrapper_hash = wrapper.get("wrapper_hash")
+    if wrapper_hash is not None:
+        expected = deepcopy(wrapper)
+        actual = expected.pop("wrapper_hash", None)
+        if not isinstance(actual, str) or replay_hash(expected) != actual:
+            raise FailClosedRuntimeError("ACLI approval continuation failed closed: replay wrapper hash mismatch")
+    return wrapper
+
+
+def _verify_replay_hashed_artifact(artifact: dict[str, Any], *, failure_reason: str) -> None:
+    expected = deepcopy(artifact)
+    actual = expected.pop("artifact_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError(failure_reason)
+
+
+def _governed_development_pending_proposal_hash(proposal_capture: dict[str, Any]) -> str:
+    proposal = proposal_capture.get("proposal_artifact")
+    if not isinstance(proposal, dict):
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: proposal artifact missing")
+    proposal_hash = proposal.get("artifact_hash")
+    if not isinstance(proposal_hash, str) or not proposal_hash:
+        raise FailClosedRuntimeError("ACLI approval continuation failed closed: proposal artifact hash missing")
+    return proposal_hash
+
+
+def _governed_development_proposal_is_consumed(*, session_root: Path, proposal_hash: str) -> bool:
+    execution_paths = sorted(
+        session_root.glob(
+            "TURN-*/acli_governed_development_execution_bridge/"
+            "001_acli_governed_development_execution_recorded.json"
+        )
+    )
+    for execution_path in execution_paths:
+        wrapper = _load_verified_replay_wrapper(execution_path)
+        artifact = wrapper.get("artifact")
+        if not isinstance(artifact, dict):
+            continue
+        if artifact.get("artifact_type") != ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1:
+            continue
+        if artifact.get("proposal_hash") == proposal_hash:
+            return True
+    return False
+
+
+def _record_governed_development_pending_proposal_restore(
+    *,
+    turn_root: Path,
+    proposal_path: Path,
+    proposal_hash: str,
+    created_at: str,
+) -> None:
+    artifact = {
+        "artifact_type": "ACLI_GOVERNED_DEVELOPMENT_PENDING_PROPOSAL_RESTORED_V1",
+        "restore_status": "PENDING_PROPOSAL_RESTORED",
+        "source_replay_reference": str(proposal_path),
+        "proposal_hash": proposal_hash,
+        "restored_for": "EXPLICIT_OPERATOR_DECISION",
+        "approval_granted": False,
+        "execution_authorized": False,
+        "mutation_performed": False,
+        "worker_invoked": False,
+        "validation_executed": False,
+        "replay_visible": True,
+        "created_at": created_at,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "acli_governed_development_pending_proposal_restored",
+        "artifact": artifact,
+    }
+    wrapper["wrapper_hash"] = replay_hash(wrapper)
+    write_json_immutable(
+        turn_root
+        / "acli_governed_development_pending_proposal_restore"
+        / "000_acli_governed_development_pending_proposal_restored.json",
+        wrapper,
+    )
 
 
 def _latest_recommendation_state(session_root: Path) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:

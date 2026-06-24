@@ -134,6 +134,110 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
 
 
+def test_acli_governed_development_approval_continues_after_session_resume(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    first_output: list[str] = []
+    second_output: list[str] = []
+    args = _conversation_args(tmp_path, repo)
+
+    first = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["Add replay validation", "exit"]),
+        output_func=first_output.append,
+    )
+    second = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["APPROVE", "exit"]),
+        output_func=second_output.append,
+    )
+
+    proposal_turn = first["turns"][0]
+    execution_turn = second["turns"][0]
+    rendered = "\n".join(second_output)
+
+    assert proposal_turn["response_status"] == APPROVAL_REQUIRED
+    assert proposal_turn["repository_mutation_performed"] is False
+    assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert execution_turn["response_status"] == EXECUTION_COMPLETED
+    assert execution_turn["approval_bypassed"] is False
+    assert execution_turn["repository_mutation_performed"] is True
+    assert execution_turn["validation_executed"] is True
+    assert execution_turn["worker_invoked"] is True
+    assert "Stateful governed development approval decision detected" in rendered
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" not in rendered
+
+    restore_replay = (
+        tmp_path
+        / "runtime"
+        / SESSION_ID
+        / "TURN-000002"
+        / "acli_governed_development_pending_proposal_restore"
+        / "000_acli_governed_development_pending_proposal_restored.json"
+    )
+    assert restore_replay.exists()
+    restore_artifact = json.loads(restore_replay.read_text())["artifact"]
+    assert restore_artifact["restore_status"] == "PENDING_PROPOSAL_RESTORED"
+    assert restore_artifact["approval_granted"] is False
+    assert restore_artifact["execution_authorized"] is False
+
+
+def test_acli_governed_development_approval_without_pending_proposal_does_not_execute(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path, repo),
+        input_func=_input_sequence(["APPROVE", "exit"]),
+        output_func=output.append,
+    )
+
+    turn = result["turns"][0]
+    rendered = "\n".join(output)
+
+    assert turn["response_status"] == "CLARIFICATION_REQUIRED"
+    assert turn["conversational_workflow_id"] == "HUMAN_INTENT_CLARIFICATION_INTAKE"
+    assert turn.get("repository_mutation_performed") is not True
+    assert turn["worker_invoked"] is False
+    assert "HUMAN INTENT CLARIFICATION REQUIRED" in rendered
+
+
+def test_acli_governed_development_invalid_pending_replay_fails_closed(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    args = _conversation_args(tmp_path, repo)
+
+    first = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["Add replay validation", "exit"]),
+        output_func=lambda _line: None,
+    )
+    assert first["turns"][0]["response_status"] == APPROVAL_REQUIRED
+
+    proposal_replay = (
+        tmp_path
+        / "runtime"
+        / SESSION_ID
+        / "TURN-000001"
+        / "acli_governed_development_execution_bridge"
+        / "000_acli_governed_development_proposal_recorded.json"
+    )
+    wrapper = json.loads(proposal_replay.read_text())
+    wrapper["artifact"]["artifact_hash"] = "sha256:tampered"
+    proposal_replay.write_text(json.dumps(wrapper, indent=2, sort_keys=True))
+
+    output: list[str] = []
+    second = run_interactive_conversation(
+        args,
+        input_func=_input_sequence(["APPROVE", "exit"]),
+        output_func=output.append,
+    )
+    rendered = "\n".join(output)
+
+    assert second["failed_turns"] == 1
+    assert "FAILED_CLOSED" in rendered
+    assert "hash mismatch" in rendered
+    assert not any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
+
+
 def test_governance_artifact_operator_prompt_uses_governed_development_bridge(tmp_path) -> None:
     repo = _repo(tmp_path)
     output: list[str] = []
