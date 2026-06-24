@@ -483,6 +483,11 @@ from aigol.runtime.acli_human_friendly_explanation_runtime import (
     create_acli_human_friendly_explanation,
     render_acli_human_friendly_explanation,
 )
+from aigol.runtime.acli_llm_assisted_explanation_runtime import (
+    authoritative_state_from_acli_proposal_capture,
+    create_acli_llm_assisted_explanation,
+    render_acli_llm_assisted_explanation,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -1954,6 +1959,28 @@ def _attach_interactive_human_friendly_explanation(
     turn_summary["human_friendly_explanation_rendered_hash"] = artifact["rendered_explanation_hash"]
 
 
+def _attach_interactive_llm_assisted_explanation(
+    *,
+    turn_summary: dict[str, Any],
+    explanation_capture: dict[str, Any],
+) -> None:
+    artifact = explanation_capture["llm_assisted_explanation_artifact"]
+    turn_summary["llm_assisted_explanation_replay_reference"] = explanation_capture[
+        "llm_assisted_explanation_replay_reference"
+    ]
+    turn_summary["llm_assisted_explanation_artifact_type"] = artifact["artifact_type"]
+    turn_summary["llm_assisted_explanation_status"] = artifact["explanation_status"]
+    turn_summary["llm_assisted_explanation_provider_id"] = artifact["provider_id"]
+    turn_summary["llm_assisted_explanation_provider_invoked"] = artifact["provider_invoked"] is True
+    turn_summary["llm_assisted_explanation_provider_used"] = artifact["provider_explanation_used"] is True
+    turn_summary["llm_assisted_explanation_deterministic_fallback_used"] = (
+        artifact["deterministic_fallback_used"] is True
+    )
+    turn_summary["llm_assisted_explanation_advisory_only"] = artifact["advisory_only"] is True
+    turn_summary["llm_assisted_explanation_authority_granted"] = artifact["authority_granted"] is True
+    turn_summary["llm_assisted_explanation_rendered_hash"] = artifact["rendered_explanation_hash"]
+
+
 def _record_interactive_routing_visibility(
     *,
     turn_id: str,
@@ -2789,6 +2816,8 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--operator-context", default="interactive_conversation_cli")
     conversation.add_argument("--workspace", default=".")
     conversation.add_argument("--auto-continue", action="store_true")
+    conversation.add_argument("--enable-llm-assisted-explanation", action="store_true")
+    conversation.add_argument("--llm-explanation-provider-id", default="UNSPECIFIED_EXPLANATION_PROVIDER")
 
     show_latest_chain = subcommands.add_parser("show-latest-chain")
     show_latest_chain.add_argument("--replay-root", default=".")
@@ -2989,6 +3018,7 @@ def run_interactive_conversation(
     input_func: Any | None = None,
     output_func: Any | None = None,
     monotonic_func: Any | None = None,
+    llm_explanation_provider: Any | None = None,
 ) -> dict[str, Any]:
     input_reader = input if input_func is None else input_func
     output_writer = print if output_func is None else output_func
@@ -3014,6 +3044,14 @@ def run_interactive_conversation(
     pending_governed_development_bridge_restored = False
     pending_governed_development_resume_presented = False
     auto_continue_enabled = bool(getattr(args, "auto_continue", False))
+    llm_assisted_explanation_enabled = bool(
+        getattr(args, "enable_llm_assisted_explanation", False)
+        or llm_explanation_provider is not None
+    )
+    llm_explanation_provider_id = str(
+        getattr(args, "llm_explanation_provider_id", "UNSPECIFIED_EXPLANATION_PROVIDER")
+        or "UNSPECIFIED_EXPLANATION_PROVIDER"
+    )
     pending_auto_continuation: str | None = None
     pending_post_entry_continuation: dict[str, Any] | None = None
     auto_continue_turns = 0
@@ -3057,6 +3095,7 @@ def run_interactive_conversation(
         progress_binding_capture: dict[str, Any] | None = None
         universal_intake_capture: dict[str, Any] | None = None
         human_friendly_explanation_capture: dict[str, Any] | None = None
+        llm_assisted_explanation_capture: dict[str, Any] | None = None
         turn_progress_buffer: list[str] = []
         turn_output_buffer: list[str] = []
         try:
@@ -4872,6 +4911,40 @@ def run_interactive_conversation(
                         created_at=created_at,
                     )
                     output_writer(render_acli_human_friendly_explanation(human_friendly_explanation_capture))
+                    if llm_assisted_explanation_enabled:
+                        authoritative_state = authoritative_state_from_acli_proposal_capture(
+                            state_id=f"{prompt_id}:LLM-ASSISTED-EXPLANATION-STATE",
+                            proposal_capture=bridge_capture,
+                            approval_state="APPROVAL_REQUIRED",
+                            replay_references=[
+                                str(turn_root / "conversational_cli_routing"),
+                                str(turn_root / "routing_visibility"),
+                                str(turn_root / "universal_intake"),
+                                human_friendly_explanation_capture[
+                                    "human_friendly_explanation_replay_reference"
+                                ],
+                            ],
+                            created_at=created_at,
+                        )
+                        llm_assisted_explanation_capture = create_acli_llm_assisted_explanation(
+                            explanation_id=f"{prompt_id}:LLM-ASSISTED-EXPLANATION",
+                            authoritative_state=authoritative_state,
+                            deterministic_explanation=human_friendly_explanation_capture[
+                                "operator_explanation"
+                            ],
+                            provider=llm_explanation_provider,
+                            provider_id=llm_explanation_provider_id,
+                            replay_dir=turn_root / "llm_assisted_explanation",
+                            created_at=created_at,
+                        )
+                        llm_assisted_artifact = llm_assisted_explanation_capture[
+                            "llm_assisted_explanation_artifact"
+                        ]
+                        if llm_assisted_artifact.get("provider_explanation_used") is True:
+                            output_writer("PROVIDER-ASSISTED EXPLANATION")
+                            output_writer(
+                                render_acli_llm_assisted_explanation(llm_assisted_explanation_capture)
+                            )
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
                 else:
                     failed_turns += 1
@@ -5558,6 +5631,11 @@ def run_interactive_conversation(
                 _attach_interactive_human_friendly_explanation(
                     turn_summary=turns[-1],
                     explanation_capture=human_friendly_explanation_capture,
+                )
+            if llm_assisted_explanation_capture is not None:
+                _attach_interactive_llm_assisted_explanation(
+                    turn_summary=turns[-1],
+                    explanation_capture=llm_assisted_explanation_capture,
                 )
             workflow_status = _attach_interactive_workflow_status(turns[-1])
             if auto_continuation_prompt is not None:

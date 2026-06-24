@@ -11,6 +11,11 @@ from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
 from aigol.runtime.acli_human_friendly_explanation_runtime import (
     reconstruct_acli_human_friendly_explanation_replay,
 )
+from aigol.runtime.acli_llm_assisted_explanation_runtime import (
+    DETERMINISTIC_FALLBACK_USED,
+    PROVIDER_EXPLANATION_USED,
+    reconstruct_acli_llm_assisted_explanation_replay,
+)
 from aigol.runtime.acli_governed_development_execution_bridge import (
     APPROVAL_REQUIRED,
     EXECUTION_COMPLETED,
@@ -652,3 +657,111 @@ def test_acli_governed_development_bridge_pending_approval_exits_without_mutatio
     assert proposal_turn["repository_mutation_performed"] is False
     assert not any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))
     assert not any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
+
+
+def test_live_acli_uses_optional_llm_assisted_explanation_provider(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    output: list[str] = []
+
+    def provider(request: dict) -> dict:
+        state = request["authoritative_state"]
+        return {
+            "explanation_text": (
+                "Provider explanation: ACLI_USAGE_GUIDELINES_V1 will wait for approval before mutation."
+            ),
+            "preserved_artifact_identifiers": list(state["artifact_identifiers"]),
+            "preserved_target_paths": list(state["target_paths"]),
+            "preserved_approval_state": state["approval_state"],
+            "preserved_replay_references": list(state["replay_references"]),
+            "advisory_only": True,
+            "authority_granted": False,
+        }
+
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path, repo),
+        input_func=_input_sequence(
+            [
+                (
+                    "Create governance artifact ACLI_USAGE_GUIDELINES_V1 documenting recommended "
+                    "operator practices for using ACLI as the primary development interface."
+                ),
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+        llm_explanation_provider=provider,
+    )
+
+    rendered = "\n".join(output)
+    proposal_turn = result["turns"][0]
+
+    assert proposal_turn["response_status"] == APPROVAL_REQUIRED
+    assert proposal_turn["repository_mutation_performed"] is False
+    assert proposal_turn["worker_invoked"] is False
+    assert proposal_turn["human_friendly_explanation_artifact_type"] == (
+        "ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1"
+    )
+    assert proposal_turn["llm_assisted_explanation_artifact_type"] == (
+        "ACLI_LLM_ASSISTED_EXPLANATION_ARTIFACT_V1"
+    )
+    assert proposal_turn["llm_assisted_explanation_status"] == PROVIDER_EXPLANATION_USED
+    assert proposal_turn["llm_assisted_explanation_provider_invoked"] is True
+    assert proposal_turn["llm_assisted_explanation_provider_used"] is True
+    assert proposal_turn["llm_assisted_explanation_advisory_only"] is True
+    assert proposal_turn["llm_assisted_explanation_authority_granted"] is False
+    assert "HUMAN-FRIENDLY EXPLANATION" in rendered
+    assert "PROVIDER-ASSISTED EXPLANATION" in rendered
+    assert "Provider explanation: ACLI_USAGE_GUIDELINES_V1" in rendered
+    assert "Governed Development Proposal" in rendered
+    assert rendered.index("HUMAN-FRIENDLY EXPLANATION") < rendered.index("PROVIDER-ASSISTED EXPLANATION")
+    assert rendered.index("PROVIDER-ASSISTED EXPLANATION") < rendered.index("Governed Development Proposal")
+
+    replay = reconstruct_acli_llm_assisted_explanation_replay(
+        proposal_turn["llm_assisted_explanation_replay_reference"]
+    )
+    state = replay["authoritative_state"]
+    assert replay["explanation_status"] == PROVIDER_EXPLANATION_USED
+    assert replay["provider_explanation_used"] is True
+    assert replay["authority_granted"] is False
+    assert state["artifact_identifiers"] == ["ACLI_USAGE_GUIDELINES_V1"]
+    assert "docs/governance/ACLI_USAGE_GUIDELINES_V1.md" in state["target_paths"]
+    assert state["approval_state"] == APPROVAL_REQUIRED
+    assert state["proposal_hash"].startswith("sha256:")
+
+
+def test_live_acli_llm_assisted_explanation_provider_failure_falls_back(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    output: list[str] = []
+
+    def unavailable(_request: dict) -> dict:
+        raise RuntimeError("provider unavailable")
+
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path, repo),
+        input_func=_input_sequence(["Add replay validation", "exit"]),
+        output_func=output.append,
+        llm_explanation_provider=unavailable,
+    )
+
+    rendered = "\n".join(output)
+    proposal_turn = result["turns"][0]
+
+    assert proposal_turn["response_status"] == APPROVAL_REQUIRED
+    assert proposal_turn["repository_mutation_performed"] is False
+    assert proposal_turn["worker_invoked"] is False
+    assert proposal_turn["llm_assisted_explanation_status"] == DETERMINISTIC_FALLBACK_USED
+    assert proposal_turn["llm_assisted_explanation_provider_invoked"] is True
+    assert proposal_turn["llm_assisted_explanation_provider_used"] is False
+    assert proposal_turn["llm_assisted_explanation_deterministic_fallback_used"] is True
+    assert proposal_turn["llm_assisted_explanation_authority_granted"] is False
+    assert "HUMAN-FRIENDLY EXPLANATION" in rendered
+    assert "PROVIDER-ASSISTED EXPLANATION" not in rendered
+    assert "Governed Development Proposal" in rendered
+
+    replay = reconstruct_acli_llm_assisted_explanation_replay(
+        proposal_turn["llm_assisted_explanation_replay_reference"]
+    )
+    assert replay["explanation_status"] == DETERMINISTIC_FALLBACK_USED
+    assert replay["deterministic_fallback_used"] is True
+    assert replay["authority_granted"] is False
+    assert replay["authoritative_state"]["approval_state"] == APPROVAL_REQUIRED
