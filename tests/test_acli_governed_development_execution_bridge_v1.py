@@ -75,9 +75,19 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert execution_turn["repository_mutation_performed"] is True
     assert execution_turn["validation_executed"] is True
     assert execution_turn["worker_invoked"] is True
+    assert execution_turn["routing_visibility_status"] == "ROUTING_SELECTED"
+    assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert execution_turn["universal_intake_source_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert "Governed Development Proposal" in rendered
     assert "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION" in rendered
+    assert "approval_boundary: explicit human APPROVE required before mutation" in rendered
     assert "Governed Development Execution" in rendered
+    assert "ROUTING FAILED CLOSED" not in rendered
+    assert "Stateful governed development approval decision detected" in rendered
+    assert "approval_decision: APPROVED" in rendered
+    assert "approval_hash: sha256:" in rendered
+    assert "worker_protections_preserved: true" in rendered
+    assert "validation_allowlists_preserved: true" in rendered
     assert "workflow_execution_status: GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED" in rendered
 
     replay_root = Path(execution_turn["governed_development_replay_reference"])

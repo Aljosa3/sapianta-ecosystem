@@ -1935,6 +1935,7 @@ def _record_interactive_routing_visibility(
     turn_root: Path,
     domain_approval_entry_intent: dict[str, Any] | None = None,
     conversational_routing_capture: dict[str, Any] | None = None,
+    pending_governed_development_bridge: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if conversational_routing_capture is None:
         analysis = _interactive_routing_visibility_analysis(
@@ -1943,6 +1944,7 @@ def _record_interactive_routing_visibility(
             recommendation_continuity_artifact=recommendation_continuity_artifact,
             recommendation_approval_artifact=recommendation_approval_artifact,
             domain_approval_entry_intent=domain_approval_entry_intent,
+            pending_governed_development_bridge=pending_governed_development_bridge,
         )
     else:
         analysis = _authoritative_routing_visibility_analysis(conversational_routing_capture)
@@ -2000,8 +2002,23 @@ def _interactive_routing_visibility_analysis(
     recommendation_continuity_artifact: dict[str, Any] | None,
     recommendation_approval_artifact: dict[str, Any] | None,
     domain_approval_entry_intent: dict[str, Any] | None = None,
+    pending_governed_development_bridge: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     human_decision = normalize_human_decision(human_prompt)
+    if (
+        pending_governed_development_bridge is not None
+        and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+    ):
+        return _routing_visibility_selected(
+            workflow_id=CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=["governed-development-pending-approval", human_decision],
+            competing_signals=[],
+            routing_reason=(
+                "Stateful governed development approval decision detected; "
+                "continuing the pending proposal without rerouting."
+            ),
+        )
     if domain_approval_entry_intent and domain_approval_entry_intent.get("approval_entry_intent_detected") is True:
         return _routing_visibility_selected(
             workflow_id=CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
@@ -3091,6 +3108,12 @@ def run_interactive_conversation(
             authoritative_workflow_id = (
                 (conversational_routing_capture or {}).get("workflow_selection_artifact", {}).get("workflow_id")
             )
+            stateful_governed_development_decision = (
+                pending_governed_development_bridge is not None
+                and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
+            )
+            if stateful_governed_development_decision:
+                authoritative_workflow_id = CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW
             routing_visibility_capture = _record_interactive_routing_visibility(
                 turn_id=turn_id,
                 prompt_id=prompt_id,
@@ -3100,6 +3123,7 @@ def run_interactive_conversation(
                 recommendation_approval_artifact=recommendation_approval_artifact,
                 domain_approval_entry_intent=domain_approval_entry_intent,
                 conversational_routing_capture=conversational_routing_capture,
+                pending_governed_development_bridge=pending_governed_development_bridge,
                 created_at=created_at,
                 turn_root=turn_root,
             )
