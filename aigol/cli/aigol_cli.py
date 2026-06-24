@@ -476,6 +476,10 @@ from aigol.runtime.acli_governed_development_execution_bridge import (
     propose_acli_governed_development_execution,
     render_acli_governed_development_bridge_summary,
 )
+from aigol.runtime.acli_human_friendly_explanation_runtime import (
+    create_acli_human_friendly_explanation,
+    render_acli_human_friendly_explanation,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -1923,6 +1927,22 @@ def _attach_interactive_universal_intake(
     turn_summary["universal_intake_fail_closed"] = artifact.get("fail_closed") is True
 
 
+def _attach_interactive_human_friendly_explanation(
+    *,
+    turn_summary: dict[str, Any],
+    explanation_capture: dict[str, Any],
+) -> None:
+    artifact = explanation_capture["human_friendly_explanation_artifact"]
+    turn_summary["human_friendly_explanation_replay_reference"] = explanation_capture[
+        "human_friendly_explanation_replay_reference"
+    ]
+    turn_summary["human_friendly_explanation_artifact_type"] = artifact["artifact_type"]
+    turn_summary["human_friendly_explanation_workflow_id"] = artifact["workflow_id"]
+    turn_summary["human_friendly_explanation_visibility_only"] = artifact["visibility_only"] is True
+    turn_summary["human_friendly_explanation_authority_granted"] = artifact["authority_granted"] is True
+    turn_summary["human_friendly_explanation_rendered_hash"] = artifact["rendered_explanation_hash"]
+
+
 def _record_interactive_routing_visibility(
     *,
     turn_id: str,
@@ -3009,6 +3029,7 @@ def run_interactive_conversation(
         turn_root = session_root / turn_id
         progress_binding_capture: dict[str, Any] | None = None
         universal_intake_capture: dict[str, Any] | None = None
+        human_friendly_explanation_capture: dict[str, Any] | None = None
         turn_progress_buffer: list[str] = []
         turn_output_buffer: list[str] = []
         try:
@@ -4745,6 +4766,21 @@ def run_interactive_conversation(
                 )
                 if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED:
                     pending_governed_development_bridge = bridge_capture
+                    human_friendly_explanation_capture = create_acli_human_friendly_explanation(
+                        explanation_id=f"{prompt_id}:HUMAN-FRIENDLY-EXPLANATION",
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        human_prompt=human_prompt,
+                        workflow_id=CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+                        routing_visibility_artifact=routing_visibility_capture[
+                            "conversational_routing_visibility_artifact"
+                        ],
+                        universal_intake_artifact=universal_intake_capture["universal_intake_artifact"],
+                        proposal_capture=bridge_capture,
+                        replay_dir=turn_root / "human_friendly_explanation",
+                        created_at=created_at,
+                    )
+                    output_writer(render_acli_human_friendly_explanation(human_friendly_explanation_capture))
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
                 else:
                     failed_turns += 1
@@ -5427,6 +5463,11 @@ def run_interactive_conversation(
                 turn_summary=turns[-1],
                 universal_intake_capture=universal_intake_capture,
             )
+            if human_friendly_explanation_capture is not None:
+                _attach_interactive_human_friendly_explanation(
+                    turn_summary=turns[-1],
+                    explanation_capture=human_friendly_explanation_capture,
+                )
             workflow_status = _attach_interactive_workflow_status(turns[-1])
             if auto_continuation_prompt is not None:
                 turns[-1]["auto_continued"] = True

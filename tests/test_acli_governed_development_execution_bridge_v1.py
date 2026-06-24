@@ -6,6 +6,9 @@ import subprocess
 from pathlib import Path
 
 from aigol.cli.aigol_cli import build_parser, run_interactive_conversation
+from aigol.runtime.acli_human_friendly_explanation_runtime import (
+    reconstruct_acli_human_friendly_explanation_replay,
+)
 from aigol.runtime.acli_governed_development_execution_bridge import (
     APPROVAL_REQUIRED,
     EXECUTION_COMPLETED,
@@ -70,6 +73,12 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert proposal_turn["response_status"] == APPROVAL_REQUIRED
     assert proposal_turn["repository_mutation_performed"] is False
     assert proposal_turn["worker_invoked"] is False
+    assert proposal_turn["human_friendly_explanation_artifact_type"] == (
+        "ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1"
+    )
+    assert proposal_turn["human_friendly_explanation_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert proposal_turn["human_friendly_explanation_visibility_only"] is True
+    assert proposal_turn["human_friendly_explanation_authority_granted"] is False
     assert execution_turn["response_status"] == EXECUTION_COMPLETED
     assert execution_turn["approval_bypassed"] is False
     assert execution_turn["repository_mutation_performed"] is True
@@ -79,6 +88,15 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert execution_turn["routing_visibility_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert execution_turn["universal_intake_source_workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert "Governed Development Proposal" in rendered
+    assert rendered.index("HUMAN-FRIENDLY EXPLANATION") < rendered.index("Governed Development Proposal")
+    assert "WHAT I UNDERSTOOD" in rendered
+    assert "WHAT WILL HAPPEN" in rendered
+    assert "WHAT WILL NOT HAPPEN" in rendered
+    assert "WHAT REQUIRES YOUR APPROVAL" in rendered
+    assert "WHAT TO TYPE NEXT" in rendered
+    assert "REPLAY VISIBILITY" in rendered
+    assert "Type APPROVE to continue." in rendered
+    assert "no worker will execute before approval" in rendered
     assert "next_action: APPROVE, REJECT, or REQUEST_MODIFICATION" in rendered
     assert "approval_boundary: explicit human APPROVE required before mutation" in rendered
     assert "Governed Development Execution" in rendered
@@ -91,6 +109,12 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert "workflow_execution_status: GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED" in rendered
 
     replay_root = Path(execution_turn["governed_development_replay_reference"])
+    explanation_replay = reconstruct_acli_human_friendly_explanation_replay(
+        proposal_turn["human_friendly_explanation_replay_reference"]
+    )
+    assert explanation_replay["workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert explanation_replay["visibility_only"] is True
+    assert explanation_replay["authority_granted"] is False
     assert replay_root.exists()
     assert (replay_root / "008_governed_development_outcome_recorded.json").exists()
     assert any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))
