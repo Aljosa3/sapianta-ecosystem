@@ -18,7 +18,7 @@ def test_governance_artifact_creation_is_detected_without_granting_authority() -
     assert result["intent_class"] == GENERIC_GOVERNED_ARTIFACT_CREATION
     assert result["target_kind"] == "ARTIFACT"
     assert result["execution_authority_granted"] is False
-    assert result["routing_action"] == "ROUTE_TO_GOVERNANCE_ARTIFACT_CREATION_WORKFLOW"
+    assert result["routing_action"] == "ROUTE_TO_GOVERNED_DEVELOPMENT_WORKFLOW"
 
 
 def test_generic_unclear_change_does_not_create_execution_intent() -> None:

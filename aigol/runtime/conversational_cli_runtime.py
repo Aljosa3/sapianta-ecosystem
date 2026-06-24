@@ -556,9 +556,9 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(PROPOSAL_RUNTIME, "HIGH", ["proposal", "artifact", "governance"])
     if _is_governance_artifact_creation_prompt(normalized):
         return _analysis(
-            GOVERNANCE_ARTIFACT_CREATION,
+            GOVERNED_DEVELOPMENT_WORKFLOW,
             "HIGH",
-            ["create", "governance", "artifact"],
+            ["create", "governance", "artifact", "governed-development"],
         )
     if _is_governed_repository_mutation_prompt(normalized):
         return _analysis(

@@ -55,7 +55,7 @@ def detect_human_execution_intent(human_prompt: str) -> dict[str, Any]:
             "matched_terms": matched_terms,
             "requires_clarification": True,
             "execution_authority_granted": False,
-            "routing_action": "ROUTE_TO_GOVERNANCE_ARTIFACT_CREATION_WORKFLOW",
+            "routing_action": "ROUTE_TO_GOVERNED_DEVELOPMENT_WORKFLOW",
         }
 
     if _is_generic_governed_execution_request(normalized):

@@ -155,12 +155,12 @@ def test_governance_artifact_creation_workflow_is_registered() -> None:
     assert matches[0]["existing_runtime"] == "governance_artifact_creation_runtime"
 
 
-def test_governance_artifact_creation_prompt_routes_without_execution(tmp_path) -> None:
+def test_governance_artifact_creation_prompt_routes_to_governed_development(tmp_path) -> None:
     capture = _route(tmp_path, "Create a governance artifact for the new runtime")
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
-    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
-    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governance_artifact_creation_runtime"
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governed_development_workflow_runtime"
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
     assert capture["execution_requested"] is False
@@ -168,15 +168,15 @@ def test_governance_artifact_creation_prompt_routes_without_execution(tmp_path) 
     assert capture["replay_mutated"] is False
 
 
-def test_audited_governance_artifact_prompt_routes_to_governance_artifact_creation(tmp_path) -> None:
+def test_audited_governance_artifact_prompt_routes_to_governed_development(tmp_path) -> None:
     capture = _route(
         tmp_path,
         "Add governance artifact TEST_ACLI_BRIDGE_V1 documenting that ACLI execution bridge was successfully tested.",
     )
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
-    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
-    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governance_artifact_creation_runtime"
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governed_development_workflow_runtime"
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
     assert capture["execution_requested"] is False
@@ -194,11 +194,11 @@ def test_audited_governance_artifact_prompt_routes_to_governance_artifact_creati
         "Create governance doc TEST_ACLI_BRIDGE_V1.",
     ],
 )
-def test_governance_artifact_phrase_expansion_routes_without_execution(tmp_path, prompt: str) -> None:
+def test_governance_artifact_phrase_expansion_routes_to_governed_development(tmp_path, prompt: str) -> None:
     capture = _route(tmp_path, prompt)
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
-    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
     assert capture["execution_requested"] is False
@@ -208,7 +208,25 @@ def test_governed_artifact_creation_prompt_routes_to_certified_workflow(tmp_path
     capture = _route(tmp_path, "Create a governed artifact named ExampleArtifact")
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
-    assert capture["workflow_id"] == GOVERNANCE_ARTIFACT_CREATION
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+
+
+def test_usage_guidelines_governance_artifact_prompt_routes_to_governed_development(tmp_path) -> None:
+    capture = _route(
+        tmp_path,
+        (
+            "Create governance artifact ACLI_USAGE_GUIDELINES_V1 documenting recommended operator "
+            "practices for using ACLI as the primary development interface."
+        ),
+    )
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert capture["workflow_selection_artifact"]["existing_runtime"] == "governed_development_workflow_runtime"
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
 
 
 def test_governed_repository_mutation_workflow_is_registered() -> None:
