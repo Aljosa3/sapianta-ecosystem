@@ -173,6 +173,12 @@ def test_governance_artifact_operator_prompt_uses_governed_development_bridge(tm
     assert "WHAT I UNDERSTOOD" in rendered
     assert "Governed Development Proposal" in rendered
     assert "Proposal ready for review." in rendered
+    assert "Requested artifact: ACLI_USAGE_GUIDELINES_V1" in rendered
+    assert "Selected artifact: ACLI_USAGE_GUIDELINES_V1" in rendered
+    assert "File ACLI plans to create: docs/governance/ACLI_USAGE_GUIDELINES_V1.md" in rendered
+    assert "Target path mode: REQUESTED_IDENTIFIER" in rendered
+    assert "Title: ACLI_USAGE_GUIDELINES_V1" in rendered
+    assert "Purpose: Document recommended operator practices" in rendered
     assert "approval_boundary: explicit human APPROVE required before mutation" in rendered
     assert "Governed Development Execution" in rendered
     assert "Approved and executed." in rendered
@@ -184,8 +190,62 @@ def test_governance_artifact_operator_prompt_uses_governed_development_bridge(tm
     assert explanation_replay["workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert explanation_replay["visibility_only"] is True
     assert explanation_replay["authority_granted"] is False
-    assert any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))
+    assert (repo / "docs/governance/ACLI_USAGE_GUIDELINES_V1.md").exists()
+    assert not any(repo.glob("docs/governance/ACLI_GOVERNED_DEVELOPMENT_*_V1.md"))
     assert any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
+
+    proposal_replay = json.loads(
+        (Path(proposal_turn["replay_reference"]) / "000_acli_governed_development_proposal_recorded.json").read_text()
+    )
+    proposal_artifact = proposal_replay["artifact"]
+    naming_decision = proposal_artifact["proposal_naming_decision"]
+    preview_artifact = proposal_artifact["proposal_preview_artifact"]
+    proposal = proposal_artifact["proposal_artifact"]
+    assert naming_decision["requested_artifact_identifier"] == "ACLI_USAGE_GUIDELINES_V1"
+    assert naming_decision["selected_artifact_identifier"] == "ACLI_USAGE_GUIDELINES_V1"
+    assert naming_decision["selected_target_path"] == "docs/governance/ACLI_USAGE_GUIDELINES_V1.md"
+    assert naming_decision["target_path_mode"] == "REQUESTED_IDENTIFIER"
+    assert naming_decision["collision_status"] == "NO_COLLISION"
+    assert preview_artifact["selected_artifact_identifier"] == "ACLI_USAGE_GUIDELINES_V1"
+    assert preview_artifact["selected_target_path"] == "docs/governance/ACLI_USAGE_GUIDELINES_V1.md"
+    assert proposal["governance_artifact_proposal"]["target_path"] == (
+        "docs/governance/ACLI_USAGE_GUIDELINES_V1.md"
+    )
+    assert proposal["governance_artifact_proposal"]["artifact_title"] == "ACLI_USAGE_GUIDELINES_V1"
+
+
+def test_governance_artifact_requested_name_collision_fails_closed(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    target = repo / "docs/governance/ACLI_USAGE_GUIDELINES_V1.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("# Existing\n", encoding="utf-8")
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        _conversation_args(tmp_path, repo),
+        input_func=_input_sequence(
+            [
+                (
+                    "Create governance artifact ACLI_USAGE_GUIDELINES_V1 documenting recommended operator "
+                    "practices for using ACLI as the primary development interface."
+                ),
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+
+    rendered = "\n".join(output)
+    proposal_turn = result["turns"][0]
+
+    assert result["failed_turns"] == 1
+    assert result["execution_requested"] is False
+    assert result["worker_invoked"] is False
+    assert proposal_turn["response_status"] == "FAILED_CLOSED"
+    assert proposal_turn["repository_mutation_performed"] is False
+    assert "target path collision at docs/governance/ACLI_USAGE_GUIDELINES_V1.md" in rendered
+    assert target.read_text(encoding="utf-8") == "# Existing\n"
+    assert not any(repo.glob("aigol/runtime/acli_governed_development_*.py"))
 
 
 def test_acli_governed_development_bridge_rejection_does_not_mutate(tmp_path) -> None:

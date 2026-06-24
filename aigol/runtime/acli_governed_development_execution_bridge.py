@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 
 from aigol.runtime.governed_development_workflow_runtime import (
@@ -35,6 +36,11 @@ MODIFICATION_REQUESTED = "MODIFICATION_REQUESTED"
 WAITING_FOR_OPERATOR_REVISION = "WAITING_FOR_OPERATOR_REVISION"
 
 WORKFLOW_ID = "GOVERNED_DEVELOPMENT_WORKFLOW"
+REQUESTED_ARTIFACT_IDENTIFIER_PATTERN = re.compile(r"\b[A-Z][A-Z0-9_]*_V[0-9]+\b")
+REQUESTED_IDENTIFIER_MODE = "REQUESTED_IDENTIFIER"
+GENERATED_FALLBACK_MODE = "GENERATED_FALLBACK"
+AMBIGUOUS_FAIL_CLOSED_MODE = "AMBIGUOUS_FAIL_CLOSED"
+COLLISION_FAIL_CLOSED_MODE = "COLLISION_FAIL_CLOSED"
 
 
 def propose_acli_governed_development_execution(
@@ -88,12 +94,27 @@ def propose_acli_governed_development_execution(
                 "workflow_selection_hash": workflow_selection["artifact_hash"],
             }
         )[7:23]
+        naming_decision = _proposal_naming_decision(
+            human_prompt=human_prompt,
+            seed=seed,
+            workspace=workspace,
+        )
         proposal = create_governed_development_proposal(
             proposal_id=f"{bridge_id}:PROPOSAL",
             original_request_reference=routing_decision["routing_decision_id"],
             resolved_intent_reference=workflow_selection["workflow_selection_id"],
-            governance_artifact=_governance_artifact(seed=seed, human_prompt=human_prompt),
-            repository_file_mutations=[_repository_file_mutation(seed=seed, human_prompt=human_prompt)],
+            governance_artifact=_governance_artifact(
+                seed=seed,
+                human_prompt=human_prompt,
+                naming_decision=naming_decision,
+            ),
+            repository_file_mutations=[
+                _repository_file_mutation(
+                    seed=seed,
+                    human_prompt=human_prompt,
+                    artifact_identifier=naming_decision["selected_artifact_identifier"],
+                )
+            ],
             repository_validation_command=["git", "diff", "--check"],
             replay_references=[
                 conversational_routing_capture["conversational_cli_routing_replay_reference"],
@@ -116,6 +137,12 @@ def propose_acli_governed_development_execution(
             workspace=workspace,
             created_at=created_at,
         )
+        proposal_preview = _proposal_preview_artifact(
+            bridge_id=bridge_id,
+            proposal=proposal,
+            naming_decision=naming_decision,
+            created_at=created_at,
+        )
         capture = {
             "artifact_type": ACLI_GOVERNED_DEVELOPMENT_BRIDGE_PROPOSAL_CAPTURE_V1,
             "runtime_version": ACLI_GOVERNED_DEVELOPMENT_EXECUTION_BRIDGE_VERSION,
@@ -128,6 +155,8 @@ def propose_acli_governed_development_execution(
             "workflow_artifact": deepcopy(workflow_selection),
             "repository_context_artifact": repository_context,
             "proposal_artifact": proposal,
+            "proposal_naming_decision": naming_decision,
+            "proposal_preview_artifact": proposal_preview,
             "approval_required": True,
             "approval_bypassed": False,
             "mutation_performed": False,
@@ -270,6 +299,12 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
     workflow_capture = capture.get("workflow_capture") or {}
     if capture.get("bridge_status") == APPROVAL_REQUIRED:
         target_paths = [str(path) for path in capture.get("target_paths", [])]
+        naming_decision = capture.get("proposal_naming_decision") or {}
+        preview = capture.get("proposal_preview_artifact") or {}
+        content_preview = preview.get("content_preview") if isinstance(preview.get("content_preview"), list) else []
+        requested_identifier = naming_decision.get("requested_artifact_identifier")
+        selected_identifier = naming_decision.get("selected_artifact_identifier")
+        selected_target_path = naming_decision.get("selected_target_path")
         return "\n".join(
             _compact_lines(
                 [
@@ -280,6 +315,14 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
                     "Proposal ready for review.",
                     "",
                     "ACLI prepared a governed development proposal for your request.",
+                    "",
+                    f"Requested artifact: {requested_identifier or 'not provided'}",
+                    f"Selected artifact: {selected_identifier or 'not available'}",
+                    f"File ACLI plans to create: {selected_target_path or 'not available'}",
+                    f"Target path mode: {naming_decision.get('target_path_mode') or 'not available'}",
+                    "",
+                    "Proposal preview:",
+                    *(_bullet_lines(content_preview) if content_preview else ["- No content preview was recorded."]),
                     "",
                     "Proposed repository changes:",
                     *(_bullet_lines(target_paths) if target_paths else ["- No target paths were recorded."]),
@@ -303,6 +346,12 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
                     f"workflow_id: {capture.get('workflow_id')}",
                     f"proposal_id: {proposal.get('proposal_id')}",
                     f"proposal_hash: {proposal.get('artifact_hash')}",
+                    f"requested_artifact_identifier: {requested_identifier or ''}",
+                    f"selected_artifact_identifier: {selected_identifier or ''}",
+                    f"selected_target_path: {selected_target_path or ''}",
+                    f"target_path_mode: {naming_decision.get('target_path_mode') or ''}",
+                    f"collision_status: {naming_decision.get('collision_status') or ''}",
+                    f"proposal_preview_hash: {preview.get('artifact_hash') or ''}",
                     "target_paths:",
                     *[f"- {path}" for path in target_paths],
                     "approval_required: true",
@@ -540,15 +589,112 @@ def _repository_context_artifact(
     return artifact
 
 
-def _governance_artifact(*, seed: str, human_prompt: str) -> dict[str, Any]:
-    title = f"ACLI_GOVERNED_DEVELOPMENT_{seed.upper()}_V1"
+def _proposal_naming_decision(*, human_prompt: str, seed: str, workspace: Path) -> dict[str, Any]:
+    prompt = _require_string(human_prompt, "human_prompt")
+    matches = REQUESTED_ARTIFACT_IDENTIFIER_PATTERN.findall(prompt)
+    unique_matches = list(dict.fromkeys(matches))
+    fallback_identifier = f"ACLI_GOVERNED_DEVELOPMENT_{seed.upper()}_V1"
+    if len(unique_matches) > 1:
+        decision = {
+            "requested_artifact_identifier": None,
+            "requested_identifier_detected": True,
+            "requested_identifier_detection_rule": REQUESTED_ARTIFACT_IDENTIFIER_PATTERN.pattern,
+            "requested_identifier_safe": False,
+            "requested_identifier_ambiguity": unique_matches,
+            "selected_artifact_identifier": None,
+            "selected_target_path": None,
+            "target_path_mode": AMBIGUOUS_FAIL_CLOSED_MODE,
+            "fallback_seed": seed,
+            "collision_status": None,
+            "collision_resolution": "FAIL_CLOSED",
+        }
+        decision["artifact_hash"] = replay_hash(decision)
+        raise FailClosedRuntimeError(
+            "ACLI governed development bridge failed closed: ambiguous artifact identifiers "
+            + ", ".join(unique_matches)
+        )
+    if unique_matches:
+        identifier = unique_matches[0]
+        target_path = f"docs/governance/{identifier}.md"
+        collision_status = _target_collision_status(workspace=workspace, target_path=target_path)
+        if collision_status != "NO_COLLISION":
+            decision = {
+                "requested_artifact_identifier": identifier,
+                "requested_identifier_detected": True,
+                "requested_identifier_detection_rule": REQUESTED_ARTIFACT_IDENTIFIER_PATTERN.pattern,
+                "requested_identifier_safe": True,
+                "requested_identifier_ambiguity": [],
+                "selected_artifact_identifier": identifier,
+                "selected_target_path": target_path,
+                "target_path_mode": COLLISION_FAIL_CLOSED_MODE,
+                "fallback_seed": seed,
+                "collision_status": collision_status,
+                "collision_resolution": "FAIL_CLOSED",
+            }
+            decision["artifact_hash"] = replay_hash(decision)
+            raise FailClosedRuntimeError(
+                f"ACLI governed development bridge failed closed: target path collision at {target_path}"
+            )
+        decision = {
+            "requested_artifact_identifier": identifier,
+            "requested_identifier_detected": True,
+            "requested_identifier_detection_rule": REQUESTED_ARTIFACT_IDENTIFIER_PATTERN.pattern,
+            "requested_identifier_safe": True,
+            "requested_identifier_ambiguity": [],
+            "selected_artifact_identifier": identifier,
+            "selected_target_path": target_path,
+            "target_path_mode": REQUESTED_IDENTIFIER_MODE,
+            "fallback_seed": seed,
+            "collision_status": collision_status,
+            "collision_resolution": "NOT_REQUIRED",
+        }
+        decision["artifact_hash"] = replay_hash(decision)
+        return decision
+    target_path = f"docs/governance/{fallback_identifier}.md"
+    collision_status = _target_collision_status(workspace=workspace, target_path=target_path)
+    if collision_status != "NO_COLLISION":
+        raise FailClosedRuntimeError(
+            f"ACLI governed development bridge failed closed: generated target path collision at {target_path}"
+        )
+    decision = {
+        "requested_artifact_identifier": None,
+        "requested_identifier_detected": False,
+        "requested_identifier_detection_rule": REQUESTED_ARTIFACT_IDENTIFIER_PATTERN.pattern,
+        "requested_identifier_safe": False,
+        "requested_identifier_ambiguity": [],
+        "selected_artifact_identifier": fallback_identifier,
+        "selected_target_path": target_path,
+        "target_path_mode": GENERATED_FALLBACK_MODE,
+        "fallback_seed": seed,
+        "collision_status": collision_status,
+        "collision_resolution": "NOT_REQUIRED",
+    }
+    decision["artifact_hash"] = replay_hash(decision)
+    return decision
+
+
+def _target_collision_status(*, workspace: Path, target_path: str) -> str:
+    target = (workspace / target_path).resolve()
+    try:
+        target.relative_to(workspace.resolve())
+    except ValueError as exc:
+        raise FailClosedRuntimeError("ACLI governed development bridge failed closed: target escaped workspace") from exc
+    if target.exists():
+        return "TARGET_EXISTS"
+    return "NO_COLLISION"
+
+
+def _governance_artifact(*, seed: str, human_prompt: str, naming_decision: dict[str, Any]) -> dict[str, Any]:
+    title = _require_string(naming_decision.get("selected_artifact_identifier"), "selected_artifact_identifier")
+    target_path = _require_string(naming_decision.get("selected_target_path"), "selected_target_path")
+    purpose = _proposal_purpose(human_prompt)
     content = "\n".join(
         [
             f"# {title}",
             "",
             "Status: Generated Proposal",
             "",
-            "Purpose: Replay-visible governance artifact generated by the ACLI governed development bridge.",
+            f"Purpose: {purpose}",
             "",
             "Human request:",
             "",
@@ -563,20 +709,31 @@ def _governance_artifact(*, seed: str, human_prompt: str) -> dict[str, Any]:
         ]
     )
     return {
-        "target_path": f"docs/governance/{title}.md",
+        "target_path": target_path,
         "artifact_title": title,
-        "artifact_purpose": "Record a no-copy-paste governed development proposal.",
+        "artifact_purpose": purpose,
         "proposed_content": content,
         "expected_sections": ["Status", "Purpose", "Boundaries"],
     }
 
 
-def _repository_file_mutation(*, seed: str, human_prompt: str) -> dict[str, Any]:
+def _proposal_purpose(human_prompt: str) -> str:
+    prompt = _require_string(human_prompt, "human_prompt")
+    match = re.search(r"\b(documenting|defining|recording|explaining)\s+(.+?)[.!?]?$", prompt, re.IGNORECASE)
+    if match:
+        purpose = match.group(2).strip()
+        if purpose:
+            return "Document " + purpose
+    return "Record a no-copy-paste governed development proposal."
+
+
+def _repository_file_mutation(*, seed: str, human_prompt: str, artifact_identifier: str) -> dict[str, Any]:
     content = "\n".join(
         [
             '"""ACLI governed development bridge generated marker."""',
             "",
             f'CERTIFIED_ACLI_GOVERNED_DEVELOPMENT_REQUEST = {human_prompt.strip()!r}',
+            f'CERTIFIED_ACLI_GOVERNED_DEVELOPMENT_ARTIFACT = "{_require_string(artifact_identifier, "artifact_identifier")}"',
             f'CERTIFIED_ACLI_GOVERNED_DEVELOPMENT_SEED = "{seed}"',
             "",
         ]
@@ -588,6 +745,38 @@ def _repository_file_mutation(*, seed: str, human_prompt: str) -> dict[str, Any]
         "new_content_hash": replay_hash(content),
         "approved": True,
     }
+
+
+def _proposal_preview_artifact(
+    *, bridge_id: str, proposal: dict[str, Any], naming_decision: dict[str, Any], created_at: str
+) -> dict[str, Any]:
+    governance = proposal["governance_artifact_proposal"]
+    repository = proposal["repository_mutation_proposal"]
+    preview = {
+        "artifact_type": "ACLI_GOVERNED_DEVELOPMENT_PROPOSAL_PREVIEW_ARTIFACT_V1",
+        "preview_id": f"{bridge_id}:PROPOSAL-PREVIEW",
+        "proposal_id": proposal["proposal_id"],
+        "proposal_hash": proposal["artifact_hash"],
+        "requested_artifact_identifier": naming_decision.get("requested_artifact_identifier"),
+        "selected_artifact_identifier": naming_decision["selected_artifact_identifier"],
+        "selected_target_path": naming_decision["selected_target_path"],
+        "target_path_mode": naming_decision["target_path_mode"],
+        "content_preview": [
+            f"Title: {governance['artifact_title']}",
+            f"Purpose: {governance['artifact_purpose']}",
+            "Section: Status",
+            "Section: Purpose",
+            "Section: Boundaries",
+        ],
+        "repository_mutation_paths": deepcopy(repository["target_paths"]),
+        "repository_mutation_operations": [
+            item["operation"] for item in repository.get("file_mutations", []) if isinstance(item, dict)
+        ],
+        "validation_command": deepcopy(repository["validation_plan"]["required_command"]),
+        "created_at": created_at,
+    }
+    preview["artifact_hash"] = replay_hash(preview)
+    return preview
 
 
 def _rejected_execution_capture(
