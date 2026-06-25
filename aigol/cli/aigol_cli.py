@@ -488,6 +488,9 @@ from aigol.runtime.acli_llm_assisted_explanation_runtime import (
     create_acli_llm_assisted_explanation,
     render_acli_llm_assisted_explanation,
 )
+from aigol.runtime.acli_hardening_integration_runtime import (
+    record_completed_acli_interaction_hardening,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -1455,6 +1458,79 @@ def _record_interactive_turn_completion(
     turn_summary["result_delivered_artifact_type"] = delivery["result_delivered_artifact"]["artifact_type"]
     turn_summary["elapsed_seconds"] = delivery["result_delivered_artifact"]["elapsed_seconds"]
     return delivery
+
+
+def _record_interactive_hardening_capture(
+    *,
+    session_id: str,
+    turn_id: str,
+    prompt_id: str,
+    turn_summary: dict[str, Any],
+    completion_capture: dict[str, Any],
+    session_root: Path,
+    turn_root: Path,
+    created_at: str,
+) -> dict[str, Any]:
+    try:
+        capture = record_completed_acli_interaction_hardening(
+            session_id=session_id,
+            turn_id=turn_id,
+            prompt_id=prompt_id,
+            turn_summary=turn_summary,
+            completion_capture=completion_capture,
+            session_root=session_root,
+            turn_root=turn_root,
+            created_at=created_at,
+        )
+        turn_summary["hardening_recorded"] = True
+        turn_summary["hardening_result"] = capture["hardening_capture"]["result"]
+        turn_summary["hardening_replay_reference"] = capture["hardening_replay_reference"]
+        turn_summary["hardening_metrics_reference"] = capture["hardening_metrics_reference"]
+        turn_summary["hardening_summary"] = capture["operator_summary"]
+        turn_summary["hardening_authority_preserved"] = True
+        return capture
+    except Exception as exc:
+        failure_reason = str(exc) or "ACLI hardening integration failed closed"
+        turn_summary["hardening_recorded"] = False
+        turn_summary["hardening_result"] = "FAILED_CLOSED"
+        turn_summary["hardening_failure_reason"] = failure_reason
+        turn_summary["hardening_authority_preserved"] = True
+        return {
+            "runtime_version": "ACLI_HARDENING_INTEGRATION_RUNTIME_V1",
+            "integration_status": "HARDENING_CAPTURE_FAILED_CLOSED",
+            "failure_reason": failure_reason,
+            "operator_summary": "\n".join(
+                [
+                    "",
+                    "Hardening",
+                    "",
+                    "Scenario: Not recorded",
+                    "Coverage: Unchanged",
+                    "Replay: Not recorded",
+                    "Operator feedback: Optional",
+                ]
+            ),
+            "read_only": True,
+            "replay_visible": False,
+            "authority_flags": {
+                "authorizes_execution": False,
+                "authorizes_dispatch": False,
+                "authorizes_worker_invocation": False,
+                "authorizes_provider_invocation": False,
+                "authorizes_governance_mutation": False,
+                "authorizes_replay_mutation": False,
+                "authorizes_lifecycle_modification": False,
+                "creates_approval": False,
+                "creates_improvement_proposal": False,
+            },
+            "workflow_modified": False,
+            "approval_created": False,
+            "execution_authorized": False,
+            "worker_invoked": False,
+            "provider_invoked": False,
+            "governance_mutated": False,
+            "replay_mutated": False,
+        }
 
 
 def _interactive_turn_elapsed_seconds(*, turn_started_monotonic: float, monotonic_now: Any) -> int:
@@ -5679,6 +5755,17 @@ def run_interactive_conversation(
                         "\n".join(turn_progress_buffer + normal_output + [workflow_status_output]),
                     ),
                 )
+                hardening_capture = _record_interactive_hardening_capture(
+                    session_id=session_id,
+                    turn_id=turn_id,
+                    prompt_id=prompt_id,
+                    turn_summary=turns[-1],
+                    completion_capture=completion_capture,
+                    session_root=session_root,
+                    turn_root=turn_root,
+                    created_at=created_at,
+                )
+                normal_output.append(hardening_capture["operator_summary"])
                 normal_output.append(completion_capture["operator_completion_summary"])
                 normal_output.append(workflow_status_output)
             rendered_normal_output = "\n".join(turn_progress_buffer + normal_output)
@@ -5763,6 +5850,12 @@ def run_interactive_conversation(
             turn.get("post_execution_replay_reviewed") is True for turn in turns
         ),
         "terminated": any(turn.get("terminated") is True for turn in turns),
+        "hardening_recorded": any(turn.get("hardening_recorded") is True for turn in turns),
+        "hardening_event_count": sum(1 for turn in turns if turn.get("hardening_recorded") is True),
+        "hardening_metrics_reference": next(
+            (turn.get("hardening_metrics_reference") for turn in reversed(turns) if turn.get("hardening_metrics_reference")),
+            None,
+        ),
         "execution_requested": any(turn.get("execution_started") is True for turn in turns),
         "dispatch_requested": any(turn.get("dispatch_requested") is True for turn in turns),
         "invocation_requested": any(turn.get("invocation_requested") is True for turn in turns),

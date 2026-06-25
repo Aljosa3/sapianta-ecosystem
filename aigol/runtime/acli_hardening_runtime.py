@@ -219,17 +219,29 @@ def _detect_components(interaction: dict[str, Any]) -> list[str]:
         components.add("HIRR")
     if _has_any_token(text, ("workflow", "routing", "selected_workflow")):
         components.add("Workflow Routing")
-    if _has_any_token(text, ("proposal", "proposal_hash", "target_paths")):
+    if _truthy_key(interaction, "proposal_presented") or _contains_key(interaction, "proposal_hash") or _contains_key(interaction, "target_paths"):
         components.add("Proposal Runtime")
-    if _has_any_token(text, ("approval", "approve", "reject", "request_modification")):
+    if _truthy_key(interaction, "approval_required") or _field_status(
+        interaction, "approval_status", {"APPROVED", "REJECTED", "MODIFICATION_REQUESTED", "PENDING"}
+    ):
         components.add("Approval Runtime")
     if _has_any_token(text, ("explanation", "operator summary", "human_readable")):
         components.add("Explanation Runtime")
-    if _has_any_token(text, ("provider", "llm", "escalation")):
+    if _truthy_key(interaction, "provider_invoked") or _truthy_key(interaction, "llm_assisted_explanation") or _contains_key(
+        interaction, "provider_explanation"
+    ):
         components.add("Cognition Provider Runtime")
-    if _has_any_token(text, ("worker", "dispatch", "mutation")):
+    if (
+        _truthy_key(interaction, "worker_invoked")
+        or _truthy_key(interaction, "worker_dispatched")
+        or _truthy_key(interaction, "worker_assigned")
+        or _truthy_key(interaction, "repository_mutation_performed")
+        or _field_status(interaction, "worker_status", {"DISPATCHED", "INVOKED", "EXECUTED"})
+    ):
         components.add("Worker Runtime")
-    if _has_any_token(text, ("validation", "git diff --check", "validated")):
+    if _truthy_key(interaction, "validated") or _truthy_key(interaction, "validation_executed") or _field_status(
+        interaction, "validation_status", {"PASSED", "VALIDATED", "FAILED"}
+    ):
         components.add("Validation Runtime")
     if _has_any_token(text, ("replay", "reconstruction", "replay_hash")):
         components.add("Replay Runtime")
@@ -257,8 +269,10 @@ def _detect_operator_journey(interaction: dict[str, Any]) -> dict[str, Any]:
     prompt = _first_string(interaction, ("prompt", "operator_prompt", "human_request", "request"))
     journey = {
         "prompt": prompt,
-        "proposal_presented": _truthy_key(interaction, "proposal_presented") or "proposal" in text,
-        "approval_required": _truthy_key(interaction, "approval_required") or "approval" in text,
+        "proposal_presented": _truthy_key(interaction, "proposal_presented")
+        or _contains_key(interaction, "proposal_hash")
+        or _contains_key(interaction, "target_paths"),
+        "approval_required": _truthy_key(interaction, "approval_required"),
         "approved": _status_present(text, ("approved", "approve this proposal")),
         "rejected": _status_present(text, ("rejected", "reject")),
         "modification_requested": _status_present(text, ("modification_requested", "request_modification")),
@@ -269,7 +283,8 @@ def _detect_operator_journey(interaction: dict[str, Any]) -> dict[str, Any]:
         or _field_status(interaction, "validation_status", {"PASSED", "VALIDATED"}),
         "replay_recorded": bool(_find_replay_reference(interaction)),
         "resumed": _truthy_key(interaction, "resumed") or _truthy_key(interaction, "proposal_restored"),
-        "clarification_required": _truthy_key(interaction, "clarification_required"),
+        "clarification_required": _truthy_key(interaction, "clarification_required")
+        or _field_status(interaction, "response_status", {"CLARIFICATION_REQUIRED"}),
     }
     journey["completed"] = any(
         journey[key]
@@ -358,7 +373,7 @@ def _detect_architectural_invariants(interaction: dict[str, Any], scenarios: lis
         invariants.add("Worker executes only after governed authorization")
     if "APPROVAL" in scenario_ids or "REJECT" in scenario_ids or "REQUEST_MODIFICATION" in scenario_ids:
         invariants.add("Approval boundary is explicit")
-    if _has_any_token(text, ("fail_closed", "failed closed", "failed_closed")):
+    if _truthy_key(interaction, "fail_closed") or _field_status(interaction, "response_status", {"FAILED_CLOSED"}):
         invariants.add("Fail-closed behavior is preserved")
     if _has_any_token(text, ("translation", "normalized_intent")):
         invariants.add("Translation never authorizes execution")
@@ -404,7 +419,7 @@ def _detect_issues(
     approval_required = _truthy_key(interaction, "approval_required") or "approval_required" in text
     approved = _status_present(text, ("approved", "approve this proposal"))
 
-    if _truthy_key(interaction, "authority_violation") or _has_any_token(text, ("authority_violation", "provider_authority_claim")):
+    if _truthy_key(interaction, "authority_violation") or _truthy_key(interaction, "provider_authority_claim"):
         issues.append(_issue("SECURITY", "P0", "authority_boundary_violation", source_replay_reference))
     if executed and approval_required and not approved:
         issues.append(_issue("APPROVAL", "P0", "execution_without_approval", source_replay_reference))
@@ -412,18 +427,26 @@ def _detect_issues(
         issues.append(_issue("REPLAY", "P0", "execution_missing_replay_reference", source_replay_reference))
     if _truthy_key(interaction, "approval_bypassed"):
         issues.append(_issue("APPROVAL", "P0", "approval_bypass_detected", source_replay_reference))
-    if _has_any_token(text, ("tampered", "hash mismatch", "replay corruption")):
+    if _truthy_key(interaction, "tampered") or _has_any_token(text, ("hash mismatch", "replay corruption")):
         issues.append(_issue("REPLAY", "P0", "replay_integrity_failure", source_replay_reference))
 
-    if _has_any_token(text, ("provider_unavailable", "provider unavailable")):
+    if _truthy_key(interaction, "provider_unavailable") or _field_status(
+        interaction, "provider_status", {"PROVIDER_UNAVAILABLE", "UNAVAILABLE"}
+    ):
         issues.append(_issue("PROVIDER", "P1", "provider_unavailable", source_replay_reference))
-    if _has_any_token(text, ("worker_unavailable", "worker unavailable")):
+    if _truthy_key(interaction, "worker_unavailable") or _field_status(
+        interaction, "worker_status", {"WORKER_UNAVAILABLE", "UNAVAILABLE"}
+    ):
         issues.append(_issue("WORKER", "P1", "worker_unavailable", source_replay_reference))
-    if _has_any_token(text, ("validation_failed", "validation failure", "validation_status: failed")):
+    if _truthy_key(interaction, "validation_failed") or _field_status(interaction, "validation_status", {"FAILED"}):
         issues.append(_issue("VALIDATION", "P1", "validation_failed", source_replay_reference))
-    if _has_any_token(text, ("clarification_required", "ambiguous_intent")):
+    if (
+        _truthy_key(interaction, "clarification_required")
+        or _field_status(interaction, "response_status", {"CLARIFICATION_REQUIRED"})
+        or _field_status(interaction, "intent_family", {"AMBIGUOUS_INTENT"})
+    ):
         issues.append(_issue("ROUTING", "P1", "clarification_or_ambiguity_required", source_replay_reference))
-    if _has_any_token(text, ("fail_closed", "failed closed", "failed_closed")):
+    if _truthy_key(interaction, "fail_closed") or _field_status(interaction, "response_status", {"FAILED_CLOSED"}):
         issues.append(_issue("ARCHITECTURE", "P1", "fail_closed_path_exercised", source_replay_reference))
 
     clarity = str(feedback.get("clarity") or "").strip().lower()
@@ -778,6 +801,18 @@ def _field_status(value: Any, key_name: str, statuses: set[str]) -> bool:
                 return True
     elif isinstance(value, list):
         return any(_field_status(item, key_name, statuses) for item in value)
+    return False
+
+
+def _contains_key(value: Any, key_name: str) -> bool:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == key_name:
+                return True
+            if _contains_key(item, key_name):
+                return True
+    elif isinstance(value, list):
+        return any(_contains_key(item, key_name) for item in value)
     return False
 
 

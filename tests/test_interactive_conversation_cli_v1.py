@@ -93,47 +93,41 @@ def test_interactive_conversation_records_router_and_conversation_replay(tmp_pat
     assert result["dispatch_requested"] is False
     assert result["invocation_requested"] is False
     assert turn["selected_source"] == "CONSTITUTIONAL_MEMORY"
-    assert turn["response_source"] == "SELF_RESOLUTION"
+    assert turn["response_source"] == "CONVERSATIONAL_CLI_WORKFLOW"
+    assert turn["response_status"] == "CLARIFICATION_REQUIRED"
     assert turn["fail_closed"] is False
     assert turn["turn_completed"] is True
     assert turn["result_delivered"] is True
     assert turn["turn_completion_artifact_type"] == TURN_COMPLETED_ARTIFACT_V1
     assert turn["result_delivered_artifact_type"] == RESULT_DELIVERED_ARTIFACT_V1
-    assert turn["workflow_status"]["workflow_name"] == "SELF_RESOLUTION"
-    assert turn["workflow_status"]["workflow_state"] == "COMPLETED"
-    assert turn["workflow_status"]["workflow_complete"] is True
+    assert turn["workflow_status"]["workflow_name"] == "HUMAN_INTENT_CLARIFICATION_INTAKE"
+    assert turn["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+    assert turn["workflow_status"]["workflow_complete"] is False
+    assert turn["hardening_recorded"] is True
+    assert turn["hardening_result"] == "PARTIAL PASS"
     assert _progress_lines(output[0])[:8] == PROGRESS_LINES
-    assert output[0].splitlines()[-17:-9] == [
-        "================================",
-        "TURN COMPLETED",
-        "turn_id: TURN-000001",
-        "providers: NONE",
-        "status: COMPLETED",
-        "result_delivered: TRUE",
-        "elapsed: 3s",
-        "============",
-    ]
-    assert output[0].splitlines()[-9:] == [
-        "Workflow Name: SELF_RESOLUTION",
-        "Workflow State: COMPLETED",
-        "Current Lifecycle Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
-        "Next Expected Action: No further operator action required.",
-        "WORKFLOW COMPLETE: TRUE",
-        "Lifecycle Progress:",
-        "Completed Stages: NONE",
-        "Current Stage: PROVIDER_ASSISTED_CONVERSATION_RESPONSE_CREATED",
-        "Remaining Stages: NONE",
-    ]
+    rendered_lines = output[0].splitlines()
+    assert "TURN COMPLETED" in rendered_lines
+    assert "turn_id: TURN-000001" in rendered_lines
+    assert "providers: NONE" in rendered_lines
+    assert "status: COMPLETED" in rendered_lines
+    assert "Workflow Name: HUMAN_INTENT_CLARIFICATION_INTAKE" in rendered_lines
+    assert "Workflow State: WAITING_FOR_OPERATOR" in rendered_lines
+    assert "Current Lifecycle Stage: CLARIFICATION" in rendered_lines
+    assert "WORKFLOW COMPLETE: FALSE" in rendered_lines
+    assert "WAITING FOR OPERATOR INPUT" in rendered_lines
+    assert "- operator clarification" in rendered_lines
     assert "Routing ...\nCognition ...\nProvider Invocation ...\nReplay ..." in output[0]
-    assert any("governed AI operation path" in line for line in output)
+    assert "Hardening" in output[0]
+    assert "Operator feedback: Optional" in output[0]
     assert (session_root / "TURN-000001" / "source_router" / "000_source_of_truth_router_selected.json").exists()
     assert (
         session_root
-        / "prompt_runtime"
-        / "INTERACTIVE-TEST-000001:TURN-000001"
-        / "conversation_response"
-        / "004_provider_assisted_conversation_response_returned.json"
+        / "TURN-000001"
+        / "conversational_cli_routing"
+        / "002_conversational_routing_returned.json"
     ).exists()
+    assert (session_root / "TURN-000001" / "acli_hardening" / "000_acli_hardening_evidence_recorded.json").exists()
     progress = reconstruct_conversational_progress_binding(
         session_root / "TURN-000001" / "conversational_progress"
     )
@@ -186,7 +180,7 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
     def fail_runtime(**_kwargs):
         raise RuntimeError("synthetic runtime failure")
 
-    monkeypatch.setattr(aigol_cli, "submit_prompt_to_conversation", fail_runtime)
+    monkeypatch.setattr(aigol_cli, "route_conversational_cli_intent", fail_runtime)
 
     result = run_interactive_conversation(
         args,
@@ -198,16 +192,16 @@ def test_interactive_conversation_fails_closed_on_runtime_error(tmp_path, monkey
     assert result["turn_count"] == 1
     assert result["failed_turns"] == 1
     rendered = output[0].splitlines()
-    assert [line for line in rendered if line.startswith("[") and len(line) > 1 and line[1].isdigit()][
-        :6
-    ] == PROGRESS_LINES[:6]
+    assert [line for line in rendered if line.startswith("[") and len(line) > 1 and line[1].isdigit()] == [
+        "[8/8] Replay"
+    ]
     assert "[8/8] Replay" in rendered
     assert output[-2] == "FAILED_CLOSED: synthetic runtime failure"
     assert output[-1].splitlines() == [
         "Workflow Name: UNAVAILABLE",
         "Workflow State: FAILED_CLOSED",
         "Current Lifecycle Stage: FAILED_CLOSED",
-        "Next Expected Action: Inspect fail-closed reason: synthetic runtime failure",
+        "Next Expected Action: Informational only: inspect fail-closed reason: synthetic runtime failure",
         "WORKFLOW COMPLETE: FALSE",
         "Lifecycle Progress:",
         "Completed Stages: NONE",
