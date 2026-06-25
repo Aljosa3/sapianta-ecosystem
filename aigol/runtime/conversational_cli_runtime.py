@@ -18,6 +18,7 @@ from aigol.runtime.human_intent_clarification_intake_runtime import (
     classify_development_intent_for_governed_routing,
     classify_human_intent_for_clarification,
 )
+from aigol.runtime.human_to_governance_translation_runtime import translate_human_to_governance
 from aigol.runtime.domain_handoff_review_approval_binding_runtime import detect_domain_approval_entry_intent
 from aigol.runtime.domain_approval_entry_to_execution_ready_authorization_bridge_runtime import (
     detect_domain_execution_ready_entry_intent,
@@ -108,8 +109,17 @@ def route_conversational_cli_intent(
     """Route natural language to an existing certified workflow selection."""
 
     replay_path = Path(replay_dir)
+    universal_translation_capture: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
+        universal_translation_capture = translate_human_to_governance(
+            translation_request_id=f"{routing_id}:UNIVERSAL-TRANSLATION",
+            human_request=human_prompt,
+            created_at=created_at,
+            replay_dir=replay_path / "universal_translation" / "human_to_governance",
+            session_context={"canonical_chain_id": canonical_chain_id, "prompt_id": prompt_id},
+            available_workflows=[entry["workflow_id"] for entry in workflow_registry()],
+        )
         analysis = _classify_workflow(human_prompt)
         decision = _routing_decision_artifact(
             routing_id=routing_id,
@@ -119,6 +129,7 @@ def route_conversational_cli_intent(
             created_at=created_at,
             replay_reference=str(replay_path),
             analysis=analysis,
+            universal_translation_capture=universal_translation_capture,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -192,6 +203,8 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "existing_cli_command": selection.get("existing_cli_command"),
         "coverage": deepcopy(selection["coverage"]),
         "replay_visible": True,
+        "universal_translation_reference": decision.get("universal_translation_reference"),
+        "universal_translation_hash": decision.get("universal_translation_hash"),
         "replay_artifact_count": len(wrappers),
         "provider_invoked": False,
         "worker_invoked": False,
@@ -1133,8 +1146,14 @@ def _routing_decision_artifact(
     created_at: str,
     replay_reference: str,
     analysis: dict[str, Any],
+    universal_translation_capture: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
+    translation_artifact = (
+        universal_translation_capture.get("translation_artifact")
+        if isinstance(universal_translation_capture, dict)
+        else None
+    )
     artifact = {
         "artifact_type": CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1,
         "milestone_id": MILESTONE_ID,
@@ -1150,6 +1169,20 @@ def _routing_decision_artifact(
         "intent_family": analysis.get("intent_family"),
         "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
         "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
+        "universal_translation_reference": (
+            universal_translation_capture.get("translation_replay_reference")
+            if isinstance(universal_translation_capture, dict)
+            else None
+        ),
+        "universal_translation_hash": (
+            translation_artifact.get("artifact_hash") if isinstance(translation_artifact, dict) else None
+        ),
+        "universal_translation_direction": (
+            translation_artifact.get("source_direction") if isinstance(translation_artifact, dict) else None
+        ),
+        "universal_translation_confidence": (
+            translation_artifact.get("confidence") if isinstance(translation_artifact, dict) else None
+        ),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
         "replay_visible": True,
@@ -1192,6 +1225,10 @@ def _workflow_selection_artifact(
         "intent_family": analysis.get("intent_family"),
         "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
         "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
+        "universal_translation_reference": decision.get("universal_translation_reference"),
+        "universal_translation_hash": decision.get("universal_translation_hash"),
+        "universal_translation_direction": decision.get("universal_translation_direction"),
+        "universal_translation_confidence": decision.get("universal_translation_confidence"),
         "coverage": _coverage(),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1225,6 +1262,8 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "workflow_selection_hash": selection["artifact_hash"],
         "routing_status": selection["routing_status"],
         "workflow_id": selection["workflow_id"],
+        "universal_translation_reference": decision.get("universal_translation_reference"),
+        "universal_translation_hash": decision.get("universal_translation_hash"),
         "replay_visible": True,
         "provider_invoked": False,
         "worker_invoked": False,
@@ -1264,6 +1303,10 @@ def _failed_decision_artifact(
         "intent_family": None,
         "clarification_questions": [],
         "expected_workflow_targets": [],
+        "universal_translation_reference": None,
+        "universal_translation_hash": None,
+        "universal_translation_direction": None,
+        "universal_translation_confidence": None,
         "created_at": created_at if isinstance(created_at, str) else "",
         "replay_reference": replay_reference,
         "replay_visible": True,
@@ -1319,6 +1362,8 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "workflow_selection_artifact": deepcopy(selection),
         "conversational_routing_returned": deepcopy(returned),
         "conversational_cli_routing_replay_reference": str(replay_path),
+        "universal_translation_reference": decision.get("universal_translation_reference"),
+        "universal_translation_hash": decision.get("universal_translation_hash"),
         "coverage": deepcopy(selection.get("coverage", _coverage())),
         "fail_closed": returned["routing_status"] == FAILED_CLOSED,
         "failure_reason": returned.get("failure_reason"),
