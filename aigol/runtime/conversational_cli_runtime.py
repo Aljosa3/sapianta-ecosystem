@@ -585,6 +585,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["governed", "development", "workflow"],
         )
+    if _is_task_completion_native_development_prompt(normalized):
+        return _analysis(
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            "HIGH",
+            ["task-completion", "native", "development"],
+        )
     development_intent = classify_development_intent_for_governed_routing(prompt)
     if development_intent.get("intake_matched") is True:
         return _analysis(
@@ -1088,7 +1094,7 @@ def _is_task_completion_domain_continuation_prompt(normalized: str) -> bool:
 
 
 def _is_task_completion_native_development_prompt(normalized: str) -> bool:
-    action_terms = ("prepare", "improve", "identify", "add", "create")
+    action_terms = ("prepare", "improve", "identify", "add", "create", "implement")
     if normalized.startswith(("what should ", "should ", "how should ", "can you analyze ")):
         return False
     if not any(term in normalized for term in action_terms):
@@ -1108,6 +1114,9 @@ def _is_task_completion_native_development_prompt(normalized: str) -> bool:
         "operator experience",
         "acli adoption",
         "task completion",
+        "external worker",
+        "worker lifecycle",
+        "provider adapter",
     )
     return any(subject in normalized for subject in development_subjects)
 

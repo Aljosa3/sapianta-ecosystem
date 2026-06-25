@@ -381,9 +381,11 @@ from aigol.runtime.runtime_progress_visibility import (
 )
 from aigol.runtime.conversation_native_development_context_integration import (
     FAILED_CLOSED as NATIVE_DEVELOPMENT_CONTEXT_FAILED_CLOSED,
+    reconstruct_conversation_native_development_context_integration_replay,
     render_conversation_native_development_context_summary,
     run_conversation_native_development_context_integration,
 )
+from aigol.runtime.conversation_chain_continuity_runtime import reconstruct_conversation_chain_continuity_replay
 from aigol.runtime.source_of_truth_router_runtime import route_source_of_truth
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.unknown_domain_clarification_runtime import (
@@ -743,12 +745,12 @@ def _post_context_continuation_should_run(
     if auto_continue_enabled:
         return True
     normalized_prompt = " ".join(human_prompt.lower().split())
-    return "continue" in normalized_prompt and "ppp" in normalized_prompt
+    return normalized_prompt == "continue" or ("continue" in normalized_prompt and "ppp" in normalized_prompt)
 
 
 def _post_entry_continuation_clarification_matches(human_prompt: str) -> bool:
     normalized_prompt = " ".join(human_prompt.lower().split())
-    return "continue" in normalized_prompt and "ppp" in normalized_prompt
+    return normalized_prompt == "continue" or ("continue" in normalized_prompt and "ppp" in normalized_prompt)
 
 
 def _post_context_continuation_output(capture: dict[str, Any]) -> str:
@@ -2070,6 +2072,7 @@ def _record_interactive_routing_visibility(
     domain_approval_entry_intent: dict[str, Any] | None = None,
     conversational_routing_capture: dict[str, Any] | None = None,
     pending_governed_development_bridge: dict[str, Any] | None = None,
+    pending_post_entry_continuation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if conversational_routing_capture is None:
         analysis = _interactive_routing_visibility_analysis(
@@ -2079,6 +2082,7 @@ def _record_interactive_routing_visibility(
             recommendation_approval_artifact=recommendation_approval_artifact,
             domain_approval_entry_intent=domain_approval_entry_intent,
             pending_governed_development_bridge=pending_governed_development_bridge,
+            pending_post_entry_continuation=pending_post_entry_continuation,
         )
     else:
         analysis = _authoritative_routing_visibility_analysis(conversational_routing_capture)
@@ -2137,8 +2141,28 @@ def _interactive_routing_visibility_analysis(
     recommendation_approval_artifact: dict[str, Any] | None,
     domain_approval_entry_intent: dict[str, Any] | None = None,
     pending_governed_development_bridge: dict[str, Any] | None = None,
+    pending_post_entry_continuation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     human_decision = normalize_human_decision(human_prompt)
+    if (
+        pending_post_entry_continuation is not None
+        and _is_lifecycle_command_prompt(human_prompt)
+    ):
+        matched = (
+            "continue ppp"
+            if _post_entry_continuation_clarification_matches(human_prompt)
+            else "lifecycle-command"
+        )
+        return _routing_visibility_selected(
+            workflow_id=CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=["native-context-pending-continuation", matched],
+            competing_signals=[],
+            routing_reason=(
+                "Stateful native development continuation detected; "
+                "continuing the active workflow without rerouting."
+            ),
+        )
     if (
         pending_governed_development_bridge is not None
         and (
@@ -3202,6 +3226,16 @@ def run_interactive_conversation(
             )
             human_decision = normalize_human_decision(human_prompt)
             domain_proposal_decision = _domain_proposal_review_decision(human_prompt, human_decision)
+            lifecycle_command_detected = _is_lifecycle_command_prompt(human_prompt)
+            if (
+                pending_post_entry_continuation is None
+                and _post_entry_continuation_clarification_matches(human_prompt)
+            ):
+                pending_post_entry_continuation = _restore_pending_post_entry_continuation_from_replay(
+                    session_root=session_root,
+                    turn_root=turn_root,
+                    created_at=created_at,
+                )
             if (
                 pending_governed_development_bridge is None
                 and _is_governed_development_resume_decision_prompt(human_prompt)
@@ -3276,6 +3310,13 @@ def run_interactive_conversation(
                     pending_post_entry_continuation is not None
                     and _post_entry_continuation_clarification_matches(human_prompt)
                 )
+                or (
+                    lifecycle_command_detected
+                    and (
+                        pending_governed_development_bridge is not None
+                        or pending_post_entry_continuation is not None
+                    )
+                )
             )
             conversational_routing_capture: dict[str, Any] | None = None
             if not stateful_pre_routing_gate:
@@ -3306,6 +3347,7 @@ def run_interactive_conversation(
                 domain_approval_entry_intent=domain_approval_entry_intent,
                 conversational_routing_capture=conversational_routing_capture,
                 pending_governed_development_bridge=pending_governed_development_bridge,
+                pending_post_entry_continuation=pending_post_entry_continuation,
                 created_at=created_at,
                 turn_root=turn_root,
             )
@@ -8073,6 +8115,182 @@ def _is_governed_development_resume_decision_prompt(human_prompt: str) -> bool:
         return True
     normalized = str(human_prompt or "").strip().upper().replace("-", "_")
     return normalized == "APPROVE THIS PROPOSAL" or normalized.startswith("APPROVE ")
+
+
+def _is_lifecycle_command_prompt(human_prompt: str) -> bool:
+    normalized = " ".join(str(human_prompt or "").strip().lower().replace("_", " ").split())
+    if not normalized:
+        return False
+    if _post_entry_continuation_clarification_matches(human_prompt):
+        return True
+    if normalize_human_decision(human_prompt) in {APPROVE, REJECT, REQUEST_MODIFICATION}:
+        return True
+    return normalized in {"continue", "resume", "cancel", "retry", "clarify"}
+
+
+def _restore_pending_post_entry_continuation_from_replay(
+    *,
+    session_root: Path,
+    turn_root: Path,
+    created_at: str,
+) -> dict[str, Any] | None:
+    if not session_root.exists():
+        return None
+    gate_paths = sorted(
+        session_root.glob("TURN-*/post_entry_continuation_gate/000_post_entry_continuation_gate_recorded.json")
+    )
+    for gate_path in reversed(gate_paths):
+        if _path_belongs_to_turn(gate_path, turn_root):
+            continue
+        gate_artifact = _load_verified_post_entry_gate_artifact(gate_path)
+        if gate_artifact.get("workflow_id") != CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION:
+            continue
+        if gate_artifact.get("gate_status") != POST_ENTRY_CLARIFICATION_REQUIRED:
+            continue
+        source_turn_root = gate_path.parents[1]
+        if (source_turn_root / "post_context_continuation").exists():
+            continue
+        native_context_capture = _load_verified_pending_native_context_capture(source_turn_root)
+        native_context_capture["post_entry_continuation_gate"] = deepcopy(gate_artifact)
+        native_context_capture["post_entry_continuation_gate_status"] = gate_artifact.get("gate_status")
+        native_context_capture["post_entry_continuation_gate_replay_reference"] = str(gate_path.parent)
+        native_context_capture["clarification_required"] = True
+        native_context_capture["open_clarification_detected"] = True
+        native_context_capture["post_entry_clarification_pending"] = True
+        _record_pending_post_entry_continuation_restore(
+            turn_root=turn_root,
+            gate_path=gate_path,
+            native_context_capture=native_context_capture,
+            created_at=created_at,
+        )
+        return {
+            "native_context_capture": native_context_capture,
+            "original_human_prompt": _restored_native_context_original_prompt(native_context_capture),
+            "current_chain_id": native_context_capture.get("current_chain_id"),
+            "latest_chain_id": native_context_capture.get("latest_chain_id"),
+            "restored_from_replay": True,
+        }
+    return None
+
+
+def _path_belongs_to_turn(path: Path, turn_root: Path) -> bool:
+    try:
+        path.relative_to(turn_root)
+    except ValueError:
+        return False
+    return True
+
+
+def _load_verified_post_entry_gate_artifact(gate_path: Path) -> dict[str, Any]:
+    wrapper = load_json(gate_path)
+    if not isinstance(wrapper, dict):
+        raise FailClosedRuntimeError("post-entry continuation restore failed closed: gate replay wrapper missing")
+    expected = deepcopy(wrapper)
+    actual = expected.pop("replay_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError("post-entry continuation restore failed closed: gate replay hash mismatch")
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("post-entry continuation restore failed closed: gate artifact missing")
+    _verify_replay_hashed_artifact(
+        artifact,
+        failure_reason="post-entry continuation restore failed closed: gate artifact hash mismatch",
+    )
+    return artifact
+
+
+def _load_verified_pending_native_context_capture(source_turn_root: Path) -> dict[str, Any]:
+    native_context_capture = reconstruct_conversation_native_development_context_integration_replay(source_turn_root)
+    if native_context_capture.get("context_status") != "CONTEXT_ASSEMBLED":
+        raise FailClosedRuntimeError("post-entry continuation restore failed closed: context is not assembled")
+    provider_necessity = str(native_context_capture.get("provider_necessity_classification") or "")
+    if "PROVIDER_REQUIRED" not in provider_necessity:
+        raise FailClosedRuntimeError("post-entry continuation restore failed closed: provider-backed proposal not required")
+    native_context_capture["response_status"] = "CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATED"
+    native_context_capture["response_source"] = "NATIVE_DEVELOPMENT_CONTEXT_ASSEMBLY"
+    native_context_capture["response_text"] = ""
+    native_context_capture["fail_closed"] = False
+    native_context_capture["failure_reason"] = None
+    native_context_capture["replay_reference"] = str(source_turn_root)
+    native_context_capture["conversation_replay_reference"] = str(
+        source_turn_root / "native_development_context_integration"
+    )
+    native_context_capture["native_development_task_intake"] = native_context_capture.get("intake_replay")
+    native_context_capture["development_context_assembly"] = native_context_capture.get("context_replay")
+    if (source_turn_root / "chain_continuity").exists():
+        continuity = reconstruct_conversation_chain_continuity_replay(source_turn_root / "chain_continuity")
+        native_context_capture["canonical_chain_id"] = continuity.get("canonical_chain_id")
+        native_context_capture["current_chain_id"] = continuity.get("current_chain_id")
+        native_context_capture["latest_chain_id"] = continuity.get("latest_chain_id")
+        native_context_capture["related_chain_id"] = continuity.get("related_chain_id")
+        native_context_capture["suggested_inspection_commands"] = deepcopy(
+            continuity.get("suggested_inspection_commands", [])
+        )
+        native_context_capture["conversation_chain_continuity_replay_reference"] = str(
+            source_turn_root / "chain_continuity"
+        )
+    return native_context_capture
+
+
+def _restored_native_context_original_prompt(native_context_capture: dict[str, Any]) -> str:
+    intake = native_context_capture.get("intake_replay")
+    if isinstance(intake, dict):
+        artifact = intake.get("native_development_task_intake_artifact")
+        if isinstance(artifact, dict):
+            prompt = artifact.get("human_prompt")
+            if isinstance(prompt, str) and prompt.strip():
+                return prompt.strip()
+        milestone = intake.get("requested_milestone_id")
+        if isinstance(milestone, str) and milestone.strip():
+            return (
+                f"Continue restored native development context for {milestone.strip()}. "
+                "Reuse existing governance, replay, validation, mutation, and worker lifecycle infrastructure."
+            )
+    prompt_id = native_context_capture.get("prompt_id")
+    if isinstance(prompt_id, str) and prompt_id.strip():
+        return (
+            f"Continue restored native development context for {prompt_id.strip()}. "
+            "Reuse existing governance, replay, validation, mutation, and worker lifecycle infrastructure."
+        )
+    raise FailClosedRuntimeError("post-entry continuation restore failed closed: original prompt missing")
+
+
+def _record_pending_post_entry_continuation_restore(
+    *,
+    turn_root: Path,
+    gate_path: Path,
+    native_context_capture: dict[str, Any],
+    created_at: str,
+) -> None:
+    artifact = {
+        "artifact_type": "ACLI_PENDING_POST_ENTRY_CONTINUATION_RESTORED_V1",
+        "restore_status": "PENDING_POST_ENTRY_CONTINUATION_RESTORED",
+        "source_replay_reference": str(gate_path),
+        "workflow_id": CONVERSATIONAL_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        "context_status": native_context_capture.get("context_status"),
+        "context_hash": native_context_capture.get("context_hash"),
+        "canonical_chain_id": native_context_capture.get("canonical_chain_id"),
+        "approval_granted": False,
+        "execution_authorized": False,
+        "mutation_performed": False,
+        "worker_invoked": False,
+        "validation_executed": False,
+        "replay_visible": True,
+        "created_at": created_at,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "pending_post_entry_continuation_restored",
+        "artifact": artifact,
+    }
+    wrapper["wrapper_hash"] = replay_hash(wrapper)
+    write_json_immutable(
+        turn_root
+        / "pending_post_entry_continuation_restore"
+        / "000_pending_post_entry_continuation_restored.json",
+        wrapper,
+    )
 
 
 def _is_explicit_governed_development_resume_approval(

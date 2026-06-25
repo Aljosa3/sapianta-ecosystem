@@ -384,6 +384,135 @@ def test_interactive_conversation_auto_continues_context_assembled_to_ppp(tmp_pa
     ).exists()
 
 
+@pytest.mark.parametrize("continuation_command", ["continue", "continue ppp"])
+def test_interactive_conversation_replay_restored_continue_resumes_without_rerouting(
+    tmp_path,
+    monkeypatch,
+    continuation_command: str,
+) -> None:
+    provider_response = _valid_provider_response()
+    calls: list[dict[str, Any]] = []
+
+    def fake_provider_client(
+        payload: dict[str, Any],
+        *,
+        api_key: str,
+        endpoint: str,
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        calls.append({"api_key_seen": bool(api_key)})
+        return {
+            "id": "resp-native-context-provider-projection-restored-001",
+            "output_text": json.dumps(provider_response),
+        }
+
+    def fake_external_worker_client(request_metadata: dict[str, Any]) -> dict[str, Any]:
+        assert request_metadata["provider_identity"] == "OPENAI"
+        assert request_metadata["tool_use"] is False
+        assert request_metadata["function_calling"] is False
+        assert request_metadata["streaming"] is False
+        return {
+            "id": "resp-native-context-openai-worker-restored-001",
+            "output_text": "Return bounded findings for restored post-entry continuation.",
+        }
+
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_registry",
+        _available_openai_registry,
+    )
+    monkeypatch.setattr(
+        aigol_cli,
+        "_post_context_continuation_provider_adapter",
+        lambda: OpenAIProviderAdapter(api_key="test-openai-key", client=fake_provider_client),
+    )
+    monkeypatch.setattr(aigol_cli, "_external_worker_openai_client", lambda: fake_external_worker_client)
+    parser = build_parser()
+    runtime_root = tmp_path / "interactive_runtime"
+    session_id = "SESSION-NATIVE-CONTEXT-CLI-RESTORE-CONTINUE-000001"
+    args = parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            session_id,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(runtime_root),
+        ]
+    )
+    first_output: list[str] = []
+
+    first_result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence([_claude_prompt(), "exit"]),
+        output_func=first_output.append,
+    )
+
+    assert first_result["failed_turns"] == 0
+    assert first_result["turns"][0]["workflow_status"]["workflow_state"] == "WAITING_FOR_OPERATOR"
+
+    second_output: list[str] = []
+    second_result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence([continuation_command, "exit"]),
+        output_func=second_output.append,
+    )
+    second = second_result["turns"][0]
+
+    assert second_result["failed_turns"] == 0
+    assert second["response_source"] == "NATIVE_DEVELOPMENT_CONTEXT_ASSEMBLY"
+    assert second["routing_visibility_workflow_id"] == "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+    assert second["post_entry_continuation_gate_status"] == CONTINUATION_ALLOWED
+    assert second["post_context_continuation_status"] == POST_CONTEXT_CONTINUATION_REACHED_PPP
+    assert second["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert second["canonical_chain_id"] == first_result["turns"][0]["canonical_chain_id"]
+    assert second["worker_request_reached"] is True
+    assert calls and calls[0]["api_key_seen"] is True
+    assert not (runtime_root / session_id / "TURN-000002" / "conversational_cli_routing").exists()
+    assert (
+        runtime_root
+        / session_id
+        / "TURN-000002"
+        / "pending_post_entry_continuation_restore"
+        / "000_pending_post_entry_continuation_restored.json"
+    ).exists()
+
+
+@pytest.mark.parametrize("lifecycle_command", ["approve", "resume", "retry", "cancel", "clarify"])
+def test_interactive_lifecycle_commands_do_not_reroute_while_native_workflow_waits(
+    tmp_path,
+    lifecycle_command: str,
+) -> None:
+    parser = build_parser()
+    runtime_root = tmp_path / "interactive_runtime"
+    session_id = f"SESSION-NATIVE-CONTEXT-LIFECYCLE-{lifecycle_command.upper()}-000001"
+    args = parser.parse_args(
+        [
+            "conversation",
+            "--session-id",
+            session_id,
+            "--created-at",
+            CREATED_AT,
+            "--runtime-root",
+            str(runtime_root),
+        ]
+    )
+
+    result = run_interactive_conversation(
+        args,
+        input_func=_input_sequence([_claude_prompt(), lifecycle_command, "exit"]),
+        output_func=lambda _line: None,
+    )
+    second = result["turns"][1]
+
+    assert result["failed_turns"] == 1
+    assert second["fail_closed"] is True
+    assert second["routing_visibility_workflow_id"] == "NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION"
+    assert "unsupported conversational workflow selection" in str(second["failure_reason"])
+    assert not (runtime_root / session_id / "TURN-000002" / "conversational_cli_routing").exists()
+
+
 def test_conversation_native_development_context_fails_closed_when_context_missing(tmp_path) -> None:
     governance_root = _copy_governance_subset(tmp_path)
     (governance_root / "TRADING_DOMAIN_FOUNDATION_V1.md").unlink()

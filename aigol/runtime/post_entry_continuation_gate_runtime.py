@@ -334,7 +334,7 @@ def _capture(gate: dict[str, Any], returned: dict[str, Any], replay_path: Path) 
 
 def _explicit_ppp_continuation_requested(human_prompt: str) -> bool:
     normalized = " ".join(_require_string(human_prompt, "human_prompt").lower().split())
-    return "continue" in normalized and "ppp" in normalized
+    return normalized == "continue" or ("continue" in normalized and "ppp" in normalized)
 
 
 def _ensure_replay_available(replay_path: Path) -> None:
