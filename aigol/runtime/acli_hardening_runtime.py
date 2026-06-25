@@ -100,6 +100,7 @@ def record_acli_hardening_interaction(
     contracts = _detect_contracts(interaction, scenarios)
     issues = _detect_issues(interaction, feedback, source_replay_reference)
     result = _classify_result(interaction, issues, source_replay_reference)
+    evidence = _evidence_completeness(interaction, scenarios)
     state = _next_hardening_state(
         prior_hardening_state=prior_hardening_state,
         result=result,
@@ -122,6 +123,8 @@ def record_acli_hardening_interaction(
         "completed_interaction_hash": replay_hash(interaction),
         "source_replay_reference": source_replay_reference,
         "source_replay_hash": replay_hash_value,
+        "evidence_completeness_runtime_version": "HARDENING_EVIDENCE_COMPLETENESS_RUNTIME_V1",
+        "evidence_completeness": evidence,
         "workflows_executed": workflows,
         "runtime_path": _normalize_string_list(interaction.get("runtime_path")),
         "operator_journey": operator_journey,
@@ -129,6 +132,7 @@ def record_acli_hardening_interaction(
         "exercised_contracts": contracts,
         "architectural_invariants": invariants,
         "hardening_scenarios": scenarios,
+        "hardening_scenario_identifiers": [scenario["scenario_id"] for scenario in scenarios],
         "new_hardening_scenario": _is_new_scenario(prior_hardening_state, scenarios),
         "operator_feedback_prompt": {
             "question": "Was everything understandable?",
@@ -179,6 +183,8 @@ def reconstruct_acli_hardening_replay(replay_dir: str | Path) -> dict[str, Any]:
         "source_replay_reference": artifact["source_replay_reference"],
         "source_replay_hash": artifact["source_replay_hash"],
         "hardening_scenarios": deepcopy(artifact["hardening_scenarios"]),
+        "hardening_scenario_identifiers": deepcopy(artifact.get("hardening_scenario_identifiers", [])),
+        "evidence_completeness": deepcopy(artifact.get("evidence_completeness", {})),
         "issues": deepcopy(artifact["issues"]),
         "hardening_statistics": deepcopy(artifact["hardening_statistics"]),
         "scenario_coverage": deepcopy(artifact["scenario_coverage"]),
@@ -298,6 +304,165 @@ def _detect_operator_journey(interaction: dict[str, Any]) -> dict[str, Any]:
         )
     )
     return journey
+
+
+def _evidence_completeness(interaction: dict[str, Any], scenarios: list[dict[str, Any]]) -> dict[str, Any]:
+    workflow_id = _first_string(
+        interaction,
+        ("workflow_id", "routing_visibility_workflow_id", "workflow_name", "selected_workflow"),
+    )
+    prompt = _first_string(interaction, ("operator_prompt", "prompt", "human_prompt", "human_request", "request"))
+    prompt_lines = interaction.get("operator_prompt_lines")
+    if not isinstance(prompt_lines, list):
+        prompt_lines = interaction.get("prompt_lines")
+    prompt_lines = [str(line) for line in prompt_lines if isinstance(line, str)] if isinstance(prompt_lines, list) else []
+    fail_closed_reason = _first_string(interaction, ("failure_reason", "fail_closed_reason", "hardening_failure_reason"))
+    return {
+        "operator_prompt": {
+            "prompt_text": prompt,
+            "prompt_lines": prompt_lines,
+            "prompt_hash": _first_string(interaction, ("assembled_prompt_hash", "human_prompt_hash")),
+            "captured": bool(prompt),
+        },
+        "workflow": {
+            "workflow_selected": workflow_id,
+            "workflow_id": workflow_id,
+            "workflow_name": _first_string(interaction, ("workflow_name",)),
+            "routing_confidence": _first_string(interaction, ("routing_confidence",)),
+            "routing_reason": _first_string(interaction, ("routing_reason",)),
+        },
+        "replay": {
+            "replay_chain_id": _first_string(interaction, ("canonical_chain_id", "current_chain_id", "latest_chain_id")),
+            "source_replay_reference": _find_replay_reference(interaction),
+            "source_replay_hash": _find_replay_hash(interaction),
+        },
+        "lifecycle_transition_sequence": _lifecycle_transition_sequence(interaction),
+        "clarification_summary": _clarification_summary(interaction),
+        "approval_summary": _approval_summary(interaction),
+        "provider_path_summary": _provider_path_summary(interaction),
+        "worker_path_summary": _worker_path_summary(interaction),
+        "translation_summary": _translation_summary(interaction),
+        "execution_status": _execution_status_summary(interaction),
+        "fail_closed": {
+            "fail_closed": _truthy_key(interaction, "fail_closed")
+            or _field_status(interaction, "response_status", {"FAILED_CLOSED"}),
+            "fail_closed_reason": fail_closed_reason,
+        },
+        "hardening_scenario_identifiers": [scenario["scenario_id"] for scenario in scenarios],
+        "derived_only": True,
+        "authority_granted": False,
+        "replay_authoritative": True,
+    }
+
+
+def _lifecycle_transition_sequence(interaction: dict[str, Any]) -> list[dict[str, str]]:
+    ordered_fields = (
+        ("workflow_state", "workflow_state"),
+        ("current_lifecycle_stage", "current_lifecycle_stage"),
+        ("post_entry_continuation_gate_status", "post_entry_continuation_gate_status"),
+        ("post_context_continuation_status", "post_context_continuation_status"),
+        ("ppp_route_status", "ppp_route_status"),
+        ("approval_status", "approval_status"),
+        ("execution_authorization_status", "execution_authorization_status"),
+        ("worker_invocation_request_status", "worker_invocation_request_status"),
+        ("worker_assignment_status", "worker_assignment_status"),
+        ("worker_dispatch_status", "worker_dispatch_status"),
+        ("worker_invocation_status", "worker_invocation_status"),
+        ("result_validation_status", "result_validation_status"),
+        ("replay_certification_status", "replay_certification_status"),
+        ("response_status", "response_status"),
+        ("turn_completion_status", "turn_completion_status"),
+    )
+    sequence = []
+    seen: set[tuple[str, str]] = set()
+    for source_field, label in ordered_fields:
+        value = _first_string(interaction, (source_field,))
+        if not value:
+            continue
+        key = (label, value)
+        if key in seen:
+            continue
+        seen.add(key)
+        sequence.append({"field": label, "status": value})
+    return sequence
+
+
+def _clarification_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    missing = interaction.get("missing_information")
+    if not isinstance(missing, list):
+        missing = []
+    return {
+        "clarification_required": _truthy_key(interaction, "clarification_required")
+        or _truthy_key(interaction, "open_clarification_detected")
+        or _field_status(interaction, "response_status", {"CLARIFICATION_REQUIRED"}),
+        "missing_information": [str(item) for item in missing],
+        "required_input": _collect_values_for_keys(interaction, {"required_input"}),
+    }
+
+
+def _approval_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "approval_required": _truthy_key(interaction, "approval_required"),
+        "approval_status": _first_string(interaction, ("approval_status", "human_decision_status")),
+        "human_decision": _first_string(interaction, ("human_decision",)),
+        "approval_replay_reference": _first_string(
+            interaction,
+            ("approval_replay_reference", "human_decision_replay_reference", "execution_authorization_replay_reference"),
+        ),
+        "approval_bypassed": _truthy_key(interaction, "approval_bypassed"),
+    }
+
+
+def _provider_path_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "provider_invoked": _truthy_key(interaction, "provider_invoked")
+        or _truthy_key(interaction, "llm_assisted_explanation_provider_invoked"),
+        "provider_used": _truthy_key(interaction, "provider_used")
+        or _truthy_key(interaction, "llm_assisted_explanation_provider_used"),
+        "provider_ids": _normalize_string_list(interaction.get("provider_ids")),
+        "provider_status": _first_string(interaction, ("provider_status", "openai_external_worker_status")),
+        "provider_replay_reference": _first_string(
+            interaction,
+            ("provider_replay_reference", "openai_external_worker_replay_reference", "llm_assisted_explanation_replay_reference"),
+        ),
+    }
+
+
+def _worker_path_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "worker_invoked": _truthy_key(interaction, "worker_invoked"),
+        "worker_request_status": _first_string(interaction, ("worker_invocation_request_status", "worker_status")),
+        "worker_assignment_status": _first_string(interaction, ("worker_assignment_status",)),
+        "worker_dispatch_status": _first_string(interaction, ("worker_dispatch_status",)),
+        "worker_invocation_status": _first_string(interaction, ("worker_invocation_status",)),
+        "worker_replay_reference": _first_string(
+            interaction,
+            ("worker_invocation_replay_reference", "worker_dispatch_replay_reference", "worker_assignment_replay_reference"),
+        ),
+    }
+
+
+def _translation_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "translation_detected": _has_any_token(
+            _search_text(interaction),
+            ("translation", "universal_translation", "normalized_intent"),
+        ),
+        "intent_family": _first_string(interaction, ("intent_family",)),
+        "normalized_intent_present": _contains_key(interaction, "normalized_intent"),
+        "translation_replay_reference": _first_string(interaction, ("translation_replay_reference",)),
+    }
+
+
+def _execution_status_summary(interaction: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "execution_requested": _truthy_key(interaction, "execution_requested"),
+        "execution_performed": _truthy_key(interaction, "execution_performed")
+        or _truthy_key(interaction, "executed"),
+        "execution_status": _first_string(interaction, ("execution_status", "execution_authorization_status")),
+        "validation_status": _first_string(interaction, ("validation_status", "result_validation_status")),
+        "validated": _truthy_key(interaction, "validated") or _truthy_key(interaction, "validation_executed"),
+    }
 
 
 def _detect_scenarios(
@@ -893,6 +1058,8 @@ def _capture(artifact: dict[str, Any], replay_path: Path) -> dict[str, Any]:
         "hardening_scenarios": deepcopy(artifact["hardening_scenarios"]),
         "workflows_executed": deepcopy(artifact["workflows_executed"]),
         "operator_journey": deepcopy(artifact["operator_journey"]),
+        "evidence_completeness": deepcopy(artifact["evidence_completeness"]),
+        "hardening_scenario_identifiers": deepcopy(artifact["hardening_scenario_identifiers"]),
         "issues": deepcopy(artifact["issues"]),
         "hardening_statistics": deepcopy(artifact["hardening_statistics"]),
         "scenario_coverage": deepcopy(artifact["scenario_coverage"]),

@@ -5737,6 +5737,8 @@ def run_interactive_conversation(
                 turn_summary=turns[-1],
                 multiline_prompt_capture=multiline_prompt_capture,
             )
+            turns[-1]["operator_prompt"] = human_prompt
+            turns[-1]["operator_prompt_lines"] = list(prompt_capture["prompt_lines"])
             _attach_interactive_routing_visibility(
                 turn_summary=turns[-1],
                 routing_visibility_capture=routing_visibility_capture,
@@ -5779,34 +5781,33 @@ def run_interactive_conversation(
             )
             failure_output = [line for line in turn_output_buffer if line.startswith("FAILED_CLOSED:")]
             normal_output = [line for line in turn_output_buffer if not line.startswith("FAILED_CLOSED:")]
-            completion_capture: dict[str, Any] | None = None
+            completion_capture = _record_interactive_turn_completion(
+                session_id=session_id,
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                turn_summary=turns[-1],
+                progress_binding_capture=progress_binding_capture,
+                turn_root=turn_root,
+                created_at=created_at,
+                elapsed_seconds=_interactive_turn_elapsed_seconds(
+                    turn_started_monotonic=turn_started_monotonic,
+                    monotonic_now=monotonic_now,
+                ),
+                delivered_output_line_count=_delivered_output_line_count(
+                    "\n".join(turn_progress_buffer + normal_output + failure_output + [workflow_status_output]),
+                ),
+            )
+            hardening_capture = _record_interactive_hardening_capture(
+                session_id=session_id,
+                turn_id=turn_id,
+                prompt_id=prompt_id,
+                turn_summary=turns[-1],
+                completion_capture=completion_capture,
+                session_root=session_root,
+                turn_root=turn_root,
+                created_at=created_at,
+            )
             if turns[-1].get("fail_closed") is not True:
-                completion_capture = _record_interactive_turn_completion(
-                    session_id=session_id,
-                    turn_id=turn_id,
-                    prompt_id=prompt_id,
-                    turn_summary=turns[-1],
-                    progress_binding_capture=progress_binding_capture,
-                    turn_root=turn_root,
-                    created_at=created_at,
-                    elapsed_seconds=_interactive_turn_elapsed_seconds(
-                        turn_started_monotonic=turn_started_monotonic,
-                        monotonic_now=monotonic_now,
-                    ),
-                    delivered_output_line_count=_delivered_output_line_count(
-                        "\n".join(turn_progress_buffer + normal_output + [workflow_status_output]),
-                    ),
-                )
-                hardening_capture = _record_interactive_hardening_capture(
-                    session_id=session_id,
-                    turn_id=turn_id,
-                    prompt_id=prompt_id,
-                    turn_summary=turns[-1],
-                    completion_capture=completion_capture,
-                    session_root=session_root,
-                    turn_root=turn_root,
-                    created_at=created_at,
-                )
                 normal_output.append(hardening_capture["operator_summary"])
                 normal_output.append(completion_capture["operator_completion_summary"])
                 normal_output.append(workflow_status_output)
@@ -5815,6 +5816,8 @@ def run_interactive_conversation(
             for failure_line in failure_output:
                 terminal_output_writer(failure_line)
             if turns[-1].get("fail_closed") is True:
+                terminal_output_writer(hardening_capture["operator_summary"])
+                terminal_output_writer(completion_capture["operator_completion_summary"])
                 terminal_output_writer(workflow_status_output)
             output_writer = terminal_output_writer
             if auto_continue_enabled:
@@ -5851,9 +5854,43 @@ def run_interactive_conversation(
                 turn_summary=failed_summary,
                 universal_intake_capture=universal_intake_capture,
             )
+            failed_summary["operator_prompt"] = human_prompt
+            failed_summary["operator_prompt_lines"] = list(prompt_capture["prompt_lines"])
             failed_workflow_status = _attach_interactive_workflow_status(failed_summary)
             latest_workflow_status = failed_workflow_status
             output_writer(f"FAILED_CLOSED: {failure_reason}")
+            if progress_binding_capture is not None:
+                try:
+                    completion_capture = _record_interactive_turn_completion(
+                        session_id=session_id,
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        turn_summary=failed_summary,
+                        progress_binding_capture=progress_binding_capture,
+                        turn_root=turn_root,
+                        created_at=created_at,
+                        elapsed_seconds=_interactive_turn_elapsed_seconds(
+                            turn_started_monotonic=turn_started_monotonic,
+                            monotonic_now=monotonic_now,
+                        ),
+                        delivered_output_line_count=_delivered_output_line_count(
+                            "\n".join(turn_progress_buffer + [f"FAILED_CLOSED: {failure_reason}"])
+                        ),
+                    )
+                    hardening_capture = _record_interactive_hardening_capture(
+                        session_id=session_id,
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        turn_summary=failed_summary,
+                        completion_capture=completion_capture,
+                        session_root=session_root,
+                        turn_root=turn_root,
+                        created_at=created_at,
+                    )
+                    output_writer(hardening_capture["operator_summary"])
+                    output_writer(completion_capture["operator_completion_summary"])
+                except Exception:
+                    pass
             output_writer(_render_interactive_workflow_status(failed_workflow_status))
             turns.append(failed_summary)
 

@@ -142,5 +142,28 @@ def test_hardening_integration_event_and_metrics_are_replay_visible(tmp_path) ->
     assert metrics["hardening_statistics"]["total_interactions"] == 1
 
 
+def test_fail_closed_interactive_acli_turn_records_hardening_event(tmp_path) -> None:
+    result = run_interactive_conversation(
+        _args(tmp_path, session_id="HARDENING-FAIL-CLOSED-SESSION"),
+        input_func=_input_sequence(["continue ppp", "exit"]),
+        output_func=lambda _line: None,
+        monotonic_func=_monotonic_sequence([1.0, 2.0]),
+    )
+    turn = result["turns"][0]
+    hardening_root = Path(turn["hardening_replay_reference"])
+    reconstructed = reconstruct_acli_hardening_replay(hardening_root)
+
+    assert result["failed_turns"] == 1
+    assert result["hardening_recorded"] is True
+    assert result["hardening_event_count"] == 1
+    assert turn["fail_closed"] is True
+    assert turn["hardening_recorded"] is True
+    assert turn["turn_completion_status"] == "FAILED_CLOSED"
+    assert reconstructed["result"] == "PARTIAL PASS"
+    assert reconstructed["evidence_completeness"]["operator_prompt"]["prompt_text"] == "continue ppp"
+    assert reconstructed["evidence_completeness"]["fail_closed"]["fail_closed"] is True
+    assert reconstructed["evidence_completeness"]["fail_closed"]["fail_closed_reason"]
+
+
 def test_integration_runtime_version_is_stable() -> None:
     assert ACLI_HARDENING_INTEGRATION_RUNTIME_VERSION == "ACLI_HARDENING_INTEGRATION_RUNTIME_V1"

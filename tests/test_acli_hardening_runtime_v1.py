@@ -81,6 +81,17 @@ def test_records_pass_for_completed_governed_development_interaction(tmp_path) -
     assert result["issues"] == []
     assert result["operator_feedback"]["feedback_requested"] is True
     assert result["operator_feedback"]["feedback_provided"] is True
+    assert result["evidence_completeness"]["operator_prompt"]["prompt_text"] == (
+        "Create governance artifact ACLI_USAGE_GUIDELINES_V1."
+    )
+    assert result["evidence_completeness"]["workflow"]["workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
+    assert result["evidence_completeness"]["workflow"]["routing_confidence"] is None
+    assert result["evidence_completeness"]["replay"]["source_replay_reference"] == "/tmp/replay/acli-001"
+    assert result["evidence_completeness"]["approval_summary"]["approval_required"] is True
+    assert result["evidence_completeness"]["worker_path_summary"]["worker_invoked"] is False
+    assert result["hardening_scenario_identifiers"] == [
+        scenario["scenario_id"] for scenario in result["hardening_scenarios"]
+    ]
     assert result["authority_flags"]["authorizes_execution"] is False
     assert result["execution_authorized"] is False
 
@@ -320,3 +331,38 @@ def test_hardening_artifact_hash_is_stable_and_replay_visible(tmp_path) -> None:
     assert actual == replay_hash(artifact)
     assert result["hardening_artifact"]["replay_visible"] is True
     assert result["hardening_artifact"]["read_only"] is True
+
+
+def test_fail_closed_interaction_records_comparable_evidence(tmp_path) -> None:
+    result = record_acli_hardening_interaction(
+        hardening_id="HARDENING-015",
+        interaction_id="INTERACTION-015",
+        completed_interaction=_completed_interaction(
+            prompt="continue ppp",
+            workflow_id="OCS_LLM_COGNITION",
+            routing_confidence="MEDIUM",
+            fail_closed=True,
+            response_status="FAILED_CLOSED",
+            failure_reason="OCS cognition failed closed: no provider cognition artifacts available",
+            executed=False,
+            execution_performed=False,
+            worker_status="NOT_INVOKED",
+            validation_status="NOT_RUN",
+            validated=False,
+        ),
+        replay_dir=tmp_path / "hardening",
+        created_at=CREATED_AT,
+    )
+
+    evidence = result["evidence_completeness"]
+
+    assert result["result"] == PARTIAL_PASS
+    assert evidence["operator_prompt"]["prompt_text"] == "continue ppp"
+    assert evidence["workflow"]["workflow_id"] == "OCS_LLM_COGNITION"
+    assert evidence["workflow"]["routing_confidence"] == "MEDIUM"
+    assert evidence["fail_closed"]["fail_closed"] is True
+    assert evidence["fail_closed"]["fail_closed_reason"] == (
+        "OCS cognition failed closed: no provider cognition artifacts available"
+    )
+    assert evidence["execution_status"]["execution_performed"] is False
+    assert "ARCHITECTURE" in {issue["category"] for issue in result["issues"]}
