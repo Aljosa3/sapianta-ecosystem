@@ -3534,6 +3534,7 @@ def run_interactive_conversation(
                         turn_id=turn_id,
                         current_chain_id=current_chain_id,
                         latest_chain_id=latest_chain_id,
+                        restored_native_context_capture=native_context_capture,
                     )
                     native_context_capture["post_context_continuation"] = post_context_continuation_capture
                     native_context_capture["ppp_route_status"] = post_context_continuation_capture.get(
@@ -5541,6 +5542,7 @@ def run_interactive_conversation(
                             turn_id=turn_id,
                             current_chain_id=current_chain_id,
                             latest_chain_id=latest_chain_id,
+                            restored_native_context_capture=native_context_capture,
                         )
                         native_context_capture["post_context_continuation"] = post_context_continuation_capture
                         native_context_capture["ppp_route_status"] = post_context_continuation_capture.get(

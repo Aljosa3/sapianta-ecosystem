@@ -67,6 +67,7 @@ def run_conversation_ppp_routing_integration(
     turn_id: str | None = None,
     current_chain_id: str | None = None,
     latest_chain_id: str | None = None,
+    restored_native_context_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Route a native-development conversation prompt through the PPP lifecycle."""
 
@@ -74,17 +75,24 @@ def run_conversation_ppp_routing_integration(
     route_replay = root / "conversation_ppp_route"
     try:
         _ensure_replay_available(route_replay)
-        conversation = run_conversation_native_development_context_integration(
-            prompt_id=prompt_id,
-            human_prompt=human_prompt,
-            created_at=created_at,
-            replay_dir=root / "conversation_native_development",
-            governance_root=governance_root,
-            session_id=session_id,
-            turn_id=turn_id,
-            current_chain_id=current_chain_id,
-            latest_chain_id=latest_chain_id,
-        )
+        if restored_native_context_capture is None:
+            conversation = run_conversation_native_development_context_integration(
+                prompt_id=prompt_id,
+                human_prompt=human_prompt,
+                created_at=created_at,
+                replay_dir=root / "conversation_native_development",
+                governance_root=governance_root,
+                session_id=session_id,
+                turn_id=turn_id,
+                current_chain_id=current_chain_id,
+                latest_chain_id=latest_chain_id,
+            )
+        else:
+            conversation = _conversation_from_restored_native_context(
+                restored_native_context_capture,
+                current_chain_id=current_chain_id,
+                latest_chain_id=latest_chain_id,
+            )
         if conversation.get("response_status") != CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATED:
             raise FailClosedRuntimeError(conversation.get("failure_reason") or "conversation PPP intake failed closed")
         context = conversation["development_context_assembly"]["development_context_assembly_artifact"]
@@ -298,6 +306,131 @@ def _validate_and_handoff(
     if handoff.get("handoff_status") != IMPLEMENTATION_HANDOFF_CREATED:
         raise FailClosedRuntimeError(handoff.get("failure_reason") or "conversation PPP final handoff failed")
     return validation, handoff
+
+
+def _conversation_from_restored_native_context(
+    restored_native_context_capture: dict[str, Any],
+    *,
+    current_chain_id: str | None,
+    latest_chain_id: str | None,
+) -> dict[str, Any]:
+    if not isinstance(restored_native_context_capture, dict):
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: native context missing")
+    conversation = deepcopy(restored_native_context_capture)
+    if conversation.get("fail_closed") is True:
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: native context is failed closed")
+    if conversation.get("context_status") != "CONTEXT_ASSEMBLED":
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: context is not assembled")
+
+    intake_capture = _restored_intake_capture(conversation)
+    context_capture = _restored_context_capture(conversation)
+    intake_artifact = intake_capture["native_development_task_intake_artifact"]
+    context_artifact = context_capture["development_context_assembly_artifact"]
+    _verify_artifact_hash(intake_artifact, "native development task intake")
+    _verify_artifact_hash(context_artifact, "development context assembly")
+
+    if context_artifact.get("context_status") != "CONTEXT_ASSEMBLED":
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: context artifact is not assembled")
+    if intake_artifact.get("intake_status") != "NATIVE_DEVELOPMENT_TASK_INTAKE_ACCEPTED":
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: intake artifact is not accepted")
+
+    canonical_chain_id = (
+        current_chain_id
+        or conversation.get("canonical_chain_id")
+        or conversation.get("current_chain_id")
+        or conversation.get("latest_chain_id")
+    )
+    if not isinstance(canonical_chain_id, str) or not canonical_chain_id.strip():
+        raise FailClosedRuntimeError("conversation PPP restored context failed closed: canonical chain id missing")
+
+    conversation.update(
+        {
+            "response_status": CONVERSATION_NATIVE_DEVELOPMENT_CONTEXT_INTEGRATED,
+            "response_source": "NATIVE_DEVELOPMENT_CONTEXT_ASSEMBLY",
+            "native_development_task_intake": intake_capture,
+            "development_context_assembly": context_capture,
+            "task_intake_reference": intake_artifact["intake_id"],
+            "context_assembly_reference": context_artifact["context_assembly_id"],
+            "context_hash": context_artifact["context_hash"],
+            "canonical_chain_id": canonical_chain_id,
+            "current_chain_id": current_chain_id or canonical_chain_id,
+            "latest_chain_id": latest_chain_id or current_chain_id or canonical_chain_id,
+            "fail_closed": False,
+            "failure_reason": None,
+        }
+    )
+    return conversation
+
+
+def _restored_intake_capture(conversation: dict[str, Any]) -> dict[str, Any]:
+    for key in ("native_development_task_intake", "intake_replay"):
+        capture = conversation.get(key)
+        if isinstance(capture, dict) and isinstance(capture.get("native_development_task_intake_artifact"), dict):
+            return deepcopy(capture)
+    replay_root = _restored_replay_root(conversation)
+    artifact = _load_replay_artifact(
+        replay_root / "native_development_task_intake" / "000_native_development_task_intake_recorded.json",
+        label="native development task intake",
+    )
+    return {
+        "native_development_task_intake_artifact": artifact,
+        "native_development_task_intake_replay_reference": str(replay_root / "native_development_task_intake"),
+        "intake_status": artifact.get("intake_status"),
+        "requested_milestone_id": artifact.get("requested_milestone_id"),
+        "requested_domain": artifact.get("requested_domain"),
+        "requested_worker_family": artifact.get("requested_worker_family"),
+        "requested_output_scope": deepcopy(artifact.get("requested_output_scope", [])),
+        "explicit_constraints": deepcopy(artifact.get("explicit_constraints", [])),
+        "task_kind": artifact.get("task_kind"),
+        "safe_for_native_development": artifact.get("safe_for_native_development"),
+        "failure_reason": artifact.get("failure_reason"),
+    }
+
+
+def _restored_context_capture(conversation: dict[str, Any]) -> dict[str, Any]:
+    capture = conversation.get("development_context_assembly")
+    if isinstance(capture, dict) and isinstance(capture.get("development_context_assembly_artifact"), dict):
+        return deepcopy(capture)
+    replay_root = _restored_replay_root(conversation)
+    artifact = _load_replay_artifact(
+        replay_root / "development_context_assembly" / "003_development_context_assembly_recorded.json",
+        label="development context assembly",
+    )
+    return {
+        "development_context_assembly_artifact": artifact,
+        "development_context_assembly_replay_reference": str(replay_root / "development_context_assembly"),
+        "context_status": artifact.get("context_status"),
+        "context_hash": artifact.get("context_hash"),
+        "missing_context": deepcopy(artifact.get("missing_context", [])),
+        "ambiguous_context": deepcopy(artifact.get("ambiguous_context", [])),
+        "provider_necessity_classification": artifact.get("provider_necessity_classification"),
+        "failure_reason": artifact.get("failure_reason"),
+    }
+
+
+def _restored_replay_root(conversation: dict[str, Any]) -> Path:
+    replay_reference = conversation.get("replay_reference")
+    if isinstance(replay_reference, str) and replay_reference.strip():
+        return Path(replay_reference)
+    conversation_replay = conversation.get("conversation_replay_reference")
+    if isinstance(conversation_replay, str) and conversation_replay.strip():
+        path = Path(conversation_replay)
+        if path.name == "native_development_context_integration":
+            return path.parent
+        return path
+    raise FailClosedRuntimeError("conversation PPP restored context failed closed: replay reference missing")
+
+
+def _load_replay_artifact(path: Path, *, label: str) -> dict[str, Any]:
+    wrapper = load_json(path)
+    if not isinstance(wrapper, dict):
+        raise FailClosedRuntimeError(f"conversation PPP restored context failed closed: {label} wrapper missing")
+    _verify_wrapper_hash(wrapper)
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError(f"conversation PPP restored context failed closed: {label} artifact missing")
+    _verify_artifact_hash(artifact, label)
+    return artifact
 
 
 def _repair_failed_production(
@@ -577,6 +710,8 @@ def _capture(route: dict[str, Any], returned: dict[str, Any], replay_path: Path)
         "conversation_ppp_routing_replay_reference": str(replay_path),
         "route_status": route["route_status"],
         "canonical_chain_id": route["canonical_chain_id"],
+        "task_intake_reference": route["task_intake_reference"],
+        "context_reference": route["context_reference"],
         "context_hash": route["context_hash"],
         "domain_reference": route["domain_reference"],
         "worker_reference": route["worker_reference"],

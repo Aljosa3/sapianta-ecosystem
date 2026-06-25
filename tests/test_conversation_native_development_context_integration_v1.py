@@ -467,9 +467,20 @@ def test_interactive_conversation_replay_restored_continue_resumes_without_rerou
     assert second["post_context_continuation_status"] == POST_CONTEXT_CONTINUATION_REACHED_PPP
     assert second["ppp_route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert second["canonical_chain_id"] == first_result["turns"][0]["canonical_chain_id"]
+    assert second["task_intake_reference"] == first_result["turns"][0]["task_intake_reference"]
+    assert second["context_assembly_reference"] == first_result["turns"][0]["context_assembly_reference"]
+    assert second["context_hash"] == first_result["turns"][0]["context_hash"]
     assert second["worker_request_reached"] is True
     assert calls and calls[0]["api_key_seen"] is True
     assert not (runtime_root / session_id / "TURN-000002" / "conversational_cli_routing").exists()
+    assert not (
+        runtime_root
+        / session_id
+        / "TURN-000002"
+        / "post_context_continuation"
+        / "conversation_ppp_routing"
+        / "conversation_native_development"
+    ).exists()
     assert (
         runtime_root
         / session_id

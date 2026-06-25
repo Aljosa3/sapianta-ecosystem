@@ -17,6 +17,9 @@ from aigol.runtime.conversation_ppp_routing_integration import (
     reconstruct_conversation_ppp_routing_replay,
     run_conversation_ppp_routing_integration,
 )
+from aigol.runtime.conversation_native_development_context_integration import (
+    run_conversation_native_development_context_integration,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.provider_proposal_repair_and_retry_runtime import HUMAN_CLARIFICATION_REQUIRED
 from aigol.runtime.transport.serialization import canonical_serialize
@@ -126,6 +129,49 @@ def test_conversation_ppp_routes_successful_provider_proposal_to_handoff(tmp_pat
     assert capture["worker_created"] is False
     assert reconstructed["route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert reconstructed["replay_artifact_count"] == 2
+
+
+def test_conversation_ppp_consumes_restored_context_without_reparsing_prompt(tmp_path, monkeypatch) -> None:
+    native_context = run_conversation_native_development_context_integration(
+        prompt_id="PROMPT-PPP-RESTORED-SOURCE-000001",
+        human_prompt=_prompt(),
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "source_native_context",
+        governance_root=GOVERNANCE_ROOT,
+        session_id="SESSION-PPP-000001",
+        turn_id="TURN-000001",
+        current_chain_id="CHAIN-PPP-RESTORED-000001",
+        latest_chain_id="CHAIN-PPP-RESTORED-000001",
+    )
+
+    import aigol.runtime.conversation_ppp_routing_integration as runtime
+
+    def fail_if_prompt_reparsed(**_kwargs):
+        raise AssertionError("PPP continuation must consume restored native context")
+
+    monkeypatch.setattr(runtime, "run_conversation_native_development_context_integration", fail_if_prompt_reparsed)
+
+    capture = run_conversation_ppp_routing_integration(
+        prompt_id="PROMPT-PPP-RESTORED-000001",
+        human_prompt="This prompt must not be re-parsed.",
+        provider_id=PROVIDER_ID,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "restored_ppp",
+        registry=_registry(),
+        adapter=SequenceProviderAdapter([_valid_response()]),
+        governance_root=GOVERNANCE_ROOT,
+        session_id="SESSION-PPP-000001",
+        turn_id="TURN-000002",
+        current_chain_id=native_context["canonical_chain_id"],
+        latest_chain_id=native_context["canonical_chain_id"],
+        restored_native_context_capture=native_context,
+    )
+
+    assert capture["route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert capture["task_intake_reference"] == native_context["task_intake_reference"]
+    assert capture["context_hash"] == native_context["context_hash"]
+    assert capture["canonical_chain_id"] == native_context["canonical_chain_id"]
+    assert not (tmp_path / "restored_ppp" / "conversation_native_development").exists()
 
 
 def test_conversation_ppp_invokes_repair_retry_when_production_proposal_fails(tmp_path) -> None:

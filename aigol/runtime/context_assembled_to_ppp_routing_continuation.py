@@ -44,6 +44,7 @@ def continue_context_assembled_to_ppp_routing(
     turn_id: str | None = None,
     current_chain_id: str | None = None,
     latest_chain_id: str | None = None,
+    restored_native_context_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Continue a context-assembled native prompt through existing PPP routing."""
 
@@ -63,6 +64,7 @@ def continue_context_assembled_to_ppp_routing(
             turn_id=turn_id,
             current_chain_id=current_chain_id,
             latest_chain_id=latest_chain_id,
+            restored_native_context_capture=restored_native_context_capture,
         )
         if ppp_capture.get("fail_closed") is True:
             raise FailClosedRuntimeError(
