@@ -103,6 +103,11 @@ def test_acli_governed_development_bridge_executes_after_explicit_approval(tmp_p
     assert "WHAT REQUIRES YOUR APPROVAL" in rendered
     assert "WHAT TO TYPE NEXT" in rendered
     assert "REPLAY VISIBILITY" in rendered
+    assert "EXPLANATION TRANSPARENCY" in rendered
+    assert "Authoritative State" in rendered
+    assert "AiGOL Governance" in rendered
+    assert "Explanation Confidence" in rendered
+    assert "Governance Only" in rendered
     assert "Type APPROVE to continue." in rendered
     assert "no worker will execute before approval" in rendered
     assert "Operator Summary" in rendered
@@ -712,6 +717,12 @@ def test_live_acli_uses_optional_llm_assisted_explanation_provider(tmp_path) -> 
     assert "HUMAN-FRIENDLY EXPLANATION" in rendered
     assert "PROVIDER-ASSISTED EXPLANATION" in rendered
     assert "Provider explanation: ACLI_USAGE_GUIDELINES_V1" in rendered
+    assert "EXPLANATION TRANSPARENCY" in rendered
+    assert "Provider Name" in rendered
+    assert "Explanation Confidence" in rendered
+    assert "High" in rendered
+    assert "Explanation Completeness" in rendered
+    assert "Complete" in rendered
     assert "Governed Development Proposal" in rendered
     assert rendered.index("HUMAN-FRIENDLY EXPLANATION") < rendered.index("PROVIDER-ASSISTED EXPLANATION")
     assert rendered.index("PROVIDER-ASSISTED EXPLANATION") < rendered.index("Governed Development Proposal")
@@ -723,6 +734,8 @@ def test_live_acli_uses_optional_llm_assisted_explanation_provider(tmp_path) -> 
     assert replay["explanation_status"] == PROVIDER_EXPLANATION_USED
     assert replay["provider_explanation_used"] is True
     assert replay["authority_granted"] is False
+    assert replay["explanation_transparency_artifact"]["provider_status"] == PROVIDER_EXPLANATION_USED
+    assert replay["rendered_operator_view_hash"].startswith("sha256:")
     assert state["artifact_identifiers"] == ["ACLI_USAGE_GUIDELINES_V1"]
     assert "docs/governance/ACLI_USAGE_GUIDELINES_V1.md" in state["target_paths"]
     assert state["approval_state"] == APPROVAL_REQUIRED

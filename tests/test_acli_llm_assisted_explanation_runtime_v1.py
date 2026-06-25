@@ -69,6 +69,8 @@ def _provider_response(request: dict) -> dict:
         "explanation_text": (
             "This proposal creates ACLI_USAGE_GUIDELINES_V1 and waits for human approval before any mutation."
         ),
+        "provider_name": "OpenAI GPT-5.5",
+        "provider_tier": "Tier 2",
         "preserved_artifact_identifiers": list(state["artifact_identifiers"]),
         "preserved_target_paths": list(state["target_paths"]),
         "preserved_approval_state": state["approval_state"],
@@ -97,6 +99,16 @@ def test_provider_assisted_explanation_is_generated_and_replayed(tmp_path) -> No
     assert artifact["provider_authority"] is False
     assert artifact["approval_authority"] is False
     assert artifact["execution_authority"] is False
+    assert artifact["provider_name"] == "OpenAI GPT-5.5"
+    assert artifact["provider_role"] == "Explanation Provider"
+    assert artifact["provider_tier"] == "Tier 2"
+    assert artifact["provider_status"] == PROVIDER_EXPLANATION_USED
+    assert artifact["explanation_confidence"] == "HIGH"
+    assert artifact["explanation_completeness"] == "COMPLETE"
+    assert artifact["render_mode"] == "PROVIDER_ASSISTED"
+    assert artifact["escalation_level"] == "TIER_2"
+    assert "EXPLANATION TRANSPARENCY" in artifact["rendered_operator_view"]
+    assert "OpenAI GPT-5.5" in artifact["rendered_operator_view"]
     assert artifact["explanation_request_artifact"]["authoritative_state"]["artifact_identifiers"] == [
         "ACLI_USAGE_GUIDELINES_V1"
     ]
@@ -111,6 +123,11 @@ def test_provider_assisted_explanation_is_generated_and_replayed(tmp_path) -> No
     assert replay["explanation_status"] == PROVIDER_EXPLANATION_USED
     assert replay["provider_explanation_used"] is True
     assert replay["authority_granted"] is False
+    assert replay["provider_name"] == "OpenAI GPT-5.5"
+    assert replay["explanation_confidence"] == "HIGH"
+    assert replay["explanation_completeness"] == "COMPLETE"
+    assert replay["render_mode"] == "PROVIDER_ASSISTED"
+    assert replay["explanation_transparency_artifact"]["explanation_pipeline"][1]["status"] == "USED"
 
 
 def test_provider_unavailable_falls_back_to_deterministic_explanation(tmp_path) -> None:
@@ -134,12 +151,19 @@ def test_provider_unavailable_falls_back_to_deterministic_explanation(tmp_path) 
     assert artifact["deterministic_fallback_used"] is True
     assert artifact["provider_explanation_used"] is False
     assert "EXPLANATION_PROVIDER_UNAVAILABLE" in artifact["fallback_reason"]
+    assert artifact["provider_status"] == "UNAVAILABLE"
+    assert artifact["explanation_confidence"] == "GOVERNANCE_ONLY"
+    assert artifact["explanation_completeness"] == "FALLBACK"
+    assert artifact["render_mode"] == "DETERMINISTIC_FALLBACK"
+    assert "EXPLANATION TRANSPARENCY" in artifact["rendered_operator_view"]
+    assert "Fallback" in artifact["rendered_operator_view"]
     assert artifact["authority_granted"] is False
 
     replay = reconstruct_acli_llm_assisted_explanation_replay(
         capture["llm_assisted_explanation_replay_reference"]
     )
     assert replay["deterministic_fallback_used"] is True
+    assert replay["fallback_reason"].startswith("EXPLANATION_PROVIDER_UNAVAILABLE")
 
 
 @pytest.mark.parametrize(
@@ -191,6 +215,63 @@ def test_provider_fidelity_or_authority_violation_falls_back(tmp_path, bad_respo
         "ACLI_USAGE_GUIDELINES_V1"
     ]
     assert artifact["explanation_response_artifact"]["preserved_approval_state"] == "APPROVAL_REQUIRED"
+    assert artifact["explanation_confidence"] == "GOVERNANCE_ONLY"
+    assert artifact["explanation_completeness"] == "FALLBACK"
+    assert artifact["rendered_operator_view_hash"].startswith("sha256:")
+
+
+def test_provider_malformed_response_falls_back_with_transparency(tmp_path) -> None:
+    capture = create_acli_llm_assisted_explanation(
+        explanation_id="EXPLANATION-004",
+        authoritative_state=_authoritative_state(),
+        deterministic_explanation="Fallback after malformed provider response.",
+        provider=lambda _request: "malformed",
+        provider_id="MALFORMED_PROVIDER",
+        replay_dir=tmp_path / "malformed_provider",
+        created_at=CREATED_AT,
+    )
+
+    artifact = capture["llm_assisted_explanation_artifact"]
+
+    assert capture["explanation_status"] == DETERMINISTIC_FALLBACK_USED
+    assert artifact["provider_status"] == "MALFORMED_RESPONSE"
+    assert artifact["fallback_reason"] == "EXPLANATION_PROVIDER_RESPONSE_MALFORMED"
+    assert artifact["explanation_completeness"] == "FALLBACK"
+    assert "Malformed Response" in artifact["rendered_operator_view"]
+
+
+def test_future_provider_tier_transparency_is_preserved(tmp_path) -> None:
+    def tier_three_provider(request: dict) -> dict:
+        state = request["authoritative_state"]
+        return {
+            "explanation_text": "Tier 3 explanation preserves authoritative ACLI state.",
+            "provider_name": "Comparison Explanation Provider",
+            "provider_tier": "Tier 3",
+            "preserved_artifact_identifiers": list(state["artifact_identifiers"]),
+            "preserved_target_paths": list(state["target_paths"]),
+            "preserved_approval_state": state["approval_state"],
+            "preserved_replay_references": list(state["replay_references"]),
+            "advisory_only": True,
+            "authority_granted": False,
+        }
+
+    capture = create_acli_llm_assisted_explanation(
+        explanation_id="EXPLANATION-005",
+        authoritative_state=_authoritative_state(),
+        deterministic_explanation="Deterministic explanation remains available.",
+        provider=tier_three_provider,
+        provider_id="COMPARISON_PROVIDER",
+        replay_dir=tmp_path / "tier_three_provider",
+        created_at=CREATED_AT,
+    )
+
+    artifact = capture["llm_assisted_explanation_artifact"]
+
+    assert artifact["explanation_status"] == PROVIDER_EXPLANATION_USED
+    assert artifact["provider_name"] == "Comparison Explanation Provider"
+    assert artifact["provider_tier"] == "Tier 3"
+    assert artifact["escalation_level"] == "TIER_3"
+    assert "Tier 3" in artifact["rendered_operator_view"]
 
 
 def test_authoritative_state_preserves_artifact_fidelity() -> None:

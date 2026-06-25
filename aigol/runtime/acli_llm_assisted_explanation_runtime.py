@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.acli_human_friendly_explanation_runtime import render_explanation_source_transparency
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -73,6 +74,18 @@ def create_acli_llm_assisted_explanation(
             created_at=created_at,
         )
         explanation_status = PROVIDER_EXPLANATION_USED
+    transparency = _transparency_artifact(
+        authoritative_state=state,
+        explanation_status=explanation_status,
+        provider_id=provider_id,
+        provider_response=provider_response,
+        response_artifact=response_artifact,
+        fallback_reason=response_artifact.get("fallback_reason"),
+    )
+    rendered_operator_view = _render_operator_view(
+        response_artifact["explanation_text"],
+        transparency,
+    )
 
     artifact = {
         "artifact_type": ACLI_LLM_ASSISTED_EXPLANATION_ARTIFACT_V1,
@@ -84,14 +97,33 @@ def create_acli_llm_assisted_explanation(
         "authoritative_state_hash": state["artifact_hash"],
         "deterministic_explanation": deterministic_text,
         "deterministic_explanation_hash": replay_hash(deterministic_text),
+        "provider_request": deepcopy(request_artifact),
+        "provider_response": deepcopy(response_artifact),
         "explanation_request_artifact": request_artifact,
         "explanation_response_artifact": response_artifact,
         "rendered_explanation": response_artifact["explanation_text"],
         "rendered_explanation_hash": replay_hash(response_artifact["explanation_text"]),
+        "explanation_transparency_artifact": transparency,
+        "provider_name": transparency["provider_name"],
+        "provider_role": transparency["provider_role"],
+        "provider_tier": transparency["provider_tier"],
+        "provider_status": transparency["provider_status"],
+        "provider_confidence": transparency["provider_confidence"],
+        "explanation_confidence": transparency["explanation_confidence"],
+        "explanation_completeness": transparency["explanation_completeness"],
+        "render_mode": transparency["render_mode"],
+        "escalation_level": transparency["escalation_level"],
+        "rendered_operator_view": rendered_operator_view,
+        "rendered_operator_view_hash": replay_hash(rendered_operator_view),
         "provider_invoked": provider is not None,
         "provider_explanation_used": explanation_status == PROVIDER_EXPLANATION_USED,
         "deterministic_fallback_used": explanation_status == DETERMINISTIC_FALLBACK_USED,
         "fallback_reason": response_artifact.get("fallback_reason"),
+        "explanation_accepted": None,
+        "explanation_modified": None,
+        "operator_confusion_detected": None,
+        "clarification_requested": None,
+        "operator_satisfaction": None,
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": str(replay_path),
         "replay_visible": True,
@@ -126,6 +158,7 @@ def create_acli_llm_assisted_explanation(
         "llm_assisted_explanation_artifact": deepcopy(artifact),
         "llm_assisted_explanation_replay_reference": str(replay_path),
         "operator_explanation": artifact["rendered_explanation"],
+        "operator_explanation_with_transparency": artifact["rendered_operator_view"],
         "replay_visible": True,
         "advisory_only": True,
         "authority_granted": False,
@@ -197,6 +230,8 @@ def reconstruct_acli_llm_assisted_explanation_replay(replay_dir: str | Path) -> 
     _verify_artifact_hash(response)
     if artifact.get("rendered_explanation_hash") != replay_hash(artifact.get("rendered_explanation")):
         raise FailClosedRuntimeError("ACLI LLM-assisted explanation rendered hash mismatch")
+    if artifact.get("rendered_operator_view_hash") != replay_hash(artifact.get("rendered_operator_view")):
+        raise FailClosedRuntimeError("ACLI LLM-assisted explanation rendered operator view hash mismatch")
     _validate_response_fidelity(response, artifact["authoritative_state"])
     return {
         "runtime_version": artifact["runtime_version"],
@@ -207,6 +242,21 @@ def reconstruct_acli_llm_assisted_explanation_replay(replay_dir: str | Path) -> 
         "explanation_response_artifact": deepcopy(response),
         "rendered_explanation": artifact["rendered_explanation"],
         "rendered_explanation_hash": artifact["rendered_explanation_hash"],
+        "explanation_transparency_artifact": deepcopy(artifact["explanation_transparency_artifact"]),
+        "provider_request": deepcopy(artifact["provider_request"]),
+        "provider_response": deepcopy(artifact["provider_response"]),
+        "provider_name": artifact["provider_name"],
+        "provider_role": artifact["provider_role"],
+        "provider_tier": artifact["provider_tier"],
+        "provider_status": artifact["provider_status"],
+        "provider_confidence": artifact["provider_confidence"],
+        "explanation_confidence": artifact["explanation_confidence"],
+        "explanation_completeness": artifact["explanation_completeness"],
+        "fallback_reason": artifact["fallback_reason"],
+        "render_mode": artifact["render_mode"],
+        "escalation_level": artifact["escalation_level"],
+        "rendered_operator_view": artifact["rendered_operator_view"],
+        "rendered_operator_view_hash": artifact["rendered_operator_view_hash"],
         "provider_explanation_used": artifact["provider_explanation_used"],
         "deterministic_fallback_used": artifact["deterministic_fallback_used"],
         "advisory_only": True,
@@ -220,10 +270,133 @@ def render_acli_llm_assisted_explanation(capture: dict[str, Any]) -> str:
     artifact = capture.get("llm_assisted_explanation_artifact")
     if not isinstance(artifact, dict):
         artifact = capture
+    rendered_operator_view = artifact.get("rendered_operator_view")
+    if isinstance(rendered_operator_view, str) and rendered_operator_view.strip():
+        return rendered_operator_view
     rendered = artifact.get("rendered_explanation")
     if not isinstance(rendered, str) or not rendered.strip():
         raise FailClosedRuntimeError("ACLI LLM-assisted explanation rendered text missing")
+    transparency = artifact.get("explanation_transparency_artifact")
+    if isinstance(transparency, dict):
+        return _render_operator_view(rendered, transparency)
     return rendered
+
+
+def _render_operator_view(explanation_text: str, transparency: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            _require_string(explanation_text, "explanation_text"),
+            "",
+            render_explanation_source_transparency(transparency),
+        ]
+    )
+
+
+def _transparency_artifact(
+    *,
+    authoritative_state: dict[str, Any],
+    explanation_status: str,
+    provider_id: str,
+    provider_response: dict[str, Any] | None,
+    response_artifact: dict[str, Any],
+    fallback_reason: str | None,
+) -> dict[str, Any]:
+    provider_name = None
+    provider_tier = None
+    if isinstance(provider_response, dict):
+        provider_name = provider_response.get("provider_name")
+        provider_tier = provider_response.get("provider_tier")
+    provider_name = _optional_string(provider_name) or _require_string(provider_id, "provider_id")
+    provider_tier = _optional_string(provider_tier) or "Tier 2"
+    if explanation_status == PROVIDER_EXPLANATION_USED:
+        explanation_sources = ["Deterministic ACLI", provider_name]
+        provider_status = "PROVIDER_EXPLANATION_USED"
+        provider_confidence = "HIGH"
+        explanation_confidence = "HIGH"
+        explanation_completeness = "COMPLETE"
+        fallback = "Not used"
+        replay_status = "Provider explanation recorded."
+        render_mode = "PROVIDER_ASSISTED"
+        escalation_level = provider_tier.upper().replace(" ", "_")
+        pipeline = [
+            {"tier": "Tier 1", "source": "Local deterministic explanation", "status": "USED"},
+            {"tier": provider_tier, "source": provider_name, "status": "USED"},
+            {"tier": "Tier 3", "source": "Multi-provider comparison", "status": "NOT_REQUIRED"},
+        ]
+    else:
+        reason = fallback_reason or "DETERMINISTIC_FALLBACK_SELECTED"
+        explanation_sources = ["Deterministic ACLI"]
+        provider_status = _provider_status_from_fallback(reason)
+        provider_confidence = None
+        explanation_confidence = "GOVERNANCE_ONLY"
+        explanation_completeness = "FALLBACK"
+        fallback = "Deterministic explanation used."
+        replay_status = "Fallback recorded."
+        render_mode = "DETERMINISTIC_FALLBACK"
+        escalation_level = "TIER_1"
+        pipeline = [
+            {"tier": "Tier 1", "source": "Local deterministic explanation", "status": "USED"},
+            {"tier": provider_tier, "source": provider_name, "status": provider_status},
+            {"tier": "Tier 3", "source": "Multi-provider comparison", "status": "NOT_REQUIRED"},
+        ]
+    return {
+        "artifact_type": "ACLI_EXPLANATION_SOURCE_TRANSPARENCY_V2",
+        "authoritative_state": "AiGOL Governance",
+        "authoritative_state_hash": authoritative_state["artifact_hash"],
+        "explanation_sources": explanation_sources,
+        "provider_name": provider_name if explanation_status == PROVIDER_EXPLANATION_USED else None,
+        "provider_role": "Explanation Provider",
+        "provider_tier": provider_tier,
+        "provider_status": provider_status,
+        "provider_confidence": provider_confidence,
+        "explanation_role": "Advisory Only",
+        "explanation_confidence": explanation_confidence,
+        "explanation_completeness": explanation_completeness,
+        "fallback": fallback,
+        "fallback_reason": fallback_reason,
+        "replay_status": replay_status,
+        "render_mode": render_mode,
+        "escalation_level": escalation_level,
+        "explanation_pipeline": pipeline,
+        "authoritative_items": [
+            "workflow",
+            "proposal",
+            "approval",
+            "proposal hash",
+            "replay",
+            "execution",
+            "validation",
+        ],
+        "advisory_items": [
+            "explanation",
+            "examples",
+            "natural-language interpretation",
+            "simplification",
+            "clarification",
+        ],
+        "provider_response_status": response_artifact["response_status"],
+        "learning_evidence": {
+            "explanation_accepted": None,
+            "explanation_modified": None,
+            "operator_confusion_detected": None,
+            "clarification_requested": None,
+            "operator_satisfaction": None,
+        },
+    }
+
+
+def _provider_status_from_fallback(reason: str) -> str:
+    if "NOT_CONFIGURED" in reason:
+        return "UNAVAILABLE"
+    if "UNAVAILABLE" in reason:
+        return "UNAVAILABLE"
+    if "MALFORMED" in reason:
+        return "MALFORMED_RESPONSE"
+    if "FIDELITY" in reason:
+        return "FIDELITY_VIOLATION"
+    if "CLAIMS_AUTHORITY" in reason:
+        return "REJECTED_AUTHORITY_CLAIM"
+    return "FALLBACK_USED"
 
 
 def _explanation_request_artifact(
@@ -460,4 +633,10 @@ def _require_mapping(value: Any, field_name: str) -> dict[str, Any]:
 def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"ACLI LLM-assisted explanation failed closed: {field_name} required")
+    return value.strip()
+
+
+def _optional_string(value: Any) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
     return value.strip()

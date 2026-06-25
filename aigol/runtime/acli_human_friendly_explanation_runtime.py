@@ -46,6 +46,11 @@ def create_acli_human_friendly_explanation(
         explanation_replay_reference=str(replay_path),
     )
     rendered = render_acli_human_friendly_explanation_sections(sections)
+    transparency = _deterministic_transparency_artifact()
+    rendered_operator_view = _append_explanation_transparency(
+        rendered,
+        transparency,
+    )
     artifact = {
         "artifact_type": ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1,
         "milestone_id": MILESTONE_ID,
@@ -69,6 +74,28 @@ def create_acli_human_friendly_explanation(
         "sections": sections,
         "rendered_explanation": rendered,
         "rendered_explanation_hash": replay_hash(rendered),
+        "explanation_transparency_artifact": transparency,
+        "authoritative_state": "AiGOL Governance",
+        "deterministic_explanation": rendered,
+        "provider_request": None,
+        "provider_response": None,
+        "provider_name": None,
+        "provider_role": None,
+        "provider_tier": None,
+        "provider_status": "DISABLED_BY_CONFIGURATION",
+        "provider_confidence": None,
+        "explanation_confidence": "GOVERNANCE_ONLY",
+        "explanation_completeness": "COMPLETE",
+        "fallback_reason": None,
+        "render_mode": "DETERMINISTIC_ONLY",
+        "escalation_level": "TIER_1",
+        "rendered_operator_view": rendered_operator_view,
+        "rendered_operator_view_hash": replay_hash(rendered_operator_view),
+        "explanation_accepted": None,
+        "explanation_modified": None,
+        "operator_confusion_detected": None,
+        "clarification_requested": None,
+        "operator_satisfaction": None,
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": str(replay_path),
         "replay_visible": True,
@@ -103,6 +130,7 @@ def create_acli_human_friendly_explanation(
         "human_friendly_explanation_artifact": deepcopy(artifact),
         "human_friendly_explanation_replay_reference": str(replay_path),
         "operator_explanation": rendered,
+        "operator_explanation_with_transparency": rendered_operator_view,
         "replay_visible": True,
         "visibility_only": True,
     }
@@ -124,6 +152,8 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         raise FailClosedRuntimeError("ACLI explanation artifact type mismatch")
     if artifact.get("rendered_explanation_hash") != replay_hash(artifact.get("rendered_explanation")):
         raise FailClosedRuntimeError("ACLI explanation rendered output hash mismatch")
+    if artifact.get("rendered_operator_view_hash") != replay_hash(artifact.get("rendered_operator_view")):
+        raise FailClosedRuntimeError("ACLI explanation rendered operator view hash mismatch")
     return {
         "milestone_id": MILESTONE_ID,
         "final_classification": FINAL_CLASSIFICATION,
@@ -134,6 +164,12 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         "sections": deepcopy(artifact["sections"]),
         "rendered_explanation": artifact["rendered_explanation"],
         "rendered_explanation_hash": artifact["rendered_explanation_hash"],
+        "explanation_transparency_artifact": deepcopy(artifact["explanation_transparency_artifact"]),
+        "rendered_operator_view": artifact["rendered_operator_view"],
+        "rendered_operator_view_hash": artifact["rendered_operator_view_hash"],
+        "explanation_confidence": artifact["explanation_confidence"],
+        "explanation_completeness": artifact["explanation_completeness"],
+        "render_mode": artifact["render_mode"],
         "replay_visible": True,
         "visibility_only": True,
         "authority_granted": artifact["authority_granted"],
@@ -153,9 +189,16 @@ def render_acli_human_friendly_explanation(capture: dict[str, Any]) -> str:
     if not isinstance(artifact, dict):
         artifact = capture
     rendered = artifact.get("rendered_explanation")
-    if isinstance(rendered, str) and rendered.strip():
-        return rendered
-    return render_acli_human_friendly_explanation_sections(artifact.get("sections"))
+    transparency = artifact.get("explanation_transparency_artifact")
+    operator_view = artifact.get("rendered_operator_view")
+    if isinstance(operator_view, str) and operator_view.strip():
+        return operator_view
+    if isinstance(rendered, str) and rendered.strip() and isinstance(transparency, dict):
+        return _append_explanation_transparency(rendered, transparency)
+    return _append_explanation_transparency(
+        render_acli_human_friendly_explanation_sections(artifact.get("sections")),
+        _deterministic_transparency_artifact(),
+    )
 
 
 def render_acli_human_friendly_explanation_sections(sections: Any) -> str:
@@ -178,6 +221,131 @@ def render_acli_human_friendly_explanation_sections(sections: Any) -> str:
         lines.extend(_render_body_lines(body))
     lines.append("================================")
     return "\n".join(lines)
+
+
+def _deterministic_transparency_artifact() -> dict[str, Any]:
+    return {
+        "artifact_type": "ACLI_EXPLANATION_SOURCE_TRANSPARENCY_V2",
+        "authoritative_state": "AiGOL Governance",
+        "explanation_sources": ["Deterministic ACLI"],
+        "provider_name": None,
+        "provider_role": None,
+        "provider_tier": None,
+        "provider_status": "DISABLED_BY_CONFIGURATION",
+        "provider_confidence": None,
+        "explanation_role": "Advisory Only",
+        "explanation_confidence": "GOVERNANCE_ONLY",
+        "explanation_completeness": "COMPLETE",
+        "fallback": "Not applicable",
+        "fallback_reason": None,
+        "replay_status": "Deterministic explanation recorded.",
+        "render_mode": "DETERMINISTIC_ONLY",
+        "escalation_level": "TIER_1",
+        "explanation_pipeline": [
+            {
+                "tier": "Tier 1",
+                "source": "Local deterministic explanation",
+                "status": "USED",
+            },
+            {
+                "tier": "Tier 2",
+                "source": "Provider-assisted explanation",
+                "status": "DISABLED_BY_CONFIGURATION",
+            },
+            {
+                "tier": "Tier 3",
+                "source": "Multi-provider comparison",
+                "status": "NOT_REQUIRED",
+            },
+        ],
+        "authoritative_items": [
+            "workflow",
+            "proposal",
+            "approval",
+            "proposal hash",
+            "replay",
+            "execution",
+            "validation",
+        ],
+        "advisory_items": [
+            "explanation",
+            "examples",
+            "natural-language interpretation",
+            "simplification",
+            "clarification",
+        ],
+        "learning_evidence": {
+            "explanation_accepted": None,
+            "explanation_modified": None,
+            "operator_confusion_detected": None,
+            "clarification_requested": None,
+            "operator_satisfaction": None,
+        },
+    }
+
+
+def _append_explanation_transparency(rendered: str, transparency: dict[str, Any]) -> str:
+    return "\n".join([rendered, "", render_explanation_source_transparency(transparency)])
+
+
+def render_explanation_source_transparency(transparency: dict[str, Any]) -> str:
+    if not isinstance(transparency, dict):
+        raise FailClosedRuntimeError("ACLI explanation transparency must be a JSON object")
+    lines = [
+        "====================================================",
+        "EXPLANATION TRANSPARENCY",
+        "",
+        "Authoritative State",
+        str(transparency.get("authoritative_state") or "AiGOL Governance"),
+        "",
+        "Explanation Source",
+    ]
+    for source in transparency.get("explanation_sources") or ["Deterministic ACLI"]:
+        lines.append(str(source))
+    provider_name = transparency.get("provider_name")
+    if provider_name:
+        lines.extend(["", "Provider Name", str(provider_name)])
+        lines.extend(["", "Role", str(transparency.get("provider_role") or "Explanation Provider")])
+        lines.extend(["", "Authority", "None"])
+        lines.extend(["", "Provider Tier", str(transparency.get("provider_tier") or "Unspecified")])
+    provider_status = transparency.get("provider_status")
+    if provider_status:
+        lines.extend(["", "Provider", _humanize_status(str(provider_status))])
+    lines.extend(
+        [
+            "",
+            "Explanation Role",
+            str(transparency.get("explanation_role") or "Advisory Only"),
+            "",
+            "Explanation Confidence",
+            _humanize_status(str(transparency.get("explanation_confidence") or "UNKNOWN")),
+            "",
+            "Explanation Completeness",
+            _humanize_status(str(transparency.get("explanation_completeness") or "UNKNOWN")),
+            "",
+            "Fallback",
+            str(transparency.get("fallback") or "Not used"),
+        ]
+    )
+    fallback_reason = transparency.get("fallback_reason")
+    if fallback_reason:
+        lines.extend(["", "Reason", _humanize_status(str(fallback_reason))])
+    lines.extend(["", "Replay Status", str(transparency.get("replay_status") or "Explanation recorded.")])
+    pipeline = transparency.get("explanation_pipeline")
+    if isinstance(pipeline, list) and pipeline:
+        lines.extend(["", "Explanation Pipeline"])
+        for step in pipeline:
+            if not isinstance(step, dict):
+                continue
+            lines.append(
+                f"{step.get('tier')}: {step.get('source')} - {_humanize_status(str(step.get('status') or 'UNKNOWN'))}"
+            )
+    lines.append("====================================================")
+    return "\n".join(lines)
+
+
+def _humanize_status(value: str) -> str:
+    return value.replace("_", " ").title()
 
 
 def _build_sections(

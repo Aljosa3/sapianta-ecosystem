@@ -107,6 +107,15 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     assert "WHAT REQUIRES YOUR APPROVAL" in rendered
     assert "WHAT TO TYPE NEXT" in rendered
     assert "REPLAY VISIBILITY" in rendered
+    assert "EXPLANATION TRANSPARENCY" in rendered
+    assert "Authoritative State" in rendered
+    assert "AiGOL Governance" in rendered
+    assert "Explanation Source" in rendered
+    assert "Deterministic ACLI" in rendered
+    assert "Provider" in rendered
+    assert "Disabled By Configuration" in rendered
+    assert "Explanation Confidence" in rendered
+    assert "Governance Only" in rendered
     assert "Type APPROVE to continue." in rendered
     assert "no repository mutation will occur before approval" in rendered
 
@@ -119,6 +128,10 @@ def test_explanation_replay_reconstructs_and_detects_tampering(tmp_path) -> None
     assert replay["workflow_id"] == "GOVERNED_DEVELOPMENT_WORKFLOW"
     assert replay["visibility_only"] is True
     assert replay["authority_granted"] is False
+    assert replay["explanation_confidence"] == "GOVERNANCE_ONLY"
+    assert replay["explanation_completeness"] == "COMPLETE"
+    assert replay["render_mode"] == "DETERMINISTIC_ONLY"
+    assert replay["explanation_transparency_artifact"]["provider_status"] == "DISABLED_BY_CONFIGURATION"
 
     replay_file = tmp_path / "human_friendly_explanation" / "000_acli_human_friendly_explanation_recorded.json"
     wrapper = json.loads(replay_file.read_text(encoding="utf-8"))
