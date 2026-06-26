@@ -92,6 +92,15 @@ After `RC_BATCH_02`:
 2 skipped
 ```
 
+Current revalidation for this implementation pass:
+
+```text
+5388 passed
+4 skipped
+```
+
+The current full-suite result differs from the historical `RC_BATCH_02` comparison because later release-candidate batches and Platform Core hardening work have already reduced or removed the remaining non-blocking failures. The `RC_BATCH_02` blocker subset remains resolved.
+
 Certification blockers remaining from `RC_BATCH_01` and `RC_BATCH_02`:
 
 ```text
@@ -142,6 +151,18 @@ The readiness reports now more accurately describe the current governance state:
 ## 8. Certification Impact
 
 `RC_BATCH_02_READINESS_REPORT_DRIFT` is implemented.
+
+Current validation confirms that the six readiness-report drift blockers remain resolved:
+
+```text
+6 passed
+```
+
+The affected readiness-report files also remain green:
+
+```text
+14 passed
+```
 
 The number of certification-blocking failures identified before RC implementation is now reduced to zero:
 
