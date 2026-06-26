@@ -8,7 +8,7 @@ import subprocess
 import pytest
 
 from aigol.runtime import FailClosedRuntimeError, RuntimeEngine, RuntimePackage
-from aigol.runtime.providers import OpenAIProvider, ProviderActivationGate, ProviderEnvelope
+from aigol.runtime.providers import OpenAIProvider, ProviderActivationGate, ProviderConfig, ProviderEnvelope
 from aigol.runtime.transport import RuntimeStore, reconstruct_provider_invocation
 from aigol.runtime.transport.serialization import load_json, replay_hash
 
@@ -37,7 +37,12 @@ def _transport(request_body, api_key):
 
 def _engine(store: RuntimeStore | None = None) -> RuntimeEngine:
     engine = RuntimeEngine(runtime_store=store)
-    engine.register_provider(OpenAIProvider(transport=_transport))
+    engine.register_provider(
+        OpenAIProvider(
+            config=ProviderConfig(credential_reference="env:AIGOL_OPENAI_API_KEY"),
+            transport=_transport,
+        )
+    )
     return engine
 
 
