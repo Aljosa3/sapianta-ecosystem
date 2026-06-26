@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import json
+import socket
 import threading
 from copy import deepcopy
 
@@ -91,6 +92,19 @@ def _handle(request=None, **overrides):
     )
 
 
+def _skip_if_local_socket_unavailable():
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except PermissionError as exc:
+        pytest.skip(f"local socket creation unavailable in this environment: {exc}")
+    try:
+        sock.bind(("127.0.0.1", 0))
+    except PermissionError as exc:
+        pytest.skip(f"local socket creation unavailable in this environment: {exc}")
+    finally:
+        sock.close()
+
+
 def test_successful_localhost_invocation_returns_governed_response():
     result = _handle()
     assert result["status"] == "RETURNED"
@@ -140,6 +154,7 @@ def test_localhost_only_binding_is_enforced():
 
 
 def test_real_localhost_post_invocation():
+    _skip_if_local_socket_unavailable()
     server = create_local_preview_server(host="127.0.0.1", port=0)
     thread = threading.Thread(target=server.handle_request)
     thread.start()

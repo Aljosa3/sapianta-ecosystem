@@ -1,8 +1,11 @@
 import http.client
 import json
+import socket
 import threading
 from copy import deepcopy
 from pathlib import Path
+
+import pytest
 
 from sapianta_system.runtime.chatgpt_bridge_v2 import bridge_chatgpt_conversation, create_chatgpt_bridge_request
 from sapianta_system.runtime.intent_transfer import create_governed_intent_transfer, create_intent_transfer_request
@@ -39,6 +42,19 @@ def _ingest(package=None, **overrides):
         transfer_identity=overrides.pop("transfer_identity", package.get("transfer_identity", "")),
     )
     return ingest_governed_intent_transfer(request)
+
+
+def _skip_if_local_socket_unavailable():
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except PermissionError as exc:
+        pytest.skip(f"local socket creation unavailable in this environment: {exc}")
+    try:
+        sock.bind(("127.0.0.1", 0))
+    except PermissionError as exc:
+        pytest.skip(f"local socket creation unavailable in this environment: {exc}")
+    finally:
+        sock.close()
 
 
 def test_deterministic_ingestion_receipt_generation_and_identity_stability():
@@ -119,6 +135,7 @@ def test_browser_companion_integration_and_localhost_only_endpoint():
 
 
 def test_local_runtime_ingestion_route_returns_preview_ready_response():
+    _skip_if_local_socket_unavailable()
     package = _package()
     server = create_local_preview_server(host="127.0.0.1", port=0)
     thread = threading.Thread(target=server.handle_request)
