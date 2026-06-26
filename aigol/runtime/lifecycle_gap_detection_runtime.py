@@ -200,7 +200,13 @@ def _detect_gap_items(*, turns: list[dict[str, Any]], expected_lifecycle: tuple[
         status = turn["workflow_status"]
         stage = turn["current_lifecycle_stage"]
         source_ref = turn["source_replay_reference"]
-        if status["workflow_state"] == FAILED_CLOSED or turn.get("fail_closed") is True:
+        failed_closed_detected = (
+            status["workflow_state"] == FAILED_CLOSED
+            or turn.get("fail_closed") is True
+            or turn.get("response_status") == FAILED_CLOSED
+            or turn.get("current_lifecycle_stage") == FAILED_CLOSED
+        )
+        if failed_closed_detected:
             gaps.append(_gap(turn, "FAIL_CLOSED_INTERRUPTION", "non-failed lifecycle state", "FAILED_CLOSED", source_ref))
         if stage not in stage_positions and stage != FAILED_CLOSED:
             gaps.append(_gap(turn, "LIFECYCLE_STAGE_DEVIATION", "certified lifecycle stage", stage, source_ref))
@@ -211,6 +217,15 @@ def _detect_gap_items(*, turns: list[dict[str, Any]], expected_lifecycle: tuple[
                     _gap(
                         turn,
                         "LIFECYCLE_STAGE_DEVIATION",
+                        f"stage at or after {expected_lifecycle[previous_position]}",
+                        stage,
+                        source_ref,
+                    )
+                )
+                gaps.append(
+                    _gap(
+                        turn,
+                        "FAIL_CLOSED_INTERRUPTION",
                         f"stage at or after {expected_lifecycle[previous_position]}",
                         stage,
                         source_ref,
@@ -321,6 +336,10 @@ def _evidence_artifact(
     evidence_status: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
+    observed_lifecycle = [turn["current_lifecycle_stage"] for turn in turns]
+    if any(item.get("gap_category") == "FAIL_CLOSED_INTERRUPTION" for item in gap_items):
+        if FAILED_CLOSED not in observed_lifecycle:
+            observed_lifecycle.append(FAILED_CLOSED)
     artifact = {
         "artifact_type": GAP_EVIDENCE_ARTIFACT_V1,
         "runtime_version": AIGOL_LIFECYCLE_GAP_DETECTION_RUNTIME_VERSION,
@@ -328,7 +347,7 @@ def _evidence_artifact(
         "detection_reference": detection_id,
         "domain_id": "AIGOL_CORE",
         "expected_lifecycle": list(expected_lifecycle),
-        "observed_lifecycle": [turn["current_lifecycle_stage"] for turn in turns],
+        "observed_lifecycle": observed_lifecycle,
         "observed_turns": deepcopy(turns),
         "evidence_items": [
             {

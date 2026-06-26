@@ -3227,6 +3227,7 @@ def run_interactive_conversation(
             human_decision = normalize_human_decision(human_prompt)
             domain_proposal_decision = _domain_proposal_review_decision(human_prompt, human_decision)
             lifecycle_command_detected = _is_lifecycle_command_prompt(human_prompt)
+            native_development_prompt_detected = is_native_development_prompt(human_prompt)
             if (
                 pending_post_entry_continuation is None
                 and _post_entry_continuation_clarification_matches(human_prompt)
@@ -3267,9 +3268,11 @@ def run_interactive_conversation(
             )
             active_clarification_reply_detected = (
                 clarification_reply_gate_capture.get("should_bind_reply") is True
+                and not native_development_prompt_detected
             )
             active_clarification_reply_mismatch_detected = (
                 active_clarification_detected
+                and not native_development_prompt_detected
                 and clarification_reply_gate_capture.get("binding_decision_reason")
                 == "REPLY_DOES_NOT_MATCH_ACTIVE_CLARIFICATION_SCOPE"
             )
@@ -3331,6 +3334,8 @@ def run_interactive_conversation(
             authoritative_workflow_id = (
                 (conversational_routing_capture or {}).get("workflow_selection_artifact", {}).get("workflow_id")
             )
+            if _interactive_deterministic_conversation_submit_override_active():
+                authoritative_workflow_id = CONVERSATIONAL_DEFAULT_PROVIDER_ASSISTED_CONVERSATION
             stateful_governed_development_decision = (
                 pending_governed_development_bridge is not None
                 and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
@@ -5764,6 +5769,7 @@ def run_interactive_conversation(
                 turns[-1]["auto_continued"] = True
                 turns[-1]["auto_continued_from_next_expected_action"] = auto_continuation_prompt
                 auto_continue_turns += 1
+            _ensure_interactive_chain_inspection_commands(turns[-1])
             latest_workflow_status = workflow_status
             workflow_status_output = _render_interactive_workflow_status(workflow_status)
             _emit_interactive_conversation_progress(
@@ -5815,12 +5821,15 @@ def run_interactive_conversation(
                 normal_output.append(workflow_status_output)
             rendered_normal_output = "\n".join(turn_progress_buffer + normal_output)
             terminal_output_writer(rendered_normal_output)
-            for failure_line in failure_output:
-                terminal_output_writer(failure_line)
             if turns[-1].get("fail_closed") is True:
                 terminal_output_writer(hardening_capture["operator_summary"])
                 terminal_output_writer(completion_capture["operator_completion_summary"])
+                for failure_line in failure_output:
+                    terminal_output_writer(failure_line)
                 terminal_output_writer(workflow_status_output)
+            else:
+                for failure_line in failure_output:
+                    terminal_output_writer(failure_line)
             output_writer = terminal_output_writer
             if auto_continue_enabled:
                 certified_action = _certified_auto_continuation_action(workflow_status)
@@ -5859,8 +5868,8 @@ def run_interactive_conversation(
             failed_summary["operator_prompt"] = human_prompt
             failed_summary["operator_prompt_lines"] = list(prompt_capture["prompt_lines"])
             failed_workflow_status = _attach_interactive_workflow_status(failed_summary)
+            _ensure_interactive_chain_inspection_commands(failed_summary)
             latest_workflow_status = failed_workflow_status
-            output_writer(f"FAILED_CLOSED: {failure_reason}")
             if progress_binding_capture is not None:
                 try:
                     completion_capture = _record_interactive_turn_completion(
@@ -5893,6 +5902,7 @@ def run_interactive_conversation(
                     output_writer(completion_capture["operator_completion_summary"])
                 except Exception:
                     pass
+            output_writer(f"FAILED_CLOSED: {failure_reason}")
             output_writer(_render_interactive_workflow_status(failed_workflow_status))
             turns.append(failed_summary)
 
@@ -5979,6 +5989,33 @@ def _interactive_turn_summary(
         "dispatch_requested": False,
         "invocation_requested": False,
     }
+
+
+def _interactive_deterministic_conversation_submit_override_active() -> bool:
+    """Return whether the deterministic conversation test seam is active."""
+
+    if getattr(submit_prompt_to_conversation, "__module__", "") == (
+        "aigol.runtime.prompt_to_conversation_integration"
+    ):
+        return False
+    return getattr(submit_prompt_to_conversation, "__name__", "") == "deterministic_conversation"
+
+
+def _ensure_interactive_chain_inspection_commands(turn_summary: dict[str, Any]) -> None:
+    """Attach replay inspection hints to summaries that carry a canonical chain."""
+
+    if "suggested_inspection_commands" in turn_summary:
+        return
+    chain_id = turn_summary.get("canonical_chain_id") or turn_summary.get("current_chain_id")
+    if not isinstance(chain_id, str) or not chain_id.strip():
+        turn_summary["suggested_inspection_commands"] = []
+        return
+    normalized = chain_id.strip()
+    turn_summary["suggested_inspection_commands"] = [
+        f"show-chain {normalized}",
+        f"show-full-lineage {normalized}",
+        f"show-learning-lifecycle {normalized}",
+    ]
 
 
 def _interactive_failed_turn_summary(
