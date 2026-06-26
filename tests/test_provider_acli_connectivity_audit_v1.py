@@ -13,16 +13,19 @@ def test_provider_acli_connectivity_audit_finds_expected_gaps(tmp_path):
 
     assert result["milestone_id"] == MILESTONE_ID
     assert result["final_verdict"] == "PROVIDER_ACLI_CONNECTIVITY_GAPS_FOUND"
-    assert "provider credential add openai" in result["missing_acli_registrations"]
-    assert "provider credential verify openai" in result["missing_acli_registrations"]
     assert "show provider credentials" in result["missing_acli_registrations"]
+    assert "show provider credential history" in result["missing_acli_registrations"]
+    assert "provider credential add openai" not in result["missing_acli_registrations"]
+    assert "provider credential verify openai" not in result["missing_acli_registrations"]
 
     report = load_json(Path(result["audit_report_path"]))
     rows = {row["runtime_capability"]: row for row in report["reachability_matrix"]}
     assert rows["provider status"]["acli_reachable"] is True
     assert rows["provider credentials"]["acli_reachable"] is True
-    assert rows["provider credential add"]["acli_reachable"] is False
-    assert rows["provider credential verify"]["acli_reachable"] is False
+    assert rows["provider credential add"]["acli_reachable"] is True
+    assert rows["provider credential verify"]["acli_reachable"] is True
+    assert rows["show provider credentials"]["acli_reachable"] is False
+    assert rows["show provider credential history"]["acli_reachable"] is False
     assert report["first_live_migration"]["vault_migration_ready"] is False
 
 

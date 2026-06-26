@@ -26,8 +26,8 @@
       "accepted": true,
       "accepted_prompts": 3,
       "total_prompts": 3,
-      "expected_route": "Human Prompt -> ACLI -> OCS Cognition",
-      "observed_summary": "All sampled cognition prompts selected OCS_LLM_COGNITION with OCS_COGNITION_INTAKE and did not directly invoke workers."
+      "expected_route": "Human Prompt -> ACLI -> OCS Cognition OR HIRR Clarification",
+      "observed_summary": "Sampled cognition prompts selected safe OCS or HIRR clarification handling and did not directly invoke workers."
     },
     "FREEFORM_APPROVAL": {
       "accepted": true,
@@ -47,8 +47,8 @@
       "accepted": true,
       "accepted_prompts": 3,
       "total_prompts": 3,
-      "expected_route": "Human Prompt -> ACLI -> OCS -> Clarification Required",
-      "observed_summary": "All sampled broad improvement prompts selected OCS_LLM_COGNITION and reached CLARIFICATION_REQUIRED without worker invocation."
+      "expected_route": "Human Prompt -> ACLI -> HIRR Clarification",
+      "observed_summary": "All sampled broad improvement prompts selected HUMAN_INTENT_CLARIFICATION_INTAKE and reached CLARIFICATION without worker invocation."
     },
     "FREEFORM_AMBIGUOUS_REQUEST": {
       "accepted": true,
@@ -98,9 +98,9 @@
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "I need a better way to evaluate employees.",
-      "acli_classification": "OCS_LLM_COGNITION",
-      "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "acli_classification": "HUMAN_INTENT_CLARIFICATION_INTAKE",
+      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
@@ -110,9 +110,9 @@
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "How should I improve our hiring process?",
-      "acli_classification": "OCS_LLM_COGNITION",
-      "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "acli_classification": "HUMAN_INTENT_CLARIFICATION_INTAKE",
+      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
@@ -122,9 +122,9 @@
     {
       "category": "FREEFORM_COGNITION",
       "original_human_prompt": "What would be the best architecture for an AI compliance system?",
-      "acli_classification": "OCS_LLM_COGNITION",
-      "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "acli_classification": "HUMAN_INTENT_CLARIFICATION_INTAKE",
+      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "ocs_decision": "NOT_INVOKED",
       "ppp_involvement": "NOT_INVOKED",
       "authorization_state": "NOT_CREATED",
       "worker_invocation_state": "NOT_INVOKED",
@@ -212,9 +212,9 @@
     {
       "category": "FREEFORM_CLARIFICATION",
       "original_human_prompt": "Help me improve the system.",
-      "acli_classification": "OCS_LLM_COGNITION",
-      "intake_selected": "OCS_COGNITION_INTAKE",
-      "ocs_decision": "CLARIFICATION_REQUIRED",
+      "acli_classification": "HUMAN_INTENT_CLARIFICATION_INTAKE",
+      "intake_selected": "INTAKE_NOT_APPLICABLE",
+      "ocs_decision": "NOT_INVOKED",
       "worker_invocation_state": "NOT_INVOKED",
       "final_terminal_artifact": "WAITING_FOR_OPERATOR"
     },

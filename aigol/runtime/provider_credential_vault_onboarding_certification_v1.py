@@ -134,18 +134,20 @@ def run_provider_credential_vault_onboarding_certification(
         "cert_root": str(root),
         "questions": {
             "how_operator_onboards_openai_credential": (
-                "No ACLI onboarding command is implemented; current onboarding is runtime API only."
+                "Use the ACLI provider credential onboarding command or the runtime API."
             ),
             "which_acli_command_performs_onboarding": acli_onboarding["command"],
             "when_provider_credentials_json_created": "When add_provider_credential writes the first vault record.",
-            "canonical_vault_initialization_workflow": "Runtime API add_provider_credential; ACLI workflow missing.",
+            "canonical_vault_initialization_workflow": (
+                "ACLI provider credential add command backed by runtime API add_provider_credential."
+            ),
             "canonical_storage_format": "JSON vault file outside repository with chmod 0600 and secret-bearing records.",
             "verify_successful_onboarding": "provider_credential_diagnostic or future ACLI verify command.",
             "verify_vault_not_env": scenario_3["credential_source"],
             "vault_functions_without_provider_env": scenario_4["provider_config_resolved_from_vault"],
             "first_live_certification_vault_only": scenario_5["provider_response_received"],
             "provider_credentials_json_created_automatically": False,
-            "manual_or_programmatic_creation": "programmatic runtime API; no ACLI command yet",
+            "manual_or_programmatic_creation": "operator ACLI command or programmatic runtime API",
         },
         "gap_analysis": _gap_analysis(acli_onboarding, scenario_5),
         "coverage_hash": coverage["artifact_hash"],

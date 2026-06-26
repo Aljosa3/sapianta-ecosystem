@@ -19,8 +19,12 @@ def test_provider_credential_vault_onboarding_certification_detects_fallback_dep
 
     root = Path(result["cert_root"])
     report = load_json(root / "certification_report" / "000_provider_credential_vault_onboarding_certification_report.json")
-    assert "ACLI provider credential onboarding command is not implemented." in report["gap_analysis"]
+    assert "ACLI provider credential onboarding command is not implemented." not in report["gap_analysis"]
     assert "First live cognition certification still requires environment credential preflight." in report["gap_analysis"]
+    assert report["questions"]["which_acli_command_performs_onboarding"].endswith(
+        "provider credential add openai"
+    )
+    assert "ACLI provider credential add command" in report["questions"]["canonical_vault_initialization_workflow"]
     assert report["questions"]["first_live_certification_vault_only"] is False
     assert report["questions"]["vault_functions_without_provider_env"] is True
 

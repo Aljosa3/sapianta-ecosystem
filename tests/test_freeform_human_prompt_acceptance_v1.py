@@ -210,7 +210,10 @@ def _development_accepted(record: dict[str, Any]) -> bool:
 
 
 def _cognition_accepted(record: dict[str, Any]) -> bool:
-    return record["classification"] == "OCS_LLM_COGNITION" and record["worker_invoked"] is False
+    return record["classification"] in {
+        "OCS_LLM_COGNITION",
+        "HUMAN_INTENT_CLARIFICATION_INTAKE",
+    } and record["worker_invoked"] is False
 
 
 def _approval_accepted(record: dict[str, Any]) -> bool:
@@ -232,8 +235,15 @@ def _domain_accepted(record: dict[str, Any]) -> bool:
 def _clarification_accepted(record: dict[str, Any]) -> bool:
     turn = record["turn"]
     return (
-        record["classification"] == "OCS_LLM_COGNITION"
-        and turn.get("clarification_required") is True
+        record["classification"]
+        in {
+            "OCS_LLM_COGNITION",
+            "HUMAN_INTENT_CLARIFICATION_INTAKE",
+        }
+        and (
+            turn.get("clarification_required") is True
+            or turn.get("workflow_status", {}).get("current_lifecycle_stage") == "CLARIFICATION"
+        )
         and record["worker_invoked"] is False
     )
 
@@ -290,7 +300,11 @@ def test_freeform_failures_preserve_governance_safety_boundaries(tmp_path, monke
     assert all(record["approval_bypassed"] is False for record in records)
     assert any(record["classification"] == "OCS_LLM_COGNITION" for record in records)
     assert all(record["classification"] != "DEFAULT_PROVIDER_ASSISTED_CONVERSATION" for record in records)
-    assert all(record["intake"] != "INTAKE_NOT_APPLICABLE" for record in records)
+    assert all(
+        record["intake"] != "INTAKE_NOT_APPLICABLE"
+        or record["classification"] == "HUMAN_INTENT_CLARIFICATION_INTAKE"
+        for record in records
+    )
 
 
 def test_unsupported_freeform_prompt_still_fails_closed(tmp_path, monkeypatch) -> None:

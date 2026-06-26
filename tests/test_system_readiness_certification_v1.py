@@ -15,8 +15,13 @@ def test_system_readiness_certification_produces_expected_packages(tmp_path) -> 
     result = run_system_readiness_certification_v1(replay_base=tmp_path / "system_readiness")
 
     assert result["milestone_id"] == MILESTONE_ID
-    assert result["final_verdict"] == "AIGOL_SYSTEM_READY"
-    assert all(result["assertions"].values())
+    assert result["final_verdict"] == "AIGOL_SYSTEM_GAPS_FOUND"
+    assert result["assertions"]["cognition_governance_verified"] is False
+    assert all(
+        value is True
+        for key, value in result["assertions"].items()
+        if key != "cognition_governance_verified"
+    )
     for key in (
         "readiness_coverage_report_path",
         "evidence_package_path",
@@ -33,7 +38,7 @@ def test_system_readiness_certifies_major_architectural_chains(tmp_path) -> None
 
     chains = readiness["major_chains_verified"]
     assert chains["human_intent_resolution"] is True
-    assert chains["cognition_governance"] is True
+    assert chains["cognition_governance"] is False
     assert chains["provider_governance"] is True
     assert chains["worker_governance"] is True
     assert chains["worker_selection"] is True
@@ -41,7 +46,8 @@ def test_system_readiness_certifies_major_architectural_chains(tmp_path) -> None
     assert chains["audit_review"] is True
     assert chains["executive_review"] is True
     assert chains["replay_derived_improvement"] is True
-    assert chains["all_major_chains_verified"] is True
+    assert chains["all_major_chains_verified"] is False
+    assert readiness["remaining_blockers"] == ["cognition_governance_verified"]
 
 
 def test_system_readiness_preserves_architectural_invariants(tmp_path) -> None:
