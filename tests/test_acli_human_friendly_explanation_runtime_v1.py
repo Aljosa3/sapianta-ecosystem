@@ -93,6 +93,11 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     rendered = render_acli_human_friendly_explanation(capture)
 
     assert artifact["artifact_type"] == ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1
+    assert artifact["ubtr_human_output_primary"] is True
+    assert artifact["ubtr_human_output_reference"].endswith("ubtr_human_output")
+    assert artifact["ubtr_human_output_hash"].startswith("sha256:")
+    assert artifact["primary_render_source"] == "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION"
+    assert artifact["compatibility_fallback_active"] is True
     assert artifact["visibility_only"] is True
     assert artifact["authority_granted"] is False
     assert artifact["provider_authority"] is False
@@ -102,6 +107,8 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     assert artifact["worker_invoked"] is False
     assert artifact["repository_mutation_performed"] is False
     assert "WHAT I UNDERSTOOD" in rendered
+    assert "GOVERNANCE STATE EXPLANATION" in rendered
+    assert "COMPATIBILITY OPERATOR DETAILS" in rendered
     assert "WHAT WILL HAPPEN" in rendered
     assert "WHAT WILL NOT HAPPEN" in rendered
     assert "WHAT REQUIRES YOUR APPROVAL" in rendered
@@ -131,6 +138,10 @@ def test_explanation_replay_reconstructs_and_detects_tampering(tmp_path) -> None
     assert replay["explanation_confidence"] == "GOVERNANCE_ONLY"
     assert replay["explanation_completeness"] == "COMPLETE"
     assert replay["render_mode"] == "DETERMINISTIC_ONLY"
+    assert replay["ubtr_human_output_primary"] is True
+    assert replay["ubtr_human_output_hash"].startswith("sha256:")
+    assert replay["compatibility_fallback_active"] is True
+    assert replay["primary_render_source"] == "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION"
     assert replay["explanation_transparency_artifact"]["provider_status"] == "DISABLED_BY_CONFIGURATION"
 
     replay_file = tmp_path / "human_friendly_explanation" / "000_acli_human_friendly_explanation_recorded.json"

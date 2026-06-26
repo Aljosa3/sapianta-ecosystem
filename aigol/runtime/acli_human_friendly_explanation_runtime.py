@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.governance_to_human_translation_runtime import translate_governance_to_human
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -45,7 +46,21 @@ def create_acli_human_friendly_explanation(
         proposal_capture=proposal,
         explanation_replay_reference=str(replay_path),
     )
-    rendered = render_acli_human_friendly_explanation_sections(sections)
+    compatibility_rendered = render_acli_human_friendly_explanation_sections(sections)
+    ubtr_output_capture = _create_ubtr_human_output_translation(
+        explanation_id=explanation_id,
+        workflow_id=workflow_id,
+        routing_visibility_artifact=routing,
+        universal_intake_artifact=intake,
+        proposal_capture=proposal,
+        explanation_replay_reference=str(replay_path),
+        created_at=created_at,
+        replay_dir=replay_path / "ubtr_human_output",
+    )
+    rendered = _compose_operator_output(
+        ubtr_output_capture=ubtr_output_capture,
+        compatibility_rendered=compatibility_rendered,
+    )
     transparency = _deterministic_transparency_artifact()
     rendered_operator_view = _append_explanation_transparency(
         rendered,
@@ -72,6 +87,24 @@ def create_acli_human_friendly_explanation(
         "proposal_reference": _proposal_reference(proposal),
         "proposal_hash": _proposal_hash(proposal),
         "sections": sections,
+        "ubtr_human_output_reference": (
+            ubtr_output_capture.get("translation_replay_reference")
+            if isinstance(ubtr_output_capture, dict)
+            else None
+        ),
+        "ubtr_human_output_hash": (
+            ubtr_output_capture.get("translation_artifact", {}).get("artifact_hash")
+            if isinstance(ubtr_output_capture, dict)
+            else None
+        ),
+        "ubtr_human_output_runtime": (
+            ubtr_output_capture.get("runtime_version") if isinstance(ubtr_output_capture, dict) else None
+        ),
+        "ubtr_human_output_primary": ubtr_output_capture is not None,
+        "ubtr_human_output_fallback_reason": None if ubtr_output_capture is not None else "UBTR_OUTPUT_TRANSLATION_FAILED",
+        "compatibility_explanation": compatibility_rendered,
+        "compatibility_explanation_hash": replay_hash(compatibility_rendered),
+        "compatibility_fallback_active": True,
         "rendered_explanation": rendered,
         "rendered_explanation_hash": replay_hash(rendered),
         "explanation_transparency_artifact": transparency,
@@ -88,6 +121,9 @@ def create_acli_human_friendly_explanation(
         "explanation_completeness": "COMPLETE",
         "fallback_reason": None,
         "render_mode": "DETERMINISTIC_ONLY",
+        "primary_render_source": "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION"
+        if ubtr_output_capture is not None
+        else "LEGACY_HUMAN_FRIENDLY_EXPLANATION",
         "escalation_level": "TIER_1",
         "rendered_operator_view": rendered_operator_view,
         "rendered_operator_view_hash": replay_hash(rendered_operator_view),
@@ -154,6 +190,8 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         raise FailClosedRuntimeError("ACLI explanation rendered output hash mismatch")
     if artifact.get("rendered_operator_view_hash") != replay_hash(artifact.get("rendered_operator_view")):
         raise FailClosedRuntimeError("ACLI explanation rendered operator view hash mismatch")
+    if artifact.get("compatibility_explanation_hash") != replay_hash(artifact.get("compatibility_explanation")):
+        raise FailClosedRuntimeError("ACLI explanation compatibility output hash mismatch")
     return {
         "milestone_id": MILESTONE_ID,
         "final_classification": FINAL_CLASSIFICATION,
@@ -164,6 +202,11 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         "sections": deepcopy(artifact["sections"]),
         "rendered_explanation": artifact["rendered_explanation"],
         "rendered_explanation_hash": artifact["rendered_explanation_hash"],
+        "ubtr_human_output_reference": artifact.get("ubtr_human_output_reference"),
+        "ubtr_human_output_hash": artifact.get("ubtr_human_output_hash"),
+        "ubtr_human_output_primary": artifact.get("ubtr_human_output_primary") is True,
+        "compatibility_fallback_active": artifact.get("compatibility_fallback_active") is True,
+        "primary_render_source": artifact.get("primary_render_source"),
         "explanation_transparency_artifact": deepcopy(artifact["explanation_transparency_artifact"]),
         "rendered_operator_view": artifact["rendered_operator_view"],
         "rendered_operator_view_hash": artifact["rendered_operator_view_hash"],
@@ -348,6 +391,96 @@ def _humanize_status(value: str) -> str:
     return value.replace("_", " ").title()
 
 
+def _create_ubtr_human_output_translation(
+    *,
+    explanation_id: str,
+    workflow_id: str,
+    routing_visibility_artifact: dict[str, Any],
+    universal_intake_artifact: dict[str, Any],
+    proposal_capture: dict[str, Any] | None,
+    explanation_replay_reference: str,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any] | None:
+    try:
+        return translate_governance_to_human(
+            translation_request_id=f"{_require_string(explanation_id, 'explanation_id')}:UBTR-HUMAN-OUTPUT",
+            governance_state=_governance_state_for_output(
+                workflow_id=workflow_id,
+                routing_visibility_artifact=routing_visibility_artifact,
+                universal_intake_artifact=universal_intake_artifact,
+            ),
+            replay_evidence={
+                "replay_reference": _require_string(
+                    explanation_replay_reference,
+                    "explanation_replay_reference",
+                ),
+                "routing_visibility_hash": routing_visibility_artifact.get("artifact_hash"),
+                "universal_intake_hash": universal_intake_artifact.get("artifact_hash"),
+            },
+            proposal_state=_proposal_state_for_output(proposal_capture),
+            approval_state={"approval_status": "PENDING_APPROVAL"},
+            created_at=created_at,
+            replay_dir=replay_dir,
+        )
+    except FailClosedRuntimeError:
+        return None
+
+
+def _governance_state_for_output(
+    *,
+    workflow_id: str,
+    routing_visibility_artifact: dict[str, Any],
+    universal_intake_artifact: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "workflow": _require_string(workflow_id, "workflow_id"),
+        "workflow_id": _require_string(workflow_id, "workflow_id"),
+        "workflow_state": "WAITING_FOR_APPROVAL",
+        "intent_family": _string_or_default(universal_intake_artifact.get("intake_classification"), "UNKNOWN_INTENT"),
+        "decision": "OPERATOR_EXPLANATION_RENDERED",
+        "approval_required": True,
+        "routing_status": routing_visibility_artifact.get("routing_status"),
+        "routing_confidence": routing_visibility_artifact.get("routing_confidence"),
+    }
+
+
+def _proposal_state_for_output(proposal_capture: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(proposal_capture, dict):
+        return {}
+    proposal = proposal_capture.get("proposal_artifact")
+    proposal = proposal if isinstance(proposal, dict) else {}
+    return {
+        "proposal_id": proposal.get("proposal_id"),
+        "proposal_hash": proposal.get("artifact_hash"),
+        "artifact_identifier": proposal.get("artifact_identifier"),
+        "target_paths": proposal_capture.get("target_paths") if isinstance(proposal_capture.get("target_paths"), list) else [],
+        "replay_reference": proposal_capture.get("replay_reference"),
+    }
+
+
+def _compose_operator_output(
+    *,
+    ubtr_output_capture: dict[str, Any] | None,
+    compatibility_rendered: str,
+) -> str:
+    if not isinstance(ubtr_output_capture, dict):
+        return compatibility_rendered
+    ubtr_rendered = ubtr_output_capture.get("rendered_explanation")
+    if not isinstance(ubtr_rendered, str) or not ubtr_rendered.strip():
+        return compatibility_rendered
+    return "\n".join(
+        [
+            ubtr_rendered,
+            "",
+            "================================",
+            "COMPATIBILITY OPERATOR DETAILS",
+            "================================",
+            compatibility_rendered,
+        ]
+    )
+
+
 def _build_sections(
     *,
     human_prompt: str,
@@ -476,6 +609,12 @@ def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"ACLI explanation {field_name} is required")
     return value.strip()
+
+
+def _string_or_default(value: Any, default: str) -> str:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return default
 
 
 def _verify_artifact_hash(artifact: dict[str, Any]) -> None:
