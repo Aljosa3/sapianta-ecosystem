@@ -64,9 +64,35 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert decision["universal_translation_hash"].startswith("sha256:")
     assert decision["universal_translation_direction"] == HUMAN_TO_GOVERNANCE
     assert capture["universal_translation_hash"] == decision["universal_translation_hash"]
+    assert decision["canonical_semantic_artifact_reference"].endswith("canonical_semantic_artifact")
+    assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
 
     reconstructed = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
     assert reconstructed["universal_translation_hash"] == decision["universal_translation_hash"]
+    assert reconstructed["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
+    assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+
+
+def test_conversational_routing_keeps_compatibility_fallback_when_semantics_are_ambiguous(tmp_path) -> None:
+    capture = route_conversational_cli_intent(
+        routing_id="ROUTE-UNIVERSAL-AMBIGUOUS-001",
+        prompt_id="PROMPT-AMBIGUOUS-001",
+        human_prompt="Create a governance artifact for the new runtime",
+        canonical_chain_id="CHAIN-AMBIGUOUS-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "routing",
+    )
+
+    decision = capture["routing_decision_artifact"]
+
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert decision["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
 
 
 def test_human_request_integration_wraps_translation_then_hirr_routing(tmp_path) -> None:

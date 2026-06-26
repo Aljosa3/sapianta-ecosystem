@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from aigol.runtime.canonical_semantic_artifact_runtime import create_canonical_semantic_artifact_from_translation
 from aigol.runtime.human_execution_intent_detection import (
     GENERIC_GOVERNED_ARTIFACT_CREATION,
     GENERIC_GOVERNED_DOMAIN_CREATION,
@@ -110,6 +111,7 @@ def route_conversational_cli_intent(
 
     replay_path = Path(replay_dir)
     universal_translation_capture: dict[str, Any] | None = None
+    canonical_semantic_capture: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
         universal_translation_capture = translate_human_to_governance(
@@ -120,7 +122,17 @@ def route_conversational_cli_intent(
             session_context={"canonical_chain_id": canonical_chain_id, "prompt_id": prompt_id},
             available_workflows=[entry["workflow_id"] for entry in workflow_registry()],
         )
-        analysis = _classify_workflow(human_prompt)
+        canonical_semantic_capture = create_canonical_semantic_artifact_from_translation(
+            semantic_artifact_id=f"{routing_id}:CANONICAL-SEMANTIC",
+            translation_artifact=universal_translation_capture["translation_artifact"],
+            conversation_id=canonical_chain_id,
+            workflow_id=None,
+            created_at=created_at,
+            replay_dir=replay_path / "canonical_semantic_artifact",
+        )
+        analysis = _classify_workflow_from_canonical_semantic_artifact(canonical_semantic_capture) or _classify_workflow(
+            human_prompt
+        )
         decision = _routing_decision_artifact(
             routing_id=routing_id,
             prompt_id=prompt_id,
@@ -130,6 +142,7 @@ def route_conversational_cli_intent(
             replay_reference=str(replay_path),
             analysis=analysis,
             universal_translation_capture=universal_translation_capture,
+            canonical_semantic_capture=canonical_semantic_capture,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -205,6 +218,9 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "replay_visible": True,
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
+        "semantic_routing_source": decision.get("semantic_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
@@ -726,6 +742,54 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
     if human_intent.get("intake_matched") is True:
         return _human_intent_analysis(human_intent)
     return _analysis(DEFAULT_PROVIDER_ASSISTED_CONVERSATION, "LOW", ["provider", "conversation", "fallback"])
+
+
+def _classify_workflow_from_canonical_semantic_artifact(
+    canonical_semantic_capture: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Use UBTR semantic artifact as first-class routing input when decisive."""
+
+    if not isinstance(canonical_semantic_capture, dict):
+        return None
+    artifact = canonical_semantic_capture.get("semantic_artifact")
+    if not isinstance(artifact, dict):
+        return None
+    workflow_identity = artifact.get("workflow_identity")
+    semantic_identity = artifact.get("semantic_identity")
+    ambiguity = artifact.get("ambiguity")
+    if not isinstance(workflow_identity, dict) or not isinstance(semantic_identity, dict):
+        return None
+    if isinstance(ambiguity, dict) and ambiguity.get("clarification_required") is True:
+        return None
+    workflow_id = workflow_identity.get("workflow_id")
+    if workflow_id != GOVERNED_DEVELOPMENT_WORKFLOW:
+        return None
+    domain = semantic_identity.get("domain")
+    actions = semantic_identity.get("requested_actions")
+    action_set = {action for action in actions if isinstance(action, str)} if isinstance(actions, list) else set()
+    if domain != "GOVERNANCE" or not action_set.intersection({"CREATE", "UPDATE", "IMPLEMENT"}):
+        return None
+    technical_projection = artifact.get("technical_projection")
+    normalized_intent = (
+        technical_projection.get("normalized_intent")
+        if isinstance(technical_projection, dict)
+        else {}
+    )
+    normalized_text = (
+        normalized_intent.get("normalized_text")
+        if isinstance(normalized_intent, dict)
+        else None
+    )
+    if not isinstance(normalized_text, str) or not _is_governance_artifact_creation_prompt(normalized_text):
+        return None
+    matched_terms = ["ubtr", "canonical-semantic-artifact", "governed-development"]
+    matched_terms.append(str(domain).lower())
+    matched_terms.extend(sorted(action.lower() for action in action_set))
+    return _analysis(
+        GOVERNED_DEVELOPMENT_WORKFLOW,
+        str(artifact.get("confidence", {}).get("semantic_confidence") or "HIGH"),
+        matched_terms,
+    )
 
 
 def _human_intent_analysis(intake: dict[str, Any]) -> dict[str, Any]:
@@ -1294,12 +1358,16 @@ def _routing_decision_artifact(
     replay_reference: str,
     analysis: dict[str, Any],
     universal_translation_capture: dict[str, Any] | None,
+    canonical_semantic_capture: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
     translation_artifact = (
         universal_translation_capture.get("translation_artifact")
         if isinstance(universal_translation_capture, dict)
         else None
+    )
+    semantic_artifact = (
+        canonical_semantic_capture.get("semantic_artifact") if isinstance(canonical_semantic_capture, dict) else None
     )
     artifact = {
         "artifact_type": CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1,
@@ -1336,6 +1404,23 @@ def _routing_decision_artifact(
         ),
         "universal_translation_confidence": (
             translation_artifact.get("confidence") if isinstance(translation_artifact, dict) else None
+        ),
+        "canonical_semantic_artifact_reference": (
+            canonical_semantic_capture.get("semantic_replay_reference")
+            if isinstance(canonical_semantic_capture, dict)
+            else None
+        ),
+        "canonical_semantic_artifact_hash": (
+            semantic_artifact.get("artifact_hash") if isinstance(semantic_artifact, dict) else None
+        ),
+        "canonical_semantic_artifact_type": (
+            semantic_artifact.get("artifact_type") if isinstance(semantic_artifact, dict) else None
+        ),
+        "semantic_routing_source": (
+            "CANONICAL_SEMANTIC_ARTIFACT"
+            if isinstance(semantic_artifact, dict)
+            and analysis["matched_terms"][:2] == ["ubtr", "canonical-semantic-artifact"]
+            else "COMPATIBILITY_FALLBACK"
         ),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1387,6 +1472,10 @@ def _workflow_selection_artifact(
         "universal_translation_hash": decision.get("universal_translation_hash"),
         "universal_translation_direction": decision.get("universal_translation_direction"),
         "universal_translation_confidence": decision.get("universal_translation_confidence"),
+        "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
+        "canonical_semantic_artifact_type": decision.get("canonical_semantic_artifact_type"),
+        "semantic_routing_source": decision.get("semantic_routing_source"),
         "coverage": _coverage(),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1422,6 +1511,9 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "workflow_id": selection["workflow_id"],
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
+        "semantic_routing_source": decision.get("semantic_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
@@ -1469,6 +1561,10 @@ def _failed_decision_artifact(
         "universal_translation_hash": None,
         "universal_translation_direction": None,
         "universal_translation_confidence": None,
+        "canonical_semantic_artifact_reference": None,
+        "canonical_semantic_artifact_hash": None,
+        "canonical_semantic_artifact_type": None,
+        "semantic_routing_source": None,
         "created_at": created_at if isinstance(created_at, str) else "",
         "replay_reference": replay_reference,
         "replay_visible": True,
@@ -1526,6 +1622,9 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "conversational_cli_routing_replay_reference": str(replay_path),
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
+        "semantic_routing_source": decision.get("semantic_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
