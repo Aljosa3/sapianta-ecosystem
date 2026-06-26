@@ -267,3 +267,42 @@ def test_ocs_acli_proposal_only_prompt_stops_before_ppp(tmp_path, monkeypatch) -
     assert turn["ppp_invoked"] is False
     assert turn["worker_invoked"] is False
     assert proposal_adapter.calls == 0
+
+
+def test_proposal_only_governance_document_prompt_invokes_ocs_without_execution(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    _install_fake_ocs_provider(monkeypatch)
+    proposal_adapter = _install_fake_proposal_adapter(monkeypatch)
+    output: list[str] = []
+
+    result = run_interactive_conversation(
+        _args(tmp_path, session_id="SESSION-ACLI-OCS-PROPOSAL-ONLY-ESCALATION"),
+        input_func=_input_sequence(
+            [
+                "Create governance document explaining ACLI approval behavior for an operator.",
+                "exit",
+            ]
+        ),
+        output_func=output.append,
+    )
+
+    turn = result["turns"][0]
+
+    assert result["failed_turns"] == 0
+    assert turn["conversational_workflow_id"] == "OCS_LLM_COGNITION"
+    assert turn["provider_invoked"] is True
+    assert turn["provider_ids"] == ["openai", "openai-comparison"]
+    assert turn["ocs_proposal_only_preserved"] is True
+    assert turn["proposal_only_classification"] is True
+    assert turn["ocs_escalation_reason"] == "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION"
+    assert turn["ocs_escalation_confidence"] == "HIGH"
+    assert turn["ocs_provider_selection"] == "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER"
+    assert turn["ocs_to_ppp_continuation_status"] is None
+    assert turn["ppp_route_status"] is None
+    assert turn["ppp_invoked"] is False
+    assert turn["worker_invoked"] is False
+    assert turn["execution_requested"] is False
+    assert turn["authorization_created"] is False
+    assert proposal_adapter.calls == 0

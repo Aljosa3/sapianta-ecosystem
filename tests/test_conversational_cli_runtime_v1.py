@@ -515,6 +515,58 @@ def test_ocs_product_cognition_prompts_generalize_with_appended_context(tmp_path
     assert replay["workflow_id"] == OCS_LLM_COGNITION
 
 
+@pytest.mark.parametrize(
+    ("prompt", "reason", "confidence"),
+    [
+        (
+            "Create governance document explaining ACLI approval behavior for an operator.",
+            "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION",
+            "HIGH",
+        ),
+        (
+            "Explain ACLI approval, replay, validation, and execution behavior for a non-technical operator.",
+            "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
+            "MEDIUM",
+        ),
+        (
+            "Compare provider options for proposal-only cognition.",
+            "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
+            "MEDIUM",
+        ),
+        (
+            "Želim samo pripraviti governance dokument. Ne želim izvajanja workerjev ali zapisovanja datotek.",
+            "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION",
+            "HIGH",
+        ),
+    ],
+)
+def test_proposal_only_prompts_route_to_ocs_with_replay_visible_escalation_metadata(
+    tmp_path,
+    prompt: str,
+    reason: str,
+    confidence: str,
+) -> None:
+    capture = _route(tmp_path, prompt)
+    decision = capture["routing_decision_artifact"]
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["workflow_id"] == OCS_LLM_COGNITION
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["proposal_only_classification"] is True
+    assert capture["ocs_escalation_reason"] == reason
+    assert capture["ocs_escalation_confidence"] == confidence
+    assert capture["ocs_provider_selection"] == "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER"
+    assert decision["proposal_only_classification"] is True
+    assert selection["proposal_only_classification"] is True
+    assert replay["proposal_only_classification"] is True
+    assert replay["ocs_escalation_reason"] == reason
+    assert replay["ocs_escalation_confidence"] == confidence
+    assert replay["provider_invoked"] is False
+    assert replay["worker_invoked"] is False
+    assert replay["execution_requested"] is False
+
+
 def test_conversational_routing_records_coverage(tmp_path) -> None:
     capture = _route(tmp_path, "Show latest replay chain.")
     coverage = capture["coverage"]

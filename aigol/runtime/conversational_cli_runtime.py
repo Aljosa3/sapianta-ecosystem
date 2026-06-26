@@ -205,6 +205,10 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "replay_visible": True,
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": decision.get("ocs_provider_selection"),
+        "proposal_only_classification": decision.get("proposal_only_classification") is True,
         "replay_artifact_count": len(wrappers),
         "provider_invoked": False,
         "worker_invoked": False,
@@ -563,6 +567,14 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(CREATE_DOMAIN_TRADING, "HIGH", ["create", "trading", "domain"])
     if "create" in normalized and "marketing" in normalized and "domain" in normalized:
         return _analysis(CREATE_DOMAIN_MARKETING, "HIGH", ["create", "marketing", "domain"])
+    proposal_only_ocs_escalation = _proposal_only_ocs_escalation(normalized)
+    if proposal_only_ocs_escalation:
+        return _analysis(
+            OCS_LLM_COGNITION,
+            proposal_only_ocs_escalation["confidence"],
+            proposal_only_ocs_escalation["matched_terms"],
+            ocs_escalation=proposal_only_ocs_escalation,
+        )
     if _is_improvement_proposal_runtime_prompt(normalized):
         return _analysis(IMPROVEMENT_PROPOSAL_RUNTIME, "HIGH", ["improvement", "proposal", "governance"])
     if _is_proposal_runtime_prompt(normalized):
@@ -731,6 +743,7 @@ def _analysis(
     matched_terms: list[str],
     *,
     human_intent_intake: dict[str, Any] | None = None,
+    ocs_escalation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     entry = _workflow_by_id(workflow_id)
     return {
@@ -749,6 +762,7 @@ def _analysis(
         "expected_workflow_targets": deepcopy(human_intent_intake.get("expected_workflow_targets", []))
         if human_intent_intake
         else [],
+        "ocs_escalation": deepcopy(ocs_escalation) if ocs_escalation else None,
     }
 
 
@@ -803,6 +817,130 @@ def _provider_onboarding_matched_terms(normalized: str) -> list[str]:
 
 def _normalize_slovenian(value: str) -> str:
     return value.translate(str.maketrans({"č": "c", "ć": "c", "š": "s", "ž": "z", "đ": "d"}))
+
+
+def _proposal_only_ocs_escalation(normalized: str) -> dict[str, Any] | None:
+    normalized_ascii = _normalize_slovenian(normalized)
+    no_execution_markers = (
+        "proposal-only",
+        "proposal only",
+        "advisory only",
+        "conversation only",
+        "discussion only",
+        "no execution",
+        "do not execute",
+        "do not invoke workers",
+        "no workers",
+        "without workers",
+        "without worker",
+        "without writing files",
+        "do not write files",
+        "no file writes",
+        "no repository mutation",
+        "no mutation",
+        "samo pogovor",
+        "samo pri pogovoru",
+        "samo pripraviti",
+        "brez izvajanja",
+        "brez izvajanja workerjev",
+        "ne zelim izvajanja workerjev",
+        "brez zapisovanja datotek",
+        "ne zelim zapisovanja datotek",
+    )
+    has_no_execution_marker = any(marker in normalized_ascii for marker in no_execution_markers)
+    execution_markers = (
+        "enter governed execution",
+        "continue to ppp",
+        "continue into ppp",
+        "execution required",
+        "requires execution",
+        "run worker",
+        "invoke worker",
+        "write file",
+        "write files",
+        "modify repository",
+        "mutate repository",
+        "commit ",
+    )
+    if any(marker in normalized_ascii for marker in execution_markers) and not has_no_execution_marker:
+        return None
+
+    governance_document_markers = (
+        "create governance document",
+        "create a governance document",
+        "draft governance document",
+        "draft a governance document",
+        "prepare governance document",
+        "prepare a governance document",
+        "generate governance document",
+        "generate a governance document",
+        "pripraviti governance dokument",
+        "pripravi governance dokument",
+    )
+    explicit_governance_artifact_with_no_execution = (
+        has_no_execution_marker
+        and any(term in normalized_ascii for term in ("governance artifact", "governance artefakt"))
+    )
+    if any(marker in normalized_ascii for marker in governance_document_markers) or explicit_governance_artifact_with_no_execution:
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION",
+            "confidence": "HIGH",
+            "matched_terms": ["proposal-only", "governance", "document", "ocs-cognition"],
+            "proposal_only_classification": True,
+            "provider_selection": "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER",
+        }
+
+    implementation_proposal_markers = (
+        "generate implementation proposal",
+        "create implementation proposal",
+        "draft implementation proposal",
+        "prepare implementation proposal",
+        "implementation proposal",
+    )
+    if any(marker in normalized_ascii for marker in implementation_proposal_markers):
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_IMPLEMENTATION_PROPOSAL_COGNITION",
+            "confidence": "HIGH",
+            "matched_terms": ["proposal-only", "implementation-proposal", "ocs-cognition"],
+            "proposal_only_classification": True,
+            "provider_selection": "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER",
+        }
+
+    proposal_actions = (
+        "summarize",
+        "explain",
+        "compare",
+        "brainstorm",
+        "povzemi",
+        "razlozi",
+        "primerjaj",
+    )
+    governed_subjects = (
+        "governance",
+        "approval",
+        "replay",
+        "validation",
+        "execution",
+        "acli",
+        "ocs",
+        "ppp",
+        "sapianta",
+        "aigol",
+        "provider",
+        "workflow",
+        "worker",
+    )
+    if any(action in normalized_ascii for action in proposal_actions) and any(
+        subject in normalized_ascii for subject in governed_subjects
+    ):
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
+            "confidence": "MEDIUM",
+            "matched_terms": ["proposal-only", "analysis", "ocs-cognition"],
+            "proposal_only_classification": True,
+            "provider_selection": "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER",
+        }
+    return None
 
 
 def _tokenize_provider_onboarding_prompt(value: str) -> list[str]:
@@ -1178,6 +1316,13 @@ def _routing_decision_artifact(
         "intent_family": analysis.get("intent_family"),
         "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
         "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
+        "ocs_escalation_reason": (analysis.get("ocs_escalation") or {}).get("escalation_reason"),
+        "ocs_escalation_confidence": (analysis.get("ocs_escalation") or {}).get("confidence"),
+        "ocs_provider_selection": (analysis.get("ocs_escalation") or {}).get("provider_selection"),
+        "proposal_only_classification": (analysis.get("ocs_escalation") or {}).get(
+            "proposal_only_classification"
+        )
+        is True,
         "universal_translation_reference": (
             universal_translation_capture.get("translation_replay_reference")
             if isinstance(universal_translation_capture, dict)
@@ -1234,6 +1379,10 @@ def _workflow_selection_artifact(
         "intent_family": analysis.get("intent_family"),
         "clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
         "expected_workflow_targets": deepcopy(analysis.get("expected_workflow_targets", [])),
+        "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": decision.get("ocs_provider_selection"),
+        "proposal_only_classification": decision.get("proposal_only_classification") is True,
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
         "universal_translation_direction": decision.get("universal_translation_direction"),
@@ -1273,6 +1422,10 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "workflow_id": selection["workflow_id"],
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": decision.get("ocs_provider_selection"),
+        "proposal_only_classification": decision.get("proposal_only_classification") is True,
         "replay_visible": True,
         "provider_invoked": False,
         "worker_invoked": False,
@@ -1373,6 +1526,10 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "conversational_cli_routing_replay_reference": str(replay_path),
         "universal_translation_reference": decision.get("universal_translation_reference"),
         "universal_translation_hash": decision.get("universal_translation_hash"),
+        "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": decision.get("ocs_provider_selection"),
+        "proposal_only_classification": decision.get("proposal_only_classification") is True,
         "coverage": deepcopy(selection.get("coverage", _coverage())),
         "fail_closed": returned["routing_status"] == FAILED_CLOSED,
         "failure_reason": returned.get("failure_reason"),

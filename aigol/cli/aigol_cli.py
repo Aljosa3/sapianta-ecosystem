@@ -7400,6 +7400,10 @@ def _interactive_conversational_cli_turn_summary(
         "conversational_cli_routing_replay_reference": conversational_routing_capture.get(
             "conversational_cli_routing_replay_reference"
         ),
+        "ocs_escalation_reason": conversational_routing_capture.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": conversational_routing_capture.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": conversational_routing_capture.get("ocs_provider_selection"),
+        "proposal_only_classification": conversational_routing_capture.get("proposal_only_classification") is True,
         "existing_runtime": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
             "existing_runtime"
         ),
@@ -7579,6 +7583,10 @@ def _interactive_ocs_llm_cognition_turn_summary(
         "conversational_cli_routing_replay_reference": conversational_routing_capture.get(
             "conversational_cli_routing_replay_reference"
         ),
+        "ocs_escalation_reason": conversational_routing_capture.get("ocs_escalation_reason"),
+        "ocs_escalation_confidence": conversational_routing_capture.get("ocs_escalation_confidence"),
+        "ocs_provider_selection": conversational_routing_capture.get("ocs_provider_selection"),
+        "proposal_only_classification": conversational_routing_capture.get("proposal_only_classification") is True,
         "existing_runtime": conversational_routing_capture.get("workflow_selection_artifact", {}).get(
             "existing_runtime"
         ),
