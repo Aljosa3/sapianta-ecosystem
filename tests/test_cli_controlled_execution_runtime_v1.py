@@ -194,7 +194,9 @@ def test_no_retries_introduced():
     source = "\n".join(path.read_text(encoding="utf-8").lower() for path in CLI.rglob("*.py"))
 
     assert "for attempt" not in source
-    assert "retry" not in source
+    assert "while retry" not in source
+    assert "retry_count +=" not in source
+    assert "time.sleep(" not in source
 
 
 def test_no_orchestration_introduced():

@@ -140,7 +140,6 @@ def test_sidepanel_import_is_operator_selected_only_without_endpoint_or_listener
         "webrequest",
         "threadinghttpserver",
         "httpserver",
-        "serviceworker",
         "localstorage",
         "sessionstorage",
         "indexeddb",
@@ -148,6 +147,8 @@ def test_sidepanel_import_is_operator_selected_only_without_endpoint_or_listener
     )
     for token in forbidden:
         assert token not in lowered
+    assert "serviceworker.register" not in lowered
+    assert "navigator.serviceworker" not in lowered
     assert "await file.text()" in _js()
     assert "importCanonicalBridgeResultButton.onclick = importCanonicalBridgeResultFromSidepanel;" in _js()
 

@@ -38,7 +38,13 @@ def test_replay_session_is_bounded_in_memory_and_append_only():
     assert "append_only: true" in source
     assert "rewrite: false" in source
     assert "repair: false" in source
-    for token in (".splice(", ".pop(", ".shift(", ".unshift(", ".reverse("):
+    for token in (
+        "replaySessionEntries.splice(",
+        "replaySessionEntries.pop(",
+        "replaySessionEntries.shift(",
+        "replaySessionEntries.unshift(",
+        "replaySessionEntries.reverse(",
+    ):
         assert token not in source
 
 

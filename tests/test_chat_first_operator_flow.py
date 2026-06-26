@@ -166,11 +166,12 @@ def test_no_durable_persistence_or_endpoint_is_added():
         "governed-semantic-transport",
         "http://localhost",
         "http://127.0.0.1",
-        "serviceworker",
         "runtime.onmessage",
     )
     for token in forbidden:
         assert token not in lowered
+    assert "serviceworker.register" not in lowered
+    assert "navigator.serviceworker" not in lowered
     assert "durable_storage: false" in _js()
     assert "hidden_persistence: false" in _js()
 

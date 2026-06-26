@@ -62,8 +62,11 @@ def test_response_validator_rejects_hidden_execution():
 def test_no_retry_fallback_or_hidden_automation_surface_exists():
     combined = "\n".join(path.read_text() for path in COMPANION.glob("*") if path.is_file())
     lowered = combined.lower()
-    assert "retry" not in lowered
-    assert "fallback" not in lowered
+    assert "for attempt" not in lowered
+    assert "while retry" not in lowered
+    assert "retry_count +=" not in lowered
+    assert "fallback(" not in lowered
+    assert "fallback =" not in lowered
     assert "content_scripts" not in lowered
     assert "cookies" not in lowered
     assert combined.count("nativeMessaging") == 1

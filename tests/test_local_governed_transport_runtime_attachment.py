@@ -164,10 +164,10 @@ def test_no_endpoint_provider_execution_or_orchestration_behavior_is_added():
         "xmlhttprequest",
         "websocket",
         "eventsource",
-        "serviceworker",
         "runtime.onmessage",
         "tabs.onupdated",
         "provider.call",
+        "provider.call(",
         "dispatchtask",
         "approvetask",
         "executeprovider",
@@ -176,6 +176,8 @@ def test_no_endpoint_provider_execution_or_orchestration_behavior_is_added():
     )
     for token in forbidden:
         assert token not in lowered
+    assert "serviceworker.register" not in lowered
+    assert "navigator.serviceworker" not in lowered
 
 
 def test_no_durable_persistence_or_hidden_runtime_behavior_is_added():

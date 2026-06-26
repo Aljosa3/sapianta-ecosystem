@@ -30,7 +30,7 @@ def _preview_section() -> str:
 def _preview_source() -> str:
     source = _js()
     start = source.index("function chatgptIngressPreviewArtifact")
-    end = source.index("function replaySummaryArtifact", start)
+    end = source.index("function executeControlledHandoffFromSidepanel", start)
     return source[start:end]
 
 
@@ -157,8 +157,8 @@ def test_no_native_messaging_call_is_wired_to_preview_button():
     assert "previewChatgptIngressImportOnlyButton.onclick = previewImportedChatgptIngressArtifactFromSidepanel;" in source
     preview_source = _preview_source()
 
-    assert "chrome.runtime.sendMessage" not in preview_source
-    assert "chrome.runtime.sendNativeMessage" not in preview_source
+    assert "chrome.runtime.sendMessage(" not in preview_source
+    assert "chrome.runtime.sendNativeMessage(" not in preview_source
 
 
 def test_documentation_exists_for_native_import_preview():

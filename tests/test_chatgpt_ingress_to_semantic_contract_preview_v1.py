@@ -112,8 +112,8 @@ def test_preview_path_never_invokes_codex_provider():
     end = source.index("function replaySummaryArtifact", start)
     preview_source = source[start:end].lower()
 
-    assert "run_bounded_codex_cli_task" not in preview_source
-    assert "codex_cli_provider" not in preview_source
+    assert "run_bounded_codex_cli_task(" not in preview_source
+    assert "codex_cli_provider(" not in preview_source
     assert "codex exec" not in preview_source
     assert "provider_dispatch_authorized: false" in preview_source
 

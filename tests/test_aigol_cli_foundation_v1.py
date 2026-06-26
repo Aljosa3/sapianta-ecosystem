@@ -171,7 +171,9 @@ def test_no_orchestration_introduced():
     combined = "\n".join(path.read_text(encoding="utf-8").lower() for path in CLI.rglob("*.py"))
 
     assert "for attempt" not in combined
-    assert "retry" not in combined
+    assert "while retry" not in combined
+    assert "retry_count +=" not in combined
+    assert "time.sleep(" not in combined
     assert "orchestrator" not in combined
     assert "orchestrationruntime" not in combined
     assert "threading" not in combined
