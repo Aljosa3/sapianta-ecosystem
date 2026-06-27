@@ -67,12 +67,21 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert decision["canonical_semantic_artifact_reference"].endswith("canonical_semantic_artifact")
     assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
     assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["ubtr_semantic_cognition_orchestration_reference"].endswith(
+        "ubtr_semantic_cognition_orchestration"
+    )
+    assert decision["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
+    assert decision["ubtr_semantic_cognition_reasons"] == []
+    assert decision["ubtr_ocs_cognition_request_hash"] is None
     assert capture["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
+    assert capture["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
 
     reconstructed = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
     assert reconstructed["universal_translation_hash"] == decision["universal_translation_hash"]
     assert reconstructed["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
     assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
+    assert reconstructed["ubtr_ocs_cognition_request_hash"] is None
 
 
 def test_conversational_routing_keeps_compatibility_fallback_when_semantics_are_ambiguous(tmp_path) -> None:
@@ -90,6 +99,9 @@ def test_conversational_routing_keeps_compatibility_fallback_when_semantics_are_
     assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
     assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
     assert decision["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert decision["ubtr_semantic_cognition_decision"] == "OCS_COGNITION_REQUESTED"
+    assert "GOVERNANCE_TARGET_ENTITY_MISSING" in decision["ubtr_semantic_cognition_reasons"]
+    assert decision["ubtr_ocs_cognition_request_hash"].startswith("sha256:")
     assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False

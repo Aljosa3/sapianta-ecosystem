@@ -32,6 +32,9 @@ from aigol.runtime.post_execution_replay_review_runtime import detect_domain_pos
 from aigol.runtime.governed_termination_runtime import detect_domain_governed_termination_entry_intent
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.ubtr_semantic_cognition_orchestration_runtime import (
+    orchestrate_ubtr_semantic_cognition,
+)
 from aigol.runtime.worker_assignment_runtime import detect_domain_worker_assignment_entry_intent
 from aigol.runtime.worker_dispatch_runtime import detect_domain_worker_dispatch_entry_intent
 from aigol.runtime.worker_invocation_runtime import detect_domain_worker_invocation_entry_intent
@@ -112,6 +115,7 @@ def route_conversational_cli_intent(
     replay_path = Path(replay_dir)
     universal_translation_capture: dict[str, Any] | None = None
     canonical_semantic_capture: dict[str, Any] | None = None
+    ubtr_cognition_orchestration_capture: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
         universal_translation_capture = translate_human_to_governance(
@@ -130,6 +134,12 @@ def route_conversational_cli_intent(
             created_at=created_at,
             replay_dir=replay_path / "canonical_semantic_artifact",
         )
+        ubtr_cognition_orchestration_capture = orchestrate_ubtr_semantic_cognition(
+            orchestration_id=f"{routing_id}:UBTR-SEMANTIC-COGNITION",
+            canonical_semantic_artifact=canonical_semantic_capture["semantic_artifact"],
+            created_at=created_at,
+            replay_dir=replay_path / "ubtr_semantic_cognition_orchestration",
+        )
         analysis = _classify_workflow_from_canonical_semantic_artifact(canonical_semantic_capture) or _classify_workflow(
             human_prompt
         )
@@ -143,6 +153,7 @@ def route_conversational_cli_intent(
             analysis=analysis,
             universal_translation_capture=universal_translation_capture,
             canonical_semantic_capture=canonical_semantic_capture,
+            ubtr_cognition_orchestration_capture=ubtr_cognition_orchestration_capture,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -220,6 +231,12 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "universal_translation_hash": decision.get("universal_translation_hash"),
         "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
         "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
+        "ubtr_semantic_cognition_orchestration_reference": decision.get(
+            "ubtr_semantic_cognition_orchestration_reference"
+        ),
+        "ubtr_semantic_cognition_decision": decision.get("ubtr_semantic_cognition_decision"),
+        "ubtr_semantic_cognition_reasons": deepcopy(decision.get("ubtr_semantic_cognition_reasons", [])),
+        "ubtr_ocs_cognition_request_hash": decision.get("ubtr_ocs_cognition_request_hash"),
         "semantic_routing_source": decision.get("semantic_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
@@ -1359,6 +1376,7 @@ def _routing_decision_artifact(
     analysis: dict[str, Any],
     universal_translation_capture: dict[str, Any] | None,
     canonical_semantic_capture: dict[str, Any] | None,
+    ubtr_cognition_orchestration_capture: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
     translation_artifact = (
@@ -1422,6 +1440,26 @@ def _routing_decision_artifact(
             and analysis["matched_terms"][:2] == ["ubtr", "canonical-semantic-artifact"]
             else "COMPATIBILITY_FALLBACK"
         ),
+        "ubtr_semantic_cognition_orchestration_reference": (
+            ubtr_cognition_orchestration_capture.get("orchestration_replay_reference")
+            if isinstance(ubtr_cognition_orchestration_capture, dict)
+            else None
+        ),
+        "ubtr_semantic_cognition_decision": (
+            ubtr_cognition_orchestration_capture.get("semantic_decision")
+            if isinstance(ubtr_cognition_orchestration_capture, dict)
+            else None
+        ),
+        "ubtr_semantic_cognition_reasons": (
+            list(ubtr_cognition_orchestration_capture.get("decision_reasons") or [])
+            if isinstance(ubtr_cognition_orchestration_capture, dict)
+            else []
+        ),
+        "ubtr_ocs_cognition_request_hash": (
+            ubtr_cognition_orchestration_capture.get("ocs_cognition_request_hash")
+            if isinstance(ubtr_cognition_orchestration_capture, dict)
+            else None
+        ),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
         "replay_visible": True,
@@ -1476,6 +1514,12 @@ def _workflow_selection_artifact(
         "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
         "canonical_semantic_artifact_type": decision.get("canonical_semantic_artifact_type"),
         "semantic_routing_source": decision.get("semantic_routing_source"),
+        "ubtr_semantic_cognition_orchestration_reference": decision.get(
+            "ubtr_semantic_cognition_orchestration_reference"
+        ),
+        "ubtr_semantic_cognition_decision": decision.get("ubtr_semantic_cognition_decision"),
+        "ubtr_semantic_cognition_reasons": deepcopy(decision.get("ubtr_semantic_cognition_reasons", [])),
+        "ubtr_ocs_cognition_request_hash": decision.get("ubtr_ocs_cognition_request_hash"),
         "coverage": _coverage(),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1514,6 +1558,12 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
         "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
         "semantic_routing_source": decision.get("semantic_routing_source"),
+        "ubtr_semantic_cognition_orchestration_reference": decision.get(
+            "ubtr_semantic_cognition_orchestration_reference"
+        ),
+        "ubtr_semantic_cognition_decision": decision.get("ubtr_semantic_cognition_decision"),
+        "ubtr_semantic_cognition_reasons": deepcopy(decision.get("ubtr_semantic_cognition_reasons", [])),
+        "ubtr_ocs_cognition_request_hash": decision.get("ubtr_ocs_cognition_request_hash"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
@@ -1565,6 +1615,10 @@ def _failed_decision_artifact(
         "canonical_semantic_artifact_hash": None,
         "canonical_semantic_artifact_type": None,
         "semantic_routing_source": None,
+        "ubtr_semantic_cognition_orchestration_reference": None,
+        "ubtr_semantic_cognition_decision": None,
+        "ubtr_semantic_cognition_reasons": [],
+        "ubtr_ocs_cognition_request_hash": None,
         "created_at": created_at if isinstance(created_at, str) else "",
         "replay_reference": replay_reference,
         "replay_visible": True,
@@ -1625,6 +1679,12 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "canonical_semantic_artifact_reference": decision.get("canonical_semantic_artifact_reference"),
         "canonical_semantic_artifact_hash": decision.get("canonical_semantic_artifact_hash"),
         "semantic_routing_source": decision.get("semantic_routing_source"),
+        "ubtr_semantic_cognition_orchestration_reference": decision.get(
+            "ubtr_semantic_cognition_orchestration_reference"
+        ),
+        "ubtr_semantic_cognition_decision": decision.get("ubtr_semantic_cognition_decision"),
+        "ubtr_semantic_cognition_reasons": deepcopy(decision.get("ubtr_semantic_cognition_reasons", [])),
+        "ubtr_ocs_cognition_request_hash": decision.get("ubtr_ocs_cognition_request_hash"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
