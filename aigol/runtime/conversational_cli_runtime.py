@@ -163,8 +163,13 @@ def route_conversational_cli_intent(
                         replay_dir=replay_path / "ubtr_cognition_result_integration",
                     )
                 )
-        csa_analysis = _classify_workflow_from_canonical_semantic_artifact(canonical_semantic_capture)
-        compatibility_route_evidence = _compatibility_route_evidence(human_prompt) if csa_analysis else None
+        compatibility_route_evidence = _compatibility_route_evidence(human_prompt)
+        csa_analysis = _classify_workflow_from_canonical_semantic_artifact(
+            canonical_semantic_capture,
+            compatibility_route_evidence=compatibility_route_evidence,
+        )
+        if not csa_analysis:
+            compatibility_route_evidence = None
         analysis = csa_analysis or _classify_workflow(human_prompt)
         decision = _routing_decision_artifact(
             routing_id=routing_id,
@@ -810,10 +815,14 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
 
 def _classify_workflow_from_canonical_semantic_artifact(
     canonical_semantic_capture: dict[str, Any] | None,
+    *,
+    compatibility_route_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Use UBTR semantic artifact as first-class routing input when decisive."""
 
     if not isinstance(canonical_semantic_capture, dict):
+        return None
+    if not _compatibility_route_supports_csa_migration(compatibility_route_evidence):
         return None
     artifact = canonical_semantic_capture.get("semantic_artifact")
     if not isinstance(artifact, dict):
@@ -936,6 +945,16 @@ def _compatibility_route_evidence(prompt: str) -> dict[str, Any]:
             if isinstance(exc, FailClosedRuntimeError)
             else "compatibility routing evidence failed closed",
         }
+
+
+def _compatibility_route_supports_csa_migration(route_evidence: dict[str, Any] | None) -> bool:
+    if not isinstance(route_evidence, dict):
+        return False
+    return (
+        route_evidence.get("compatibility_source") == "LOCAL_COMPATIBILITY_MARKERS"
+        and route_evidence.get("compatibility_workflow_id") == GOVERNED_DEVELOPMENT_WORKFLOW
+        and route_evidence.get("compatibility_routing_status") == WORKFLOW_SELECTED
+    )
 
 
 def _analysis(

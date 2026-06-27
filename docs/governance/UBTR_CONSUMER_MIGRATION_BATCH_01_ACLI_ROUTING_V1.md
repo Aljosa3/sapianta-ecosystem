@@ -42,7 +42,9 @@ Updated:
 Changes:
 
 - expanded `_classify_workflow_from_canonical_semantic_artifact()` to route deterministic `DEVELOPMENT` domain CSA artifacts with high confidence and no ambiguity to `GOVERNED_DEVELOPMENT_WORKFLOW`;
+- gated CSA-primary routing on compatibility route parity so CSA becomes primary only when the previous local marker route already selects `GOVERNED_DEVELOPMENT_WORKFLOW`;
 - preserved compatibility fallback for ambiguous or low-confidence CSA artifacts;
+- preserved compatibility fallback for decisive CSA artifacts that do not have previous-route parity;
 - added CSA-derived HIRR-compatible development intake metadata so existing route consumers remain stable;
 - recorded previous compatibility route evidence for CSA-selected routes;
 - recorded the migration batch identifier on CSA-selected decisions.
@@ -70,9 +72,9 @@ Previous source:
 
 `LOCAL_COMPATIBILITY_MARKERS`
 
-The previous compatibility route is evaluated only as evidence when CSA routing is selected.
+The previous compatibility route is evaluated as a parity gate before CSA routing is selected.
 
-If compatibility evidence fails closed, the CSA route remains the active route only if the CSA route itself is valid. The compatibility failure is recorded as evidence and does not grant authority.
+If compatibility evidence fails closed or selects a different workflow, CSA does not become primary for this batch. ACLI retains compatibility fallback and records CSA/UBTR evidence without assigning the migration batch identifier.
 
 ## New CSA Routing Source
 
@@ -83,6 +85,8 @@ New source:
 The CSA route is accepted only when:
 
 - workflow candidate is `GOVERNED_DEVELOPMENT_WORKFLOW`;
+- previous compatibility route evidence also selects `GOVERNED_DEVELOPMENT_WORKFLOW`;
+- previous compatibility route status is `WORKFLOW_SELECTED`;
 - clarification is not required;
 - requested actions include `CREATE`, `UPDATE`, or `IMPLEMENT`;
 - governance artifact requests satisfy the existing safe governance-artifact predicate; or
@@ -147,6 +151,7 @@ Coverage verifies:
 - explicit governance artifact prompts route through CSA;
 - previous local marker route evidence is recorded;
 - deterministic development implementation prompt routes through CSA;
+- deterministic CSA development prompts without local route parity retain compatibility fallback;
 - CSA-derived HIRR-compatible intake remains present;
 - ambiguous development and governance prompts retain compatibility fallback;
 - providers are not invoked;

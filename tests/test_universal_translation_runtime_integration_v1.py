@@ -6,6 +6,7 @@ import pytest
 
 from aigol.runtime.conversational_cli_runtime import (
     GOVERNED_DEVELOPMENT_WORKFLOW,
+    NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     reconstruct_conversational_cli_routing_replay,
     route_conversational_cli_intent,
 )
@@ -154,6 +155,28 @@ def test_deterministic_development_intent_routes_through_canonical_semantic_arti
     assert decision["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert decision["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
     assert decision["ubtr_ocs_cognition_request_hash"] is None
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+
+
+def test_development_csa_uses_compatibility_fallback_without_route_parity(tmp_path) -> None:
+    capture = route_conversational_cli_intent(
+        routing_id="ROUTE-UNIVERSAL-DEVELOPMENT-FALLBACK-001",
+        prompt_id="PROMPT-DEVELOPMENT-FALLBACK-001",
+        human_prompt="Build a basic validation script.",
+        canonical_chain_id="CHAIN-DEVELOPMENT-FALLBACK-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "routing",
+    )
+
+    decision = capture["routing_decision_artifact"]
+
+    assert capture["workflow_id"] == NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION
+    assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert decision["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert decision["migration_batch_id"] is None
+    assert decision["previous_compatibility_workflow_id"] is None
+    assert decision["new_csa_routing_source"] is None
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
 
