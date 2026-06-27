@@ -67,6 +67,10 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert decision["canonical_semantic_artifact_reference"].endswith("canonical_semantic_artifact")
     assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
     assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+    assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
+    assert decision["previous_compatibility_workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert decision["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert decision["ubtr_semantic_cognition_orchestration_reference"].endswith(
         "ubtr_semantic_cognition_orchestration"
     )
@@ -82,6 +86,9 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert reconstructed["universal_translation_hash"] == decision["universal_translation_hash"]
     assert reconstructed["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
     assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+    assert reconstructed["previous_compatibility_workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert reconstructed["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert reconstructed["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
     assert reconstructed["ubtr_ocs_cognition_request_hash"] is None
 
@@ -115,6 +122,38 @@ def test_conversational_routing_keeps_compatibility_fallback_when_semantics_are_
     assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
     assert capture["ubtr_ocs_cognition_handoff_status"] == "UBTR_OCS_COGNITION_HANDOFF_COMPLETED"
     assert capture["ubtr_cognition_result_integration_status"] == "UBTR_COGNITION_RESULT_INTEGRATION_COMPLETED"
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+
+
+def test_deterministic_development_intent_routes_through_canonical_semantic_artifact(tmp_path) -> None:
+    capture = route_conversational_cli_intent(
+        routing_id="ROUTE-UNIVERSAL-DEVELOPMENT-001",
+        prompt_id="PROMPT-DEVELOPMENT-001",
+        human_prompt="Implement worker authorization",
+        canonical_chain_id="CHAIN-DEVELOPMENT-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "routing",
+    )
+
+    decision = capture["routing_decision_artifact"]
+
+    assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+    assert decision["matched_terms"] == [
+        "ubtr",
+        "canonical-semantic-artifact",
+        "governed-development",
+        "development",
+        "implement",
+    ]
+    assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
+    assert decision["previous_compatibility_workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
+    assert decision["previous_compatibility_matched_terms"] == ["authorization", "implement", "worker"]
+    assert decision["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
+    assert decision["ubtr_ocs_cognition_request_hash"] is None
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
 
