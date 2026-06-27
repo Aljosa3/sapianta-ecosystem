@@ -32,6 +32,9 @@ from aigol.runtime.post_execution_replay_review_runtime import detect_domain_pos
 from aigol.runtime.governed_termination_runtime import detect_domain_governed_termination_entry_intent
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.ubtr_cognition_result_integration_runtime import (
+    integrate_ocs_cognition_result_into_canonical_semantic_artifact,
+)
 from aigol.runtime.ubtr_semantic_cognition_orchestration_runtime import (
     orchestrate_ubtr_semantic_cognition,
 )
@@ -118,6 +121,7 @@ def route_conversational_cli_intent(
     canonical_semantic_capture: dict[str, Any] | None = None
     ubtr_cognition_orchestration_capture: dict[str, Any] | None = None
     ubtr_ocs_cognition_handoff_capture: dict[str, Any] | None = None
+    ubtr_cognition_result_integration_capture: dict[str, Any] | None = None
     try:
         _ensure_replay_available(replay_path)
         universal_translation_capture = translate_human_to_governance(
@@ -149,6 +153,16 @@ def route_conversational_cli_intent(
                 created_at=created_at,
                 replay_dir=replay_path / "ubtr_ocs_cognition_handoff",
             )
+            if ubtr_ocs_cognition_handoff_capture.get("fail_closed") is not True:
+                ubtr_cognition_result_integration_capture = (
+                    integrate_ocs_cognition_result_into_canonical_semantic_artifact(
+                        integration_id=f"{routing_id}:UBTR-COGNITION-INTEGRATED-SEMANTIC",
+                        prior_canonical_semantic_artifact=canonical_semantic_capture["semantic_artifact"],
+                        ubtr_ocs_cognition_handoff_artifact=ubtr_ocs_cognition_handoff_capture["handoff_artifact"],
+                        created_at=created_at,
+                        replay_dir=replay_path / "ubtr_cognition_result_integration",
+                    )
+                )
         analysis = _classify_workflow_from_canonical_semantic_artifact(canonical_semantic_capture) or _classify_workflow(
             human_prompt
         )
@@ -164,6 +178,7 @@ def route_conversational_cli_intent(
             canonical_semantic_capture=canonical_semantic_capture,
             ubtr_cognition_orchestration_capture=ubtr_cognition_orchestration_capture,
             ubtr_ocs_cognition_handoff_capture=ubtr_ocs_cognition_handoff_capture,
+            ubtr_cognition_result_integration_capture=ubtr_cognition_result_integration_capture,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -252,6 +267,13 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "ubtr_ocs_context_hash": decision.get("ubtr_ocs_context_hash"),
         "ubtr_ocs_cognition_hash": decision.get("ubtr_ocs_cognition_hash"),
         "ubtr_ocs_provider_necessity": deepcopy(decision.get("ubtr_ocs_provider_necessity")),
+        "ubtr_cognition_result_integration_reference": decision.get(
+            "ubtr_cognition_result_integration_reference"
+        ),
+        "ubtr_cognition_result_integration_status": decision.get("ubtr_cognition_result_integration_status"),
+        "ubtr_cognition_integrated_semantic_artifact_hash": decision.get(
+            "ubtr_cognition_integrated_semantic_artifact_hash"
+        ),
         "semantic_routing_source": decision.get("semantic_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
@@ -1393,6 +1415,7 @@ def _routing_decision_artifact(
     canonical_semantic_capture: dict[str, Any] | None,
     ubtr_cognition_orchestration_capture: dict[str, Any] | None,
     ubtr_ocs_cognition_handoff_capture: dict[str, Any] | None,
+    ubtr_cognition_result_integration_capture: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
     translation_artifact = (
@@ -1501,6 +1524,21 @@ def _routing_decision_artifact(
             if isinstance(ubtr_ocs_cognition_handoff_capture, dict)
             else None
         ),
+        "ubtr_cognition_result_integration_reference": (
+            ubtr_cognition_result_integration_capture.get("integration_replay_reference")
+            if isinstance(ubtr_cognition_result_integration_capture, dict)
+            else None
+        ),
+        "ubtr_cognition_result_integration_status": (
+            ubtr_cognition_result_integration_capture.get("integration_status")
+            if isinstance(ubtr_cognition_result_integration_capture, dict)
+            else None
+        ),
+        "ubtr_cognition_integrated_semantic_artifact_hash": (
+            ubtr_cognition_result_integration_capture.get("integrated_canonical_semantic_artifact_hash")
+            if isinstance(ubtr_cognition_result_integration_capture, dict)
+            else None
+        ),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
         "replay_visible": True,
@@ -1566,6 +1604,13 @@ def _workflow_selection_artifact(
         "ubtr_ocs_context_hash": decision.get("ubtr_ocs_context_hash"),
         "ubtr_ocs_cognition_hash": decision.get("ubtr_ocs_cognition_hash"),
         "ubtr_ocs_provider_necessity": deepcopy(decision.get("ubtr_ocs_provider_necessity")),
+        "ubtr_cognition_result_integration_reference": decision.get(
+            "ubtr_cognition_result_integration_reference"
+        ),
+        "ubtr_cognition_result_integration_status": decision.get("ubtr_cognition_result_integration_status"),
+        "ubtr_cognition_integrated_semantic_artifact_hash": decision.get(
+            "ubtr_cognition_integrated_semantic_artifact_hash"
+        ),
         "coverage": _coverage(),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
@@ -1615,6 +1660,13 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "ubtr_ocs_context_hash": decision.get("ubtr_ocs_context_hash"),
         "ubtr_ocs_cognition_hash": decision.get("ubtr_ocs_cognition_hash"),
         "ubtr_ocs_provider_necessity": deepcopy(decision.get("ubtr_ocs_provider_necessity")),
+        "ubtr_cognition_result_integration_reference": decision.get(
+            "ubtr_cognition_result_integration_reference"
+        ),
+        "ubtr_cognition_result_integration_status": decision.get("ubtr_cognition_result_integration_status"),
+        "ubtr_cognition_integrated_semantic_artifact_hash": decision.get(
+            "ubtr_cognition_integrated_semantic_artifact_hash"
+        ),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),
@@ -1675,6 +1727,9 @@ def _failed_decision_artifact(
         "ubtr_ocs_context_hash": None,
         "ubtr_ocs_cognition_hash": None,
         "ubtr_ocs_provider_necessity": None,
+        "ubtr_cognition_result_integration_reference": None,
+        "ubtr_cognition_result_integration_status": None,
+        "ubtr_cognition_integrated_semantic_artifact_hash": None,
         "created_at": created_at if isinstance(created_at, str) else "",
         "replay_reference": replay_reference,
         "replay_visible": True,
@@ -1746,6 +1801,13 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "ubtr_ocs_context_hash": decision.get("ubtr_ocs_context_hash"),
         "ubtr_ocs_cognition_hash": decision.get("ubtr_ocs_cognition_hash"),
         "ubtr_ocs_provider_necessity": deepcopy(decision.get("ubtr_ocs_provider_necessity")),
+        "ubtr_cognition_result_integration_reference": decision.get(
+            "ubtr_cognition_result_integration_reference"
+        ),
+        "ubtr_cognition_result_integration_status": decision.get("ubtr_cognition_result_integration_status"),
+        "ubtr_cognition_integrated_semantic_artifact_hash": decision.get(
+            "ubtr_cognition_integrated_semantic_artifact_hash"
+        ),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
         "ocs_provider_selection": decision.get("ocs_provider_selection"),

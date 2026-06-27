@@ -74,6 +74,7 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert decision["ubtr_semantic_cognition_reasons"] == []
     assert decision["ubtr_ocs_cognition_request_hash"] is None
     assert decision["ubtr_ocs_cognition_handoff_reference"] is None
+    assert decision["ubtr_cognition_result_integration_reference"] is None
     assert capture["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
     assert capture["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
 
@@ -108,8 +109,12 @@ def test_conversational_routing_keeps_compatibility_fallback_when_semantics_are_
     assert decision["ubtr_ocs_context_hash"].startswith("sha256:")
     assert decision["ubtr_ocs_cognition_hash"].startswith("sha256:")
     assert decision["ubtr_ocs_provider_necessity"]["necessity_classification"] == "PROVIDER_REQUIRED"
+    assert decision["ubtr_cognition_result_integration_reference"].endswith("ubtr_cognition_result_integration")
+    assert decision["ubtr_cognition_result_integration_status"] == "UBTR_COGNITION_RESULT_INTEGRATION_COMPLETED"
+    assert decision["ubtr_cognition_integrated_semantic_artifact_hash"].startswith("sha256:")
     assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
     assert capture["ubtr_ocs_cognition_handoff_status"] == "UBTR_OCS_COGNITION_HANDOFF_COMPLETED"
+    assert capture["ubtr_cognition_result_integration_status"] == "UBTR_COGNITION_RESULT_INTEGRATION_COMPLETED"
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
 
