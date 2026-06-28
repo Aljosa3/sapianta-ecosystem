@@ -70,6 +70,15 @@ def _proposal_capture() -> dict:
     }
 
 
+def _canonical_semantic_lineage() -> dict:
+    return {
+        "canonical_semantic_artifact_reference": "CSA-EXPLANATION-RENDERING-000001",
+        "canonical_semantic_artifact_hash": "sha256:explanation-rendering-csa-000001",
+        "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "migration_batch_id": "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_10",
+    }
+
+
 def _capture(tmp_path):
     routing = _routing_capture(tmp_path)
     intake = _intake_capture(tmp_path, routing)
@@ -87,6 +96,24 @@ def _capture(tmp_path):
     )
 
 
+def _capture_with_csa(tmp_path):
+    routing = _routing_capture(tmp_path)
+    intake = _intake_capture(tmp_path, routing)
+    return create_acli_human_friendly_explanation(
+        explanation_id="SESSION:TURN-000001:HUMAN-FRIENDLY-EXPLANATION-G2-11",
+        turn_id="TURN-000001",
+        prompt_id="SESSION:TURN-000001",
+        human_prompt="Add replay validation",
+        workflow_id="GOVERNED_DEVELOPMENT_WORKFLOW",
+        routing_visibility_artifact=routing["conversational_routing_visibility_artifact"],
+        universal_intake_artifact=intake["universal_intake_artifact"],
+        proposal_capture=_proposal_capture(),
+        replay_dir=tmp_path / "human_friendly_explanation_g2_11",
+        created_at=CREATED_AT,
+        canonical_semantic_lineage=_canonical_semantic_lineage(),
+    )
+
+
 def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp_path) -> None:
     capture = _capture(tmp_path)
     artifact = capture["human_friendly_explanation_artifact"]
@@ -97,6 +124,8 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     assert artifact["ubtr_human_output_reference"].endswith("ubtr_human_output")
     assert artifact["ubtr_human_output_hash"].startswith("sha256:")
     assert artifact["primary_render_source"] == "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION"
+    assert artifact["explanation_rendering_source"] == "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION_WITH_COMPATIBILITY_FALLBACK"
+    assert artifact["explanation_rendering_parity_status"] == "CSA_LINEAGE_UNAVAILABLE_COMPATIBILITY_FALLBACK_VISIBLE"
     assert artifact["compatibility_fallback_active"] is True
     assert artifact["visibility_only"] is True
     assert artifact["authority_granted"] is False
@@ -125,6 +154,34 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     assert "Governance Only" in rendered
     assert "Type APPROVE to continue." in rendered
     assert "no repository mutation will occur before approval" in rendered
+
+
+def test_explanation_rendering_records_csa_primary_section_parity(tmp_path) -> None:
+    capture = _capture_with_csa(tmp_path)
+    artifact = capture["human_friendly_explanation_artifact"]
+    comparison = artifact["explanation_rendering_comparison_artifact"]
+    replay = reconstruct_acli_human_friendly_explanation_replay(
+        capture["human_friendly_explanation_replay_reference"]
+    )
+
+    assert artifact["explanation_rendering_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert artifact["explanation_rendering_parity_status"] == "CSA_COMPATIBILITY_SECTION_PARITY_PROVEN"
+    assert artifact["canonical_semantic_artifact_hash"] == "sha256:explanation-rendering-csa-000001"
+    assert comparison["previous_compatibility_explanation"]["source"] == "COMPATIBILITY_HUMAN_FRIENDLY_EXPLANATION"
+    assert comparison["csa_explanation_projection"]["available"] is True
+    assert comparison["semantic_equivalence_result"] == "EQUIVALENT"
+    assert comparison["semantic_differences"] == []
+    assert all(comparison["semantic_parity_evidence"]["section_parity"].values())
+    assert comparison["semantic_parity_evidence"]["compatibility_fallback_available"] is True
+    assert comparison["semantic_parity_evidence"]["provider_wording_advisory_only"] is True
+    assert artifact["authority_granted"] is False
+    assert artifact["provider_authority"] is False
+    assert artifact["approval_authority"] is False
+    assert artifact["execution_authority"] is False
+    assert artifact["worker_authority"] is False
+    assert replay["explanation_rendering_comparison_hash"] == comparison["artifact_hash"]
+    assert replay["explanation_rendering_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["canonical_semantic_artifact_hash"] == "sha256:explanation-rendering-csa-000001"
 
 
 def test_explanation_replay_reconstructs_and_detects_tampering(tmp_path) -> None:

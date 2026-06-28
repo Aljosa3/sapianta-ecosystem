@@ -15,6 +15,10 @@ MILESTONE_ID = "HUMAN_FRIENDLY_ACLI_EXPLANATION_IMPLEMENTATION_V1"
 FINAL_CLASSIFICATION = "CERTIFIED_HUMAN_FRIENDLY_ACLI_EXPLANATION_LAYER"
 
 ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1 = "ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1"
+EXPLANATION_RENDERING_COMPARISON_ARTIFACT_V1 = "EXPLANATION_RENDERING_COMPARISON_ARTIFACT_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_11_EXPLANATION_RENDERING_MIGRATION_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_11_EXPLANATION_RENDERING_MIGRATION_V1"
+)
 
 REPLAY_STEP = "acli_human_friendly_explanation_recorded"
 
@@ -31,6 +35,7 @@ def create_acli_human_friendly_explanation(
     proposal_capture: dict[str, Any] | None,
     replay_dir: str | Path,
     created_at: str,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create and persist a deterministic, non-authoritative operator explanation."""
 
@@ -60,6 +65,15 @@ def create_acli_human_friendly_explanation(
     rendered = _compose_operator_output(
         ubtr_output_capture=ubtr_output_capture,
         compatibility_rendered=compatibility_rendered,
+    )
+    rendering_comparison = _explanation_rendering_comparison_artifact(
+        comparison_id=f"{explanation_id}:G2-11-EXPLANATION-RENDERING",
+        canonical_semantic_lineage=canonical_semantic_lineage,
+        compatibility_rendered=compatibility_rendered,
+        ubtr_output_capture=ubtr_output_capture,
+        sections=sections,
+        created_at=created_at,
+        replay_reference=str(replay_path),
     )
     transparency = _deterministic_transparency_artifact()
     rendered_operator_view = _append_explanation_transparency(
@@ -102,6 +116,16 @@ def create_acli_human_friendly_explanation(
         ),
         "ubtr_human_output_primary": ubtr_output_capture is not None,
         "ubtr_human_output_fallback_reason": None if ubtr_output_capture is not None else "UBTR_OUTPUT_TRANSLATION_FAILED",
+        "explanation_rendering_source": rendering_comparison["explanation_rendering_source"],
+        "explanation_rendering_comparison_artifact": deepcopy(rendering_comparison),
+        "explanation_rendering_comparison_hash": rendering_comparison["artifact_hash"],
+        "explanation_rendering_parity_status": rendering_comparison["parity_status"],
+        "explanation_rendering_migration_batch_id": rendering_comparison["migration_batch_id"],
+        "canonical_semantic_artifact_reference": rendering_comparison.get(
+            "canonical_semantic_artifact_reference"
+        ),
+        "canonical_semantic_artifact_hash": rendering_comparison.get("canonical_semantic_artifact_hash"),
+        "explanation_rendering_fallback_status": rendering_comparison["fallback_status"],
         "compatibility_explanation": compatibility_rendered,
         "compatibility_explanation_hash": replay_hash(compatibility_rendered),
         "compatibility_fallback_active": True,
@@ -207,6 +231,16 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         "ubtr_human_output_primary": artifact.get("ubtr_human_output_primary") is True,
         "compatibility_fallback_active": artifact.get("compatibility_fallback_active") is True,
         "primary_render_source": artifact.get("primary_render_source"),
+        "explanation_rendering_source": artifact.get("explanation_rendering_source"),
+        "explanation_rendering_comparison_artifact": deepcopy(
+            artifact.get("explanation_rendering_comparison_artifact")
+        ),
+        "explanation_rendering_comparison_hash": artifact.get("explanation_rendering_comparison_hash"),
+        "explanation_rendering_parity_status": artifact.get("explanation_rendering_parity_status"),
+        "explanation_rendering_migration_batch_id": artifact.get("explanation_rendering_migration_batch_id"),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
+        "explanation_rendering_fallback_status": artifact.get("explanation_rendering_fallback_status"),
         "explanation_transparency_artifact": deepcopy(artifact["explanation_transparency_artifact"]),
         "rendered_operator_view": artifact["rendered_operator_view"],
         "rendered_operator_view_hash": artifact["rendered_operator_view_hash"],
@@ -479,6 +513,135 @@ def _compose_operator_output(
             compatibility_rendered,
         ]
     )
+
+
+def _explanation_rendering_comparison_artifact(
+    *,
+    comparison_id: str,
+    canonical_semantic_lineage: dict[str, Any] | None,
+    compatibility_rendered: str,
+    ubtr_output_capture: dict[str, Any] | None,
+    sections: dict[str, list[Any]],
+    created_at: str,
+    replay_reference: str,
+) -> dict[str, Any]:
+    lineage = _normalize_canonical_semantic_lineage(canonical_semantic_lineage)
+    csa_available = lineage["canonical_semantic_artifact_hash"] is not None
+    ubtr_rendered = (
+        ubtr_output_capture.get("rendered_explanation")
+        if isinstance(ubtr_output_capture, dict)
+        else None
+    )
+    ubtr_available = isinstance(ubtr_rendered, str) and bool(ubtr_rendered.strip())
+    required_sections = list(sections.keys())
+    section_parity = {
+        section: section in compatibility_rendered
+        for section in required_sections
+    }
+    parity_proven = csa_available and ubtr_available and all(section_parity.values())
+    compatibility = {
+        "source": "COMPATIBILITY_HUMAN_FRIENDLY_EXPLANATION",
+        "rendered_explanation_hash": replay_hash(_require_string(compatibility_rendered, "compatibility_rendered")),
+        "required_sections": required_sections,
+        "section_parity": deepcopy(section_parity),
+        "visibility_only": True,
+        "authority_granted": False,
+    }
+    csa_projection = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT_GOVERNANCE_TO_HUMAN_TRANSLATION",
+        "available": csa_available and ubtr_available,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "semantic_routing_source": lineage["semantic_routing_source"],
+        "source_migration_batch_id": lineage["migration_batch_id"],
+        "ubtr_human_output_hash": (
+            ubtr_output_capture.get("translation_artifact", {}).get("artifact_hash")
+            if isinstance(ubtr_output_capture, dict)
+            else None
+        ),
+        "rendered_explanation_hash": replay_hash(ubtr_rendered) if isinstance(ubtr_rendered, str) else None,
+        "required_sections_preserved_by_operator_view": deepcopy(section_parity),
+        "visibility_only": True,
+        "authority_granted": False,
+    }
+    if parity_proven:
+        source = "CANONICAL_SEMANTIC_ARTIFACT"
+        parity_status = "CSA_COMPATIBILITY_SECTION_PARITY_PROVEN"
+        equivalence = "EQUIVALENT"
+        differences: list[str] = []
+    elif ubtr_available:
+        source = "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION_WITH_COMPATIBILITY_FALLBACK"
+        parity_status = "CSA_LINEAGE_UNAVAILABLE_COMPATIBILITY_FALLBACK_VISIBLE"
+        equivalence = "NOT_EVALUATED"
+        differences = ["CSA lineage was not supplied for explanation rendering."]
+    else:
+        source = "COMPATIBILITY_FALLBACK"
+        parity_status = "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        equivalence = "NOT_EVALUATED"
+        differences = ["UBTR Governance -> Human output was unavailable."]
+    artifact = {
+        "artifact_type": EXPLANATION_RENDERING_COMPARISON_ARTIFACT_V1,
+        "comparison_id": _require_string(comparison_id, "comparison_id"),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_11_EXPLANATION_RENDERING_MIGRATION_V1,
+        "explanation_rendering_source": source,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "previous_compatibility_explanation": compatibility,
+        "csa_explanation_projection": csa_projection,
+        "semantic_equivalence_result": equivalence,
+        "semantic_differences": differences,
+        "parity_status": parity_status,
+        "semantic_parity_evidence": {
+            "parity_status": parity_status,
+            "parity_scope": "EXPLANATION_RENDERING_SECTION_PARITY",
+            "required_sections": required_sections,
+            "section_parity": deepcopy(section_parity),
+            "compatibility_fallback_available": True,
+            "provider_wording_advisory_only": True,
+            "visibility_only": True,
+            "authority_granted": False,
+            "approval_authority_granted": False,
+            "execution_authority_granted": False,
+            "provider_authority_granted": False,
+            "worker_authority_granted": False,
+        },
+        "replay_lineage": {
+            "replay_reference": _require_string(replay_reference, "replay_reference"),
+            "ubtr_human_output_reference": (
+                ubtr_output_capture.get("translation_replay_reference")
+                if isinstance(ubtr_output_capture, dict)
+                else None
+            ),
+        },
+        "fallback_status": "COMPATIBILITY_EXPLANATION_VISIBLE",
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+        "visibility_only": True,
+        "authority_granted": False,
+    }
+    artifact["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa_projection": csa_projection,
+            "parity_status": parity_status,
+        }
+    )
+    artifact["semantic_parity_evidence"]["semantic_comparison_hash"] = artifact["semantic_comparison_hash"]
+    artifact["semantic_parity_evidence"]["parity_hash"] = replay_hash(artifact["semantic_parity_evidence"])
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _normalize_canonical_semantic_lineage(source: dict[str, Any] | None) -> dict[str, Any]:
+    source = source if isinstance(source, dict) else {}
+    reference = source.get("canonical_semantic_artifact_reference")
+    artifact_hash = source.get("canonical_semantic_artifact_hash")
+    return {
+        "canonical_semantic_artifact_reference": reference if isinstance(reference, str) else None,
+        "canonical_semantic_artifact_hash": artifact_hash if isinstance(artifact_hash, str) else None,
+        "semantic_routing_source": source.get("semantic_routing_source"),
+        "migration_batch_id": source.get("migration_batch_id"),
+    }
 
 
 def _build_sections(
