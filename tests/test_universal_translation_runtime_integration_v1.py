@@ -70,6 +70,15 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
     assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+    assert decision["semantic_comparison_hash"].startswith("sha256:")
+    assert decision["semantic_comparison_artifact"]["artifact_hash"] == decision["semantic_comparison_hash"]
+    assert decision["semantic_comparison_artifact"]["migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1"
+    )
+    assert decision["semantic_comparison_artifact"]["non_authoritative"] is True
+    assert decision["semantic_comparison_artifact"]["routing_influence"] is False
+    assert decision["semantic_equivalence_result"] == "EQUIVALENT"
+    assert decision["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
     assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
     assert decision["previous_compatibility_workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
     assert decision["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
@@ -89,6 +98,9 @@ def test_conversational_routing_records_universal_translation_reference(tmp_path
     assert reconstructed["canonical_semantic_artifact_hash"] == decision["canonical_semantic_artifact_hash"]
     assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert reconstructed["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+    assert reconstructed["semantic_comparison_hash"] == decision["semantic_comparison_hash"]
+    assert reconstructed["semantic_comparison_artifact"]["artifact_hash"] == decision["semantic_comparison_hash"]
+    assert reconstructed["semantic_equivalence_result"] == "EQUIVALENT"
     assert reconstructed["previous_compatibility_workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
     assert reconstructed["new_csa_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert reconstructed["ubtr_semantic_cognition_decision"] == "DETERMINISTIC_SEMANTIC_ARTIFACT_VALID"
@@ -178,6 +190,14 @@ def test_development_csa_uses_compatibility_fallback_without_route_parity(tmp_pa
     assert decision["migration_batch_id"] is None
     assert decision["previous_compatibility_workflow_id"] is None
     assert decision["new_csa_routing_source"] is None
+    assert decision["semantic_comparison_artifact"]["non_authoritative"] is True
+    assert decision["semantic_comparison_artifact"]["routing_influence"] is False
+    assert decision["semantic_comparison_artifact"]["compatibility_semantic_interpretation"]["workflow_id"] == (
+        NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION
+    )
+    assert decision["semantic_equivalence_result"] == "NOT_EQUIVALENT"
+    assert decision["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_DIVERGENT"
+    assert decision["semantic_comparison_artifact"]["semantic_differences"]
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
 
@@ -200,6 +220,9 @@ def test_hirr_ambiguous_intent_routes_through_canonical_semantic_artifact_after_
     assert capture["routing_status"] == "CLARIFICATION_REQUIRED"
     assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+    assert decision["semantic_comparison_hash"].startswith("sha256:")
+    assert decision["semantic_equivalence_result"] == "EQUIVALENT"
+    assert decision["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
     assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
     assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
     assert decision["previous_compatibility_workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
@@ -218,6 +241,8 @@ def test_hirr_ambiguous_intent_routes_through_canonical_semantic_artifact_after_
     reconstructed = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
     assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
     assert reconstructed["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+    assert reconstructed["semantic_comparison_hash"] == decision["semantic_comparison_hash"]
+    assert reconstructed["semantic_equivalence_result"] == "EQUIVALENT"
     assert reconstructed["previous_compatibility_interpretation"]["intent_family"] == "AMBIGUOUS_INTENT"
     assert reconstructed["semantic_parity_evidence"]["parity_hash"] == parity["parity_hash"]
 

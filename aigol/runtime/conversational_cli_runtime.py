@@ -53,6 +53,10 @@ FINAL_CLASSIFICATION = "AIGOL_CONVERSATIONAL_CLI_RUNTIME_STATUS"
 
 CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1 = "CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1"
 CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1 = "CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1"
+SEMANTIC_REPLAY_COMPARISON_ARTIFACT_V1 = "SEMANTIC_REPLAY_COMPARISON_ARTIFACT_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1"
+)
 
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
@@ -174,6 +178,15 @@ def route_conversational_cli_intent(
                 canonical_semantic_capture,
                 compatibility_route_evidence=compatibility_route_evidence,
             )
+        semantic_comparison_artifact = _semantic_replay_comparison_artifact(
+            routing_id=routing_id,
+            prompt_id=prompt_id,
+            canonical_chain_id=canonical_chain_id,
+            created_at=created_at,
+            replay_reference=str(replay_path),
+            canonical_semantic_capture=canonical_semantic_capture,
+            compatibility_route_evidence=compatibility_route_evidence,
+        )
         if not csa_analysis:
             compatibility_route_evidence = None
         analysis = csa_analysis or _classify_workflow(human_prompt)
@@ -191,6 +204,7 @@ def route_conversational_cli_intent(
             ubtr_ocs_cognition_handoff_capture=ubtr_ocs_cognition_handoff_capture,
             ubtr_cognition_result_integration_capture=ubtr_cognition_result_integration_capture,
             compatibility_route_evidence=compatibility_route_evidence,
+            semantic_comparison_artifact=semantic_comparison_artifact,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -255,6 +269,11 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         raise FailClosedRuntimeError("conversational CLI routing decision hash mismatch")
     if returned.get("workflow_selection_reference") != selection["workflow_selection_id"]:
         raise FailClosedRuntimeError("conversational CLI routing returned reference mismatch")
+    comparison_artifact = decision.get("semantic_comparison_artifact")
+    if isinstance(comparison_artifact, dict):
+        _verify_artifact_hash(comparison_artifact)
+        if decision.get("semantic_comparison_hash") != comparison_artifact["artifact_hash"]:
+            raise FailClosedRuntimeError("conversational CLI semantic comparison hash mismatch")
     return {
         "milestone_id": MILESTONE_ID,
         "final_classification": FINAL_CLASSIFICATION,
@@ -299,6 +318,11 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
             decision.get("previous_compatibility_interpretation")
         ),
         "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
+        "semantic_comparison_artifact": deepcopy(decision.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": decision.get("semantic_comparison_hash"),
+        "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
+        "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
+        "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
@@ -997,6 +1021,205 @@ def _compatibility_route_supports_csa_migration(route_evidence: dict[str, Any] |
     )
 
 
+def _semantic_replay_comparison_artifact(
+    *,
+    routing_id: str,
+    prompt_id: str,
+    canonical_chain_id: str,
+    created_at: str,
+    replay_reference: str,
+    canonical_semantic_capture: dict[str, Any] | None,
+    compatibility_route_evidence: dict[str, Any] | None,
+) -> dict[str, Any]:
+    csa_interpretation = _csa_semantic_interpretation(canonical_semantic_capture)
+    compatibility_interpretation = _compatibility_semantic_interpretation(compatibility_route_evidence)
+    differences = _semantic_interpretation_differences(
+        csa_interpretation=csa_interpretation,
+        compatibility_interpretation=compatibility_interpretation,
+    )
+    if csa_interpretation["available"] is not True:
+        parity_status = "CSA_UNAVAILABLE"
+        equivalence_result = "NOT_EVALUATED"
+    elif compatibility_interpretation["available"] is not True:
+        parity_status = "COMPATIBILITY_UNAVAILABLE"
+        equivalence_result = "NOT_EQUIVALENT"
+    elif differences:
+        parity_status = "CSA_COMPATIBILITY_DIVERGENT"
+        equivalence_result = "NOT_EQUIVALENT"
+    else:
+        parity_status = "CSA_COMPATIBILITY_EQUIVALENT"
+        equivalence_result = "EQUIVALENT"
+    confidence_comparison = {
+        "csa_confidence": csa_interpretation.get("semantic_confidence"),
+        "compatibility_confidence": compatibility_interpretation.get("confidence"),
+        "confidence_equivalent": csa_interpretation.get("semantic_confidence")
+        == compatibility_interpretation.get("confidence"),
+    }
+    artifact = {
+        "artifact_type": SEMANTIC_REPLAY_COMPARISON_ARTIFACT_V1,
+        "comparison_id": f"{_require_string(routing_id, 'routing_id')}:SEMANTIC-COMPARISON",
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1,
+        "prompt_id": _require_string(prompt_id, "prompt_id"),
+        "canonical_chain_id": _require_string(canonical_chain_id, "canonical_chain_id"),
+        "comparison_mode": "OBSERVATIONAL_ONLY",
+        "authoritative_source": "COMPATIBILITY_ROUTING_UNLESS_CERTIFIED_MIGRATION_ALREADY_SELECTED",
+        "canonical_semantic_artifact_reference": csa_interpretation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": csa_interpretation.get("canonical_semantic_artifact_hash"),
+        "compatibility_source": compatibility_interpretation.get("source"),
+        "compatibility_interpretation_hash": replay_hash(compatibility_interpretation),
+        "csa_interpretation_hash": replay_hash(csa_interpretation),
+        "compatibility_semantic_interpretation": compatibility_interpretation,
+        "csa_semantic_interpretation": csa_interpretation,
+        "semantic_equivalence_result": equivalence_result,
+        "semantic_differences": differences,
+        "confidence_comparison": confidence_comparison,
+        "parity_status": parity_status,
+        "replay_lineage": {
+            "routing_replay_reference": _require_string(replay_reference, "replay_reference"),
+            "canonical_chain_id": canonical_chain_id,
+            "prompt_id": prompt_id,
+            "comparison_source": "CSA_VS_LOCAL_COMPATIBILITY_MARKERS",
+        },
+        "non_authoritative": True,
+        "routing_influence": False,
+        "governance_influence": False,
+        "approval_influence": False,
+        "provider_selection_influence": False,
+        "execution_influence": False,
+        "worker_influence": False,
+        "lifecycle_influence": False,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_reference": replay_reference,
+        "replay_visible": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _csa_semantic_interpretation(canonical_semantic_capture: dict[str, Any] | None) -> dict[str, Any]:
+    semantic_artifact = (
+        canonical_semantic_capture.get("semantic_artifact")
+        if isinstance(canonical_semantic_capture, dict)
+        else None
+    )
+    if not isinstance(semantic_artifact, dict):
+        return {
+            "source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "available": False,
+            "canonical_semantic_artifact_reference": None,
+            "canonical_semantic_artifact_hash": None,
+            "workflow_id": None,
+            "intent_family": None,
+            "domain": None,
+            "requested_actions": [],
+            "semantic_confidence": None,
+            "ambiguity_status": None,
+            "clarification_required": None,
+            "approval_required": None,
+            "execution_requested": None,
+            "provider_invoked": None,
+            "worker_invoked": None,
+        }
+    semantic_identity = semantic_artifact.get("semantic_identity") or {}
+    workflow_identity = semantic_artifact.get("workflow_identity") or {}
+    confidence = semantic_artifact.get("confidence") or {}
+    ambiguity = semantic_artifact.get("ambiguity") or {}
+    clarification_state = semantic_artifact.get("clarification_state") or {}
+    approval_state = semantic_artifact.get("approval_state") or {}
+    execution_intent = semantic_artifact.get("execution_intent") or {}
+    provider_projection = semantic_artifact.get("provider_projection") or {}
+    worker_projection = semantic_artifact.get("worker_projection") or {}
+    return {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "available": True,
+        "canonical_semantic_artifact_reference": (
+            canonical_semantic_capture.get("semantic_replay_reference")
+            if isinstance(canonical_semantic_capture, dict)
+            else None
+        ),
+        "canonical_semantic_artifact_hash": semantic_artifact.get("artifact_hash"),
+        "workflow_id": workflow_identity.get("workflow_id"),
+        "intent_family": semantic_identity.get("intent_family"),
+        "domain": semantic_identity.get("domain"),
+        "requested_actions": list(semantic_identity.get("requested_actions") or []),
+        "semantic_confidence": confidence.get("semantic_confidence"),
+        "ambiguity_status": ambiguity.get("ambiguity_status"),
+        "clarification_required": clarification_state.get("clarification_required"),
+        "approval_required": approval_state.get("approval_required"),
+        "execution_requested": execution_intent.get("execution_requested"),
+        "provider_invoked": provider_projection.get("provider_invoked"),
+        "worker_invoked": worker_projection.get("worker_invoked"),
+    }
+
+
+def _compatibility_semantic_interpretation(route_evidence: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(route_evidence, dict):
+        return {
+            "source": "LOCAL_COMPATIBILITY_MARKERS",
+            "available": False,
+            "workflow_id": None,
+            "routing_status": None,
+            "confidence": None,
+            "matched_terms": [],
+            "intent_family": None,
+            "clarification_required": None,
+            "expected_workflow_targets": [],
+            "failure_reason": None,
+        }
+    compatibility_intake = route_evidence.get("compatibility_human_intent_intake")
+    return {
+        "source": route_evidence.get("compatibility_source"),
+        "available": route_evidence.get("compatibility_failure_reason") is None,
+        "workflow_id": route_evidence.get("compatibility_workflow_id"),
+        "routing_status": route_evidence.get("compatibility_routing_status"),
+        "confidence": route_evidence.get("compatibility_confidence"),
+        "matched_terms": deepcopy(route_evidence.get("compatibility_matched_terms", [])),
+        "intent_family": route_evidence.get("compatibility_intent_family"),
+        "clarification_required": (
+            compatibility_intake.get("clarification_required")
+            if isinstance(compatibility_intake, dict)
+            else route_evidence.get("compatibility_routing_status") == CLARIFICATION_REQUIRED
+        ),
+        "expected_workflow_targets": deepcopy(route_evidence.get("compatibility_expected_workflow_targets", [])),
+        "failure_reason": route_evidence.get("compatibility_failure_reason"),
+    }
+
+
+def _semantic_interpretation_differences(
+    *,
+    csa_interpretation: dict[str, Any],
+    compatibility_interpretation: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if csa_interpretation.get("available") is not True or compatibility_interpretation.get("available") is not True:
+        return []
+    comparisons = (
+        ("workflow_id", "workflow_id"),
+        ("semantic_confidence", "confidence"),
+        ("clarification_required", "clarification_required"),
+    )
+    differences: list[dict[str, Any]] = []
+    for csa_field, compatibility_field in comparisons:
+        csa_value = csa_interpretation.get(csa_field)
+        compatibility_value = compatibility_interpretation.get(compatibility_field)
+        if csa_value != compatibility_value:
+            differences.append(
+                {
+                    "field": csa_field,
+                    "csa_value": csa_value,
+                    "compatibility_field": compatibility_field,
+                    "compatibility_value": compatibility_value,
+                }
+            )
+    return differences
+
+
 def _analysis(
     workflow_id: str,
     confidence: str,
@@ -1569,6 +1792,7 @@ def _routing_decision_artifact(
     ubtr_ocs_cognition_handoff_capture: dict[str, Any] | None,
     ubtr_cognition_result_integration_capture: dict[str, Any] | None,
     compatibility_route_evidence: dict[str, Any] | None,
+    semantic_comparison_artifact: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
     translation_artifact = (
@@ -1669,6 +1893,31 @@ def _routing_decision_artifact(
             analysis.get("previous_compatibility_interpretation")
         ),
         "semantic_parity_evidence": deepcopy(analysis.get("semantic_parity_evidence")),
+        "semantic_comparison_artifact": (
+            deepcopy(semantic_comparison_artifact)
+            if isinstance(semantic_comparison_artifact, dict)
+            else None
+        ),
+        "semantic_comparison_hash": (
+            semantic_comparison_artifact.get("artifact_hash")
+            if isinstance(semantic_comparison_artifact, dict)
+            else None
+        ),
+        "semantic_equivalence_result": (
+            semantic_comparison_artifact.get("semantic_equivalence_result")
+            if isinstance(semantic_comparison_artifact, dict)
+            else None
+        ),
+        "semantic_comparison_parity_status": (
+            semantic_comparison_artifact.get("parity_status")
+            if isinstance(semantic_comparison_artifact, dict)
+            else None
+        ),
+        "semantic_comparison_non_authoritative": (
+            semantic_comparison_artifact.get("non_authoritative") is True
+            if isinstance(semantic_comparison_artifact, dict)
+            else None
+        ),
         "new_csa_routing_source": (
             "CANONICAL_SEMANTIC_ARTIFACT"
             if isinstance(compatibility_route_evidence, dict)
@@ -1801,6 +2050,11 @@ def _workflow_selection_artifact(
             decision.get("previous_compatibility_interpretation")
         ),
         "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
+        "semantic_comparison_artifact": deepcopy(decision.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": decision.get("semantic_comparison_hash"),
+        "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
+        "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
+        "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -1870,6 +2124,11 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
             decision.get("previous_compatibility_interpretation")
         ),
         "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
+        "semantic_comparison_artifact": deepcopy(decision.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": decision.get("semantic_comparison_hash"),
+        "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
+        "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
+        "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -1948,6 +2207,11 @@ def _failed_decision_artifact(
         "previous_compatibility_matched_terms": [],
         "previous_compatibility_interpretation": None,
         "semantic_parity_evidence": None,
+        "semantic_comparison_artifact": None,
+        "semantic_comparison_hash": None,
+        "semantic_equivalence_result": None,
+        "semantic_comparison_parity_status": None,
+        "semantic_comparison_non_authoritative": None,
         "new_csa_routing_source": None,
         "ubtr_semantic_cognition_orchestration_reference": None,
         "ubtr_semantic_cognition_decision": None,
@@ -2033,6 +2297,11 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
             decision.get("previous_compatibility_interpretation")
         ),
         "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
+        "semantic_comparison_artifact": deepcopy(decision.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": decision.get("semantic_comparison_hash"),
+        "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
+        "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
+        "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
