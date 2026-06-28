@@ -333,6 +333,46 @@ def test_hardening_artifact_hash_is_stable_and_replay_visible(tmp_path) -> None:
     assert result["hardening_artifact"]["read_only"] is True
 
 
+def test_csa_primary_hardening_classifier_records_parity_evidence(tmp_path) -> None:
+    result = record_acli_hardening_interaction(
+        hardening_id="HARDENING-CSA-001",
+        interaction_id="INTERACTION-CSA-001",
+        completed_interaction={
+            "prompt": "show status",
+            "workflow_id": "SHOW_STATUS",
+            "intent_family": "STATUS_INTENT",
+            "normalized_intent": {"requested_actions": ["SHOW_STATUS"]},
+        },
+        canonical_semantic_lineage={
+            "canonical_semantic_artifact_reference": "replay/csa/status",
+            "canonical_semantic_artifact_hash": "sha256:" + "b" * 64,
+            "semantic_identity": {
+                "intent_family": "STATUS_INTENT",
+                "domain": "AIGOL_CORE",
+                "requested_actions": ["SHOW_STATUS"],
+            },
+            "workflow_id": "SHOW_STATUS",
+            "confidence": {"semantic_confidence": "DETERMINISTIC"},
+        },
+        replay_dir=tmp_path / "hardening",
+        created_at=CREATED_AT,
+    )
+    reconstructed = reconstruct_acli_hardening_replay(tmp_path / "hardening")
+
+    assert result["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert result["canonical_semantic_artifact_hash"] == "sha256:" + "b" * 64
+    assert result["semantic_comparison_hash"].startswith("sha256:")
+    assert result["semantic_comparison_artifact"]["artifact_hash"] == result["semantic_comparison_hash"]
+    assert result["semantic_comparison_parity_status"] == (
+        "CSA_COMPATIBILITY_HARDENING_CLASSIFIER_PARITY_PROVEN"
+    )
+    assert result["semantic_parity_evidence"]["historical_replay_reinterpreted"] is False
+    assert result["fallback_status"] == "COMPATIBILITY_FALLBACK_AVAILABLE_NOT_USED"
+    assert reconstructed["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["semantic_comparison_hash"] == result["semantic_comparison_hash"]
+    assert reconstructed["migration_batch_id"].endswith("REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1")
+
+
 def test_fail_closed_interaction_records_comparable_evidence(tmp_path) -> None:
     result = record_acli_hardening_interaction(
         hardening_id="HARDENING-015",

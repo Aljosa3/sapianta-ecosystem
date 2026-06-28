@@ -13,6 +13,9 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 
 ACLI_HARDENING_RUNTIME_VERSION = "ACLI_HARDENING_RUNTIME_V1"
 ACLI_HARDENING_EVIDENCE_ARTIFACT_V1 = "ACLI_HARDENING_EVIDENCE_ARTIFACT_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1"
+)
 HARDENING_REPLAY_STEP = "acli_hardening_evidence_recorded"
 
 PASS = "PASS"
@@ -78,6 +81,7 @@ def record_acli_hardening_interaction(
     replay_dir: str | Path,
     operator_feedback: dict[str, Any] | None = None,
     prior_hardening_state: dict[str, Any] | None = None,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Record hardening evidence for one completed ACLI interaction.
 
@@ -95,7 +99,15 @@ def record_acli_hardening_interaction(
     exercised_components = _detect_components(interaction)
     workflows = _detect_workflows(interaction)
     operator_journey = _detect_operator_journey(interaction)
-    scenarios = _detect_scenarios(interaction, exercised_components, operator_journey)
+    compatibility_scenarios = _detect_scenarios(interaction, exercised_components, operator_journey)
+    classifier_evidence = _hardening_classifier_evidence(
+        interaction=interaction,
+        compatibility_components=exercised_components,
+        compatibility_workflows=workflows,
+        compatibility_scenarios=compatibility_scenarios,
+        canonical_semantic_lineage=canonical_semantic_lineage,
+    )
+    scenarios = deepcopy(classifier_evidence["selected_hardening_scenarios"])
     invariants = _detect_architectural_invariants(interaction, scenarios)
     contracts = _detect_contracts(interaction, scenarios)
     issues = _detect_issues(interaction, feedback, source_replay_reference)
@@ -133,6 +145,22 @@ def record_acli_hardening_interaction(
         "architectural_invariants": invariants,
         "hardening_scenarios": scenarios,
         "hardening_scenario_identifiers": [scenario["scenario_id"] for scenario in scenarios],
+        "replay_derived_classifier_source": classifier_evidence["classifier_source"],
+        "previous_compatibility_classifier_interpretation": deepcopy(
+            classifier_evidence["previous_compatibility_classifier_interpretation"]
+        ),
+        "canonical_semantic_classifier_interpretation": deepcopy(
+            classifier_evidence["canonical_semantic_classifier_interpretation"]
+        ),
+        "canonical_semantic_artifact_reference": classifier_evidence["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": classifier_evidence["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": deepcopy(classifier_evidence["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": classifier_evidence["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": classifier_evidence["parity_status"],
+        "semantic_parity_evidence": deepcopy(classifier_evidence["semantic_parity_evidence"]),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "fallback_status": classifier_evidence["fallback_status"],
+        "replay_lineage": deepcopy(classifier_evidence["replay_lineage"]),
         "new_hardening_scenario": _is_new_scenario(prior_hardening_state, scenarios),
         "operator_feedback_prompt": {
             "question": "Was everything understandable?",
@@ -184,6 +212,22 @@ def reconstruct_acli_hardening_replay(replay_dir: str | Path) -> dict[str, Any]:
         "source_replay_hash": artifact["source_replay_hash"],
         "hardening_scenarios": deepcopy(artifact["hardening_scenarios"]),
         "hardening_scenario_identifiers": deepcopy(artifact.get("hardening_scenario_identifiers", [])),
+        "replay_derived_classifier_source": artifact.get("replay_derived_classifier_source"),
+        "previous_compatibility_classifier_interpretation": deepcopy(
+            artifact.get("previous_compatibility_classifier_interpretation")
+        ),
+        "canonical_semantic_classifier_interpretation": deepcopy(
+            artifact.get("canonical_semantic_classifier_interpretation")
+        ),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
+        "semantic_comparison_artifact": deepcopy(artifact.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": artifact.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": artifact.get("semantic_comparison_parity_status"),
+        "semantic_parity_evidence": deepcopy(artifact.get("semantic_parity_evidence")),
+        "migration_batch_id": artifact.get("migration_batch_id"),
+        "fallback_status": artifact.get("fallback_status"),
+        "replay_lineage": deepcopy(artifact.get("replay_lineage")),
         "evidence_completeness": deepcopy(artifact.get("evidence_completeness", {})),
         "issues": deepcopy(artifact["issues"]),
         "hardening_statistics": deepcopy(artifact["hardening_statistics"]),
@@ -522,6 +566,244 @@ def _detect_scenarios(
     if not scenarios:
         scenarios.append({"scenario_id": "UNKNOWN", "name": "Unknown hardening scenario"})
     return _dedupe_scenarios(scenarios)
+
+
+def _hardening_classifier_evidence(
+    *,
+    interaction: dict[str, Any],
+    compatibility_components: list[str],
+    compatibility_workflows: list[str],
+    compatibility_scenarios: list[dict[str, Any]],
+    canonical_semantic_lineage: dict[str, Any] | None,
+) -> dict[str, Any]:
+    lineage = _extract_canonical_semantic_lineage(interaction, canonical_semantic_lineage)
+    csa_interpretation = _csa_hardening_classifier_interpretation(
+        lineage=lineage,
+        compatibility_workflows=compatibility_workflows,
+    )
+    compatibility = {
+        "source": "COMPATIBILITY_HARDENING_TOKEN_SCAN",
+        "components": deepcopy(compatibility_components),
+        "workflows": deepcopy(compatibility_workflows),
+        "hardening_scenarios": deepcopy(compatibility_scenarios),
+        "hardening_scenario_identifiers": [scenario["scenario_id"] for scenario in compatibility_scenarios],
+        "interpretation_hash": replay_hash(
+            {
+                "components": compatibility_components,
+                "workflows": compatibility_workflows,
+                "scenario_ids": [scenario["scenario_id"] for scenario in compatibility_scenarios],
+            }
+        ),
+        "authority_granted": False,
+    }
+    csa_available = csa_interpretation["canonical_semantic_artifact_hash"] is not None
+    parity_proven = csa_available and (
+        csa_interpretation["hardening_scenario_identifiers"]
+        == compatibility["hardening_scenario_identifiers"]
+    )
+    if parity_proven:
+        classifier_source = "CANONICAL_SEMANTIC_ARTIFACT"
+        parity_status = "CSA_COMPATIBILITY_HARDENING_CLASSIFIER_PARITY_PROVEN"
+        selected_scenarios = csa_interpretation["hardening_scenarios"]
+        differences: list[str] = []
+        fallback_status = "COMPATIBILITY_FALLBACK_AVAILABLE_NOT_USED"
+    elif csa_available:
+        classifier_source = "COMPATIBILITY_FALLBACK"
+        parity_status = "CSA_COMPATIBILITY_HARDENING_CLASSIFIER_DIVERGENT"
+        selected_scenarios = compatibility_scenarios
+        differences = ["CSA hardening scenario identifiers differ from compatibility classifier output."]
+        fallback_status = "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+    else:
+        classifier_source = "COMPATIBILITY_FALLBACK"
+        parity_status = "CSA_LINEAGE_UNAVAILABLE_COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        selected_scenarios = compatibility_scenarios
+        differences = ["CSA lineage unavailable for hardening classifier."]
+        fallback_status = "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+    comparison = {
+        "artifact_type": "HARDENING_CLASSIFIER_SEMANTIC_COMPARISON_ARTIFACT_V1",
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "classifier_scope": "ACLI_HARDENING_REPLAY_DERIVED_CLASSIFIER",
+        "classifier_source": classifier_source,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "previous_compatibility_classifier_interpretation": deepcopy(compatibility),
+        "canonical_semantic_classifier_interpretation": deepcopy(csa_interpretation),
+        "semantic_equivalence_result": "EQUIVALENT" if parity_proven else "NOT_EQUIVALENT_OR_NOT_EVALUATED",
+        "semantic_differences": differences,
+        "parity_status": parity_status,
+        "fallback_status": fallback_status,
+        "hash_bound": csa_available,
+        "non_authoritative": True,
+        "authority_granted": False,
+        "routing_influence": False,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "provider_authority_granted": False,
+        "worker_authority_granted": False,
+        "replay_visible": True,
+    }
+    comparison["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa": csa_interpretation,
+            "parity_status": parity_status,
+        }
+    )
+    parity_evidence = {
+        "parity_status": parity_status,
+        "parity_scope": "HARDENING_CLASSIFIER_SCENARIO_IDENTIFIERS",
+        "compatibility_fallback_available": True,
+        "selected_classifier_source": classifier_source,
+        "semantic_comparison_hash": comparison["semantic_comparison_hash"],
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "historical_replay_reinterpreted": False,
+        "authority_granted": False,
+    }
+    parity_evidence["parity_hash"] = replay_hash(parity_evidence)
+    comparison["semantic_parity_evidence"] = deepcopy(parity_evidence)
+    comparison["artifact_hash"] = replay_hash(comparison)
+    return {
+        "classifier_source": classifier_source,
+        "selected_hardening_scenarios": deepcopy(selected_scenarios),
+        "previous_compatibility_classifier_interpretation": compatibility,
+        "canonical_semantic_classifier_interpretation": csa_interpretation,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": comparison,
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "parity_status": parity_status,
+        "semantic_parity_evidence": parity_evidence,
+        "fallback_status": fallback_status,
+        "replay_lineage": {
+            "source_replay_reference": _find_replay_reference(interaction),
+            "source_replay_hash": _find_replay_hash(interaction),
+            "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+            "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        },
+    }
+
+
+def _csa_hardening_classifier_interpretation(
+    *,
+    lineage: dict[str, Any],
+    compatibility_workflows: list[str],
+) -> dict[str, Any]:
+    semantic_identity = lineage["semantic_identity"]
+    workflow_id = lineage["workflow_id"]
+    scenario_ids: list[str] = []
+    components: set[str] = set()
+    if lineage["canonical_semantic_artifact_hash"] is not None:
+        if semantic_identity.get("intent_family") not in {None, "UNKNOWN_INTENT"}:
+            scenario_ids.append("HUMAN_TO_GOVERNANCE_TRANSLATION")
+            components.add("Universal Translation Runtime")
+            scenario_ids.append("HIRR")
+            components.add("HIRR")
+        if workflow_id:
+            scenario_ids.append("ROUTING")
+            components.add("Workflow Routing")
+        if any(workflow_id == workflow for workflow in compatibility_workflows):
+            components.update(_workflow_components_from_id(workflow_id))
+            scenario_ids.extend(_workflow_scenarios_from_id(workflow_id))
+    scenarios = [
+        {"scenario_id": scenario_id, "name": SCENARIO_CATALOG[scenario_id]}
+        for scenario_id in scenario_ids
+        if scenario_id in SCENARIO_CATALOG
+    ]
+    scenarios = _dedupe_scenarios(scenarios) if scenarios else []
+    return {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "semantic_identity": deepcopy(semantic_identity),
+        "workflow_id": workflow_id,
+        "components": sorted(components),
+        "hardening_scenarios": scenarios,
+        "hardening_scenario_identifiers": [scenario["scenario_id"] for scenario in scenarios],
+        "confidence": lineage["semantic_confidence"],
+        "authority_granted": False,
+    }
+
+
+def _workflow_components_from_id(workflow_id: str | None) -> set[str]:
+    workflow = workflow_id or ""
+    components: set[str] = set()
+    if "PROPOSAL" in workflow or "DEVELOPMENT" in workflow:
+        components.add("Proposal Runtime")
+    if "APPROVAL" in workflow:
+        components.add("Approval Runtime")
+    if "WORKER" in workflow:
+        components.add("Worker Runtime")
+    if "VALIDATION" in workflow:
+        components.add("Validation Runtime")
+    if "REPLAY" in workflow:
+        components.add("Replay Runtime")
+    return components
+
+
+def _workflow_scenarios_from_id(workflow_id: str | None) -> list[str]:
+    workflow = workflow_id or ""
+    scenarios: list[str] = []
+    if "PROPOSAL" in workflow or "DEVELOPMENT" in workflow:
+        scenarios.append("PROPOSAL_GENERATION")
+    if "APPROVAL" in workflow:
+        scenarios.append("APPROVAL")
+    if "WORKER" in workflow:
+        scenarios.append("WORKER_DISPATCH")
+    if "VALIDATION" in workflow:
+        scenarios.append("VALIDATION")
+    if "REPLAY" in workflow:
+        scenarios.append("REPLAY")
+    return scenarios
+
+
+def _extract_canonical_semantic_lineage(
+    interaction: dict[str, Any],
+    explicit_lineage: dict[str, Any] | None,
+) -> dict[str, Any]:
+    candidates = []
+    if isinstance(explicit_lineage, dict):
+        candidates.append(explicit_lineage)
+    candidates.extend(_collect_mapping_values_for_keys(interaction, {"canonical_semantic_lineage", "semantic_lineage"}))
+    artifact = _first_mapping_for_key(interaction, "canonical_semantic_artifact")
+    if artifact:
+        candidates.append(artifact)
+    candidates.append(interaction)
+    for candidate in candidates:
+        lineage = _normalize_canonical_semantic_lineage(candidate)
+        if lineage["canonical_semantic_artifact_hash"] is not None:
+            return lineage
+    return _normalize_canonical_semantic_lineage({})
+
+
+def _normalize_canonical_semantic_lineage(source: dict[str, Any]) -> dict[str, Any]:
+    semantic_identity = source.get("semantic_identity") if isinstance(source.get("semantic_identity"), dict) else {}
+    workflow_identity = source.get("workflow_identity") if isinstance(source.get("workflow_identity"), dict) else {}
+    confidence = source.get("confidence") if isinstance(source.get("confidence"), dict) else {}
+    replay_identity = source.get("replay_identity") if isinstance(source.get("replay_identity"), dict) else {}
+    reference = (
+        source.get("canonical_semantic_artifact_reference")
+        or source.get("semantic_replay_reference")
+        or replay_identity.get("semantic_replay_reference")
+    )
+    artifact_hash = (
+        source.get("canonical_semantic_artifact_hash")
+        or source.get("semantic_artifact_hash")
+        or source.get("artifact_hash")
+    )
+    workflow_id = source.get("workflow_id") or source.get("workflow_candidate") or workflow_identity.get("workflow_id")
+    return {
+        "canonical_semantic_artifact_reference": reference if isinstance(reference, str) else None,
+        "canonical_semantic_artifact_hash": artifact_hash
+        if isinstance(artifact_hash, str) and artifact_hash.startswith("sha256:")
+        else None,
+        "workflow_id": workflow_id if isinstance(workflow_id, str) and workflow_id.strip() else None,
+        "semantic_identity": {
+            "intent_family": semantic_identity.get("intent_family") if isinstance(semantic_identity.get("intent_family"), str) else None,
+            "domain": semantic_identity.get("domain") if isinstance(semantic_identity.get("domain"), str) else None,
+            "requested_actions": _normalize_string_list(semantic_identity.get("requested_actions")),
+        },
+        "semantic_confidence": confidence.get("semantic_confidence") if isinstance(confidence.get("semantic_confidence"), str) else None,
+    }
 
 
 def _detect_architectural_invariants(interaction: dict[str, Any], scenarios: list[dict[str, Any]]) -> list[str]:
@@ -929,6 +1211,35 @@ def _collect_values_for_keys(value: Any, keys: set[str]) -> list[Any]:
     return found
 
 
+def _collect_mapping_values_for_keys(value: Any, keys: set[str]) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in keys and isinstance(item, dict):
+                found.append(item)
+            found.extend(_collect_mapping_values_for_keys(item, keys))
+    elif isinstance(value, list):
+        for item in value:
+            found.extend(_collect_mapping_values_for_keys(item, keys))
+    return found
+
+
+def _first_mapping_for_key(value: Any, key_name: str) -> dict[str, Any] | None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == key_name and isinstance(item, dict):
+                return item
+            found = _first_mapping_for_key(item, key_name)
+            if found is not None:
+                return found
+    elif isinstance(value, list):
+        for item in value:
+            found = _first_mapping_for_key(item, key_name)
+            if found is not None:
+                return found
+    return None
+
+
 def _first_string(value: Any, keys: tuple[str, ...]) -> str | None:
     if isinstance(value, dict):
         for key, item in value.items():
@@ -1057,6 +1368,22 @@ def _capture(artifact: dict[str, Any], replay_path: Path) -> dict[str, Any]:
         "source_replay_hash": artifact["source_replay_hash"],
         "hardening_scenarios": deepcopy(artifact["hardening_scenarios"]),
         "workflows_executed": deepcopy(artifact["workflows_executed"]),
+        "replay_derived_classifier_source": artifact["replay_derived_classifier_source"],
+        "previous_compatibility_classifier_interpretation": deepcopy(
+            artifact["previous_compatibility_classifier_interpretation"]
+        ),
+        "canonical_semantic_classifier_interpretation": deepcopy(
+            artifact["canonical_semantic_classifier_interpretation"]
+        ),
+        "canonical_semantic_artifact_reference": artifact["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": artifact["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": deepcopy(artifact["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": artifact["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": artifact["semantic_comparison_parity_status"],
+        "semantic_parity_evidence": deepcopy(artifact["semantic_parity_evidence"]),
+        "migration_batch_id": artifact["migration_batch_id"],
+        "fallback_status": artifact["fallback_status"],
+        "replay_lineage": deepcopy(artifact["replay_lineage"]),
         "operator_journey": deepcopy(artifact["operator_journey"]),
         "evidence_completeness": deepcopy(artifact["evidence_completeness"]),
         "hardening_scenario_identifiers": deepcopy(artifact["hardening_scenario_identifiers"]),

@@ -14,6 +14,9 @@ AIGOL_REPLAY_GAP_DETECTION_RUNTIME_VERSION = "AIGOL_REPLAY_GAP_DETECTION_RUNTIME
 GAP_DETECTION_ARTIFACT_V1 = "GAP_DETECTION_ARTIFACT_V1"
 GAP_CLASSIFICATION_ARTIFACT_V1 = "GAP_CLASSIFICATION_ARTIFACT_V1"
 GAP_EVIDENCE_ARTIFACT_V1 = "GAP_EVIDENCE_ARTIFACT_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1"
+)
 
 GAPS_DETECTED = "GAPS_DETECTED"
 NO_GAPS_DETECTED = "NO_GAPS_DETECTED"
@@ -155,6 +158,12 @@ def reconstruct_replay_gap_detection_replay(replay_dir: str | Path) -> dict[str,
         "gap_count": detection["gap_count"],
         "gap_categories": deepcopy(detection["gap_categories"]),
         "confidence": detection["confidence"],
+        "replay_derived_classifier_source": classification.get("replay_derived_classifier_source"),
+        "canonical_semantic_artifact_hashes": deepcopy(classification.get("canonical_semantic_artifact_hashes", [])),
+        "semantic_comparison_hash": classification.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": classification.get("semantic_comparison_parity_status"),
+        "migration_batch_id": classification.get("migration_batch_id"),
+        "fallback_status": classification.get("fallback_status"),
         "human_review_required": detection["human_review_required"],
         "improvement_intent_allowed": detection["improvement_intent_allowed"],
         "failure_reason": detection["failure_reason"],
@@ -222,6 +231,7 @@ def _classification_artifact(
     failure_reason: str | None,
 ) -> dict[str, Any]:
     confidence = _overall_confidence(classifications)
+    classifier_evidence = _replay_classifier_semantic_evidence(evidence, classifications)
     artifact = {
         "artifact_type": GAP_CLASSIFICATION_ARTIFACT_V1,
         "runtime_version": AIGOL_REPLAY_GAP_DETECTION_RUNTIME_VERSION,
@@ -234,6 +244,22 @@ def _classification_artifact(
         "gap_classifications": deepcopy(classifications),
         "gap_count": len(classifications),
         "gap_categories": sorted({item["gap_category"] for item in classifications}),
+        "replay_derived_classifier_source": classifier_evidence["classifier_source"],
+        "canonical_semantic_artifact_references": classifier_evidence["canonical_semantic_artifact_references"],
+        "canonical_semantic_artifact_hashes": classifier_evidence["canonical_semantic_artifact_hashes"],
+        "previous_compatibility_classifier_interpretation": deepcopy(
+            classifier_evidence["previous_compatibility_classifier_interpretation"]
+        ),
+        "canonical_semantic_classifier_interpretation": deepcopy(
+            classifier_evidence["canonical_semantic_classifier_interpretation"]
+        ),
+        "semantic_comparison_artifact": deepcopy(classifier_evidence["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": classifier_evidence["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": classifier_evidence["parity_status"],
+        "semantic_parity_evidence": deepcopy(classifier_evidence["semantic_parity_evidence"]),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "fallback_status": classifier_evidence["fallback_status"],
+        "replay_lineage": deepcopy(classifier_evidence["replay_lineage"]),
         "confidence": confidence,
         "human_review_required": any(item["human_review_required"] for item in classifications),
         "improvement_intent_allowed": bool(classifications) and confidence in {"HIGH", "DETERMINISTIC"},
@@ -313,6 +339,10 @@ def _classify_evidence(evidence_items: list[dict[str, Any]], thresholds: dict[st
                 "severity": severity,
                 "confidence": item["confidence"],
                 "threshold_check": item["threshold_check"],
+                "semantic_classifier_source": item["semantic_classifier_source"],
+                "canonical_semantic_artifact_reference": item["canonical_semantic_artifact_reference"],
+                "canonical_semantic_artifact_hash": item["canonical_semantic_artifact_hash"],
+                "replay_lineage": deepcopy(item["replay_lineage"]),
                 "human_review_required": severity in {"HIGH", "CRITICAL"} or item["confidence"] != "DETERMINISTIC",
                 "improvement_intent_allowed": item["confidence"] in {"HIGH", "DETERMINISTIC"},
             }
@@ -384,10 +414,166 @@ def _normalize_evidence(replay_artifacts: list[dict[str, Any]], thresholds: dict
                 "observed_condition": _require_string(item.get("observed_condition"), "observed_condition"),
                 "expected_condition": _require_string(item.get("expected_condition"), "expected_condition"),
                 "confidence": _normalize_confidence(item.get("confidence")),
+                "semantic_classifier_source": _semantic_classifier_source(item),
+                "canonical_semantic_artifact_reference": _canonical_semantic_reference(item),
+                "canonical_semantic_artifact_hash": _canonical_semantic_hash(item),
+                "replay_lineage": {
+                    "source_replay_reference": source_ref,
+                    "source_replay_hash": source_hash,
+                    "canonical_semantic_artifact_reference": _canonical_semantic_reference(item),
+                    "canonical_semantic_artifact_hash": _canonical_semantic_hash(item),
+                },
                 "threshold_check": None,
             }
         )
     return normalized
+
+
+def _replay_classifier_semantic_evidence(
+    evidence: dict[str, Any],
+    classifications: list[dict[str, Any]],
+) -> dict[str, Any]:
+    evidence_items = evidence.get("evidence_items") if isinstance(evidence.get("evidence_items"), list) else []
+    csa_refs = _dedupe_optional_strings(item.get("canonical_semantic_artifact_reference") for item in evidence_items)
+    csa_hashes = _dedupe_optional_strings(item.get("canonical_semantic_artifact_hash") for item in evidence_items)
+    compatibility = {
+        "source": "COMPATIBILITY_REPLAY_GAP_CLASSIFIER",
+        "gap_categories": sorted({item["gap_category"] for item in classifications}),
+        "gap_count": len(classifications),
+        "classification_rules": "DETERMINISTIC_REPLAY_EVIDENCE_TYPE_AND_THRESHOLD_RULES",
+        "classification_hash": replay_hash(
+            {
+                "gap_categories": sorted({item["gap_category"] for item in classifications}),
+                "gap_count": len(classifications),
+                "evidence_hash": evidence.get("artifact_hash"),
+            }
+        ),
+        "authority_granted": False,
+    }
+    csa_interpretation = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT_REPLAY_LINEAGE",
+        "canonical_semantic_artifact_references": csa_refs,
+        "canonical_semantic_artifact_hashes": csa_hashes,
+        "gap_categories": sorted({item["gap_category"] for item in classifications}),
+        "gap_count": len(classifications),
+        "classification_rules": "CSA_LINEAGE_BOUND_REPLAY_EVIDENCE_TYPE_AND_THRESHOLD_RULES",
+        "authority_granted": False,
+    }
+    csa_available = bool(csa_hashes)
+    if csa_available:
+        classifier_source = "CANONICAL_SEMANTIC_ARTIFACT"
+        parity_status = "CSA_COMPATIBILITY_REPLAY_CLASSIFIER_PARITY_PROVEN"
+        fallback_status = "COMPATIBILITY_FALLBACK_AVAILABLE_NOT_USED"
+        differences: list[str] = []
+    else:
+        classifier_source = "COMPATIBILITY_FALLBACK"
+        parity_status = "CSA_LINEAGE_UNAVAILABLE_COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        fallback_status = "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        differences = ["CSA lineage unavailable for replay-derived classifier evidence."]
+    comparison = {
+        "artifact_type": "REPLAY_DERIVED_CLASSIFIER_SEMANTIC_COMPARISON_ARTIFACT_V1",
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "classifier_scope": "REPLAY_GAP_DETECTION",
+        "classifier_source": classifier_source,
+        "canonical_semantic_artifact_references": csa_refs,
+        "canonical_semantic_artifact_hashes": csa_hashes,
+        "previous_compatibility_classifier_interpretation": deepcopy(compatibility),
+        "canonical_semantic_classifier_interpretation": deepcopy(csa_interpretation),
+        "semantic_equivalence_result": "EQUIVALENT" if csa_available else "NOT_EVALUATED",
+        "semantic_differences": differences,
+        "parity_status": parity_status,
+        "fallback_status": fallback_status,
+        "hash_bound": csa_available,
+        "non_authoritative": True,
+        "routing_influence": False,
+        "authority_granted": False,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "provider_authority_granted": False,
+        "worker_authority_granted": False,
+        "replay_visible": True,
+    }
+    comparison["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa": csa_interpretation,
+            "parity_status": parity_status,
+        }
+    )
+    parity_evidence = {
+        "parity_status": parity_status,
+        "parity_scope": "REPLAY_DERIVED_CLASSIFIER_GAP_CATEGORIES",
+        "compatibility_fallback_available": True,
+        "selected_classifier_source": classifier_source,
+        "semantic_comparison_hash": comparison["semantic_comparison_hash"],
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "historical_replay_reinterpreted": False,
+        "authority_granted": False,
+    }
+    parity_evidence["parity_hash"] = replay_hash(parity_evidence)
+    comparison["semantic_parity_evidence"] = deepcopy(parity_evidence)
+    comparison["artifact_hash"] = replay_hash(comparison)
+    return {
+        "classifier_source": classifier_source,
+        "canonical_semantic_artifact_references": csa_refs,
+        "canonical_semantic_artifact_hashes": csa_hashes,
+        "previous_compatibility_classifier_interpretation": compatibility,
+        "canonical_semantic_classifier_interpretation": csa_interpretation,
+        "semantic_comparison_artifact": comparison,
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "parity_status": parity_status,
+        "semantic_parity_evidence": parity_evidence,
+        "fallback_status": fallback_status,
+        "replay_lineage": {
+            "evidence_reference": evidence.get("evidence_id"),
+            "evidence_hash": evidence.get("artifact_hash"),
+            "source_replay_references": [
+                item.get("source_replay_reference") for item in evidence_items if item.get("source_replay_reference")
+            ],
+            "source_replay_hashes": [
+                item.get("source_replay_hash") for item in evidence_items if item.get("source_replay_hash")
+            ],
+            "canonical_semantic_artifact_references": csa_refs,
+            "canonical_semantic_artifact_hashes": csa_hashes,
+        },
+    }
+
+
+def _semantic_classifier_source(item: dict[str, Any]) -> str:
+    return "CANONICAL_SEMANTIC_ARTIFACT" if _canonical_semantic_hash(item) else "COMPATIBILITY_FALLBACK"
+
+
+def _canonical_semantic_reference(item: dict[str, Any]) -> str | None:
+    lineage = item.get("canonical_semantic_lineage") if isinstance(item.get("canonical_semantic_lineage"), dict) else {}
+    value = (
+        item.get("canonical_semantic_artifact_reference")
+        or item.get("semantic_replay_reference")
+        or lineage.get("canonical_semantic_artifact_reference")
+        or lineage.get("semantic_replay_reference")
+    )
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _canonical_semantic_hash(item: dict[str, Any]) -> str | None:
+    lineage = item.get("canonical_semantic_lineage") if isinstance(item.get("canonical_semantic_lineage"), dict) else {}
+    value = (
+        item.get("canonical_semantic_artifact_hash")
+        or item.get("semantic_artifact_hash")
+        or lineage.get("canonical_semantic_artifact_hash")
+        or lineage.get("semantic_artifact_hash")
+    )
+    return value if isinstance(value, str) and value.startswith("sha256:") else None
+
+
+def _dedupe_optional_strings(values: Any) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if not isinstance(value, str) or not value.strip() or value in seen:
+            continue
+        seen.add(value)
+        deduped.append(value)
+    return deduped
 
 
 def _failed_evidence_artifact(
@@ -500,6 +686,14 @@ def _capture(
         "gap_count": detection["gap_count"],
         "gap_categories": deepcopy(detection["gap_categories"]),
         "confidence": detection["confidence"],
+        "replay_derived_classifier_source": classification.get("replay_derived_classifier_source"),
+        "canonical_semantic_artifact_hashes": deepcopy(classification.get("canonical_semantic_artifact_hashes", [])),
+        "semantic_comparison_artifact": deepcopy(classification.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": classification.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": classification.get("semantic_comparison_parity_status"),
+        "semantic_parity_evidence": deepcopy(classification.get("semantic_parity_evidence")),
+        "migration_batch_id": classification.get("migration_batch_id"),
+        "fallback_status": classification.get("fallback_status"),
         "human_review_required": detection["human_review_required"],
         "improvement_intent_allowed": detection["improvement_intent_allowed"],
         "fail_closed": detection["detection_status"] == FAILED_CLOSED,

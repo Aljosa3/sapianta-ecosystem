@@ -141,6 +141,41 @@ def test_no_gap_result_is_replay_visible_and_non_authorizing(tmp_path) -> None:
     assert capture["ppp_invoked"] is False
 
 
+def test_replay_gap_classifier_consumes_csa_lineage_when_available(tmp_path) -> None:
+    capture = detect_replay_gaps(
+        detection_id="GAP-DETECTION-CSA-000001",
+        domain_id="AIGOL_CORE",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "csa",
+        replay_artifacts=[
+            _evidence(
+                "VALIDATION-CSA-FAIL",
+                "VALIDATION_RESULT",
+                {"status": "FAILED"},
+                status="FAILED",
+                canonical_semantic_lineage={
+                    "canonical_semantic_artifact_reference": "replay/csa/validation",
+                    "canonical_semantic_artifact_hash": "sha256:" + "c" * 64,
+                },
+            )
+        ],
+    )
+    reconstructed = reconstruct_replay_gap_detection_replay(tmp_path / "csa")
+    classification = capture["gap_classification_artifact"]
+
+    assert capture["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["canonical_semantic_artifact_hashes"] == ["sha256:" + "c" * 64]
+    assert capture["semantic_comparison_hash"].startswith("sha256:")
+    assert classification["semantic_comparison_artifact"]["artifact_hash"] == capture["semantic_comparison_hash"]
+    assert classification["semantic_comparison_parity_status"] == (
+        "CSA_COMPATIBILITY_REPLAY_CLASSIFIER_PARITY_PROVEN"
+    )
+    assert classification["semantic_parity_evidence"]["historical_replay_reinterpreted"] is False
+    assert classification["fallback_status"] == "COMPATIBILITY_FALLBACK_AVAILABLE_NOT_USED"
+    assert reconstructed["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["canonical_semantic_artifact_hashes"] == ["sha256:" + "c" * 64]
+
+
 def test_gap_detection_fails_closed_when_evidence_is_missing(tmp_path) -> None:
     capture = detect_replay_gaps(
         detection_id="GAP-DETECTION-MISSING-000001",

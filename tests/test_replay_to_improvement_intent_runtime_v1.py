@@ -97,6 +97,46 @@ def test_confirmed_gap_becomes_bounded_improvement_intent(tmp_path) -> None:
     assert reconstructed["replay_artifact_count"] == 4
 
 
+def test_replay_to_improvement_intent_preserves_upstream_csa_classifier_lineage(tmp_path) -> None:
+    gap = detect_replay_gaps(
+        detection_id="GAP-CSA-LINEAGE-000001",
+        domain_id="AIGOL_CORE",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "gap-csa-lineage",
+        replay_artifacts=[
+            _evidence(
+                "VALIDATION-CSA-FAIL",
+                "VALIDATION_RESULT",
+                {"status": "FAILED"},
+                status="FAILED",
+                canonical_semantic_lineage={
+                    "canonical_semantic_artifact_reference": "replay/csa/intent",
+                    "canonical_semantic_artifact_hash": "sha256:" + "d" * 64,
+                },
+            )
+        ],
+    )
+    capture = create_improvement_intent_from_replay_gap(
+        improvement_intent_id="IMPROVEMENT-INTENT-CSA-000001",
+        gap_detection_artifact=gap["gap_detection_artifact"],
+        gap_classification_artifact=gap["gap_classification_artifact"],
+        gap_evidence_artifact=gap["gap_evidence_artifact"],
+        canonical_chain_id=CHAIN_ID,
+        affected_layer="REPLAY",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "intent-csa-lineage",
+    )
+    reconstructed = reconstruct_replay_to_improvement_intent_replay(tmp_path / "intent-csa-lineage")
+
+    assert capture["intent_status"] == IMPROVEMENT_INTENT_CREATED
+    assert capture["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["canonical_semantic_artifact_hashes"] == ["sha256:" + "d" * 64]
+    assert capture["upstream_semantic_comparison_hash"] == gap["semantic_comparison_hash"]
+    assert capture["fallback_status"] == "COMPATIBILITY_FALLBACK_AVAILABLE_NOT_USED"
+    assert reconstructed["replay_derived_classifier_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["canonical_semantic_artifact_hashes"] == ["sha256:" + "d" * 64]
+
+
 def test_domain_effectiveness_gap_maps_to_domain_model_intent(tmp_path) -> None:
     gap = detect_replay_gaps(
         detection_id="GAP-MARKETING-DOMAIN-EFFECTIVENESS",

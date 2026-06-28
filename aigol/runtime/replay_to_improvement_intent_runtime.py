@@ -20,6 +20,9 @@ AIGOL_REPLAY_TO_IMPROVEMENT_INTENT_RUNTIME_VERSION = "AIGOL_REPLAY_TO_IMPROVEMEN
 IMPROVEMENT_INTENT_ARTIFACT_V1 = "IMPROVEMENT_INTENT_ARTIFACT_V1"
 IMPROVEMENT_INTENT_EVIDENCE_V1 = "IMPROVEMENT_INTENT_EVIDENCE_V1"
 IMPROVEMENT_INTENT_CLASSIFICATION_V1 = "IMPROVEMENT_INTENT_CLASSIFICATION_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1"
+)
 IMPROVEMENT_INTENT_CREATED = "IMPROVEMENT_INTENT_CREATED"
 FAILED_CLOSED = "FAILED_CLOSED"
 
@@ -212,6 +215,12 @@ def reconstruct_replay_to_improvement_intent_replay(replay_dir: str | Path) -> d
         "affected_layer": intent["affected_layer"],
         "improvement_class": intent["improvement_class"],
         "confidence": intent["confidence"],
+        "replay_derived_classifier_source": intent.get("replay_derived_classifier_source"),
+        "canonical_semantic_artifact_hashes": deepcopy(intent.get("canonical_semantic_artifact_hashes", [])),
+        "upstream_semantic_comparison_hash": intent.get("upstream_semantic_comparison_hash"),
+        "upstream_semantic_comparison_parity_status": intent.get("upstream_semantic_comparison_parity_status"),
+        "migration_batch_id": intent.get("migration_batch_id"),
+        "fallback_status": intent.get("fallback_status"),
         "human_review_required": intent["human_review_required"],
         "ppp_eligible": intent["ppp_eligible"],
         "failure_reason": intent["failure_reason"],
@@ -292,6 +301,16 @@ def _intent_evidence_artifact(
         "confirmed_gap_count": detection["gap_count"],
         "gap_categories": deepcopy(detection["gap_categories"]),
         "confidence": detection["confidence"],
+        "replay_derived_classifier_source": classification.get("replay_derived_classifier_source")
+        or "COMPATIBILITY_FALLBACK",
+        "canonical_semantic_artifact_references": deepcopy(
+            classification.get("canonical_semantic_artifact_references", [])
+        ),
+        "canonical_semantic_artifact_hashes": deepcopy(classification.get("canonical_semantic_artifact_hashes", [])),
+        "upstream_semantic_comparison_hash": classification.get("semantic_comparison_hash"),
+        "upstream_semantic_comparison_parity_status": classification.get("semantic_comparison_parity_status"),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "fallback_status": classification.get("fallback_status") or "COMPATIBILITY_FALLBACK_AUTHORITATIVE",
         "evidence_status": evidence_status,
         "false_positive_controls": {
             "confirmed_gap_required": True,
@@ -344,6 +363,15 @@ def _intent_classification_artifact(
         "evidence_summary": _evidence_summary(classification),
         "constraints": _constraints(constraints),
         "known_gaps": deepcopy(intent_evidence["gap_categories"]),
+        "replay_derived_classifier_source": intent_evidence["replay_derived_classifier_source"],
+        "canonical_semantic_artifact_references": deepcopy(intent_evidence["canonical_semantic_artifact_references"]),
+        "canonical_semantic_artifact_hashes": deepcopy(intent_evidence["canonical_semantic_artifact_hashes"]),
+        "upstream_semantic_comparison_hash": intent_evidence["upstream_semantic_comparison_hash"],
+        "upstream_semantic_comparison_parity_status": intent_evidence[
+            "upstream_semantic_comparison_parity_status"
+        ],
+        "migration_batch_id": intent_evidence["migration_batch_id"],
+        "fallback_status": intent_evidence["fallback_status"],
         "assumptions": ["Improvement intent remains proposal-eligible but non-authorizing."],
         "confidence": intent_evidence["confidence"],
         "human_review_required": intent_evidence["affected_domain"] in HIGH_RISK_DOMAINS
@@ -399,6 +427,17 @@ def _improvement_intent_artifact(
         "evidence_summary": intent_classification["evidence_summary"],
         "constraints": deepcopy(intent_classification["constraints"]),
         "known_gaps": deepcopy(intent_classification["known_gaps"]),
+        "replay_derived_classifier_source": intent_classification["replay_derived_classifier_source"],
+        "canonical_semantic_artifact_references": deepcopy(
+            intent_classification["canonical_semantic_artifact_references"]
+        ),
+        "canonical_semantic_artifact_hashes": deepcopy(intent_classification["canonical_semantic_artifact_hashes"]),
+        "upstream_semantic_comparison_hash": intent_classification["upstream_semantic_comparison_hash"],
+        "upstream_semantic_comparison_parity_status": intent_classification[
+            "upstream_semantic_comparison_parity_status"
+        ],
+        "migration_batch_id": intent_classification["migration_batch_id"],
+        "fallback_status": intent_classification["fallback_status"],
         "assumptions": deepcopy(intent_classification["assumptions"]),
         "confidence": intent_classification["confidence"],
         "human_review_required": intent_classification["human_review_required"],
@@ -460,6 +499,41 @@ def _failed_intent_evidence_artifact(
         "confirmed_gap_count": gap_detection_artifact.get("gap_count") if isinstance(gap_detection_artifact, dict) else 0,
         "gap_categories": gap_detection_artifact.get("gap_categories") if isinstance(gap_detection_artifact, dict) else [],
         "confidence": gap_detection_artifact.get("confidence") if isinstance(gap_detection_artifact, dict) else None,
+        "replay_derived_classifier_source": (
+            gap_classification_artifact.get("replay_derived_classifier_source")
+            if isinstance(gap_classification_artifact, dict)
+            else "COMPATIBILITY_FALLBACK"
+        )
+        or "COMPATIBILITY_FALLBACK",
+        "canonical_semantic_artifact_references": (
+            gap_classification_artifact.get("canonical_semantic_artifact_references")
+            if isinstance(gap_classification_artifact, dict)
+            else []
+        )
+        or [],
+        "canonical_semantic_artifact_hashes": (
+            gap_classification_artifact.get("canonical_semantic_artifact_hashes")
+            if isinstance(gap_classification_artifact, dict)
+            else []
+        )
+        or [],
+        "upstream_semantic_comparison_hash": (
+            gap_classification_artifact.get("semantic_comparison_hash")
+            if isinstance(gap_classification_artifact, dict)
+            else None
+        ),
+        "upstream_semantic_comparison_parity_status": (
+            gap_classification_artifact.get("semantic_comparison_parity_status")
+            if isinstance(gap_classification_artifact, dict)
+            else None
+        ),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_12_REPLAY_HARDENING_AND_REPLAY_DERIVED_CLASSIFIERS_V1,
+        "fallback_status": (
+            gap_classification_artifact.get("fallback_status")
+            if isinstance(gap_classification_artifact, dict)
+            else "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        )
+        or "COMPATIBILITY_FALLBACK_AUTHORITATIVE",
         "evidence_status": FAILED_CLOSED,
         "false_positive_controls": {
             "confirmed_gap_required": True,
@@ -505,6 +579,15 @@ def _failed_intent_classification_artifact(
         "evidence_summary": None,
         "constraints": [],
         "known_gaps": deepcopy(intent_evidence["gap_categories"]),
+        "replay_derived_classifier_source": intent_evidence["replay_derived_classifier_source"],
+        "canonical_semantic_artifact_references": deepcopy(intent_evidence["canonical_semantic_artifact_references"]),
+        "canonical_semantic_artifact_hashes": deepcopy(intent_evidence["canonical_semantic_artifact_hashes"]),
+        "upstream_semantic_comparison_hash": intent_evidence["upstream_semantic_comparison_hash"],
+        "upstream_semantic_comparison_parity_status": intent_evidence[
+            "upstream_semantic_comparison_parity_status"
+        ],
+        "migration_batch_id": intent_evidence["migration_batch_id"],
+        "fallback_status": intent_evidence["fallback_status"],
         "assumptions": [],
         "confidence": intent_evidence["confidence"],
         "human_review_required": True,
@@ -556,6 +639,17 @@ def _failed_improvement_intent_artifact(
         "evidence_summary": None,
         "constraints": [],
         "known_gaps": deepcopy(intent_evidence["gap_categories"]),
+        "replay_derived_classifier_source": intent_classification["replay_derived_classifier_source"],
+        "canonical_semantic_artifact_references": deepcopy(
+            intent_classification["canonical_semantic_artifact_references"]
+        ),
+        "canonical_semantic_artifact_hashes": deepcopy(intent_classification["canonical_semantic_artifact_hashes"]),
+        "upstream_semantic_comparison_hash": intent_classification["upstream_semantic_comparison_hash"],
+        "upstream_semantic_comparison_parity_status": intent_classification[
+            "upstream_semantic_comparison_parity_status"
+        ],
+        "migration_batch_id": intent_classification["migration_batch_id"],
+        "fallback_status": intent_classification["fallback_status"],
         "assumptions": [],
         "confidence": intent_evidence["confidence"],
         "human_review_required": True,
@@ -626,6 +720,12 @@ def _capture(
         "improvement_class": intent["improvement_class"],
         "intent_summary": intent["intent_summary"],
         "confidence": intent["confidence"],
+        "replay_derived_classifier_source": intent.get("replay_derived_classifier_source"),
+        "canonical_semantic_artifact_hashes": deepcopy(intent.get("canonical_semantic_artifact_hashes", [])),
+        "upstream_semantic_comparison_hash": intent.get("upstream_semantic_comparison_hash"),
+        "upstream_semantic_comparison_parity_status": intent.get("upstream_semantic_comparison_parity_status"),
+        "migration_batch_id": intent.get("migration_batch_id"),
+        "fallback_status": intent.get("fallback_status"),
         "human_review_required": intent["human_review_required"],
         "ppp_eligible": intent["ppp_eligible"],
         "fail_closed": intent["intent_status"] == FAILED_CLOSED,
