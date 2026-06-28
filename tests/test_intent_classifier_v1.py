@@ -96,6 +96,34 @@ def test_replay_contains_required_visibility_evidence(tmp_path) -> None:
     assert replay["replay_visibility"] == "MANDATORY"
 
 
+def test_legacy_classifier_records_csa_parity_closure_evidence(tmp_path) -> None:
+    capture = _classify(
+        tmp_path,
+        "Explain AiGOL architecture.",
+        canonical_semantic_lineage={
+            "canonical_semantic_artifact_reference": "replay/csa/conversation",
+            "canonical_semantic_artifact_hash": "sha256:" + "e" * 64,
+            "workflow_id": CONVERSATION,
+            "semantic_identity": {
+                "intent_family": "CONVERSATION_INTENT",
+                "domain": "AIGOL_CORE",
+                "requested_actions": [CONVERSATION],
+            },
+        },
+    )
+    artifact = capture["intent_classification_artifact"]
+    reconstructed = reconstruct_intent_classification_replay(tmp_path)
+
+    assert capture["legacy_classifier_status"] == "CSA_PARITY_MIGRATED_LEGACY_COMPATIBILITY_VISIBLE"
+    assert artifact["canonical_semantic_artifact_hash"] == "sha256:" + "e" * 64
+    assert artifact["semantic_comparison_artifact"]["artifact_hash"] == artifact["semantic_comparison_hash"]
+    assert artifact["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_LEGACY_CLASSIFIER_PARITY_PROVEN"
+    assert artifact["semantic_parity_evidence"]["historical_replay_reinterpreted"] is False
+    assert artifact["fallback_status"] == "LEGACY_COMPATIBILITY_VISIBLE_NOT_AUTHORITATIVE"
+    assert reconstructed["legacy_classifier_status"] == "CSA_PARITY_MIGRATED_LEGACY_COMPATIBILITY_VISIBLE"
+    assert reconstructed["semantic_comparison_hash"] == artifact["semantic_comparison_hash"]
+
+
 def test_ambiguous_prompt_fails_closed(tmp_path) -> None:
     capture = _classify(tmp_path, "Explain runtime status.")
     artifact = capture["intent_classification_artifact"]
@@ -229,4 +257,3 @@ def test_no_expanded_runtime_surface_imports() -> None:
     assert "await " not in source
     assert "threading" not in source
     assert "multiprocessing" not in source
-

@@ -25,6 +25,9 @@ from aigol.runtime.transport.serialization import load_json, replay_hash, write_
 
 
 PROVIDER_ASSISTED_CLASSIFIER_VERSION = "PROVIDER_ASSISTED_INTENT_CLASSIFICATION_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_13_PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_13_PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE_V1"
+)
 NORMALIZED_PROVIDER_TEXT_CONFIDENCE = "PROVIDER_TEXT_NORMALIZED"
 MINIMAL_PROVIDER_CONTEXT_CAPSULE_VERSION = "MINIMAL_PROVIDER_CONTEXT_CAPSULE_V1"
 MINIMAL_PROVIDER_CONTEXT_CAPSULE_LINES = (
@@ -53,6 +56,7 @@ def classify_intent_with_provider_assistance(
     registry: ProviderRegistry,
     adapter: ProviderAdapter,
     normalized_request_reference: str | None = None,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Classify deterministically, then request provider semantics only on failure."""
 
@@ -67,8 +71,18 @@ def classify_intent_with_provider_assistance(
         replay_reference=str(deterministic_dir),
         replay_dir=deterministic_dir,
         normalized_request_reference=normalized_request_reference,
+        canonical_semantic_lineage=canonical_semantic_lineage,
     )
     deterministic_artifact = deterministic_capture["intent_classification_artifact"]
+    provider_closure = _provider_assisted_classifier_closure_evidence(
+        deterministic_artifact=deterministic_artifact,
+        provider_capture=None,
+        provider_assistance_required=False,
+        provider_validated=False,
+        suggested_destination=deterministic_artifact.get("classification_destination"),
+        classification_reasoning=deterministic_artifact.get("classification_reason"),
+        canonical_semantic_lineage=canonical_semantic_lineage,
+    )
     try:
         _ensure_replay_available(replay_path)
         if deterministic_artifact["classification_status"] == CLASSIFIED:
@@ -85,6 +99,7 @@ def classify_intent_with_provider_assistance(
                 validation_reason="deterministic classification succeeded; provider assistance not requested",
                 timestamp=classification_timestamp,
                 failure_reason=None,
+                provider_closure=provider_closure,
             )
             final_artifact = _final_classification_artifact(
                 artifact_id=artifact_id,
@@ -101,6 +116,7 @@ def classify_intent_with_provider_assistance(
                 failure_reason=None,
                 provider_assisted=False,
                 validation_hash=validation["artifact_hash"],
+                provider_closure=provider_closure,
             )
             assisted_replay = _assisted_replay(final_artifact, validation)
             _persist_step(replay_path, 0, REPLAY_STEPS[0], validation)
@@ -122,6 +138,15 @@ def classify_intent_with_provider_assistance(
             replay_dir=provider_dir,
         )
         suggestion = _extract_provider_suggestion(provider_capture)
+        provider_closure = _provider_assisted_classifier_closure_evidence(
+            deterministic_artifact=deterministic_artifact,
+            provider_capture=provider_capture,
+            provider_assistance_required=True,
+            provider_validated=True,
+            suggested_destination=suggestion["suggested_destination"],
+            classification_reasoning=suggestion["classification_reasoning"],
+            canonical_semantic_lineage=canonical_semantic_lineage,
+        )
         validation = _validation_artifact(
             validation_id=f"{artifact_id}:VALIDATION",
             human_request_reference=human_request_reference,
@@ -135,6 +160,7 @@ def classify_intent_with_provider_assistance(
             validation_reason="provider semantic suggestion validated by AiGOL",
             timestamp=classification_timestamp,
             failure_reason=None,
+            provider_closure=provider_closure,
         )
         final_artifact = _final_classification_artifact(
             artifact_id=artifact_id,
@@ -151,6 +177,7 @@ def classify_intent_with_provider_assistance(
             failure_reason=None,
             provider_assisted=True,
             validation_hash=validation["artifact_hash"],
+            provider_closure=provider_closure,
         )
         assisted_replay = _assisted_replay(final_artifact, validation)
         _persist_step(replay_path, 0, REPLAY_STEPS[0], validation)
@@ -166,6 +193,15 @@ def classify_intent_with_provider_assistance(
             provider_capture=provider_capture if isinstance(provider_capture, dict) else None,
             timestamp=classification_timestamp,
             failure_reason=_failure_reason(exc),
+            provider_closure=_provider_assisted_classifier_closure_evidence(
+                deterministic_artifact=deterministic_artifact,
+                provider_capture=provider_capture if isinstance(provider_capture, dict) else None,
+                provider_assistance_required=deterministic_artifact["classification_status"] == FAILED_CLOSED,
+                provider_validated=False,
+                suggested_destination=None,
+                classification_reasoning="provider-assisted classification failed closed",
+                canonical_semantic_lineage=canonical_semantic_lineage,
+            ),
         )
         final_artifact = _failed_classification_artifact(
             artifact_id=artifact_id,
@@ -176,6 +212,7 @@ def classify_intent_with_provider_assistance(
             normalized_request_reference=normalized_request_reference,
             validation_hash=validation["artifact_hash"],
             failure_reason=_failure_reason(exc),
+            provider_closure=validation["provider_assisted_classifier_closure"],
         )
         assisted_replay = _assisted_replay(final_artifact, validation)
         _persist_failure_if_possible(replay_path, 0, REPLAY_STEPS[0], validation)
@@ -223,6 +260,14 @@ def reconstruct_provider_assisted_intent_classification_replay(replay_dir: str |
         "deterministic_classification_status": deterministic["classification_status"],
         "deterministic_destination": deterministic["classification_destination"],
         "provider_assistance_required": validation["provider_assistance_required"],
+        "provider_assisted_classifier_status": validation.get("provider_assisted_classifier_status"),
+        "legacy_classifier_status": validation.get("legacy_classifier_status"),
+        "canonical_semantic_artifact_reference": validation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": validation.get("canonical_semantic_artifact_hash"),
+        "semantic_comparison_hash": validation.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": validation.get("semantic_comparison_parity_status"),
+        "migration_batch_id": validation.get("migration_batch_id"),
+        "fallback_status": validation.get("fallback_status"),
         "provider_assistance_replay": deepcopy(provider),
         "governance_validation_status": validation["validation_status"],
         "replay_visible": True,
@@ -415,6 +460,7 @@ def _validation_artifact(
     validation_reason: str,
     timestamp: str,
     failure_reason: str | None,
+    provider_closure: dict[str, Any],
 ) -> dict[str, Any]:
     if suggested_destination not in VALID_DESTINATIONS:
         raise FailClosedRuntimeError("provider-assisted intent validation failed: invalid destination")
@@ -440,9 +486,211 @@ def _validation_artifact(
         "worker_invoked": False,
         "replay_visible": True,
         "failure_reason": failure_reason,
+        **_provider_closure_fields(provider_closure),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
+
+
+def _provider_assisted_classifier_closure_evidence(
+    *,
+    deterministic_artifact: dict[str, Any],
+    provider_capture: dict[str, Any] | None,
+    provider_assistance_required: bool,
+    provider_validated: bool,
+    suggested_destination: str | None,
+    classification_reasoning: str | None,
+    canonical_semantic_lineage: dict[str, Any] | None,
+) -> dict[str, Any]:
+    lineage = _normalize_canonical_semantic_lineage(canonical_semantic_lineage)
+    csa_destination = _csa_destination(lineage)
+    compatibility = {
+        "source": "PROVIDER_ASSISTED_OR_LEGACY_COMPATIBILITY_INTERPRETATION",
+        "deterministic_status": deterministic_artifact.get("classification_status"),
+        "deterministic_destination": deterministic_artifact.get("classification_destination"),
+        "deterministic_failure_reason": deterministic_artifact.get("failure_reason"),
+        "provider_assistance_required": provider_assistance_required,
+        "provider_suggestion_validated": provider_validated,
+        "suggested_destination": suggested_destination,
+        "classification_reasoning": classification_reasoning,
+        "provider_proposal_hash": _provider_proposal_hash(provider_capture),
+        "authority_granted": False,
+    }
+    csa_interpretation = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "classification_destination": csa_destination,
+        "workflow_id": lineage["workflow_id"],
+        "semantic_identity": deepcopy(lineage["semantic_identity"]),
+        "authority_granted": False,
+    }
+    csa_available = lineage["canonical_semantic_artifact_hash"] is not None
+    deterministic_failed = deterministic_artifact.get("classification_status") == FAILED_CLOSED
+    if not provider_assistance_required and csa_available:
+        provider_status = "PROVIDER_ASSISTED_CLASSIFIER_ISOLATED_NOT_REQUIRED"
+        legacy_status = "CSA_OR_DETERMINISTIC_CLASSIFIER_AUTHORITY_PRESERVED"
+        parity_status = "CSA_COMPATIBILITY_PROVIDER_ASSISTED_NOT_REQUIRED"
+        fallback_status = "PROVIDER_ASSISTED_FALLBACK_NOT_USED"
+        differences: list[str] = []
+    elif provider_assistance_required and csa_available and deterministic_failed:
+        provider_status = "PROVIDER_ASSISTED_CLASSIFIER_CSA_GATED_ADVISORY_ONLY"
+        legacy_status = "LEGACY_DETERMINISTIC_FAILURE_RECORDED"
+        parity_status = "CSA_FAILURE_PROVIDER_ADVISORY_ESCALATION_CERTIFIED"
+        fallback_status = "PROVIDER_ASSISTED_FALLBACK_AFTER_CSA_OR_DETERMINISTIC_FAILURE"
+        differences = []
+    elif provider_assistance_required and deterministic_failed:
+        provider_status = "PROVIDER_ASSISTED_CLASSIFIER_COMPATIBILITY_FALLBACK_ACTIVE"
+        legacy_status = "LEGACY_DETERMINISTIC_FAILURE_RECORDED_CSA_UNAVAILABLE"
+        parity_status = "CSA_LINEAGE_UNAVAILABLE_PROVIDER_ASSISTED_COMPATIBILITY_FALLBACK"
+        fallback_status = "PROVIDER_ASSISTED_COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        differences = ["CSA lineage unavailable before provider-assisted classifier fallback."]
+    else:
+        provider_status = "PROVIDER_ASSISTED_CLASSIFIER_ISOLATED_NOT_REQUIRED"
+        legacy_status = "LEGACY_CLASSIFIER_COMPATIBILITY_VISIBLE"
+        parity_status = "PROVIDER_ASSISTED_NOT_REQUIRED_COMPATIBILITY_VISIBLE"
+        fallback_status = "PROVIDER_ASSISTED_FALLBACK_NOT_USED"
+        differences = []
+    comparison = {
+        "artifact_type": "PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_SEMANTIC_COMPARISON_ARTIFACT_V1",
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_13_PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE_V1,
+        "provider_assisted_classifier_status": provider_status,
+        "legacy_classifier_status": legacy_status,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "previous_compatibility_interpretation": deepcopy(compatibility),
+        "canonical_semantic_interpretation": deepcopy(csa_interpretation),
+        "semantic_equivalence_result": "EQUIVALENT_OR_ADVISORY_GATED" if not differences else "NOT_EVALUATED",
+        "semantic_differences": differences,
+        "parity_status": parity_status,
+        "fallback_status": fallback_status,
+        "provider_output_advisory_only": True,
+        "provider_suggestion_authority": False,
+        "non_authoritative": True,
+        "routing_influence": False,
+        "authority_granted": False,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "provider_authority_granted": False,
+        "worker_authority_granted": False,
+        "replay_visible": True,
+    }
+    comparison["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa": csa_interpretation,
+            "parity_status": parity_status,
+        }
+    )
+    parity_evidence = {
+        "parity_status": parity_status,
+        "parity_scope": "PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE",
+        "provider_assisted_classifier_status": provider_status,
+        "legacy_classifier_status": legacy_status,
+        "deterministic_or_csa_failure_recorded_before_provider": (not provider_assistance_required)
+        or deterministic_failed
+        or csa_available,
+        "provider_output_advisory_only": True,
+        "compatibility_interpretation_recorded": True,
+        "compatibility_fallback_available": True,
+        "semantic_comparison_hash": comparison["semantic_comparison_hash"],
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_13_PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE_V1,
+        "historical_replay_reinterpreted": False,
+        "authority_granted": False,
+    }
+    parity_evidence["parity_hash"] = replay_hash(parity_evidence)
+    comparison["semantic_parity_evidence"] = deepcopy(parity_evidence)
+    comparison["artifact_hash"] = replay_hash(comparison)
+    return {
+        "provider_assisted_classifier_status": provider_status,
+        "legacy_classifier_status": legacy_status,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "previous_compatibility_interpretation": compatibility,
+        "semantic_comparison_artifact": comparison,
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "semantic_comparison_parity_status": parity_status,
+        "semantic_parity_evidence": parity_evidence,
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_13_PROVIDER_ASSISTED_AND_LEGACY_CLASSIFIER_CLOSURE_V1,
+        "fallback_status": fallback_status,
+        "replay_lineage": {
+            "deterministic_artifact_id": deterministic_artifact.get("artifact_id"),
+            "deterministic_artifact_hash": deterministic_artifact.get("artifact_hash"),
+            "provider_proposal_hash": _provider_proposal_hash(provider_capture),
+            "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+            "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        },
+    }
+
+
+def _provider_closure_fields(provider_closure: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "provider_assisted_classifier_status": provider_closure["provider_assisted_classifier_status"],
+        "legacy_classifier_status": provider_closure["legacy_classifier_status"],
+        "canonical_semantic_artifact_reference": provider_closure["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": provider_closure["canonical_semantic_artifact_hash"],
+        "previous_compatibility_interpretation": deepcopy(provider_closure["previous_compatibility_interpretation"]),
+        "semantic_comparison_artifact": deepcopy(provider_closure["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": provider_closure["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": provider_closure["semantic_comparison_parity_status"],
+        "semantic_parity_evidence": deepcopy(provider_closure["semantic_parity_evidence"]),
+        "provider_assisted_classifier_closure": deepcopy(provider_closure),
+        "migration_batch_id": provider_closure["migration_batch_id"],
+        "fallback_status": provider_closure["fallback_status"],
+        "replay_lineage": deepcopy(provider_closure["replay_lineage"]),
+    }
+
+
+def _csa_destination(lineage: dict[str, Any]) -> str | None:
+    workflow_id = lineage["workflow_id"]
+    if not workflow_id:
+        return None
+    if workflow_id in VALID_DESTINATIONS:
+        return workflow_id
+    semantic = lineage["semantic_identity"]
+    requested_actions = {item.upper() for item in semantic.get("requested_actions", [])}
+    for destination in sorted(VALID_DESTINATIONS):
+        if destination in requested_actions:
+            return destination
+    return None
+
+
+def _normalize_canonical_semantic_lineage(source: dict[str, Any] | None) -> dict[str, Any]:
+    source = source if isinstance(source, dict) else {}
+    semantic_identity = source.get("semantic_identity") if isinstance(source.get("semantic_identity"), dict) else {}
+    workflow_identity = source.get("workflow_identity") if isinstance(source.get("workflow_identity"), dict) else {}
+    replay_identity = source.get("replay_identity") if isinstance(source.get("replay_identity"), dict) else {}
+    reference = (
+        source.get("canonical_semantic_artifact_reference")
+        or source.get("semantic_replay_reference")
+        or replay_identity.get("semantic_replay_reference")
+    )
+    artifact_hash = (
+        source.get("canonical_semantic_artifact_hash")
+        or source.get("semantic_artifact_hash")
+        or source.get("artifact_hash")
+    )
+    workflow_id = source.get("workflow_id") or source.get("workflow_candidate") or workflow_identity.get("workflow_id")
+    return {
+        "canonical_semantic_artifact_reference": reference if isinstance(reference, str) else None,
+        "canonical_semantic_artifact_hash": artifact_hash
+        if isinstance(artifact_hash, str) and artifact_hash.startswith("sha256:")
+        else None,
+        "workflow_id": workflow_id if isinstance(workflow_id, str) and workflow_id.strip() else None,
+        "semantic_identity": {
+            "intent_family": semantic_identity.get("intent_family") if isinstance(semantic_identity.get("intent_family"), str) else None,
+            "domain": semantic_identity.get("domain") if isinstance(semantic_identity.get("domain"), str) else None,
+            "requested_actions": _string_list(semantic_identity.get("requested_actions")),
+        },
+    }
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
 
 
 def _failed_validation_artifact(
@@ -453,6 +701,7 @@ def _failed_validation_artifact(
     provider_capture: dict[str, Any] | None,
     timestamp: str,
     failure_reason: str,
+    provider_closure: dict[str, Any],
 ) -> dict[str, Any]:
     artifact = {
         "artifact_id": _require_string(validation_id, "validation_id"),
@@ -476,6 +725,7 @@ def _failed_validation_artifact(
         "worker_invoked": False,
         "replay_visible": True,
         "failure_reason": failure_reason,
+        **_provider_closure_fields(provider_closure),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -497,6 +747,7 @@ def _final_classification_artifact(
     failure_reason: str | None,
     provider_assisted: bool,
     validation_hash: str,
+    provider_closure: dict[str, Any],
 ) -> dict[str, Any]:
     if classification_destination not in VALID_DESTINATIONS:
         raise FailClosedRuntimeError("provider-assisted intent failed closed: invalid destination")
@@ -520,6 +771,7 @@ def _final_classification_artifact(
         "execution_requested": False,
         "worker_invoked": False,
         "failure_reason": failure_reason,
+        **_provider_closure_fields(provider_closure),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -535,6 +787,7 @@ def _failed_classification_artifact(
     normalized_request_reference: str | None,
     validation_hash: str,
     failure_reason: str,
+    provider_closure: dict[str, Any],
 ) -> dict[str, Any]:
     prompt = human_prompt if isinstance(human_prompt, str) and human_prompt.strip() else "INVALID_PROMPT"
     artifact = {
@@ -557,6 +810,7 @@ def _failed_classification_artifact(
         "execution_requested": False,
         "worker_invoked": False,
         "failure_reason": failure_reason,
+        **_provider_closure_fields(provider_closure),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -573,6 +827,14 @@ def _assisted_replay(final_artifact: dict[str, Any], validation: dict[str, Any])
         "provider_assistance_required": validation["provider_assistance_required"],
         "provider_proposal_hash": validation["provider_proposal_hash"],
         "governance_validation_hash": validation["artifact_hash"],
+        "provider_assisted_classifier_status": validation.get("provider_assisted_classifier_status"),
+        "legacy_classifier_status": validation.get("legacy_classifier_status"),
+        "canonical_semantic_artifact_reference": validation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": validation.get("canonical_semantic_artifact_hash"),
+        "semantic_comparison_hash": validation.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": validation.get("semantic_comparison_parity_status"),
+        "migration_batch_id": validation.get("migration_batch_id"),
+        "fallback_status": validation.get("fallback_status"),
         "classification_artifact_hash": final_artifact["artifact_hash"],
         "replay_reference": final_artifact["replay_reference"],
         "replay_visibility": "MANDATORY",
@@ -599,6 +861,18 @@ def _capture(
         "classification_destination": final_artifact["classification_destination"],
         "classification_status": final_artifact["classification_status"],
         "provider_suggestion_authority": False,
+        "provider_assisted_classifier_status": final_artifact.get("provider_assisted_classifier_status"),
+        "legacy_classifier_status": final_artifact.get("legacy_classifier_status"),
+        "canonical_semantic_artifact_reference": final_artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": final_artifact.get("canonical_semantic_artifact_hash"),
+        "previous_compatibility_interpretation": deepcopy(final_artifact.get("previous_compatibility_interpretation")),
+        "semantic_comparison_artifact": deepcopy(final_artifact.get("semantic_comparison_artifact")),
+        "semantic_comparison_hash": final_artifact.get("semantic_comparison_hash"),
+        "semantic_comparison_parity_status": final_artifact.get("semantic_comparison_parity_status"),
+        "semantic_parity_evidence": deepcopy(final_artifact.get("semantic_parity_evidence")),
+        "migration_batch_id": final_artifact.get("migration_batch_id"),
+        "fallback_status": final_artifact.get("fallback_status"),
+        "replay_lineage": deepcopy(final_artifact.get("replay_lineage")),
         "routing_performed": False,
         "execution_requested": False,
         "worker_invoked": False,

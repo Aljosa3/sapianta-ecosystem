@@ -80,6 +80,19 @@ def _classify(tmp_path, prompt: str, *, adapter=None, registry=None):
     )
 
 
+def _csa_lineage(destination: str = CONVERSATION) -> dict:
+    return {
+        "canonical_semantic_artifact_reference": "replay/csa/provider-assisted",
+        "canonical_semantic_artifact_hash": "sha256:" + "f" * 64,
+        "workflow_id": destination,
+        "semantic_identity": {
+            "intent_family": "CONVERSATION_INTENT",
+            "domain": "AIGOL_CORE",
+            "requested_actions": [destination],
+        },
+    }
+
+
 class FakeOpenAIClient:
     def __init__(self, text: str) -> None:
         self.text = text
@@ -119,6 +132,60 @@ def test_provider_assists_after_deterministic_failure_for_slovenian_prompt(tmp_p
     assert reconstructed["deterministic_classification_status"] == "FAILED_CLOSED"
     assert reconstructed["provider_assistance_required"] is True
     assert reconstructed["provider_suggestion_authority"] is False
+
+
+def test_provider_assisted_classifier_records_csa_gated_advisory_closure(tmp_path):
+    capture = classify_intent_with_provider_assistance(
+        artifact_id="intent-csa-provider",
+        human_request_reference="prompt-csa-provider",
+        human_prompt="Kaj je namen AiGOL?",
+        classification_timestamp=TIMESTAMP,
+        replay_reference=str(tmp_path / "intent_replay"),
+        replay_dir=tmp_path / "intent_replay",
+        provider_id="openai",
+        registry=_registry(),
+        adapter=StaticSemanticProviderAdapter(),
+        canonical_semantic_lineage=_csa_lineage(),
+    )
+    reconstructed = reconstruct_provider_assisted_intent_classification_replay(tmp_path / "intent_replay")
+
+    assert capture["provider_assisted"] is True
+    assert capture["provider_assisted_classifier_status"] == (
+        "PROVIDER_ASSISTED_CLASSIFIER_CSA_GATED_ADVISORY_ONLY"
+    )
+    assert capture["legacy_classifier_status"] == "LEGACY_DETERMINISTIC_FAILURE_RECORDED"
+    assert capture["canonical_semantic_artifact_hash"] == "sha256:" + "f" * 64
+    assert capture["semantic_comparison_artifact"]["artifact_hash"] == capture["semantic_comparison_hash"]
+    assert capture["semantic_comparison_parity_status"] == "CSA_FAILURE_PROVIDER_ADVISORY_ESCALATION_CERTIFIED"
+    assert capture["semantic_parity_evidence"]["provider_output_advisory_only"] is True
+    assert capture["fallback_status"] == "PROVIDER_ASSISTED_FALLBACK_AFTER_CSA_OR_DETERMINISTIC_FAILURE"
+    assert reconstructed["provider_assisted_classifier_status"] == (
+        "PROVIDER_ASSISTED_CLASSIFIER_CSA_GATED_ADVISORY_ONLY"
+    )
+    assert reconstructed["semantic_comparison_hash"] == capture["semantic_comparison_hash"]
+
+
+def test_deterministic_success_records_provider_isolated_not_required_closure(tmp_path):
+    adapter = StaticSemanticProviderAdapter(fail_if_called=True)
+    capture = classify_intent_with_provider_assistance(
+        artifact_id="intent-csa-deterministic",
+        human_request_reference="prompt-csa-deterministic",
+        human_prompt="what is aigol",
+        classification_timestamp=TIMESTAMP,
+        replay_reference=str(tmp_path / "intent_replay"),
+        replay_dir=tmp_path / "intent_replay",
+        provider_id="openai",
+        registry=_registry(),
+        adapter=adapter,
+        canonical_semantic_lineage=_csa_lineage(),
+    )
+
+    assert adapter.call_count == 0
+    assert capture["provider_assisted"] is False
+    assert capture["provider_assisted_classifier_status"] == "PROVIDER_ASSISTED_CLASSIFIER_ISOLATED_NOT_REQUIRED"
+    assert capture["legacy_classifier_status"] == "CSA_OR_DETERMINISTIC_CLASSIFIER_AUTHORITY_PRESERVED"
+    assert capture["fallback_status"] == "PROVIDER_ASSISTED_FALLBACK_NOT_USED"
+    assert capture["provider_suggestion_authority"] is False
 
 
 def test_provider_explanatory_text_normalizes_clear_conversation_destination(tmp_path):
