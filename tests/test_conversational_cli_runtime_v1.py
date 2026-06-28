@@ -44,6 +44,7 @@ from aigol.runtime.conversational_cli_runtime import (
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
     PLATFORM_SEMANTIC_GAP_CLOSURE_G2_07_NATIVE_DEVELOPMENT_SEMANTICS_V1,
+    PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08_SPECIALIZED_PRODUCT_DOMAIN_PROVIDER_SIMILARITY_ROUTES_V1,
     PROPOSAL_RUNTIME,
     PROVIDER_ONBOARDING_DOMAIN,
     REVIEW_LATEST_AUDIT,
@@ -271,6 +272,124 @@ def test_native_development_prompt_keeps_compatibility_authoritative_without_csa
     assert replay["native_development_semantic_source"] is None
     assert replay["native_development_semantic_comparison_hash"] is None
     assert decision["semantic_comparison_artifact"]["parity_status"] == "CSA_COMPATIBILITY_DIVERGENT"
+    assert decision["semantic_comparison_artifact"]["routing_influence"] is False
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
+
+
+@pytest.mark.parametrize(
+    ("prompt", "workflow_id", "route_family"),
+    [
+        ("Create a compliance domain.", CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "DOMAIN_UNKNOWN_DOMAIN"),
+        ("Create a new governed domain called PilotDomain.", CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "DOMAIN_UNKNOWN_DOMAIN"),
+        ("Dodaj Claude", PROVIDER_ONBOARDING_DOMAIN, "PROVIDER_ONBOARDING"),
+        ("Onemogoči Claude.", PROVIDER_ONBOARDING_DOMAIN, "PROVIDER_ONBOARDING"),
+        (
+            "Define Product 1 AI Decision Validator domain foundation.",
+            AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
+            "PRODUCT_1",
+        ),
+        (
+            "Create Product 1 AI Decision Validator capability model.",
+            AI_DECISION_VALIDATOR_CAPABILITY_MODEL,
+            "PRODUCT_1",
+        ),
+        (
+            "Define Product 1 AI Decision Validator capability lifecycle.",
+            AI_DECISION_VALIDATOR_CAPABILITY_LIFECYCLE,
+            "PRODUCT_1",
+        ),
+        (
+            "Create a healthcare version of the trading domain.",
+            DOMAIN_ADAPTATION_REFERENCE,
+            "SIMILARITY_DOMAIN_ADAPTATION",
+        ),
+        (
+            "Should Sapianta primarily sell domains, license the platform, or offer managed services?",
+            OCS_LLM_COGNITION,
+            "BROAD_OCS_COGNITION",
+        ),
+    ],
+)
+def test_specialized_routes_use_csa_primary_when_family_parity_is_proven(
+    tmp_path,
+    prompt: str,
+    workflow_id: str,
+    route_family: str,
+) -> None:
+    capture = _route(tmp_path, prompt)
+    decision = capture["routing_decision_artifact"]
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] in {WORKFLOW_SELECTED, CLARIFICATION_REQUIRED}
+    assert capture["workflow_id"] == workflow_id
+    assert capture["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["migration_batch_id"] == (
+        PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08_SPECIALIZED_PRODUCT_DOMAIN_PROVIDER_SIMILARITY_ROUTES_V1
+    )
+    assert decision["previous_compatibility_interpretation"]["workflow_id"] == workflow_id
+    assert decision["specialized_route_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["specialized_route_migration_batch_id"] == (
+        PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08_SPECIALIZED_PRODUCT_DOMAIN_PROVIDER_SIMILARITY_ROUTES_V1
+    )
+    assert decision["specialized_route_family"] == route_family
+    assert decision["specialized_route_semantic_comparison_hash"].startswith("sha256:")
+    assert decision["specialized_route_semantic_comparison_artifact"]["artifact_hash"] == (
+        decision["specialized_route_semantic_comparison_hash"]
+    )
+    assert decision["specialized_route_semantic_comparison_parity_status"] == (
+        "CSA_COMPATIBILITY_EQUIVALENT"
+    )
+    assert decision["specialized_route_semantic_comparison_artifact"]["fallback_status"] == (
+        "COMPATIBILITY_AVAILABLE_FOR_NON_PARITY_CASES"
+    )
+    assert decision["semantic_parity_evidence"]["parity_status"] == "CSA_COMPATIBILITY_PARITY_PROVEN"
+    assert decision["semantic_parity_evidence"]["parity_scope"] == (
+        "SPECIALIZED_PRODUCT_DOMAIN_PROVIDER_SIMILARITY_ROUTES"
+    )
+    assert decision["semantic_parity_evidence"]["fallback_status_for_non_parity_cases"] == (
+        "COMPATIBILITY_AUTHORITATIVE"
+    )
+    assert decision["semantic_parity_evidence"]["provider_ownership_preserved"] is True
+    assert decision["semantic_parity_evidence"]["ocs_authority_preserved"] is True
+    assert decision["semantic_parity_evidence"]["ppp_ownership_preserved"] is True
+    assert decision["semantic_parity_evidence"]["domain_activation_authorized"] is False
+    assert decision["specialized_route_compatibility_fallback_available"] is True
+    assert decision["specialized_route_compatibility_fallback_authoritative"] is False
+    assert selection["specialized_route_semantic_comparison_hash"] == (
+        decision["specialized_route_semantic_comparison_hash"]
+    )
+    assert replay["specialized_route_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["specialized_route_family"] == route_family
+    assert replay["specialized_route_semantic_comparison_hash"] == (
+        decision["specialized_route_semantic_comparison_hash"]
+    )
+    assert replay["specialized_route_compatibility_fallback_authoritative"] is False
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["authorization_created"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
+    assert capture["governance_mutated"] is False
+    assert capture["replay_mutated"] is False
+
+
+def test_specialized_route_keeps_compatibility_authoritative_without_family_parity(tmp_path) -> None:
+    capture = _route(tmp_path, "I want to create the first real AiGOL product.")
+    decision = capture["routing_decision_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == OCS_LLM_COGNITION
+    assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert capture["migration_batch_id"] is None
+    assert decision["specialized_route_semantic_source"] is None
+    assert decision["specialized_route_semantic_comparison_artifact"] is None
+    assert replay["specialized_route_semantic_source"] is None
+    assert replay["specialized_route_semantic_comparison_hash"] is None
     assert decision["semantic_comparison_artifact"]["routing_influence"] is False
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
