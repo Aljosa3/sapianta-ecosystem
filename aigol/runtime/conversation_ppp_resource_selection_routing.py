@@ -15,6 +15,8 @@ from aigol.runtime.conversation_native_development_context_integration import (
 from aigol.runtime.conversation_ppp_routing_integration import (
     _is_high_risk_domain,
     _milestone_type,
+    _normalize_canonical_semantic_lineage,
+    _ppp_semantic_annotation_artifact,
     _repair_failed_production,
     _seed_proposal,
     _validate_and_handoff,
@@ -84,6 +86,7 @@ def run_conversation_ppp_resource_selection_routing(
     turn_id: str | None = None,
     current_chain_id: str | None = None,
     latest_chain_id: str | None = None,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Route a conversation native-development prompt through Resource Selection and PPP."""
 
@@ -159,6 +162,16 @@ def run_conversation_ppp_resource_selection_routing(
         )
         if resource_ppp.get("integration_status") != RESOURCE_PPP_INTEGRATED:
             raise FailClosedRuntimeError(resource_ppp.get("failure_reason") or "conversation resource PPP integration failed closed")
+        ppp_semantic_annotation = _resource_ppp_semantic_annotation_artifact(
+            annotation_id=f"{prompt_id}:G2-09-RESOURCE-PPP-SEMANTIC-ANNOTATION",
+            canonical_semantic_lineage=canonical_semantic_lineage,
+            context=context,
+            resolution_artifact=resolution_artifact,
+            provider_policy_artifact=provider_policy["provider_necessity_policy_artifact"],
+            resource_selection_artifact=selected,
+            resource_ppp_artifact=resource_ppp["resource_ppp_integration_artifact"],
+            created_at=created_at,
+        )
         if resource_ppp["ppp_resource_status"] == PPP_WORKER_HANDOFF_REFERENCE_READY:
             route = _route_artifact(
                 prompt_id=prompt_id,
@@ -174,6 +187,7 @@ def run_conversation_ppp_resource_selection_routing(
                 final_handoff=None,
                 approval_required=_is_high_risk_domain(resolution_artifact["domain_id"]),
                 clarification_required=False,
+                ppp_semantic_annotation=ppp_semantic_annotation,
                 created_at=created_at,
                 failure_reason=None,
             )
@@ -253,6 +267,7 @@ def run_conversation_ppp_resource_selection_routing(
                 final_handoff=final_handoff,
                 approval_required=approval_required,
                 clarification_required=clarification_required,
+                ppp_semantic_annotation=ppp_semantic_annotation,
                 created_at=created_at,
                 failure_reason=None,
             )
@@ -298,6 +313,12 @@ def reconstruct_conversation_ppp_resource_selection_routing_replay(replay_dir: s
         "route_id": route["route_id"],
         "route_status": route["route_status"],
         "canonical_chain_id": route["canonical_chain_id"],
+        "ppp_semantic_annotation_source": route.get("ppp_semantic_annotation_source"),
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "ppp_semantic_annotation_migration_batch_id": route.get("ppp_semantic_annotation_migration_batch_id"),
+        "canonical_semantic_artifact_reference": route.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "selected_resource_id": route["selected_resource_id"],
         "selected_resource_category": route["selected_resource_category"],
         "selected_role_type": route["selected_role_type"],
@@ -382,6 +403,39 @@ def _create_request_handoff(
     return handoff
 
 
+def _resource_ppp_semantic_annotation_artifact(
+    *,
+    annotation_id: str,
+    canonical_semantic_lineage: dict[str, Any] | None,
+    context: dict[str, Any],
+    resolution_artifact: dict[str, Any],
+    provider_policy_artifact: dict[str, Any],
+    resource_selection_artifact: dict[str, Any],
+    resource_ppp_artifact: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    annotation = _ppp_semantic_annotation_artifact(
+        annotation_id=annotation_id,
+        canonical_semantic_lineage=_normalize_canonical_semantic_lineage(canonical_semantic_lineage),
+        context=context,
+        resolution_artifact=resolution_artifact,
+        provider_policy_artifact=provider_policy_artifact,
+        created_at=created_at,
+    )
+    annotation["resource_selection_lineage"] = {
+        "resource_selection_hash": resource_selection_artifact["artifact_hash"],
+        "selected_resource_id": resource_selection_artifact["selected_resource_id"],
+        "selected_role_type": resource_selection_artifact["selected_role_type"],
+        "resource_ppp_integration_hash": resource_ppp_artifact["artifact_hash"],
+    }
+    annotation["semantic_parity_evidence"]["resource_selection_hash"] = resource_selection_artifact["artifact_hash"]
+    annotation["semantic_parity_evidence"]["resource_ppp_integration_hash"] = resource_ppp_artifact["artifact_hash"]
+    annotation["semantic_parity_evidence"]["parity_hash"] = replay_hash(annotation["semantic_parity_evidence"])
+    annotation.pop("artifact_hash", None)
+    annotation["artifact_hash"] = replay_hash(annotation)
+    return annotation
+
+
 def _route_artifact(
     *,
     prompt_id: str,
@@ -397,6 +451,7 @@ def _route_artifact(
     final_handoff: dict[str, Any] | None,
     approval_required: bool,
     clarification_required: bool,
+    ppp_semantic_annotation: dict[str, Any],
     created_at: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
@@ -414,6 +469,13 @@ def _route_artifact(
         "task_intake_reference": conversation["task_intake_reference"],
         "context_reference": conversation["context_assembly_reference"],
         "context_hash": conversation["context_hash"],
+        "ppp_semantic_annotation_source": ppp_semantic_annotation["semantic_annotation_source"],
+        "ppp_semantic_annotation_artifact": deepcopy(ppp_semantic_annotation),
+        "ppp_semantic_annotation_hash": ppp_semantic_annotation["artifact_hash"],
+        "ppp_semantic_annotation_parity_status": ppp_semantic_annotation["parity_status"],
+        "ppp_semantic_annotation_migration_batch_id": ppp_semantic_annotation["migration_batch_id"],
+        "canonical_semantic_artifact_reference": ppp_semantic_annotation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": ppp_semantic_annotation.get("canonical_semantic_artifact_hash"),
         "domain_reference": resolution_artifact["domain_id"],
         "worker_reference": resolution_artifact["worker_family_id"],
         "milestone_reference": resolution_artifact["milestone_type"],
@@ -469,6 +531,13 @@ def _failed_route_artifact(*, prompt_id: str, created_at: str, canonical_chain_i
         "task_intake_reference": None,
         "context_reference": None,
         "context_hash": None,
+        "ppp_semantic_annotation_source": None,
+        "ppp_semantic_annotation_artifact": None,
+        "ppp_semantic_annotation_hash": None,
+        "ppp_semantic_annotation_parity_status": None,
+        "ppp_semantic_annotation_migration_batch_id": None,
+        "canonical_semantic_artifact_reference": None,
+        "canonical_semantic_artifact_hash": None,
         "domain_reference": None,
         "worker_reference": None,
         "milestone_reference": None,
@@ -521,6 +590,9 @@ def _returned_artifact(route: dict[str, Any]) -> dict[str, Any]:
         "route_hash": route["artifact_hash"],
         "route_status": route["route_status"],
         "canonical_chain_id": route["canonical_chain_id"],
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "selected_resource_id": route["selected_resource_id"],
         "selected_role_type": route["selected_role_type"],
         "implementation_handoff_reference": route["implementation_handoff_reference"],
@@ -545,6 +617,13 @@ def _capture(route: dict[str, Any], returned: dict[str, Any], replay_path: Path)
         "conversation_ppp_resource_selection_routing_replay_reference": str(replay_path),
         "route_status": route["route_status"],
         "canonical_chain_id": route["canonical_chain_id"],
+        "ppp_semantic_annotation_source": route.get("ppp_semantic_annotation_source"),
+        "ppp_semantic_annotation_artifact": deepcopy(route.get("ppp_semantic_annotation_artifact")),
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "ppp_semantic_annotation_migration_batch_id": route.get("ppp_semantic_annotation_migration_batch_id"),
+        "canonical_semantic_artifact_reference": route.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "selected_resource_id": route["selected_resource_id"],
         "selected_resource_category": route["selected_resource_category"],
         "selected_role_type": route["selected_role_type"],

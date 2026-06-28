@@ -91,6 +91,15 @@ def _valid_response() -> dict[str, Any]:
     }
 
 
+def _canonical_semantic_lineage() -> dict[str, Any]:
+    return {
+        "canonical_semantic_artifact_reference": "CSA-RESOURCE-PPP-ANNOTATION-000001",
+        "canonical_semantic_artifact_hash": "sha256:resource-ppp-csa-annotation-000001",
+        "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "migration_batch_id": "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08",
+    }
+
+
 def test_conversation_routes_openai_provider_resource_through_ppp_to_handoff(tmp_path) -> None:
     capture = run_conversation_ppp_resource_selection_routing(
         prompt_id="PROMPT-RESOURCE-PPP-000001",
@@ -120,6 +129,42 @@ def test_conversation_routes_openai_provider_resource_through_ppp_to_handoff(tmp
     assert capture["authorization_created"] is False
     assert reconstructed["route_status"] == CONVERSATION_RESOURCE_PPP_HANDOFF_CREATED
     assert reconstructed["replay_artifact_count"] == 2
+
+
+def test_conversation_resource_ppp_records_csa_semantic_annotation(tmp_path) -> None:
+    capture = run_conversation_ppp_resource_selection_routing(
+        prompt_id="PROMPT-RESOURCE-PPP-G2-09-000001",
+        human_prompt=_prompt(),
+        provider_id="OPENAI",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "resource-ppp-g2-09",
+        registry=_registry("OPENAI"),
+        adapter=SequenceProviderAdapter([_valid_response()], provider_id="OPENAI"),
+        governance_root=GOVERNANCE_ROOT,
+        explicit_resource_role="OPENAI_PROVIDER_ROLE",
+        session_id="SESSION-RESOURCE-PPP-G2-09-000001",
+        turn_id="TURN-000001",
+        current_chain_id="CHAIN-RESOURCE-PPP-G2-09-000001",
+        latest_chain_id="CHAIN-RESOURCE-PPP-G2-09-000001",
+        canonical_semantic_lineage=_canonical_semantic_lineage(),
+    )
+    reconstructed = reconstruct_conversation_ppp_resource_selection_routing_replay(
+        tmp_path / "resource-ppp-g2-09"
+    )
+    route = capture["conversation_ppp_resource_selection_routing_artifact"]
+    annotation = route["ppp_semantic_annotation_artifact"]
+
+    assert capture["route_status"] == CONVERSATION_RESOURCE_PPP_HANDOFF_CREATED
+    assert route["ppp_semantic_annotation_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert route["ppp_semantic_annotation_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert route["canonical_semantic_artifact_hash"] == "sha256:resource-ppp-csa-annotation-000001"
+    assert annotation["semantic_equivalence_result"] == "EQUIVALENT"
+    assert annotation["resource_selection_lineage"]["selected_resource_id"] == "OPENAI"
+    assert annotation["semantic_parity_evidence"]["resource_selection_hash"] == route["resource_selection_hash"]
+    assert reconstructed["ppp_semantic_annotation_hash"] == annotation["artifact_hash"]
+    assert capture["provider_invoked"] is True
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
 
 
 def test_conversation_routes_hybrid_codex_provider_role_with_explicit_role(tmp_path) -> None:

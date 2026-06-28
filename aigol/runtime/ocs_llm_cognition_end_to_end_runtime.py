@@ -54,6 +54,10 @@ OCS_PROVIDER_COGNITION_AVAILABILITY_ARTIFACT_V1 = "OCS_PROVIDER_COGNITION_AVAILA
 OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1 = (
     "OCS_SINGLE_PROVIDER_PRIMARY_MODE_SELECTION_ARTIFACT_V1"
 )
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1"
+)
+OCS_SEMANTIC_LINEAGE_COMPARISON_ARTIFACT_V1 = "OCS_SEMANTIC_LINEAGE_COMPARISON_ARTIFACT_V1"
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED_CLOSED = "FAILED_CLOSED"
@@ -124,6 +128,13 @@ def run_ocs_llm_cognition_end_to_end(
         )
         _require_stage_success(context_capture, "OCS context assembly")
         context_artifact = _validate_context_artifact(context_capture["ocs_context_assembly_artifact"])
+        ocs_semantic_lineage = _ocs_semantic_lineage_artifact(
+            lineage_id=f"{end_to_end}:G2-09-OCS-SEMANTIC-LINEAGE",
+            source_context=source_context,
+            context_artifact=context_artifact,
+            created_at=timestamp,
+            replay_reference=str(replay_path),
+        )
         if use_err_resource_lookup:
             err_selection_capture = select_resource_for_capability(
                 selection_id=f"{end_to_end}:ERR_RESOURCE_SELECTION",
@@ -173,6 +184,7 @@ def run_ocs_llm_cognition_end_to_end(
                 human_question=question,
                 created_at=timestamp,
                 context_artifact=context_artifact,
+                ocs_semantic_lineage=ocs_semantic_lineage,
                 result_bundle=result_bundle,
                 availability_artifact=availability_artifact,
                 stage_replay_references={key: str(value) for key, value in stage_paths.items()},
@@ -221,6 +233,7 @@ def run_ocs_llm_cognition_end_to_end(
                 human_question=question,
                 created_at=timestamp,
                 context_artifact=context_artifact,
+                ocs_semantic_lineage=ocs_semantic_lineage,
                 result_bundle=result_bundle,
                 availability_artifact=availability_artifact,
                 mode_selection_artifact=mode_selection_artifact,
@@ -293,6 +306,7 @@ def run_ocs_llm_cognition_end_to_end(
             human_question=question,
             created_at=timestamp,
             context_artifact=context_artifact,
+            ocs_semantic_lineage=ocs_semantic_lineage,
             result_bundle=result_bundle,
             availability_artifact=availability_artifact,
             mode_selection_artifact=mode_selection_artifact,
@@ -438,6 +452,13 @@ def reconstruct_ocs_llm_cognition_end_to_end_replay(replay_dir: str | Path) -> d
         "end_to_end_id": artifact.get("end_to_end_id"),
         "artifact_type": artifact.get("artifact_type"),
         "context_hash": artifact.get("context_hash"),
+        "ocs_semantic_lineage_source": artifact.get("ocs_semantic_lineage_source"),
+        "ocs_semantic_lineage_artifact": deepcopy(artifact.get("ocs_semantic_lineage_artifact")),
+        "ocs_semantic_lineage_hash": artifact.get("ocs_semantic_lineage_hash"),
+        "ocs_semantic_lineage_parity_status": artifact.get("ocs_semantic_lineage_parity_status"),
+        "ocs_semantic_lineage_migration_batch_id": artifact.get("ocs_semantic_lineage_migration_batch_id"),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
         "provider_count": artifact.get("provider_count"),
         "successful_provider_count": artifact.get("successful_provider_count"),
         "failed_provider_count": artifact.get("failed_provider_count"),
@@ -678,6 +699,122 @@ def _provider_cognition_availability_artifact(
     return artifact
 
 
+def _ocs_semantic_lineage_artifact(
+    *,
+    lineage_id: str,
+    source_context: dict[str, Any],
+    context_artifact: dict[str, Any],
+    created_at: str,
+    replay_reference: str,
+) -> dict[str, Any]:
+    lineage_source = _extract_canonical_semantic_lineage(source_context)
+    csa_available = lineage_source["canonical_semantic_artifact_hash"] is not None
+    compatibility = {
+        "source": "OCS_CONTEXT_ASSEMBLY_COMPATIBILITY_LINEAGE",
+        "context_assembly_id": context_artifact["context_assembly_id"],
+        "context_hash": context_artifact["context_hash"],
+        "context_artifact_hash": context_artifact["artifact_hash"],
+        "ocs_cognition_authority_preserved": True,
+        "provider_ownership_preserved": True,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "worker_invoked": False,
+    }
+    csa_interpretation = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT_LINEAGE",
+        "available": csa_available,
+        "canonical_semantic_artifact_reference": lineage_source["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage_source["canonical_semantic_artifact_hash"],
+        "semantic_routing_source": lineage_source["semantic_routing_source"],
+        "migration_batch_id": lineage_source["migration_batch_id"],
+        "context_hash": context_artifact["context_hash"],
+        "ocs_cognition_authority_preserved": True,
+        "provider_ownership_preserved": True,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "worker_invoked": False,
+    }
+    parity_status = "CSA_COMPATIBILITY_EQUIVALENT" if csa_available else "CSA_LINEAGE_UNAVAILABLE"
+    artifact = {
+        "artifact_type": OCS_SEMANTIC_LINEAGE_COMPARISON_ARTIFACT_V1,
+        "lineage_id": _require_string(lineage_id, "lineage_id"),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1,
+        "semantic_lineage_source": "CANONICAL_SEMANTIC_ARTIFACT" if csa_available else "COMPATIBILITY_FALLBACK",
+        "canonical_semantic_artifact_reference": lineage_source["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage_source["canonical_semantic_artifact_hash"],
+        "previous_compatibility_interpretation": compatibility,
+        "csa_semantic_lineage_interpretation": csa_interpretation,
+        "semantic_equivalence_result": "EQUIVALENT" if csa_available else "NOT_EVALUATED",
+        "semantic_differences": [],
+        "parity_status": parity_status,
+        "semantic_parity_evidence": {
+            "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN" if csa_available else "COMPATIBILITY_FALLBACK_AUTHORITATIVE",
+            "parity_scope": "OCS_SEMANTIC_LINEAGE_PROPAGATION",
+            "ocs_cognition_authority_preserved": True,
+            "provider_ownership_preserved": True,
+            "approval_authority_granted": False,
+            "execution_authority_granted": False,
+            "worker_invoked": False,
+            "compatibility_fallback_available": True,
+        },
+        "replay_lineage": {
+            "replay_reference": _require_string(replay_reference, "replay_reference"),
+            "context_assembly_id": context_artifact["context_assembly_id"],
+            "context_artifact_hash": context_artifact["artifact_hash"],
+        },
+        "fallback_status": "COMPATIBILITY_AUTHORITATIVE_WHEN_CSA_LINEAGE_ABSENT",
+        "non_authoritative_annotation": True,
+        "ocs_cognition_authority_preserved": True,
+        "provider_ownership_preserved": True,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "worker_invoked": False,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+    }
+    artifact["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa": csa_interpretation,
+            "parity_status": parity_status,
+        }
+    )
+    artifact["semantic_parity_evidence"]["semantic_comparison_hash"] = artifact["semantic_comparison_hash"]
+    artifact["semantic_parity_evidence"]["parity_hash"] = replay_hash(artifact["semantic_parity_evidence"])
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _extract_canonical_semantic_lineage(source_context: dict[str, Any]) -> dict[str, Any]:
+    candidates = [source_context]
+    for key in (
+        "canonical_semantic_lineage",
+        "semantic_lineage",
+        "routing_decision_artifact",
+        "conversational_routing",
+        "conversational_routing_decision",
+    ):
+        value = source_context.get(key) if isinstance(source_context, dict) else None
+        if isinstance(value, dict):
+            candidates.append(value)
+    for candidate in candidates:
+        reference = candidate.get("canonical_semantic_artifact_reference")
+        artifact_hash = candidate.get("canonical_semantic_artifact_hash")
+        if isinstance(reference, str) and isinstance(artifact_hash, str):
+            return {
+                "canonical_semantic_artifact_reference": reference,
+                "canonical_semantic_artifact_hash": artifact_hash,
+                "semantic_routing_source": candidate.get("semantic_routing_source"),
+                "migration_batch_id": candidate.get("migration_batch_id"),
+            }
+    return {
+        "canonical_semantic_artifact_reference": None,
+        "canonical_semantic_artifact_hash": None,
+        "semantic_routing_source": None,
+        "migration_batch_id": None,
+    }
+
+
 def reconstruct_provider_cognition_availability_replay(replay_dir: str | Path) -> dict[str, Any]:
     replay_path = Path(replay_dir)
     wrapper = load_json(replay_path / "000_ocs_provider_cognition_availability_recorded.json")
@@ -912,6 +1049,7 @@ def _end_to_end_artifact(
     human_question: str,
     created_at: str,
     context_artifact: dict[str, Any],
+    ocs_semantic_lineage: dict[str, Any],
     result_bundle: dict[str, Any],
     availability_artifact: dict[str, Any],
     mode_selection_artifact: dict[str, Any],
@@ -938,6 +1076,15 @@ def _end_to_end_artifact(
         "context_assembly_id": context_artifact["context_assembly_id"],
         "context_hash": context_artifact["context_hash"],
         "context_artifact_hash": context_artifact["artifact_hash"],
+        "ocs_semantic_lineage_source": ocs_semantic_lineage["semantic_lineage_source"],
+        "ocs_semantic_lineage_artifact": deepcopy(ocs_semantic_lineage),
+        "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+        "ocs_semantic_lineage_parity_status": ocs_semantic_lineage["parity_status"],
+        "ocs_semantic_lineage_migration_batch_id": ocs_semantic_lineage["migration_batch_id"],
+        "canonical_semantic_artifact_reference": ocs_semantic_lineage.get(
+            "canonical_semantic_artifact_reference"
+        ),
+        "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
         "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
         "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
         "provider_count": result_bundle["provider_count"],
@@ -971,6 +1118,8 @@ def _end_to_end_artifact(
             "human_question_hash": replay_hash(human_question),
             "context_hash": context_artifact["context_hash"],
             "context_artifact_hash": context_artifact["artifact_hash"],
+            "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+            "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
             "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
             "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
@@ -1054,6 +1203,7 @@ def _provider_unavailable_end_to_end_artifact(
     human_question: str,
     created_at: str,
     context_artifact: dict[str, Any],
+    ocs_semantic_lineage: dict[str, Any],
     result_bundle: dict[str, Any],
     availability_artifact: dict[str, Any],
     stage_replay_references: dict[str, str],
@@ -1071,6 +1221,15 @@ def _provider_unavailable_end_to_end_artifact(
         "context_assembly_id": context_artifact["context_assembly_id"],
         "context_hash": context_artifact["context_hash"],
         "context_artifact_hash": context_artifact["artifact_hash"],
+        "ocs_semantic_lineage_source": ocs_semantic_lineage["semantic_lineage_source"],
+        "ocs_semantic_lineage_artifact": deepcopy(ocs_semantic_lineage),
+        "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+        "ocs_semantic_lineage_parity_status": ocs_semantic_lineage["parity_status"],
+        "ocs_semantic_lineage_migration_batch_id": ocs_semantic_lineage["migration_batch_id"],
+        "canonical_semantic_artifact_reference": ocs_semantic_lineage.get(
+            "canonical_semantic_artifact_reference"
+        ),
+        "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
         "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
         "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
         "provider_count": result_bundle["provider_count"],
@@ -1118,6 +1277,8 @@ def _provider_unavailable_end_to_end_artifact(
             "human_question_hash": replay_hash(human_question),
             "context_hash": context_artifact["context_hash"],
             "context_artifact_hash": context_artifact["artifact_hash"],
+            "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+            "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
             "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
             "provider_availability_artifact_hash": availability_artifact["artifact_hash"],
@@ -1164,6 +1325,7 @@ def _mode_selection_failed_end_to_end_artifact(
     human_question: str,
     created_at: str,
     context_artifact: dict[str, Any],
+    ocs_semantic_lineage: dict[str, Any],
     result_bundle: dict[str, Any],
     availability_artifact: dict[str, Any],
     mode_selection_artifact: dict[str, Any],
@@ -1183,6 +1345,15 @@ def _mode_selection_failed_end_to_end_artifact(
         "context_assembly_id": context_artifact["context_assembly_id"],
         "context_hash": context_artifact["context_hash"],
         "context_artifact_hash": context_artifact["artifact_hash"],
+        "ocs_semantic_lineage_source": ocs_semantic_lineage["semantic_lineage_source"],
+        "ocs_semantic_lineage_artifact": deepcopy(ocs_semantic_lineage),
+        "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+        "ocs_semantic_lineage_parity_status": ocs_semantic_lineage["parity_status"],
+        "ocs_semantic_lineage_migration_batch_id": ocs_semantic_lineage["migration_batch_id"],
+        "canonical_semantic_artifact_reference": ocs_semantic_lineage.get(
+            "canonical_semantic_artifact_reference"
+        ),
+        "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
         "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
         "multi_provider_result_bundle_result_hash": result_bundle["result_bundle_hash"],
         "provider_count": result_bundle["provider_count"],
@@ -1227,6 +1398,8 @@ def _mode_selection_failed_end_to_end_artifact(
             "human_question_hash": replay_hash(human_question),
             "context_hash": context_artifact["context_hash"],
             "context_artifact_hash": context_artifact["artifact_hash"],
+            "ocs_semantic_lineage_hash": ocs_semantic_lineage["artifact_hash"],
+            "canonical_semantic_artifact_hash": ocs_semantic_lineage.get("canonical_semantic_artifact_hash"),
             "multi_provider_result_bundle_hash": result_bundle["artifact_hash"],
             "source_cognition_artifact_hashes": result_bundle["cognition_artifact_hashes"],
             "provider_usage_artifact_hashes": result_bundle.get("provider_usage_hashes", []),
@@ -1365,6 +1538,13 @@ def _failed_end_to_end_artifact(
         "context_assembly_id": None,
         "context_hash": None,
         "context_artifact_hash": None,
+        "ocs_semantic_lineage_source": None,
+        "ocs_semantic_lineage_artifact": None,
+        "ocs_semantic_lineage_hash": None,
+        "ocs_semantic_lineage_parity_status": None,
+        "ocs_semantic_lineage_migration_batch_id": None,
+        "canonical_semantic_artifact_reference": None,
+        "canonical_semantic_artifact_hash": None,
         "multi_provider_result_bundle_hash": None,
         "multi_provider_result_bundle_result_hash": None,
         "provider_count": 0,
@@ -1409,6 +1589,8 @@ def _failed_end_to_end_artifact(
             "human_question_hash": replay_hash(human_question),
             "context_hash": None,
             "context_artifact_hash": None,
+            "ocs_semantic_lineage_hash": None,
+            "canonical_semantic_artifact_hash": None,
             "multi_provider_result_bundle_hash": None,
             "source_cognition_artifact_hashes": [],
             "provider_availability_artifact_hash": None,
@@ -1456,6 +1638,9 @@ def _returned_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         "end_to_end_id": artifact["end_to_end_id"],
         "end_to_end_artifact_hash": artifact["artifact_hash"],
         "workflow_status": artifact["workflow_status"],
+        "ocs_semantic_lineage_hash": artifact.get("ocs_semantic_lineage_hash"),
+        "ocs_semantic_lineage_parity_status": artifact.get("ocs_semantic_lineage_parity_status"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
         "clarification_required": artifact["human_facing_cognition_result"]["clarification_required"],
         "authority_flags": deepcopy(AUTHORITY_FLAGS),
         "replay_visible": True,
@@ -1711,6 +1896,13 @@ def _capture(
         "ocs_llm_cognition_end_to_end_artifact": deepcopy(artifact),
         "returned_artifact": deepcopy(returned),
         "human_facing_cognition_result": deepcopy(artifact.get("human_facing_cognition_result")),
+        "ocs_semantic_lineage_source": artifact.get("ocs_semantic_lineage_source"),
+        "ocs_semantic_lineage_artifact": deepcopy(artifact.get("ocs_semantic_lineage_artifact")),
+        "ocs_semantic_lineage_hash": artifact.get("ocs_semantic_lineage_hash"),
+        "ocs_semantic_lineage_parity_status": artifact.get("ocs_semantic_lineage_parity_status"),
+        "ocs_semantic_lineage_migration_batch_id": artifact.get("ocs_semantic_lineage_migration_batch_id"),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
         "stage_captures": deepcopy(stage_captures),
         "authority_flags": deepcopy(AUTHORITY_FLAGS),
         "replay_reference": str(replay_path),

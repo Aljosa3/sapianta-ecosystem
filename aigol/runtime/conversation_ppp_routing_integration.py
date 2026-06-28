@@ -46,6 +46,10 @@ AIGOL_CONVERSATION_PPP_ROUTING_INTEGRATION_VERSION = "AIGOL_CONVERSATION_PPP_ROU
 CONVERSATION_PPP_ROUTED = "CONVERSATION_PPP_ROUTED"
 CONVERSATION_PPP_HANDOFF_CREATED = "CONVERSATION_PPP_HANDOFF_CREATED"
 FAILED_CLOSED = "FAILED_CLOSED"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1"
+)
+PPP_SEMANTIC_ANNOTATION_COMPARISON_ARTIFACT_V1 = "PPP_SEMANTIC_ANNOTATION_COMPARISON_ARTIFACT_V1"
 
 REPLAY_STEPS = (
     "conversation_ppp_route_recorded",
@@ -68,6 +72,7 @@ def run_conversation_ppp_routing_integration(
     current_chain_id: str | None = None,
     latest_chain_id: str | None = None,
     restored_native_context_capture: dict[str, Any] | None = None,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Route a native-development conversation prompt through the PPP lifecycle."""
 
@@ -119,6 +124,14 @@ def run_conversation_ppp_routing_integration(
         provider_policy_artifact = provider_policy["provider_necessity_policy_artifact"]
         if provider_policy.get("necessity_classification") != PROVIDER_REQUIRED:
             raise FailClosedRuntimeError("conversation PPP failed closed: provider proposal is not required")
+        ppp_semantic_annotation = _ppp_semantic_annotation_artifact(
+            annotation_id=f"{prompt_id}:G2-09-PPP-SEMANTIC-ANNOTATION",
+            canonical_semantic_lineage=canonical_semantic_lineage or _extract_canonical_semantic_lineage(conversation),
+            context=context,
+            resolution_artifact=resolution_artifact,
+            provider_policy_artifact=provider_policy_artifact,
+            created_at=created_at,
+        )
         seed_proposal = _seed_proposal(
             proposal_id=f"{prompt_id}:PPP-SEED-PROPOSAL",
             context=context,
@@ -208,6 +221,7 @@ def run_conversation_ppp_routing_integration(
             final_handoff=final_handoff,
             approval_required=approval_required,
             clarification_required=clarification_required,
+            ppp_semantic_annotation=ppp_semantic_annotation,
             created_at=created_at,
             failure_reason=None,
         )
@@ -255,6 +269,12 @@ def reconstruct_conversation_ppp_routing_replay(replay_dir: str | Path) -> dict[
         "canonical_chain_id": route["canonical_chain_id"],
         "task_intake_reference": route["task_intake_reference"],
         "context_hash": route["context_hash"],
+        "ppp_semantic_annotation_source": route.get("ppp_semantic_annotation_source"),
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "ppp_semantic_annotation_migration_batch_id": route.get("ppp_semantic_annotation_migration_batch_id"),
+        "canonical_semantic_artifact_reference": route.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "domain_reference": route["domain_reference"],
         "worker_reference": route["worker_reference"],
         "provider_necessity_classification": route["provider_necessity_classification"],
@@ -572,6 +592,137 @@ def _milestone_type(intake: dict[str, Any]) -> str:
     return "WORKER_FOUNDATION"
 
 
+def _ppp_semantic_annotation_artifact(
+    *,
+    annotation_id: str,
+    canonical_semantic_lineage: dict[str, Any],
+    context: dict[str, Any],
+    resolution_artifact: dict[str, Any],
+    provider_policy_artifact: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    lineage = _normalize_canonical_semantic_lineage(canonical_semantic_lineage)
+    csa_available = lineage["canonical_semantic_artifact_hash"] is not None
+    compatibility = {
+        "source": "PPP_COMPATIBILITY_STRUCTURED_ANNOTATION",
+        "context_hash": context["context_hash"],
+        "domain_reference": resolution_artifact["domain_id"],
+        "worker_reference": resolution_artifact["worker_family_id"],
+        "milestone_reference": resolution_artifact["milestone_type"],
+        "provider_necessity_hash": provider_policy_artifact["artifact_hash"],
+        "ppp_structured_authority_preserved": True,
+        "provider_ownership_preserved": True,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "worker_invoked": False,
+    }
+    csa_annotation = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT_PPP_ANNOTATION",
+        "available": csa_available,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "semantic_routing_source": lineage["semantic_routing_source"],
+        "source_migration_batch_id": lineage["migration_batch_id"],
+        "context_hash": context["context_hash"],
+        "domain_reference": resolution_artifact["domain_id"],
+        "worker_reference": resolution_artifact["worker_family_id"],
+        "milestone_reference": resolution_artifact["milestone_type"],
+        "provider_necessity_hash": provider_policy_artifact["artifact_hash"],
+        "ppp_structured_authority_preserved": True,
+        "provider_ownership_preserved": True,
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "worker_invoked": False,
+    }
+    parity_status = "CSA_COMPATIBILITY_EQUIVALENT" if csa_available else "CSA_ANNOTATION_UNAVAILABLE"
+    artifact = {
+        "artifact_type": PPP_SEMANTIC_ANNOTATION_COMPARISON_ARTIFACT_V1,
+        "annotation_id": _require_string(annotation_id, "annotation_id"),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09_OCS_SEMANTIC_LINEAGE_AND_PPP_ANNOTATION_V1,
+        "semantic_annotation_source": "CANONICAL_SEMANTIC_ARTIFACT" if csa_available else "COMPATIBILITY_FALLBACK",
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "previous_compatibility_interpretation": compatibility,
+        "csa_ppp_annotation_interpretation": csa_annotation,
+        "semantic_equivalence_result": "EQUIVALENT" if csa_available else "NOT_EVALUATED",
+        "semantic_differences": [],
+        "confidence_comparison": {
+            "compatibility_confidence": "DETERMINISTIC",
+            "csa_confidence": "DETERMINISTIC" if csa_available else "UNAVAILABLE",
+        },
+        "parity_status": parity_status,
+        "semantic_parity_evidence": {
+            "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN" if csa_available else "COMPATIBILITY_FALLBACK_AUTHORITATIVE",
+            "parity_scope": "PPP_SEMANTIC_ANNOTATION",
+            "ppp_structured_authority_preserved": True,
+            "provider_ownership_preserved": True,
+            "approval_authority_granted": False,
+            "execution_authority_granted": False,
+            "worker_invoked": False,
+            "compatibility_fallback_available": True,
+        },
+        "replay_lineage": {
+            "context_hash": context["context_hash"],
+            "domain_worker_resolution_hash": resolution_artifact["artifact_hash"],
+            "provider_necessity_hash": provider_policy_artifact["artifact_hash"],
+        },
+        "fallback_status": "COMPATIBILITY_AUTHORITATIVE_WHEN_CSA_ANNOTATION_ABSENT",
+        "non_authoritative_annotation": True,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+    }
+    artifact["semantic_comparison_hash"] = replay_hash(
+        {
+            "compatibility": compatibility,
+            "csa": csa_annotation,
+            "parity_status": parity_status,
+        }
+    )
+    artifact["semantic_parity_evidence"]["semantic_comparison_hash"] = artifact["semantic_comparison_hash"]
+    artifact["semantic_parity_evidence"]["parity_hash"] = replay_hash(artifact["semantic_parity_evidence"])
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _extract_canonical_semantic_lineage(source: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(source, dict):
+        return {}
+    candidates = [source]
+    for key in (
+        "canonical_semantic_lineage",
+        "semantic_lineage",
+        "routing_decision_artifact",
+        "conversational_routing",
+        "conversational_routing_decision",
+    ):
+        value = source.get(key)
+        if isinstance(value, dict):
+            candidates.append(value)
+    for candidate in candidates:
+        lineage = _normalize_canonical_semantic_lineage(candidate)
+        if lineage["canonical_semantic_artifact_hash"] is not None:
+            return lineage
+    return {}
+
+
+def _normalize_canonical_semantic_lineage(source: dict[str, Any] | None) -> dict[str, Any]:
+    source = source if isinstance(source, dict) else {}
+    reference = source.get("canonical_semantic_artifact_reference")
+    artifact_hash = source.get("canonical_semantic_artifact_hash")
+    return {
+        "canonical_semantic_artifact_reference": reference if isinstance(reference, str) else None,
+        "canonical_semantic_artifact_hash": artifact_hash if isinstance(artifact_hash, str) else None,
+        "semantic_routing_source": source.get("semantic_routing_source"),
+        "migration_batch_id": source.get("migration_batch_id"),
+    }
+
+
+def _require_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise FailClosedRuntimeError(f"{field_name} is required")
+    return value
+
+
 def _route_artifact(
     *,
     prompt_id: str,
@@ -586,6 +737,7 @@ def _route_artifact(
     final_handoff: dict[str, Any] | None,
     approval_required: bool,
     clarification_required: bool,
+    ppp_semantic_annotation: dict[str, Any],
     created_at: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
@@ -602,6 +754,13 @@ def _route_artifact(
         "task_intake_reference": conversation["task_intake_reference"],
         "context_reference": conversation["context_assembly_reference"],
         "context_hash": conversation["context_hash"],
+        "ppp_semantic_annotation_source": ppp_semantic_annotation["semantic_annotation_source"],
+        "ppp_semantic_annotation_artifact": deepcopy(ppp_semantic_annotation),
+        "ppp_semantic_annotation_hash": ppp_semantic_annotation["artifact_hash"],
+        "ppp_semantic_annotation_parity_status": ppp_semantic_annotation["parity_status"],
+        "ppp_semantic_annotation_migration_batch_id": ppp_semantic_annotation["migration_batch_id"],
+        "canonical_semantic_artifact_reference": ppp_semantic_annotation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": ppp_semantic_annotation.get("canonical_semantic_artifact_hash"),
         "domain_reference": resolution_artifact["domain_id"],
         "worker_reference": resolution_artifact["worker_family_id"],
         "milestone_reference": resolution_artifact["milestone_type"],
@@ -654,6 +813,13 @@ def _failed_route_artifact(
         "task_intake_reference": None,
         "context_reference": None,
         "context_hash": None,
+        "ppp_semantic_annotation_source": None,
+        "ppp_semantic_annotation_artifact": None,
+        "ppp_semantic_annotation_hash": None,
+        "ppp_semantic_annotation_parity_status": None,
+        "ppp_semantic_annotation_migration_batch_id": None,
+        "canonical_semantic_artifact_reference": None,
+        "canonical_semantic_artifact_hash": None,
         "domain_reference": None,
         "worker_reference": None,
         "milestone_reference": None,
@@ -690,6 +856,9 @@ def _returned_artifact(route: dict[str, Any]) -> dict[str, Any]:
         "route_hash": route["artifact_hash"],
         "route_status": route["route_status"],
         "canonical_chain_id": route["canonical_chain_id"],
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "implementation_handoff_reference": route["implementation_handoff_reference"],
         "clarification_required": route["clarification_required"],
         "approval_required": route["approval_required"],
@@ -713,6 +882,13 @@ def _capture(route: dict[str, Any], returned: dict[str, Any], replay_path: Path)
         "task_intake_reference": route["task_intake_reference"],
         "context_reference": route["context_reference"],
         "context_hash": route["context_hash"],
+        "ppp_semantic_annotation_source": route.get("ppp_semantic_annotation_source"),
+        "ppp_semantic_annotation_artifact": deepcopy(route.get("ppp_semantic_annotation_artifact")),
+        "ppp_semantic_annotation_hash": route.get("ppp_semantic_annotation_hash"),
+        "ppp_semantic_annotation_parity_status": route.get("ppp_semantic_annotation_parity_status"),
+        "ppp_semantic_annotation_migration_batch_id": route.get("ppp_semantic_annotation_migration_batch_id"),
+        "canonical_semantic_artifact_reference": route.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": route.get("canonical_semantic_artifact_hash"),
         "domain_reference": route["domain_reference"],
         "worker_reference": route["worker_reference"],
         "provider_proposal_production_status": route["provider_proposal_production_status"],

@@ -94,6 +94,15 @@ def _valid_response() -> dict[str, Any]:
     }
 
 
+def _canonical_semantic_lineage() -> dict[str, Any]:
+    return {
+        "canonical_semantic_artifact_reference": "CSA-PPP-ANNOTATION-000001",
+        "canonical_semantic_artifact_hash": "sha256:ppp-csa-annotation-000001",
+        "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "migration_batch_id": "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08",
+    }
+
+
 def _ambiguous_response() -> dict[str, Any]:
     response = _valid_response()
     response["proposed_outputs"] = [
@@ -129,6 +138,40 @@ def test_conversation_ppp_routes_successful_provider_proposal_to_handoff(tmp_pat
     assert capture["worker_created"] is False
     assert reconstructed["route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
     assert reconstructed["replay_artifact_count"] == 2
+
+
+def test_conversation_ppp_records_csa_semantic_annotation(tmp_path) -> None:
+    capture = run_conversation_ppp_routing_integration(
+        prompt_id="PROMPT-PPP-G2-09-000001",
+        human_prompt=_prompt(),
+        provider_id=PROVIDER_ID,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "ppp-g2-09",
+        registry=_registry(),
+        adapter=SequenceProviderAdapter([_valid_response()]),
+        governance_root=GOVERNANCE_ROOT,
+        session_id="SESSION-PPP-G2-09-000001",
+        turn_id="TURN-000001",
+        current_chain_id="CHAIN-PPP-G2-09-000001",
+        latest_chain_id="CHAIN-PPP-G2-09-000001",
+        canonical_semantic_lineage=_canonical_semantic_lineage(),
+    )
+    reconstructed = reconstruct_conversation_ppp_routing_replay(tmp_path / "ppp-g2-09")
+    route = capture["conversation_ppp_routing_artifact"]
+    annotation = route["ppp_semantic_annotation_artifact"]
+
+    assert capture["route_status"] == CONVERSATION_PPP_HANDOFF_CREATED
+    assert route["ppp_semantic_annotation_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert route["ppp_semantic_annotation_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert route["canonical_semantic_artifact_hash"] == "sha256:ppp-csa-annotation-000001"
+    assert annotation["semantic_equivalence_result"] == "EQUIVALENT"
+    assert annotation["previous_compatibility_interpretation"]["source"] == "PPP_COMPATIBILITY_STRUCTURED_ANNOTATION"
+    assert annotation["csa_ppp_annotation_interpretation"]["available"] is True
+    assert annotation["semantic_parity_evidence"]["compatibility_fallback_available"] is True
+    assert reconstructed["ppp_semantic_annotation_hash"] == annotation["artifact_hash"]
+    assert capture["provider_invoked"] is True
+    assert capture["execution_requested"] is False
+    assert capture["worker_created"] is False
 
 
 def test_conversation_ppp_consumes_restored_context_without_reparsing_prompt(tmp_path, monkeypatch) -> None:

@@ -61,6 +61,17 @@ def _source_context(suffix: str = "001") -> dict:
     }
 
 
+def _source_context_with_csa_lineage() -> dict:
+    context = _source_context("CSA-LINEAGE")
+    context["canonical_semantic_lineage"] = {
+        "canonical_semantic_artifact_reference": "CSA-OCS-LINEAGE-000001",
+        "canonical_semantic_artifact_hash": "sha256:ocs-csa-lineage-000001",
+        "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "migration_batch_id": "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_08",
+    }
+    return context
+
+
 def _contracts(provider_ids: tuple[str, ...] = ("provider-a", "provider-b", "provider-c")) -> list[dict]:
     return [
         create_default_cognition_provider_contract(provider_id=provider_id, created_at=CREATED_AT)
@@ -147,6 +158,26 @@ def test_end_to_end_runtime_creates_human_facing_cognition_result(tmp_path):
     assert replay["provider_count"] == 3
     assert replay["cognition_artifact_count"] == 3
     assert replay["clarification_required"] is True
+
+
+def test_end_to_end_runtime_records_csa_ocs_semantic_lineage(tmp_path):
+    result = _run(tmp_path, source_context=_source_context_with_csa_lineage())
+    artifact = result["ocs_llm_cognition_end_to_end_artifact"]
+    lineage = artifact["ocs_semantic_lineage_artifact"]
+    replay = reconstruct_ocs_llm_cognition_end_to_end_replay(tmp_path / "e2e")
+
+    assert artifact["ocs_semantic_lineage_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert artifact["ocs_semantic_lineage_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert artifact["canonical_semantic_artifact_hash"] == "sha256:ocs-csa-lineage-000001"
+    assert lineage["previous_compatibility_interpretation"]["source"] == "OCS_CONTEXT_ASSEMBLY_COMPATIBILITY_LINEAGE"
+    assert lineage["csa_semantic_lineage_interpretation"]["available"] is True
+    assert lineage["semantic_equivalence_result"] == "EQUIVALENT"
+    assert lineage["semantic_parity_evidence"]["compatibility_fallback_available"] is True
+    assert artifact["lineage_refs"]["ocs_semantic_lineage_hash"] == lineage["artifact_hash"]
+    assert replay["ocs_semantic_lineage_hash"] == lineage["artifact_hash"]
+    assert result["approval_created"] is False
+    assert result["worker_invoked"] is False
+    assert result["execution_requested"] is False
 
 
 def test_operator_visible_cognition_rendering_precedes_technical_summary(tmp_path):
