@@ -43,6 +43,7 @@ from aigol.runtime.conversational_cli_runtime import (
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     OCS_LLM_COGNITION,
     OPERATOR_DECISION_SUPPORT,
+    PLATFORM_SEMANTIC_GAP_CLOSURE_G2_07_NATIVE_DEVELOPMENT_SEMANTICS_V1,
     PROPOSAL_RUNTIME,
     PROVIDER_ONBOARDING_DOMAIN,
     REVIEW_LATEST_AUDIT,
@@ -205,6 +206,76 @@ def test_audited_governance_artifact_prompt_routes_to_governed_development(tmp_p
     assert capture["approval_bypassed"] is False
     assert capture["governance_mutated"] is False
     assert capture["replay_mutated"] is False
+
+
+def test_native_development_prompt_uses_csa_primary_when_parity_is_proven(tmp_path) -> None:
+    capture = _route(tmp_path, "Build a parser helper for CSV validation.")
+    decision = capture["routing_decision_artifact"]
+    selection = capture["workflow_selection_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION
+    assert capture["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["migration_batch_id"] == PLATFORM_SEMANTIC_GAP_CLOSURE_G2_07_NATIVE_DEVELOPMENT_SEMANTICS_V1
+    assert decision["previous_compatibility_interpretation"]["workflow_id"] == NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION
+    assert decision["native_development_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["native_development_migration_batch_id"] == (
+        PLATFORM_SEMANTIC_GAP_CLOSURE_G2_07_NATIVE_DEVELOPMENT_SEMANTICS_V1
+    )
+    assert decision["native_development_semantic_comparison_hash"].startswith("sha256:")
+    assert decision["native_development_semantic_comparison_artifact"]["artifact_hash"] == (
+        decision["native_development_semantic_comparison_hash"]
+    )
+    assert decision["native_development_semantic_comparison_parity_status"] == (
+        "CSA_COMPATIBILITY_EQUIVALENT"
+    )
+    assert decision["native_development_semantic_comparison_artifact"]["fallback_status"] == (
+        "COMPATIBILITY_AVAILABLE_FOR_NON_PARITY_CASES"
+    )
+    assert decision["semantic_parity_evidence"]["parity_status"] == "CSA_COMPATIBILITY_PARITY_PROVEN"
+    assert decision["semantic_parity_evidence"]["parity_scope"] == "NATIVE_DEVELOPMENT_ROUTING_SEMANTICS"
+    assert decision["semantic_parity_evidence"]["fallback_status_for_non_parity_cases"] == (
+        "COMPATIBILITY_AUTHORITATIVE"
+    )
+    assert decision["native_development_compatibility_fallback_available"] is True
+    assert decision["native_development_compatibility_fallback_authoritative"] is False
+    assert selection["native_development_semantic_comparison_hash"] == (
+        decision["native_development_semantic_comparison_hash"]
+    )
+    assert replay["native_development_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["native_development_semantic_comparison_hash"] == (
+        decision["native_development_semantic_comparison_hash"]
+    )
+    assert replay["native_development_compatibility_fallback_authoritative"] is False
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["authorization_created"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
+    assert capture["governance_mutated"] is False
+    assert capture["replay_mutated"] is False
+
+
+def test_native_development_prompt_keeps_compatibility_authoritative_without_csa_parity(tmp_path) -> None:
+    capture = _route(tmp_path, "Create native development context for AIGOL_NATIVE_DEVELOPMENT_TEST_V1.")
+    decision = capture["routing_decision_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+
+    assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["workflow_id"] == NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION
+    assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert capture["migration_batch_id"] is None
+    assert decision["native_development_semantic_source"] is None
+    assert decision["native_development_semantic_comparison_artifact"] is None
+    assert replay["native_development_semantic_source"] is None
+    assert replay["native_development_semantic_comparison_hash"] is None
+    assert decision["semantic_comparison_artifact"]["parity_status"] == "CSA_COMPATIBILITY_DIVERGENT"
+    assert decision["semantic_comparison_artifact"]["routing_influence"] is False
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+    assert capture["approval_bypassed"] is False
 
 
 @pytest.mark.parametrize(
