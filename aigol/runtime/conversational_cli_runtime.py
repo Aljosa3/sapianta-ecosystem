@@ -171,6 +171,13 @@ def route_conversational_cli_intent(
                         replay_dir=replay_path / "ubtr_cognition_result_integration",
                     )
                 )
+        execution_intent_evidence = detect_human_execution_intent(
+            human_prompt,
+            canonical_semantic_capture=canonical_semantic_capture,
+            replay_reference=str(replay_path),
+            detection_id=f"{routing_id}:EXECUTION-INTENT",
+            created_at=created_at,
+        )
         compatibility_route_evidence = _compatibility_route_evidence(human_prompt)
         csa_analysis = _classify_workflow_from_canonical_semantic_artifact(
             canonical_semantic_capture,
@@ -213,6 +220,7 @@ def route_conversational_cli_intent(
             ubtr_cognition_result_integration_capture=ubtr_cognition_result_integration_capture,
             compatibility_route_evidence=compatibility_route_evidence,
             semantic_comparison_artifact=semantic_comparison_artifact,
+            execution_intent_evidence=execution_intent_evidence,
             failure_reason=None,
         )
         selection = _workflow_selection_artifact(
@@ -331,6 +339,27 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
         "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
         "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
+        "execution_intent_detection": deepcopy(decision.get("execution_intent_detection")),
+        "execution_intent_semantic_source": decision.get("execution_intent_semantic_source"),
+        "execution_intent_migration_batch_id": decision.get("execution_intent_migration_batch_id"),
+        "execution_intent_canonical_semantic_artifact_hash": decision.get(
+            "execution_intent_canonical_semantic_artifact_hash"
+        ),
+        "execution_intent_previous_compatibility_interpretation": deepcopy(
+            decision.get("execution_intent_previous_compatibility_interpretation")
+        ),
+        "execution_intent_semantic_comparison_artifact": deepcopy(
+            decision.get("execution_intent_semantic_comparison_artifact")
+        ),
+        "execution_intent_semantic_comparison_hash": decision.get(
+            "execution_intent_semantic_comparison_hash"
+        ),
+        "execution_intent_semantic_comparison_parity_status": decision.get(
+            "execution_intent_semantic_comparison_parity_status"
+        ),
+        "execution_intent_semantic_parity_evidence": deepcopy(
+            decision.get("execution_intent_semantic_parity_evidence")
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
@@ -1960,6 +1989,7 @@ def _routing_decision_artifact(
     ubtr_cognition_result_integration_capture: dict[str, Any] | None,
     compatibility_route_evidence: dict[str, Any] | None,
     semantic_comparison_artifact: dict[str, Any] | None,
+    execution_intent_evidence: dict[str, Any] | None,
     failure_reason: str | None,
 ) -> dict[str, Any]:
     translation_artifact = (
@@ -2085,6 +2115,49 @@ def _routing_decision_artifact(
             if isinstance(semantic_comparison_artifact, dict)
             else None
         ),
+        "execution_intent_detection": deepcopy(execution_intent_evidence)
+        if isinstance(execution_intent_evidence, dict)
+        else None,
+        "execution_intent_semantic_source": (
+            execution_intent_evidence.get("semantic_execution_intent_source")
+            if isinstance(execution_intent_evidence, dict)
+            else None
+        ),
+        "execution_intent_migration_batch_id": (
+            execution_intent_evidence.get("migration_batch_id")
+            if isinstance(execution_intent_evidence, dict)
+            else None
+        ),
+        "execution_intent_canonical_semantic_artifact_hash": (
+            execution_intent_evidence.get("canonical_semantic_artifact_hash")
+            if isinstance(execution_intent_evidence, dict)
+            else None
+        ),
+        "execution_intent_previous_compatibility_interpretation": deepcopy(
+            execution_intent_evidence.get("previous_compatibility_interpretation")
+        )
+        if isinstance(execution_intent_evidence, dict)
+        else None,
+        "execution_intent_semantic_comparison_artifact": deepcopy(
+            execution_intent_evidence.get("semantic_comparison_artifact")
+        )
+        if isinstance(execution_intent_evidence, dict)
+        else None,
+        "execution_intent_semantic_comparison_hash": (
+            execution_intent_evidence.get("semantic_comparison_hash")
+            if isinstance(execution_intent_evidence, dict)
+            else None
+        ),
+        "execution_intent_semantic_comparison_parity_status": (
+            execution_intent_evidence.get("semantic_comparison_parity_status")
+            if isinstance(execution_intent_evidence, dict)
+            else None
+        ),
+        "execution_intent_semantic_parity_evidence": deepcopy(
+            execution_intent_evidence.get("semantic_parity_evidence")
+        )
+        if isinstance(execution_intent_evidence, dict)
+        else None,
         "new_csa_routing_source": (
             "CANONICAL_SEMANTIC_ARTIFACT"
             if isinstance(compatibility_route_evidence, dict)
@@ -2222,6 +2295,27 @@ def _workflow_selection_artifact(
         "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
         "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
         "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
+        "execution_intent_detection": deepcopy(decision.get("execution_intent_detection")),
+        "execution_intent_semantic_source": decision.get("execution_intent_semantic_source"),
+        "execution_intent_migration_batch_id": decision.get("execution_intent_migration_batch_id"),
+        "execution_intent_canonical_semantic_artifact_hash": decision.get(
+            "execution_intent_canonical_semantic_artifact_hash"
+        ),
+        "execution_intent_previous_compatibility_interpretation": deepcopy(
+            decision.get("execution_intent_previous_compatibility_interpretation")
+        ),
+        "execution_intent_semantic_comparison_artifact": deepcopy(
+            decision.get("execution_intent_semantic_comparison_artifact")
+        ),
+        "execution_intent_semantic_comparison_hash": decision.get(
+            "execution_intent_semantic_comparison_hash"
+        ),
+        "execution_intent_semantic_comparison_parity_status": decision.get(
+            "execution_intent_semantic_comparison_parity_status"
+        ),
+        "execution_intent_semantic_parity_evidence": deepcopy(
+            decision.get("execution_intent_semantic_parity_evidence")
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -2296,6 +2390,27 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
         "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
         "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
+        "execution_intent_detection": deepcopy(decision.get("execution_intent_detection")),
+        "execution_intent_semantic_source": decision.get("execution_intent_semantic_source"),
+        "execution_intent_migration_batch_id": decision.get("execution_intent_migration_batch_id"),
+        "execution_intent_canonical_semantic_artifact_hash": decision.get(
+            "execution_intent_canonical_semantic_artifact_hash"
+        ),
+        "execution_intent_previous_compatibility_interpretation": deepcopy(
+            decision.get("execution_intent_previous_compatibility_interpretation")
+        ),
+        "execution_intent_semantic_comparison_artifact": deepcopy(
+            decision.get("execution_intent_semantic_comparison_artifact")
+        ),
+        "execution_intent_semantic_comparison_hash": decision.get(
+            "execution_intent_semantic_comparison_hash"
+        ),
+        "execution_intent_semantic_comparison_parity_status": decision.get(
+            "execution_intent_semantic_comparison_parity_status"
+        ),
+        "execution_intent_semantic_parity_evidence": deepcopy(
+            decision.get("execution_intent_semantic_parity_evidence")
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -2379,6 +2494,15 @@ def _failed_decision_artifact(
         "semantic_equivalence_result": None,
         "semantic_comparison_parity_status": None,
         "semantic_comparison_non_authoritative": None,
+        "execution_intent_detection": None,
+        "execution_intent_semantic_source": None,
+        "execution_intent_migration_batch_id": None,
+        "execution_intent_canonical_semantic_artifact_hash": None,
+        "execution_intent_previous_compatibility_interpretation": None,
+        "execution_intent_semantic_comparison_artifact": None,
+        "execution_intent_semantic_comparison_hash": None,
+        "execution_intent_semantic_comparison_parity_status": None,
+        "execution_intent_semantic_parity_evidence": None,
         "new_csa_routing_source": None,
         "ubtr_semantic_cognition_orchestration_reference": None,
         "ubtr_semantic_cognition_decision": None,
@@ -2469,6 +2593,27 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "semantic_equivalence_result": decision.get("semantic_equivalence_result"),
         "semantic_comparison_parity_status": decision.get("semantic_comparison_parity_status"),
         "semantic_comparison_non_authoritative": decision.get("semantic_comparison_non_authoritative"),
+        "execution_intent_detection": deepcopy(decision.get("execution_intent_detection")),
+        "execution_intent_semantic_source": decision.get("execution_intent_semantic_source"),
+        "execution_intent_migration_batch_id": decision.get("execution_intent_migration_batch_id"),
+        "execution_intent_canonical_semantic_artifact_hash": decision.get(
+            "execution_intent_canonical_semantic_artifact_hash"
+        ),
+        "execution_intent_previous_compatibility_interpretation": deepcopy(
+            decision.get("execution_intent_previous_compatibility_interpretation")
+        ),
+        "execution_intent_semantic_comparison_artifact": deepcopy(
+            decision.get("execution_intent_semantic_comparison_artifact")
+        ),
+        "execution_intent_semantic_comparison_hash": decision.get(
+            "execution_intent_semantic_comparison_hash"
+        ),
+        "execution_intent_semantic_comparison_parity_status": decision.get(
+            "execution_intent_semantic_comparison_parity_status"
+        ),
+        "execution_intent_semantic_parity_evidence": deepcopy(
+            decision.get("execution_intent_semantic_parity_evidence")
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"

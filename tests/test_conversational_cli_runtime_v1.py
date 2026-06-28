@@ -173,10 +173,32 @@ def test_audited_governance_artifact_prompt_routes_to_governed_development(tmp_p
         tmp_path,
         "Add governance artifact TEST_ACLI_BRIDGE_V1 documenting that ACLI execution bridge was successfully tested.",
     )
+    decision = capture["routing_decision_artifact"]
+    replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
 
     assert capture["routing_status"] == WORKFLOW_SELECTED
     assert capture["workflow_id"] == GOVERNED_DEVELOPMENT_WORKFLOW
     assert capture["workflow_selection_artifact"]["existing_runtime"] == "governed_development_workflow_runtime"
+    assert decision["execution_intent_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["execution_intent_migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_05_EXECUTION_INTENT_AND_AUTHORIZATION_ENTRY_SEMANTICS_V1"
+    )
+    assert decision["execution_intent_previous_compatibility_interpretation"]["intent_class"] == (
+        "GENERIC_GOVERNED_ARTIFACT_CREATION"
+    )
+    assert decision["execution_intent_semantic_comparison_hash"].startswith("sha256:")
+    assert decision["execution_intent_semantic_comparison_artifact"]["artifact_hash"] == (
+        decision["execution_intent_semantic_comparison_hash"]
+    )
+    assert decision["execution_intent_semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert decision["execution_intent_semantic_parity_evidence"]["parity_status"] == (
+        "CSA_COMPATIBILITY_PARITY_PROVEN"
+    )
+    assert decision["execution_intent_semantic_parity_evidence"]["execution_authority_granted"] is False
+    assert replay["execution_intent_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["execution_intent_semantic_comparison_hash"] == (
+        decision["execution_intent_semantic_comparison_hash"]
+    )
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
     assert capture["execution_requested"] is False
