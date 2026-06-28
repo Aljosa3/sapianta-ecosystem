@@ -38,6 +38,15 @@ DOMAIN_COMPLIANCE = "COMPLIANCE"
 DOMAIN_GOVERNANCE = "GOVERNANCE"
 DOMAIN_UNKNOWN = "UNKNOWN_DOMAIN"
 WORKFLOW_OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
+WORKFLOW_HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
+
+BUSINESS_GOAL_INTENT = "BUSINESS_GOAL_INTENT"
+PROBLEM_STATEMENT_INTENT = "PROBLEM_STATEMENT_INTENT"
+AUTOMATION_INTENT = "AUTOMATION_INTENT"
+COMPLIANCE_INTENT = "COMPLIANCE_INTENT"
+GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
+CONTINUATION_INTENT = "CONTINUATION_INTENT"
+BOUNDED_FILE_WRITE_PROOF_INTENT = "BOUNDED_FILE_WRITE_PROOF_INTENT"
 
 ARTIFACT_RE = re.compile(r"\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+_V\d+\b")
 PATH_RE = re.compile(r"\b(?:docs|aigol|tests|runtime|sapianta_bridge)/[A-Za-z0-9_./-]+\b")
@@ -62,6 +71,7 @@ def translate_human_to_governance(
     normalized = _normalize_request(request)
     entities = _extract_entities(request)
     proposal_only_ocs = _detect_proposal_only_ocs(normalized)
+    hirr_clarification = _detect_hirr_clarification_intent(normalized)
     if proposal_only_ocs:
         action = REVIEW_ACTION
         domain = DOMAIN_GOVERNANCE
@@ -73,6 +83,17 @@ def translate_human_to_governance(
         confidence = proposal_only_ocs["confidence"]
         intent_family = "OCS_PROPOSAL_ONLY_INTENT"
         workflow_candidate = WORKFLOW_OCS_LLM_COGNITION
+    elif hirr_clarification:
+        action = UNKNOWN_ACTION
+        domain = DOMAIN_UNKNOWN
+        ambiguity = {
+            "ambiguity_status": MATERIAL_AMBIGUITY,
+            "clarification_required": True,
+            "clarification_questions": [],
+        }
+        confidence = hirr_clarification["confidence"]
+        intent_family = hirr_clarification["intent_family"]
+        workflow_candidate = WORKFLOW_HUMAN_INTENT_CLARIFICATION_INTAKE
     else:
         action = _detect_action(normalized)
         domain = _detect_domain(normalized)
@@ -115,6 +136,8 @@ def translate_human_to_governance(
         "clarification_questions": list(ambiguity["clarification_questions"]),
         "proposal_only": proposal_only_ocs is not None,
         "proposal_only_reason": proposal_only_ocs.get("escalation_reason") if proposal_only_ocs else None,
+        "hirr_clarification_intent_family": hirr_clarification.get("intent_family") if hirr_clarification else None,
+        "hirr_clarification_signals": list(hirr_clarification.get("signals") or []) if hirr_clarification else [],
         "authority_granted": False,
         "provider_invoked": False,
         "workflow_executed": False,
@@ -352,6 +375,224 @@ def _detect_proposal_only_ocs(normalized: str) -> dict[str, str] | None:
     return None
 
 
+def _detect_hirr_clarification_intent(normalized: str) -> dict[str, Any] | None:
+    normalized = normalized.strip().rstrip(".?!")
+    checks = (
+        _hirr_continuation_intent,
+        _hirr_bounded_file_write_proof_intent,
+        _hirr_general_improvement_intent,
+        _hirr_compliance_intent,
+        _hirr_automation_intent,
+        _hirr_problem_statement_intent,
+        _hirr_business_goal_intent,
+    )
+    for check in checks:
+        result = check(normalized)
+        if result is not None:
+            return result
+    return None
+
+
+def _hirr_business_goal_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "build a tool",
+            "build a system",
+            "start using ai",
+            "start a project",
+            "internal service",
+            "trust ai",
+            "ai recommendations",
+            "ai decisions",
+            "ai suggestions",
+            "zgraditi sistem",
+            "kakovost",
+            "skladnost",
+        ),
+    )
+    if len(signals) >= 2 or (_has_word(normalized, "ai") and any(term in normalized for term in ("trust", "safe", "quality"))):
+        return {"intent_family": BUSINESS_GOAL_INTENT, "confidence": MEDIUM, "signals": signals or ["ai-goal"]}
+    return None
+
+
+def _hirr_general_improvement_intent(normalized: str) -> dict[str, Any] | None:
+    if _has_hirr_workflow_or_control_signals(normalized):
+        return None
+    ai_scoped_signals = _matched_terms(
+        normalized,
+        (
+            "improve how",
+            "processes safer",
+            "improve trust",
+            "suggest how",
+            "reduce risk",
+            "where should we start",
+            "first step",
+            "plan a better",
+            "recommend improvements",
+            "easier to explain",
+        ),
+    )
+    standalone_advisory_signals = _matched_terms(
+        normalized,
+        (
+            "kaj bi bilo najbolje",
+            "kaj je najbolje",
+            "najbolje narediti naprej",
+            "kaj naj naredim naprej",
+            "naslednji korak",
+            "najboljsi naslednji korak",
+            "najboljši naslednji korak",
+            "izboljsal sistem",
+            "izboljšal sistem",
+        ),
+    )
+    if standalone_advisory_signals:
+        return {
+            "intent_family": GENERAL_IMPROVEMENT_INTENT,
+            "confidence": MEDIUM,
+            "signals": standalone_advisory_signals,
+        }
+    if ai_scoped_signals and _has_word(normalized, "ai"):
+        return {"intent_family": GENERAL_IMPROVEMENT_INTENT, "confidence": MEDIUM, "signals": ai_scoped_signals}
+    return None
+
+
+def _hirr_continuation_intent(normalized: str) -> dict[str, Any] | None:
+    continuation_terms = (
+        "nadaljuj",
+        "continue",
+        "continue this",
+        "continue the project",
+        "go on",
+        "resume",
+        "proceed",
+    )
+    signals = [term for term in continuation_terms if normalized == term]
+    if not signals and normalized in {"continue project", "resume the project", "resume project"}:
+        signals = [normalized]
+    if signals:
+        return {"intent_family": CONTINUATION_INTENT, "confidence": LOW, "signals": signals}
+    return None
+
+
+def _hirr_bounded_file_write_proof_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "proof note",
+            "evidence note",
+            "evidence file",
+            "proof file",
+            "majhno datoteko",
+            "majhna datoteka",
+            "malo datoteko",
+            "dokaz",
+            "dokazni zapis",
+            "tekstovno datoteko",
+            "write a small proof",
+            "create a small proof",
+            "make a small proof",
+            "create a tiny proof",
+            "did something safely",
+            "system really did something safely",
+        ),
+    )
+    if signals:
+        return {"intent_family": BOUNDED_FILE_WRITE_PROOF_INTENT, "confidence": MEDIUM, "signals": signals}
+    return None
+
+
+def _hirr_problem_statement_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "contradict",
+            "inconsistent",
+            "cannot explain",
+            "do not know",
+            "risky ai",
+            "hard to compare",
+            "without review",
+            "miss problems",
+            "unreliable",
+            "quality problem",
+        ),
+    )
+    if signals and (_has_word(normalized, "ai") or _has_word(normalized, "automated") or _has_word(normalized, "chatbot")):
+        return {"intent_family": PROBLEM_STATEMENT_INTENT, "confidence": MEDIUM, "signals": signals}
+    return None
+
+
+def _hirr_automation_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "automate",
+            "automated check",
+            "flag",
+            "workflow that reviews",
+            "screen",
+            "collect evidence",
+            "missing justification",
+            "stops bad",
+        ),
+    )
+    if signals and (_has_word(normalized, "ai") or _has_word(normalized, "model")):
+        return {"intent_family": AUTOMATION_INTENT, "confidence": MEDIUM, "signals": signals}
+    return None
+
+
+def _hirr_compliance_intent(normalized: str) -> dict[str, Any] | None:
+    signals = _matched_terms(
+        normalized,
+        (
+            "auditor",
+            "auditors",
+            "audit",
+            "regulator",
+            "regulators",
+            "proof",
+            "prove",
+            "records",
+            "company rules",
+            "internal rules",
+            "controlled",
+            "compliance",
+            "skladnost",
+        ),
+    )
+    if signals and (
+        _has_word(normalized, "ai")
+        or _has_word(normalized, "decision")
+        or _has_word(normalized, "decisions")
+        or _has_word(normalized, "output")
+        or _has_word(normalized, "outputs")
+    ):
+        return {"intent_family": COMPLIANCE_INTENT, "confidence": MEDIUM, "signals": signals}
+    return None
+
+
+def _has_hirr_workflow_or_control_signals(normalized: str) -> bool:
+    return any(
+        signal in normalized
+        for signal in (
+            "human approval",
+            "collect evidence",
+            "before staff use",
+            "before action",
+            "workflow",
+            "controlled",
+            "audit evidence",
+        )
+    )
+
+
+def _matched_terms(normalized: str, terms: tuple[str, ...]) -> list[str]:
+    return [term for term in terms if _contains_term(normalized, term)]
+
+
 def _normalize_slovenian(value: str) -> str:
     return value.translate(str.maketrans({"č": "c", "ć": "c", "š": "s", "ž": "z", "đ": "d"}))
 
@@ -439,6 +680,10 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
 
 def _contains_term(normalized: str, term: str) -> bool:
     return re.search(rf"\b{re.escape(term)}\b", normalized) is not None
+
+
+def _has_word(normalized: str, word: str) -> bool:
+    return re.search(rf"\b{re.escape(word)}\b", normalized) is not None
 
 
 def _string_list(values: list[str] | None) -> list[str]:

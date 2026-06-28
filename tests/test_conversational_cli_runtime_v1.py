@@ -707,6 +707,23 @@ def test_human_intent_clarification_intake_routes_supported_families_before_prov
     assert replay["provider_invoked"] is False
     assert replay["worker_invoked"] is False
     assert replay["execution_requested"] is False
+    assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["semantic_comparison_hash"].startswith("sha256:")
+    assert decision["semantic_equivalence_result"] == "EQUIVALENT"
+    assert decision["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert decision["previous_compatibility_interpretation"]["intent_family"] == intent_family
+    assert decision["semantic_parity_evidence"]["compatibility_intent_family"] == intent_family
+    assert decision["semantic_parity_evidence"]["parity_hash"].startswith("sha256:")
+    if intent_family == "AMBIGUOUS_INTENT":
+        assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+        assert decision["semantic_parity_evidence"]["parity_scope"] == "AMBIGUOUS_INTENT_CLARIFICATION_INTAKE"
+    else:
+        assert decision["migration_batch_id"] == (
+            "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_03_HIRR_REMAINING_INTAKE_FAMILIES_V1"
+        )
+        assert decision["semantic_parity_evidence"]["parity_scope"] == "HIRR_REMAINING_INTAKE_FAMILY"
+    assert replay["migration_batch_id"] == decision["migration_batch_id"]
+    assert replay["semantic_parity_evidence"]["parity_hash"] == decision["semantic_parity_evidence"]["parity_hash"]
 
 
 def test_human_intent_unknown_prompt_clarifies_instead_of_provider_fallback(tmp_path) -> None:

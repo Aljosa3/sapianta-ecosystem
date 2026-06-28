@@ -136,6 +136,66 @@ def test_proposal_only_ocs_prompt_translates_without_execution_authority(tmp_pat
     assert result["governance_mutated"] is False
 
 
+@pytest.mark.parametrize(
+    ("human_request", "intent_family", "confidence"),
+    [
+        (
+            "I want to build a tool that helps managers trust AI recommendations.",
+            "BUSINESS_GOAL_INTENT",
+            "MEDIUM",
+        ),
+        (
+            "Our AI sometimes gives answers that contradict company policy.",
+            "PROBLEM_STATEMENT_INTENT",
+            "MEDIUM",
+        ),
+        (
+            "Automate review of AI-generated summaries before they are sent out.",
+            "AUTOMATION_INTENT",
+            "MEDIUM",
+        ),
+        (
+            "We need to show auditors how AI decisions were reviewed.",
+            "COMPLIANCE_INTENT",
+            "MEDIUM",
+        ),
+        (
+            "Nadaljuj.",
+            "CONTINUATION_INTENT",
+            "LOW",
+        ),
+    ],
+)
+def test_hirr_remaining_intake_families_translate_to_clarification_csa_source(
+    tmp_path,
+    human_request: str,
+    intent_family: str,
+    confidence: str,
+) -> None:
+    result = translate_human_to_governance(
+        translation_request_id=f"HTG-HIRR-{intent_family}",
+        human_request=human_request,
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "translation",
+    )
+
+    artifact = result["translation_artifact"]
+    governance_payload = artifact["translated_governance_payload"]
+
+    assert artifact["normalized_intent"]["intent_family"] == intent_family
+    assert artifact["normalized_intent"]["requested_actions"] == []
+    assert artifact["confidence"] == confidence
+    assert governance_payload["workflow_candidate"] == "HUMAN_INTENT_CLARIFICATION_INTAKE"
+    assert governance_payload["hirr_clarification_intent_family"] == intent_family
+    assert governance_payload["clarification_required"] is True
+    assert governance_payload["approval_required"] is False
+    assert governance_payload["execution_requested"] is False
+    assert governance_payload["provider_relevance"] == "NOT_REQUIRED"
+    assert governance_payload["worker_relevance"] == "NONE"
+    assert result["provider_invoked"] is False
+    assert result["workflow_executed"] is False
+
+
 def test_unsafe_approval_bypass_request_is_marked_unsafe_without_execution(tmp_path) -> None:
     result = translate_human_to_governance(
         translation_request_id="HTG-005",
