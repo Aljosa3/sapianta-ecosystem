@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import re
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.transport.serialization import replay_hash
 
 
 HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
@@ -25,6 +27,36 @@ CREATE_DOMAIN_COMPLIANCE_CLARIFICATION_TARGET = "CREATE_DOMAIN_COMPLIANCE_CLARIF
 OCS_LLM_COGNITION_TARGET = "OCS_LLM_COGNITION"
 BOUNDED_FILE_WRITE_WORKER_USER_SESSION_TARGET = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
 GOVERNED_DEVELOPMENT_WORKFLOW_TARGET = "GOVERNED_DEVELOPMENT_WORKFLOW"
+UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1 = "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+
+
+def classify_human_intent_for_clarification_from_canonical_semantic_artifact(
+    *,
+    canonical_semantic_artifact: dict[str, Any],
+    previous_compatibility_intake: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve HIRR intake from CSA only when compatibility parity is deterministic."""
+
+    artifact = _require_mapping(canonical_semantic_artifact, "canonical_semantic_artifact")
+    compatibility = _require_mapping(previous_compatibility_intake, "previous_compatibility_intake")
+    if not _csa_supports_ambiguous_hirr_intake(artifact):
+        return _csa_no_match("CSA_HIRR_PARITY_NOT_SUPPORTED")
+    if not _compatibility_supports_ambiguous_hirr_intake(compatibility):
+        return _csa_no_match("COMPATIBILITY_HIRR_PARITY_NOT_SUPPORTED")
+    intake = deepcopy(compatibility)
+    intake.update(
+        {
+            "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "migration_batch_id": UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1,
+            "canonical_semantic_artifact_reference": artifact["replay_identity"]["semantic_replay_reference"],
+            "canonical_semantic_artifact_hash": artifact["artifact_hash"],
+            "previous_compatibility_interpretation": _compatibility_interpretation(compatibility),
+            "semantic_parity_evidence": _hirr_parity_evidence(artifact, compatibility),
+            "semantic_authority": True,
+        }
+    )
+    return intake
 
 
 def classify_development_intent_for_governed_routing(human_prompt: str) -> dict[str, Any]:
@@ -125,6 +157,100 @@ def classify_human_intent_for_clarification(human_prompt: str, *, include_unknow
         "replay_mutated": False,
         "failure_reason": None,
     }
+
+
+def _csa_no_match(reason: str) -> dict[str, Any]:
+    return {
+        "artifact_type": HUMAN_INTENT_CLARIFICATION_INTAKE_ARTIFACT_V1,
+        "intake_matched": False,
+        "workflow_id": None,
+        "intent_family": None,
+        "intent_confidence": "NONE",
+        "intent_signals": [],
+        "clarification_required": False,
+        "clarification_questions": [],
+        "expected_workflow_targets": [],
+        "routing_decision": "CSA_HIRR_INTAKE_NO_MATCH_CONTINUE_TO_COMPATIBILITY",
+        "semantic_routing_source": "COMPATIBILITY_FALLBACK",
+        "migration_batch_id": None,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+        "failure_reason": reason,
+    }
+
+
+def _csa_supports_ambiguous_hirr_intake(artifact: dict[str, Any]) -> bool:
+    workflow_identity = _require_mapping(artifact.get("workflow_identity"), "workflow_identity")
+    semantic_identity = _require_mapping(artifact.get("semantic_identity"), "semantic_identity")
+    clarification_state = _require_mapping(artifact.get("clarification_state"), "clarification_state")
+    ambiguity = _require_mapping(artifact.get("ambiguity"), "ambiguity")
+    confidence = _require_mapping(artifact.get("confidence"), "confidence")
+    replay_identity = _require_mapping(artifact.get("replay_identity"), "replay_identity")
+    _require_string(artifact.get("artifact_hash"), "artifact_hash")
+    _require_string(replay_identity.get("semantic_replay_reference"), "semantic_replay_reference")
+    return (
+        workflow_identity.get("workflow_id") == HUMAN_INTENT_CLARIFICATION_INTAKE
+        and semantic_identity.get("intent_family") == "CLARIFICATION_REQUIRED"
+        and semantic_identity.get("domain") == "UNKNOWN_DOMAIN"
+        and semantic_identity.get("requested_actions") == []
+        and clarification_state.get("clarification_required") is True
+        and ambiguity.get("ambiguity_status") == "MATERIAL_AMBIGUITY"
+        and confidence.get("semantic_confidence") == "LOW"
+    )
+
+
+def _compatibility_supports_ambiguous_hirr_intake(intake: dict[str, Any]) -> bool:
+    return (
+        intake.get("artifact_type") == HUMAN_INTENT_CLARIFICATION_INTAKE_ARTIFACT_V1
+        and intake.get("intake_matched") is True
+        and intake.get("workflow_id") == HUMAN_INTENT_CLARIFICATION_INTAKE
+        and intake.get("intent_family") == AMBIGUOUS_INTENT
+        and intake.get("intent_confidence") == "LOW"
+        and intake.get("clarification_required") is True
+        and intake.get("routing_decision") == "HUMAN_INTENT_CLARIFICATION_REQUIRED"
+    )
+
+
+def _compatibility_interpretation(intake: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source": "LOCAL_HIRR_COMPATIBILITY_MARKERS",
+        "workflow_id": intake.get("workflow_id"),
+        "intent_family": intake.get("intent_family"),
+        "intent_confidence": intake.get("intent_confidence"),
+        "intent_signals": list(intake.get("intent_signals") or []),
+        "clarification_required": intake.get("clarification_required") is True,
+        "expected_workflow_targets": list(intake.get("expected_workflow_targets") or []),
+        "routing_decision": intake.get("routing_decision"),
+    }
+
+
+def _hirr_parity_evidence(artifact: dict[str, Any], intake: dict[str, Any]) -> dict[str, Any]:
+    evidence = {
+        "migration_batch_id": UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1,
+        "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN",
+        "parity_scope": "AMBIGUOUS_INTENT_CLARIFICATION_INTAKE",
+        "csa_workflow_id": artifact["workflow_identity"]["workflow_id"],
+        "csa_intent_family": artifact["semantic_identity"]["intent_family"],
+        "csa_clarification_required": artifact["clarification_state"]["clarification_required"] is True,
+        "csa_ambiguity_status": artifact["ambiguity"]["ambiguity_status"],
+        "csa_semantic_confidence": artifact["confidence"]["semantic_confidence"],
+        "compatibility_workflow_id": intake.get("workflow_id"),
+        "compatibility_intent_family": intake.get("intent_family"),
+        "compatibility_clarification_required": intake.get("clarification_required") is True,
+        "compatibility_confidence": intake.get("intent_confidence"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+    }
+    evidence["parity_hash"] = replay_hash(evidence)
+    return evidence
 
 
 def _intake_result(*, intent_family: str, confidence: str, signals: list[str]) -> dict[str, Any]:
@@ -474,3 +600,9 @@ def _require_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise FailClosedRuntimeError(f"{field_name} is required")
     return value.strip()
+
+
+def _require_mapping(value: Any, field_name: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise FailClosedRuntimeError(f"{field_name} must be a JSON object")
+    return deepcopy(value)

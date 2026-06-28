@@ -17,6 +17,7 @@ from aigol.runtime.human_execution_intent_detection import (
 from aigol.runtime.human_intent_clarification_intake_runtime import (
     HUMAN_INTENT_CLARIFICATION_INTAKE,
     classify_development_intent_for_governed_routing,
+    classify_human_intent_for_clarification_from_canonical_semantic_artifact,
     classify_human_intent_for_clarification,
 )
 from aigol.runtime.human_to_governance_translation_runtime import translate_human_to_governance
@@ -169,6 +170,11 @@ def route_conversational_cli_intent(
             compatibility_route_evidence=compatibility_route_evidence,
         )
         if not csa_analysis:
+            csa_analysis = _classify_hirr_from_canonical_semantic_artifact(
+                canonical_semantic_capture,
+                compatibility_route_evidence=compatibility_route_evidence,
+            )
+        if not csa_analysis:
             compatibility_route_evidence = None
         analysis = csa_analysis or _classify_workflow(human_prompt)
         decision = _routing_decision_artifact(
@@ -289,6 +295,10 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         "previous_compatibility_matched_terms": deepcopy(
             decision.get("previous_compatibility_matched_terms", [])
         ),
+        "previous_compatibility_interpretation": deepcopy(
+            decision.get("previous_compatibility_interpretation")
+        ),
+        "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
         "ocs_escalation_confidence": decision.get("ocs_escalation_confidence"),
@@ -883,6 +893,26 @@ def _classify_workflow_from_canonical_semantic_artifact(
     )
 
 
+def _classify_hirr_from_canonical_semantic_artifact(
+    canonical_semantic_capture: dict[str, Any] | None,
+    *,
+    compatibility_route_evidence: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    if not isinstance(canonical_semantic_capture, dict) or not isinstance(compatibility_route_evidence, dict):
+        return None
+    semantic_artifact = canonical_semantic_capture.get("semantic_artifact")
+    compatibility_intake = compatibility_route_evidence.get("compatibility_human_intent_intake")
+    if not isinstance(semantic_artifact, dict) or not isinstance(compatibility_intake, dict):
+        return None
+    intake = classify_human_intent_for_clarification_from_canonical_semantic_artifact(
+        canonical_semantic_artifact=semantic_artifact,
+        previous_compatibility_intake=compatibility_intake,
+    )
+    if intake.get("intake_matched") is not True:
+        return None
+    return _human_intent_analysis(intake)
+
+
 def _human_intent_analysis(intake: dict[str, Any]) -> dict[str, Any]:
     return _analysis(
         HUMAN_INTENT_CLARIFICATION_INTAKE,
@@ -932,6 +962,12 @@ def _compatibility_route_evidence(prompt: str) -> dict[str, Any]:
             "compatibility_routing_status": analysis["routing_status"],
             "compatibility_confidence": analysis["confidence"],
             "compatibility_matched_terms": deepcopy(analysis["matched_terms"]),
+            "compatibility_human_intent_intake": deepcopy(analysis.get("human_intent_intake")),
+            "compatibility_intent_family": analysis.get("intent_family"),
+            "compatibility_clarification_questions": deepcopy(analysis.get("clarification_questions", [])),
+            "compatibility_expected_workflow_targets": deepcopy(
+                analysis.get("expected_workflow_targets", [])
+            ),
             "compatibility_failure_reason": None,
         }
     except Exception as exc:
@@ -941,6 +977,10 @@ def _compatibility_route_evidence(prompt: str) -> dict[str, Any]:
             "compatibility_routing_status": FAILED_CLOSED,
             "compatibility_confidence": "NONE",
             "compatibility_matched_terms": [],
+            "compatibility_human_intent_intake": None,
+            "compatibility_intent_family": None,
+            "compatibility_clarification_questions": [],
+            "compatibility_expected_workflow_targets": [],
             "compatibility_failure_reason": str(exc)
             if isinstance(exc, FailClosedRuntimeError)
             else "compatibility routing evidence failed closed",
@@ -982,6 +1022,16 @@ def _analysis(
         "expected_workflow_targets": deepcopy(human_intent_intake.get("expected_workflow_targets", []))
         if human_intent_intake
         else [],
+        "semantic_routing_source": human_intent_intake.get("semantic_routing_source") if human_intent_intake else None,
+        "migration_batch_id": human_intent_intake.get("migration_batch_id") if human_intent_intake else None,
+        "previous_compatibility_interpretation": deepcopy(
+            human_intent_intake.get("previous_compatibility_interpretation")
+        )
+        if human_intent_intake
+        else None,
+        "semantic_parity_evidence": deepcopy(human_intent_intake.get("semantic_parity_evidence"))
+        if human_intent_intake
+        else None,
         "ocs_escalation": deepcopy(ocs_escalation) if ocs_escalation else None,
     }
 
@@ -1529,6 +1579,18 @@ def _routing_decision_artifact(
     semantic_artifact = (
         canonical_semantic_capture.get("semantic_artifact") if isinstance(canonical_semantic_capture, dict) else None
     )
+    semantic_routing_source = analysis.get("semantic_routing_source") or (
+        "CANONICAL_SEMANTIC_ARTIFACT"
+        if isinstance(semantic_artifact, dict)
+        and analysis["matched_terms"][:2] == ["ubtr", "canonical-semantic-artifact"]
+        else "COMPATIBILITY_FALLBACK"
+    )
+    migration_batch_id = analysis.get("migration_batch_id") or (
+        "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
+        if isinstance(compatibility_route_evidence, dict)
+        and semantic_routing_source == "CANONICAL_SEMANTIC_ARTIFACT"
+        else None
+    )
     artifact = {
         "artifact_type": CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1,
         "milestone_id": MILESTONE_ID,
@@ -1576,17 +1638,8 @@ def _routing_decision_artifact(
         "canonical_semantic_artifact_type": (
             semantic_artifact.get("artifact_type") if isinstance(semantic_artifact, dict) else None
         ),
-        "semantic_routing_source": (
-            "CANONICAL_SEMANTIC_ARTIFACT"
-            if isinstance(semantic_artifact, dict)
-            and analysis["matched_terms"][:2] == ["ubtr", "canonical-semantic-artifact"]
-            else "COMPATIBILITY_FALLBACK"
-        ),
-        "migration_batch_id": (
-            "UBTR_CONSUMER_MIGRATION_BATCH_01_ACLI_ROUTING_V1"
-            if isinstance(compatibility_route_evidence, dict)
-            else None
-        ),
+        "semantic_routing_source": semantic_routing_source,
+        "migration_batch_id": migration_batch_id,
         "previous_routing_source": (
             compatibility_route_evidence.get("compatibility_source")
             if isinstance(compatibility_route_evidence, dict)
@@ -1612,9 +1665,14 @@ def _routing_decision_artifact(
             if isinstance(compatibility_route_evidence, dict)
             else []
         ),
+        "previous_compatibility_interpretation": deepcopy(
+            analysis.get("previous_compatibility_interpretation")
+        ),
+        "semantic_parity_evidence": deepcopy(analysis.get("semantic_parity_evidence")),
         "new_csa_routing_source": (
             "CANONICAL_SEMANTIC_ARTIFACT"
             if isinstance(compatibility_route_evidence, dict)
+            and semantic_routing_source == "CANONICAL_SEMANTIC_ARTIFACT"
             else None
         ),
         "ubtr_semantic_cognition_orchestration_reference": (
@@ -1739,6 +1797,10 @@ def _workflow_selection_artifact(
         "previous_compatibility_matched_terms": deepcopy(
             decision.get("previous_compatibility_matched_terms", [])
         ),
+        "previous_compatibility_interpretation": deepcopy(
+            decision.get("previous_compatibility_interpretation")
+        ),
+        "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -1804,6 +1866,10 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "previous_compatibility_matched_terms": deepcopy(
             decision.get("previous_compatibility_matched_terms", [])
         ),
+        "previous_compatibility_interpretation": deepcopy(
+            decision.get("previous_compatibility_interpretation")
+        ),
+        "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -1880,6 +1946,8 @@ def _failed_decision_artifact(
         "previous_compatibility_routing_status": None,
         "previous_compatibility_confidence": None,
         "previous_compatibility_matched_terms": [],
+        "previous_compatibility_interpretation": None,
+        "semantic_parity_evidence": None,
         "new_csa_routing_source": None,
         "ubtr_semantic_cognition_orchestration_reference": None,
         "ubtr_semantic_cognition_decision": None,
@@ -1961,6 +2029,10 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         "previous_compatibility_matched_terms": deepcopy(
             decision.get("previous_compatibility_matched_terms", [])
         ),
+        "previous_compatibility_interpretation": deepcopy(
+            decision.get("previous_compatibility_interpretation")
+        ),
+        "semantic_parity_evidence": deepcopy(decision.get("semantic_parity_evidence")),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"

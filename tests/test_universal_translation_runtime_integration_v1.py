@@ -6,6 +6,7 @@ import pytest
 
 from aigol.runtime.conversational_cli_runtime import (
     GOVERNED_DEVELOPMENT_WORKFLOW,
+    HUMAN_INTENT_CLARIFICATION_INTAKE,
     NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
     reconstruct_conversational_cli_routing_replay,
     route_conversational_cli_intent,
@@ -177,6 +178,68 @@ def test_development_csa_uses_compatibility_fallback_without_route_parity(tmp_pa
     assert decision["migration_batch_id"] is None
     assert decision["previous_compatibility_workflow_id"] is None
     assert decision["new_csa_routing_source"] is None
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+
+
+def test_hirr_ambiguous_intent_routes_through_canonical_semantic_artifact_after_parity(tmp_path) -> None:
+    capture = route_conversational_cli_intent(
+        routing_id="ROUTE-UNIVERSAL-HIRR-AMBIGUOUS-001",
+        prompt_id="PROMPT-HIRR-AMBIGUOUS-001",
+        human_prompt="Something unclear about my company needs help.",
+        canonical_chain_id="CHAIN-HIRR-AMBIGUOUS-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "routing",
+    )
+
+    decision = capture["routing_decision_artifact"]
+    intake = decision["human_intent_intake"]
+    parity = decision["semantic_parity_evidence"]
+
+    assert capture["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert capture["routing_status"] == "CLARIFICATION_REQUIRED"
+    assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+    assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
+    assert decision["previous_compatibility_workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert decision["previous_compatibility_interpretation"]["intent_family"] == "AMBIGUOUS_INTENT"
+    assert intake["routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert intake["intent_family"] == "AMBIGUOUS_INTENT"
+    assert parity["parity_scope"] == "AMBIGUOUS_INTENT_CLARIFICATION_INTAKE"
+    assert parity["parity_status"] == "CSA_COMPATIBILITY_PARITY_PROVEN"
+    assert parity["csa_workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert parity["compatibility_intent_family"] == "AMBIGUOUS_INTENT"
+    assert parity["parity_hash"].startswith("sha256:")
+    assert capture["provider_invoked"] is False
+    assert capture["worker_invoked"] is False
+    assert capture["execution_requested"] is False
+
+    reconstructed = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
+    assert reconstructed["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert reconstructed["migration_batch_id"] == "UBTR_CONSUMER_MIGRATION_BATCH_02_HIRR_V1"
+    assert reconstructed["previous_compatibility_interpretation"]["intent_family"] == "AMBIGUOUS_INTENT"
+    assert reconstructed["semantic_parity_evidence"]["parity_hash"] == parity["parity_hash"]
+
+
+def test_hirr_csa_keeps_compatibility_fallback_without_intake_parity(tmp_path) -> None:
+    capture = route_conversational_cli_intent(
+        routing_id="ROUTE-UNIVERSAL-HIRR-FALLBACK-001",
+        prompt_id="PROMPT-HIRR-FALLBACK-001",
+        human_prompt="Build something useful for my company.",
+        canonical_chain_id="CHAIN-HIRR-FALLBACK-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "routing",
+    )
+
+    decision = capture["routing_decision_artifact"]
+
+    assert capture["workflow_id"] == HUMAN_INTENT_CLARIFICATION_INTAKE
+    assert decision["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert decision["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+    assert decision["migration_batch_id"] is None
+    assert decision["previous_compatibility_interpretation"] is None
+    assert decision["semantic_parity_evidence"] is None
     assert capture["provider_invoked"] is False
     assert capture["worker_invoked"] is False
 
