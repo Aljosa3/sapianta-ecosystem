@@ -57,6 +57,9 @@ SEMANTIC_REPLAY_COMPARISON_ARTIFACT_V1 = "SEMANTIC_REPLAY_COMPARISON_ARTIFACT_V1
 PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1 = (
     "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1"
 )
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1"
+)
 
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
@@ -175,6 +178,11 @@ def route_conversational_cli_intent(
         )
         if not csa_analysis:
             csa_analysis = _classify_hirr_from_canonical_semantic_artifact(
+                canonical_semantic_capture,
+                compatibility_route_evidence=compatibility_route_evidence,
+            )
+        if not csa_analysis:
+            csa_analysis = _classify_proposal_only_ocs_from_canonical_semantic_artifact(
                 canonical_semantic_capture,
                 compatibility_route_evidence=compatibility_route_evidence,
             )
@@ -937,6 +945,154 @@ def _classify_hirr_from_canonical_semantic_artifact(
     return _human_intent_analysis(intake)
 
 
+def _classify_proposal_only_ocs_from_canonical_semantic_artifact(
+    canonical_semantic_capture: dict[str, Any] | None,
+    *,
+    compatibility_route_evidence: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    if not isinstance(canonical_semantic_capture, dict) or not isinstance(compatibility_route_evidence, dict):
+        return None
+    semantic_artifact = canonical_semantic_capture.get("semantic_artifact")
+    if not isinstance(semantic_artifact, dict):
+        return None
+    compatibility_ocs = compatibility_route_evidence.get("compatibility_ocs_escalation")
+    if not _compatibility_supports_proposal_only_ocs(compatibility_route_evidence, compatibility_ocs):
+        return None
+    if not _csa_supports_proposal_only_ocs(semantic_artifact, compatibility_ocs):
+        return None
+    matched_terms = ["ubtr", "canonical-semantic-artifact", "proposal-only", "ocs-cognition"]
+    escalation = {
+        "escalation_reason": compatibility_ocs["escalation_reason"],
+        "confidence": compatibility_ocs["confidence"],
+        "matched_terms": matched_terms,
+        "proposal_only_classification": True,
+        "provider_selection": compatibility_ocs["provider_selection"],
+    }
+    analysis = _analysis(
+        OCS_LLM_COGNITION,
+        compatibility_ocs["confidence"],
+        matched_terms,
+        ocs_escalation=escalation,
+    )
+    analysis.update(
+        {
+            "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1,
+            "previous_compatibility_interpretation": _compatibility_proposal_only_ocs_interpretation(
+                compatibility_route_evidence,
+                compatibility_ocs,
+            ),
+            "semantic_parity_evidence": _proposal_only_ocs_parity_evidence(
+                artifact=semantic_artifact,
+                compatibility_route_evidence=compatibility_route_evidence,
+                compatibility_ocs=compatibility_ocs,
+            ),
+        }
+    )
+    return analysis
+
+
+def _compatibility_supports_proposal_only_ocs(
+    route_evidence: dict[str, Any],
+    compatibility_ocs: Any,
+) -> bool:
+    return (
+        route_evidence.get("compatibility_source") == "LOCAL_COMPATIBILITY_MARKERS"
+        and route_evidence.get("compatibility_workflow_id") == OCS_LLM_COGNITION
+        and route_evidence.get("compatibility_routing_status") == WORKFLOW_SELECTED
+        and isinstance(compatibility_ocs, dict)
+        and compatibility_ocs.get("proposal_only_classification") is True
+        and compatibility_ocs.get("provider_selection") == "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER"
+        and compatibility_ocs.get("escalation_reason")
+        in {
+            "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION",
+            "PROPOSAL_ONLY_IMPLEMENTATION_PROPOSAL_COGNITION",
+            "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
+        }
+    )
+
+
+def _csa_supports_proposal_only_ocs(artifact: dict[str, Any], compatibility_ocs: dict[str, Any]) -> bool:
+    workflow_identity = artifact.get("workflow_identity") or {}
+    semantic_identity = artifact.get("semantic_identity") or {}
+    confidence = artifact.get("confidence") or {}
+    ambiguity = artifact.get("ambiguity") or {}
+    approval_state = artifact.get("approval_state") or {}
+    execution_intent = artifact.get("execution_intent") or {}
+    provider_projection = artifact.get("provider_projection") or {}
+    worker_projection = artifact.get("worker_projection") or {}
+    technical_projection = artifact.get("technical_projection") or {}
+    payload = technical_projection.get("translated_governance_payload") if isinstance(technical_projection, dict) else {}
+    return (
+        workflow_identity.get("workflow_id") == OCS_LLM_COGNITION
+        and semantic_identity.get("intent_family") == "OCS_PROPOSAL_ONLY_INTENT"
+        and semantic_identity.get("domain") == "GOVERNANCE"
+        and semantic_identity.get("requested_actions") == ["REVIEW"]
+        and confidence.get("semantic_confidence") == compatibility_ocs.get("confidence")
+        and ambiguity.get("clarification_required") is False
+        and approval_state.get("approval_required") is False
+        and execution_intent.get("execution_requested") is False
+        and provider_projection.get("provider_relevance") == "PROVIDER_REQUIRED"
+        and provider_projection.get("provider_invoked") is False
+        and worker_projection.get("worker_relevance") == "NONE"
+        and worker_projection.get("worker_invoked") is False
+        and isinstance(payload, dict)
+        and payload.get("proposal_only") is True
+        and payload.get("proposal_only_reason") == compatibility_ocs.get("escalation_reason")
+    )
+
+
+def _compatibility_proposal_only_ocs_interpretation(
+    route_evidence: dict[str, Any],
+    compatibility_ocs: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "source": "LOCAL_PROPOSAL_ONLY_OCS_COMPATIBILITY_MARKERS",
+        "workflow_id": route_evidence.get("compatibility_workflow_id"),
+        "routing_status": route_evidence.get("compatibility_routing_status"),
+        "confidence": route_evidence.get("compatibility_confidence"),
+        "matched_terms": deepcopy(route_evidence.get("compatibility_matched_terms", [])),
+        "escalation_reason": compatibility_ocs.get("escalation_reason"),
+        "proposal_only_classification": compatibility_ocs.get("proposal_only_classification") is True,
+        "provider_selection": compatibility_ocs.get("provider_selection"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+    }
+
+
+def _proposal_only_ocs_parity_evidence(
+    *,
+    artifact: dict[str, Any],
+    compatibility_route_evidence: dict[str, Any],
+    compatibility_ocs: dict[str, Any],
+) -> dict[str, Any]:
+    evidence = {
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1,
+        "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN",
+        "parity_scope": "PROPOSAL_ONLY_OCS_ROUTING",
+        "csa_workflow_id": artifact["workflow_identity"]["workflow_id"],
+        "csa_intent_family": artifact["semantic_identity"]["intent_family"],
+        "csa_requested_actions": list(artifact["semantic_identity"]["requested_actions"]),
+        "csa_semantic_confidence": artifact["confidence"]["semantic_confidence"],
+        "csa_execution_requested": artifact["execution_intent"]["execution_requested"] is True,
+        "csa_provider_relevance": artifact["provider_projection"]["provider_relevance"],
+        "csa_worker_relevance": artifact["worker_projection"]["worker_relevance"],
+        "compatibility_workflow_id": compatibility_route_evidence.get("compatibility_workflow_id"),
+        "compatibility_confidence": compatibility_route_evidence.get("compatibility_confidence"),
+        "compatibility_escalation_reason": compatibility_ocs.get("escalation_reason"),
+        "compatibility_provider_selection": compatibility_ocs.get("provider_selection"),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+    }
+    evidence["parity_hash"] = replay_hash(evidence)
+    return evidence
+
+
 def _human_intent_analysis(intake: dict[str, Any]) -> dict[str, Any]:
     return _analysis(
         HUMAN_INTENT_CLARIFICATION_INTAKE,
@@ -992,6 +1148,7 @@ def _compatibility_route_evidence(prompt: str) -> dict[str, Any]:
             "compatibility_expected_workflow_targets": deepcopy(
                 analysis.get("expected_workflow_targets", [])
             ),
+            "compatibility_ocs_escalation": deepcopy(analysis.get("ocs_escalation")),
             "compatibility_failure_reason": None,
         }
     except Exception as exc:
@@ -1005,6 +1162,7 @@ def _compatibility_route_evidence(prompt: str) -> dict[str, Any]:
             "compatibility_intent_family": None,
             "compatibility_clarification_questions": [],
             "compatibility_expected_workflow_targets": [],
+            "compatibility_ocs_escalation": None,
             "compatibility_failure_reason": str(exc)
             if isinstance(exc, FailClosedRuntimeError)
             else "compatibility routing evidence failed closed",
@@ -1171,9 +1329,12 @@ def _compatibility_semantic_interpretation(route_evidence: dict[str, Any] | None
             "intent_family": None,
             "clarification_required": None,
             "expected_workflow_targets": [],
+            "ocs_escalation": None,
+            "proposal_only_classification": False,
             "failure_reason": None,
         }
     compatibility_intake = route_evidence.get("compatibility_human_intent_intake")
+    compatibility_ocs = route_evidence.get("compatibility_ocs_escalation")
     return {
         "source": route_evidence.get("compatibility_source"),
         "available": route_evidence.get("compatibility_failure_reason") is None,
@@ -1188,6 +1349,12 @@ def _compatibility_semantic_interpretation(route_evidence: dict[str, Any] | None
             else route_evidence.get("compatibility_routing_status") == CLARIFICATION_REQUIRED
         ),
         "expected_workflow_targets": deepcopy(route_evidence.get("compatibility_expected_workflow_targets", [])),
+        "ocs_escalation": deepcopy(compatibility_ocs) if isinstance(compatibility_ocs, dict) else None,
+        "proposal_only_classification": (
+            compatibility_ocs.get("proposal_only_classification") is True
+            if isinstance(compatibility_ocs, dict)
+            else False
+        ),
         "failure_reason": route_evidence.get("compatibility_failure_reason"),
     }
 

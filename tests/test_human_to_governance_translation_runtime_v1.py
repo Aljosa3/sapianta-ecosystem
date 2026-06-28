@@ -111,6 +111,31 @@ def test_ambiguous_request_fails_closed_into_clarification_candidate(tmp_path) -
     assert result["governance_mutated"] is False
 
 
+def test_proposal_only_ocs_prompt_translates_without_execution_authority(tmp_path) -> None:
+    result = translate_human_to_governance(
+        translation_request_id="HTG-PROPOSAL-ONLY-001",
+        human_request="Create governance document explaining ACLI approval behavior for an operator.",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "translation",
+    )
+
+    artifact = result["translation_artifact"]
+    governance_payload = artifact["translated_governance_payload"]
+
+    assert artifact["normalized_intent"]["intent_family"] == "OCS_PROPOSAL_ONLY_INTENT"
+    assert artifact["normalized_intent"]["requested_actions"] == ["REVIEW"]
+    assert governance_payload["workflow_candidate"] == "OCS_LLM_COGNITION"
+    assert governance_payload["proposal_only"] is True
+    assert governance_payload["proposal_only_reason"] == "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION"
+    assert governance_payload["approval_required"] is False
+    assert governance_payload["execution_requested"] is False
+    assert governance_payload["provider_relevance"] == "PROVIDER_REQUIRED"
+    assert governance_payload["worker_relevance"] == "NONE"
+    assert result["provider_invoked"] is False
+    assert result["workflow_executed"] is False
+    assert result["governance_mutated"] is False
+
+
 def test_unsafe_approval_bypass_request_is_marked_unsafe_without_execution(tmp_path) -> None:
     result = translate_human_to_governance(
         translation_request_id="HTG-005",

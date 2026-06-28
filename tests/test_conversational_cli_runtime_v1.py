@@ -553,13 +553,36 @@ def test_proposal_only_prompts_route_to_ocs_with_replay_visible_escalation_metad
 
     assert capture["workflow_id"] == OCS_LLM_COGNITION
     assert capture["routing_status"] == WORKFLOW_SELECTED
+    assert capture["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert capture["migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1"
+    )
     assert capture["proposal_only_classification"] is True
     assert capture["ocs_escalation_reason"] == reason
     assert capture["ocs_escalation_confidence"] == confidence
     assert capture["ocs_provider_selection"] == "OCS_PROVIDER_REGISTRY_DETERMINISTIC_ORDER"
     assert decision["proposal_only_classification"] is True
+    assert decision["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert decision["migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1"
+    )
+    assert decision["previous_routing_source"] == "LOCAL_COMPATIBILITY_MARKERS"
+    assert decision["previous_compatibility_workflow_id"] == OCS_LLM_COGNITION
+    assert decision["previous_compatibility_interpretation"]["escalation_reason"] == reason
+    assert decision["previous_compatibility_interpretation"]["proposal_only_classification"] is True
+    assert decision["semantic_parity_evidence"]["parity_scope"] == "PROPOSAL_ONLY_OCS_ROUTING"
+    assert decision["semantic_parity_evidence"]["compatibility_escalation_reason"] == reason
+    assert decision["semantic_parity_evidence"]["csa_execution_requested"] is False
+    assert decision["semantic_parity_evidence"]["parity_hash"].startswith("sha256:")
+    assert decision["semantic_comparison_artifact"]["non_authoritative"] is True
+    assert decision["semantic_equivalence_result"] == "EQUIVALENT"
+    assert decision["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
     assert selection["proposal_only_classification"] is True
     assert replay["proposal_only_classification"] is True
+    assert replay["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["migration_batch_id"] == "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1"
+    assert replay["semantic_comparison_hash"] == decision["semantic_comparison_hash"]
+    assert replay["semantic_parity_evidence"]["parity_hash"] == decision["semantic_parity_evidence"]["parity_hash"]
     assert replay["ocs_escalation_reason"] == reason
     assert replay["ocs_escalation_confidence"] == confidence
     assert replay["provider_invoked"] is False

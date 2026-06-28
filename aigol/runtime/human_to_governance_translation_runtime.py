@@ -37,6 +37,7 @@ DOMAIN_SECURITY = "SECURITY"
 DOMAIN_COMPLIANCE = "COMPLIANCE"
 DOMAIN_GOVERNANCE = "GOVERNANCE"
 DOMAIN_UNKNOWN = "UNKNOWN_DOMAIN"
+WORKFLOW_OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 
 ARTIFACT_RE = re.compile(r"\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+_V\d+\b")
 PATH_RE = re.compile(r"\b(?:docs|aigol|tests|runtime|sapianta_bridge)/[A-Za-z0-9_./-]+\b")
@@ -59,18 +60,31 @@ def translate_human_to_governance(
     replay_path = Path(replay_dir)
     request = _require_string(human_request, "human_request")
     normalized = _normalize_request(request)
-    action = _detect_action(normalized)
-    domain = _detect_domain(normalized)
     entities = _extract_entities(request)
-    ambiguity = _detect_ambiguity(
-        normalized=normalized,
-        action=action,
-        domain=domain,
-        entities=entities,
-    )
-    confidence = _confidence_for(ambiguity["ambiguity_status"], action, domain)
-    intent_family = _intent_family(action, domain)
-    workflow_candidate = _workflow_candidate(action, domain)
+    proposal_only_ocs = _detect_proposal_only_ocs(normalized)
+    if proposal_only_ocs:
+        action = REVIEW_ACTION
+        domain = DOMAIN_GOVERNANCE
+        ambiguity = {
+            "ambiguity_status": NO_AMBIGUITY,
+            "clarification_required": False,
+            "clarification_questions": [],
+        }
+        confidence = proposal_only_ocs["confidence"]
+        intent_family = "OCS_PROPOSAL_ONLY_INTENT"
+        workflow_candidate = WORKFLOW_OCS_LLM_COGNITION
+    else:
+        action = _detect_action(normalized)
+        domain = _detect_domain(normalized)
+        ambiguity = _detect_ambiguity(
+            normalized=normalized,
+            action=action,
+            domain=domain,
+            entities=entities,
+        )
+        confidence = _confidence_for(ambiguity["ambiguity_status"], action, domain)
+        intent_family = _intent_family(action, domain)
+        workflow_candidate = _workflow_candidate(action, domain)
     normalized_intent = {
         "normalized_text": normalized,
         "intent_family": intent_family,
@@ -86,13 +100,21 @@ def translate_human_to_governance(
         "workflow_candidate": workflow_candidate,
         "intent_family": intent_family,
         "requested_actions": [] if action == UNKNOWN_ACTION else [action],
-        "approval_required": action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
-        "execution_requested": action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
-        "provider_relevance": "NOT_REQUIRED",
-        "worker_relevance": "POSSIBLE_AFTER_APPROVAL" if action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION} else "NONE",
+        "approval_required": False if proposal_only_ocs else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
+        "execution_requested": False if proposal_only_ocs else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
+        "provider_relevance": "PROVIDER_REQUIRED" if proposal_only_ocs else "NOT_REQUIRED",
+        "worker_relevance": (
+            "NONE"
+            if proposal_only_ocs
+            else "POSSIBLE_AFTER_APPROVAL"
+            if action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION}
+            else "NONE"
+        ),
         "entities": deepcopy(entities),
         "clarification_required": ambiguity["clarification_required"],
         "clarification_questions": list(ambiguity["clarification_questions"]),
+        "proposal_only": proposal_only_ocs is not None,
+        "proposal_only_reason": proposal_only_ocs.get("escalation_reason") if proposal_only_ocs else None,
         "authority_granted": False,
         "provider_invoked": False,
         "workflow_executed": False,
@@ -214,6 +236,124 @@ def _detect_domain(normalized: str) -> str:
     if any(_contains_term(normalized, term) for term in ("replay", "validation", "worker", "runtime", "implementation")):
         return DOMAIN_DEVELOPMENT
     return DOMAIN_UNKNOWN
+
+
+def _detect_proposal_only_ocs(normalized: str) -> dict[str, str] | None:
+    normalized_ascii = _normalize_slovenian(normalized)
+    no_execution_markers = (
+        "proposal-only",
+        "proposal only",
+        "advisory only",
+        "conversation only",
+        "discussion only",
+        "no execution",
+        "do not execute",
+        "do not invoke workers",
+        "no workers",
+        "without workers",
+        "without worker",
+        "without writing files",
+        "do not write files",
+        "no file writes",
+        "no repository mutation",
+        "no mutation",
+        "samo pogovor",
+        "samo pri pogovoru",
+        "samo pripraviti",
+        "brez izvajanja",
+        "brez izvajanja workerjev",
+        "ne zelim izvajanja workerjev",
+        "brez zapisovanja datotek",
+        "ne zelim zapisovanja datotek",
+    )
+    has_no_execution_marker = any(marker in normalized_ascii for marker in no_execution_markers)
+    execution_markers = (
+        "enter governed execution",
+        "continue to ppp",
+        "continue into ppp",
+        "execution required",
+        "requires execution",
+        "run worker",
+        "invoke worker",
+        "write file",
+        "write files",
+        "modify repository",
+        "mutate repository",
+        "commit ",
+    )
+    if any(marker in normalized_ascii for marker in execution_markers) and not has_no_execution_marker:
+        return None
+    if any(term in normalized_ascii for term in ("governance artifact", "governance artefakt")) and not has_no_execution_marker:
+        return None
+    governance_document_markers = (
+        "create governance document",
+        "create a governance document",
+        "draft governance document",
+        "draft a governance document",
+        "prepare governance document",
+        "prepare a governance document",
+        "generate governance document",
+        "generate a governance document",
+        "pripraviti governance dokument",
+        "pripravi governance dokument",
+    )
+    explicit_governance_artifact_with_no_execution = (
+        has_no_execution_marker
+        and any(term in normalized_ascii for term in ("governance artifact", "governance artefakt"))
+    )
+    if any(marker in normalized_ascii for marker in governance_document_markers) or explicit_governance_artifact_with_no_execution:
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_GOVERNANCE_DOCUMENT_COGNITION",
+            "confidence": HIGH,
+        }
+    implementation_proposal_markers = (
+        "generate implementation proposal",
+        "create implementation proposal",
+        "draft implementation proposal",
+        "prepare implementation proposal",
+        "implementation proposal",
+    )
+    if any(marker in normalized_ascii for marker in implementation_proposal_markers):
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_IMPLEMENTATION_PROPOSAL_COGNITION",
+            "confidence": HIGH,
+        }
+    proposal_actions = (
+        "summarize",
+        "explain",
+        "compare",
+        "brainstorm",
+        "povzemi",
+        "razlozi",
+        "primerjaj",
+    )
+    governed_subjects = (
+        "governance",
+        "approval",
+        "replay",
+        "validation",
+        "execution",
+        "acli",
+        "ocs",
+        "ppp",
+        "sapianta",
+        "aigol",
+        "provider",
+        "workflow",
+        "worker",
+    )
+    if any(action in normalized_ascii for action in proposal_actions) and any(
+        subject in normalized_ascii for subject in governed_subjects
+    ):
+        return {
+            "escalation_reason": "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
+            "confidence": MEDIUM,
+        }
+    return None
+
+
+def _normalize_slovenian(value: str) -> str:
+    return value.translate(str.maketrans({"č": "c", "ć": "c", "š": "s", "ž": "z", "đ": "d"}))
 
 
 def _extract_entities(human_request: str) -> dict[str, Any]:
