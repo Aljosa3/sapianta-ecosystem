@@ -69,6 +69,15 @@ def _approval(tmp_path):
     )
 
 
+def _canonical_semantic_lineage() -> dict:
+    return {
+        "canonical_semantic_artifact_reference": "CSA-COMMAND-BOUNDARY-000001",
+        "canonical_semantic_artifact_hash": "sha256:command-boundary-csa-000001",
+        "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "migration_batch_id": "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_09",
+    }
+
+
 def _conversation_args(tmp_path):
     (tmp_path / "governance").mkdir(exist_ok=True)
     (tmp_path / "aigol" / "runtime").mkdir(parents=True, exist_ok=True)
@@ -140,6 +149,33 @@ def test_explicit_human_approval_records_approval_artifact(tmp_path) -> None:
     assert replay["approval_bypassed"] is False
 
 
+def test_recommendation_approval_certifies_exact_command_boundary(tmp_path) -> None:
+    continuity = _continuity(tmp_path)
+    capture = record_recommendation_approval(
+        approval_id="APPROVAL-G2-10-EXACT",
+        recommendation_continuity_artifact=continuity["recommendation_continuity_artifact"],
+        operator_decision=APPROVE,
+        approval_timestamp=CREATED_AT,
+        replay_dir=tmp_path / "approval_g2_10",
+        canonical_semantic_lineage=_canonical_semantic_lineage(),
+    )
+    replay = reconstruct_recommendation_approval_replay(tmp_path / "approval_g2_10")
+    artifact = capture["recommendation_approval_artifact"]
+    boundary = artifact["command_boundary_comparison_artifact"]
+
+    assert artifact["operator_decision"] == APPROVE
+    assert artifact["command_boundary_source"] == "DETERMINISTIC_COMMAND_PARSER"
+    assert artifact["command_boundary_parity_status"] == "COMMAND_PARSER_AUTHORITATIVE"
+    assert artifact["canonical_semantic_artifact_hash"] == "sha256:command-boundary-csa-000001"
+    assert boundary["command_parser_decision"]["parser_matched"] is True
+    assert boundary["command_parser_decision"]["parser_authoritative"] is True
+    assert boundary["csa_command_prose_interpretation"]["used"] is False
+    assert boundary["semantic_parity_evidence"]["csa_requires_parser_non_match"] is True
+    assert replay["command_boundary_comparison_hash"] == boundary["artifact_hash"]
+    assert replay["execution_requested"] is False
+    assert replay["worker_invoked"] is False
+
+
 @pytest.mark.parametrize(
     ("prompt", "action"),
     [
@@ -178,6 +214,42 @@ def test_approved_recommendation_generates_followup_candidates(tmp_path, prompt:
     assert replay["execution_requested"] is False
     assert replay["implementation_authorized"] is False
     assert replay["domain_created"] is False
+
+
+def test_recommendation_followup_records_csa_only_after_parser_non_match(tmp_path) -> None:
+    continuity = _continuity(tmp_path)
+    approval = record_recommendation_approval(
+        approval_id="APPROVAL-G2-10-NONMATCH",
+        recommendation_continuity_artifact=continuity["recommendation_continuity_artifact"],
+        operator_decision=APPROVE,
+        approval_timestamp=CREATED_AT,
+        replay_dir=tmp_path / "approval_nonmatch",
+    )
+    capture = create_recommendation_followup(
+        followup_id="FOLLOWUP-G2-10-NONMATCH",
+        recommendation_continuity_artifact=continuity["recommendation_continuity_artifact"],
+        recommendation_approval_artifact=approval["recommendation_approval_artifact"],
+        human_prompt="Please continue with the sensible next step.",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "followup_nonmatch",
+        canonical_semantic_lineage=_canonical_semantic_lineage(),
+    )
+    replay = reconstruct_recommendation_followup_replay(tmp_path / "followup_nonmatch")
+    artifact = capture["recommendation_followup_artifact"]
+    boundary = artifact["command_boundary_comparison_artifact"]
+
+    assert capture["fail_closed"] is True
+    assert artifact["command_boundary_source"] == "CANONICAL_SEMANTIC_ARTIFACT_AFTER_COMMAND_NON_MATCH"
+    assert artifact["command_boundary_parity_status"] == "CSA_OBSERVATIONAL_AFTER_COMMAND_NON_MATCH"
+    assert artifact["command_boundary_fallback_reason"] == "COMMAND_PARSER_NON_MATCH"
+    assert artifact["canonical_semantic_artifact_hash"] == "sha256:command-boundary-csa-000001"
+    assert boundary["command_parser_decision"]["parser_matched"] is False
+    assert boundary["command_parser_decision"]["parser_authoritative"] is False
+    assert boundary["csa_command_prose_interpretation"]["used"] is True
+    assert boundary["semantic_parity_evidence"]["exact_command_authority_preserved"] is True
+    assert replay["command_boundary_comparison_hash"] == boundary["artifact_hash"]
+    assert replay["execution_requested"] is False
+    assert replay["implementation_authorized"] is False
 
 
 def test_followup_fails_closed_without_approval(tmp_path) -> None:

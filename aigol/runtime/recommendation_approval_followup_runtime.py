@@ -20,6 +20,10 @@ FINAL_CLASSIFICATION = "AIGOL_RECOMMENDATION_APPROVAL_AND_FOLLOWUP_RUNTIME_STATU
 RECOMMENDATION_CONTINUITY_ARTIFACT_V1 = "RECOMMENDATION_CONTINUITY_ARTIFACT_V1"
 RECOMMENDATION_APPROVAL_ARTIFACT_V1 = "RECOMMENDATION_APPROVAL_ARTIFACT_V1"
 RECOMMENDATION_FOLLOWUP_ARTIFACT_V1 = "RECOMMENDATION_FOLLOWUP_ARTIFACT_V1"
+COMMAND_BOUNDARY_COMPARISON_ARTIFACT_V1 = "COMMAND_BOUNDARY_COMPARISON_ARTIFACT_V1"
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_10_COMMAND_BOUNDARY_AND_RECOMMENDATION_PROSE_CERTIFICATION_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_10_COMMAND_BOUNDARY_AND_RECOMMENDATION_PROSE_CERTIFICATION_V1"
+)
 
 CONTINUITY_RECORDED = "RECOMMENDATION_CONTINUITY_RECORDED"
 APPROVAL_RECORDED = "RECOMMENDATION_APPROVAL_RECORDED"
@@ -135,6 +139,7 @@ def record_recommendation_approval(
     operator_decision: str,
     approval_timestamp: str,
     replay_dir: str | Path,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     replay_path = Path(replay_dir)
     try:
@@ -142,10 +147,23 @@ def record_recommendation_approval(
         continuity = deepcopy(recommendation_continuity_artifact)
         _validate_continuity(continuity)
         decision = _normalize_operator_decision(operator_decision)
+        command_boundary = _command_boundary_artifact(
+            boundary_id=f"{approval_id}:G2-10-COMMAND-BOUNDARY",
+            boundary_scope="RECOMMENDATION_APPROVAL_COMMAND",
+            parser_name="RECOMMENDATION_APPROVAL_COMMAND_PARSER",
+            parser_matched=True,
+            parser_decision=decision,
+            human_prompt=operator_decision,
+            canonical_semantic_lineage=canonical_semantic_lineage,
+            created_at=approval_timestamp,
+            replay_reference=str(replay_path),
+            fallback_reason=None,
+        )
         artifact = _approval_artifact(
             approval_id=approval_id,
             continuity=continuity,
             operator_decision=decision,
+            command_boundary=command_boundary,
             approval_timestamp=approval_timestamp,
             replay_reference=str(replay_path),
             failure_reason=None,
@@ -166,6 +184,20 @@ def record_recommendation_approval(
             approval_id=approval_id,
             recommendation_continuity_artifact=recommendation_continuity_artifact,
             operator_decision=operator_decision,
+            command_boundary=_command_boundary_artifact(
+                boundary_id=f"{approval_id}:G2-10-COMMAND-BOUNDARY"
+                if isinstance(approval_id, str)
+                else "INVALID-APPROVAL:G2-10-COMMAND-BOUNDARY",
+                boundary_scope="RECOMMENDATION_APPROVAL_COMMAND",
+                parser_name="RECOMMENDATION_APPROVAL_COMMAND_PARSER",
+                parser_matched=False,
+                parser_decision=None,
+                human_prompt=operator_decision if isinstance(operator_decision, str) else "",
+                canonical_semantic_lineage=canonical_semantic_lineage,
+                created_at=approval_timestamp,
+                replay_reference=str(replay_path),
+                fallback_reason="COMMAND_PARSER_NON_MATCH",
+            ),
             approval_timestamp=approval_timestamp,
             replay_reference=str(replay_path),
             failure_reason=failure_reason,
@@ -190,6 +222,7 @@ def create_recommendation_followup(
     human_prompt: str,
     created_at: str,
     replay_dir: str | Path,
+    canonical_semantic_lineage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     replay_path = Path(replay_dir)
     try:
@@ -201,6 +234,18 @@ def create_recommendation_followup(
         if approval.get("operator_decision") != APPROVE:
             raise FailClosedRuntimeError("recommendation followup failed closed: explicit approval is required")
         action = _followup_action(human_prompt)
+        command_boundary = _command_boundary_artifact(
+            boundary_id=f"{followup_id}:G2-10-COMMAND-BOUNDARY",
+            boundary_scope="RECOMMENDATION_FOLLOWUP_COMMAND",
+            parser_name="RECOMMENDATION_FOLLOWUP_COMMAND_PARSER",
+            parser_matched=action is not None,
+            parser_decision=action,
+            human_prompt=human_prompt,
+            canonical_semantic_lineage=canonical_semantic_lineage,
+            created_at=created_at,
+            replay_reference=str(replay_path),
+            fallback_reason=None if action is not None else "COMMAND_PARSER_NON_MATCH",
+        )
         if action is None:
             raise FailClosedRuntimeError("recommendation followup failed closed: unsupported follow-up action")
         artifact = _followup_artifact(
@@ -209,6 +254,7 @@ def create_recommendation_followup(
             approval=approval,
             human_prompt=human_prompt,
             followup_action=action,
+            command_boundary=command_boundary,
             created_at=created_at,
             replay_reference=str(replay_path),
             failure_reason=None,
@@ -230,6 +276,22 @@ def create_recommendation_followup(
             recommendation_continuity_artifact=recommendation_continuity_artifact,
             recommendation_approval_artifact=recommendation_approval_artifact,
             human_prompt=human_prompt,
+            command_boundary=_command_boundary_artifact(
+                boundary_id=f"{followup_id}:G2-10-COMMAND-BOUNDARY"
+                if isinstance(followup_id, str)
+                else "INVALID-FOLLOWUP:G2-10-COMMAND-BOUNDARY",
+                boundary_scope="RECOMMENDATION_FOLLOWUP_COMMAND",
+                parser_name="RECOMMENDATION_FOLLOWUP_COMMAND_PARSER",
+                parser_matched=_followup_action(human_prompt) is not None if isinstance(human_prompt, str) else False,
+                parser_decision=_followup_action(human_prompt) if isinstance(human_prompt, str) else None,
+                human_prompt=human_prompt if isinstance(human_prompt, str) else "",
+                canonical_semantic_lineage=canonical_semantic_lineage,
+                created_at=created_at,
+                replay_reference=str(replay_path),
+                fallback_reason=None
+                if isinstance(human_prompt, str) and _followup_action(human_prompt) is not None
+                else "COMMAND_PARSER_NON_MATCH",
+            ),
             created_at=created_at,
             replay_reference=str(replay_path),
             failure_reason=failure_reason,
@@ -368,6 +430,7 @@ def _approval_artifact(
     approval_id: str,
     continuity: dict[str, Any],
     operator_decision: str,
+    command_boundary: dict[str, Any],
     approval_timestamp: str,
     replay_reference: str,
     failure_reason: str | None,
@@ -382,6 +445,7 @@ def _approval_artifact(
         "continuity_hash": continuity["artifact_hash"],
         "operator_decision": operator_decision,
         "approval_status": _approval_status(operator_decision),
+        **_command_boundary_fields(command_boundary),
         "approval_timestamp": _require_string(approval_timestamp, "approval_timestamp"),
         "replay_reference": _require_string(replay_reference, "replay_reference"),
         "recommended": continuity.get("recommended"),
@@ -403,6 +467,7 @@ def _followup_artifact(
     approval: dict[str, Any],
     human_prompt: str,
     followup_action: str,
+    command_boundary: dict[str, Any],
     created_at: str,
     replay_reference: str,
     failure_reason: str | None,
@@ -420,6 +485,7 @@ def _followup_artifact(
         "approval_hash": approval["artifact_hash"],
         "operator_prompt_hash": replay_hash(_require_string(human_prompt, "human_prompt")),
         "followup_action": followup_action,
+        **_command_boundary_fields(command_boundary),
         "followup_status": FOLLOWUP_CANDIDATE_GENERATED,
         "candidate_status": FOLLOWUP_CANDIDATE_GENERATED,
         "candidate": candidate,
@@ -477,6 +543,7 @@ def _failed_approval_artifact(
     approval_id: str,
     recommendation_continuity_artifact: Any,
     operator_decision: Any,
+    command_boundary: dict[str, Any],
     approval_timestamp: str,
     replay_reference: str,
     failure_reason: str,
@@ -492,6 +559,7 @@ def _failed_approval_artifact(
         "continuity_hash": continuity.get("artifact_hash"),
         "operator_decision": operator_decision if isinstance(operator_decision, str) else None,
         "approval_status": FAILED_CLOSED,
+        **_command_boundary_fields(command_boundary),
         "approval_timestamp": approval_timestamp if isinstance(approval_timestamp, str) else "",
         "replay_reference": replay_reference,
         "recommended": continuity.get("recommended"),
@@ -512,6 +580,7 @@ def _failed_followup_artifact(
     recommendation_continuity_artifact: Any,
     recommendation_approval_artifact: Any,
     human_prompt: Any,
+    command_boundary: dict[str, Any],
     created_at: str,
     replay_reference: str,
     failure_reason: str,
@@ -530,6 +599,7 @@ def _failed_followup_artifact(
         "approval_hash": approval.get("artifact_hash"),
         "operator_prompt_hash": replay_hash(human_prompt) if isinstance(human_prompt, str) else None,
         "followup_action": _followup_action(human_prompt) if isinstance(human_prompt, str) else None,
+        **_command_boundary_fields(command_boundary),
         "followup_status": FAILED_CLOSED,
         "candidate_status": FAILED_CLOSED,
         "candidate": {},
@@ -618,6 +688,15 @@ def _capture(
         "continuity_reference": artifact.get("continuity_reference") or artifact.get("continuity_id"),
         "approval_reference": artifact.get("approval_reference") or artifact.get("approval_id"),
         "followup_action": artifact.get("followup_action"),
+        "command_boundary_source": artifact.get("command_boundary_source"),
+        "command_parser_decision": deepcopy(artifact.get("command_parser_decision")),
+        "command_boundary_comparison_artifact": deepcopy(artifact.get("command_boundary_comparison_artifact")),
+        "command_boundary_comparison_hash": artifact.get("command_boundary_comparison_hash"),
+        "command_boundary_parity_status": artifact.get("command_boundary_parity_status"),
+        "command_boundary_migration_batch_id": artifact.get("command_boundary_migration_batch_id"),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
+        "command_boundary_fallback_reason": artifact.get("command_boundary_fallback_reason"),
         "fail_closed": status == FAILED_CLOSED,
         "failure_reason": returned.get("failure_reason"),
         **_authority_flags(),
@@ -651,6 +730,11 @@ def _returned_artifact(
         status_field: artifact_status,
         "recommendation_reference": artifact.get("recommendation_reference"),
         "recommendation_hash": artifact.get("recommendation_hash"),
+        "command_boundary_source": artifact.get("command_boundary_source"),
+        "command_boundary_comparison_hash": artifact.get("command_boundary_comparison_hash"),
+        "command_boundary_parity_status": artifact.get("command_boundary_parity_status"),
+        "command_boundary_migration_batch_id": artifact.get("command_boundary_migration_batch_id"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
         "replay_visible": True,
         **_authority_flags(),
         "implementation_authorized": False,
@@ -686,6 +770,15 @@ def _reconstruction_common(artifact: dict[str, Any], wrappers: list[dict[str, An
         "recommended": artifact.get("recommended"),
         "followup_action": artifact.get("followup_action"),
         "candidate_status": artifact.get("candidate_status"),
+        "command_boundary_source": artifact.get("command_boundary_source"),
+        "command_parser_decision": deepcopy(artifact.get("command_parser_decision")),
+        "command_boundary_comparison_artifact": deepcopy(artifact.get("command_boundary_comparison_artifact")),
+        "command_boundary_comparison_hash": artifact.get("command_boundary_comparison_hash"),
+        "command_boundary_parity_status": artifact.get("command_boundary_parity_status"),
+        "command_boundary_migration_batch_id": artifact.get("command_boundary_migration_batch_id"),
+        "canonical_semantic_artifact_reference": artifact.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("canonical_semantic_artifact_hash"),
+        "command_boundary_fallback_reason": artifact.get("command_boundary_fallback_reason"),
         "replay_visible": True,
         "lineage_bound": True,
         "replay_artifact_count": len(wrappers),
@@ -724,6 +817,128 @@ def _validate_approval(approval: dict[str, Any], continuity: dict[str, Any]) -> 
     _verify_artifact_hash(approval)
     if approval.get("continuity_hash") != continuity["artifact_hash"]:
         raise FailClosedRuntimeError("recommendation followup failed closed: approval continuity mismatch")
+
+
+def _command_boundary_artifact(
+    *,
+    boundary_id: str,
+    boundary_scope: str,
+    parser_name: str,
+    parser_matched: bool,
+    parser_decision: str | None,
+    human_prompt: str,
+    canonical_semantic_lineage: dict[str, Any] | None,
+    created_at: str,
+    replay_reference: str,
+    fallback_reason: str | None,
+) -> dict[str, Any]:
+    lineage = _normalize_canonical_semantic_lineage(canonical_semantic_lineage)
+    csa_available = lineage["canonical_semantic_artifact_hash"] is not None
+    csa_used = not parser_matched and csa_available
+    parser = {
+        "parser_name": _require_string(parser_name, "parser_name"),
+        "parser_matched": parser_matched,
+        "parser_decision": parser_decision,
+        "parser_authoritative": parser_matched,
+        "exact_command_authority_preserved": True,
+    }
+    csa = {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT_COMMAND_PROSE_OBSERVATION",
+        "available": csa_available,
+        "used": csa_used,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "semantic_routing_source": lineage["semantic_routing_source"],
+        "source_migration_batch_id": lineage["migration_batch_id"],
+        "parser_non_match_required": True,
+    }
+    if parser_matched:
+        source = "DETERMINISTIC_COMMAND_PARSER"
+        parity_status = "COMMAND_PARSER_AUTHORITATIVE"
+        equivalence = "NOT_APPLIED"
+        differences = []
+    elif csa_used:
+        source = "CANONICAL_SEMANTIC_ARTIFACT_AFTER_COMMAND_NON_MATCH"
+        parity_status = "CSA_OBSERVATIONAL_AFTER_COMMAND_NON_MATCH"
+        equivalence = "OBSERVED_ONLY"
+        differences = ["Compatibility command parser produced no exact match."]
+    else:
+        source = "COMPATIBILITY_FALLBACK"
+        parity_status = "COMPATIBILITY_FALLBACK_AUTHORITATIVE"
+        equivalence = "NOT_EVALUATED"
+        differences = ["No deterministic command match and no CSA lineage available."]
+    artifact = {
+        "artifact_type": COMMAND_BOUNDARY_COMPARISON_ARTIFACT_V1,
+        "boundary_id": _require_string(boundary_id, "boundary_id"),
+        "boundary_scope": _require_string(boundary_scope, "boundary_scope"),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_10_COMMAND_BOUNDARY_AND_RECOMMENDATION_PROSE_CERTIFICATION_V1,
+        "command_boundary_source": source,
+        "command_parser_decision": parser,
+        "csa_command_prose_interpretation": csa,
+        "canonical_semantic_artifact_reference": lineage["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": lineage["canonical_semantic_artifact_hash"],
+        "fallback_reason": fallback_reason,
+        "semantic_equivalence_result": equivalence,
+        "semantic_differences": differences,
+        "parity_status": parity_status,
+        "semantic_parity_evidence": {
+            "parity_status": parity_status,
+            "parity_scope": boundary_scope,
+            "exact_command_authority_preserved": True,
+            "csa_requires_parser_non_match": True,
+            "compatibility_fallback_available": True,
+            "approval_authority_transferred": False,
+            "execution_authority_granted": False,
+            "provider_invoked": False,
+            "worker_invoked": False,
+        },
+        "replay_lineage": {
+            "replay_reference": _require_string(replay_reference, "replay_reference"),
+            "operator_prompt_hash": replay_hash(_require_string(human_prompt, "human_prompt")),
+        },
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_visible": True,
+        **_authority_flags(),
+    }
+    artifact["semantic_comparison_hash"] = replay_hash(
+        {
+            "parser": parser,
+            "csa": csa,
+            "parity_status": parity_status,
+            "fallback_reason": fallback_reason,
+        }
+    )
+    artifact["semantic_parity_evidence"]["semantic_comparison_hash"] = artifact["semantic_comparison_hash"]
+    artifact["semantic_parity_evidence"]["parity_hash"] = replay_hash(artifact["semantic_parity_evidence"])
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _command_boundary_fields(command_boundary: dict[str, Any]) -> dict[str, Any]:
+    _verify_artifact_hash(command_boundary)
+    return {
+        "command_boundary_source": command_boundary["command_boundary_source"],
+        "command_parser_decision": deepcopy(command_boundary["command_parser_decision"]),
+        "command_boundary_comparison_artifact": deepcopy(command_boundary),
+        "command_boundary_comparison_hash": command_boundary["artifact_hash"],
+        "command_boundary_parity_status": command_boundary["parity_status"],
+        "command_boundary_migration_batch_id": command_boundary["migration_batch_id"],
+        "canonical_semantic_artifact_reference": command_boundary.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": command_boundary.get("canonical_semantic_artifact_hash"),
+        "command_boundary_fallback_reason": command_boundary.get("fallback_reason"),
+    }
+
+
+def _normalize_canonical_semantic_lineage(source: dict[str, Any] | None) -> dict[str, Any]:
+    source = source if isinstance(source, dict) else {}
+    reference = source.get("canonical_semantic_artifact_reference")
+    artifact_hash = source.get("canonical_semantic_artifact_hash")
+    return {
+        "canonical_semantic_artifact_reference": reference if isinstance(reference, str) else None,
+        "canonical_semantic_artifact_hash": artifact_hash if isinstance(artifact_hash, str) else None,
+        "semantic_routing_source": source.get("semantic_routing_source"),
+        "migration_batch_id": source.get("migration_batch_id"),
+    }
 
 
 def _followup_action(human_prompt: str) -> str | None:
