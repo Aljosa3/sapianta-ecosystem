@@ -867,6 +867,24 @@ def test_interactive_human_intent_clarification_response_selects_expected_workfl
     assert replay["workflow_id"] == expected_workflow
     assert replay["workflow_target_refinement_status"] == WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION
     assert replay["refined_workflow_targets"] == [expected_workflow]
+    assert replay["migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1"
+    )
+    assert replay["compatibility_fallback_available"] is True
+    assert replay["semantic_comparison_hash"].startswith("sha256:")
+    assert replay["semantic_comparison_artifact"]["artifact_hash"] == replay["semantic_comparison_hash"]
+    assert replay["semantic_comparison_artifact"]["replay_lineage"]["continuity_replay_reference"] == (
+        second_turn["replay_reference"]
+    )
+    if expected_workflow in {OCS_LLM_COGNITION, BOUNDED_FILE_WRITE_WORKER_USER_SESSION}:
+        assert replay["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+        assert replay["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+        assert replay["semantic_parity_evidence"]["parity_status"] == "CSA_COMPATIBILITY_PARITY_PROVEN"
+        assert replay["previous_compatibility_interpretation"]["workflow_id"] == expected_workflow
+        assert replay["canonical_semantic_artifact_hash"].startswith("sha256:")
+    else:
+        assert replay["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+        assert replay["semantic_parity_evidence"]["compatibility_fallback_authoritative"] is True
     if prompt == "Kaj bi bilo najbolje narediti naprej?":
         assert replay["proposal_only_cognition_routing"] is False
         assert replay["human_confirmation_required"] is False
@@ -916,6 +934,15 @@ def test_unknown_intent_after_clarification_escalates_to_proposal_only_ocs(tmp_p
     assert replay["ambiguity_escalation_reason"] == "UNRESOLVED_AMBIGUITY_AFTER_CLARIFICATION"
     assert replay["proposal_only_cognition_routing"] is True
     assert replay["human_confirmation_required"] is True
+    assert replay["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+    assert replay["migration_batch_id"] == (
+        "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1"
+    )
+    assert replay["canonical_semantic_artifact_hash"].startswith("sha256:")
+    assert replay["semantic_comparison_parity_status"] == "CSA_COMPATIBILITY_EQUIVALENT"
+    assert replay["semantic_comparison_artifact"]["semantic_equivalence_result"] == "EQUIVALENT"
+    assert replay["semantic_comparison_artifact"]["routing_influence"] is True
+    assert replay["previous_compatibility_interpretation"]["workflow_id"] == OCS_LLM_COGNITION
     assert "Proposal-Only Cognition Routing: YES" in rendered
     assert "Human Confirmation Required: YES" in rendered
 

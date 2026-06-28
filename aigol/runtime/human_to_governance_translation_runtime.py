@@ -39,6 +39,7 @@ DOMAIN_GOVERNANCE = "GOVERNANCE"
 DOMAIN_UNKNOWN = "UNKNOWN_DOMAIN"
 WORKFLOW_OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 WORKFLOW_HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
+WORKFLOW_BOUNDED_FILE_WRITE_WORKER_USER_SESSION = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
 
 BUSINESS_GOAL_INTENT = "BUSINESS_GOAL_INTENT"
 PROBLEM_STATEMENT_INTENT = "PROBLEM_STATEMENT_INTENT"
@@ -70,9 +71,21 @@ def translate_human_to_governance(
     request = _require_string(human_request, "human_request")
     normalized = _normalize_request(request)
     entities = _extract_entities(request)
-    proposal_only_ocs = _detect_proposal_only_ocs(normalized)
+    continuity_response = _detect_hirr_clarification_continuity_response(normalized, session_context)
+    proposal_only_ocs = _detect_proposal_only_ocs(normalized) if continuity_response is None else None
     hirr_clarification = _detect_hirr_clarification_intent(normalized)
-    if proposal_only_ocs:
+    if continuity_response:
+        action = continuity_response["action"]
+        domain = continuity_response["domain"]
+        ambiguity = {
+            "ambiguity_status": NO_AMBIGUITY,
+            "clarification_required": False,
+            "clarification_questions": [],
+        }
+        confidence = continuity_response["confidence"]
+        intent_family = continuity_response["intent_family"]
+        workflow_candidate = continuity_response["workflow_candidate"]
+    elif proposal_only_ocs:
         action = REVIEW_ACTION
         domain = DOMAIN_GOVERNANCE
         ambiguity = {
@@ -121,12 +134,22 @@ def translate_human_to_governance(
         "workflow_candidate": workflow_candidate,
         "intent_family": intent_family,
         "requested_actions": [] if action == UNKNOWN_ACTION else [action],
-        "approval_required": False if proposal_only_ocs else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
-        "execution_requested": False if proposal_only_ocs else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
-        "provider_relevance": "PROVIDER_REQUIRED" if proposal_only_ocs else "NOT_REQUIRED",
+        "approval_required": False
+        if proposal_only_ocs or continuity_response
+        else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
+        "execution_requested": False
+        if proposal_only_ocs or continuity_response
+        else action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION},
+        "provider_relevance": "PROVIDER_REQUIRED"
+        if proposal_only_ocs
+        or (
+            isinstance(continuity_response, dict)
+            and continuity_response.get("workflow_candidate") == WORKFLOW_OCS_LLM_COGNITION
+        )
+        else "NOT_REQUIRED",
         "worker_relevance": (
             "NONE"
-            if proposal_only_ocs
+            if proposal_only_ocs or continuity_response
             else "POSSIBLE_AFTER_APPROVAL"
             if action in {CREATE_ACTION, UPDATE_ACTION, IMPLEMENT_ACTION}
             else "NONE"
@@ -134,10 +157,22 @@ def translate_human_to_governance(
         "entities": deepcopy(entities),
         "clarification_required": ambiguity["clarification_required"],
         "clarification_questions": list(ambiguity["clarification_questions"]),
-        "proposal_only": proposal_only_ocs is not None,
-        "proposal_only_reason": proposal_only_ocs.get("escalation_reason") if proposal_only_ocs else None,
+        "proposal_only": proposal_only_ocs is not None
+        or (
+            isinstance(continuity_response, dict)
+            and continuity_response.get("workflow_candidate") == WORKFLOW_OCS_LLM_COGNITION
+        ),
+        "proposal_only_reason": proposal_only_ocs.get("escalation_reason")
+        if proposal_only_ocs
+        else continuity_response.get("proposal_only_reason")
+        if isinstance(continuity_response, dict)
+        else None,
         "hirr_clarification_intent_family": hirr_clarification.get("intent_family") if hirr_clarification else None,
         "hirr_clarification_signals": list(hirr_clarification.get("signals") or []) if hirr_clarification else [],
+        "hirr_clarification_continuity_response": continuity_response is not None,
+        "hirr_clarification_continuity_signals": list(continuity_response.get("signals") or [])
+        if isinstance(continuity_response, dict)
+        else [],
         "authority_granted": False,
         "provider_invoked": False,
         "workflow_executed": False,
@@ -371,6 +406,128 @@ def _detect_proposal_only_ocs(normalized: str) -> dict[str, str] | None:
         return {
             "escalation_reason": "PROPOSAL_ONLY_EXPLANATION_OR_ANALYSIS_COGNITION",
             "confidence": MEDIUM,
+        }
+    return None
+
+
+def _detect_hirr_clarification_continuity_response(
+    normalized: str,
+    session_context: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(session_context, dict):
+        return None
+    if session_context.get("semantic_context") != "HIRR_CLARIFICATION_CONTINUITY":
+        return None
+    original_target = session_context.get("original_expected_workflow_target")
+    confirmation_signals = _matched_terms(
+        normalized,
+        (
+            "yes",
+            "yes.",
+            "da",
+            "da.",
+            "approved",
+            "approve",
+            "confirmed",
+            "go ahead",
+            "that is correct",
+            "odobreno",
+            "odobrim",
+            "potrjujem",
+        ),
+    )
+    bounded_file_signals = _matched_terms(
+        normalized,
+        (
+            "small text file",
+            "tiny proof",
+            "proof file",
+            "proof note",
+            "majhno datoteko",
+            "majhna datoteka",
+            "malo datoteko",
+            "tekstovno datoteko",
+            "dokazni zapis",
+            "dokaz",
+        ),
+    )
+    if (
+        original_target == WORKFLOW_BOUNDED_FILE_WRITE_WORKER_USER_SESSION
+        and confirmation_signals
+    ) or bounded_file_signals:
+        return {
+            "intent_family": BOUNDED_FILE_WRITE_PROOF_INTENT,
+            "confidence": MEDIUM,
+            "signals": confirmation_signals + bounded_file_signals,
+            "action": UNKNOWN_ACTION,
+            "domain": DOMAIN_UNKNOWN,
+            "workflow_candidate": WORKFLOW_BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
+            "proposal_only_reason": None,
+        }
+    unresolved_signals = _matched_terms(
+        normalized,
+        (
+            "not sure",
+            "not certain",
+            "unclear",
+            "i do not know",
+            "i don't know",
+            "help me decide",
+            "help me figure out",
+            "safest interpretation",
+            "safe next step",
+        ),
+    )
+    advisory_signals = _matched_terms(
+        normalized,
+        (
+            "advisory",
+            "guidance",
+            "plan",
+            "plan only",
+            "planning",
+            "recommend",
+            "recommendation",
+            "analyze",
+            "reduce risk",
+            "safer",
+            "understand",
+            "explain",
+            "wording",
+            "before implementation",
+            "do not start implementation",
+            "no implementation",
+            "without execution",
+            "before any runtime changes",
+            "just advice",
+            "don't change anything",
+            "dont change anything",
+            "next safest",
+            "best next step",
+        ),
+    )
+    no_execution_signals = _matched_terms(
+        normalized,
+        (
+            "plan only",
+            "do not start implementation",
+            "no implementation",
+            "without execution",
+            "before any runtime changes",
+            "just advice",
+            "don't change anything",
+            "dont change anything",
+        ),
+    )
+    if unresolved_signals or advisory_signals:
+        return {
+            "intent_family": "OCS_PROPOSAL_ONLY_INTENT",
+            "confidence": MEDIUM if advisory_signals else LOW,
+            "signals": unresolved_signals + advisory_signals + no_execution_signals,
+            "action": REVIEW_ACTION,
+            "domain": DOMAIN_GOVERNANCE,
+            "workflow_candidate": WORKFLOW_OCS_LLM_COGNITION,
+            "proposal_only_reason": "PROPOSAL_ONLY_CLARIFICATION_CONTINUITY_COGNITION",
         }
     return None
 

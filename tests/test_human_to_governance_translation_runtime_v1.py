@@ -196,6 +196,57 @@ def test_hirr_remaining_intake_families_translate_to_clarification_csa_source(
     assert result["workflow_executed"] is False
 
 
+def test_hirr_clarification_continuity_context_translates_plan_only_reply_to_ocs(tmp_path) -> None:
+    result = translate_human_to_governance(
+        translation_request_id="HTG-HIRR-CONTINUITY-OCS",
+        human_request="Give me a plan only.",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "translation",
+        session_context={
+            "semantic_context": "HIRR_CLARIFICATION_CONTINUITY",
+            "original_expected_workflow_target": "OCS_LLM_COGNITION",
+        },
+    )
+
+    artifact = result["translation_artifact"]
+    governance_payload = artifact["translated_governance_payload"]
+
+    assert artifact["normalized_intent"]["intent_family"] == "OCS_PROPOSAL_ONLY_INTENT"
+    assert governance_payload["workflow_candidate"] == "OCS_LLM_COGNITION"
+    assert governance_payload["proposal_only"] is True
+    assert governance_payload["proposal_only_reason"] == "PROPOSAL_ONLY_CLARIFICATION_CONTINUITY_COGNITION"
+    assert governance_payload["hirr_clarification_continuity_response"] is True
+    assert governance_payload["approval_required"] is False
+    assert governance_payload["execution_requested"] is False
+    assert result["provider_invoked"] is False
+    assert result["workflow_executed"] is False
+
+
+def test_hirr_clarification_continuity_context_translates_bounded_confirmation(tmp_path) -> None:
+    result = translate_human_to_governance(
+        translation_request_id="HTG-HIRR-CONTINUITY-BOUNDED",
+        human_request="Yes.",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "translation",
+        session_context={
+            "semantic_context": "HIRR_CLARIFICATION_CONTINUITY",
+            "original_expected_workflow_target": "BOUNDED_FILE_WRITE_WORKER_USER_SESSION",
+        },
+    )
+
+    artifact = result["translation_artifact"]
+    governance_payload = artifact["translated_governance_payload"]
+
+    assert artifact["normalized_intent"]["intent_family"] == "BOUNDED_FILE_WRITE_PROOF_INTENT"
+    assert governance_payload["workflow_candidate"] == "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
+    assert governance_payload["proposal_only"] is False
+    assert governance_payload["hirr_clarification_continuity_response"] is True
+    assert governance_payload["approval_required"] is False
+    assert governance_payload["execution_requested"] is False
+    assert result["provider_invoked"] is False
+    assert result["workflow_executed"] is False
+
+
 def test_unsafe_approval_bypass_request_is_marked_unsafe_without_execution(tmp_path) -> None:
     result = translate_human_to_governance(
         translation_request_id="HTG-005",

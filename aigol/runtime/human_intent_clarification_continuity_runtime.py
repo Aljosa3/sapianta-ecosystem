@@ -6,7 +6,11 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.canonical_semantic_artifact_runtime import (
+    create_canonical_semantic_artifact_from_translation,
+)
 from aigol.runtime.clarification_lifecycle_resolution_runtime import active_clarification_state
+from aigol.runtime.human_to_governance_translation_runtime import translate_human_to_governance
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -27,11 +31,18 @@ HUMAN_INTENT_CLARIFICATION_RESOLUTION_ARTIFACT_V1 = "HUMAN_INTENT_CLARIFICATION_
 HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1 = (
     "HUMAN_INTENT_WORKFLOW_SELECTION_AFTER_CLARIFICATION_ARTIFACT_V1"
 )
+HIRR_CLARIFICATION_CONTINUITY_SEMANTIC_COMPARISON_ARTIFACT_V1 = (
+    "HIRR_CLARIFICATION_CONTINUITY_SEMANTIC_COMPARISON_ARTIFACT_V1"
+)
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1"
+)
 
 HUMAN_INTENT_CLARIFICATION_INTAKE = "HUMAN_INTENT_CLARIFICATION_INTAKE"
 AMBIGUOUS_INTENT = "AMBIGUOUS_INTENT"
 GENERAL_IMPROVEMENT_INTENT = "GENERAL_IMPROVEMENT_INTENT"
 CONTINUATION_INTENT = "CONTINUATION_INTENT"
+BOUNDED_FILE_WRITE_PROOF_INTENT = "BOUNDED_FILE_WRITE_PROOF_INTENT"
 CREATE_DOMAIN_COMPLIANCE_CLARIFICATION = "CREATE_DOMAIN_COMPLIANCE_CLARIFICATION"
 OCS_LLM_COGNITION = "OCS_LLM_COGNITION"
 BOUNDED_FILE_WRITE_WORKER_USER_SESSION = "BOUNDED_FILE_WRITE_WORKER_USER_SESSION"
@@ -43,6 +54,11 @@ WORKFLOW_SELECTION_AFTER_CLARIFICATION = "WORKFLOW_SELECTION_AFTER_CLARIFICATION
 WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION = "WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION"
 TARGET_PRESERVED_LOW_CONFIDENCE = "TARGET_PRESERVED_LOW_CONFIDENCE"
 FAILED_CLOSED = "FAILED_CLOSED"
+CANONICAL_SEMANTIC_ARTIFACT = "CANONICAL_SEMANTIC_ARTIFACT"
+COMPATIBILITY_FALLBACK = "COMPATIBILITY_FALLBACK"
+CSA_COMPATIBILITY_EQUIVALENT = "CSA_COMPATIBILITY_EQUIVALENT"
+CSA_COMPATIBILITY_DIVERGENT = "CSA_COMPATIBILITY_DIVERGENT"
+CSA_UNAVAILABLE = "CSA_UNAVAILABLE"
 
 REPLAY_STEPS = (
     "human_intent_clarification_reply_binding_recorded",
@@ -87,12 +103,21 @@ def continue_human_intent_clarification_to_workflow(
             clarification_response=clarification_response,
             created_at=created_at,
         )
+        canonical_semantic_capture = _clarification_response_canonical_semantic_capture(
+            continuity_id=continuity_id,
+            state=state,
+            clarification_response=clarification_response,
+            created_at=created_at,
+            replay_path=replay_path,
+        )
         refinement = _target_refinement_artifact(
             continuity_id=continuity_id,
             state=state,
             response=response,
             clarification_response=clarification_response,
             created_at=created_at,
+            canonical_semantic_capture=canonical_semantic_capture,
+            replay_reference=str(replay_path),
         )
         resolution = _resolution_artifact(
             continuity_id=continuity_id,
@@ -142,6 +167,7 @@ def reconstruct_human_intent_clarification_continuity_replay(replay_dir: str | P
         _verify_artifact_hash(artifact)
         wrappers.append(wrapper)
     refinement = wrappers[2]["artifact"]
+    _verify_semantic_comparison_hash(refinement)
     selection = wrappers[4]["artifact"]
     return {
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
@@ -155,6 +181,17 @@ def reconstruct_human_intent_clarification_continuity_replay(replay_dir: str | P
         "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
         "human_confirmation_required": refinement["human_confirmation_required"],
         "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
+        "semantic_routing_source": refinement["semantic_routing_source"],
+        "previous_compatibility_interpretation": deepcopy(refinement["previous_compatibility_interpretation"]),
+        "migration_batch_id": refinement["migration_batch_id"],
+        "canonical_semantic_artifact_reference": refinement["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": refinement["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": deepcopy(refinement["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": refinement["semantic_comparison_hash"],
+        "semantic_equivalence_result": refinement["semantic_equivalence_result"],
+        "semantic_comparison_parity_status": refinement["semantic_comparison_parity_status"],
+        "semantic_parity_evidence": deepcopy(refinement["semantic_parity_evidence"]),
+        "compatibility_fallback_available": refinement["compatibility_fallback_available"],
         "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
         "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
@@ -304,6 +341,8 @@ def _target_refinement_artifact(
     response: dict[str, Any],
     clarification_response: str,
     created_at: str,
+    canonical_semantic_capture: dict[str, Any] | None,
+    replay_reference: str,
 ) -> dict[str, Any]:
     request = state["clarification_request_artifact"]
     original_target = _initial_workflow_target(request)
@@ -313,6 +352,46 @@ def _target_refinement_artifact(
         original_target=original_target,
         clarification_response=response_text,
     )
+    csa_decision = _csa_clarification_continuity_decision(
+        canonical_semantic_capture=canonical_semantic_capture,
+        compatibility_decision=decision,
+    )
+    comparison = _semantic_comparison_artifact(
+        continuity_id=continuity_id,
+        request=request,
+        compatibility_decision=decision,
+        canonical_semantic_capture=canonical_semantic_capture,
+        csa_decision=csa_decision,
+        created_at=created_at,
+        replay_reference=replay_reference,
+    )
+    if _csa_parity_proven(compatibility_decision=decision, csa_decision=csa_decision):
+        semantic_routing_source = CANONICAL_SEMANTIC_ARTIFACT
+        selected_decision = deepcopy(decision)
+        selected_decision["selected_workflow_id"] = csa_decision["selected_workflow_id"]
+        selected_decision["refined_intent_family"] = csa_decision["refined_intent_family"]
+        semantic_parity_evidence = _semantic_parity_evidence(
+            compatibility_decision=decision,
+            csa_decision=csa_decision,
+            comparison=comparison,
+        )
+    else:
+        semantic_routing_source = COMPATIBILITY_FALLBACK
+        selected_decision = decision
+        semantic_parity_evidence = {
+            "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1,
+            "parity_status": comparison["parity_status"],
+            "parity_scope": "HIRR_CLARIFICATION_CONTINUITY",
+            "fallback_reason": "CSA_COMPATIBILITY_PARITY_NOT_CERTIFIED_FOR_THIS_CONTINUITY_DECISION",
+            "compatibility_fallback_authoritative": True,
+            "parity_hash": replay_hash(
+                {
+                    "parity_status": comparison["parity_status"],
+                    "comparison_hash": comparison["artifact_hash"],
+                    "fallback": True,
+                }
+            ),
+        }
     artifact = {
         "artifact_type": HUMAN_INTENT_WORKFLOW_TARGET_REFINEMENT_ARTIFACT_V1,
         "runtime_version": AIGOL_HUMAN_INTENT_CLARIFICATION_CONTINUITY_RUNTIME_V1,
@@ -323,17 +402,31 @@ def _target_refinement_artifact(
         "clarification_response_hash": response["artifact_hash"],
         "original_intent_family": request.get("intent_family"),
         "original_expected_workflow_targets": deepcopy(request.get("expected_workflow_targets", [])),
-        "clarification_response_signals": decision["signals"],
-        "refined_intent_family": decision["refined_intent_family"],
-        "refined_workflow_targets": [decision["selected_workflow_id"]],
-        "selected_workflow_id": decision["selected_workflow_id"],
-        "refinement_status": decision["refinement_status"],
-        "refinement_reason": decision["refinement_reason"],
-        "ambiguity_escalation_reason": decision["ambiguity_escalation_reason"],
-        "unresolved_ambiguity_classification": decision["unresolved_ambiguity_classification"],
-        "proposal_only_cognition_routing": decision["proposal_only_cognition_routing"],
-        "human_confirmation_required": decision["human_confirmation_required"],
-        "future_deterministic_rule_candidate_status": decision["future_deterministic_rule_candidate_status"],
+        "clarification_response_signals": selected_decision["signals"],
+        "refined_intent_family": selected_decision["refined_intent_family"],
+        "refined_workflow_targets": [selected_decision["selected_workflow_id"]],
+        "selected_workflow_id": selected_decision["selected_workflow_id"],
+        "refinement_status": selected_decision["refinement_status"],
+        "refinement_reason": selected_decision["refinement_reason"],
+        "ambiguity_escalation_reason": selected_decision["ambiguity_escalation_reason"],
+        "unresolved_ambiguity_classification": selected_decision["unresolved_ambiguity_classification"],
+        "proposal_only_cognition_routing": selected_decision["proposal_only_cognition_routing"],
+        "human_confirmation_required": selected_decision["human_confirmation_required"],
+        "future_deterministic_rule_candidate_status": selected_decision[
+            "future_deterministic_rule_candidate_status"
+        ],
+        "semantic_routing_source": semantic_routing_source,
+        "previous_compatibility_interpretation": _compatibility_continuity_interpretation(decision),
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1,
+        "canonical_semantic_artifact_reference": comparison["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": comparison["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": deepcopy(comparison),
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "semantic_equivalence_result": comparison["semantic_equivalence_result"],
+        "semantic_comparison_parity_status": comparison["parity_status"],
+        "semantic_parity_evidence": semantic_parity_evidence,
+        "compatibility_fallback_available": True,
+        "compatibility_fallback_authoritative": semantic_routing_source == COMPATIBILITY_FALLBACK,
         "canonical_chain_id": request["canonical_chain_id"],
         "created_at": _require_string(created_at, "created_at"),
         "provider_invoked": False,
@@ -592,6 +685,306 @@ def _refined_workflow_target(
     }
 
 
+def _clarification_response_canonical_semantic_capture(
+    *,
+    continuity_id: str,
+    state: dict[str, Any],
+    clarification_response: str,
+    created_at: str,
+    replay_path: Path,
+) -> dict[str, Any] | None:
+    request = state["clarification_request_artifact"]
+    original_target = _initial_workflow_target(request)
+    translation = translate_human_to_governance(
+        translation_request_id=f"{_require_string(continuity_id, 'continuity_id')}:CLARIFICATION-CONTINUITY-RESPONSE",
+        human_request=_require_string(clarification_response, "clarification_response"),
+        created_at=_require_string(created_at, "created_at"),
+        replay_dir=replay_path / "clarification_response_translation",
+        session_context={
+            "semantic_context": "HIRR_CLARIFICATION_CONTINUITY",
+            "canonical_chain_id": request["canonical_chain_id"],
+            "original_intent_family": request.get("intent_family"),
+            "original_expected_workflow_target": original_target,
+            "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1,
+        },
+        available_workflows=[CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, OCS_LLM_COGNITION, BOUNDED_FILE_WRITE_WORKER_USER_SESSION],
+    )
+    return create_canonical_semantic_artifact_from_translation(
+        semantic_artifact_id=f"{_require_string(continuity_id, 'continuity_id')}:CLARIFICATION-CONTINUITY-CSA",
+        translation_artifact=translation["translation_artifact"],
+        conversation_id=request["canonical_chain_id"],
+        workflow_id=translation["governance_intent_candidate"].get("workflow_candidate"),
+        created_at=_require_string(created_at, "created_at"),
+        replay_dir=replay_path / "clarification_response_canonical_semantic_artifact",
+    )
+
+
+def _csa_clarification_continuity_decision(
+    *,
+    canonical_semantic_capture: dict[str, Any] | None,
+    compatibility_decision: dict[str, Any],
+) -> dict[str, Any] | None:
+    artifact = (
+        canonical_semantic_capture.get("semantic_artifact")
+        if isinstance(canonical_semantic_capture, dict)
+        else None
+    )
+    if not isinstance(artifact, dict):
+        return None
+    workflow_identity = artifact.get("workflow_identity") or {}
+    semantic_identity = artifact.get("semantic_identity") or {}
+    confidence = artifact.get("confidence") or {}
+    ambiguity = artifact.get("ambiguity") or {}
+    execution_intent = artifact.get("execution_intent") or {}
+    provider_projection = artifact.get("provider_projection") or {}
+    worker_projection = artifact.get("worker_projection") or {}
+    workflow_id = workflow_identity.get("workflow_id")
+    intent_family = semantic_identity.get("intent_family")
+    if execution_intent.get("execution_requested") is True:
+        return None
+    if provider_projection.get("provider_invoked") is True or worker_projection.get("worker_invoked") is True:
+        return None
+    if ambiguity.get("clarification_required") is True:
+        return None
+    if (
+        workflow_id == OCS_LLM_COGNITION
+        and intent_family == "OCS_PROPOSAL_ONLY_INTENT"
+        and compatibility_decision.get("selected_workflow_id") == OCS_LLM_COGNITION
+    ):
+        return {
+            "selected_workflow_id": OCS_LLM_COGNITION,
+            "refined_intent_family": compatibility_decision["refined_intent_family"],
+            "semantic_intent_family": intent_family,
+            "semantic_confidence": confidence.get("semantic_confidence"),
+            "parity_scope": "HIRR_CLARIFICATION_CONTINUITY_PROPOSAL_ONLY_OCS",
+        }
+    if (
+        workflow_id == BOUNDED_FILE_WRITE_WORKER_USER_SESSION
+        and intent_family == BOUNDED_FILE_WRITE_PROOF_INTENT
+        and compatibility_decision.get("selected_workflow_id") == BOUNDED_FILE_WRITE_WORKER_USER_SESSION
+    ):
+        return {
+            "selected_workflow_id": BOUNDED_FILE_WRITE_WORKER_USER_SESSION,
+            "refined_intent_family": compatibility_decision["refined_intent_family"],
+            "semantic_intent_family": intent_family,
+            "semantic_confidence": confidence.get("semantic_confidence"),
+            "parity_scope": "HIRR_CLARIFICATION_CONTINUITY_BOUNDED_PROOF_CONFIRMATION",
+        }
+    return None
+
+
+def _csa_parity_proven(
+    *,
+    compatibility_decision: dict[str, Any],
+    csa_decision: dict[str, Any] | None,
+) -> bool:
+    if not isinstance(csa_decision, dict):
+        return False
+    return (
+        compatibility_decision.get("selected_workflow_id") == csa_decision.get("selected_workflow_id")
+        and compatibility_decision.get("refinement_status") == WORKFLOW_TARGET_REFINED_AFTER_CLARIFICATION
+    )
+
+
+def _semantic_comparison_artifact(
+    *,
+    continuity_id: str,
+    request: dict[str, Any],
+    compatibility_decision: dict[str, Any],
+    canonical_semantic_capture: dict[str, Any] | None,
+    csa_decision: dict[str, Any] | None,
+    created_at: str,
+    replay_reference: str,
+) -> dict[str, Any]:
+    compatibility = _compatibility_continuity_interpretation(compatibility_decision)
+    csa = _csa_continuity_interpretation(canonical_semantic_capture, csa_decision)
+    differences = _continuity_semantic_differences(
+        compatibility_interpretation=compatibility,
+        csa_interpretation=csa,
+    )
+    if csa["available"] is not True:
+        parity_status = CSA_UNAVAILABLE
+        equivalence = "NOT_EVALUATED"
+    elif differences:
+        parity_status = CSA_COMPATIBILITY_DIVERGENT
+        equivalence = "NOT_EQUIVALENT"
+    else:
+        parity_status = CSA_COMPATIBILITY_EQUIVALENT
+        equivalence = "EQUIVALENT"
+    artifact = {
+        "artifact_type": HIRR_CLARIFICATION_CONTINUITY_SEMANTIC_COMPARISON_ARTIFACT_V1,
+        "comparison_id": f"{_require_string(continuity_id, 'continuity_id')}:HIRR-CONTINUITY-SEMANTIC-COMPARISON",
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1,
+        "canonical_chain_id": request["canonical_chain_id"],
+        "clarification_request_reference": request["workflow_selection_id"],
+        "clarification_request_hash": request["artifact_hash"],
+        "comparison_mode": "CSA_PRIMARY_WHEN_PARITY_PROVEN",
+        "canonical_semantic_artifact_reference": csa["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": csa["canonical_semantic_artifact_hash"],
+        "compatibility_interpretation_hash": replay_hash(compatibility),
+        "csa_interpretation_hash": replay_hash(csa),
+        "compatibility_semantic_interpretation": compatibility,
+        "csa_semantic_interpretation": csa,
+        "semantic_equivalence_result": equivalence,
+        "semantic_differences": differences,
+        "confidence_comparison": {
+            "csa_confidence": csa.get("semantic_confidence"),
+            "compatibility_confidence": compatibility.get("confidence"),
+            "confidence_comparable": False,
+            "comparison_reason": "HIRR continuity compatibility decision has deterministic signal status, not numeric confidence",
+        },
+        "parity_status": parity_status,
+        "replay_lineage": {
+            "continuity_replay_reference": _require_string(replay_reference, "replay_reference"),
+            "canonical_chain_id": request["canonical_chain_id"],
+            "clarification_request_reference": request["workflow_selection_id"],
+            "comparison_source": "CSA_VS_HIRR_COMPATIBILITY_CLARIFICATION_CONTINUITY",
+        },
+        "non_authoritative_outside_certified_scope": True,
+        "routing_influence": parity_status == CSA_COMPATIBILITY_EQUIVALENT,
+        "governance_influence": False,
+        "approval_influence": False,
+        "provider_selection_influence": False,
+        "execution_influence": False,
+        "worker_influence": False,
+        "lifecycle_influence": False,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_reference": _require_string(replay_reference, "replay_reference"),
+        "replay_visible": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _compatibility_continuity_interpretation(decision: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source": "HIRR_COMPATIBILITY_CLARIFICATION_CONTINUITY",
+        "available": True,
+        "workflow_id": decision.get("selected_workflow_id"),
+        "refined_intent_family": decision.get("refined_intent_family"),
+        "refinement_status": decision.get("refinement_status"),
+        "refinement_reason": decision.get("refinement_reason"),
+        "confidence": "DETERMINISTIC_RULE" if decision.get("signals") else "LOW_CONFIDENCE_PRESERVATION",
+        "signals": list(decision.get("signals") or []),
+        "proposal_only_cognition_routing": decision.get("proposal_only_cognition_routing") is True,
+        "human_confirmation_required": decision.get("human_confirmation_required") is True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+    }
+
+
+def _csa_continuity_interpretation(
+    canonical_semantic_capture: dict[str, Any] | None,
+    csa_decision: dict[str, Any] | None,
+) -> dict[str, Any]:
+    artifact = (
+        canonical_semantic_capture.get("semantic_artifact")
+        if isinstance(canonical_semantic_capture, dict)
+        else None
+    )
+    if not isinstance(artifact, dict):
+        return {
+            "source": CANONICAL_SEMANTIC_ARTIFACT,
+            "available": False,
+            "canonical_semantic_artifact_reference": None,
+            "canonical_semantic_artifact_hash": None,
+            "workflow_id": None,
+            "semantic_intent_family": None,
+            "semantic_confidence": None,
+            "clarification_required": None,
+            "provider_invoked": None,
+            "worker_invoked": None,
+            "execution_requested": None,
+            "parity_scope": None,
+        }
+    workflow_identity = artifact.get("workflow_identity") or {}
+    semantic_identity = artifact.get("semantic_identity") or {}
+    confidence = artifact.get("confidence") or {}
+    clarification_state = artifact.get("clarification_state") or {}
+    provider_projection = artifact.get("provider_projection") or {}
+    worker_projection = artifact.get("worker_projection") or {}
+    execution_intent = artifact.get("execution_intent") or {}
+    return {
+        "source": CANONICAL_SEMANTIC_ARTIFACT,
+        "available": isinstance(csa_decision, dict),
+        "canonical_semantic_artifact_reference": canonical_semantic_capture.get("semantic_replay_reference"),
+        "canonical_semantic_artifact_hash": artifact.get("artifact_hash"),
+        "workflow_id": workflow_identity.get("workflow_id"),
+        "semantic_intent_family": semantic_identity.get("intent_family"),
+        "semantic_confidence": confidence.get("semantic_confidence"),
+        "clarification_required": clarification_state.get("clarification_required"),
+        "provider_invoked": provider_projection.get("provider_invoked"),
+        "worker_invoked": worker_projection.get("worker_invoked"),
+        "execution_requested": execution_intent.get("execution_requested"),
+        "parity_scope": csa_decision.get("parity_scope") if isinstance(csa_decision, dict) else None,
+    }
+
+
+def _continuity_semantic_differences(
+    *,
+    compatibility_interpretation: dict[str, Any],
+    csa_interpretation: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if csa_interpretation.get("available") is not True or compatibility_interpretation.get("available") is not True:
+        return []
+    comparisons = (
+        ("workflow_id", "workflow_id"),
+        ("provider_invoked", "provider_invoked"),
+        ("worker_invoked", "worker_invoked"),
+        ("execution_requested", "execution_requested"),
+    )
+    differences: list[dict[str, Any]] = []
+    for csa_field, compatibility_field in comparisons:
+        csa_value = csa_interpretation.get(csa_field)
+        compatibility_value = compatibility_interpretation.get(compatibility_field)
+        if csa_value != compatibility_value:
+            differences.append(
+                {
+                    "field": csa_field,
+                    "csa_value": csa_value,
+                    "compatibility_field": compatibility_field,
+                    "compatibility_value": compatibility_value,
+                }
+            )
+    return differences
+
+
+def _semantic_parity_evidence(
+    *,
+    compatibility_decision: dict[str, Any],
+    csa_decision: dict[str, Any],
+    comparison: dict[str, Any],
+) -> dict[str, Any]:
+    evidence = {
+        "migration_batch_id": PLATFORM_SEMANTIC_GAP_CLOSURE_G2_04_HIRR_CLARIFICATION_CONTINUITY_V1,
+        "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN",
+        "parity_scope": csa_decision["parity_scope"],
+        "compatibility_workflow_id": compatibility_decision["selected_workflow_id"],
+        "csa_workflow_id": csa_decision["selected_workflow_id"],
+        "compatibility_refinement_status": compatibility_decision["refinement_status"],
+        "csa_semantic_intent_family": csa_decision["semantic_intent_family"],
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "semantic_equivalence_result": comparison["semantic_equivalence_result"],
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+    }
+    evidence["parity_hash"] = replay_hash(evidence)
+    return evidence
+
+
 def _resolution_artifact(
     *,
     continuity_id: str,
@@ -620,6 +1013,12 @@ def _resolution_artifact(
         "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
         "human_confirmation_required": refinement["human_confirmation_required"],
         "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
+        "semantic_routing_source": refinement["semantic_routing_source"],
+        "migration_batch_id": refinement["migration_batch_id"],
+        "canonical_semantic_artifact_hash": refinement["canonical_semantic_artifact_hash"],
+        "semantic_comparison_hash": refinement["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": refinement["semantic_comparison_parity_status"],
+        "compatibility_fallback_available": refinement["compatibility_fallback_available"],
         "original_workflow_id": request.get("workflow_id"),
         "clarification_response_hash": replay_hash(_require_string(clarification_response, "clarification_response")),
         "resolution_status": "INTENT_RESOLVED_AFTER_CLARIFICATION",
@@ -662,6 +1061,12 @@ def _selection_artifact(
         "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
         "human_confirmation_required": refinement["human_confirmation_required"],
         "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
+        "semantic_routing_source": refinement["semantic_routing_source"],
+        "migration_batch_id": refinement["migration_batch_id"],
+        "canonical_semantic_artifact_hash": refinement["canonical_semantic_artifact_hash"],
+        "semantic_comparison_hash": refinement["semantic_comparison_hash"],
+        "semantic_comparison_parity_status": refinement["semantic_comparison_parity_status"],
+        "compatibility_fallback_available": refinement["compatibility_fallback_available"],
         "created_at": _require_string(created_at, "created_at"),
         "provider_invoked": False,
         "worker_invoked": False,
@@ -713,6 +1118,18 @@ def _capture(
         "proposal_only_cognition_routing": refinement["proposal_only_cognition_routing"],
         "human_confirmation_required": refinement["human_confirmation_required"],
         "future_deterministic_rule_candidate_status": refinement["future_deterministic_rule_candidate_status"],
+        "semantic_routing_source": refinement["semantic_routing_source"],
+        "previous_compatibility_interpretation": deepcopy(refinement["previous_compatibility_interpretation"]),
+        "migration_batch_id": refinement["migration_batch_id"],
+        "canonical_semantic_artifact_reference": refinement["canonical_semantic_artifact_reference"],
+        "canonical_semantic_artifact_hash": refinement["canonical_semantic_artifact_hash"],
+        "semantic_comparison_artifact": deepcopy(refinement["semantic_comparison_artifact"]),
+        "semantic_comparison_hash": refinement["semantic_comparison_hash"],
+        "semantic_equivalence_result": refinement["semantic_equivalence_result"],
+        "semantic_comparison_parity_status": refinement["semantic_comparison_parity_status"],
+        "semantic_parity_evidence": deepcopy(refinement["semantic_parity_evidence"]),
+        "compatibility_fallback_available": refinement["compatibility_fallback_available"],
+        "compatibility_fallback_authoritative": refinement["compatibility_fallback_authoritative"],
         "original_workflow_targets": deepcopy(refinement["original_expected_workflow_targets"]),
         "refined_workflow_targets": deepcopy(refinement["refined_workflow_targets"]),
         "clarification_response_bound": True,
@@ -799,6 +1216,15 @@ def _verify_wrapper_hash(wrapper: dict[str, Any]) -> None:
     expected.pop("replay_hash")
     if actual != replay_hash(expected):
         raise FailClosedRuntimeError("human intent clarification continuity replay mismatch")
+
+
+def _verify_semantic_comparison_hash(refinement: dict[str, Any]) -> None:
+    comparison = refinement.get("semantic_comparison_artifact")
+    if not isinstance(comparison, dict):
+        raise FailClosedRuntimeError("human intent clarification continuity semantic comparison is required")
+    if refinement.get("semantic_comparison_hash") != comparison.get("artifact_hash"):
+        raise FailClosedRuntimeError("human intent clarification continuity semantic comparison hash mismatch")
+    _verify_artifact_hash(comparison)
 
 
 def _matched_terms(normalized: str, terms: tuple[str, ...]) -> list[str]:
