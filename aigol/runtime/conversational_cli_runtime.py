@@ -60,6 +60,10 @@ PLATFORM_SEMANTIC_GAP_CLOSURE_G2_01_REPLAY_COMPARISON_SUBSTRATE_V1 = (
 PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1 = (
     "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_02_PROPOSAL_ONLY_OCS_ROUTING_V1"
 )
+PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1 = (
+    "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1"
+)
+LIFECYCLE_ENTRY_SEMANTIC_COMPARISON_ARTIFACT_V1 = "LIFECYCLE_ENTRY_SEMANTIC_COMPARISON_ARTIFACT_V1"
 
 WORKFLOW_SELECTED = "WORKFLOW_SELECTED"
 CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED"
@@ -192,6 +196,16 @@ def route_conversational_cli_intent(
             csa_analysis = _classify_proposal_only_ocs_from_canonical_semantic_artifact(
                 canonical_semantic_capture,
                 compatibility_route_evidence=compatibility_route_evidence,
+            )
+        if not csa_analysis:
+            csa_analysis = _classify_lifecycle_entry_from_canonical_semantic_artifact(
+                canonical_semantic_capture,
+                compatibility_route_evidence=compatibility_route_evidence,
+                routing_id=routing_id,
+                prompt_id=prompt_id,
+                canonical_chain_id=canonical_chain_id,
+                created_at=created_at,
+                replay_reference=str(replay_path),
             )
         semantic_comparison_artifact = _semantic_replay_comparison_artifact(
             routing_id=routing_id,
@@ -359,6 +373,23 @@ def reconstruct_conversational_cli_routing_replay(replay_dir: str | Path) -> dic
         ),
         "execution_intent_semantic_parity_evidence": deepcopy(
             decision.get("execution_intent_semantic_parity_evidence")
+        ),
+        "lifecycle_entry_semantic_source": decision.get("lifecycle_entry_semantic_source"),
+        "lifecycle_entry_migration_batch_id": decision.get("lifecycle_entry_migration_batch_id"),
+        "lifecycle_entry_semantic_comparison_artifact": deepcopy(
+            decision.get("lifecycle_entry_semantic_comparison_artifact")
+        ),
+        "lifecycle_entry_semantic_comparison_hash": decision.get(
+            "lifecycle_entry_semantic_comparison_hash"
+        ),
+        "lifecycle_entry_semantic_comparison_parity_status": decision.get(
+            "lifecycle_entry_semantic_comparison_parity_status"
+        ),
+        "lifecycle_entry_compatibility_fallback_available": decision.get(
+            "lifecycle_entry_compatibility_fallback_available"
+        ),
+        "lifecycle_entry_compatibility_fallback_authoritative": decision.get(
+            "lifecycle_entry_compatibility_fallback_authoritative"
         ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ocs_escalation_reason": decision.get("ocs_escalation_reason"),
@@ -1019,6 +1050,362 @@ def _classify_proposal_only_ocs_from_canonical_semantic_artifact(
         }
     )
     return analysis
+
+
+def _classify_lifecycle_entry_from_canonical_semantic_artifact(
+    canonical_semantic_capture: dict[str, Any] | None,
+    *,
+    compatibility_route_evidence: dict[str, Any] | None = None,
+    routing_id: str,
+    prompt_id: str,
+    canonical_chain_id: str,
+    created_at: str,
+    replay_reference: str,
+) -> dict[str, Any] | None:
+    if not isinstance(canonical_semantic_capture, dict) or not isinstance(compatibility_route_evidence, dict):
+        return None
+    semantic_artifact = canonical_semantic_capture.get("semantic_artifact")
+    if not isinstance(semantic_artifact, dict):
+        return None
+    compatibility = _compatibility_lifecycle_entry_interpretation(compatibility_route_evidence)
+    if compatibility["workflow_id"] not in {DOMAIN_WORKER_REQUEST, DOMAIN_POST_EXECUTION_REPLAY_REVIEW}:
+        return None
+    csa = _csa_lifecycle_entry_interpretation(canonical_semantic_capture)
+    csa_decision = _csa_lifecycle_entry_decision(csa, compatibility)
+    comparison = _lifecycle_entry_semantic_comparison_artifact(
+        routing_id=routing_id,
+        prompt_id=prompt_id,
+        canonical_chain_id=canonical_chain_id,
+        created_at=created_at,
+        replay_reference=replay_reference,
+        compatibility_interpretation=compatibility,
+        csa_interpretation=csa,
+        csa_decision=csa_decision,
+    )
+    if comparison["parity_status"] != "CSA_COMPATIBILITY_EQUIVALENT":
+        return None
+    workflow_id = compatibility["workflow_id"]
+    matched_terms = ["ubtr", "canonical-semantic-artifact", "lifecycle-entry"]
+    matched_terms.extend(str(term) for term in compatibility.get("matched_terms", []) if term)
+    analysis = _analysis(
+        workflow_id,
+        str(compatibility.get("confidence") or "HIGH"),
+        matched_terms,
+    )
+    analysis.update(
+        {
+            "semantic_routing_source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "migration_batch_id": (
+                PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1
+            ),
+            "previous_compatibility_interpretation": compatibility,
+            "semantic_parity_evidence": _lifecycle_entry_parity_evidence(
+                compatibility_interpretation=compatibility,
+                csa_decision=csa_decision,
+                comparison=comparison,
+            ),
+            "lifecycle_entry_semantic_source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "lifecycle_entry_migration_batch_id": (
+                PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1
+            ),
+            "lifecycle_entry_semantic_comparison_artifact": comparison,
+            "lifecycle_entry_semantic_comparison_hash": comparison["artifact_hash"],
+            "lifecycle_entry_semantic_comparison_parity_status": comparison["parity_status"],
+            "lifecycle_entry_compatibility_fallback_available": True,
+            "lifecycle_entry_compatibility_fallback_authoritative": False,
+        }
+    )
+    return analysis
+
+
+def _compatibility_lifecycle_entry_interpretation(route_evidence: dict[str, Any]) -> dict[str, Any]:
+    workflow_id = route_evidence.get("compatibility_workflow_id")
+    return {
+        "source": "LOCAL_LIFECYCLE_ENTRY_COMPATIBILITY_DETECTOR",
+        "available": route_evidence.get("compatibility_failure_reason") is None,
+        "workflow_id": workflow_id,
+        "routing_status": route_evidence.get("compatibility_routing_status"),
+        "confidence": route_evidence.get("compatibility_confidence"),
+        "matched_terms": deepcopy(route_evidence.get("compatibility_matched_terms", [])),
+        "lifecycle_stage": _lifecycle_stage_for_workflow(workflow_id),
+        "requested_action": _lifecycle_requested_action_for_workflow(workflow_id),
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "authorization_created": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+    }
+
+
+def _csa_lifecycle_entry_interpretation(canonical_semantic_capture: dict[str, Any]) -> dict[str, Any]:
+    semantic_artifact = canonical_semantic_capture.get("semantic_artifact")
+    if not isinstance(semantic_artifact, dict):
+        return {
+            "source": "CANONICAL_SEMANTIC_ARTIFACT",
+            "available": False,
+            "canonical_semantic_artifact_reference": None,
+            "canonical_semantic_artifact_hash": None,
+            "workflow_id": None,
+            "domain": None,
+            "requested_actions": [],
+            "semantic_confidence": None,
+            "approval_required": None,
+            "execution_requested": None,
+            "worker_relevance": None,
+            "provider_invoked": None,
+            "worker_invoked": None,
+            "normalized_text": None,
+        }
+    semantic_identity = semantic_artifact.get("semantic_identity") or {}
+    confidence = semantic_artifact.get("confidence") or {}
+    approval_state = semantic_artifact.get("approval_state") or {}
+    execution_intent = semantic_artifact.get("execution_intent") or {}
+    provider_projection = semantic_artifact.get("provider_projection") or {}
+    worker_projection = semantic_artifact.get("worker_projection") or {}
+    technical_projection = semantic_artifact.get("technical_projection") or {}
+    normalized_intent = technical_projection.get("normalized_intent") if isinstance(technical_projection, dict) else {}
+    workflow_identity = semantic_artifact.get("workflow_identity") or {}
+    return {
+        "source": "CANONICAL_SEMANTIC_ARTIFACT",
+        "available": True,
+        "canonical_semantic_artifact_reference": canonical_semantic_capture.get("semantic_replay_reference"),
+        "canonical_semantic_artifact_hash": semantic_artifact.get("artifact_hash"),
+        "workflow_id": workflow_identity.get("workflow_id"),
+        "domain": semantic_identity.get("domain"),
+        "requested_actions": list(semantic_identity.get("requested_actions") or []),
+        "semantic_confidence": confidence.get("semantic_confidence"),
+        "approval_required": approval_state.get("approval_required") is True,
+        "execution_requested": execution_intent.get("execution_requested") is True,
+        "worker_relevance": execution_intent.get("worker_relevance"),
+        "provider_invoked": provider_projection.get("provider_invoked") is True,
+        "worker_invoked": worker_projection.get("worker_invoked") is True,
+        "normalized_text": normalized_intent.get("normalized_text") if isinstance(normalized_intent, dict) else None,
+    }
+
+
+def _csa_lifecycle_entry_decision(
+    csa_interpretation: dict[str, Any],
+    compatibility_interpretation: dict[str, Any],
+) -> dict[str, Any] | None:
+    if csa_interpretation.get("available") is not True:
+        return None
+    normalized_text = csa_interpretation.get("normalized_text")
+    actions = {action for action in csa_interpretation.get("requested_actions", []) if isinstance(action, str)}
+    if not isinstance(normalized_text, str):
+        return None
+    if (
+        compatibility_interpretation.get("workflow_id") == DOMAIN_WORKER_REQUEST
+        and "worker request" in normalized_text
+        and "CREATE" in actions
+        and csa_interpretation.get("domain") == "DEVELOPMENT"
+        and csa_interpretation.get("approval_required") is True
+        and csa_interpretation.get("execution_requested") is True
+        and csa_interpretation.get("worker_relevance") == "POSSIBLE_AFTER_APPROVAL"
+    ):
+        return {
+            "workflow_id": DOMAIN_WORKER_REQUEST,
+            "lifecycle_stage": "WORKER_REQUESTED",
+            "requested_action": "CREATE_WORKER_REQUEST",
+            "semantic_confidence": csa_interpretation.get("semantic_confidence"),
+            "approval_authority_granted": False,
+            "execution_authority_granted": False,
+            "authorization_created": False,
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "execution_requested": False,
+        }
+    if (
+        compatibility_interpretation.get("workflow_id") == DOMAIN_POST_EXECUTION_REPLAY_REVIEW
+        and "post-execution replay" in normalized_text
+        and "REVIEW" in actions
+        and csa_interpretation.get("execution_requested") is False
+        and csa_interpretation.get("worker_relevance") == "NONE"
+    ):
+        return {
+            "workflow_id": DOMAIN_POST_EXECUTION_REPLAY_REVIEW,
+            "lifecycle_stage": "REPLAY_REVIEWED",
+            "requested_action": "REVIEW_POST_EXECUTION_REPLAY",
+            "semantic_confidence": csa_interpretation.get("semantic_confidence"),
+            "approval_authority_granted": False,
+            "execution_authority_granted": False,
+            "authorization_created": False,
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "execution_requested": False,
+        }
+    return None
+
+
+def _lifecycle_entry_semantic_comparison_artifact(
+    *,
+    routing_id: str,
+    prompt_id: str,
+    canonical_chain_id: str,
+    created_at: str,
+    replay_reference: str,
+    compatibility_interpretation: dict[str, Any],
+    csa_interpretation: dict[str, Any],
+    csa_decision: dict[str, Any] | None,
+) -> dict[str, Any]:
+    differences = _lifecycle_entry_semantic_differences(
+        compatibility_interpretation=compatibility_interpretation,
+        csa_decision=csa_decision,
+    )
+    if csa_interpretation.get("available") is not True:
+        parity_status = "CSA_UNAVAILABLE"
+        equivalence_result = "NOT_EVALUATED"
+    elif not isinstance(csa_decision, dict) or differences:
+        parity_status = "CSA_COMPATIBILITY_DIVERGENT"
+        equivalence_result = "NOT_EQUIVALENT"
+    else:
+        parity_status = "CSA_COMPATIBILITY_EQUIVALENT"
+        equivalence_result = "EQUIVALENT"
+    artifact = {
+        "artifact_type": LIFECYCLE_ENTRY_SEMANTIC_COMPARISON_ARTIFACT_V1,
+        "comparison_id": f"{_require_string(routing_id, 'routing_id')}:LIFECYCLE-ENTRY-SEMANTIC-COMPARISON",
+        "migration_batch_id": (
+            PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1
+        ),
+        "prompt_id": _require_string(prompt_id, "prompt_id"),
+        "canonical_chain_id": _require_string(canonical_chain_id, "canonical_chain_id"),
+        "comparison_mode": "CSA_PRIMARY_WHEN_LIFECYCLE_ENTRY_PARITY_PROVEN",
+        "canonical_semantic_artifact_reference": csa_interpretation.get("canonical_semantic_artifact_reference"),
+        "canonical_semantic_artifact_hash": csa_interpretation.get("canonical_semantic_artifact_hash"),
+        "compatibility_interpretation_hash": replay_hash(compatibility_interpretation),
+        "csa_interpretation_hash": replay_hash(csa_interpretation),
+        "compatibility_semantic_interpretation": compatibility_interpretation,
+        "csa_semantic_interpretation": csa_interpretation,
+        "csa_lifecycle_entry_decision": deepcopy(csa_decision),
+        "semantic_equivalence_result": equivalence_result,
+        "semantic_differences": differences,
+        "confidence_comparison": {
+            "csa_confidence": csa_interpretation.get("semantic_confidence"),
+            "compatibility_confidence": compatibility_interpretation.get("confidence"),
+            "confidence_equivalent": csa_interpretation.get("semantic_confidence")
+            == compatibility_interpretation.get("confidence"),
+        },
+        "parity_status": parity_status,
+        "replay_lineage": {
+            "routing_replay_reference": _require_string(replay_reference, "replay_reference"),
+            "canonical_chain_id": canonical_chain_id,
+            "prompt_id": prompt_id,
+            "comparison_source": "CSA_VS_LIFECYCLE_ENTRY_COMPATIBILITY_DETECTOR",
+        },
+        "non_authoritative_outside_certified_scope": True,
+        "governance_influence": False,
+        "approval_influence": False,
+        "authorization_influence": False,
+        "provider_selection_influence": False,
+        "execution_influence": False,
+        "worker_influence": False,
+        "lifecycle_orchestration_influence": False,
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_reference": _require_string(replay_reference, "replay_reference"),
+        "replay_visible": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "authorization_created": False,
+        "execution_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "replay_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _lifecycle_entry_semantic_differences(
+    *,
+    compatibility_interpretation: dict[str, Any],
+    csa_decision: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if not isinstance(csa_decision, dict):
+        return []
+    differences: list[dict[str, Any]] = []
+    for field in (
+        "workflow_id",
+        "lifecycle_stage",
+        "requested_action",
+        "approval_authority_granted",
+        "execution_authority_granted",
+        "authorization_created",
+        "provider_invoked",
+        "worker_invoked",
+        "execution_requested",
+    ):
+        if compatibility_interpretation.get(field) != csa_decision.get(field):
+            differences.append(
+                {
+                    "field": field,
+                    "csa_value": csa_decision.get(field),
+                    "compatibility_value": compatibility_interpretation.get(field),
+                }
+            )
+    return differences
+
+
+def _lifecycle_entry_parity_evidence(
+    *,
+    compatibility_interpretation: dict[str, Any],
+    csa_decision: dict[str, Any] | None,
+    comparison: dict[str, Any],
+) -> dict[str, Any]:
+    evidence = {
+        "migration_batch_id": (
+            PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1
+        ),
+        "parity_status": "CSA_COMPATIBILITY_PARITY_PROVEN",
+        "parity_scope": "WORKER_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS",
+        "compatibility_workflow_id": compatibility_interpretation.get("workflow_id"),
+        "csa_workflow_id": csa_decision.get("workflow_id") if isinstance(csa_decision, dict) else None,
+        "compatibility_lifecycle_stage": compatibility_interpretation.get("lifecycle_stage"),
+        "csa_lifecycle_stage": csa_decision.get("lifecycle_stage") if isinstance(csa_decision, dict) else None,
+        "compatibility_requested_action": compatibility_interpretation.get("requested_action"),
+        "csa_requested_action": csa_decision.get("requested_action") if isinstance(csa_decision, dict) else None,
+        "semantic_comparison_hash": comparison["artifact_hash"],
+        "approval_authority_granted": False,
+        "execution_authority_granted": False,
+        "authorization_created": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_requested": False,
+        "compatibility_fallback_available": True,
+    }
+    evidence["parity_hash"] = replay_hash(evidence)
+    return evidence
+
+
+def _lifecycle_stage_for_workflow(workflow_id: Any) -> str | None:
+    return {
+        DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE: "EXECUTION_READY",
+        DOMAIN_EXECUTION_AUTHORIZATION: "EXECUTION_AUTHORIZED",
+        DOMAIN_WORKER_REQUEST: "WORKER_REQUESTED",
+        DOMAIN_WORKER_ASSIGNMENT: "WORKER_ASSIGNED",
+        DOMAIN_WORKER_DISPATCH: "WORKER_DISPATCHED",
+        DOMAIN_WORKER_INVOCATION: "WORKER_INVOKED",
+        DOMAIN_WORKER_EXECUTION: "EXECUTING",
+        DOMAIN_WORKER_RESULT_CAPTURE: "RESULT_CREATED",
+        DOMAIN_WORKER_RESULT_VALIDATION: "RESULT_VALIDATED",
+        DOMAIN_POST_EXECUTION_REPLAY_REVIEW: "REPLAY_REVIEWED",
+        DOMAIN_GOVERNED_TERMINATION: "TERMINATED",
+    }.get(workflow_id)
+
+
+def _lifecycle_requested_action_for_workflow(workflow_id: Any) -> str | None:
+    return {
+        DOMAIN_EXECUTION_READY_AUTHORIZATION_BRIDGE: "CREATE_EXECUTION_READY_AUTHORIZATION_PACKET",
+        DOMAIN_EXECUTION_AUTHORIZATION: "AUTHORIZE_EXECUTION_READY_PACKET",
+        DOMAIN_WORKER_REQUEST: "CREATE_WORKER_REQUEST",
+        DOMAIN_WORKER_ASSIGNMENT: "ASSIGN_WORKER",
+        DOMAIN_WORKER_DISPATCH: "DISPATCH_WORKER",
+        DOMAIN_WORKER_INVOCATION: "INVOKE_WORKER",
+        DOMAIN_WORKER_EXECUTION: "EXECUTE_WORKER",
+        DOMAIN_WORKER_RESULT_CAPTURE: "CAPTURE_WORKER_RESULT",
+        DOMAIN_WORKER_RESULT_VALIDATION: "VALIDATE_WORKER_RESULT",
+        DOMAIN_POST_EXECUTION_REPLAY_REVIEW: "REVIEW_POST_EXECUTION_REPLAY",
+        DOMAIN_GOVERNED_TERMINATION: "TERMINATE_GOVERNED_OPERATION",
+    }.get(workflow_id)
 
 
 def _compatibility_supports_proposal_only_ocs(
@@ -2158,6 +2545,23 @@ def _routing_decision_artifact(
         )
         if isinstance(execution_intent_evidence, dict)
         else None,
+        "lifecycle_entry_semantic_source": analysis.get("lifecycle_entry_semantic_source"),
+        "lifecycle_entry_migration_batch_id": analysis.get("lifecycle_entry_migration_batch_id"),
+        "lifecycle_entry_semantic_comparison_artifact": deepcopy(
+            analysis.get("lifecycle_entry_semantic_comparison_artifact")
+        ),
+        "lifecycle_entry_semantic_comparison_hash": analysis.get(
+            "lifecycle_entry_semantic_comparison_hash"
+        ),
+        "lifecycle_entry_semantic_comparison_parity_status": analysis.get(
+            "lifecycle_entry_semantic_comparison_parity_status"
+        ),
+        "lifecycle_entry_compatibility_fallback_available": analysis.get(
+            "lifecycle_entry_compatibility_fallback_available"
+        ),
+        "lifecycle_entry_compatibility_fallback_authoritative": analysis.get(
+            "lifecycle_entry_compatibility_fallback_authoritative"
+        ),
         "new_csa_routing_source": (
             "CANONICAL_SEMANTIC_ARTIFACT"
             if isinstance(compatibility_route_evidence, dict)
@@ -2316,6 +2720,23 @@ def _workflow_selection_artifact(
         "execution_intent_semantic_parity_evidence": deepcopy(
             decision.get("execution_intent_semantic_parity_evidence")
         ),
+        "lifecycle_entry_semantic_source": decision.get("lifecycle_entry_semantic_source"),
+        "lifecycle_entry_migration_batch_id": decision.get("lifecycle_entry_migration_batch_id"),
+        "lifecycle_entry_semantic_comparison_artifact": deepcopy(
+            decision.get("lifecycle_entry_semantic_comparison_artifact")
+        ),
+        "lifecycle_entry_semantic_comparison_hash": decision.get(
+            "lifecycle_entry_semantic_comparison_hash"
+        ),
+        "lifecycle_entry_semantic_comparison_parity_status": decision.get(
+            "lifecycle_entry_semantic_comparison_parity_status"
+        ),
+        "lifecycle_entry_compatibility_fallback_available": decision.get(
+            "lifecycle_entry_compatibility_fallback_available"
+        ),
+        "lifecycle_entry_compatibility_fallback_authoritative": decision.get(
+            "lifecycle_entry_compatibility_fallback_authoritative"
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -2411,6 +2832,23 @@ def _returned_artifact(decision: dict[str, Any], selection: dict[str, Any]) -> d
         "execution_intent_semantic_parity_evidence": deepcopy(
             decision.get("execution_intent_semantic_parity_evidence")
         ),
+        "lifecycle_entry_semantic_source": decision.get("lifecycle_entry_semantic_source"),
+        "lifecycle_entry_migration_batch_id": decision.get("lifecycle_entry_migration_batch_id"),
+        "lifecycle_entry_semantic_comparison_artifact": deepcopy(
+            decision.get("lifecycle_entry_semantic_comparison_artifact")
+        ),
+        "lifecycle_entry_semantic_comparison_hash": decision.get(
+            "lifecycle_entry_semantic_comparison_hash"
+        ),
+        "lifecycle_entry_semantic_comparison_parity_status": decision.get(
+            "lifecycle_entry_semantic_comparison_parity_status"
+        ),
+        "lifecycle_entry_compatibility_fallback_available": decision.get(
+            "lifecycle_entry_compatibility_fallback_available"
+        ),
+        "lifecycle_entry_compatibility_fallback_authoritative": decision.get(
+            "lifecycle_entry_compatibility_fallback_authoritative"
+        ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(
             "ubtr_semantic_cognition_orchestration_reference"
@@ -2503,6 +2941,13 @@ def _failed_decision_artifact(
         "execution_intent_semantic_comparison_hash": None,
         "execution_intent_semantic_comparison_parity_status": None,
         "execution_intent_semantic_parity_evidence": None,
+        "lifecycle_entry_semantic_source": None,
+        "lifecycle_entry_migration_batch_id": None,
+        "lifecycle_entry_semantic_comparison_artifact": None,
+        "lifecycle_entry_semantic_comparison_hash": None,
+        "lifecycle_entry_semantic_comparison_parity_status": None,
+        "lifecycle_entry_compatibility_fallback_available": None,
+        "lifecycle_entry_compatibility_fallback_authoritative": None,
         "new_csa_routing_source": None,
         "ubtr_semantic_cognition_orchestration_reference": None,
         "ubtr_semantic_cognition_decision": None,
@@ -2613,6 +3058,23 @@ def _capture(decision: dict[str, Any], selection: dict[str, Any], returned: dict
         ),
         "execution_intent_semantic_parity_evidence": deepcopy(
             decision.get("execution_intent_semantic_parity_evidence")
+        ),
+        "lifecycle_entry_semantic_source": decision.get("lifecycle_entry_semantic_source"),
+        "lifecycle_entry_migration_batch_id": decision.get("lifecycle_entry_migration_batch_id"),
+        "lifecycle_entry_semantic_comparison_artifact": deepcopy(
+            decision.get("lifecycle_entry_semantic_comparison_artifact")
+        ),
+        "lifecycle_entry_semantic_comparison_hash": decision.get(
+            "lifecycle_entry_semantic_comparison_hash"
+        ),
+        "lifecycle_entry_semantic_comparison_parity_status": decision.get(
+            "lifecycle_entry_semantic_comparison_parity_status"
+        ),
+        "lifecycle_entry_compatibility_fallback_available": decision.get(
+            "lifecycle_entry_compatibility_fallback_available"
+        ),
+        "lifecycle_entry_compatibility_fallback_authoritative": decision.get(
+            "lifecycle_entry_compatibility_fallback_authoritative"
         ),
         "new_csa_routing_source": decision.get("new_csa_routing_source"),
         "ubtr_semantic_cognition_orchestration_reference": decision.get(

@@ -412,6 +412,7 @@ def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: s
     capture = _route(tmp_path, prompt)
     replay = reconstruct_conversational_cli_routing_replay(tmp_path / "routing")
     selection = capture["workflow_selection_artifact"]
+    decision = capture["routing_decision_artifact"]
 
     assert capture["final_classification"] == FINAL_CLASSIFICATION
     assert capture["workflow_id"] == workflow_id
@@ -424,6 +425,34 @@ def test_conversational_intents_route_to_certified_workflows(tmp_path, prompt: s
     assert selection["approval_bypassed"] is False
     assert replay["workflow_id"] == workflow_id
     assert workflow_id != DEFAULT_PROVIDER_ASSISTED_CONVERSATION
+    if workflow_id in {DOMAIN_WORKER_REQUEST, DOMAIN_POST_EXECUTION_REPLAY_REVIEW} and prompt in {
+        "Create worker request for FreshDomain.",
+        "Review post-execution replay for FreshDomain.",
+    }:
+        assert capture["semantic_routing_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+        assert capture["migration_batch_id"] == (
+            "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1"
+        )
+        assert decision["lifecycle_entry_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+        assert decision["lifecycle_entry_migration_batch_id"] == (
+            "PLATFORM_SEMANTIC_GAP_CLOSURE_G2_06_WORKER_AND_DOMAIN_LIFECYCLE_ENTRY_SEMANTICS_V1"
+        )
+        assert decision["lifecycle_entry_semantic_comparison_hash"].startswith("sha256:")
+        assert decision["lifecycle_entry_semantic_comparison_artifact"]["artifact_hash"] == (
+            decision["lifecycle_entry_semantic_comparison_hash"]
+        )
+        assert decision["lifecycle_entry_semantic_comparison_parity_status"] == (
+            "CSA_COMPATIBILITY_EQUIVALENT"
+        )
+        assert decision["semantic_parity_evidence"]["parity_status"] == "CSA_COMPATIBILITY_PARITY_PROVEN"
+        assert decision["semantic_parity_evidence"]["execution_authority_granted"] is False
+        assert replay["lifecycle_entry_semantic_source"] == "CANONICAL_SEMANTIC_ARTIFACT"
+        assert replay["lifecycle_entry_semantic_comparison_hash"] == (
+            decision["lifecycle_entry_semantic_comparison_hash"]
+        )
+    if prompt == "Assign worker for FreshDomain.":
+        assert capture["semantic_routing_source"] == "COMPATIBILITY_FALLBACK"
+        assert decision["lifecycle_entry_semantic_source"] is None
 
 
 @pytest.mark.parametrize(
