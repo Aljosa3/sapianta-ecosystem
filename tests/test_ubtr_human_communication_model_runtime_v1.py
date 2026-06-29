@@ -14,6 +14,8 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     COMMUNICATION_LEVELS,
     DOMAIN_UNDERSTANDING,
     LEVEL_STANDARD,
+    SOURCE_COMPONENT_GOVERNANCE,
+    SOURCE_COMPONENT_PRODUCT,
     TYPED_SECTION_ARTIFACT_TYPE,
     TYPED_SECTION_TYPES,
     create_ubtr_human_communication_artifact,
@@ -126,6 +128,7 @@ def _typed_section(tmp_path, *, section_type: str, level: str = LEVEL_STANDARD) 
             "non_authority_notice": "Evidence only.",
         },
         evidence_references=_evidence(section_type),
+        source_component="UBTR",
         csa_reference="CSA-SECTION-001",
         csa_hash=replay_hash({"csa": section_type}),
         ocs_reference="OCS-SECTION-001",
@@ -145,6 +148,66 @@ def _typed_section(tmp_path, *, section_type: str, level: str = LEVEL_STANDARD) 
         rollback_reference="ROLLBACK-TYPED-SECTION-001",
         created_at=CREATED_AT,
         replay_dir=tmp_path / f"typed_{section_type}_{level}",
+    )
+
+
+def _evidence_bound_section(tmp_path) -> dict:
+    return create_typed_communication_section(
+        section_id="SECTION-EVIDENCE-BOUND-001",
+        section_type="TRANSPARENCY",
+        communication_level=LEVEL_STANDARD,
+        structured_content={
+            "summary": "Product 1 evidence is bound to communication.",
+            "assumptions": ["Decision packet is the source of product assumptions."],
+            "risks": ["Provider output remains advisory."],
+            "uncertainties": ["Operator may request more evidence."],
+        },
+        evidence_references=[
+            {
+                "evidence_reference": "PRODUCT1-DECISION-PACKET-001",
+                "evidence_hash": replay_hash({"packet": "001"}),
+                "evidence_role": "PRODUCT_SOURCE",
+            },
+            {
+                "evidence_reference": "GOVERNANCE-CHECKPOINT-001",
+                "evidence_hash": replay_hash({"governance": "001"}),
+                "evidence_role": "GOVERNANCE_SOURCE",
+            },
+        ],
+        source_component=SOURCE_COMPONENT_PRODUCT,
+        source_evidence_bindings={
+            "specific_sources": {
+                "replay": {
+                    "reference": "REPLAY-001",
+                    "hash": replay_hash({"replay": "001"}),
+                },
+                "governance": {
+                    "reference": "GOVERNANCE-CHECKPOINT-001",
+                    "hash": replay_hash({"governance": "001"}),
+                },
+                "provider": {
+                    "reference": "PROVIDER-PROVENANCE-001",
+                    "hash": replay_hash({"provider": "001"}),
+                },
+                "worker": {
+                    "reference": "WORKER-RESULT-001",
+                    "hash": replay_hash({"worker": "001"}),
+                },
+                "product": {
+                    "reference": "PRODUCT1-DECISION-PACKET-001",
+                    "hash": replay_hash({"packet": "001"}),
+                },
+            },
+        },
+        csa_reference="CSA-EVIDENCE-BOUND-001",
+        csa_hash=replay_hash({"csa": "evidence-bound"}),
+        ocs_reference="OCS-EVIDENCE-BOUND-001",
+        ocs_hash=replay_hash({"ocs": "evidence-bound"}),
+        replay_lineage=_lineage("evidence-bound"),
+        rollback_reference="ROLLBACK-EVIDENCE-BOUND-001",
+        non_authority_notices=["Evidence binding is explanatory only."],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "evidence_bound_section",
     )
 
 
@@ -188,11 +251,56 @@ def test_creates_typed_sections_for_all_required_uhcl_section_types(tmp_path) ->
         assert artifact["communication_level"] == LEVEL_STANDARD
         assert artifact["evidence_reference_count"] == 1
         assert artifact["evidence_references_hash"].startswith("sha256:")
-        assert artifact["source_bindings"]["csa_hash"].startswith("sha256:")
+        assert artifact["source_component"] == "UBTR"
+        assert artifact["source_evidence_binding_hash"].startswith("sha256:")
+        assert artifact["source_bindings"]["specific_sources"]["csa"]["hash"].startswith("sha256:")
+        assert artifact["source_bindings"]["source_evidence_hashes"] == [
+            artifact["evidence_references"][0]["evidence_hash"]
+        ]
         assert "DETAILED" in artifact["communication_level_variants"]
+        assert artifact["non_authority_notices"]
         assert artifact["authority_flags"]["approval_authority"] is False
         assert artifact["authority_flags"]["execution_authority"] is False
         assert result["interface_specific_rendering"] is False
+
+
+def test_source_evidence_binding_records_platform_source_lineage(tmp_path) -> None:
+    result = _evidence_bound_section(tmp_path)
+    artifact = result["typed_section_artifact"]
+    bindings = artifact["source_bindings"]
+
+    assert artifact["source_component"] == SOURCE_COMPONENT_PRODUCT
+    assert result["source_component"] == SOURCE_COMPONENT_PRODUCT
+    assert bindings["binding_schema_version"] == "UHCL_SOURCE_EVIDENCE_BINDING_V1"
+    assert bindings["source_component"] == SOURCE_COMPONENT_PRODUCT
+    assert bindings["source_evidence_reference_count"] == 2
+    assert bindings["source_evidence_hashes"] == [
+        item["evidence_hash"] for item in artifact["evidence_references"]
+    ]
+    assert bindings["source_evidence_references_hash"] == artifact["evidence_references_hash"]
+    assert bindings["specific_sources"]["csa"]["reference"] == "CSA-EVIDENCE-BOUND-001"
+    assert bindings["specific_sources"]["ocs"]["reference"] == "OCS-EVIDENCE-BOUND-001"
+    assert bindings["specific_sources"]["replay"]["reference"] == "REPLAY-001"
+    assert bindings["specific_sources"]["governance"]["reference"] == "GOVERNANCE-CHECKPOINT-001"
+    assert bindings["specific_sources"]["provider"]["reference"] == "PROVIDER-PROVENANCE-001"
+    assert bindings["specific_sources"]["worker"]["reference"] == "WORKER-RESULT-001"
+    assert bindings["specific_sources"]["product"]["reference"] == "PRODUCT1-DECISION-PACKET-001"
+    assert bindings["non_authoritative"] is True
+    assert artifact["source_evidence_binding_hash"] == result["source_evidence_binding_hash"]
+    assert "Evidence binding is explanatory only." in artifact["non_authority_notices"]
+    assert artifact["authority_flags"]["provider_authority"] is False
+    assert artifact["authority_flags"]["worker_authority"] is False
+
+
+def test_source_evidence_binding_reconstructs_with_binding_hash(tmp_path) -> None:
+    result = _evidence_bound_section(tmp_path)
+
+    reconstructed = reconstruct_typed_communication_section_replay(tmp_path / "evidence_bound_section")
+
+    assert reconstructed["typed_section_artifact"] == result["typed_section_artifact"]
+    assert reconstructed["source_component"] == SOURCE_COMPONENT_PRODUCT
+    assert reconstructed["source_evidence_binding_hash"] == result["source_evidence_binding_hash"]
+    assert reconstructed["non_authority_notices"]
 
 
 def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
@@ -353,6 +461,43 @@ def test_invalid_typed_section_evidence_fails_closed_before_replay_write(tmp_pat
         )
 
     assert not replay_dir.exists()
+
+
+def test_invalid_source_evidence_binding_component_fails_closed(tmp_path) -> None:
+    with pytest.raises(FailClosedRuntimeError, match="source_component is not supported"):
+        create_typed_communication_section(
+            section_id="SECTION-INVALID-SOURCE-COMPONENT",
+            section_type="GUIDANCE",
+            communication_level=LEVEL_STANDARD,
+            structured_content={"summary": "Invalid source component."},
+            evidence_references=_evidence("invalid-component"),
+            source_component="TERMINAL",
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / "invalid_source_component",
+        )
+
+
+def test_source_evidence_binding_tampering_fails_closed(tmp_path) -> None:
+    _evidence_bound_section(tmp_path)
+    replay_file = (
+        tmp_path
+        / "evidence_bound_section"
+        / "000_uhcl_typed_communication_section_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["source_bindings"]["source_evidence_hashes"] = [replay_hash({"tampered": True})]
+    wrapper["replay_hash"] = replay_hash(
+        {
+            "replay_index": wrapper["replay_index"],
+            "replay_step": wrapper["replay_step"],
+            "event_type": wrapper["event_type"],
+            "artifact": wrapper["artifact"],
+        }
+    )
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="source evidence binding hash list mismatch"):
+        reconstruct_typed_communication_section_replay(tmp_path / "evidence_bound_section")
 
 
 def test_runtime_has_no_interface_provider_worker_deployment_or_mutation_surfaces() -> None:

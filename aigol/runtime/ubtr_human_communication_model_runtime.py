@@ -17,6 +17,7 @@ REPLAY_STEP = "ubtr_human_communication_artifact_recorded"
 TYPED_SECTION_ARTIFACT_TYPE = "UHCL_TYPED_COMMUNICATION_SECTION_ARTIFACT_V1"
 TYPED_SECTION_SCHEMA_VERSION = "UHCL_TYPED_COMMUNICATION_SECTIONS_V1"
 TYPED_SECTION_REPLAY_STEP = "uhcl_typed_communication_section_recorded"
+SOURCE_EVIDENCE_BINDING_SCHEMA_VERSION = "UHCL_SOURCE_EVIDENCE_BINDING_V1"
 
 DOMAIN_UNDERSTANDING = "UNDERSTANDING"
 DOMAIN_EXPLANATION = "EXPLANATION"
@@ -54,6 +55,30 @@ TYPED_SECTION_TYPES = {
     SECTION_TYPE_ASSUMPTIONS,
     SECTION_TYPE_RISKS,
     SECTION_TYPE_UNCERTAINTIES,
+}
+
+SOURCE_COMPONENT_CSA = "CSA"
+SOURCE_COMPONENT_OCS = "OCS"
+SOURCE_COMPONENT_REPLAY = "REPLAY"
+SOURCE_COMPONENT_GOVERNANCE = "GOVERNANCE"
+SOURCE_COMPONENT_PROVIDER = "PROVIDER"
+SOURCE_COMPONENT_WORKER = "WORKER"
+SOURCE_COMPONENT_PRODUCT = "PRODUCT"
+SOURCE_COMPONENT_APPROVAL = "APPROVAL"
+SOURCE_COMPONENT_AUTHORIZATION = "AUTHORIZATION"
+SOURCE_COMPONENT_UBTR = "UBTR"
+
+SOURCE_COMPONENTS = {
+    SOURCE_COMPONENT_CSA,
+    SOURCE_COMPONENT_OCS,
+    SOURCE_COMPONENT_REPLAY,
+    SOURCE_COMPONENT_GOVERNANCE,
+    SOURCE_COMPONENT_PROVIDER,
+    SOURCE_COMPONENT_WORKER,
+    SOURCE_COMPONENT_PRODUCT,
+    SOURCE_COMPONENT_APPROVAL,
+    SOURCE_COMPONENT_AUTHORIZATION,
+    SOURCE_COMPONENT_UBTR,
 }
 
 COMMUNICATION_DOMAINS = {
@@ -231,9 +256,12 @@ def create_typed_communication_section(
     csa_hash: str | None = None,
     ocs_reference: str | None = None,
     ocs_hash: str | None = None,
+    source_component: str | None = None,
+    source_evidence_bindings: dict[str, Any] | None = None,
     communication_level_variants: dict[str, dict[str, Any]] | None = None,
     replay_lineage: list[dict[str, Any]] | None = None,
     rollback_reference: str | None = None,
+    non_authority_notices: list[str] | None = None,
 ) -> dict[str, Any]:
     """Create a deterministic UHCL typed section artifact."""
 
@@ -242,6 +270,15 @@ def create_typed_communication_section(
     level = _require_choice(communication_level, COMMUNICATION_LEVELS, "communication_level")
     content = _require_nonempty_mapping(structured_content, "structured_content")
     evidence = _normalize_evidence_references(evidence_references)
+    source_bindings = _source_evidence_bindings(
+        source_component=source_component,
+        evidence_references=evidence,
+        csa_reference=csa_reference,
+        csa_hash=csa_hash,
+        ocs_reference=ocs_reference,
+        ocs_hash=ocs_hash,
+        source_evidence_bindings=source_evidence_bindings,
+    )
     variants = _normalize_level_variants(communication_level_variants, level, content)
     lineage = _optional_lineage(replay_lineage)
     artifact = {
@@ -255,18 +292,16 @@ def create_typed_communication_section(
         "evidence_references": evidence,
         "evidence_reference_count": len(evidence),
         "evidence_references_hash": replay_hash(evidence),
-        "source_bindings": {
-            "csa_reference": _optional_string(csa_reference),
-            "csa_hash": _optional_hash(csa_hash, "csa_hash"),
-            "ocs_reference": _optional_string(ocs_reference),
-            "ocs_hash": _optional_hash(ocs_hash, "ocs_hash"),
-        },
+        "source_component": source_bindings["source_component"],
+        "source_bindings": source_bindings,
+        "source_evidence_binding_hash": replay_hash(source_bindings),
         "communication_level_variants": variants,
         "communication_level_variants_hash": replay_hash(variants),
         "replay_lineage": lineage,
         "replay_lineage_hash": replay_hash(lineage),
         "replay_reference": str(replay_path),
         "rollback_reference": _optional_string(rollback_reference),
+        "non_authority_notices": _non_authority_notices(non_authority_notices),
         "authority_flags": _authority_flags(),
         "interface_neutral": True,
         "replay_visible": True,
@@ -289,6 +324,8 @@ def create_typed_communication_section(
         "typed_section_replay_reference": str(replay_path),
         "section_type": normalized_type,
         "communication_level": level,
+        "source_component": source_bindings["source_component"],
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
         "authority_granted": False,
         "provider_invoked": False,
         "worker_invoked": False,
@@ -316,6 +353,9 @@ def reconstruct_typed_communication_section_replay(replay_dir: str | Path) -> di
         "typed_section_replay_reference": str(replay_path),
         "section_type": artifact["section_type"],
         "communication_level": artifact["communication_level"],
+        "source_component": artifact["source_component"],
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "non_authority_notices": list(artifact["non_authority_notices"]),
         "replay_hash": wrapper["replay_hash"],
         "authority_granted": False,
         "provider_invoked": False,
@@ -475,7 +515,14 @@ def _validate_typed_section_artifact(artifact: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("UHCL typed section evidence count mismatch")
     if candidate.get("evidence_references_hash") != replay_hash(evidence):
         raise FailClosedRuntimeError("UHCL typed section evidence hash mismatch")
-    _require_mapping(candidate.get("source_bindings"), "source_bindings")
+    source_component = _require_choice(candidate.get("source_component"), SOURCE_COMPONENTS, "source_component")
+    source_bindings = _validate_source_evidence_bindings(
+        candidate.get("source_bindings"),
+        evidence_references=evidence,
+        expected_source_component=source_component,
+    )
+    if candidate.get("source_evidence_binding_hash") != replay_hash(source_bindings):
+        raise FailClosedRuntimeError("UHCL typed section source evidence binding hash mismatch")
     variants = _require_mapping(candidate.get("communication_level_variants"), "communication_level_variants")
     if candidate.get("communication_level") not in variants:
         raise FailClosedRuntimeError("UHCL typed section level variant missing")
@@ -484,6 +531,9 @@ def _validate_typed_section_artifact(artifact: dict[str, Any]) -> None:
     lineage = _list_of_mappings(candidate.get("replay_lineage"), "replay_lineage")
     if candidate.get("replay_lineage_hash") != replay_hash(lineage):
         raise FailClosedRuntimeError("UHCL typed section replay lineage hash mismatch")
+    notices = _string_list(candidate.get("non_authority_notices"), "non_authority_notices")
+    if not notices:
+        raise FailClosedRuntimeError("UHCL typed section non-authority notices cannot be empty")
     flags = _require_mapping(candidate.get("authority_flags"), "authority_flags")
     for key, value in flags.items():
         if value is not False:
@@ -527,6 +577,127 @@ def _non_authority_notices(value: list[str] | None) -> list[str]:
     if default not in notices:
         notices.append(default)
     return notices
+
+
+def _source_evidence_bindings(
+    *,
+    source_component: str | None,
+    evidence_references: list[dict[str, Any]],
+    csa_reference: str | None,
+    csa_hash: str | None,
+    ocs_reference: str | None,
+    ocs_hash: str | None,
+    source_evidence_bindings: dict[str, Any] | None,
+) -> dict[str, Any]:
+    component = _require_choice(source_component or SOURCE_COMPONENT_UBTR, SOURCE_COMPONENTS, "source_component")
+    supplied = _optional_mapping(source_evidence_bindings, "source_evidence_bindings") if source_evidence_bindings is not None else {}
+    specific_sources = _normalize_specific_source_references(supplied.get("specific_sources", {}))
+    if csa_reference or csa_hash:
+        specific_sources["csa"] = _source_ref(
+            csa_reference,
+            csa_hash,
+            reference_field="csa_reference",
+            hash_field="csa_hash",
+            existing=specific_sources.get("csa"),
+        )
+    if ocs_reference or ocs_hash:
+        specific_sources["ocs"] = _source_ref(
+            ocs_reference,
+            ocs_hash,
+            reference_field="ocs_reference",
+            hash_field="ocs_hash",
+            existing=specific_sources.get("ocs"),
+        )
+    binding = {
+        "binding_schema_version": SOURCE_EVIDENCE_BINDING_SCHEMA_VERSION,
+        "source_component": component,
+        "source_evidence_references": deepcopy(evidence_references),
+        "source_evidence_hashes": [item["evidence_hash"] for item in evidence_references],
+        "source_evidence_reference_count": len(evidence_references),
+        "source_evidence_references_hash": replay_hash(evidence_references),
+        "specific_sources": specific_sources,
+        "specific_sources_hash": replay_hash(specific_sources),
+        "non_authoritative": True,
+    }
+    return binding
+
+
+def _validate_source_evidence_bindings(
+    value: Any,
+    *,
+    evidence_references: list[dict[str, Any]],
+    expected_source_component: str,
+) -> dict[str, Any]:
+    binding = _require_mapping(value, "source_bindings")
+    if binding.get("binding_schema_version") != SOURCE_EVIDENCE_BINDING_SCHEMA_VERSION:
+        raise FailClosedRuntimeError("UHCL source evidence binding schema mismatch")
+    component = _require_choice(binding.get("source_component"), SOURCE_COMPONENTS, "source_component")
+    if component != expected_source_component:
+        raise FailClosedRuntimeError("UHCL source evidence binding component mismatch")
+    bound_refs = _normalize_evidence_references(binding.get("source_evidence_references"))
+    if bound_refs != evidence_references:
+        raise FailClosedRuntimeError("UHCL source evidence binding references mismatch")
+    hashes = _string_list(binding.get("source_evidence_hashes"), "source_evidence_hashes")
+    if hashes != [item["evidence_hash"] for item in evidence_references]:
+        raise FailClosedRuntimeError("UHCL source evidence binding hash list mismatch")
+    if binding.get("source_evidence_reference_count") != len(evidence_references):
+        raise FailClosedRuntimeError("UHCL source evidence binding count mismatch")
+    if binding.get("source_evidence_references_hash") != replay_hash(evidence_references):
+        raise FailClosedRuntimeError("UHCL source evidence binding references hash mismatch")
+    specific_sources = _normalize_specific_source_references(binding.get("specific_sources"))
+    if binding.get("specific_sources_hash") != replay_hash(specific_sources):
+        raise FailClosedRuntimeError("UHCL source evidence binding specific sources hash mismatch")
+    if binding.get("non_authoritative") is not True:
+        raise FailClosedRuntimeError("UHCL source evidence binding must be non-authoritative")
+    normalized = deepcopy(binding)
+    normalized["source_evidence_references"] = bound_refs
+    normalized["specific_sources"] = specific_sources
+    return normalized
+
+
+def _normalize_specific_source_references(value: Any) -> dict[str, dict[str, str]]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise FailClosedRuntimeError("specific_sources must be a JSON object")
+    sources: dict[str, dict[str, str]] = {}
+    allowed = {
+        "csa",
+        "ocs",
+        "replay",
+        "governance",
+        "provider",
+        "worker",
+        "product",
+        "approval",
+        "authorization",
+    }
+    for key, item in value.items():
+        source_key = _require_string(key, "specific_source_key").lower()
+        if source_key not in allowed:
+            raise FailClosedRuntimeError("specific source type is not supported")
+        if not isinstance(item, dict):
+            raise FailClosedRuntimeError(f"specific_sources[{source_key}] must be a JSON object")
+        reference = _require_string(item.get("reference"), f"specific_sources[{source_key}].reference")
+        source_hash = _require_hash(item.get("hash"), f"specific_sources[{source_key}].hash")
+        sources[source_key] = {"reference": reference, "hash": source_hash}
+    return sources
+
+
+def _source_ref(
+    reference: str | None,
+    source_hash: str | None,
+    *,
+    reference_field: str,
+    hash_field: str,
+    existing: dict[str, str] | None,
+) -> dict[str, str]:
+    if existing:
+        return existing
+    return {
+        "reference": _require_string(reference, reference_field),
+        "hash": _require_hash(source_hash, hash_field),
+    }
 
 
 def _require_lineage(value: Any) -> list[dict[str, Any]]:
