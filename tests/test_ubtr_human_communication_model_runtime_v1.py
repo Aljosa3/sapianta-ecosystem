@@ -14,7 +14,11 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     COMMUNICATION_LEVELS,
     DOMAIN_UNDERSTANDING,
     LEVEL_STANDARD,
+    TYPED_SECTION_ARTIFACT_TYPE,
+    TYPED_SECTION_TYPES,
     create_ubtr_human_communication_artifact,
+    create_typed_communication_section,
+    reconstruct_typed_communication_section_replay,
     reconstruct_ubtr_human_communication_replay,
 )
 
@@ -101,6 +105,49 @@ def _create(tmp_path, *, domain: str = DOMAIN_UNDERSTANDING, level: str = LEVEL_
     )
 
 
+def _evidence(name: str = "source") -> list[dict]:
+    return [
+        {
+            "evidence_reference": f"EVIDENCE-{name}",
+            "evidence_hash": replay_hash({"evidence": name}),
+            "evidence_role": "SOURCE_EVIDENCE",
+        }
+    ]
+
+
+def _typed_section(tmp_path, *, section_type: str, level: str = LEVEL_STANDARD) -> dict:
+    return create_typed_communication_section(
+        section_id=f"SECTION-{section_type}-{level}",
+        section_type=section_type,
+        communication_level=level,
+        structured_content={
+            "summary": f"{section_type} section summary.",
+            "required_human_action": "review typed section evidence",
+            "non_authority_notice": "Evidence only.",
+        },
+        evidence_references=_evidence(section_type),
+        csa_reference="CSA-SECTION-001",
+        csa_hash=replay_hash({"csa": section_type}),
+        ocs_reference="OCS-SECTION-001",
+        ocs_hash=replay_hash({"ocs": section_type}),
+        communication_level_variants={
+            level: {
+                "summary": f"{section_type} section summary.",
+                "required_human_action": "review typed section evidence",
+                "non_authority_notice": "Evidence only.",
+            },
+            "DETAILED": {
+                "summary": f"Detailed {section_type} section summary.",
+                "details": ["source evidence is hash-bound"],
+            },
+        },
+        replay_lineage=_lineage(section_type),
+        rollback_reference="ROLLBACK-TYPED-SECTION-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"typed_{section_type}_{level}",
+    )
+
+
 def test_creates_interface_neutral_communication_artifact_with_all_sections(tmp_path) -> None:
     result = _create(tmp_path)
     artifact = result["communication_artifact"]
@@ -129,6 +176,74 @@ def test_creates_interface_neutral_communication_artifact_with_all_sections(tmp_
     assert result["provider_invoked"] is False
     assert result["worker_invoked"] is False
     assert result["repository_mutated"] is False
+
+
+def test_creates_typed_sections_for_all_required_uhcl_section_types(tmp_path) -> None:
+    for section_type in sorted(TYPED_SECTION_TYPES):
+        result = _typed_section(tmp_path, section_type=section_type)
+        artifact = result["typed_section_artifact"]
+
+        assert artifact["artifact_type"] == TYPED_SECTION_ARTIFACT_TYPE
+        assert artifact["section_type"] == section_type
+        assert artifact["communication_level"] == LEVEL_STANDARD
+        assert artifact["evidence_reference_count"] == 1
+        assert artifact["evidence_references_hash"].startswith("sha256:")
+        assert artifact["source_bindings"]["csa_hash"].startswith("sha256:")
+        assert "DETAILED" in artifact["communication_level_variants"]
+        assert artifact["authority_flags"]["approval_authority"] is False
+        assert artifact["authority_flags"]["execution_authority"] is False
+        assert result["interface_specific_rendering"] is False
+
+
+def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
+    result = _typed_section(tmp_path, section_type="RISKS")
+
+    reconstructed = reconstruct_typed_communication_section_replay(
+        tmp_path / "typed_RISKS_STANDARD"
+    )
+
+    assert reconstructed["typed_section_artifact"] == result["typed_section_artifact"]
+    assert reconstructed["typed_section_artifact_hash"] == result["typed_section_artifact_hash"]
+    assert reconstructed["section_type"] == "RISKS"
+    assert reconstructed["authority_granted"] is False
+
+
+def test_typed_section_can_be_embedded_in_canonical_communication_artifact(tmp_path) -> None:
+    assumptions = _typed_section(tmp_path, section_type="ASSUMPTIONS")
+    risks = _typed_section(tmp_path, section_type="RISKS")
+    uncertainties = _typed_section(tmp_path, section_type="UNCERTAINTIES")
+    recovery = _typed_section(tmp_path, section_type="RECOVERY")
+
+    result = create_ubtr_human_communication_artifact(
+        communication_id="COMM-TYPED-SECTIONS-001",
+        source_component="UBTR",
+        target_human_context="ACLI_OPERATOR",
+        communication_domain=DOMAIN_UNDERSTANDING,
+        communication_level=LEVEL_STANDARD,
+        required_human_action="review typed communication sections",
+        replay_lineage=_lineage("typed-communication"),
+        rollback_reference="ROLLBACK-COMM-TYPED-001",
+        csa_reference="CSA-TYPED-001",
+        csa_hash=replay_hash({"csa": "typed"}),
+        assumptions_section=assumptions["typed_section_artifact"],
+        risks_section=risks["typed_section_artifact"],
+        uncertainties_section=uncertainties["typed_section_artifact"],
+        recovery_section=recovery["typed_section_artifact"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "typed_communication",
+    )
+
+    artifact = result["communication_artifact"]
+
+    assert artifact["sections_rendered"] == [
+        "assumptions",
+        "recovery",
+        "risks",
+        "uncertainties",
+    ]
+    assert artifact["sections"]["assumptions"]["section_type"] == "ASSUMPTIONS"
+    assert artifact["sections"]["recovery"]["section_type"] == "RECOVERY"
+    assert artifact["source_references"]["sections_hash"].startswith("sha256:")
 
 
 def test_supports_all_canonical_domains_and_levels(tmp_path) -> None:
@@ -201,6 +316,43 @@ def test_replay_tampering_fails_closed(tmp_path) -> None:
 
     with pytest.raises(FailClosedRuntimeError, match="replay hash mismatch"):
         reconstruct_ubtr_human_communication_replay(tmp_path / "UNDERSTANDING_STANDARD")
+
+
+def test_typed_section_replay_tampering_fails_closed(tmp_path) -> None:
+    _typed_section(tmp_path, section_type="CONFIRMATION")
+    replay_file = (
+        tmp_path
+        / "typed_CONFIRMATION_STANDARD"
+        / "000_uhcl_typed_communication_section_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["authority_flags"]["approval_authority"] = True
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="replay hash mismatch"):
+        reconstruct_typed_communication_section_replay(tmp_path / "typed_CONFIRMATION_STANDARD")
+
+
+def test_invalid_typed_section_evidence_fails_closed_before_replay_write(tmp_path) -> None:
+    replay_dir = tmp_path / "typed_invalid"
+
+    with pytest.raises(FailClosedRuntimeError, match="evidence_references\\[0\\].evidence_hash"):
+        create_typed_communication_section(
+            section_id="SECTION-INVALID-EVIDENCE",
+            section_type="EXPLANATION",
+            communication_level=LEVEL_STANDARD,
+            structured_content={"summary": "Invalid evidence hash."},
+            evidence_references=[
+                {
+                    "evidence_reference": "EVIDENCE-INVALID",
+                    "evidence_hash": "not-a-hash",
+                }
+            ],
+            created_at=CREATED_AT,
+            replay_dir=replay_dir,
+        )
+
+    assert not replay_dir.exists()
 
 
 def test_runtime_has_no_interface_provider_worker_deployment_or_mutation_surfaces() -> None:
