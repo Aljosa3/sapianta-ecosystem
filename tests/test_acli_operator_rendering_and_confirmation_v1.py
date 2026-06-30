@@ -15,6 +15,7 @@ from aigol.runtime.acli_development_session_lifecycle import create_acli_develop
 from aigol.runtime.acli_operator_rendering_and_confirmation import (
     ACLI_OPERATOR_CONFIRMATION_CLASSIFICATION_ARTIFACT_V1,
     ACLI_OPERATOR_RENDERING_ARTIFACT_V1,
+    ACLI_UHCL_COMMAND_CONSUMPTION_MIGRATION_VERSION,
     classify_operator_confirmation,
     reconstruct_operator_rendering_confirmation_replay,
     render_operator_response,
@@ -105,6 +106,12 @@ def test_renders_safe_fallback_for_empty_conversation(tmp_path) -> None:
     assert artifact["safe_fallback_rendered"] is True
     assert artifact["required_operator_action"] == "provide first governed development request"
     assert artifact["canonical_semantic_artifact_reference"] == "CSA-SESSION-RENDER-000001"
+    assert artifact["uhcl_command_migration_version"] == ACLI_UHCL_COMMAND_CONSUMPTION_MIGRATION_VERSION
+    assert artifact["uhcl_consumption"]["command_surface"] == "ACLI_OPERATOR_RESPONSE_RENDERING"
+    assert artifact["uhcl_consumption"]["acli_role"] == "PRESENTATION_ADAPTER"
+    assert artifact["uhcl_consumption"]["uhcl_source_artifact_hash"].startswith("sha256:")
+    assert artifact["uhcl_consumption"]["uhcl_render_artifact_hash"].startswith("sha256:")
+    assert artifact["uhcl_consumption"]["explanation_generated_by_acli"] is False
     assert artifact["provider_invoked"] is False
     assert artifact["worker_invoked"] is False
     assert artifact["execution_requested"] is False
@@ -151,6 +158,21 @@ def test_classifies_confirmation_reject_clarify_modify_continue_and_unknown(tmp_
         artifact = capture["artifact"]
         assert artifact["artifact_type"] == ACLI_OPERATOR_CONFIRMATION_CLASSIFICATION_ARTIFACT_V1
         assert artifact["confirmation_classification"] == expected
+        assert artifact["uhcl_command_migration_version"] == ACLI_UHCL_COMMAND_CONSUMPTION_MIGRATION_VERSION
+        assert artifact["uhcl_consumption"]["command_surface"] == "ACLI_OPERATOR_CONFIRMATION_CLASSIFICATION"
+        assert artifact["uhcl_consumption"]["acli_role"] == "PRESENTATION_ADAPTER"
+        assert artifact["uhcl_consumption"]["uhcl_source_artifact_hash"].startswith("sha256:")
+        assert artifact["uhcl_consumption"]["uhcl_render_artifact_hash"].startswith("sha256:")
+        assert artifact["uhcl_consumption"]["confirmation_logic_performed_by_acli"] is False
+        if expected == "unknown":
+            assert artifact["canonical_uhcl_response_class"] is None
+            assert artifact["uhcl_consumption"]["uhcl_response_capture_status"] == (
+                "COMPATIBILITY_UNKNOWN_INPUT_FAILED_CLOSED"
+            )
+        else:
+            assert artifact["canonical_uhcl_response_class"] in artifact["canonical_uhcl_response_class_set"]
+            assert artifact["uhcl_consumption"]["uhcl_response_capture_status"] == "CANONICAL_RESPONSE_CAPTURED"
+            assert artifact["uhcl_consumption"]["uhcl_response_artifact_hash"].startswith("sha256:")
         assert artifact["confirmation_evidence_only"] is True
         assert artifact["approval_created"] is False
         assert artifact["authorization_created"] is False
@@ -178,6 +200,8 @@ def test_reconstructs_rendering_and_confirmation_replay(tmp_path) -> None:
     assert reconstructed["classification_count"] == 1
     assert reconstructed["artifact_count"] == 2
     assert reconstructed["confirmation_classifications"] == ["continue"]
+    assert reconstructed["uhcl_consumption_migrated"] is True
+    assert len(reconstructed["uhcl_source_artifact_hashes"]) == 2
     assert reconstructed["provider_invoked"] is False
     assert reconstructed["worker_invoked"] is False
 
