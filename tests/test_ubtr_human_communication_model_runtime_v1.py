@@ -10,6 +10,8 @@ from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash
 from aigol.runtime.ubtr_human_communication_model_runtime import (
     COMMUNICATION_ARTIFACT_TYPE,
+    COMMUNICATION_BINDING_ARTIFACT_TYPE,
+    COMMUNICATION_BINDING_TYPES,
     COMMUNICATION_DOMAINS,
     COMMUNICATION_LEVELS,
     DOMAIN_UNDERSTANDING,
@@ -25,10 +27,12 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     SOURCE_COMPONENT_PRODUCT,
     TYPED_SECTION_ARTIFACT_TYPE,
     TYPED_SECTION_TYPES,
+    create_communication_binding,
     create_shared_confirmation_model,
     derive_progressive_explanation,
     create_ubtr_human_communication_artifact,
     create_typed_communication_section,
+    reconstruct_communication_binding_replay,
     reconstruct_progressive_explanation_replay,
     reconstruct_shared_confirmation_replay,
     reconstruct_typed_communication_section_replay,
@@ -350,6 +354,52 @@ def _shared_confirmation(tmp_path) -> dict:
     )
 
 
+def _binding_evidence(binding_type: str) -> list[dict]:
+    return [
+        {
+            "evidence_reference": f"{binding_type}-EVIDENCE-001",
+            "evidence_hash": replay_hash({"binding": binding_type, "evidence": "001"}),
+            "evidence_role": "COMMUNICATION_BINDING_SOURCE",
+        }
+    ]
+
+
+def _communication_binding(tmp_path, *, binding_type: str) -> dict:
+    group = "PROVIDER" if binding_type.startswith("PROVIDER") else "WORKER" if binding_type.startswith("WORKER") else "PRODUCT"
+    specific_sources = {
+        "replay": {
+            "reference": f"REPLAY-{binding_type}-001",
+            "hash": replay_hash({"replay": binding_type}),
+        },
+        group.lower(): {
+            "reference": f"{group}-{binding_type}-001",
+            "hash": replay_hash({group.lower(): binding_type}),
+        },
+    }
+    return create_communication_binding(
+        binding_id=f"BINDING-{binding_type}-001",
+        binding_type=binding_type,
+        target_human_context="ACLI_OPERATOR",
+        communication_level=LEVEL_STANDARD,
+        summary_content={
+            "summary": f"{binding_type} is available for human review.",
+            "human_readable_status": "EVIDENCE_BOUND",
+            "limitations": ["Communication is non-authoritative."],
+        },
+        evidence_references=_binding_evidence(binding_type),
+        source_evidence_bindings={"specific_sources": specific_sources},
+        csa_reference=f"CSA-{binding_type}-001",
+        csa_hash=replay_hash({"csa": binding_type}),
+        ocs_reference=f"OCS-{binding_type}-001",
+        ocs_hash=replay_hash({"ocs": binding_type}),
+        replay_lineage=_lineage(binding_type.lower()),
+        rollback_reference=f"ROLLBACK-{binding_type}-001",
+        non_authority_notices=[f"{binding_type} communication binding is evidence only."],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / f"binding_{binding_type}",
+    )
+
+
 def test_creates_interface_neutral_communication_artifact_with_all_sections(tmp_path) -> None:
     result = _create(tmp_path)
     artifact = result["communication_artifact"]
@@ -637,6 +687,93 @@ def test_shared_confirmation_rejects_authoritative_response_model(tmp_path) -> N
 
     with pytest.raises(FailClosedRuntimeError, match="response cannot set creates_authorization"):
         reconstruct_shared_confirmation_replay(tmp_path / "shared_confirmation")
+
+
+def test_creates_all_provider_worker_product_communication_bindings(tmp_path) -> None:
+    for binding_type in sorted(COMMUNICATION_BINDING_TYPES):
+        result = _communication_binding(tmp_path, binding_type=binding_type)
+        artifact = result["communication_binding_artifact"]
+        section = result["typed_section_artifact"]
+
+        assert artifact["artifact_type"] == COMMUNICATION_BINDING_ARTIFACT_TYPE
+        assert artifact["binding_type"] == binding_type
+        assert artifact["binding_group"] in {"PROVIDER", "WORKER", "PRODUCT"}
+        assert artifact["typed_section_artifact_hash"] == section["artifact_hash"]
+        assert artifact["source_evidence_binding_hash"] == section["source_evidence_binding_hash"]
+        assert artifact["evidence_references_hash"] == section["evidence_references_hash"]
+        assert artifact["binding_lineage"]["typed_section_artifact_hash"] == section["artifact_hash"]
+        assert artifact["binding_lineage"]["source_evidence_binding_hash"] == artifact["source_evidence_binding_hash"]
+        assert section["structured_content"]["binding_type"] == binding_type
+        assert section["structured_content"]["non_authoritative"] is True
+        assert result["provider_invoked"] is False
+        assert result["worker_invoked"] is False
+        assert result["product_behavior_created"] is False
+        assert result["approval_created"] is False
+        assert result["authorization_created"] is False
+        assert result["repository_mutated"] is False
+
+
+def test_communication_binding_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
+    result = _communication_binding(tmp_path, binding_type="PRODUCT1_AUDIT_PACKET_SUMMARY")
+
+    reconstructed = reconstruct_communication_binding_replay(
+        tmp_path / "binding_PRODUCT1_AUDIT_PACKET_SUMMARY"
+    )
+
+    assert reconstructed["communication_binding_artifact"] == result["communication_binding_artifact"]
+    assert reconstructed["communication_binding_artifact_hash"] == result["communication_binding_artifact_hash"]
+    assert reconstructed["binding_type"] == "PRODUCT1_AUDIT_PACKET_SUMMARY"
+    assert reconstructed["binding_group"] == "PRODUCT"
+    assert reconstructed["authority_granted"] is False
+
+
+def test_communication_binding_typed_section_embeds_in_canonical_artifact(tmp_path) -> None:
+    binding = _communication_binding(tmp_path, binding_type="PROVIDER_PROVENANCE")
+
+    result = create_ubtr_human_communication_artifact(
+        communication_id="COMM-BINDING-PROVIDER-PROVENANCE-001",
+        source_component="UBTR",
+        target_human_context="ACLI_OPERATOR",
+        communication_domain="TRANSPARENCY",
+        communication_level=LEVEL_STANDARD,
+        required_human_action="review provider provenance communication binding",
+        replay_lineage=_lineage("binding-provider-provenance-communication"),
+        rollback_reference="ROLLBACK-BINDING-PROVIDER-PROVENANCE-COMM-001",
+        csa_reference="CSA-BINDING-PROVIDER-PROVENANCE-001",
+        csa_hash=replay_hash({"csa": "binding-provider-provenance"}),
+        transparency_section=binding["typed_section_artifact"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "binding_provider_provenance_communication",
+    )
+    artifact = result["communication_artifact"]
+
+    assert artifact["sections_rendered"] == ["transparency"]
+    assert artifact["sections"]["transparency"]["structured_content"]["binding_type"] == "PROVIDER_PROVENANCE"
+    assert artifact["sections"]["transparency"]["source_evidence_binding_hash"].startswith("sha256:")
+    assert artifact["authority_flags"]["provider_authority"] is False
+
+
+def test_communication_binding_tampering_fails_closed(tmp_path) -> None:
+    _communication_binding(tmp_path, binding_type="WORKER_EXECUTION_SUMMARY")
+    replay_file = (
+        tmp_path
+        / "binding_WORKER_EXECUTION_SUMMARY"
+        / "000_uhcl_provider_worker_product_communication_binding_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["authority_flags"]["worker_authority"] = True
+    wrapper["replay_hash"] = replay_hash(
+        {
+            "replay_index": wrapper["replay_index"],
+            "replay_step": wrapper["replay_step"],
+            "event_type": wrapper["event_type"],
+            "artifact": wrapper["artifact"],
+        }
+    )
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="cannot grant worker_authority"):
+        reconstruct_communication_binding_replay(tmp_path / "binding_WORKER_EXECUTION_SUMMARY")
 
 
 def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:

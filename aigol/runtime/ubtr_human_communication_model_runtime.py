@@ -24,6 +24,9 @@ PROGRESSIVE_EXPLANATION_REPLAY_STEP = "uhcl_progressive_explanation_derivation_r
 SHARED_CONFIRMATION_ARTIFACT_TYPE = "UHCL_SHARED_CONFIRMATION_MODEL_ARTIFACT_V1"
 SHARED_CONFIRMATION_SCHEMA_VERSION = "UHCL_SHARED_CONFIRMATION_ALIGNMENT_V1"
 SHARED_CONFIRMATION_REPLAY_STEP = "uhcl_shared_confirmation_model_recorded"
+COMMUNICATION_BINDING_ARTIFACT_TYPE = "UHCL_PROVIDER_WORKER_PRODUCT_COMMUNICATION_BINDING_ARTIFACT_V1"
+COMMUNICATION_BINDING_SCHEMA_VERSION = "UHCL_PROVIDER_WORKER_PRODUCT_COMMUNICATION_BINDINGS_V1"
+COMMUNICATION_BINDING_REPLAY_STEP = "uhcl_provider_worker_product_communication_binding_recorded"
 
 DOMAIN_UNDERSTANDING = "UNDERSTANDING"
 DOMAIN_EXPLANATION = "EXPLANATION"
@@ -127,6 +130,62 @@ CONFIRMATION_RESPONSE_TYPES = {
     RESPONSE_MODIFICATION,
     RESPONSE_REJECTION,
     RESPONSE_CONTINUATION,
+}
+
+BINDING_PROVIDER_COGNITION_SUMMARY = "PROVIDER_COGNITION_SUMMARY"
+BINDING_PROVIDER_PROVENANCE = "PROVIDER_PROVENANCE"
+BINDING_WORKER_EXECUTION_SUMMARY = "WORKER_EXECUTION_SUMMARY"
+BINDING_WORKER_LIFECYCLE_SUMMARY = "WORKER_LIFECYCLE_SUMMARY"
+BINDING_PRODUCT1_WORKFLOW_SUMMARY = "PRODUCT1_WORKFLOW_SUMMARY"
+BINDING_PRODUCT1_DECISION_PACKET_SUMMARY = "PRODUCT1_DECISION_PACKET_SUMMARY"
+BINDING_PRODUCT1_AUDIT_PACKET_SUMMARY = "PRODUCT1_AUDIT_PACKET_SUMMARY"
+
+COMMUNICATION_BINDING_TYPES = {
+    BINDING_PROVIDER_COGNITION_SUMMARY,
+    BINDING_PROVIDER_PROVENANCE,
+    BINDING_WORKER_EXECUTION_SUMMARY,
+    BINDING_WORKER_LIFECYCLE_SUMMARY,
+    BINDING_PRODUCT1_WORKFLOW_SUMMARY,
+    BINDING_PRODUCT1_DECISION_PACKET_SUMMARY,
+    BINDING_PRODUCT1_AUDIT_PACKET_SUMMARY,
+}
+
+COMMUNICATION_BINDING_DEFINITIONS = {
+    BINDING_PROVIDER_COGNITION_SUMMARY: {
+        "binding_group": "PROVIDER",
+        "source_component": SOURCE_COMPONENT_PROVIDER,
+        "section_type": SECTION_TYPE_EXPLANATION,
+    },
+    BINDING_PROVIDER_PROVENANCE: {
+        "binding_group": "PROVIDER",
+        "source_component": SOURCE_COMPONENT_PROVIDER,
+        "section_type": SECTION_TYPE_TRANSPARENCY,
+    },
+    BINDING_WORKER_EXECUTION_SUMMARY: {
+        "binding_group": "WORKER",
+        "source_component": SOURCE_COMPONENT_WORKER,
+        "section_type": SECTION_TYPE_EXPLANATION,
+    },
+    BINDING_WORKER_LIFECYCLE_SUMMARY: {
+        "binding_group": "WORKER",
+        "source_component": SOURCE_COMPONENT_WORKER,
+        "section_type": SECTION_TYPE_TRANSPARENCY,
+    },
+    BINDING_PRODUCT1_WORKFLOW_SUMMARY: {
+        "binding_group": "PRODUCT",
+        "source_component": SOURCE_COMPONENT_PRODUCT,
+        "section_type": SECTION_TYPE_GUIDANCE,
+    },
+    BINDING_PRODUCT1_DECISION_PACKET_SUMMARY: {
+        "binding_group": "PRODUCT",
+        "source_component": SOURCE_COMPONENT_PRODUCT,
+        "section_type": SECTION_TYPE_EXPLANATION,
+    },
+    BINDING_PRODUCT1_AUDIT_PACKET_SUMMARY: {
+        "binding_group": "PRODUCT",
+        "source_component": SOURCE_COMPONENT_PRODUCT,
+        "section_type": SECTION_TYPE_TRANSPARENCY,
+    },
 }
 
 SECTION_FIELDS = {
@@ -697,6 +756,160 @@ def reconstruct_shared_confirmation_replay(replay_dir: str | Path) -> dict[str, 
     }
 
 
+def create_communication_binding(
+    *,
+    binding_id: str,
+    binding_type: str,
+    target_human_context: str,
+    communication_level: str,
+    summary_content: dict[str, Any],
+    evidence_references: list[dict[str, Any]],
+    created_at: str,
+    replay_dir: str | Path,
+    csa_reference: str | None = None,
+    csa_hash: str | None = None,
+    ocs_reference: str | None = None,
+    ocs_hash: str | None = None,
+    source_evidence_bindings: dict[str, Any] | None = None,
+    communication_level_variants: dict[str, dict[str, Any]] | None = None,
+    replay_lineage: list[dict[str, Any]] | None = None,
+    rollback_reference: str | None = None,
+    non_authority_notices: list[str] | None = None,
+) -> dict[str, Any]:
+    """Create a canonical Provider/Worker/Product communication binding."""
+
+    replay_path = Path(replay_dir)
+    normalized_type = _require_choice(binding_type, COMMUNICATION_BINDING_TYPES, "binding_type")
+    definition = COMMUNICATION_BINDING_DEFINITIONS[normalized_type]
+    level = _require_choice(communication_level, COMMUNICATION_LEVELS, "communication_level")
+    content = _binding_structured_content(
+        binding_id=binding_id,
+        binding_type=normalized_type,
+        binding_group=definition["binding_group"],
+        summary_content=summary_content,
+    )
+    evidence = _normalize_evidence_references(evidence_references)
+    section_result = create_typed_communication_section(
+        section_id=f"{_require_string(binding_id, 'binding_id')}-SECTION",
+        section_type=definition["section_type"],
+        communication_level=level,
+        structured_content=content,
+        evidence_references=evidence,
+        source_component=definition["source_component"],
+        csa_reference=csa_reference,
+        csa_hash=csa_hash,
+        ocs_reference=ocs_reference,
+        ocs_hash=ocs_hash,
+        source_evidence_bindings=source_evidence_bindings,
+        communication_level_variants=communication_level_variants,
+        replay_lineage=replay_lineage,
+        rollback_reference=rollback_reference,
+        non_authority_notices=non_authority_notices,
+        created_at=created_at,
+        replay_dir=replay_path / "typed_section",
+    )
+    section = section_result["typed_section_artifact"]
+    lineage = _optional_lineage(replay_lineage)
+    notices = _non_authority_notices(non_authority_notices)
+    artifact = {
+        "artifact_type": COMMUNICATION_BINDING_ARTIFACT_TYPE,
+        "schema_version": COMMUNICATION_BINDING_SCHEMA_VERSION,
+        "runtime_version": RUNTIME_VERSION,
+        "binding_id": _require_string(binding_id, "binding_id"),
+        "binding_type": normalized_type,
+        "binding_group": definition["binding_group"],
+        "source_component": definition["source_component"],
+        "target_human_context": _require_string(target_human_context, "target_human_context"),
+        "communication_level": level,
+        "typed_section_artifact": deepcopy(section),
+        "typed_section_artifact_hash": section["artifact_hash"],
+        "typed_section_replay_reference": section["replay_reference"],
+        "evidence_references": evidence,
+        "evidence_references_hash": replay_hash(evidence),
+        "source_bindings": deepcopy(section["source_bindings"]),
+        "source_evidence_binding_hash": section["source_evidence_binding_hash"],
+        "binding_lineage": {
+            "typed_section_artifact_hash": section["artifact_hash"],
+            "typed_section_replay_reference": section["replay_reference"],
+            "evidence_references_hash": replay_hash(evidence),
+            "source_evidence_binding_hash": section["source_evidence_binding_hash"],
+            "replay_lineage_hash": replay_hash(lineage),
+        },
+        "non_authority_notices": notices,
+        "replay_lineage": lineage,
+        "replay_lineage_hash": replay_hash(lineage),
+        "replay_reference": str(replay_path),
+        "rollback_reference": _optional_string(rollback_reference),
+        "authority_flags": _authority_flags(),
+        "interface_neutral": True,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    _validate_communication_binding_artifact(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": COMMUNICATION_BINDING_REPLAY_STEP,
+        "event_type": RUNTIME_VERSION,
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / f"000_{COMMUNICATION_BINDING_REPLAY_STEP}.json", wrapper)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "communication_binding_artifact": deepcopy(artifact),
+        "communication_binding_artifact_hash": artifact["artifact_hash"],
+        "communication_binding_replay_reference": str(replay_path),
+        "binding_type": normalized_type,
+        "binding_group": definition["binding_group"],
+        "typed_section_artifact": deepcopy(section),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "authority_granted": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "product_behavior_created": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
+def reconstruct_communication_binding_replay(replay_dir: str | Path) -> dict[str, Any]:
+    """Reconstruct Provider/Worker/Product communication binding replay evidence."""
+
+    replay_path = Path(replay_dir)
+    wrapper = load_json(replay_path / f"000_{COMMUNICATION_BINDING_REPLAY_STEP}.json")
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != COMMUNICATION_BINDING_REPLAY_STEP:
+        raise FailClosedRuntimeError("UHCL communication binding replay ordering mismatch")
+    _verify_wrapper_hash(wrapper, expected_label="UHCL communication binding")
+    artifact = _require_mapping(wrapper.get("artifact"), "communication_binding_artifact")
+    _validate_communication_binding_artifact(artifact)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "communication_binding_artifact": deepcopy(artifact),
+        "communication_binding_artifact_hash": artifact["artifact_hash"],
+        "communication_binding_replay_reference": str(replay_path),
+        "binding_type": artifact["binding_type"],
+        "binding_group": artifact["binding_group"],
+        "typed_section_artifact": deepcopy(artifact["typed_section_artifact"]),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "replay_hash": wrapper["replay_hash"],
+        "authority_granted": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "product_behavior_created": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
 def reconstruct_ubtr_human_communication_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct UBTR human communication replay evidence."""
 
@@ -1075,6 +1288,118 @@ def _validate_shared_confirmation_artifact(artifact: dict[str, Any]) -> None:
     expected.pop("artifact_hash", None)
     if not isinstance(actual, str) or replay_hash(expected) != actual:
         raise FailClosedRuntimeError("UHCL shared confirmation artifact hash mismatch")
+
+
+def _validate_communication_binding_artifact(artifact: dict[str, Any]) -> None:
+    candidate = _require_mapping(artifact, "communication_binding_artifact")
+    if candidate.get("artifact_type") != COMMUNICATION_BINDING_ARTIFACT_TYPE:
+        raise FailClosedRuntimeError("UHCL communication binding artifact type mismatch")
+    if candidate.get("schema_version") != COMMUNICATION_BINDING_SCHEMA_VERSION:
+        raise FailClosedRuntimeError("UHCL communication binding schema version mismatch")
+    for field in (
+        "binding_id",
+        "source_component",
+        "target_human_context",
+        "typed_section_artifact_hash",
+        "typed_section_replay_reference",
+        "source_evidence_binding_hash",
+        "replay_reference",
+        "created_at",
+    ):
+        _require_string(candidate.get(field), field)
+    binding_type = _require_choice(candidate.get("binding_type"), COMMUNICATION_BINDING_TYPES, "binding_type")
+    definition = COMMUNICATION_BINDING_DEFINITIONS[binding_type]
+    if candidate.get("binding_group") != definition["binding_group"]:
+        raise FailClosedRuntimeError("UHCL communication binding group mismatch")
+    if candidate.get("source_component") != definition["source_component"]:
+        raise FailClosedRuntimeError("UHCL communication binding source component mismatch")
+    _require_choice(candidate.get("communication_level"), COMMUNICATION_LEVELS, "communication_level")
+    section = _require_mapping(candidate.get("typed_section_artifact"), "typed_section_artifact")
+    _validate_typed_section_artifact(section)
+    if section["artifact_hash"] != candidate["typed_section_artifact_hash"]:
+        raise FailClosedRuntimeError("UHCL communication binding typed section hash mismatch")
+    if section["replay_reference"] != candidate["typed_section_replay_reference"]:
+        raise FailClosedRuntimeError("UHCL communication binding typed section replay reference mismatch")
+    if section["source_component"] != definition["source_component"]:
+        raise FailClosedRuntimeError("UHCL communication binding typed section source component mismatch")
+    if section["section_type"] != definition["section_type"]:
+        raise FailClosedRuntimeError("UHCL communication binding typed section type mismatch")
+    if section["communication_level"] != candidate["communication_level"]:
+        raise FailClosedRuntimeError("UHCL communication binding typed section level mismatch")
+    content = _require_nonempty_mapping(section.get("structured_content"), "structured_content")
+    if content.get("binding_id") != candidate["binding_id"]:
+        raise FailClosedRuntimeError("UHCL communication binding structured content id mismatch")
+    if content.get("binding_type") != binding_type:
+        raise FailClosedRuntimeError("UHCL communication binding structured content type mismatch")
+    if content.get("binding_group") != definition["binding_group"]:
+        raise FailClosedRuntimeError("UHCL communication binding structured content group mismatch")
+    evidence = _normalize_evidence_references(candidate.get("evidence_references"))
+    if evidence != section["evidence_references"]:
+        raise FailClosedRuntimeError("UHCL communication binding evidence mismatch")
+    if candidate.get("evidence_references_hash") != replay_hash(evidence):
+        raise FailClosedRuntimeError("UHCL communication binding evidence hash mismatch")
+    source_bindings = _validate_source_evidence_bindings(
+        candidate.get("source_bindings"),
+        evidence_references=evidence,
+        expected_source_component=definition["source_component"],
+    )
+    if source_bindings != section["source_bindings"]:
+        raise FailClosedRuntimeError("UHCL communication binding source binding mismatch")
+    if candidate.get("source_evidence_binding_hash") != replay_hash(source_bindings):
+        raise FailClosedRuntimeError("UHCL communication binding source evidence binding hash mismatch")
+    if candidate["source_evidence_binding_hash"] != section["source_evidence_binding_hash"]:
+        raise FailClosedRuntimeError("UHCL communication binding section source binding hash mismatch")
+    binding_lineage = _require_mapping(candidate.get("binding_lineage"), "binding_lineage")
+    expected_lineage = {
+        "typed_section_artifact_hash": section["artifact_hash"],
+        "typed_section_replay_reference": section["replay_reference"],
+        "evidence_references_hash": replay_hash(evidence),
+        "source_evidence_binding_hash": candidate["source_evidence_binding_hash"],
+        "replay_lineage_hash": replay_hash(_list_of_mappings(candidate.get("replay_lineage"), "replay_lineage")),
+    }
+    if binding_lineage != expected_lineage:
+        raise FailClosedRuntimeError("UHCL communication binding lineage mismatch")
+    replay_lineage = _list_of_mappings(candidate.get("replay_lineage"), "replay_lineage")
+    if candidate.get("replay_lineage_hash") != replay_hash(replay_lineage):
+        raise FailClosedRuntimeError("UHCL communication binding replay lineage hash mismatch")
+    notices = _string_list(candidate.get("non_authority_notices"), "non_authority_notices")
+    if not notices:
+        raise FailClosedRuntimeError("UHCL communication binding non-authority notices cannot be empty")
+    flags = _require_mapping(candidate.get("authority_flags"), "authority_flags")
+    for key, value in flags.items():
+        if value is not False:
+            raise FailClosedRuntimeError(f"UHCL communication binding cannot grant {key}")
+    if candidate.get("interface_neutral") is not True:
+        raise FailClosedRuntimeError("UHCL communication binding must be interface-neutral")
+    if candidate.get("replay_visible") is not True:
+        raise FailClosedRuntimeError("UHCL communication binding must be replay-visible")
+    actual = candidate.get("artifact_hash")
+    expected = deepcopy(candidate)
+    expected.pop("artifact_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError("UHCL communication binding artifact hash mismatch")
+
+
+def _binding_structured_content(
+    *,
+    binding_id: str,
+    binding_type: str,
+    binding_group: str,
+    summary_content: dict[str, Any],
+) -> dict[str, Any]:
+    content = _require_nonempty_mapping(summary_content, "summary_content")
+    content["binding_id"] = _require_string(binding_id, "binding_id")
+    content["binding_type"] = _require_choice(binding_type, COMMUNICATION_BINDING_TYPES, "binding_type")
+    content["binding_group"] = _require_string(binding_group, "binding_group")
+    content["non_authoritative"] = True
+    content["provider_invoked"] = False
+    content["worker_invoked"] = False
+    content["product_behavior_created"] = False
+    content["approval_created"] = False
+    content["authorization_created"] = False
+    content["execution_authorized"] = False
+    content["repository_mutated"] = False
+    return content
 
 
 def _confirmation_response_models() -> dict[str, dict[str, Any]]:
