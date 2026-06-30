@@ -27,6 +27,9 @@ SHARED_CONFIRMATION_REPLAY_STEP = "uhcl_shared_confirmation_model_recorded"
 COMMUNICATION_BINDING_ARTIFACT_TYPE = "UHCL_PROVIDER_WORKER_PRODUCT_COMMUNICATION_BINDING_ARTIFACT_V1"
 COMMUNICATION_BINDING_SCHEMA_VERSION = "UHCL_PROVIDER_WORKER_PRODUCT_COMMUNICATION_BINDINGS_V1"
 COMMUNICATION_BINDING_REPLAY_STEP = "uhcl_provider_worker_product_communication_binding_recorded"
+RECOVERY_GUIDANCE_ARTIFACT_TYPE = "UHCL_RECOVERY_GUIDANCE_MODEL_ARTIFACT_V1"
+RECOVERY_GUIDANCE_SCHEMA_VERSION = "UHCL_RECOVERY_GUIDANCE_DERIVATION_V1"
+RECOVERY_GUIDANCE_REPLAY_STEP = "uhcl_recovery_guidance_model_recorded"
 
 DOMAIN_UNDERSTANDING = "UNDERSTANDING"
 DOMAIN_EXPLANATION = "EXPLANATION"
@@ -910,6 +913,186 @@ def reconstruct_communication_binding_replay(replay_dir: str | Path) -> dict[str
     }
 
 
+def create_recovery_guidance_model(
+    *,
+    recovery_id: str,
+    source_component: str,
+    target_human_context: str,
+    communication_level: str,
+    blocked_operation: str,
+    cannot_continue_reason: str,
+    missing_prerequisites: list[dict[str, Any]],
+    available_recovery_actions: list[dict[str, Any]],
+    recommended_next_action: dict[str, Any],
+    evidence_references: list[dict[str, Any]],
+    created_at: str,
+    replay_dir: str | Path,
+    csa_reference: str | None = None,
+    csa_hash: str | None = None,
+    ocs_reference: str | None = None,
+    ocs_hash: str | None = None,
+    source_evidence_bindings: dict[str, Any] | None = None,
+    replay_lineage: list[dict[str, Any]] | None = None,
+    rollback_reference: str | None = None,
+    non_authority_notices: list[str] | None = None,
+) -> dict[str, Any]:
+    """Create deterministic, non-authoritative UHCL recovery guidance."""
+
+    replay_path = Path(replay_dir)
+    level = _require_choice(communication_level, COMMUNICATION_LEVELS, "communication_level")
+    prerequisites = _recovery_prerequisites(missing_prerequisites)
+    actions = _recovery_actions(available_recovery_actions)
+    recommendation = _recovery_recommendation(recommended_next_action, available_actions=actions)
+    content = {
+        "recovery_id": _require_string(recovery_id, "recovery_id"),
+        "blocked_operation": _require_string(blocked_operation, "blocked_operation"),
+        "cannot_continue_reason": _require_string(cannot_continue_reason, "cannot_continue_reason"),
+        "missing_prerequisites": prerequisites,
+        "available_recovery_actions": actions,
+        "recommended_next_action": recommendation,
+        "automatic_recovery_performed": False,
+        "non_authoritative": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "deployment_performed": False,
+    }
+    evidence = _normalize_evidence_references(evidence_references)
+    section_result = create_typed_communication_section(
+        section_id=f"{_require_string(recovery_id, 'recovery_id')}-SECTION",
+        section_type=SECTION_TYPE_RECOVERY,
+        communication_level=level,
+        structured_content=content,
+        evidence_references=evidence,
+        source_component=source_component,
+        csa_reference=csa_reference,
+        csa_hash=csa_hash,
+        ocs_reference=ocs_reference,
+        ocs_hash=ocs_hash,
+        source_evidence_bindings=source_evidence_bindings,
+        replay_lineage=replay_lineage,
+        rollback_reference=rollback_reference,
+        non_authority_notices=non_authority_notices,
+        created_at=created_at,
+        replay_dir=replay_path / "typed_section",
+    )
+    section = section_result["typed_section_artifact"]
+    lineage = _optional_lineage(replay_lineage)
+    notices = _non_authority_notices(non_authority_notices)
+    artifact = {
+        "artifact_type": RECOVERY_GUIDANCE_ARTIFACT_TYPE,
+        "schema_version": RECOVERY_GUIDANCE_SCHEMA_VERSION,
+        "runtime_version": RUNTIME_VERSION,
+        "recovery_id": _require_string(recovery_id, "recovery_id"),
+        "source_component": section["source_component"],
+        "target_human_context": _require_string(target_human_context, "target_human_context"),
+        "communication_level": level,
+        "recovery_section": deepcopy(section),
+        "recovery_section_hash": section["artifact_hash"],
+        "recovery_section_replay_reference": section["replay_reference"],
+        "blocked_operation": content["blocked_operation"],
+        "cannot_continue_reason": content["cannot_continue_reason"],
+        "missing_prerequisites": prerequisites,
+        "available_recovery_actions": actions,
+        "recommended_next_action": recommendation,
+        "evidence_references": evidence,
+        "evidence_references_hash": replay_hash(evidence),
+        "source_bindings": deepcopy(section["source_bindings"]),
+        "source_evidence_binding_hash": section["source_evidence_binding_hash"],
+        "recovery_lineage": {
+            "recovery_section_hash": section["artifact_hash"],
+            "recovery_section_replay_reference": section["replay_reference"],
+            "evidence_references_hash": replay_hash(evidence),
+            "source_evidence_binding_hash": section["source_evidence_binding_hash"],
+            "replay_lineage_hash": replay_hash(lineage),
+        },
+        "recovery_policy": {
+            "automatic_recovery_allowed": False,
+            "provider_invocation_allowed": False,
+            "worker_execution_allowed": False,
+            "approval_creation_allowed": False,
+            "authorization_creation_allowed": False,
+            "deployment_allowed": False,
+            "repository_mutation_allowed": False,
+        },
+        "non_authority_notices": notices,
+        "replay_lineage": lineage,
+        "replay_lineage_hash": replay_hash(lineage),
+        "replay_reference": str(replay_path),
+        "rollback_reference": _optional_string(rollback_reference),
+        "authority_flags": _authority_flags(),
+        "interface_neutral": True,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    _validate_recovery_guidance_artifact(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": RECOVERY_GUIDANCE_REPLAY_STEP,
+        "event_type": RUNTIME_VERSION,
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / f"000_{RECOVERY_GUIDANCE_REPLAY_STEP}.json", wrapper)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "recovery_guidance_artifact": deepcopy(artifact),
+        "recovery_guidance_artifact_hash": artifact["artifact_hash"],
+        "recovery_guidance_replay_reference": str(replay_path),
+        "recovery_section": deepcopy(section),
+        "recommended_next_action": deepcopy(recommendation),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "authority_granted": False,
+        "automatic_recovery_performed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "deployment_performed": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
+def reconstruct_recovery_guidance_replay(replay_dir: str | Path) -> dict[str, Any]:
+    """Reconstruct UHCL recovery guidance replay evidence."""
+
+    replay_path = Path(replay_dir)
+    wrapper = load_json(replay_path / f"000_{RECOVERY_GUIDANCE_REPLAY_STEP}.json")
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != RECOVERY_GUIDANCE_REPLAY_STEP:
+        raise FailClosedRuntimeError("UHCL recovery guidance replay ordering mismatch")
+    _verify_wrapper_hash(wrapper, expected_label="UHCL recovery guidance")
+    artifact = _require_mapping(wrapper.get("artifact"), "recovery_guidance_artifact")
+    _validate_recovery_guidance_artifact(artifact)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "recovery_guidance_artifact": deepcopy(artifact),
+        "recovery_guidance_artifact_hash": artifact["artifact_hash"],
+        "recovery_guidance_replay_reference": str(replay_path),
+        "recovery_section": deepcopy(artifact["recovery_section"]),
+        "recommended_next_action": deepcopy(artifact["recommended_next_action"]),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "replay_hash": wrapper["replay_hash"],
+        "authority_granted": False,
+        "automatic_recovery_performed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "deployment_performed": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
 def reconstruct_ubtr_human_communication_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct UBTR human communication replay evidence."""
 
@@ -1378,6 +1561,194 @@ def _validate_communication_binding_artifact(artifact: dict[str, Any]) -> None:
     expected.pop("artifact_hash", None)
     if not isinstance(actual, str) or replay_hash(expected) != actual:
         raise FailClosedRuntimeError("UHCL communication binding artifact hash mismatch")
+
+
+def _validate_recovery_guidance_artifact(artifact: dict[str, Any]) -> None:
+    candidate = _require_mapping(artifact, "recovery_guidance_artifact")
+    if candidate.get("artifact_type") != RECOVERY_GUIDANCE_ARTIFACT_TYPE:
+        raise FailClosedRuntimeError("UHCL recovery guidance artifact type mismatch")
+    if candidate.get("schema_version") != RECOVERY_GUIDANCE_SCHEMA_VERSION:
+        raise FailClosedRuntimeError("UHCL recovery guidance schema version mismatch")
+    for field in (
+        "recovery_id",
+        "source_component",
+        "target_human_context",
+        "blocked_operation",
+        "cannot_continue_reason",
+        "recovery_section_hash",
+        "recovery_section_replay_reference",
+        "source_evidence_binding_hash",
+        "replay_reference",
+        "created_at",
+    ):
+        _require_string(candidate.get(field), field)
+    source_component = _require_choice(candidate.get("source_component"), SOURCE_COMPONENTS, "source_component")
+    _require_choice(candidate.get("communication_level"), COMMUNICATION_LEVELS, "communication_level")
+    prerequisites = _recovery_prerequisites(candidate.get("missing_prerequisites"))
+    actions = _recovery_actions(candidate.get("available_recovery_actions"))
+    recommendation = _recovery_recommendation(candidate.get("recommended_next_action"), available_actions=actions)
+    section = _require_mapping(candidate.get("recovery_section"), "recovery_section")
+    _validate_typed_section_artifact(section)
+    if section["section_type"] != SECTION_TYPE_RECOVERY:
+        raise FailClosedRuntimeError("UHCL recovery guidance section type mismatch")
+    if section["artifact_hash"] != candidate["recovery_section_hash"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance section hash mismatch")
+    if section["replay_reference"] != candidate["recovery_section_replay_reference"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance section replay reference mismatch")
+    if section["source_component"] != source_component:
+        raise FailClosedRuntimeError("UHCL recovery guidance section source component mismatch")
+    if section["communication_level"] != candidate["communication_level"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance section level mismatch")
+    content = _require_nonempty_mapping(section.get("structured_content"), "structured_content")
+    if content.get("recovery_id") != candidate["recovery_id"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance section id mismatch")
+    if content.get("blocked_operation") != candidate["blocked_operation"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance blocked operation mismatch")
+    if content.get("cannot_continue_reason") != candidate["cannot_continue_reason"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance reason mismatch")
+    if _recovery_prerequisites(content.get("missing_prerequisites")) != prerequisites:
+        raise FailClosedRuntimeError("UHCL recovery guidance prerequisite mismatch")
+    if _recovery_actions(content.get("available_recovery_actions")) != actions:
+        raise FailClosedRuntimeError("UHCL recovery guidance action mismatch")
+    if _recovery_recommendation(content.get("recommended_next_action"), available_actions=actions) != recommendation:
+        raise FailClosedRuntimeError("UHCL recovery guidance recommendation mismatch")
+    for flag in (
+        "automatic_recovery_performed",
+        "provider_invoked",
+        "worker_invoked",
+        "approval_created",
+        "authorization_created",
+        "execution_authorized",
+        "repository_mutated",
+        "deployment_performed",
+    ):
+        if content.get(flag) is not False:
+            raise FailClosedRuntimeError(f"UHCL recovery guidance section cannot set {flag}")
+    if content.get("non_authoritative") is not True:
+        raise FailClosedRuntimeError("UHCL recovery guidance section must be non-authoritative")
+    evidence = _normalize_evidence_references(candidate.get("evidence_references"))
+    if evidence != section["evidence_references"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance evidence mismatch")
+    if candidate.get("evidence_references_hash") != replay_hash(evidence):
+        raise FailClosedRuntimeError("UHCL recovery guidance evidence hash mismatch")
+    source_bindings = _validate_source_evidence_bindings(
+        candidate.get("source_bindings"),
+        evidence_references=evidence,
+        expected_source_component=source_component,
+    )
+    if source_bindings != section["source_bindings"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance source binding mismatch")
+    if candidate.get("source_evidence_binding_hash") != replay_hash(source_bindings):
+        raise FailClosedRuntimeError("UHCL recovery guidance source evidence binding hash mismatch")
+    if candidate["source_evidence_binding_hash"] != section["source_evidence_binding_hash"]:
+        raise FailClosedRuntimeError("UHCL recovery guidance section source binding hash mismatch")
+    replay_lineage = _list_of_mappings(candidate.get("replay_lineage"), "replay_lineage")
+    recovery_lineage = _require_mapping(candidate.get("recovery_lineage"), "recovery_lineage")
+    expected_lineage = {
+        "recovery_section_hash": section["artifact_hash"],
+        "recovery_section_replay_reference": section["replay_reference"],
+        "evidence_references_hash": replay_hash(evidence),
+        "source_evidence_binding_hash": candidate["source_evidence_binding_hash"],
+        "replay_lineage_hash": replay_hash(replay_lineage),
+    }
+    if recovery_lineage != expected_lineage:
+        raise FailClosedRuntimeError("UHCL recovery guidance lineage mismatch")
+    expected_policy = {
+        "automatic_recovery_allowed": False,
+        "provider_invocation_allowed": False,
+        "worker_execution_allowed": False,
+        "approval_creation_allowed": False,
+        "authorization_creation_allowed": False,
+        "deployment_allowed": False,
+        "repository_mutation_allowed": False,
+    }
+    if _require_mapping(candidate.get("recovery_policy"), "recovery_policy") != expected_policy:
+        raise FailClosedRuntimeError("UHCL recovery guidance policy mismatch")
+    if candidate.get("replay_lineage_hash") != replay_hash(replay_lineage):
+        raise FailClosedRuntimeError("UHCL recovery guidance replay lineage hash mismatch")
+    notices = _string_list(candidate.get("non_authority_notices"), "non_authority_notices")
+    if not notices:
+        raise FailClosedRuntimeError("UHCL recovery guidance non-authority notices cannot be empty")
+    flags = _require_mapping(candidate.get("authority_flags"), "authority_flags")
+    for key, value in flags.items():
+        if value is not False:
+            raise FailClosedRuntimeError(f"UHCL recovery guidance cannot grant {key}")
+    if candidate.get("interface_neutral") is not True:
+        raise FailClosedRuntimeError("UHCL recovery guidance must be interface-neutral")
+    if candidate.get("replay_visible") is not True:
+        raise FailClosedRuntimeError("UHCL recovery guidance must be replay-visible")
+    actual = candidate.get("artifact_hash")
+    expected = deepcopy(candidate)
+    expected.pop("artifact_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError("UHCL recovery guidance artifact hash mismatch")
+
+
+def _recovery_prerequisites(value: Any) -> list[dict[str, Any]]:
+    items = _list_of_mappings(value, "missing_prerequisites")
+    if not items:
+        raise FailClosedRuntimeError("missing_prerequisites cannot be empty")
+    prerequisites = []
+    for index, item in enumerate(items):
+        normalized = deepcopy(item)
+        normalized["prerequisite_id"] = _require_string(
+            item.get("prerequisite_id"),
+            f"missing_prerequisites[{index}].prerequisite_id",
+        )
+        normalized["description"] = _require_string(
+            item.get("description"),
+            f"missing_prerequisites[{index}].description",
+        )
+        normalized["evidence_reference"] = _optional_string(item.get("evidence_reference"))
+        normalized["evidence_hash"] = _optional_hash(item.get("evidence_hash"), f"missing_prerequisites[{index}].evidence_hash")
+        prerequisites.append(normalized)
+    return prerequisites
+
+
+def _recovery_actions(value: Any) -> list[dict[str, Any]]:
+    items = _list_of_mappings(value, "available_recovery_actions")
+    if not items:
+        raise FailClosedRuntimeError("available_recovery_actions cannot be empty")
+    actions = []
+    action_ids: set[str] = set()
+    for index, item in enumerate(items):
+        normalized = deepcopy(item)
+        action_id = _require_string(item.get("action_id"), f"available_recovery_actions[{index}].action_id")
+        if action_id in action_ids:
+            raise FailClosedRuntimeError("available_recovery_actions action_id must be unique")
+        action_ids.add(action_id)
+        normalized["action_id"] = action_id
+        normalized["description"] = _require_string(
+            item.get("description"),
+            f"available_recovery_actions[{index}].description",
+        )
+        normalized["requires_human_choice"] = item.get("requires_human_choice") is not False
+        normalized["automatic_execution_allowed"] = False
+        normalized["provider_invocation_allowed"] = False
+        normalized["worker_execution_allowed"] = False
+        normalized["repository_mutation_allowed"] = False
+        actions.append(normalized)
+    return actions
+
+
+def _recovery_recommendation(value: Any, *, available_actions: list[dict[str, Any]]) -> dict[str, Any]:
+    recommendation = _require_mapping(value, "recommended_next_action")
+    action_id = _require_string(recommendation.get("action_id"), "recommended_next_action.action_id")
+    action_ids = {item["action_id"] for item in available_actions}
+    if action_id not in action_ids:
+        raise FailClosedRuntimeError("recommended_next_action must reference an available action")
+    normalized = deepcopy(recommendation)
+    normalized["action_id"] = action_id
+    normalized["reason"] = _require_string(recommendation.get("reason"), "recommended_next_action.reason")
+    normalized["non_authoritative"] = True
+    normalized["automatic_execution_allowed"] = False
+    normalized["provider_invocation_allowed"] = False
+    normalized["worker_execution_allowed"] = False
+    normalized["approval_creation_allowed"] = False
+    normalized["authorization_creation_allowed"] = False
+    normalized["deployment_allowed"] = False
+    normalized["repository_mutation_allowed"] = False
+    return normalized
 
 
 def _binding_structured_content(

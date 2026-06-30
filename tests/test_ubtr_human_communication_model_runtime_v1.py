@@ -22,18 +22,21 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     RESPONSE_CONTINUATION,
     RESPONSE_MODIFICATION,
     RESPONSE_REJECTION,
+    RECOVERY_GUIDANCE_ARTIFACT_TYPE,
     SHARED_CONFIRMATION_ARTIFACT_TYPE,
     SOURCE_COMPONENT_GOVERNANCE,
     SOURCE_COMPONENT_PRODUCT,
     TYPED_SECTION_ARTIFACT_TYPE,
     TYPED_SECTION_TYPES,
     create_communication_binding,
+    create_recovery_guidance_model,
     create_shared_confirmation_model,
     derive_progressive_explanation,
     create_ubtr_human_communication_artifact,
     create_typed_communication_section,
     reconstruct_communication_binding_replay,
     reconstruct_progressive_explanation_replay,
+    reconstruct_recovery_guidance_replay,
     reconstruct_shared_confirmation_replay,
     reconstruct_typed_communication_section_replay,
     reconstruct_ubtr_human_communication_replay,
@@ -397,6 +400,67 @@ def _communication_binding(tmp_path, *, binding_type: str) -> dict:
         non_authority_notices=[f"{binding_type} communication binding is evidence only."],
         created_at=CREATED_AT,
         replay_dir=tmp_path / f"binding_{binding_type}",
+    )
+
+
+def _recovery_guidance(tmp_path) -> dict:
+    return create_recovery_guidance_model(
+        recovery_id="RECOVERY-GUIDANCE-001",
+        source_component=SOURCE_COMPONENT_GOVERNANCE,
+        target_human_context="ACLI_OPERATOR",
+        communication_level=LEVEL_STANDARD,
+        blocked_operation="Provider activation cannot continue.",
+        cannot_continue_reason="Required governance approval evidence is missing.",
+        missing_prerequisites=[
+            {
+                "prerequisite_id": "GOVERNANCE-APPROVAL-REQUIRED",
+                "description": "Governance approval evidence must be present.",
+                "evidence_reference": "GOVERNANCE-CHECKPOINT-RECOVERY-001",
+                "evidence_hash": replay_hash({"governance": "recovery"}),
+            }
+        ],
+        available_recovery_actions=[
+            {
+                "action_id": "REQUEST_APPROVAL_EVIDENCE",
+                "description": "Ask the operator to supply or select approval evidence.",
+            },
+            {
+                "action_id": "REQUEST_CLARIFICATION",
+                "description": "Ask the operator to clarify the intended governed action.",
+            },
+        ],
+        recommended_next_action={
+            "action_id": "REQUEST_APPROVAL_EVIDENCE",
+            "reason": "Approval evidence is the missing prerequisite blocking continuation.",
+        },
+        evidence_references=[
+            {
+                "evidence_reference": "GOVERNANCE-CHECKPOINT-RECOVERY-001",
+                "evidence_hash": replay_hash({"governance": "recovery"}),
+                "evidence_role": "GOVERNANCE_SOURCE",
+            }
+        ],
+        source_evidence_bindings={
+            "specific_sources": {
+                "governance": {
+                    "reference": "GOVERNANCE-CHECKPOINT-RECOVERY-001",
+                    "hash": replay_hash({"governance": "recovery"}),
+                },
+                "replay": {
+                    "reference": "REPLAY-RECOVERY-001",
+                    "hash": replay_hash({"replay": "recovery"}),
+                },
+            },
+        },
+        csa_reference="CSA-RECOVERY-001",
+        csa_hash=replay_hash({"csa": "recovery"}),
+        ocs_reference="OCS-RECOVERY-001",
+        ocs_hash=replay_hash({"ocs": "recovery"}),
+        replay_lineage=_lineage("recovery-guidance"),
+        rollback_reference="ROLLBACK-RECOVERY-GUIDANCE-001",
+        non_authority_notices=["Recovery guidance is advisory only."],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "recovery_guidance",
     )
 
 
@@ -774,6 +838,125 @@ def test_communication_binding_tampering_fails_closed(tmp_path) -> None:
 
     with pytest.raises(FailClosedRuntimeError, match="cannot grant worker_authority"):
         reconstruct_communication_binding_replay(tmp_path / "binding_WORKER_EXECUTION_SUMMARY")
+
+
+def test_creates_recovery_guidance_with_recommendation_and_evidence(tmp_path) -> None:
+    result = _recovery_guidance(tmp_path)
+    artifact = result["recovery_guidance_artifact"]
+    section = result["recovery_section"]
+
+    assert artifact["artifact_type"] == RECOVERY_GUIDANCE_ARTIFACT_TYPE
+    assert artifact["blocked_operation"] == "Provider activation cannot continue."
+    assert artifact["cannot_continue_reason"] == "Required governance approval evidence is missing."
+    assert artifact["missing_prerequisites"][0]["prerequisite_id"] == "GOVERNANCE-APPROVAL-REQUIRED"
+    assert artifact["recommended_next_action"]["action_id"] == "REQUEST_APPROVAL_EVIDENCE"
+    assert artifact["recommended_next_action"]["non_authoritative"] is True
+    assert artifact["recovery_policy"]["automatic_recovery_allowed"] is False
+    assert artifact["recovery_policy"]["provider_invocation_allowed"] is False
+    assert artifact["recovery_policy"]["worker_execution_allowed"] is False
+    assert artifact["recovery_policy"]["repository_mutation_allowed"] is False
+    assert artifact["source_bindings"]["specific_sources"]["governance"]["reference"] == "GOVERNANCE-CHECKPOINT-RECOVERY-001"
+    assert section["section_type"] == "RECOVERY"
+    assert section["structured_content"]["automatic_recovery_performed"] is False
+    assert section["structured_content"]["provider_invoked"] is False
+    assert section["structured_content"]["worker_invoked"] is False
+    assert result["automatic_recovery_performed"] is False
+    assert result["provider_invoked"] is False
+    assert result["worker_invoked"] is False
+    assert result["repository_mutated"] is False
+
+
+def test_recovery_guidance_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
+    result = _recovery_guidance(tmp_path)
+
+    reconstructed = reconstruct_recovery_guidance_replay(tmp_path / "recovery_guidance")
+
+    assert reconstructed["recovery_guidance_artifact"] == result["recovery_guidance_artifact"]
+    assert reconstructed["recovery_guidance_artifact_hash"] == result["recovery_guidance_artifact_hash"]
+    assert reconstructed["recommended_next_action"] == result["recommended_next_action"]
+    assert reconstructed["authority_granted"] is False
+    assert reconstructed["automatic_recovery_performed"] is False
+
+
+def test_recovery_guidance_section_embeds_in_canonical_communication_artifact(tmp_path) -> None:
+    recovery = _recovery_guidance(tmp_path)
+
+    result = create_ubtr_human_communication_artifact(
+        communication_id="COMM-RECOVERY-GUIDANCE-001",
+        source_component="UBTR",
+        target_human_context="ACLI_OPERATOR",
+        communication_domain="GUIDANCE",
+        communication_level=LEVEL_STANDARD,
+        required_human_action="review recovery guidance",
+        replay_lineage=_lineage("recovery-guidance-communication"),
+        rollback_reference="ROLLBACK-RECOVERY-GUIDANCE-COMM-001",
+        csa_reference="CSA-RECOVERY-GUIDANCE-COMM-001",
+        csa_hash=replay_hash({"csa": "recovery-guidance-communication"}),
+        recovery_section=recovery["recovery_section"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "recovery_guidance_communication",
+    )
+    artifact = result["communication_artifact"]
+
+    assert artifact["sections_rendered"] == ["recovery"]
+    assert artifact["sections"]["recovery"]["section_type"] == "RECOVERY"
+    assert artifact["sections"]["recovery"]["structured_content"]["recommended_next_action"]["action_id"] == "REQUEST_APPROVAL_EVIDENCE"
+    assert artifact["authority_flags"]["execution_authority"] is False
+    assert artifact["authority_flags"]["mutation_authority"] is False
+
+
+def test_recovery_guidance_rejects_recommendation_outside_available_actions(tmp_path) -> None:
+    with pytest.raises(FailClosedRuntimeError, match="recommended_next_action must reference an available action"):
+        create_recovery_guidance_model(
+            recovery_id="RECOVERY-GUIDANCE-INVALID",
+            source_component=SOURCE_COMPONENT_GOVERNANCE,
+            target_human_context="ACLI_OPERATOR",
+            communication_level=LEVEL_STANDARD,
+            blocked_operation="Operation blocked.",
+            cannot_continue_reason="Missing prerequisite.",
+            missing_prerequisites=[
+                {
+                    "prerequisite_id": "PREREQ-001",
+                    "description": "A required input is missing.",
+                }
+            ],
+            available_recovery_actions=[
+                {
+                    "action_id": "REQUEST_INPUT",
+                    "description": "Ask for input.",
+                }
+            ],
+            recommended_next_action={
+                "action_id": "EXECUTE_ANYWAY",
+                "reason": "Invalid recommendation.",
+            },
+            evidence_references=_evidence("invalid-recovery"),
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / "recovery_guidance_invalid",
+        )
+
+
+def test_recovery_guidance_tampering_fails_closed(tmp_path) -> None:
+    _recovery_guidance(tmp_path)
+    replay_file = (
+        tmp_path
+        / "recovery_guidance"
+        / "000_uhcl_recovery_guidance_model_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["recovery_policy"]["automatic_recovery_allowed"] = True
+    wrapper["replay_hash"] = replay_hash(
+        {
+            "replay_index": wrapper["replay_index"],
+            "replay_step": wrapper["replay_step"],
+            "event_type": wrapper["event_type"],
+            "artifact": wrapper["artifact"],
+        }
+    )
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="policy mismatch"):
+        reconstruct_recovery_guidance_replay(tmp_path / "recovery_guidance")
 
 
 def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
