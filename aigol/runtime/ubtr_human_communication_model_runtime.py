@@ -18,6 +18,9 @@ TYPED_SECTION_ARTIFACT_TYPE = "UHCL_TYPED_COMMUNICATION_SECTION_ARTIFACT_V1"
 TYPED_SECTION_SCHEMA_VERSION = "UHCL_TYPED_COMMUNICATION_SECTIONS_V1"
 TYPED_SECTION_REPLAY_STEP = "uhcl_typed_communication_section_recorded"
 SOURCE_EVIDENCE_BINDING_SCHEMA_VERSION = "UHCL_SOURCE_EVIDENCE_BINDING_V1"
+PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE = "UHCL_PROGRESSIVE_EXPLANATION_DERIVATION_ARTIFACT_V1"
+PROGRESSIVE_EXPLANATION_SCHEMA_VERSION = "UHCL_PROGRESSIVE_EXPLANATION_DERIVATION_V1"
+PROGRESSIVE_EXPLANATION_REPLAY_STEP = "uhcl_progressive_explanation_derivation_recorded"
 
 DOMAIN_UNDERSTANDING = "UNDERSTANDING"
 DOMAIN_EXPLANATION = "EXPLANATION"
@@ -367,6 +370,162 @@ def reconstruct_typed_communication_section_replay(replay_dir: str | Path) -> di
     }
 
 
+def derive_progressive_explanation(
+    *,
+    derivation_id: str,
+    source_communication_artifact: dict[str, Any],
+    target_levels: list[str],
+    created_at: str,
+    replay_dir: str | Path,
+    replay_lineage: list[dict[str, Any]] | None = None,
+    rollback_reference: str | None = None,
+    non_authority_notices: list[str] | None = None,
+) -> dict[str, Any]:
+    """Derive level-aware explanations without changing meaning or evidence lineage."""
+
+    replay_path = Path(replay_dir)
+    communication = _require_mapping(source_communication_artifact, "source_communication_artifact")
+    _validate_communication_artifact(communication)
+    levels = _normalize_target_levels(target_levels)
+    source_sections = _progressive_source_sections(communication["sections"])
+    if not source_sections:
+        raise FailClosedRuntimeError("progressive explanation requires at least one source section")
+    source_section_hashes = [item["source_section_hash"] for item in source_sections]
+    source_evidence_binding_hashes = [
+        item["source_evidence_binding_hash"]
+        for item in source_sections
+        if item["source_evidence_binding_hash"] is not None
+    ]
+    source_evidence_hashes = sorted(
+        {
+            evidence_hash
+            for item in source_sections
+            for evidence_hash in item["source_evidence_hashes"]
+        }
+    )
+    semantic_meaning_hash = replay_hash(
+        {
+            "source_communication_hash": communication["artifact_hash"],
+            "source_section_hashes": source_section_hashes,
+            "source_evidence_binding_hashes": source_evidence_binding_hashes,
+        }
+    )
+    evidence_lineage_hash = replay_hash(
+        {
+            "source_communication_hash": communication["artifact_hash"],
+            "source_evidence_hashes": source_evidence_hashes,
+            "source_evidence_binding_hashes": source_evidence_binding_hashes,
+        }
+    )
+    derived_explanations = {
+        level: _derive_level_explanation(
+            level=level,
+            source_sections=source_sections,
+            semantic_meaning_hash=semantic_meaning_hash,
+            evidence_lineage_hash=evidence_lineage_hash,
+        )
+        for level in levels
+    }
+    lineage = _optional_lineage(replay_lineage)
+    if not lineage:
+        lineage = [
+            {
+                "replay_reference": communication["replay_reference"],
+                "replay_hash": communication["artifact_hash"],
+            }
+        ]
+    notices = _non_authority_notices(non_authority_notices)
+    artifact = {
+        "artifact_type": PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE,
+        "schema_version": PROGRESSIVE_EXPLANATION_SCHEMA_VERSION,
+        "runtime_version": RUNTIME_VERSION,
+        "derivation_id": _require_string(derivation_id, "derivation_id"),
+        "source_communication_reference": communication["replay_reference"],
+        "source_communication_hash": communication["artifact_hash"],
+        "source_communication_level": communication["communication_level"],
+        "source_communication_domain": communication["communication_domain"],
+        "target_levels": levels,
+        "semantic_meaning_hash": semantic_meaning_hash,
+        "source_section_hashes": source_section_hashes,
+        "source_evidence_hashes": source_evidence_hashes,
+        "source_evidence_binding_hashes": source_evidence_binding_hashes,
+        "evidence_lineage_hash": evidence_lineage_hash,
+        "source_sections": source_sections,
+        "derived_explanations": derived_explanations,
+        "level_derivation_policy": {
+            "semantic_meaning_preserved": True,
+            "evidence_bindings_preserved": True,
+            "new_facts_allowed": False,
+            "authority_preserved": True,
+            "interface_rendering_allowed": False,
+        },
+        "non_authority_notices": notices,
+        "replay_lineage": lineage,
+        "replay_lineage_hash": replay_hash(lineage),
+        "replay_reference": str(replay_path),
+        "rollback_reference": _optional_string(rollback_reference),
+        "authority_flags": _authority_flags(),
+        "interface_neutral": True,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    _validate_progressive_explanation_artifact(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": PROGRESSIVE_EXPLANATION_REPLAY_STEP,
+        "event_type": RUNTIME_VERSION,
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / f"000_{PROGRESSIVE_EXPLANATION_REPLAY_STEP}.json", wrapper)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "progressive_explanation_artifact": deepcopy(artifact),
+        "progressive_explanation_artifact_hash": artifact["artifact_hash"],
+        "progressive_explanation_replay_reference": str(replay_path),
+        "target_levels": list(levels),
+        "semantic_meaning_hash": semantic_meaning_hash,
+        "evidence_lineage_hash": evidence_lineage_hash,
+        "authority_granted": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
+def reconstruct_progressive_explanation_replay(replay_dir: str | Path) -> dict[str, Any]:
+    """Reconstruct UHCL progressive explanation derivation replay evidence."""
+
+    replay_path = Path(replay_dir)
+    wrapper = load_json(replay_path / f"000_{PROGRESSIVE_EXPLANATION_REPLAY_STEP}.json")
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != PROGRESSIVE_EXPLANATION_REPLAY_STEP:
+        raise FailClosedRuntimeError("UHCL progressive explanation replay ordering mismatch")
+    _verify_wrapper_hash(wrapper, expected_label="UHCL progressive explanation derivation")
+    artifact = _require_mapping(wrapper.get("artifact"), "progressive_explanation_artifact")
+    _validate_progressive_explanation_artifact(artifact)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "progressive_explanation_artifact": deepcopy(artifact),
+        "progressive_explanation_artifact_hash": artifact["artifact_hash"],
+        "progressive_explanation_replay_reference": str(replay_path),
+        "target_levels": list(artifact["target_levels"]),
+        "semantic_meaning_hash": artifact["semantic_meaning_hash"],
+        "evidence_lineage_hash": artifact["evidence_lineage_hash"],
+        "replay_hash": wrapper["replay_hash"],
+        "authority_granted": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
 def reconstruct_ubtr_human_communication_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct UBTR human communication replay evidence."""
 
@@ -547,6 +706,201 @@ def _validate_typed_section_artifact(artifact: dict[str, Any]) -> None:
     expected.pop("artifact_hash", None)
     if not isinstance(actual, str) or replay_hash(expected) != actual:
         raise FailClosedRuntimeError("UHCL typed section artifact hash mismatch")
+
+
+def _validate_progressive_explanation_artifact(artifact: dict[str, Any]) -> None:
+    candidate = _require_mapping(artifact, "progressive_explanation_artifact")
+    if candidate.get("artifact_type") != PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE:
+        raise FailClosedRuntimeError("UHCL progressive explanation artifact type mismatch")
+    if candidate.get("schema_version") != PROGRESSIVE_EXPLANATION_SCHEMA_VERSION:
+        raise FailClosedRuntimeError("UHCL progressive explanation schema version mismatch")
+    for field in (
+        "derivation_id",
+        "source_communication_reference",
+        "source_communication_hash",
+        "semantic_meaning_hash",
+        "evidence_lineage_hash",
+        "replay_reference",
+        "created_at",
+    ):
+        _require_string(candidate.get(field), field)
+    _require_hash(candidate.get("source_communication_hash"), "source_communication_hash")
+    _require_choice(candidate.get("source_communication_level"), COMMUNICATION_LEVELS, "source_communication_level")
+    _require_choice(candidate.get("source_communication_domain"), COMMUNICATION_DOMAINS, "source_communication_domain")
+    target_levels = _normalize_target_levels(candidate.get("target_levels"))
+    source_section_hashes = _string_list(candidate.get("source_section_hashes"), "source_section_hashes")
+    if not source_section_hashes:
+        raise FailClosedRuntimeError("progressive explanation source sections cannot be empty")
+    source_evidence_hashes = _string_list(candidate.get("source_evidence_hashes"), "source_evidence_hashes")
+    for value in source_evidence_hashes:
+        _require_hash(value, "source_evidence_hash")
+    source_evidence_binding_hashes = _string_list(
+        candidate.get("source_evidence_binding_hashes"),
+        "source_evidence_binding_hashes",
+    )
+    for value in source_evidence_binding_hashes:
+        _require_hash(value, "source_evidence_binding_hash")
+    expected_semantic_hash = replay_hash(
+        {
+            "source_communication_hash": candidate["source_communication_hash"],
+            "source_section_hashes": source_section_hashes,
+            "source_evidence_binding_hashes": source_evidence_binding_hashes,
+        }
+    )
+    if candidate.get("semantic_meaning_hash") != expected_semantic_hash:
+        raise FailClosedRuntimeError("UHCL progressive explanation semantic meaning hash mismatch")
+    expected_evidence_hash = replay_hash(
+        {
+            "source_communication_hash": candidate["source_communication_hash"],
+            "source_evidence_hashes": source_evidence_hashes,
+            "source_evidence_binding_hashes": source_evidence_binding_hashes,
+        }
+    )
+    if candidate.get("evidence_lineage_hash") != expected_evidence_hash:
+        raise FailClosedRuntimeError("UHCL progressive explanation evidence lineage hash mismatch")
+    source_sections = _list_of_mappings(candidate.get("source_sections"), "source_sections")
+    if [item.get("source_section_hash") for item in source_sections] != source_section_hashes:
+        raise FailClosedRuntimeError("UHCL progressive explanation source section hash list mismatch")
+    derived = _require_mapping(candidate.get("derived_explanations"), "derived_explanations")
+    if sorted(derived.keys()) != target_levels:
+        raise FailClosedRuntimeError("UHCL progressive explanation derived level mismatch")
+    for level in target_levels:
+        level_explanation = _require_mapping(derived.get(level), f"derived_explanations[{level}]")
+        if level_explanation.get("communication_level") != level:
+            raise FailClosedRuntimeError("UHCL progressive explanation level mismatch")
+        if level_explanation.get("semantic_meaning_hash") != candidate["semantic_meaning_hash"]:
+            raise FailClosedRuntimeError("UHCL progressive explanation changed semantic meaning")
+        if level_explanation.get("evidence_lineage_hash") != candidate["evidence_lineage_hash"]:
+            raise FailClosedRuntimeError("UHCL progressive explanation changed evidence lineage")
+        if level_explanation.get("new_facts_introduced") is not False:
+            raise FailClosedRuntimeError("UHCL progressive explanation cannot introduce new facts")
+        derivations = _list_of_mappings(level_explanation.get("section_derivations"), "section_derivations")
+        if [item.get("source_section_hash") for item in derivations] != source_section_hashes:
+            raise FailClosedRuntimeError("UHCL progressive explanation section derivation mismatch")
+        for section_derivation in derivations:
+            content = _require_nonempty_mapping(section_derivation.get("explanation_content"), "explanation_content")
+            if section_derivation.get("source_variant_hash") != replay_hash(content):
+                raise FailClosedRuntimeError("UHCL progressive explanation variant hash mismatch")
+            if section_derivation.get("new_facts_introduced") is not False:
+                raise FailClosedRuntimeError("UHCL progressive explanation section introduced new facts")
+    policy = _require_mapping(candidate.get("level_derivation_policy"), "level_derivation_policy")
+    expected_policy = {
+        "semantic_meaning_preserved": True,
+        "evidence_bindings_preserved": True,
+        "new_facts_allowed": False,
+        "authority_preserved": True,
+        "interface_rendering_allowed": False,
+    }
+    if policy != expected_policy:
+        raise FailClosedRuntimeError("UHCL progressive explanation derivation policy mismatch")
+    lineage = _require_lineage(candidate.get("replay_lineage"))
+    if candidate.get("replay_lineage_hash") != replay_hash(lineage):
+        raise FailClosedRuntimeError("UHCL progressive explanation replay lineage hash mismatch")
+    notices = _string_list(candidate.get("non_authority_notices"), "non_authority_notices")
+    if not notices:
+        raise FailClosedRuntimeError("UHCL progressive explanation non-authority notices cannot be empty")
+    flags = _require_mapping(candidate.get("authority_flags"), "authority_flags")
+    for key, value in flags.items():
+        if value is not False:
+            raise FailClosedRuntimeError(f"UHCL progressive explanation cannot grant {key}")
+    if candidate.get("interface_neutral") is not True:
+        raise FailClosedRuntimeError("UHCL progressive explanation must be interface-neutral")
+    if candidate.get("replay_visible") is not True:
+        raise FailClosedRuntimeError("UHCL progressive explanation must be replay-visible")
+    actual = candidate.get("artifact_hash")
+    expected = deepcopy(candidate)
+    expected.pop("artifact_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError("UHCL progressive explanation artifact hash mismatch")
+
+
+def _normalize_target_levels(value: Any) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise FailClosedRuntimeError("target_levels must be a non-empty list")
+    levels = sorted({_require_choice(item, COMMUNICATION_LEVELS, "target_level") for item in value})
+    if not levels:
+        raise FailClosedRuntimeError("target_levels must be a non-empty list")
+    return levels
+
+
+def _progressive_source_sections(sections: dict[str, Any]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for section_key in sorted(sections.keys()):
+        section = _require_mapping(sections[section_key], f"sections[{section_key}]")
+        typed = section.get("artifact_type") == TYPED_SECTION_ARTIFACT_TYPE
+        if typed:
+            _validate_typed_section_artifact(section)
+            section_id = section["section_id"]
+            section_type = section["section_type"]
+            selected_level = section["communication_level"]
+            source_section_hash = section["artifact_hash"]
+            evidence_hashes = [item["evidence_hash"] for item in section["evidence_references"]]
+            source_evidence_binding_hash = section["source_evidence_binding_hash"]
+            variants = deepcopy(section["communication_level_variants"])
+        else:
+            section_id = section_key
+            section_type = section_key.upper()
+            selected_level = LEVEL_STANDARD
+            source_section_hash = replay_hash(section)
+            evidence_hashes = []
+            source_evidence_binding_hash = None
+            variants = {selected_level: deepcopy(section)}
+        normalized.append(
+            {
+                "section_key": section_key,
+                "section_id": section_id,
+                "section_type": section_type,
+                "source_section_hash": source_section_hash,
+                "source_evidence_hashes": evidence_hashes,
+                "source_evidence_binding_hash": source_evidence_binding_hash,
+                "base_communication_level": selected_level,
+                "available_levels": sorted(variants.keys()),
+                "communication_level_variants": variants,
+                "communication_level_variants_hash": replay_hash(variants),
+            }
+        )
+    return normalized
+
+
+def _derive_level_explanation(
+    *,
+    level: str,
+    source_sections: list[dict[str, Any]],
+    semantic_meaning_hash: str,
+    evidence_lineage_hash: str,
+) -> dict[str, Any]:
+    derivations = []
+    for source in source_sections:
+        variants = _require_mapping(source["communication_level_variants"], "communication_level_variants")
+        if level in variants:
+            content = _require_nonempty_mapping(variants[level], f"communication_level_variants[{level}]")
+            derivation_mode = "EXPLICIT_LEVEL_VARIANT"
+        else:
+            base_level = _require_choice(source["base_communication_level"], COMMUNICATION_LEVELS, "base_communication_level")
+            content = _require_nonempty_mapping(variants[base_level], f"communication_level_variants[{base_level}]")
+            derivation_mode = "BASE_LEVEL_FALLBACK"
+        derivations.append(
+            {
+                "section_id": source["section_id"],
+                "section_type": source["section_type"],
+                "source_section_hash": source["source_section_hash"],
+                "source_evidence_hashes": list(source["source_evidence_hashes"]),
+                "source_evidence_binding_hash": source["source_evidence_binding_hash"],
+                "derivation_mode": derivation_mode,
+                "explanation_content": deepcopy(content),
+                "source_variant_hash": replay_hash(content),
+                "new_facts_introduced": False,
+            }
+        )
+    return {
+        "communication_level": level,
+        "semantic_meaning_hash": semantic_meaning_hash,
+        "evidence_lineage_hash": evidence_lineage_hash,
+        "section_derivations": derivations,
+        "new_facts_introduced": False,
+        "authority_granted": False,
+        "interface_specific_rendering": False,
+    }
 
 
 def _authority_flags() -> dict[str, bool]:

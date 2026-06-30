@@ -14,12 +14,15 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     COMMUNICATION_LEVELS,
     DOMAIN_UNDERSTANDING,
     LEVEL_STANDARD,
+    PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE,
     SOURCE_COMPONENT_GOVERNANCE,
     SOURCE_COMPONENT_PRODUCT,
     TYPED_SECTION_ARTIFACT_TYPE,
     TYPED_SECTION_TYPES,
+    derive_progressive_explanation,
     create_ubtr_human_communication_artifact,
     create_typed_communication_section,
+    reconstruct_progressive_explanation_replay,
     reconstruct_typed_communication_section_replay,
     reconstruct_ubtr_human_communication_replay,
 )
@@ -211,6 +214,90 @@ def _evidence_bound_section(tmp_path) -> dict:
     )
 
 
+def _progressive_communication(tmp_path) -> dict:
+    variants = {
+        "CONCISE": {
+            "summary": "Decision evidence is available for review.",
+            "detail_policy": "minimal",
+        },
+        "STANDARD": {
+            "summary": "Decision evidence is available for governed review.",
+            "detail_policy": "normal",
+        },
+        "DETAILED": {
+            "summary": "Decision evidence is available for governed review.",
+            "details": ["CSA, replay, and governance sources remain hash-bound."],
+            "detail_policy": "expanded",
+        },
+        "BEGINNER": {
+            "summary": "The platform explains why this decision can be reviewed.",
+            "plain_language": "This does not approve or execute the decision.",
+        },
+        "TECHNICAL": {
+            "summary": "UHCL derives this explanation from a typed section variant.",
+            "hash_controls": ["source_evidence_binding_hash", "artifact_hash"],
+        },
+        "AUDITOR": {
+            "summary": "The explanation preserves source evidence lineage.",
+            "audit_controls": ["semantic_meaning_hash", "evidence_lineage_hash"],
+        },
+        "EXECUTIVE": {
+            "summary": "The review is evidence-backed and non-authoritative.",
+            "business_context": "Operator decision support only.",
+        },
+    }
+    explanation = create_typed_communication_section(
+        section_id="SECTION-PROGRESSIVE-EXPLANATION-001",
+        section_type="EXPLANATION",
+        communication_level=LEVEL_STANDARD,
+        structured_content=variants[LEVEL_STANDARD],
+        evidence_references=[
+            {
+                "evidence_reference": "GOVERNANCE-CHECKPOINT-PROGRESSIVE-001",
+                "evidence_hash": replay_hash({"governance": "progressive"}),
+                "evidence_role": "GOVERNANCE_SOURCE",
+            }
+        ],
+        source_component=SOURCE_COMPONENT_GOVERNANCE,
+        source_evidence_bindings={
+            "specific_sources": {
+                "replay": {
+                    "reference": "REPLAY-PROGRESSIVE-001",
+                    "hash": replay_hash({"replay": "progressive"}),
+                },
+                "governance": {
+                    "reference": "GOVERNANCE-CHECKPOINT-PROGRESSIVE-001",
+                    "hash": replay_hash({"governance": "progressive"}),
+                },
+            },
+        },
+        csa_reference="CSA-PROGRESSIVE-001",
+        csa_hash=replay_hash({"csa": "progressive"}),
+        ocs_reference="OCS-PROGRESSIVE-001",
+        ocs_hash=replay_hash({"ocs": "progressive"}),
+        communication_level_variants=variants,
+        replay_lineage=_lineage("progressive-section"),
+        rollback_reference="ROLLBACK-PROGRESSIVE-SECTION-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "progressive_section",
+    )
+    return create_ubtr_human_communication_artifact(
+        communication_id="COMM-PROGRESSIVE-EXPLANATION-001",
+        source_component="UBTR",
+        target_human_context="ACLI_OPERATOR",
+        communication_domain="EXPLANATION",
+        communication_level=LEVEL_STANDARD,
+        required_human_action="review progressive explanation variants",
+        replay_lineage=_lineage("progressive-communication"),
+        rollback_reference="ROLLBACK-PROGRESSIVE-COMM-001",
+        csa_reference="CSA-PROGRESSIVE-001",
+        csa_hash=replay_hash({"csa": "progressive"}),
+        explanation_section=explanation["typed_section_artifact"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "progressive_communication",
+    )
+
+
 def test_creates_interface_neutral_communication_artifact_with_all_sections(tmp_path) -> None:
     result = _create(tmp_path)
     artifact = result["communication_artifact"]
@@ -301,6 +388,104 @@ def test_source_evidence_binding_reconstructs_with_binding_hash(tmp_path) -> Non
     assert reconstructed["source_component"] == SOURCE_COMPONENT_PRODUCT
     assert reconstructed["source_evidence_binding_hash"] == result["source_evidence_binding_hash"]
     assert reconstructed["non_authority_notices"]
+
+
+def test_derives_progressive_explanations_for_all_levels_from_same_artifact(tmp_path) -> None:
+    communication = _progressive_communication(tmp_path)
+
+    result = derive_progressive_explanation(
+        derivation_id="DERIVE-PROGRESSIVE-001",
+        source_communication_artifact=communication["communication_artifact"],
+        target_levels=sorted(COMMUNICATION_LEVELS),
+        replay_lineage=_lineage("progressive-derivation"),
+        rollback_reference="ROLLBACK-PROGRESSIVE-DERIVATION-001",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "progressive_derivation",
+    )
+    artifact = result["progressive_explanation_artifact"]
+
+    assert artifact["artifact_type"] == PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE
+    assert artifact["source_communication_hash"] == communication["communication_artifact_hash"]
+    assert artifact["target_levels"] == sorted(COMMUNICATION_LEVELS)
+    assert artifact["semantic_meaning_hash"] == result["semantic_meaning_hash"]
+    assert artifact["evidence_lineage_hash"] == result["evidence_lineage_hash"]
+    assert artifact["level_derivation_policy"]["new_facts_allowed"] is False
+    assert artifact["source_sections"][0]["section_type"] == "EXPLANATION"
+    assert artifact["source_sections"][0]["source_evidence_binding_hash"].startswith("sha256:")
+    for level in sorted(COMMUNICATION_LEVELS):
+        explanation = artifact["derived_explanations"][level]
+        assert explanation["semantic_meaning_hash"] == artifact["semantic_meaning_hash"]
+        assert explanation["evidence_lineage_hash"] == artifact["evidence_lineage_hash"]
+        assert explanation["new_facts_introduced"] is False
+        assert explanation["authority_granted"] is False
+        assert explanation["section_derivations"][0]["source_section_hash"] == artifact["source_section_hashes"][0]
+        assert explanation["section_derivations"][0]["new_facts_introduced"] is False
+    assert result["interface_specific_rendering"] is False
+    assert result["provider_invoked"] is False
+    assert result["worker_invoked"] is False
+
+
+def test_progressive_explanation_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
+    communication = _progressive_communication(tmp_path)
+    result = derive_progressive_explanation(
+        derivation_id="DERIVE-PROGRESSIVE-REPLAY-001",
+        source_communication_artifact=communication["communication_artifact"],
+        target_levels=["CONCISE", "AUDITOR"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "progressive_derivation_replay",
+    )
+
+    reconstructed = reconstruct_progressive_explanation_replay(
+        tmp_path / "progressive_derivation_replay"
+    )
+
+    assert reconstructed["progressive_explanation_artifact"] == result["progressive_explanation_artifact"]
+    assert reconstructed["progressive_explanation_artifact_hash"] == result["progressive_explanation_artifact_hash"]
+    assert reconstructed["target_levels"] == ["AUDITOR", "CONCISE"]
+    assert reconstructed["authority_granted"] is False
+
+
+def test_progressive_explanation_rejects_unsupported_level(tmp_path) -> None:
+    communication = _progressive_communication(tmp_path)
+
+    with pytest.raises(FailClosedRuntimeError, match="target_level is not supported"):
+        derive_progressive_explanation(
+            derivation_id="DERIVE-PROGRESSIVE-INVALID-001",
+            source_communication_artifact=communication["communication_artifact"],
+            target_levels=["TERMINAL_VERBOSE"],
+            created_at=CREATED_AT,
+            replay_dir=tmp_path / "progressive_invalid_level",
+        )
+
+
+def test_progressive_explanation_tampering_fails_closed(tmp_path) -> None:
+    communication = _progressive_communication(tmp_path)
+    derive_progressive_explanation(
+        derivation_id="DERIVE-PROGRESSIVE-TAMPER-001",
+        source_communication_artifact=communication["communication_artifact"],
+        target_levels=["CONCISE", "STANDARD"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "progressive_derivation_tamper",
+    )
+    replay_file = (
+        tmp_path
+        / "progressive_derivation_tamper"
+        / "000_uhcl_progressive_explanation_derivation_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["derived_explanations"]["CONCISE"]["new_facts_introduced"] = True
+    wrapper["replay_hash"] = replay_hash(
+        {
+            "replay_index": wrapper["replay_index"],
+            "replay_step": wrapper["replay_step"],
+            "event_type": wrapper["event_type"],
+            "artifact": wrapper["artifact"],
+        }
+    )
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="cannot introduce new facts"):
+        reconstruct_progressive_explanation_replay(tmp_path / "progressive_derivation_tamper")
 
 
 def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
