@@ -493,6 +493,10 @@ from aigol.runtime.acli_llm_assisted_explanation_runtime import (
 from aigol.runtime.acli_hardening_integration_runtime import (
     record_completed_acli_interaction_hardening,
 )
+from aigol.runtime.g4_live_acli_governed_development_session_entrypoint import (
+    render_g4_live_acli_session_summary,
+    run_g4_live_acli_governed_development_session_entrypoint,
+)
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
@@ -2969,6 +2973,14 @@ def build_parser() -> argparse.ArgumentParser:
     run_governed.add_argument("--created-at", default="2026-05-31T00:00:00Z")
     run_governed.add_argument("--runtime-root", default=".aigol_operator_runtime")
     run_governed.add_argument("--workspace", default=".")
+
+    g4_live_session = subcommands.add_parser("g4-live-session")
+    g4_live_session.add_argument("--session-id", default="G4-05-LIVE-ACLI-SESSION-000001")
+    g4_live_session.add_argument("--request", required=True)
+    g4_live_session.add_argument("--response", required=True)
+    g4_live_session.add_argument("--created-at", default="2026-06-30T00:00:00Z")
+    g4_live_session.add_argument("--runtime-root", default=".runtime/g4_05_live_acli_session")
+    g4_live_session.add_argument("--json", action="store_true")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -9304,6 +9316,14 @@ def run_command(args: argparse.Namespace) -> dict:
             runtime_root=args.runtime_root,
             workspace=args.workspace,
         )
+    if args.command == "g4-live-session":
+        return run_g4_live_acli_governed_development_session_entrypoint(
+            session_id=args.session_id,
+            operator_request=args.request,
+            operator_response=args.response,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.session_id,
+        )
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
             input_path=args.input,
@@ -9845,6 +9865,11 @@ def render_command_result(result: dict) -> str:
                 f"fail_closed: {result.get('fail_closed')}",
                 f"failure_reason: {result.get('failure_reason', '')}",
             ],
+        )
+    if command == "aigol g4-live-session":
+        return render_card(
+            "AIGOL G4 LIVE SESSION",
+            render_g4_live_acli_session_summary(result).splitlines(),
         )
     if command == "aigol moc validate-contract":
         validation = result.get("contract_validation_result", {})
