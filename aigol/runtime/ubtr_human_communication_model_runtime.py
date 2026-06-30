@@ -21,6 +21,9 @@ SOURCE_EVIDENCE_BINDING_SCHEMA_VERSION = "UHCL_SOURCE_EVIDENCE_BINDING_V1"
 PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE = "UHCL_PROGRESSIVE_EXPLANATION_DERIVATION_ARTIFACT_V1"
 PROGRESSIVE_EXPLANATION_SCHEMA_VERSION = "UHCL_PROGRESSIVE_EXPLANATION_DERIVATION_V1"
 PROGRESSIVE_EXPLANATION_REPLAY_STEP = "uhcl_progressive_explanation_derivation_recorded"
+SHARED_CONFIRMATION_ARTIFACT_TYPE = "UHCL_SHARED_CONFIRMATION_MODEL_ARTIFACT_V1"
+SHARED_CONFIRMATION_SCHEMA_VERSION = "UHCL_SHARED_CONFIRMATION_ALIGNMENT_V1"
+SHARED_CONFIRMATION_REPLAY_STEP = "uhcl_shared_confirmation_model_recorded"
 
 DOMAIN_UNDERSTANDING = "UNDERSTANDING"
 DOMAIN_EXPLANATION = "EXPLANATION"
@@ -110,6 +113,20 @@ COMMUNICATION_LEVELS = {
     LEVEL_TECHNICAL,
     LEVEL_AUDITOR,
     LEVEL_EXECUTIVE,
+}
+
+RESPONSE_CONFIRMATION = "CONFIRMATION"
+RESPONSE_CLARIFICATION = "CLARIFICATION"
+RESPONSE_MODIFICATION = "MODIFICATION"
+RESPONSE_REJECTION = "REJECTION"
+RESPONSE_CONTINUATION = "CONTINUATION"
+
+CONFIRMATION_RESPONSE_TYPES = {
+    RESPONSE_CONFIRMATION,
+    RESPONSE_CLARIFICATION,
+    RESPONSE_MODIFICATION,
+    RESPONSE_REJECTION,
+    RESPONSE_CONTINUATION,
 }
 
 SECTION_FIELDS = {
@@ -526,6 +543,160 @@ def reconstruct_progressive_explanation_replay(replay_dir: str | Path) -> dict[s
     }
 
 
+def create_shared_confirmation_model(
+    *,
+    confirmation_id: str,
+    source_component: str,
+    target_human_context: str,
+    communication_level: str,
+    confirmation_prompt: str,
+    required_human_action: str,
+    evidence_references: list[dict[str, Any]],
+    created_at: str,
+    replay_dir: str | Path,
+    csa_reference: str | None = None,
+    csa_hash: str | None = None,
+    ocs_reference: str | None = None,
+    ocs_hash: str | None = None,
+    approval_reference: str | None = None,
+    approval_hash: str | None = None,
+    authorization_reference: str | None = None,
+    authorization_hash: str | None = None,
+    source_evidence_bindings: dict[str, Any] | None = None,
+    replay_lineage: list[dict[str, Any]] | None = None,
+    rollback_reference: str | None = None,
+    non_authority_notices: list[str] | None = None,
+) -> dict[str, Any]:
+    """Create a canonical UHCL shared confirmation model artifact."""
+
+    replay_path = Path(replay_dir)
+    level = _require_choice(communication_level, COMMUNICATION_LEVELS, "communication_level")
+    evidence = _normalize_evidence_references(evidence_references)
+    response_models = _confirmation_response_models()
+    source_bindings = _confirmation_source_evidence_bindings(
+        source_component=source_component,
+        evidence_references=evidence,
+        csa_reference=csa_reference,
+        csa_hash=csa_hash,
+        ocs_reference=ocs_reference,
+        ocs_hash=ocs_hash,
+        approval_reference=approval_reference,
+        approval_hash=approval_hash,
+        authorization_reference=authorization_reference,
+        authorization_hash=authorization_hash,
+        source_evidence_bindings=source_evidence_bindings,
+    )
+    section = {
+        "section_id": _require_string(confirmation_id, "confirmation_id"),
+        "section_type": SECTION_TYPE_CONFIRMATION,
+        "communication_level": level,
+        "confirmation_prompt": _require_string(confirmation_prompt, "confirmation_prompt"),
+        "confirmation_required": True,
+        "confirmation_status": "PENDING",
+        "supported_response_types": sorted(CONFIRMATION_RESPONSE_TYPES),
+        "response_models": response_models,
+        "required_human_action": _require_string(required_human_action, "required_human_action"),
+        "evidence_references": evidence,
+        "evidence_references_hash": replay_hash(evidence),
+        "source_bindings": source_bindings,
+        "source_evidence_binding_hash": replay_hash(source_bindings),
+        "non_authoritative": True,
+    }
+    section["section_hash"] = replay_hash(section)
+    lineage = _optional_lineage(replay_lineage)
+    notices = _non_authority_notices(non_authority_notices)
+    artifact = {
+        "artifact_type": SHARED_CONFIRMATION_ARTIFACT_TYPE,
+        "schema_version": SHARED_CONFIRMATION_SCHEMA_VERSION,
+        "runtime_version": RUNTIME_VERSION,
+        "confirmation_id": section["section_id"],
+        "source_component": source_bindings["source_component"],
+        "target_human_context": _require_string(target_human_context, "target_human_context"),
+        "communication_level": level,
+        "confirmation_section": section,
+        "response_models": response_models,
+        "supported_response_types": sorted(CONFIRMATION_RESPONSE_TYPES),
+        "evidence_references": evidence,
+        "evidence_references_hash": replay_hash(evidence),
+        "source_bindings": source_bindings,
+        "source_evidence_binding_hash": replay_hash(source_bindings),
+        "confirmation_lineage": {
+            "confirmation_section_hash": section["section_hash"],
+            "source_evidence_binding_hash": replay_hash(source_bindings),
+            "approval_reference": _optional_string(approval_reference),
+            "approval_hash": _optional_hash(approval_hash, "approval_hash"),
+            "authorization_reference": _optional_string(authorization_reference),
+            "authorization_hash": _optional_hash(authorization_hash, "authorization_hash"),
+        },
+        "non_authority_notices": notices,
+        "replay_lineage": lineage,
+        "replay_lineage_hash": replay_hash(lineage),
+        "replay_reference": str(replay_path),
+        "rollback_reference": _optional_string(rollback_reference),
+        "authority_flags": _authority_flags(),
+        "interface_neutral": True,
+        "replay_visible": True,
+        "created_at": _require_string(created_at, "created_at"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    _validate_shared_confirmation_artifact(artifact)
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": SHARED_CONFIRMATION_REPLAY_STEP,
+        "event_type": RUNTIME_VERSION,
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path / f"000_{SHARED_CONFIRMATION_REPLAY_STEP}.json", wrapper)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "shared_confirmation_artifact": deepcopy(artifact),
+        "shared_confirmation_artifact_hash": artifact["artifact_hash"],
+        "shared_confirmation_replay_reference": str(replay_path),
+        "confirmation_section": deepcopy(section),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "authority_granted": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
+def reconstruct_shared_confirmation_replay(replay_dir: str | Path) -> dict[str, Any]:
+    """Reconstruct UHCL shared confirmation model replay evidence."""
+
+    replay_path = Path(replay_dir)
+    wrapper = load_json(replay_path / f"000_{SHARED_CONFIRMATION_REPLAY_STEP}.json")
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != SHARED_CONFIRMATION_REPLAY_STEP:
+        raise FailClosedRuntimeError("UHCL shared confirmation replay ordering mismatch")
+    _verify_wrapper_hash(wrapper, expected_label="UHCL shared confirmation model")
+    artifact = _require_mapping(wrapper.get("artifact"), "shared_confirmation_artifact")
+    _validate_shared_confirmation_artifact(artifact)
+    return {
+        "runtime_version": RUNTIME_VERSION,
+        "shared_confirmation_artifact": deepcopy(artifact),
+        "shared_confirmation_artifact_hash": artifact["artifact_hash"],
+        "shared_confirmation_replay_reference": str(replay_path),
+        "confirmation_section": deepcopy(artifact["confirmation_section"]),
+        "source_evidence_binding_hash": artifact["source_evidence_binding_hash"],
+        "replay_hash": wrapper["replay_hash"],
+        "authority_granted": False,
+        "approval_created": False,
+        "authorization_created": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+        "interface_specific_rendering": False,
+        "replay_visible": True,
+    }
+
+
 def reconstruct_ubtr_human_communication_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct UBTR human communication replay evidence."""
 
@@ -812,6 +983,210 @@ def _validate_progressive_explanation_artifact(artifact: dict[str, Any]) -> None
     expected.pop("artifact_hash", None)
     if not isinstance(actual, str) or replay_hash(expected) != actual:
         raise FailClosedRuntimeError("UHCL progressive explanation artifact hash mismatch")
+
+
+def _validate_shared_confirmation_artifact(artifact: dict[str, Any]) -> None:
+    candidate = _require_mapping(artifact, "shared_confirmation_artifact")
+    if candidate.get("artifact_type") != SHARED_CONFIRMATION_ARTIFACT_TYPE:
+        raise FailClosedRuntimeError("UHCL shared confirmation artifact type mismatch")
+    if candidate.get("schema_version") != SHARED_CONFIRMATION_SCHEMA_VERSION:
+        raise FailClosedRuntimeError("UHCL shared confirmation schema version mismatch")
+    for field in (
+        "confirmation_id",
+        "source_component",
+        "target_human_context",
+        "replay_reference",
+        "created_at",
+    ):
+        _require_string(candidate.get(field), field)
+    _require_choice(candidate.get("source_component"), SOURCE_COMPONENTS, "source_component")
+    _require_choice(candidate.get("communication_level"), COMMUNICATION_LEVELS, "communication_level")
+    supported = _string_list(candidate.get("supported_response_types"), "supported_response_types")
+    if supported != sorted(CONFIRMATION_RESPONSE_TYPES):
+        raise FailClosedRuntimeError("UHCL shared confirmation supported response types mismatch")
+    response_models = _validate_confirmation_response_models(candidate.get("response_models"))
+    evidence = _normalize_evidence_references(candidate.get("evidence_references"))
+    if candidate.get("evidence_references_hash") != replay_hash(evidence):
+        raise FailClosedRuntimeError("UHCL shared confirmation evidence hash mismatch")
+    source_bindings = _validate_source_evidence_bindings(
+        candidate.get("source_bindings"),
+        evidence_references=evidence,
+        expected_source_component=candidate["source_component"],
+    )
+    if candidate.get("source_evidence_binding_hash") != replay_hash(source_bindings):
+        raise FailClosedRuntimeError("UHCL shared confirmation source evidence binding hash mismatch")
+    section = _require_mapping(candidate.get("confirmation_section"), "confirmation_section")
+    if section.get("section_id") != candidate["confirmation_id"]:
+        raise FailClosedRuntimeError("UHCL shared confirmation section id mismatch")
+    if section.get("section_type") != SECTION_TYPE_CONFIRMATION:
+        raise FailClosedRuntimeError("UHCL shared confirmation section type mismatch")
+    if section.get("communication_level") != candidate["communication_level"]:
+        raise FailClosedRuntimeError("UHCL shared confirmation section level mismatch")
+    _require_string(section.get("confirmation_prompt"), "confirmation_prompt")
+    if section.get("confirmation_required") is not True:
+        raise FailClosedRuntimeError("UHCL shared confirmation must require confirmation")
+    if section.get("confirmation_status") != "PENDING":
+        raise FailClosedRuntimeError("UHCL shared confirmation status must be pending")
+    if _string_list(section.get("supported_response_types"), "section.supported_response_types") != supported:
+        raise FailClosedRuntimeError("UHCL shared confirmation section response type mismatch")
+    if _validate_confirmation_response_models(section.get("response_models")) != response_models:
+        raise FailClosedRuntimeError("UHCL shared confirmation section response models mismatch")
+    if _normalize_evidence_references(section.get("evidence_references")) != evidence:
+        raise FailClosedRuntimeError("UHCL shared confirmation section evidence mismatch")
+    if section.get("evidence_references_hash") != replay_hash(evidence):
+        raise FailClosedRuntimeError("UHCL shared confirmation section evidence hash mismatch")
+    if _validate_source_evidence_bindings(
+        section.get("source_bindings"),
+        evidence_references=evidence,
+        expected_source_component=candidate["source_component"],
+    ) != source_bindings:
+        raise FailClosedRuntimeError("UHCL shared confirmation section source binding mismatch")
+    if section.get("source_evidence_binding_hash") != replay_hash(source_bindings):
+        raise FailClosedRuntimeError("UHCL shared confirmation section source binding hash mismatch")
+    if section.get("non_authoritative") is not True:
+        raise FailClosedRuntimeError("UHCL shared confirmation section must be non-authoritative")
+    expected_section = deepcopy(section)
+    expected_section.pop("section_hash", None)
+    if section.get("section_hash") != replay_hash(expected_section):
+        raise FailClosedRuntimeError("UHCL shared confirmation section hash mismatch")
+    lineage = _require_mapping(candidate.get("confirmation_lineage"), "confirmation_lineage")
+    if lineage.get("confirmation_section_hash") != section["section_hash"]:
+        raise FailClosedRuntimeError("UHCL shared confirmation lineage section hash mismatch")
+    if lineage.get("source_evidence_binding_hash") != candidate["source_evidence_binding_hash"]:
+        raise FailClosedRuntimeError("UHCL shared confirmation lineage source binding hash mismatch")
+    _optional_hash(lineage.get("approval_hash"), "approval_hash")
+    _optional_hash(lineage.get("authorization_hash"), "authorization_hash")
+    replay_lineage = _list_of_mappings(candidate.get("replay_lineage"), "replay_lineage")
+    if candidate.get("replay_lineage_hash") != replay_hash(replay_lineage):
+        raise FailClosedRuntimeError("UHCL shared confirmation replay lineage hash mismatch")
+    notices = _string_list(candidate.get("non_authority_notices"), "non_authority_notices")
+    if not notices:
+        raise FailClosedRuntimeError("UHCL shared confirmation non-authority notices cannot be empty")
+    flags = _require_mapping(candidate.get("authority_flags"), "authority_flags")
+    for key, value in flags.items():
+        if value is not False:
+            raise FailClosedRuntimeError(f"UHCL shared confirmation cannot grant {key}")
+    if candidate.get("interface_neutral") is not True:
+        raise FailClosedRuntimeError("UHCL shared confirmation must be interface-neutral")
+    if candidate.get("replay_visible") is not True:
+        raise FailClosedRuntimeError("UHCL shared confirmation must be replay-visible")
+    actual = candidate.get("artifact_hash")
+    expected = deepcopy(candidate)
+    expected.pop("artifact_hash", None)
+    if not isinstance(actual, str) or replay_hash(expected) != actual:
+        raise FailClosedRuntimeError("UHCL shared confirmation artifact hash mismatch")
+
+
+def _confirmation_response_models() -> dict[str, dict[str, Any]]:
+    models = {
+        RESPONSE_CONFIRMATION: {
+            "response_type": RESPONSE_CONFIRMATION,
+            "meaning": "The human confirms the presented communication for the next governed step.",
+            "required_payload_fields": [],
+        },
+        RESPONSE_CLARIFICATION: {
+            "response_type": RESPONSE_CLARIFICATION,
+            "meaning": "The human requests additional clarification before continuing.",
+            "required_payload_fields": ["clarification_request"],
+        },
+        RESPONSE_MODIFICATION: {
+            "response_type": RESPONSE_MODIFICATION,
+            "meaning": "The human requests a bounded modification to the presented communication.",
+            "required_payload_fields": ["modification_request"],
+        },
+        RESPONSE_REJECTION: {
+            "response_type": RESPONSE_REJECTION,
+            "meaning": "The human rejects the presented communication or proposed next step.",
+            "required_payload_fields": ["rejection_reason"],
+        },
+        RESPONSE_CONTINUATION: {
+            "response_type": RESPONSE_CONTINUATION,
+            "meaning": "The human asks to continue the conversation without approval or execution.",
+            "required_payload_fields": ["continuation_context"],
+        },
+    }
+    for model in models.values():
+        model["creates_approval"] = False
+        model["creates_authorization"] = False
+        model["creates_execution_authority"] = False
+        model["invokes_provider"] = False
+        model["invokes_worker"] = False
+        model["mutates_repository"] = False
+        model["non_authoritative"] = True
+    return models
+
+
+def _validate_confirmation_response_models(value: Any) -> dict[str, dict[str, Any]]:
+    models = _require_mapping(value, "response_models")
+    if sorted(models.keys()) != sorted(CONFIRMATION_RESPONSE_TYPES):
+        raise FailClosedRuntimeError("UHCL shared confirmation response model keys mismatch")
+    normalized: dict[str, dict[str, Any]] = {}
+    for response_type in sorted(CONFIRMATION_RESPONSE_TYPES):
+        model = _require_mapping(models.get(response_type), f"response_models[{response_type}]")
+        if model.get("response_type") != response_type:
+            raise FailClosedRuntimeError("UHCL shared confirmation response type mismatch")
+        _require_string(model.get("meaning"), f"response_models[{response_type}].meaning")
+        _string_list(model.get("required_payload_fields"), f"response_models[{response_type}].required_payload_fields")
+        for flag in (
+            "creates_approval",
+            "creates_authorization",
+            "creates_execution_authority",
+            "invokes_provider",
+            "invokes_worker",
+            "mutates_repository",
+        ):
+            if model.get(flag) is not False:
+                raise FailClosedRuntimeError(f"UHCL shared confirmation response cannot set {flag}")
+        if model.get("non_authoritative") is not True:
+            raise FailClosedRuntimeError("UHCL shared confirmation response must be non-authoritative")
+        normalized[response_type] = deepcopy(model)
+    return normalized
+
+
+def _confirmation_source_evidence_bindings(
+    *,
+    source_component: str,
+    evidence_references: list[dict[str, Any]],
+    csa_reference: str | None,
+    csa_hash: str | None,
+    ocs_reference: str | None,
+    ocs_hash: str | None,
+    approval_reference: str | None,
+    approval_hash: str | None,
+    authorization_reference: str | None,
+    authorization_hash: str | None,
+    source_evidence_bindings: dict[str, Any] | None,
+) -> dict[str, Any]:
+    supplied = deepcopy(source_evidence_bindings) if source_evidence_bindings is not None else {}
+    if not isinstance(supplied, dict):
+        raise FailClosedRuntimeError("source_evidence_bindings must be a JSON object")
+    specific_sources = deepcopy(supplied.get("specific_sources", {}))
+    if approval_reference or approval_hash:
+        specific_sources["approval"] = _source_ref(
+            approval_reference,
+            approval_hash,
+            reference_field="approval_reference",
+            hash_field="approval_hash",
+            existing=specific_sources.get("approval"),
+        )
+    if authorization_reference or authorization_hash:
+        specific_sources["authorization"] = _source_ref(
+            authorization_reference,
+            authorization_hash,
+            reference_field="authorization_reference",
+            hash_field="authorization_hash",
+            existing=specific_sources.get("authorization"),
+        )
+    supplied["specific_sources"] = specific_sources
+    return _source_evidence_bindings(
+        source_component=source_component,
+        evidence_references=evidence_references,
+        csa_reference=csa_reference,
+        csa_hash=csa_hash,
+        ocs_reference=ocs_reference,
+        ocs_hash=ocs_hash,
+        source_evidence_bindings=supplied,
+    )
 
 
 def _normalize_target_levels(value: Any) -> list[str]:

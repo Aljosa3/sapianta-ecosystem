@@ -15,14 +15,22 @@ from aigol.runtime.ubtr_human_communication_model_runtime import (
     DOMAIN_UNDERSTANDING,
     LEVEL_STANDARD,
     PROGRESSIVE_EXPLANATION_ARTIFACT_TYPE,
+    RESPONSE_CLARIFICATION,
+    RESPONSE_CONFIRMATION,
+    RESPONSE_CONTINUATION,
+    RESPONSE_MODIFICATION,
+    RESPONSE_REJECTION,
+    SHARED_CONFIRMATION_ARTIFACT_TYPE,
     SOURCE_COMPONENT_GOVERNANCE,
     SOURCE_COMPONENT_PRODUCT,
     TYPED_SECTION_ARTIFACT_TYPE,
     TYPED_SECTION_TYPES,
+    create_shared_confirmation_model,
     derive_progressive_explanation,
     create_ubtr_human_communication_artifact,
     create_typed_communication_section,
     reconstruct_progressive_explanation_replay,
+    reconstruct_shared_confirmation_replay,
     reconstruct_typed_communication_section_replay,
     reconstruct_ubtr_human_communication_replay,
 )
@@ -298,6 +306,50 @@ def _progressive_communication(tmp_path) -> dict:
     )
 
 
+def _shared_confirmation(tmp_path) -> dict:
+    return create_shared_confirmation_model(
+        confirmation_id="CONFIRMATION-SHARED-001",
+        source_component=SOURCE_COMPONENT_GOVERNANCE,
+        target_human_context="ACLI_OPERATOR",
+        communication_level=LEVEL_STANDARD,
+        confirmation_prompt="Review the governed communication and choose a response.",
+        required_human_action="choose confirm, clarify, modify, reject, or continue",
+        evidence_references=[
+            {
+                "evidence_reference": "APPROVAL-EVIDENCE-001",
+                "evidence_hash": replay_hash({"approval": "001"}),
+                "evidence_role": "APPROVAL_SOURCE",
+            },
+            {
+                "evidence_reference": "AUTHORIZATION-EVIDENCE-001",
+                "evidence_hash": replay_hash({"authorization": "001"}),
+                "evidence_role": "AUTHORIZATION_SOURCE",
+            },
+        ],
+        source_evidence_bindings={
+            "specific_sources": {
+                "governance": {
+                    "reference": "GOVERNANCE-CONFIRMATION-001",
+                    "hash": replay_hash({"governance": "confirmation"}),
+                },
+            },
+        },
+        csa_reference="CSA-CONFIRMATION-001",
+        csa_hash=replay_hash({"csa": "confirmation"}),
+        ocs_reference="OCS-CONFIRMATION-001",
+        ocs_hash=replay_hash({"ocs": "confirmation"}),
+        approval_reference="APPROVAL-EVIDENCE-001",
+        approval_hash=replay_hash({"approval": "001"}),
+        authorization_reference="AUTHORIZATION-EVIDENCE-001",
+        authorization_hash=replay_hash({"authorization": "001"}),
+        replay_lineage=_lineage("shared-confirmation"),
+        rollback_reference="ROLLBACK-SHARED-CONFIRMATION-001",
+        non_authority_notices=["Confirmation response classification is evidence only."],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "shared_confirmation",
+    )
+
+
 def test_creates_interface_neutral_communication_artifact_with_all_sections(tmp_path) -> None:
     result = _create(tmp_path)
     artifact = result["communication_artifact"]
@@ -486,6 +538,105 @@ def test_progressive_explanation_tampering_fails_closed(tmp_path) -> None:
 
     with pytest.raises(FailClosedRuntimeError, match="cannot introduce new facts"):
         reconstruct_progressive_explanation_replay(tmp_path / "progressive_derivation_tamper")
+
+
+def test_creates_shared_confirmation_model_with_all_response_classes(tmp_path) -> None:
+    result = _shared_confirmation(tmp_path)
+    artifact = result["shared_confirmation_artifact"]
+    section = result["confirmation_section"]
+
+    assert artifact["artifact_type"] == SHARED_CONFIRMATION_ARTIFACT_TYPE
+    assert artifact["communication_level"] == LEVEL_STANDARD
+    assert artifact["supported_response_types"] == sorted(
+        [
+            RESPONSE_CLARIFICATION,
+            RESPONSE_CONFIRMATION,
+            RESPONSE_CONTINUATION,
+            RESPONSE_MODIFICATION,
+            RESPONSE_REJECTION,
+        ]
+    )
+    assert section["section_type"] == "CONFIRMATION"
+    assert section["confirmation_status"] == "PENDING"
+    assert section["source_evidence_binding_hash"] == artifact["source_evidence_binding_hash"]
+    assert artifact["source_bindings"]["specific_sources"]["approval"]["reference"] == "APPROVAL-EVIDENCE-001"
+    assert artifact["source_bindings"]["specific_sources"]["authorization"]["reference"] == "AUTHORIZATION-EVIDENCE-001"
+    for response_type, model in artifact["response_models"].items():
+        assert model["response_type"] == response_type
+        assert model["creates_approval"] is False
+        assert model["creates_authorization"] is False
+        assert model["creates_execution_authority"] is False
+        assert model["invokes_provider"] is False
+        assert model["invokes_worker"] is False
+        assert model["mutates_repository"] is False
+        assert model["non_authoritative"] is True
+    assert result["approval_created"] is False
+    assert result["authorization_created"] is False
+    assert result["execution_authorized"] is False
+    assert result["interface_specific_rendering"] is False
+
+
+def test_shared_confirmation_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
+    result = _shared_confirmation(tmp_path)
+
+    reconstructed = reconstruct_shared_confirmation_replay(tmp_path / "shared_confirmation")
+
+    assert reconstructed["shared_confirmation_artifact"] == result["shared_confirmation_artifact"]
+    assert reconstructed["shared_confirmation_artifact_hash"] == result["shared_confirmation_artifact_hash"]
+    assert reconstructed["source_evidence_binding_hash"] == result["source_evidence_binding_hash"]
+    assert reconstructed["authority_granted"] is False
+    assert reconstructed["approval_created"] is False
+    assert reconstructed["authorization_created"] is False
+
+
+def test_shared_confirmation_section_embeds_in_canonical_communication_artifact(tmp_path) -> None:
+    confirmation = _shared_confirmation(tmp_path)
+
+    result = create_ubtr_human_communication_artifact(
+        communication_id="COMM-SHARED-CONFIRMATION-001",
+        source_component="UBTR",
+        target_human_context="ACLI_OPERATOR",
+        communication_domain="HUMAN_CONFIRMATION",
+        communication_level=LEVEL_STANDARD,
+        required_human_action="review shared confirmation section",
+        replay_lineage=_lineage("shared-confirmation-communication"),
+        rollback_reference="ROLLBACK-SHARED-CONFIRMATION-COMM-001",
+        csa_reference="CSA-SHARED-CONFIRMATION-001",
+        csa_hash=replay_hash({"csa": "shared-confirmation"}),
+        confirmation_section=confirmation["confirmation_section"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "shared_confirmation_communication",
+    )
+    artifact = result["communication_artifact"]
+
+    assert artifact["sections_rendered"] == ["confirmation"]
+    assert artifact["sections"]["confirmation"]["section_type"] == "CONFIRMATION"
+    assert artifact["sections"]["confirmation"]["source_evidence_binding_hash"].startswith("sha256:")
+    assert artifact["authority_flags"]["approval_authority"] is False
+    assert artifact["authority_flags"]["authorization_authority"] is False
+
+
+def test_shared_confirmation_rejects_authoritative_response_model(tmp_path) -> None:
+    _shared_confirmation(tmp_path)
+    replay_file = (
+        tmp_path
+        / "shared_confirmation"
+        / "000_uhcl_shared_confirmation_model_recorded.json"
+    )
+    wrapper = load_json(replay_file)
+    wrapper["artifact"]["response_models"]["CONFIRMATION"]["creates_authorization"] = True
+    wrapper["replay_hash"] = replay_hash(
+        {
+            "replay_index": wrapper["replay_index"],
+            "replay_step": wrapper["replay_step"],
+            "event_type": wrapper["event_type"],
+            "artifact": wrapper["artifact"],
+        }
+    )
+    replay_file.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="response cannot set creates_authorization"):
+        reconstruct_shared_confirmation_replay(tmp_path / "shared_confirmation")
 
 
 def test_typed_section_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
