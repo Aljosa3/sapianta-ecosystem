@@ -11,6 +11,10 @@ from aigol.runtime.acli_conversational_development_session import (
 )
 from aigol.runtime.approval.approval_request import ApprovalRequest
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_communication_wrapper_wiring import (
+    wire_confirmation_wrapper_to_uhcl,
+    wire_explanation_wrapper_to_uhcl,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -119,6 +123,12 @@ def create_conversational_development_proposal(
         rejection_reference=None,
         failure_reason=None,
     )
+    _attach_proposal_uhcl_wiring(
+        artifact,
+        event_type=EVENT_PROPOSAL_CREATED,
+        replay_dir=replay_path,
+        created_at=created_at,
+    )
     _persist_step(replay_path, 0, EVENT_PROPOSAL_CREATED, artifact)
     return _capture(artifact, replay_path)
 
@@ -175,8 +185,15 @@ def revise_conversational_development_proposal(
         rejection_reference=None,
         failure_reason=proposal["failure_reason"],
     )
-    _persist_step(Path(replay_dir), event_index, EVENT_PROPOSAL_REVISED, artifact)
-    return _capture(artifact, Path(replay_dir))
+    replay_path = Path(replay_dir)
+    _attach_proposal_uhcl_wiring(
+        artifact,
+        event_type=EVENT_PROPOSAL_REVISED,
+        replay_dir=replay_path,
+        created_at=revised_at,
+    )
+    _persist_step(replay_path, event_index, EVENT_PROPOSAL_REVISED, artifact)
+    return _capture(artifact, replay_path)
 
 
 def generate_conversational_approval_request(
@@ -243,8 +260,15 @@ def generate_conversational_approval_request(
         rejection_reference=None,
         failure_reason=proposal["failure_reason"],
     )
-    _persist_step(Path(replay_dir), event_index, EVENT_APPROVAL_REQUEST_GENERATED, artifact)
-    return _capture(artifact, Path(replay_dir))
+    replay_path = Path(replay_dir)
+    _attach_proposal_uhcl_wiring(
+        artifact,
+        event_type=EVENT_APPROVAL_REQUEST_GENERATED,
+        replay_dir=replay_path,
+        created_at=requested_at,
+    )
+    _persist_step(replay_path, event_index, EVENT_APPROVAL_REQUEST_GENERATED, artifact)
+    return _capture(artifact, replay_path)
 
 
 def record_conversational_approval_decision(
@@ -319,8 +343,15 @@ def record_conversational_approval_decision(
         rejection_reference=rejection_ref,
         failure_reason=proposal["failure_reason"],
     )
-    _persist_step(Path(replay_dir), event_index, EVENT_APPROVAL_DECISION_RECORDED, artifact)
-    return _capture(artifact, Path(replay_dir))
+    replay_path = Path(replay_dir)
+    _attach_proposal_uhcl_wiring(
+        artifact,
+        event_type=EVENT_APPROVAL_DECISION_RECORDED,
+        replay_dir=replay_path,
+        created_at=decided_at,
+    )
+    _persist_step(replay_path, event_index, EVENT_APPROVAL_DECISION_RECORDED, artifact)
+    return _capture(artifact, replay_path)
 
 
 def reconstruct_acli_proposal_approval_bridge_replay(replay_dir: str | Path) -> dict[str, Any]:
@@ -425,6 +456,73 @@ def _proposal_artifact_from_existing(
         rejection_reference=rejection_reference,
         failure_reason=failure_reason,
     )
+
+
+def _attach_proposal_uhcl_wiring(
+    artifact: dict[str, Any],
+    *,
+    event_type: str,
+    replay_dir: Path,
+    created_at: str,
+) -> None:
+    evidence = [
+        {
+            "evidence_reference": f"proposal:{artifact['proposal_id']}",
+            "evidence_hash": artifact["artifact_hash"],
+        },
+        {
+            "evidence_reference": artifact["canonical_semantic_artifact_reference"],
+            "evidence_hash": artifact["canonical_semantic_artifact_hash"],
+        },
+    ]
+    if event_type == EVENT_APPROVAL_REQUEST_GENERATED and artifact["approval_requests"]:
+        latest_request = artifact["approval_requests"][-1]
+        artifact["uhcl_wrapper_wiring"] = wire_confirmation_wrapper_to_uhcl(
+            wrapper_surface="ACLI_PROPOSAL_APPROVAL_BRIDGE",
+            wrapper_id=f"{artifact['proposal_id']}:{event_type}",
+            confirmation_prompt=f"Review proposal {artifact['proposal_id']} before any governed continuation.",
+            required_human_action="Choose approve, reject, or request clarification.",
+            evidence_references=evidence
+            + [
+                {
+                    "evidence_reference": latest_request["approval_request_id"],
+                    "evidence_hash": latest_request["approval_request_hash"],
+                }
+            ],
+            created_at=created_at,
+            replay_dir=replay_dir / "uhcl_wrapper_wiring" / event_type,
+            replay_lineage=artifact["replay_lineage"],
+            rollback_reference=artifact["rollback_reference"],
+            approval_reference=latest_request["approval_request_id"],
+            approval_hash=latest_request["approval_request_hash"],
+        )
+    else:
+        artifact["uhcl_wrapper_wiring"] = wire_explanation_wrapper_to_uhcl(
+            wrapper_surface="ACLI_PROPOSAL_APPROVAL_BRIDGE",
+            wrapper_id=f"{artifact['proposal_id']}:{event_type}",
+            summary_content={
+                "event_type": event_type,
+                "proposal_id": artifact["proposal_id"],
+                "proposal_version": artifact["proposal_version"],
+                "proposal_status": artifact["proposal_status"],
+                "approval_status": artifact["approval_status"],
+                "approval_request_generated": artifact["approval_request_generated"],
+                "rejection_handling_visible": artifact["rejection_handling_visible"],
+                "clarification_return_path_visible": artifact["clarification_return_path_visible"],
+            },
+            evidence_references=evidence,
+            created_at=created_at,
+            replay_dir=replay_dir / "uhcl_wrapper_wiring" / event_type,
+            replay_lineage=artifact["replay_lineage"],
+            rollback_reference=artifact["rollback_reference"],
+        )
+    _refresh_artifact_hash(artifact)
+
+
+def _refresh_artifact_hash(artifact: dict[str, Any]) -> None:
+    candidate = deepcopy(artifact)
+    candidate.pop("artifact_hash", None)
+    artifact["artifact_hash"] = replay_hash(candidate)
 
 
 def _proposal_artifact(

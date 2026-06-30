@@ -107,6 +107,9 @@ def test_provider_assisted_explanation_is_generated_and_replayed(tmp_path) -> No
     assert artifact["explanation_completeness"] == "COMPLETE"
     assert artifact["render_mode"] == "PROVIDER_ASSISTED"
     assert artifact["escalation_level"] == "TIER_2"
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert artifact["uhcl_wrapper_wiring"]["provider_invoked_by_wiring"] is False
+    assert artifact["uhcl_wrapper_wiring"]["new_communication_semantics_introduced"] is False
     assert "EXPLANATION TRANSPARENCY" in artifact["rendered_operator_view"]
     assert "OpenAI GPT-5.5" in artifact["rendered_operator_view"]
     assert artifact["explanation_request_artifact"]["authoritative_state"]["artifact_identifiers"] == [
@@ -127,6 +130,7 @@ def test_provider_assisted_explanation_is_generated_and_replayed(tmp_path) -> No
     assert replay["explanation_confidence"] == "HIGH"
     assert replay["explanation_completeness"] == "COMPLETE"
     assert replay["render_mode"] == "PROVIDER_ASSISTED"
+    assert replay["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
     assert replay["explanation_transparency_artifact"]["explanation_pipeline"][1]["status"] == "USED"
 
 

@@ -12,6 +12,7 @@ from typing import Any, Callable
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.acli_human_friendly_explanation_runtime import render_explanation_source_transparency
+from aigol.runtime.platform_communication_wrapper_wiring import wire_explanation_wrapper_to_uhcl
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -86,6 +87,35 @@ def create_acli_llm_assisted_explanation(
         response_artifact["explanation_text"],
         transparency,
     )
+    uhcl_wrapper_wiring = wire_explanation_wrapper_to_uhcl(
+        wrapper_surface="ACLI_LLM_ASSISTED_EXPLANATION_RUNTIME",
+        wrapper_id=explanation_id,
+        summary_content={
+            "explanation_status": explanation_status,
+            "provider_id": provider_id,
+            "rendered_explanation_hash": replay_hash(response_artifact["explanation_text"]),
+            "rendered_operator_view_hash": replay_hash(rendered_operator_view),
+            "deterministic_fallback_used": explanation_status == DETERMINISTIC_FALLBACK_USED,
+            "provider_explanation_used": explanation_status == PROVIDER_EXPLANATION_USED,
+        },
+        evidence_references=[
+            {
+                "evidence_reference": state["state_id"],
+                "evidence_hash": state["artifact_hash"],
+            },
+            {
+                "evidence_reference": f"{request_artifact['explanation_id']}:REQUEST",
+                "evidence_hash": request_artifact["artifact_hash"],
+            },
+            {
+                "evidence_reference": f"{response_artifact['explanation_id']}:RESPONSE",
+                "evidence_hash": response_artifact["artifact_hash"],
+            },
+        ],
+        created_at=created_at,
+        replay_dir=replay_path / "uhcl_wrapper_wiring",
+        rollback_reference=f"rollback:{explanation_id}:uhcl-wrapper-wiring",
+    )
 
     artifact = {
         "artifact_type": ACLI_LLM_ASSISTED_EXPLANATION_ARTIFACT_V1,
@@ -142,6 +172,7 @@ def create_acli_llm_assisted_explanation(
         "worker_invoked": False,
         "validation_executed": False,
         "adaptive_escalation_compatible": True,
+        "uhcl_wrapper_wiring": uhcl_wrapper_wiring,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     wrapper = {
@@ -259,6 +290,7 @@ def reconstruct_acli_llm_assisted_explanation_replay(replay_dir: str | Path) -> 
         "rendered_operator_view_hash": artifact["rendered_operator_view_hash"],
         "provider_explanation_used": artifact["provider_explanation_used"],
         "deterministic_fallback_used": artifact["deterministic_fallback_used"],
+        "uhcl_wrapper_wiring": deepcopy(artifact.get("uhcl_wrapper_wiring")),
         "advisory_only": True,
         "authority_granted": artifact["authority_granted"],
         "replay_artifact_count": 1,

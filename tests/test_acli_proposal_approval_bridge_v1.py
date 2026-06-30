@@ -146,6 +146,8 @@ def test_creates_proposal_from_conversational_turn_with_required_fields(tmp_path
     assert artifact["authorization_created"] is False
     assert artifact["execution_requested"] is False
     assert len(artifact["replay_lineage"]) == 3
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_artifact_type"] == "UHCL_TYPED_COMMUNICATION_SECTION_ARTIFACT_V1"
 
     reconstructed = reconstruct_acli_proposal_approval_bridge_replay(tmp_path / "bridge")
     assert reconstructed["proposal_id"] == "ACLI-PROPOSAL-BRIDGE-000001"
@@ -198,6 +200,8 @@ def test_generates_approval_request_without_approval_authorization_or_execution(
     assert artifact["provider_invoked"] is False
     assert artifact["worker_invoked"] is False
     assert artifact["repository_mutated"] is False
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_artifact_type"] == "UHCL_SHARED_CONFIRMATION_MODEL_ARTIFACT_V1"
 
 
 def test_records_rejection_handling_without_execution(tmp_path) -> None:

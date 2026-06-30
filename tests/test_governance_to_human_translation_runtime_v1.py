@@ -87,6 +87,8 @@ def test_translates_governance_state_to_human_readable_universal_artifact(tmp_pa
     assert result["workflow_executed"] is False
     assert result["governance_mutated"] is False
     assert result["approval_granted"] is False
+    assert result["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert result["uhcl_wrapper_wiring"]["legacy_contract_preserved"] is True
 
 
 def test_authoritative_references_preserve_source_state_hashes(tmp_path) -> None:
@@ -128,6 +130,7 @@ def test_translation_replay_reconstructs_and_preserves_hash(tmp_path) -> None:
 
     assert reconstructed["translation_artifact"] == result["translation_artifact"]
     assert reconstructed["artifact_hash"] == translation_artifact_hash(result["translation_artifact"])
+    assert reconstructed["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
     assert reconstructed["rendered_explanation"] == result["rendered_explanation"]
     assert reconstructed["provider_invoked"] is False
     assert reconstructed["governance_mutated"] is False

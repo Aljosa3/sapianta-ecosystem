@@ -155,12 +155,16 @@ def test_creates_authorization_ready_artifact_from_approved_proposal(tmp_path) -
     assert artifact["authorization_created"] is False
     assert artifact["execution_requested"] is False
     assert artifact["worker_invoked"] is False
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert artifact["uhcl_wrapper_wiring"]["authorization_created_by_wiring"] is False
+    assert artifact["uhcl_wrapper_wiring"]["execution_authorized_by_wiring"] is False
 
     reconstructed = reconstruct_acli_authorization_bridge_replay(tmp_path / "authorization_bridge")
     assert reconstructed["authorization_readiness_status"] == AUTHORIZATION_READY
     assert reconstructed["precondition_status"] == PRECONDITIONS_SATISFIED
     assert reconstructed["event_count"] == 1
     assert reconstructed["authorization_created"] is False
+    assert reconstructed["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
 
 
 def test_blocks_authorization_bridge_for_missing_approval(tmp_path) -> None:
@@ -180,6 +184,7 @@ def test_blocks_authorization_bridge_for_missing_approval(tmp_path) -> None:
     assert "approval_request_present" in artifact["failure_reason"]
     assert artifact["rejection_or_missing_approval_handling_visible"] is True
     assert artifact["execution_requested"] is False
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_artifact_type"] == "UHCL_RECOVERY_GUIDANCE_MODEL_ARTIFACT_V1"
 
 
 def test_blocks_authorization_bridge_for_rejected_proposal(tmp_path) -> None:

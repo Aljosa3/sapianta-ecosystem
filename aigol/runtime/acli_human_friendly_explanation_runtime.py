@@ -8,6 +8,7 @@ from typing import Any
 
 from aigol.runtime.governance_to_human_translation_runtime import translate_governance_to_human
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_communication_wrapper_wiring import wire_explanation_wrapper_to_uhcl
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -79,6 +80,47 @@ def create_acli_human_friendly_explanation(
     rendered_operator_view = _append_explanation_transparency(
         rendered,
         transparency,
+    )
+    uhcl_wrapper_wiring = wire_explanation_wrapper_to_uhcl(
+        wrapper_surface="ACLI_HUMAN_FRIENDLY_EXPLANATION_RUNTIME",
+        wrapper_id=explanation_id,
+        summary_content={
+            "sections": deepcopy(sections),
+            "rendered_explanation_hash": replay_hash(rendered),
+            "rendered_operator_view_hash": replay_hash(rendered_operator_view),
+            "primary_render_source": (
+                "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION"
+                if ubtr_output_capture is not None
+                else "LEGACY_HUMAN_FRIENDLY_EXPLANATION"
+            ),
+        },
+        evidence_references=[
+            {
+                "evidence_reference": _require_string(
+                    routing.get("routing_visibility_id"),
+                    "routing_visibility_reference",
+                ),
+                "evidence_hash": _require_string(routing.get("artifact_hash"), "routing_visibility_hash"),
+            },
+            {
+                "evidence_reference": _require_string(
+                    intake.get("universal_intake_id"),
+                    "universal_intake_reference",
+                ),
+                "evidence_hash": _require_string(intake.get("artifact_hash"), "universal_intake_hash"),
+            },
+            {
+                "evidence_reference": "UBTR_GOVERNANCE_TO_HUMAN_TRANSLATION",
+                "evidence_hash": (
+                    ubtr_output_capture.get("translation_artifact", {}).get("artifact_hash")
+                    if isinstance(ubtr_output_capture, dict)
+                    else replay_hash({"ubtr_output_capture": "unavailable", "explanation_id": explanation_id})
+                ),
+            },
+        ],
+        created_at=created_at,
+        replay_dir=replay_path / "uhcl_wrapper_wiring",
+        rollback_reference=f"rollback:{explanation_id}:uhcl-wrapper-wiring",
     )
     artifact = {
         "artifact_type": ACLI_HUMAN_FRIENDLY_EXPLANATION_ARTIFACT_V1,
@@ -174,6 +216,7 @@ def create_acli_human_friendly_explanation(
         "repository_mutation_performed": False,
         "governance_mutated": False,
         "replay_mutated": False,
+        "uhcl_wrapper_wiring": uhcl_wrapper_wiring,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     wrapper = {
@@ -254,6 +297,7 @@ def reconstruct_acli_human_friendly_explanation_replay(replay_dir: str | Path) -
         "approval_authority": artifact["approval_authority"],
         "execution_authority": artifact["execution_authority"],
         "worker_authority": artifact["worker_authority"],
+        "uhcl_wrapper_wiring": deepcopy(artifact.get("uhcl_wrapper_wiring")),
         "replay_artifact_count": 1,
         "replay_hash": replay_hash(wrapper),
     }

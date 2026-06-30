@@ -135,6 +135,9 @@ def test_explanation_renders_required_sections_and_preserves_authority_flags(tmp
     assert artifact["worker_authority"] is False
     assert artifact["worker_invoked"] is False
     assert artifact["repository_mutation_performed"] is False
+    assert artifact["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert artifact["uhcl_wrapper_wiring"]["legacy_contract_preserved"] is True
+    assert artifact["uhcl_wrapper_wiring"]["new_communication_semantics_introduced"] is False
     assert "WHAT I UNDERSTOOD" in rendered
     assert "GOVERNANCE STATE EXPLANATION" in rendered
     assert "COMPATIBILITY OPERATOR DETAILS" in rendered

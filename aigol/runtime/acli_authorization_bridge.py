@@ -11,6 +11,7 @@ from aigol.runtime.acli_proposal_approval_bridge import (
     APPROVAL_RECORDED,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_communication_wrapper_wiring import wire_authorization_wrapper_to_uhcl
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -109,6 +110,48 @@ def create_conversational_authorization_bridge(
         created_at=created_at,
         failure_reason=None if readiness_status == AUTHORIZATION_READY else preconditions["failure_reason"],
     )
+    artifact["uhcl_wrapper_wiring"] = wire_authorization_wrapper_to_uhcl(
+        wrapper_surface="ACLI_AUTHORIZATION_BRIDGE",
+        wrapper_id=authorization_bridge_id,
+        readiness_status=readiness_status,
+        cannot_continue_reason=artifact.get("failure_reason"),
+        missing_prerequisites=[
+            {
+                "prerequisite_id": item["precondition_name"],
+                "description": f"Authorization precondition must be satisfied: {item['precondition_name']}.",
+                "evidence_reference": f"precondition:{item['precondition_name']}",
+                "evidence_hash": item["precondition_hash"],
+            }
+            for item in artifact["precondition_evidence"]
+            if item.get("precondition_met") is not True
+        ],
+        summary_content={
+            "authorization_readiness_status": readiness_status,
+            "precondition_status": preconditions["precondition_status"],
+            "approval_request_id": approval_request_id,
+            "approval_decision_reference": approval_decision_reference,
+            "failure_reason": artifact.get("failure_reason"),
+        },
+        evidence_references=[
+            {
+                "evidence_reference": f"proposal:{proposal['proposal_id']}",
+                "evidence_hash": proposal["artifact_hash"],
+            },
+            {
+                "evidence_reference": f"approval_request:{approval_request_id}",
+                "evidence_hash": approval_request_hash,
+            },
+            {
+                "evidence_reference": f"approval_decision:{approval_decision_reference}",
+                "evidence_hash": approval_decision_hash,
+            },
+        ],
+        created_at=created_at,
+        replay_dir=Path(replay_dir) / "uhcl_wrapper_wiring",
+        replay_lineage=artifact["replay_lineage"],
+        rollback_reference=artifact["rollback_reference"],
+    )
+    _refresh_artifact_hash(artifact)
     replay_path = Path(replay_dir)
     _persist_step(replay_path, 0, EVENT_AUTHORIZATION_BRIDGE_RECORDED, artifact)
     return _capture(artifact, replay_path)
@@ -152,6 +195,7 @@ def reconstruct_acli_authorization_bridge_replay(replay_dir: str | Path) -> dict
         "rollback_reference": artifact["rollback_reference"],
         "event_count": len(events),
         "event_hash_chain": [event["event_hash"] for event in events],
+        "uhcl_wrapper_wiring": deepcopy(artifact.get("uhcl_wrapper_wiring")),
         "provider_invoked": False,
         "worker_invoked": False,
         "authorization_created": False,
@@ -228,6 +272,12 @@ def _authorization_bridge_artifact(
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
+
+
+def _refresh_artifact_hash(artifact: dict[str, Any]) -> None:
+    candidate = deepcopy(artifact)
+    candidate.pop("artifact_hash", None)
+    artifact["artifact_hash"] = replay_hash(candidate)
 
 
 def _precondition_evidence(

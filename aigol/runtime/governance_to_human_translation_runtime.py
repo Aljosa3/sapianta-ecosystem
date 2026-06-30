@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_communication_wrapper_wiring import wire_transparency_wrapper_to_uhcl
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.universal_translation_artifact_schema import (
     GOVERNANCE_ONLY,
@@ -131,6 +132,33 @@ def translate_governance_to_human(
     }
     wrapper["replay_hash"] = replay_hash(wrapper)
     write_json_immutable(replay_path / f"000_{REPLAY_STEP}.json", wrapper)
+    uhcl_wrapper_wiring = wire_transparency_wrapper_to_uhcl(
+        wrapper_surface="GOVERNANCE_TO_HUMAN_TRANSLATION_RUNTIME",
+        wrapper_id=translation_request_id,
+        transparency_content={
+            "translation_id": artifact["translation_id"],
+            "rendered_explanation_hash": replay_hash(human_payload["rendered_explanation"]),
+            "operator_action_required": human_payload["operator_action_required"],
+            "ambiguity_flags": deepcopy(ambiguity),
+        },
+        evidence_references=[
+            {
+                "evidence_reference": "governance_state",
+                "evidence_hash": references["governance_state_hash"],
+            },
+            {
+                "evidence_reference": "replay_evidence",
+                "evidence_hash": references["replay_evidence_hash"],
+            },
+            {
+                "evidence_reference": artifact["translation_id"],
+                "evidence_hash": artifact["artifact_hash"],
+            },
+        ],
+        created_at=created_at,
+        replay_dir=replay_path / "uhcl_wrapper_wiring",
+        rollback_reference=f"rollback:{translation_request_id}:uhcl-wrapper-wiring",
+    )
     return {
         "runtime_version": RUNTIME_VERSION,
         "translation_status": "TRANSLATED",
@@ -144,6 +172,7 @@ def translate_governance_to_human(
         "workflow_executed": False,
         "governance_mutated": False,
         "approval_granted": False,
+        "uhcl_wrapper_wiring": uhcl_wrapper_wiring,
         "replay_visible": True,
     }
 
@@ -163,6 +192,7 @@ def reconstruct_governance_to_human_translation_replay(replay_dir: str | Path) -
     if validated["source_direction"] != GOVERNANCE_TO_HUMAN:
         raise FailClosedRuntimeError("governance-to-human translation replay direction mismatch")
     human_payload = validated["human_readable_payload"]
+    uhcl_wrapper_wiring = _load_optional_uhcl_wrapper_wiring(replay_path)
     return {
         "runtime_version": RUNTIME_VERSION,
         "translation_id": validated["translation_id"],
@@ -178,7 +208,32 @@ def reconstruct_governance_to_human_translation_replay(replay_dir: str | Path) -
         "workflow_executed": False,
         "governance_mutated": False,
         "approval_granted": False,
+        "uhcl_wrapper_wiring": deepcopy(uhcl_wrapper_wiring),
         "replay_visible": True,
+    }
+
+
+def _load_optional_uhcl_wrapper_wiring(replay_path: Path) -> dict[str, Any] | None:
+    wrapper_path = (
+        replay_path
+        / "uhcl_wrapper_wiring"
+        / "000_uhcl_typed_communication_section_recorded.json"
+    )
+    if not wrapper_path.exists():
+        return None
+    wrapper = load_json(wrapper_path)
+    artifact = wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("governance-to-human UHCL wrapper wiring artifact must be a JSON object")
+    return {
+        "wiring_version": "G3_04_PHASE_8B_PLATFORM_COMMUNICATION_WRAPPER_WIRING_V1",
+        "wrapper_surface": "GOVERNANCE_TO_HUMAN_TRANSLATION_RUNTIME",
+        "uhcl_consumed": True,
+        "uhcl_artifact_type": artifact.get("artifact_type"),
+        "uhcl_artifact_hash": artifact.get("artifact_hash"),
+        "uhcl_replay_reference": str(wrapper_path.parent),
+        "legacy_contract_preserved": True,
+        "new_communication_semantics_introduced": False,
     }
 
 

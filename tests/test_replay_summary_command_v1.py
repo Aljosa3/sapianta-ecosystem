@@ -50,6 +50,8 @@ def test_replay_summary_view_contains_required_fields(tmp_path) -> None:
     assert "human prompt completed" in summary["result_summary"]
     assert summary["timestamp_ordering"]["created_at"] == CREATED_AT
     assert summary["read_only_view"] is True
+    assert summary["uhcl_wrapper_wiring"]["uhcl_consumed"] is True
+    assert summary["uhcl_wrapper_wiring"]["legacy_contract_preserved"] is True
 
 
 def test_replay_summary_renders_operator_view(tmp_path) -> None:
