@@ -152,6 +152,7 @@ from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
+from aigol.acli_next import render_acli_next_session_summary, run_acli_next_session
 from aigol.moc.approval_gate import render_approval_gate_summary
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
@@ -2981,6 +2982,17 @@ def build_parser() -> argparse.ArgumentParser:
     g4_live_session.add_argument("--created-at", default="2026-06-30T00:00:00Z")
     g4_live_session.add_argument("--runtime-root", default=".runtime/g4_05_live_acli_session")
     g4_live_session.add_argument("--json", action="store_true")
+
+    next_cmd = subcommands.add_parser("next")
+    next_sub = next_cmd.add_subparsers(dest="next_command", required=True)
+    next_session = next_sub.add_parser("session")
+    next_session.add_argument("--session-id", default="ACLI-NEXT-SESSION-000001")
+    next_session.add_argument("--request", required=True)
+    next_session.add_argument("--response", required=True)
+    next_session.add_argument("--created-at", default="2026-07-01T00:00:00Z")
+    next_session.add_argument("--runtime-root", default=".runtime/acli_next")
+    next_session.add_argument("--workspace", default=".")
+    next_session.add_argument("--json", action="store_true")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -9324,6 +9336,15 @@ def run_command(args: argparse.Namespace) -> dict:
             created_at=args.created_at,
             replay_dir=Path(args.runtime_root) / args.session_id,
         )
+    if args.command == "next" and args.next_command == "session":
+        return run_acli_next_session(
+            session_id=args.session_id,
+            operator_request=args.request,
+            operator_response=args.response,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.session_id,
+            workspace=args.workspace,
+        )
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
             input_path=args.input,
@@ -9870,6 +9891,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL G4 LIVE SESSION",
             render_g4_live_acli_session_summary(result).splitlines(),
+        )
+    if command == "aigol next session":
+        return render_card(
+            "AIGOL NEXT SESSION",
+            render_acli_next_session_summary(result).splitlines(),
         )
     if command == "aigol moc validate-contract":
         validation = result.get("contract_validation_result", {})
