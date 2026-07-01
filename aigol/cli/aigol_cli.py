@@ -152,7 +152,12 @@ from aigol.cognition.state_envelope import render_cognition_summary
 from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
-from aigol.acli_next import render_acli_next_session_summary, run_acli_next_session
+from aigol.acli_next import (
+    render_acli_next_interactive_summary,
+    render_acli_next_session_summary,
+    run_acli_next_interactive_session,
+    run_acli_next_session,
+)
 from aigol.moc.approval_gate import render_approval_gate_summary
 from aigol.moc.advisory_contract_generation import render_advisory_contract_generation_summary
 from aigol.moc.advisory_proposal_validation import render_advisory_proposal_validation_summary
@@ -2993,6 +2998,13 @@ def build_parser() -> argparse.ArgumentParser:
     next_session.add_argument("--runtime-root", default=".runtime/acli_next")
     next_session.add_argument("--workspace", default=".")
     next_session.add_argument("--json", action="store_true")
+    next_interactive = next_sub.add_parser("interactive")
+    next_interactive.add_argument("--session-id", default="ACLI-NEXT-INTERACTIVE-000001")
+    next_interactive.add_argument("--turn", action="append", required=True)
+    next_interactive.add_argument("--created-at", default="2026-07-01T00:00:00Z")
+    next_interactive.add_argument("--runtime-root", default=".runtime/acli_next_interactive")
+    next_interactive.add_argument("--workspace", default=".")
+    next_interactive.add_argument("--json", action="store_true")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -8970,6 +8982,20 @@ def _provider_credential_command_result(args: argparse.Namespace, artifact: dict
     }
 
 
+def _parse_acli_next_turns(values: list[str]) -> list[dict[str, str]]:
+    turns: list[dict[str, str]] = []
+    for index, value in enumerate(values, start=1):
+        if "=>" not in value:
+            raise FailClosedRuntimeError(
+                f"ACLI Next interactive turn {index} must use 'request=>response'"
+            )
+        request, response = value.split("=>", 1)
+        if not request.strip() or not response.strip():
+            raise FailClosedRuntimeError(f"ACLI Next interactive turn {index} is incomplete")
+        turns.append({"operator_request": request.strip(), "operator_response": response.strip()})
+    return turns
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -9341,6 +9367,14 @@ def run_command(args: argparse.Namespace) -> dict:
             session_id=args.session_id,
             operator_request=args.request,
             operator_response=args.response,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.session_id,
+            workspace=args.workspace,
+        )
+    if args.command == "next" and args.next_command == "interactive":
+        return run_acli_next_interactive_session(
+            session_id=args.session_id,
+            turns=_parse_acli_next_turns(args.turn),
             created_at=args.created_at,
             replay_dir=Path(args.runtime_root) / args.session_id,
             workspace=args.workspace,
@@ -9896,6 +9930,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL NEXT SESSION",
             render_acli_next_session_summary(result).splitlines(),
+        )
+    if command == "aigol next interactive":
+        return render_card(
+            "AIGOL NEXT INTERACTIVE",
+            render_acli_next_interactive_summary(result).splitlines(),
         )
     if command == "aigol moc validate-contract":
         validation = result.get("contract_validation_result", {})
