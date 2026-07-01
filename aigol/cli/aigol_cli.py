@@ -153,9 +153,11 @@ from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
 from aigol.acli_next import (
+    render_acli_next_execution_plan_summary,
     render_acli_next_interactive_summary,
     render_acli_next_readonly_worker_summary,
     render_acli_next_session_summary,
+    run_acli_next_interactive_with_execution_plan,
     run_acli_next_interactive_with_readonly_worker,
     run_acli_next_interactive_session,
     run_acli_next_session,
@@ -3015,6 +3017,17 @@ def build_parser() -> argparse.ArgumentParser:
     next_readonly_worker.add_argument("--runtime-root", default=".runtime/acli_next_readonly_worker")
     next_readonly_worker.add_argument("--workspace", default=".")
     next_readonly_worker.add_argument("--json", action="store_true")
+    next_execution_plan = next_sub.add_parser("execution-plan")
+    next_execution_plan.add_argument("--session-id", default="ACLI-NEXT-EXECUTION-PLAN-000001")
+    next_execution_plan.add_argument("--turn", action="append", required=True)
+    next_execution_plan.add_argument("--worker-step", action="append", default=None)
+    next_execution_plan.add_argument("--capability", action="append", default=None)
+    next_execution_plan.add_argument("--expected-artifact", action="append", default=None)
+    next_execution_plan.add_argument("--potential-impact", action="append", default=None)
+    next_execution_plan.add_argument("--created-at", default="2026-07-01T00:00:00Z")
+    next_execution_plan.add_argument("--runtime-root", default=".runtime/acli_next_execution_plan")
+    next_execution_plan.add_argument("--workspace", default=".")
+    next_execution_plan.add_argument("--json", action="store_true")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -9398,6 +9411,18 @@ def run_command(args: argparse.Namespace) -> dict:
             replay_dir=Path(args.runtime_root) / args.session_id,
             workspace=args.workspace,
         )
+    if args.command == "next" and args.next_command == "execution-plan":
+        return run_acli_next_interactive_with_execution_plan(
+            session_id=args.session_id,
+            turns=_parse_acli_next_turns(args.turn),
+            worker_sequence=args.worker_step,
+            requested_capabilities=args.capability,
+            expected_artifacts=args.expected_artifact,
+            potential_repository_impacts=args.potential_impact,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.session_id,
+            workspace=args.workspace,
+        )
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
             input_path=args.input,
@@ -9959,6 +9984,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL NEXT READONLY WORKER",
             render_acli_next_readonly_worker_summary(result).splitlines(),
+        )
+    if command == "aigol next execution-plan":
+        return render_card(
+            "AIGOL NEXT EXECUTION PLAN",
+            render_acli_next_execution_plan_summary(result).splitlines(),
         )
     if command == "aigol moc validate-contract":
         validation = result.get("contract_validation_result", {})
