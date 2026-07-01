@@ -165,3 +165,25 @@ def test_first_mutating_worker_has_no_provider_git_or_deployment_surface() -> No
     assert "git " not in source.lower()
     assert "commit(" not in source
     assert "deploy" not in source.replace('"deployment_allowed"', "").replace('"deployment_performed"', "")
+
+
+def test_first_mutating_worker_runtime_delegates_platform_core_responsibilities() -> None:
+    import aigol.runtime.first_mutating_worker_runtime as runtime
+
+    source = inspect.getsource(runtime)
+
+    assert "def create_first_mutating_worker_candidate" not in source
+    assert "def create_first_mutating_worker_approval" not in source
+    assert "def reconstruct_first_mutating_worker_replay" not in source
+    assert "create_authorization_record" not in source
+    assert "validate_authorization_record" not in source
+    assert "write_json_immutable" not in source
+    assert "load_json" not in source
+    assert "def _validation_artifact" not in source
+    assert "def _rollback_artifact" not in source
+    assert "validate_mutation_candidate" in source
+    assert "validate_mutation_approval" in source
+    assert "create_mutation_authorization_record" in source
+    assert "persist_mutation_replay_step" in source
+    assert "post_mutation_validation_artifact" in source
+    assert "mutation_rollback_metadata_artifact" in source
