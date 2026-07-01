@@ -1,4 +1,4 @@
-"""Tests for the G8-06B Platform Core execution planning service."""
+"""Tests for the G8-06D Platform Core execution planning service."""
 
 from __future__ import annotations
 
@@ -70,3 +70,26 @@ def test_acli_next_readonly_worker_adapter_no_longer_owns_capability_lookup() ->
     assert "def _readonly_worker_summary" not in source
     assert "def _governance_authorization_check" not in source
     assert "run_platform_core_readonly_worker_handoff" in source
+
+
+def test_platform_core_execution_planning_service_delegates_owner_responsibilities() -> None:
+    source = Path("aigol/runtime/platform_core_execution_planning_service.py").read_text(encoding="utf-8")
+
+    assert "lookup_readonly_worker_capability" in source
+    assert "readonly_worker_authorization" in source
+    assert "execution_plan_authorization" in source
+    assert "readonly_worker_result" in source
+    assert "execution_plan_artifact" in source
+    assert "mutation_preview_artifact" in source
+    assert "execution_plan_replay_plan" in source
+    assert "persist_platform_core_preview_artifact" in source
+    assert "SUPPORTED_READONLY_CAPABILITIES" not in source
+    assert "def _readonly_worker_authorization" not in source
+    assert "def _execution_plan_authorization" not in source
+    assert "def _readonly_worker_result" not in source
+    assert "def _readonly_worker_summary" not in source
+    assert "def _execution_plan(" not in source
+    assert "def _mutation_preview" not in source
+    assert "def _replay_plan" not in source
+    assert "def _governance_checkpoints" not in source
+    assert "def _risk_summary" not in source
