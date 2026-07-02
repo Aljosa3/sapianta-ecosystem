@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import json
 
 from aigol.acli_next import (
@@ -15,6 +16,7 @@ from aigol.acli_next.conversational import (
     ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED,
     ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED,
 )
+from aigol.cli import aigol_cli
 from aigol.cli.aigol_cli import build_parser, render_command_result, run_command
 
 
@@ -208,3 +210,78 @@ def test_acli_next_message_composer_clear_and_cancel_create_no_turns(tmp_path) -
     assert not (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-NO-TURN" / "RUN-000001").exists()
     assert any("Message buffer cleared." in output for output in outputs)
     assert any("Message composition canceled." in output for output in outputs)
+
+
+def test_acli_next_message_composer_accepts_pasted_format_character_commands(tmp_path) -> None:
+    inputs = iter(
+        [
+            "Message pasted from a formatted source.",
+            "/preview\u200b",
+            "/send\u200b",
+            "exit",
+        ]
+    )
+    outputs: list[str] = []
+
+    result = run_acli_next_persistent_conversational_session(
+        session_id="ACLI-NEXT-COMPOSER-FORMAT-COMMANDS",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "runtime",
+        workspace=tmp_path,
+        input_reader=lambda _prompt: next(inputs),
+        output_writer=outputs.append,
+    )
+
+    assert result["turn_count"] == 1
+    assert result["submitted_message_count"] == 1
+    assert result["preview_count"] == 1
+    assert (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-FORMAT-COMMANDS" / "RUN-000001").exists()
+    assert any("Message buffer preview:" in output for output in outputs)
+    assert any("session_status: ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED" in output for output in outputs)
+
+
+def test_acli_next_message_composer_main_interactive_path_submits_one_turn(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    class TtyStdin:
+        def isatty(self) -> bool:
+            return True
+
+    inputs = iter(
+        [
+            "Interactive main path.",
+            "",
+            "G12_02B regression.",
+            "/preview",
+            "/send",
+            "exit",
+        ]
+    )
+
+    monkeypatch.setattr("sys.stdin", TtyStdin())
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(inputs))
+
+    result = aigol_cli.main(
+        [
+            "next",
+            "--session-id",
+            "ACLI-NEXT-COMPOSER-MAIN",
+            "--runtime-root",
+            str(tmp_path / "runtime"),
+            "--workspace",
+            str(tmp_path),
+            "--created-at",
+            CREATED_AT,
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert result == 0
+    assert "Message buffer preview:" in output
+    assert "session_status: ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED" in output
+    assert "message_composer_enabled: True" in output
+    assert "submitted_message_count: 1" in output
+    assert (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MAIN" / "RUN-000001").exists()
+    assert not (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MAIN" / "RUN-000002").exists()

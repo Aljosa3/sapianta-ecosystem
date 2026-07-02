@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -146,8 +147,10 @@ def run_acli_next_persistent_conversational_session(
             raise FailClosedRuntimeError("ACLI Next persistent session requires string input")
         line = prompt.rstrip("\r\n")
         normalized = line.strip()
-        command = normalized.lower()
+        command = _normalized_message_composer_command(line)
         if not normalized and not composer_buffer:
+            continue
+        if not command and not composer_buffer:
             continue
         if command in ACLI_NEXT_MESSAGE_COMPOSER_EXIT_COMMANDS:
             if composer_buffer:
@@ -403,6 +406,13 @@ def _persistent_completion_artifact(
 
 def _composed_message(buffer: list[str]) -> str:
     return "\n".join(buffer).strip()
+
+
+def _normalized_message_composer_command(line: str) -> str:
+    """Normalize only command detection; preserve buffered message content unchanged."""
+
+    candidate = line.strip()
+    return "".join(ch for ch in candidate if unicodedata.category(ch) != "Cf").lower()
 
 
 def _render_message_composer_preview(buffer: list[str]) -> str:
