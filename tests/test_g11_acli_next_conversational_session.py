@@ -4,9 +4,14 @@ from __future__ import annotations
 
 from aigol.acli_next import (
     ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION,
+    ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
     run_acli_next_conversational_session,
+    run_acli_next_persistent_conversational_session,
 )
-from aigol.acli_next.conversational import ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED
+from aigol.acli_next.conversational import (
+    ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED,
+    ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED,
+)
 from aigol.cli.aigol_cli import build_parser, render_command_result, run_command
 
 
@@ -90,3 +95,36 @@ def test_acli_next_conversational_cli_route_renders_summary(tmp_path) -> None:
     assert "AIGOL NEXT" in rendered
     assert "session_id: ACLI-NEXT-CONVERSATIONAL-CLI" in rendered
     assert "hybrid_status: FULLY_GOVERNED" in rendered
+
+
+def test_acli_next_persistent_conversational_session_loops_until_exit(tmp_path) -> None:
+    inputs = iter(
+        [
+            "Show governed development status.",
+            "Implement governed Git remote workflow.",
+            "exit",
+        ]
+    )
+    outputs: list[str] = []
+
+    result = run_acli_next_persistent_conversational_session(
+        session_id="ACLI-NEXT-PERSISTENT-TEST",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "runtime",
+        workspace=tmp_path,
+        input_reader=lambda _prompt: next(inputs),
+        output_writer=outputs.append,
+    )
+
+    assert result["command"] == "aigol next"
+    assert result["runtime_version"] == ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION
+    assert result["session_status"] == ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED
+    assert result["turn_count"] == 2
+    assert result["exit_reason"] == "EXIT_COMMAND"
+    assert result["show_guide_delegate_only"] is True
+    assert result["acli_next_authorizes"] is False
+    assert result["acli_next_executes"] is False
+    assert result["acli_next_records_replay_evidence"] is False
+    assert (tmp_path / "runtime" / "ACLI-NEXT-PERSISTENT-TEST" / "RUN-000001").exists()
+    assert (tmp_path / "runtime" / "ACLI-NEXT-PERSISTENT-TEST" / "RUN-000002").exists()
+    assert any("hybrid_status: HYBRID_REQUIRED" in output for output in outputs)

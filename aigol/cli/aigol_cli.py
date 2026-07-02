@@ -157,6 +157,7 @@ from aigol.acli_next import (
     render_acli_next_daily_dashboard,
     render_acli_next_execution_plan_summary,
     render_acli_next_interactive_summary,
+    render_acli_next_persistent_conversational_session,
     render_acli_next_readonly_worker_summary,
     render_acli_next_session_summary,
     run_acli_next_conversational_session,
@@ -164,6 +165,7 @@ from aigol.acli_next import (
     run_acli_next_interactive_with_execution_plan,
     run_acli_next_interactive_with_readonly_worker,
     run_acli_next_interactive_session,
+    run_acli_next_persistent_conversational_session,
     run_acli_next_session,
 )
 from aigol.moc.approval_gate import render_approval_gate_summary
@@ -9082,6 +9084,16 @@ def _acli_next_conversational_prompts(args: argparse.Namespace) -> list[str]:
     return ["show governed development status"]
 
 
+def _should_run_persistent_acli_next(args: argparse.Namespace) -> bool:
+    return (
+        args.command == "next"
+        and getattr(args, "next_command", None) is None
+        and not getattr(args, "prompt", None)
+        and not getattr(args, "json", False)
+        and sys.stdin.isatty()
+    )
+
+
 def _acli_next_dashboard_state(args: Any) -> dict[str, Any]:
     hybrid: dict[str, Any] = {
         "operation_type": args.operation_type or args.requested_operation,
@@ -10368,6 +10380,17 @@ def main(argv: list[str] | None = None) -> int:
             print(_json(result))
         else:
             print(render_command_result(result))
+        return 0
+    if _should_run_persistent_acli_next(args):
+        result = run_acli_next_persistent_conversational_session(
+            session_id=args.session_id,
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root),
+            workspace=args.workspace,
+            input_reader=input,
+            output_writer=print,
+        )
+        print(render_acli_next_persistent_conversational_session(result))
         return 0
     result = run_command(args)
     if getattr(args, "json", False):

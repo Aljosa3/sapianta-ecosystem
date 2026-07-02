@@ -15,8 +15,15 @@ from aigol.runtime.transport.serialization import replay_hash, write_json_immuta
 ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION = (
     "G11_02_ACLI_NEXT_CONVERSATIONAL_DEVELOPMENT_SESSION_IMPLEMENTATION_V1"
 )
+ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION = (
+    "G11_03_ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_IMPLEMENTATION_V1"
+)
 ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME = "aigol next"
 ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED = "ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED"
+ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED = (
+    "ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED"
+)
+ACLI_NEXT_PERSISTENT_EXIT_COMMANDS = {"exit", "quit", "close session"}
 
 
 def run_acli_next_conversational_session(
@@ -93,6 +100,65 @@ def run_acli_next_conversational_session(
     return result
 
 
+def run_acli_next_persistent_conversational_session(
+    *,
+    created_at: str,
+    replay_dir: str | Path,
+    session_id: str | None = None,
+    workspace: str | Path = ".",
+    input_reader: Any | None = None,
+    output_writer: Any | None = None,
+) -> dict[str, Any]:
+    """Run a persistent ACLI Next conversational REPL over the single-turn adapter."""
+
+    reader = input if input_reader is None else input_reader
+    writer = print if output_writer is None else output_writer
+    conversation_id = session_id or _derived_persistent_session_id(created_at, workspace)
+    session_root = Path(replay_dir) / conversation_id
+    turn_results: list[dict[str, Any]] = []
+    exit_reason = "EXIT_COMMAND"
+    writer("AiGOL conversational session started. Type 'exit' to close the session.")
+    while True:
+        try:
+            prompt = reader("AiGOL> ")
+        except EOFError:
+            exit_reason = "EOF"
+            break
+        if not isinstance(prompt, str):
+            raise FailClosedRuntimeError("ACLI Next persistent session requires string input")
+        normalized = prompt.strip()
+        if not normalized:
+            continue
+        if normalized.lower() in ACLI_NEXT_PERSISTENT_EXIT_COMMANDS:
+            break
+        turn_result = run_acli_next_conversational_session(
+            session_id=conversation_id,
+            prompts=[normalized],
+            created_at=created_at,
+            replay_dir=replay_dir,
+            workspace=workspace,
+        )
+        turn_results.append(turn_result)
+        writer(render_acli_next_conversational_session(turn_result))
+
+    completion = _persistent_completion_artifact(
+        conversation_id=conversation_id,
+        turn_results=turn_results,
+        session_root=session_root,
+        exit_reason=exit_reason,
+        created_at=created_at,
+        workspace=workspace,
+    )
+    write_json_immutable(
+        session_root / f"{len(turn_results) + 1:03d}_acli_next_persistent_session_completed.json",
+        completion,
+    )
+    writer("AiGOL conversational session closed.")
+    result = deepcopy(completion)
+    result["replay_hash"] = completion["artifact_hash"]
+    return result
+
+
 def render_acli_next_conversational_session(result: dict[str, Any]) -> str:
     """Render the conversational ACLI Next session summary."""
 
@@ -125,6 +191,25 @@ def render_acli_next_conversational_session(result: dict[str, Any]) -> str:
             f"hybrid_reason: {hybrid.get('reason')}",
             f"execution_plan_replay_reference: {result.get('execution_plan_replay_reference')}",
             f"dashboard_replay_reference: {result.get('dashboard_replay_reference')}",
+            f"replay_reference: {result.get('replay_reference')}",
+            f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
+            f"acli_next_executes: {result.get('acli_next_executes')}",
+            f"acli_next_records_replay_evidence: {result.get('acli_next_records_replay_evidence')}",
+        ]
+    )
+
+
+def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -> str:
+    """Render the persistent conversational ACLI Next session summary."""
+
+    return "\n".join(
+        [
+            f"command: {result.get('command')}",
+            f"runtime_version: {result.get('runtime_version')}",
+            f"session_id: {result.get('session_id')}",
+            f"session_status: {result.get('session_status')}",
+            f"turn_count: {result.get('turn_count')}",
+            f"exit_reason: {result.get('exit_reason')}",
             f"replay_reference: {result.get('replay_reference')}",
             f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
             f"acli_next_executes: {result.get('acli_next_executes')}",
@@ -168,6 +253,53 @@ def _conversational_artifact(
         "dashboard_summary": deepcopy(dashboard_snapshot),
         "replay_reference": str(run_root),
         "session_root": str(session_root),
+        "show_guide_delegate_only": True,
+        "minimal_ux_extension_only": True,
+        "platform_core_coordinates": True,
+        "governance_authority_preserved": True,
+        "replay_authority_preserved": True,
+        "worker_execution_authority_preserved": True,
+        "architectural_health_advisory_only": True,
+        "platform_digital_twin_evidence_source_preserved": True,
+        "acli_next_authorizes": False,
+        "acli_next_executes": False,
+        "acli_next_records_replay_evidence": False,
+        "acli_next_repairs_architecture": False,
+        "acli_next_certifies": False,
+        "external_operation_performed": False,
+        "repository_mutated": False,
+        "deployment_performed": False,
+        "dependency_operation_performed": False,
+        "git_remote_operation_performed": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _persistent_completion_artifact(
+    *,
+    conversation_id: str,
+    turn_results: list[dict[str, Any]],
+    session_root: Path,
+    exit_reason: str,
+    created_at: str,
+    workspace: str | Path,
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": "ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETION_ARTIFACT_V1",
+        "runtime_version": ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
+        "command": ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME,
+        "session_id": conversation_id,
+        "session_status": ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED,
+        "turn_count": len(turn_results),
+        "turn_hashes": [turn["artifact_hash"] for turn in turn_results],
+        "turn_replay_references": [turn["replay_reference"] for turn in turn_results],
+        "exit_reason": _require_string(exit_reason, "exit_reason"),
+        "workspace": str(Path(workspace)),
+        "created_at": _require_string(created_at, "created_at"),
+        "replay_reference": str(session_root),
+        "persistent_repl": True,
         "show_guide_delegate_only": True,
         "minimal_ux_extension_only": True,
         "platform_core_coordinates": True,
@@ -304,6 +436,13 @@ def _next_run_index(session_root: Path) -> int:
 def _derived_session_id(prompts: list[str], created_at: str) -> str:
     digest = replay_hash({"prompts": prompts, "created_at": created_at})[7:23].upper()
     return f"ACLI-NEXT-CONVERSATIONAL-{digest}"
+
+
+def _derived_persistent_session_id(created_at: str, workspace: str | Path) -> str:
+    digest = replay_hash({"created_at": created_at, "workspace": str(Path(workspace)), "mode": "persistent"})[
+        7:23
+    ].upper()
+    return f"ACLI-NEXT-PERSISTENT-{digest}"
 
 
 def _require_prompts(prompts: list[str]) -> list[str]:
