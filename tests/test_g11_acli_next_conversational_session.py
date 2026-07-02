@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
+
 from aigol.acli_next import (
     ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION,
+    ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
     ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
     run_acli_next_conversational_session,
     run_acli_next_persistent_conversational_session,
@@ -101,7 +104,9 @@ def test_acli_next_persistent_conversational_session_loops_until_exit(tmp_path) 
     inputs = iter(
         [
             "Show governed development status.",
+            "/send",
             "Implement governed Git remote workflow.",
+            "/send",
             "exit",
         ]
     )
@@ -117,9 +122,15 @@ def test_acli_next_persistent_conversational_session_loops_until_exit(tmp_path) 
     )
 
     assert result["command"] == "aigol next"
-    assert result["runtime_version"] == ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION
+    assert result["runtime_version"] == ACLI_NEXT_MESSAGE_COMPOSER_VERSION
+    assert result["persistent_session_runtime_version"] == ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION
     assert result["session_status"] == ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED
     assert result["turn_count"] == 2
+    assert result["message_composer_enabled"] is True
+    assert result["submitted_message_count"] == 2
+    assert result["composer_creates_turn_before_send"] is False
+    assert result["composer_creates_replay_before_send"] is False
+    assert result["one_submitted_message_per_turn"] is True
     assert result["exit_reason"] == "EXIT_COMMAND"
     assert result["show_guide_delegate_only"] is True
     assert result["acli_next_authorizes"] is False
@@ -128,3 +139,72 @@ def test_acli_next_persistent_conversational_session_loops_until_exit(tmp_path) 
     assert (tmp_path / "runtime" / "ACLI-NEXT-PERSISTENT-TEST" / "RUN-000001").exists()
     assert (tmp_path / "runtime" / "ACLI-NEXT-PERSISTENT-TEST" / "RUN-000002").exists()
     assert any("hybrid_status: HYBRID_REQUIRED" in output for output in outputs)
+
+
+def test_acli_next_message_composer_submits_multiline_message_as_one_turn(tmp_path) -> None:
+    inputs = iter(
+        [
+            "We are beginning Generation 12.",
+            "",
+            "Objective:",
+            "",
+            "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1",
+            "/preview",
+            "/send",
+            "exit",
+        ]
+    )
+    outputs: list[str] = []
+
+    result = run_acli_next_persistent_conversational_session(
+        session_id="ACLI-NEXT-COMPOSER-MULTILINE",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "runtime",
+        workspace=tmp_path,
+        input_reader=lambda _prompt: next(inputs),
+        output_writer=outputs.append,
+    )
+
+    run_root = tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MULTILINE" / "RUN-000001"
+    assert result["turn_count"] == 1
+    assert result["submitted_message_count"] == 1
+    assert result["preview_count"] == 1
+    assert run_root.exists()
+    assert not (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MULTILINE" / "RUN-000002").exists()
+    turn_artifact = json.loads((run_root / "000_acli_next_conversational_session_presented.json").read_text())
+    assert turn_artifact["turn_count"] == 1
+    assert "We are beginning Generation 12." in turn_artifact["latest_prompt"]
+    assert "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1" in turn_artifact["latest_prompt"]
+    assert any("Message buffer preview:" in output for output in outputs)
+    assert any("G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1" in output for output in outputs)
+
+
+def test_acli_next_message_composer_clear_and_cancel_create_no_turns(tmp_path) -> None:
+    inputs = iter(
+        [
+            "This should be cleared.",
+            "/clear",
+            "This should be canceled.",
+            "/cancel",
+            "exit",
+        ]
+    )
+    outputs: list[str] = []
+
+    result = run_acli_next_persistent_conversational_session(
+        session_id="ACLI-NEXT-COMPOSER-NO-TURN",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "runtime",
+        workspace=tmp_path,
+        input_reader=lambda _prompt: next(inputs),
+        output_writer=outputs.append,
+    )
+
+    assert result["turn_count"] == 0
+    assert result["submitted_message_count"] == 0
+    assert result["clear_count"] == 1
+    assert result["cancel_count"] == 1
+    assert result["composer_creates_turn_before_send"] is False
+    assert not (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-NO-TURN" / "RUN-000001").exists()
+    assert any("Message buffer cleared." in output for output in outputs)
+    assert any("Message composition canceled." in output for output in outputs)

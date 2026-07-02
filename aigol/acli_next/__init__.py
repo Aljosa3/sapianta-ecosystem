@@ -9,6 +9,7 @@ from aigol.acli_next.entrypoint import (
 )
 from aigol.acli_next.conversational import (
     ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION,
+    ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
     ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
     render_acli_next_conversational_session,
     render_acli_next_persistent_conversational_session,
@@ -44,6 +45,7 @@ __all__ = [
     "ACLI_NEXT_DAILY_OPERATIONAL_EXPOSURE_VERSION",
     "ACLI_NEXT_EXECUTION_PLAN_VERSION",
     "ACLI_NEXT_INTERACTIVE_VERSION",
+    "ACLI_NEXT_MESSAGE_COMPOSER_VERSION",
     "ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION",
     "ACLI_NEXT_READONLY_WORKER_VERSION",
     "render_acli_next_conversational_session",

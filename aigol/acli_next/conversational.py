@@ -18,12 +18,19 @@ ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION = (
 ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION = (
     "G11_03_ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_IMPLEMENTATION_V1"
 )
+ACLI_NEXT_MESSAGE_COMPOSER_VERSION = "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1"
 ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME = "aigol next"
 ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED = "ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED"
 ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED = (
     "ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED"
 )
 ACLI_NEXT_PERSISTENT_EXIT_COMMANDS = {"exit", "quit", "close session"}
+ACLI_NEXT_MESSAGE_COMPOSER_SEND_COMMAND = "/send"
+ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND = "/preview"
+ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND = "/clear"
+ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND = "/cancel"
+ACLI_NEXT_MESSAGE_COMPOSER_HELP_COMMAND = "/help"
+ACLI_NEXT_MESSAGE_COMPOSER_EXIT_COMMANDS = {"/exit", "/quit", "exit", "quit", "close session"}
 
 
 def run_acli_next_conversational_session(
@@ -116,34 +123,82 @@ def run_acli_next_persistent_conversational_session(
     conversation_id = session_id or _derived_persistent_session_id(created_at, workspace)
     session_root = Path(replay_dir) / conversation_id
     turn_results: list[dict[str, Any]] = []
+    composer_buffer: list[str] = []
+    composer_events = {
+        "preview_count": 0,
+        "clear_count": 0,
+        "cancel_count": 0,
+        "empty_send_count": 0,
+        "submitted_message_count": 0,
+    }
     exit_reason = "EXIT_COMMAND"
-    writer("AiGOL conversational session started. Type 'exit' to close the session.")
+    writer(
+        "AiGOL conversational session started. Compose a message, then type /send. "
+        "Use /preview, /clear, /cancel, or /help."
+    )
     while True:
         try:
-            prompt = reader("AiGOL> ")
+            prompt = reader("AiGOL compose> " if composer_buffer else "AiGOL> ")
         except EOFError:
             exit_reason = "EOF"
             break
         if not isinstance(prompt, str):
             raise FailClosedRuntimeError("ACLI Next persistent session requires string input")
-        normalized = prompt.strip()
-        if not normalized:
+        line = prompt.rstrip("\r\n")
+        normalized = line.strip()
+        command = normalized.lower()
+        if not normalized and not composer_buffer:
             continue
-        if normalized.lower() in ACLI_NEXT_PERSISTENT_EXIT_COMMANDS:
+        if command in ACLI_NEXT_MESSAGE_COMPOSER_EXIT_COMMANDS:
+            if composer_buffer:
+                writer("Composed message is not empty. Use /send, /clear, or /cancel before exiting.")
+                continue
             break
-        turn_result = run_acli_next_conversational_session(
-            session_id=conversation_id,
-            prompts=[normalized],
-            created_at=created_at,
-            replay_dir=replay_dir,
-            workspace=workspace,
-        )
-        turn_results.append(turn_result)
-        writer(render_acli_next_conversational_session(turn_result))
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_HELP_COMMAND:
+            writer(_render_message_composer_help())
+            continue
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND:
+            composer_events["preview_count"] += 1
+            writer(_render_message_composer_preview(composer_buffer))
+            continue
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND:
+            composer_events["clear_count"] += 1
+            composer_buffer.clear()
+            writer("Message buffer cleared.")
+            continue
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND:
+            composer_events["cancel_count"] += 1
+            composer_buffer.clear()
+            writer("Message composition canceled.")
+            continue
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_SEND_COMMAND:
+            message = _composed_message(composer_buffer)
+            if not message:
+                composer_events["empty_send_count"] += 1
+                writer("Message buffer is empty. Add content before /send.")
+                continue
+            composer_events["submitted_message_count"] += 1
+            turn_result = run_acli_next_conversational_session(
+                session_id=conversation_id,
+                prompts=[message],
+                created_at=created_at,
+                replay_dir=replay_dir,
+                workspace=workspace,
+            )
+            turn_results.append(turn_result)
+            composer_buffer.clear()
+            writer(render_acli_next_conversational_session(turn_result))
+            continue
+        composer_buffer.append(line)
+
+    if composer_buffer:
+        exit_reason = "EOF_WITH_UNSUBMITTED_MESSAGE" if exit_reason == "EOF" else "EXIT_WITH_UNSUBMITTED_MESSAGE"
 
     completion = _persistent_completion_artifact(
         conversation_id=conversation_id,
         turn_results=turn_results,
+        composer_events=composer_events,
+        unsubmitted_buffer_line_count=len(composer_buffer),
         session_root=session_root,
         exit_reason=exit_reason,
         created_at=created_at,
@@ -209,6 +264,8 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"session_id: {result.get('session_id')}",
             f"session_status: {result.get('session_status')}",
             f"turn_count: {result.get('turn_count')}",
+            f"message_composer_enabled: {result.get('message_composer_enabled')}",
+            f"submitted_message_count: {result.get('submitted_message_count')}",
             f"exit_reason: {result.get('exit_reason')}",
             f"replay_reference: {result.get('replay_reference')}",
             f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
@@ -281,6 +338,8 @@ def _persistent_completion_artifact(
     *,
     conversation_id: str,
     turn_results: list[dict[str, Any]],
+    composer_events: dict[str, int],
+    unsubmitted_buffer_line_count: int,
     session_root: Path,
     exit_reason: str,
     created_at: str,
@@ -288,13 +347,31 @@ def _persistent_completion_artifact(
 ) -> dict[str, Any]:
     artifact = {
         "artifact_type": "ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETION_ARTIFACT_V1",
-        "runtime_version": ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
+        "runtime_version": ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
+        "persistent_session_runtime_version": ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION,
         "command": ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME,
         "session_id": conversation_id,
         "session_status": ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED,
         "turn_count": len(turn_results),
         "turn_hashes": [turn["artifact_hash"] for turn in turn_results],
         "turn_replay_references": [turn["replay_reference"] for turn in turn_results],
+        "message_composer_enabled": True,
+        "message_composer_version": ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
+        "message_composer_commands": [
+            ACLI_NEXT_MESSAGE_COMPOSER_SEND_COMMAND,
+            ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND,
+            ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND,
+            ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND,
+        ],
+        "submitted_message_count": int(composer_events.get("submitted_message_count", 0)),
+        "preview_count": int(composer_events.get("preview_count", 0)),
+        "clear_count": int(composer_events.get("clear_count", 0)),
+        "cancel_count": int(composer_events.get("cancel_count", 0)),
+        "empty_send_count": int(composer_events.get("empty_send_count", 0)),
+        "unsubmitted_buffer_line_count": int(unsubmitted_buffer_line_count),
+        "composer_creates_turn_before_send": False,
+        "composer_creates_replay_before_send": False,
+        "one_submitted_message_per_turn": True,
         "exit_reason": _require_string(exit_reason, "exit_reason"),
         "workspace": str(Path(workspace)),
         "created_at": _require_string(created_at, "created_at"),
@@ -322,6 +399,30 @@ def _persistent_completion_artifact(
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
+
+
+def _composed_message(buffer: list[str]) -> str:
+    return "\n".join(buffer).strip()
+
+
+def _render_message_composer_preview(buffer: list[str]) -> str:
+    message = _composed_message(buffer)
+    if not message:
+        return "Message buffer is empty."
+    return "\n".join(["Message buffer preview:", message])
+
+
+def _render_message_composer_help() -> str:
+    return "\n".join(
+        [
+            "Message composer commands:",
+            "/send - submit the composed message as one governed conversational turn",
+            "/preview - show the current buffer without execution",
+            "/clear - empty the current buffer",
+            "/cancel - discard the current message",
+            "/exit or /quit - close the session when the buffer is empty",
+        ]
+    )
 
 
 def _platform_core_state(
