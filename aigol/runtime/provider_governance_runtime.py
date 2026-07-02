@@ -78,6 +78,15 @@ PROVIDER_REGISTRY: dict[str, dict[str, Any]] = {
         "credential_source_type": "ENVIRONMENT_VARIABLE",
         "status": "REFERENCE_DEFINED_NOT_LIVE_CERTIFIED",
     },
+    "codex-cognition": {
+        "provider_id": "codex-cognition",
+        "provider_aliases": ["codex-cognition", "codex"],
+        "provider_resource_type": "COGNITION_PROVIDER",
+        "credential_class": "GOVERNED_CODEX_PROVIDER_CREDENTIAL",
+        "credential_reference": "env:AIGOL_CODEX_COGNITION_CREDENTIAL",
+        "credential_source_type": "ENVIRONMENT_VARIABLE",
+        "status": "REFERENCE_DEFINED_NOT_LIVE_CERTIFIED",
+    },
 }
 
 SECRET_MARKERS = ("sk-", "Bearer ", "AIGOL_OPENAI_API_KEY=", "OPENAI_API_KEY=", "ANTHROPIC_API_KEY=")
