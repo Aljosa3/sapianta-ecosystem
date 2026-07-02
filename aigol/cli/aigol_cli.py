@@ -153,11 +153,13 @@ from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
 from aigol.acli_next import (
+    render_acli_next_conversational_session,
     render_acli_next_daily_dashboard,
     render_acli_next_execution_plan_summary,
     render_acli_next_interactive_summary,
     render_acli_next_readonly_worker_summary,
     render_acli_next_session_summary,
+    run_acli_next_conversational_session,
     run_acli_next_daily_dashboard,
     run_acli_next_interactive_with_execution_plan,
     run_acli_next_interactive_with_readonly_worker,
@@ -2995,7 +2997,13 @@ def build_parser() -> argparse.ArgumentParser:
     g4_live_session.add_argument("--json", action="store_true")
 
     next_cmd = subcommands.add_parser("next")
-    next_sub = next_cmd.add_subparsers(dest="next_command", required=True)
+    next_cmd.add_argument("--session-id", default=None)
+    next_cmd.add_argument("--prompt", action="append", default=None)
+    next_cmd.add_argument("--created-at", default="2026-07-02T00:00:00Z")
+    next_cmd.add_argument("--runtime-root", default=".runtime/acli_next_conversational")
+    next_cmd.add_argument("--workspace", default=".")
+    next_cmd.add_argument("--json", action="store_true")
+    next_sub = next_cmd.add_subparsers(dest="next_command", required=False)
     next_session = next_sub.add_parser("session")
     next_session.add_argument("--session-id", default="ACLI-NEXT-SESSION-000001")
     next_session.add_argument("--request", required=True)
@@ -9056,6 +9064,24 @@ def _parse_acli_next_turns(values: list[str]) -> list[dict[str, str]]:
     return turns
 
 
+def _acli_next_conversational_prompts(args: argparse.Namespace) -> list[str]:
+    prompts = [value.strip() for value in (args.prompt or []) if isinstance(value, str) and value.strip()]
+    if prompts:
+        return prompts
+    if not sys.stdin.isatty():
+        ready, _, _ = select.select([sys.stdin], [], [], 0)
+        if ready:
+            stdin_text = sys.stdin.read()
+            prompts = [line.strip() for line in stdin_text.splitlines() if line.strip()]
+            if prompts:
+                return prompts
+    if sys.stdin.isatty():
+        prompt = input("AiGOL> ").strip()
+        if prompt:
+            return [prompt]
+    return ["show governed development status"]
+
+
 def _acli_next_dashboard_state(args: Any) -> dict[str, Any]:
     hybrid: dict[str, Any] = {
         "operation_type": args.operation_type or args.requested_operation,
@@ -9495,6 +9521,14 @@ def run_command(args: argparse.Namespace) -> dict:
             operator_response=args.response,
             created_at=args.created_at,
             replay_dir=Path(args.runtime_root) / args.session_id,
+        )
+    if args.command == "next" and args.next_command is None:
+        return run_acli_next_conversational_session(
+            session_id=args.session_id,
+            prompts=_acli_next_conversational_prompts(args),
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root),
+            workspace=args.workspace,
         )
     if args.command == "next" and args.next_command == "session":
         return run_acli_next_session(
@@ -10087,6 +10121,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL G4 LIVE SESSION",
             render_g4_live_acli_session_summary(result).splitlines(),
+        )
+    if command == "aigol next":
+        return render_card(
+            "AIGOL NEXT",
+            render_acli_next_conversational_session(result).splitlines(),
         )
     if command == "aigol next session":
         return render_card(
