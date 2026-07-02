@@ -37,3 +37,6 @@ manual_test.txt
 
 # Provider credential vault
 .aigol_provider_credential_vault/
+
+# All runtime artifacts
+.runtime/
