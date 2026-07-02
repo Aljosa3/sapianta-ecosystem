@@ -153,10 +153,12 @@ from aigol.cognition.topology_report import render_cognition_topology_summary
 from aigol.cli.render.status_renderer import render_status
 from aigol.cli.render.terminal_cards import render_card
 from aigol.acli_next import (
+    render_acli_next_daily_dashboard,
     render_acli_next_execution_plan_summary,
     render_acli_next_interactive_summary,
     render_acli_next_readonly_worker_summary,
     render_acli_next_session_summary,
+    run_acli_next_daily_dashboard,
     run_acli_next_interactive_with_execution_plan,
     run_acli_next_interactive_with_readonly_worker,
     run_acli_next_interactive_session,
@@ -3028,6 +3030,41 @@ def build_parser() -> argparse.ArgumentParser:
     next_execution_plan.add_argument("--runtime-root", default=".runtime/acli_next_execution_plan")
     next_execution_plan.add_argument("--workspace", default=".")
     next_execution_plan.add_argument("--json", action="store_true")
+    next_dashboard = next_sub.add_parser("dashboard")
+    next_dashboard.add_argument("--dashboard-id", default="ACLI-NEXT-DAILY-DASHBOARD-000001")
+    next_dashboard.add_argument("--task-id", default="G10-04-TASK")
+    next_dashboard.add_argument("--task-objective", default="show governed development status")
+    next_dashboard.add_argument("--current-milestone", default="G10_04")
+    next_dashboard.add_argument("--current-generation", default="Generation 10")
+    next_dashboard.add_argument("--governance-state", default="governed")
+    next_dashboard.add_argument("--requested-operation", default="governed_development")
+    next_dashboard.add_argument("--current-stage", default="Capture Intent")
+    next_dashboard.add_argument("--completed-stage", action="append", default=None)
+    next_dashboard.add_argument("--current-operation", default="present daily operational status")
+    next_dashboard.add_argument("--next-expected-operation", default=None)
+    next_dashboard.add_argument("--approval-state", default="not_required_for_display")
+    next_dashboard.add_argument("--authorization-state", default="not_required_for_display")
+    next_dashboard.add_argument("--pending-approval", action="append", default=None)
+    next_dashboard.add_argument("--completed-authorization", action="append", default=None)
+    next_dashboard.add_argument("--latest-validation", default="none")
+    next_dashboard.add_argument("--validation-suite-status", default="not_run")
+    next_dashboard.add_argument("--validation-summary", default="validation not yet available")
+    next_dashboard.add_argument("--validation-outcome", default="unknown")
+    next_dashboard.add_argument("--latest-replay-record", default="none")
+    next_dashboard.add_argument("--replay-summary", default="replay evidence not yet available")
+    next_dashboard.add_argument("--reconstruction-available", action="store_true")
+    next_dashboard.add_argument("--evidence-available", action="store_true")
+    next_dashboard.add_argument("--health-status", default="not_run")
+    next_dashboard.add_argument("--health-severity", default="none")
+    next_dashboard.add_argument("--health-recommendation", action="append", default=None)
+    next_dashboard.add_argument("--health-finding", action="append", default=None)
+    next_dashboard.add_argument("--operation-type", default=None)
+    next_dashboard.add_argument("--hybrid-required", action="store_true")
+    next_dashboard.add_argument("--hybrid-reason", default=None)
+    next_dashboard.add_argument("--external-tool", default=None)
+    next_dashboard.add_argument("--created-at", default="2026-07-02T00:00:00Z")
+    next_dashboard.add_argument("--runtime-root", default=".runtime/acli_next_daily_dashboard")
+    next_dashboard.add_argument("--json", action="store_true")
 
     moc = subcommands.add_parser("moc")
     moc_sub = moc.add_subparsers(dest="moc_command", required=True)
@@ -9019,6 +9056,80 @@ def _parse_acli_next_turns(values: list[str]) -> list[dict[str, str]]:
     return turns
 
 
+def _acli_next_dashboard_state(args: Any) -> dict[str, Any]:
+    hybrid: dict[str, Any] = {
+        "operation_type": args.operation_type or args.requested_operation,
+    }
+    if args.hybrid_required:
+        hybrid["hybrid_required"] = True
+    if args.hybrid_reason is not None:
+        hybrid["reason"] = args.hybrid_reason
+    if args.external_tool is not None:
+        hybrid["external_tool"] = args.external_tool
+    workflow = {
+        "current_stage": args.current_stage,
+        "completed_stages": args.completed_stage or [],
+        "current_operation": args.current_operation,
+    }
+    if args.next_expected_operation is not None:
+        workflow["next_expected_operation"] = args.next_expected_operation
+    return {
+        "workflow": workflow,
+        "active_task": {
+            "task_id": args.task_id,
+            "task_objective": args.task_objective,
+            "current_milestone": args.current_milestone,
+            "current_generation": args.current_generation,
+            "governance_state": args.governance_state,
+            "requested_operation": args.requested_operation,
+        },
+        "governance": {
+            "approval_state": args.approval_state,
+            "authorization_state": args.authorization_state,
+            "pending_approvals": args.pending_approval or [],
+            "completed_authorizations": args.completed_authorization or [],
+        },
+        "validation": {
+            "latest_validation": args.latest_validation,
+            "validation_suite_status": args.validation_suite_status,
+            "validation_summary": args.validation_summary,
+            "validation_outcome": args.validation_outcome,
+        },
+        "replay": {
+            "latest_replay_record": args.latest_replay_record,
+            "replay_summary": args.replay_summary,
+            "reconstruction_available": args.reconstruction_available,
+            "evidence_available": args.evidence_available,
+        },
+        "architectural_health": {
+            "health_status": args.health_status,
+            "highest_severity": args.health_severity,
+            "recommendations": args.health_recommendation or [],
+            "findings": _parse_acli_next_health_findings(args.health_finding or []),
+        },
+        "hybrid": hybrid,
+    }
+
+
+def _parse_acli_next_health_findings(values: list[str]) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    for index, value in enumerate(values, start=1):
+        parts = [part.strip() for part in value.split("|")]
+        if len(parts) != 4 or any(not part for part in parts):
+            raise FailClosedRuntimeError(
+                f"ACLI Next dashboard health finding {index} must use 'id|severity|summary|recommendation'"
+            )
+        findings.append(
+            {
+                "finding_id": parts[0],
+                "severity": parts[1],
+                "summary": parts[2],
+                "recommendation": parts[3],
+            }
+        )
+    return findings
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -9422,6 +9533,13 @@ def run_command(args: argparse.Namespace) -> dict:
             created_at=args.created_at,
             replay_dir=Path(args.runtime_root) / args.session_id,
             workspace=args.workspace,
+        )
+    if args.command == "next" and args.next_command == "dashboard":
+        return run_acli_next_daily_dashboard(
+            dashboard_id=args.dashboard_id,
+            platform_core_state=_acli_next_dashboard_state(args),
+            created_at=args.created_at,
+            replay_dir=Path(args.runtime_root) / args.dashboard_id,
         )
     if args.command == "moc" and args.moc_command == "validate-contract":
         return validate_contract_command(
@@ -9989,6 +10107,11 @@ def render_command_result(result: dict) -> str:
         return render_card(
             "AIGOL NEXT EXECUTION PLAN",
             render_acli_next_execution_plan_summary(result).splitlines(),
+        )
+    if command == "aigol next dashboard":
+        return render_card(
+            "AIGOL NEXT DAILY DASHBOARD",
+            render_acli_next_daily_dashboard(result).splitlines(),
         )
     if command == "aigol moc validate-contract":
         validation = result.get("contract_validation_result", {})
