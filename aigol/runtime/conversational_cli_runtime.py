@@ -3124,7 +3124,18 @@ def _is_task_completion_domain_prompt(normalized: str) -> bool:
 def _is_task_completion_provider_prompt(normalized: str) -> bool:
     return (
         "provider" in normalized
-        and any(term in normalized for term in ("improve", "boundary", "abstraction", "identity", "authority"))
+        and (
+            "provider layer" in normalized
+            or any(
+                term in normalized
+                for term in (
+                    "provider boundary",
+                    "provider abstraction",
+                    "provider identity",
+                    "provider authority",
+                )
+            )
+        )
     )
 
 
@@ -3168,6 +3179,9 @@ def _is_task_completion_native_development_prompt(normalized: str) -> bool:
         "external worker",
         "worker lifecycle",
         "provider adapter",
+        "provider availability",
+        "provider resilience",
+        "availability handling",
     )
     return any(subject in normalized for subject in development_subjects)
 

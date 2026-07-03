@@ -238,6 +238,8 @@ def test_native_development_prompt_detection_is_conservative() -> None:
         )
         is True
     )
+    assert is_native_development_prompt("Improve provider availability handling.") is True
+    assert is_native_development_prompt("Fix provider resilience for native development routing.") is True
     assert is_native_development_prompt("What is AiGOL?") is False
     assert is_native_development_prompt("Deploy this validation script to production external users.") is False
 

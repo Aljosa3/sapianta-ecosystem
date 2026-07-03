@@ -474,6 +474,9 @@ def guided_development_clarification_required(message: str) -> bool:
         "github actions",
         "governed",
         "replay",
+        "provider availability",
+        "provider resilience",
+        "availability handling",
     )
     return not any(term in lowered for term in specificity_terms)
 

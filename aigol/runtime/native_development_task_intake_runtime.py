@@ -82,13 +82,18 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
             "calculator utility",
             "python tool",
             "validation script",
+            "provider availability",
+            "availability handling",
+            "provider resilience",
             "csv",
         )
     )
-    if freeform_development_subject and any(term in lowered for term in ("need", "create", "build", "implement", "add")):
+    if freeform_development_subject and any(
+        term in lowered for term in ("need", "create", "build", "implement", "add", "improve", "fix")
+    ):
         return True
     return (
-        lowered.startswith(("implement ", "build ", "add ", "create "))
+        lowered.startswith(("implement ", "build ", "add ", "create ", "improve ", "fix "))
         and any(
             term in lowered
             for term in (
@@ -102,6 +107,9 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
                 "workflow",
                 "ci",
                 "github actions",
+                "provider availability",
+                "provider resilience",
+                "availability handling",
             )
         )
     )
