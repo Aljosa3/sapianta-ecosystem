@@ -443,11 +443,13 @@ def _provider_request_prompt_projection(
         *["- " + item for item in _require_string_list(request_packet.get("known_gaps", []), "known_gaps")],
         "",
         "Return JSON with exactly these proposal fields:",
-        "- proposal_summary",
-        "- proposed_outputs",
-        "- constraints_acknowledged",
-        "- assumptions",
-        "- known_gaps",
+        "- proposal_summary: string, maximum 240 characters",
+        "- proposed_outputs: array of strings only; use the output targets exactly as plain strings",
+        "- constraints_acknowledged: array of strings",
+        "- assumptions: array of strings",
+        "- known_gaps: array of strings",
+        "",
+        "Return only the JSON object. Do not wrap it in Markdown. Do not include nested objects.",
         "",
         "Do not include authorization, execution, dispatch, worker creation, domain creation, governance mutation, or replay mutation fields.",
     ]
@@ -549,15 +551,58 @@ def _normalize_provider_response_payload(response: Any) -> dict[str, Any]:
         return deepcopy(response)
     response_text = response.get("response_text")
     if isinstance(response_text, str) and response_text.strip():
-        try:
-            parsed = json.loads(response_text)
-        except json.JSONDecodeError as exc:
-            raise FailClosedRuntimeError(
-                "provider proposal production failed closed: provider response invalid"
-            ) from exc
+        parsed = _parse_provider_response_text(response_text)
         if isinstance(parsed, dict):
             return parsed
     raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
+
+
+def _parse_provider_response_text(response_text: str) -> dict[str, Any]:
+    stripped = response_text.strip()
+    candidates = [stripped]
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if len(lines) >= 3 and lines[-1].strip() == "```":
+            candidates.append("\n".join(lines[1:-1]).strip())
+    first_object = _extract_first_json_object(stripped)
+    if first_object is not None:
+        candidates.append(first_object)
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    raise FailClosedRuntimeError("provider proposal production failed closed: provider response invalid")
+
+
+def _extract_first_json_object(value: str) -> str | None:
+    start = value.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(value)):
+        char = value[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return value[start : index + 1]
+    return None
 
 
 def _development_proposal_from_response(

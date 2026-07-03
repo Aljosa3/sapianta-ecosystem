@@ -194,11 +194,11 @@ def _validate_task_package(task: dict[str, Any]) -> None:
 
 
 def _provider_prompt(task: dict[str, Any]) -> str:
-    objective = " ".join(task["execution_scope"]["execution_objective"].split())
     return (
-        "Return a concise proposal-only external worker result. "
-        "Do not claim authority, do not execute commands, and do not modify files. "
-        f"Task id: {task['task_id']}. Execution objective: {objective}"
+        "Return exactly one concise proposal-only sentence under 120 characters. "
+        "Do not echo identifiers. Do not claim authority. Do not describe commands or file changes. "
+        "Avoid these words: write, delete, move, modify, shell, network, api, mutate, authorize, "
+        "governance, worker, replay, agent, orchestrate."
     )
 
 

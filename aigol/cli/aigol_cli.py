@@ -476,7 +476,10 @@ from aigol.provider.provider_runtime import run_provider_attachment
 from aigol.provider.providers.openai_provider import (
     DEFAULT_OPENAI_MODEL as OPENAI_PROVIDER_DEFAULT_MODEL,
     MAX_OPENAI_RESPONSE_CHARS,
+    OPENAI_API_KEY_ENV,
+    OPENAI_RESPONSES_ENDPOINT,
     OPENAI_PROVIDER_ID,
+    OpenAIHTTPClient,
     OpenAIProviderAdapter,
     openai_provider_metadata,
 )
@@ -520,6 +523,10 @@ CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_VERSION = "AIGOL_CONVERSATIONAL_OPEN
 OPENAI_OUTPUT_BUDGET_ARTIFACT_V1 = "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1"
 DEFAULT_PROVIDER = "OPENAI"
 CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS = 1200
+POST_CONTEXT_OPENAI_MAX_OUTPUT_TOKENS = 2048
+POST_CONTEXT_OPENAI_TIMEOUT_SECONDS = 90
+EXTERNAL_WORKER_OPENAI_MAX_OUTPUT_TOKENS = 1024
+EXTERNAL_WORKER_OPENAI_TIMEOUT_SECONDS = 30
 CONVERSATIONAL_OCS_OPENAI_CHARS_PER_TOKEN_ESTIMATE = 5
 CONVERSATIONAL_OCS_OPENAI_ESTIMATED_CHAR_BUDGET = (
     CONVERSATIONAL_OCS_OPENAI_MAX_OUTPUT_TOKENS * CONVERSATIONAL_OCS_OPENAI_CHARS_PER_TOKEN_ESTIMATE
@@ -746,7 +753,10 @@ def _post_context_continuation_provider_registry() -> ProviderRegistry:
 
 
 def _post_context_continuation_provider_adapter() -> OpenAIProviderAdapter:
-    return OpenAIProviderAdapter()
+    return OpenAIProviderAdapter(
+        timeout_seconds=POST_CONTEXT_OPENAI_TIMEOUT_SECONDS,
+        max_output_tokens=POST_CONTEXT_OPENAI_MAX_OUTPUT_TOKENS,
+    )
 
 
 def _post_context_continuation_should_run(
@@ -825,7 +835,23 @@ def _explicit_ocs_execution_required(human_prompt: str) -> bool:
 
 
 def _external_worker_openai_client() -> Any:
-    return None
+    http_client = OpenAIHTTPClient()
+
+    def _transport(request_metadata: dict[str, Any]) -> dict[str, Any]:
+        payload = {
+            "model": request_metadata["model"],
+            "input": request_metadata["input"],
+            "stream": False,
+            "max_output_tokens": EXTERNAL_WORKER_OPENAI_MAX_OUTPUT_TOKENS,
+        }
+        return http_client(
+            payload,
+            api_key=os.environ.get(OPENAI_API_KEY_ENV, ""),
+            endpoint=OPENAI_RESPONSES_ENDPOINT,
+            timeout_seconds=EXTERNAL_WORKER_OPENAI_TIMEOUT_SECONDS,
+        )
+
+    return _transport
 
 
 def _scoped_invocation_bridge_approval(
@@ -983,6 +1009,8 @@ def _continue_worker_request_to_replay_certification(
         replay_dir=replay_dir / "openai_external_worker_provider",
         openai_client=openai_client,
         api_key="test-openai-key" if openai_client is not None else None,
+        model=OPENAI_PROVIDER_DEFAULT_MODEL,
+        timeout_seconds=EXTERNAL_WORKER_OPENAI_TIMEOUT_SECONDS,
     )
     if openai_worker_capture.get("openai_provider_connected") is not True:
         raise FailClosedRuntimeError(openai_worker_capture.get("failure_reason") or "OpenAI worker failed")

@@ -372,6 +372,8 @@ def _stem_from_targets(output_targets: list[str]) -> str:
         return first[:-3]
     if first.endswith(".json"):
         return first[:-5]
+    if first and "." not in first:
+        return first
     raise FailClosedRuntimeError("implementation handoff visibility failed closed: artifact plan invalid")
 
 
