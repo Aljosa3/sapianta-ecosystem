@@ -230,32 +230,43 @@ def render_acli_next_conversational_session(result: dict[str, Any]) -> str:
         if isinstance(dashboard.get("architectural_health"), dict)
         else {}
     )
-    return "\n".join(
-        [
-            f"command: {result.get('command')}",
-            f"runtime_version: {result.get('runtime_version')}",
-            f"session_id: {result.get('session_id')}",
-            f"run_id: {result.get('run_id')}",
-            f"session_resumed: {result.get('session_resumed')}",
-            f"turn_count: {result.get('turn_count')}",
-            f"session_status: {result.get('session_status')}",
-            f"prompt: {result.get('latest_prompt')}",
-            f"current_stage: {dashboard.get('workflow', {}).get('current_stage')}",
-            f"next_expected_operation: {dashboard.get('workflow', {}).get('next_expected_operation')}",
-            f"approval_state: {governance.get('approval_state')}",
-            f"authorization_state: {governance.get('authorization_state')}",
-            f"latest_replay_record: {replay.get('latest_replay_record')}",
-            f"architectural_health_status: {health.get('health_status')}",
-            f"hybrid_status: {hybrid.get('hybrid_status')}",
-            f"hybrid_reason: {hybrid.get('reason')}",
-            f"execution_plan_replay_reference: {result.get('execution_plan_replay_reference')}",
-            f"dashboard_replay_reference: {result.get('dashboard_replay_reference')}",
-            f"replay_reference: {result.get('replay_reference')}",
-            f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
-            f"acli_next_executes: {result.get('acli_next_executes')}",
-            f"acli_next_records_replay_evidence: {result.get('acli_next_records_replay_evidence')}",
-        ]
-    )
+    lines = [
+        f"command: {result.get('command')}",
+        f"runtime_version: {result.get('runtime_version')}",
+        f"session_id: {result.get('session_id')}",
+        f"run_id: {result.get('run_id')}",
+        f"session_resumed: {result.get('session_resumed')}",
+        f"turn_count: {result.get('turn_count')}",
+        f"session_status: {result.get('session_status')}",
+        f"prompt: {result.get('latest_prompt')}",
+        f"current_stage: {dashboard.get('workflow', {}).get('current_stage')}",
+        f"next_expected_operation: {dashboard.get('workflow', {}).get('next_expected_operation')}",
+        f"approval_state: {governance.get('approval_state')}",
+        f"authorization_state: {governance.get('authorization_state')}",
+        f"latest_replay_record: {replay.get('latest_replay_record')}",
+        f"architectural_health_status: {health.get('health_status')}",
+        f"hybrid_status: {hybrid.get('hybrid_status')}",
+        f"hybrid_reason: {hybrid.get('reason')}",
+        f"execution_plan_replay_reference: {result.get('execution_plan_replay_reference')}",
+        f"dashboard_replay_reference: {result.get('dashboard_replay_reference')}",
+        f"replay_reference: {result.get('replay_reference')}",
+        f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
+        f"acli_next_executes: {result.get('acli_next_executes')}",
+        f"acli_next_records_replay_evidence: {result.get('acli_next_records_replay_evidence')}",
+    ]
+    if result.get("runtime_binding_status"):
+        lines.extend(
+            [
+                f"runtime_binding_status: {result.get('runtime_binding_status')}",
+                f"runtime_entered: {result.get('runtime_entered')}",
+                f"governance_authorization_reached: {result.get('governance_authorization_reached')}",
+                f"provider_invocation_reached: {result.get('provider_invocation_reached')}",
+                f"worker_execution_reached: {result.get('worker_execution_reached')}",
+                f"replay_certification_reached: {result.get('replay_certification_reached')}",
+                f"manual_chatgpt_codex_transfer_required: {result.get('manual_chatgpt_codex_transfer_required')}",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -> str:

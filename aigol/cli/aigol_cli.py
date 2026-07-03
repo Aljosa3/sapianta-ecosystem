@@ -519,6 +519,12 @@ from aigol.runtime.g4_live_acli_governed_development_session_entrypoint import (
 
 
 INTERACTIVE_CONVERSATION_CLI_VERSION = "INTERACTIVE_CONVERSATION_CLI_V1"
+ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION = (
+    "G14_03_AIGOL_NEXT_RUNTIME_BINDING_IMPLEMENTATION_V1"
+)
+ACLI_NEXT_RUNTIME_BOUND = "AIGOL_NEXT_RUNTIME_BOUND"
+ACLI_NEXT_RUNTIME_PARTIALLY_BOUND = "AIGOL_NEXT_RUNTIME_PARTIALLY_BOUND"
+ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED = "AIGOL_NEXT_RUNTIME_BINDING_NOT_REQUIRED"
 CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_VERSION = "AIGOL_CONVERSATIONAL_OPENAI_OUTPUT_BUDGET_RUNTIME_V1"
 OPENAI_OUTPUT_BUDGET_ARTIFACT_V1 = "OPENAI_OUTPUT_BUDGET_ARTIFACT_V1"
 DEFAULT_PROVIDER = "OPENAI"
@@ -9196,6 +9202,125 @@ def _parse_acli_next_health_findings(values: list[str]) -> list[dict[str, str]]:
     return findings
 
 
+def _acli_next_input_sequence(values: list[str]):
+    iterator = iter(values)
+
+    def read(_prompt: str) -> str:
+        try:
+            return next(iterator)
+        except StopIteration:
+            return "exit"
+
+    return read
+
+
+def _latest_runtime_binding_turn(conversation_result: dict[str, Any]) -> dict[str, Any]:
+    turns = conversation_result.get("turns")
+    if not isinstance(turns, list):
+        return {}
+    for turn in reversed(turns):
+        if isinstance(turn, dict):
+            return turn
+    return {}
+
+
+def _acli_next_runtime_binding_status(conversation_result: dict[str, Any], turn: dict[str, Any]) -> str:
+    if (
+        conversation_result.get("failed_turns") == 0
+        and turn.get("worker_invoked") is True
+        and turn.get("replay_certification_reached") is True
+    ):
+        return ACLI_NEXT_RUNTIME_BOUND
+    return ACLI_NEXT_RUNTIME_PARTIALLY_BOUND
+
+
+def _run_acli_next_runtime_bound_session(
+    *,
+    session_id: str,
+    prompts: list[str],
+    created_at: str,
+    replay_dir: Path,
+    workspace: str,
+) -> dict[str, Any]:
+    presentation = run_acli_next_conversational_session(
+        session_id=session_id,
+        prompts=prompts,
+        created_at=created_at,
+        replay_dir=replay_dir,
+        workspace=workspace,
+    )
+    if not any(is_native_development_prompt(prompt) for prompt in prompts):
+        result = deepcopy(presentation)
+        result["runtime_binding_status"] = ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED
+        result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
+        result["runtime_entered"] = False
+        result["manual_chatgpt_codex_transfer_required"] = False
+        return result
+
+    conversation_args = argparse.Namespace(
+        session_id=session_id,
+        created_at=created_at,
+        runtime_root=str(replay_dir),
+        workspace=workspace,
+        operator_context="AIGOL_NEXT_RUNTIME_BINDING",
+        auto_continue=True,
+        enable_llm_assisted_explanation=False,
+        llm_explanation_provider_id="UNSPECIFIED_EXPLANATION_PROVIDER",
+    )
+    conversation_output: list[str] = []
+    conversation_result = run_interactive_conversation(
+        conversation_args,
+        input_func=_acli_next_input_sequence([*prompts, "exit"]),
+        output_func=conversation_output.append,
+    )
+    latest_turn = _latest_runtime_binding_turn(conversation_result)
+    runtime_binding_status = _acli_next_runtime_binding_status(conversation_result, latest_turn)
+    runtime_bound = runtime_binding_status == ACLI_NEXT_RUNTIME_BOUND
+    result = deepcopy(presentation)
+    result.update(
+        {
+            "runtime_binding_version": ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION,
+            "runtime_binding_status": runtime_binding_status,
+            "runtime_entered": True,
+            "runtime_command": conversation_result.get("command"),
+            "runtime_root": conversation_result.get("runtime_root"),
+            "runtime_turn_count": conversation_result.get("turn_count"),
+            "runtime_failed_turns": conversation_result.get("failed_turns"),
+            "runtime_exit_reason": conversation_result.get("exit_reason"),
+            "auto_continue_enabled": conversation_result.get("auto_continue_enabled") is True,
+            "manual_chatgpt_codex_transfer_required": not runtime_bound,
+            "execution_summary_presented": bool(latest_turn.get("execution_summary_reference")),
+            "human_confirmation_presented": bool(latest_turn.get("human_confirmation_reference")),
+            "governance_authorization_reached": latest_turn.get("execution_authorization_status")
+            == "EXECUTION_AUTHORIZED",
+            "provider_invocation_reached": latest_turn.get("openai_provider_reached") is True
+            or latest_turn.get("provider_invoked") is True,
+            "worker_execution_reached": latest_turn.get("worker_invoked") is True,
+            "replay_certification_reached": latest_turn.get("replay_certification_reached") is True,
+            "execution_plan_generated": latest_turn.get("execution_preparation_status") == "EXECUTION_READY",
+            "execution_plan_status": latest_turn.get("execution_preparation_status"),
+            "worker_assignment_status": latest_turn.get("worker_assignment_status"),
+            "worker_dispatch_status": latest_turn.get("worker_dispatch_status"),
+            "worker_invocation_status": latest_turn.get("worker_invocation_status"),
+            "result_validation_status": latest_turn.get("result_validation_status"),
+            "replay_certification_status": latest_turn.get("replay_certification_status"),
+            "execution_summary_reference": latest_turn.get("execution_summary_reference"),
+            "human_confirmation_reference": latest_turn.get("human_confirmation_reference"),
+            "runtime_replay_reference": latest_turn.get("replay_reference")
+            or latest_turn.get("conversation_replay_reference"),
+            "conversation_output_tail": conversation_output[-12:],
+            "acli_next_runtime_orchestrates": False,
+            "acli_next_runtime_authorizes": False,
+            "acli_next_runtime_executes": False,
+            "platform_core_runtime_delegated": True,
+            "governance_authority_preserved": True,
+            "replay_authority_preserved": True,
+            "worker_execution_authority_preserved": True,
+        }
+    )
+    return result
+
+
 def run_command(args: argparse.Namespace) -> dict:
     if args.command == "status":
         return status_summary()
@@ -9563,7 +9688,7 @@ def run_command(args: argparse.Namespace) -> dict:
             replay_dir=Path(args.runtime_root) / args.session_id,
         )
     if args.command == "next" and args.next_command is None:
-        return run_acli_next_conversational_session(
+        return _run_acli_next_runtime_bound_session(
             session_id=args.session_id,
             prompts=_acli_next_conversational_prompts(args),
             created_at=args.created_at,

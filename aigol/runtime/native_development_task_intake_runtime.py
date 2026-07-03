@@ -89,7 +89,21 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
         return True
     return (
         lowered.startswith(("implement ", "build ", "add ", "create "))
-        and any(term in lowered for term in ("function", "test", "runtime", "helper", "validator", "parser"))
+        and any(
+            term in lowered
+            for term in (
+                "function",
+                "test",
+                "runtime",
+                "helper",
+                "validator",
+                "parser",
+                "support",
+                "workflow",
+                "ci",
+                "github actions",
+            )
+        )
     )
 
 
