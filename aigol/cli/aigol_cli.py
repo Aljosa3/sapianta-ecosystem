@@ -10542,6 +10542,8 @@ def main(argv: list[str] | None = None) -> int:
             workspace=args.workspace,
             input_reader=input,
             output_writer=print,
+            turn_runner=_run_acli_next_runtime_bound_session,
+            guided_development_workflow=True,
         )
         print(render_acli_next_persistent_conversational_session(result))
         return 0

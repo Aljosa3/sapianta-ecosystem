@@ -31,6 +31,7 @@ ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND = "/preview"
 ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND = "/clear"
 ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND = "/cancel"
 ACLI_NEXT_MESSAGE_COMPOSER_HELP_COMMAND = "/help"
+ACLI_NEXT_MESSAGE_COMPOSER_APPROVE_COMMAND = "/approve"
 ACLI_NEXT_MESSAGE_COMPOSER_EXIT_COMMANDS = {"/exit", "/quit", "exit", "quit", "close session"}
 ACLI_NEXT_MESSAGE_COMPOSER_PROMPT_PREFIXES = ("aigol compose>", "aigol>")
 
@@ -117,21 +118,30 @@ def run_acli_next_persistent_conversational_session(
     workspace: str | Path = ".",
     input_reader: Any | None = None,
     output_writer: Any | None = None,
+    turn_runner: Any | None = None,
+    guided_development_workflow: bool = False,
 ) -> dict[str, Any]:
     """Run a persistent ACLI Next conversational REPL over the single-turn adapter."""
 
     reader = input if input_reader is None else input_reader
     writer = print if output_writer is None else output_writer
+    submit_turn = run_acli_next_conversational_session if turn_runner is None else turn_runner
     conversation_id = session_id or _derived_persistent_session_id(created_at, workspace)
     session_root = Path(replay_dir) / conversation_id
     turn_results: list[dict[str, Any]] = []
     composer_buffer: list[str] = []
+    pending_clarification: dict[str, Any] | None = None
+    pending_summary: dict[str, Any] | None = None
     composer_events = {
         "preview_count": 0,
         "clear_count": 0,
         "cancel_count": 0,
         "empty_send_count": 0,
         "submitted_message_count": 0,
+        "clarification_question_count": 0,
+        "clarification_response_count": 0,
+        "execution_summary_count": 0,
+        "approval_count": 0,
     }
     exit_reason = "EXIT_COMMAND"
     writer(
@@ -161,6 +171,25 @@ def run_acli_next_persistent_conversational_session(
         if command == ACLI_NEXT_MESSAGE_COMPOSER_HELP_COMMAND:
             writer(_render_message_composer_help())
             continue
+        if command == ACLI_NEXT_MESSAGE_COMPOSER_APPROVE_COMMAND:
+            if not pending_summary:
+                writer("No implementation summary is awaiting approval.")
+                continue
+            composer_events["approval_count"] += 1
+            writer("Human confirmation recorded. Entering certified runtime.")
+            turn_result = submit_turn(
+                session_id=conversation_id,
+                prompts=[pending_summary["refined_message"]],
+                created_at=created_at,
+                replay_dir=replay_dir,
+                workspace=workspace,
+            )
+            turn_results.append(turn_result)
+            pending_summary = None
+            pending_clarification = None
+            composer_buffer.clear()
+            writer(render_acli_next_conversational_session(turn_result))
+            continue
         if command == ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND:
             composer_events["preview_count"] += 1
             writer(_render_message_composer_preview(composer_buffer))
@@ -173,6 +202,8 @@ def run_acli_next_persistent_conversational_session(
         if command == ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND:
             composer_events["cancel_count"] += 1
             composer_buffer.clear()
+            pending_clarification = None
+            pending_summary = None
             writer("Message composition canceled.")
             continue
         if command == ACLI_NEXT_MESSAGE_COMPOSER_SEND_COMMAND:
@@ -181,8 +212,34 @@ def run_acli_next_persistent_conversational_session(
                 composer_events["empty_send_count"] += 1
                 writer("Message buffer is empty. Add content before /send.")
                 continue
+            if guided_development_workflow and pending_clarification is not None:
+                composer_events["clarification_response_count"] += 1
+                pending_summary = _guided_development_summary(
+                    original_message=pending_clarification["original_message"],
+                    clarification_response=message,
+                )
+                composer_events["execution_summary_count"] += 1
+                pending_clarification = None
+                composer_buffer.clear()
+                writer(_render_guided_development_summary(pending_summary))
+                continue
+            if guided_development_workflow and _guided_development_clarification_required(message):
+                pending_clarification = _guided_development_clarification(message)
+                composer_events["clarification_question_count"] += 1
+                composer_buffer.clear()
+                writer(_render_guided_development_clarification(pending_clarification))
+                continue
+            if guided_development_workflow and _guided_development_request_detected(message):
+                pending_summary = _guided_development_summary(
+                    original_message=message,
+                    clarification_response=None,
+                )
+                composer_events["execution_summary_count"] += 1
+                composer_buffer.clear()
+                writer(_render_guided_development_summary(pending_summary))
+                continue
             composer_events["submitted_message_count"] += 1
-            turn_result = run_acli_next_conversational_session(
+            turn_result = submit_turn(
                 session_id=conversation_id,
                 prompts=[message],
                 created_at=created_at,
@@ -203,6 +260,9 @@ def run_acli_next_persistent_conversational_session(
         turn_results=turn_results,
         composer_events=composer_events,
         unsubmitted_buffer_line_count=len(composer_buffer),
+        guided_development_workflow=guided_development_workflow,
+        pending_clarification=pending_clarification is not None,
+        pending_summary=pending_summary is not None,
         session_root=session_root,
         exit_reason=exit_reason,
         created_at=created_at,
@@ -280,7 +340,13 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"session_status: {result.get('session_status')}",
             f"turn_count: {result.get('turn_count')}",
             f"message_composer_enabled: {result.get('message_composer_enabled')}",
+            f"guided_development_workflow_enabled: {result.get('guided_development_workflow_enabled')}",
             f"submitted_message_count: {result.get('submitted_message_count')}",
+            f"clarification_question_count: {result.get('clarification_question_count')}",
+            f"clarification_response_count: {result.get('clarification_response_count')}",
+            f"execution_summary_count: {result.get('execution_summary_count')}",
+            f"approval_count: {result.get('approval_count')}",
+            f"runtime_bound_count: {result.get('runtime_bound_count')}",
             f"exit_reason: {result.get('exit_reason')}",
             f"replay_reference: {result.get('replay_reference')}",
             f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
@@ -355,6 +421,9 @@ def _persistent_completion_artifact(
     turn_results: list[dict[str, Any]],
     composer_events: dict[str, int],
     unsubmitted_buffer_line_count: int,
+    guided_development_workflow: bool,
+    pending_clarification: bool,
+    pending_summary: bool,
     session_root: Path,
     exit_reason: str,
     created_at: str,
@@ -371,14 +440,25 @@ def _persistent_completion_artifact(
         "turn_hashes": [turn["artifact_hash"] for turn in turn_results],
         "turn_replay_references": [turn["replay_reference"] for turn in turn_results],
         "message_composer_enabled": True,
+        "guided_development_workflow_enabled": bool(guided_development_workflow),
         "message_composer_version": ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
         "message_composer_commands": [
             ACLI_NEXT_MESSAGE_COMPOSER_SEND_COMMAND,
             ACLI_NEXT_MESSAGE_COMPOSER_PREVIEW_COMMAND,
             ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND,
             ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND,
+            ACLI_NEXT_MESSAGE_COMPOSER_APPROVE_COMMAND,
         ],
         "submitted_message_count": int(composer_events.get("submitted_message_count", 0)),
+        "clarification_question_count": int(composer_events.get("clarification_question_count", 0)),
+        "clarification_response_count": int(composer_events.get("clarification_response_count", 0)),
+        "execution_summary_count": int(composer_events.get("execution_summary_count", 0)),
+        "approval_count": int(composer_events.get("approval_count", 0)),
+        "runtime_bound_count": sum(
+            1 for result in turn_results if result.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
+        ),
+        "pending_clarification": bool(pending_clarification),
+        "pending_execution_summary": bool(pending_summary),
         "preview_count": int(composer_events.get("preview_count", 0)),
         "clear_count": int(composer_events.get("clear_count", 0)),
         "cancel_count": int(composer_events.get("cancel_count", 0)),
@@ -447,9 +527,93 @@ def _render_message_composer_help() -> str:
             "/preview - show the current buffer without execution",
             "/clear - empty the current buffer",
             "/cancel - discard the current message",
+            "/approve - confirm the presented implementation summary and enter the certified runtime",
             "/exit or /quit - close the session when the buffer is empty",
         ]
     )
+
+
+def _guided_development_request_detected(message: str) -> bool:
+    lowered = message.lower().strip()
+    return lowered.startswith(("add ", "build ", "create ", "implement ", "improve ", "fix "))
+
+
+def _guided_development_clarification_required(message: str) -> bool:
+    lowered = message.lower()
+    if not _guided_development_request_detected(message):
+        return False
+    specificity_terms = (
+        "support",
+        "workflow",
+        "runtime",
+        "test",
+        "validation",
+        "validator",
+        "parser",
+        "github actions",
+        "governed",
+        "replay",
+    )
+    return not any(term in lowered for term in specificity_terms)
+
+
+def _guided_development_clarification(message: str) -> dict[str, Any]:
+    return {
+        "original_message": message,
+        "clarification_required": True,
+        "clarification_questions": [
+            "What specific capability should AiGOL implement?",
+            "What constraints or boundaries should the implementation preserve?",
+        ],
+    }
+
+
+def _render_guided_development_clarification(clarification: dict[str, Any]) -> str:
+    lines = [
+        "Clarification required before governed execution.",
+        f"original_request: {clarification.get('original_message')}",
+        "questions:",
+    ]
+    lines.extend(f"- {question}" for question in clarification.get("clarification_questions", []))
+    lines.append("Compose your answer and type /send.")
+    return "\n".join(lines)
+
+
+def _guided_development_summary(
+    *,
+    original_message: str,
+    clarification_response: str | None,
+) -> dict[str, Any]:
+    refined_message = original_message
+    if clarification_response:
+        refined_message = f"{original_message}\n\nClarification:\n{clarification_response}"
+    return {
+        "original_message": original_message,
+        "clarification_response": clarification_response,
+        "refined_message": refined_message,
+        "summary_status": "IMPLEMENTATION_SUMMARY_PRESENTED",
+        "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME",
+        "requires_human_confirmation": True,
+        "acli_next_authorizes": False,
+        "acli_next_executes": False,
+    }
+
+
+def _render_guided_development_summary(summary: dict[str, Any]) -> str:
+    lines = [
+        "Governed implementation summary",
+        f"original_request: {summary.get('original_message')}",
+    ]
+    if summary.get("clarification_response"):
+        lines.extend(["clarification:", str(summary["clarification_response"])])
+    lines.extend(
+        [
+            "runtime_after_approval: CERTIFIED_PLATFORM_CORE_RUNTIME",
+            "AiGOL Next will delegate to Platform Core; it will not authorize or execute.",
+            "Type /approve to continue into the certified runtime, or /cancel to discard.",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _platform_core_state(
