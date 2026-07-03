@@ -285,6 +285,54 @@ def test_provider_proposal_production_projects_prompt_for_openai_adapter(tmp_pat
     assert calls and calls[0]["api_key_seen"] is True
 
 
+def test_provider_proposal_production_accepts_fenced_json_response_text(tmp_path) -> None:
+    handoff, context, resolution, policy = _evidence_chain(tmp_path)
+    provider_response = _provider_response()
+    response_text = "```json\n" + json.dumps(provider_response) + "\n```"
+
+    capture = produce_provider_development_proposal(
+        production_id="PROVIDER-PRODUCTION-FENCED-JSON-000001",
+        provider_id=PROVIDER_ID,
+        handoff_artifact=handoff,
+        context_assembly_artifact=context,
+        registry_resolution_artifact=resolution,
+        provider_necessity_policy_artifact=policy,
+        canonical_chain_id="CHAIN-PROVIDER-PRODUCTION-FENCED-JSON-000001",
+        created_at=CREATED_AT,
+        registry=_registry(),
+        adapter=FakeProviderAdapter({"response_text": response_text}),
+        replay_dir=tmp_path / "fenced_json",
+    )
+
+    assert capture["production_status"] == PROVIDER_PROPOSAL_PRODUCED
+    assert capture["provider_response_artifact"]["provider_response_payload"] == provider_response
+    assert capture["development_proposal_artifact"]["proposal_summary"] == provider_response["proposal_summary"]
+
+
+def test_provider_proposal_production_accepts_embedded_json_response_text(tmp_path) -> None:
+    handoff, context, resolution, policy = _evidence_chain(tmp_path)
+    provider_response = _provider_response()
+    response_text = "Proposal follows:\n" + json.dumps(provider_response) + "\nEnd."
+
+    capture = produce_provider_development_proposal(
+        production_id="PROVIDER-PRODUCTION-EMBEDDED-JSON-000001",
+        provider_id=PROVIDER_ID,
+        handoff_artifact=handoff,
+        context_assembly_artifact=context,
+        registry_resolution_artifact=resolution,
+        provider_necessity_policy_artifact=policy,
+        canonical_chain_id="CHAIN-PROVIDER-PRODUCTION-EMBEDDED-JSON-000001",
+        created_at=CREATED_AT,
+        registry=_registry(),
+        adapter=FakeProviderAdapter({"response_text": response_text}),
+        replay_dir=tmp_path / "embedded_json",
+    )
+
+    assert capture["production_status"] == PROVIDER_PROPOSAL_PRODUCED
+    assert capture["provider_response_artifact"]["provider_response_payload"] == provider_response
+    assert capture["development_proposal_artifact"]["proposed_outputs"] == provider_response["proposed_outputs"]
+
+
 def test_provider_proposal_production_fails_closed_when_provider_unavailable(tmp_path) -> None:
     handoff, context, resolution, policy = _evidence_chain(tmp_path)
 

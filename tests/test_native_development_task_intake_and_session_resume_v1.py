@@ -230,4 +230,5 @@ def test_native_development_runtime_has_no_worker_dispatch_or_execution_imports(
 
 def test_native_development_prompt_detection_is_conservative() -> None:
     assert is_native_development_prompt(f"Open {MILESTONE_ID}. Foundation only.") is True
+    assert is_native_development_prompt("Add GitHub Actions support.") is True
     assert is_native_development_prompt("What is AiGOL?") is False

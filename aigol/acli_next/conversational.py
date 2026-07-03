@@ -22,6 +22,9 @@ ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION = (
 ACLI_NEXT_MESSAGE_COMPOSER_VERSION = "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1"
 ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION = "G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1"
 ACLI_NEXT_PROJECT_GUIDANCE_VERSION = "G14_06_PROJECT_GUIDANCE_AND_DEVELOPMENT_ASSISTANT_V1"
+ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION = (
+    "G14_08_PROJECT_KNOWLEDGE_REUSE_AND_CONTEXTUAL_TASK_MAPPING_V1"
+)
 ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME = "aigol next"
 ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED = "ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED"
 ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED = (
@@ -146,6 +149,7 @@ def run_acli_next_persistent_conversational_session(
         "execution_summary_count": 0,
         "approval_count": 0,
         "goal_mapping_count": 0,
+        "knowledge_reuse_count": 0,
     }
     exit_reason = "EXIT_COMMAND"
     writer(
@@ -239,6 +243,7 @@ def run_acli_next_persistent_conversational_session(
                 continue
             if guided_development_workflow and _goal_oriented_request_detected(message):
                 composer_events["goal_mapping_count"] += 1
+                composer_events["knowledge_reuse_count"] += 1
                 pending_summary = _guided_development_summary(
                     original_message=message,
                     clarification_response=None,
@@ -298,7 +303,8 @@ def run_acli_next_persistent_conversational_session(
         workspace=workspace,
     )
     write_json_immutable(
-        session_root / f"{len(turn_results) + 1:03d}_acli_next_persistent_session_completed.json",
+        session_root
+        / f"{_next_persistent_completion_index(session_root):03d}_acli_next_persistent_session_completed.json",
         completion,
     )
     workspace_snapshot = _persistent_workspace_state_artifact(
@@ -398,6 +404,7 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"execution_summary_count: {result.get('execution_summary_count')}",
             f"approval_count: {result.get('approval_count')}",
             f"goal_mapping_count: {result.get('goal_mapping_count')}",
+            f"knowledge_reuse_count: {result.get('knowledge_reuse_count')}",
             f"runtime_bound_count: {result.get('runtime_bound_count')}",
             f"pending_clarification: {result.get('pending_clarification')}",
             f"pending_execution_summary: {result.get('pending_execution_summary')}",
@@ -510,6 +517,16 @@ def _next_workspace_state_index(session_root: Path) -> int:
     return max(existing, default=0) + 1
 
 
+def _next_persistent_completion_index(session_root: Path) -> int:
+    existing: list[int] = []
+    if session_root.exists():
+        for path in session_root.glob("*_acli_next_persistent_session_completed.json"):
+            prefix = path.name.split("_", 1)[0]
+            if prefix.isdigit():
+                existing.append(int(prefix))
+    return max(existing, default=0) + 1
+
+
 def _persistent_workspace_state_artifact(
     *,
     conversation_id: str,
@@ -551,6 +568,12 @@ def _persistent_workspace_state_artifact(
             1 for result in turn_results if result.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
         ),
     )
+    knowledge_index = _project_knowledge_index_model(
+        prior_state=prior_state,
+        pending_summary=pending_summary,
+        guidance=guidance,
+        implementation_history=implementation_history,
+    )
     artifact = {
         "artifact_type": "ACLI_NEXT_PERSISTENT_WORKSPACE_STATE_ARTIFACT_V1",
         "runtime_version": ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION,
@@ -570,6 +593,7 @@ def _persistent_workspace_state_artifact(
         "implementation_history": implementation_history,
         "implementation_history_count": len(implementation_history),
         "project_guidance": guidance,
+        "project_knowledge_index": knowledge_index,
         "recent_governed_decisions": [
             {
                 "decision": "HUMAN_CONFIRMATION_RECORDED",
@@ -745,6 +769,177 @@ def _render_project_guidance(guidance: dict[str, Any]) -> str:
     )
 
 
+def _project_knowledge_index_model(
+    *,
+    prior_state: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+    guidance: dict[str, Any],
+    implementation_history: list[dict[str, Any]],
+) -> dict[str, Any]:
+    prior_index = (
+        prior_state.get("project_knowledge_index")
+        if isinstance(prior_state, dict) and isinstance(prior_state.get("project_knowledge_index"), dict)
+        else {}
+    )
+    known_targets = _unique_strings(prior_index.get("known_goal_targets"))
+    certified_artifacts = _copy_string_map(prior_index.get("certified_artifacts_by_target"))
+    related_milestones = _copy_string_map(prior_index.get("related_milestones_by_target"))
+    implementation_matches = _copy_string_map(prior_index.get("implementation_history_by_target"))
+    target = None
+    if isinstance(pending_summary, dict) and isinstance(pending_summary.get("goal_mapping"), dict):
+        mapping = pending_summary["goal_mapping"]
+        target = str(mapping.get("goal_target") or "").strip() or None
+        if target:
+            known_targets = _unique_strings([*known_targets, target])
+            certified_artifacts[target] = _unique_strings(
+                [
+                    *certified_artifacts.get(target, []),
+                    *_certified_artifacts_for_goal_target(target),
+                ]
+            )
+            related_milestones[target] = _unique_strings(
+                [
+                    *related_milestones.get(target, []),
+                    str(guidance.get("active_milestone") or "AIGOL_GENERIC_DEVELOPMENT_TASK_V1"),
+                ]
+            )
+            implementation_matches[target] = _unique_strings(
+                [
+                    *implementation_matches.get(target, []),
+                    str(mapping.get("governed_request") or mapping.get("source_goal") or ""),
+                ]
+            )
+    return {
+        "knowledge_reuse_version": ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION,
+        "knowledge_source": "deterministic_workspace_state",
+        "known_goal_targets": known_targets,
+        "certified_artifacts_by_target": certified_artifacts,
+        "related_milestones_by_target": related_milestones,
+        "implementation_history_by_target": implementation_matches,
+        "implementation_history_count": len(implementation_history),
+        "latest_pending_goal_target": target,
+        "conversation_history_is_authority": False,
+        "requires_human_approval_before_execution": True,
+        "acli_next_executes_recommendation": False,
+    }
+
+
+def _project_knowledge_context_from_workspace(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    goal_target: str,
+    governed_request: str,
+) -> dict[str, Any]:
+    knowledge_index = (
+        workspace_state.get("project_knowledge_index")
+        if isinstance(workspace_state, dict) and isinstance(workspace_state.get("project_knowledge_index"), dict)
+        else {}
+    )
+    known_targets = set(_unique_strings(knowledge_index.get("known_goal_targets")))
+    known = goal_target in known_targets
+    lowered = message.lower()
+    already_requested = any(term in lowered for term in ("already", "done", "implemented", "satisfied"))
+    modify_requested = any(term in lowered for term in ("improve", "change", "modify", "refine", "update"))
+    continue_requested = any(term in lowered for term in ("continue", "extend", "add to", "build on"))
+    if known and already_requested:
+        classification = "ALREADY_SATISFIED"
+        new_work_required = False
+        reuse_recommended = True
+        reason = "The deterministic workspace already records this goal target."
+    elif known and modify_requested:
+        classification = "MODIFIES_EXISTING_CAPABILITY"
+        new_work_required = True
+        reuse_recommended = True
+        reason = "The goal modifies a capability already present in the deterministic workspace."
+    elif known and continue_requested:
+        classification = "EXTENDS_EXISTING_MILESTONE"
+        new_work_required = True
+        reuse_recommended = True
+        reason = "The goal extends an existing workspace milestone instead of creating unrelated work."
+    elif goal_target != "general_project_goal" and _certified_artifacts_for_goal_target(goal_target):
+        classification = "RELATES_TO_CERTIFIED_CAPABILITY"
+        new_work_required = True
+        reuse_recommended = True
+        reason = "Certified artifacts already describe the related capability family."
+    else:
+        classification = "NEW_GOVERNED_WORK"
+        new_work_required = True
+        reuse_recommended = False
+        reason = "No deterministic workspace match was found for this goal target."
+    artifacts_by_target = (
+        knowledge_index.get("certified_artifacts_by_target")
+        if isinstance(knowledge_index.get("certified_artifacts_by_target"), dict)
+        else {}
+    )
+    artifacts = _unique_strings(
+        [
+            *artifacts_by_target.get(goal_target, []),
+            *_certified_artifacts_for_goal_target(goal_target),
+        ]
+    )
+    milestones = _unique_strings(
+        knowledge_index.get("related_milestones_by_target", {}).get(goal_target, [])
+        if isinstance(knowledge_index.get("related_milestones_by_target"), dict)
+        else []
+    )
+    history_matches = _unique_strings(
+        knowledge_index.get("implementation_history_by_target", {}).get(goal_target, [])
+        if isinstance(knowledge_index.get("implementation_history_by_target"), dict)
+        else []
+    )
+    return {
+        "knowledge_reuse_version": ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION,
+        "workspace_inspected": True,
+        "mapping_source": "deterministic_workspace_state",
+        "classification": classification,
+        "goal_target": goal_target,
+        "governed_request": governed_request,
+        "related_milestones": milestones,
+        "relevant_certified_artifacts": artifacts,
+        "implementation_history_matches": history_matches,
+        "reuse_recommended": reuse_recommended,
+        "reuse_reason": reason,
+        "new_work_required": new_work_required,
+        "duplicate_work_avoided": classification == "ALREADY_SATISFIED",
+        "requires_human_approval": True,
+        "acli_next_executes_recommendation": False,
+    }
+
+
+def _certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
+    artifacts = {
+        "github_actions": [
+            "docs/governance/G14_07_GOAL_ORIENTED_DEVELOPMENT_EXPERIENCE_V1.md",
+        ],
+        "deployment": [
+            "docs/governance/G11_00_OPERATIONAL_EXPANSION_PRIORITIZATION_REVIEW_V1.md",
+        ],
+        "mobile_interface": [
+            "docs/governance/G14_01_UNIFIED_HUMAN_INTERFACE_ARCHITECTURE_CERTIFICATION_V1.md",
+        ],
+        "active_objective": [
+            "docs/governance/G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1.md",
+        ],
+    }
+    return artifacts.get(goal_target, [])
+
+
+def _unique_strings(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    return sorted({str(value) for value in values if str(value).strip()})
+
+
+def _copy_string_map(value: Any) -> dict[str, list[str]]:
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, list[str]] = {}
+    for key, values in value.items():
+        result[str(key)] = _unique_strings(values)
+    return result
+
+
 def _persistent_completion_artifact(
     *,
     conversation_id: str,
@@ -793,6 +988,7 @@ def _persistent_completion_artifact(
         "execution_summary_count": int(composer_events.get("execution_summary_count", 0)),
         "approval_count": int(composer_events.get("approval_count", 0)),
         "goal_mapping_count": int(composer_events.get("goal_mapping_count", 0)),
+        "knowledge_reuse_count": int(composer_events.get("knowledge_reuse_count", 0)),
         "runtime_bound_count": sum(
             1 for result in turn_results if result.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
         ),
@@ -913,7 +1109,7 @@ def _goal_mapping_from_workspace(
         governed_request = message
         goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
         target = "general_project_goal"
-    return {
+    mapping = {
         "goal_mapping_status": "GOAL_MAPPED_TO_GOVERNED_REQUEST",
         "goal_type": goal_type,
         "goal_target": target,
@@ -924,6 +1120,13 @@ def _goal_mapping_from_workspace(
         "requires_human_approval": True,
         "acli_next_executes_mapping": False,
     }
+    mapping["contextual_task_mapping"] = _project_knowledge_context_from_workspace(
+        message=message,
+        workspace_state=workspace_state,
+        goal_target=target,
+        governed_request=governed_request,
+    )
+    return mapping
 
 
 def _guided_development_clarification_required(message: str) -> bool:
@@ -1013,6 +1216,23 @@ def _render_guided_development_summary(summary: dict[str, Any]) -> str:
                 f"mapping_source: {mapping.get('mapping_source')}",
             ]
         )
+        if isinstance(mapping.get("contextual_task_mapping"), dict):
+            context = mapping["contextual_task_mapping"]
+            lines.extend(
+                [
+                    "contextual_task_mapping:",
+                    f"classification: {context.get('classification')}",
+                    f"workspace_inspected: {context.get('workspace_inspected')}",
+                    f"reuse_recommended: {context.get('reuse_recommended')}",
+                    f"new_work_required: {context.get('new_work_required')}",
+                    f"duplicate_work_avoided: {context.get('duplicate_work_avoided')}",
+                    f"related_milestones: {', '.join(context.get('related_milestones') or []) or 'NONE'}",
+                    "relevant_certified_artifacts: "
+                    f"{', '.join(context.get('relevant_certified_artifacts') or []) or 'NONE'}",
+                    "implementation_history_matches: "
+                    f"{', '.join(context.get('implementation_history_matches') or []) or 'NONE'}",
+                ]
+            )
     lines.extend(
         [
             "runtime_after_approval: CERTIFIED_PLATFORM_CORE_RUNTIME",

@@ -19,7 +19,7 @@ from aigol.runtime.implementation_handoff_visibility import (
     render_implementation_handoff_visibility_summary,
 )
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import canonical_serialize
+from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
 CREATED_AT = "2026-06-04T00:00:00+00:00"
@@ -48,6 +48,14 @@ def _input_sequence(values: list[str]):
         return next(iterator)
 
     return read
+
+
+def _rehash_wrapper(wrapper: dict) -> None:
+    artifact = wrapper["artifact"]
+    artifact.pop("artifact_hash", None)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    wrapper.pop("replay_hash", None)
+    wrapper["replay_hash"] = replay_hash(wrapper)
 
 
 def _handoff_capture(tmp_path, *, prompt: str = "Create a filesystem worker."):
@@ -123,6 +131,52 @@ def test_cli_prints_handoff_summary_for_created_handoff(tmp_path) -> None:
     assert "Target Worker:\nFILESYSTEM" in output[0]
     assert "* governance/SERVER_MANAGEMENT_FILESYSTEM_WORKER_MODEL_V1.md" in output[0]
     assert "Approval Status:\nNOT REQUIRED" in output[0]
+
+
+def test_visibility_accepts_abstract_output_target_identifiers(tmp_path) -> None:
+    handoff = _handoff_capture(tmp_path)
+    handoff_path = (
+        tmp_path
+        / "handoff_execution"
+        / "implementation_handoff"
+        / "000_implementation_handoff_created.json"
+    )
+    wrapper = json.loads(handoff_path.read_text(encoding="utf-8"))
+    artifact = wrapper["artifact"]
+    artifact["output_targets"] = ["CLAUDE_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1", "WORKER_FOUNDATION"]
+    artifact["handoff_hash"] = replay_hash(
+        {
+            "task_reference": artifact["task_reference"],
+            "proposal_hash": artifact["proposal_hash"],
+            "context_hash": artifact["context_hash"],
+            "registry_resolution_hash": artifact["validation_references"]["registry_resolution_hash"],
+            "output_targets": artifact["output_targets"],
+        }
+    )
+    _rehash_wrapper(wrapper)
+    handoff_path.write_text(canonical_serialize(wrapper) + "\n", encoding="utf-8")
+    returned_path = (
+        tmp_path
+        / "handoff_execution"
+        / "implementation_handoff"
+        / "001_implementation_handoff_returned.json"
+    )
+    returned_wrapper = json.loads(returned_path.read_text(encoding="utf-8"))
+    returned_wrapper["artifact"]["handoff_hash"] = artifact["artifact_hash"]
+    _rehash_wrapper(returned_wrapper)
+    returned_path.write_text(canonical_serialize(returned_wrapper) + "\n", encoding="utf-8")
+
+    capture = create_implementation_handoff_visibility_summary(
+        visibility_id="HANDOFF-VISIBILITY-ABSTRACT-TARGETS-000001",
+        handoff_replay_reference=handoff["handoff_replay_reference"],
+        approval_status=handoff["approval_status"],
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "visibility_abstract_targets",
+    )
+
+    assert capture["summary_status"] == IMPLEMENTATION_HANDOFF_SUMMARY_CREATED
+    assert "governance/CLAUDE_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1.md" in capture["planned_artifacts"]
+    assert "aigol/runtime/claude_external_worker_provider_adapter_v1.py" in capture["planned_artifacts"]
 
 
 def test_visibility_fails_closed_when_handoff_lineage_is_invalid(tmp_path) -> None:
