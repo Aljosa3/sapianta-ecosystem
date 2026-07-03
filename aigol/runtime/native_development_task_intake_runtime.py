@@ -85,7 +85,7 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
             "csv",
         )
     )
-    if freeform_development_subject and any(term in lowered for term in ("need", "create", "build")):
+    if freeform_development_subject and any(term in lowered for term in ("need", "create", "build", "implement", "add")):
         return True
     return (
         lowered.startswith(("implement ", "build ", "add ", "create "))

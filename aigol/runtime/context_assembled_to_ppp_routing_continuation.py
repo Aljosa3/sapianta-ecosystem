@@ -133,6 +133,11 @@ def reconstruct_context_assembled_to_ppp_routing_continuation_replay(replay_dir:
         "execution_requested": artifact["execution_requested"],
         "dispatch_requested": artifact["dispatch_requested"],
         "failure_reason": artifact["failure_reason"],
+        "operational_failure_classification": artifact.get("operational_failure_classification"),
+        "provider_resilience_status": artifact.get("provider_resilience_status", "NOT_APPLICABLE"),
+        "provider_resilience_action": artifact.get("provider_resilience_action"),
+        "retry_performed": artifact.get("retry_performed", False),
+        "alternate_provider_attempted": artifact.get("alternate_provider_attempted", False),
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
@@ -152,6 +157,7 @@ def _continuation_artifact(
     route = ppp_capture.get("conversation_ppp_routing_artifact") if isinstance(ppp_capture, dict) else None
     if not isinstance(route, dict):
         route = {}
+    resilience = _provider_resilience_fields(failure_reason)
     artifact = {
         "artifact_type": POST_CONTEXT_CONTINUATION_ARTIFACT_V1,
         "runtime_version": AIGOL_CONTEXT_ASSEMBLED_TO_PPP_ROUTING_CONTINUATION_VERSION,
@@ -183,6 +189,7 @@ def _continuation_artifact(
         "created_at": _require_string(created_at, "created_at"),
         "replay_visible": True,
         "failure_reason": failure_reason,
+        **resilience,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
@@ -206,6 +213,11 @@ def _returned_artifact(continuation: dict[str, Any]) -> dict[str, Any]:
         "dispatch_requested": False,
         "replay_visible": True,
         "failure_reason": continuation["failure_reason"],
+        "operational_failure_classification": continuation["operational_failure_classification"],
+        "provider_resilience_status": continuation["provider_resilience_status"],
+        "provider_resilience_action": continuation["provider_resilience_action"],
+        "retry_performed": continuation["retry_performed"],
+        "alternate_provider_attempted": continuation["alternate_provider_attempted"],
     }
     returned["artifact_hash"] = replay_hash(returned)
     return returned
@@ -238,9 +250,38 @@ def _capture(
         "worker_invoked": False,
         "execution_requested": False,
         "dispatch_requested": False,
+        "operational_failure_classification": continuation["operational_failure_classification"],
+        "provider_resilience_status": continuation["provider_resilience_status"],
+        "provider_resilience_action": continuation["provider_resilience_action"],
+        "retry_performed": continuation["retry_performed"],
+        "alternate_provider_attempted": continuation["alternate_provider_attempted"],
     }
     capture["post_context_continuation_capture_hash"] = replay_hash(capture)
     return capture
+
+
+def _provider_resilience_fields(failure_reason: str | None) -> dict[str, Any]:
+    normalized = str(failure_reason or "").lower()
+    provider_unavailable = (
+        "provider unavailable" in normalized
+        or "openai provider unavailable" in normalized
+        or "provider-assisted conversation failed closed" in normalized
+    )
+    if provider_unavailable:
+        return {
+            "operational_failure_classification": "PROVIDER_AVAILABILITY",
+            "provider_resilience_status": "PROVIDER_UNAVAILABLE_FAIL_CLOSED",
+            "provider_resilience_action": "RETRY_AFTER_PROVIDER_AVAILABILITY_RESTORED",
+            "retry_performed": False,
+            "alternate_provider_attempted": False,
+        }
+    return {
+        "operational_failure_classification": None,
+        "provider_resilience_status": "NOT_APPLICABLE",
+        "provider_resilience_action": None,
+        "retry_performed": False,
+        "alternate_provider_attempted": False,
+    }
 
 
 def _ensure_replay_available(replay_path: Path) -> None:

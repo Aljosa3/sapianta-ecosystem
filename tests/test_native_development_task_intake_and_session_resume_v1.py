@@ -13,6 +13,7 @@ from aigol.runtime.conversation_session_resume_runtime import (
     CONVERSATION_SESSION_RESUME_STATUS,
     resume_conversation_session,
 )
+from aigol.runtime.context_assembled_to_ppp_routing_continuation import _provider_resilience_fields
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.native_development_task_intake_runtime import (
     AIGOL_NATIVE_DEVELOPMENT_TASK_INTAKE_ARTIFACT_V1,
@@ -231,4 +232,25 @@ def test_native_development_runtime_has_no_worker_dispatch_or_execution_imports(
 def test_native_development_prompt_detection_is_conservative() -> None:
     assert is_native_development_prompt(f"Open {MILESTONE_ID}. Foundation only.") is True
     assert is_native_development_prompt("Add GitHub Actions support.") is True
+    assert (
+        is_native_development_prompt(
+            "Implement a validation script for checking Platform Core project service authority fields."
+        )
+        is True
+    )
     assert is_native_development_prompt("What is AiGOL?") is False
+    assert is_native_development_prompt("Deploy this validation script to production external users.") is False
+
+
+def test_provider_availability_failure_classification_is_deterministic() -> None:
+    classified = _provider_resilience_fields(
+        "provider-assisted conversation failed closed: OpenAI provider unavailable"
+    )
+    clean = _provider_resilience_fields(None)
+
+    assert classified["operational_failure_classification"] == "PROVIDER_AVAILABILITY"
+    assert classified["provider_resilience_status"] == "PROVIDER_UNAVAILABLE_FAIL_CLOSED"
+    assert classified["provider_resilience_action"] == "RETRY_AFTER_PROVIDER_AVAILABILITY_RESTORED"
+    assert classified["retry_performed"] is False
+    assert classified["alternate_provider_attempted"] is False
+    assert clean["provider_resilience_status"] == "NOT_APPLICABLE"
