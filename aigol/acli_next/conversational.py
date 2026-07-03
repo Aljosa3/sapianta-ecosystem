@@ -145,6 +145,7 @@ def run_acli_next_persistent_conversational_session(
         "clarification_response_count": 0,
         "execution_summary_count": 0,
         "approval_count": 0,
+        "goal_mapping_count": 0,
     }
     exit_reason = "EXIT_COMMAND"
     writer(
@@ -223,6 +224,7 @@ def run_acli_next_persistent_conversational_session(
                 pending_summary = _guided_development_summary(
                     original_message=pending_clarification["original_message"],
                     clarification_response=message,
+                    workspace_state=workspace_state,
                 )
                 composer_events["execution_summary_count"] += 1
                 pending_clarification = None
@@ -235,10 +237,26 @@ def run_acli_next_persistent_conversational_session(
                 composer_buffer.clear()
                 writer(_render_guided_development_clarification(pending_clarification))
                 continue
+            if guided_development_workflow and _goal_oriented_request_detected(message):
+                composer_events["goal_mapping_count"] += 1
+                pending_summary = _guided_development_summary(
+                    original_message=message,
+                    clarification_response=None,
+                    workspace_state=workspace_state,
+                    goal_mapping=_goal_mapping_from_workspace(
+                        message=message,
+                        workspace_state=workspace_state,
+                    ),
+                )
+                composer_events["execution_summary_count"] += 1
+                composer_buffer.clear()
+                writer(_render_guided_development_summary(pending_summary))
+                continue
             if guided_development_workflow and _guided_development_request_detected(message):
                 pending_summary = _guided_development_summary(
                     original_message=message,
                     clarification_response=None,
+                    workspace_state=workspace_state,
                 )
                 composer_events["execution_summary_count"] += 1
                 composer_buffer.clear()
@@ -379,6 +397,7 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"clarification_response_count: {result.get('clarification_response_count')}",
             f"execution_summary_count: {result.get('execution_summary_count')}",
             f"approval_count: {result.get('approval_count')}",
+            f"goal_mapping_count: {result.get('goal_mapping_count')}",
             f"runtime_bound_count: {result.get('runtime_bound_count')}",
             f"pending_clarification: {result.get('pending_clarification')}",
             f"pending_execution_summary: {result.get('pending_execution_summary')}",
@@ -773,6 +792,7 @@ def _persistent_completion_artifact(
         "clarification_response_count": int(composer_events.get("clarification_response_count", 0)),
         "execution_summary_count": int(composer_events.get("execution_summary_count", 0)),
         "approval_count": int(composer_events.get("approval_count", 0)),
+        "goal_mapping_count": int(composer_events.get("goal_mapping_count", 0)),
         "runtime_bound_count": sum(
             1 for result in turn_results if result.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
         ),
@@ -857,6 +877,55 @@ def _guided_development_request_detected(message: str) -> bool:
     return lowered.startswith(("add ", "build ", "create ", "implement ", "improve ", "fix "))
 
 
+def _goal_oriented_request_detected(message: str) -> bool:
+    lowered = message.lower().strip()
+    return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ", "continue "))
+
+
+def _goal_mapping_from_workspace(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+) -> dict[str, Any]:
+    lowered = message.lower()
+    active_objective = (
+        workspace_state.get("active_development_objective")
+        if isinstance(workspace_state, dict)
+        else None
+    )
+    if "github actions" in lowered:
+        governed_request = "Add GitHub Actions support."
+        goal_type = "EXTENDS_PROJECT"
+        target = "github_actions"
+    elif "deployment" in lowered:
+        governed_request = "Add governed deployment workflow support."
+        goal_type = "EXTENDS_PROJECT"
+        target = "deployment"
+    elif "mobile" in lowered:
+        governed_request = "Continue the governed mobile interface."
+        goal_type = "CONTINUES_PROJECT"
+        target = "mobile_interface"
+    elif lowered.startswith(("continue ", "let's continue", "lets continue")):
+        governed_request = str(active_objective or "Continue the active governed development objective.")
+        goal_type = "CONTINUES_PROJECT"
+        target = "active_objective"
+    else:
+        governed_request = message
+        goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
+        target = "general_project_goal"
+    return {
+        "goal_mapping_status": "GOAL_MAPPED_TO_GOVERNED_REQUEST",
+        "goal_type": goal_type,
+        "goal_target": target,
+        "source_goal": message,
+        "active_workspace_objective": active_objective,
+        "governed_request": governed_request,
+        "mapping_source": "deterministic_workspace_state",
+        "requires_human_approval": True,
+        "acli_next_executes_mapping": False,
+    }
+
+
 def _guided_development_clarification_required(message: str) -> bool:
     lowered = message.lower()
     if not _guided_development_request_detected(message):
@@ -902,13 +971,21 @@ def _guided_development_summary(
     *,
     original_message: str,
     clarification_response: str | None,
+    workspace_state: dict[str, Any] | None = None,
+    goal_mapping: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     refined_message = original_message
     if clarification_response:
         refined_message = f"{original_message}\n\nClarification:\n{clarification_response}"
+    if isinstance(goal_mapping, dict):
+        refined_message = str(goal_mapping.get("governed_request") or refined_message)
     return {
         "original_message": original_message,
         "clarification_response": clarification_response,
+        "goal_mapping": deepcopy(goal_mapping),
+        "workspace_state_reference": (
+            workspace_state.get("replay_reference") if isinstance(workspace_state, dict) else None
+        ),
         "refined_message": refined_message,
         "summary_status": "IMPLEMENTATION_SUMMARY_PRESENTED",
         "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME",
@@ -925,6 +1002,17 @@ def _render_guided_development_summary(summary: dict[str, Any]) -> str:
     ]
     if summary.get("clarification_response"):
         lines.extend(["clarification:", str(summary["clarification_response"])])
+    if isinstance(summary.get("goal_mapping"), dict):
+        mapping = summary["goal_mapping"]
+        lines.extend(
+            [
+                "goal_mapping:",
+                f"goal_type: {mapping.get('goal_type')}",
+                f"goal_target: {mapping.get('goal_target')}",
+                f"governed_request: {mapping.get('governed_request')}",
+                f"mapping_source: {mapping.get('mapping_source')}",
+            ]
+        )
     lines.extend(
         [
             "runtime_after_approval: CERTIFIED_PLATFORM_CORE_RUNTIME",
