@@ -10,6 +10,18 @@ from typing import Any
 from aigol.acli_next.daily_dashboard import run_acli_next_daily_dashboard
 from aigol.acli_next.execution_plan import run_acli_next_interactive_with_execution_plan
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_core_project_services import (
+    PLATFORM_CORE_PERSISTENT_WORKSPACE_VERSION,
+    PLATFORM_CORE_PROJECT_GUIDANCE_VERSION,
+    PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
+    build_persistent_workspace_state_artifact,
+    goal_mapping_from_workspace,
+    goal_oriented_request_detected,
+    guided_development_clarification,
+    guided_development_clarification_required,
+    guided_development_request_detected,
+    project_guidance_from_workspace_state,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -20,11 +32,9 @@ ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION = (
     "G11_03_ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_IMPLEMENTATION_V1"
 )
 ACLI_NEXT_MESSAGE_COMPOSER_VERSION = "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1"
-ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION = "G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1"
-ACLI_NEXT_PROJECT_GUIDANCE_VERSION = "G14_06_PROJECT_GUIDANCE_AND_DEVELOPMENT_ASSISTANT_V1"
-ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION = (
-    "G14_08_PROJECT_KNOWLEDGE_REUSE_AND_CONTEXTUAL_TASK_MAPPING_V1"
-)
+ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION = PLATFORM_CORE_PERSISTENT_WORKSPACE_VERSION
+ACLI_NEXT_PROJECT_GUIDANCE_VERSION = PLATFORM_CORE_PROJECT_GUIDANCE_VERSION
+ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION = PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION
 ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME = "aigol next"
 ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED = "ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED"
 ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED = (
@@ -158,7 +168,7 @@ def run_acli_next_persistent_conversational_session(
     )
     if workspace_state is not None:
         writer(_render_persistent_workspace_resume(workspace_state))
-        writer(_render_project_guidance(_project_guidance_from_workspace_state(workspace_state)))
+        writer(_render_project_guidance(project_guidance_from_workspace_state(workspace_state)))
     while True:
         try:
             prompt = reader("" if composer_buffer else "AiGOL> ")
@@ -235,20 +245,20 @@ def run_acli_next_persistent_conversational_session(
                 composer_buffer.clear()
                 writer(_render_guided_development_summary(pending_summary))
                 continue
-            if guided_development_workflow and _guided_development_clarification_required(message):
-                pending_clarification = _guided_development_clarification(message)
+            if guided_development_workflow and guided_development_clarification_required(message):
+                pending_clarification = guided_development_clarification(message)
                 composer_events["clarification_question_count"] += 1
                 composer_buffer.clear()
                 writer(_render_guided_development_clarification(pending_clarification))
                 continue
-            if guided_development_workflow and _goal_oriented_request_detected(message):
+            if guided_development_workflow and goal_oriented_request_detected(message):
                 composer_events["goal_mapping_count"] += 1
                 composer_events["knowledge_reuse_count"] += 1
                 pending_summary = _guided_development_summary(
                     original_message=message,
                     clarification_response=None,
                     workspace_state=workspace_state,
-                    goal_mapping=_goal_mapping_from_workspace(
+                    goal_mapping=goal_mapping_from_workspace(
                         message=message,
                         workspace_state=workspace_state,
                     ),
@@ -257,7 +267,7 @@ def run_acli_next_persistent_conversational_session(
                 composer_buffer.clear()
                 writer(_render_guided_development_summary(pending_summary))
                 continue
-            if guided_development_workflow and _guided_development_request_detected(message):
+            if guided_development_workflow and guided_development_request_detected(message):
                 pending_summary = _guided_development_summary(
                     original_message=message,
                     clarification_response=None,
@@ -307,8 +317,9 @@ def run_acli_next_persistent_conversational_session(
         / f"{_next_persistent_completion_index(session_root):03d}_acli_next_persistent_session_completed.json",
         completion,
     )
-    workspace_snapshot = _persistent_workspace_state_artifact(
+    workspace_snapshot = build_persistent_workspace_state_artifact(
         conversation_id=conversation_id,
+        command_name=ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME,
         prior_state=workspace_state,
         completion=completion,
         turn_results=turn_results,
@@ -527,108 +538,6 @@ def _next_persistent_completion_index(session_root: Path) -> int:
     return max(existing, default=0) + 1
 
 
-def _persistent_workspace_state_artifact(
-    *,
-    conversation_id: str,
-    prior_state: dict[str, Any] | None,
-    completion: dict[str, Any],
-    turn_results: list[dict[str, Any]],
-    pending_clarification: dict[str, Any] | None,
-    pending_summary: dict[str, Any] | None,
-    session_root: Path,
-    created_at: str,
-    workspace: str | Path,
-) -> dict[str, Any]:
-    prior_history = prior_state.get("implementation_history", []) if isinstance(prior_state, dict) else []
-    if not isinstance(prior_history, list):
-        prior_history = []
-    new_history = [
-        {
-            "runtime_binding_status": result.get("runtime_binding_status"),
-            "runtime_replay_reference": result.get("runtime_replay_reference") or result.get("replay_reference"),
-            "latest_prompt_hash": replay_hash(result.get("latest_prompt", "")),
-            "replay_certification_reached": result.get("replay_certification_reached") is True,
-        }
-        for result in turn_results
-    ]
-    implementation_history = [*deepcopy(prior_history), *new_history]
-    active_objective = _active_development_objective(
-        pending_clarification=pending_clarification,
-        pending_summary=pending_summary,
-        implementation_history=implementation_history,
-    )
-    pending_approval = pending_summary is not None
-    pending_clarification_present = pending_clarification is not None
-    guidance = _project_guidance_model(
-        active_objective=active_objective,
-        pending_clarification=pending_clarification_present,
-        pending_approval=pending_approval,
-        implementation_history_count=len(implementation_history),
-        runtime_bound_count=sum(
-            1 for result in turn_results if result.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
-        ),
-    )
-    knowledge_index = _project_knowledge_index_model(
-        prior_state=prior_state,
-        pending_summary=pending_summary,
-        guidance=guidance,
-        implementation_history=implementation_history,
-    )
-    artifact = {
-        "artifact_type": "ACLI_NEXT_PERSISTENT_WORKSPACE_STATE_ARTIFACT_V1",
-        "runtime_version": ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION,
-        "command": ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME,
-        "session_id": conversation_id,
-        "workspace": str(Path(workspace)),
-        "created_at": _require_string(created_at, "created_at"),
-        "session_root": str(session_root),
-        "completion_reference": completion.get("replay_reference"),
-        "completion_hash": completion.get("artifact_hash"),
-        "prior_workspace_state_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
-        "active_development_objective": active_objective,
-        "pending_clarification_request": deepcopy(pending_clarification),
-        "pending_implementation_summary": deepcopy(pending_summary),
-        "pending_approval": pending_approval,
-        "pending_approval_kind": "IMPLEMENTATION_SUMMARY_APPROVAL" if pending_approval else None,
-        "implementation_history": implementation_history,
-        "implementation_history_count": len(implementation_history),
-        "project_guidance": guidance,
-        "project_knowledge_index": knowledge_index,
-        "recent_governed_decisions": [
-            {
-                "decision": "HUMAN_CONFIRMATION_RECORDED",
-                "runtime_binding_status": result.get("runtime_binding_status"),
-                "replay_certification_reached": result.get("replay_certification_reached") is True,
-            }
-            for result in turn_results
-            if result.get("runtime_binding_status")
-        ],
-        "resumable_conversational_context": True,
-        "replay_visible": True,
-        "acli_next_authorizes": False,
-        "acli_next_executes": False,
-        "platform_core_runtime_delegated": True,
-        "replay_reference": str(session_root / "workspace_state"),
-    }
-    artifact["artifact_hash"] = replay_hash(artifact)
-    return artifact
-
-
-def _active_development_objective(
-    *,
-    pending_clarification: dict[str, Any] | None,
-    pending_summary: dict[str, Any] | None,
-    implementation_history: list[dict[str, Any]],
-) -> str | None:
-    if isinstance(pending_summary, dict):
-        return str(pending_summary.get("original_message") or pending_summary.get("refined_message") or "")
-    if isinstance(pending_clarification, dict):
-        return str(pending_clarification.get("original_message") or "")
-    if implementation_history:
-        return "recent governed development runtime completed"
-    return None
-
-
 def _render_persistent_workspace_resume(workspace_state: dict[str, Any]) -> str:
     lines = [
         "Persistent development workspace restored.",
@@ -646,113 +555,6 @@ def _render_persistent_workspace_resume(workspace_state: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _project_guidance_from_workspace_state(workspace_state: dict[str, Any]) -> dict[str, Any]:
-    existing = workspace_state.get("project_guidance")
-    if isinstance(existing, dict):
-        return deepcopy(existing)
-    return _project_guidance_model(
-        active_objective=workspace_state.get("active_development_objective"),
-        pending_clarification=workspace_state.get("pending_clarification_request") is not None,
-        pending_approval=workspace_state.get("pending_approval") is True,
-        implementation_history_count=int(workspace_state.get("implementation_history_count") or 0),
-        runtime_bound_count=sum(
-            1
-            for item in workspace_state.get("implementation_history", [])
-            if isinstance(item, dict) and item.get("runtime_binding_status") == "AIGOL_NEXT_RUNTIME_BOUND"
-        ),
-    )
-
-
-def _project_guidance_model(
-    *,
-    active_objective: Any,
-    pending_clarification: bool,
-    pending_approval: bool,
-    implementation_history_count: int,
-    runtime_bound_count: int,
-) -> dict[str, Any]:
-    objective = str(active_objective or "No active development objective")
-    pending_work = _guidance_pending_work(
-        active_objective=objective,
-        pending_clarification=pending_clarification,
-        pending_approval=pending_approval,
-    )
-    return {
-        "guidance_version": ACLI_NEXT_PROJECT_GUIDANCE_VERSION,
-        "guidance_source": "deterministic_workspace_state",
-        "advisory_only": True,
-        "active_generation": _guidance_generation(objective),
-        "active_milestone": _guidance_milestone(objective),
-        "active_development_objective": objective,
-        "pending_implementation_work": pending_work,
-        "pending_approvals": ["IMPLEMENTATION_SUMMARY_APPROVAL"] if pending_approval else [],
-        "unresolved_clarification": pending_clarification,
-        "implementation_history_count": int(implementation_history_count),
-        "runtime_bound_count": int(runtime_bound_count),
-        "recommended_next_governed_action": _guidance_next_action(
-            pending_clarification=pending_clarification,
-            pending_approval=pending_approval,
-            implementation_history_count=implementation_history_count,
-        ),
-        "requires_explicit_human_approval": pending_approval,
-        "acli_next_executes_recommendation": False,
-    }
-
-
-def _guidance_generation(objective: str) -> str:
-    marker = _find_generation_marker(objective)
-    return f"Generation {marker}" if marker else "Generation 14"
-
-
-def _guidance_milestone(objective: str) -> str:
-    for part in objective.replace("-", "_").split():
-        normalized = part.strip(".,:;()[]{}")
-        if "_V" in normalized and normalized.rsplit("_V", 1)[-1].isdigit():
-            return normalized
-    return "AIGOL_GENERIC_DEVELOPMENT_TASK_V1"
-
-
-def _find_generation_marker(value: str) -> str | None:
-    for token in value.replace("-", "_").split("_"):
-        if token.startswith("G") and token[1:].isdigit():
-            return token[1:]
-    for token in value.split():
-        cleaned = token.strip(".,:;()[]{}")
-        if cleaned.startswith("G") and cleaned[1:].isdigit():
-            return cleaned[1:]
-    return None
-
-
-def _guidance_pending_work(
-    *,
-    active_objective: str,
-    pending_clarification: bool,
-    pending_approval: bool,
-) -> list[str]:
-    if pending_clarification:
-        return [f"Answer clarification for: {active_objective}"]
-    if pending_approval:
-        return [f"Approve or cancel implementation summary for: {active_objective}"]
-    if active_objective != "No active development objective":
-        return [f"Continue next governed development task after: {active_objective}"]
-    return ["Define the next governed development objective"]
-
-
-def _guidance_next_action(
-    *,
-    pending_clarification: bool,
-    pending_approval: bool,
-    implementation_history_count: int,
-) -> str:
-    if pending_clarification:
-        return "Answer the pending clarification, then type /send."
-    if pending_approval:
-        return "Review the pending implementation summary, then type /approve or /cancel."
-    if implementation_history_count > 0:
-        return "Choose the next governed development objective."
-    return "Compose the first governed development request."
-
-
 def _render_project_guidance(guidance: dict[str, Any]) -> str:
     return "\n".join(
         [
@@ -767,177 +569,6 @@ def _render_project_guidance(guidance: dict[str, Any]) -> str:
             f"acli_next_executes_recommendation: {guidance.get('acli_next_executes_recommendation')}",
         ]
     )
-
-
-def _project_knowledge_index_model(
-    *,
-    prior_state: dict[str, Any] | None,
-    pending_summary: dict[str, Any] | None,
-    guidance: dict[str, Any],
-    implementation_history: list[dict[str, Any]],
-) -> dict[str, Any]:
-    prior_index = (
-        prior_state.get("project_knowledge_index")
-        if isinstance(prior_state, dict) and isinstance(prior_state.get("project_knowledge_index"), dict)
-        else {}
-    )
-    known_targets = _unique_strings(prior_index.get("known_goal_targets"))
-    certified_artifacts = _copy_string_map(prior_index.get("certified_artifacts_by_target"))
-    related_milestones = _copy_string_map(prior_index.get("related_milestones_by_target"))
-    implementation_matches = _copy_string_map(prior_index.get("implementation_history_by_target"))
-    target = None
-    if isinstance(pending_summary, dict) and isinstance(pending_summary.get("goal_mapping"), dict):
-        mapping = pending_summary["goal_mapping"]
-        target = str(mapping.get("goal_target") or "").strip() or None
-        if target:
-            known_targets = _unique_strings([*known_targets, target])
-            certified_artifacts[target] = _unique_strings(
-                [
-                    *certified_artifacts.get(target, []),
-                    *_certified_artifacts_for_goal_target(target),
-                ]
-            )
-            related_milestones[target] = _unique_strings(
-                [
-                    *related_milestones.get(target, []),
-                    str(guidance.get("active_milestone") or "AIGOL_GENERIC_DEVELOPMENT_TASK_V1"),
-                ]
-            )
-            implementation_matches[target] = _unique_strings(
-                [
-                    *implementation_matches.get(target, []),
-                    str(mapping.get("governed_request") or mapping.get("source_goal") or ""),
-                ]
-            )
-    return {
-        "knowledge_reuse_version": ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION,
-        "knowledge_source": "deterministic_workspace_state",
-        "known_goal_targets": known_targets,
-        "certified_artifacts_by_target": certified_artifacts,
-        "related_milestones_by_target": related_milestones,
-        "implementation_history_by_target": implementation_matches,
-        "implementation_history_count": len(implementation_history),
-        "latest_pending_goal_target": target,
-        "conversation_history_is_authority": False,
-        "requires_human_approval_before_execution": True,
-        "acli_next_executes_recommendation": False,
-    }
-
-
-def _project_knowledge_context_from_workspace(
-    *,
-    message: str,
-    workspace_state: dict[str, Any] | None,
-    goal_target: str,
-    governed_request: str,
-) -> dict[str, Any]:
-    knowledge_index = (
-        workspace_state.get("project_knowledge_index")
-        if isinstance(workspace_state, dict) and isinstance(workspace_state.get("project_knowledge_index"), dict)
-        else {}
-    )
-    known_targets = set(_unique_strings(knowledge_index.get("known_goal_targets")))
-    known = goal_target in known_targets
-    lowered = message.lower()
-    already_requested = any(term in lowered for term in ("already", "done", "implemented", "satisfied"))
-    modify_requested = any(term in lowered for term in ("improve", "change", "modify", "refine", "update"))
-    continue_requested = any(term in lowered for term in ("continue", "extend", "add to", "build on"))
-    if known and already_requested:
-        classification = "ALREADY_SATISFIED"
-        new_work_required = False
-        reuse_recommended = True
-        reason = "The deterministic workspace already records this goal target."
-    elif known and modify_requested:
-        classification = "MODIFIES_EXISTING_CAPABILITY"
-        new_work_required = True
-        reuse_recommended = True
-        reason = "The goal modifies a capability already present in the deterministic workspace."
-    elif known and continue_requested:
-        classification = "EXTENDS_EXISTING_MILESTONE"
-        new_work_required = True
-        reuse_recommended = True
-        reason = "The goal extends an existing workspace milestone instead of creating unrelated work."
-    elif goal_target != "general_project_goal" and _certified_artifacts_for_goal_target(goal_target):
-        classification = "RELATES_TO_CERTIFIED_CAPABILITY"
-        new_work_required = True
-        reuse_recommended = True
-        reason = "Certified artifacts already describe the related capability family."
-    else:
-        classification = "NEW_GOVERNED_WORK"
-        new_work_required = True
-        reuse_recommended = False
-        reason = "No deterministic workspace match was found for this goal target."
-    artifacts_by_target = (
-        knowledge_index.get("certified_artifacts_by_target")
-        if isinstance(knowledge_index.get("certified_artifacts_by_target"), dict)
-        else {}
-    )
-    artifacts = _unique_strings(
-        [
-            *artifacts_by_target.get(goal_target, []),
-            *_certified_artifacts_for_goal_target(goal_target),
-        ]
-    )
-    milestones = _unique_strings(
-        knowledge_index.get("related_milestones_by_target", {}).get(goal_target, [])
-        if isinstance(knowledge_index.get("related_milestones_by_target"), dict)
-        else []
-    )
-    history_matches = _unique_strings(
-        knowledge_index.get("implementation_history_by_target", {}).get(goal_target, [])
-        if isinstance(knowledge_index.get("implementation_history_by_target"), dict)
-        else []
-    )
-    return {
-        "knowledge_reuse_version": ACLI_NEXT_PROJECT_KNOWLEDGE_REUSE_VERSION,
-        "workspace_inspected": True,
-        "mapping_source": "deterministic_workspace_state",
-        "classification": classification,
-        "goal_target": goal_target,
-        "governed_request": governed_request,
-        "related_milestones": milestones,
-        "relevant_certified_artifacts": artifacts,
-        "implementation_history_matches": history_matches,
-        "reuse_recommended": reuse_recommended,
-        "reuse_reason": reason,
-        "new_work_required": new_work_required,
-        "duplicate_work_avoided": classification == "ALREADY_SATISFIED",
-        "requires_human_approval": True,
-        "acli_next_executes_recommendation": False,
-    }
-
-
-def _certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
-    artifacts = {
-        "github_actions": [
-            "docs/governance/G14_07_GOAL_ORIENTED_DEVELOPMENT_EXPERIENCE_V1.md",
-        ],
-        "deployment": [
-            "docs/governance/G11_00_OPERATIONAL_EXPANSION_PRIORITIZATION_REVIEW_V1.md",
-        ],
-        "mobile_interface": [
-            "docs/governance/G14_01_UNIFIED_HUMAN_INTERFACE_ARCHITECTURE_CERTIFICATION_V1.md",
-        ],
-        "active_objective": [
-            "docs/governance/G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1.md",
-        ],
-    }
-    return artifacts.get(goal_target, [])
-
-
-def _unique_strings(values: Any) -> list[str]:
-    if not isinstance(values, list):
-        return []
-    return sorted({str(value) for value in values if str(value).strip()})
-
-
-def _copy_string_map(value: Any) -> dict[str, list[str]]:
-    if not isinstance(value, dict):
-        return {}
-    result: dict[str, list[str]] = {}
-    for key, values in value.items():
-        result[str(key)] = _unique_strings(values)
-    return result
 
 
 def _persistent_completion_artifact(
@@ -1066,97 +697,6 @@ def _render_message_composer_help() -> str:
             "/exit or /quit - close the session when the buffer is empty",
         ]
     )
-
-
-def _guided_development_request_detected(message: str) -> bool:
-    lowered = message.lower().strip()
-    return lowered.startswith(("add ", "build ", "create ", "implement ", "improve ", "fix "))
-
-
-def _goal_oriented_request_detected(message: str) -> bool:
-    lowered = message.lower().strip()
-    return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ", "continue "))
-
-
-def _goal_mapping_from_workspace(
-    *,
-    message: str,
-    workspace_state: dict[str, Any] | None,
-) -> dict[str, Any]:
-    lowered = message.lower()
-    active_objective = (
-        workspace_state.get("active_development_objective")
-        if isinstance(workspace_state, dict)
-        else None
-    )
-    if "github actions" in lowered:
-        governed_request = "Add GitHub Actions support."
-        goal_type = "EXTENDS_PROJECT"
-        target = "github_actions"
-    elif "deployment" in lowered:
-        governed_request = "Add governed deployment workflow support."
-        goal_type = "EXTENDS_PROJECT"
-        target = "deployment"
-    elif "mobile" in lowered:
-        governed_request = "Continue the governed mobile interface."
-        goal_type = "CONTINUES_PROJECT"
-        target = "mobile_interface"
-    elif lowered.startswith(("continue ", "let's continue", "lets continue")):
-        governed_request = str(active_objective or "Continue the active governed development objective.")
-        goal_type = "CONTINUES_PROJECT"
-        target = "active_objective"
-    else:
-        governed_request = message
-        goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
-        target = "general_project_goal"
-    mapping = {
-        "goal_mapping_status": "GOAL_MAPPED_TO_GOVERNED_REQUEST",
-        "goal_type": goal_type,
-        "goal_target": target,
-        "source_goal": message,
-        "active_workspace_objective": active_objective,
-        "governed_request": governed_request,
-        "mapping_source": "deterministic_workspace_state",
-        "requires_human_approval": True,
-        "acli_next_executes_mapping": False,
-    }
-    mapping["contextual_task_mapping"] = _project_knowledge_context_from_workspace(
-        message=message,
-        workspace_state=workspace_state,
-        goal_target=target,
-        governed_request=governed_request,
-    )
-    return mapping
-
-
-def _guided_development_clarification_required(message: str) -> bool:
-    lowered = message.lower()
-    if not _guided_development_request_detected(message):
-        return False
-    specificity_terms = (
-        "support",
-        "workflow",
-        "runtime",
-        "test",
-        "validation",
-        "validator",
-        "parser",
-        "github actions",
-        "governed",
-        "replay",
-    )
-    return not any(term in lowered for term in specificity_terms)
-
-
-def _guided_development_clarification(message: str) -> dict[str, Any]:
-    return {
-        "original_message": message,
-        "clarification_required": True,
-        "clarification_questions": [
-            "What specific capability should AiGOL implement?",
-            "What constraints or boundaries should the implementation preserve?",
-        ],
-    }
 
 
 def _render_guided_development_clarification(clarification: dict[str, Any]) -> str:
