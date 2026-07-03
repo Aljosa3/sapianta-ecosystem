@@ -10,7 +10,7 @@ from typing import Any
 from aigol.acli_next.daily_dashboard import run_acli_next_daily_dashboard
 from aigol.acli_next.execution_plan import run_acli_next_interactive_with_execution_plan
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import replay_hash, write_json_immutable
+from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
 ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION = (
@@ -20,6 +20,7 @@ ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_VERSION = (
     "G11_03_ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_IMPLEMENTATION_V1"
 )
 ACLI_NEXT_MESSAGE_COMPOSER_VERSION = "G12_02_ACLI_NEXT_MESSAGE_COMPOSER_IMPLEMENTATION_V1"
+ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION = "G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1"
 ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME = "aigol next"
 ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED = "ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED"
 ACLI_NEXT_PERSISTENT_CONVERSATIONAL_SESSION_COMPLETED = (
@@ -128,10 +129,11 @@ def run_acli_next_persistent_conversational_session(
     submit_turn = run_acli_next_conversational_session if turn_runner is None else turn_runner
     conversation_id = session_id or _derived_persistent_session_id(created_at, workspace)
     session_root = Path(replay_dir) / conversation_id
+    workspace_state = _latest_persistent_workspace_state(session_root)
     turn_results: list[dict[str, Any]] = []
     composer_buffer: list[str] = []
-    pending_clarification: dict[str, Any] | None = None
-    pending_summary: dict[str, Any] | None = None
+    pending_clarification = _restored_pending_clarification(workspace_state)
+    pending_summary = _restored_pending_summary(workspace_state)
     composer_events = {
         "preview_count": 0,
         "clear_count": 0,
@@ -148,6 +150,8 @@ def run_acli_next_persistent_conversational_session(
         "AiGOL conversational session started. Compose a message, then type /send. "
         "Use /preview, /clear, /cancel, or /help."
     )
+    if workspace_state is not None:
+        writer(_render_persistent_workspace_resume(workspace_state))
     while True:
         try:
             prompt = reader("" if composer_buffer else "AiGOL> ")
@@ -261,6 +265,11 @@ def run_acli_next_persistent_conversational_session(
         composer_events=composer_events,
         unsubmitted_buffer_line_count=len(composer_buffer),
         guided_development_workflow=guided_development_workflow,
+        session_resumed=workspace_state is not None,
+        restored_workspace_state_reference=workspace_state.get("replay_reference") if workspace_state else None,
+        restored_implementation_history_count=len(workspace_state.get("implementation_history", []))
+        if workspace_state
+        else 0,
         pending_clarification=pending_clarification is not None,
         pending_summary=pending_summary is not None,
         session_root=session_root,
@@ -272,8 +281,27 @@ def run_acli_next_persistent_conversational_session(
         session_root / f"{len(turn_results) + 1:03d}_acli_next_persistent_session_completed.json",
         completion,
     )
+    workspace_snapshot = _persistent_workspace_state_artifact(
+        conversation_id=conversation_id,
+        prior_state=workspace_state,
+        completion=completion,
+        turn_results=turn_results,
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+        session_root=session_root,
+        created_at=created_at,
+        workspace=workspace,
+    )
+    write_json_immutable(
+        session_root
+        / "workspace_state"
+        / f"{_next_workspace_state_index(session_root):03d}_acli_next_workspace_state_recorded.json",
+        workspace_snapshot,
+    )
     writer("AiGOL conversational session closed.")
     result = deepcopy(completion)
+    result["workspace_state_replay_reference"] = workspace_snapshot["replay_reference"]
+    result["workspace_state_hash"] = workspace_snapshot["artifact_hash"]
     result["replay_hash"] = completion["artifact_hash"]
     return result
 
@@ -340,6 +368,9 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"session_status: {result.get('session_status')}",
             f"turn_count: {result.get('turn_count')}",
             f"message_composer_enabled: {result.get('message_composer_enabled')}",
+            f"persistent_development_workspace_enabled: {result.get('persistent_development_workspace_enabled')}",
+            f"session_resumed: {result.get('session_resumed')}",
+            f"restored_implementation_history_count: {result.get('restored_implementation_history_count')}",
             f"guided_development_workflow_enabled: {result.get('guided_development_workflow_enabled')}",
             f"submitted_message_count: {result.get('submitted_message_count')}",
             f"clarification_question_count: {result.get('clarification_question_count')}",
@@ -347,7 +378,10 @@ def render_acli_next_persistent_conversational_session(result: dict[str, Any]) -
             f"execution_summary_count: {result.get('execution_summary_count')}",
             f"approval_count: {result.get('approval_count')}",
             f"runtime_bound_count: {result.get('runtime_bound_count')}",
+            f"pending_clarification: {result.get('pending_clarification')}",
+            f"pending_execution_summary: {result.get('pending_execution_summary')}",
             f"exit_reason: {result.get('exit_reason')}",
+            f"workspace_state_replay_reference: {result.get('workspace_state_replay_reference')}",
             f"replay_reference: {result.get('replay_reference')}",
             f"acli_next_authorizes: {result.get('acli_next_authorizes')}",
             f"acli_next_executes: {result.get('acli_next_executes')}",
@@ -415,6 +449,145 @@ def _conversational_artifact(
     return artifact
 
 
+def _latest_persistent_workspace_state(session_root: Path) -> dict[str, Any] | None:
+    state_root = session_root / "workspace_state"
+    if not state_root.exists():
+        return None
+    candidates = sorted(state_root.glob("*_acli_next_workspace_state_recorded.json"))
+    for path in reversed(candidates):
+        try:
+            artifact = load_json(path)
+        except FailClosedRuntimeError:
+            continue
+        if artifact.get("artifact_type") == "ACLI_NEXT_PERSISTENT_WORKSPACE_STATE_ARTIFACT_V1":
+            return artifact
+    return None
+
+
+def _restored_pending_clarification(workspace_state: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(workspace_state, dict):
+        return None
+    pending = workspace_state.get("pending_clarification_request")
+    return deepcopy(pending) if isinstance(pending, dict) else None
+
+
+def _restored_pending_summary(workspace_state: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(workspace_state, dict):
+        return None
+    pending = workspace_state.get("pending_implementation_summary")
+    return deepcopy(pending) if isinstance(pending, dict) else None
+
+
+def _next_workspace_state_index(session_root: Path) -> int:
+    state_root = session_root / "workspace_state"
+    existing: list[int] = []
+    if state_root.exists():
+        for path in state_root.glob("*_acli_next_workspace_state_recorded.json"):
+            prefix = path.name.split("_", 1)[0]
+            if prefix.isdigit():
+                existing.append(int(prefix))
+    return max(existing, default=0) + 1
+
+
+def _persistent_workspace_state_artifact(
+    *,
+    conversation_id: str,
+    prior_state: dict[str, Any] | None,
+    completion: dict[str, Any],
+    turn_results: list[dict[str, Any]],
+    pending_clarification: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+    session_root: Path,
+    created_at: str,
+    workspace: str | Path,
+) -> dict[str, Any]:
+    prior_history = prior_state.get("implementation_history", []) if isinstance(prior_state, dict) else []
+    if not isinstance(prior_history, list):
+        prior_history = []
+    new_history = [
+        {
+            "runtime_binding_status": result.get("runtime_binding_status"),
+            "runtime_replay_reference": result.get("runtime_replay_reference") or result.get("replay_reference"),
+            "latest_prompt_hash": replay_hash(result.get("latest_prompt", "")),
+            "replay_certification_reached": result.get("replay_certification_reached") is True,
+        }
+        for result in turn_results
+    ]
+    implementation_history = [*deepcopy(prior_history), *new_history]
+    artifact = {
+        "artifact_type": "ACLI_NEXT_PERSISTENT_WORKSPACE_STATE_ARTIFACT_V1",
+        "runtime_version": ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION,
+        "command": ACLI_NEXT_CONVERSATIONAL_COMMAND_NAME,
+        "session_id": conversation_id,
+        "workspace": str(Path(workspace)),
+        "created_at": _require_string(created_at, "created_at"),
+        "session_root": str(session_root),
+        "completion_reference": completion.get("replay_reference"),
+        "completion_hash": completion.get("artifact_hash"),
+        "prior_workspace_state_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
+        "active_development_objective": _active_development_objective(
+            pending_clarification=pending_clarification,
+            pending_summary=pending_summary,
+            implementation_history=implementation_history,
+        ),
+        "pending_clarification_request": deepcopy(pending_clarification),
+        "pending_implementation_summary": deepcopy(pending_summary),
+        "pending_approval": pending_summary is not None,
+        "pending_approval_kind": "IMPLEMENTATION_SUMMARY_APPROVAL" if pending_summary is not None else None,
+        "implementation_history": implementation_history,
+        "implementation_history_count": len(implementation_history),
+        "recent_governed_decisions": [
+            {
+                "decision": "HUMAN_CONFIRMATION_RECORDED",
+                "runtime_binding_status": result.get("runtime_binding_status"),
+                "replay_certification_reached": result.get("replay_certification_reached") is True,
+            }
+            for result in turn_results
+            if result.get("runtime_binding_status")
+        ],
+        "resumable_conversational_context": True,
+        "replay_visible": True,
+        "acli_next_authorizes": False,
+        "acli_next_executes": False,
+        "platform_core_runtime_delegated": True,
+        "replay_reference": str(session_root / "workspace_state"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _active_development_objective(
+    *,
+    pending_clarification: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+    implementation_history: list[dict[str, Any]],
+) -> str | None:
+    if isinstance(pending_summary, dict):
+        return str(pending_summary.get("original_message") or pending_summary.get("refined_message") or "")
+    if isinstance(pending_clarification, dict):
+        return str(pending_clarification.get("original_message") or "")
+    if implementation_history:
+        return "recent governed development runtime completed"
+    return None
+
+
+def _render_persistent_workspace_resume(workspace_state: dict[str, Any]) -> str:
+    lines = [
+        "Persistent development workspace restored.",
+        f"active_development_objective: {workspace_state.get('active_development_objective')}",
+        f"pending_clarification: {workspace_state.get('pending_clarification_request') is not None}",
+        f"pending_approval: {workspace_state.get('pending_approval') is True}",
+        f"implementation_history_count: {workspace_state.get('implementation_history_count')}",
+    ]
+    if workspace_state.get("pending_clarification_request") is not None:
+        lines.append("Continue by answering the pending clarification and type /send.")
+    elif workspace_state.get("pending_implementation_summary") is not None:
+        lines.append("Continue by typing /approve, or /cancel to discard the pending summary.")
+    else:
+        lines.append("Continue by composing the next development request.")
+    return "\n".join(lines)
+
+
 def _persistent_completion_artifact(
     *,
     conversation_id: str,
@@ -422,6 +595,9 @@ def _persistent_completion_artifact(
     composer_events: dict[str, int],
     unsubmitted_buffer_line_count: int,
     guided_development_workflow: bool,
+    session_resumed: bool,
+    restored_workspace_state_reference: str | None,
+    restored_implementation_history_count: int,
     pending_clarification: bool,
     pending_summary: bool,
     session_root: Path,
@@ -440,6 +616,11 @@ def _persistent_completion_artifact(
         "turn_hashes": [turn["artifact_hash"] for turn in turn_results],
         "turn_replay_references": [turn["replay_reference"] for turn in turn_results],
         "message_composer_enabled": True,
+        "persistent_development_workspace_enabled": True,
+        "persistent_workspace_runtime_version": ACLI_NEXT_PERSISTENT_WORKSPACE_VERSION,
+        "session_resumed": bool(session_resumed),
+        "restored_workspace_state_reference": restored_workspace_state_reference,
+        "restored_implementation_history_count": int(restored_implementation_history_count),
         "guided_development_workflow_enabled": bool(guided_development_workflow),
         "message_composer_version": ACLI_NEXT_MESSAGE_COMPOSER_VERSION,
         "message_composer_commands": [
