@@ -32,6 +32,7 @@ ACLI_NEXT_MESSAGE_COMPOSER_CLEAR_COMMAND = "/clear"
 ACLI_NEXT_MESSAGE_COMPOSER_CANCEL_COMMAND = "/cancel"
 ACLI_NEXT_MESSAGE_COMPOSER_HELP_COMMAND = "/help"
 ACLI_NEXT_MESSAGE_COMPOSER_EXIT_COMMANDS = {"/exit", "/quit", "exit", "quit", "close session"}
+ACLI_NEXT_MESSAGE_COMPOSER_PROMPT_PREFIXES = ("aigol compose>", "aigol>")
 
 
 def run_acli_next_conversational_session(
@@ -139,7 +140,7 @@ def run_acli_next_persistent_conversational_session(
     )
     while True:
         try:
-            prompt = reader("AiGOL compose> " if composer_buffer else "AiGOL> ")
+            prompt = reader("" if composer_buffer else "AiGOL> ")
         except EOFError:
             exit_reason = "EOF"
             break
@@ -412,7 +413,12 @@ def _normalized_message_composer_command(line: str) -> str:
     """Normalize only command detection; preserve buffered message content unchanged."""
 
     candidate = line.strip()
-    return "".join(ch for ch in candidate if unicodedata.category(ch) != "Cf").lower()
+    normalized = "".join(ch for ch in candidate if unicodedata.category(ch) != "Cf").lower().strip()
+    for prefix in ACLI_NEXT_MESSAGE_COMPOSER_PROMPT_PREFIXES:
+        if normalized.startswith(prefix):
+            normalized = normalized[len(prefix) :].strip()
+            break
+    return normalized
 
 
 def _render_message_composer_preview(buffer: list[str]) -> str:

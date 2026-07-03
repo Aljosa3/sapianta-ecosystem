@@ -4,6 +4,13 @@ from __future__ import annotations
 
 import builtins
 import json
+import os
+import pty
+import select
+import subprocess
+import sys
+import time
+from pathlib import Path
 
 from aigol.acli_next import (
     ACLI_NEXT_CONVERSATIONAL_SESSION_VERSION,
@@ -21,6 +28,68 @@ from aigol.cli.aigol_cli import build_parser, render_command_result, run_command
 
 
 CREATED_AT = "2026-07-02T00:00:00Z"
+
+
+def _run_acli_next_pty(tmp_path, lines: list[str]) -> str:
+    master_fd, slave_fd = pty.openpty()
+    runtime_root = tmp_path / "runtime"
+    command = [
+        sys.executable,
+        "-m",
+        "aigol.cli.aigol_cli",
+        "next",
+        "--session-id",
+        "ACLI-NEXT-COMPOSER-PTY",
+        "--runtime-root",
+        str(runtime_root),
+        "--workspace",
+        str(tmp_path),
+        "--created-at",
+        CREATED_AT,
+    ]
+    process = subprocess.Popen(
+        command,
+        cwd=Path.cwd(),
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        close_fds=True,
+    )
+    os.close(slave_fd)
+    output = bytearray()
+    try:
+        os.write(master_fd, ("\n".join(lines) + "\n").encode("utf-8"))
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            ready, _, _ = select.select([master_fd], [], [], 0.1)
+            if ready:
+                try:
+                    chunk = os.read(master_fd, 8192)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                output.extend(chunk)
+            if process.poll() is not None:
+                while True:
+                    ready, _, _ = select.select([master_fd], [], [], 0)
+                    if not ready:
+                        break
+                    try:
+                        chunk = os.read(master_fd, 8192)
+                    except OSError:
+                        break
+                    if not chunk:
+                        break
+                    output.extend(chunk)
+                break
+        process.wait(timeout=5)
+    finally:
+        os.close(master_fd)
+        if process.poll() is None:
+            process.kill()
+    assert process.returncode == 0
+    return output.decode("utf-8", errors="replace")
 
 
 def test_acli_next_conversational_session_composes_existing_capabilities(tmp_path) -> None:
@@ -240,6 +309,34 @@ def test_acli_next_message_composer_accepts_pasted_format_character_commands(tmp
     assert any("session_status: ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED" in output for output in outputs)
 
 
+def test_acli_next_message_composer_accepts_copied_prompt_prefixed_commands(tmp_path) -> None:
+    inputs = iter(
+        [
+            "Message pasted from a transcript.",
+            "AiGOL compose> /preview",
+            "AiGOL compose> /send",
+            "AiGOL> exit",
+        ]
+    )
+    outputs: list[str] = []
+
+    result = run_acli_next_persistent_conversational_session(
+        session_id="ACLI-NEXT-COMPOSER-PROMPT-PREFIXED-COMMANDS",
+        created_at=CREATED_AT,
+        replay_dir=tmp_path / "runtime",
+        workspace=tmp_path,
+        input_reader=lambda _prompt: next(inputs),
+        output_writer=outputs.append,
+    )
+
+    assert result["turn_count"] == 1
+    assert result["submitted_message_count"] == 1
+    assert result["preview_count"] == 1
+    assert (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-PROMPT-PREFIXED-COMMANDS" / "RUN-000001").exists()
+    assert any("Message buffer preview:" in output for output in outputs)
+    assert any("session_status: ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED" in output for output in outputs)
+
+
 def test_acli_next_message_composer_main_interactive_path_submits_one_turn(
     tmp_path,
     monkeypatch,
@@ -285,3 +382,42 @@ def test_acli_next_message_composer_main_interactive_path_submits_one_turn(
     assert "submitted_message_count: 1" in output
     assert (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MAIN" / "RUN-000001").exists()
     assert not (tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-MAIN" / "RUN-000002").exists()
+
+
+def test_acli_next_message_composer_real_pty_interactive_flow(tmp_path) -> None:
+    output = _run_acli_next_pty(
+        tmp_path,
+        [
+            "First composed message before clear.",
+            "",
+            "Objective:",
+            "/preview",
+            "/clear",
+            "/send",
+            "Second composed message.",
+            "",
+            "G12_02C regression.",
+            "/send",
+            "Third composed message.",
+            "/send",
+            "Canceled message.",
+            "/cancel",
+            "exit",
+        ],
+    )
+
+    runtime_root = tmp_path / "runtime" / "ACLI-NEXT-COMPOSER-PTY"
+    assert "Message buffer preview:" in output
+    assert "First composed message before clear." in output
+    assert "Message buffer cleared." in output
+    assert "Message buffer is empty. Add content before /send." in output
+    assert "Message composition canceled." in output
+    assert "session_status: ACLI_NEXT_CONVERSATIONAL_SESSION_PRESENTED" in output
+    assert "run_id: RUN-000001" in output
+    assert "run_id: RUN-000002" in output
+    assert "message_composer_enabled: True" in output
+    assert "submitted_message_count: 2" in output
+    assert "AiGOL compose>" not in output
+    assert (runtime_root / "RUN-000001").exists()
+    assert (runtime_root / "RUN-000002").exists()
+    assert not (runtime_root / "RUN-000003").exists()
