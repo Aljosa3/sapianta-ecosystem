@@ -1402,6 +1402,10 @@ def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> N
             NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
         ),
         (
+            "Improve provider availability handling.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
             "Improve provider abstraction documentation so provider identity cannot be confused with governance authority.",
             IMPROVE_PROVIDER_LAYER,
         ),

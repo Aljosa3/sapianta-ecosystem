@@ -152,3 +152,35 @@ def test_high_level_operational_goals_map_without_manual_workflow_prompts(
     assert "governed_request: Continue the governed mobile interface." in output
     assert "goal_mapping_count: 2" in output
     assert "runtime_bound_count: 0" in output
+
+
+def test_improvement_request_approval_enters_native_runtime(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    proposal_adapter = _install_fake_proposal_adapter(monkeypatch)
+    _install_fake_external_worker_openai_client(monkeypatch)
+
+    result = _run_aigol_next(
+        monkeypatch,
+        tmp_path,
+        session_id="G14-12-IMPROVE-PROVIDER-AVAILABILITY",
+        inputs=[
+            "Improve provider availability handling.",
+            "/send",
+            "/approve",
+            "exit",
+        ],
+    )
+    output = capsys.readouterr().out
+
+    assert result == 0
+    assert "Governed implementation summary" in output
+    assert "Human confirmation recorded. Entering certified runtime." in output
+    assert "runtime_binding_status: AIGOL_NEXT_RUNTIME_BOUND" in output
+    assert "runtime_entered: True" in output
+    assert "provider_invocation_reached: True" in output
+    assert "worker_execution_reached: True" in output
+    assert "replay_certification_reached: True" in output
+    assert proposal_adapter.calls == 1
