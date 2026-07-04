@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.native_development_task_intake_runtime import is_native_development_prompt
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -14,6 +15,9 @@ PLATFORM_CORE_PERSISTENT_WORKSPACE_VERSION = "G14_05_PERSISTENT_DEVELOPMENT_WORK
 PLATFORM_CORE_PROJECT_GUIDANCE_VERSION = "G14_06_PROJECT_GUIDANCE_AND_DEVELOPMENT_ASSISTANT_V1"
 PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION = (
     "G14_08_PROJECT_KNOWLEDGE_REUSE_AND_CONTEXTUAL_TASK_MAPPING_V1"
+)
+PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_VERSION = (
+    "G14_19_CANONICAL_DEVELOPMENT_INTENT_RESOLUTION_UNIFICATION_V1"
 )
 
 
@@ -399,6 +403,81 @@ def certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
 def goal_oriented_request_detected(message: str) -> bool:
     lowered = message.lower().strip()
     return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ", "continue "))
+
+
+def resolve_development_intent(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve deterministic development intent once for summary and runtime binding."""
+
+    raw_message = require_string(message, "message")
+    goal_detected = goal_oriented_request_detected(raw_message)
+    guided_detected = guided_development_request_detected(raw_message)
+    goal_mapping = (
+        goal_mapping_from_workspace(message=raw_message, workspace_state=workspace_state)
+        if goal_detected
+        else None
+    )
+    governed_request = (
+        str(goal_mapping.get("governed_request") or raw_message)
+        if isinstance(goal_mapping, dict)
+        else raw_message
+    )
+    clarification_required = False
+    clarification_reason = None
+    if guided_detected and guided_development_clarification_required(raw_message):
+        clarification_required = True
+        clarification_reason = "guided development request lacks deterministic implementation specificity"
+    if not goal_detected and not guided_detected:
+        clarification_reason = "request is not a deterministic development request"
+
+    canonical_runtime_prompt = canonical_development_runtime_prompt(governed_request)
+    native_runtime_admissible = is_native_development_prompt(canonical_runtime_prompt)
+    summary_admissible = (
+        (goal_detected or guided_detected)
+        and not clarification_required
+        and native_runtime_admissible
+    )
+    runtime_binding_admissible = summary_admissible
+    resolution = {
+        "artifact_type": "PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "development_intent_resolution_authority": "PLATFORM_CORE",
+        "raw_prompt": raw_message,
+        "goal_oriented_request_detected": goal_detected,
+        "guided_development_request_detected": guided_detected,
+        "clarification_required": clarification_required,
+        "clarification_reason": clarification_reason,
+        "goal_mapping": deepcopy(goal_mapping),
+        "governed_request": governed_request,
+        "refined_message": canonical_runtime_prompt,
+        "canonical_runtime_prompt": canonical_runtime_prompt,
+        "native_development_prompt_detected": native_runtime_admissible,
+        "summary_admissible": summary_admissible,
+        "runtime_binding_admissible": runtime_binding_admissible,
+        "same_decision_for_send_and_approve": True,
+        "acli_next_executes_resolution": False,
+        "requires_human_approval": summary_admissible,
+        "replay_visible": True,
+    }
+    resolution["artifact_hash"] = replay_hash(resolution)
+    return resolution
+
+
+def canonical_development_runtime_prompt(message: str) -> str:
+    """Return a deterministic runtime prompt for governed development continuation."""
+
+    prompt = require_string(message, "message")
+    if is_native_development_prompt(prompt):
+        return prompt
+    lowered = prompt.lower()
+    if guided_development_request_detected(prompt) and not guided_development_clarification_required(prompt):
+        if "governed" in lowered or "governance" in lowered:
+            return f"{prompt} Implement as a native development governance workflow."
+    return prompt
 
 
 def goal_mapping_from_workspace(

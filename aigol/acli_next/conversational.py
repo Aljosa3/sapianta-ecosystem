@@ -15,12 +15,9 @@ from aigol.runtime.platform_core_project_services import (
     PLATFORM_CORE_PROJECT_GUIDANCE_VERSION,
     PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
     build_persistent_workspace_state_artifact,
-    goal_mapping_from_workspace,
-    goal_oriented_request_detected,
     guided_development_clarification,
-    guided_development_clarification_required,
-    guided_development_request_detected,
     project_guidance_from_workspace_state,
+    resolve_development_intent,
 )
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -235,43 +232,58 @@ def run_acli_next_persistent_conversational_session(
                 continue
             if guided_development_workflow and pending_clarification is not None:
                 composer_events["clarification_response_count"] += 1
+                clarified_message = f"{pending_clarification['original_message']}\n\nClarification:\n{message}"
+                intent_resolution = resolve_development_intent(
+                    message=clarified_message,
+                    workspace_state=workspace_state,
+                )
+                if intent_resolution.get("summary_admissible") is not True:
+                    pending_clarification = guided_development_clarification(pending_clarification["original_message"])
+                    composer_events["clarification_question_count"] += 1
+                    composer_buffer.clear()
+                    writer(_render_guided_development_clarification(pending_clarification))
+                    continue
                 pending_summary = _guided_development_summary(
                     original_message=pending_clarification["original_message"],
                     clarification_response=message,
                     workspace_state=workspace_state,
+                    development_intent_resolution=intent_resolution,
                 )
                 composer_events["execution_summary_count"] += 1
                 pending_clarification = None
                 composer_buffer.clear()
                 writer(_render_guided_development_summary(pending_summary))
                 continue
-            if guided_development_workflow and guided_development_clarification_required(message):
+            intent_resolution = (
+                resolve_development_intent(message=message, workspace_state=workspace_state)
+                if guided_development_workflow
+                else None
+            )
+            if guided_development_workflow and isinstance(intent_resolution, dict) and intent_resolution.get(
+                "clarification_required"
+            ) is True:
                 pending_clarification = guided_development_clarification(message)
                 composer_events["clarification_question_count"] += 1
                 composer_buffer.clear()
                 writer(_render_guided_development_clarification(pending_clarification))
                 continue
-            if guided_development_workflow and goal_oriented_request_detected(message):
-                composer_events["goal_mapping_count"] += 1
-                composer_events["knowledge_reuse_count"] += 1
-                pending_summary = _guided_development_summary(
-                    original_message=message,
-                    clarification_response=None,
-                    workspace_state=workspace_state,
-                    goal_mapping=goal_mapping_from_workspace(
-                        message=message,
-                        workspace_state=workspace_state,
-                    ),
+            if guided_development_workflow and isinstance(intent_resolution, dict) and intent_resolution.get(
+                "summary_admissible"
+            ) is True:
+                goal_mapping = (
+                    intent_resolution.get("goal_mapping")
+                    if isinstance(intent_resolution.get("goal_mapping"), dict)
+                    else None
                 )
-                composer_events["execution_summary_count"] += 1
-                composer_buffer.clear()
-                writer(_render_guided_development_summary(pending_summary))
-                continue
-            if guided_development_workflow and guided_development_request_detected(message):
+                if goal_mapping is not None:
+                    composer_events["goal_mapping_count"] += 1
+                    composer_events["knowledge_reuse_count"] += 1
                 pending_summary = _guided_development_summary(
                     original_message=message,
                     clarification_response=None,
                     workspace_state=workspace_state,
+                    goal_mapping=goal_mapping,
+                    development_intent_resolution=intent_resolution,
                 )
                 composer_events["execution_summary_count"] += 1
                 composer_buffer.clear()
@@ -716,16 +728,20 @@ def _guided_development_summary(
     clarification_response: str | None,
     workspace_state: dict[str, Any] | None = None,
     goal_mapping: dict[str, Any] | None = None,
+    development_intent_resolution: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     refined_message = original_message
     if clarification_response:
         refined_message = f"{original_message}\n\nClarification:\n{clarification_response}"
     if isinstance(goal_mapping, dict):
         refined_message = str(goal_mapping.get("governed_request") or refined_message)
+    if isinstance(development_intent_resolution, dict):
+        refined_message = str(development_intent_resolution.get("refined_message") or refined_message)
     return {
         "original_message": original_message,
         "clarification_response": clarification_response,
         "goal_mapping": deepcopy(goal_mapping),
+        "development_intent_resolution": deepcopy(development_intent_resolution),
         "workspace_state_reference": (
             workspace_state.get("replay_reference") if isinstance(workspace_state, dict) else None
         ),

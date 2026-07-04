@@ -389,6 +389,7 @@ from aigol.runtime.conversation_provider_unavailable_clarification_fallback impo
 from aigol.runtime.native_development_task_intake_runtime import (
     is_native_development_prompt,
 )
+from aigol.runtime.platform_core_project_services import resolve_development_intent
 from aigol.runtime.runtime_progress_visibility import (
     format_runtime_progress,
     format_runtime_status,
@@ -9249,10 +9250,20 @@ def _run_acli_next_runtime_bound_session(
         replay_dir=replay_dir,
         workspace=workspace,
     )
-    if not any(is_native_development_prompt(prompt) for prompt in prompts):
+    intent_resolutions = [
+        resolve_development_intent(message=prompt, workspace_state=None)
+        for prompt in prompts
+    ]
+    runtime_prompts = [
+        str(resolution.get("canonical_runtime_prompt") or prompt)
+        for prompt, resolution in zip(prompts, intent_resolutions)
+        if resolution.get("runtime_binding_admissible") is True
+    ]
+    if not runtime_prompts:
         result = deepcopy(presentation)
         result["runtime_binding_status"] = ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED
         result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
+        result["development_intent_resolution"] = intent_resolutions[-1] if intent_resolutions else None
         result["runtime_entered"] = False
         result["manual_chatgpt_codex_transfer_required"] = False
         return result
@@ -9270,7 +9281,7 @@ def _run_acli_next_runtime_bound_session(
     conversation_output: list[str] = []
     conversation_result = run_interactive_conversation(
         conversation_args,
-        input_func=_acli_next_input_sequence([*prompts, "exit"]),
+        input_func=_acli_next_input_sequence([*runtime_prompts, "exit"]),
         output_func=conversation_output.append,
     )
     latest_turn = _latest_runtime_binding_turn(conversation_result)
@@ -9281,6 +9292,8 @@ def _run_acli_next_runtime_bound_session(
         {
             "runtime_binding_version": ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION,
             "runtime_binding_status": runtime_binding_status,
+            "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
+            "runtime_prompts": runtime_prompts,
             "runtime_entered": True,
             "runtime_command": conversation_result.get("command"),
             "runtime_root": conversation_result.get("runtime_root"),
