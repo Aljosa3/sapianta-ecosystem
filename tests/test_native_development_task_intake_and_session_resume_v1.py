@@ -240,6 +240,20 @@ def test_native_development_prompt_detection_is_conservative() -> None:
     )
     assert is_native_development_prompt("Improve provider availability handling.") is True
     assert is_native_development_prompt("Fix provider resilience for native development routing.") is True
+    for prompt in (
+        "Extend runtime binding coverage for native development.",
+        "Enhance governance validation summaries.",
+        "Refactor message composer buffer handling.",
+        "Optimize replay certification workflow.",
+        "Introduce provider handling resilience.",
+        "Create utility for replay evidence summaries.",
+        "Create validator for runtime routing evidence.",
+        "Add feature for workspace resume status.",
+        "Improve workflow routing for native development.",
+        "Improve governance replay integration.",
+        "Improve runtime validation reporting.",
+    ):
+        assert is_native_development_prompt(prompt) is True
     assert is_native_development_prompt("What is AiGOL?") is False
     assert is_native_development_prompt("Deploy this validation script to production external users.") is False
 
