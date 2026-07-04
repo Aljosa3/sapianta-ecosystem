@@ -52,6 +52,64 @@ CONSTRAINT_TERMS = (
     "no governance mutation",
     "no replay mutation",
 )
+IMPLEMENTATION_ACTION_TERMS = (
+    "implement",
+    "improve",
+    "extend",
+    "enhance",
+    "refactor",
+    "optimize",
+    "add",
+    "introduce",
+    "create",
+    "build",
+    "fix",
+    "repair",
+    "update",
+)
+DEVELOPMENT_SUBJECT_TERMS = (
+    "adapter",
+    "api",
+    "buffer",
+    "classifier",
+    "component",
+    "feature",
+    "function",
+    "github actions",
+    "governance",
+    "helper",
+    "integration",
+    "intent classification",
+    "message composer",
+    "parser",
+    "project guidance",
+    "provider adapter",
+    "provider availability",
+    "provider handling",
+    "provider resilience",
+    "replay",
+    "routing",
+    "runtime",
+    "script",
+    "support",
+    "test",
+    "utility",
+    "validation",
+    "validation script",
+    "validator",
+    "workflow",
+    "workspace",
+)
+CREATE_SUBJECT_TERMS = (
+    "feature",
+    "helper",
+    "parser",
+    "script",
+    "support",
+    "utility",
+    "validation script",
+    "validator",
+)
 
 
 def is_native_development_prompt(human_prompt: str) -> bool:
@@ -76,43 +134,34 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
         return False
     if any(term in lowered for term in ("deploy", "production", "external users", "domain", "business")):
         return False
-    freeform_development_subject = any(
-        term in lowered
-        for term in (
-            "calculator utility",
-            "python tool",
-            "validation script",
-            "provider availability",
-            "availability handling",
-            "provider resilience",
-            "csv",
-        )
-    )
-    if freeform_development_subject and any(
-        term in lowered for term in ("need", "create", "build", "implement", "add", "improve", "fix")
+    freeform_development_subject = _has_development_subject(lowered)
+    if freeform_development_subject and (
+        _has_implementation_action(lowered) or any(term in lowered for term in ("need", "want"))
     ):
         return True
+    return _starts_with_implementation_action(lowered) and _has_development_subject(lowered)
+
+
+def _has_implementation_action(lowered_prompt: str) -> bool:
+    return any(_contains_term(lowered_prompt, term) for term in IMPLEMENTATION_ACTION_TERMS)
+
+
+def _starts_with_implementation_action(lowered_prompt: str) -> bool:
+    return lowered_prompt.startswith(tuple(f"{term} " for term in IMPLEMENTATION_ACTION_TERMS))
+
+
+def _has_development_subject(lowered_prompt: str) -> bool:
     return (
-        lowered.startswith(("implement ", "build ", "add ", "create ", "improve ", "fix "))
-        and any(
-            term in lowered
-            for term in (
-                "function",
-                "test",
-                "runtime",
-                "helper",
-                "validator",
-                "parser",
-                "support",
-                "workflow",
-                "ci",
-                "github actions",
-                "provider availability",
-                "provider resilience",
-                "availability handling",
-            )
-        )
+        any(term in lowered_prompt for term in DEVELOPMENT_SUBJECT_TERMS)
+        or any(f"create {term}" in lowered_prompt for term in CREATE_SUBJECT_TERMS)
+        or any(f"add {term}" in lowered_prompt for term in CREATE_SUBJECT_TERMS)
     )
+
+
+def _contains_term(lowered_prompt: str, term: str) -> bool:
+    if " " in term:
+        return term in lowered_prompt
+    return re.search(rf"\b{re.escape(term)}\b", lowered_prompt) is not None
 
 
 def run_native_development_task_intake(

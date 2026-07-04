@@ -184,3 +184,41 @@ def test_improvement_request_approval_enters_native_runtime(
     assert "worker_execution_reached: True" in output
     assert "replay_certification_reached: True" in output
     assert proposal_adapter.calls == 1
+
+
+def test_broader_implementation_intent_family_enters_native_runtime_after_approval(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    proposal_adapter = _install_fake_proposal_adapter(monkeypatch)
+    _install_fake_external_worker_openai_client(monkeypatch)
+
+    result = _run_aigol_next(
+        monkeypatch,
+        tmp_path,
+        session_id="G14-14-BROAD-NATIVE-DEVELOPMENT-COVERAGE",
+        inputs=[
+            "Extend runtime binding coverage for native development.",
+            "/send",
+            "/approve",
+            "Refactor message composer buffer handling.",
+            "/send",
+            "/approve",
+            "Create validator for runtime routing evidence.",
+            "/send",
+            "/approve",
+            "exit",
+        ],
+    )
+    output = capsys.readouterr().out
+
+    assert result == 0
+    assert output.count("Governed implementation summary") == 3
+    assert output.count("Human confirmation recorded. Entering certified runtime.") == 3
+    assert output.count("runtime_binding_status: AIGOL_NEXT_RUNTIME_BOUND") >= 3
+    assert output.count("runtime_entered: True") >= 3
+    assert output.count("provider_invocation_reached: True") >= 3
+    assert output.count("worker_execution_reached: True") >= 3
+    assert output.count("replay_certification_reached: True") >= 3
+    assert proposal_adapter.calls == 3

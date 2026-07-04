@@ -1406,6 +1406,26 @@ def test_generic_governed_domain_creation_routes_to_clarification(tmp_path) -> N
             NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
         ),
         (
+            "Extend runtime binding coverage for native development.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Refactor message composer buffer handling.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Optimize replay certification workflow.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Introduce provider handling resilience.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
+            "Create validator for runtime routing evidence.",
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+        ),
+        (
             "Improve provider abstraction documentation so provider identity cannot be confused with governance authority.",
             IMPROVE_PROVIDER_LAYER,
         ),

@@ -3156,7 +3156,24 @@ def _is_task_completion_domain_continuation_prompt(normalized: str) -> bool:
 
 
 def _is_task_completion_native_development_prompt(normalized: str) -> bool:
-    action_terms = ("prepare", "improve", "identify", "add", "create", "implement")
+    if _is_task_completion_provider_prompt(normalized):
+        return False
+    action_terms = (
+        "prepare",
+        "improve",
+        "identify",
+        "add",
+        "create",
+        "implement",
+        "extend",
+        "enhance",
+        "refactor",
+        "optimize",
+        "introduce",
+        "fix",
+        "repair",
+        "update",
+    )
     if normalized.startswith(("what should ", "should ", "how should ", "can you analyze ")):
         return False
     if not any(term in normalized for term in action_terms):
@@ -3179,9 +3196,22 @@ def _is_task_completion_native_development_prompt(normalized: str) -> bool:
         "external worker",
         "worker lifecycle",
         "provider adapter",
+        "provider handling",
         "provider availability",
         "provider resilience",
         "availability handling",
+        "runtime",
+        "workflow",
+        "governance",
+        "governance validation",
+        "intent classification",
+        "message composer",
+        "workspace",
+        "project guidance",
+        "routing",
+        "feature",
+        "utility",
+        "validator",
     )
     return any(subject in normalized for subject in development_subjects)
 

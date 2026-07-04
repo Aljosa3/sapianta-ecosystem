@@ -456,7 +456,23 @@ def goal_mapping_from_workspace(
 
 def guided_development_request_detected(message: str) -> bool:
     lowered = message.lower().strip()
-    return lowered.startswith(("add ", "build ", "create ", "implement ", "improve ", "fix "))
+    return lowered.startswith(
+        (
+            "add ",
+            "build ",
+            "create ",
+            "enhance ",
+            "extend ",
+            "fix ",
+            "implement ",
+            "improve ",
+            "introduce ",
+            "optimize ",
+            "refactor ",
+            "repair ",
+            "update ",
+        )
+    )
 
 
 def guided_development_clarification_required(message: str) -> bool:
@@ -471,12 +487,22 @@ def guided_development_clarification_required(message: str) -> bool:
         "validation",
         "validator",
         "parser",
+        "feature",
+        "helper",
+        "utility",
         "github actions",
         "governed",
+        "governance",
         "replay",
+        "routing",
+        "intent classification",
+        "message composer",
+        "provider handling",
         "provider availability",
         "provider resilience",
+        "runtime",
         "availability handling",
+        "workspace",
     )
     return not any(term in lowered for term in specificity_terms)
 
