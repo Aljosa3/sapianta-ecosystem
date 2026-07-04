@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+"""Repository-local launcher for the reference AiGOL UHI CLI."""
+
+from aigol.cli.aicli import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
