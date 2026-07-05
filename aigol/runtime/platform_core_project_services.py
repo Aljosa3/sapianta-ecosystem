@@ -551,6 +551,7 @@ def goal_oriented_request_detected(message: str) -> bool:
     lowered = message.lower().strip()
     return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ")) or (
         continuation_development_request_detected(message)
+        or collaborative_development_request_detected(message)
     )
 
 
@@ -565,6 +566,7 @@ def resolve_development_intent(
     goal_detected = goal_oriented_request_detected(raw_message)
     guided_detected = guided_development_request_detected(raw_message)
     continuation_detected = continuation_development_request_detected(raw_message)
+    collaborative_detected = collaborative_development_request_detected(raw_message)
     goal_mapping = (
         goal_mapping_from_workspace(message=raw_message, workspace_state=workspace_state)
         if goal_detected
@@ -583,6 +585,9 @@ def resolve_development_intent(
     if continuation_detected and not isinstance(workspace_state, dict):
         clarification_required = True
         clarification_reason = "continuation request requires deterministic workspace state"
+    if collaborative_detected and collaborative_development_request_requires_workspace(raw_message, workspace_state):
+        clarification_required = True
+        clarification_reason = "collaborative development request requires deterministic workspace state"
     if not goal_detected and not guided_detected:
         clarification_reason = "request is not a deterministic development request"
 
@@ -603,6 +608,7 @@ def resolve_development_intent(
         "goal_oriented_request_detected": goal_detected,
         "guided_development_request_detected": guided_detected,
         "continuation_development_request_detected": continuation_detected,
+        "collaborative_development_request_detected": collaborative_detected,
         "clarification_required": clarification_required,
         "clarification_reason": clarification_reason,
         "goal_mapping": deepcopy(goal_mapping),
@@ -631,6 +637,15 @@ def canonical_development_runtime_prompt(message: str) -> str:
     if guided_development_request_detected(prompt) and not guided_development_clarification_required(prompt):
         if "governed" in lowered or "governance" in lowered:
             return f"{prompt} Implement as a native development governance workflow."
+        contextual_development_terms = (
+            "capability",
+            "current functionality",
+            "implementation",
+            "previous implementation",
+            "solution",
+        )
+        if any(term in lowered for term in contextual_development_terms):
+            return f"{prompt} Implement as a governed development workflow."
     return prompt
 
 
@@ -664,6 +679,13 @@ def goal_mapping_from_workspace(
         )
         goal_type = "CONTINUES_PROJECT"
         target = "active_objective"
+    elif collaborative_development_request_detected(message):
+        governed_request = collaborative_development_governed_request(
+            message=message,
+            active_objective=active_objective,
+        )
+        goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
+        target = "active_objective" if active_objective else "general_project_goal"
     else:
         governed_request = message
         goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
@@ -700,6 +722,10 @@ def continuation_development_request_detected(message: str) -> bool:
             "continue improving",
             "keep developing",
             "keep improving",
+            "let's finish",
+            "lets finish",
+            "let's keep going",
+            "lets keep going",
             "pick up ",
             "resume ",
             "let's continue",
@@ -711,7 +737,6 @@ def continuation_development_request_detected(message: str) -> bool:
         "conversation",
         "talking",
         "writing documentation",
-        "yesterday",
         "chat",
     )
     if any(subject in lowered for subject in negative_subjects):
@@ -726,8 +751,13 @@ def continuation_development_request_detected(message: str) -> bool:
         "implementation",
         "implementing",
         "improving",
+        "going",
         "project",
+        "platform",
         "previous",
+        "previous task",
+        "what we started",
+        "where we stopped",
         "where we left off",
         "work",
     )
@@ -752,6 +782,80 @@ def continuation_development_governed_request(
     )
 
 
+def collaborative_development_request_detected(message: str) -> bool:
+    lowered = " ".join(require_string(message, "message").lower().split())
+    if lowered.startswith(("i have another idea", "i'm not sure", "im not sure", "what do you recommend")):
+        return False
+    collaborative_prefixes = (
+        "can we ",
+        "could we ",
+        "i think we should ",
+        "i'd like to ",
+        "id like to ",
+        "let's ",
+        "lets ",
+        "we should ",
+        "we should probably ",
+    )
+    if not lowered.startswith(collaborative_prefixes):
+        return False
+    development_actions = (
+        "add",
+        "expand",
+        "extend",
+        "improve",
+        "refactor",
+    )
+    if not any(action in lowered for action in development_actions):
+        return False
+    development_references = (
+        "capability",
+        "current functionality",
+        "existing capability",
+        "implementation",
+        "platform",
+        "previous implementation",
+        "project",
+        "this",
+        "work",
+    )
+    return any(reference in lowered for reference in development_references)
+
+
+def collaborative_development_request_requires_workspace(
+    message: str,
+    workspace_state: dict[str, Any] | None,
+) -> bool:
+    if isinstance(workspace_state, dict):
+        return False
+    lowered = " ".join(require_string(message, "message").lower().split())
+    workspace_bound_references = (
+        "current functionality",
+        "previous implementation",
+        "this",
+        "work",
+    )
+    return any(reference in lowered for reference in workspace_bound_references)
+
+
+def collaborative_development_governed_request(
+    *,
+    message: str,
+    active_objective: Any,
+) -> str:
+    objective = str(active_objective or "").strip()
+    source = require_string(message, "message")
+    if objective and objective != "No active development objective":
+        return (
+            "Implement the requested governed development improvement for the active "
+            f"project objective: {objective}. Source request: {source}"
+        )
+    return (
+        "Implement the requested governed development improvement for the active "
+        f"project. Source request: {source}"
+    )
+
+
 def guided_development_request_detected(message: str) -> bool:
     lowered = message.lower().strip()
     return lowered.startswith(
@@ -760,6 +864,7 @@ def guided_development_request_detected(message: str) -> bool:
             "build ",
             "create ",
             "enhance ",
+            "expand ",
             "extend ",
             "fix ",
             "implement ",
@@ -800,6 +905,11 @@ def guided_development_clarification_required(message: str) -> bool:
         "provider resilience",
         "runtime",
         "availability handling",
+        "capability",
+        "current functionality",
+        "implementation",
+        "previous implementation",
+        "solution",
         "workspace",
     )
     return not any(term in lowered for term in specificity_terms)
