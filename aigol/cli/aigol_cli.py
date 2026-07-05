@@ -389,9 +389,10 @@ from aigol.runtime.conversation_provider_unavailable_clarification_fallback impo
 from aigol.runtime.native_development_task_intake_runtime import (
     is_native_development_prompt,
 )
-from aigol.runtime.platform_core_project_services import (
-    prepare_unified_human_interface_project_context,
-    record_unified_human_interface_workspace_state,
+from aigol.runtime.human_interface_runtime_entry_service import (
+    CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
+    CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED,
+    run_human_interface_runtime_entry,
 )
 from aigol.runtime.runtime_progress_visibility import (
     format_runtime_progress,
@@ -9206,38 +9207,6 @@ def _parse_acli_next_health_findings(values: list[str]) -> list[dict[str, str]]:
     return findings
 
 
-def _acli_next_input_sequence(values: list[str]):
-    iterator = iter(values)
-
-    def read(_prompt: str) -> str:
-        try:
-            return next(iterator)
-        except StopIteration:
-            return "exit"
-
-    return read
-
-
-def _latest_runtime_binding_turn(conversation_result: dict[str, Any]) -> dict[str, Any]:
-    turns = conversation_result.get("turns")
-    if not isinstance(turns, list):
-        return {}
-    for turn in reversed(turns):
-        if isinstance(turn, dict):
-            return turn
-    return {}
-
-
-def _acli_next_runtime_binding_status(conversation_result: dict[str, Any], turn: dict[str, Any]) -> str:
-    if (
-        conversation_result.get("failed_turns") == 0
-        and turn.get("worker_invoked") is True
-        and turn.get("replay_certification_reached") is True
-    ):
-        return ACLI_NEXT_RUNTIME_BOUND
-    return ACLI_NEXT_RUNTIME_PARTIALLY_BOUND
-
-
 def _run_acli_next_runtime_bound_session(
     *,
     session_id: str,
@@ -9253,127 +9222,41 @@ def _run_acli_next_runtime_bound_session(
         replay_dir=replay_dir,
         workspace=workspace,
     )
-    project_contexts = [
-        prepare_unified_human_interface_project_context(
-            interface_name="aigol next",
-            session_id=session_id,
-            message=prompt,
-            runtime_root=replay_dir,
-            workspace=workspace,
-            created_at=created_at,
-        )
-        for prompt in prompts
-    ]
-    intent_resolutions = [
-        context["development_intent_resolution"]
-        for context in project_contexts
-    ]
-    runtime_prompts = [
-        str(resolution.get("canonical_runtime_prompt") or prompt)
-        for prompt, resolution in zip(prompts, intent_resolutions)
-        if resolution.get("runtime_binding_admissible") is True
-    ]
-    if not runtime_prompts:
-        result = deepcopy(presentation)
-        result["runtime_binding_status"] = ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED
-        result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
-        result["development_intent_resolution"] = intent_resolutions[-1] if intent_resolutions else None
-        result["platform_core_project_services_context"] = project_contexts[-1] if project_contexts else None
-        result["runtime_entered"] = False
-        result["manual_chatgpt_codex_transfer_required"] = False
-        workspace_state = record_unified_human_interface_workspace_state(
-            interface_name="aigol next",
-            session_id=session_id,
-            runtime_root=replay_dir,
-            workspace=workspace,
-            created_at=created_at,
-            completion=result,
-            turn_results=[],
-            pending_clarification=None,
-            pending_summary=None,
-        )
-        result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
-        result["project_workspace_hash"] = workspace_state["artifact_hash"]
-        return result
-
-    conversation_args = argparse.Namespace(
+    result = run_human_interface_runtime_entry(
+        interface_name="aigol next",
         session_id=session_id,
+        human_requests=prompts,
         created_at=created_at,
-        runtime_root=str(replay_dir),
+        runtime_root=replay_dir,
         workspace=workspace,
-        operator_context="AIGOL_NEXT_RUNTIME_BINDING",
-        auto_continue=True,
-        enable_llm_assisted_explanation=False,
-        llm_explanation_provider_id="UNSPECIFIED_EXPLANATION_PROVIDER",
+        governed_runtime_runner=run_interactive_conversation,
+        presentation=presentation,
+        operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
     )
-    conversation_output: list[str] = []
-    conversation_result = run_interactive_conversation(
-        conversation_args,
-        input_func=_acli_next_input_sequence([*runtime_prompts, "exit"]),
-        output_func=conversation_output.append,
+    result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
+    result["runtime_binding_status"] = _acli_next_status_from_canonical_entry(result)
+    result["manual_chatgpt_codex_transfer_required"] = (
+        result["runtime_binding_status"] == ACLI_NEXT_RUNTIME_PARTIALLY_BOUND
     )
-    latest_turn = _latest_runtime_binding_turn(conversation_result)
-    runtime_binding_status = _acli_next_runtime_binding_status(conversation_result, latest_turn)
-    runtime_bound = runtime_binding_status == ACLI_NEXT_RUNTIME_BOUND
-    result = deepcopy(presentation)
     result.update(
         {
-            "runtime_binding_version": ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION,
-            "runtime_binding_status": runtime_binding_status,
-            "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
-            "platform_core_project_services_context": project_contexts[-1] if project_contexts else None,
-            "runtime_prompts": runtime_prompts,
-            "runtime_entered": True,
-            "runtime_command": conversation_result.get("command"),
-            "runtime_root": conversation_result.get("runtime_root"),
-            "runtime_turn_count": conversation_result.get("turn_count"),
-            "runtime_failed_turns": conversation_result.get("failed_turns"),
-            "runtime_exit_reason": conversation_result.get("exit_reason"),
-            "auto_continue_enabled": conversation_result.get("auto_continue_enabled") is True,
-            "manual_chatgpt_codex_transfer_required": not runtime_bound,
-            "execution_summary_presented": bool(latest_turn.get("execution_summary_reference")),
-            "human_confirmation_presented": bool(latest_turn.get("human_confirmation_reference")),
-            "governance_authorization_reached": latest_turn.get("execution_authorization_status")
-            == "EXECUTION_AUTHORIZED",
-            "provider_invocation_reached": latest_turn.get("openai_provider_reached") is True
-            or latest_turn.get("provider_invoked") is True,
-            "worker_execution_reached": latest_turn.get("worker_invoked") is True,
-            "replay_certification_reached": latest_turn.get("replay_certification_reached") is True,
-            "execution_plan_generated": latest_turn.get("execution_preparation_status") == "EXECUTION_READY",
-            "execution_plan_status": latest_turn.get("execution_preparation_status"),
-            "worker_assignment_status": latest_turn.get("worker_assignment_status"),
-            "worker_dispatch_status": latest_turn.get("worker_dispatch_status"),
-            "worker_invocation_status": latest_turn.get("worker_invocation_status"),
-            "result_validation_status": latest_turn.get("result_validation_status"),
-            "replay_certification_status": latest_turn.get("replay_certification_status"),
-            "execution_summary_reference": latest_turn.get("execution_summary_reference"),
-            "human_confirmation_reference": latest_turn.get("human_confirmation_reference"),
-            "runtime_replay_reference": latest_turn.get("replay_reference")
-            or latest_turn.get("conversation_replay_reference"),
-            "conversation_output_tail": conversation_output[-12:],
             "acli_next_runtime_orchestrates": False,
             "acli_next_runtime_authorizes": False,
             "acli_next_runtime_executes": False,
-            "platform_core_runtime_delegated": True,
-            "governance_authority_preserved": True,
             "replay_authority_preserved": True,
             "worker_execution_authority_preserved": True,
         }
     )
-    workspace_state = record_unified_human_interface_workspace_state(
-        interface_name="aigol next",
-        session_id=session_id,
-        runtime_root=replay_dir,
-        workspace=workspace,
-        created_at=created_at,
-        completion=result,
-        turn_results=[result],
-        pending_clarification=None,
-        pending_summary=None,
-    )
-    result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
-    result["project_workspace_hash"] = workspace_state["artifact_hash"]
     return result
+
+
+def _acli_next_status_from_canonical_entry(result: dict[str, Any]) -> str:
+    status = result.get("canonical_runtime_entry_status")
+    if status == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND:
+        return ACLI_NEXT_RUNTIME_BOUND
+    if status == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
+        return ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED
+    return ACLI_NEXT_RUNTIME_PARTIALLY_BOUND
 
 
 def run_command(args: argparse.Namespace) -> dict:

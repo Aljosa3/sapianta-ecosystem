@@ -13,6 +13,11 @@ from pathlib import Path
 from typing import Any
 
 from aigol.cli.aigol_cli import run_interactive_conversation
+from aigol.runtime.human_interface_runtime_entry_service import (
+    CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
+    CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED,
+    run_human_interface_runtime_entry,
+)
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
     prepare_unified_human_interface_project_context,
@@ -53,7 +58,6 @@ def run_reference_uhi_session(
     created = _require_string(created_at, "created_at")
     root = Path(runtime_root)
     workspace_path = str(Path(workspace))
-    runner = runtime_runner or _run_certified_runtime
     output_writer("aicli reference UHI session started. Type a request, /approve, /cancel, or /exit.")
 
     pending_summary: dict[str, Any] | None = None
@@ -178,13 +182,25 @@ def run_reference_uhi_session(
             approval_count += 1
             prompt = _require_string(pending_summary["canonical_runtime_prompt"], "canonical_runtime_prompt")
             output_writer("Human approval recorded. Delegating to certified Platform Core runtime.")
-            runtime_result = runner(
-                session_id=session,
-                prompt=prompt,
-                created_at=created,
-                runtime_root=root,
-                workspace=workspace_path,
-            )
+            if runtime_runner is None:
+                runtime_result = run_human_interface_runtime_entry(
+                    interface_name="aicli",
+                    session_id=session,
+                    human_requests=[prompt],
+                    created_at=created,
+                    runtime_root=root,
+                    workspace=workspace_path,
+                    governed_runtime_runner=run_interactive_conversation,
+                    operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+                )
+            else:
+                runtime_result = runtime_runner(
+                    session_id=session,
+                    prompt=prompt,
+                    created_at=created,
+                    runtime_root=root,
+                    workspace=workspace_path,
+                )
             runtime_status = _reference_runtime_status(runtime_result)
             output_writer(_render_runtime_result(runtime_result, runtime_status))
             pending_summary = None
@@ -228,113 +244,34 @@ def run_reference_uhi_session(
         "worker_platform_preserved": True,
         "replay_authority_preserved": True,
     }
-    workspace_state = record_unified_human_interface_workspace_state(
-        interface_name="aicli",
-        session_id=session,
-        runtime_root=root,
-        workspace=workspace_path,
-        created_at=created,
-        completion=result,
-        turn_results=[runtime_result] if isinstance(runtime_result, dict) else [],
-        pending_clarification=pending_clarification,
-        pending_summary=pending_summary,
-    )
-    result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
-    result["project_workspace_hash"] = workspace_state["artifact_hash"]
+    if isinstance(runtime_result, dict) and runtime_result.get("project_workspace_replay_reference"):
+        result["project_workspace_replay_reference"] = runtime_result["project_workspace_replay_reference"]
+        result["project_workspace_hash"] = runtime_result.get("project_workspace_hash")
+    else:
+        workspace_state = record_unified_human_interface_workspace_state(
+            interface_name="aicli",
+            session_id=session,
+            runtime_root=root,
+            workspace=workspace_path,
+            created_at=created,
+            completion=result,
+            turn_results=[runtime_result] if isinstance(runtime_result, dict) else [],
+            pending_clarification=pending_clarification,
+            pending_summary=pending_summary,
+        )
+        result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
+        result["project_workspace_hash"] = workspace_state["artifact_hash"]
     output_writer(_render_session_result(result))
     return result
-
-
-def _run_certified_runtime(
-    *,
-    session_id: str,
-    prompt: str,
-    created_at: str,
-    runtime_root: str | Path,
-    workspace: str,
-) -> dict[str, Any]:
-    conversation_args = argparse.Namespace(
-        session_id=session_id,
-        created_at=created_at,
-        runtime_root=str(runtime_root),
-        workspace=workspace,
-        operator_context="REFERENCE_UHI_RUNTIME",
-        auto_continue=True,
-        enable_llm_assisted_explanation=False,
-        llm_explanation_provider_id="UNSPECIFIED_EXPLANATION_PROVIDER",
-    )
-    output: list[str] = []
-    conversation_result = run_interactive_conversation(
-        conversation_args,
-        input_func=_input_sequence([prompt, "exit"]),
-        output_func=output.append,
-    )
-    latest_turn = _latest_turn(conversation_result)
-    binding_status = _runtime_binding_status(conversation_result, latest_turn)
-    return {
-        "runtime_binding_status": binding_status,
-        "runtime_entered": True,
-        "runtime_command": conversation_result.get("command"),
-        "runtime_root": conversation_result.get("runtime_root"),
-        "runtime_turn_count": conversation_result.get("turn_count"),
-        "runtime_failed_turns": conversation_result.get("failed_turns"),
-        "runtime_exit_reason": conversation_result.get("exit_reason"),
-        "governance_authorization_reached": latest_turn.get("execution_authorization_status") == "EXECUTION_AUTHORIZED",
-        "provider_invocation_reached": latest_turn.get("openai_provider_reached") is True
-        or latest_turn.get("provider_invoked") is True,
-        "worker_execution_reached": latest_turn.get("worker_invoked") is True,
-        "replay_certification_reached": latest_turn.get("replay_certification_reached") is True,
-        "execution_plan_status": latest_turn.get("execution_preparation_status"),
-        "worker_assignment_status": latest_turn.get("worker_assignment_status"),
-        "worker_dispatch_status": latest_turn.get("worker_dispatch_status"),
-        "worker_invocation_status": latest_turn.get("worker_invocation_status"),
-        "result_validation_status": latest_turn.get("result_validation_status"),
-        "replay_certification_status": latest_turn.get("replay_certification_status"),
-        "runtime_replay_reference": latest_turn.get("replay_reference") or latest_turn.get("conversation_replay_reference"),
-        "conversation_output_tail": output[-12:],
-        "platform_core_runtime_delegated": True,
-        "governance_authority_preserved": True,
-        "provider_platform_preserved": True,
-        "worker_execution_authority_preserved": True,
-        "replay_authority_preserved": True,
-    }
 
 
 def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("runtime_binding_status") == REFERENCE_UHI_BOUND:
         return REFERENCE_UHI_BOUND
-    return REFERENCE_UHI_PARTIALLY_BOUND
-
-
-def _input_sequence(values: list[str]):
-    iterator = iter(values)
-
-    def read(_prompt: str) -> str:
-        try:
-            return next(iterator)
-        except StopIteration:
-            return "exit"
-
-    return read
-
-
-def _latest_turn(conversation_result: dict[str, Any]) -> dict[str, Any]:
-    turns = conversation_result.get("turns")
-    if not isinstance(turns, list):
-        return {}
-    for turn in reversed(turns):
-        if isinstance(turn, dict):
-            return turn
-    return {}
-
-
-def _runtime_binding_status(conversation_result: dict[str, Any], turn: dict[str, Any]) -> str:
-    if (
-        conversation_result.get("failed_turns") == 0
-        and turn.get("worker_invoked") is True
-        and turn.get("replay_certification_reached") is True
-    ):
+    if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND:
         return REFERENCE_UHI_BOUND
+    if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
+        return REFERENCE_UHI_NOT_REQUIRED
     return REFERENCE_UHI_PARTIALLY_BOUND
 
 
