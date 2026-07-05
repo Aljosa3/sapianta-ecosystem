@@ -297,18 +297,24 @@ def _submit_composed_request(
     output_writer("Request submitted to Platform Core.")
     output_writer(_render_project_context(project_context))
     resolution = project_context["development_intent_resolution"]
+    conversation = (
+        project_context.get("human_conversation_experience")
+        if isinstance(project_context.get("human_conversation_experience"), dict)
+        else {}
+    )
     transcript.append(
         {
             "event": "message",
             "line_count": len(compose_buffer),
             "summary_admissible": resolution.get("summary_admissible"),
             "clarification_required": resolution.get("clarification_required"),
+            "conversation_response_mode": conversation.get("response_mode"),
             "project_context_reference": project_context.get("replay_reference"),
         }
     )
     multiline_requests = 1 if len(compose_buffer) > 1 else 0
-    if resolution.get("clarification_required") is True:
-        clarification = guided_development_clarification(message)
+    if resolution.get("clarification_required") is True or conversation.get("response_mode") == "CLARIFICATION":
+        clarification = _clarification_from_conversation(message, conversation)
         output_writer(_render_clarification(clarification))
         return None, clarification, resolution, project_context, 1, multiline_requests
     if resolution.get("summary_admissible") is True:
@@ -344,9 +350,16 @@ def _render_project_context(project_context: dict[str, Any]) -> str:
         if isinstance(project_context.get("knowledge_reuse"), dict)
         else {}
     )
+    conversation = (
+        project_context.get("human_conversation_experience")
+        if isinstance(project_context.get("human_conversation_experience"), dict)
+        else {}
+    )
     return "\n".join(
         [
             "Platform Core project context",
+            f"status: {conversation.get('user_headline')}",
+            f"next_step: {conversation.get('recommended_next_user_action')}",
             f"project_workspace_restored: {project_context.get('project_workspace_restored')}",
             f"project_workspace_authority: {project_context.get('project_workspace_authority')}",
             f"project_guidance_authority: {project_context.get('project_guidance_authority')}",
@@ -356,6 +369,21 @@ def _render_project_context(project_context: dict[str, Any]) -> str:
             f"reuse_recommended: {knowledge.get('reuse_recommended')}",
         ]
     )
+
+
+def _clarification_from_conversation(message: str, conversation: dict[str, Any]) -> dict[str, Any]:
+    questions = conversation.get("clarification_questions")
+    if not isinstance(questions, list) or not questions:
+        return guided_development_clarification(message)
+    return {
+        "original_message": message,
+        "clarification_required": True,
+        "clarification_authority": "PLATFORM_CORE",
+        "conversation_response_mode": conversation.get("response_mode"),
+        "user_headline": conversation.get("user_headline"),
+        "user_explanation": conversation.get("user_explanation"),
+        "clarification_questions": [str(question) for question in questions],
+    }
 
 
 def _render_summary(summary: dict[str, Any]) -> str:
@@ -373,8 +401,12 @@ def _render_clarification(clarification: dict[str, Any]) -> str:
     lines = [
         "Clarification required before governed execution.",
         f"original_request: {clarification.get('original_message')}",
-        "questions:",
     ]
+    if clarification.get("user_headline"):
+        lines.append(str(clarification["user_headline"]))
+    if clarification.get("user_explanation"):
+        lines.append(str(clarification["user_explanation"]))
+    lines.append("questions:")
     for question in clarification.get("clarification_questions", []):
         lines.append(f"- {question}")
     return "\n".join(lines)

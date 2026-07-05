@@ -23,6 +23,9 @@ PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_VERSION = (
 PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION = (
     "G14_27_UNIFIED_HUMAN_INTERFACE_RUNTIME_PROJECT_SERVICES_INTEGRATION_V1"
 )
+PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION = (
+    "G14_38_PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_V1"
+)
 
 
 def prepare_unified_human_interface_project_context(
@@ -65,10 +68,19 @@ def prepare_unified_human_interface_project_context(
             governed_request=message,
         )
     )
+    conversation_experience = human_conversation_experience_from_resolution(
+        message=message,
+        guidance=guidance,
+        knowledge_reuse=knowledge_reuse,
+        development_intent=development_intent,
+    )
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
         "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "platform_core_human_conversation_experience_version": (
+            PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION
+        ),
         "interface_name": require_string(interface_name, "interface_name"),
         "session_id": require_string(session_id, "session_id"),
         "workspace": str(Path(workspace)),
@@ -79,10 +91,12 @@ def prepare_unified_human_interface_project_context(
         "project_guidance": guidance,
         "knowledge_reuse": knowledge_reuse,
         "development_intent_resolution": development_intent,
+        "human_conversation_experience": conversation_experience,
         "project_workspace_authority": "PLATFORM_CORE",
         "project_guidance_authority": "PLATFORM_CORE",
         "project_knowledge_reuse_authority": "PLATFORM_CORE",
         "development_intent_resolution_authority": "PLATFORM_CORE",
+        "human_conversation_experience_authority": "PLATFORM_CORE",
         "interface_authority": False,
         "interface_executes_project_services": False,
         "replay_visible": True,
@@ -631,6 +645,224 @@ def resolve_development_intent(
     }
     resolution["artifact_hash"] = replay_hash(resolution)
     return resolution
+
+
+def human_conversation_experience_from_resolution(
+    *,
+    message: str,
+    guidance: dict[str, Any] | None,
+    knowledge_reuse: dict[str, Any] | None,
+    development_intent: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the canonical Platform Core human conversation response model."""
+
+    prompt = require_string(message, "message")
+    lowered = " ".join(prompt.lower().split())
+    guidance_model = guidance if isinstance(guidance, dict) else {}
+    reuse_model = knowledge_reuse if isinstance(knowledge_reuse, dict) else {}
+    intent = development_intent if isinstance(development_intent, dict) else {}
+    response_mode = "INFORMATIONAL"
+    headline = "I inspected the project state."
+    explanation = "I did not find enough deterministic development intent to prepare governed execution."
+    questions: list[str] = []
+    next_step = "Describe the capability, improvement, or decision you want AiGOL to help with."
+    if intent.get("summary_admissible") is True:
+        response_mode = "APPROVAL_PREPARATION"
+        headline = "I can prepare this as governed development work."
+        explanation = (
+            "I checked the workspace, considered reuse, and prepared a governed implementation summary. "
+            "Approval will delegate to the certified runtime; the interface will not execute or authorize work."
+        )
+        next_step = "Review the summary and approve only if it matches your intent."
+    elif intent.get("clarification_required") is True:
+        response_mode = "CLARIFICATION"
+        headline = "I need one clarification before governed execution."
+        explanation = _conversation_explanation_for_clarification(prompt, intent)
+        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        next_step = "Answer the question with the smallest useful detail."
+    elif _reuse_request_detected(lowered):
+        response_mode = "CLARIFICATION"
+        headline = "I can check for reuse, but I need to know what to compare."
+        explanation = (
+            "Reuse decisions come from deterministic workspace and governance evidence. "
+            "I need a capability or topic before I can compare it safely."
+        )
+        questions = [
+            "Which capability, feature, or workflow should I check for prior implementation?",
+            "Should the check focus on current workspace history, certified governance artifacts, or both?",
+        ]
+        next_step = "Name the capability or area to inspect for reuse."
+    elif _architecture_question_detected(lowered):
+        response_mode = "CLARIFICATION"
+        headline = "I can help place this architecturally, but I need the subject."
+        explanation = (
+            "Architecture placement is a Platform Core decision based on the capability being discussed. "
+            "I need the specific behavior or artifact before recommending ownership."
+        )
+        questions = [
+            "What capability, behavior, or artifact are you asking about?",
+            "Are you deciding between Platform Core ownership and Human Interface presentation?",
+        ]
+        next_step = "Describe the capability whose ownership should be evaluated."
+    elif _vague_improvement_or_ideation_detected(lowered):
+        response_mode = "CLARIFICATION"
+        headline = "I can help turn this into governed development work."
+        explanation = (
+            "Your request sounds like a development direction, but it does not yet identify the target "
+            "capability or desired outcome."
+        )
+        questions = [
+            "What should be improved or built?",
+            "What outcome would tell you the improvement is successful?",
+        ]
+        next_step = "Name the target capability or desired outcome."
+    return _conversation_experience_artifact(
+        message=prompt,
+        response_mode=response_mode,
+        headline=headline,
+        explanation=explanation,
+        questions=questions,
+        next_step=next_step,
+        guidance=guidance_model,
+        knowledge_reuse=reuse_model,
+        development_intent=intent,
+    )
+
+
+def _conversation_experience_artifact(
+    *,
+    message: str,
+    response_mode: str,
+    headline: str,
+    explanation: str,
+    questions: list[str],
+    next_step: str,
+    guidance: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+    development_intent: dict[str, Any],
+) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "conversation_authority": "PLATFORM_CORE",
+        "interface_executes_conversation": False,
+        "raw_prompt": message,
+        "response_mode": response_mode,
+        "user_headline": headline,
+        "user_explanation": explanation,
+        "clarification_questions": questions,
+        "recommended_next_user_action": next_step,
+        "progress_messages": [
+            "Workspace state inspected.",
+            "Project guidance checked.",
+            "Knowledge reuse checked.",
+            "Development intent evaluated.",
+        ],
+        "approval_explanation": (
+            "Approval delegates to the certified runtime; the Human Interface does not authorize or execute."
+        ),
+        "fail_closed_explanation": (
+            "When intent is incomplete, AiGOL asks for clarification instead of guessing or executing."
+        ),
+        "project_guidance_summary": guidance.get("recommended_next_governed_action"),
+        "knowledge_reuse_classification": knowledge_reuse.get("classification"),
+        "reuse_recommended": knowledge_reuse.get("reuse_recommended") is True,
+        "summary_admissible": development_intent.get("summary_admissible") is True,
+        "runtime_binding_admissible": development_intent.get("runtime_binding_admissible") is True,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _conversation_explanation_for_clarification(prompt: str, intent: dict[str, Any]) -> str:
+    reason = str(intent.get("clarification_reason") or "").strip()
+    if reason == "continuation request requires deterministic workspace state":
+        return "I need to know which project work should continue before I can safely resume it."
+    if reason == "guided development request lacks deterministic implementation specificity":
+        return "The request sounds like development work, but the target capability is not specific enough yet."
+    return "I need one more detail before converting this into governed development work."
+
+
+def _conversation_questions_for_prompt(
+    prompt: str,
+    knowledge_reuse: dict[str, Any],
+    intent: dict[str, Any],
+) -> list[str]:
+    lowered = " ".join(prompt.lower().split())
+    if _reuse_request_detected(lowered):
+        return [
+            "Which capability or topic should I check for prior implementation?",
+            "Should I look for reuse in workspace history, certified artifacts, or both?",
+        ]
+    if _architecture_question_detected(lowered):
+        return [
+            "What capability or artifact are you asking about?",
+            "Are you deciding ownership, reuse, or implementation location?",
+        ]
+    if continuation_development_request_detected(prompt):
+        return [
+            "Which capability or previous task should continue?",
+            "What constraint should remain preserved while continuing?",
+        ]
+    if knowledge_reuse.get("reuse_recommended") is True:
+        return [
+            "Should AiGOL extend the existing related capability or create new governed work?",
+            "What change should be made to the existing capability?",
+        ]
+    if _vague_improvement_or_ideation_detected(lowered):
+        return [
+            "What should be improved or built?",
+            "What outcome would make the improvement successful?",
+        ]
+    return guided_development_clarification(prompt)["clarification_questions"]
+
+
+def _reuse_request_detected(lowered: str) -> bool:
+    return any(
+        term in lowered
+        for term in (
+            "already implemented",
+            "already exists",
+            "reuse",
+            "reuse something",
+            "something similar",
+            "check whether",
+            "search previous work",
+        )
+    )
+
+
+def _architecture_question_detected(lowered: str) -> bool:
+    return any(
+        term in lowered
+        for term in (
+            "platform core",
+            "belong in",
+            "inside the interface",
+            "make this reusable",
+            "architecture",
+            "architectural",
+        )
+    )
+
+
+def _vague_improvement_or_ideation_detected(lowered: str) -> bool:
+    return any(
+        term in lowered
+        for term in (
+            "i have an idea",
+            "not sure how",
+            "help me decide",
+            "what do you recommend",
+            "should be improved",
+            "can be better",
+            "something should be improved",
+            "build something",
+            "improve this",
+        )
+    )
 
 
 def canonical_development_runtime_prompt(message: str) -> str:

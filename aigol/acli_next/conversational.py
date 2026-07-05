@@ -16,6 +16,7 @@ from aigol.runtime.platform_core_project_services import (
     PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
     build_persistent_workspace_state_artifact,
     guided_development_clarification,
+    human_conversation_experience_from_resolution,
     project_guidance_from_workspace_state,
     resolve_development_intent,
 )
@@ -259,10 +260,29 @@ def run_acli_next_persistent_conversational_session(
                 if guided_development_workflow
                 else None
             )
+            conversation_experience = (
+                _human_conversation_experience(
+                    message=message,
+                    intent_resolution=intent_resolution,
+                    workspace_state=workspace_state,
+                )
+                if guided_development_workflow and isinstance(intent_resolution, dict)
+                else {}
+            )
             if guided_development_workflow and isinstance(intent_resolution, dict) and intent_resolution.get(
                 "clarification_required"
             ) is True:
-                pending_clarification = guided_development_clarification(message)
+                pending_clarification = _clarification_from_conversation(message, conversation_experience)
+                composer_events["clarification_question_count"] += 1
+                composer_buffer.clear()
+                writer(_render_guided_development_clarification(pending_clarification))
+                continue
+            if (
+                guided_development_workflow
+                and isinstance(intent_resolution, dict)
+                and conversation_experience.get("response_mode") == "CLARIFICATION"
+            ):
+                pending_clarification = _clarification_from_conversation(message, conversation_experience)
                 composer_events["clarification_question_count"] += 1
                 composer_buffer.clear()
                 writer(_render_guided_development_clarification(pending_clarification))
@@ -715,11 +735,61 @@ def _render_guided_development_clarification(clarification: dict[str, Any]) -> s
     lines = [
         "Clarification required before governed execution.",
         f"original_request: {clarification.get('original_message')}",
-        "questions:",
     ]
+    if clarification.get("user_headline"):
+        lines.append(str(clarification["user_headline"]))
+    if clarification.get("user_explanation"):
+        lines.append(str(clarification["user_explanation"]))
+    lines.append("questions:")
     lines.extend(f"- {question}" for question in clarification.get("clarification_questions", []))
     lines.append("Compose your answer and type /send.")
     return "\n".join(lines)
+
+
+def _human_conversation_experience(
+    *,
+    message: str,
+    intent_resolution: dict[str, Any] | None,
+    workspace_state: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(intent_resolution, dict):
+        return {}
+    guidance = (
+        project_guidance_from_workspace_state(workspace_state)
+        if isinstance(workspace_state, dict)
+        else {}
+    )
+    goal_mapping = (
+        intent_resolution.get("goal_mapping")
+        if isinstance(intent_resolution.get("goal_mapping"), dict)
+        else {}
+    )
+    knowledge = (
+        goal_mapping.get("contextual_task_mapping")
+        if isinstance(goal_mapping.get("contextual_task_mapping"), dict)
+        else {}
+    )
+    return human_conversation_experience_from_resolution(
+        message=message,
+        guidance=guidance,
+        knowledge_reuse=knowledge,
+        development_intent=intent_resolution,
+    )
+
+
+def _clarification_from_conversation(message: str, conversation: dict[str, Any]) -> dict[str, Any]:
+    questions = conversation.get("clarification_questions")
+    if not isinstance(questions, list) or not questions:
+        return guided_development_clarification(message)
+    return {
+        "original_message": message,
+        "clarification_required": True,
+        "clarification_authority": "PLATFORM_CORE",
+        "conversation_response_mode": conversation.get("response_mode"),
+        "user_headline": conversation.get("user_headline"),
+        "user_explanation": conversation.get("user_explanation"),
+        "clarification_questions": [str(question) for question in questions],
+    }
 
 
 def _guided_development_summary(
