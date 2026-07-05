@@ -251,4 +251,5 @@ def test_aicli_source_remains_thin_adapter() -> None:
         assert token not in source
     assert "prepare_unified_human_interface_project_context(" in source
     assert "record_unified_human_interface_workspace_state(" in source
-    assert "run_interactive_conversation(" in source
+    assert "_run_certified_runtime(" not in source
+    assert "run_human_interface_runtime_entry(" in source

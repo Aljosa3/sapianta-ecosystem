@@ -549,7 +549,9 @@ def certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
 
 def goal_oriented_request_detected(message: str) -> bool:
     lowered = message.lower().strip()
-    return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ", "continue "))
+    return lowered.startswith(("i want ", "i want aigol", "let's ", "lets ")) or (
+        continuation_development_request_detected(message)
+    )
 
 
 def resolve_development_intent(
@@ -562,6 +564,7 @@ def resolve_development_intent(
     raw_message = require_string(message, "message")
     goal_detected = goal_oriented_request_detected(raw_message)
     guided_detected = guided_development_request_detected(raw_message)
+    continuation_detected = continuation_development_request_detected(raw_message)
     goal_mapping = (
         goal_mapping_from_workspace(message=raw_message, workspace_state=workspace_state)
         if goal_detected
@@ -577,6 +580,9 @@ def resolve_development_intent(
     if guided_detected and guided_development_clarification_required(raw_message):
         clarification_required = True
         clarification_reason = "guided development request lacks deterministic implementation specificity"
+    if continuation_detected and not isinstance(workspace_state, dict):
+        clarification_required = True
+        clarification_reason = "continuation request requires deterministic workspace state"
     if not goal_detected and not guided_detected:
         clarification_reason = "request is not a deterministic development request"
 
@@ -596,6 +602,7 @@ def resolve_development_intent(
         "raw_prompt": raw_message,
         "goal_oriented_request_detected": goal_detected,
         "guided_development_request_detected": guided_detected,
+        "continuation_development_request_detected": continuation_detected,
         "clarification_required": clarification_required,
         "clarification_reason": clarification_reason,
         "goal_mapping": deepcopy(goal_mapping),
@@ -650,8 +657,11 @@ def goal_mapping_from_workspace(
         governed_request = "Continue the governed mobile interface."
         goal_type = "CONTINUES_PROJECT"
         target = "mobile_interface"
-    elif lowered.startswith(("continue ", "let's continue", "lets continue")):
-        governed_request = str(active_objective or "Continue the active governed development objective.")
+    elif continuation_development_request_detected(message):
+        governed_request = continuation_development_governed_request(
+            message=message,
+            active_objective=active_objective,
+        )
         goal_type = "CONTINUES_PROJECT"
         target = "active_objective"
     else:
@@ -678,6 +688,68 @@ def goal_mapping_from_workspace(
         governed_request=governed_request,
     )
     return mapping
+
+
+def continuation_development_request_detected(message: str) -> bool:
+    lowered = " ".join(require_string(message, "message").lower().split())
+    if not lowered.startswith(
+        (
+            "continue ",
+            "continue developing",
+            "continue implementing",
+            "continue improving",
+            "keep developing",
+            "keep improving",
+            "pick up ",
+            "resume ",
+            "let's continue",
+            "lets continue",
+        )
+    ):
+        return False
+    negative_subjects = (
+        "conversation",
+        "talking",
+        "writing documentation",
+        "yesterday",
+        "chat",
+    )
+    if any(subject in lowered for subject in negative_subjects):
+        return False
+    if lowered in {"continue", "continue.", "resume", "resume.", "pick up", "pick up."}:
+        return False
+    continuation_subjects = (
+        "aigol",
+        "capability",
+        "development",
+        "developing",
+        "implementation",
+        "implementing",
+        "improving",
+        "project",
+        "previous",
+        "where we left off",
+        "work",
+    )
+    return any(subject in lowered for subject in continuation_subjects)
+
+
+def continuation_development_governed_request(
+    *,
+    message: str,
+    active_objective: Any,
+) -> str:
+    objective = str(active_objective or "").strip()
+    source = require_string(message, "message")
+    if objective and objective != "No active development objective":
+        return (
+            "Implement the next governed development workflow for the active "
+            f"project objective: {objective}. Source continuation request: {source}"
+        )
+    return (
+        "Implement the next governed development workflow for the active "
+        f"project. Source continuation request: {source}"
+    )
 
 
 def guided_development_request_detected(message: str) -> bool:

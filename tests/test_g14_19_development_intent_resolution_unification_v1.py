@@ -87,6 +87,68 @@ def test_canonical_development_intent_resolution_matrix() -> None:
     assert ambiguous["clarification_required"] is True
 
 
+def test_continuation_development_intent_is_runtime_admissible_with_workspace_state() -> None:
+    workspace_state = {
+        "active_development_objective": "Implement governance validation utility.",
+        "project_knowledge_index": {
+            "known_goal_targets": ["active_objective"],
+            "certified_artifacts_by_target": {},
+            "related_milestones_by_target": {},
+            "implementation_history_by_target": {},
+        },
+    }
+    prompts = [
+        "Continue developing AiGOL.",
+        "Continue the project.",
+        "Continue implementing the previous capability.",
+        "Resume development.",
+        "Continue where we left off.",
+        "Continue improving this capability.",
+        "Keep developing this implementation.",
+    ]
+
+    for prompt in prompts:
+        result = resolve_development_intent(message=prompt, workspace_state=workspace_state)
+        assert result["development_intent_resolution_authority"] == "PLATFORM_CORE"
+        assert result["continuation_development_request_detected"] is True
+        assert result["goal_oriented_request_detected"] is True
+        assert result["summary_admissible"] is True
+        assert result["runtime_binding_admissible"] is True
+        assert result["clarification_required"] is False
+        assert "Implement the next governed development workflow" in result["canonical_runtime_prompt"]
+        assert result["goal_mapping"]["goal_type"] == "CONTINUES_PROJECT"
+        assert result["goal_mapping"]["goal_target"] == "active_objective"
+
+
+def test_continuation_development_intent_remains_conservative_for_ambiguous_prompts() -> None:
+    workspace_state = {
+        "active_development_objective": "Implement governance validation utility.",
+        "project_knowledge_index": {},
+    }
+    prompts = [
+        "Continue.",
+        "Continue talking.",
+        "Continue this conversation.",
+        "Continue writing documentation.",
+        "Continue yesterday.",
+    ]
+
+    for prompt in prompts:
+        result = resolve_development_intent(message=prompt, workspace_state=workspace_state)
+        assert result["runtime_binding_admissible"] is False
+        assert result["summary_admissible"] is False
+
+
+def test_continuation_development_intent_requires_workspace_state() -> None:
+    result = resolve_development_intent(message="Continue developing AiGOL.")
+
+    assert result["continuation_development_request_detected"] is True
+    assert result["runtime_binding_admissible"] is False
+    assert result["summary_admissible"] is False
+    assert result["clarification_required"] is True
+    assert result["clarification_reason"] == "continuation request requires deterministic workspace state"
+
+
 def test_previously_failing_prompt_uses_same_resolution_for_send_and_approve(
     tmp_path,
     monkeypatch,
