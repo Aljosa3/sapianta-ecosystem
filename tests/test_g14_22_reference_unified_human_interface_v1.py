@@ -106,7 +106,7 @@ def test_aicli_renders_platform_core_clarification_without_runtime(tmp_path: Pat
         session_id="AICLI-CLARIFY",
         runtime_root=tmp_path,
         workspace=".",
-        input_reader=_reader(["Improve project.", "/exit"]),
+        input_reader=_reader(["Improve project.", "/send", "/exit"]),
         output_writer=output.append,
         runtime_runner=_successful_runner(calls),
     )
@@ -116,6 +116,75 @@ def test_aicli_renders_platform_core_clarification_without_runtime(tmp_path: Pat
     assert calls == []
     assert any("Clarification required before governed execution." in line for line in output)
     assert result["development_intent_resolution"]["development_intent_resolution_authority"] == "PLATFORM_CORE"
+
+
+def test_aicli_multiline_composer_submits_one_complete_request(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    output: list[str] = []
+    request_lines = [
+        "Implement governance validation utility.",
+        "",
+        "Requirements:",
+        "- preserve replay evidence",
+        "- add deterministic reporting",
+    ]
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-MULTILINE",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_reader([*request_lines, "/send", "/approve", "/exit"]),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 1
+    assert result["multiline_request_count"] == 1
+    assert result["submitted_message_count"] == 1
+    assert calls[0]["prompt"] == "\n".join(request_lines)
+    assert result["development_intent_resolution"]["raw_prompt"] == "\n".join(request_lines)
+    assert any("Request submitted to Platform Core." in line for line in output)
+    assert (
+        tmp_path
+        / "AICLI-MULTILINE"
+        / "uhi_project_services"
+        / "001_uhi_project_context_recorded.json"
+    ).exists()
+
+
+def test_aicli_dot_submits_composed_request(tmp_path: Path) -> None:
+    calls: list[dict] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-DOT",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_reader(["Implement replay summary utility.", ".", "/approve", "/exit"]),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 1
+    assert result["runtime_entered"] is True
+    assert calls[0]["prompt"] == "Implement replay summary utility."
+
+
+def test_aicli_cancel_clears_compose_buffer_without_runtime(tmp_path: Path) -> None:
+    calls: list[dict] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-CANCEL",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_reader(["Implement discarded utility.", "/cancel", "/exit"]),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 0
+    assert result["canceled_compose_count"] == 1
+    assert result["runtime_entered"] is False
+    assert calls == []
 
 
 def test_aicli_reference_scenarios_share_same_runtime_runner(tmp_path: Path) -> None:
@@ -152,7 +221,7 @@ def test_aicli_clarification_scenario_does_not_enter_runtime(tmp_path: Path) -> 
         session_id="AICLI-SCENARIO-D",
         runtime_root=tmp_path / "scenario-d",
         workspace=".",
-        input_reader=_reader(["Improve project.", "/exit"]),
+        input_reader=_reader(["Improve project.", "/send", "/exit"]),
         output_writer=output.append,
         runtime_runner=_successful_runner(calls),
     )

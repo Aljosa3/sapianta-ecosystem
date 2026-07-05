@@ -26,6 +26,7 @@ REFERENCE_UHI_PARTIALLY_BOUND = "REFERENCE_UHI_RUNTIME_PARTIALLY_BOUND"
 REFERENCE_UHI_NOT_REQUIRED = "REFERENCE_UHI_RUNTIME_NOT_REQUIRED"
 DEFAULT_CREATED_AT = "2026-07-04T00:00:00Z"
 DEFAULT_RUNTIME_ROOT = ".runtime/aicli"
+AICLI_SEND_COMMANDS = {"/send", "."}
 
 
 RuntimeRunner = Callable[..., dict[str, Any]]
@@ -64,31 +65,112 @@ def run_reference_uhi_session(
     last_resolution: dict[str, Any] | None = None
     last_project_context: dict[str, Any] | None = None
     pending_clarification: dict[str, Any] | None = None
+    compose_buffer: list[str] = []
+    submitted_request_count = 0
+    multiline_request_count = 0
+    canceled_compose_count = 0
     transcript: list[dict[str, Any]] = []
+    output_writer("Compose a request. Finish with /send or a single '.' line. Use /cancel to clear.")
 
     while True:
         try:
-            line = input_reader("aicli> ")
+            line = input_reader("aicli compose> " if compose_buffer else "aicli> ")
         except EOFError:
+            if compose_buffer:
+                (
+                    pending_summary,
+                    pending_clarification,
+                    last_resolution,
+                    last_project_context,
+                    submitted_requests,
+                    multiline_requests,
+                ) = _submit_composed_request(
+                    compose_buffer=compose_buffer,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    output_writer=output_writer,
+                    transcript=transcript,
+                )
+                submitted_messages += submitted_requests
+                submitted_request_count += submitted_requests
+                clarification_count += 1 if pending_clarification is not None else 0
+                multiline_request_count += multiline_requests
+                compose_buffer.clear()
             exit_reason = "EOF"
             break
-        message = str(line).strip()
-        if not message:
+        line_text = str(line).rstrip("\r\n")
+        normalized = line_text.strip().lower()
+        if not normalized and not compose_buffer:
             continue
-        normalized = message.lower()
         if normalized in {"/exit", "exit", "quit"}:
+            if compose_buffer:
+                output_writer("Composed request is not empty. Use /send, '.', or /cancel before exiting.")
+                continue
             exit_reason = "EXIT_COMMAND"
             break
         if normalized == "/help":
             output_writer(_render_help())
             continue
         if normalized == "/cancel":
+            if compose_buffer:
+                canceled_compose_count += 1
+                compose_buffer.clear()
             pending_summary = None
             pending_clarification = None
             output_writer("Pending request canceled.")
             transcript.append({"event": "cancel"})
             continue
+        if normalized in AICLI_SEND_COMMANDS:
+            if not compose_buffer:
+                output_writer("Compose buffer is empty. Add a request before submitting.")
+                continue
+            (
+                pending_summary,
+                pending_clarification,
+                last_resolution,
+                last_project_context,
+                submitted_requests,
+                multiline_requests,
+            ) = _submit_composed_request(
+                compose_buffer=compose_buffer,
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                output_writer=output_writer,
+                transcript=transcript,
+            )
+            submitted_messages += submitted_requests
+            submitted_request_count += submitted_requests
+            clarification_count += 1 if pending_clarification is not None else 0
+            multiline_request_count += multiline_requests
+            compose_buffer.clear()
+            continue
         if normalized == "/approve":
+            if pending_summary is None and compose_buffer:
+                (
+                    pending_summary,
+                    pending_clarification,
+                    last_resolution,
+                    last_project_context,
+                    submitted_requests,
+                    multiline_requests,
+                ) = _submit_composed_request(
+                    compose_buffer=compose_buffer,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    output_writer=output_writer,
+                    transcript=transcript,
+                )
+                submitted_messages += submitted_requests
+                submitted_request_count += submitted_requests
+                clarification_count += 1 if pending_clarification is not None else 0
+                multiline_request_count += multiline_requests
+                compose_buffer.clear()
             if pending_summary is None:
                 output_writer("No governed implementation summary is pending approval.")
                 transcript.append({"event": "approval_without_summary"})
@@ -110,39 +192,7 @@ def run_reference_uhi_session(
             transcript.append({"event": "approved", "runtime_status": runtime_status})
             continue
 
-        submitted_messages += 1
-        project_context = prepare_unified_human_interface_project_context(
-            interface_name="aicli",
-            session_id=session,
-            message=message,
-            runtime_root=root,
-            workspace=workspace_path,
-            created_at=created,
-        )
-        last_project_context = project_context
-        output_writer(_render_project_context(project_context))
-        resolution = project_context["development_intent_resolution"]
-        last_resolution = resolution
-        transcript.append(
-            {
-                "event": "message",
-                "summary_admissible": resolution.get("summary_admissible"),
-                "clarification_required": resolution.get("clarification_required"),
-                "project_context_reference": project_context.get("replay_reference"),
-            }
-        )
-        if resolution.get("clarification_required") is True:
-            clarification_count += 1
-            clarification = guided_development_clarification(message)
-            pending_clarification = clarification
-            output_writer(_render_clarification(clarification))
-            continue
-        if resolution.get("summary_admissible") is True:
-            pending_summary = _summary_from_resolution(resolution)
-            pending_clarification = None
-            output_writer(_render_summary(pending_summary))
-            continue
-        output_writer(_render_non_development_resolution(resolution))
+        compose_buffer.append(line_text)
 
     result = {
         "command": "aicli",
@@ -154,6 +204,10 @@ def run_reference_uhi_session(
         "session_status": "REFERENCE_UHI_SESSION_COMPLETED",
         "exit_reason": exit_reason,
         "submitted_message_count": submitted_messages,
+        "submitted_request_count": submitted_request_count,
+        "multiline_request_count": multiline_request_count,
+        "unsubmitted_compose_line_count": len(compose_buffer),
+        "canceled_compose_count": canceled_compose_count,
         "clarification_question_count": clarification_count,
         "approval_count": approval_count,
         "pending_approval": pending_summary is not None,
@@ -284,6 +338,50 @@ def _runtime_binding_status(conversation_result: dict[str, Any], turn: dict[str,
     return REFERENCE_UHI_PARTIALLY_BOUND
 
 
+def _submit_composed_request(
+    *,
+    compose_buffer: list[str],
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    output_writer: Callable[[str], None],
+    transcript: list[dict[str, Any]],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any], dict[str, Any], int, int]:
+    message = "\n".join(compose_buffer)
+    project_context = prepare_unified_human_interface_project_context(
+        interface_name="aicli",
+        session_id=session,
+        message=message,
+        runtime_root=root,
+        workspace=workspace_path,
+        created_at=created,
+    )
+    output_writer("Request submitted to Platform Core.")
+    output_writer(_render_project_context(project_context))
+    resolution = project_context["development_intent_resolution"]
+    transcript.append(
+        {
+            "event": "message",
+            "line_count": len(compose_buffer),
+            "summary_admissible": resolution.get("summary_admissible"),
+            "clarification_required": resolution.get("clarification_required"),
+            "project_context_reference": project_context.get("replay_reference"),
+        }
+    )
+    multiline_requests = 1 if len(compose_buffer) > 1 else 0
+    if resolution.get("clarification_required") is True:
+        clarification = guided_development_clarification(message)
+        output_writer(_render_clarification(clarification))
+        return None, clarification, resolution, project_context, 1, multiline_requests
+    if resolution.get("summary_admissible") is True:
+        summary = _summary_from_resolution(resolution)
+        output_writer(_render_summary(summary))
+        return summary, None, resolution, project_context, 1, multiline_requests
+    output_writer(_render_non_development_resolution(resolution))
+    return None, None, resolution, project_context, 1, multiline_requests
+
+
 def _summary_from_resolution(resolution: dict[str, Any]) -> dict[str, Any]:
     return {
         "summary_type": "GOVERNED_IMPLEMENTATION_SUMMARY",
@@ -388,8 +486,10 @@ def _render_help() -> str:
     return "\n".join(
         [
             "Commands:",
+            "/send - submit the composed request",
+            ". - submit the composed request",
             "/approve - approve the pending governed implementation summary",
-            "/cancel - discard the pending summary",
+            "/cancel - clear the compose buffer or discard the pending summary",
             "/exit - close the reference UHI session",
         ]
     )
