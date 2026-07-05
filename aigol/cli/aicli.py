@@ -15,7 +15,8 @@ from typing import Any
 from aigol.cli.aigol_cli import run_interactive_conversation
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
-    resolve_development_intent,
+    prepare_unified_human_interface_project_context,
+    record_unified_human_interface_workspace_state,
 )
 
 
@@ -61,6 +62,8 @@ def run_reference_uhi_session(
     runtime_result: dict[str, Any] | None = None
     runtime_status = REFERENCE_UHI_NOT_REQUIRED
     last_resolution: dict[str, Any] | None = None
+    last_project_context: dict[str, Any] | None = None
+    pending_clarification: dict[str, Any] | None = None
     transcript: list[dict[str, Any]] = []
 
     while True:
@@ -81,6 +84,7 @@ def run_reference_uhi_session(
             continue
         if normalized == "/cancel":
             pending_summary = None
+            pending_clarification = None
             output_writer("Pending request canceled.")
             transcript.append({"event": "cancel"})
             continue
@@ -102,26 +106,40 @@ def run_reference_uhi_session(
             runtime_status = _reference_runtime_status(runtime_result)
             output_writer(_render_runtime_result(runtime_result, runtime_status))
             pending_summary = None
+            pending_clarification = None
             transcript.append({"event": "approved", "runtime_status": runtime_status})
             continue
 
         submitted_messages += 1
-        resolution = resolve_development_intent(message=message, workspace_state=None)
+        project_context = prepare_unified_human_interface_project_context(
+            interface_name="aicli",
+            session_id=session,
+            message=message,
+            runtime_root=root,
+            workspace=workspace_path,
+            created_at=created,
+        )
+        last_project_context = project_context
+        output_writer(_render_project_context(project_context))
+        resolution = project_context["development_intent_resolution"]
         last_resolution = resolution
         transcript.append(
             {
                 "event": "message",
                 "summary_admissible": resolution.get("summary_admissible"),
                 "clarification_required": resolution.get("clarification_required"),
+                "project_context_reference": project_context.get("replay_reference"),
             }
         )
         if resolution.get("clarification_required") is True:
             clarification_count += 1
             clarification = guided_development_clarification(message)
+            pending_clarification = clarification
             output_writer(_render_clarification(clarification))
             continue
         if resolution.get("summary_admissible") is True:
             pending_summary = _summary_from_resolution(resolution)
+            pending_clarification = None
             output_writer(_render_summary(pending_summary))
             continue
         output_writer(_render_non_development_resolution(resolution))
@@ -151,10 +169,24 @@ def run_reference_uhi_session(
         "aicli_owns_goal_mapping": False,
         "aicli_owns_provider_selection": False,
         "platform_core_services_delegated": True,
+        "platform_core_project_services_context": last_project_context,
         "provider_platform_preserved": True,
         "worker_platform_preserved": True,
         "replay_authority_preserved": True,
     }
+    workspace_state = record_unified_human_interface_workspace_state(
+        interface_name="aicli",
+        session_id=session,
+        runtime_root=root,
+        workspace=workspace_path,
+        created_at=created,
+        completion=result,
+        turn_results=[runtime_result] if isinstance(runtime_result, dict) else [],
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+    )
+    result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
+    result["project_workspace_hash"] = workspace_state["artifact_hash"]
     output_writer(_render_session_result(result))
     return result
 
@@ -264,6 +296,31 @@ def _summary_from_resolution(resolution: dict[str, Any]) -> dict[str, Any]:
         "aicli_authorizes": False,
         "aicli_executes": False,
     }
+
+
+def _render_project_context(project_context: dict[str, Any]) -> str:
+    guidance = (
+        project_context.get("project_guidance")
+        if isinstance(project_context.get("project_guidance"), dict)
+        else {}
+    )
+    knowledge = (
+        project_context.get("knowledge_reuse")
+        if isinstance(project_context.get("knowledge_reuse"), dict)
+        else {}
+    )
+    return "\n".join(
+        [
+            "Platform Core project context",
+            f"project_workspace_restored: {project_context.get('project_workspace_restored')}",
+            f"project_workspace_authority: {project_context.get('project_workspace_authority')}",
+            f"project_guidance_authority: {project_context.get('project_guidance_authority')}",
+            f"project_knowledge_reuse_authority: {project_context.get('project_knowledge_reuse_authority')}",
+            f"recommended_next_governed_action: {guidance.get('recommended_next_governed_action')}",
+            f"knowledge_reuse_classification: {knowledge.get('classification')}",
+            f"reuse_recommended: {knowledge.get('reuse_recommended')}",
+        ]
+    )
 
 
 def _render_summary(summary: dict[str, Any]) -> str:

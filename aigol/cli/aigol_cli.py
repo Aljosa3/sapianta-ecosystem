@@ -389,7 +389,10 @@ from aigol.runtime.conversation_provider_unavailable_clarification_fallback impo
 from aigol.runtime.native_development_task_intake_runtime import (
     is_native_development_prompt,
 )
-from aigol.runtime.platform_core_project_services import resolve_development_intent
+from aigol.runtime.platform_core_project_services import (
+    prepare_unified_human_interface_project_context,
+    record_unified_human_interface_workspace_state,
+)
 from aigol.runtime.runtime_progress_visibility import (
     format_runtime_progress,
     format_runtime_status,
@@ -9250,9 +9253,20 @@ def _run_acli_next_runtime_bound_session(
         replay_dir=replay_dir,
         workspace=workspace,
     )
-    intent_resolutions = [
-        resolve_development_intent(message=prompt, workspace_state=None)
+    project_contexts = [
+        prepare_unified_human_interface_project_context(
+            interface_name="aigol next",
+            session_id=session_id,
+            message=prompt,
+            runtime_root=replay_dir,
+            workspace=workspace,
+            created_at=created_at,
+        )
         for prompt in prompts
+    ]
+    intent_resolutions = [
+        context["development_intent_resolution"]
+        for context in project_contexts
     ]
     runtime_prompts = [
         str(resolution.get("canonical_runtime_prompt") or prompt)
@@ -9264,8 +9278,22 @@ def _run_acli_next_runtime_bound_session(
         result["runtime_binding_status"] = ACLI_NEXT_RUNTIME_BINDING_NOT_REQUIRED
         result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
         result["development_intent_resolution"] = intent_resolutions[-1] if intent_resolutions else None
+        result["platform_core_project_services_context"] = project_contexts[-1] if project_contexts else None
         result["runtime_entered"] = False
         result["manual_chatgpt_codex_transfer_required"] = False
+        workspace_state = record_unified_human_interface_workspace_state(
+            interface_name="aigol next",
+            session_id=session_id,
+            runtime_root=replay_dir,
+            workspace=workspace,
+            created_at=created_at,
+            completion=result,
+            turn_results=[],
+            pending_clarification=None,
+            pending_summary=None,
+        )
+        result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
+        result["project_workspace_hash"] = workspace_state["artifact_hash"]
         return result
 
     conversation_args = argparse.Namespace(
@@ -9293,6 +9321,7 @@ def _run_acli_next_runtime_bound_session(
             "runtime_binding_version": ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION,
             "runtime_binding_status": runtime_binding_status,
             "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
+            "platform_core_project_services_context": project_contexts[-1] if project_contexts else None,
             "runtime_prompts": runtime_prompts,
             "runtime_entered": True,
             "runtime_command": conversation_result.get("command"),
@@ -9331,6 +9360,19 @@ def _run_acli_next_runtime_bound_session(
             "worker_execution_authority_preserved": True,
         }
     )
+    workspace_state = record_unified_human_interface_workspace_state(
+        interface_name="aigol next",
+        session_id=session_id,
+        runtime_root=replay_dir,
+        workspace=workspace,
+        created_at=created_at,
+        completion=result,
+        turn_results=[result],
+        pending_clarification=None,
+        pending_summary=None,
+    )
+    result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
+    result["project_workspace_hash"] = workspace_state["artifact_hash"]
     return result
 
 

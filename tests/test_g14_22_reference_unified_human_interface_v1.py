@@ -56,6 +56,46 @@ def test_aicli_approval_delegates_to_certified_runtime(tmp_path: Path) -> None:
     assert calls[0]["prompt"] == "Implement governance validation utility."
     assert any("Governed implementation summary" in line for line in output)
     assert any("Certified runtime result" in line for line in output)
+    assert result["platform_core_project_services_context"]["project_guidance_authority"] == "PLATFORM_CORE"
+    assert result["project_workspace_replay_reference"].endswith("workspace_state")
+    assert (
+        tmp_path
+        / "AICLI-TEST"
+        / "workspace_state"
+        / "001_platform_core_workspace_state_recorded.json"
+    ).exists()
+
+
+def test_aicli_restores_platform_core_workspace_state_across_sessions(tmp_path: Path) -> None:
+    first_calls: list[dict] = []
+    aicli.run_reference_uhi_session(
+        session_id="AICLI-CONTINUITY",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_reader(["I want AiGOL Next to support GitHub Actions.", "/approve", "/exit"]),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(first_calls),
+    )
+
+    second_calls: list[dict] = []
+    output: list[str] = []
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-CONTINUITY",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_reader(["Continue the mobile interface.", "/approve", "/exit"]),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(second_calls),
+    )
+
+    context = result["platform_core_project_services_context"]
+    assert context["project_workspace_restored"] is True
+    assert context["project_workspace_authority"] == "PLATFORM_CORE"
+    assert context["project_guidance_authority"] == "PLATFORM_CORE"
+    assert context["project_knowledge_reuse_authority"] == "PLATFORM_CORE"
+    assert context["knowledge_reuse"]["mapping_source"] == "deterministic_workspace_state"
+    assert result["aicli_owns_workspace"] is False
+    assert any("Platform Core project context" in line for line in output)
 
 
 def test_aicli_renders_platform_core_clarification_without_runtime(tmp_path: Path) -> None:
@@ -140,5 +180,6 @@ def test_aicli_source_remains_thin_adapter() -> None:
 
     for token in forbidden:
         assert token not in source
-    assert "resolve_development_intent(" in source
+    assert "prepare_unified_human_interface_project_context(" in source
+    assert "record_unified_human_interface_workspace_state(" in source
     assert "run_interactive_conversation(" in source

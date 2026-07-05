@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.native_development_task_intake_runtime import is_native_development_prompt
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
 PLATFORM_CORE_PROJECT_SERVICES_VERSION = "G14_08A_PLATFORM_CORE_PROJECT_SERVICES_EXTRACTION_V1"
@@ -19,6 +20,152 @@ PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION = (
 PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_VERSION = (
     "G14_19_CANONICAL_DEVELOPMENT_INTENT_RESOLUTION_UNIFICATION_V1"
 )
+PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION = (
+    "G14_27_UNIFIED_HUMAN_INTERFACE_RUNTIME_PROJECT_SERVICES_INTEGRATION_V1"
+)
+
+
+def prepare_unified_human_interface_project_context(
+    *,
+    interface_name: str,
+    session_id: str,
+    message: str,
+    runtime_root: str | Path,
+    workspace: str | Path,
+    created_at: str,
+) -> dict[str, Any]:
+    """Prepare the canonical Platform Core project-services context for any UHI."""
+
+    session_root = Path(runtime_root) / require_string(session_id, "session_id")
+    prior_state = latest_platform_core_workspace_state(session_root)
+    guidance = (
+        project_guidance_from_workspace_state(prior_state)
+        if isinstance(prior_state, dict)
+        else project_guidance_model(
+            active_objective=None,
+            pending_clarification=False,
+            pending_approval=False,
+            implementation_history_count=0,
+            runtime_bound_count=0,
+        )
+    )
+    development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
+    goal_mapping = (
+        development_intent.get("goal_mapping")
+        if isinstance(development_intent.get("goal_mapping"), dict)
+        else goal_mapping_from_workspace(message=message, workspace_state=prior_state)
+    )
+    knowledge_reuse = (
+        goal_mapping.get("contextual_task_mapping")
+        if isinstance(goal_mapping, dict) and isinstance(goal_mapping.get("contextual_task_mapping"), dict)
+        else project_knowledge_context_from_workspace(
+            message=message,
+            workspace_state=prior_state,
+            goal_target="general_project_goal",
+            governed_request=message,
+        )
+    )
+    artifact = {
+        "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "interface_name": require_string(interface_name, "interface_name"),
+        "session_id": require_string(session_id, "session_id"),
+        "workspace": str(Path(workspace)),
+        "created_at": require_string(created_at, "created_at"),
+        "message_hash": replay_hash(message),
+        "project_workspace_restored": prior_state is not None,
+        "project_workspace_replay_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
+        "project_guidance": guidance,
+        "knowledge_reuse": knowledge_reuse,
+        "development_intent_resolution": development_intent,
+        "project_workspace_authority": "PLATFORM_CORE",
+        "project_guidance_authority": "PLATFORM_CORE",
+        "project_knowledge_reuse_authority": "PLATFORM_CORE",
+        "development_intent_resolution_authority": "PLATFORM_CORE",
+        "interface_authority": False,
+        "interface_executes_project_services": False,
+        "replay_visible": True,
+        "replay_reference": str(session_root / "uhi_project_services"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    write_json_immutable(
+        session_root
+        / "uhi_project_services"
+        / f"{next_uhi_project_context_index(session_root):03d}_uhi_project_context_recorded.json",
+        artifact,
+    )
+    return artifact
+
+
+def record_unified_human_interface_workspace_state(
+    *,
+    interface_name: str,
+    session_id: str,
+    runtime_root: str | Path,
+    workspace: str | Path,
+    created_at: str,
+    completion: dict[str, Any],
+    turn_results: list[dict[str, Any]],
+    pending_clarification: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Record the canonical Platform Core project workspace state for any UHI."""
+
+    session_root = Path(runtime_root) / require_string(session_id, "session_id")
+    prior_state = latest_platform_core_workspace_state(session_root)
+    artifact = build_persistent_workspace_state_artifact(
+        conversation_id=session_id,
+        command_name=interface_name,
+        prior_state=prior_state,
+        completion=completion,
+        turn_results=turn_results,
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+        session_root=session_root,
+        created_at=created_at,
+        workspace=workspace,
+    )
+    write_json_immutable(
+        session_root
+        / "workspace_state"
+        / f"{next_workspace_state_index(session_root):03d}_platform_core_workspace_state_recorded.json",
+        artifact,
+    )
+    return artifact
+
+
+def latest_platform_core_workspace_state(session_root: Path) -> dict[str, Any] | None:
+    state_root = session_root / "workspace_state"
+    if not state_root.exists():
+        return None
+    candidates = sorted(state_root.glob("*_workspace_state_recorded.json"))
+    for path in reversed(candidates):
+        try:
+            artifact = load_json(path)
+        except FailClosedRuntimeError:
+            continue
+        if artifact.get("artifact_type") == "ACLI_NEXT_PERSISTENT_WORKSPACE_STATE_ARTIFACT_V1":
+            return artifact
+    return None
+
+
+def next_workspace_state_index(session_root: Path) -> int:
+    return next_index(session_root / "workspace_state", "*_workspace_state_recorded.json")
+
+
+def next_uhi_project_context_index(session_root: Path) -> int:
+    return next_index(session_root / "uhi_project_services", "*_uhi_project_context_recorded.json")
+
+
+def next_index(root: Path, pattern: str) -> int:
+    existing: list[int] = []
+    if root.exists():
+        for path in root.glob(pattern):
+            prefix = path.name.split("_", 1)[0]
+            if prefix.isdigit():
+                existing.append(int(prefix))
+    return max(existing, default=0) + 1
 
 
 def build_persistent_workspace_state_artifact(
