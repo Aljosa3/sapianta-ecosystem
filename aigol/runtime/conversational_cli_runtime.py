@@ -859,26 +859,6 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["governed", "development", "workflow"],
         )
-    if _is_task_completion_native_development_prompt(normalized):
-        return _analysis(
-            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
-            "HIGH",
-            ["task-completion", "native", "development"],
-        )
-    development_intent = classify_development_intent_for_governed_routing(prompt)
-    if development_intent.get("intake_matched") is True:
-        return _analysis(
-            GOVERNED_DEVELOPMENT_WORKFLOW,
-            str(development_intent.get("intent_confidence") or "HIGH"),
-            list(development_intent.get("intent_signals") or ["development", "intent"]),
-            human_intent_intake=development_intent,
-        )
-    if is_conversation_native_development_intent(prompt):
-        return _analysis(
-            NATIVE_DEVELOPMENT_INTENT_ROUTING,
-            "HIGH",
-            ["native", "development", "intent"],
-        )
     if _is_product_1_domain_foundation_prompt(normalized):
         return _analysis(
             AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
@@ -901,6 +881,26 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(DOMAIN_LIFECYCLE_GOVERNANCE, "HIGH", ["domain", "lifecycle", "governance"])
     if _is_capability_lifecycle_governance_prompt(normalized):
         return _analysis(CAPABILITY_LIFECYCLE_GOVERNANCE, "HIGH", ["capability", "lifecycle", "governance"])
+    if _is_explicit_native_development_context_prompt(normalized):
+        return _analysis(
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            "HIGH",
+            ["explicit", "native", "development"],
+        )
+    development_intent = classify_development_intent_for_governed_routing(prompt)
+    if development_intent.get("intake_matched") is True:
+        return _analysis(
+            GOVERNED_DEVELOPMENT_WORKFLOW,
+            str(development_intent.get("intent_confidence") or "HIGH"),
+            list(development_intent.get("intent_signals") or ["development", "intent"]),
+            human_intent_intake=development_intent,
+        )
+    if is_conversation_native_development_intent(prompt):
+        return _analysis(
+            NATIVE_DEVELOPMENT_INTENT_ROUTING,
+            "HIGH",
+            ["native", "development", "intent"],
+        )
     if _is_improvement_proposal_runtime_prompt(normalized):
         return _analysis(IMPROVEMENT_PROPOSAL_RUNTIME, "HIGH", ["improvement", "proposal", "governance"])
     if _is_proposal_runtime_prompt(normalized):
@@ -929,12 +929,6 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
             "HIGH",
             ["approved", "domain", "proposal", "continuation"],
         )
-    if _is_task_completion_native_development_prompt(normalized):
-        return _analysis(
-            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
-            "HIGH",
-            ["task-completion", "native", "development"],
-        )
     early_human_intent = classify_human_intent_for_clarification(prompt, include_unknown=False)
     if early_human_intent.get("intake_matched") is True:
         return _human_intent_analysis(early_human_intent)
@@ -947,6 +941,12 @@ def _classify_workflow(human_prompt: str) -> dict[str, Any]:
         return _analysis(CREATE_DOMAIN_COMPLIANCE_CLARIFICATION, "HIGH", ["create", "new", "domain"])
     if _is_plain_ocs_intake_prompt(normalized):
         return _analysis(OCS_LLM_COGNITION, "HIGH", ["plain", "ocs", "cognition"])
+    if _is_task_completion_native_development_prompt(normalized):
+        return _analysis(
+            NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION,
+            "HIGH",
+            ["task-completion", "native", "development"],
+        )
     if is_plain_native_development_prompt(prompt):
         return _analysis(NATIVE_DEVELOPMENT_CONTEXT_INTEGRATION, "HIGH", ["plain", "native", "development"])
     if _is_operator_decision_support_prompt(normalized):
@@ -3217,6 +3217,19 @@ def _is_task_completion_native_development_prompt(normalized: str) -> bool:
         "validator",
     )
     return any(subject in normalized for subject in development_subjects)
+
+
+def _is_explicit_native_development_context_prompt(normalized: str) -> bool:
+    if not _is_task_completion_native_development_prompt(normalized):
+        return False
+    explicit_native_markers = (
+        " native ",
+        "native development",
+        "external worker",
+        "provider adapter",
+        "provider-neutral external worker",
+    )
+    return any(marker in f" {normalized} " for marker in explicit_native_markers)
 
 
 def _is_freeform_clarification_prompt(normalized: str) -> bool:
