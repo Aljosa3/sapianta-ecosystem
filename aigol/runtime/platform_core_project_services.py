@@ -583,8 +583,14 @@ def resolve_development_intent(
         clarification_required = True
         clarification_reason = "guided development request lacks deterministic implementation specificity"
     if continuation_detected and not isinstance(workspace_state, dict):
-        clarification_required = True
-        clarification_reason = "continuation request requires deterministic workspace state"
+        mapped_target = (
+            str(goal_mapping.get("goal_target") or "")
+            if isinstance(goal_mapping, dict)
+            else ""
+        )
+        if mapped_target in {"", "active_objective", "general_project_goal"}:
+            clarification_required = True
+            clarification_reason = "continuation request requires deterministic workspace state"
     if collaborative_detected and collaborative_development_request_requires_workspace(raw_message, workspace_state):
         clarification_required = True
         clarification_reason = "collaborative development request requires deterministic workspace state"
@@ -646,6 +652,13 @@ def canonical_development_runtime_prompt(message: str) -> str:
         )
         if any(term in lowered for term in contextual_development_terms):
             return f"{prompt} Implement as a governed development workflow."
+    if continuation_development_request_detected(prompt) and (
+        "governed" in lowered
+        or "interface" in lowered
+        or "support" in lowered
+        or "workflow" in lowered
+    ):
+        return f"{prompt} Implement as a governed development workflow."
     return prompt
 
 
@@ -751,11 +764,15 @@ def continuation_development_request_detected(message: str) -> bool:
         "implementation",
         "implementing",
         "improving",
+        "github actions",
         "going",
+        "interface",
+        "mobile",
         "project",
         "platform",
         "previous",
         "previous task",
+        "support",
         "what we started",
         "where we stopped",
         "where we left off",

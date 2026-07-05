@@ -93,6 +93,7 @@ DEVELOPMENT_SUBJECT_TERMS = (
     "script",
     "support",
     "test",
+    "tool",
     "utility",
     "validation",
     "validation script",
@@ -106,6 +107,7 @@ CREATE_SUBJECT_TERMS = (
     "parser",
     "script",
     "support",
+    "tool",
     "utility",
     "validation script",
     "validator",
@@ -130,9 +132,21 @@ def is_plain_native_development_prompt(human_prompt: str) -> bool:
     lowered = prompt.lower()
     if MILESTONE_PATTERN.search(prompt):
         return False
+    advisory_markers = (
+        "advisory guidance",
+        "before any runtime changes",
+        "before changing runtime behavior",
+        "do not start implementation",
+        "more understandable",
+        "plan only",
+    )
+    if any(marker in lowered for marker in advisory_markers):
+        return False
     if _has_unacceptable_authority(prompt):
         return False
-    if any(term in lowered for term in ("deploy", "production", "external users", "domain", "business")):
+    if any(term in lowered for term in ("production", "external users", "domain", "business")):
+        return False
+    if re.search(r"\bdeploy\b", lowered):
         return False
     freeform_development_subject = _has_development_subject(lowered)
     if freeform_development_subject and (
