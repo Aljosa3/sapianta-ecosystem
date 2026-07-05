@@ -741,6 +741,19 @@ def _conversation_experience_artifact(
     knowledge_reuse: dict[str, Any],
     development_intent: dict[str, Any],
 ) -> dict[str, Any]:
+    approval_summary = _conversation_approval_summary(
+        message=message,
+        development_intent=development_intent,
+        approval_explanation=(
+            "Approval delegates to the certified runtime; the Human Interface does not authorize or execute."
+        ),
+    )
+    fail_closed_response = _conversation_fail_closed_response(
+        message=message,
+        development_intent=development_intent,
+        explanation="When intent is incomplete, AiGOL asks for clarification instead of guessing or executing.",
+        next_step=next_step,
+    )
     artifact = {
         "artifact_type": "PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION,
@@ -759,12 +772,10 @@ def _conversation_experience_artifact(
             "Knowledge reuse checked.",
             "Development intent evaluated.",
         ],
-        "approval_explanation": (
-            "Approval delegates to the certified runtime; the Human Interface does not authorize or execute."
-        ),
-        "fail_closed_explanation": (
-            "When intent is incomplete, AiGOL asks for clarification instead of guessing or executing."
-        ),
+        "approval_summary": approval_summary,
+        "approval_explanation": approval_summary["approval_explanation"],
+        "fail_closed_response": fail_closed_response,
+        "fail_closed_explanation": fail_closed_response["fail_closed_explanation"],
         "project_guidance_summary": guidance.get("recommended_next_governed_action"),
         "knowledge_reuse_classification": knowledge_reuse.get("classification"),
         "reuse_recommended": knowledge_reuse.get("reuse_recommended") is True,
@@ -774,6 +785,59 @@ def _conversation_experience_artifact(
     }
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
+
+
+def _conversation_approval_summary(
+    *,
+    message: str,
+    development_intent: dict[str, Any],
+    approval_explanation: str,
+) -> dict[str, Any]:
+    summary_admissible = development_intent.get("summary_admissible") is True
+    return {
+        "summary_type": "GOVERNED_IMPLEMENTATION_SUMMARY",
+        "summary_authority": "PLATFORM_CORE",
+        "summary_title": "Governed implementation summary",
+        "original_request": development_intent.get("raw_prompt") or message,
+        "original_message": development_intent.get("raw_prompt") or message,
+        "canonical_runtime_prompt": development_intent.get("canonical_runtime_prompt") or message,
+        "refined_message": development_intent.get("canonical_runtime_prompt") or message,
+        "goal_mapping": deepcopy(development_intent.get("goal_mapping")),
+        "requires_human_approval": development_intent.get("requires_human_approval") is True,
+        "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME" if summary_admissible else None,
+        "approval_state": "PENDING_HUMAN_APPROVAL" if summary_admissible else "NOT_APPLICABLE",
+        "approval_explanation": approval_explanation,
+        "human_interface_authorizes": False,
+        "human_interface_executes": False,
+        "acli_next_authorizes": False,
+        "acli_next_executes": False,
+    }
+
+
+def _conversation_fail_closed_response(
+    *,
+    message: str,
+    development_intent: dict[str, Any],
+    explanation: str,
+    next_step: str,
+) -> dict[str, Any]:
+    lowered = " ".join(message.lower().split())
+    return {
+        "response_type": "FAIL_CLOSED_EXPLANATION",
+        "response_authority": "PLATFORM_CORE",
+        "response_title": "No governed implementation summary was produced.",
+        "reason": development_intent.get("clarification_reason"),
+        "fail_closed_explanation": explanation,
+        "recommended_next_user_action": next_step,
+        "conversation_state": (
+            "FAIL_CLOSED"
+            if development_intent.get("summary_admissible") is not True
+            and development_intent.get("clarification_required") is not True
+            else "NOT_APPLICABLE"
+        ),
+        "interface_render_recommended": "could be better" in lowered,
+        "human_interface_generates_explanation": False,
+    }
 
 
 def _conversation_explanation_for_clarification(prompt: str, intent: dict[str, Any]) -> str:

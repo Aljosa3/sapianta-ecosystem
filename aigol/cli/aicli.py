@@ -318,25 +318,18 @@ def _submit_composed_request(
         output_writer(_render_clarification(clarification))
         return None, clarification, resolution, project_context, 1, multiline_requests
     if resolution.get("summary_admissible") is True:
-        summary = _summary_from_resolution(resolution)
+        summary = _summary_from_conversation(conversation)
         output_writer(_render_summary(summary))
         return summary, None, resolution, project_context, 1, multiline_requests
-    output_writer(_render_non_development_resolution(resolution))
+    output_writer(_render_non_development_response(conversation))
     return None, None, resolution, project_context, 1, multiline_requests
 
 
-def _summary_from_resolution(resolution: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "summary_type": "GOVERNED_IMPLEMENTATION_SUMMARY",
-        "summary_authority": "PLATFORM_CORE",
-        "original_request": resolution["raw_prompt"],
-        "canonical_runtime_prompt": resolution["canonical_runtime_prompt"],
-        "goal_mapping": resolution.get("goal_mapping"),
-        "requires_human_approval": resolution.get("requires_human_approval") is True,
-        "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME",
-        "aicli_authorizes": False,
-        "aicli_executes": False,
-    }
+def _summary_from_conversation(conversation: dict[str, Any]) -> dict[str, Any]:
+    summary = conversation.get("approval_summary")
+    if not isinstance(summary, dict):
+        raise ValueError("Platform Core approval_summary is required")
+    return dict(summary)
 
 
 def _render_project_context(project_context: dict[str, Any]) -> str:
@@ -388,10 +381,10 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
 
 def _render_summary(summary: dict[str, Any]) -> str:
     lines = [
-        "Governed implementation summary",
+        str(summary.get("summary_title") or "Governed implementation summary"),
         f"original_request: {summary.get('original_request')}",
         f"runtime_after_approval: {summary.get('runtime_after_approval')}",
-        "aicli will delegate to Platform Core; it will not authorize or execute.",
+        str(summary.get("approval_explanation")),
         "Type /approve to continue, or /cancel to discard.",
     ]
     return "\n".join(lines)
@@ -412,12 +405,16 @@ def _render_clarification(clarification: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _render_non_development_resolution(resolution: dict[str, Any]) -> str:
+def _render_non_development_response(conversation: dict[str, Any]) -> str:
+    response = conversation.get("fail_closed_response")
+    if not isinstance(response, dict):
+        raise ValueError("Platform Core fail_closed_response is required")
     return "\n".join(
         [
-            "No governed implementation summary was produced.",
-            f"reason: {resolution.get('clarification_reason')}",
-            "aicli performed no routing or execution.",
+            str(response.get("response_title") or "No governed implementation summary was produced."),
+            f"reason: {response.get('reason')}",
+            str(response.get("fail_closed_explanation")),
+            f"next_step: {response.get('recommended_next_user_action')}",
         ]
     )
 

@@ -244,12 +244,12 @@ def run_acli_next_persistent_conversational_session(
                     composer_buffer.clear()
                     writer(_render_guided_development_clarification(pending_clarification))
                     continue
-                pending_summary = _guided_development_summary(
-                    original_message=pending_clarification["original_message"],
-                    clarification_response=message,
+                conversation_experience = _human_conversation_experience(
+                    message=clarified_message,
+                    intent_resolution=intent_resolution,
                     workspace_state=workspace_state,
-                    development_intent_resolution=intent_resolution,
                 )
+                pending_summary = _guided_development_summary(conversation_experience=conversation_experience)
                 composer_events["execution_summary_count"] += 1
                 pending_clarification = None
                 composer_buffer.clear()
@@ -298,16 +298,16 @@ def run_acli_next_persistent_conversational_session(
                 if goal_mapping is not None:
                     composer_events["goal_mapping_count"] += 1
                     composer_events["knowledge_reuse_count"] += 1
-                pending_summary = _guided_development_summary(
-                    original_message=message,
-                    clarification_response=None,
-                    workspace_state=workspace_state,
-                    goal_mapping=goal_mapping,
-                    development_intent_resolution=intent_resolution,
-                )
+                pending_summary = _guided_development_summary(conversation_experience=conversation_experience)
                 composer_events["execution_summary_count"] += 1
                 composer_buffer.clear()
                 writer(_render_guided_development_summary(pending_summary))
+                continue
+            if guided_development_workflow and isinstance(intent_resolution, dict) and _should_render_fail_closed_response(
+                conversation_experience
+            ):
+                composer_buffer.clear()
+                writer(_render_fail_closed_response(conversation_experience))
                 continue
             composer_events["submitted_message_count"] += 1
             turn_result = submit_turn(
@@ -792,45 +792,18 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
     }
 
 
-def _guided_development_summary(
-    *,
-    original_message: str,
-    clarification_response: str | None,
-    workspace_state: dict[str, Any] | None = None,
-    goal_mapping: dict[str, Any] | None = None,
-    development_intent_resolution: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    refined_message = original_message
-    if clarification_response:
-        refined_message = f"{original_message}\n\nClarification:\n{clarification_response}"
-    if isinstance(goal_mapping, dict):
-        refined_message = str(goal_mapping.get("governed_request") or refined_message)
-    if isinstance(development_intent_resolution, dict):
-        refined_message = str(development_intent_resolution.get("refined_message") or refined_message)
-    return {
-        "original_message": original_message,
-        "clarification_response": clarification_response,
-        "goal_mapping": deepcopy(goal_mapping),
-        "development_intent_resolution": deepcopy(development_intent_resolution),
-        "workspace_state_reference": (
-            workspace_state.get("replay_reference") if isinstance(workspace_state, dict) else None
-        ),
-        "refined_message": refined_message,
-        "summary_status": "IMPLEMENTATION_SUMMARY_PRESENTED",
-        "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME",
-        "requires_human_confirmation": True,
-        "acli_next_authorizes": False,
-        "acli_next_executes": False,
-    }
+def _guided_development_summary(*, conversation_experience: dict[str, Any]) -> dict[str, Any]:
+    summary = conversation_experience.get("approval_summary")
+    if not isinstance(summary, dict):
+        raise FailClosedRuntimeError("Platform Core approval_summary is required")
+    return dict(summary)
 
 
 def _render_guided_development_summary(summary: dict[str, Any]) -> str:
     lines = [
-        "Governed implementation summary",
-        f"original_request: {summary.get('original_message')}",
+        str(summary.get("summary_title") or "Governed implementation summary"),
+        f"original_request: {summary.get('original_request')}",
     ]
-    if summary.get("clarification_response"):
-        lines.extend(["clarification:", str(summary["clarification_response"])])
     if isinstance(summary.get("goal_mapping"), dict):
         mapping = summary["goal_mapping"]
         lines.extend(
@@ -861,12 +834,34 @@ def _render_guided_development_summary(summary: dict[str, Any]) -> str:
             )
     lines.extend(
         [
-            "runtime_after_approval: CERTIFIED_PLATFORM_CORE_RUNTIME",
-            "AiGOL Next will delegate to Platform Core; it will not authorize or execute.",
+            f"runtime_after_approval: {summary.get('runtime_after_approval')}",
+            str(summary.get("approval_explanation")),
             "Type /approve to continue into the certified runtime, or /cancel to discard.",
         ]
     )
     return "\n".join(lines)
+
+
+def _render_fail_closed_response(conversation_experience: dict[str, Any]) -> str:
+    response = conversation_experience.get("fail_closed_response")
+    if not isinstance(response, dict):
+        raise FailClosedRuntimeError("Platform Core fail_closed_response is required")
+    return "\n".join(
+        [
+            str(response.get("response_title") or "No governed implementation summary was produced."),
+            f"reason: {response.get('reason')}",
+            str(response.get("fail_closed_explanation")),
+            f"next_step: {response.get('recommended_next_user_action')}",
+            "Compose a revised request and type /send.",
+        ]
+    )
+
+
+def _should_render_fail_closed_response(conversation_experience: dict[str, Any]) -> bool:
+    response = conversation_experience.get("fail_closed_response")
+    if not isinstance(response, dict) or response.get("conversation_state") != "FAIL_CLOSED":
+        return False
+    return response.get("interface_render_recommended") is True
 
 
 def _platform_core_state(
