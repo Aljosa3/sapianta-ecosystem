@@ -87,5 +87,5 @@ def test_acli_next_renders_same_platform_core_conversation_clarification(tmp_pat
 
     assert result["clarification_question_count"] == 1
     assert result["turn_count"] == 0
-    assert "I can help place this architecturally, but I need the subject." in rendered
-    assert "What capability, behavior, or artifact are you asking about?" in rendered
+    assert "I can help place this architecturally." in rendered
+    assert "What user-visible behavior or artifact should be placed architecturally?" in rendered

@@ -26,6 +26,122 @@ PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION = (
 PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION = (
     "G14_38_PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_V1"
 )
+PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION = (
+    "G14_47_HUMAN_INTENT_TO_CAPABILITY_RESOLUTION_V1"
+)
+
+
+CAPABILITY_CATALOG: tuple[dict[str, Any], ...] = (
+    {
+        "capability_id": "governance_documentation",
+        "display_name": "governance documentation",
+        "keywords": (
+            "governance documentation",
+            "governance docs",
+            "governance document",
+            "constitutional documentation",
+            "governance report",
+            "governance artifact",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve governance documentation.",
+    },
+    {
+        "capability_id": "governance_validation",
+        "display_name": "governance validator",
+        "keywords": (
+            "governance validator",
+            "governance validation",
+            "validator",
+            "validation",
+            "validate governance",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve governance validation.",
+    },
+    {
+        "capability_id": "replay",
+        "display_name": "replay evidence",
+        "keywords": (
+            "replay",
+            "replay evidence",
+            "replay certification",
+            "replay generation",
+            "replay-safe",
+            "replay safe",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve replay evidence handling.",
+    },
+    {
+        "capability_id": "certification",
+        "display_name": "certification workflow",
+        "keywords": (
+            "certification",
+            "certify",
+            "final certification",
+            "certification simpler",
+            "certification easier",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Simplify certification workflow.",
+    },
+    {
+        "capability_id": "development_experience",
+        "display_name": "development experience",
+        "keywords": (
+            "development easier",
+            "make development easier",
+            "developer experience",
+            "development experience",
+            "ordinary users",
+            "user experience",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve governed development experience.",
+    },
+    {
+        "capability_id": "human_intent_resolution",
+        "display_name": "human intent resolution",
+        "keywords": (
+            "human intent",
+            "intent resolution",
+            "natural language",
+            "capability resolution",
+            "derive capability",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve human intent to capability resolution.",
+    },
+    {
+        "capability_id": "provider_attachment",
+        "display_name": "provider attachment",
+        "keywords": (
+            "provider attachment",
+            "provider platform",
+            "external provider",
+            "provider boundary",
+            "provider",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve provider attachment boundary handling.",
+    },
+    {
+        "capability_id": "human_interface",
+        "display_name": "human interface",
+        "keywords": (
+            "human interface",
+            "interface",
+            "aicli",
+            "aigol next",
+            "web interface",
+            "mobile interface",
+            "voice interface",
+        ),
+        "default_goal_type": "EXTENDS_PROJECT",
+        "canonical_request": "Improve the human interface experience.",
+    },
+)
 
 
 def prepare_unified_human_interface_project_context(
@@ -464,6 +580,7 @@ def project_knowledge_context_from_workspace(
     workspace_state: dict[str, Any] | None,
     goal_target: str,
     governed_request: str,
+    candidate_capability_discovery: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     knowledge_index = (
         workspace_state.get("project_knowledge_index")
@@ -476,6 +593,18 @@ def project_knowledge_context_from_workspace(
     already_requested = any(term in lowered for term in ("already", "done", "implemented", "satisfied"))
     modify_requested = any(term in lowered for term in ("improve", "change", "modify", "refine", "update"))
     continue_requested = any(term in lowered for term in ("continue", "extend", "add to", "build on"))
+    discovery = candidate_capability_discovery if isinstance(candidate_capability_discovery, dict) else {}
+    discovery_target = str(discovery.get("selected_goal_target") or "")
+    capability_decision = (
+        str(discovery.get("capability_resolution_decision") or "")
+        if discovery_target == goal_target
+        else ""
+    )
+    candidate_capabilities = (
+        discovery.get("candidate_capabilities")
+        if isinstance(discovery.get("candidate_capabilities"), list)
+        else []
+    )
     if known and already_requested:
         classification = "ALREADY_SATISFIED"
         new_work_required = False
@@ -496,6 +625,16 @@ def project_knowledge_context_from_workspace(
         new_work_required = True
         reuse_recommended = True
         reason = "Certified artifacts already describe the related capability family."
+    elif capability_decision == "EXTENDS_EXISTING_CAPABILITY":
+        classification = "RELATES_TO_CERTIFIED_CAPABILITY"
+        new_work_required = True
+        reuse_recommended = True
+        reason = "Candidate capability discovery found a related certified capability family."
+    elif capability_decision == "EXISTING_CAPABILITY":
+        classification = "ALREADY_SATISFIED"
+        new_work_required = False
+        reuse_recommended = True
+        reason = "Candidate capability discovery found an existing workspace capability."
     else:
         classification = "NEW_GOVERNED_WORK"
         new_work_required = True
@@ -531,6 +670,9 @@ def project_knowledge_context_from_workspace(
         "classification": classification,
         "goal_target": goal_target,
         "governed_request": governed_request,
+        "candidate_capability_discovery": deepcopy(discovery),
+        "candidate_capabilities_received": deepcopy(candidate_capabilities),
+        "capability_resolution_decision": capability_decision or "NEW_CAPABILITY",
         "related_milestones": milestones,
         "relevant_certified_artifacts": artifacts,
         "implementation_history_matches": history_matches,
@@ -557,6 +699,33 @@ def certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
         "active_objective": [
             "docs/governance/G14_05_PERSISTENT_DEVELOPMENT_WORKSPACE_AND_PROJECT_CONTINUITY_V1.md",
         ],
+        "governance_documentation": [
+            "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md",
+            "docs/governance/GOVERNANCE_CONFORMANCE_SYSTEM_V1.md",
+        ],
+        "governance_validation": [
+            "runtime/governance/governance_conformance_engine.py",
+            "runtime/governance/conformance_rules.py",
+        ],
+        "replay": [
+            "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+            "governance/UNIFIED_REPLAY_RECONSTRUCTION_MODEL_V1.md",
+        ],
+        "certification": [
+            "docs/governance/G14_31_FINAL_GENERATION_14_OPERATIONAL_ACCEPTANCE_V1.md",
+        ],
+        "development_experience": [
+            "docs/governance/G14_38_PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_V1.md",
+        ],
+        "human_intent_resolution": [
+            "docs/governance/G14_19_DEVELOPMENT_INTENT_RESOLUTION_UNIFICATION_V1.md",
+        ],
+        "provider_attachment": [
+            "aigol/provider/certified_provider_attachment.py",
+        ],
+        "human_interface": [
+            "docs/governance/G14_30_CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_SERVICE_V1.md",
+        ],
     }
     return artifacts.get(goal_target, [])
 
@@ -569,6 +738,254 @@ def goal_oriented_request_detected(message: str) -> bool:
     )
 
 
+def discover_candidate_capabilities(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Infer candidate Platform Core capabilities from ordinary human language."""
+
+    raw_message = require_string(message, "message")
+    lowered = " ".join(raw_message.lower().split())
+    if _invalid_continuation_reference(lowered):
+        return _empty_candidate_capability_discovery(raw_message)
+    knowledge_index = (
+        workspace_state.get("project_knowledge_index")
+        if isinstance(workspace_state, dict) and isinstance(workspace_state.get("project_knowledge_index"), dict)
+        else {}
+    )
+    active_objective = (
+        workspace_state.get("active_development_objective")
+        if isinstance(workspace_state, dict)
+        else None
+    )
+    candidates: list[dict[str, Any]] = []
+    for capability in CAPABILITY_CATALOG:
+        evidence = [term for term in capability["keywords"] if term in lowered]
+        if not evidence:
+            continue
+        candidate = _candidate_capability(
+            capability=capability,
+            evidence=evidence,
+            message=raw_message,
+            workspace_state=workspace_state,
+            knowledge_index=knowledge_index,
+        )
+        candidates.append(candidate)
+    if not candidates and active_objective and _workspace_reference_detected(lowered):
+        candidates.append(
+            _active_objective_candidate(
+                active_objective=active_objective,
+                message=raw_message,
+                knowledge_index=knowledge_index,
+            )
+        )
+    candidates = sorted(candidates, key=lambda item: (-int(item.get("confidence_score") or 0), item["capability_id"]))
+    selected = candidates[0] if candidates else None
+    ambiguity_remaining = len(candidates) > 1 and int(candidates[0]["confidence_score"]) == int(candidates[1]["confidence_score"])
+    if selected is None:
+        decision = "NEW_CAPABILITY"
+    elif selected.get("workspace_match") is True and _already_satisfied_request_detected(lowered):
+        decision = "EXISTING_CAPABILITY"
+    elif selected.get("workspace_match") is True or selected.get("certified_artifacts"):
+        decision = "EXTENDS_EXISTING_CAPABILITY"
+    else:
+        decision = "NEW_CAPABILITY"
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_CANDIDATE_CAPABILITY_DISCOVERY_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "capability_discovery_authority": "PLATFORM_CORE",
+        "raw_prompt": raw_message,
+        "human_objective": extract_human_objective(raw_message),
+        "candidate_capabilities": candidates,
+        "candidate_capability_count": len(candidates),
+        "selected_candidate_capability": deepcopy(selected),
+        "selected_goal_target": selected.get("goal_target") if isinstance(selected, dict) else "general_project_goal",
+        "capability_resolution_decision": decision,
+        "workspace_inspected": True,
+        "knowledge_reuse_prepared": True,
+        "certified_governance_artifacts_inspected": True,
+        "ambiguity_remaining_after_deterministic_analysis": ambiguity_remaining,
+        "requires_human_capability_name": False,
+        "clarification_allowed_only_for_remaining_ambiguity": True,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _empty_candidate_capability_discovery(message: str) -> dict[str, Any]:
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_CANDIDATE_CAPABILITY_DISCOVERY_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "capability_discovery_authority": "PLATFORM_CORE",
+        "raw_prompt": message,
+        "human_objective": extract_human_objective(message),
+        "candidate_capabilities": [],
+        "candidate_capability_count": 0,
+        "selected_candidate_capability": None,
+        "selected_goal_target": "general_project_goal",
+        "capability_resolution_decision": "NEW_CAPABILITY",
+        "workspace_inspected": True,
+        "knowledge_reuse_prepared": True,
+        "certified_governance_artifacts_inspected": True,
+        "ambiguity_remaining_after_deterministic_analysis": False,
+        "requires_human_capability_name": False,
+        "clarification_allowed_only_for_remaining_ambiguity": True,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _invalid_continuation_reference(lowered: str) -> bool:
+    starts_like_continuation = lowered.startswith(
+        (
+            "continue",
+            "resume",
+            "pick up",
+        )
+    )
+    return starts_like_continuation and not continuation_development_request_detected(lowered)
+
+
+def _candidate_capability(
+    *,
+    capability: dict[str, Any],
+    evidence: list[str],
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    knowledge_index: dict[str, Any],
+) -> dict[str, Any]:
+    capability_id = str(capability["capability_id"])
+    known_targets = set(unique_strings(knowledge_index.get("known_goal_targets")))
+    workspace_match = capability_id in known_targets
+    artifacts = certified_artifacts_for_goal_target(capability_id)
+    active_objective = (
+        workspace_state.get("active_development_objective")
+        if isinstance(workspace_state, dict)
+        else None
+    )
+    confidence = 60 + min(len(evidence), 3) * 10
+    if workspace_match:
+        confidence += 15
+    if artifacts:
+        confidence += 10
+    if active_objective and capability_id in str(active_objective).lower().replace(" ", "_"):
+        confidence += 5
+    return {
+        "capability_id": capability_id,
+        "goal_target": capability_id,
+        "display_name": capability["display_name"],
+        "default_goal_type": capability.get("default_goal_type", "EXTENDS_PROJECT"),
+        "matched_terms": unique_strings(evidence),
+        "human_objective": extract_human_objective(message),
+        "workspace_match": workspace_match,
+        "certified_artifacts": artifacts,
+        "reuse_decision_basis": "keyword_workspace_certified_artifact_match",
+        "confidence_score": confidence,
+        "requires_human_capability_name": False,
+    }
+
+
+def _active_objective_candidate(
+    *,
+    active_objective: Any,
+    message: str,
+    knowledge_index: dict[str, Any],
+) -> dict[str, Any]:
+    artifacts_by_target = (
+        knowledge_index.get("certified_artifacts_by_target")
+        if isinstance(knowledge_index.get("certified_artifacts_by_target"), dict)
+        else {}
+    )
+    return {
+        "capability_id": "active_objective",
+        "goal_target": "active_objective",
+        "display_name": "active project objective",
+        "matched_terms": ["this", "current", "previous"],
+        "human_objective": extract_human_objective(message),
+        "workspace_match": True,
+        "active_workspace_objective": str(active_objective),
+        "certified_artifacts": unique_strings(artifacts_by_target.get("active_objective", [])),
+        "reuse_decision_basis": "workspace_active_objective_reference",
+        "confidence_score": 70,
+        "requires_human_capability_name": False,
+    }
+
+
+def extract_human_objective(message: str) -> str:
+    text = " ".join(require_string(message, "message").strip().split())
+    lowered = text.lower()
+    prefixes = (
+        "i have an idea to ",
+        "i have an idea about ",
+        "i have an idea ",
+        "we should ",
+        "we should probably ",
+        "i think ",
+        "i think we should ",
+        "can we ",
+        "could we ",
+        "let's ",
+        "lets ",
+        "i want to ",
+        "i'd like to ",
+        "id like to ",
+    )
+    for prefix in prefixes:
+        if lowered.startswith(prefix):
+            return text[len(prefix) :].strip(" .") or text
+    return text.strip(" .")
+
+
+def _already_satisfied_request_detected(lowered: str) -> bool:
+    return any(term in lowered for term in ("already implemented", "already exists", "done", "satisfied"))
+
+
+def _clarification_first_request_detected(message: str) -> bool:
+    lowered = " ".join(require_string(message, "message").lower().split())
+    if _reuse_request_detected(lowered) or _architecture_question_detected(lowered):
+        return True
+    if lowered.startswith(
+        (
+            "i have another idea",
+            "i have an idea but",
+            "i think something",
+            "something should be improved",
+            "help me decide",
+            "i'm not sure",
+            "im not sure",
+            "what do you recommend",
+            "is there already",
+            "we probably implemented",
+            "check whether",
+            "search previous work",
+        )
+    ):
+        return True
+    return False
+
+
+def _workspace_reference_detected(lowered: str) -> bool:
+    return any(
+        term in lowered
+        for term in (
+            "this",
+            "current",
+            "previous",
+            "what we started",
+            "where we stopped",
+            "where we left off",
+            "existing",
+        )
+    )
+
+
 def resolve_development_intent(
     *,
     message: str,
@@ -577,12 +994,26 @@ def resolve_development_intent(
     """Resolve deterministic development intent once for summary and runtime binding."""
 
     raw_message = require_string(message, "message")
-    goal_detected = goal_oriented_request_detected(raw_message)
+    candidate_capability_discovery = discover_candidate_capabilities(
+        message=raw_message,
+        workspace_state=workspace_state,
+    )
+    candidate_goal_target = str(candidate_capability_discovery.get("selected_goal_target") or "")
+    base_goal_detected = goal_oriented_request_detected(raw_message)
+    actionable_candidate_detected = (
+        candidate_goal_target not in {"", "general_project_goal"}
+        and not _clarification_first_request_detected(raw_message)
+    )
+    goal_detected = base_goal_detected or actionable_candidate_detected
     guided_detected = guided_development_request_detected(raw_message)
     continuation_detected = continuation_development_request_detected(raw_message)
     collaborative_detected = collaborative_development_request_detected(raw_message)
     goal_mapping = (
-        goal_mapping_from_workspace(message=raw_message, workspace_state=workspace_state)
+        goal_mapping_from_workspace(
+            message=raw_message,
+            workspace_state=workspace_state,
+            candidate_capability_discovery=candidate_capability_discovery,
+        )
         if goal_detected
         else None
     )
@@ -608,6 +1039,16 @@ def resolve_development_intent(
     if collaborative_detected and collaborative_development_request_requires_workspace(raw_message, workspace_state):
         clarification_required = True
         clarification_reason = "collaborative development request requires deterministic workspace state"
+    if _clarification_first_request_detected(raw_message) and not guided_detected and not base_goal_detected:
+        clarification_required = True
+        clarification_reason = "deterministic capability inference requires goal confirmation"
+    if (
+        candidate_capability_discovery.get("ambiguity_remaining_after_deterministic_analysis") is True
+        and not isinstance(workspace_state, dict)
+        and not guided_detected
+    ):
+        clarification_required = True
+        clarification_reason = "multiple inferred capability targets remain plausible"
     if not goal_detected and not guided_detected:
         clarification_reason = "request is not a deterministic development request"
 
@@ -629,6 +1070,12 @@ def resolve_development_intent(
         "guided_development_request_detected": guided_detected,
         "continuation_development_request_detected": continuation_detected,
         "collaborative_development_request_detected": collaborative_detected,
+        "candidate_capability_discovery": deepcopy(candidate_capability_discovery),
+        "candidate_capabilities": deepcopy(candidate_capability_discovery.get("candidate_capabilities")),
+        "capability_resolution_decision": candidate_capability_discovery.get(
+            "capability_resolution_decision"
+        ),
+        "human_capability_name_required": False,
         "clarification_required": clarification_required,
         "clarification_reason": clarification_reason,
         "goal_mapping": deepcopy(goal_mapping),
@@ -678,32 +1125,30 @@ def human_conversation_experience_from_resolution(
         response_mode = "CLARIFICATION"
         headline = "I need one clarification before governed execution."
         explanation = _conversation_explanation_for_clarification(prompt, intent)
+        if _reuse_request_detected(lowered):
+            headline = "I checked for reusable project capability evidence."
+        elif _architecture_question_detected(lowered):
+            headline = "I can help place this architecturally."
         questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
         next_step = "Answer the question with the smallest useful detail."
     elif _reuse_request_detected(lowered):
         response_mode = "CLARIFICATION"
-        headline = "I can check for reuse, but I need to know what to compare."
+        headline = "I checked for reusable project capability evidence."
         explanation = (
             "Reuse decisions come from deterministic workspace and governance evidence. "
-            "I need a capability or topic before I can compare it safely."
+            "I inferred candidate targets first and will only ask if the goal still has more than one safe reading."
         )
-        questions = [
-            "Which capability, feature, or workflow should I check for prior implementation?",
-            "Should the check focus on current workspace history, certified governance artifacts, or both?",
-        ]
-        next_step = "Name the capability or area to inspect for reuse."
+        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        next_step = "Choose the goal outcome or confirm the inferred target."
     elif _architecture_question_detected(lowered):
         response_mode = "CLARIFICATION"
-        headline = "I can help place this architecturally, but I need the subject."
+        headline = "I can help place this architecturally."
         explanation = (
             "Architecture placement is a Platform Core decision based on the capability being discussed. "
-            "I need the specific behavior or artifact before recommending ownership."
+            "I inferred candidate ownership targets before asking for clarification."
         )
-        questions = [
-            "What capability, behavior, or artifact are you asking about?",
-            "Are you deciding between Platform Core ownership and Human Interface presentation?",
-        ]
-        next_step = "Describe the capability whose ownership should be evaluated."
+        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        next_step = "Confirm the desired outcome for the inferred ownership decision."
     elif _vague_improvement_or_ideation_detected(lowered):
         response_mode = "CLARIFICATION"
         headline = "I can help turn this into governed development work."
@@ -768,6 +1213,7 @@ def _conversation_experience_artifact(
         "recommended_next_user_action": next_step,
         "progress_messages": [
             "Workspace state inspected.",
+            "Candidate capability discovery completed.",
             "Project guidance checked.",
             "Knowledge reuse checked.",
             "Development intent evaluated.",
@@ -778,6 +1224,10 @@ def _conversation_experience_artifact(
         "fail_closed_explanation": fail_closed_response["fail_closed_explanation"],
         "project_guidance_summary": guidance.get("recommended_next_governed_action"),
         "knowledge_reuse_classification": knowledge_reuse.get("classification"),
+        "candidate_capability_discovery": deepcopy(development_intent.get("candidate_capability_discovery")),
+        "candidate_capabilities": deepcopy(development_intent.get("candidate_capabilities")),
+        "capability_resolution_decision": development_intent.get("capability_resolution_decision"),
+        "human_capability_name_required": False,
         "reuse_recommended": knowledge_reuse.get("reuse_recommended") is True,
         "summary_admissible": development_intent.get("summary_admissible") is True,
         "runtime_binding_admissible": development_intent.get("runtime_binding_admissible") is True,
@@ -855,19 +1305,30 @@ def _conversation_questions_for_prompt(
     intent: dict[str, Any],
 ) -> list[str]:
     lowered = " ".join(prompt.lower().split())
+    candidate = _selected_candidate_from_intent(intent)
     if _reuse_request_detected(lowered):
+        if candidate:
+            return [
+                _goal_oriented_candidate_question(candidate, knowledge_reuse),
+                "Should I reuse workspace history, certified artifacts, or both for this improvement?",
+            ]
         return [
-            "Which capability or topic should I check for prior implementation?",
+            "What user-visible outcome should I check for prior implementation?",
             "Should I look for reuse in workspace history, certified artifacts, or both?",
         ]
     if _architecture_question_detected(lowered):
+        if candidate:
+            return [
+                _goal_oriented_candidate_question(candidate, knowledge_reuse),
+                "Should the outcome be reusable Platform Core behavior or interface-only presentation?",
+            ]
         return [
-            "What capability or artifact are you asking about?",
+            "What user-visible behavior or artifact should be placed architecturally?",
             "Are you deciding ownership, reuse, or implementation location?",
         ]
     if continuation_development_request_detected(prompt):
         return [
-            "Which capability or previous task should continue?",
+            "Which previous user goal should continue?",
             "What constraint should remain preserved while continuing?",
         ]
     if knowledge_reuse.get("reuse_recommended") is True:
@@ -876,6 +1337,11 @@ def _conversation_questions_for_prompt(
             "What change should be made to the existing capability?",
         ]
     if _vague_improvement_or_ideation_detected(lowered):
+        if candidate:
+            return [
+                _goal_oriented_candidate_question(candidate, knowledge_reuse),
+                "What outcome would make the improvement successful?",
+            ]
         return [
             "What should be improved or built?",
             "What outcome would make the improvement successful?",
@@ -896,6 +1362,27 @@ def _reuse_request_detected(lowered: str) -> bool:
             "search previous work",
         )
     )
+
+
+def _selected_candidate_from_intent(intent: dict[str, Any]) -> dict[str, Any]:
+    discovery = intent.get("candidate_capability_discovery")
+    if not isinstance(discovery, dict):
+        return {}
+    selected = discovery.get("selected_candidate_capability")
+    return selected if isinstance(selected, dict) else {}
+
+
+def _goal_oriented_candidate_question(
+    candidate: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+) -> str:
+    display = str(candidate.get("display_name") or "the inferred target")
+    artifacts = knowledge_reuse.get("relevant_certified_artifacts")
+    if isinstance(artifacts, list) and artifacts:
+        return f"I found existing {display} evidence. What outcome should this improvement add?"
+    if candidate.get("workspace_match") is True:
+        return f"I found an active {display} thread in the workspace. What should change next?"
+    return f"I inferred {display} as the target. What outcome should this produce?"
 
 
 def _architecture_question_detected(lowered: str) -> bool:
@@ -962,8 +1449,16 @@ def goal_mapping_from_workspace(
     *,
     message: str,
     workspace_state: dict[str, Any] | None,
+    candidate_capability_discovery: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     lowered = message.lower()
+    discovery = candidate_capability_discovery if isinstance(candidate_capability_discovery, dict) else {}
+    discovered_target = str(discovery.get("selected_goal_target") or "")
+    selected_candidate = (
+        discovery.get("selected_candidate_capability")
+        if isinstance(discovery.get("selected_candidate_capability"), dict)
+        else {}
+    )
     active_objective = (
         workspace_state.get("active_development_objective")
         if isinstance(workspace_state, dict)
@@ -981,6 +1476,10 @@ def goal_mapping_from_workspace(
         governed_request = "Continue the governed mobile interface."
         goal_type = "CONTINUES_PROJECT"
         target = "mobile_interface"
+    elif "release notes" in lowered:
+        governed_request = "Add governed release notes support."
+        goal_type = "EXTENDS_PROJECT"
+        target = "release_notes"
     elif continuation_development_request_detected(message):
         governed_request = continuation_development_governed_request(
             message=message,
@@ -995,6 +1494,21 @@ def goal_mapping_from_workspace(
         )
         goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
         target = "active_objective" if active_objective else "general_project_goal"
+    elif guided_development_request_detected(message):
+        governed_request = message
+        goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
+        target = discovered_target if discovered_target else "general_project_goal"
+    elif discovered_target and discovered_target != "general_project_goal":
+        governed_request = _governed_request_for_discovered_capability(
+            message=message,
+            selected_candidate=selected_candidate,
+        )
+        goal_type = (
+            "CONTINUES_PROJECT"
+            if discovered_target == "active_objective"
+            else str(selected_candidate.get("default_goal_type") or "EXTENDS_PROJECT")
+        )
+        target = discovered_target
     else:
         governed_request = message
         goal_type = "MODIFIES_PROJECT" if active_objective else "EXTENDS_PROJECT"
@@ -1017,8 +1531,25 @@ def goal_mapping_from_workspace(
         workspace_state=workspace_state,
         goal_target=target,
         governed_request=governed_request,
+        candidate_capability_discovery=discovery,
     )
     return mapping
+
+
+def _governed_request_for_discovered_capability(
+    *,
+    message: str,
+    selected_candidate: dict[str, Any],
+) -> str:
+    source = require_string(message, "message")
+    display_name = str(selected_candidate.get("display_name") or "inferred capability").strip()
+    objective = extract_human_objective(source)
+    if source.lower().strip().startswith(("implement ", "add ", "create ", "build ")):
+        return source
+    return (
+        f"Implement governed development work to improve {display_name}. "
+        f"Human objective: {objective}."
+    )
 
 
 def continuation_development_request_detected(message: str) -> bool:
@@ -1235,7 +1766,7 @@ def guided_development_clarification(message: str) -> dict[str, Any]:
         "clarification_authority": "PLATFORM_CORE",
         "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
         "clarification_questions": [
-            "What specific capability should AiGOL implement?",
+            "What user-visible outcome should this development work produce?",
             "What constraints or boundaries should the implementation preserve?",
         ],
     }
