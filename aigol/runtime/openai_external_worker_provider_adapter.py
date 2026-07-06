@@ -1,8 +1,8 @@
 """OpenAI-backed external worker provider adapter.
 
 This adapter is intentionally thin: it consumes the existing provider-neutral
-external worker task package, invokes the existing OpenAI provider adapter, and
-returns the existing external worker result package shape.
+external worker task package, invokes OpenAI through the Certified Provider
+Attachment, and returns the existing external worker result package shape.
 """
 
 from __future__ import annotations
@@ -11,6 +11,15 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
+from aigol.provider.provider_registry import AVAILABLE, ProviderRegistry
+from aigol.provider.providers.openai_provider import (
+    DEFAULT_OPENAI_MODEL,
+    DEFAULT_TIMEOUT_SECONDS,
+    OPENAI_PROVIDER_ID,
+    OpenAIProviderAdapter,
+    openai_provider_metadata,
+)
 from aigol.runtime.external_worker_adapter_runtime import (
     EXTERNAL_WORKER_RESULT_PACKAGE_V1,
     EXTERNAL_WORKER_TASK_PACKAGE_CREATED,
@@ -19,13 +28,6 @@ from aigol.runtime.external_worker_adapter_runtime import (
 )
 from aigol.runtime.governed_worker_execution_runtime import WORKER_EXECUTION_COMPLETED
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.openai_provider_adapter import (
-    DEFAULT_OPENAI_MODEL,
-    DEFAULT_TIMEOUT_SECONDS,
-    GOVERNED_RESULT_RETURNED,
-    OpenAIClient,
-    invoke_openai_provider_adapter,
-)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -34,6 +36,10 @@ OPENAI_EXTERNAL_WORKER_PROVIDER_CAPTURE_ARTIFACT_V1 = "OPENAI_EXTERNAL_WORKER_PR
 OPENAI_EXTERNAL_WORKER_PROVIDER_RETURNED_ARTIFACT_V1 = "OPENAI_EXTERNAL_WORKER_PROVIDER_RETURNED_ARTIFACT_V1"
 OPENAI_EXTERNAL_WORKER_COMPLETED = "OPENAI_EXTERNAL_WORKER_COMPLETED"
 FAILED_CLOSED = "FAILED_CLOSED"
+PROVIDER_ATTACHMENT_BOUNDARY = "CERTIFIED_PROVIDER_ATTACHMENT"
+LEGACY_PROVIDER_ATTACHMENT_CLASSIFICATION = "ACTIVE_CANONICAL"
+PRODUCTION_PROVIDER_ROUTING_ALLOWED = True
+CERTIFIED_RUNTIME_REACHABLE = True
 
 REPLAY_STEPS = (
     "openai_external_worker_task_recorded",
@@ -49,7 +55,7 @@ def run_openai_external_worker_provider_adapter(
     task_package_artifact: dict[str, Any],
     completed_at: str,
     replay_dir: str | Path,
-    openai_client: OpenAIClient | None = None,
+    openai_client: Any | None = None,
     api_key: str | None = None,
     model: str = DEFAULT_OPENAI_MODEL,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
@@ -63,15 +69,33 @@ def run_openai_external_worker_provider_adapter(
         _validate_task_package(task)
         _persist_step(replay_path, 0, REPLAY_STEPS[0], task)
 
-        provider_capture = invoke_openai_provider_adapter(
-            adapter_id=f"{task['task_id']}:OPENAI",
-            human_request=_provider_prompt(task),
-            created_at=completed_at,
-            replay_dir=replay_path / "openai_provider_adapter",
-            openai_client=openai_client,
-            api_key=api_key,
-            model=model,
-            timeout_seconds=timeout_seconds,
+        provider_capture = run_certified_provider_attachment(
+            provider_id=OPENAI_PROVIDER_ID,
+            request={
+                "prompt": _provider_prompt(task),
+                "human_prompt": _provider_prompt(task),
+                "provider_metadata": {
+                    "task_id": task["task_id"],
+                    "worker_interface": task["worker_authorization"]["worker_interface"],
+                    "stream": False,
+                    "tool_use": False,
+                    "function_calling": False,
+                    "automatic_retries": False,
+                },
+                "stream": False,
+                "tool_use": False,
+                "function_calling": False,
+            },
+            proposal_id=f"{task['task_id']}:OPENAI-EXTERNAL-WORKER-PROPOSAL",
+            timestamp=completed_at,
+            registry=_openai_provider_registry(),
+            adapter=OpenAIProviderAdapter(
+                api_key=api_key,
+                model=model,
+                timeout_seconds=timeout_seconds,
+                client=_compatibility_client(openai_client) if openai_client is not None else None,
+            ),
+            replay_dir=replay_path / "certified_provider_attachment",
         )
         provider_artifact = _provider_capture_artifact(
             task=task,
@@ -89,7 +113,7 @@ def run_openai_external_worker_provider_adapter(
             worker_evidence=_worker_evidence(task, provider_artifact),
             execution_logs=[
                 "external worker task package consumed",
-                "existing OpenAI provider adapter invoked",
+                "Certified Provider Attachment invoked",
                 "OpenAI response captured as untrusted provider evidence",
                 "external worker result package generated",
                 "no repository mutation performed by provider adapter",
@@ -208,22 +232,46 @@ def _provider_capture_artifact(
     provider_capture: dict[str, Any],
     captured_at: str,
 ) -> dict[str, Any]:
-    governed_result = provider_capture.get("governed_result") if isinstance(provider_capture, dict) else None
-    raw_response = provider_capture.get("raw_provider_response") if isinstance(provider_capture, dict) else None
-    if not isinstance(governed_result, dict):
-        raise FailClosedRuntimeError("OpenAI external worker failed closed: OpenAI governed result missing")
-    provider_status = governed_result.get("final_status")
-    raw_text = raw_response.get("raw_provider_response") if isinstance(raw_response, dict) else None
+    if not isinstance(provider_capture, dict):
+        raise FailClosedRuntimeError("OpenAI external worker failed closed: provider capture missing")
+    envelope = provider_capture.get("provider_proposal_envelope")
+    certification = provider_capture.get("certified_provider_attachment")
+    created = provider_capture.get("provider_proposal_created")
+    returned = provider_capture.get("provider_proposal_returned")
+    if not isinstance(envelope, dict) or not isinstance(certification, dict):
+        raise FailClosedRuntimeError("OpenAI external worker failed closed: certified provider capture missing")
+    if not isinstance(created, dict):
+        created = {}
+    if not isinstance(returned, dict):
+        returned = {}
+    response = envelope.get("response")
+    if not isinstance(response, dict):
+        response = {}
+    raw_text = response.get("response_text")
+    completed = (
+        created.get("provider_invoked") is True
+        and returned.get("event_type") == "PROVIDER_PROPOSAL_RETURNED"
+        and isinstance(raw_text, str)
+        and bool(raw_text.strip())
+    )
+    failure_reason = (
+        certification.get("failure_reason")
+        or returned.get("failure_reason")
+        or created.get("failure_reason")
+    )
     artifact = {
         "artifact_type": OPENAI_EXTERNAL_WORKER_PROVIDER_CAPTURE_ARTIFACT_V1,
         "runtime_version": AIGOL_OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_VERSION,
         "task_id": task["task_id"],
         "task_package_hash": task["artifact_hash"],
         "provider_id": "openai",
+        "provider_attachment_boundary": PROVIDER_ATTACHMENT_BOUNDARY,
         "provider_adapter_runtime": "OPENAI_PROVIDER_ADAPTER_V1",
-        "provider_status": provider_status if isinstance(provider_status, str) else FAILED_CLOSED,
-        "provider_governed_result_hash": governed_result.get("artifact_hash"),
-        "raw_provider_response_hash": raw_response.get("artifact_hash") if isinstance(raw_response, dict) else None,
+        "provider_status": "COMPLETED" if completed else FAILED_CLOSED,
+        "provider_governed_result_hash": certification.get("artifact_hash"),
+        "certified_provider_attachment_hash": certification.get("artifact_hash"),
+        "provider_attachment_runtime_capture_hash": provider_capture.get("provider_attachment_runtime_capture_hash"),
+        "raw_provider_response_hash": response.get("raw_response_hash"),
         "raw_provider_response_text_hash": replay_hash(raw_text) if isinstance(raw_text, str) else None,
         "raw_provider_response_text": raw_text if isinstance(raw_text, str) else "",
         "provider_capture": deepcopy(provider_capture),
@@ -236,7 +284,7 @@ def _provider_capture_artifact(
         "replay_lineage_preserved": True,
         "fail_closed_preserved": True,
         "captured_at": _require_string(captured_at, "captured_at"),
-        "failure_reason": governed_result.get("failure_reason"),
+        "failure_reason": failure_reason,
     }
     if artifact["provider_status"] != "COMPLETED" and not artifact["failure_reason"]:
         artifact["failure_reason"] = "OpenAI provider failed closed"
@@ -274,6 +322,7 @@ def _worker_evidence(task: dict[str, Any], provider_artifact: dict[str, Any]) ->
         "task_id": task["task_id"],
         "task_package_hash": task["artifact_hash"],
         "provider_id": "openai",
+        "provider_attachment_boundary": provider_artifact["provider_attachment_boundary"],
         "provider_adapter_runtime": provider_artifact["provider_adapter_runtime"],
         "provider_capture_hash": provider_artifact["artifact_hash"],
         "provider_governed_result_hash": provider_artifact["provider_governed_result_hash"],
@@ -287,6 +336,34 @@ def _worker_evidence(task: dict[str, Any], provider_artifact: dict[str, Any]) ->
         "replay_lineage_preserved": True,
         "fail_closed_preserved": True,
     }
+
+
+def _openai_provider_registry() -> ProviderRegistry:
+    registry = ProviderRegistry()
+    registry.register_provider(openai_provider_metadata(status=AVAILABLE))
+    return registry
+
+
+def _compatibility_client(openai_client: Any):
+    def call(payload: dict[str, Any], *, api_key: str, endpoint: str, timeout_seconds: int) -> Any:
+        metadata = {
+            "provider_identity": "OPENAI",
+            "normalized_provider_identity": "openai",
+            "payload": deepcopy(payload),
+            "api_key_captured": False,
+            "api_key_present": bool(api_key),
+            "endpoint": endpoint,
+            "timeout_seconds": timeout_seconds,
+            "streaming": False,
+            "stream": False,
+            "automatic_retries": False,
+            "tool_use": False,
+            "function_calling": False,
+            "memory": False,
+        }
+        return openai_client(metadata)
+
+    return call
 
 
 def _failed_result_package(

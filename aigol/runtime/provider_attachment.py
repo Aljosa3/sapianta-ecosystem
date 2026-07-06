@@ -1,4 +1,9 @@
-"""Provider attachment boundary for proposal-only provider responses."""
+"""Legacy provider attachment boundary for proposal-only provider responses.
+
+G14.46 classifies this module as compatibility-only replay support for
+historical REAL_PROVIDER_ATTACHMENT_V1 evidence. Production provider invocation
+must use aigol.provider.certified_provider_attachment instead.
+"""
 
 from __future__ import annotations
 
@@ -20,6 +25,12 @@ RAW_PROVIDER_RESPONSE_CAPTURED = "RAW_PROVIDER_RESPONSE_CAPTURED"
 PROVIDER_ATTACHMENT_RECORDED = "PROVIDER_ATTACHMENT_RECORDED"
 PROVIDER_GOVERNED_RESULT_RETURNED = "PROVIDER_GOVERNED_RESULT_RETURNED"
 PROVIDER_FAILED = "FAILED"
+LEGACY_PROVIDER_ATTACHMENT_CLASSIFICATION = "LEGACY_COMPATIBILITY"
+PRODUCTION_PROVIDER_ROUTING_ALLOWED = False
+CERTIFIED_RUNTIME_REACHABLE = False
+LEGACY_COMPATIBILITY_REASON = (
+    "Retained only to reconstruct and validate historical REAL_PROVIDER_ATTACHMENT_V1 replay."
+)
 
 REPLAY_STEPS = (
     "provider_identity",

@@ -1,4 +1,9 @@
-"""OpenAI proposal-source adapter routed through the provider attachment boundary."""
+"""Legacy OpenAI proposal-source adapter.
+
+G14.46 classifies this module as compatibility-only replay support for
+historical OPENAI_PROVIDER_ADAPTER_V1 evidence. Production provider invocation
+must use aigol.provider.certified_provider_attachment with a ProviderAdapter.
+"""
 
 from __future__ import annotations
 
@@ -25,6 +30,12 @@ RAW_RESPONSE_CAPTURED = "OPENAI_RAW_RESPONSE_CAPTURED"
 ATTACHMENT_CAPTURED = "OPENAI_ATTACHMENT_CAPTURED"
 GOVERNED_RESULT_RETURNED = "OPENAI_GOVERNED_RESULT_RETURNED"
 OPENAI_FAILED = "FAILED"
+LEGACY_PROVIDER_ATTACHMENT_CLASSIFICATION = "LEGACY_COMPATIBILITY"
+PRODUCTION_PROVIDER_ROUTING_ALLOWED = False
+CERTIFIED_RUNTIME_REACHABLE = False
+LEGACY_COMPATIBILITY_REASON = (
+    "Retained only to reconstruct and validate historical OPENAI_PROVIDER_ADAPTER_V1 replay."
+)
 
 REPLAY_STEPS = (
     "provider_request_metadata",
