@@ -282,9 +282,11 @@ def run_reference_uhi_submit_session(
     runtime_root: str | Path = DEFAULT_RUNTIME_ROOT,
     workspace: str | Path = ".",
     stdin_reader: StdinReader | None = None,
+    input_reader: Callable[[str], str] | None = None,
     output_writer: Callable[[str], None] = print,
+    runtime_runner: RuntimeRunner | None = None,
 ) -> dict[str, Any]:
-    """Run one-shot stdin submission for large development prompts."""
+    """Run stdin submission and continue while Platform Core needs input."""
 
     session = _require_string(session_id, "session_id")
     created = _require_string(created_at, "created_at")
@@ -304,6 +306,10 @@ def run_reference_uhi_submit_session(
     submitted_request_count = 0
     multiline_request_count = 0
     clarification_count = 0
+    approval_count = 0
+    canceled_compose_count = 0
+    runtime_result: dict[str, Any] | None = None
+    runtime_status = REFERENCE_UHI_NOT_REQUIRED
     session_status = "REFERENCE_UHI_SUBMIT_COMPLETED"
     exit_reason = "SUBMITTED"
 
@@ -328,11 +334,153 @@ def run_reference_uhi_submit_session(
         submitted_request_count += submitted_requests
         clarification_count += 1 if pending_clarification is not None else 0
         multiline_request_count += multiline_requests
+        _record_submit_workspace_state(
+            session=session,
+            root=root,
+            workspace_path=workspace_path,
+            created=created,
+            session_status="REFERENCE_UHI_SUBMIT_CONVERSATION_ACTIVE",
+            exit_reason="AWAITING_PLATFORM_CORE_INPUT",
+            submitted_messages=submitted_messages,
+            submitted_request_count=submitted_request_count,
+            multiline_request_count=multiline_request_count,
+            canceled_compose_count=canceled_compose_count,
+            clarification_count=clarification_count,
+            approval_count=approval_count,
+            runtime_status=runtime_status,
+            runtime_result=runtime_result,
+            last_resolution=last_resolution,
+            last_project_context=last_project_context,
+            transcript=transcript,
+            pending_clarification=pending_clarification,
+            pending_summary=pending_summary,
+        )
     else:
         output_writer("No request submitted. Submit mode received empty input.")
         session_status = "REFERENCE_UHI_SUBMIT_REJECTED_EMPTY_INPUT"
         exit_reason = "EMPTY_INPUT"
         transcript.append({"event": "empty_submit_rejected"})
+
+    while request and (pending_clarification is not None or pending_summary is not None):
+        if input_reader is None:
+            session_status = "REFERENCE_UHI_SUBMIT_AWAITING_HUMAN_INPUT"
+            exit_reason = "AWAITING_HUMAN_INPUT"
+            break
+        if pending_clarification is not None:
+            try:
+                reply = input_reader("aicli clarification> ")
+            except (EOFError, StopIteration):
+                session_status = "REFERENCE_UHI_SUBMIT_AWAITING_HUMAN_INPUT"
+                exit_reason = "EOF_AWAITING_CLARIFICATION"
+                break
+            reply_text = str(reply).strip()
+            normalized_reply = reply_text.lower()
+            if not reply_text:
+                continue
+            if normalized_reply == "/cancel":
+                pending_clarification = None
+                canceled_compose_count += 1
+                session_status = "REFERENCE_UHI_SUBMIT_CONVERSATION_CANCELED"
+                exit_reason = "CANCEL_COMMAND"
+                output_writer("Pending request canceled.")
+                transcript.append({"event": "cancel"})
+                break
+            if normalized_reply in {"/exit", "exit", "quit"}:
+                output_writer("Platform Core is waiting for clarification. Use /cancel to discard the request.")
+                continue
+            (
+                pending_summary,
+                pending_clarification,
+                last_resolution,
+                last_project_context,
+                submitted_requests,
+                multiline_requests,
+            ) = _submit_composed_request(
+                compose_buffer=[reply_text],
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                output_writer=output_writer,
+                transcript=transcript,
+            )
+            submitted_messages += submitted_requests
+            submitted_request_count += submitted_requests
+            clarification_count += 1 if pending_clarification is not None else 0
+            multiline_request_count += multiline_requests
+            _record_submit_workspace_state(
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                session_status="REFERENCE_UHI_SUBMIT_CONVERSATION_ACTIVE",
+                exit_reason="AWAITING_PLATFORM_CORE_INPUT",
+                submitted_messages=submitted_messages,
+                submitted_request_count=submitted_request_count,
+                multiline_request_count=multiline_request_count,
+                canceled_compose_count=canceled_compose_count,
+                clarification_count=clarification_count,
+                approval_count=approval_count,
+                runtime_status=runtime_status,
+                runtime_result=runtime_result,
+                last_resolution=last_resolution,
+                last_project_context=last_project_context,
+                transcript=transcript,
+                pending_clarification=pending_clarification,
+                pending_summary=pending_summary,
+            )
+            continue
+        try:
+            approval = input_reader("aicli approval> ")
+        except (EOFError, StopIteration):
+            session_status = "REFERENCE_UHI_SUBMIT_AWAITING_HUMAN_INPUT"
+            exit_reason = "EOF_AWAITING_APPROVAL"
+            break
+        approval_text = str(approval).strip().lower()
+        if approval_text == "/cancel":
+            pending_summary = None
+            canceled_compose_count += 1
+            session_status = "REFERENCE_UHI_SUBMIT_CONVERSATION_CANCELED"
+            exit_reason = "CANCEL_COMMAND"
+            output_writer("Pending request canceled.")
+            transcript.append({"event": "cancel"})
+            break
+        if approval_text in {"/exit", "exit", "quit"}:
+            output_writer("Platform Core is waiting for approval. Use /approve or /cancel.")
+            continue
+        if approval_text != "/approve":
+            output_writer("Type /approve to continue, or /cancel to discard.")
+            continue
+        approval_count += 1
+        prompt = _require_string(pending_summary["canonical_runtime_prompt"], "canonical_runtime_prompt")
+        output_writer("Human approval recorded. Delegating to certified Platform Core runtime.")
+        if runtime_runner is None:
+            runtime_result = run_human_interface_runtime_entry(
+                interface_name="aicli",
+                session_id=session,
+                human_requests=[prompt],
+                created_at=created,
+                runtime_root=root,
+                workspace=workspace_path,
+                governed_runtime_runner=run_interactive_conversation,
+                operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+            )
+        else:
+            runtime_result = runtime_runner(
+                session_id=session,
+                prompt=prompt,
+                created_at=created,
+                runtime_root=root,
+                workspace=workspace_path,
+            )
+        runtime_status = _reference_runtime_status(runtime_result)
+        output_writer(_render_runtime_result(runtime_result, runtime_status))
+        pending_summary = None
+        pending_clarification = None
+        session_status = "REFERENCE_UHI_SUBMIT_CONVERSATION_COMPLETED"
+        exit_reason = "RUNTIME_COMPLETED"
+        transcript.append({"event": "approved", "runtime_status": runtime_status})
+        break
 
     result = {
         "command": "aicli submit",
@@ -347,13 +495,14 @@ def run_reference_uhi_submit_session(
         "submitted_request_count": submitted_request_count,
         "multiline_request_count": multiline_request_count,
         "unsubmitted_compose_line_count": 0,
-        "canceled_compose_count": 0,
+        "canceled_compose_count": canceled_compose_count,
+        "canceled_conversation_count": canceled_compose_count,
         "clarification_question_count": clarification_count,
-        "approval_count": 0,
+        "approval_count": approval_count,
         "pending_approval": pending_summary is not None,
-        "runtime_status": REFERENCE_UHI_NOT_REQUIRED,
-        "runtime_entered": False,
-        "runtime_result": None,
+        "runtime_status": runtime_status,
+        "runtime_entered": runtime_result is not None,
+        "runtime_result": runtime_result,
         "development_intent_resolution": last_resolution,
         "transcript": transcript,
         "aicli_authorizes": False,
@@ -375,7 +524,7 @@ def run_reference_uhi_submit_session(
         workspace=workspace_path,
         created_at=created,
         completion=result,
-        turn_results=[],
+        turn_results=[runtime_result] if isinstance(runtime_result, dict) else [],
         pending_clarification=pending_clarification,
         pending_summary=pending_summary,
     )
@@ -393,6 +542,76 @@ def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
         return REFERENCE_UHI_NOT_REQUIRED
     return REFERENCE_UHI_PARTIALLY_BOUND
+
+
+def _record_submit_workspace_state(
+    *,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    session_status: str,
+    exit_reason: str,
+    submitted_messages: int,
+    submitted_request_count: int,
+    multiline_request_count: int,
+    canceled_compose_count: int,
+    clarification_count: int,
+    approval_count: int,
+    runtime_status: str,
+    runtime_result: dict[str, Any] | None,
+    last_resolution: dict[str, Any] | None,
+    last_project_context: dict[str, Any] | None,
+    transcript: list[dict[str, Any]],
+    pending_clarification: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+) -> dict[str, Any]:
+    completion = {
+        "command": "aicli submit",
+        "runtime_version": REFERENCE_UHI_RUNTIME_VERSION,
+        "session_id": session,
+        "created_at": created,
+        "runtime_root": str(root),
+        "workspace": workspace_path,
+        "session_status": session_status,
+        "exit_reason": exit_reason,
+        "submitted_message_count": submitted_messages,
+        "submitted_request_count": submitted_request_count,
+        "multiline_request_count": multiline_request_count,
+        "unsubmitted_compose_line_count": 0,
+        "canceled_compose_count": canceled_compose_count,
+        "canceled_conversation_count": canceled_compose_count,
+        "clarification_question_count": clarification_count,
+        "approval_count": approval_count,
+        "pending_approval": pending_summary is not None,
+        "runtime_status": runtime_status,
+        "runtime_entered": runtime_result is not None,
+        "runtime_result": runtime_result,
+        "development_intent_resolution": last_resolution,
+        "transcript": list(transcript),
+        "aicli_authorizes": False,
+        "aicli_executes": False,
+        "aicli_owns_replay": False,
+        "aicli_owns_workspace": False,
+        "aicli_owns_goal_mapping": False,
+        "aicli_owns_provider_selection": False,
+        "platform_core_services_delegated": True,
+        "platform_core_project_services_context": last_project_context,
+        "provider_platform_preserved": True,
+        "worker_platform_preserved": True,
+        "replay_authority_preserved": True,
+    }
+    return record_unified_human_interface_workspace_state(
+        interface_name="aicli",
+        session_id=session,
+        runtime_root=root,
+        workspace=workspace_path,
+        created_at=created,
+        completion=completion,
+        turn_results=[runtime_result] if isinstance(runtime_result, dict) else [],
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+    )
 
 
 def _split_input_chunk(line: Any) -> list[str]:
@@ -626,6 +845,7 @@ def main(argv: list[str] | None = None) -> int:
             created_at=args.created_at,
             runtime_root=args.runtime_root,
             workspace=args.workspace,
+            input_reader=input,
         )
         return 0
     run_reference_uhi_session(

@@ -4,6 +4,8 @@
 
 Implemented.
 
+Supersession note: G15-AICLI-03 extends submit mode with a persistent Platform Core conversation session. G15-AICLI-02 remains the stdin capture baseline; G15-AICLI-03 changes session lifetime so submit mode can continue through clarification, approval, cancellation, and runtime completion.
+
 ## Problem Observed
 
 Real interactive validation showed that AiCLI short compose sessions work, but large multi-line development prompts pasted into VS Code Terminal can render repeated `aicli compose>` prompts inside or between pasted lines. The prompt flood creates an unusable operator experience for Generation 15-sized requests.

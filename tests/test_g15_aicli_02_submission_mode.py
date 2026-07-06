@@ -37,7 +37,7 @@ def test_submit_mode_accepts_large_multiline_prompt_once(tmp_path: Path) -> None
         output_writer=output.append,
     )
 
-    assert result["session_status"] == "REFERENCE_UHI_SUBMIT_COMPLETED"
+    assert result["session_status"] == "REFERENCE_UHI_SUBMIT_AWAITING_HUMAN_INPUT"
     assert result["submitted_request_count"] == 1
     assert result["submitted_message_count"] == 1
     assert result["multiline_request_count"] == 1
