@@ -16,7 +16,8 @@ from aigol.provider.provider_proposal_envelope import (
     create_provider_proposal_envelope,
 )
 from aigol.provider.provider_registry import AVAILABLE, ProviderMetadata, ProviderRegistry
-from aigol.provider.provider_runtime import run_provider_attachment, reconstruct_provider_attachment_replay
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
+from aigol.provider.provider_runtime import reconstruct_provider_attachment_replay
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import replay_hash
 from aigol.workers.filesystem_worker import (
@@ -122,7 +123,7 @@ def run_governed_operation_command(
                 resource_type="text",
             )
         )
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=PROVIDER_ID,
             request=human_request,
             proposal_id=f"{operation_id}:PROPOSAL",

@@ -8,7 +8,8 @@ from typing import Any
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_registry import ProviderRegistry
-from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED, reconstruct_provider_attachment_replay, run_provider_attachment
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
+from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED, reconstruct_provider_attachment_replay
 from aigol.runtime.intent_classifier import CLASSIFIED, CONVERSATION
 from aigol.runtime.intent_routing_attachment import (
     ROUTED,
@@ -148,7 +149,7 @@ def run_provider_assisted_conversation(
                 failure_reason=None,
             )
         else:
-            provider_capture = run_provider_attachment(
+            provider_capture = run_certified_provider_attachment(
                 provider_id=provider_id,
                 request=_provider_response_request(
                     prompt_id=prompt_id,

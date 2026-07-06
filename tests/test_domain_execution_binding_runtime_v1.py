@@ -193,7 +193,8 @@ def test_domain_execution_binding_uses_existing_provider_authorization_and_worke
 
     source = inspect.getsource(binding_runtime)
 
-    assert "run_provider_attachment(" in source
+    assert "run_certified_provider_attachment(" in source
+    assert "run_provider_attachment(" not in source
     assert "authorize_worker_request(" in source
     assert "create_authorized_worker_request(" in source
     assert "execute_filesystem_create_request(" in source

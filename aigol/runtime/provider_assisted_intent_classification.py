@@ -8,10 +8,10 @@ from typing import Any
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_registry import ProviderRegistry
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
 from aigol.provider.provider_runtime import (
     PROVIDER_PROPOSAL_RETURNED,
     reconstruct_provider_attachment_replay,
-    run_provider_attachment,
 )
 from aigol.runtime.intent_classifier import (
     CLASSIFIED,
@@ -124,7 +124,7 @@ def classify_intent_with_provider_assistance(
             _persist_step(replay_path, 2, REPLAY_STEPS[2], assisted_replay)
             return _capture(deterministic_capture, None, validation, final_artifact, assisted_replay)
 
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=provider_id,
             request=_provider_request(
                 human_prompt=human_prompt,

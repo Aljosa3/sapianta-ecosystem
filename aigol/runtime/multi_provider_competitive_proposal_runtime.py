@@ -8,7 +8,8 @@ from typing import Any
 
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, ProviderMetadata, ProviderRegistry
-from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED, run_provider_attachment
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
+from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED
 from aigol.runtime.filesystem_mutation_authorization_runtime import (
     AUTHORIZATION_DECISION,
     AUTHORIZATION_SCOPE,
@@ -348,7 +349,7 @@ def _invoke_provider(*, provider_id: str, adapter: Any, request: dict[str, Any],
             resource_type="provider",
         )
     )
-    return run_provider_attachment(
+    return run_certified_provider_attachment(
         provider_id=provider_id,
         request=request,
         proposal_id=f"REAL-PROVIDER-PROPOSAL-{provider_id}-000001",

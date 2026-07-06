@@ -8,7 +8,7 @@ from typing import Any
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_registry import ProviderRegistry
-from aigol.provider.provider_runtime import run_provider_attachment
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
 from aigol.runtime.development_context_assembly_runtime import (
     CONTEXT_ASSEMBLED,
     DEVELOPMENT_CONTEXT_ASSEMBLY_ARTIFACT_V1,
@@ -330,7 +330,7 @@ def _run_retries(
     if retry_limit <= 0:
         raise FailClosedRuntimeError("provider proposal repair failed closed: retry limit exceeded")
     for attempt in range(1, retry_limit + 1):
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=provider_id,
             request=_retry_request_payload(request, attempt),
             proposal_id=f"{repair_id}:RETRY-{attempt:03d}:PROVIDER-ENVELOPE",

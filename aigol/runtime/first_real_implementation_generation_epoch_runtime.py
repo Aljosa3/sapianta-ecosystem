@@ -6,12 +6,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, ProviderMetadata, ProviderRegistry
-from aigol.provider.provider_runtime import (
-    PROVIDER_PROPOSAL_RETURNED,
-    run_provider_attachment,
-)
+from aigol.provider.provider_runtime import PROVIDER_PROPOSAL_RETURNED
 from aigol.runtime.filesystem_mutation_authorization_runtime import (
     AUTHORIZATION_DECISION,
     AUTHORIZATION_SCOPE,
@@ -306,7 +304,7 @@ def _invoke_provider(*, request: dict[str, Any], adapter: Any, created_at: str, 
             resource_type="provider",
         )
     )
-    return run_provider_attachment(
+    return run_certified_provider_attachment(
         provider_id=REAL_PROVIDER_ID,
         request=request,
         proposal_id="REAL-PROVIDER-PROPOSAL-FIRST-REAL-EPOCH-000001",

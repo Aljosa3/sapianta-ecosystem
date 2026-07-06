@@ -9,7 +9,7 @@ from typing import Any
 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_registry import ProviderRegistry
-from aigol.provider.provider_runtime import run_provider_attachment
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
 from aigol.runtime.conversation_to_implementation_handoff_runtime import (
     IMPLEMENTATION_HANDOFF_ARTIFACT_V1,
     IMPLEMENTATION_HANDOFF_CREATED,
@@ -123,7 +123,7 @@ def produce_provider_development_proposal(
             created_at=created_at,
         )
         _persist_prompt_projection(replay_path, prompt_projection)
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=provider_id,
             request=prompt_projection,
             proposal_id=f"{production_id}:PROVIDER-ENVELOPE",

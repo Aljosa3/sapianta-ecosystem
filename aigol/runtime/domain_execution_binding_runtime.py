@@ -10,7 +10,8 @@ from aigol.authorization.authorization_runtime import authorize_worker_request, 
 from aigol.provider.provider_adapter import ProviderAdapter
 from aigol.provider.provider_proposal_envelope import ProviderProposalEnvelope, create_provider_proposal_envelope
 from aigol.provider.provider_registry import AVAILABLE, ProviderMetadata, ProviderRegistry
-from aigol.provider.provider_runtime import run_provider_attachment, reconstruct_provider_attachment_replay
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
+from aigol.provider.provider_runtime import reconstruct_provider_attachment_replay
 from aigol.runtime.domain_runtime import ACTIVE, DOMAIN_LIFECYCLE_ARTIFACT_V1
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
@@ -124,7 +125,7 @@ def execute_domain_request(
         _persist_step(replay_path, 0, DOMAIN_EXECUTION_REQUESTED, requested)
         registry = provider_registry or default_domain_execution_provider_registry()
         adapter = provider_adapter or DomainExecutionProviderAdapter()
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=DOMAIN_PROVIDER_ID,
             request=contract["execution_request"],
             proposal_id=f"{contract['domain_execution_id']}:PROVIDER-PROPOSAL",

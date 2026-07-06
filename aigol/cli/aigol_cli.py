@@ -477,7 +477,7 @@ from aigol.runtime.multiline_prompt_support_runtime import (
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.provider.provider_registry import ProviderRegistry
-from aigol.provider.provider_runtime import run_provider_attachment
+from aigol.provider.certified_provider_attachment import run_certified_provider_attachment
 from aigol.provider.providers.openai_provider import (
     DEFAULT_OPENAI_MODEL as OPENAI_PROVIDER_DEFAULT_MODEL,
     MAX_OPENAI_RESPONSE_CHARS,
@@ -1312,7 +1312,7 @@ def _conversation_ocs_cognition_transports(*, created_at: str, replay_dir: Path)
             created_at=created_at,
             replay_dir=provider_replay_dir,
         )
-        provider_capture = run_provider_attachment(
+        provider_capture = run_certified_provider_attachment(
             provider_id=OPENAI_PROVIDER_ID,
             request={
                 "prompt": payload["input"],

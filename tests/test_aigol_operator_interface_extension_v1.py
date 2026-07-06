@@ -227,7 +227,7 @@ def test_invalid_proposal_fails_closed(tmp_path, monkeypatch):
             }
         }
 
-    monkeypatch.setattr(command, "run_provider_attachment", failed_provider_attachment)
+    monkeypatch.setattr(command, "run_certified_provider_attachment", failed_provider_attachment)
     result = _run(tmp_path)
 
     assert result["status"] == "FAILED_CLOSED"
