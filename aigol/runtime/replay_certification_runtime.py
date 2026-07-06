@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.replay_observation_layer import generate_replay_observation_layer
 from aigol.runtime.result_validation_runtime import RESULT_VALIDATION_ARTIFACT_V1, RESULT_VALIDATION_COMPLETED
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -37,9 +38,16 @@ def certify_validated_replay(
         _ensure_replay_available(replay_path)
         validation = deepcopy(result_validation_artifact)
         _validate_result_validation(validation)
+        observation_layer = generate_replay_observation_layer(
+            replay_identifier=certification_id,
+            source_replay_artifacts=[validation["validation_evidence"], validation],
+            observed_at=certified_at,
+            replay_dir=replay_path / "replay_observation_layer",
+        )
         certification = _certification_artifact(
             certification_id=certification_id,
             validation=validation,
+            observation_layer=observation_layer,
             certified_by=certified_by,
             certified_at=certified_at,
             certification_status=REPLAY_CERTIFICATION_COMPLETED,
@@ -92,6 +100,9 @@ def reconstruct_replay_certification_replay(replay_dir: str | Path) -> dict[str,
         "replay_lineage_preserved": certification["replay_lineage_preserved"],
         "fail_closed_preserved": certification["fail_closed_preserved"],
         "deterministic_certification_preserved": certification["deterministic_certification_preserved"],
+        "replay_observation_layer_reference": certification["replay_observation_layer_reference"],
+        "replay_observation_layer_hash": certification["replay_observation_layer_hash"],
+        "replay_observation_count": certification["replay_observation_count"],
         "ready_for_closed_improvement_loop": certification["ready_for_closed_improvement_loop"],
         "validation_result_modified": False,
         "governance_modified": False,
@@ -156,6 +167,7 @@ def _certification_artifact(
     *,
     certification_id: str,
     validation: dict[str, Any],
+    observation_layer: dict[str, Any],
     certified_by: str,
     certified_at: str,
     certification_status: str,
@@ -183,6 +195,11 @@ def _certification_artifact(
             "validation_evidence_hash": validation["validation_evidence_hash"],
             "validation_status": validation["validation_status"],
         },
+        "replay_observation_layer_reference": observation_layer["replay_observation_layer_replay_reference"],
+        "replay_observation_layer_hash": observation_layer["replay_observation_layer_artifact"]["artifact_hash"],
+        "replay_observation_count": observation_layer["observation_count"],
+        "replay_observation_category_counts": deepcopy(observation_layer["category_counts"]),
+        "replay_observation_generation_authority": "PLATFORM_CORE",
         "replay_references": deepcopy(validation["replay_references"]),
         "replay_hashes": deepcopy(validation["replay_hashes"]),
         "certification_rationale": (
@@ -242,6 +259,11 @@ def _failed_certification_artifact(
         "certified_by": certified_by if isinstance(certified_by, str) else None,
         "certified_at": certified_at if isinstance(certified_at, str) else None,
         "replay_lineage_preserved": False,
+        "replay_observation_layer_reference": None,
+        "replay_observation_layer_hash": None,
+        "replay_observation_count": 0,
+        "replay_observation_category_counts": {},
+        "replay_observation_generation_authority": "PLATFORM_CORE",
         "fail_closed_preserved": True,
         "deterministic_certification_preserved": True,
         "ready_for_closed_improvement_loop": False,
@@ -267,6 +289,9 @@ def _returned_artifact(certification: dict[str, Any]) -> dict[str, Any]:
         "certification_decision": certification["certification_decision"],
         "source_result_validation": certification["source_result_validation"],
         "replay_lineage_preserved": certification["replay_lineage_preserved"],
+        "replay_observation_layer_reference": certification["replay_observation_layer_reference"],
+        "replay_observation_layer_hash": certification["replay_observation_layer_hash"],
+        "replay_observation_count": certification["replay_observation_count"],
         "fail_closed_preserved": certification["fail_closed_preserved"],
         "ready_for_closed_improvement_loop": certification["ready_for_closed_improvement_loop"],
         "validation_result_modified": False,
@@ -289,6 +314,9 @@ def _capture(certification: dict[str, Any], returned: dict[str, Any], replay_pat
         "replay_certification_replay_reference": str(replay_path),
         "replay_certification_completed": certification["certification_status"] == REPLAY_CERTIFICATION_COMPLETED,
         "replay_certification_artifact_generated": certification["artifact_type"] == REPLAY_CERTIFICATION_ARTIFACT_V1,
+        "replay_observation_layer_reference": certification["replay_observation_layer_reference"],
+        "replay_observation_layer_hash": certification["replay_observation_layer_hash"],
+        "replay_observation_count": certification["replay_observation_count"],
         "replay_lineage_preserved": certification["replay_lineage_preserved"],
         "fail_closed_preserved": certification["fail_closed_preserved"],
         "ready_for_closed_improvement_loop": certification["ready_for_closed_improvement_loop"],
