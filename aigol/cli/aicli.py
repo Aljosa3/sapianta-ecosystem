@@ -8,6 +8,7 @@ certified runtime path.
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,7 @@ AICLI_SEND_COMMANDS = {"/send", "."}
 
 
 RuntimeRunner = Callable[..., dict[str, Any]]
+StdinReader = Callable[[], str]
 
 
 def run_reference_uhi_session(
@@ -273,6 +275,116 @@ def run_reference_uhi_session(
     return result
 
 
+def run_reference_uhi_submit_session(
+    *,
+    session_id: str,
+    created_at: str = DEFAULT_CREATED_AT,
+    runtime_root: str | Path = DEFAULT_RUNTIME_ROOT,
+    workspace: str | Path = ".",
+    stdin_reader: StdinReader | None = None,
+    output_writer: Callable[[str], None] = print,
+) -> dict[str, Any]:
+    """Run one-shot stdin submission for large development prompts."""
+
+    session = _require_string(session_id, "session_id")
+    created = _require_string(created_at, "created_at")
+    root = Path(runtime_root)
+    workspace_path = str(Path(workspace))
+    reader = sys.stdin.read if stdin_reader is None else stdin_reader
+    output_writer("Paste request below.")
+    output_writer("Finish with Ctrl+D.")
+
+    request = _normalize_submit_request(reader())
+    pending_summary: dict[str, Any] | None = None
+    pending_clarification: dict[str, Any] | None = None
+    last_resolution: dict[str, Any] | None = None
+    last_project_context: dict[str, Any] | None = None
+    transcript: list[dict[str, Any]] = []
+    submitted_messages = 0
+    submitted_request_count = 0
+    multiline_request_count = 0
+    clarification_count = 0
+    session_status = "REFERENCE_UHI_SUBMIT_COMPLETED"
+    exit_reason = "SUBMITTED"
+
+    if request:
+        (
+            pending_summary,
+            pending_clarification,
+            last_resolution,
+            last_project_context,
+            submitted_requests,
+            multiline_requests,
+        ) = _submit_composed_request(
+            compose_buffer=request.split("\n"),
+            session=session,
+            root=root,
+            workspace_path=workspace_path,
+            created=created,
+            output_writer=output_writer,
+            transcript=transcript,
+        )
+        submitted_messages += submitted_requests
+        submitted_request_count += submitted_requests
+        clarification_count += 1 if pending_clarification is not None else 0
+        multiline_request_count += multiline_requests
+    else:
+        output_writer("No request submitted. Submit mode received empty input.")
+        session_status = "REFERENCE_UHI_SUBMIT_REJECTED_EMPTY_INPUT"
+        exit_reason = "EMPTY_INPUT"
+        transcript.append({"event": "empty_submit_rejected"})
+
+    result = {
+        "command": "aicli submit",
+        "runtime_version": REFERENCE_UHI_RUNTIME_VERSION,
+        "session_id": session,
+        "created_at": created,
+        "runtime_root": str(root),
+        "workspace": workspace_path,
+        "session_status": session_status,
+        "exit_reason": exit_reason,
+        "submitted_message_count": submitted_messages,
+        "submitted_request_count": submitted_request_count,
+        "multiline_request_count": multiline_request_count,
+        "unsubmitted_compose_line_count": 0,
+        "canceled_compose_count": 0,
+        "clarification_question_count": clarification_count,
+        "approval_count": 0,
+        "pending_approval": pending_summary is not None,
+        "runtime_status": REFERENCE_UHI_NOT_REQUIRED,
+        "runtime_entered": False,
+        "runtime_result": None,
+        "development_intent_resolution": last_resolution,
+        "transcript": transcript,
+        "aicli_authorizes": False,
+        "aicli_executes": False,
+        "aicli_owns_replay": False,
+        "aicli_owns_workspace": False,
+        "aicli_owns_goal_mapping": False,
+        "aicli_owns_provider_selection": False,
+        "platform_core_services_delegated": True,
+        "platform_core_project_services_context": last_project_context,
+        "provider_platform_preserved": True,
+        "worker_platform_preserved": True,
+        "replay_authority_preserved": True,
+    }
+    workspace_state = record_unified_human_interface_workspace_state(
+        interface_name="aicli",
+        session_id=session,
+        runtime_root=root,
+        workspace=workspace_path,
+        created_at=created,
+        completion=result,
+        turn_results=[],
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+    )
+    result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
+    result["project_workspace_hash"] = workspace_state["artifact_hash"]
+    output_writer(_render_session_result(result))
+    return result
+
+
 def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("runtime_binding_status") == REFERENCE_UHI_BOUND:
         return REFERENCE_UHI_BOUND
@@ -292,6 +404,16 @@ def _split_input_chunk(line: Any) -> list[str]:
     if lines and lines[-1] == "":
         lines.pop()
     return lines
+
+
+def _normalize_submit_request(raw_request: Any) -> str:
+    text = str(raw_request).replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
 
 
 def _submit_composed_request(
@@ -492,11 +614,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--created-at", default=DEFAULT_CREATED_AT)
     parser.add_argument("--runtime-root", default=DEFAULT_RUNTIME_ROOT)
     parser.add_argument("--workspace", default=".")
+    parser.add_argument("mode", nargs="?", choices=("submit",), help="Use stdin one-shot submission mode.")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mode == "submit":
+        run_reference_uhi_submit_session(
+            session_id=args.session_id,
+            created_at=args.created_at,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+        )
+        return 0
     run_reference_uhi_session(
         session_id=args.session_id,
         created_at=args.created_at,
