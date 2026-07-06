@@ -661,10 +661,19 @@ def project_knowledge_context_from_workspace(
         if isinstance(knowledge_index.get("implementation_history_by_target"), dict)
         else []
     )
+    evidence_selection = _knowledge_reuse_evidence_selection(
+        artifacts=artifacts,
+        history_matches=history_matches,
+        milestones=milestones,
+    )
     return {
         "knowledge_reuse_version": PLATFORM_CORE_PROJECT_KNOWLEDGE_REUSE_VERSION,
         "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
         "workspace_inspected": True,
+        "certified_artifacts_inspected": True,
+        "knowledge_reuse_evidence_selection": evidence_selection,
+        "evidence_selection_authority": "PLATFORM_CORE",
+        "human_selects_evidence_sources": False,
         "mapping_source": "deterministic_workspace_state",
         "contextual_task_mapping_authority": "PLATFORM_CORE",
         "classification": classification,
@@ -728,6 +737,29 @@ def certified_artifacts_for_goal_target(goal_target: str) -> list[str]:
         ],
     }
     return artifacts.get(goal_target, [])
+
+
+def _knowledge_reuse_evidence_selection(
+    *,
+    artifacts: list[str],
+    history_matches: list[str],
+    milestones: list[str],
+) -> dict[str, Any]:
+    sources: list[str] = []
+    if history_matches or milestones:
+        sources.append("PROJECT_WORKSPACE")
+    if artifacts:
+        sources.append("CERTIFIED_ARTIFACTS")
+    if not sources:
+        sources.append("DETERMINISTIC_CAPABILITY_DISCOVERY")
+    return {
+        "selection_authority": "PLATFORM_CORE",
+        "selected_sources": sources,
+        "workspace_selected": "PROJECT_WORKSPACE" in sources,
+        "certified_artifacts_selected": "CERTIFIED_ARTIFACTS" in sources,
+        "additional_deterministic_evidence_selected": "DETERMINISTIC_CAPABILITY_DISCOVERY" in sources,
+        "human_selects_sources": False,
+    }
 
 
 def goal_oriented_request_detected(message: str) -> bool:
@@ -1310,11 +1342,11 @@ def _conversation_questions_for_prompt(
         if candidate:
             return [
                 _goal_oriented_candidate_question(candidate, knowledge_reuse),
-                "Should I reuse workspace history, certified artifacts, or both for this improvement?",
+                "What problem should the reused or extended work solve for the user?",
             ]
         return [
             "What user-visible outcome should I check for prior implementation?",
-            "Should I look for reuse in workspace history, certified artifacts, or both?",
+            "What problem are you trying to avoid solving twice?",
         ]
     if _architecture_question_detected(lowered):
         if candidate:
@@ -1324,7 +1356,7 @@ def _conversation_questions_for_prompt(
             ]
         return [
             "What user-visible behavior or artifact should be placed architecturally?",
-            "Are you deciding ownership, reuse, or implementation location?",
+            "What outcome should the architecture decision enable for users?",
         ]
     if continuation_development_request_detected(prompt):
         return [
