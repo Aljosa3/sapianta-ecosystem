@@ -1,0 +1,150 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from aigol.cli import aicli
+
+
+def _successful_runner(calls: list[dict]):
+    def run(**kwargs):
+        calls.append(kwargs)
+        return {
+            "runtime_binding_status": aicli.REFERENCE_UHI_BOUND,
+            "runtime_entered": True,
+            "governance_authorization_reached": True,
+            "provider_invocation_reached": True,
+            "worker_execution_reached": True,
+            "replay_certification_reached": True,
+            "runtime_replay_reference": "/tmp/aicli-runtime/TURN-000001",
+            "platform_core_runtime_delegated": True,
+            "governance_authority_preserved": True,
+            "provider_platform_preserved": True,
+            "worker_execution_authority_preserved": True,
+            "replay_authority_preserved": True,
+        }
+
+    return run
+
+
+def _prompt_recording_reader(values: list[str], prompts: list[str]):
+    iterator = iter(values)
+
+    def read(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(iterator)
+
+    return read
+
+
+def test_short_compose_session_still_prompts_once_per_input_cycle(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    output: list[str] = []
+    prompts: list[str] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G15-SHORT-COMPOSE",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(
+            ["Implement governance validation utility.", "/approve", "/exit"],
+            prompts,
+        ),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 1
+    assert result["runtime_status"] == aicli.REFERENCE_UHI_BOUND
+    assert calls[0]["prompt"] == "Implement governance validation utility."
+    assert prompts == ["aicli> ", "aicli compose> ", "aicli> "]
+    assert any("Request submitted to Platform Core." in line for line in output)
+
+
+def test_large_pasted_compose_chunk_is_consumed_without_prompt_flood(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    prompts: list[str] = []
+    request_lines = [
+        "Implement governance validation utility for replay observation reporting.",
+        "",
+        "Generation 14 is fully certified.",
+        "Treat every Generation 14 architectural invariant as immutable.",
+        "",
+        "Objective:",
+        "Implement deterministic replay observations.",
+        "",
+        "Constraints:",
+        "- Preserve Platform Core ownership.",
+        "- Keep Human Interfaces thin.",
+        "- Do not invoke providers.",
+        "- Do not create improvement proposals.",
+        "",
+        "Validation:",
+        "- existing replay behavior remains unchanged",
+        "- deterministic replay preserved",
+    ]
+    large_paste = "\n".join([*request_lines, "/send", "/approve", "/exit"]) + "\n"
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G15-LARGE-PASTE",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader([large_paste], prompts),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 1
+    assert result["multiline_request_count"] == 1
+    assert result["unsubmitted_compose_line_count"] == 0
+    assert result["runtime_status"] == aicli.REFERENCE_UHI_BOUND
+    assert calls[0]["prompt"] == "\n".join(request_lines)
+    assert prompts == ["aicli> "]
+
+
+def test_large_paste_preserves_blank_lines_and_handles_eof_after_buffer(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    prompts: list[str] = []
+    request_lines = [
+        "Implement replay observation indexing.",
+        "",
+        "",
+        "The blank lines above are intentional.",
+    ]
+    large_paste_without_send = "\n".join(request_lines) + "\n"
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G15-LARGE-PASTE-EOF",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader([large_paste_without_send], prompts),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["exit_reason"] == "EOF"
+    assert result["submitted_request_count"] == 1
+    assert result["multiline_request_count"] == 1
+    assert result["runtime_entered"] is False
+    assert calls == []
+    assert result["development_intent_resolution"]["raw_prompt"] == "\n".join(request_lines)
+    assert prompts == ["aicli> ", "aicli compose> "]
+
+
+def test_top_level_blank_paste_is_ignored_without_submitting(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    prompts: list[str] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G15-BLANK-PASTE",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(["\n\n\n/exit\n"], prompts),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 0
+    assert result["runtime_entered"] is False
+    assert result["exit_reason"] == "EXIT_COMMAND"
+    assert calls == []
+    assert prompts == ["aicli> "]

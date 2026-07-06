@@ -70,6 +70,7 @@ def run_reference_uhi_session(
     last_project_context: dict[str, Any] | None = None
     pending_clarification: dict[str, Any] | None = None
     compose_buffer: list[str] = []
+    pending_input_lines: list[str] = []
     submitted_request_count = 0
     multiline_request_count = 0
     canceled_compose_count = 0
@@ -77,33 +78,40 @@ def run_reference_uhi_session(
     output_writer("Compose a request. Finish with /send or a single '.' line. Use /cancel to clear.")
 
     while True:
-        try:
-            line = input_reader("aicli compose> " if compose_buffer else "aicli> ")
-        except EOFError:
-            if compose_buffer:
-                (
-                    pending_summary,
-                    pending_clarification,
-                    last_resolution,
-                    last_project_context,
-                    submitted_requests,
-                    multiline_requests,
-                ) = _submit_composed_request(
-                    compose_buffer=compose_buffer,
-                    session=session,
-                    root=root,
-                    workspace_path=workspace_path,
-                    created=created,
-                    output_writer=output_writer,
-                    transcript=transcript,
-                )
-                submitted_messages += submitted_requests
-                submitted_request_count += submitted_requests
-                clarification_count += 1 if pending_clarification is not None else 0
-                multiline_request_count += multiline_requests
-                compose_buffer.clear()
-            exit_reason = "EOF"
-            break
+        if pending_input_lines:
+            line = pending_input_lines.pop(0)
+        else:
+            try:
+                line = input_reader("aicli compose> " if compose_buffer else "aicli> ")
+            except (EOFError, StopIteration):
+                if compose_buffer:
+                    (
+                        pending_summary,
+                        pending_clarification,
+                        last_resolution,
+                        last_project_context,
+                        submitted_requests,
+                        multiline_requests,
+                    ) = _submit_composed_request(
+                        compose_buffer=compose_buffer,
+                        session=session,
+                        root=root,
+                        workspace_path=workspace_path,
+                        created=created,
+                        output_writer=output_writer,
+                        transcript=transcript,
+                    )
+                    submitted_messages += submitted_requests
+                    submitted_request_count += submitted_requests
+                    clarification_count += 1 if pending_clarification is not None else 0
+                    multiline_request_count += multiline_requests
+                    compose_buffer.clear()
+                exit_reason = "EOF"
+                break
+            pending_input_lines.extend(_split_input_chunk(line))
+            if not pending_input_lines:
+                continue
+            line = pending_input_lines.pop(0)
         line_text = str(line).rstrip("\r\n")
         normalized = line_text.strip().lower()
         if not normalized and not compose_buffer:
@@ -273,6 +281,17 @@ def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
         return REFERENCE_UHI_NOT_REQUIRED
     return REFERENCE_UHI_PARTIALLY_BOUND
+
+
+def _split_input_chunk(line: Any) -> list[str]:
+    text = str(line)
+    if "\n" not in text and "\r" not in text:
+        return [text]
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    lines = normalized.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
 
 
 def _submit_composed_request(
