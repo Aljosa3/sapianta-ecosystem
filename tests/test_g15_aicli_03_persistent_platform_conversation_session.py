@@ -44,7 +44,7 @@ def test_submit_mode_continues_clarification_then_approval_to_runtime(tmp_path: 
         runtime_root=tmp_path,
         workspace=".",
         stdin_reader=lambda: "I have an idea.",
-        input_reader=_reader(["Implement governance documentation indexing utility.", "/approve"]),
+        input_reader=_reader(["Implement governance documentation indexing utility.", "/send", "/approve"]),
         output_writer=output.append,
         runtime_runner=_successful_runner(calls),
     )
@@ -75,7 +75,9 @@ def test_submit_mode_supports_multiple_platform_core_clarification_rounds(tmp_pa
         input_reader=_reader(
             [
                 "Improve this.",
+                "/send",
                 "Implement replay observation diagnostics utility.",
+                "/send",
                 "/approve",
             ]
         ),

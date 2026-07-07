@@ -59,7 +59,7 @@ def test_submit_clarification_reply_binds_to_replay_backed_active_clarification(
         runtime_root=tmp_path,
         workspace=".",
         stdin_reader=lambda: "I have an idea.",
-        input_reader=_reader(["Implement governance documentation indexing utility.", "/approve"]),
+        input_reader=_reader(["Implement governance documentation indexing utility.", "/send", "/approve"]),
         output_writer=lambda _line: None,
         runtime_runner=_successful_runner(calls),
     )
@@ -98,7 +98,15 @@ def test_insufficient_submit_clarification_reply_remains_replay_continuous(tmp_p
         runtime_root=tmp_path,
         workspace=".",
         stdin_reader=lambda: "I have an idea.",
-        input_reader=_reader(["Improve this.", "Implement replay observation diagnostics utility.", "/approve"]),
+        input_reader=_reader(
+            [
+                "Improve this.",
+                "/send",
+                "Implement replay observation diagnostics utility.",
+                "/send",
+                "/approve",
+            ]
+        ),
         output_writer=lambda _line: None,
         runtime_runner=_successful_runner(calls),
     )

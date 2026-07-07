@@ -367,16 +367,16 @@ def run_reference_uhi_submit_session(
             exit_reason = "AWAITING_HUMAN_INPUT"
             break
         if pending_clarification is not None:
-            try:
-                reply = input_reader("aicli clarification> ")
-            except (EOFError, StopIteration):
+            reply_text, reply_status = _read_clarification_reply(
+                input_reader=input_reader,
+            )
+            if reply_status == "EOF":
                 session_status = "REFERENCE_UHI_SUBMIT_AWAITING_HUMAN_INPUT"
                 exit_reason = "EOF_AWAITING_CLARIFICATION"
                 break
-            reply_text = str(reply).strip()
-            normalized_reply = reply_text.lower()
-            if not reply_text:
+            if reply_status == "EMPTY":
                 continue
+            normalized_reply = reply_text.strip().lower()
             if normalized_reply == "/cancel":
                 pending_clarification = None
                 canceled_compose_count += 1
@@ -396,7 +396,7 @@ def run_reference_uhi_submit_session(
                 submitted_requests,
                 multiline_requests,
             ) = _submit_composed_request(
-                compose_buffer=[reply_text],
+                compose_buffer=reply_text.split("\n"),
                 session=session,
                 root=root,
                 workspace_path=workspace_path,
@@ -542,6 +542,46 @@ def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
         return REFERENCE_UHI_NOT_REQUIRED
     return REFERENCE_UHI_PARTIALLY_BOUND
+
+
+def _read_clarification_reply(
+    *,
+    input_reader: Callable[[str], str],
+) -> tuple[str, str]:
+    """Read one composed clarification reply from terminal input."""
+
+    reply_buffer: list[str] = []
+    pending_lines: list[str] = []
+    while True:
+        if pending_lines:
+            line = pending_lines.pop(0)
+        else:
+            try:
+                line = input_reader(
+                    "aicli clarification compose> " if reply_buffer else "aicli clarification> "
+                )
+            except (EOFError, StopIteration):
+                return "", "EOF"
+            pending_lines.extend(_split_input_chunk(line))
+            if not pending_lines:
+                continue
+            line = pending_lines.pop(0)
+        line_text = str(line).rstrip("\r\n")
+        normalized = line_text.strip().lower()
+        if not normalized and not reply_buffer:
+            continue
+        if normalized == "/cancel":
+            if not reply_buffer:
+                return "/cancel", "CANCEL"
+            reply_buffer.clear()
+            return "/cancel", "CANCEL"
+        if normalized in {"/exit", "exit", "quit"}:
+            return normalized, "EXIT"
+        if normalized in AICLI_SEND_COMMANDS:
+            if not reply_buffer:
+                return "", "EMPTY"
+            return "\n".join(reply_buffer), "SUBMITTED"
+        reply_buffer.append(line_text)
 
 
 def _record_submit_workspace_state(
@@ -762,6 +802,7 @@ def _render_clarification(clarification: dict[str, Any]) -> str:
     lines.append("questions:")
     for question in clarification.get("clarification_questions", []):
         lines.append(f"- {question}")
+    lines.append("Finish with /send or a single '.' line. Use /cancel to discard.")
     return "\n".join(lines)
 
 
