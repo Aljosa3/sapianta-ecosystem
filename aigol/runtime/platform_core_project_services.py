@@ -29,6 +29,9 @@ PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION = (
 PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION = (
     "G14_47_HUMAN_INTENT_TO_CAPABILITY_RESOLUTION_V1"
 )
+PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION = (
+    "G15_HIR_02_REPLAY_BACKED_CLARIFICATION_CONTINUITY_V1"
+)
 
 
 CAPABILITY_CATALOG: tuple[dict[str, Any], ...] = (
@@ -168,7 +171,18 @@ def prepare_unified_human_interface_project_context(
             runtime_bound_count=0,
         )
     )
-    development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
+    clarification_continuity = None
+    active_clarification_state = replay_backed_uhi_clarification_state(prior_state)
+    if active_clarification_state is not None:
+        development_intent, clarification_continuity = resolve_uhi_clarification_continuity(
+            message=message,
+            workspace_state=prior_state,
+            active_clarification_state=active_clarification_state,
+            session_root=session_root,
+            created_at=created_at,
+        )
+    else:
+        development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
     goal_mapping = (
         development_intent.get("goal_mapping")
         if isinstance(development_intent.get("goal_mapping"), dict)
@@ -206,6 +220,7 @@ def prepare_unified_human_interface_project_context(
         "project_workspace_replay_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
         "project_guidance": guidance,
         "knowledge_reuse": knowledge_reuse,
+        "clarification_continuity": clarification_continuity,
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "project_workspace_authority": "PLATFORM_CORE",
@@ -280,12 +295,126 @@ def latest_platform_core_workspace_state(session_root: Path) -> dict[str, Any] |
     return None
 
 
+def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Recover the active UHI clarification state from Platform Core workspace replay."""
+
+    if not isinstance(workspace_state, dict):
+        return None
+    pending = workspace_state.get("pending_clarification_request")
+    if not isinstance(pending, dict):
+        return None
+    return {
+        "artifact_type": "PLATFORM_CORE_UHI_ACTIVE_CLARIFICATION_STATE_V1",
+        "runtime_version": PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION,
+        "state_source": "PLATFORM_CORE_WORKSPACE_REPLAY",
+        "workspace_state_reference": workspace_state.get("replay_reference"),
+        "workspace_state_hash": workspace_state.get("artifact_hash"),
+        "session_id": workspace_state.get("session_id"),
+        "original_message": pending.get("original_message"),
+        "clarification_questions": unique_strings(pending.get("clarification_questions")),
+        "pending_clarification_request": deepcopy(pending),
+        "replay_backed": True,
+        "platform_core_authority": True,
+        "human_interface_authority": False,
+    }
+
+
+def resolve_uhi_clarification_continuity(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    active_clarification_state: dict[str, Any],
+    session_root: Path,
+    created_at: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Bind a UHI clarification reply to the replay-backed active clarification."""
+
+    reply = require_string(message, "message")
+    reply_resolution = resolve_development_intent(
+        message=reply,
+        workspace_state=workspace_state,
+    )
+    resolved = reply_resolution.get("summary_admissible") is True
+    status = "CLARIFICATION_RESOLVED" if resolved else "CLARIFICATION_STILL_REQUIRED"
+    continuity_artifact = {
+        "artifact_type": "PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "created_at": require_string(created_at, "created_at"),
+        "session_id": active_clarification_state.get("session_id"),
+        "reply_hash": replay_hash(reply),
+        "reply_bound_to_active_clarification": True,
+        "clarification_continuity_status": status,
+        "clarification_resolved": resolved,
+        "new_governed_request_created": False,
+        "active_clarification_state": deepcopy(active_clarification_state),
+        "active_clarification_workspace_state_reference": active_clarification_state.get(
+            "workspace_state_reference"
+        ),
+        "active_clarification_workspace_state_hash": active_clarification_state.get(
+            "workspace_state_hash"
+        ),
+        "development_intent_resolution_hash": reply_resolution.get("artifact_hash"),
+        "canonical_semantic_artifact_hash": None,
+        "canonical_semantic_artifact_status": (
+            "NOT_CREATED_BY_UHI_PROJECT_SERVICES_CONTINUITY"
+        ),
+        "semantic_lineage_preserved": True,
+        "replay_lineage_preserved": True,
+        "governance_authority_preserved": True,
+        "human_interface_authority": False,
+        "provider_platform_preserved": True,
+        "worker_platform_preserved": True,
+        "replay_reference": str(session_root / "uhi_clarification_continuity"),
+    }
+    continuity_artifact["artifact_hash"] = replay_hash(continuity_artifact)
+    write_json_immutable(
+        session_root
+        / "uhi_clarification_continuity"
+        / f"{next_uhi_clarification_continuity_index(session_root):03d}_uhi_clarification_continuity_recorded.json",
+        continuity_artifact,
+    )
+    enriched_resolution = deepcopy(reply_resolution)
+    if not resolved:
+        enriched_resolution["clarification_required"] = True
+        enriched_resolution["clarification_reason"] = (
+            "clarification reply did not resolve active clarification deterministically"
+        )
+        enriched_resolution["summary_admissible"] = False
+        enriched_resolution["runtime_binding_admissible"] = False
+        enriched_resolution["requires_human_approval"] = False
+    enriched_resolution.update(
+        {
+            "clarification_reply_bound": True,
+            "clarification_continuity_status": status,
+            "clarification_resolved": resolved,
+            "clarification_continuity_replay_reference": continuity_artifact["replay_reference"],
+            "clarification_continuity_artifact_hash": continuity_artifact["artifact_hash"],
+            "active_clarification_workspace_state_reference": active_clarification_state.get(
+                "workspace_state_reference"
+            ),
+            "new_governed_request_created": False,
+            "human_interface_resolves_clarification": False,
+            "platform_core_resolves_clarification": True,
+        }
+    )
+    enriched_resolution["artifact_hash"] = replay_hash(enriched_resolution)
+    return enriched_resolution, continuity_artifact
+
+
 def next_workspace_state_index(session_root: Path) -> int:
     return next_index(session_root / "workspace_state", "*_workspace_state_recorded.json")
 
 
 def next_uhi_project_context_index(session_root: Path) -> int:
     return next_index(session_root / "uhi_project_services", "*_uhi_project_context_recorded.json")
+
+
+def next_uhi_clarification_continuity_index(session_root: Path) -> int:
+    return next_index(
+        session_root / "uhi_clarification_continuity",
+        "*_uhi_clarification_continuity_recorded.json",
+    )
 
 
 def next_index(root: Path, pattern: str) -> int:
