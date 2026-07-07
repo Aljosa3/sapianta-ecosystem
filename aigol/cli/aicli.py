@@ -557,9 +557,7 @@ def _read_clarification_reply(
             line = pending_lines.pop(0)
         else:
             try:
-                line = input_reader(
-                    "aicli clarification compose> " if reply_buffer else "aicli clarification> "
-                )
+                line = input_reader("aicli clarification> " if not reply_buffer else "")
             except (EOFError, StopIteration):
                 return "", "EOF"
             pending_lines.extend(_split_input_chunk(line))

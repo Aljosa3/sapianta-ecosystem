@@ -15,6 +15,16 @@ def _reader(values: list[str]):
     return read
 
 
+def _prompt_recording_reader(values: list[str], prompts: list[str]):
+    iterator = iter(values)
+
+    def read(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(iterator)
+
+    return read
+
+
 def _successful_runner(calls: list[dict]):
     def run(**kwargs):
         calls.append(kwargs)
@@ -106,3 +116,49 @@ def test_submit_mode_clarification_compose_cancel_discards_buffer(tmp_path: Path
     assert len(contexts) == 1
     assert calls == []
     assert any("Pending request canceled." in line for line in output)
+
+
+def test_submit_mode_clarification_line_by_line_paste_renders_prompt_once(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    prompts: list[str] = []
+    session_id = "G15-AICLI-08-SINGLE-PROMPT"
+    clarification_reply = "\n".join(
+        [
+            "Implement Governed Development Execution Bridge validation.",
+            "",
+            "The bridge should preserve Platform Core ownership.",
+            "No Human Interface behaviour shall change.",
+        ]
+    )
+
+    result = aicli.run_reference_uhi_submit_session(
+        session_id=session_id,
+        runtime_root=tmp_path,
+        workspace=".",
+        stdin_reader=lambda: "I have an idea.",
+        input_reader=_prompt_recording_reader(
+            [
+                "Implement Governed Development Execution Bridge validation.",
+                "",
+                "The bridge should preserve Platform Core ownership.",
+                "No Human Interface behaviour shall change.",
+                "/send",
+                "/approve",
+            ],
+            prompts,
+        ),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    contexts = _load_contexts(tmp_path, session_id)
+    resolution = contexts[1]["development_intent_resolution"]
+
+    assert result["session_status"] == "REFERENCE_UHI_SUBMIT_CONVERSATION_COMPLETED"
+    assert result["submitted_request_count"] == 2
+    assert result["multiline_request_count"] == 1
+    assert calls[0]["prompt"] == clarification_reply
+    assert resolution["raw_prompt"] == clarification_reply
+    assert prompts[:5] == ["aicli clarification> ", "", "", "", ""]
+    assert "aicli clarification compose> " not in prompts
+    assert prompts[-1] == "aicli approval> "
