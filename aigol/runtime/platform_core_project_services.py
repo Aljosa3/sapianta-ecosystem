@@ -361,7 +361,10 @@ def resolve_uhi_clarification_continuity(
             ),
             workspace_state=workspace_state,
         )
-    resolved = reply_resolution.get("summary_admissible") is True
+    resolved = (
+        reply_resolution.get("summary_admissible") is True
+        and satisfaction["clarification_satisfied"] is True
+    )
     status = "CLARIFICATION_RESOLVED" if resolved else "CLARIFICATION_STILL_REQUIRED"
     question_bindings = deterministic_clarification_question_bindings(
         active_clarification_state.get("clarification_questions")
@@ -416,6 +419,9 @@ def resolve_uhi_clarification_continuity(
         enriched_resolution["clarification_reason"] = (
             "clarification answer did not satisfy active semantic slot"
         )
+        enriched_resolution["clarification_decision_explainability"] = satisfaction[
+            "clarification_decision_explainability"
+        ]
         enriched_resolution["active_clarification_open_slot"] = satisfaction["open_semantic_slot"]
         enriched_resolution["active_clarification_missing_information"] = satisfaction[
             "missing_information"
@@ -432,6 +438,9 @@ def resolve_uhi_clarification_continuity(
             "clarification_reply_resolution_source": resolution_source,
             "clarification_question_bindings": question_bindings,
             "clarification_satisfaction_verification": deepcopy(satisfaction),
+            "clarification_decision_explainability": satisfaction[
+                "clarification_decision_explainability"
+            ],
             "answered_clarification_question_ids": satisfaction["satisfied_question_ids"] if resolved else [],
             "satisfied_semantic_slots": satisfaction["satisfied_semantic_slots"] if resolved else [],
             "pending_semantic_slots": satisfaction["pending_semantic_slots"],
@@ -528,6 +537,12 @@ def clarification_satisfaction_verification(
         if satisfied
         else _clarification_slot_missing_information(open_slot)
     )
+    explainability = clarification_decision_explainability(
+        reply=text,
+        slot_id=open_slot,
+        question_text=open_question,
+        clarification_satisfied=satisfied,
+    )
     return {
         "artifact_type": "PLATFORM_CORE_CLARIFICATION_SATISFACTION_VERIFICATION_V1",
         "runtime_version": "G15_HIR_10_CLARIFICATION_SATISFACTION_VERIFICATION_V1",
@@ -541,6 +556,7 @@ def clarification_satisfaction_verification(
         "satisfied_semantic_slots": [open_slot] if satisfied and open_slot is not None else [],
         "pending_semantic_slots": [] if satisfied or open_slot is None else [open_slot],
         "missing_information": missing_information,
+        "clarification_decision_explainability": deepcopy(explainability),
         "identical_question_repeated": False,
         "llm_reasoning_used": False,
         "probabilistic_scoring_used": False,
@@ -548,6 +564,178 @@ def clarification_satisfaction_verification(
         "platform_core_owns_satisfaction": True,
         "replay_visible": True,
     }
+
+
+def clarification_decision_explainability(
+    *,
+    reply: str,
+    slot_id: str | None,
+    question_text: str | None,
+    clarification_satisfied: bool,
+) -> dict[str, Any]:
+    """Explain the deterministic clarification decision in semantic terms."""
+
+    expected = _clarification_expected_semantic_outcome(slot_id)
+    accepted = _accepted_semantic_requirements(reply=reply, slot_id=slot_id)
+    required = _required_semantic_requirements(slot_id)
+    remaining = [] if clarification_satisfied else [
+        requirement for requirement in required if requirement not in accepted
+    ]
+    if not clarification_satisfied and not remaining:
+        remaining = [_clarification_slot_missing_information(slot_id)]
+    blocker = (
+        "No semantic blocker remains for the active clarification slot."
+        if clarification_satisfied
+        else (
+            "Deterministic continuation is blocked until the remaining semantic "
+            "requirement is satisfied."
+        )
+    )
+    return {
+        "artifact_type": "PLATFORM_CORE_CLARIFICATION_DECISION_EXPLAINABILITY_V1",
+        "runtime_version": "G15_HIR_11_CLARIFICATION_DECISION_EXPLAINABILITY_V1",
+        "explanation_authority": "PLATFORM_CORE",
+        "active_semantic_slot": slot_id,
+        "active_question_text": question_text,
+        "expected_semantic_outcome": expected,
+        "accepted_semantic_requirements": accepted,
+        "unresolved_semantic_requirements": remaining,
+        "deterministic_continuation_status": (
+            "READY" if clarification_satisfied else "BLOCKED"
+        ),
+        "deterministic_continuation_reason": blocker,
+        "user_explanation": _clarification_user_explanation(
+            slot_id=slot_id,
+            accepted=accepted,
+            remaining=remaining,
+            clarification_satisfied=clarification_satisfied,
+        ),
+        "implementation_internals_exposed": False,
+        "semantic_reasoning_only": True,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+
+
+def _clarification_expected_semantic_outcome(slot_id: str | None) -> str:
+    if slot_id == "architecture_outcome":
+        return "a reusable architecture outcome with an observable user-facing effect"
+    if slot_id == "architecture_subject":
+        return "the behavior or artifact being placed and the outcome that placement enables"
+    if slot_id == "continuation_reference":
+        return "whether the request extends the active objective or starts a new one"
+    if slot_id == "capability_target_choice":
+        return "the specific governed capability target to continue"
+    if slot_id == "capability_target":
+        return "the governed capability or outcome to improve"
+    if slot_id == "desired_outcome":
+        return "the observable outcome the improvement should produce"
+    if slot_id == "reuse_delta":
+        return "the new outcome or delta against existing governed evidence"
+    if slot_id == "reuse_goal":
+        return "the user-visible outcome to compare with existing governed work"
+    if slot_id == "implementation_specificity":
+        return "the capability or runtime behavior the implementation should change"
+    if slot_id == "active_objective_delta":
+        return "the next concrete change to the active objective"
+    if slot_id == "implementation_constraints":
+        return "the constraints or boundaries the implementation should preserve"
+    return "the remaining semantic detail needed for governed continuation"
+
+
+def _required_semantic_requirements(slot_id: str | None) -> list[str]:
+    if slot_id == "architecture_outcome":
+        return [
+            "reusable Platform Core behavior",
+            "Human Interface neutrality",
+            "observable user-visible outcome",
+        ]
+    if slot_id == "architecture_subject":
+        return ["behavior or artifact", "enabled outcome"]
+    if slot_id == "continuation_reference":
+        return ["continuation choice"]
+    if slot_id == "capability_target_choice":
+        return ["governed capability target"]
+    if slot_id == "capability_target":
+        return ["governed capability target", "desired outcome"]
+    if slot_id == "desired_outcome":
+        return ["observable user-visible outcome"]
+    if slot_id == "reuse_delta":
+        return ["existing evidence delta", "new outcome"]
+    if slot_id == "reuse_goal":
+        return ["user-visible reuse goal"]
+    if slot_id == "implementation_specificity":
+        return ["capability or runtime behavior"]
+    if slot_id == "active_objective_delta":
+        return ["next concrete change"]
+    if slot_id == "implementation_constraints":
+        return ["constraints or boundaries"]
+    return ["remaining semantic detail"]
+
+
+def _accepted_semantic_requirements(*, reply: str, slot_id: str | None) -> list[str]:
+    lowered = reply.lower()
+    accepted: list[str] = []
+    if slot_id == "architecture_outcome":
+        if "platform core" in lowered or "reusable" in lowered or "shared" in lowered:
+            accepted.append("reusable Platform Core behavior")
+        if "human interface" in lowered or "interfaces" in lowered or "shared" in lowered:
+            accepted.append("Human Interface neutrality")
+        if any(term in lowered for term in ("outcome", "user-visible", "observable", "enable", "enables")):
+            accepted.append("observable user-visible outcome")
+    elif slot_id == "architecture_subject":
+        if any(term in lowered for term in ("behavior", "artifact", "interface", "runtime", "workflow")):
+            accepted.append("behavior or artifact")
+        if any(term in lowered for term in ("outcome", "enable", "enables", "produce")):
+            accepted.append("enabled outcome")
+    elif slot_id == "continuation_reference":
+        if any(term in lowered for term in ("current", "existing", "continue", "extend", "new one", "start a new")):
+            accepted.append("continuation choice")
+    elif slot_id == "capability_target_choice":
+        if any(term in lowered for term in ("automation", "runtime", "replay", "governance", "governed", "github actions", "interface", "clarification", "validation", "worker")):
+            accepted.append("governed capability target")
+    elif slot_id in {"capability_target", "desired_outcome"}:
+        if any(term in lowered for term in ("automation", "runtime", "replay", "governance", "governed", "github actions", "interface", "clarification", "validation", "worker")):
+            accepted.append("governed capability target")
+        if any(term in lowered for term in ("outcome", "produce", "improve", "enable", "behavior")):
+            accepted.append("desired outcome" if slot_id == "capability_target" else "observable user-visible outcome")
+    elif slot_id == "reuse_delta":
+        if any(term in lowered for term in ("existing", "reuse", "evidence")):
+            accepted.append("existing evidence delta")
+        if any(term in lowered for term in ("outcome", "new", "change", "delta")):
+            accepted.append("new outcome")
+    elif slot_id == "reuse_goal":
+        if any(term in lowered for term in ("outcome", "goal", "user-visible")):
+            accepted.append("user-visible reuse goal")
+    elif slot_id == "implementation_specificity":
+        if any(term in lowered for term in ("capability", "runtime", "behavior", "workflow", "interface")):
+            accepted.append("capability or runtime behavior")
+    elif slot_id == "active_objective_delta":
+        if any(term in lowered for term in ("change", "next", "add", "remove", "update", "improve")):
+            accepted.append("next concrete change")
+    elif slot_id == "implementation_constraints":
+        if any(term in lowered for term in ("preserve", "boundary", "constraint", "replay", "governance")):
+            accepted.append("constraints or boundaries")
+    return unique_strings(accepted)
+
+
+def _clarification_user_explanation(
+    *,
+    slot_id: str | None,
+    accepted: list[str],
+    remaining: list[str],
+    clarification_satisfied: bool,
+) -> str:
+    slot_label = str(slot_id or "semantic detail").replace("_", " ")
+    if clarification_satisfied:
+        accepted_text = ", ".join(accepted) if accepted else "the requested semantic detail"
+        return f"Accepted for {slot_label}: {accepted_text}. Deterministic continuation can proceed."
+    accepted_text = ", ".join(accepted) if accepted else "no required semantic requirement yet"
+    remaining_text = ", ".join(remaining) if remaining else "remaining semantic detail"
+    return (
+        f"Current semantic slot: {slot_label}. Accepted: {accepted_text}. "
+        f"Still required: {remaining_text}. Deterministic continuation is blocked until that is provided."
+    )
 
 
 def _clarification_reply_satisfies_slot(*, reply: str, slot_id: str | None) -> bool:
@@ -574,12 +762,16 @@ def _clarification_reply_satisfies_slot(*, reply: str, slot_id: str | None) -> b
     )
     scope_terms = (
         "aicli",
+        "automation",
         "governance",
+        "governed",
+        "github actions",
         "human interface",
         "interfaces",
         "platform core",
         "replay",
         "runtime",
+        "validation",
         "workflow",
         "worker",
         "certification",
@@ -1741,6 +1933,11 @@ def _conversation_fail_closed_response(
 
 def _conversation_explanation_for_clarification(prompt: str, intent: dict[str, Any]) -> str:
     reason = str(intent.get("clarification_reason") or "").strip()
+    if reason == "clarification answer did not satisfy active semantic slot":
+        explainability = intent.get("clarification_decision_explainability")
+        if isinstance(explainability, dict) and explainability.get("user_explanation"):
+            return str(explainability["user_explanation"])
+        return "The answer did not yet satisfy the active semantic slot, so deterministic continuation remains blocked."
     if reason == "continuation request requires deterministic workspace state":
         return "I need to know which project work should continue before I can safely resume it."
     if reason == "guided development request lacks deterministic implementation specificity":
