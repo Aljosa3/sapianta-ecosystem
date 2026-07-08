@@ -345,12 +345,13 @@ def resolve_uhi_clarification_continuity(
         workspace_state=workspace_state,
     )
     resolution_source = "CLARIFICATION_REPLY_STANDALONE"
+    satisfaction = clarification_satisfaction_verification(
+        reply=reply,
+        active_clarification_state=active_clarification_state,
+    )
     if (
         reply_resolution.get("summary_admissible") is not True
-        and clarification_reply_substantively_answers_active_questions(
-            reply=reply,
-            active_clarification_state=active_clarification_state,
-        )
+        and satisfaction["clarification_satisfied"] is True
     ):
         resolution_source = "ORIGINAL_REQUEST_WITH_BOUND_CLARIFICATION_REPLY"
         reply_resolution = resolve_development_intent(
@@ -375,9 +376,10 @@ def resolve_uhi_clarification_continuity(
         "reply_bound_to_active_clarification": True,
         "reply_resolution_source": resolution_source,
         "clarification_question_bindings": question_bindings,
-        "answered_clarification_question_ids": [
-            binding["question_id"] for binding in question_bindings
-        ] if resolved else [],
+        "clarification_satisfaction_verification": deepcopy(satisfaction),
+        "answered_clarification_question_ids": satisfaction["satisfied_question_ids"] if resolved else [],
+        "satisfied_semantic_slots": satisfaction["satisfied_semantic_slots"] if resolved else [],
+        "pending_semantic_slots": satisfaction["pending_semantic_slots"],
         "clarification_continuity_status": status,
         "clarification_resolved": resolved,
         "new_governed_request_created": False,
@@ -412,8 +414,15 @@ def resolve_uhi_clarification_continuity(
     if not resolved:
         enriched_resolution["clarification_required"] = True
         enriched_resolution["clarification_reason"] = (
-            "clarification reply did not resolve active clarification deterministically"
+            "clarification answer did not satisfy active semantic slot"
         )
+        enriched_resolution["active_clarification_open_slot"] = satisfaction["open_semantic_slot"]
+        enriched_resolution["active_clarification_missing_information"] = satisfaction[
+            "missing_information"
+        ]
+        enriched_resolution["active_clarification_original_question"] = satisfaction[
+            "open_question_text"
+        ]
         enriched_resolution["summary_admissible"] = False
         enriched_resolution["runtime_binding_admissible"] = False
         enriched_resolution["requires_human_approval"] = False
@@ -422,9 +431,10 @@ def resolve_uhi_clarification_continuity(
             "clarification_reply_bound": True,
             "clarification_reply_resolution_source": resolution_source,
             "clarification_question_bindings": question_bindings,
-            "answered_clarification_question_ids": [
-                binding["question_id"] for binding in question_bindings
-            ] if resolved else [],
+            "clarification_satisfaction_verification": deepcopy(satisfaction),
+            "answered_clarification_question_ids": satisfaction["satisfied_question_ids"] if resolved else [],
+            "satisfied_semantic_slots": satisfaction["satisfied_semantic_slots"] if resolved else [],
+            "pending_semantic_slots": satisfaction["pending_semantic_slots"],
             "clarification_continuity_status": status,
             "clarification_resolved": resolved,
             "clarification_continuity_replay_reference": continuity_artifact["replay_reference"],
@@ -448,10 +458,184 @@ def deterministic_clarification_question_bindings(questions: Any) -> list[dict[s
         {
             "question_id": f"CLARIFICATION_QUESTION_{replay_hash(question)[:16]}",
             "question_text": question,
+            "semantic_slot": semantic_slot_for_clarification_question(question),
             "binding_authority": "PLATFORM_CORE",
         }
         for question in unique_strings(questions)
     ]
+
+
+def semantic_slot_for_clarification_question(question: Any) -> str:
+    """Infer the deterministic semantic slot bound to a clarification question."""
+
+    lowered = " ".join(str(question).lower().split())
+    if "extending the current governed development objective" in lowered:
+        return "continuation_reference"
+    if "which inferred governed capability" in lowered:
+        return "capability_target_choice"
+    if "improve runtime, clarification quality, replay behavior" in lowered:
+        return "capability_target"
+    if "architecture decision enable" in lowered:
+        return "architecture_outcome"
+    if "placed architecturally" in lowered:
+        return "architecture_subject"
+    if "new outcome should be added" in lowered or "outcome should change in the existing" in lowered:
+        return "reuse_delta"
+    if "check against existing governed work" in lowered:
+        return "reuse_goal"
+    if "name the capability or runtime behavior" in lowered:
+        return "implementation_specificity"
+    if "what should change next" in lowered:
+        return "active_objective_delta"
+    if "what outcome should the" in lowered and "improvement produce" in lowered:
+        return "desired_outcome"
+    if "user-visible outcome should this development work produce" in lowered:
+        return "desired_outcome"
+    if "constraints or boundaries should the implementation preserve" in lowered:
+        return "implementation_constraints"
+    return "desired_outcome"
+
+
+def clarification_satisfaction_verification(
+    *,
+    reply: str,
+    active_clarification_state: dict[str, Any],
+) -> dict[str, Any]:
+    """Verify whether a reply satisfies the currently open clarification slot."""
+
+    text = " ".join(require_string(reply, "reply").split())
+    bindings = deterministic_clarification_question_bindings(
+        active_clarification_state.get("clarification_questions")
+    )
+    open_binding = bindings[0] if bindings else None
+    open_slot = (
+        str(open_binding.get("semantic_slot"))
+        if isinstance(open_binding, dict)
+        else None
+    )
+    open_question = (
+        str(open_binding.get("question_text"))
+        if isinstance(open_binding, dict)
+        else None
+    )
+    satisfied = (
+        _clarification_reply_satisfies_slot(reply=text, slot_id=open_slot)
+        if open_slot is not None
+        else False
+    )
+    missing_information = (
+        None
+        if satisfied
+        else _clarification_slot_missing_information(open_slot)
+    )
+    return {
+        "artifact_type": "PLATFORM_CORE_CLARIFICATION_SATISFACTION_VERIFICATION_V1",
+        "runtime_version": "G15_HIR_10_CLARIFICATION_SATISFACTION_VERIFICATION_V1",
+        "verification_authority": "PLATFORM_CORE",
+        "reply_hash": replay_hash(text),
+        "open_question_id": open_binding.get("question_id") if isinstance(open_binding, dict) else None,
+        "open_question_text": open_question,
+        "open_semantic_slot": open_slot,
+        "clarification_satisfied": satisfied,
+        "satisfied_question_ids": [open_binding["question_id"]] if satisfied and isinstance(open_binding, dict) else [],
+        "satisfied_semantic_slots": [open_slot] if satisfied and open_slot is not None else [],
+        "pending_semantic_slots": [] if satisfied or open_slot is None else [open_slot],
+        "missing_information": missing_information,
+        "identical_question_repeated": False,
+        "llm_reasoning_used": False,
+        "probabilistic_scoring_used": False,
+        "human_interface_authority": False,
+        "platform_core_owns_satisfaction": True,
+        "replay_visible": True,
+    }
+
+
+def _clarification_reply_satisfies_slot(*, reply: str, slot_id: str | None) -> bool:
+    lowered = reply.lower()
+    if len(lowered) < 20:
+        return False
+    outcome_terms = (
+        "outcome",
+        "enable",
+        "enables",
+        "produce",
+        "create",
+        "build",
+        "change",
+        "improve",
+        "implement",
+        "support",
+        "behavior",
+        "capability",
+        "workflow",
+        "runtime",
+        "reusable",
+        "shared",
+    )
+    scope_terms = (
+        "aicli",
+        "governance",
+        "human interface",
+        "interfaces",
+        "platform core",
+        "replay",
+        "runtime",
+        "workflow",
+        "worker",
+        "certification",
+    )
+    if slot_id == "architecture_outcome":
+        return (
+            any(term in lowered for term in ("outcome", "enable", "enables", "behavior", "capability"))
+            and any(term in lowered for term in ("platform core", "human interface", "interfaces", "reusable", "shared"))
+        )
+    if slot_id == "architecture_subject":
+        return (
+            any(term in lowered for term in ("behavior", "artifact", "interface", "platform core", "runtime", "workflow"))
+            and any(term in lowered for term in outcome_terms)
+        )
+    if slot_id == "continuation_reference":
+        return any(term in lowered for term in ("current", "existing", "continue", "extend", "new one", "start a new"))
+    if slot_id == "capability_target_choice":
+        return any(term in lowered for term in scope_terms)
+    if slot_id == "implementation_constraints":
+        return any(term in lowered for term in ("preserve", "boundary", "replay", "governance", "thin", "fail closed"))
+    if slot_id in {
+        "capability_target",
+        "desired_outcome",
+        "reuse_delta",
+        "reuse_goal",
+        "implementation_specificity",
+        "active_objective_delta",
+    }:
+        return any(term in lowered for term in outcome_terms) and any(term in lowered for term in scope_terms)
+    return any(term in lowered for term in outcome_terms) and any(term in lowered for term in scope_terms)
+
+
+def _clarification_slot_missing_information(slot_id: str | None) -> str:
+    if slot_id == "architecture_outcome":
+        return "architecture outcome"
+    if slot_id == "architecture_subject":
+        return "user-visible behavior or artifact and the outcome it enables"
+    if slot_id == "continuation_reference":
+        return "whether to extend the active objective or start a new one"
+    if slot_id == "capability_target_choice":
+        return "which inferred governed capability should continue"
+    if slot_id == "capability_target":
+        return "target governed capability or outcome"
+    if slot_id == "desired_outcome":
+        return "desired outcome"
+    if slot_id == "reuse_delta":
+        return "new outcome or delta against existing evidence"
+    if slot_id == "reuse_goal":
+        return "user-visible reuse goal"
+    if slot_id == "implementation_specificity":
+        return "capability or runtime behavior to change"
+    if slot_id == "active_objective_delta":
+        return "next change to the active objective"
+    if slot_id == "implementation_constraints":
+        return "constraints or boundaries to preserve"
+    return "remaining semantic detail"
 
 
 def clarification_reply_substantively_answers_active_questions(
@@ -461,41 +645,10 @@ def clarification_reply_substantively_answers_active_questions(
 ) -> bool:
     """Return whether a free-form reply is enough to consume active clarification slots."""
 
-    text = " ".join(require_string(reply, "reply").split())
-    if len(text) < 20:
-        return False
-    lowered = text.lower()
-    action_terms = (
-        "add",
-        "build",
-        "change",
-        "create",
-        "fix",
-        "implement",
-        "improve",
-        "record",
-        "remove",
-        "reuse",
-        "support",
-        "update",
-    )
-    scope_terms = (
-        "aicli",
-        "governance",
-        "human interface",
-        "interface",
-        "platform core",
-        "replay",
-        "runtime",
-        "workflow",
-    )
-    if not any(term in lowered for term in action_terms):
-        return False
-    if not any(term in lowered for term in scope_terms):
-        return False
-    return bool(deterministic_clarification_question_bindings(
-        active_clarification_state.get("clarification_questions")
-    ))
+    return clarification_satisfaction_verification(
+        reply=reply,
+        active_clarification_state=active_clarification_state,
+    )["clarification_satisfied"] is True
 
 
 def clarification_resolved_development_request(
@@ -1728,6 +1881,23 @@ def _clarification_missing_slots(
     reason = str(development_intent.get("clarification_reason") or "")
     if reason == "continuation request requires deterministic workspace state":
         slots.append(_missing_slot("continuation_reference", 100, "No replay-backed active objective was available."))
+    if reason == "clarification answer did not satisfy active semantic slot":
+        active_slot = str(development_intent.get("active_clarification_open_slot") or "")
+        missing = str(
+            development_intent.get("active_clarification_missing_information")
+            or "remaining semantic detail"
+        )
+        if active_slot:
+            slots.append(
+                {
+                    **_missing_slot(active_slot, 101, f"Clarification answer still lacks {missing}."),
+                    "followup_after_insufficient_answer": True,
+                    "missing_information": missing,
+                    "original_question": development_intent.get(
+                        "active_clarification_original_question"
+                    ),
+                }
+            )
     discovery = development_intent.get("candidate_capability_discovery")
     if not isinstance(discovery, dict):
         discovery = {}
@@ -1800,28 +1970,48 @@ def _clarification_question_for_slot(
     slot_id = str(slot.get("slot_id") or "")
     display = str(candidate.get("display_name") or "governed capability")
     if slot_id == "continuation_reference":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need whether this extends the active objective or starts a new one. State one of those choices."
         return "Are you extending the current governed development objective or starting a new one?"
     if slot_id == "capability_target_choice":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need the governed capability to continue. Name the capability target."
         return "Which inferred governed capability should this continue?"
     if slot_id == "capability_target":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need the target governed capability or outcome. Name the runtime, replay, clarification, governance, or interface behavior to improve."
         return "What outcome should improve runtime, clarification quality, replay behavior, or another governed capability?"
     if slot_id == "desired_outcome":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return f"I still need the outcome the {display} improvement should produce. State the outcome in one sentence."
         return f"What outcome should the {display} improvement produce?"
     if slot_id == "architecture_outcome":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return f"I still need the architecture outcome for {display}. State the reusable behavior or interface outcome it should enable."
         return f"What outcome should the {display} architecture decision enable?"
     if slot_id == "architecture_subject":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need the behavior or artifact to place architecturally and the outcome it should enable."
         return "What user-visible behavior or artifact should be placed architecturally? Include the outcome it should enable."
     if slot_id == "reuse_delta":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return f"I still need the new outcome or delta for the existing {display} evidence."
         artifacts = knowledge_reuse.get("relevant_certified_artifacts")
         if isinstance(artifacts, list) and artifacts:
             return f"What new outcome should be added to the existing {display} evidence?"
         return f"What outcome should change in the existing {display} capability?"
     if slot_id == "reuse_goal":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need the user-visible outcome to check against existing governed work."
         return "What user-visible outcome should I check against existing governed work?"
     if slot_id == "implementation_specificity":
+        if slot.get("followup_after_insufficient_answer") is True:
+            return "I still need the capability or runtime behavior this implementation should change."
         return "What should be improved or built? Name the capability or runtime behavior this implementation should change."
     if slot_id == "active_objective_delta":
         objective = str(active_objective or "active objective")
+        if slot.get("followup_after_insufficient_answer") is True:
+            return f"I still need the next change to {objective}. State the concrete change."
         return f"What should change next in {objective}?"
     return "What remaining outcome should this governed development work produce?"
 
