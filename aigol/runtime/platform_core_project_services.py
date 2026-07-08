@@ -312,6 +312,9 @@ def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None
         "session_id": workspace_state.get("session_id"),
         "original_message": pending.get("original_message"),
         "clarification_questions": unique_strings(pending.get("clarification_questions")),
+        "clarification_question_bindings": deterministic_clarification_question_bindings(
+            pending.get("clarification_questions")
+        ),
         "pending_clarification_request": deepcopy(pending),
         "replay_backed": True,
         "platform_core_authority": True,
@@ -334,8 +337,27 @@ def resolve_uhi_clarification_continuity(
         message=reply,
         workspace_state=workspace_state,
     )
+    resolution_source = "CLARIFICATION_REPLY_STANDALONE"
+    if (
+        reply_resolution.get("summary_admissible") is not True
+        and clarification_reply_substantively_answers_active_questions(
+            reply=reply,
+            active_clarification_state=active_clarification_state,
+        )
+    ):
+        resolution_source = "ORIGINAL_REQUEST_WITH_BOUND_CLARIFICATION_REPLY"
+        reply_resolution = resolve_development_intent(
+            message=clarification_resolved_development_request(
+                reply=reply,
+                active_clarification_state=active_clarification_state,
+            ),
+            workspace_state=workspace_state,
+        )
     resolved = reply_resolution.get("summary_admissible") is True
     status = "CLARIFICATION_RESOLVED" if resolved else "CLARIFICATION_STILL_REQUIRED"
+    question_bindings = deterministic_clarification_question_bindings(
+        active_clarification_state.get("clarification_questions")
+    )
     continuity_artifact = {
         "artifact_type": "PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION,
@@ -344,6 +366,11 @@ def resolve_uhi_clarification_continuity(
         "session_id": active_clarification_state.get("session_id"),
         "reply_hash": replay_hash(reply),
         "reply_bound_to_active_clarification": True,
+        "reply_resolution_source": resolution_source,
+        "clarification_question_bindings": question_bindings,
+        "answered_clarification_question_ids": [
+            binding["question_id"] for binding in question_bindings
+        ] if resolved else [],
         "clarification_continuity_status": status,
         "clarification_resolved": resolved,
         "new_governed_request_created": False,
@@ -386,6 +413,11 @@ def resolve_uhi_clarification_continuity(
     enriched_resolution.update(
         {
             "clarification_reply_bound": True,
+            "clarification_reply_resolution_source": resolution_source,
+            "clarification_question_bindings": question_bindings,
+            "answered_clarification_question_ids": [
+                binding["question_id"] for binding in question_bindings
+            ] if resolved else [],
             "clarification_continuity_status": status,
             "clarification_resolved": resolved,
             "clarification_continuity_replay_reference": continuity_artifact["replay_reference"],
@@ -400,6 +432,90 @@ def resolve_uhi_clarification_continuity(
     )
     enriched_resolution["artifact_hash"] = replay_hash(enriched_resolution)
     return enriched_resolution, continuity_artifact
+
+
+def deterministic_clarification_question_bindings(questions: Any) -> list[dict[str, Any]]:
+    """Create stable identifiers for replay-backed clarification questions."""
+
+    return [
+        {
+            "question_id": f"CLARIFICATION_QUESTION_{replay_hash(question)[:16]}",
+            "question_text": question,
+            "binding_authority": "PLATFORM_CORE",
+        }
+        for question in unique_strings(questions)
+    ]
+
+
+def clarification_reply_substantively_answers_active_questions(
+    *,
+    reply: str,
+    active_clarification_state: dict[str, Any],
+) -> bool:
+    """Return whether a free-form reply is enough to consume active clarification slots."""
+
+    text = " ".join(require_string(reply, "reply").split())
+    if len(text) < 20:
+        return False
+    lowered = text.lower()
+    action_terms = (
+        "add",
+        "build",
+        "change",
+        "create",
+        "fix",
+        "implement",
+        "improve",
+        "record",
+        "remove",
+        "reuse",
+        "support",
+        "update",
+    )
+    scope_terms = (
+        "aicli",
+        "governance",
+        "human interface",
+        "interface",
+        "platform core",
+        "replay",
+        "runtime",
+        "workflow",
+    )
+    if not any(term in lowered for term in action_terms):
+        return False
+    if not any(term in lowered for term in scope_terms):
+        return False
+    return bool(deterministic_clarification_question_bindings(
+        active_clarification_state.get("clarification_questions")
+    ))
+
+
+def clarification_resolved_development_request(
+    *,
+    reply: str,
+    active_clarification_state: dict[str, Any],
+) -> str:
+    """Build the Platform Core-owned request resolved from a clarification answer."""
+
+    original = str(active_clarification_state.get("original_message") or "").strip()
+    questions = [
+        binding["question_text"]
+        for binding in deterministic_clarification_question_bindings(
+            active_clarification_state.get("clarification_questions")
+        )
+    ]
+    question_text = "\n".join(f"- {question}" for question in questions)
+    return "\n".join(
+        [
+            "Implement the clarification-resolved governed development request.",
+            f"Original request: {original}",
+            "Clarification questions:",
+            question_text,
+            f"Clarification answer: {require_string(reply, 'reply')}",
+            "Implement as a governed development workflow.",
+        ]
+    )
 
 
 def next_workspace_state_index(session_root: Path) -> int:
