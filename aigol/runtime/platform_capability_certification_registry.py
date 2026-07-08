@@ -208,6 +208,19 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="PROVIDER_PLATFORM_OPERATIONAL_COMPLETION",
         certification_version="G14-43",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_CORE_COGNITION_LAYER_FOUNDATION",
+        capability_owner="PLATFORM_CORE_COGNITION_LAYER",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G16-01",
+        certification_evidence=("docs/governance/G16_01_PCCL_FOUNDATION.md",),
+        certification_date="2026-07-08",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_core_cognition_layer",
+        verification_type="IMPLEMENTATION",
+        certification_version="G16-01",
+    ),
 )
 
 
