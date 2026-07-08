@@ -8,6 +8,9 @@ from typing import Any
 
 from aigol.runtime.native_development_task_intake_runtime import is_native_development_prompt
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_capability_certification_registry import (
+    list_platform_capability_certifications,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -31,6 +34,9 @@ PLATFORM_CORE_HUMAN_INTENT_CAPABILITY_RESOLUTION_VERSION = (
 )
 PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION = (
     "G15_HIR_02_REPLAY_BACKED_CLARIFICATION_CONTINUITY_V1"
+)
+PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLANNER_VERSION = (
+    "G15_HIR_08_DETERMINISTIC_CLARIFICATION_PLANNER_V1"
 )
 
 
@@ -203,6 +209,7 @@ def prepare_unified_human_interface_project_context(
         guidance=guidance,
         knowledge_reuse=knowledge_reuse,
         development_intent=development_intent,
+        workspace_state=prior_state,
     )
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
@@ -1377,6 +1384,7 @@ def human_conversation_experience_from_resolution(
     guidance: dict[str, Any] | None,
     knowledge_reuse: dict[str, Any] | None,
     development_intent: dict[str, Any],
+    workspace_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the canonical Platform Core human conversation response model."""
 
@@ -1385,6 +1393,13 @@ def human_conversation_experience_from_resolution(
     guidance_model = guidance if isinstance(guidance, dict) else {}
     reuse_model = knowledge_reuse if isinstance(knowledge_reuse, dict) else {}
     intent = development_intent if isinstance(development_intent, dict) else {}
+    clarification_plan = deterministic_clarification_plan(
+        message=prompt,
+        workspace_state=workspace_state,
+        guidance=guidance_model,
+        knowledge_reuse=reuse_model,
+        development_intent=intent,
+    )
     response_mode = "INFORMATIONAL"
     headline = "I inspected the project state."
     explanation = "I did not find enough deterministic development intent to prepare governed execution."
@@ -1406,7 +1421,7 @@ def human_conversation_experience_from_resolution(
             headline = "I checked for reusable project capability evidence."
         elif _architecture_question_detected(lowered):
             headline = "I can help place this architecturally."
-        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Answer the question with the smallest useful detail."
     elif _reuse_request_detected(lowered):
         response_mode = "CLARIFICATION"
@@ -1415,7 +1430,7 @@ def human_conversation_experience_from_resolution(
             "Reuse decisions come from deterministic workspace and governance evidence. "
             "I inferred candidate targets first and will only ask if the goal still has more than one safe reading."
         )
-        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Choose the goal outcome or confirm the inferred target."
     elif _architecture_question_detected(lowered):
         response_mode = "CLARIFICATION"
@@ -1424,7 +1439,7 @@ def human_conversation_experience_from_resolution(
             "Architecture placement is a Platform Core decision based on the capability being discussed. "
             "I inferred candidate ownership targets before asking for clarification."
         )
-        questions = _conversation_questions_for_prompt(prompt, reuse_model, intent)
+        questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Confirm the desired outcome for the inferred ownership decision."
     elif _vague_improvement_or_ideation_detected(lowered):
         response_mode = "CLARIFICATION"
@@ -1433,10 +1448,7 @@ def human_conversation_experience_from_resolution(
             "Your request sounds like a development direction, but it does not yet identify the target "
             "capability or desired outcome."
         )
-        questions = [
-            "What should be improved or built?",
-            "What outcome would tell you the improvement is successful?",
-        ]
+        questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Name the target capability or desired outcome."
     return _conversation_experience_artifact(
         message=prompt,
@@ -1448,6 +1460,7 @@ def human_conversation_experience_from_resolution(
         guidance=guidance_model,
         knowledge_reuse=reuse_model,
         development_intent=intent,
+        clarification_plan=clarification_plan,
     )
 
 
@@ -1462,6 +1475,7 @@ def _conversation_experience_artifact(
     guidance: dict[str, Any],
     knowledge_reuse: dict[str, Any],
     development_intent: dict[str, Any],
+    clarification_plan: dict[str, Any],
 ) -> dict[str, Any]:
     approval_summary = _conversation_approval_summary(
         message=message,
@@ -1487,6 +1501,11 @@ def _conversation_experience_artifact(
         "user_headline": headline,
         "user_explanation": explanation,
         "clarification_questions": questions,
+        "deterministic_clarification_plan": deepcopy(clarification_plan),
+        "clarification_planner_version": clarification_plan.get("runtime_version"),
+        "clarification_planner_authority": clarification_plan.get("planner_authority"),
+        "clarification_planner_selected_slot": clarification_plan.get("selected_missing_slot"),
+        "clarification_question_count": len(questions),
         "recommended_next_user_action": next_step,
         "progress_messages": [
             "Workspace state inspected.",
@@ -1574,6 +1593,254 @@ def _conversation_explanation_for_clarification(prompt: str, intent: dict[str, A
     if reason == "guided development request lacks deterministic implementation specificity":
         return "The request sounds like development work, but the target capability is not specific enough yet."
     return "I need one more detail before converting this into governed development work."
+
+
+def deterministic_clarification_plan(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    guidance: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+    development_intent: dict[str, Any],
+) -> dict[str, Any]:
+    """Plan the smallest deterministic clarification needed from existing evidence."""
+
+    prompt = require_string(message, "message")
+    lowered = " ".join(prompt.lower().split())
+    candidate = _selected_candidate_from_intent(development_intent)
+    discovery = development_intent.get("candidate_capability_discovery")
+    if not isinstance(discovery, dict):
+        discovery = {}
+    active_objective = (
+        workspace_state.get("active_development_objective")
+        if isinstance(workspace_state, dict)
+        else None
+    )
+    previous_answers = _previous_clarification_answer_ids(workspace_state)
+    goal_mapping = development_intent.get("goal_mapping")
+    if not isinstance(goal_mapping, dict):
+        goal_mapping = {}
+    candidate_goal_target = str(goal_mapping.get("goal_target") or "")
+    if not candidate_goal_target and isinstance(discovery, dict):
+        candidate_goal_target = str(discovery.get("selected_goal_target") or "")
+    missing_slots = (
+        []
+        if development_intent.get("summary_admissible") is True
+        else _clarification_missing_slots(
+            lowered=lowered,
+            workspace_state=workspace_state,
+            active_objective=active_objective,
+            development_intent=development_intent,
+            knowledge_reuse=knowledge_reuse,
+            candidate=candidate,
+            candidate_goal_target=candidate_goal_target,
+        )
+    )
+    ranked_slots = sorted(
+        missing_slots,
+        key=lambda item: (-int(item["uncertainty_rank"]), str(item["slot_id"])),
+    )
+    selected_slot = ranked_slots[0] if ranked_slots else None
+    question = (
+        _clarification_question_for_slot(
+            slot=selected_slot,
+            candidate=candidate,
+            knowledge_reuse=knowledge_reuse,
+            active_objective=active_objective,
+        )
+        if isinstance(selected_slot, dict)
+        else None
+    )
+    certification_records = list_platform_capability_certifications()
+    certification_capabilities = [
+        str(record.get("capability_id"))
+        for record in certification_records
+        if isinstance(record, dict) and record.get("capability_id")
+    ]
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLAN_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLANNER_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "planner_authority": "PLATFORM_CORE",
+        "planning_mode": "DETERMINISTIC_SEMANTIC_PLANNING",
+        "raw_prompt": prompt,
+        "input_sequence": [
+            "HUMAN_REQUEST",
+            "WORKSPACE_CONTEXT",
+            "REPLAY_CONTEXT",
+            "GOVERNANCE_CONTEXT",
+            "CERTIFICATION_CONTEXT",
+            "CONVERSATION_CONTEXT",
+            "CANDIDATE_GOVERNED_GOALS",
+            "MISSING_SEMANTIC_SLOTS",
+            "RANK_REMAINING_UNCERTAINTY",
+            "CHOOSE_HIGHEST_VALUE_CLARIFICATION",
+        ],
+        "deterministic_inputs": {
+            "human_request_hash": replay_hash(prompt),
+            "workspace_context_available": isinstance(workspace_state, dict),
+            "workspace_state_hash": workspace_state.get("artifact_hash") if isinstance(workspace_state, dict) else None,
+            "replay_continuity_available": isinstance(workspace_state, dict),
+            "clarification_continuity_available": bool(previous_answers),
+            "canonical_semantic_artifact_available": False,
+            "certification_registry_available": True,
+            "certified_capability_count": len(certification_capabilities),
+            "governance_evidence_available": bool(knowledge_reuse.get("relevant_certified_artifacts")),
+            "previous_clarification_answers": previous_answers,
+            "active_governed_workflow": active_objective,
+            "project_objective": guidance.get("active_development_objective"),
+            "runtime_state_available": bool(
+                isinstance(workspace_state, dict) and workspace_state.get("implementation_history")
+            ),
+        },
+        "candidate_governed_goals": deepcopy(development_intent.get("candidate_capabilities") or []),
+        "selected_candidate_capability": deepcopy(candidate),
+        "missing_semantic_slots": ranked_slots,
+        "selected_missing_slot": selected_slot.get("slot_id") if isinstance(selected_slot, dict) else None,
+        "selected_clarification_question": question,
+        "clarification_questions": [question] if question else [],
+        "clarification_question_count": 1 if question else 0,
+        "asks_exactly_one_question": question is not None,
+        "already_known_information_reused": True,
+        "resolved_clarifications_suppressed": bool(previous_answers),
+        "generic_template_used": False,
+        "human_interface_authority": False,
+        "platform_core_owns_clarification_semantics": True,
+        "llm_reasoning_used": False,
+        "probabilistic_routing_used": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _clarification_missing_slots(
+    *,
+    lowered: str,
+    workspace_state: dict[str, Any] | None,
+    active_objective: Any,
+    development_intent: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+    candidate: dict[str, Any],
+    candidate_goal_target: str,
+) -> list[dict[str, Any]]:
+    slots: list[dict[str, Any]] = []
+    reason = str(development_intent.get("clarification_reason") or "")
+    if reason == "continuation request requires deterministic workspace state":
+        slots.append(_missing_slot("continuation_reference", 100, "No replay-backed active objective was available."))
+    discovery = development_intent.get("candidate_capability_discovery")
+    if not isinstance(discovery, dict):
+        discovery = {}
+    if discovery.get("ambiguity_remaining_after_deterministic_analysis") is True:
+        slots.append(_missing_slot("capability_target_choice", 95, "Multiple deterministic capability targets tied."))
+    if not candidate and candidate_goal_target in {"", "general_project_goal"}:
+        slots.append(_missing_slot("capability_target", 90, "No deterministic capability target was selected."))
+    if _vague_improvement_or_ideation_detected(lowered):
+        if "implementation" in lowered:
+            slots.append(_missing_slot("implementation_specificity", 91, "Implementation request lacks target behavior."))
+        elif candidate or candidate_goal_target not in {"", "general_project_goal"}:
+            slots.append(_missing_slot("desired_outcome", 85, "The capability target is inferred but outcome is missing."))
+        else:
+            slots.append(_missing_slot("capability_target", 90, "The request is ideation without a target capability."))
+    if _architecture_question_detected(lowered):
+        if candidate:
+            slots.append(
+                _missing_slot(
+                    "architecture_outcome",
+                    88,
+                    "Architecture placement needs the outcome before ownership can be determined.",
+                )
+            )
+        else:
+            slots.append(_missing_slot("architecture_subject", 92, "Architecture placement subject is missing."))
+    if _reuse_request_detected(lowered):
+        if knowledge_reuse.get("reuse_recommended") is True or candidate:
+            slots.append(_missing_slot("reuse_delta", 86, "Reuse evidence exists but the requested delta is missing."))
+        else:
+            slots.append(_missing_slot("reuse_goal", 84, "Reuse request lacks the user-visible goal."))
+    if reason == "guided development request lacks deterministic implementation specificity":
+        slots.append(_missing_slot("implementation_specificity", 89, "Guided request lacks target capability detail."))
+    if active_objective and _workspace_reference_detected(lowered):
+        slots = [slot for slot in slots if slot["slot_id"] not in {"continuation_reference", "capability_target"}]
+        if not slots and development_intent.get("summary_admissible") is not True:
+            slots.append(_missing_slot("active_objective_delta", 83, "Active objective is known but requested delta is missing."))
+    if not slots and development_intent.get("clarification_required") is True:
+        slots.append(_missing_slot("desired_outcome", 80, "Summary admissibility still requires one outcome detail."))
+    return _dedupe_missing_slots(slots)
+
+
+def _missing_slot(slot_id: str, uncertainty_rank: int, evidence_reason: str) -> dict[str, Any]:
+    return {
+        "slot_id": slot_id,
+        "uncertainty_rank": uncertainty_rank,
+        "evidence_reason": evidence_reason,
+        "slot_authority": "PLATFORM_CORE",
+    }
+
+
+def _dedupe_missing_slots(slots: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_id: dict[str, dict[str, Any]] = {}
+    for slot in slots:
+        slot_id = str(slot.get("slot_id") or "")
+        existing = by_id.get(slot_id)
+        if existing is None or int(slot["uncertainty_rank"]) > int(existing["uncertainty_rank"]):
+            by_id[slot_id] = slot
+    return list(by_id.values())
+
+
+def _clarification_question_for_slot(
+    *,
+    slot: dict[str, Any] | None,
+    candidate: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+    active_objective: Any,
+) -> str | None:
+    if not isinstance(slot, dict):
+        return None
+    slot_id = str(slot.get("slot_id") or "")
+    display = str(candidate.get("display_name") or "governed capability")
+    if slot_id == "continuation_reference":
+        return "Are you extending the current governed development objective or starting a new one?"
+    if slot_id == "capability_target_choice":
+        return "Which inferred governed capability should this continue?"
+    if slot_id == "capability_target":
+        return "What outcome should improve runtime, clarification quality, replay behavior, or another governed capability?"
+    if slot_id == "desired_outcome":
+        return f"What outcome should the {display} improvement produce?"
+    if slot_id == "architecture_outcome":
+        return f"What outcome should the {display} architecture decision enable?"
+    if slot_id == "architecture_subject":
+        return "What user-visible behavior or artifact should be placed architecturally? Include the outcome it should enable."
+    if slot_id == "reuse_delta":
+        artifacts = knowledge_reuse.get("relevant_certified_artifacts")
+        if isinstance(artifacts, list) and artifacts:
+            return f"What new outcome should be added to the existing {display} evidence?"
+        return f"What outcome should change in the existing {display} capability?"
+    if slot_id == "reuse_goal":
+        return "What user-visible outcome should I check against existing governed work?"
+    if slot_id == "implementation_specificity":
+        return "What should be improved or built? Name the capability or runtime behavior this implementation should change."
+    if slot_id == "active_objective_delta":
+        objective = str(active_objective or "active objective")
+        return f"What should change next in {objective}?"
+    return "What remaining outcome should this governed development work produce?"
+
+
+def _clarification_questions_from_plan(plan: dict[str, Any]) -> list[str]:
+    questions = unique_strings(plan.get("clarification_questions"))
+    return questions[:1]
+
+
+def _previous_clarification_answer_ids(workspace_state: dict[str, Any] | None) -> list[str]:
+    if not isinstance(workspace_state, dict):
+        return []
+    pending = workspace_state.get("pending_clarification_request")
+    if isinstance(pending, dict):
+        return unique_strings(pending.get("answered_clarification_question_ids"))
+    continuity = workspace_state.get("clarification_continuity")
+    if isinstance(continuity, dict):
+        return unique_strings(continuity.get("answered_clarification_question_ids"))
+    return []
 
 
 def _conversation_questions_for_prompt(
