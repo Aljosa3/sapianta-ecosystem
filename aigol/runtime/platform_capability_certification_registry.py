@@ -247,6 +247,19 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="IMPLEMENTATION",
         certification_version="G16-03",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="CANONICAL_POLICY_ENVELOPE",
+        capability_owner="PLATFORM_CORE_COGNITION_LAYER",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G16-04",
+        certification_evidence=("docs/governance/G16_04_CANONICAL_POLICY_ENVELOPE.md",),
+        certification_date="2026-07-08",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_core_cognition_layer",
+        verification_type="IMPLEMENTATION",
+        certification_version="G16-04",
+    ),
 )
 
 

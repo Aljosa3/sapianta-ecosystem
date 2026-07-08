@@ -2,9 +2,10 @@
 
 G16-01 registers PCCL as a first-class Platform Core service boundary. G16-02
 adds deterministic session state. G16-03 adds a canonical context envelope that
-aggregates certified Platform Core references only; it does not generate
-prompts, evaluate policy, invoke providers, generate proposals, or run
-cognitive loops.
+aggregates certified Platform Core references only. G16-04 adds a canonical
+policy envelope that aggregates governance boundary references only; it does
+not generate prompts, evaluate policy, authorize execution, invoke providers,
+generate proposals, or run cognitive loops.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from aigol.runtime.transport.serialization import replay_hash
 PCCL_SERVICE_VERSION = "G16_01_PLATFORM_CORE_COGNITION_LAYER_FOUNDATION_V1"
 PCCL_SESSION_RUNTIME_VERSION = "G16_02_PCCL_SESSION_RUNTIME_V1"
 PCCL_CONTEXT_ENVELOPE_VERSION = "G16_03_CANONICAL_CONTEXT_ENVELOPE_V1"
+PCCL_POLICY_ENVELOPE_VERSION = "G16_04_CANONICAL_POLICY_ENVELOPE_V1"
 PCCL_SERVICE_NAME = "PlatformCoreCognitionLayer"
 PCCL_FOUNDATION_STATUS = "PCCL_FOUNDATION_REGISTERED"
 PCCL_SESSION_DECLARED = "PCCL_SESSION_DECLARED"
@@ -27,6 +29,7 @@ PCCL_RESERVED_FOR_FUTURE_MILESTONE = "PCCL_RESERVED_FOR_FUTURE_MILESTONE"
 
 PCCL_SESSION_RUNTIME_ARTIFACT_V1 = "PCCL_SESSION_RUNTIME_ARTIFACT_V1"
 CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1 = "CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1"
+CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1 = "CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1"
 PCCL_SESSION_CREATED = "PCCL_SESSION_CREATED"
 PCCL_SESSION_ACTIVE = "PCCL_SESSION_ACTIVE"
 PCCL_SESSION_WAITING = "PCCL_SESSION_WAITING"
@@ -135,6 +138,32 @@ CONTEXT_REFERENCE_OWNER_BY_TYPE = {
     "REPLAY_REFERENCE": "PLATFORM_CORE_REPLAY",
     "GOVERNANCE_REFERENCE": "PLATFORM_CORE_GOVERNANCE",
     "CERTIFICATION_REFERENCE": "PLATFORM_CORE_CERTIFICATION",
+}
+
+CANONICAL_POLICY_REFERENCE_TYPES = frozenset(
+    {
+        "PCCL_SESSION",
+        "CONTEXT_ENVELOPE",
+        "GOVERNANCE_POLICY",
+        "CONSTITUTIONAL_CONSTRAINT",
+        "REPLAY_REQUIREMENT",
+        "HUMAN_APPROVAL_REQUIREMENT",
+        "PROVIDER_PERMISSION",
+        "WORKER_BOUNDARY",
+        "CERTIFICATION_REQUIREMENT",
+    }
+)
+
+POLICY_REFERENCE_OWNER_BY_TYPE = {
+    "PCCL_SESSION": "PLATFORM_CORE_COGNITION_LAYER",
+    "CONTEXT_ENVELOPE": "PLATFORM_CORE_COGNITION_LAYER",
+    "GOVERNANCE_POLICY": "PLATFORM_CORE_GOVERNANCE",
+    "CONSTITUTIONAL_CONSTRAINT": "PLATFORM_CORE_GOVERNANCE",
+    "REPLAY_REQUIREMENT": "PLATFORM_CORE_REPLAY",
+    "HUMAN_APPROVAL_REQUIREMENT": "HUMAN_AUTHORITY",
+    "PROVIDER_PERMISSION": "PROVIDER_PLATFORM",
+    "WORKER_BOUNDARY": "WORKER_PLATFORM",
+    "CERTIFICATION_REQUIREMENT": "PLATFORM_CORE_CERTIFICATION",
 }
 
 
@@ -359,6 +388,23 @@ class PlatformCoreCognitionLayer:
             context_references=context_references,
         )
 
+    def create_policy_envelope(
+        self,
+        *,
+        policy_envelope_id: str,
+        created_at: str,
+        pccl_session: dict[str, Any],
+        context_envelope: dict[str, Any],
+        policy_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    ) -> dict[str, Any]:
+        return create_canonical_policy_envelope(
+            policy_envelope_id=policy_envelope_id,
+            created_at=created_at,
+            pccl_session=pccl_session,
+            context_envelope=context_envelope,
+            policy_references=policy_references,
+        )
+
 
 def platform_core_cognition_layer_manifest() -> dict[str, Any]:
     """Return deterministic PCCL ownership, lifecycle, and boundary metadata."""
@@ -377,6 +423,7 @@ def platform_core_cognition_layer_manifest() -> dict[str, Any]:
         "deterministic_lifecycle": list(PCCL_LIFECYCLE),
         "contracts": [descriptor["contract_name"] for descriptor in _contract_descriptor_dicts()],
         "canonical_context_envelope_implemented": True,
+        "canonical_policy_envelope_implemented": True,
         "cognition_loop_implemented": False,
         "provider_invocation_implemented": False,
         "context_assembly_implemented": False,
@@ -619,6 +666,79 @@ def validate_canonical_context_envelope(envelope: dict[str, Any]) -> dict[str, A
     return _validated_context_envelope(envelope)
 
 
+def create_canonical_policy_envelope(
+    *,
+    policy_envelope_id: str,
+    created_at: str,
+    pccl_session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+) -> dict[str, Any]:
+    """Create a deterministic PCCL policy envelope of references only.
+
+    The envelope carries canonical governance and execution-boundary references
+    for future providers. It does not execute policy, evaluate policy, grant
+    authorization, invoke governance, invoke providers, or invoke workers.
+    """
+
+    session = _validated_session(pccl_session)
+    context = _validated_context_envelope(context_envelope)
+    if context["pccl_session_id"] != session["session_id"] or context["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: context session mismatch")
+    references = _canonical_policy_references(
+        session=session,
+        context_envelope=context,
+        policy_references=policy_references,
+    )
+    artifact = {
+        "artifact_type": CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1,
+        "pccl_service_version": PCCL_SERVICE_VERSION,
+        "pccl_session_runtime_version": PCCL_SESSION_RUNTIME_VERSION,
+        "pccl_context_envelope_version": PCCL_CONTEXT_ENVELOPE_VERSION,
+        "pccl_policy_envelope_version": PCCL_POLICY_ENVELOPE_VERSION,
+        "policy_envelope_id": _require_string(policy_envelope_id, "policy_envelope_id"),
+        "created_at": _require_string(created_at, "created_at"),
+        "pccl_session_id": session["session_id"],
+        "pccl_session_status": session["session_status"],
+        "pccl_session_hash": session["artifact_hash"],
+        "context_envelope_id": context["envelope_id"],
+        "context_envelope_hash": context["artifact_hash"],
+        "human_goal_reference": session["originating_human_goal_reference"],
+        "policy_references": references,
+        "policy_reference_count": len(references),
+        "included_policy_reference_types": sorted({reference["reference_type"] for reference in references}),
+        "source_owners": {
+            reference_type: POLICY_REFERENCE_OWNER_BY_TYPE[reference_type]
+            for reference_type in sorted({reference["reference_type"] for reference in references})
+        },
+        "policy_references_aggregated": True,
+        "reference_only_envelope": True,
+        "governance_policy_payload_embedded": False,
+        "policy_executed": False,
+        "policy_evaluated": False,
+        "authorization_granted": False,
+        "governance_invoked": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "runtime_invoked": False,
+        "prompt_generated": False,
+        "proposal_generated": False,
+        "replay_modified": False,
+        "replay_certified": False,
+        "certification_performed": False,
+        "provider_specific": False,
+        "authority_flags": deepcopy(PCCL_AUTHORITY_FLAGS),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def validate_canonical_policy_envelope(envelope: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed validation for a canonical PCCL policy envelope."""
+
+    return _validated_policy_envelope(envelope)
+
+
 def _contract_descriptor_dicts() -> tuple[dict[str, Any], ...]:
     descriptors = (
         PCCLContractDescriptor("PCCLSession", "cognitive session lifecycle"),
@@ -698,6 +818,82 @@ def _context_reference_entry(
         "prompt_generated": False,
         "provider_invoked": False,
         "governance_modified": False,
+        "replay_modified": False,
+    }
+    entry["reference_hash"] = replay_hash(entry)
+    return entry
+
+
+def _canonical_policy_references(
+    *,
+    session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_references: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+) -> list[dict[str, Any]]:
+    if not isinstance(policy_references, (list, tuple)):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: policy_references must be a sequence")
+    references = [
+        _policy_reference_entry(
+            reference_type="PCCL_SESSION",
+            reference=session["session_id"],
+            artifact_hash=session["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _policy_reference_entry(
+            reference_type="CONTEXT_ENVELOPE",
+            reference=context_envelope["envelope_id"],
+            artifact_hash=context_envelope["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+    ]
+    references.extend(_policy_reference_entry_from_dict(reference) for reference in policy_references)
+    unique: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for reference in references:
+        key = (
+            reference["reference_type"],
+            reference["reference"],
+            reference["artifact_hash"],
+            reference["certification_reference"],
+        )
+        unique[key] = reference
+    return [
+        deepcopy(unique[key])
+        for key in sorted(unique, key=lambda item: (item[0], item[1], item[2], item[3]))
+    ]
+
+
+def _policy_reference_entry_from_dict(reference: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: policy reference must be object")
+    return _policy_reference_entry(
+        reference_type=reference.get("reference_type"),
+        reference=reference.get("reference"),
+        artifact_hash=reference.get("artifact_hash", ""),
+        certification_reference=reference.get("certification_reference", ""),
+    )
+
+
+def _policy_reference_entry(
+    *,
+    reference_type: Any,
+    reference: Any,
+    artifact_hash: Any,
+    certification_reference: Any,
+) -> dict[str, Any]:
+    normalized_type = _normalize_policy_reference_type(reference_type)
+    entry = {
+        "reference_type": normalized_type,
+        "reference_owner": POLICY_REFERENCE_OWNER_BY_TYPE[normalized_type],
+        "reference": _require_string(reference, "policy reference"),
+        "artifact_hash": _optional_artifact_hash(artifact_hash),
+        "certification_reference": _optional_string(certification_reference),
+        "reference_payload_embedded": False,
+        "policy_executed": False,
+        "policy_evaluated": False,
+        "authorization_granted": False,
+        "governance_invoked": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
         "replay_modified": False,
     }
     entry["reference_hash"] = replay_hash(entry)
@@ -963,6 +1159,86 @@ def _validated_context_reference(reference: Any) -> None:
             raise FailClosedRuntimeError(f"canonical context envelope failed closed: reference {flag} must be false")
 
 
+def _validated_policy_envelope(envelope: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(envelope, dict):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: envelope must be object")
+    if envelope.get("artifact_type") != CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: invalid artifact type")
+    expected = deepcopy(envelope)
+    actual_hash = expected.pop("artifact_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: artifact hash mismatch")
+    if envelope.get("pccl_policy_envelope_version") != PCCL_POLICY_ENVELOPE_VERSION:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: invalid version")
+    references = envelope.get("policy_references")
+    if not isinstance(references, list) or not references:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: references required")
+    recalculated_types = sorted({reference.get("reference_type") for reference in references})
+    if envelope.get("included_policy_reference_types") != recalculated_types:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference type index mismatch")
+    if envelope.get("policy_reference_count") != len(references):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference count mismatch")
+    if "PCCL_SESSION" not in recalculated_types or "CONTEXT_ENVELOPE" not in recalculated_types:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: required references missing")
+    if envelope.get("policy_references_aggregated") is not True or envelope.get("reference_only_envelope") is not True:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference-only invariants invalid")
+    expected_source_owners = {
+        reference_type: POLICY_REFERENCE_OWNER_BY_TYPE[reference_type]
+        for reference_type in recalculated_types
+    }
+    if envelope.get("source_owners") != expected_source_owners:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: source owner index mismatch")
+    if envelope.get("authority_flags") != PCCL_AUTHORITY_FLAGS:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: authority flags invalid")
+    for flag in (
+        "governance_policy_payload_embedded",
+        "policy_executed",
+        "policy_evaluated",
+        "authorization_granted",
+        "governance_invoked",
+        "provider_invoked",
+        "worker_invoked",
+        "runtime_invoked",
+        "prompt_generated",
+        "proposal_generated",
+        "replay_modified",
+        "replay_certified",
+        "certification_performed",
+        "provider_specific",
+    ):
+        if envelope.get(flag) is not False:
+            raise FailClosedRuntimeError(f"canonical policy envelope failed closed: {flag} must be false")
+    for reference in references:
+        _validated_policy_reference(reference)
+    return deepcopy(envelope)
+
+
+def _validated_policy_reference(reference: Any) -> None:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference must be object")
+    expected = deepcopy(reference)
+    actual_hash = expected.pop("reference_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference hash mismatch")
+    _normalize_policy_reference_type(reference.get("reference_type"))
+    if reference.get("reference_owner") != POLICY_REFERENCE_OWNER_BY_TYPE[reference["reference_type"]]:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: reference owner mismatch")
+    _require_string(reference.get("reference"), "policy reference")
+    _optional_artifact_hash(reference.get("artifact_hash", ""))
+    for flag in (
+        "reference_payload_embedded",
+        "policy_executed",
+        "policy_evaluated",
+        "authorization_granted",
+        "governance_invoked",
+        "provider_invoked",
+        "worker_invoked",
+        "replay_modified",
+    ):
+        if reference.get(flag) is not False:
+            raise FailClosedRuntimeError(f"canonical policy envelope failed closed: reference {flag} must be false")
+
+
 def _validated_event(event: Any, expected_index: int) -> None:
     if not isinstance(event, dict):
         raise FailClosedRuntimeError("PCCL session runtime failed closed: event must be object")
@@ -1017,6 +1293,13 @@ def _normalize_context_reference_type(value: Any) -> str:
     reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
     if reference_type not in CANONICAL_CONTEXT_REFERENCE_TYPES:
         raise FailClosedRuntimeError("canonical context envelope failed closed: unsupported reference type")
+    return reference_type
+
+
+def _normalize_policy_reference_type(value: Any) -> str:
+    reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
+    if reference_type not in CANONICAL_POLICY_REFERENCE_TYPES:
+        raise FailClosedRuntimeError("canonical policy envelope failed closed: unsupported reference type")
     return reference_type
 
 
