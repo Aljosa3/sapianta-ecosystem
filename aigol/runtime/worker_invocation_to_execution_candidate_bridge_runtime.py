@@ -656,6 +656,8 @@ def _resolve_replay_reference(reference: str, *, anchor: Path) -> Path:
     path = Path(text)
     if path.is_absolute():
         return path
+    if path.parts and path.parts[0] in {".runtime", "runtime"}:
+        return path.resolve()
     return (anchor.parent / path).resolve()
 
 

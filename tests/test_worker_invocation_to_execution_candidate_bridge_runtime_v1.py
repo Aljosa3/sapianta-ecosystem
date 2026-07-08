@@ -147,6 +147,47 @@ def test_domain_worker_invocation_becomes_external_worker_task_package(tmp_path)
     assert task["worker_authorization"]["authorized"] is True
 
 
+def test_worker_invocation_bridge_resolves_repository_relative_dispatch_replay_reference(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    replay_root = (
+        Path(".runtime")
+        / "aicli"
+        / "AICLI-REFERENCE-SESSION"
+        / "TURN-000010"
+        / "certified_development_continuation"
+        / "worker_lifecycle_continuation"
+    )
+    invocation_capture = _invoke(
+        replay_root,
+        prompt="Create a filesystem worker.",
+        suffix="repository-relative-dispatch",
+    )
+    invocation = invocation_capture["worker_invocation_artifact"]
+
+    assert invocation_capture["worker_invocation_replay_reference"].startswith(".runtime/")
+
+    bridge_capture = bridge_worker_invocation_to_execution_candidate(
+        candidate_id="WORKER-EXECUTION-CANDIDATE-REPOSITORY-RELATIVE-DISPATCH-000001",
+        worker_invocation_artifact=invocation,
+        worker_invocation_replay_reference=invocation_capture["worker_invocation_replay_reference"],
+        human_approval_artifact=_bridge_approval(invocation),
+        requested_by="HUMAN_OPERATOR",
+        created_at=CREATED_AT,
+        replay_dir=replay_root / "worker_invocation_to_execution_candidate_bridge",
+    )
+    execution_candidate = bridge_capture["worker_execution_candidate_artifact"]
+
+    assert bridge_capture["candidate_status"] == WORKER_EXECUTION_CANDIDATE_CREATED
+    assert bridge_capture["worker_execution_candidate_generated"] is True
+    assert bridge_capture["replay_lineage_preserved"] is True
+    assert execution_candidate["source_dispatch_candidate"] == invocation["worker_dispatch_reference"]
+    assert execution_candidate["replay_references"]
+    assert execution_candidate["replay_hashes"]
+
+
 def test_worker_invocation_bridge_fails_closed_without_explicit_approval(tmp_path) -> None:
     invocation_capture = _invoke(
         tmp_path,
