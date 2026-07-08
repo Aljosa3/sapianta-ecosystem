@@ -500,6 +500,7 @@ from aigol.runtime.acli_governed_development_execution_bridge import (
     ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1,
     APPROVAL_REQUIRED as ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED,
     EXECUTION_COMPLETED as ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
+    FAILED_CLOSED as ACLI_GOVERNED_DEVELOPMENT_FAILED_CLOSED,
     MODIFICATION_REQUESTED as ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
     approve_and_execute_acli_governed_development,
     propose_acli_governed_development_execution,
@@ -1175,6 +1176,93 @@ def _continue_ppp_handoff_to_worker_request(
         "worker_invoked": True,
         "execution_requested": True,
         "dispatch_requested": True,
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+
+
+def _canonical_human_interface_runtime_entry_context(args: argparse.Namespace) -> bool:
+    return str(getattr(args, "operator_context", "") or "") == "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+
+
+def _continue_governed_development_bridge_to_certified_runtime(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    bridge_capture: dict[str, Any],
+    args: argparse.Namespace,
+    session_id: str,
+    turn_id: str,
+    current_chain_id: str | None,
+    latest_chain_id: str | None,
+    created_at: str,
+    turn_root: Path,
+) -> dict[str, Any]:
+    """Continue an already-approved UHI governed-development bridge into certified runtime."""
+
+    if bridge_capture.get("bridge_status") != ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED:
+        raise FailClosedRuntimeError("governed development continuation failed closed: bridge proposal missing")
+    native_context_capture = run_conversation_native_development_context_integration(
+        prompt_id=prompt_id,
+        human_prompt=human_prompt,
+        created_at=created_at,
+        replay_dir=turn_root / "governed_bridge_certified_development_context",
+        governance_root="governance",
+        session_id=session_id,
+        turn_id=turn_id,
+        current_chain_id=current_chain_id,
+        latest_chain_id=latest_chain_id,
+    )
+    if native_context_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(
+            native_context_capture.get("failure_reason") or "native development context integration failed"
+        )
+    post_context_continuation_capture = continue_context_assembled_to_ppp_routing(
+        continuation_id=f"{prompt_id}:GOVERNED-BRIDGE-POST-CONTEXT-CONTINUATION",
+        prompt_id=prompt_id,
+        human_prompt=human_prompt,
+        provider_id=OPENAI_PROVIDER_ID,
+        created_at=created_at,
+        replay_dir=turn_root / "governed_bridge_post_context_continuation",
+        registry=_post_context_continuation_provider_registry(),
+        adapter=_post_context_continuation_provider_adapter(),
+        governance_root="governance",
+        session_id=session_id,
+        turn_id=turn_id,
+        current_chain_id=current_chain_id,
+        latest_chain_id=latest_chain_id,
+        restored_native_context_capture=native_context_capture,
+    )
+    if post_context_continuation_capture.get("fail_closed") is True:
+        raise FailClosedRuntimeError(
+            post_context_continuation_capture.get("failure_reason") or "post-context continuation failed"
+        )
+    worker_request_continuation = _continue_ppp_handoff_to_worker_request(
+        prompt_id=prompt_id,
+        post_context_continuation_capture=post_context_continuation_capture,
+        created_at=created_at,
+        replay_dir=turn_root / "governed_bridge_certified_development_continuation",
+    )
+    return {
+        "continuation_status": "GOVERNED_DEVELOPMENT_BRIDGE_CONTINUED_TO_CERTIFIED_RUNTIME",
+        "upstream_human_approval_consumed": True,
+        "approval_bypassed": False,
+        "native_context_capture": native_context_capture,
+        "post_context_continuation": post_context_continuation_capture,
+        "certified_worker_continuation": worker_request_continuation,
+        "worker_request_reached": worker_request_continuation.get("worker_request_reached") is True,
+        "worker_assignment_reached": worker_request_continuation.get("worker_assignment_reached") is True,
+        "worker_dispatch_reached": worker_request_continuation.get("worker_dispatch_reached") is True,
+        "worker_invocation_reached": worker_request_continuation.get("worker_invocation_reached") is True,
+        "worker_execution_candidate_reached": worker_request_continuation.get("worker_execution_candidate_reached") is True,
+        "external_task_package_reached": worker_request_continuation.get("external_task_package_reached") is True,
+        "openai_provider_reached": worker_request_continuation.get("openai_provider_reached") is True,
+        "result_validation_reached": worker_request_continuation.get("result_validation_reached") is True,
+        "replay_certification_reached": worker_request_continuation.get("replay_certification_reached") is True,
+        "replay_lineage_preserved": worker_request_continuation.get("worker_lifecycle_continuation", {}).get(
+            "replay_lineage_preserved"
+        )
+        is True,
         "fail_closed": False,
         "failure_reason": None,
     }
@@ -5215,6 +5303,47 @@ def run_interactive_conversation(
                                 render_acli_llm_assisted_explanation(llm_assisted_explanation_capture)
                             )
                     output_writer(render_acli_governed_development_bridge_summary(bridge_capture))
+                    if auto_continue_enabled and _canonical_human_interface_runtime_entry_context(args):
+                        try:
+                            bridge_continuation = _continue_governed_development_bridge_to_certified_runtime(
+                                prompt_id=prompt_id,
+                                human_prompt=human_prompt,
+                                bridge_capture=bridge_capture,
+                                args=args,
+                                session_id=session_id,
+                                turn_id=turn_id,
+                                current_chain_id=current_chain_id,
+                                latest_chain_id=latest_chain_id,
+                                created_at=created_at,
+                                turn_root=turn_root,
+                            )
+                        except FailClosedRuntimeError as exc:
+                            bridge_capture["fail_closed"] = True
+                            bridge_capture["bridge_status"] = ACLI_GOVERNED_DEVELOPMENT_FAILED_CLOSED
+                            bridge_capture["failure_reason"] = str(exc)
+                            pending_governed_development_bridge = None
+                            failed_turns += 1
+                            output_writer(f"FAILED_CLOSED: {bridge_capture['failure_reason']}")
+                        else:
+                            bridge_capture["certified_development_continuation"] = bridge_continuation
+                            bridge_capture["upstream_human_approval_consumed"] = True
+                            bridge_capture["approval_bypassed"] = False
+                            bridge_capture["approval_required"] = False
+                            bridge_capture["approval_granted"] = True
+                            bridge_capture["execution_authorized"] = True
+                            bridge_capture["worker_invoked"] = bridge_continuation["worker_invocation_reached"]
+                            bridge_capture["replay_certification_reached"] = bridge_continuation[
+                                "replay_certification_reached"
+                            ]
+                            bridge_capture["bridge_status"] = (
+                                "GOVERNED_DEVELOPMENT_BRIDGE_CERTIFIED_RUNTIME_COMPLETED"
+                            )
+                            pending_governed_development_bridge = None
+                            output_writer(
+                                _worker_lifecycle_continuation_output(
+                                    bridge_continuation["certified_worker_continuation"]
+                                )
+                            )
                 else:
                     failed_turns += 1
                     output_writer(f"FAILED_CLOSED: {bridge_capture.get('failure_reason')}")
@@ -7578,6 +7707,51 @@ def _interactive_acli_governed_development_bridge_turn_summary(
 ) -> dict[str, Any]:
     source_artifact = router_capture["source_of_truth_router_artifact"]
     workflow_capture = bridge_capture.get("workflow_capture") or {}
+    certified_continuation = bridge_capture.get("certified_development_continuation")
+    if not isinstance(certified_continuation, dict):
+        certified_continuation = {}
+    certified_worker_continuation = certified_continuation.get("certified_worker_continuation")
+    if not isinstance(certified_worker_continuation, dict):
+        certified_worker_continuation = {}
+    post_context_continuation = certified_continuation.get("post_context_continuation")
+    if not isinstance(post_context_continuation, dict):
+        post_context_continuation = {}
+    conversation_ppp_routing = post_context_continuation.get("conversation_ppp_routing")
+    if not isinstance(conversation_ppp_routing, dict):
+        conversation_ppp_routing = {}
+    worker_request = certified_worker_continuation.get("worker_invocation_request")
+    if not isinstance(worker_request, dict):
+        worker_request = {}
+    execution_authorization = certified_worker_continuation.get("execution_authorization")
+    if not isinstance(execution_authorization, dict):
+        execution_authorization = {}
+    worker_lifecycle = certified_worker_continuation.get("worker_lifecycle_continuation")
+    if not isinstance(worker_lifecycle, dict):
+        worker_lifecycle = {}
+    worker_assignment = worker_lifecycle.get("worker_assignment")
+    if not isinstance(worker_assignment, dict):
+        worker_assignment = {}
+    worker_dispatch = worker_lifecycle.get("worker_dispatch")
+    if not isinstance(worker_dispatch, dict):
+        worker_dispatch = {}
+    worker_invocation = worker_lifecycle.get("worker_invocation")
+    if not isinstance(worker_invocation, dict):
+        worker_invocation = {}
+    execution_candidate = worker_lifecycle.get("worker_execution_candidate")
+    if not isinstance(execution_candidate, dict):
+        execution_candidate = {}
+    external_task = worker_lifecycle.get("external_worker_task_package")
+    if not isinstance(external_task, dict):
+        external_task = {}
+    openai_worker = worker_lifecycle.get("openai_external_worker_provider")
+    if not isinstance(openai_worker, dict):
+        openai_worker = {}
+    result_validation = worker_lifecycle.get("result_validation")
+    if not isinstance(result_validation, dict):
+        result_validation = {}
+    replay_certification = worker_lifecycle.get("replay_certification")
+    if not isinstance(replay_certification, dict):
+        replay_certification = {}
     bridge_status = bridge_capture.get("bridge_status")
     completed = bridge_status == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED
     modification_requested = bridge_status == ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED
@@ -7611,11 +7785,12 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "coverage": None,
         "clarification_required": False,
         "open_clarification_detected": False,
-        "provider_invoked": False,
+        "provider_invoked": worker_lifecycle.get("openai_provider_reached") is True,
         "worker_invoked": bridge_capture.get("worker_invoked") is True,
-        "worker_assigned": False,
-        "worker_dispatched": False,
+        "worker_assigned": worker_lifecycle.get("worker_assignment_reached") is True,
+        "worker_dispatched": worker_lifecycle.get("worker_dispatch_reached") is True,
         "authorization_created": authorization_created,
+        "execution_authorization_status": execution_authorization.get("authorization_status"),
         "approval_required": (
             bridge_capture.get("approval_required") is True
             and not completed
@@ -7623,14 +7798,53 @@ def _interactive_acli_governed_development_bridge_turn_summary(
             and not rejected
         ),
         "operator_revision_requested": modification_requested,
-        "execution_requested": completed,
-        "execution_started": completed,
-        "dispatch_requested": False,
+        "execution_requested": completed or certified_worker_continuation.get("execution_requested") is True,
+        "execution_started": completed or worker_lifecycle.get("external_task_package_reached") is True,
+        "dispatch_requested": certified_worker_continuation.get("dispatch_requested") is True,
         "invocation_requested": bridge_capture.get("worker_invoked") is True,
         "approval_bypassed": bridge_capture.get("approval_bypassed") is True,
         "governance_mutated": completed,
         "repository_mutation_performed": bridge_capture.get("mutation_performed") is True,
         "validation_executed": bridge_capture.get("validation_executed") is True,
+        "upstream_human_approval_consumed": bridge_capture.get("upstream_human_approval_consumed") is True,
+        "post_context_continuation_status": post_context_continuation.get("continuation_status"),
+        "post_context_continuation_replay_reference": post_context_continuation.get(
+            "post_context_continuation_replay_reference"
+        ),
+        "ppp_route_status": post_context_continuation.get("ppp_route_status"),
+        "ppp_routing_replay_reference": conversation_ppp_routing.get("conversation_ppp_routing_replay_reference"),
+        "worker_invocation_request_status": worker_request.get("request_status"),
+        "worker_invocation_request_replay_reference": worker_request.get(
+            "worker_invocation_request_replay_reference"
+        ),
+        "worker_assignment_status": worker_assignment.get("assignment_status"),
+        "worker_assignment_replay_reference": worker_assignment.get("worker_assignment_replay_reference"),
+        "worker_dispatch_status": worker_dispatch.get("dispatch_status"),
+        "worker_dispatch_replay_reference": worker_dispatch.get("worker_dispatch_replay_reference"),
+        "worker_invocation_status": worker_invocation.get("invocation_status"),
+        "worker_invocation_replay_reference": worker_invocation.get("worker_invocation_replay_reference"),
+        "worker_execution_candidate_status": execution_candidate.get("candidate_status"),
+        "worker_execution_candidate_replay_reference": execution_candidate.get(
+            "worker_execution_candidate_replay_reference"
+        ),
+        "external_worker_task_status": external_task.get("task_status"),
+        "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "openai_external_worker_status": openai_worker.get("worker_status"),
+        "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
+        "result_validation_status": result_validation.get("validation_status"),
+        "result_validation_replay_reference": result_validation.get("result_validation_replay_reference"),
+        "replay_certification_status": replay_certification.get("certification_status"),
+        "replay_certification_replay_reference": replay_certification.get("replay_certification_replay_reference"),
+        "worker_request_reached": certified_continuation.get("worker_request_reached") is True,
+        "worker_assignment_reached": worker_lifecycle.get("worker_assignment_reached") is True,
+        "worker_dispatch_reached": worker_lifecycle.get("worker_dispatch_reached") is True,
+        "worker_invocation_reached": worker_lifecycle.get("worker_invocation_reached") is True,
+        "worker_execution_candidate_reached": worker_lifecycle.get("worker_execution_candidate_reached") is True,
+        "external_task_package_reached": worker_lifecycle.get("external_task_package_reached") is True,
+        "openai_provider_reached": worker_lifecycle.get("openai_provider_reached") is True,
+        "result_validation_reached": worker_lifecycle.get("result_validation_reached") is True,
+        "replay_certification_reached": worker_lifecycle.get("replay_certification_reached") is True,
+        "replay_lineage_preserved": worker_lifecycle.get("replay_lineage_preserved") is True,
         "replay_mutated": False,
         "governed_development_replay_reference": workflow_capture.get("governed_development_replay_reference"),
     }
