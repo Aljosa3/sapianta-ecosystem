@@ -5,8 +5,9 @@ adds deterministic session state. G16-03 adds a canonical context envelope that
 aggregates certified Platform Core references only. G16-04 adds a canonical
 policy envelope that aggregates governance boundary references only. G16-08
 adds reference binding for existing Platform Core services; it does not execute
-those services, generate prompts, evaluate policy, authorize execution, invoke
-providers, generate proposals, or run cognitive loops.
+those services. G16-09 adds deterministic proposal lifecycle tracking; it does
+not generate prompts, evaluate policy, authorize execution, invoke providers,
+generate proposals, or run cognitive loops.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ PCCL_SESSION_RUNTIME_VERSION = "G16_02_PCCL_SESSION_RUNTIME_V1"
 PCCL_CONTEXT_ENVELOPE_VERSION = "G16_03_CANONICAL_CONTEXT_ENVELOPE_V1"
 PCCL_POLICY_ENVELOPE_VERSION = "G16_04_CANONICAL_POLICY_ENVELOPE_V1"
 PCCL_REFERENCE_BINDING_VERSION = "G16_08_PCCL_REFERENCE_BINDING_V1"
+PCCL_PROPOSAL_LIFECYCLE_VERSION = "G16_09_PCCL_PROPOSAL_LIFECYCLE_FOUNDATION_V1"
 PCCL_SERVICE_NAME = "PlatformCoreCognitionLayer"
 PCCL_FOUNDATION_STATUS = "PCCL_FOUNDATION_REGISTERED"
 PCCL_SESSION_DECLARED = "PCCL_SESSION_DECLARED"
@@ -33,6 +35,7 @@ PCCL_SESSION_RUNTIME_ARTIFACT_V1 = "PCCL_SESSION_RUNTIME_ARTIFACT_V1"
 CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1 = "CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1"
 CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1 = "CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1"
 PCCL_REFERENCE_BINDING_ARTIFACT_V1 = "PCCL_REFERENCE_BINDING_ARTIFACT_V1"
+PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1 = "PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1"
 PCCL_SESSION_CREATED = "PCCL_SESSION_CREATED"
 PCCL_SESSION_ACTIVE = "PCCL_SESSION_ACTIVE"
 PCCL_SESSION_WAITING = "PCCL_SESSION_WAITING"
@@ -57,6 +60,48 @@ PCCL_ALLOWED_SESSION_STATUSES = frozenset(
         PCCL_SESSION_CLOSED,
     }
 )
+
+PCCL_PROPOSAL_CREATED = "CREATED"
+PCCL_PROPOSAL_CONTEXT_READY = "CONTEXT_READY"
+PCCL_PROPOSAL_POLICY_READY = "POLICY_READY"
+PCCL_PROPOSAL_PROVIDER_PENDING = "PROVIDER_PENDING"
+PCCL_PROPOSAL_PROVIDER_COMPLETED = "PROVIDER_COMPLETED"
+PCCL_PROPOSAL_REVIEW_PENDING = "REVIEW_PENDING"
+PCCL_PROPOSAL_APPROVAL_PENDING = "APPROVAL_PENDING"
+PCCL_PROPOSAL_COMPLETED = "COMPLETED"
+PCCL_PROPOSAL_ESCALATED = "ESCALATED"
+PCCL_PROPOSAL_CANCELLED = "CANCELLED"
+
+PCCL_PROPOSAL_TERMINAL_STATUSES = frozenset(
+    {
+        PCCL_PROPOSAL_COMPLETED,
+        PCCL_PROPOSAL_ESCALATED,
+        PCCL_PROPOSAL_CANCELLED,
+    }
+)
+PCCL_ALLOWED_PROPOSAL_STATUSES = frozenset(
+    {
+        PCCL_PROPOSAL_CREATED,
+        PCCL_PROPOSAL_CONTEXT_READY,
+        PCCL_PROPOSAL_POLICY_READY,
+        PCCL_PROPOSAL_PROVIDER_PENDING,
+        PCCL_PROPOSAL_PROVIDER_COMPLETED,
+        PCCL_PROPOSAL_REVIEW_PENDING,
+        PCCL_PROPOSAL_APPROVAL_PENDING,
+        PCCL_PROPOSAL_COMPLETED,
+        PCCL_PROPOSAL_ESCALATED,
+        PCCL_PROPOSAL_CANCELLED,
+    }
+)
+PCCL_PROPOSAL_ALLOWED_TRANSITIONS = {
+    PCCL_PROPOSAL_CREATED: frozenset({PCCL_PROPOSAL_CONTEXT_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_CONTEXT_READY: frozenset({PCCL_PROPOSAL_POLICY_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_POLICY_READY: frozenset({PCCL_PROPOSAL_PROVIDER_PENDING, PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_PROVIDER_PENDING: frozenset({PCCL_PROPOSAL_PROVIDER_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_PROVIDER_COMPLETED: frozenset({PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_REVIEW_PENDING: frozenset({PCCL_PROPOSAL_APPROVAL_PENDING, PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    PCCL_PROPOSAL_APPROVAL_PENDING: frozenset({PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+}
 
 PCCL_RESPONSIBILITIES = (
     "cognition orchestration",
@@ -465,6 +510,144 @@ class PlatformCoreCognitionLayer:
             service_references=service_references,
         )
 
+    def create_proposal_lifecycle(
+        self,
+        *,
+        proposal_id: str,
+        created_at: str,
+        pccl_session: dict[str, Any],
+        reference_binding: dict[str, Any],
+        proposal_reference: str = "",
+    ) -> dict[str, Any]:
+        return create_pccl_proposal_lifecycle(
+            proposal_id=proposal_id,
+            created_at=created_at,
+            pccl_session=pccl_session,
+            reference_binding=reference_binding,
+            proposal_reference=proposal_reference,
+        )
+
+    def mark_proposal_context_ready(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        context_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_context_ready(
+            proposal_lifecycle=proposal_lifecycle,
+            context_reference=context_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_policy_ready(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        policy_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_policy_ready(
+            proposal_lifecycle=proposal_lifecycle,
+            policy_reference=policy_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_provider_pending(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        provider_request_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_provider_pending(
+            proposal_lifecycle=proposal_lifecycle,
+            provider_request_reference=provider_request_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_provider_completed(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        provider_completion_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_provider_completed(
+            proposal_lifecycle=proposal_lifecycle,
+            provider_completion_reference=provider_completion_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_review_pending(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        review_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_review_pending(
+            proposal_lifecycle=proposal_lifecycle,
+            review_reference=review_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_approval_pending(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        approval_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_approval_pending(
+            proposal_lifecycle=proposal_lifecycle,
+            approval_reference=approval_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_completed(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        completion_reference: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_completed(
+            proposal_lifecycle=proposal_lifecycle,
+            completion_reference=completion_reference,
+            updated_at=updated_at,
+        )
+
+    def mark_proposal_escalated(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        escalation_reference: str,
+        termination_reason: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return mark_pccl_proposal_escalated(
+            proposal_lifecycle=proposal_lifecycle,
+            escalation_reference=escalation_reference,
+            termination_reason=termination_reason,
+            updated_at=updated_at,
+        )
+
+    def cancel_proposal(
+        self,
+        *,
+        proposal_lifecycle: dict[str, Any],
+        cancellation_reference: str,
+        termination_reason: str,
+        updated_at: str,
+    ) -> dict[str, Any]:
+        return cancel_pccl_proposal(
+            proposal_lifecycle=proposal_lifecycle,
+            cancellation_reference=cancellation_reference,
+            termination_reason=termination_reason,
+            updated_at=updated_at,
+        )
+
 
 def platform_core_cognition_layer_manifest() -> dict[str, Any]:
     """Return deterministic PCCL ownership, lifecycle, and boundary metadata."""
@@ -485,6 +668,7 @@ def platform_core_cognition_layer_manifest() -> dict[str, Any]:
         "canonical_context_envelope_implemented": True,
         "canonical_policy_envelope_implemented": True,
         "pccl_reference_binding_implemented": True,
+        "proposal_lifecycle_foundation_implemented": True,
         "cognition_loop_implemented": False,
         "provider_invocation_implemented": False,
         "context_assembly_implemented": False,
@@ -885,6 +1069,212 @@ def validate_pccl_reference_binding(binding: dict[str, Any]) -> dict[str, Any]:
     return _validated_reference_binding(binding)
 
 
+def create_pccl_proposal_lifecycle(
+    *,
+    proposal_id: str,
+    created_at: str,
+    pccl_session: dict[str, Any],
+    reference_binding: dict[str, Any],
+    proposal_reference: str = "",
+) -> dict[str, Any]:
+    """Create a deterministic proposal lifecycle artifact.
+
+    The lifecycle tracks proposal state only. It does not generate proposals,
+    invoke providers, execute governance, modify replay, dispatch workers, or
+    generate prompts.
+    """
+
+    session = _validated_session(pccl_session)
+    binding = _validated_reference_binding(reference_binding)
+    if binding["pccl_session_id"] != session["session_id"] or binding["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: binding session mismatch")
+    event = _proposal_event(
+        event_index=0,
+        event_type="pccl_proposal_created",
+        occurred_at=created_at,
+        previous_event_hash="",
+        from_status="",
+        to_status=PCCL_PROPOSAL_CREATED,
+        reference=proposal_reference,
+        event_payload={"proposal_status": PCCL_PROPOSAL_CREATED},
+    )
+    artifact = _proposal_lifecycle_artifact(
+        proposal_id=proposal_id,
+        created_at=created_at,
+        updated_at=created_at,
+        proposal_status=PCCL_PROPOSAL_CREATED,
+        pccl_session=session,
+        reference_binding=binding,
+        proposal_reference=proposal_reference,
+        context_reference="",
+        policy_reference="",
+        provider_request_reference="",
+        provider_completion_reference="",
+        review_reference="",
+        approval_reference="",
+        completion_reference="",
+        escalation_reference="",
+        cancellation_reference="",
+        termination_reason=None,
+        lifecycle_events=[],
+    )
+    return _with_proposal_events(artifact, [event])
+
+
+def validate_pccl_proposal_lifecycle(proposal_lifecycle: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed validation for a PCCL proposal lifecycle artifact."""
+
+    return _validated_proposal_lifecycle(proposal_lifecycle)
+
+
+def mark_pccl_proposal_context_ready(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    context_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_CONTEXT_READY,
+        updated_at=updated_at,
+        event_type="pccl_proposal_context_ready",
+        reference_field="context_reference",
+        reference=context_reference,
+    )
+
+
+def mark_pccl_proposal_policy_ready(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    policy_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_POLICY_READY,
+        updated_at=updated_at,
+        event_type="pccl_proposal_policy_ready",
+        reference_field="policy_reference",
+        reference=policy_reference,
+    )
+
+
+def mark_pccl_proposal_provider_pending(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    provider_request_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_PROVIDER_PENDING,
+        updated_at=updated_at,
+        event_type="pccl_proposal_provider_pending",
+        reference_field="provider_request_reference",
+        reference=provider_request_reference,
+    )
+
+
+def mark_pccl_proposal_provider_completed(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    provider_completion_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_PROVIDER_COMPLETED,
+        updated_at=updated_at,
+        event_type="pccl_proposal_provider_completed",
+        reference_field="provider_completion_reference",
+        reference=provider_completion_reference,
+    )
+
+
+def mark_pccl_proposal_review_pending(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    review_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_REVIEW_PENDING,
+        updated_at=updated_at,
+        event_type="pccl_proposal_review_pending",
+        reference_field="review_reference",
+        reference=review_reference,
+    )
+
+
+def mark_pccl_proposal_approval_pending(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    approval_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_APPROVAL_PENDING,
+        updated_at=updated_at,
+        event_type="pccl_proposal_approval_pending",
+        reference_field="approval_reference",
+        reference=approval_reference,
+    )
+
+
+def mark_pccl_proposal_completed(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    completion_reference: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_COMPLETED,
+        updated_at=updated_at,
+        event_type="pccl_proposal_completed",
+        reference_field="completion_reference",
+        reference=completion_reference,
+    )
+
+
+def mark_pccl_proposal_escalated(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    escalation_reference: str,
+    termination_reason: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_ESCALATED,
+        updated_at=updated_at,
+        event_type="pccl_proposal_escalated",
+        reference_field="escalation_reference",
+        reference=escalation_reference,
+        termination_reason=termination_reason,
+    )
+
+
+def cancel_pccl_proposal(
+    *,
+    proposal_lifecycle: dict[str, Any],
+    cancellation_reference: str,
+    termination_reason: str,
+    updated_at: str,
+) -> dict[str, Any]:
+    return _proposal_transition(
+        proposal_lifecycle,
+        proposal_status=PCCL_PROPOSAL_CANCELLED,
+        updated_at=updated_at,
+        event_type="pccl_proposal_cancelled",
+        reference_field="cancellation_reference",
+        reference=cancellation_reference,
+        termination_reason=termination_reason,
+    )
+
+
 def _contract_descriptor_dicts() -> tuple[dict[str, Any], ...]:
     descriptors = (
         PCCLContractDescriptor("PCCLSession", "cognitive session lifecycle"),
@@ -1132,6 +1522,208 @@ def _policy_reference_entry(
     }
     entry["reference_hash"] = replay_hash(entry)
     return entry
+
+
+def _proposal_transition(
+    proposal_lifecycle: dict[str, Any],
+    *,
+    proposal_status: str,
+    updated_at: str,
+    event_type: str,
+    reference_field: str,
+    reference: str,
+    termination_reason: str | None = None,
+) -> dict[str, Any]:
+    current = _validated_proposal_lifecycle(proposal_lifecycle)
+    if current["proposal_status"] in PCCL_PROPOSAL_TERMINAL_STATUSES:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: terminal proposal cannot transition")
+    allowed = PCCL_PROPOSAL_ALLOWED_TRANSITIONS.get(current["proposal_status"], frozenset())
+    if proposal_status not in allowed:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: invalid proposal transition")
+    normalized_reference = _require_string(reference, reference_field)
+    event = _proposal_event(
+        event_index=len(current["lifecycle_events"]),
+        event_type=event_type,
+        occurred_at=updated_at,
+        previous_event_hash=current["lifecycle_events"][-1]["event_hash"],
+        from_status=current["proposal_status"],
+        to_status=proposal_status,
+        reference=normalized_reference,
+        event_payload={
+            "proposal_status": proposal_status,
+            reference_field: normalized_reference,
+        },
+    )
+    values = {
+        "proposal_reference": current["proposal_reference"],
+        "context_reference": current["context_reference"],
+        "policy_reference": current["policy_reference"],
+        "provider_request_reference": current["provider_request_reference"],
+        "provider_completion_reference": current["provider_completion_reference"],
+        "review_reference": current["review_reference"],
+        "approval_reference": current["approval_reference"],
+        "completion_reference": current["completion_reference"],
+        "escalation_reference": current["escalation_reference"],
+        "cancellation_reference": current["cancellation_reference"],
+    }
+    values[reference_field] = normalized_reference
+    artifact = _proposal_lifecycle_artifact(
+        proposal_id=current["proposal_id"],
+        created_at=current["created_at"],
+        updated_at=updated_at,
+        proposal_status=proposal_status,
+        pccl_session_hash=current["pccl_session_hash"],
+        pccl_session_id=current["pccl_session_id"],
+        reference_binding_id=current["reference_binding_id"],
+        reference_binding_hash=current["reference_binding_hash"],
+        context_envelope_id=current["context_envelope_id"],
+        context_envelope_hash=current["context_envelope_hash"],
+        policy_envelope_id=current["policy_envelope_id"],
+        policy_envelope_hash=current["policy_envelope_hash"],
+        proposal_reference=values["proposal_reference"],
+        context_reference=values["context_reference"],
+        policy_reference=values["policy_reference"],
+        provider_request_reference=values["provider_request_reference"],
+        provider_completion_reference=values["provider_completion_reference"],
+        review_reference=values["review_reference"],
+        approval_reference=values["approval_reference"],
+        completion_reference=values["completion_reference"],
+        escalation_reference=values["escalation_reference"],
+        cancellation_reference=values["cancellation_reference"],
+        termination_reason=termination_reason if termination_reason is not None else current["termination_reason"],
+        lifecycle_events=current["lifecycle_events"],
+    )
+    return _with_proposal_events(artifact, current["lifecycle_events"] + [event])
+
+
+def _proposal_lifecycle_artifact(
+    *,
+    proposal_id: str,
+    created_at: str,
+    updated_at: str,
+    proposal_status: str,
+    proposal_reference: str,
+    context_reference: str,
+    policy_reference: str,
+    provider_request_reference: str,
+    provider_completion_reference: str,
+    review_reference: str,
+    approval_reference: str,
+    completion_reference: str,
+    escalation_reference: str,
+    cancellation_reference: str,
+    termination_reason: str | None,
+    lifecycle_events: list[dict[str, Any]],
+    pccl_session: dict[str, Any] | None = None,
+    reference_binding: dict[str, Any] | None = None,
+    pccl_session_id: str | None = None,
+    pccl_session_hash: str | None = None,
+    reference_binding_id: str | None = None,
+    reference_binding_hash: str | None = None,
+    context_envelope_id: str | None = None,
+    context_envelope_hash: str | None = None,
+    policy_envelope_id: str | None = None,
+    policy_envelope_hash: str | None = None,
+) -> dict[str, Any]:
+    if proposal_status not in PCCL_ALLOWED_PROPOSAL_STATUSES:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: unsupported proposal status")
+    session_id = pccl_session["session_id"] if isinstance(pccl_session, dict) else _require_string(pccl_session_id, "pccl_session_id")
+    session_hash = pccl_session["artifact_hash"] if isinstance(pccl_session, dict) else _require_string(pccl_session_hash, "pccl_session_hash")
+    binding_id = reference_binding["binding_id"] if isinstance(reference_binding, dict) else _require_string(reference_binding_id, "reference_binding_id")
+    binding_hash = reference_binding["artifact_hash"] if isinstance(reference_binding, dict) else _require_string(reference_binding_hash, "reference_binding_hash")
+    context_id = reference_binding["context_envelope_id"] if isinstance(reference_binding, dict) else _require_string(context_envelope_id, "context_envelope_id")
+    context_hash = reference_binding["context_envelope_hash"] if isinstance(reference_binding, dict) else _require_string(context_envelope_hash, "context_envelope_hash")
+    policy_id = reference_binding["policy_envelope_id"] if isinstance(reference_binding, dict) else _require_string(policy_envelope_id, "policy_envelope_id")
+    policy_hash = reference_binding["policy_envelope_hash"] if isinstance(reference_binding, dict) else _require_string(policy_envelope_hash, "policy_envelope_hash")
+    artifact = {
+        "artifact_type": PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1,
+        "pccl_service_version": PCCL_SERVICE_VERSION,
+        "pccl_session_runtime_version": PCCL_SESSION_RUNTIME_VERSION,
+        "pccl_reference_binding_version": PCCL_REFERENCE_BINDING_VERSION,
+        "pccl_proposal_lifecycle_version": PCCL_PROPOSAL_LIFECYCLE_VERSION,
+        "proposal_id": _require_string(proposal_id, "proposal_id"),
+        "created_at": _require_string(created_at, "created_at"),
+        "updated_at": _require_string(updated_at, "updated_at"),
+        "proposal_status": proposal_status,
+        "pccl_session_id": session_id,
+        "pccl_session_hash": session_hash,
+        "reference_binding_id": binding_id,
+        "reference_binding_hash": binding_hash,
+        "context_envelope_id": context_id,
+        "context_envelope_hash": context_hash,
+        "policy_envelope_id": policy_id,
+        "policy_envelope_hash": policy_hash,
+        "proposal_reference": _optional_string(proposal_reference),
+        "context_reference": _optional_string(context_reference),
+        "policy_reference": _optional_string(policy_reference),
+        "provider_request_reference": _optional_string(provider_request_reference),
+        "provider_completion_reference": _optional_string(provider_completion_reference),
+        "review_reference": _optional_string(review_reference),
+        "approval_reference": _optional_string(approval_reference),
+        "completion_reference": _optional_string(completion_reference),
+        "escalation_reference": _optional_string(escalation_reference),
+        "cancellation_reference": _optional_string(cancellation_reference),
+        "termination_reason": termination_reason if isinstance(termination_reason, str) and termination_reason else None,
+        "lifecycle_events": deepcopy(lifecycle_events),
+        "lifecycle_event_count": len(lifecycle_events),
+        "proposal_lifecycle_tracked": True,
+        "reference_only_lifecycle": True,
+        "proposal_payload_embedded": False,
+        "proposal_generated": False,
+        "provider_invoked": False,
+        "provider_selected": False,
+        "governance_executed": False,
+        "governance_invoked": False,
+        "replay_executed": False,
+        "replay_modified": False,
+        "worker_invoked": False,
+        "cognitive_loop_started": False,
+        "prompt_generated": False,
+        "new_runtime_behavior_introduced": False,
+        "authority_flags": deepcopy(PCCL_AUTHORITY_FLAGS),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _with_proposal_events(artifact: dict[str, Any], events: list[dict[str, Any]]) -> dict[str, Any]:
+    updated = deepcopy(artifact)
+    updated["lifecycle_events"] = deepcopy(events)
+    updated["lifecycle_event_count"] = len(events)
+    updated["artifact_hash"] = replay_hash({key: value for key, value in updated.items() if key != "artifact_hash"})
+    return updated
+
+
+def _proposal_event(
+    *,
+    event_index: int,
+    event_type: str,
+    occurred_at: str,
+    previous_event_hash: str,
+    from_status: str,
+    to_status: str,
+    reference: str,
+    event_payload: dict[str, Any],
+) -> dict[str, Any]:
+    event = {
+        "event_index": _require_nonnegative_int(event_index, "event_index"),
+        "event_type": _require_string(event_type, "event_type"),
+        "occurred_at": _require_string(occurred_at, "occurred_at"),
+        "previous_event_hash": previous_event_hash,
+        "from_status": _optional_string(from_status),
+        "to_status": _require_string(to_status, "to_status"),
+        "transition_reference": _optional_string(reference),
+        "event_payload": deepcopy(event_payload),
+        "proposal_generated": False,
+        "provider_invoked": False,
+        "provider_selected": False,
+        "governance_executed": False,
+        "worker_invoked": False,
+        "replay_modified": False,
+        "prompt_generated": False,
+    }
+    event["event_hash"] = replay_hash(event)
+    return event
 
 
 def _transition(
@@ -1528,6 +2120,102 @@ def _validated_reference_binding(binding: dict[str, Any]) -> dict[str, Any]:
     for reference in references:
         _validated_binding_reference(reference)
     return deepcopy(binding)
+
+
+def _validated_proposal_lifecycle(proposal_lifecycle: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(proposal_lifecycle, dict):
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: proposal lifecycle must be object")
+    if proposal_lifecycle.get("artifact_type") != PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: invalid artifact type")
+    expected = deepcopy(proposal_lifecycle)
+    actual_hash = expected.pop("artifact_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: artifact hash mismatch")
+    if proposal_lifecycle.get("pccl_proposal_lifecycle_version") != PCCL_PROPOSAL_LIFECYCLE_VERSION:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: invalid version")
+    if proposal_lifecycle.get("proposal_status") not in PCCL_ALLOWED_PROPOSAL_STATUSES:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: invalid proposal status")
+    if proposal_lifecycle.get("authority_flags") != PCCL_AUTHORITY_FLAGS:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: authority flags invalid")
+    if proposal_lifecycle.get("proposal_lifecycle_tracked") is not True or proposal_lifecycle.get("reference_only_lifecycle") is not True:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: lifecycle invariants invalid")
+    events = proposal_lifecycle.get("lifecycle_events")
+    if not isinstance(events, list) or not events:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: lifecycle events required")
+    if proposal_lifecycle.get("lifecycle_event_count") != len(events):
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: lifecycle event count mismatch")
+    previous_status = ""
+    for index, event in enumerate(events):
+        _validated_proposal_event(event, index)
+        expected_previous_hash = "" if index == 0 else events[index - 1]["event_hash"]
+        if event["previous_event_hash"] != expected_previous_hash:
+            raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event lineage mismatch")
+        if event["from_status"] != previous_status:
+            raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event status lineage mismatch")
+        to_status = event["to_status"]
+        if index == 0:
+            if to_status != PCCL_PROPOSAL_CREATED:
+                raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: first event must create proposal")
+        elif to_status not in PCCL_PROPOSAL_ALLOWED_TRANSITIONS.get(previous_status, frozenset()):
+            raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: invalid event transition")
+        previous_status = to_status
+    if proposal_lifecycle.get("proposal_status") != previous_status:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: proposal status does not match event lineage")
+    for flag in (
+        "proposal_payload_embedded",
+        "proposal_generated",
+        "provider_invoked",
+        "provider_selected",
+        "governance_executed",
+        "governance_invoked",
+        "replay_executed",
+        "replay_modified",
+        "worker_invoked",
+        "cognitive_loop_started",
+        "prompt_generated",
+        "new_runtime_behavior_introduced",
+    ):
+        if proposal_lifecycle.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL proposal lifecycle failed closed: {flag} must be false")
+    for field in (
+        "proposal_id",
+        "created_at",
+        "updated_at",
+        "pccl_session_id",
+        "pccl_session_hash",
+        "reference_binding_id",
+        "reference_binding_hash",
+        "context_envelope_id",
+        "context_envelope_hash",
+        "policy_envelope_id",
+        "policy_envelope_hash",
+    ):
+        _require_string(proposal_lifecycle.get(field), field)
+    return deepcopy(proposal_lifecycle)
+
+
+def _validated_proposal_event(event: Any, expected_index: int) -> None:
+    if not isinstance(event, dict):
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event must be object")
+    if event.get("event_index") != expected_index:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event order mismatch")
+    expected = deepcopy(event)
+    actual_hash = expected.pop("event_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event hash mismatch")
+    if event.get("to_status") not in PCCL_ALLOWED_PROPOSAL_STATUSES:
+        raise FailClosedRuntimeError("PCCL proposal lifecycle failed closed: event status invalid")
+    for flag in (
+        "proposal_generated",
+        "provider_invoked",
+        "provider_selected",
+        "governance_executed",
+        "worker_invoked",
+        "replay_modified",
+        "prompt_generated",
+    ):
+        if event.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL proposal lifecycle failed closed: event {flag} must be false")
 
 
 def _validated_binding_reference(reference: Any) -> None:
