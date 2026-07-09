@@ -7,7 +7,8 @@ policy envelope that aggregates governance boundary references only. G16-08
 adds reference binding for existing Platform Core services; it does not execute
 those services. G16-09 adds deterministic proposal lifecycle tracking; it does
 not generate prompts, evaluate policy, authorize execution, invoke providers,
-generate proposals, or run cognitive loops.
+generate proposals, or run cognitive loops. G16-11 adds orchestration decision
+records that identify admissible lifecycle transitions without executing them.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ PCCL_CONTEXT_ENVELOPE_VERSION = "G16_03_CANONICAL_CONTEXT_ENVELOPE_V1"
 PCCL_POLICY_ENVELOPE_VERSION = "G16_04_CANONICAL_POLICY_ENVELOPE_V1"
 PCCL_REFERENCE_BINDING_VERSION = "G16_08_PCCL_REFERENCE_BINDING_V1"
 PCCL_PROPOSAL_LIFECYCLE_VERSION = "G16_09_PCCL_PROPOSAL_LIFECYCLE_FOUNDATION_V1"
+PCCL_ORCHESTRATION_DECISION_RECORD_VERSION = "G16_11_PCCL_ORCHESTRATION_DECISION_RECORD_V1"
 PCCL_SERVICE_NAME = "PlatformCoreCognitionLayer"
 PCCL_FOUNDATION_STATUS = "PCCL_FOUNDATION_REGISTERED"
 PCCL_SESSION_DECLARED = "PCCL_SESSION_DECLARED"
@@ -36,6 +38,7 @@ CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1 = "CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1
 CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1 = "CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1"
 PCCL_REFERENCE_BINDING_ARTIFACT_V1 = "PCCL_REFERENCE_BINDING_ARTIFACT_V1"
 PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1 = "PCCL_PROPOSAL_LIFECYCLE_ARTIFACT_V1"
+PCCL_ORCHESTRATION_DECISION_RECORD_ARTIFACT_V1 = "PCCL_ORCHESTRATION_DECISION_RECORD_ARTIFACT_V1"
 PCCL_SESSION_CREATED = "PCCL_SESSION_CREATED"
 PCCL_SESSION_ACTIVE = "PCCL_SESSION_ACTIVE"
 PCCL_SESSION_WAITING = "PCCL_SESSION_WAITING"
@@ -93,14 +96,60 @@ PCCL_ALLOWED_PROPOSAL_STATUSES = frozenset(
         PCCL_PROPOSAL_CANCELLED,
     }
 )
+PCCL_PROPOSAL_TRANSITION_SEQUENCE = {
+    PCCL_PROPOSAL_CREATED: (PCCL_PROPOSAL_CONTEXT_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_CONTEXT_READY: (PCCL_PROPOSAL_POLICY_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_POLICY_READY: (PCCL_PROPOSAL_PROVIDER_PENDING, PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_PROVIDER_PENDING: (PCCL_PROPOSAL_PROVIDER_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_PROVIDER_COMPLETED: (PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_REVIEW_PENDING: (PCCL_PROPOSAL_APPROVAL_PENDING, PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+    PCCL_PROPOSAL_APPROVAL_PENDING: (PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED),
+}
 PCCL_PROPOSAL_ALLOWED_TRANSITIONS = {
-    PCCL_PROPOSAL_CREATED: frozenset({PCCL_PROPOSAL_CONTEXT_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_CONTEXT_READY: frozenset({PCCL_PROPOSAL_POLICY_READY, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_POLICY_READY: frozenset({PCCL_PROPOSAL_PROVIDER_PENDING, PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_PROVIDER_PENDING: frozenset({PCCL_PROPOSAL_PROVIDER_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_PROVIDER_COMPLETED: frozenset({PCCL_PROPOSAL_REVIEW_PENDING, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_REVIEW_PENDING: frozenset({PCCL_PROPOSAL_APPROVAL_PENDING, PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
-    PCCL_PROPOSAL_APPROVAL_PENDING: frozenset({PCCL_PROPOSAL_COMPLETED, PCCL_PROPOSAL_ESCALATED, PCCL_PROPOSAL_CANCELLED}),
+    status: frozenset(transitions)
+    for status, transitions in PCCL_PROPOSAL_TRANSITION_SEQUENCE.items()
+}
+
+PCCL_DECISION_SUPPORT_REFERENCE_TYPES = frozenset(
+    {
+        "PCCL_SESSION",
+        "CONTEXT_ENVELOPE",
+        "POLICY_ENVELOPE",
+        "REFERENCE_BINDING",
+        "PROPOSAL_LIFECYCLE",
+        "HUMAN_INTENT_RESOLUTION",
+        "DEVELOPMENT_INTENT_RESOLUTION",
+        "CAPABILITY_DISCOVERY",
+        "KNOWLEDGE_REUSE",
+        "CLARIFICATION",
+        "CANONICAL_SEMANTIC_ARTIFACT",
+        "RUNTIME",
+        "GOVERNANCE",
+        "REPLAY",
+        "CERTIFICATION_REGISTRY",
+        "PROVIDER_PLATFORM",
+        "WORKER_RESOLUTION",
+    }
+)
+
+DECISION_SUPPORT_REFERENCE_OWNER_BY_TYPE = {
+    "PCCL_SESSION": "PLATFORM_CORE_COGNITION_LAYER",
+    "CONTEXT_ENVELOPE": "PLATFORM_CORE_COGNITION_LAYER",
+    "POLICY_ENVELOPE": "PLATFORM_CORE_COGNITION_LAYER",
+    "REFERENCE_BINDING": "PLATFORM_CORE_COGNITION_LAYER",
+    "PROPOSAL_LIFECYCLE": "PLATFORM_CORE_COGNITION_LAYER",
+    "HUMAN_INTENT_RESOLUTION": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "DEVELOPMENT_INTENT_RESOLUTION": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "CAPABILITY_DISCOVERY": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "KNOWLEDGE_REUSE": "PLATFORM_CORE_KNOWLEDGE_REUSE",
+    "CLARIFICATION": "PLATFORM_CORE_CLARIFICATION",
+    "CANONICAL_SEMANTIC_ARTIFACT": "PLATFORM_CORE_SEMANTICS",
+    "RUNTIME": "PLATFORM_CORE_RUNTIME",
+    "GOVERNANCE": "PLATFORM_CORE_GOVERNANCE",
+    "REPLAY": "PLATFORM_CORE_REPLAY",
+    "CERTIFICATION_REGISTRY": "PLATFORM_CORE_CERTIFICATION",
+    "PROVIDER_PLATFORM": "PROVIDER_PLATFORM",
+    "WORKER_RESOLUTION": "WORKER_PLATFORM",
 }
 
 PCCL_RESPONSIBILITIES = (
@@ -648,6 +697,33 @@ class PlatformCoreCognitionLayer:
             updated_at=updated_at,
         )
 
+    def create_orchestration_decision_record(
+        self,
+        *,
+        decision_id: str,
+        created_at: str,
+        pccl_session: dict[str, Any],
+        context_envelope: dict[str, Any],
+        policy_envelope: dict[str, Any],
+        reference_binding: dict[str, Any],
+        proposal_lifecycle: dict[str, Any],
+        supporting_evidence_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+        selected_next_lifecycle_transition: str = "",
+        decision_rationale_reference: str = "",
+    ) -> dict[str, Any]:
+        return create_pccl_orchestration_decision_record(
+            decision_id=decision_id,
+            created_at=created_at,
+            pccl_session=pccl_session,
+            context_envelope=context_envelope,
+            policy_envelope=policy_envelope,
+            reference_binding=reference_binding,
+            proposal_lifecycle=proposal_lifecycle,
+            supporting_evidence_references=supporting_evidence_references,
+            selected_next_lifecycle_transition=selected_next_lifecycle_transition,
+            decision_rationale_reference=decision_rationale_reference,
+        )
+
 
 def platform_core_cognition_layer_manifest() -> dict[str, Any]:
     """Return deterministic PCCL ownership, lifecycle, and boundary metadata."""
@@ -669,6 +745,7 @@ def platform_core_cognition_layer_manifest() -> dict[str, Any]:
         "canonical_policy_envelope_implemented": True,
         "pccl_reference_binding_implemented": True,
         "proposal_lifecycle_foundation_implemented": True,
+        "orchestration_decision_record_implemented": True,
         "cognition_loop_implemented": False,
         "provider_invocation_implemented": False,
         "context_assembly_implemented": False,
@@ -1125,6 +1202,107 @@ def validate_pccl_proposal_lifecycle(proposal_lifecycle: dict[str, Any]) -> dict
     """Fail-closed validation for a PCCL proposal lifecycle artifact."""
 
     return _validated_proposal_lifecycle(proposal_lifecycle)
+
+
+def create_pccl_orchestration_decision_record(
+    *,
+    decision_id: str,
+    created_at: str,
+    pccl_session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_envelope: dict[str, Any],
+    reference_binding: dict[str, Any],
+    proposal_lifecycle: dict[str, Any],
+    supporting_evidence_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    selected_next_lifecycle_transition: str = "",
+    decision_rationale_reference: str = "",
+) -> dict[str, Any]:
+    """Create a deterministic non-executing PCCL orchestration decision record."""
+
+    session = _validated_session(pccl_session)
+    context = _validated_context_envelope(context_envelope)
+    policy = _validated_policy_envelope(policy_envelope)
+    binding = _validated_reference_binding(reference_binding)
+    proposal = _validated_proposal_lifecycle(proposal_lifecycle)
+    _require_decision_artifact_consistency(
+        session=session,
+        context_envelope=context,
+        policy_envelope=policy,
+        reference_binding=binding,
+        proposal_lifecycle=proposal,
+    )
+    current_status = proposal["proposal_status"]
+    admissible_transitions = list(PCCL_PROPOSAL_TRANSITION_SEQUENCE.get(current_status, ()))
+    normalized_selected = _normalize_selected_lifecycle_transition(
+        selected_next_lifecycle_transition,
+        admissible_transitions,
+    )
+    support_references = _decision_support_references(
+        session=session,
+        context_envelope=context,
+        policy_envelope=policy,
+        reference_binding=binding,
+        proposal_lifecycle=proposal,
+        supporting_evidence_references=supporting_evidence_references,
+    )
+    fail_closed_reason = "TERMINAL_PROPOSAL_LIFECYCLE_STATE" if not admissible_transitions else ""
+    artifact = {
+        "artifact_type": PCCL_ORCHESTRATION_DECISION_RECORD_ARTIFACT_V1,
+        "pccl_service_version": PCCL_SERVICE_VERSION,
+        "pccl_session_runtime_version": PCCL_SESSION_RUNTIME_VERSION,
+        "pccl_context_envelope_version": PCCL_CONTEXT_ENVELOPE_VERSION,
+        "pccl_policy_envelope_version": PCCL_POLICY_ENVELOPE_VERSION,
+        "pccl_reference_binding_version": PCCL_REFERENCE_BINDING_VERSION,
+        "pccl_proposal_lifecycle_version": PCCL_PROPOSAL_LIFECYCLE_VERSION,
+        "pccl_orchestration_decision_record_version": PCCL_ORCHESTRATION_DECISION_RECORD_VERSION,
+        "decision_id": _require_string(decision_id, "decision_id"),
+        "created_at": _require_string(created_at, "created_at"),
+        "pccl_session_id": session["session_id"],
+        "pccl_session_hash": session["artifact_hash"],
+        "context_envelope_id": context["envelope_id"],
+        "context_envelope_hash": context["artifact_hash"],
+        "policy_envelope_id": policy["policy_envelope_id"],
+        "policy_envelope_hash": policy["artifact_hash"],
+        "reference_binding_id": binding["binding_id"],
+        "reference_binding_hash": binding["artifact_hash"],
+        "proposal_id": proposal["proposal_id"],
+        "proposal_lifecycle_hash": proposal["artifact_hash"],
+        "current_lifecycle_state": current_status,
+        "admissible_next_lifecycle_transitions": admissible_transitions,
+        "selected_next_lifecycle_transition": normalized_selected,
+        "decision_rationale_reference": _optional_string(decision_rationale_reference),
+        "fail_closed_reason": fail_closed_reason,
+        "supporting_evidence_references": support_references,
+        "supporting_evidence_reference_count": len(support_references),
+        "included_supporting_evidence_reference_types": sorted({reference["reference_type"] for reference in support_references}),
+        "decision_record_only": True,
+        "transition_executed": False,
+        "platform_core_service_invoked": False,
+        "semantic_interpretation_performed": False,
+        "capability_resolution_performed": False,
+        "provider_selected": False,
+        "provider_invoked": False,
+        "proposal_generated": False,
+        "governance_executed": False,
+        "governance_invoked": False,
+        "approval_granted": False,
+        "runtime_invoked": False,
+        "replay_executed": False,
+        "replay_modified": False,
+        "worker_invoked": False,
+        "cognitive_loop_started": False,
+        "prompt_generated": False,
+        "new_runtime_behavior_introduced": False,
+        "authority_flags": deepcopy(PCCL_AUTHORITY_FLAGS),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def validate_pccl_orchestration_decision_record(decision_record: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed validation for a PCCL orchestration decision record."""
+
+    return _validated_orchestration_decision_record(decision_record)
 
 
 def mark_pccl_proposal_context_ready(
@@ -1726,6 +1904,148 @@ def _proposal_event(
     return event
 
 
+def _require_decision_artifact_consistency(
+    *,
+    session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_envelope: dict[str, Any],
+    reference_binding: dict[str, Any],
+    proposal_lifecycle: dict[str, Any],
+) -> None:
+    if context_envelope["pccl_session_id"] != session["session_id"] or context_envelope["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: context session mismatch")
+    if policy_envelope["pccl_session_id"] != session["session_id"] or policy_envelope["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: policy session mismatch")
+    if policy_envelope["context_envelope_id"] != context_envelope["envelope_id"] or policy_envelope["context_envelope_hash"] != context_envelope["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: policy context mismatch")
+    if reference_binding["pccl_session_id"] != session["session_id"] or reference_binding["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: binding session mismatch")
+    if reference_binding["context_envelope_id"] != context_envelope["envelope_id"] or reference_binding["context_envelope_hash"] != context_envelope["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: binding context mismatch")
+    if reference_binding["policy_envelope_id"] != policy_envelope["policy_envelope_id"] or reference_binding["policy_envelope_hash"] != policy_envelope["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: binding policy mismatch")
+    if proposal_lifecycle["pccl_session_id"] != session["session_id"] or proposal_lifecycle["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: proposal session mismatch")
+    if proposal_lifecycle["reference_binding_id"] != reference_binding["binding_id"] or proposal_lifecycle["reference_binding_hash"] != reference_binding["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: proposal binding mismatch")
+    if proposal_lifecycle["context_envelope_id"] != context_envelope["envelope_id"] or proposal_lifecycle["context_envelope_hash"] != context_envelope["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: proposal context mismatch")
+    if proposal_lifecycle["policy_envelope_id"] != policy_envelope["policy_envelope_id"] or proposal_lifecycle["policy_envelope_hash"] != policy_envelope["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: proposal policy mismatch")
+
+
+def _normalize_selected_lifecycle_transition(value: Any, admissible_transitions: list[str]) -> str:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return admissible_transitions[0] if admissible_transitions else ""
+    selected = _require_string(value, "selected_next_lifecycle_transition").upper().replace("-", "_").replace(" ", "_")
+    if selected not in admissible_transitions:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: selected transition is not admissible")
+    return selected
+
+
+def _decision_support_references(
+    *,
+    session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_envelope: dict[str, Any],
+    reference_binding: dict[str, Any],
+    proposal_lifecycle: dict[str, Any],
+    supporting_evidence_references: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+) -> list[dict[str, Any]]:
+    if not isinstance(supporting_evidence_references, (list, tuple)):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence references must be a sequence")
+    references = [
+        _decision_support_reference_entry(
+            reference_type="PCCL_SESSION",
+            reference=session["session_id"],
+            artifact_hash=session["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _decision_support_reference_entry(
+            reference_type="CONTEXT_ENVELOPE",
+            reference=context_envelope["envelope_id"],
+            artifact_hash=context_envelope["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _decision_support_reference_entry(
+            reference_type="POLICY_ENVELOPE",
+            reference=policy_envelope["policy_envelope_id"],
+            artifact_hash=policy_envelope["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _decision_support_reference_entry(
+            reference_type="REFERENCE_BINDING",
+            reference=reference_binding["binding_id"],
+            artifact_hash=reference_binding["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _decision_support_reference_entry(
+            reference_type="PROPOSAL_LIFECYCLE",
+            reference=proposal_lifecycle["proposal_id"],
+            artifact_hash=proposal_lifecycle["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+    ]
+    references.extend(_decision_support_reference_entry_from_dict(reference) for reference in supporting_evidence_references)
+    unique: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for reference in references:
+        key = (
+            reference["reference_type"],
+            reference["reference"],
+            reference["artifact_hash"],
+            reference["certification_reference"],
+        )
+        unique[key] = reference
+    return [
+        deepcopy(unique[key])
+        for key in sorted(unique, key=lambda item: (item[0], item[1], item[2], item[3]))
+    ]
+
+
+def _decision_support_reference_entry_from_dict(reference: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence reference must be object")
+    return _decision_support_reference_entry(
+        reference_type=reference.get("reference_type"),
+        reference=reference.get("reference"),
+        artifact_hash=reference.get("artifact_hash", ""),
+        certification_reference=reference.get("certification_reference", ""),
+    )
+
+
+def _decision_support_reference_entry(
+    *,
+    reference_type: Any,
+    reference: Any,
+    artifact_hash: Any,
+    certification_reference: Any,
+) -> dict[str, Any]:
+    normalized_type = _normalize_decision_support_reference_type(reference_type)
+    entry = {
+        "reference_type": normalized_type,
+        "reference_owner": DECISION_SUPPORT_REFERENCE_OWNER_BY_TYPE[normalized_type],
+        "reference": _require_string(reference, "decision support reference"),
+        "artifact_hash": _optional_artifact_hash(artifact_hash),
+        "certification_reference": _optional_string(certification_reference),
+        "reference_payload_embedded": False,
+        "service_invoked": False,
+        "transition_executed": False,
+        "semantic_interpretation_performed": False,
+        "capability_resolution_performed": False,
+        "provider_selected": False,
+        "provider_invoked": False,
+        "proposal_generated": False,
+        "governance_executed": False,
+        "governance_invoked": False,
+        "runtime_invoked": False,
+        "worker_invoked": False,
+        "replay_modified": False,
+        "prompt_generated": False,
+    }
+    entry["reference_hash"] = replay_hash(entry)
+    return entry
+
+
 def _transition(
     session: dict[str, Any],
     *,
@@ -2218,6 +2538,125 @@ def _validated_proposal_event(event: Any, expected_index: int) -> None:
             raise FailClosedRuntimeError(f"PCCL proposal lifecycle failed closed: event {flag} must be false")
 
 
+def _validated_orchestration_decision_record(decision_record: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(decision_record, dict):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: decision record must be object")
+    if decision_record.get("artifact_type") != PCCL_ORCHESTRATION_DECISION_RECORD_ARTIFACT_V1:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: invalid artifact type")
+    expected = deepcopy(decision_record)
+    actual_hash = expected.pop("artifact_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: artifact hash mismatch")
+    if decision_record.get("pccl_orchestration_decision_record_version") != PCCL_ORCHESTRATION_DECISION_RECORD_VERSION:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: invalid version")
+    current_status = decision_record.get("current_lifecycle_state")
+    if current_status not in PCCL_ALLOWED_PROPOSAL_STATUSES:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: invalid current lifecycle state")
+    admissible = list(PCCL_PROPOSAL_TRANSITION_SEQUENCE.get(current_status, ()))
+    if decision_record.get("admissible_next_lifecycle_transitions") != admissible:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: admissible transition index mismatch")
+    selected = decision_record.get("selected_next_lifecycle_transition")
+    if admissible:
+        if selected not in admissible:
+            raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: selected transition is not admissible")
+        if decision_record.get("fail_closed_reason") != "":
+            raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: fail-closed reason must be empty")
+    else:
+        if selected != "":
+            raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: terminal state cannot select transition")
+        if decision_record.get("fail_closed_reason") != "TERMINAL_PROPOSAL_LIFECYCLE_STATE":
+            raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: terminal fail-closed reason required")
+    references = decision_record.get("supporting_evidence_references")
+    if not isinstance(references, list) or not references:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence required")
+    if decision_record.get("supporting_evidence_reference_count") != len(references):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence count mismatch")
+    recalculated_types = sorted({reference.get("reference_type") for reference in references})
+    if decision_record.get("included_supporting_evidence_reference_types") != recalculated_types:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence type index mismatch")
+    required_types = {"PCCL_SESSION", "CONTEXT_ENVELOPE", "POLICY_ENVELOPE", "REFERENCE_BINDING", "PROPOSAL_LIFECYCLE"}
+    if not required_types.issubset(set(recalculated_types)):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: required supporting evidence missing")
+    if decision_record.get("authority_flags") != PCCL_AUTHORITY_FLAGS:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: authority flags invalid")
+    for flag in (
+        "decision_record_only",
+    ):
+        if decision_record.get(flag) is not True:
+            raise FailClosedRuntimeError(f"PCCL orchestration decision record failed closed: {flag} must be true")
+    for flag in (
+        "transition_executed",
+        "platform_core_service_invoked",
+        "semantic_interpretation_performed",
+        "capability_resolution_performed",
+        "provider_selected",
+        "provider_invoked",
+        "proposal_generated",
+        "governance_executed",
+        "governance_invoked",
+        "approval_granted",
+        "runtime_invoked",
+        "replay_executed",
+        "replay_modified",
+        "worker_invoked",
+        "cognitive_loop_started",
+        "prompt_generated",
+        "new_runtime_behavior_introduced",
+    ):
+        if decision_record.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL orchestration decision record failed closed: {flag} must be false")
+    for field in (
+        "decision_id",
+        "created_at",
+        "pccl_session_id",
+        "pccl_session_hash",
+        "context_envelope_id",
+        "context_envelope_hash",
+        "policy_envelope_id",
+        "policy_envelope_hash",
+        "reference_binding_id",
+        "reference_binding_hash",
+        "proposal_id",
+        "proposal_lifecycle_hash",
+    ):
+        _require_string(decision_record.get(field), field)
+    for reference in references:
+        _validated_decision_support_reference(reference)
+    return deepcopy(decision_record)
+
+
+def _validated_decision_support_reference(reference: Any) -> None:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence reference must be object")
+    expected = deepcopy(reference)
+    actual_hash = expected.pop("reference_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence hash mismatch")
+    _normalize_decision_support_reference_type(reference.get("reference_type"))
+    if reference.get("reference_owner") != DECISION_SUPPORT_REFERENCE_OWNER_BY_TYPE[reference["reference_type"]]:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: supporting evidence owner mismatch")
+    _require_string(reference.get("reference"), "decision support reference")
+    _optional_artifact_hash(reference.get("artifact_hash", ""))
+    for flag in (
+        "reference_payload_embedded",
+        "service_invoked",
+        "transition_executed",
+        "semantic_interpretation_performed",
+        "capability_resolution_performed",
+        "provider_selected",
+        "provider_invoked",
+        "proposal_generated",
+        "governance_executed",
+        "governance_invoked",
+        "runtime_invoked",
+        "worker_invoked",
+        "replay_modified",
+        "prompt_generated",
+    ):
+        if reference.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL orchestration decision record failed closed: supporting evidence {flag} must be false")
+
+
 def _validated_binding_reference(reference: Any) -> None:
     if not isinstance(reference, dict):
         raise FailClosedRuntimeError("PCCL reference binding failed closed: reference must be object")
@@ -2317,6 +2756,13 @@ def _normalize_binding_reference_type(value: Any) -> str:
     reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
     if reference_type not in PCCL_BINDING_REFERENCE_TYPES:
         raise FailClosedRuntimeError("PCCL reference binding failed closed: unsupported reference type")
+    return reference_type
+
+
+def _normalize_decision_support_reference_type(value: Any) -> str:
+    reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
+    if reference_type not in PCCL_DECISION_SUPPORT_REFERENCE_TYPES:
+        raise FailClosedRuntimeError("PCCL orchestration decision record failed closed: unsupported supporting evidence type")
     return reference_type
 
 
