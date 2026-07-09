@@ -84,7 +84,7 @@ def run_reference_uhi_session(
             line = pending_input_lines.pop(0)
         else:
             try:
-                line = input_reader("aicli compose> " if compose_buffer else "aicli> ")
+                line = input_reader("" if compose_buffer else "aicli> ")
             except (EOFError, StopIteration):
                 if compose_buffer:
                     (
@@ -109,6 +109,16 @@ def run_reference_uhi_session(
                     multiline_request_count += multiline_requests
                     compose_buffer.clear()
                 exit_reason = "EOF"
+                break
+            except KeyboardInterrupt:
+                if compose_buffer:
+                    canceled_compose_count += 1
+                    compose_buffer.clear()
+                pending_summary = None
+                pending_clarification = None
+                output_writer("Session interrupted. Pending compose buffer canceled.")
+                transcript.append({"event": "keyboard_interrupt"})
+                exit_reason = "KEYBOARD_INTERRUPT"
                 break
             pending_input_lines.extend(_split_input_chunk(line))
             if not pending_input_lines:

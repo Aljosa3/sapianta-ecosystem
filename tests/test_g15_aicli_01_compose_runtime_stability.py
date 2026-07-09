@@ -26,12 +26,15 @@ def _successful_runner(calls: list[dict]):
     return run
 
 
-def _prompt_recording_reader(values: list[str], prompts: list[str]):
+def _prompt_recording_reader(values: list[object], prompts: list[str]):
     iterator = iter(values)
 
     def read(prompt: str) -> str:
         prompts.append(prompt)
-        return next(iterator)
+        value = next(iterator)
+        if value is KeyboardInterrupt:
+            raise KeyboardInterrupt
+        return str(value)
 
     return read
 
@@ -56,7 +59,7 @@ def test_short_compose_session_still_prompts_once_per_input_cycle(tmp_path: Path
     assert result["submitted_request_count"] == 1
     assert result["runtime_status"] == aicli.REFERENCE_UHI_BOUND
     assert calls[0]["prompt"] == "Implement governance validation utility."
-    assert prompts == ["aicli> ", "aicli compose> ", "aicli> "]
+    assert prompts == ["aicli> ", "", "aicli> "]
     assert any("Request submitted to Platform Core." in line for line in output)
 
 
@@ -127,7 +130,63 @@ def test_large_paste_preserves_blank_lines_and_handles_eof_after_buffer(tmp_path
     assert result["runtime_entered"] is False
     assert calls == []
     assert result["development_intent_resolution"]["raw_prompt"] == "\n".join(request_lines)
-    assert prompts == ["aicli> ", "aicli compose> "]
+    assert prompts == ["aicli> ", ""]
+
+
+def test_line_by_line_multiline_paste_uses_blank_buffer_prompt(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    prompts: list[str] = []
+    request_lines = [
+        "Implement replay observation indexing.",
+        "",
+        "Preserve Human Interface boundaries.",
+    ]
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G17-LINE-BY-LINE-PASTE",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(
+            [*request_lines, "/send", "/approve", "/exit"],
+            prompts,
+        ),
+        output_writer=lambda _line: None,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["submitted_request_count"] == 1
+    assert result["multiline_request_count"] == 1
+    assert result["runtime_status"] == aicli.REFERENCE_UHI_BOUND
+    assert calls[0]["prompt"] == "\n".join(request_lines)
+    assert "aicli compose> " not in prompts
+    assert prompts == ["aicli> ", "", "", "", "aicli> ", "aicli> "]
+
+
+def test_keyboard_interrupt_cancels_compose_without_traceback(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    output: list[str] = []
+    prompts: list[str] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G17-KEYBOARD-INTERRUPT",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(
+            ["Implement partial governed request.", KeyboardInterrupt],
+            prompts,
+        ),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["exit_reason"] == "KEYBOARD_INTERRUPT"
+    assert result["canceled_compose_count"] == 1
+    assert result["unsubmitted_compose_line_count"] == 0
+    assert result["runtime_entered"] is False
+    assert calls == []
+    assert {"event": "keyboard_interrupt"} in result["transcript"]
+    assert any("Session interrupted." in line for line in output)
+    assert prompts == ["aicli> ", ""]
 
 
 def test_top_level_blank_paste_is_ignored_without_submitting(tmp_path: Path) -> None:
