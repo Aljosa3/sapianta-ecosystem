@@ -3,9 +3,10 @@
 G16-01 registers PCCL as a first-class Platform Core service boundary. G16-02
 adds deterministic session state. G16-03 adds a canonical context envelope that
 aggregates certified Platform Core references only. G16-04 adds a canonical
-policy envelope that aggregates governance boundary references only; it does
-not generate prompts, evaluate policy, authorize execution, invoke providers,
-generate proposals, or run cognitive loops.
+policy envelope that aggregates governance boundary references only. G16-08
+adds reference binding for existing Platform Core services; it does not execute
+those services, generate prompts, evaluate policy, authorize execution, invoke
+providers, generate proposals, or run cognitive loops.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ PCCL_SERVICE_VERSION = "G16_01_PLATFORM_CORE_COGNITION_LAYER_FOUNDATION_V1"
 PCCL_SESSION_RUNTIME_VERSION = "G16_02_PCCL_SESSION_RUNTIME_V1"
 PCCL_CONTEXT_ENVELOPE_VERSION = "G16_03_CANONICAL_CONTEXT_ENVELOPE_V1"
 PCCL_POLICY_ENVELOPE_VERSION = "G16_04_CANONICAL_POLICY_ENVELOPE_V1"
+PCCL_REFERENCE_BINDING_VERSION = "G16_08_PCCL_REFERENCE_BINDING_V1"
 PCCL_SERVICE_NAME = "PlatformCoreCognitionLayer"
 PCCL_FOUNDATION_STATUS = "PCCL_FOUNDATION_REGISTERED"
 PCCL_SESSION_DECLARED = "PCCL_SESSION_DECLARED"
@@ -30,6 +32,7 @@ PCCL_RESERVED_FOR_FUTURE_MILESTONE = "PCCL_RESERVED_FOR_FUTURE_MILESTONE"
 PCCL_SESSION_RUNTIME_ARTIFACT_V1 = "PCCL_SESSION_RUNTIME_ARTIFACT_V1"
 CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1 = "CANONICAL_CONTEXT_ENVELOPE_ARTIFACT_V1"
 CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1 = "CANONICAL_POLICY_ENVELOPE_ARTIFACT_V1"
+PCCL_REFERENCE_BINDING_ARTIFACT_V1 = "PCCL_REFERENCE_BINDING_ARTIFACT_V1"
 PCCL_SESSION_CREATED = "PCCL_SESSION_CREATED"
 PCCL_SESSION_ACTIVE = "PCCL_SESSION_ACTIVE"
 PCCL_SESSION_WAITING = "PCCL_SESSION_WAITING"
@@ -164,6 +167,44 @@ POLICY_REFERENCE_OWNER_BY_TYPE = {
     "PROVIDER_PERMISSION": "PROVIDER_PLATFORM",
     "WORKER_BOUNDARY": "WORKER_PLATFORM",
     "CERTIFICATION_REQUIREMENT": "PLATFORM_CORE_CERTIFICATION",
+}
+
+PCCL_BINDING_REFERENCE_TYPES = frozenset(
+    {
+        "PCCL_SESSION",
+        "CONTEXT_ENVELOPE",
+        "POLICY_ENVELOPE",
+        "HUMAN_INTENT_RESOLUTION",
+        "DEVELOPMENT_INTENT_RESOLUTION",
+        "CAPABILITY_DISCOVERY",
+        "KNOWLEDGE_REUSE",
+        "CLARIFICATION",
+        "CANONICAL_SEMANTIC_ARTIFACT",
+        "RUNTIME",
+        "GOVERNANCE",
+        "REPLAY",
+        "CERTIFICATION_REGISTRY",
+        "PROVIDER_PLATFORM",
+        "WORKER_RESOLUTION",
+    }
+)
+
+BINDING_REFERENCE_OWNER_BY_TYPE = {
+    "PCCL_SESSION": "PLATFORM_CORE_COGNITION_LAYER",
+    "CONTEXT_ENVELOPE": "PLATFORM_CORE_COGNITION_LAYER",
+    "POLICY_ENVELOPE": "PLATFORM_CORE_COGNITION_LAYER",
+    "HUMAN_INTENT_RESOLUTION": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "DEVELOPMENT_INTENT_RESOLUTION": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "CAPABILITY_DISCOVERY": "PLATFORM_CORE_HUMAN_INTENT_RESOLUTION",
+    "KNOWLEDGE_REUSE": "PLATFORM_CORE_KNOWLEDGE_REUSE",
+    "CLARIFICATION": "PLATFORM_CORE_CLARIFICATION",
+    "CANONICAL_SEMANTIC_ARTIFACT": "PLATFORM_CORE_SEMANTICS",
+    "RUNTIME": "PLATFORM_CORE_RUNTIME",
+    "GOVERNANCE": "PLATFORM_CORE_GOVERNANCE",
+    "REPLAY": "PLATFORM_CORE_REPLAY",
+    "CERTIFICATION_REGISTRY": "PLATFORM_CORE_CERTIFICATION",
+    "PROVIDER_PLATFORM": "PROVIDER_PLATFORM",
+    "WORKER_RESOLUTION": "WORKER_PLATFORM",
 }
 
 
@@ -405,6 +446,25 @@ class PlatformCoreCognitionLayer:
             policy_references=policy_references,
         )
 
+    def create_reference_binding(
+        self,
+        *,
+        binding_id: str,
+        created_at: str,
+        pccl_session: dict[str, Any],
+        context_envelope: dict[str, Any],
+        policy_envelope: dict[str, Any],
+        service_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    ) -> dict[str, Any]:
+        return create_pccl_reference_binding(
+            binding_id=binding_id,
+            created_at=created_at,
+            pccl_session=pccl_session,
+            context_envelope=context_envelope,
+            policy_envelope=policy_envelope,
+            service_references=service_references,
+        )
+
 
 def platform_core_cognition_layer_manifest() -> dict[str, Any]:
     """Return deterministic PCCL ownership, lifecycle, and boundary metadata."""
@@ -424,6 +484,7 @@ def platform_core_cognition_layer_manifest() -> dict[str, Any]:
         "contracts": [descriptor["contract_name"] for descriptor in _contract_descriptor_dicts()],
         "canonical_context_envelope_implemented": True,
         "canonical_policy_envelope_implemented": True,
+        "pccl_reference_binding_implemented": True,
         "cognition_loop_implemented": False,
         "provider_invocation_implemented": False,
         "context_assembly_implemented": False,
@@ -739,6 +800,91 @@ def validate_canonical_policy_envelope(envelope: dict[str, Any]) -> dict[str, An
     return _validated_policy_envelope(envelope)
 
 
+def create_pccl_reference_binding(
+    *,
+    binding_id: str,
+    created_at: str,
+    pccl_session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_envelope: dict[str, Any],
+    service_references: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+) -> dict[str, Any]:
+    """Create a deterministic binding from PCCL artifacts to existing services.
+
+    The binding is reference-only. It validates PCCL-owned wrappers and records
+    owner-bound service references, but it never executes, resolves, governs,
+    invokes, certifies, or dereferences those services.
+    """
+
+    session = _validated_session(pccl_session)
+    context = _validated_context_envelope(context_envelope)
+    policy = _validated_policy_envelope(policy_envelope)
+    if context["pccl_session_id"] != session["session_id"] or context["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: context session mismatch")
+    if policy["pccl_session_id"] != session["session_id"] or policy["pccl_session_hash"] != session["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: policy session mismatch")
+    if policy["context_envelope_id"] != context["envelope_id"] or policy["context_envelope_hash"] != context["artifact_hash"]:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: policy context mismatch")
+    references = _canonical_binding_references(
+        session=session,
+        context_envelope=context,
+        policy_envelope=policy,
+        service_references=service_references,
+    )
+    artifact = {
+        "artifact_type": PCCL_REFERENCE_BINDING_ARTIFACT_V1,
+        "pccl_service_version": PCCL_SERVICE_VERSION,
+        "pccl_session_runtime_version": PCCL_SESSION_RUNTIME_VERSION,
+        "pccl_context_envelope_version": PCCL_CONTEXT_ENVELOPE_VERSION,
+        "pccl_policy_envelope_version": PCCL_POLICY_ENVELOPE_VERSION,
+        "pccl_reference_binding_version": PCCL_REFERENCE_BINDING_VERSION,
+        "binding_id": _require_string(binding_id, "binding_id"),
+        "created_at": _require_string(created_at, "created_at"),
+        "pccl_session_id": session["session_id"],
+        "pccl_session_status": session["session_status"],
+        "pccl_session_hash": session["artifact_hash"],
+        "context_envelope_id": context["envelope_id"],
+        "context_envelope_hash": context["artifact_hash"],
+        "policy_envelope_id": policy["policy_envelope_id"],
+        "policy_envelope_hash": policy["artifact_hash"],
+        "binding_references": references,
+        "binding_reference_count": len(references),
+        "included_binding_reference_types": sorted({reference["reference_type"] for reference in references}),
+        "source_owners": {
+            reference_type: BINDING_REFERENCE_OWNER_BY_TYPE[reference_type]
+            for reference_type in sorted({reference["reference_type"] for reference in references})
+        },
+        "platform_core_services_bound": True,
+        "reference_only_binding": True,
+        "reference_payload_embedded": False,
+        "platform_core_service_invoked": False,
+        "provider_runtime_created": False,
+        "capability_resolver_created": False,
+        "capability_resolution_performed": False,
+        "governance_logic_duplicated": False,
+        "governance_invoked": False,
+        "runtime_invoked": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "replay_modified": False,
+        "replay_certified": False,
+        "certification_performed": False,
+        "proposal_pipeline_implemented": False,
+        "cognitive_loop_implemented": False,
+        "prompt_generated": False,
+        "new_runtime_behavior_introduced": False,
+        "authority_flags": deepcopy(PCCL_AUTHORITY_FLAGS),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def validate_pccl_reference_binding(binding: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed validation for a PCCL reference binding artifact."""
+
+    return _validated_reference_binding(binding)
+
+
 def _contract_descriptor_dicts() -> tuple[dict[str, Any], ...]:
     descriptors = (
         PCCLContractDescriptor("PCCLSession", "cognitive session lifecycle"),
@@ -860,6 +1006,94 @@ def _canonical_policy_references(
         deepcopy(unique[key])
         for key in sorted(unique, key=lambda item: (item[0], item[1], item[2], item[3]))
     ]
+
+
+def _canonical_binding_references(
+    *,
+    session: dict[str, Any],
+    context_envelope: dict[str, Any],
+    policy_envelope: dict[str, Any],
+    service_references: list[dict[str, Any]] | tuple[dict[str, Any], ...],
+) -> list[dict[str, Any]]:
+    if not isinstance(service_references, (list, tuple)):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: service_references must be a sequence")
+    references = [
+        _binding_reference_entry(
+            reference_type="PCCL_SESSION",
+            reference=session["session_id"],
+            artifact_hash=session["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _binding_reference_entry(
+            reference_type="CONTEXT_ENVELOPE",
+            reference=context_envelope["envelope_id"],
+            artifact_hash=context_envelope["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+        _binding_reference_entry(
+            reference_type="POLICY_ENVELOPE",
+            reference=policy_envelope["policy_envelope_id"],
+            artifact_hash=policy_envelope["artifact_hash"],
+            certification_reference=session["certification_reference"],
+        ),
+    ]
+    references.extend(_binding_reference_entry_from_dict(reference) for reference in service_references)
+    unique: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    for reference in references:
+        key = (
+            reference["reference_type"],
+            reference["reference"],
+            reference["artifact_hash"],
+            reference["certification_reference"],
+        )
+        unique[key] = reference
+    return [
+        deepcopy(unique[key])
+        for key in sorted(unique, key=lambda item: (item[0], item[1], item[2], item[3]))
+    ]
+
+
+def _binding_reference_entry_from_dict(reference: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: service reference must be object")
+    return _binding_reference_entry(
+        reference_type=reference.get("reference_type"),
+        reference=reference.get("reference"),
+        artifact_hash=reference.get("artifact_hash", ""),
+        certification_reference=reference.get("certification_reference", ""),
+    )
+
+
+def _binding_reference_entry(
+    *,
+    reference_type: Any,
+    reference: Any,
+    artifact_hash: Any,
+    certification_reference: Any,
+) -> dict[str, Any]:
+    normalized_type = _normalize_binding_reference_type(reference_type)
+    entry = {
+        "reference_type": normalized_type,
+        "reference_owner": BINDING_REFERENCE_OWNER_BY_TYPE[normalized_type],
+        "reference": _require_string(reference, "binding reference"),
+        "artifact_hash": _optional_artifact_hash(artifact_hash),
+        "certification_reference": _optional_string(certification_reference),
+        "reference_payload_embedded": False,
+        "service_invoked": False,
+        "logic_duplicated": False,
+        "semantic_interpretation_performed": False,
+        "capability_resolution_performed": False,
+        "governance_invoked": False,
+        "runtime_invoked": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "replay_modified": False,
+        "replay_certified": False,
+        "certification_performed": False,
+        "prompt_generated": False,
+    }
+    entry["reference_hash"] = replay_hash(entry)
+    return entry
 
 
 def _policy_reference_entry_from_dict(reference: dict[str, Any]) -> dict[str, Any]:
@@ -1239,6 +1473,94 @@ def _validated_policy_reference(reference: Any) -> None:
             raise FailClosedRuntimeError(f"canonical policy envelope failed closed: reference {flag} must be false")
 
 
+def _validated_reference_binding(binding: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(binding, dict):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: binding must be object")
+    if binding.get("artifact_type") != PCCL_REFERENCE_BINDING_ARTIFACT_V1:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: invalid artifact type")
+    expected = deepcopy(binding)
+    actual_hash = expected.pop("artifact_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: artifact hash mismatch")
+    if binding.get("pccl_reference_binding_version") != PCCL_REFERENCE_BINDING_VERSION:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: invalid version")
+    references = binding.get("binding_references")
+    if not isinstance(references, list) or not references:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: references required")
+    recalculated_types = sorted({reference.get("reference_type") for reference in references})
+    if binding.get("included_binding_reference_types") != recalculated_types:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference type index mismatch")
+    if binding.get("binding_reference_count") != len(references):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference count mismatch")
+    if not {"PCCL_SESSION", "CONTEXT_ENVELOPE", "POLICY_ENVELOPE"}.issubset(set(recalculated_types)):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: required references missing")
+    if binding.get("platform_core_services_bound") is not True or binding.get("reference_only_binding") is not True:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference-only invariants invalid")
+    expected_source_owners = {
+        reference_type: BINDING_REFERENCE_OWNER_BY_TYPE[reference_type]
+        for reference_type in recalculated_types
+    }
+    if binding.get("source_owners") != expected_source_owners:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: source owner index mismatch")
+    if binding.get("authority_flags") != PCCL_AUTHORITY_FLAGS:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: authority flags invalid")
+    for flag in (
+        "reference_payload_embedded",
+        "platform_core_service_invoked",
+        "provider_runtime_created",
+        "capability_resolver_created",
+        "capability_resolution_performed",
+        "governance_logic_duplicated",
+        "governance_invoked",
+        "runtime_invoked",
+        "provider_invoked",
+        "worker_invoked",
+        "replay_modified",
+        "replay_certified",
+        "certification_performed",
+        "proposal_pipeline_implemented",
+        "cognitive_loop_implemented",
+        "prompt_generated",
+        "new_runtime_behavior_introduced",
+    ):
+        if binding.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL reference binding failed closed: {flag} must be false")
+    for reference in references:
+        _validated_binding_reference(reference)
+    return deepcopy(binding)
+
+
+def _validated_binding_reference(reference: Any) -> None:
+    if not isinstance(reference, dict):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference must be object")
+    expected = deepcopy(reference)
+    actual_hash = expected.pop("reference_hash", None)
+    if actual_hash != replay_hash(expected):
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference hash mismatch")
+    _normalize_binding_reference_type(reference.get("reference_type"))
+    if reference.get("reference_owner") != BINDING_REFERENCE_OWNER_BY_TYPE[reference["reference_type"]]:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: reference owner mismatch")
+    _require_string(reference.get("reference"), "binding reference")
+    _optional_artifact_hash(reference.get("artifact_hash", ""))
+    for flag in (
+        "reference_payload_embedded",
+        "service_invoked",
+        "logic_duplicated",
+        "semantic_interpretation_performed",
+        "capability_resolution_performed",
+        "governance_invoked",
+        "runtime_invoked",
+        "provider_invoked",
+        "worker_invoked",
+        "replay_modified",
+        "replay_certified",
+        "certification_performed",
+        "prompt_generated",
+    ):
+        if reference.get(flag) is not False:
+            raise FailClosedRuntimeError(f"PCCL reference binding failed closed: reference {flag} must be false")
+
+
 def _validated_event(event: Any, expected_index: int) -> None:
     if not isinstance(event, dict):
         raise FailClosedRuntimeError("PCCL session runtime failed closed: event must be object")
@@ -1300,6 +1622,13 @@ def _normalize_policy_reference_type(value: Any) -> str:
     reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
     if reference_type not in CANONICAL_POLICY_REFERENCE_TYPES:
         raise FailClosedRuntimeError("canonical policy envelope failed closed: unsupported reference type")
+    return reference_type
+
+
+def _normalize_binding_reference_type(value: Any) -> str:
+    reference_type = _require_string(value, "reference_type").upper().replace("-", "_").replace(" ", "_")
+    if reference_type not in PCCL_BINDING_REFERENCE_TYPES:
+        raise FailClosedRuntimeError("PCCL reference binding failed closed: unsupported reference type")
     return reference_type
 
 
