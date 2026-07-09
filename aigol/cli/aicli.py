@@ -68,6 +68,7 @@ def run_reference_uhi_session(
     approval_count = 0
     runtime_result: dict[str, Any] | None = None
     runtime_status = REFERENCE_UHI_NOT_REQUIRED
+    session_status = "REFERENCE_UHI_SESSION_ACTIVE"
     last_resolution: dict[str, Any] | None = None
     last_project_context: dict[str, Any] | None = None
     pending_clarification: dict[str, Any] | None = None
@@ -108,6 +109,19 @@ def run_reference_uhi_session(
                     clarification_count += 1 if pending_clarification is not None else 0
                     multiline_request_count += multiline_requests
                     compose_buffer.clear()
+                if pending_summary is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL"
+                    exit_reason = "EOF_AWAITING_APPROVAL"
+                    output_writer("Platform Core is waiting for approval. Use /approve or /cancel.")
+                    transcript.append({"event": "eof_awaiting_approval"})
+                    break
+                if pending_clarification is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_HUMAN_CLARIFICATION"
+                    exit_reason = "EOF_AWAITING_CLARIFICATION"
+                    output_writer("Platform Core is waiting for clarification. Use /send or /cancel.")
+                    transcript.append({"event": "eof_awaiting_clarification"})
+                    break
+                session_status = "REFERENCE_UHI_SESSION_COMPLETED"
                 exit_reason = "EOF"
                 break
             except KeyboardInterrupt:
@@ -118,6 +132,7 @@ def run_reference_uhi_session(
                 pending_clarification = None
                 output_writer("Session interrupted. Pending compose buffer canceled.")
                 transcript.append({"event": "keyboard_interrupt"})
+                session_status = "REFERENCE_UHI_SESSION_INTERRUPTED"
                 exit_reason = "KEYBOARD_INTERRUPT"
                 break
             pending_input_lines.extend(_split_input_chunk(line))
@@ -132,6 +147,7 @@ def run_reference_uhi_session(
             if compose_buffer:
                 output_writer("Composed request is not empty. Use /send, '.', or /cancel before exiting.")
                 continue
+            session_status = "REFERENCE_UHI_SESSION_COMPLETED"
             exit_reason = "EXIT_COMMAND"
             break
         if normalized == "/help":
@@ -237,7 +253,7 @@ def run_reference_uhi_session(
         "created_at": created,
         "runtime_root": str(root),
         "workspace": workspace_path,
-        "session_status": "REFERENCE_UHI_SESSION_COMPLETED",
+        "session_status": session_status,
         "exit_reason": exit_reason,
         "submitted_message_count": submitted_messages,
         "submitted_request_count": submitted_request_count,
@@ -843,10 +859,18 @@ def _render_runtime_result(runtime_result: dict[str, Any], runtime_status: str) 
 
 
 def _render_session_result(result: dict[str, Any]) -> str:
+    title = (
+        "aicli session awaiting human input."
+        if "_AWAITING_" in str(result.get("session_status"))
+        else "aicli session closed."
+    )
     return "\n".join(
         [
-            "aicli session closed.",
+            title,
             f"session_id: {result.get('session_id')}",
+            f"session_status: {result.get('session_status')}",
+            f"exit_reason: {result.get('exit_reason')}",
+            f"pending_approval: {result.get('pending_approval')}",
             f"runtime_status: {result.get('runtime_status')}",
             f"submitted_message_count: {result.get('submitted_message_count')}",
             f"approval_count: {result.get('approval_count')}",

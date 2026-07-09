@@ -63,6 +63,62 @@ def test_short_compose_session_still_prompts_once_per_input_cycle(tmp_path: Path
     assert any("Request submitted to Platform Core." in line for line in output)
 
 
+def test_pending_approval_eof_is_awaiting_human_approval(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    output: list[str] = []
+    prompts: list[str] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G17-APPROVAL-EOF",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(
+            ["Implement governance validation utility.", "/send"],
+            prompts,
+        ),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["session_status"] == "REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL"
+    assert result["exit_reason"] == "EOF_AWAITING_APPROVAL"
+    assert result["pending_approval"] is True
+    assert result["runtime_entered"] is False
+    assert result["runtime_status"] == aicli.REFERENCE_UHI_NOT_REQUIRED
+    assert calls == []
+    assert {"event": "eof_awaiting_approval"} in result["transcript"]
+    assert any("Platform Core is waiting for approval." in line for line in output)
+    assert any("aicli session awaiting human input." in line for line in output)
+    assert any("session_status: REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL" in line for line in output)
+    assert any("pending_approval: True" in line for line in output)
+    assert prompts == ["aicli> ", "", "aicli> "]
+
+
+def test_cancel_clears_pending_approval_before_exit(tmp_path: Path) -> None:
+    calls: list[dict] = []
+    output: list[str] = []
+
+    result = aicli.run_reference_uhi_session(
+        session_id="AICLI-G17-APPROVAL-CANCEL",
+        runtime_root=tmp_path,
+        workspace=".",
+        input_reader=_prompt_recording_reader(
+            ["Implement governance validation utility.", "/send", "/cancel", "/exit"],
+            [],
+        ),
+        output_writer=output.append,
+        runtime_runner=_successful_runner(calls),
+    )
+
+    assert result["session_status"] == "REFERENCE_UHI_SESSION_COMPLETED"
+    assert result["exit_reason"] == "EXIT_COMMAND"
+    assert result["pending_approval"] is False
+    assert result["runtime_entered"] is False
+    assert calls == []
+    assert {"event": "cancel"} in result["transcript"]
+    assert any("Pending request canceled." in line for line in output)
+
+
 def test_large_pasted_compose_chunk_is_consumed_without_prompt_flood(tmp_path: Path) -> None:
     calls: list[dict] = []
     prompts: list[str] = []
@@ -124,7 +180,9 @@ def test_large_paste_preserves_blank_lines_and_handles_eof_after_buffer(tmp_path
         runtime_runner=_successful_runner(calls),
     )
 
-    assert result["exit_reason"] == "EOF"
+    assert result["session_status"] == "REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL"
+    assert result["exit_reason"] == "EOF_AWAITING_APPROVAL"
+    assert result["pending_approval"] is True
     assert result["submitted_request_count"] == 1
     assert result["multiline_request_count"] == 1
     assert result["runtime_entered"] is False
