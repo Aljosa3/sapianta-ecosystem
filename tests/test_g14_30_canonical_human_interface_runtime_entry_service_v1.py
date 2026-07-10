@@ -248,6 +248,60 @@ def test_canonical_runtime_entry_selects_governed_bridge_before_native_routing(
     assert result["turns"][0]["replay_certification_reached"] is True
 
 
+def test_governed_bridge_summary_binds_worker_continuation_envelope() -> None:
+    summary = aigol_cli._interactive_acli_governed_development_bridge_turn_summary(
+        turn_id="TURN-000001",
+        prompt_id="PROMPT-000001",
+        router_capture={
+            "source_of_truth_router_artifact": {
+                "selected_source": "GOVERNED_DEVELOPMENT",
+                "selection_reason": "canonical Human Interface runtime entry",
+            }
+        },
+        bridge_capture={
+            "bridge_status": "GOVERNED_DEVELOPMENT_BRIDGE_CERTIFIED_RUNTIME_COMPLETED",
+            "workflow_id": aigol_cli.CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+            "approval_granted": True,
+            "execution_authorized": True,
+            "worker_invoked": False,
+            "replay_reference": "runtime/turn/acli_governed_development_execution_bridge",
+            "certified_development_continuation": {
+                "worker_request_reached": True,
+                "worker_assignment_reached": True,
+                "worker_dispatch_reached": True,
+                "worker_invocation_reached": True,
+                "worker_execution_candidate_reached": True,
+                "external_task_package_reached": True,
+                "openai_provider_reached": True,
+                "result_validation_reached": True,
+                "replay_certification_reached": True,
+                "replay_lineage_preserved": True,
+                "certified_worker_continuation": {
+                    "execution_authorization": {"authorization_status": "EXECUTION_AUTHORIZED"},
+                    "worker_invocation_request": {
+                        "request_status": "WORKER_INVOCATION_REQUEST_CREATED",
+                    },
+                    "worker_lifecycle_continuation": {
+                        "worker_invocation": {"invocation_status": "WORKER_INVOKED"},
+                        "result_validation": {"validation_status": "RESULT_VALIDATION_COMPLETED"},
+                        "replay_certification": {
+                            "certification_status": "REPLAY_CERTIFICATION_COMPLETED",
+                        },
+                    },
+                },
+            },
+        },
+        source_router_replay_reference="runtime/turn/source_router",
+    )
+
+    assert summary["worker_invoked"] is True
+    assert summary["worker_invocation_reached"] is True
+    assert summary["external_task_package_reached"] is True
+    assert summary["result_validation_reached"] is True
+    assert summary["replay_certification_reached"] is True
+    assert summary["replay_lineage_preserved"] is True
+
+
 def _reader(values: list[str]):
     iterator = iter(values)
 

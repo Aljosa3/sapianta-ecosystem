@@ -823,16 +823,28 @@ def _worker_lifecycle_continuation_output(capture: dict[str, Any]) -> str:
             "Certified Worker Lifecycle Continuation",
             "",
             f"worker_request_reached: {str(capture.get('worker_request_reached') is True).lower()}",
-            f"worker_assignment_reached: {str(lifecycle.get('worker_assignment_reached') is True).lower()}",
-            f"worker_dispatch_reached: {str(lifecycle.get('worker_dispatch_reached') is True).lower()}",
-            f"worker_invocation_reached: {str(lifecycle.get('worker_invocation_reached') is True).lower()}",
-            f"execution_candidate_reached: {str(lifecycle.get('worker_execution_candidate_reached') is True).lower()}",
-            f"external_task_package_reached: {str(lifecycle.get('external_task_package_reached') is True).lower()}",
-            f"openai_provider_reached: {str(lifecycle.get('openai_provider_reached') is True).lower()}",
-            f"result_validation_reached: {str(lifecycle.get('result_validation_reached') is True).lower()}",
-            f"replay_certification_reached: {str(lifecycle.get('replay_certification_reached') is True).lower()}",
+            "worker_assignment_reached: "
+            f"{str(_continuation_flag_reached('worker_assignment_reached', capture, lifecycle)).lower()}",
+            "worker_dispatch_reached: "
+            f"{str(_continuation_flag_reached('worker_dispatch_reached', capture, lifecycle)).lower()}",
+            "worker_invocation_reached: "
+            f"{str(_continuation_flag_reached('worker_invocation_reached', capture, lifecycle)).lower()}",
+            "execution_candidate_reached: "
+            f"{str(_continuation_flag_reached('worker_execution_candidate_reached', capture, lifecycle)).lower()}",
+            "external_task_package_reached: "
+            f"{str(_continuation_flag_reached('external_task_package_reached', capture, lifecycle)).lower()}",
+            "openai_provider_reached: "
+            f"{str(_continuation_flag_reached('openai_provider_reached', capture, lifecycle)).lower()}",
+            "result_validation_reached: "
+            f"{str(_continuation_flag_reached('result_validation_reached', capture, lifecycle)).lower()}",
+            "replay_certification_reached: "
+            f"{str(_continuation_flag_reached('replay_certification_reached', capture, lifecycle)).lower()}",
         ]
     )
+
+
+def _continuation_flag_reached(flag: str, *captures: dict[str, Any]) -> bool:
+    return any(isinstance(capture, dict) and capture.get(flag) is True for capture in captures)
 
 
 def _explicit_ocs_execution_required(human_prompt: str) -> bool:
@@ -7927,10 +7939,31 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "coverage": None,
         "clarification_required": False,
         "open_clarification_detected": False,
-        "provider_invoked": worker_lifecycle.get("openai_provider_reached") is True,
-        "worker_invoked": bridge_capture.get("worker_invoked") is True,
-        "worker_assigned": worker_lifecycle.get("worker_assignment_reached") is True,
-        "worker_dispatched": worker_lifecycle.get("worker_dispatch_reached") is True,
+        "provider_invoked": _continuation_flag_reached(
+            "openai_provider_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_invoked": bridge_capture.get("worker_invoked") is True
+        or _continuation_flag_reached(
+            "worker_invocation_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_assigned": _continuation_flag_reached(
+            "worker_assignment_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_dispatched": _continuation_flag_reached(
+            "worker_dispatch_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
         "authorization_created": authorization_created,
         "execution_authorization_status": execution_authorization.get("authorization_status"),
         "approval_required": (
@@ -7941,9 +7974,21 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         ),
         "operator_revision_requested": modification_requested,
         "execution_requested": completed or certified_worker_continuation.get("execution_requested") is True,
-        "execution_started": completed or worker_lifecycle.get("external_task_package_reached") is True,
+        "execution_started": completed
+        or _continuation_flag_reached(
+            "external_task_package_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
         "dispatch_requested": certified_worker_continuation.get("dispatch_requested") is True,
-        "invocation_requested": bridge_capture.get("worker_invoked") is True,
+        "invocation_requested": bridge_capture.get("worker_invoked") is True
+        or _continuation_flag_reached(
+            "worker_invocation_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
         "approval_bypassed": bridge_capture.get("approval_bypassed") is True,
         "governance_mutated": completed,
         "repository_mutation_performed": bridge_capture.get("mutation_performed") is True,
@@ -7977,16 +8022,65 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "result_validation_replay_reference": result_validation.get("result_validation_replay_reference"),
         "replay_certification_status": replay_certification.get("certification_status"),
         "replay_certification_replay_reference": replay_certification.get("replay_certification_replay_reference"),
-        "worker_request_reached": certified_continuation.get("worker_request_reached") is True,
-        "worker_assignment_reached": worker_lifecycle.get("worker_assignment_reached") is True,
-        "worker_dispatch_reached": worker_lifecycle.get("worker_dispatch_reached") is True,
-        "worker_invocation_reached": worker_lifecycle.get("worker_invocation_reached") is True,
-        "worker_execution_candidate_reached": worker_lifecycle.get("worker_execution_candidate_reached") is True,
-        "external_task_package_reached": worker_lifecycle.get("external_task_package_reached") is True,
-        "openai_provider_reached": worker_lifecycle.get("openai_provider_reached") is True,
-        "result_validation_reached": worker_lifecycle.get("result_validation_reached") is True,
-        "replay_certification_reached": worker_lifecycle.get("replay_certification_reached") is True,
-        "replay_lineage_preserved": worker_lifecycle.get("replay_lineage_preserved") is True,
+        "worker_request_reached": _continuation_flag_reached(
+            "worker_request_reached",
+            certified_continuation,
+            certified_worker_continuation,
+        ),
+        "worker_assignment_reached": _continuation_flag_reached(
+            "worker_assignment_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_dispatch_reached": _continuation_flag_reached(
+            "worker_dispatch_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_invocation_reached": _continuation_flag_reached(
+            "worker_invocation_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "worker_execution_candidate_reached": _continuation_flag_reached(
+            "worker_execution_candidate_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "external_task_package_reached": _continuation_flag_reached(
+            "external_task_package_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "openai_provider_reached": _continuation_flag_reached(
+            "openai_provider_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "result_validation_reached": _continuation_flag_reached(
+            "result_validation_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "replay_certification_reached": _continuation_flag_reached(
+            "replay_certification_reached",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
+        "replay_lineage_preserved": _continuation_flag_reached(
+            "replay_lineage_preserved",
+            certified_continuation,
+            certified_worker_continuation,
+            worker_lifecycle,
+        ),
         "replay_mutated": False,
         "governed_development_replay_reference": workflow_capture.get("governed_development_replay_reference"),
     }
