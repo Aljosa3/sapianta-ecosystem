@@ -350,7 +350,10 @@ from aigol.runtime.external_worker_adapter_runtime import (
     accept_external_worker_result_package,
     create_external_worker_task_package,
 )
-from aigol.runtime.openai_external_worker_provider_adapter import run_openai_external_worker_provider_adapter
+from aigol.runtime.universal_provider_worker_runtime import (
+    UNIVERSAL_PROVIDER_WORKER_INTERFACE,
+    run_universal_provider_worker_runtime,
+)
 from aigol.runtime.result_validation_runtime import validate_governed_execution_result
 from aigol.runtime.replay_certification_runtime import certify_validated_replay
 from aigol.runtime.worker_result_capture_runtime import (
@@ -933,8 +936,8 @@ def _scoped_external_worker_task_approval(
 
 def _external_worker_capability_declaration() -> dict[str, Any]:
     return {
-        "worker_interface": "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1",
-        "worker_family": "REAL_PROVIDER_EXTERNAL_LLM_WORKER",
+        "worker_interface": UNIVERSAL_PROVIDER_WORKER_INTERFACE,
+        "worker_family": "UNIVERSAL_PROVIDER_EXTERNAL_LLM_WORKER",
         "capabilities": [
             "EXECUTE_EXTERNAL_WORKER_TASK_PACKAGE_V1",
             "RETURN_EXTERNAL_WORKER_RESULT_PACKAGE_V1",
@@ -1028,21 +1031,21 @@ def _continue_worker_request_to_replay_certification(
         raise FailClosedRuntimeError(external_task_capture.get("failure_reason") or "external task package failed")
 
     openai_client = _external_worker_openai_client()
-    openai_worker_capture = run_openai_external_worker_provider_adapter(
+    provider_worker_capture = run_universal_provider_worker_runtime(
         result_id=f"{prompt_id}:OPENAI-EXTERNAL-WORKER-RESULT",
         task_package_artifact=external_task_capture["external_worker_task_package"],
         completed_at=created_at,
-        replay_dir=replay_dir / "openai_external_worker_provider",
+        replay_dir=replay_dir / "universal_provider_worker",
         openai_client=openai_client,
         api_key="test-openai-key" if openai_client is not None else None,
         model=OPENAI_PROVIDER_DEFAULT_MODEL,
         timeout_seconds=EXTERNAL_WORKER_OPENAI_TIMEOUT_SECONDS,
     )
-    if openai_worker_capture.get("openai_provider_connected") is not True:
-        raise FailClosedRuntimeError(openai_worker_capture.get("failure_reason") or "OpenAI worker failed")
+    if provider_worker_capture.get("openai_provider_connected") is not True:
+        raise FailClosedRuntimeError(provider_worker_capture.get("failure_reason") or "universal provider worker failed")
 
     external_result_capture = accept_external_worker_result_package(
-        result_package=openai_worker_capture["external_worker_result_package"],
+        result_package=provider_worker_capture["external_worker_result_package"],
         task_package_artifact=external_task_capture["external_worker_task_package"],
         accepted_by="AIGOL_GOVERNANCE",
         accepted_at=created_at,
@@ -1079,7 +1082,8 @@ def _continue_worker_request_to_replay_certification(
         "worker_invocation": invocation_capture,
         "worker_execution_candidate": execution_candidate_capture,
         "external_worker_task_package": external_task_capture,
-        "openai_external_worker_provider": openai_worker_capture,
+        "universal_provider_worker": provider_worker_capture,
+        "openai_external_worker_provider": provider_worker_capture,
         "external_worker_result": external_result_capture,
         "result_validation": result_validation_capture,
         "replay_certification": replay_certification_capture,
@@ -1088,6 +1092,8 @@ def _continue_worker_request_to_replay_certification(
         "worker_invocation_reached": True,
         "worker_execution_candidate_reached": True,
         "external_task_package_reached": True,
+        "universal_provider_runtime_reached": True,
+        "smart_provider_selection_reached": provider_worker_capture.get("smart_selection_executed") is True,
         "openai_provider_reached": True,
         "result_validation_reached": True,
         "replay_certification_reached": True,
@@ -1097,7 +1103,7 @@ def _continue_worker_request_to_replay_certification(
             for capture in (
                 execution_candidate_capture,
                 external_task_capture,
-                openai_worker_capture,
+                provider_worker_capture,
                 external_result_capture,
                 result_validation_capture,
                 replay_certification_capture,
@@ -7889,6 +7895,9 @@ def _interactive_acli_governed_development_bridge_turn_summary(
     openai_worker = worker_lifecycle.get("openai_external_worker_provider")
     if not isinstance(openai_worker, dict):
         openai_worker = {}
+    universal_provider_worker = worker_lifecycle.get("universal_provider_worker")
+    if not isinstance(universal_provider_worker, dict):
+        universal_provider_worker = {}
     result_validation = worker_lifecycle.get("result_validation")
     if not isinstance(result_validation, dict):
         result_validation = {}
@@ -8016,6 +8025,12 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         ),
         "external_worker_task_status": external_task.get("task_status"),
         "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "universal_provider_worker_status": universal_provider_worker.get("universal_provider_worker_status"),
+        "universal_provider_worker_replay_reference": universal_provider_worker.get(
+            "universal_provider_worker_replay_reference"
+        ),
+        "selected_provider_resource_id": universal_provider_worker.get("selected_resource_id"),
+        "smart_provider_selection_executed": universal_provider_worker.get("smart_selection_executed"),
         "openai_external_worker_status": openai_worker.get("worker_status"),
         "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
         "result_validation_status": result_validation.get("validation_status"),
@@ -8144,6 +8159,9 @@ def _interactive_ocs_llm_cognition_turn_summary(
     openai_worker = worker_lifecycle.get("openai_external_worker_provider")
     if not isinstance(openai_worker, dict):
         openai_worker = {}
+    universal_provider_worker = worker_lifecycle.get("universal_provider_worker")
+    if not isinstance(universal_provider_worker, dict):
+        universal_provider_worker = {}
     result_validation = worker_lifecycle.get("result_validation")
     if not isinstance(result_validation, dict):
         result_validation = {}
@@ -8214,6 +8232,12 @@ def _interactive_ocs_llm_cognition_turn_summary(
         ),
         "external_worker_task_status": external_task.get("task_status"),
         "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "universal_provider_worker_status": universal_provider_worker.get("universal_provider_worker_status"),
+        "universal_provider_worker_replay_reference": universal_provider_worker.get(
+            "universal_provider_worker_replay_reference"
+        ),
+        "selected_provider_resource_id": universal_provider_worker.get("selected_resource_id"),
+        "smart_provider_selection_executed": universal_provider_worker.get("smart_selection_executed"),
         "openai_external_worker_status": openai_worker.get("worker_status"),
         "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
         "result_validation_status": result_validation.get("validation_status"),
@@ -8663,6 +8687,9 @@ def _interactive_native_development_turn_summary(
     openai_worker = worker_lifecycle.get("openai_external_worker_provider")
     if not isinstance(openai_worker, dict):
         openai_worker = {}
+    universal_provider_worker = worker_lifecycle.get("universal_provider_worker")
+    if not isinstance(universal_provider_worker, dict):
+        universal_provider_worker = {}
     result_validation = worker_lifecycle.get("result_validation")
     if not isinstance(result_validation, dict):
         result_validation = {}
@@ -8760,6 +8787,12 @@ def _interactive_native_development_turn_summary(
         ),
         "external_worker_task_status": external_task.get("task_status"),
         "external_worker_task_replay_reference": external_task.get("external_worker_replay_reference"),
+        "universal_provider_worker_status": universal_provider_worker.get("universal_provider_worker_status"),
+        "universal_provider_worker_replay_reference": universal_provider_worker.get(
+            "universal_provider_worker_replay_reference"
+        ),
+        "selected_provider_resource_id": universal_provider_worker.get("selected_resource_id"),
+        "smart_provider_selection_executed": universal_provider_worker.get("smart_selection_executed"),
         "openai_external_worker_status": openai_worker.get("worker_status"),
         "openai_external_worker_replay_reference": openai_worker.get("openai_external_worker_replay_reference"),
         "result_validation_status": result_validation.get("validation_status"),

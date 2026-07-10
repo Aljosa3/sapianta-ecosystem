@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from dataclasses import dataclass
 from typing import Any
@@ -20,6 +21,7 @@ from aigol.runtime.external_worker_adapter_runtime import EXTERNAL_WORKER_TASK_P
 from aigol.runtime.openai_external_worker_provider_adapter import OPENAI_EXTERNAL_WORKER_COMPLETED
 from aigol.runtime.replay_certification_runtime import REPLAY_CERTIFICATION_COMPLETED
 from aigol.runtime.result_validation_runtime import RESULT_VALIDATION_COMPLETED
+from aigol.runtime.universal_provider_worker_runtime import UNIVERSAL_PROVIDER_WORKER_COMPLETED
 from aigol.runtime.worker_assignment_runtime import WORKER_ASSIGNED
 from aigol.runtime.worker_dispatch_runtime import WORKER_DISPATCHED
 from aigol.runtime.worker_invocation_runtime import WORKER_INVOKED
@@ -196,6 +198,10 @@ def test_development_acli_auto_continue_reaches_replay_certification(tmp_path, m
     assert turn["worker_invocation_status"] == WORKER_INVOKED
     assert turn["worker_execution_candidate_status"] == WORKER_EXECUTION_CANDIDATE_CREATED
     assert turn["external_worker_task_status"] == EXTERNAL_WORKER_TASK_PACKAGE_CREATED
+    assert turn["universal_provider_worker_status"] == UNIVERSAL_PROVIDER_WORKER_COMPLETED
+    assert turn["selected_provider_resource_id"] == "OPENAI"
+    assert turn["smart_provider_selection_executed"] is True
+    assert turn["universal_provider_worker_replay_reference"]
     assert turn["openai_external_worker_status"] == OPENAI_EXTERNAL_WORKER_COMPLETED
     assert turn["result_validation_status"] == RESULT_VALIDATION_COMPLETED
     assert turn["replay_certification_status"] == REPLAY_CERTIFICATION_COMPLETED
@@ -211,6 +217,16 @@ def test_development_acli_auto_continue_reaches_replay_certification(tmp_path, m
     assert turn["execution_requested"] is True
     assert turn["replay_lineage_preserved"] is True
     assert proposal_adapter.calls == 1
+
+
+def test_worker_continuation_routes_through_universal_provider_runtime() -> None:
+    source = inspect.getsource(aigol_cli._continue_worker_request_to_replay_certification)
+    capability_source = inspect.getsource(aigol_cli._external_worker_capability_declaration)
+
+    assert "run_universal_provider_worker_runtime(" in source
+    assert "run_openai_external_worker_provider_adapter(" not in source
+    assert "UNIVERSAL_PROVIDER_WORKER_INTERFACE" in capability_source
+    assert "OPENAI_EXTERNAL_WORKER_PROVIDER_ADAPTER_V1" not in capability_source
 
 
 def test_ocs_acli_reaches_ppp_only_when_execution_explicitly_required(tmp_path, monkeypatch) -> None:
