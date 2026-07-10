@@ -109,6 +109,28 @@ def run_reference_uhi_session(
                     clarification_count += 1 if pending_clarification is not None else 0
                     multiline_request_count += multiline_requests
                     compose_buffer.clear()
+                    _record_reference_workspace_state(
+                        command_name="aicli",
+                        session=session,
+                        root=root,
+                        workspace_path=workspace_path,
+                        created=created,
+                        session_status=session_status,
+                        exit_reason="AWAITING_PLATFORM_CORE_INPUT",
+                        submitted_messages=submitted_messages,
+                        submitted_request_count=submitted_request_count,
+                        multiline_request_count=multiline_request_count,
+                        canceled_compose_count=canceled_compose_count,
+                        clarification_count=clarification_count,
+                        approval_count=approval_count,
+                        runtime_status=runtime_status,
+                        runtime_result=runtime_result,
+                        last_resolution=last_resolution,
+                        last_project_context=last_project_context,
+                        transcript=transcript,
+                        pending_clarification=pending_clarification,
+                        pending_summary=pending_summary,
+                    )
                 if pending_summary is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL"
                     exit_reason = "EOF_AWAITING_APPROVAL"
@@ -159,6 +181,28 @@ def run_reference_uhi_session(
                 compose_buffer.clear()
             pending_summary = None
             pending_clarification = None
+            _record_reference_workspace_state(
+                command_name="aicli",
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                session_status=session_status,
+                exit_reason="CANCEL_COMMAND",
+                submitted_messages=submitted_messages,
+                submitted_request_count=submitted_request_count,
+                multiline_request_count=multiline_request_count,
+                canceled_compose_count=canceled_compose_count,
+                clarification_count=clarification_count,
+                approval_count=approval_count,
+                runtime_status=runtime_status,
+                runtime_result=runtime_result,
+                last_resolution=last_resolution,
+                last_project_context=last_project_context,
+                transcript=transcript,
+                pending_clarification=pending_clarification,
+                pending_summary=pending_summary,
+            )
             output_writer("Pending request canceled.")
             transcript.append({"event": "cancel"})
             continue
@@ -187,6 +231,28 @@ def run_reference_uhi_session(
             clarification_count += 1 if pending_clarification is not None else 0
             multiline_request_count += multiline_requests
             compose_buffer.clear()
+            _record_reference_workspace_state(
+                command_name="aicli",
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                session_status=session_status,
+                exit_reason="AWAITING_PLATFORM_CORE_INPUT",
+                submitted_messages=submitted_messages,
+                submitted_request_count=submitted_request_count,
+                multiline_request_count=multiline_request_count,
+                canceled_compose_count=canceled_compose_count,
+                clarification_count=clarification_count,
+                approval_count=approval_count,
+                runtime_status=runtime_status,
+                runtime_result=runtime_result,
+                last_resolution=last_resolution,
+                last_project_context=last_project_context,
+                transcript=transcript,
+                pending_clarification=pending_clarification,
+                pending_summary=pending_summary,
+            )
             continue
         if normalized == "/approve":
             if pending_summary is None and compose_buffer:
@@ -211,6 +277,28 @@ def run_reference_uhi_session(
                 clarification_count += 1 if pending_clarification is not None else 0
                 multiline_request_count += multiline_requests
                 compose_buffer.clear()
+                _record_reference_workspace_state(
+                    command_name="aicli",
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    session_status=session_status,
+                    exit_reason="AWAITING_PLATFORM_CORE_INPUT",
+                    submitted_messages=submitted_messages,
+                    submitted_request_count=submitted_request_count,
+                    multiline_request_count=multiline_request_count,
+                    canceled_compose_count=canceled_compose_count,
+                    clarification_count=clarification_count,
+                    approval_count=approval_count,
+                    runtime_status=runtime_status,
+                    runtime_result=runtime_result,
+                    last_resolution=last_resolution,
+                    last_project_context=last_project_context,
+                    transcript=transcript,
+                    pending_clarification=pending_clarification,
+                    pending_summary=pending_summary,
+                )
             if pending_summary is None:
                 output_writer("No governed implementation summary is pending approval.")
                 transcript.append({"event": "approval_without_summary"})
@@ -242,6 +330,28 @@ def run_reference_uhi_session(
             pending_summary = None
             pending_clarification = None
             transcript.append({"event": "approved", "runtime_status": runtime_status})
+            _record_reference_workspace_state(
+                command_name="aicli",
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                session_status=session_status,
+                exit_reason="RUNTIME_COMPLETED",
+                submitted_messages=submitted_messages,
+                submitted_request_count=submitted_request_count,
+                multiline_request_count=multiline_request_count,
+                canceled_compose_count=canceled_compose_count,
+                clarification_count=clarification_count,
+                approval_count=approval_count,
+                runtime_status=runtime_status,
+                runtime_result=runtime_result,
+                last_resolution=last_resolution,
+                last_project_context=last_project_context,
+                transcript=transcript,
+                pending_clarification=pending_clarification,
+                pending_summary=pending_summary,
+            )
             continue
 
         compose_buffer.append(line_text)
@@ -630,8 +740,55 @@ def _record_submit_workspace_state(
     pending_clarification: dict[str, Any] | None,
     pending_summary: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    return _record_reference_workspace_state(
+        command_name="aicli submit",
+        session=session,
+        root=root,
+        workspace_path=workspace_path,
+        created=created,
+        session_status=session_status,
+        exit_reason=exit_reason,
+        submitted_messages=submitted_messages,
+        submitted_request_count=submitted_request_count,
+        multiline_request_count=multiline_request_count,
+        canceled_compose_count=canceled_compose_count,
+        clarification_count=clarification_count,
+        approval_count=approval_count,
+        runtime_status=runtime_status,
+        runtime_result=runtime_result,
+        last_resolution=last_resolution,
+        last_project_context=last_project_context,
+        transcript=transcript,
+        pending_clarification=pending_clarification,
+        pending_summary=pending_summary,
+    )
+
+
+def _record_reference_workspace_state(
+    *,
+    command_name: str,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    session_status: str,
+    exit_reason: str,
+    submitted_messages: int,
+    submitted_request_count: int,
+    multiline_request_count: int,
+    canceled_compose_count: int,
+    clarification_count: int,
+    approval_count: int,
+    runtime_status: str,
+    runtime_result: dict[str, Any] | None,
+    last_resolution: dict[str, Any] | None,
+    last_project_context: dict[str, Any] | None,
+    transcript: list[dict[str, Any]],
+    pending_clarification: dict[str, Any] | None,
+    pending_summary: dict[str, Any] | None,
+) -> dict[str, Any]:
     completion = {
-        "command": "aicli submit",
+        "command": command_name,
         "runtime_version": REFERENCE_UHI_RUNTIME_VERSION,
         "session_id": session,
         "created_at": created,
