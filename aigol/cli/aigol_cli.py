@@ -220,6 +220,8 @@ from aigol.runtime.conversational_cli_runtime import (
     AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION as CONVERSATIONAL_AI_DECISION_VALIDATOR_DOMAIN_FOUNDATION,
     AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW as CONVERSATIONAL_AUTHORIZED_DOMAIN_ARTIFACT_REQUEST_REVIEW,
     CAPABILITY_LIFECYCLE_GOVERNANCE as CONVERSATIONAL_CAPABILITY_LIFECYCLE_GOVERNANCE,
+    CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1,
+    CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1,
     CREATE_DOMAIN_COMPLIANCE_CLARIFICATION as CONVERSATIONAL_CREATE_DOMAIN_COMPLIANCE_CLARIFICATION,
     CREATE_DOMAIN_MARKETING as CONVERSATIONAL_CREATE_DOMAIN_MARKETING,
     CREATE_DOMAIN_TRADING as CONVERSATIONAL_CREATE_DOMAIN_TRADING,
@@ -1183,6 +1185,94 @@ def _continue_ppp_handoff_to_worker_request(
 
 def _canonical_human_interface_runtime_entry_context(args: argparse.Namespace) -> bool:
     return str(getattr(args, "operator_context", "") or "") == "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+
+
+def _canonical_human_interface_governed_development_bridge_selection_active(
+    *,
+    args: argparse.Namespace,
+    auto_continue_enabled: bool,
+    human_prompt: str,
+    pending_governed_development_bridge: dict[str, Any] | None,
+) -> bool:
+    return (
+        _canonical_human_interface_runtime_entry_context(args)
+        and auto_continue_enabled
+        and pending_governed_development_bridge is None
+        and is_native_development_prompt(human_prompt)
+    )
+
+
+def _canonical_human_interface_governed_development_routing_capture(
+    *,
+    routing_id: str,
+    prompt_id: str,
+    human_prompt: str,
+    canonical_chain_id: str,
+    created_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    replay_reference = str(replay_dir)
+    decision = {
+        "artifact_type": CONVERSATIONAL_ROUTING_DECISION_ARTIFACT_V1,
+        "routing_decision_id": f"{routing_id}:DECISION",
+        "prompt_id": _require_cli_string(prompt_id, "prompt_id"),
+        "human_prompt_hash": replay_hash(_require_cli_string(human_prompt, "human_prompt")),
+        "canonical_chain_id": _require_cli_string(canonical_chain_id, "canonical_chain_id"),
+        "workflow_id": CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+        "routing_status": ROUTING_SELECTED,
+        "confidence": ROUTING_VISIBILITY_HIGH,
+        "matched_terms": ["canonical-human-interface-runtime-entry", "governed-development-bridge"],
+        "human_intent_intake": None,
+        "intent_family": "GOVERNED_DEVELOPMENT",
+        "clarification_questions": [],
+        "expected_workflow_targets": [CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW],
+        "semantic_routing_source": "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        "failure_reason": None,
+        "created_at": _require_cli_string(created_at, "created_at"),
+        "replay_reference": replay_reference,
+    }
+    decision["artifact_hash"] = replay_hash(decision)
+    selection = {
+        "artifact_type": CONVERSATIONAL_WORKFLOW_SELECTION_ARTIFACT_V1,
+        "workflow_selection_id": f"{routing_id}:WORKFLOW-SELECTION",
+        "routing_decision_reference": decision["routing_decision_id"],
+        "routing_decision_hash": decision["artifact_hash"],
+        "canonical_chain_id": decision["canonical_chain_id"],
+        "workflow_id": CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+        "routing_status": ROUTING_SELECTED,
+        "existing_runtime": "acli_governed_development_execution_bridge",
+        "existing_cli_command": "aigol conversation",
+        "operator_summary": (
+            "Canonical Human Interface runtime entry selected the governed development "
+            "execution bridge before native conversational routing."
+        ),
+        "human_intent_intake": None,
+        "intent_family": "GOVERNED_DEVELOPMENT",
+        "clarification_questions": [],
+        "expected_workflow_targets": [CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW],
+        "semantic_routing_source": "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        "failure_reason": None,
+        "created_at": created_at,
+        "replay_reference": replay_reference,
+    }
+    selection["artifact_hash"] = replay_hash(selection)
+    capture = {
+        "routing_decision_artifact": decision,
+        "workflow_selection_artifact": selection,
+        "workflow_id": CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+        "routing_status": ROUTING_SELECTED,
+        "conversational_cli_routing_replay_reference": replay_reference,
+        "conversational_cli_routing_hash": replay_hash(
+            {
+                "routing_decision_hash": decision["artifact_hash"],
+                "workflow_selection_hash": selection["artifact_hash"],
+                "replay_reference": replay_reference,
+            }
+        ),
+        "fail_closed": False,
+        "failure_reason": None,
+    }
+    return capture
 
 
 def _continue_governed_development_bridge_to_certified_runtime(
@@ -2220,6 +2310,7 @@ def _record_interactive_routing_visibility(
     conversational_routing_capture: dict[str, Any] | None = None,
     pending_governed_development_bridge: dict[str, Any] | None = None,
     pending_post_entry_continuation: dict[str, Any] | None = None,
+    canonical_human_interface_governed_development_bridge_selected: bool = False,
 ) -> dict[str, Any]:
     if conversational_routing_capture is None:
         analysis = _interactive_routing_visibility_analysis(
@@ -2230,6 +2321,9 @@ def _record_interactive_routing_visibility(
             domain_approval_entry_intent=domain_approval_entry_intent,
             pending_governed_development_bridge=pending_governed_development_bridge,
             pending_post_entry_continuation=pending_post_entry_continuation,
+            canonical_human_interface_governed_development_bridge_selected=(
+                canonical_human_interface_governed_development_bridge_selected
+            ),
         )
     else:
         analysis = _authoritative_routing_visibility_analysis(conversational_routing_capture)
@@ -2289,8 +2383,20 @@ def _interactive_routing_visibility_analysis(
     domain_approval_entry_intent: dict[str, Any] | None = None,
     pending_governed_development_bridge: dict[str, Any] | None = None,
     pending_post_entry_continuation: dict[str, Any] | None = None,
+    canonical_human_interface_governed_development_bridge_selected: bool = False,
 ) -> dict[str, Any]:
     human_decision = normalize_human_decision(human_prompt)
+    if canonical_human_interface_governed_development_bridge_selected:
+        return _routing_visibility_selected(
+            workflow_id=CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW,
+            routing_confidence=ROUTING_VISIBILITY_HIGH,
+            matched_signals=["canonical-human-interface-runtime-entry", "governed-development-bridge"],
+            competing_signals=[],
+            routing_reason=(
+                "Canonical Human Interface runtime entry selected the governed development "
+                "execution bridge before native conversational routing."
+            ),
+        )
     if (
         pending_post_entry_continuation is not None
         and _is_lifecycle_command_prompt(human_prompt)
@@ -3513,10 +3619,19 @@ def run_interactive_conversation(
             domain_approval_entry_detected = (
                 domain_approval_entry_intent.get("approval_entry_intent_detected") is True
             )
+            canonical_human_interface_governed_development_bridge_selected = (
+                _canonical_human_interface_governed_development_bridge_selection_active(
+                    args=args,
+                    auto_continue_enabled=auto_continue_enabled,
+                    human_prompt=human_prompt,
+                    pending_governed_development_bridge=pending_governed_development_bridge,
+                )
+            )
             stateful_pre_routing_gate = (
                 active_clarification_reply_detected
                 or active_clarification_reply_mismatch_detected
                 or domain_approval_entry_detected
+                or canonical_human_interface_governed_development_bridge_selected
                 or (
                     pending_domain_proposal is not None
                     and domain_proposal_decision is not None
@@ -3564,6 +3679,17 @@ def run_interactive_conversation(
                     created_at=created_at,
                     replay_dir=turn_root / "conversational_cli_routing",
                 )
+            elif canonical_human_interface_governed_development_bridge_selected:
+                conversational_routing_capture = (
+                    _canonical_human_interface_governed_development_routing_capture(
+                        routing_id=f"{prompt_id}:CANONICAL-UHI-GOVERNED-BRIDGE-ROUTING",
+                        prompt_id=prompt_id,
+                        human_prompt=human_prompt,
+                        canonical_chain_id=current_chain_id or prompt_id,
+                        created_at=created_at,
+                        replay_dir=turn_root / "canonical_uhi_governed_bridge_routing",
+                    )
+                )
             authoritative_workflow_id = (
                 (conversational_routing_capture or {}).get("workflow_selection_artifact", {}).get("workflow_id")
             )
@@ -3574,6 +3700,8 @@ def run_interactive_conversation(
                 and human_decision in {APPROVE, REJECT, REQUEST_MODIFICATION}
             )
             if stateful_governed_development_decision:
+                authoritative_workflow_id = CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW
+            if canonical_human_interface_governed_development_bridge_selected:
                 authoritative_workflow_id = CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW
             routing_visibility_capture = _record_interactive_routing_visibility(
                 turn_id=turn_id,
@@ -3586,6 +3714,9 @@ def run_interactive_conversation(
                 conversational_routing_capture=conversational_routing_capture,
                 pending_governed_development_bridge=pending_governed_development_bridge,
                 pending_post_entry_continuation=pending_post_entry_continuation,
+                canonical_human_interface_governed_development_bridge_selected=(
+                    canonical_human_interface_governed_development_bridge_selected
+                ),
                 created_at=created_at,
                 turn_root=turn_root,
             )
@@ -7772,6 +7903,17 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "failure_reason": bridge_capture.get("failure_reason"),
         "replay_reference": bridge_capture.get("replay_reference"),
         "conversation_replay_reference": bridge_capture.get("replay_reference"),
+        "execution_summary_reference": bridge_capture.get("replay_reference"),
+        "human_confirmation_reference": (
+            bridge_capture.get("approval_hash")
+            or bridge_capture.get("approval_replay_reference")
+            or (
+                bridge_capture.get("replay_reference")
+                if bridge_capture.get("approval_granted") is True
+                or bridge_capture.get("upstream_human_approval_consumed") is True
+                else None
+            )
+        ),
         "canonical_chain_id": prompt_id,
         "current_chain_id": prompt_id,
         "latest_chain_id": prompt_id,
