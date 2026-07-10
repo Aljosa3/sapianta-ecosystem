@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from aigol.cli import aicli, aigol_cli
@@ -76,6 +77,72 @@ def test_canonical_runtime_entry_service_owns_shared_runtime_binding(tmp_path: P
         / "workspace_state"
         / "001_platform_core_workspace_state_recorded.json"
     ).exists()
+
+
+def test_canonical_runtime_entry_projects_status_from_replay_evidence(tmp_path: Path) -> None:
+    def replay_backed_runtime(args, input_func, output_func):
+        input_func("")
+        output_func("runtime completed with replay evidence")
+        universal_replay = Path(args.runtime_root) / "runtime" / "universal_provider_worker"
+        certification_replay = Path(args.runtime_root) / "runtime" / "replay_certification"
+        universal_replay.mkdir(parents=True)
+        certification_replay.mkdir(parents=True)
+        _write_wrapped_artifact(
+            universal_replay / "001_universal_provider_worker_result_recorded.json",
+            {
+                "universal_provider_worker_status": "UNIVERSAL_PROVIDER_WORKER_COMPLETED",
+                "smart_selection_executed": True,
+                "provider_invocation_delegated": True,
+                "certified_provider_attachment_reused": True,
+                "selected_resource_id": "OPENAI",
+            },
+        )
+        _write_wrapped_artifact(
+            certification_replay / "000_replay_certification_artifact_recorded.json",
+            {
+                "certification_status": "REPLAY_CERTIFICATION_COMPLETED",
+                "replay_lineage_preserved": True,
+            },
+        )
+        return {
+            "command": "aigol conversation",
+            "runtime_root": args.runtime_root,
+            "turn_count": 1,
+            "failed_turns": 0,
+            "exit_reason": "EXIT_COMMAND",
+            "auto_continue_enabled": True,
+            "turns": [
+                {
+                    "worker_invoked": False,
+                    "provider_invoked": False,
+                    "openai_provider_reached": False,
+                    "replay_certification_reached": False,
+                    "execution_authorization_status": "EXECUTION_AUTHORIZED",
+                    "universal_provider_worker_replay_reference": str(universal_replay),
+                    "replay_certification_replay_reference": str(certification_replay),
+                    "replay_reference": str(Path(args.runtime_root) / "runtime" / "TURN-000001"),
+                }
+            ],
+        }
+
+    result = run_human_interface_runtime_entry(
+        interface_name="reference replay projection interface",
+        session_id="UHI-G18-05-REPLAY-PROJECTION",
+        human_requests=["Implement replay-backed runtime projection."],
+        created_at="2026-07-10T00:00:00Z",
+        runtime_root=tmp_path,
+        workspace=".",
+        governed_runtime_runner=replay_backed_runtime,
+    )
+
+    assert result["canonical_runtime_entry_status"] == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND
+    assert result["runtime_binding_status"] == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND
+    assert result["provider_invocation_reached"] is True
+    assert result["worker_execution_reached"] is True
+    assert result["replay_certification_reached"] is True
+    assert result["runtime_status_projection_source"] == "LATEST_TURN_AND_REPLAY_EVIDENCE"
+    assert result["runtime_status_projection_evidence"]["universal_provider_worker_replay_inspected"] is True
+    assert result["runtime_status_projection_evidence"]["replay_certification_replay_inspected"] is True
 
 
 def test_aicli_default_approval_uses_canonical_runtime_entry(monkeypatch, tmp_path: Path) -> None:
@@ -309,3 +376,10 @@ def _reader(values: list[str]):
         return next(iterator)
 
     return read
+
+
+def _write_wrapped_artifact(path: Path, artifact: dict) -> None:
+    path.write_text(
+        json.dumps({"artifact": artifact}, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
