@@ -41,6 +41,9 @@ PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLANNER_VERSION = (
 PLATFORM_CORE_CLARIFICATION_COMPLETION_VERSION = (
     "G19_HI_04_CLARIFICATION_COMPLETION_LIFECYCLE_V1"
 )
+PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION = (
+    "G19_HI_06_FIRST_PASS_CONTEXT_SUFFICIENCY_TRANSITION_V1"
+)
 PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION = (
     "G19_HI_02_GOVERNED_WORK_TYPE_PRESERVATION_V1"
 )
@@ -232,6 +235,10 @@ def prepare_unified_human_interface_project_context(
         knowledge_reuse=knowledge_reuse,
         development_intent=development_intent,
         workspace_state=prior_state,
+    )
+    development_intent = development_intent_with_context_sufficiency(
+        development_intent=development_intent,
+        conversation_experience=conversation_experience,
     )
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
@@ -830,7 +837,21 @@ def _accepted_semantic_requirements(*, reply: str, slot_id: str | None) -> list[
             accepted.append("reusable Platform Core behavior")
         if "human interface" in lowered or "interfaces" in lowered or "shared" in lowered:
             accepted.append("Human Interface neutrality")
-        if any(term in lowered for term in ("outcome", "user-visible", "observable", "enable", "enables")):
+        if any(
+            term in lowered
+            for term in (
+                "outcome",
+                "user-visible",
+                "observable",
+                "enable",
+                "enables",
+                "become",
+                "presentation adapter",
+                "presentation adapters",
+                "thin adapter",
+                "stateless",
+            )
+        ):
             accepted.append("observable user-visible outcome")
     elif slot_id == "architecture_subject":
         if any(term in lowered for term in ("behavior", "artifact", "interface", "runtime", "workflow")):
@@ -2184,6 +2205,9 @@ def human_conversation_experience_from_resolution(
         knowledge_reuse=reuse_model,
         development_intent=intent,
     )
+    clarification_required_after_sufficiency = (
+        clarification_plan.get("clarification_required_after_sufficiency") is True
+    )
     response_mode = "INFORMATIONAL"
     headline = "I inspected the project state."
     explanation = "I did not find enough deterministic development intent to prepare governed execution."
@@ -2197,7 +2221,7 @@ def human_conversation_experience_from_resolution(
             "Approval will delegate to the certified runtime; the interface will not execute or authorize work."
         )
         next_step = "Review the summary and approve only if it matches your intent."
-    elif intent.get("clarification_required") is True:
+    elif intent.get("clarification_required") is True and clarification_required_after_sufficiency:
         response_mode = "CLARIFICATION"
         headline = "I need one clarification before governed execution."
         explanation = _conversation_explanation_for_clarification(prompt, intent)
@@ -2209,7 +2233,7 @@ def human_conversation_experience_from_resolution(
         next_step = "Answer the question with the smallest useful detail."
     elif intent.get("work_type_conflict_detected") is True or (
         intent.get("work_type") in NON_MUTATING_GOVERNED_WORK_TYPES
-        and intent.get("clarification_required") is not True
+        and not clarification_required_after_sufficiency
     ):
         response_mode = "INFORMATIONAL"
         headline = f"I preserved this as {intent.get('work_type')} work."
@@ -2218,7 +2242,7 @@ def human_conversation_experience_from_resolution(
             "implementation because this work type is non-mutating."
         )
         next_step = "Submit an explicit implementation work type only if you want runtime implementation."
-    elif _reuse_request_detected(lowered):
+    elif _reuse_request_detected(lowered) and clarification_required_after_sufficiency:
         response_mode = "CLARIFICATION"
         headline = "I checked for reusable project capability evidence."
         explanation = (
@@ -2227,7 +2251,7 @@ def human_conversation_experience_from_resolution(
         )
         questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Choose the goal outcome or confirm the inferred target."
-    elif _architecture_question_detected(lowered):
+    elif _architecture_question_detected(lowered) and clarification_required_after_sufficiency:
         response_mode = "CLARIFICATION"
         headline = "I can help place this architecturally."
         explanation = (
@@ -2257,6 +2281,53 @@ def human_conversation_experience_from_resolution(
         development_intent=intent,
         clarification_plan=clarification_plan,
     )
+
+
+def development_intent_with_context_sufficiency(
+    *,
+    development_intent: dict[str, Any],
+    conversation_experience: dict[str, Any],
+) -> dict[str, Any]:
+    """Project first-pass sufficiency into the returned intent artifact."""
+
+    intent = deepcopy(development_intent)
+    conversation = conversation_experience if isinstance(conversation_experience, dict) else {}
+    plan = conversation.get("deterministic_clarification_plan")
+    if not isinstance(plan, dict):
+        return intent
+    sufficiency = plan.get("clarification_context_sufficiency_evaluation")
+    if not isinstance(sufficiency, dict):
+        return intent
+    clarification_required_before = intent.get("clarification_required") is True
+    clarification_required_after = (
+        sufficiency.get("clarification_required_after_sufficiency") is True
+    )
+    intent["clarification_context_sufficiency_version"] = (
+        PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION
+    )
+    intent["clarification_required_before_context_sufficiency"] = clarification_required_before
+    intent["clarification_required_after_context_sufficiency"] = clarification_required_after
+    intent["clarification_context_sufficiency_evaluation"] = deepcopy(sufficiency)
+    intent["candidate_missing_semantic_slots"] = deepcopy(
+        plan.get("candidate_missing_semantic_slots") or []
+    )
+    intent["remaining_missing_semantic_slots"] = deepcopy(
+        sufficiency.get("remaining_missing_slots") or []
+    )
+    intent["satisfied_semantic_slots_from_context"] = unique_strings(
+        sufficiency.get("satisfied_semantic_slots")
+    )
+    intent["clarification_suppressed_by_context_sufficiency"] = (
+        clarification_required_before and not clarification_required_after
+    )
+    if clarification_required_before and not clarification_required_after:
+        intent["clarification_required"] = False
+        intent["clarification_reason_before_context_sufficiency"] = intent.get(
+            "clarification_reason"
+        )
+        intent["clarification_reason"] = None
+    intent["artifact_hash"] = replay_hash(intent)
+    return intent
 
 
 def _conversation_experience_artifact(
@@ -2300,6 +2371,18 @@ def _conversation_experience_artifact(
         "clarification_planner_version": clarification_plan.get("runtime_version"),
         "clarification_planner_authority": clarification_plan.get("planner_authority"),
         "clarification_planner_selected_slot": clarification_plan.get("selected_missing_slot"),
+        "clarification_context_sufficiency_version": (
+            PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION
+        ),
+        "clarification_context_sufficiency_evaluation": deepcopy(
+            clarification_plan.get("clarification_context_sufficiency_evaluation")
+        ),
+        "clarification_required_after_sufficiency": clarification_plan.get(
+            "clarification_required_after_sufficiency"
+        ) is True,
+        "satisfied_semantic_slots_from_context": unique_strings(
+            clarification_plan.get("satisfied_semantic_slots_from_context")
+        ),
         "clarification_question_count": len(questions),
         "recommended_next_user_action": next_step,
         "progress_messages": [
@@ -2466,7 +2549,7 @@ def deterministic_clarification_plan(
     candidate_goal_target = str(goal_mapping.get("goal_target") or "")
     if not candidate_goal_target and isinstance(discovery, dict):
         candidate_goal_target = str(discovery.get("selected_goal_target") or "")
-    missing_slots = (
+    candidate_missing_slots = (
         []
         if development_intent.get("summary_admissible") is True
         else _clarification_missing_slots(
@@ -2479,6 +2562,15 @@ def deterministic_clarification_plan(
             candidate_goal_target=candidate_goal_target,
         )
     )
+    sufficiency_evaluation = clarification_context_sufficiency_evaluation(
+        message=prompt,
+        candidate_missing_slots=candidate_missing_slots,
+        workspace_state=workspace_state,
+        guidance=guidance,
+        knowledge_reuse=knowledge_reuse,
+        development_intent=development_intent,
+    )
+    missing_slots = sufficiency_evaluation["remaining_missing_slots"]
     ranked_slots = sorted(
         missing_slots,
         key=lambda item: (-int(item["uncertainty_rank"]), str(item["slot_id"])),
@@ -2515,6 +2607,8 @@ def deterministic_clarification_plan(
             "CERTIFICATION_CONTEXT",
             "CONVERSATION_CONTEXT",
             "CANDIDATE_GOVERNED_GOALS",
+            "CONTEXT_SUFFICIENCY_EVALUATION",
+            "DETERMINISTIC_SLOT_SATISFACTION",
             "MISSING_SEMANTIC_SLOTS",
             "RANK_REMAINING_UNCERTAINTY",
             "CHOOSE_HIGHEST_VALUE_CLARIFICATION",
@@ -2538,6 +2632,14 @@ def deterministic_clarification_plan(
         },
         "candidate_governed_goals": deepcopy(development_intent.get("candidate_capabilities") or []),
         "selected_candidate_capability": deepcopy(candidate),
+        "candidate_missing_semantic_slots": deepcopy(candidate_missing_slots),
+        "clarification_context_sufficiency_evaluation": deepcopy(sufficiency_evaluation),
+        "clarification_required_after_sufficiency": sufficiency_evaluation[
+            "clarification_required_after_sufficiency"
+        ],
+        "satisfied_semantic_slots_from_context": sufficiency_evaluation[
+            "satisfied_semantic_slots"
+        ],
         "missing_semantic_slots": ranked_slots,
         "selected_missing_slot": selected_slot.get("slot_id") if isinstance(selected_slot, dict) else None,
         "selected_clarification_question": question,
@@ -2551,6 +2653,108 @@ def deterministic_clarification_plan(
         "platform_core_owns_clarification_semantics": True,
         "llm_reasoning_used": False,
         "probabilistic_routing_used": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def clarification_context_sufficiency_evaluation(
+    *,
+    message: str,
+    candidate_missing_slots: list[dict[str, Any]],
+    workspace_state: dict[str, Any] | None,
+    guidance: dict[str, Any],
+    knowledge_reuse: dict[str, Any],
+    development_intent: dict[str, Any],
+) -> dict[str, Any]:
+    """Remove clarification slots already satisfied by deterministic context."""
+
+    prompt = " ".join(require_string(message, "message").split())
+    lowered_prompt = prompt.lower()
+    clarification_first_requested = any(
+        term in lowered_prompt
+        for term in (
+            "need clarification",
+            "needs clarification",
+            "ask me for clarification",
+            "ask for clarification",
+            "clarify before",
+        )
+    )
+    remaining_slots: list[dict[str, Any]] = []
+    satisfied_slots: list[str] = []
+    satisfied_from_original_request: list[dict[str, Any]] = []
+    unresolved_slots: list[dict[str, Any]] = []
+    for slot in _dedupe_missing_slots(candidate_missing_slots):
+        slot_id = str(slot.get("slot_id") or "")
+        accepted = _accepted_semantic_requirements(reply=prompt, slot_id=slot_id)
+        required = _required_semantic_requirements(slot_id)
+        satisfied = (
+            not clarification_first_requested
+            and bool(required)
+            and all(requirement in accepted for requirement in required)
+        )
+        unresolved = [] if satisfied else [
+            requirement for requirement in required if requirement not in accepted
+        ]
+        if satisfied:
+            satisfied_slots.append(slot_id)
+            satisfied_from_original_request.append(
+                {
+                    "slot_id": slot_id,
+                    "source": "ORIGINAL_REQUEST",
+                    "accepted_semantic_requirements": accepted,
+                    "required_semantic_requirements": required,
+                    "source_hash": replay_hash(prompt),
+                }
+            )
+        else:
+            unresolved_slots.append(
+                {
+                    "slot_id": slot_id,
+                    "unresolved_semantic_requirements": unresolved
+                    or [_clarification_slot_missing_information(slot_id)],
+                    "accepted_semantic_requirements": accepted,
+                    "required_semantic_requirements": required,
+                }
+            )
+            remaining_slots.append(slot)
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_EVALUATION_V1",
+        "runtime_version": PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "sufficiency_authority": "PLATFORM_CORE",
+        "evaluation_mode": "DETERMINISTIC_FIRST_PASS_CONTEXT_SUFFICIENCY",
+        "input_sequence": [
+            "ORIGINAL_REQUEST",
+            "WORKSPACE_CONTEXT",
+            "PROJECT_GUIDANCE",
+            "PLATFORM_KNOWLEDGE_REUSE",
+            "DEVELOPMENT_INTENT_RESOLUTION",
+            "CANDIDATE_MISSING_SLOTS",
+            "DETERMINISTIC_SLOT_SATISFACTION",
+            "REMAINING_MISSING_SLOTS",
+        ],
+        "original_request_hash": replay_hash(prompt),
+        "clarification_first_requested": clarification_first_requested,
+        "workspace_context_available": isinstance(workspace_state, dict),
+        "workspace_state_hash": workspace_state.get("artifact_hash") if isinstance(workspace_state, dict) else None,
+        "project_guidance_hash": replay_hash(guidance),
+        "knowledge_reuse_hash": replay_hash(knowledge_reuse),
+        "development_intent_hash": development_intent.get("artifact_hash"),
+        "candidate_missing_slots": deepcopy(_dedupe_missing_slots(candidate_missing_slots)),
+        "satisfied_from_original_request": satisfied_from_original_request,
+        "satisfied_from_workspace_context": [],
+        "satisfied_from_previous_clarification": [],
+        "satisfied_semantic_slots": unique_strings(satisfied_slots),
+        "unresolved_slot_requirements": unresolved_slots,
+        "remaining_missing_slots": _dedupe_missing_slots(remaining_slots),
+        "clarification_required_after_sufficiency": bool(remaining_slots),
+        "human_interface_authority": False,
+        "platform_core_owns_sufficiency": True,
+        "llm_reasoning_used": False,
+        "probabilistic_matching_used": False,
         "replay_visible": True,
     }
     artifact["artifact_hash"] = replay_hash(artifact)
