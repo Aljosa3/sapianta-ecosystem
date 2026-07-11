@@ -299,6 +299,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="IMPLEMENTATION",
         certification_version="G16-11",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="DETERMINISTIC_ROOT_CAUSE_TRACE_BINDING",
+        capability_owner="PLATFORM_CORE_REPLAY",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G18-09",
+        certification_evidence=(
+            "docs/governance/G18_09_DETERMINISTIC_ROOT_CAUSE_TRACE_BINDING_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-11",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_core_root_cause_trace",
+        verification_type="DETERMINISTIC_REPLAY_BACKED_TRACE_COMPOSITION",
+        certification_version="G18-09",
+    ),
 )
 
 
