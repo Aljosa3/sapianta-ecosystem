@@ -24,10 +24,12 @@ ROOT_CAUSE_TRACE_RESPONSE_ARTIFACT_V1 = "PLATFORM_CORE_ROOT_CAUSE_TRACE_ARTIFACT
 GOVERNED_DEVELOPMENT_RESPONSE_ARTIFACT_V1 = (
     "PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_ARTIFACT_V1"
 )
+GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1 = "GENERATION_CERTIFICATION_RESULT_V1"
 
 PLATFORM_KNOWLEDGE_SERVICE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_SERVICE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
 GOVERNED_DEVELOPMENT_SERVICE = "GOVERNED_DEVELOPMENT_RUNTIME"
+GENERATION_CERTIFICATION_SERVICE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -162,6 +164,8 @@ def _presentation_from_response(
         return _root_cause_presentation(service_response, router_response=router_response)
     if artifact_type == GOVERNED_DEVELOPMENT_RESPONSE_ARTIFACT_V1:
         return _governed_development_presentation(service_response, router_response=router_response)
+    if artifact_type == GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1:
+        return _generation_certification_presentation(service_response, router_response=router_response)
     raise FailClosedRuntimeError("platform presentation unsupported source artifact type")
 
 
@@ -370,6 +374,92 @@ def _governed_development_presentation(
     )
 
 
+def _generation_certification_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    certification_status = str(response.get("certification_status") or "")
+    if certification_status == "GENERATION_CERTIFIED":
+        status = PRESENTATION_READY
+        confidence = "CERTIFIED"
+        summary = f"{response.get('generation_identifier')} is certified with durable replay-visible evidence."
+        recommended = "Preserve the durable certification evidence and its replay lineage."
+    elif certification_status == "GENERATION_CERTIFICATION_READY":
+        status = PRESENTATION_READY
+        confidence = "CERTIFICATION_READY"
+        summary = f"{response.get('generation_identifier')} satisfies the deterministic certification evidence profile."
+        recommended = "Record durable certification evidence before claiming GENERATION_CERTIFIED."
+    elif certification_status == "GENERATION_CERTIFICATION_INCOMPLETE":
+        status = PRESENTATION_MISSING_EVIDENCE
+        confidence = "MISSING_EVIDENCE"
+        summary = f"{response.get('generation_identifier')} certification evidence is incomplete."
+        recommended = "Resolve the listed missing evidence before certification."
+    else:
+        status = PRESENTATION_FAILED_CLOSED
+        confidence = "FAILED_CLOSED"
+        summary = f"{response.get('generation_identifier')} certification failed closed."
+        recommended = "Resolve contradictory, invalid, or lineage-incomplete evidence."
+    findings = deepcopy(response.get("completeness_findings") or [])
+    evidence = [
+        {"source_type": "CAPABILITY_CERTIFICATION", "artifact": deepcopy(item)}
+        for item in response.get("capability_certification_evidence", [])
+        if isinstance(item, dict)
+    ]
+    evidence.extend(
+        {"source_type": "GOVERNANCE_EVIDENCE", "artifact": deepcopy(item)}
+        for item in response.get("governance_evidence", [])
+        if isinstance(item, dict)
+    )
+    evidence.extend(
+        {"source_type": "RUNTIME_EVIDENCE", "artifact": deepcopy(item)}
+        for item in response.get("runtime_evidence", [])
+        if isinstance(item, dict)
+    )
+    evidence.extend(
+        {"source_type": "REPLAY_EVIDENCE", "artifact": deepcopy(item)}
+        for item in response.get("replay_evidence", [])
+        if isinstance(item, dict)
+    )
+    if isinstance(response.get("durable_certification_evidence"), dict):
+        evidence.append(
+            {
+                "source_type": "DURABLE_CERTIFICATION_EVIDENCE",
+                "artifact": deepcopy(response["durable_certification_evidence"]),
+            }
+        )
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "generation_identifier": response.get("generation_identifier"),
+            "certification_status": certification_status,
+            "generation_certified": response.get("generation_certified") is True,
+            "generation_certification_ready": response.get("generation_certification_ready") is True,
+            "required_evidence_count": response.get("required_evidence_count"),
+            "resolved_evidence_count": response.get("resolved_evidence_count"),
+            "durable_certification_recorded": response.get("durable_certification_recorded") is True,
+            "completeness_findings": findings,
+        },
+        confidence=confidence,
+        evidence=evidence,
+        reasoning_path=_router_reasoning(router_response)
+        + [
+            {"step": "GENERATION_EVIDENCE_PROFILE", "artifact_hash": response.get("generation_evidence_profile_hash")},
+            {"step": "DETERMINISTIC_COMPLETENESS_POLICY", "findings": findings},
+            {"step": "GENERATION_CERTIFICATION_RESULT", "certification_status": certification_status},
+        ],
+        sources=[str(response.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=certification_status,
+        governance_status="PLATFORM_CORE_CERTIFICATION",
+        replay_status="REPLAY_VISIBLE" if response.get("replay_visible") is True else None,
+        warnings=findings + ([response.get("failure_reason")] if response.get("failure_reason") else []),
+        actions=[recommended],
+        reusable_components=list(response.get("reused_platform_core_services") or []),
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -481,6 +571,8 @@ def _selected_service(
         return ROOT_CAUSE_TRACE_SERVICE
     if artifact_type == GOVERNED_DEVELOPMENT_RESPONSE_ARTIFACT_V1:
         return GOVERNED_DEVELOPMENT_SERVICE
+    if artifact_type == GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1:
+        return GENERATION_CERTIFICATION_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")

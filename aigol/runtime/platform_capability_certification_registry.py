@@ -359,6 +359,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_PLATFORM_PRESENTATION_COMPOSITION",
         certification_version="G19-06",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="GENERATION_CERTIFICATION_COMPOSITION_SERVICE",
+        capability_owner="PLATFORM_CORE_CERTIFICATION",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G20-01",
+        certification_evidence=(
+            "docs/governance/G20_01_GENERATION_CERTIFICATION_COMPOSITION_SERVICE_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-11",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.generation_certification_composition",
+        verification_type="DETERMINISTIC_GENERATION_CERTIFICATION_COMPOSITION",
+        certification_version="G20-01",
+    ),
 )
 
 
