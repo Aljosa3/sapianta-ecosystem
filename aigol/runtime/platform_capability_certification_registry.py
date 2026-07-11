@@ -314,6 +314,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_REPLAY_BACKED_TRACE_COMPOSITION",
         certification_version="G18-09",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_KNOWLEDGE_RUNTIME",
+        capability_owner="PLATFORM_CORE_KNOWLEDGE",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G19-02",
+        certification_evidence=(
+            "docs/governance/G19_02_PLATFORM_KNOWLEDGE_RUNTIME_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-11",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_knowledge_runtime",
+        verification_type="DETERMINISTIC_PLATFORM_KNOWLEDGE_COMPOSITION",
+        certification_version="G19-02",
+    ),
 )
 
 
