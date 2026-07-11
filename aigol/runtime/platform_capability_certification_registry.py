@@ -344,6 +344,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_PLATFORM_QUERY_ROUTING_COMPOSITION",
         certification_version="G19-04",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="CANONICAL_PLATFORM_PRESENTATION_LAYER",
+        capability_owner="PLATFORM_CORE_PRESENTATION",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G19-06",
+        certification_evidence=(
+            "docs/governance/G19_06_CANONICAL_PLATFORM_PRESENTATION_LAYER_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-11",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_presentation_layer",
+        verification_type="DETERMINISTIC_PLATFORM_PRESENTATION_COMPOSITION",
+        certification_version="G19-06",
+    ),
 )
 
 
