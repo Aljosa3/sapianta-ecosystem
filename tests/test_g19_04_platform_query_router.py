@@ -11,6 +11,7 @@ from aigol.runtime.platform_capability_certification_registry import (
     platform_capability_owner,
 )
 from aigol.runtime.platform_query_router import (
+    GENERATION_CERTIFICATION_ROUTE,
     GOVERNED_DEVELOPMENT_ROUTE,
     PLATFORM_KNOWLEDGE_ROUTE,
     REQUIRED_EVIDENCE_MISSING,
@@ -121,6 +122,7 @@ def test_route_descriptors_are_reusable_platform_core_metadata() -> None:
     services = {descriptor["service_identifier"] for descriptor in descriptors}
 
     assert services == {
+        GENERATION_CERTIFICATION_ROUTE,
         PLATFORM_KNOWLEDGE_ROUTE,
         ROOT_CAUSE_TRACE_ROUTE,
         GOVERNED_DEVELOPMENT_ROUTE,
