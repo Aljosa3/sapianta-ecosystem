@@ -145,6 +145,149 @@ def test_canonical_runtime_entry_projects_status_from_replay_evidence(tmp_path: 
     assert result["runtime_status_projection_evidence"]["replay_certification_replay_inspected"] is True
 
 
+def test_canonical_runtime_entry_discovers_status_from_current_turn_replay_tree(
+    tmp_path: Path,
+) -> None:
+    def turn_replay_runtime(args, input_func, output_func):
+        input_func("")
+        output_func("runtime completed with discovered turn replay")
+        turn_root = Path(args.runtime_root) / "runtime" / "TURN-000023"
+        bridge_root = turn_root / "governed_bridge_certified_development_continuation"
+        worker_lifecycle = bridge_root / "worker_lifecycle_continuation"
+        (turn_root / "acli_governed_development_execution_bridge").mkdir(parents=True)
+        _write_wrapped_artifact(
+            worker_lifecycle / "worker_invocation" / "003_invocation_result_recorded.json",
+            {
+                "artifact_type": "WORKER_INVOCATION_RESULT_ARTIFACT_V1",
+                "runtime_version": "AIGOL_WORKER_INVOCATION_RUNTIME_V1",
+                "invocation_status": "WORKER_INVOKED",
+                "worker_invoked": True,
+                "failure_reason": None,
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "000_universal_provider_worker_binding_recorded.json",
+            {
+                "binding_status": "UNIVERSAL_PROVIDER_WORKER_COMPLETED",
+                "universal_provider_runtime_reached": True,
+                "smart_selection_executed": True,
+                "selected_resource_id": "OPENAI",
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "001_universal_provider_worker_result_recorded.json",
+            {
+                "universal_provider_worker_status": "FAILED_CLOSED",
+                "provider_invocation_delegated": True,
+                "certified_provider_attachment_reused": True,
+                "selected_resource_id": "OPENAI",
+                "failure_reason": "OpenAI provider unavailable",
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "universal_resource_selection"
+            / "001_resource_selection_returned.json",
+            {
+                "selection_status": "RESOURCE_SELECTION_SUCCEEDED",
+                "selected_resource_id": "OPENAI",
+                "selected_role_type": "PROVIDER_ROLE",
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "selected_provider_openai"
+            / "001_openai_provider_adapter_recorded.json",
+            {
+                "artifact_type": "OPENAI_EXTERNAL_WORKER_PROVIDER_CAPTURE_ARTIFACT_V1",
+                "provider_adapter_runtime": "OPENAI_PROVIDER_ADAPTER_V1",
+                "provider_invoked_inside_adapter": True,
+                "provider_status": "FAILED_CLOSED",
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "selected_provider_openai"
+            / "002_openai_external_worker_result_recorded.json",
+            {
+                "worker_status": "FAILED_CLOSED",
+                "provider_invoked_inside_adapter": True,
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle
+            / "universal_provider_worker"
+            / "selected_provider_openai"
+            / "certified_provider_attachment"
+            / "002_certified_provider_attachment_recorded.json",
+            {
+                "provider_status": "FAILED_CLOSED",
+                "provider_invoked": False,
+                "failure_reason": "OpenAI provider unavailable",
+            },
+        )
+        _write_wrapped_artifact(
+            worker_lifecycle / "replay_certification" / "000_replay_certification_artifact_recorded.json",
+            {
+                "certification_status": "REPLAY_CERTIFICATION_COMPLETED",
+                "replay_lineage_preserved": True,
+            },
+        )
+        return {
+            "command": "aigol conversation",
+            "runtime_root": args.runtime_root,
+            "turn_count": 1,
+            "failed_turns": 0,
+            "exit_reason": "EXIT_COMMAND",
+            "auto_continue_enabled": True,
+            "turns": [
+                {
+                    "worker_invoked": False,
+                    "provider_invoked": False,
+                    "openai_provider_reached": False,
+                    "replay_certification_reached": False,
+                    "execution_authorization_status": "EXECUTION_AUTHORIZED",
+                    "replay_reference": str(
+                        turn_root / "acli_governed_development_execution_bridge"
+                    ),
+                }
+            ],
+        }
+
+    result = run_human_interface_runtime_entry(
+        interface_name="reference turn replay discovery interface",
+        session_id="UHI-G18-07-REPLAY-DISCOVERY",
+        human_requests=["Implement turn replay discovery projection."],
+        created_at="2026-07-10T00:00:00Z",
+        runtime_root=tmp_path,
+        workspace=".",
+        governed_runtime_runner=turn_replay_runtime,
+    )
+
+    evidence = result["runtime_status_projection_evidence"]
+    assert result["canonical_runtime_entry_status"] == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND
+    assert result["provider_invocation_reached"] is True
+    assert result["worker_execution_reached"] is True
+    assert result["replay_certification_reached"] is True
+    assert evidence["turn_replay_discovery_used"] is True
+    assert evidence["worker_invocation_replay_inspected"] is True
+    assert evidence["universal_provider_worker_binding_replay_inspected"] is True
+    assert evidence["universal_provider_worker_replay_inspected"] is True
+    assert evidence["resource_selection_replay_inspected"] is True
+    assert evidence["selected_provider_replay_inspected"] is True
+    assert evidence["certified_provider_attachment_replay_inspected"] is True
+    assert evidence["replay_certification_replay_inspected"] is True
+    assert evidence["worker_invocation_status"] == "WORKER_INVOKED"
+    assert evidence["selected_provider_resource_id"] == "OPENAI"
+
+
 def test_aicli_default_approval_uses_canonical_runtime_entry(monkeypatch, tmp_path: Path) -> None:
     calls: list[dict] = []
     monkeypatch.setattr(aicli, "run_interactive_conversation", _runtime_runner(calls))
@@ -379,6 +522,7 @@ def _reader(values: list[str]):
 
 
 def _write_wrapped_artifact(path: Path, artifact: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps({"artifact": artifact}, indent=2, sort_keys=True),
         encoding="utf-8",
