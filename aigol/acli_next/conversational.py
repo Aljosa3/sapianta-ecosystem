@@ -788,6 +788,16 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
         "conversation_response_mode": conversation.get("response_mode"),
         "user_headline": conversation.get("user_headline"),
         "user_explanation": conversation.get("user_explanation"),
+        "requested_work_type": conversation.get("requested_work_type"),
+        "work_type": conversation.get("work_type"),
+        "prepared_work_type": conversation.get("prepared_work_type"),
+        "work_type_source": conversation.get("work_type_source"),
+        "work_type_source_text": conversation.get("work_type_source_text"),
+        "mutation_allowed": conversation.get("mutation_allowed"),
+        "runtime_implementation": conversation.get("runtime_implementation"),
+        "work_type_change_allowed": conversation.get("work_type_change_allowed"),
+        "work_type_conflict_detected": conversation.get("work_type_conflict_detected"),
+        "work_type_conflict_reason": conversation.get("work_type_conflict_reason"),
         "clarification_questions": [str(question) for question in questions],
     }
 

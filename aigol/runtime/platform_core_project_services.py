@@ -38,6 +38,25 @@ PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION = (
 PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLANNER_VERSION = (
     "G15_HIR_08_DETERMINISTIC_CLARIFICATION_PLANNER_V1"
 )
+PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION = (
+    "G19_HI_02_GOVERNED_WORK_TYPE_PRESERVATION_V1"
+)
+
+CANONICAL_GOVERNED_WORK_TYPES = (
+    "AUDIT_ONLY",
+    "IMPLEMENTATION",
+    "REVIEW",
+    "CERTIFICATION",
+    "ANALYSIS",
+    "DOCUMENTATION",
+)
+NON_MUTATING_GOVERNED_WORK_TYPES = (
+    "AUDIT_ONLY",
+    "REVIEW",
+    "CERTIFICATION",
+    "ANALYSIS",
+    "DOCUMENTATION",
+)
 
 
 CAPABILITY_CATALOG: tuple[dict[str, Any], ...] = (
@@ -318,6 +337,16 @@ def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None
         "workspace_state_hash": workspace_state.get("artifact_hash"),
         "session_id": workspace_state.get("session_id"),
         "original_message": pending.get("original_message"),
+        "requested_work_type": pending.get("requested_work_type"),
+        "work_type": pending.get("work_type"),
+        "prepared_work_type": pending.get("prepared_work_type"),
+        "work_type_source": pending.get("work_type_source"),
+        "work_type_source_text": pending.get("work_type_source_text"),
+        "mutation_allowed": pending.get("mutation_allowed"),
+        "runtime_implementation": pending.get("runtime_implementation"),
+        "work_type_change_allowed": pending.get("work_type_change_allowed"),
+        "work_type_conflict_detected": pending.get("work_type_conflict_detected"),
+        "work_type_conflict_reason": pending.get("work_type_conflict_reason"),
         "clarification_questions": unique_strings(pending.get("clarification_questions")),
         "clarification_question_bindings": deterministic_clarification_question_bindings(
             pending.get("clarification_questions")
@@ -361,9 +390,13 @@ def resolve_uhi_clarification_continuity(
             ),
             workspace_state=workspace_state,
         )
+    reply_resolution = preserve_active_clarification_work_type(
+        resolution=reply_resolution,
+        active_clarification_state=active_clarification_state,
+    )
     resolved = (
-        reply_resolution.get("summary_admissible") is True
-        and satisfaction["clarification_satisfied"] is True
+        satisfaction["clarification_satisfied"] is True
+        and reply_resolution.get("clarification_required") is not True
     )
     status = "CLARIFICATION_RESOLVED" if resolved else "CLARIFICATION_STILL_REQUIRED"
     question_bindings = deterministic_clarification_question_bindings(
@@ -394,6 +427,14 @@ def resolve_uhi_clarification_continuity(
             "workspace_state_hash"
         ),
         "development_intent_resolution_hash": reply_resolution.get("artifact_hash"),
+        "requested_work_type": reply_resolution.get("requested_work_type")
+        or active_clarification_state.get("requested_work_type"),
+        "work_type": reply_resolution.get("work_type") or active_clarification_state.get("work_type"),
+        "prepared_work_type": reply_resolution.get("prepared_work_type"),
+        "mutation_allowed": reply_resolution.get("mutation_allowed"),
+        "runtime_implementation": reply_resolution.get("runtime_implementation"),
+        "work_type_conflict_detected": reply_resolution.get("work_type_conflict_detected"),
+        "work_type_conflict_reason": reply_resolution.get("work_type_conflict_reason"),
         "canonical_semantic_artifact_hash": None,
         "canonical_semantic_artifact_status": (
             "NOT_CREATED_BY_UHI_PROJECT_SERVICES_CONTINUITY"
@@ -446,6 +487,14 @@ def resolve_uhi_clarification_continuity(
             "pending_semantic_slots": satisfaction["pending_semantic_slots"],
             "clarification_continuity_status": status,
             "clarification_resolved": resolved,
+            "requested_work_type": reply_resolution.get("requested_work_type")
+            or active_clarification_state.get("requested_work_type"),
+            "work_type": reply_resolution.get("work_type") or active_clarification_state.get("work_type"),
+            "prepared_work_type": reply_resolution.get("prepared_work_type"),
+            "mutation_allowed": reply_resolution.get("mutation_allowed"),
+            "runtime_implementation": reply_resolution.get("runtime_implementation"),
+            "work_type_conflict_detected": reply_resolution.get("work_type_conflict_detected"),
+            "work_type_conflict_reason": reply_resolution.get("work_type_conflict_reason"),
             "clarification_continuity_replay_reference": continuity_artifact["replay_reference"],
             "clarification_continuity_artifact_hash": continuity_artifact["artifact_hash"],
             "active_clarification_workspace_state_reference": active_clarification_state.get(
@@ -851,6 +900,9 @@ def clarification_resolved_development_request(
     """Build the Platform Core-owned request resolved from a clarification answer."""
 
     original = str(active_clarification_state.get("original_message") or "").strip()
+    work_type = str(active_clarification_state.get("requested_work_type") or "IMPLEMENTATION")
+    if work_type not in CANONICAL_GOVERNED_WORK_TYPES:
+        work_type = "IMPLEMENTATION"
     questions = [
         binding["question_text"]
         for binding in deterministic_clarification_question_bindings(
@@ -858,14 +910,21 @@ def clarification_resolved_development_request(
         )
     ]
     question_text = "\n".join(f"- {question}" for question in questions)
+    if work_type == "IMPLEMENTATION":
+        opening = "Implement the clarification-resolved governed development request."
+        closing = "Implement as a governed development workflow."
+    else:
+        opening = f"Prepare the clarification-resolved governed {work_type} request."
+        closing = f"Preserve governed work type {work_type}; do not convert it into implementation work."
     return "\n".join(
         [
-            "Implement the clarification-resolved governed development request.",
+            opening,
+            f"Requested work type: {work_type}",
             f"Original request: {original}",
             "Clarification questions:",
             question_text,
             f"Clarification answer: {require_string(reply, 'reply')}",
-            "Implement as a governed development workflow.",
+            closing,
         ]
     )
 
@@ -1681,12 +1740,28 @@ def resolve_development_intent(
     if not goal_detected and not guided_detected:
         clarification_reason = "request is not a deterministic development request"
 
+    work_type_resolution = resolve_governed_work_type(raw_message)
+    requested_work_type = str(work_type_resolution["requested_work_type"])
     canonical_runtime_prompt = canonical_development_runtime_prompt(governed_request)
     native_runtime_admissible = is_native_development_prompt(canonical_runtime_prompt)
+    prepared_work_type = prepared_work_type_for_runtime_prompt(
+        canonical_runtime_prompt,
+        requested_work_type=requested_work_type,
+    )
+    work_type_conflict = (
+        prepared_work_type != requested_work_type
+        and work_type_resolution["explicit_work_type_change_declared"] is not True
+    )
+    mutation_allowed = work_type_resolution["mutation_allowed"] is True
+    runtime_implementation = work_type_resolution["runtime_implementation"] is True
     summary_admissible = (
         (goal_detected or guided_detected)
         and not clarification_required
         and native_runtime_admissible
+        and requested_work_type == "IMPLEMENTATION"
+        and mutation_allowed
+        and runtime_implementation
+        and not work_type_conflict
     )
     runtime_binding_admissible = summary_admissible
     resolution = {
@@ -1712,6 +1787,26 @@ def resolve_development_intent(
         "refined_message": canonical_runtime_prompt,
         "canonical_runtime_prompt": canonical_runtime_prompt,
         "native_development_prompt_detected": native_runtime_admissible,
+        "work_type_preservation_version": PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION,
+        "governed_work_type_metadata": deepcopy(work_type_resolution),
+        "requested_work_type": requested_work_type,
+        "work_type": requested_work_type,
+        "prepared_work_type": prepared_work_type,
+        "work_type_source": work_type_resolution["work_type_source"],
+        "work_type_source_text": work_type_resolution["work_type_source_text"],
+        "mutation_allowed": mutation_allowed,
+        "runtime_implementation": runtime_implementation,
+        "work_type_change_allowed": work_type_resolution["work_type_change_allowed"],
+        "work_type_conflict_detected": work_type_conflict,
+        "work_type_conflict_reason": work_type_conflict_reason(
+            requested_work_type=requested_work_type,
+            prepared_work_type=prepared_work_type,
+            mutation_allowed=mutation_allowed,
+            runtime_implementation=runtime_implementation,
+        )
+        if work_type_conflict or not mutation_allowed or not runtime_implementation
+        else None,
+        "knowledge_reuse_classification_is_work_type": False,
         "summary_admissible": summary_admissible,
         "runtime_binding_admissible": runtime_binding_admissible,
         "same_decision_for_send_and_approve": True,
@@ -1721,6 +1816,211 @@ def resolve_development_intent(
     }
     resolution["artifact_hash"] = replay_hash(resolution)
     return resolution
+
+
+def resolve_governed_work_type(message: str) -> dict[str, Any]:
+    """Resolve explicit governed work-type metadata for Platform Core artifacts."""
+
+    prompt = require_string(message, "message")
+    explicit = explicit_governed_work_type(prompt)
+    requested = explicit["work_type"] or "IMPLEMENTATION"
+    mutation_allowed = requested == "IMPLEMENTATION"
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_GOVERNED_WORK_TYPE_METADATA_V1",
+        "runtime_version": PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION,
+        "work_type_authority": "PLATFORM_CORE",
+        "requested_work_type": requested,
+        "work_type": requested,
+        "work_type_source": explicit["source"],
+        "work_type_source_text": explicit["source_text"],
+        "supported_work_types": list(CANONICAL_GOVERNED_WORK_TYPES),
+        "mutation_allowed": mutation_allowed,
+        "runtime_implementation": requested == "IMPLEMENTATION",
+        "work_type_change_allowed": False,
+        "explicit_work_type_change_declared": False,
+        "work_type_conflict_detected": False,
+        "work_type_conflict_reason": None,
+        "knowledge_reuse_classification_is_work_type": False,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def preserve_active_clarification_work_type(
+    *,
+    resolution: dict[str, Any],
+    active_clarification_state: dict[str, Any],
+) -> dict[str, Any]:
+    """Carry immutable work type from the active clarification into the resolved intent."""
+
+    requested = str(active_clarification_state.get("requested_work_type") or "").strip()
+    if requested not in CANONICAL_GOVERNED_WORK_TYPES:
+        return resolution
+    enriched = deepcopy(resolution)
+    prompt = str(enriched.get("canonical_runtime_prompt") or enriched.get("raw_prompt") or "")
+    prepared = prepared_work_type_for_runtime_prompt(prompt, requested_work_type=requested)
+    mutation_allowed = requested == "IMPLEMENTATION"
+    runtime_implementation = requested == "IMPLEMENTATION"
+    conflict = prepared != requested
+    metadata = deepcopy(enriched.get("governed_work_type_metadata"))
+    if not isinstance(metadata, dict):
+        metadata = {}
+    metadata.update(
+        {
+            "requested_work_type": requested,
+            "work_type": requested,
+            "work_type_source": active_clarification_state.get("work_type_source"),
+            "work_type_source_text": active_clarification_state.get("work_type_source_text"),
+            "mutation_allowed": mutation_allowed,
+            "runtime_implementation": runtime_implementation,
+            "work_type_change_allowed": False,
+            "work_type_conflict_detected": conflict,
+            "work_type_conflict_reason": work_type_conflict_reason(
+                requested_work_type=requested,
+                prepared_work_type=prepared,
+                mutation_allowed=mutation_allowed,
+                runtime_implementation=runtime_implementation,
+            )
+            if conflict or not mutation_allowed or not runtime_implementation
+            else None,
+            "active_clarification_work_type_preserved": True,
+        }
+    )
+    metadata["artifact_hash"] = replay_hash(metadata)
+    runtime_admissible = (
+        enriched.get("runtime_binding_admissible") is True
+        and requested == "IMPLEMENTATION"
+        and mutation_allowed
+        and runtime_implementation
+        and not conflict
+    )
+    enriched.update(
+        {
+            "governed_work_type_metadata": metadata,
+            "requested_work_type": requested,
+            "work_type": requested,
+            "prepared_work_type": prepared,
+            "work_type_source": active_clarification_state.get("work_type_source"),
+            "work_type_source_text": active_clarification_state.get("work_type_source_text"),
+            "mutation_allowed": mutation_allowed,
+            "runtime_implementation": runtime_implementation,
+            "work_type_change_allowed": False,
+            "work_type_conflict_detected": conflict,
+            "work_type_conflict_reason": metadata["work_type_conflict_reason"],
+            "active_clarification_work_type_preserved": True,
+            "summary_admissible": runtime_admissible,
+            "runtime_binding_admissible": runtime_admissible,
+            "requires_human_approval": runtime_admissible,
+        }
+    )
+    enriched["artifact_hash"] = replay_hash(enriched)
+    return enriched
+
+
+def explicit_governed_work_type(message: str) -> dict[str, str | None]:
+    """Return explicit work-type declarations without treating reuse class as work type."""
+
+    lowered = " ".join(require_string(message, "message").lower().replace("-", "_").split())
+    declarations = {
+        "AUDIT_ONLY": (
+            "work_type: audit_only",
+            "work type: audit_only",
+            "work_type=audit_only",
+            "audit_only",
+        ),
+        "IMPLEMENTATION": (
+            "work_type: implementation",
+            "work type: implementation",
+            "work_type=implementation",
+            "implementation_only",
+        ),
+        "REVIEW": (
+            "work_type: review",
+            "work type: review",
+            "work_type=review",
+            "review_only",
+        ),
+        "CERTIFICATION": (
+            "work_type: certification",
+            "work type: certification",
+            "work_type=certification",
+            "certification_only",
+        ),
+        "ANALYSIS": (
+            "work_type: analysis",
+            "work type: analysis",
+            "work_type=analysis",
+            "analysis_only",
+        ),
+        "DOCUMENTATION": (
+            "work_type: documentation",
+            "work type: documentation",
+            "work_type=documentation",
+            "documentation_only",
+        ),
+    }
+    matches: list[tuple[str, str]] = []
+    for work_type, markers in declarations.items():
+        for marker in markers:
+            if marker in lowered:
+                matches.append((work_type, marker))
+                break
+    if len(matches) == 1:
+        return {
+            "work_type": matches[0][0],
+            "source": "EXPLICIT_HUMAN_WORK_TYPE_DECLARATION",
+            "source_text": matches[0][1],
+        }
+    if len(matches) > 1:
+        return {
+            "work_type": matches[0][0],
+            "source": "CONFLICTING_EXPLICIT_HUMAN_WORK_TYPE_DECLARATIONS",
+            "source_text": ", ".join(match[1] for match in matches),
+        }
+    return {
+        "work_type": None,
+        "source": "DEFAULT_GOVERNED_DEVELOPMENT_WORK_TYPE",
+        "source_text": None,
+    }
+
+
+def prepared_work_type_for_runtime_prompt(prompt: str, *, requested_work_type: str) -> str:
+    """Classify the prepared runtime action without using knowledge reuse classification."""
+
+    lowered = " ".join(require_string(prompt, "prompt").lower().split())
+    implementation_markers = (
+        "implement ",
+        "implement as a governed development workflow",
+        "implement as a native development governance workflow",
+    )
+    if lowered.startswith(("implement ", "add ", "build ", "create ", "fix ", "repair ", "update ")):
+        return "IMPLEMENTATION"
+    if any(marker in lowered for marker in implementation_markers):
+        return "IMPLEMENTATION"
+    if requested_work_type in CANONICAL_GOVERNED_WORK_TYPES:
+        return requested_work_type
+    return "IMPLEMENTATION"
+
+
+def work_type_conflict_reason(
+    *,
+    requested_work_type: str,
+    prepared_work_type: str,
+    mutation_allowed: bool,
+    runtime_implementation: bool,
+) -> str:
+    if prepared_work_type != requested_work_type:
+        return (
+            f"Prepared work type {prepared_work_type} does not match requested work type "
+            f"{requested_work_type}."
+        )
+    if not mutation_allowed:
+        return f"Requested work type {requested_work_type} does not allow mutation."
+    if not runtime_implementation:
+        return f"Requested work type {requested_work_type} does not allow runtime implementation."
+    return "Work-type preservation guard blocked runtime continuation."
 
 
 def human_conversation_experience_from_resolution(
@@ -1768,6 +2068,17 @@ def human_conversation_experience_from_resolution(
             headline = "I can help place this architecturally."
         questions = _clarification_questions_from_plan(clarification_plan)
         next_step = "Answer the question with the smallest useful detail."
+    elif intent.get("work_type_conflict_detected") is True or (
+        intent.get("work_type") in NON_MUTATING_GOVERNED_WORK_TYPES
+        and intent.get("clarification_required") is not True
+    ):
+        response_mode = "INFORMATIONAL"
+        headline = f"I preserved this as {intent.get('work_type')} work."
+        explanation = (
+            "Platform Core preserved the requested work type and blocked certified runtime "
+            "implementation because this work type is non-mutating."
+        )
+        next_step = "Submit an explicit implementation work type only if you want runtime implementation."
     elif _reuse_request_detected(lowered):
         response_mode = "CLARIFICATION"
         headline = "I checked for reusable project capability evidence."
@@ -1869,6 +2180,19 @@ def _conversation_experience_artifact(
         "candidate_capabilities": deepcopy(development_intent.get("candidate_capabilities")),
         "capability_resolution_decision": development_intent.get("capability_resolution_decision"),
         "human_capability_name_required": False,
+        "work_type_preservation_version": development_intent.get("work_type_preservation_version"),
+        "governed_work_type_metadata": deepcopy(development_intent.get("governed_work_type_metadata")),
+        "requested_work_type": development_intent.get("requested_work_type"),
+        "work_type": development_intent.get("work_type"),
+        "prepared_work_type": development_intent.get("prepared_work_type"),
+        "work_type_source": development_intent.get("work_type_source"),
+        "work_type_source_text": development_intent.get("work_type_source_text"),
+        "mutation_allowed": development_intent.get("mutation_allowed"),
+        "runtime_implementation": development_intent.get("runtime_implementation"),
+        "work_type_change_allowed": development_intent.get("work_type_change_allowed"),
+        "work_type_conflict_detected": development_intent.get("work_type_conflict_detected"),
+        "work_type_conflict_reason": development_intent.get("work_type_conflict_reason"),
+        "knowledge_reuse_classification_is_work_type": False,
         "reuse_recommended": knowledge_reuse.get("reuse_recommended") is True,
         "summary_admissible": development_intent.get("summary_admissible") is True,
         "runtime_binding_admissible": development_intent.get("runtime_binding_admissible") is True,
@@ -1885,15 +2209,37 @@ def _conversation_approval_summary(
     approval_explanation: str,
 ) -> dict[str, Any]:
     summary_admissible = development_intent.get("summary_admissible") is True
+    work_type = str(development_intent.get("work_type") or "IMPLEMENTATION")
+    prepared_work_type = str(development_intent.get("prepared_work_type") or work_type)
     return {
-        "summary_type": "GOVERNED_IMPLEMENTATION_SUMMARY",
+        "summary_type": (
+            "GOVERNED_IMPLEMENTATION_SUMMARY"
+            if work_type == "IMPLEMENTATION"
+            else "GOVERNED_WORK_TYPE_PRESERVATION_SUMMARY"
+        ),
         "summary_authority": "PLATFORM_CORE",
-        "summary_title": "Governed implementation summary",
+        "summary_title": (
+            "Governed implementation summary"
+            if work_type == "IMPLEMENTATION"
+            else f"Governed {work_type} preservation summary"
+        ),
         "original_request": development_intent.get("raw_prompt") or message,
         "original_message": development_intent.get("raw_prompt") or message,
         "canonical_runtime_prompt": development_intent.get("canonical_runtime_prompt") or message,
         "refined_message": development_intent.get("canonical_runtime_prompt") or message,
         "goal_mapping": deepcopy(development_intent.get("goal_mapping")),
+        "work_type_preservation_version": development_intent.get("work_type_preservation_version"),
+        "requested_work_type": work_type,
+        "work_type": work_type,
+        "prepared_work_type": prepared_work_type,
+        "work_type_source": development_intent.get("work_type_source"),
+        "work_type_source_text": development_intent.get("work_type_source_text"),
+        "mutation_allowed": development_intent.get("mutation_allowed") is True,
+        "runtime_implementation": development_intent.get("runtime_implementation") is True,
+        "work_type_change_allowed": development_intent.get("work_type_change_allowed") is True,
+        "work_type_conflict_detected": development_intent.get("work_type_conflict_detected") is True,
+        "work_type_conflict_reason": development_intent.get("work_type_conflict_reason"),
+        "knowledge_reuse_classification_is_work_type": False,
         "requires_human_approval": development_intent.get("requires_human_approval") is True,
         "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME" if summary_admissible else None,
         "approval_state": "PENDING_HUMAN_APPROVAL" if summary_admissible else "NOT_APPLICABLE",
@@ -1913,13 +2259,21 @@ def _conversation_fail_closed_response(
     next_step: str,
 ) -> dict[str, Any]:
     lowered = " ".join(message.lower().split())
+    work_type_reason = development_intent.get("work_type_conflict_reason")
     return {
         "response_type": "FAIL_CLOSED_EXPLANATION",
         "response_authority": "PLATFORM_CORE",
         "response_title": "No governed implementation summary was produced.",
-        "reason": development_intent.get("clarification_reason"),
+        "reason": work_type_reason or development_intent.get("clarification_reason"),
         "fail_closed_explanation": explanation,
         "recommended_next_user_action": next_step,
+        "requested_work_type": development_intent.get("requested_work_type"),
+        "work_type": development_intent.get("work_type"),
+        "prepared_work_type": development_intent.get("prepared_work_type"),
+        "mutation_allowed": development_intent.get("mutation_allowed") is True,
+        "runtime_implementation": development_intent.get("runtime_implementation") is True,
+        "work_type_conflict_detected": development_intent.get("work_type_conflict_detected") is True,
+        "work_type_conflict_reason": work_type_reason,
         "conversation_state": (
             "FAIL_CLOSED"
             if development_intent.get("summary_admissible") is not True
