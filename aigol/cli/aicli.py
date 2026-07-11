@@ -902,6 +902,9 @@ def _submit_composed_request(
         summary = _summary_from_conversation(conversation)
         output_writer(_render_summary(summary))
         return summary, None, resolution, project_context, 1, multiline_requests
+    if conversation.get("response_mode") == "READ_ONLY_RESULT":
+        output_writer(_render_read_only_result(conversation))
+        return None, None, resolution, project_context, 1, multiline_requests
     output_writer(_render_non_development_response(conversation))
     return None, None, resolution, project_context, 1, multiline_requests
 
@@ -1007,6 +1010,26 @@ def _render_non_development_response(conversation: dict[str, Any]) -> str:
             f"reason: {response.get('reason')}",
             str(response.get("fail_closed_explanation")),
             f"next_step: {response.get('recommended_next_user_action')}",
+        ]
+    )
+
+
+def _render_read_only_result(conversation: dict[str, Any]) -> str:
+    result = conversation.get("governed_read_only_work_result")
+    if not isinstance(result, dict):
+        raise ValueError("Platform Core governed_read_only_work_result is required")
+    return "\n".join(
+        [
+            "Governed read-only result",
+            f"work_type: {result.get('work_type')}",
+            f"binding_status: {result.get('binding_status')}",
+            f"selected_service: {result.get('selected_read_only_service')}",
+            f"presentation_status: {result.get('presentation_status')}",
+            str(result.get("presentation_summary")),
+            f"provider_invoked: {result.get('provider_invoked')}",
+            f"worker_invoked: {result.get('worker_invoked')}",
+            f"repository_mutated: {result.get('repository_mutated')}",
+            f"result_hash: {result.get('artifact_hash')}",
         ]
     )
 

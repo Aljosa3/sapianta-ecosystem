@@ -82,6 +82,11 @@ def run_human_interface_runtime_entry(
         for request, resolution in zip(requests, intent_resolutions)
         if resolution.get("runtime_binding_admissible") is True
     ]
+    read_only_work_results = [
+        context.get("governed_read_only_work_result")
+        for context in project_contexts
+        if isinstance(context.get("governed_read_only_work_result"), dict)
+    ]
 
     result.update(
         {
@@ -96,6 +101,16 @@ def run_human_interface_runtime_entry(
             "development_intent_resolutions": intent_resolutions,
             "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
             "runtime_prompts": runtime_prompts,
+            "read_only_work_results": read_only_work_results,
+            "governed_read_only_work_result": (
+                read_only_work_results[-1] if read_only_work_results else None
+            ),
+            "read_only_runtime_entered": bool(read_only_work_results),
+            "read_only_work_binding_status": (
+                read_only_work_results[-1].get("binding_status")
+                if read_only_work_results
+                else None
+            ),
             "human_interface_runtime_entry_service_used": True,
             "human_interface_runtime_entry_orchestrates": False,
             "platform_core_project_services_delegated": True,

@@ -50,6 +50,13 @@ PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION = (
 PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION = (
     "G19_HI_08_PREPARED_WORK_TYPE_RESOLUTION_REFACTORING_V1"
 )
+PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION = (
+    "G19_HI_10_GOVERNED_READ_ONLY_RUNTIME_BINDING_V1"
+)
+
+GOVERNED_READ_ONLY_WORK_BOUND = "GOVERNED_READ_ONLY_WORK_BOUND"
+GOVERNED_READ_ONLY_WORK_NOT_REQUIRED = "GOVERNED_READ_ONLY_WORK_NOT_REQUIRED"
+GOVERNED_READ_ONLY_WORK_FAILED_CLOSED = "GOVERNED_READ_ONLY_WORK_FAILED_CLOSED"
 
 CANONICAL_GOVERNED_WORK_TYPES = (
     "AUDIT_ONLY",
@@ -243,6 +250,22 @@ def prepare_unified_human_interface_project_context(
         development_intent=development_intent,
         conversation_experience=conversation_experience,
     )
+    read_only_work_result = None
+    if development_intent.get("read_only_work_binding_admissible") is True:
+        read_only_work_result = run_governed_read_only_work_binding(
+            message=message,
+            workspace_state=prior_state,
+            development_intent=development_intent,
+            created_at=created_at,
+        )
+        development_intent = development_intent_with_read_only_work_result(
+            development_intent=development_intent,
+            read_only_work_result=read_only_work_result,
+        )
+        conversation_experience = human_conversation_experience_with_read_only_result(
+            conversation_experience=conversation_experience,
+            read_only_work_result=read_only_work_result,
+        )
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
@@ -262,6 +285,7 @@ def prepare_unified_human_interface_project_context(
         "clarification_continuity": clarification_continuity,
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
+        "governed_read_only_work_result": read_only_work_result,
         "project_workspace_authority": "PLATFORM_CORE",
         "project_guidance_authority": "PLATFORM_CORE",
         "project_knowledge_reuse_authority": "PLATFORM_CORE",
@@ -500,6 +524,9 @@ def resolve_uhi_clarification_continuity(
         ]
         enriched_resolution["summary_admissible"] = False
         enriched_resolution["runtime_binding_admissible"] = False
+        enriched_resolution["read_only_work_binding_admissible"] = False
+        enriched_resolution["read_only_work_binding_status"] = GOVERNED_READ_ONLY_WORK_NOT_REQUIRED
+        enriched_resolution["read_only_work_result_required"] = False
         enriched_resolution["requires_human_approval"] = False
     else:
         enriched_resolution["clarification_required"] = False
@@ -549,6 +576,218 @@ def resolve_uhi_clarification_continuity(
     )
     enriched_resolution["artifact_hash"] = replay_hash(enriched_resolution)
     return enriched_resolution, continuity_artifact
+
+
+def read_only_work_binding_admissible_for_intent(
+    *,
+    requested_work_type: str,
+    prepared_work_type: str,
+    clarification_required: bool,
+    work_type_conflict_detected: bool,
+) -> bool:
+    """Return whether a non-mutating work type may bind to read-only services."""
+
+    return (
+        requested_work_type in NON_MUTATING_GOVERNED_WORK_TYPES
+        and prepared_work_type == requested_work_type
+        and work_type_conflict_detected is not True
+    )
+
+
+def run_governed_read_only_work_binding(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    development_intent: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    """Execute non-mutating work through existing read-only Platform Core services."""
+
+    prompt = require_string(message, "message")
+    intent = development_intent if isinstance(development_intent, dict) else {}
+    work_type = str(intent.get("work_type") or intent.get("requested_work_type") or "")
+    prepared_work_type = str(intent.get("prepared_work_type") or "")
+    if intent.get("read_only_work_binding_admissible") is not True:
+        result = _failed_read_only_work_result(
+            message=prompt,
+            development_intent=intent,
+            created_at=created_at,
+            failure_reason="read-only work binding is not admissible",
+        )
+        result["artifact_hash"] = replay_hash(result)
+        return result
+    try:
+        from aigol.runtime.platform_presentation_layer import (
+            present_platform_response,
+            validate_platform_presentation,
+        )
+        from aigol.runtime.platform_query_router import (
+            route_platform_query,
+            validate_platform_query_router_response,
+        )
+
+        router_response = route_platform_query(
+            query=prompt,
+            workspace_state=workspace_state,
+            created_at=created_at,
+        )
+        validate_platform_query_router_response(router_response)
+        presentation = present_platform_response(
+            router_response,
+            created_at=created_at,
+        )
+        validate_platform_presentation(presentation)
+        result = {
+            "artifact_type": "PLATFORM_CORE_GOVERNED_READ_ONLY_WORK_RESULT_V1",
+            "runtime_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+            "binding_status": GOVERNED_READ_ONLY_WORK_BOUND,
+            "created_at": require_string(created_at, "created_at"),
+            "original_message": prompt,
+            "original_message_hash": replay_hash(prompt),
+            "requested_work_type": work_type,
+            "work_type": work_type,
+            "prepared_work_type": prepared_work_type,
+            "read_only_work_binding_admissible": True,
+            "read_only_work_result_status": "GOVERNED_READ_ONLY_RESULT_READY",
+            "selected_read_only_service": router_response.get("selected_service"),
+            "selected_query_class": router_response.get("selected_query_class"),
+            "platform_query_router_response": deepcopy(router_response),
+            "platform_query_router_response_hash": router_response.get("artifact_hash"),
+            "canonical_presentation": deepcopy(presentation),
+            "canonical_presentation_hash": presentation.get("presentation_hash"),
+            "presentation_artifact_type": presentation.get("artifact_type"),
+            "presentation_status": presentation.get("presentation_status"),
+            "presentation_summary": presentation.get("summary"),
+            "presentation_answer": deepcopy(presentation.get("answer")),
+            "presentation_recommended_next_step": presentation.get("recommended_next_step"),
+            "reusable_platform_core_components": unique_strings(
+                [
+                    "UNIFIED_PLATFORM_QUERY_ROUTER",
+                    "CANONICAL_PLATFORM_PRESENTATION_LAYER",
+                    *(presentation.get("reusable_components") or []),
+                ]
+            ),
+            "human_approval_required": False,
+            "human_interface_authority": False,
+            "platform_core_authority": True,
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "repository_mutated": False,
+            "governance_modified": False,
+            "replay_modified": False,
+            "runtime_implementation_invoked": False,
+            "implementation_summary_created": False,
+            "read_only": True,
+            "replay_visible": True,
+        }
+        result["artifact_hash"] = replay_hash(result)
+        return result
+    except Exception as exc:
+        result = _failed_read_only_work_result(
+            message=prompt,
+            development_intent=intent,
+            created_at=created_at,
+            failure_reason=str(exc) or "read-only work binding failed closed",
+        )
+        result["artifact_hash"] = replay_hash(result)
+        return result
+
+
+def development_intent_with_read_only_work_result(
+    *,
+    development_intent: dict[str, Any],
+    read_only_work_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach replay-visible read-only work result evidence to intent metadata."""
+
+    intent = deepcopy(development_intent)
+    result = read_only_work_result if isinstance(read_only_work_result, dict) else {}
+    intent["read_only_work_result"] = deepcopy(result)
+    intent["read_only_work_result_hash"] = result.get("artifact_hash")
+    intent["read_only_work_result_status"] = result.get("read_only_work_result_status")
+    intent["read_only_work_binding_status"] = result.get("binding_status")
+    intent["read_only_work_selected_service"] = result.get("selected_read_only_service")
+    intent["read_only_work_presentation_status"] = result.get("presentation_status")
+    intent["read_only_work_provider_invoked"] = result.get("provider_invoked") is True
+    intent["read_only_work_worker_invoked"] = result.get("worker_invoked") is True
+    intent["read_only_work_repository_mutated"] = result.get("repository_mutated") is True
+    intent["artifact_hash"] = replay_hash(intent)
+    return intent
+
+
+def human_conversation_experience_with_read_only_result(
+    *,
+    conversation_experience: dict[str, Any],
+    read_only_work_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Project a governed read-only result into the Platform Core conversation artifact."""
+
+    conversation = deepcopy(conversation_experience)
+    result = read_only_work_result if isinstance(read_only_work_result, dict) else {}
+    conversation.update(
+        {
+            "response_mode": "READ_ONLY_RESULT",
+            "user_headline": f"I completed governed {result.get('work_type')} read-only work.",
+            "user_explanation": (
+                "Platform Core routed the non-mutating request through read-only services "
+                "and produced a canonical presentation artifact."
+            ),
+            "recommended_next_user_action": "Review the governed read-only result.",
+            "governed_read_only_work_result": deepcopy(result),
+            "governed_read_only_work_result_hash": result.get("artifact_hash"),
+            "read_only_work_binding_status": result.get("binding_status"),
+            "read_only_work_result_status": result.get("read_only_work_result_status"),
+            "read_only_work_selected_service": result.get("selected_read_only_service"),
+            "read_only_work_presentation_status": result.get("presentation_status"),
+            "read_only_work_provider_invoked": result.get("provider_invoked") is True,
+            "read_only_work_worker_invoked": result.get("worker_invoked") is True,
+            "read_only_work_repository_mutated": result.get("repository_mutated") is True,
+        }
+    )
+    conversation["artifact_hash"] = replay_hash(conversation)
+    return conversation
+
+
+def _failed_read_only_work_result(
+    *,
+    message: str,
+    development_intent: dict[str, Any],
+    created_at: str,
+    failure_reason: str,
+) -> dict[str, Any]:
+    work_type = str(
+        development_intent.get("work_type")
+        or development_intent.get("requested_work_type")
+        or ""
+    )
+    return {
+        "artifact_type": "PLATFORM_CORE_GOVERNED_READ_ONLY_WORK_RESULT_V1",
+        "runtime_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+        "binding_status": GOVERNED_READ_ONLY_WORK_FAILED_CLOSED,
+        "created_at": require_string(created_at, "created_at"),
+        "original_message": message,
+        "original_message_hash": replay_hash(message),
+        "requested_work_type": work_type,
+        "work_type": work_type,
+        "prepared_work_type": development_intent.get("prepared_work_type"),
+        "read_only_work_binding_admissible": (
+            development_intent.get("read_only_work_binding_admissible") is True
+        ),
+        "read_only_work_result_status": "GOVERNED_READ_ONLY_RESULT_FAILED_CLOSED",
+        "failure_reason": failure_reason,
+        "human_approval_required": False,
+        "human_interface_authority": False,
+        "platform_core_authority": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "runtime_implementation_invoked": False,
+        "implementation_summary_created": False,
+        "read_only": True,
+        "replay_visible": True,
+    }
 
 
 def clarification_completion_transition(
@@ -1941,6 +2180,12 @@ def resolve_development_intent(
         and not work_type_conflict
     )
     runtime_binding_admissible = summary_admissible
+    read_only_work_binding_admissible = read_only_work_binding_admissible_for_intent(
+        requested_work_type=requested_work_type,
+        prepared_work_type=prepared_work_type,
+        clarification_required=clarification_required,
+        work_type_conflict_detected=work_type_conflict,
+    )
     resolution = {
         "artifact_type": "PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_VERSION,
@@ -1991,6 +2236,19 @@ def resolve_development_intent(
         "knowledge_reuse_classification_is_work_type": False,
         "summary_admissible": summary_admissible,
         "runtime_binding_admissible": runtime_binding_admissible,
+        "read_only_work_binding_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+        "read_only_work_binding_admissible": read_only_work_binding_admissible,
+        "read_only_work_binding_status": (
+            GOVERNED_READ_ONLY_WORK_BOUND
+            if read_only_work_binding_admissible
+            else GOVERNED_READ_ONLY_WORK_NOT_REQUIRED
+        ),
+        "read_only_work_supported_types": list(NON_MUTATING_GOVERNED_WORK_TYPES),
+        "read_only_work_result_required": read_only_work_binding_admissible,
+        "read_only_work_human_approval_required": False,
+        "read_only_work_provider_invocation_allowed": False,
+        "read_only_work_worker_invocation_allowed": False,
+        "read_only_work_mutation_allowed": False,
         "same_decision_for_send_and_approve": True,
         "acli_next_executes_resolution": False,
         "requires_human_approval": summary_admissible,
@@ -2091,6 +2349,12 @@ def preserve_active_clarification_work_type(
         and runtime_implementation
         and not conflict
     )
+    read_only_work_binding_admissible = read_only_work_binding_admissible_for_intent(
+        requested_work_type=requested,
+        prepared_work_type=prepared,
+        clarification_required=enriched.get("clarification_required") is True,
+        work_type_conflict_detected=conflict,
+    )
     enriched.update(
         {
             "governed_work_type_metadata": metadata,
@@ -2114,6 +2378,19 @@ def preserve_active_clarification_work_type(
             "active_clarification_work_type_preserved": True,
             "summary_admissible": runtime_admissible,
             "runtime_binding_admissible": runtime_admissible,
+            "read_only_work_binding_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+            "read_only_work_binding_admissible": read_only_work_binding_admissible,
+            "read_only_work_binding_status": (
+                GOVERNED_READ_ONLY_WORK_BOUND
+                if read_only_work_binding_admissible
+                else GOVERNED_READ_ONLY_WORK_NOT_REQUIRED
+            ),
+            "read_only_work_supported_types": list(NON_MUTATING_GOVERNED_WORK_TYPES),
+            "read_only_work_result_required": read_only_work_binding_admissible,
+            "read_only_work_human_approval_required": False,
+            "read_only_work_provider_invocation_allowed": False,
+            "read_only_work_worker_invocation_allowed": False,
+            "read_only_work_mutation_allowed": False,
             "requires_human_approval": runtime_admissible,
         }
     )
@@ -2487,6 +2764,20 @@ def development_intent_with_context_sufficiency(
             "clarification_reason"
         )
         intent["clarification_reason"] = None
+    read_only_work_binding_admissible = read_only_work_binding_admissible_for_intent(
+        requested_work_type=str(intent.get("requested_work_type") or ""),
+        prepared_work_type=str(intent.get("prepared_work_type") or ""),
+        clarification_required=intent.get("clarification_required") is True,
+        work_type_conflict_detected=intent.get("work_type_conflict_detected") is True,
+    )
+    intent["read_only_work_binding_version"] = PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION
+    intent["read_only_work_binding_admissible"] = read_only_work_binding_admissible
+    intent["read_only_work_binding_status"] = (
+        GOVERNED_READ_ONLY_WORK_BOUND
+        if read_only_work_binding_admissible
+        else GOVERNED_READ_ONLY_WORK_NOT_REQUIRED
+    )
+    intent["read_only_work_result_required"] = read_only_work_binding_admissible
     intent["artifact_hash"] = replay_hash(intent)
     return intent
 

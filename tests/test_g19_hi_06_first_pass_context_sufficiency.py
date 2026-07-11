@@ -66,7 +66,10 @@ def test_original_request_satisfies_architecture_outcome_before_clarification(
     assert resolution["clarification_required_before_context_sufficiency"] is True
     assert resolution["clarification_required"] is False
     assert resolution["clarification_suppressed_by_context_sufficiency"] is True
-    assert conversation["response_mode"] == "INFORMATIONAL"
+    assert conversation["response_mode"] == "READ_ONLY_RESULT"
+    assert context["governed_read_only_work_result"]["binding_status"] == (
+        "GOVERNED_READ_ONLY_WORK_BOUND"
+    )
     assert conversation["clarification_questions"] == []
     assert plan["clarification_required_after_sufficiency"] is False
     assert plan["selected_missing_slot"] is None
