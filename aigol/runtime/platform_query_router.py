@@ -16,6 +16,10 @@ from aigol.runtime.platform_capability_composition_coverage import (
     PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
     discover_platform_capability_composition_coverage,
 )
+from aigol.runtime.platform_development_composition_plan import (
+    PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_VERSION,
+    compose_platform_development_plan_for_query,
+)
 from aigol.runtime.generation_certification_composition import (
     GENERATION_CERTIFICATION_COMPOSITION_VERSION,
     compose_generation_certification,
@@ -47,6 +51,7 @@ ROOT_CAUSE_TRACE_ROUTE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
 GOVERNED_DEVELOPMENT_ROUTE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_ROUTE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 CAPABILITY_COMPOSITION_COVERAGE_ROUTE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
+DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 
 
 ROUTER_BOUNDARY_FLAGS = {
@@ -106,6 +111,23 @@ class PlatformServiceRouteDescriptor:
 
 
 PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
+    PlatformServiceRouteDescriptor(
+        service_identifier=DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
+        service_owner="PLATFORM_CORE_DEVELOPMENT_PLANNING",
+        implementation_owner="aigol.runtime.platform_development_composition_plan",
+        query_classes=("DEVELOPMENT_COMPOSITION_PLAN",),
+        required_inputs=("query",),
+        response_artifact_type="PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_ARTIFACT_V1",
+        service_version=PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_VERSION,
+        adapter_name="_route_development_composition_plan",
+        routing_terms=(
+            "development composition plan",
+            "governed development plan",
+            "platform development plan",
+            "ordered implementation sequence",
+            "implementation dependency graph",
+        ),
+    ),
     PlatformServiceRouteDescriptor(
         service_identifier=CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
         service_owner="PLATFORM_CORE_CAPABILITY_DISCOVERY",
@@ -423,7 +445,26 @@ def _route_capability_composition_coverage(
     )
 
 
+def _route_development_composition_plan(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    composition_replay_evidence: list[dict[str, Any]] | None,
+    governance_root: str,
+    created_at: str,
+    **_: Any,
+) -> dict[str, Any]:
+    return compose_platform_development_plan_for_query(
+        query=query,
+        workspace_state=workspace_state,
+        replay_evidence=composition_replay_evidence,
+        governance_root=governance_root,
+        created_at=created_at,
+    )
+
+
 ROUTE_ADAPTERS: dict[str, Callable[..., dict[str, Any]]] = {
+    DEVELOPMENT_COMPOSITION_PLAN_ROUTE: _route_development_composition_plan,
     CAPABILITY_COMPOSITION_COVERAGE_ROUTE: _route_capability_composition_coverage,
     GENERATION_CERTIFICATION_ROUTE: _route_generation_certification,
     PLATFORM_KNOWLEDGE_ROUTE: _route_platform_knowledge,
@@ -442,6 +483,13 @@ def _candidate_routes(
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
     candidates = [
+        _candidate(
+            service_identifier=DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
+            query_class="DEVELOPMENT_COMPOSITION_PLAN",
+            score=_development_composition_plan_score(lowered),
+            required_evidence_available=True,
+            reason="Development Composition Plan derives ordered governed work from capability coverage.",
+        ),
         _candidate(
             service_identifier=CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
             query_class="CAPABILITY_COMPOSITION_DISCOVERY",
@@ -487,6 +535,7 @@ def _candidate_routes(
         GOVERNED_DEVELOPMENT_ROUTE,
         GENERATION_CERTIFICATION_ROUTE,
         CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
+        DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
     }
     for descriptor in descriptors:
         if descriptor.service_identifier in built_in_services:
@@ -552,6 +601,17 @@ def _root_cause_score(query: str) -> int:
 
 
 def _development_score(query: str, development_intent: dict[str, Any]) -> int:
+    if any(
+        phrase in query
+        for phrase in (
+            "development composition plan",
+            "governed development plan",
+            "platform development plan",
+            "ordered implementation sequence",
+            "implementation dependency graph",
+        )
+    ):
+        return 0
     terms = ("implement", "build", "add", "change", "modify", "refine", "improve", "create")
     score = sum(18 for term in terms if term in query)
     if development_intent.get("summary_admissible") is True:
@@ -581,6 +641,17 @@ def _capability_composition_coverage_score(query: str) -> int:
         "minimal platform composition",
     )
     return min(100, sum(30 for phrase in phrases if phrase in query))
+
+
+def _development_composition_plan_score(query: str) -> int:
+    phrases = (
+        "development composition plan",
+        "governed development plan",
+        "platform development plan",
+        "ordered implementation sequence",
+        "implementation dependency graph",
+    )
+    return min(100, sum(35 for phrase in phrases if phrase in query))
 
 
 def _descriptor_score(query: str, descriptor: PlatformServiceRouteDescriptor) -> int:

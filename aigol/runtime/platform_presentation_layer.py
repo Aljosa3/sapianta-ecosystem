@@ -28,12 +28,16 @@ GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1 = "GENERATION_CERTIFICATION_RESULT
 CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1 = (
     "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1"
 )
+DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1 = (
+    "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_ARTIFACT_V1"
+)
 
 PLATFORM_KNOWLEDGE_SERVICE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_SERVICE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
 GOVERNED_DEVELOPMENT_SERVICE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_SERVICE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 CAPABILITY_COMPOSITION_COVERAGE_SERVICE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
+DEVELOPMENT_COMPOSITION_PLAN_SERVICE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -172,6 +176,11 @@ def _presentation_from_response(
         return _generation_certification_presentation(service_response, router_response=router_response)
     if artifact_type == CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1:
         return _capability_composition_coverage_presentation(
+            service_response,
+            router_response=router_response,
+        )
+    if artifact_type == DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1:
+        return _development_composition_plan_presentation(
             service_response,
             router_response=router_response,
         )
@@ -548,6 +557,100 @@ def _capability_composition_coverage_presentation(
     )
 
 
+def _development_composition_plan_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    plan_status = str(response.get("plan_status") or "")
+    if plan_status == "DEVELOPMENT_COMPOSITION_PLAN_READY":
+        status = PRESENTATION_READY
+        confidence = "DETERMINISTIC_PLAN_READY"
+        summary = "A minimal governed Development Composition Plan is ready for review."
+        recommended = "Review the advisory plan and obtain human approval before implementation."
+    elif plan_status == "DEVELOPMENT_COMPOSITION_PLAN_NO_IMPLEMENTATION_REQUIRED":
+        status = PRESENTATION_READY
+        confidence = "EXISTING_COMPOSITION_SUFFICIENT"
+        summary = "Existing certified Platform capabilities satisfy the requested composition."
+        recommended = "Reuse and verify the existing certified capability composition."
+    else:
+        status = PRESENTATION_FAILED_CLOSED
+        confidence = "FAILED_CLOSED"
+        summary = "Development Composition Plan generation failed closed."
+        recommended = "Resolve capability coverage ambiguity before development planning."
+    work_items = deepcopy(response.get("required_implementation_work") or [])
+    dependencies = deepcopy(response.get("dependency_graph") or {})
+    evidence = [
+        {
+            "source_type": "CAPABILITY_COVERAGE",
+            "artifact_hash": response.get("capability_coverage_hash"),
+            "runtime_version": response.get("capability_coverage_runtime_version"),
+        },
+        {
+            "source_type": "GOVERNANCE_DEPENDENCIES",
+            "items": deepcopy(response.get("governance_dependencies") or []),
+        },
+        {
+            "source_type": "CERTIFICATION_DEPENDENCIES",
+            "items": deepcopy(response.get("certification_dependencies") or []),
+        },
+        {
+            "source_type": "REPLAY_DEPENDENCIES",
+            "items": deepcopy(response.get("replay_dependencies") or []),
+        },
+    ]
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "plan_status": plan_status,
+            "implementation_required": response.get("implementation_required") is True,
+            "reusable_certified_capabilities": deepcopy(
+                response.get("reusable_certified_capabilities") or []
+            ),
+            "reusable_certified_compositions": deepcopy(
+                response.get("reusable_certified_compositions") or []
+            ),
+            "residual_capability_gaps": deepcopy(
+                response.get("residual_capability_gaps") or []
+            ),
+            "ordered_implementation_sequence": deepcopy(
+                response.get("ordered_implementation_sequence") or []
+            ),
+            "dependency_graph": dependencies,
+            "validation_requirements": deepcopy(
+                response.get("validation_requirements") or []
+            ),
+            "implementation_boundary": deepcopy(
+                response.get("implementation_boundary") or {}
+            ),
+        },
+        confidence=confidence,
+        evidence=evidence,
+        reasoning_path=_router_reasoning(router_response)
+        + [
+            {
+                "step": "CAPABILITY_COVERAGE_VALIDATION",
+                "artifact_hash": response.get("capability_coverage_hash"),
+            },
+            {"step": "ORDERED_IMPLEMENTATION_SEQUENCE", "value": work_items},
+            {"step": "DEPENDENCY_GRAPH", "value": dependencies},
+            {
+                "step": "IMPLEMENTATION_BOUNDARY",
+                "value": deepcopy(response.get("implementation_boundary") or {}),
+            },
+        ],
+        sources=[str(response.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=None,
+        governance_status="PLATFORM_CORE_DEVELOPMENT_PLANNING",
+        replay_status="REPLAY_VISIBLE" if response.get("replay_visible") is True else None,
+        warnings=[response.get("failure_reason")] if response.get("failure_reason") else [],
+        actions=[recommended],
+        reusable_components=list(response.get("reused_platform_core_services") or []),
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -663,6 +766,8 @@ def _selected_service(
         return GENERATION_CERTIFICATION_SERVICE
     if artifact_type == CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1:
         return CAPABILITY_COMPOSITION_COVERAGE_SERVICE
+    if artifact_type == DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1:
+        return DEVELOPMENT_COMPOSITION_PLAN_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")
