@@ -25,11 +25,15 @@ GOVERNED_DEVELOPMENT_RESPONSE_ARTIFACT_V1 = (
     "PLATFORM_CORE_DEVELOPMENT_INTENT_RESOLUTION_ARTIFACT_V1"
 )
 GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1 = "GENERATION_CERTIFICATION_RESULT_V1"
+CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1 = (
+    "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1"
+)
 
 PLATFORM_KNOWLEDGE_SERVICE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_SERVICE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
 GOVERNED_DEVELOPMENT_SERVICE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_SERVICE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
+CAPABILITY_COMPOSITION_COVERAGE_SERVICE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -166,6 +170,11 @@ def _presentation_from_response(
         return _governed_development_presentation(service_response, router_response=router_response)
     if artifact_type == GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1:
         return _generation_certification_presentation(service_response, router_response=router_response)
+    if artifact_type == CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1:
+        return _capability_composition_coverage_presentation(
+            service_response,
+            router_response=router_response,
+        )
     raise FailClosedRuntimeError("platform presentation unsupported source artifact type")
 
 
@@ -460,6 +469,85 @@ def _generation_certification_presentation(
     )
 
 
+def _capability_composition_coverage_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    coverage_status = str(response.get("coverage_status") or "")
+    residual_gaps = deepcopy(response.get("uncovered_residual_gaps") or [])
+    minimal_extension = deepcopy(response.get("minimal_required_platform_extension") or {})
+    if coverage_status == "CAPABILITY_COMPOSITION_COVERAGE_COMPLETE":
+        status = PRESENTATION_READY
+        confidence = "DETERMINISTIC_COVERAGE_COMPLETE"
+        summary = "Existing certified Platform capabilities cover every discovered request facet."
+        recommended = (
+            "Reuse the identified certified composition."
+            if minimal_extension.get("required") is False
+            else "Implement only the identified minimal Platform composition."
+        )
+    elif coverage_status == "CAPABILITY_COMPOSITION_COVERAGE_PARTIAL":
+        status = PRESENTATION_MISSING_EVIDENCE
+        confidence = "PARTIAL_CAPABILITY_COVERAGE"
+        summary = "Platform capability coverage is partial and residual gaps remain."
+        recommended = "Review the residual gaps and implement only the minimal required extension."
+    else:
+        status = PRESENTATION_FAILED_CLOSED
+        confidence = "FAILED_CLOSED"
+        summary = "Platform capability composition discovery failed closed."
+        recommended = "Clarify the requested capability facets before implementation."
+    evidence = [
+        {"source_type": "CAPABILITY_COVERAGE", "artifact": deepcopy(item)}
+        for item in response.get("capability_coverage", [])
+        if isinstance(item, dict)
+    ]
+    evidence.extend(
+        {"source_type": "CERTIFIED_COMPOSITION", "artifact": deepcopy(item)}
+        for item in response.get("certified_reusable_compositions", [])
+        if isinstance(item, dict)
+    )
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "coverage_status": coverage_status,
+            "request_facet_count": response.get("request_facet_count"),
+            "covered_facet_count": response.get("covered_facet_count"),
+            "discovered_reusable_capabilities": deepcopy(
+                response.get("discovered_reusable_capabilities") or []
+            ),
+            "certified_reusable_compositions": deepcopy(
+                response.get("certified_reusable_compositions") or []
+            ),
+            "uncovered_residual_gaps": residual_gaps,
+            "minimal_required_platform_extension": minimal_extension,
+        },
+        confidence=confidence,
+        evidence=evidence,
+        reasoning_path=_router_reasoning(router_response)
+        + [
+            {
+                "step": "CAPABILITY_DISCOVERY",
+                "artifact_hash": response.get("candidate_capability_discovery_hash"),
+            },
+            {
+                "step": "PLATFORM_KNOWLEDGE",
+                "artifact_hash": response.get("platform_knowledge_response_hash"),
+            },
+            {"step": "CAPABILITY_COVERAGE", "value": deepcopy(response.get("capability_coverage") or [])},
+            {"step": "RESIDUAL_GAP_RESOLUTION", "value": minimal_extension},
+        ],
+        sources=[str(response.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=None,
+        governance_status="PLATFORM_CORE_CAPABILITY_DISCOVERY",
+        replay_status="REPLAY_VISIBLE" if response.get("replay_visible") is True else None,
+        warnings=residual_gaps + ([response.get("failure_reason")] if response.get("failure_reason") else []),
+        actions=[recommended],
+        reusable_components=list(response.get("reused_platform_core_services") or []),
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -573,6 +661,8 @@ def _selected_service(
         return GOVERNED_DEVELOPMENT_SERVICE
     if artifact_type == GENERATION_CERTIFICATION_RESPONSE_ARTIFACT_V1:
         return GENERATION_CERTIFICATION_SERVICE
+    if artifact_type == CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1:
+        return CAPABILITY_COMPOSITION_COVERAGE_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")

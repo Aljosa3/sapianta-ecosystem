@@ -12,6 +12,10 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_capability_composition_coverage import (
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
+    discover_platform_capability_composition_coverage,
+)
 from aigol.runtime.generation_certification_composition import (
     GENERATION_CERTIFICATION_COMPOSITION_VERSION,
     compose_generation_certification,
@@ -42,6 +46,7 @@ PLATFORM_KNOWLEDGE_ROUTE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_ROUTE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
 GOVERNED_DEVELOPMENT_ROUTE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_ROUTE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
+CAPABILITY_COMPOSITION_COVERAGE_ROUTE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 
 
 ROUTER_BOUNDARY_FLAGS = {
@@ -101,6 +106,24 @@ class PlatformServiceRouteDescriptor:
 
 
 PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
+    PlatformServiceRouteDescriptor(
+        service_identifier=CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
+        service_owner="PLATFORM_CORE_CAPABILITY_DISCOVERY",
+        implementation_owner="aigol.runtime.platform_capability_composition_coverage",
+        query_classes=("CAPABILITY_COMPOSITION_DISCOVERY",),
+        required_inputs=("query",),
+        response_artifact_type="PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1",
+        service_version=PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
+        adapter_name="_route_capability_composition_coverage",
+        routing_terms=(
+            "capability composition",
+            "composition coverage",
+            "composition discovery",
+            "reusable capabilities",
+            "residual gap",
+            "minimal platform composition",
+        ),
+    ),
     PlatformServiceRouteDescriptor(
         service_identifier=GENERATION_CERTIFICATION_ROUTE,
         service_owner="PLATFORM_CORE_CERTIFICATION",
@@ -187,6 +210,7 @@ def route_platform_query(
     user_visible_result: dict[str, Any] | None = None,
     generation_identifier: str | None = None,
     generation_evidence_profile: dict[str, Any] | None = None,
+    composition_replay_evidence: list[dict[str, Any]] | None = None,
     governance_root: str = ".",
     created_at: str = "2026-07-11T00:00:00Z",
     route_descriptors: list[PlatformServiceRouteDescriptor] | tuple[PlatformServiceRouteDescriptor, ...] | None = None,
@@ -239,6 +263,7 @@ def route_platform_query(
             user_visible_result=user_visible_result,
             generation_identifier=generation_identifier,
             generation_evidence_profile=generation_evidence_profile,
+            composition_replay_evidence=composition_replay_evidence,
             governance_root=governance_root,
             created_at=created_at,
             knowledge_probe=knowledge_probe,
@@ -380,7 +405,26 @@ def _route_generation_certification(
     )
 
 
+def _route_capability_composition_coverage(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    composition_replay_evidence: list[dict[str, Any]] | None,
+    governance_root: str,
+    created_at: str,
+    **_: Any,
+) -> dict[str, Any]:
+    return discover_platform_capability_composition_coverage(
+        query=query,
+        workspace_state=workspace_state,
+        replay_evidence=composition_replay_evidence,
+        governance_root=governance_root,
+        created_at=created_at,
+    )
+
+
 ROUTE_ADAPTERS: dict[str, Callable[..., dict[str, Any]]] = {
+    CAPABILITY_COMPOSITION_COVERAGE_ROUTE: _route_capability_composition_coverage,
     GENERATION_CERTIFICATION_ROUTE: _route_generation_certification,
     PLATFORM_KNOWLEDGE_ROUTE: _route_platform_knowledge,
     ROOT_CAUSE_TRACE_ROUTE: _route_root_cause_trace,
@@ -398,6 +442,13 @@ def _candidate_routes(
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
     candidates = [
+        _candidate(
+            service_identifier=CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
+            query_class="CAPABILITY_COMPOSITION_DISCOVERY",
+            score=_capability_composition_coverage_score(lowered),
+            required_evidence_available=True,
+            reason="Capability Composition Coverage resolves reusable capabilities and residual gaps.",
+        ),
         _candidate(
             service_identifier=GENERATION_CERTIFICATION_ROUTE,
             query_class="GENERATION_CERTIFICATION",
@@ -435,6 +486,7 @@ def _candidate_routes(
         ROOT_CAUSE_TRACE_ROUTE,
         GOVERNED_DEVELOPMENT_ROUTE,
         GENERATION_CERTIFICATION_ROUTE,
+        CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
     }
     for descriptor in descriptors:
         if descriptor.service_identifier in built_in_services:
@@ -517,6 +569,18 @@ def _generation_certification_score(query: str) -> int:
         "generation evidence profile",
     )
     return min(100, sum(35 for phrase in phrases if phrase in query))
+
+
+def _capability_composition_coverage_score(query: str) -> int:
+    phrases = (
+        "capability composition",
+        "composition coverage",
+        "composition discovery",
+        "reusable capabilities",
+        "residual gap",
+        "minimal platform composition",
+    )
+    return min(100, sum(30 for phrase in phrases if phrase in query))
 
 
 def _descriptor_score(query: str, descriptor: PlatformServiceRouteDescriptor) -> int:
