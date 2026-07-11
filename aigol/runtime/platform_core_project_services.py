@@ -38,6 +38,9 @@ PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_VERSION = (
 PLATFORM_CORE_DETERMINISTIC_CLARIFICATION_PLANNER_VERSION = (
     "G15_HIR_08_DETERMINISTIC_CLARIFICATION_PLANNER_V1"
 )
+PLATFORM_CORE_CLARIFICATION_COMPLETION_VERSION = (
+    "G19_HI_04_CLARIFICATION_COMPLETION_LIFECYCLE_V1"
+)
 PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION = (
     "G19_HI_02_GOVERNED_WORK_TYPE_PRESERVATION_V1"
 )
@@ -378,6 +381,13 @@ def resolve_uhi_clarification_continuity(
         reply=reply,
         active_clarification_state=active_clarification_state,
     )
+    question_bindings = deterministic_clarification_question_bindings(
+        active_clarification_state.get("clarification_questions")
+    )
+    completion = clarification_completion_transition(
+        satisfaction=satisfaction,
+        question_bindings=question_bindings,
+    )
     if (
         reply_resolution.get("summary_admissible") is not True
         and satisfaction["clarification_satisfied"] is True
@@ -394,13 +404,12 @@ def resolve_uhi_clarification_continuity(
         resolution=reply_resolution,
         active_clarification_state=active_clarification_state,
     )
-    resolved = (
-        satisfaction["clarification_satisfied"] is True
-        and reply_resolution.get("clarification_required") is not True
-    )
-    status = "CLARIFICATION_RESOLVED" if resolved else "CLARIFICATION_STILL_REQUIRED"
-    question_bindings = deterministic_clarification_question_bindings(
-        active_clarification_state.get("clarification_questions")
+    completed = completion["clarification_completed"] is True
+    resolved = completed
+    status = (
+        "CLARIFICATION_RESOLVED"
+        if completed
+        else "CLARIFICATION_STILL_REQUIRED"
     )
     continuity_artifact = {
         "artifact_type": "PLATFORM_CORE_UHI_CLARIFICATION_CONTINUITY_ARTIFACT_V1",
@@ -413,9 +422,18 @@ def resolve_uhi_clarification_continuity(
         "reply_resolution_source": resolution_source,
         "clarification_question_bindings": question_bindings,
         "clarification_satisfaction_verification": deepcopy(satisfaction),
-        "answered_clarification_question_ids": satisfaction["satisfied_question_ids"] if resolved else [],
-        "satisfied_semantic_slots": satisfaction["satisfied_semantic_slots"] if resolved else [],
-        "pending_semantic_slots": satisfaction["pending_semantic_slots"],
+        "clarification_completion_transition": deepcopy(completion),
+        "clarification_completion_status": completion["clarification_completion_status"],
+        "clarification_completed": completed,
+        "completed_clarification_question_ids": completion["completed_clarification_question_ids"],
+        "completed_semantic_slots": completion["completed_semantic_slots"],
+        "remaining_clarification_questions": completion["remaining_clarification_questions"],
+        "remaining_clarification_question_bindings": completion[
+            "remaining_clarification_question_bindings"
+        ],
+        "answered_clarification_question_ids": completion["completed_clarification_question_ids"],
+        "satisfied_semantic_slots": completion["completed_semantic_slots"],
+        "pending_semantic_slots": completion["pending_semantic_slots"],
         "clarification_continuity_status": status,
         "clarification_resolved": resolved,
         "new_governed_request_created": False,
@@ -455,7 +473,7 @@ def resolve_uhi_clarification_continuity(
         continuity_artifact,
     )
     enriched_resolution = deepcopy(reply_resolution)
-    if not resolved:
+    if not completed:
         enriched_resolution["clarification_required"] = True
         enriched_resolution["clarification_reason"] = (
             "clarification answer did not satisfy active semantic slot"
@@ -473,18 +491,32 @@ def resolve_uhi_clarification_continuity(
         enriched_resolution["summary_admissible"] = False
         enriched_resolution["runtime_binding_admissible"] = False
         enriched_resolution["requires_human_approval"] = False
+    else:
+        enriched_resolution["clarification_required"] = False
+        enriched_resolution["clarification_completion_authority"] = "PLATFORM_CORE"
     enriched_resolution.update(
         {
             "clarification_reply_bound": True,
             "clarification_reply_resolution_source": resolution_source,
             "clarification_question_bindings": question_bindings,
             "clarification_satisfaction_verification": deepcopy(satisfaction),
+            "clarification_completion_transition": deepcopy(completion),
+            "clarification_completion_status": completion["clarification_completion_status"],
+            "clarification_completed": completed,
+            "completed_clarification_question_ids": completion[
+                "completed_clarification_question_ids"
+            ],
+            "completed_semantic_slots": completion["completed_semantic_slots"],
+            "remaining_clarification_questions": completion["remaining_clarification_questions"],
+            "remaining_clarification_question_bindings": completion[
+                "remaining_clarification_question_bindings"
+            ],
             "clarification_decision_explainability": satisfaction[
                 "clarification_decision_explainability"
             ],
-            "answered_clarification_question_ids": satisfaction["satisfied_question_ids"] if resolved else [],
-            "satisfied_semantic_slots": satisfaction["satisfied_semantic_slots"] if resolved else [],
-            "pending_semantic_slots": satisfaction["pending_semantic_slots"],
+            "answered_clarification_question_ids": completion["completed_clarification_question_ids"],
+            "satisfied_semantic_slots": completion["completed_semantic_slots"],
+            "pending_semantic_slots": completion["pending_semantic_slots"],
             "clarification_continuity_status": status,
             "clarification_resolved": resolved,
             "requested_work_type": reply_resolution.get("requested_work_type")
@@ -507,6 +539,74 @@ def resolve_uhi_clarification_continuity(
     )
     enriched_resolution["artifact_hash"] = replay_hash(enriched_resolution)
     return enriched_resolution, continuity_artifact
+
+
+def clarification_completion_transition(
+    *,
+    satisfaction: dict[str, Any],
+    question_bindings: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Complete satisfied clarification questions independently of downstream intent."""
+
+    satisfied_question_ids = unique_strings(satisfaction.get("satisfied_question_ids"))
+    satisfied_slots = unique_strings(satisfaction.get("satisfied_semantic_slots"))
+    pending_slots = unique_strings(satisfaction.get("pending_semantic_slots"))
+    remaining_bindings = [
+        deepcopy(binding)
+        for binding in question_bindings
+        if str(binding.get("question_id") or "") not in set(satisfied_question_ids)
+    ]
+    remaining_questions = unique_strings(
+        [binding.get("question_text") for binding in remaining_bindings]
+    )
+    clarification_satisfied = satisfaction.get("clarification_satisfied") is True
+    completed = (
+        clarification_satisfied
+        and not pending_slots
+        and not remaining_bindings
+        and bool(satisfied_question_ids or satisfied_slots)
+    )
+    partially_completed = (
+        clarification_satisfied
+        and not pending_slots
+        and bool(remaining_bindings)
+    )
+    status = (
+        "CLARIFICATION_COMPLETED"
+        if completed
+        else (
+            "CLARIFICATION_PARTIALLY_COMPLETED"
+            if partially_completed
+            else "CLARIFICATION_COMPLETION_STILL_REQUIRED"
+        )
+    )
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_CLARIFICATION_COMPLETION_TRANSITION_V1",
+        "runtime_version": PLATFORM_CORE_CLARIFICATION_COMPLETION_VERSION,
+        "completion_authority": "PLATFORM_CORE",
+        "completion_evaluation_source": "CLARIFICATION_SATISFACTION_VERIFICATION",
+        "clarification_completion_status": status,
+        "clarification_completed": completed,
+        "clarification_partially_completed": partially_completed,
+        "clarification_still_required": not completed,
+        "completed_clarification_question_ids": satisfied_question_ids,
+        "completed_semantic_slots": satisfied_slots,
+        "remaining_clarification_questions": remaining_questions,
+        "remaining_clarification_question_bindings": remaining_bindings,
+        "pending_semantic_slots": pending_slots,
+        "pending_clarification_should_be_removed": completed,
+        "downstream_intent_admissibility_required": False,
+        "approval_preparation_required_for_completion": False,
+        "runtime_binding_required_for_completion": False,
+        "completion_blocks_remaining": [] if completed else (
+            ["remaining clarification questions"] if remaining_bindings else ["active slot not satisfied"]
+        ),
+        "human_interface_authority": False,
+        "platform_core_owns_completion": True,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
 
 
 def deterministic_clarification_question_bindings(questions: Any) -> list[dict[str, Any]]:
@@ -989,6 +1089,38 @@ def build_persistent_workspace_state_artifact(
     )
     pending_approval = pending_summary is not None
     pending_clarification_present = pending_clarification is not None
+    prior_completed_clarifications = (
+        prior_state.get("completed_clarifications", [])
+        if isinstance(prior_state, dict) and isinstance(prior_state.get("completed_clarifications"), list)
+        else []
+    )
+    latest_completion = (
+        completion.get("development_intent_resolution", {})
+        if isinstance(completion.get("development_intent_resolution"), dict)
+        else {}
+    )
+    completed_clarifications = [*deepcopy(prior_completed_clarifications)]
+    if latest_completion.get("clarification_completed") is True:
+        completed_clarifications.append(
+            {
+                "clarification_completion_status": latest_completion.get(
+                    "clarification_completion_status"
+                ),
+                "completed_clarification_question_ids": unique_strings(
+                    latest_completion.get("completed_clarification_question_ids")
+                ),
+                "completed_semantic_slots": unique_strings(
+                    latest_completion.get("completed_semantic_slots")
+                ),
+                "clarification_continuity_replay_reference": latest_completion.get(
+                    "clarification_continuity_replay_reference"
+                ),
+                "clarification_continuity_artifact_hash": latest_completion.get(
+                    "clarification_continuity_artifact_hash"
+                ),
+                "completion_authority": "PLATFORM_CORE",
+            }
+        )
     guidance = project_guidance_model(
         active_objective=active_objective,
         pending_clarification=pending_clarification_present,
@@ -1018,6 +1150,13 @@ def build_persistent_workspace_state_artifact(
         "prior_workspace_state_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
         "active_development_objective": active_objective,
         "pending_clarification_request": deepcopy(pending_clarification),
+        "completed_clarifications": completed_clarifications,
+        "completed_clarification_count": len(completed_clarifications),
+        "latest_clarification_completion_transition": deepcopy(
+            latest_completion.get("clarification_completion_transition")
+        )
+        if latest_completion.get("clarification_completed") is True
+        else None,
         "pending_implementation_summary": deepcopy(pending_summary),
         "pending_approval": pending_approval,
         "pending_approval_kind": "IMPLEMENTATION_SUMMARY_APPROVAL" if pending_approval else None,
@@ -2581,6 +2720,13 @@ def _previous_clarification_answer_ids(workspace_state: dict[str, Any] | None) -
     continuity = workspace_state.get("clarification_continuity")
     if isinstance(continuity, dict):
         return unique_strings(continuity.get("answered_clarification_question_ids"))
+    completed = workspace_state.get("completed_clarifications")
+    if isinstance(completed, list):
+        answer_ids: list[str] = []
+        for item in completed:
+            if isinstance(item, dict):
+                answer_ids.extend(unique_strings(item.get("completed_clarification_question_ids")))
+        return unique_strings(answer_ids)
     return []
 
 
