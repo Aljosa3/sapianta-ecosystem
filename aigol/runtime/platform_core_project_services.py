@@ -47,6 +47,9 @@ PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION = (
 PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION = (
     "G19_HI_02_GOVERNED_WORK_TYPE_PRESERVATION_V1"
 )
+PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION = (
+    "G19_HI_08_PREPARED_WORK_TYPE_RESOLUTION_REFACTORING_V1"
+)
 
 CANONICAL_GOVERNED_WORK_TYPES = (
     "AUDIT_ONLY",
@@ -672,7 +675,19 @@ def clarification_satisfaction_verification(
     bindings = deterministic_clarification_question_bindings(
         active_clarification_state.get("clarification_questions")
     )
-    open_binding = bindings[0] if bindings else None
+    satisfied_bindings = [
+        binding
+        for binding in bindings
+        if _clarification_reply_satisfies_slot(
+            reply=text,
+            slot_id=str(binding.get("semantic_slot") or ""),
+        )
+    ]
+    open_binding = (
+        satisfied_bindings[0]
+        if satisfied_bindings
+        else (bindings[0] if bindings else None)
+    )
     open_slot = (
         str(open_binding.get("semantic_slot"))
         if isinstance(open_binding, dict)
@@ -683,11 +698,7 @@ def clarification_satisfaction_verification(
         if isinstance(open_binding, dict)
         else None
     )
-    satisfied = (
-        _clarification_reply_satisfies_slot(reply=text, slot_id=open_slot)
-        if open_slot is not None
-        else False
-    )
+    satisfied = bool(satisfied_bindings)
     missing_information = (
         None
         if satisfied
@@ -708,8 +719,12 @@ def clarification_satisfaction_verification(
         "open_question_text": open_question,
         "open_semantic_slot": open_slot,
         "clarification_satisfied": satisfied,
-        "satisfied_question_ids": [open_binding["question_id"]] if satisfied and isinstance(open_binding, dict) else [],
-        "satisfied_semantic_slots": [open_slot] if satisfied and open_slot is not None else [],
+        "satisfied_question_ids": unique_strings(
+            [binding.get("question_id") for binding in satisfied_bindings]
+        ),
+        "satisfied_semantic_slots": unique_strings(
+            [binding.get("semantic_slot") for binding in satisfied_bindings]
+        ),
         "pending_semantic_slots": [] if satisfied or open_slot is None else [open_slot],
         "missing_information": missing_information,
         "clarification_decision_explainability": deepcopy(explainability),
@@ -1904,10 +1919,12 @@ def resolve_development_intent(
     requested_work_type = str(work_type_resolution["requested_work_type"])
     canonical_runtime_prompt = canonical_development_runtime_prompt(governed_request)
     native_runtime_admissible = is_native_development_prompt(canonical_runtime_prompt)
-    prepared_work_type = prepared_work_type_for_runtime_prompt(
-        canonical_runtime_prompt,
+    prepared_work_type_resolution = resolve_prepared_work_type(
         requested_work_type=requested_work_type,
+        canonical_runtime_prompt=canonical_runtime_prompt,
+        governed_work_type_metadata=work_type_resolution,
     )
+    prepared_work_type = str(prepared_work_type_resolution["prepared_work_type"])
     work_type_conflict = (
         prepared_work_type != requested_work_type
         and work_type_resolution["explicit_work_type_change_declared"] is not True
@@ -1948,10 +1965,15 @@ def resolve_development_intent(
         "canonical_runtime_prompt": canonical_runtime_prompt,
         "native_development_prompt_detected": native_runtime_admissible,
         "work_type_preservation_version": PLATFORM_CORE_WORK_TYPE_PRESERVATION_VERSION,
+        "prepared_work_type_resolution_version": PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION,
         "governed_work_type_metadata": deepcopy(work_type_resolution),
+        "prepared_work_type_resolution": deepcopy(prepared_work_type_resolution),
         "requested_work_type": requested_work_type,
         "work_type": requested_work_type,
         "prepared_work_type": prepared_work_type,
+        "runtime_prompt_work_type_signal": prepared_work_type_resolution[
+            "runtime_prompt_work_type_signal"
+        ],
         "work_type_source": work_type_resolution["work_type_source"],
         "work_type_source_text": work_type_resolution["work_type_source_text"],
         "mutation_allowed": mutation_allowed,
@@ -2020,7 +2042,12 @@ def preserve_active_clarification_work_type(
         return resolution
     enriched = deepcopy(resolution)
     prompt = str(enriched.get("canonical_runtime_prompt") or enriched.get("raw_prompt") or "")
-    prepared = prepared_work_type_for_runtime_prompt(prompt, requested_work_type=requested)
+    prepared_resolution = resolve_prepared_work_type(
+        requested_work_type=requested,
+        canonical_runtime_prompt=prompt,
+        governed_work_type_metadata=enriched.get("governed_work_type_metadata"),
+    )
+    prepared = str(prepared_resolution["prepared_work_type"])
     mutation_allowed = requested == "IMPLEMENTATION"
     runtime_implementation = requested == "IMPLEMENTATION"
     conflict = prepared != requested
@@ -2036,6 +2063,14 @@ def preserve_active_clarification_work_type(
             "mutation_allowed": mutation_allowed,
             "runtime_implementation": runtime_implementation,
             "work_type_change_allowed": False,
+            "prepared_work_type_resolution_version": (
+                PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION
+            ),
+            "prepared_work_type_resolution": deepcopy(prepared_resolution),
+            "prepared_work_type": prepared,
+            "runtime_prompt_work_type_signal": prepared_resolution[
+                "runtime_prompt_work_type_signal"
+            ],
             "work_type_conflict_detected": conflict,
             "work_type_conflict_reason": work_type_conflict_reason(
                 requested_work_type=requested,
@@ -2062,6 +2097,13 @@ def preserve_active_clarification_work_type(
             "requested_work_type": requested,
             "work_type": requested,
             "prepared_work_type": prepared,
+            "prepared_work_type_resolution_version": (
+                PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION
+            ),
+            "prepared_work_type_resolution": deepcopy(prepared_resolution),
+            "runtime_prompt_work_type_signal": prepared_resolution[
+                "runtime_prompt_work_type_signal"
+            ],
             "work_type_source": active_clarification_state.get("work_type_source"),
             "work_type_source_text": active_clarification_state.get("work_type_source_text"),
             "mutation_allowed": mutation_allowed,
@@ -2146,8 +2188,114 @@ def explicit_governed_work_type(message: str) -> dict[str, str | None]:
     }
 
 
+def runtime_prompt_work_type_signal(prompt: str) -> dict[str, Any]:
+    """Record runtime-prompt work-type wording as evidence, not authority."""
+
+    lowered = " ".join(require_string(prompt, "prompt").lower().split())
+    implementation_markers = (
+        "implement ",
+        "implement as a governed development workflow",
+        "implement as a native development governance workflow",
+    )
+    starts_with_implementation = lowered.startswith(
+        ("implement ", "add ", "build ", "create ", "fix ", "repair ", "update ")
+    )
+    contains_implementation_marker = any(marker in lowered for marker in implementation_markers)
+    signal = (
+        "IMPLEMENTATION"
+        if starts_with_implementation or contains_implementation_marker
+        else "NO_RUNTIME_IMPLEMENTATION_SIGNAL"
+    )
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_RUNTIME_PROMPT_WORK_TYPE_SIGNAL_V1",
+        "runtime_version": PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION,
+        "signal_authority": "PLATFORM_CORE_EVIDENCE_ONLY",
+        "prompt_hash": replay_hash(prompt),
+        "runtime_prompt_work_type_signal": signal,
+        "implementation_marker_detected": signal == "IMPLEMENTATION",
+        "starts_with_implementation_command": starts_with_implementation,
+        "contains_implementation_marker": contains_implementation_marker,
+        "signal_changes_prepared_work_type": False,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def resolve_prepared_work_type(
+    *,
+    requested_work_type: str,
+    canonical_runtime_prompt: str,
+    governed_work_type_metadata: dict[str, Any] | None = None,
+    governed_work_type_transition: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve prepared work type from authoritative governance metadata."""
+
+    requested = require_string(requested_work_type, "requested_work_type")
+    if requested not in CANONICAL_GOVERNED_WORK_TYPES:
+        requested = "IMPLEMENTATION"
+    metadata = governed_work_type_metadata if isinstance(governed_work_type_metadata, dict) else {}
+    transition = governed_work_type_transition if isinstance(governed_work_type_transition, dict) else {}
+    prompt_signal = runtime_prompt_work_type_signal(canonical_runtime_prompt)
+    transition_authorized = (
+        transition.get("work_type_change_authorized") is True
+        and transition.get("transition_authority") == "PLATFORM_CORE"
+        and transition.get("human_authorization_recorded") is True
+        and transition.get("replay_visible") is True
+    )
+    transition_work_type = str(transition.get("prepared_work_type") or "")
+    prepared = (
+        transition_work_type
+        if transition_authorized and transition_work_type in CANONICAL_GOVERNED_WORK_TYPES
+        else requested
+    )
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_V1",
+        "runtime_version": PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION,
+        "resolution_authority": "PLATFORM_CORE",
+        "prepared_work_type_source": (
+            "AUTHORIZED_GOVERNED_WORK_TYPE_TRANSITION"
+            if prepared != requested
+            else "REQUESTED_WORK_TYPE_METADATA"
+        ),
+        "requested_work_type": requested,
+        "prepared_work_type": prepared,
+        "requested_work_type_source": metadata.get("work_type_source"),
+        "requested_work_type_source_text": metadata.get("work_type_source_text"),
+        "runtime_prompt_work_type_signal": deepcopy(prompt_signal),
+        "runtime_prompt_wording_changes_prepared_work_type": False,
+        "governed_work_type_transition_authorized": transition_authorized,
+        "governed_work_type_transition": deepcopy(transition) if transition else None,
+        "work_type_change_allowed": transition_authorized,
+        "human_authorization_required_for_work_type_change": prepared != requested,
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
 def prepared_work_type_for_runtime_prompt(prompt: str, *, requested_work_type: str) -> str:
-    """Classify the prepared runtime action without using knowledge reuse classification."""
+    """Compatibility projection for callers that need the prepared work type."""
+
+    return str(
+        resolve_prepared_work_type(
+            requested_work_type=requested_work_type,
+            canonical_runtime_prompt=prompt,
+        )["prepared_work_type"]
+    )
+
+
+def inferred_work_type_from_runtime_prompt(prompt: str) -> str:
+    """Return evidence-only runtime prompt signal for diagnostic callers."""
+
+    signal = runtime_prompt_work_type_signal(prompt)["runtime_prompt_work_type_signal"]
+    return "IMPLEMENTATION" if signal == "IMPLEMENTATION" else "UNSPECIFIED"
+
+
+def _legacy_prepared_work_type_for_runtime_prompt(prompt: str, *, requested_work_type: str) -> str:
+    """Legacy prompt-text classifier retained only for source trace comparison."""
 
     lowered = " ".join(require_string(prompt, "prompt").lower().split())
     implementation_markers = (
@@ -2299,14 +2447,27 @@ def development_intent_with_context_sufficiency(
     if not isinstance(sufficiency, dict):
         return intent
     clarification_required_before = intent.get("clarification_required") is True
-    clarification_required_after = (
+    slot_sufficiency_requires_clarification = (
         sufficiency.get("clarification_required_after_sufficiency") is True
+    )
+    active_clarification_still_required = (
+        intent.get("clarification_completed") is False
+        and intent.get("clarification_continuity_status") == "CLARIFICATION_STILL_REQUIRED"
+    )
+    clarification_required_after = (
+        slot_sufficiency_requires_clarification or active_clarification_still_required
     )
     intent["clarification_context_sufficiency_version"] = (
         PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION
     )
     intent["clarification_required_before_context_sufficiency"] = clarification_required_before
     intent["clarification_required_after_context_sufficiency"] = clarification_required_after
+    intent["clarification_required_after_slot_sufficiency"] = (
+        slot_sufficiency_requires_clarification
+    )
+    intent["active_clarification_still_required_after_context_sufficiency"] = (
+        active_clarification_still_required
+    )
     intent["clarification_context_sufficiency_evaluation"] = deepcopy(sufficiency)
     intent["candidate_missing_semantic_slots"] = deepcopy(
         plan.get("candidate_missing_semantic_slots") or []
@@ -2403,7 +2564,16 @@ def _conversation_experience_artifact(
         "capability_resolution_decision": development_intent.get("capability_resolution_decision"),
         "human_capability_name_required": False,
         "work_type_preservation_version": development_intent.get("work_type_preservation_version"),
+        "prepared_work_type_resolution_version": development_intent.get(
+            "prepared_work_type_resolution_version"
+        ),
         "governed_work_type_metadata": deepcopy(development_intent.get("governed_work_type_metadata")),
+        "prepared_work_type_resolution": deepcopy(
+            development_intent.get("prepared_work_type_resolution")
+        ),
+        "runtime_prompt_work_type_signal": deepcopy(
+            development_intent.get("runtime_prompt_work_type_signal")
+        ),
         "requested_work_type": development_intent.get("requested_work_type"),
         "work_type": development_intent.get("work_type"),
         "prepared_work_type": development_intent.get("prepared_work_type"),
@@ -2451,6 +2621,15 @@ def _conversation_approval_summary(
         "refined_message": development_intent.get("canonical_runtime_prompt") or message,
         "goal_mapping": deepcopy(development_intent.get("goal_mapping")),
         "work_type_preservation_version": development_intent.get("work_type_preservation_version"),
+        "prepared_work_type_resolution_version": development_intent.get(
+            "prepared_work_type_resolution_version"
+        ),
+        "prepared_work_type_resolution": deepcopy(
+            development_intent.get("prepared_work_type_resolution")
+        ),
+        "runtime_prompt_work_type_signal": deepcopy(
+            development_intent.get("runtime_prompt_work_type_signal")
+        ),
         "requested_work_type": work_type,
         "work_type": work_type,
         "prepared_work_type": prepared_work_type,
@@ -2492,6 +2671,15 @@ def _conversation_fail_closed_response(
         "requested_work_type": development_intent.get("requested_work_type"),
         "work_type": development_intent.get("work_type"),
         "prepared_work_type": development_intent.get("prepared_work_type"),
+        "prepared_work_type_resolution_version": development_intent.get(
+            "prepared_work_type_resolution_version"
+        ),
+        "prepared_work_type_resolution": deepcopy(
+            development_intent.get("prepared_work_type_resolution")
+        ),
+        "runtime_prompt_work_type_signal": deepcopy(
+            development_intent.get("runtime_prompt_work_type_signal")
+        ),
         "mutation_allowed": development_intent.get("mutation_allowed") is True,
         "runtime_implementation": development_intent.get("runtime_implementation") is True,
         "work_type_conflict_detected": development_intent.get("work_type_conflict_detected") is True,

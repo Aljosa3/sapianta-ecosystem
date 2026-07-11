@@ -9,6 +9,7 @@ from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
 from aigol.runtime.platform_core_project_services import (
+    PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION,
     prepare_unified_human_interface_project_context,
     resolve_development_intent,
 )
@@ -33,7 +34,7 @@ def _contexts(runtime_root: Path, session_id: str) -> list[dict]:
     ]
 
 
-def test_audit_only_implementation_prompt_fails_closed_before_approval() -> None:
+def test_audit_only_implementation_prompt_prepares_audit_only_before_approval() -> None:
     result = resolve_development_intent(
         message=(
             "Implement governance validation utility.\n\n"
@@ -43,10 +44,29 @@ def test_audit_only_implementation_prompt_fails_closed_before_approval() -> None
     )
 
     assert result["requested_work_type"] == "AUDIT_ONLY"
-    assert result["prepared_work_type"] == "IMPLEMENTATION"
+    assert result["prepared_work_type"] == "AUDIT_ONLY"
+    assert (
+        result["prepared_work_type_resolution_version"]
+        == PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION
+    )
+    assert (
+        result["prepared_work_type_resolution"]["prepared_work_type_source"]
+        == "REQUESTED_WORK_TYPE_METADATA"
+    )
+    assert (
+        result["runtime_prompt_work_type_signal"]["runtime_prompt_work_type_signal"]
+        == "IMPLEMENTATION"
+    )
+    assert (
+        result["prepared_work_type_resolution"][
+            "runtime_prompt_wording_changes_prepared_work_type"
+        ]
+        is False
+    )
     assert result["mutation_allowed"] is False
     assert result["runtime_implementation"] is False
-    assert result["work_type_conflict_detected"] is True
+    assert result["work_type_conflict_detected"] is False
+    assert result["work_type_conflict_reason"] == "Requested work type AUDIT_ONLY does not allow mutation."
     assert result["summary_admissible"] is False
     assert result["runtime_binding_admissible"] is False
 
@@ -84,6 +104,17 @@ def test_aicli_clarification_preserves_audit_only_work_type_without_runtime(
     assert resolved["clarification_resolved"] is True
     assert resolved["requested_work_type"] == "AUDIT_ONLY"
     assert resolved["work_type"] == "AUDIT_ONLY"
+    assert resolved["prepared_work_type"] == "AUDIT_ONLY"
+    assert (
+        resolved["prepared_work_type_resolution"]["prepared_work_type_source"]
+        == "REQUESTED_WORK_TYPE_METADATA"
+    )
+    assert (
+        resolved["prepared_work_type_resolution"][
+            "runtime_prompt_wording_changes_prepared_work_type"
+        ]
+        is False
+    )
     assert resolved["mutation_allowed"] is False
     assert resolved["runtime_implementation"] is False
     assert resolved["summary_admissible"] is False
@@ -124,6 +155,8 @@ def test_non_implementation_work_types_are_preserved_without_runtime(tmp_path: P
 
         assert resolution["requested_work_type"] == work_type
         assert resolution["work_type"] == work_type
+        assert resolution["prepared_work_type"] == work_type
+        assert resolution["work_type_conflict_detected"] is False
         assert resolution["mutation_allowed"] is False
         assert resolution["runtime_implementation"] is False
         assert resolution["summary_admissible"] is False
@@ -156,6 +189,7 @@ def test_runtime_entry_refuses_non_mutating_work_type(tmp_path: Path) -> None:
     assert result["canonical_runtime_entry_status"] == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED
     assert result["runtime_entered"] is False
     assert result["development_intent_resolution"]["requested_work_type"] == "AUDIT_ONLY"
+    assert result["development_intent_resolution"]["prepared_work_type"] == "AUDIT_ONLY"
     assert result["development_intent_resolution"]["runtime_binding_admissible"] is False
     assert calls == []
 
