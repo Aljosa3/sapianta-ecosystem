@@ -219,6 +219,15 @@ def _knowledge_presentation(
             if isinstance(response.get("architectural_certification_assessment"), dict)
             else {}
         )
+        constitutional = (
+            response.get("constitutional_assessment")
+            if isinstance(response.get("constitutional_assessment"), dict)
+            else None
+        )
+        if constitutional is not None:
+            ready = ready and constitutional.get("assessment_status") == (
+                "CONSTITUTIONAL_ASSESSMENT_READY"
+            )
         recommended = (
             "Review the composed architectural evidence."
             if ready
@@ -227,10 +236,18 @@ def _knowledge_presentation(
         return _adapter_result(
             presentation_status=PRESENTATION_READY if ready else PRESENTATION_FAILED_CLOSED,
             summary=(
-                str(assessment.get("assessment_summary"))
+                str(
+                    constitutional.get("assessment_rationale")
+                    if constitutional is not None
+                    else assessment.get("assessment_summary")
+                )
                 if ready
                 else str(
-                    assessment.get("assessment_summary")
+                    (
+                        constitutional.get("assessment_rationale")
+                        if constitutional is not None
+                        else assessment.get("assessment_summary")
+                    )
                     or "Architectural meta-audit failed closed because required evidence is missing."
                 )
             ),
@@ -244,6 +261,26 @@ def _knowledge_presentation(
                 ),
                 "required_evidence_sufficient": assessment.get(
                     "required_evidence_sufficient"
+                ),
+                "constitutional_assessment_rule": (
+                    constitutional.get("assessment_rule")
+                    if constitutional is not None
+                    else None
+                ),
+                "constitutional_assessment_status": (
+                    constitutional.get("assessment_status")
+                    if constitutional is not None
+                    else None
+                ),
+                "constitutional_verdict": (
+                    constitutional.get("constitutional_verdict")
+                    if constitutional is not None
+                    else None
+                ),
+                "constitutional_assessment_rationale": (
+                    constitutional.get("assessment_rationale")
+                    if constitutional is not None
+                    else None
                 ),
                 "capability_certification_record_count": response.get(
                     "capability_certification_record_count"
@@ -259,14 +296,33 @@ def _knowledge_presentation(
                 {"source_type": "PROJECT_OBJECTIVE", "artifact_hash": response.get("project_objective_hash")},
                 {"source_type": "GOVERNANCE_EVIDENCE", "items": deepcopy(response.get("governance_evidence") or [])},
                 {"source_type": "REPLAY_EVIDENCE", "items": deepcopy(response.get("replay_evidence") or [])},
+                {
+                    "source_type": "CONSTITUTIONAL_ASSESSMENT",
+                    "artifact_hash": (
+                        constitutional.get("artifact_hash")
+                        if constitutional is not None
+                        else None
+                    ),
+                },
             ],
             reasoning_path=_router_reasoning(router_response),
             sources=list(response.get("governance_evidence") or []),
             recommended_next_step=recommended,
-            certification_status=None,
+            certification_status=(
+                constitutional.get("constitutional_verdict")
+                if constitutional is not None
+                else None
+            ),
             governance_status="READ_ONLY_ARCHITECTURAL_META_AUDIT",
             replay_status="REPLAY_VISIBLE",
-            warnings=list(response.get("required_architectural_evidence_missing") or []),
+            warnings=[
+                *(response.get("required_architectural_evidence_missing") or []),
+                *(
+                    constitutional.get("required_evidence_missing") or []
+                    if constitutional is not None
+                    else []
+                ),
+            ],
             actions=[recommended],
             reusable_components=[
                 "PLATFORM_KNOWLEDGE_RUNTIME",

@@ -71,6 +71,25 @@ PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIM
 DURABLE_GOVERNED_WORK_ROUTE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 ARCHITECTURAL_META_AUDIT_ROUTE = "PLATFORM_ARCHITECTURAL_META_AUDIT_COMPOSITION"
 
+CONSTITUTIONAL_ASSESSMENT_RULE = "PLATFORM_CORE_CONSTITUTIONAL_ASSESSMENT_RULE_V1"
+CONSTITUTIONAL_REQUIRED_CAPABILITIES = (
+    "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+    "CANONICAL_PLATFORM_PRESENTATION_LAYER",
+    "CANONICAL_SEMANTIC_ARTIFACT",
+    "CLARIFICATION_CONTINUITY",
+    "GOVERNED_DEVELOPMENT_RUNTIME_END_TO_END",
+    "PCCL_ORCHESTRATION_DECISION_RECORD",
+    "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME",
+    "PLATFORM_CORE_COGNITION_LAYER_FOUNDATION",
+    "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME",
+    "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME",
+    "PLATFORM_KNOWLEDGE_RUNTIME",
+    "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME",
+    "REPLAY_CERTIFICATION_RUNTIME",
+    "REPLAY_OBSERVATION_LAYER",
+    "UNIFIED_PLATFORM_QUERY_ROUTER",
+)
+
 LIFECYCLE_ROUTE_PRECEDENCE = {
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE: (DURABLE_GOVERNED_WORK_ROUTE,),
 }
@@ -550,6 +569,13 @@ def _route_architectural_meta_audit(
         "required_evidence_missing": list(missing),
     }
     certification_assessment["artifact_hash"] = replay_hash(certification_assessment)
+    constitutional_assessment = _constitutional_assessment_from_composed_evidence(
+        query=query,
+        registry=registry,
+        governance_evidence=governance_evidence,
+        replay_evidence=replay_evidence,
+        objective=objective,
+    )
     response = deepcopy(knowledge_probe)
     response.update(
         {
@@ -572,6 +598,12 @@ def _route_architectural_meta_audit(
             "architectural_certification_assessment_hash": certification_assessment[
                 "artifact_hash"
             ],
+            "constitutional_assessment": constitutional_assessment,
+            "constitutional_assessment_hash": (
+                constitutional_assessment.get("artifact_hash")
+                if isinstance(constitutional_assessment, dict)
+                else None
+            ),
             "clause_role_interpretation": interpret_request_clause_roles(query),
             "provider_invoked": False,
             "worker_invoked": False,
@@ -583,6 +615,119 @@ def _route_architectural_meta_audit(
     response.pop("artifact_hash", None)
     response["artifact_hash"] = replay_hash(response)
     return response
+
+
+def _constitutional_assessment_from_composed_evidence(
+    *,
+    query: str,
+    registry: list[dict[str, Any]],
+    governance_evidence: list[str],
+    replay_evidence: list[dict[str, Any]],
+    objective: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Apply the constitutional rule to already-composed evidence only."""
+
+    lowered = query.lower()
+    applicable = any(
+        phrase in lowered
+        for phrase in (
+            "constitutional certification",
+            "constitutional completion",
+            "constitutional assessment",
+            "constitutionally certified",
+            "constitutionally regarded",
+        )
+    )
+    if not applicable:
+        return None
+    certified = {
+        str(record.get("capability_identifier"))
+        for record in registry
+        if record.get("certification_status") in {"CERTIFIED", "VERIFIED"}
+    }
+    missing_capabilities = sorted(set(CONSTITUTIONAL_REQUIRED_CAPABILITIES) - certified)
+    valid_replay_evidence = [
+        deepcopy(item)
+        for item in replay_evidence
+        if isinstance(item.get("replay_reference"), str)
+        and item.get("replay_reference")
+        and isinstance(item.get("artifact_hash"), str)
+        and item.get("artifact_hash")
+    ]
+    criteria = [
+        {
+            "criterion": "CANONICAL_PLATFORM_CORE_CAPABILITY_OWNERSHIP",
+            "satisfied": not missing_capabilities,
+            "evidence": sorted(certified & set(CONSTITUTIONAL_REQUIRED_CAPABILITIES)),
+        },
+        {
+            "criterion": "GOVERNANCE_AND_CERTIFICATION_LINEAGE",
+            "satisfied": bool(governance_evidence),
+            "evidence": list(governance_evidence),
+        },
+        {
+            "criterion": "REPLAY_LINEAGE",
+            "satisfied": bool(valid_replay_evidence),
+            "evidence": valid_replay_evidence,
+        },
+        {
+            "criterion": "PROJECT_OBJECTIVE_SUFFICIENCY",
+            "satisfied": objective.get("objective_sufficient") is True,
+            "evidence": objective.get("artifact_hash"),
+        },
+    ]
+    missing = []
+    if missing_capabilities:
+        missing.append("certified constitutional capabilities: " + ", ".join(missing_capabilities))
+    if not governance_evidence:
+        missing.append("governance and certification lineage evidence")
+    if not valid_replay_evidence:
+        missing.append("replay lineage evidence")
+    if objective.get("objective_sufficient") is not True:
+        missing.append("sufficient Project Objective evidence")
+    ready = not missing
+    assessment = {
+        "artifact_type": "PLATFORM_CORE_CONSTITUTIONAL_ASSESSMENT_ARTIFACT_V1",
+        "assessment_rule": CONSTITUTIONAL_ASSESSMENT_RULE,
+        "assessment_rule_applied": True,
+        "assessment_status": (
+            "CONSTITUTIONAL_ASSESSMENT_READY"
+            if ready
+            else "CONSTITUTIONAL_ASSESSMENT_FAILED_CLOSED"
+        ),
+        "constitutional_verdict": (
+            "PLATFORM_CORE_CONSTITUTIONALLY_READY_AS_STABLE_DETERMINISTIC_COGNITION_AND_GOVERNANCE_INFRASTRUCTURE_WITH_BOUNDED_STABILIZATION_REMAINING"
+            if ready
+            else "CONSTITUTIONAL_CERTIFICATION_NOT_DETERMINED"
+        ),
+        "assessment_rationale": (
+            "Required Platform Core responsibilities have certified capability ownership, "
+            "governance and certification evidence, replay lineage, and a sufficient "
+            "Project Objective. Remaining work may be treated as bounded stabilization "
+            "or governed execution evolution, not a missing cognition foundation."
+            if ready
+            else "Constitutional certification failed closed because required composed "
+            "evidence is incomplete."
+        ),
+        "criteria": criteria,
+        "evidence_consumed": {
+            "required_capabilities": list(CONSTITUTIONAL_REQUIRED_CAPABILITIES),
+            "certified_required_capabilities": sorted(
+                certified & set(CONSTITUTIONAL_REQUIRED_CAPABILITIES)
+            ),
+            "governance_evidence": list(governance_evidence),
+            "replay_evidence": valid_replay_evidence,
+            "project_objective_hash": objective.get("artifact_hash"),
+        },
+        "required_evidence_complete": ready,
+        "required_evidence_missing": missing,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "read_only": True,
+    }
+    assessment["artifact_hash"] = replay_hash(assessment)
+    return assessment
 
 
 def _route_root_cause_trace(
@@ -967,6 +1112,9 @@ def _architectural_certification_score(query: str) -> int:
         "platform architectural certification",
         "platform certification assessment",
         "architectural certification",
+        "constitutional certification",
+        "constitutional completion certification",
+        "constitutional assessment",
     )
     return 100 if any(phrase in query for phrase in phrases) else 0
 
