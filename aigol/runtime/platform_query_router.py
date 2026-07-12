@@ -12,6 +12,10 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.architectural_health_advisory import generate_architectural_health_advisory
+from aigol.runtime.platform_capability_certification_registry import (
+    list_platform_capability_certifications,
+)
 from aigol.runtime.platform_capability_composition_coverage import (
     PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
     discover_platform_capability_composition_coverage,
@@ -65,6 +69,7 @@ CAPABILITY_COMPOSITION_COVERAGE_ROUTE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAG
 DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 DURABLE_GOVERNED_WORK_ROUTE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
+ARCHITECTURAL_META_AUDIT_ROUTE = "PLATFORM_ARCHITECTURAL_META_AUDIT_COMPOSITION"
 
 LIFECYCLE_ROUTE_PRECEDENCE = {
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE: (DURABLE_GOVERNED_WORK_ROUTE,),
@@ -128,6 +133,22 @@ class PlatformServiceRouteDescriptor:
 
 
 PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
+    PlatformServiceRouteDescriptor(
+        service_identifier=ARCHITECTURAL_META_AUDIT_ROUTE,
+        service_owner="PLATFORM_CORE_KNOWLEDGE",
+        implementation_owner="aigol.runtime.platform_query_router",
+        query_classes=("ARCHITECTURAL_META_AUDIT",),
+        required_inputs=("query",),
+        response_artifact_type="PLATFORM_KNOWLEDGE_RESPONSE_ARTIFACT_V1",
+        service_version=PLATFORM_QUERY_ROUTER_VERSION,
+        adapter_name="_route_architectural_meta_audit",
+        routing_terms=(
+            "architectural meta-audit",
+            "architectural completion",
+            "architecturally complete",
+            "architectural completeness",
+        ),
+    ),
     PlatformServiceRouteDescriptor(
         service_identifier=DURABLE_GOVERNED_WORK_ROUTE,
         service_owner="PLATFORM_CORE_DEVELOPMENT_LIFECYCLE",
@@ -280,6 +301,7 @@ def route_platform_query(
     generation_identifier: str | None = None,
     generation_evidence_profile: dict[str, Any] | None = None,
     composition_replay_evidence: list[dict[str, Any]] | None = None,
+    architectural_evidence_bundle: dict[str, Any] | None = None,
     development_plan_artifact: dict[str, Any] | None = None,
     project_objective_artifact: dict[str, Any] | None = None,
     governance_root: str = ".",
@@ -346,6 +368,7 @@ def route_platform_query(
             generation_identifier=generation_identifier,
             generation_evidence_profile=generation_evidence_profile,
             composition_replay_evidence=composition_replay_evidence,
+            architectural_evidence_bundle=architectural_evidence_bundle,
             development_plan_artifact=development_plan_artifact,
             project_objective_artifact=project_objective_artifact,
             governance_root=governance_root,
@@ -384,6 +407,10 @@ def route_platform_query(
             ],
             "development_intent_clarification_required": development_intent["clarification_required"],
             "development_intent_artifact_hash": development_intent["artifact_hash"],
+            "clause_role_interpretation_authoritative": True,
+            "requested_action_clauses": interpret_request_clause_roles(raw_query)[
+                "requested_action_clauses"
+            ],
         },
         "service_response": service_response,
         "service_response_hash": _service_response_hash(service_response),
@@ -435,6 +462,90 @@ def _route_platform_knowledge(
         goal_target=goal_target,
         workspace_state=workspace_state,
     )
+
+
+def _route_architectural_meta_audit(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    knowledge_probe: dict[str, Any],
+    development_intent: dict[str, Any],
+    architectural_evidence_bundle: dict[str, Any] | None,
+    created_at: str,
+    **_: Any,
+) -> dict[str, Any]:
+    """Compose existing read-only architectural evidence for a meta-audit."""
+
+    registry = list_platform_capability_certifications()
+    objective = infer_platform_project_objective(
+        request=query,
+        development_intent=development_intent,
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+    governance_evidence = sorted(
+        {
+            str(reference)
+            for record in registry
+            for reference in record.get("certification_evidence", ())
+            if str(reference).strip()
+        }
+    )
+    replay_evidence = []
+    if isinstance(workspace_state, dict):
+        replay_evidence.append(
+            {
+                "replay_reference": workspace_state.get("replay_reference"),
+                "artifact_hash": workspace_state.get("artifact_hash"),
+            }
+        )
+    advisory = None
+    advisory_failure = None
+    if isinstance(architectural_evidence_bundle, dict):
+        try:
+            advisory = generate_architectural_health_advisory(
+                projection_id=f"ARCHITECTURAL-META-AUDIT-{replay_hash(query)[7:23]}",
+                digital_twin_evidence=architectural_evidence_bundle,
+                generated_at=created_at,
+            )
+        except Exception as exc:
+            advisory_failure = str(exc) or "architectural health advisory failed closed"
+    missing = []
+    if not registry:
+        missing.append("capability certification registry evidence")
+    if objective.get("objective_sufficient") is not True:
+        missing.append("sufficient Project Objective evidence")
+    if advisory_failure:
+        missing.append(advisory_failure)
+    response = deepcopy(knowledge_probe)
+    response.update(
+        {
+            "query_classification": "ARCHITECTURAL_META_AUDIT",
+            "architectural_meta_audit_status": (
+                "ARCHITECTURAL_META_AUDIT_READY"
+                if not missing
+                else "ARCHITECTURAL_META_AUDIT_FAILED_CLOSED"
+            ),
+            "project_objective_evidence": deepcopy(objective),
+            "project_objective_hash": objective.get("artifact_hash"),
+            "capability_certification_registry_evidence": deepcopy(registry),
+            "capability_certification_record_count": len(registry),
+            "governance_evidence": governance_evidence,
+            "replay_evidence": replay_evidence,
+            "architectural_health_advisory": deepcopy(advisory),
+            "architectural_health_advisory_used": isinstance(advisory, dict),
+            "required_architectural_evidence_missing": missing,
+            "clause_role_interpretation": interpret_request_clause_roles(query),
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "governance_modified": False,
+            "replay_modified": False,
+            "repository_mutated": False,
+        }
+    )
+    response.pop("artifact_hash", None)
+    response["artifact_hash"] = replay_hash(response)
+    return response
 
 
 def _route_root_cause_trace(
@@ -563,6 +674,7 @@ def _route_project_objective_inference(
 
 
 ROUTE_ADAPTERS: dict[str, Callable[..., dict[str, Any]]] = {
+    ARCHITECTURAL_META_AUDIT_ROUTE: _route_architectural_meta_audit,
     DURABLE_GOVERNED_WORK_ROUTE: _route_durable_governed_work,
     PROJECT_OBJECTIVE_INFERENCE_ROUTE: _route_project_objective_inference,
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE: _route_development_composition_plan,
@@ -584,11 +696,32 @@ def _candidate_routes(
     development_plan_artifact_supplied: bool,
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
+    clause_roles = interpret_request_clause_roles(query)
+    requested_action_clauses = list(clause_roles["requested_action_clauses"])
+    requested_action_clauses.extend(
+        str(clause["text"])
+        for clause in clause_roles["clauses"]
+        if _explicit_planning_action_clause(clause)
+        and str(clause["text"]) not in requested_action_clauses
+    )
+    requested_action_text = " ".join(requested_action_clauses).lower()
+    routing_action_text = " ".join(
+        clause
+        for clause in requested_action_clauses
+        if not _architectural_inventory_or_criteria_clause(clause)
+    ).lower()
     candidates = [
+        _candidate(
+            service_identifier=ARCHITECTURAL_META_AUDIT_ROUTE,
+            query_class="ARCHITECTURAL_META_AUDIT",
+            score=_architectural_meta_audit_score(requested_action_text),
+            required_evidence_available=True,
+            reason="Architectural Meta-Audit composes existing read-only Platform evidence.",
+        ),
         _candidate(
             service_identifier=DURABLE_GOVERNED_WORK_ROUTE,
             query_class="DURABLE_GOVERNED_WORK",
-            score=_durable_governed_work_score(lowered),
+            score=_durable_governed_work_score(routing_action_text),
             required_evidence_available=development_plan_artifact_supplied,
             missing_required_inputs=()
             if development_plan_artifact_supplied
@@ -605,7 +738,7 @@ def _candidate_routes(
         _candidate(
             service_identifier=DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
             query_class="DEVELOPMENT_COMPOSITION_PLAN",
-            score=_development_composition_plan_score(lowered),
+            score=_development_composition_plan_score(routing_action_text),
             required_evidence_available=True,
             reason="Development Composition Plan derives ordered governed work from capability coverage.",
         ),
@@ -649,6 +782,7 @@ def _candidate_routes(
         ),
     ]
     built_in_services = {
+        ARCHITECTURAL_META_AUDIT_ROUTE,
         DURABLE_GOVERNED_WORK_ROUTE,
         PROJECT_OBJECTIVE_INFERENCE_ROUTE,
         PLATFORM_KNOWLEDGE_ROUTE,
@@ -776,6 +910,52 @@ def _development_composition_plan_score(query: str) -> int:
     return min(100, matches * 55 + (45 if matches else 0))
 
 
+def _architectural_meta_audit_score(query: str) -> int:
+    phrases = (
+        "architectural meta-audit",
+        "architectural completion",
+        "architecturally complete",
+        "architectural completeness",
+    )
+    return 100 if any(phrase in query for phrase in phrases) else 0
+
+
+def _architectural_inventory_or_criteria_clause(clause: str) -> bool:
+    lowered = str(clause).lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "existing inventory",
+            "architectural inventory",
+            "evaluation criteria",
+            "completion criteria",
+            "evaluate platform core against",
+            "already provides",
+            "already contains",
+        )
+    )
+
+
+def _explicit_planning_action_clause(clause: dict[str, Any]) -> bool:
+    """Retain explicit planning imperatives omitted from generic action roles."""
+
+    if clause.get("prohibition") is True or clause.get("architectural_reference") is True:
+        return False
+    lowered = str(clause.get("text") or "").lower()
+    planning_artifact = any(
+        phrase in lowered
+        for phrase in (
+            "development composition plan",
+            "governed development plan",
+            "platform development plan",
+        )
+    )
+    planning_action = any(
+        action in lowered for action in ("prepare", "create", "produce", "compose", "generate")
+    )
+    return planning_artifact and planning_action
+
+
 def _project_objective_inference_score(query: str) -> int:
     phrases = (
         "project objective inference",
@@ -825,6 +1005,30 @@ def _apply_lifecycle_precedence(
         "durable governed work" in clause and "approval" in clause
         for clause in target_clauses
     )
+    if (
+        isinstance(valid_plan, dict)
+        and downstream_target_requested
+        and selected.get("service_identifier") == DURABLE_GOVERNED_WORK_ROUTE
+    ):
+        return deepcopy(selected), {
+            "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
+            "precedence_applied": True,
+            "canonical_entry_runtime": DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
+            "selected_lifecycle_runtime": DURABLE_GOVERNED_WORK_ROUTE,
+            "lifecycle_stage": "DURABLE_GOVERNED_WORK",
+            "upstream_plan_hash": upstream_plan_hash,
+            "suppressed_downstream_routes": [],
+            "suppressed_entry_routes": [DEVELOPMENT_COMPOSITION_PLAN_ROUTE],
+            "top_score": top_score,
+            "reason": (
+                "validated upstream plan and explicit Durable Governed Work to "
+                "Approval target continue the downstream lifecycle"
+            ),
+            "precedence_reason": "VALIDATED_UPSTREAM_PLAN_DOWNSTREAM_TARGET",
+            "clause_role_interpretation_reused": True,
+            "platform_core_authority": True,
+            "human_interface_authority": False,
+        }
     tied_by_service = {
         str(candidate.get("service_identifier")): candidate
         for candidate in candidates
