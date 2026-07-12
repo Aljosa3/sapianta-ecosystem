@@ -13,6 +13,7 @@ from aigol.runtime.platform_capability_certification_registry import (
 )
 from aigol.runtime.platform_project_objective_inference import (
     infer_platform_project_objective,
+    interpret_request_clause_roles,
     validate_platform_project_objective,
 )
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
@@ -1940,6 +1941,8 @@ def discover_candidate_capabilities(
 
     raw_message = require_string(message, "message")
     lowered = " ".join(raw_message.lower().split())
+    clause_roles = interpret_request_clause_roles(raw_message)
+    target_text = " ".join(clause_roles["capability_target_clauses"]).lower()
     if _invalid_continuation_reference(lowered):
         return _empty_candidate_capability_discovery(raw_message)
     knowledge_index = (
@@ -1954,7 +1957,7 @@ def discover_candidate_capabilities(
     )
     candidates: list[dict[str, Any]] = []
     for capability in CAPABILITY_CATALOG:
-        evidence = [term for term in capability["keywords"] if term in lowered]
+        evidence = [term for term in capability["keywords"] if term in target_text]
         if not evidence:
             continue
         candidate = _candidate_capability(
@@ -2002,6 +2005,7 @@ def discover_candidate_capabilities(
         "ambiguity_remaining_after_deterministic_analysis": ambiguity_remaining,
         "requires_human_capability_name": False,
         "clarification_allowed_only_for_remaining_ambiguity": True,
+        "clause_role_interpretation": deepcopy(clause_roles),
         "human_interface_authority": False,
         "replay_visible": True,
     }
@@ -2354,7 +2358,26 @@ def resolve_governed_work_type(message: str) -> dict[str, Any]:
 
     prompt = require_string(message, "message")
     explicit = explicit_governed_work_type(prompt)
-    requested = explicit["work_type"] or "IMPLEMENTATION"
+    clause_roles = interpret_request_clause_roles(prompt)
+    inferred_read_only_validation = (
+        explicit["work_type"] is None
+        and clause_roles["non_mutation_constraint_detected"] is True
+        and (
+            clause_roles["read_only_validation_action_detected"] is True
+            or clause_roles["read_only_inspection_action_detected"] is True
+        )
+    )
+    requested = explicit["work_type"] or ("AUDIT_ONLY" if inferred_read_only_validation else "IMPLEMENTATION")
+    work_type_source = (
+        "EXPLICIT_NON_MUTATING_VALIDATION_OBJECTIVE"
+        if inferred_read_only_validation
+        else explicit["source"]
+    )
+    work_type_source_text = (
+        "validation action with explicit non-mutation constraint"
+        if inferred_read_only_validation
+        else explicit["source_text"]
+    )
     mutation_allowed = requested == "IMPLEMENTATION"
     artifact = {
         "artifact_type": "PLATFORM_CORE_GOVERNED_WORK_TYPE_METADATA_V1",
@@ -2362,8 +2385,9 @@ def resolve_governed_work_type(message: str) -> dict[str, Any]:
         "work_type_authority": "PLATFORM_CORE",
         "requested_work_type": requested,
         "work_type": requested,
-        "work_type_source": explicit["source"],
-        "work_type_source_text": explicit["source_text"],
+        "work_type_source": work_type_source,
+        "work_type_source_text": work_type_source_text,
+        "clause_role_interpretation": deepcopy(clause_roles),
         "supported_work_types": list(CANONICAL_GOVERNED_WORK_TYPES),
         "mutation_allowed": mutation_allowed,
         "runtime_implementation": requested == "IMPLEMENTATION",
@@ -3365,6 +3389,11 @@ def _clarification_missing_slots(
     candidate_goal_target: str,
 ) -> list[dict[str, Any]]:
     slots: list[dict[str, Any]] = []
+    objective_inference = (
+        development_intent.get("project_objective_inference")
+        if isinstance(development_intent.get("project_objective_inference"), dict)
+        else {}
+    )
     reason = str(development_intent.get("clarification_reason") or "")
     if reason == "continuation request requires deterministic workspace state":
         slots.append(_missing_slot("continuation_reference", 100, "No replay-backed active objective was available."))
@@ -3411,10 +3440,22 @@ def _clarification_missing_slots(
         else:
             slots.append(_missing_slot("architecture_subject", 92, "Architecture placement subject is missing."))
     if _reuse_request_detected(lowered):
-        if knowledge_reuse.get("reuse_recommended") is True or candidate:
-            slots.append(_missing_slot("reuse_delta", 86, "Reuse evidence exists but the requested delta is missing."))
-        else:
-            slots.append(_missing_slot("reuse_goal", 84, "Reuse request lacks the user-visible goal."))
+        non_mutating_objective = str(development_intent.get("requested_work_type") or "") in (
+            NON_MUTATING_GOVERNED_WORK_TYPES
+        )
+        objective_outcomes = set(
+            objective_inference.get("requested_outcomes")
+            if isinstance(objective_inference.get("requested_outcomes"), list)
+            else []
+        )
+        inspection_objective = bool(
+            objective_outcomes.intersection({"audit_or_analysis", "existing_capability_discovery"})
+        )
+        if not (non_mutating_objective and inspection_objective):
+            if knowledge_reuse.get("reuse_recommended") is True or candidate:
+                slots.append(_missing_slot("reuse_delta", 86, "Reuse evidence exists but the requested delta is missing."))
+            else:
+                slots.append(_missing_slot("reuse_goal", 84, "Reuse request lacks the user-visible goal."))
     if reason == "guided development request lacks deterministic implementation specificity":
         slots.append(_missing_slot("implementation_specificity", 89, "Guided request lacks target capability detail."))
     if active_objective and _workspace_reference_detected(lowered):

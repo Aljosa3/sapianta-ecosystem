@@ -38,6 +38,19 @@ OBJECTIVE_BOUNDARY_FLAGS = {
     "replay_modified": False,
 }
 
+READ_ONLY_VALIDATION_ACTIONS = ("validate", "verify", "confirm")
+NON_MUTATION_CONSTRAINTS = (
+    "do not implement",
+    "don't implement",
+    "do not modify",
+    "no repository mutation",
+    "no worker execution",
+    "read-only result only",
+    "read only result only",
+    "without implementation",
+    "no implementation",
+)
+
 
 def infer_platform_project_objective(
     *,
@@ -151,6 +164,83 @@ def infer_platform_project_objective(
     return artifact
 
 
+def interpret_request_clause_roles(request: str) -> dict[str, Any]:
+    """Return bounded lexical clause roles used by existing interpretation services."""
+
+    prompt = _require_string(request, "request")
+    clauses = [
+        " ".join(part.split())
+        for part in re.split(r"(?:\r?\n|(?<=[.!?;])\s+)", prompt)
+        if part.strip()
+    ]
+    interpreted: list[dict[str, Any]] = []
+    for clause in clauses:
+        lowered = clause.lower()
+        quoted = bool(re.search(r"(?:^|\s)(?:>|output:|status:|result:)|[`\"'].*[`\"']", clause))
+        prohibition = any(term in lowered for term in NON_MUTATION_CONSTRAINTS)
+        reference = any(
+            term in lowered
+            for term in (
+                "mentioned", "mentions", "referenced", "references", "according to",
+                "runtime output", "runtime evidence", "architectural boundary",
+                "architecture boundary", "lifecycle observation", "behaved correctly",
+                "does not belong", "do not belong",
+            )
+        )
+        requested_action = bool(
+            re.search(
+                r"\b(?:audit|inspect|review|analyse|analyze|evaluate|validate|verify|confirm|"
+                r"implement|modify|change|extend|improve|build|create|add|fix|repair|update|"
+                r"make|simplify|reuse)\b",
+                lowered,
+            )
+        ) or bool(
+            re.search(r"\bshould\b.+\b(?:belong|change|enable)\b", lowered)
+            or re.search(r"\b(?:require|requires)\b.+\bbindings?\b", lowered)
+            or re.search(r"\bcan become\b", lowered)
+            or re.search(r"\bwhere is\b.+\bimplemented\b", lowered)
+        )
+        requested_action = requested_action and not prohibition and not reference and not quoted
+        interpreted.append(
+            {
+                "text": clause,
+                "normalized_text": lowered,
+                "requested_action": requested_action,
+                "prohibition": prohibition,
+                "safety_constraint": prohibition or "preserve" in lowered or "must not" in lowered,
+                "quoted_runtime_evidence": quoted,
+                "architectural_reference": reference or "architectural" in lowered,
+                "tool_interface_reference": bool(
+                    re.search(r"(?:\./aicli|\baicli\b|human interface|provider|worker)", lowered)
+                ),
+                "capability_target_eligible": requested_action and not quoted and not reference,
+            }
+        )
+    lowered_prompt = " ".join(prompt.lower().split())
+    return {
+        "clauses": interpreted,
+        "requested_action_clauses": [item["text"] for item in interpreted if item["requested_action"]],
+        "prohibition_clauses": [item["text"] for item in interpreted if item["prohibition"]],
+        "capability_target_clauses": [
+            item["text"] for item in interpreted if item["capability_target_eligible"]
+        ],
+        "non_mutation_constraint_detected": any(
+            term in lowered_prompt for term in NON_MUTATION_CONSTRAINTS
+        ),
+        "read_only_validation_action_detected": any(
+            re.search(rf"\b{action}\b", item["normalized_text"])
+            for action in READ_ONLY_VALIDATION_ACTIONS
+            for item in interpreted
+            if item["requested_action"]
+        ),
+        "read_only_inspection_action_detected": any(
+            re.search(r"\b(?:audit|inspect|review|analyse|analyze|evaluate)\b", item["normalized_text"])
+            for item in interpreted
+            if item["requested_action"]
+        ),
+    }
+
+
 def validate_platform_project_objective(artifact: dict[str, Any]) -> dict[str, Any]:
     """Fail closed unless the objective artifact is canonical and immutable."""
 
@@ -183,7 +273,7 @@ def validate_platform_project_objective(artifact: dict[str, Any]) -> dict[str, A
 def _objective_subject(request: str, discovery: dict[str, Any]) -> str:
     patterns = (
         r"\bfor implementing\s+(.+?)(?:\.|;|\n|$)",
-        r"\b(?:audit|review|analyse|analyze)\s+(.+?)(?:\.|;|\n|$)",
+        r"\b(?:audit|review|analyse|analyze|validate|verify|confirm)\s+(.+?)(?:\.|;|\n|$)",
         r"\b(?:implement|build|create|add|improve)\s+(.+?)(?:\.|;|\n|$)",
     )
     for pattern in patterns:
@@ -209,7 +299,7 @@ def _requested_outcomes(lowered: str) -> list[str]:
         ("residual_gap_analysis", ("what is missing", "residual gap", "uncovered")),
         ("governed_development_plan", ("governed development plan", "development composition plan")),
         ("implementation", ("implement ", "build ", "create ", "add ")),
-        ("audit_or_analysis", ("audit", "analyse", "analyze", "review")),
+        ("audit_or_analysis", ("audit", "analyse", "analyze", "review", "validate", "verify", "confirm")),
     )
     for outcome, terms in signals:
         if any(term in lowered for term in terms):
@@ -244,18 +334,11 @@ def _satisfied_semantic_slots(
 
 
 def _objective_work_type(lowered: str, source_work_type: str) -> tuple[str, str]:
-    non_mutation = any(
-        phrase in lowered
-        for phrase in (
-            "do not implement",
-            "don't implement",
-            "no implementation",
-            "without implementation",
-            "read-only",
-            "read only",
-        )
-    )
-    audit = any(term in lowered for term in ("audit", "analyse", "analyze", "review"))
+    roles = interpret_request_clause_roles(lowered)
+    non_mutation = roles["non_mutation_constraint_detected"]
+    audit = any(term in lowered for term in ("audit", "analyse", "analyze", "review")) or roles[
+        "read_only_validation_action_detected"
+    ]
     if non_mutation and audit:
         return "AUDIT_ONLY", "EXPLICIT_NON_MUTATING_OBJECTIVE"
     return source_work_type, "DEVELOPMENT_INTENT_RESOLUTION"
@@ -285,5 +368,6 @@ __all__ = [
     "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_ARTIFACT_V1",
     "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_VERSION",
     "infer_platform_project_objective",
+    "interpret_request_clause_roles",
     "validate_platform_project_objective",
 ]
