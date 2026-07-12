@@ -31,6 +31,9 @@ CAPABILITY_COMPOSITION_COVERAGE_RESPONSE_ARTIFACT_V1 = (
 DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1 = (
     "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_ARTIFACT_V1"
 )
+PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1 = (
+    "PLATFORM_CORE_PROJECT_OBJECTIVE_INFERENCE_ARTIFACT_V1"
+)
 
 PLATFORM_KNOWLEDGE_SERVICE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_SERVICE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
@@ -38,6 +41,7 @@ GOVERNED_DEVELOPMENT_SERVICE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_SERVICE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 CAPABILITY_COMPOSITION_COVERAGE_SERVICE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 DEVELOPMENT_COMPOSITION_PLAN_SERVICE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
+PROJECT_OBJECTIVE_INFERENCE_SERVICE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -181,6 +185,11 @@ def _presentation_from_response(
         )
     if artifact_type == DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1:
         return _development_composition_plan_presentation(
+            service_response,
+            router_response=router_response,
+        )
+    if artifact_type == PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1:
+        return _project_objective_inference_presentation(
             service_response,
             router_response=router_response,
         )
@@ -651,6 +660,60 @@ def _development_composition_plan_presentation(
     )
 
 
+def _project_objective_inference_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    sufficient = response.get("objective_sufficient") is True
+    status = PRESENTATION_READY if sufficient else PRESENTATION_CLARIFICATION_REQUIRED
+    summary = (
+        "The canonical Platform Core project objective is sufficient for governed preparation."
+        if sufficient
+        else "Project objective inference requires one material clarification."
+    )
+    recommended = (
+        "Continue through the existing governed preparation composition."
+        if sufficient
+        else "Clarify only the recorded missing material objective information."
+    )
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "objective_status": response.get("objective_status"),
+            "canonical_project_objective": response.get("canonical_project_objective"),
+            "objective_subject": response.get("objective_subject"),
+            "requested_outcomes": deepcopy(response.get("requested_outcomes") or []),
+            "missing_material_information": deepcopy(
+                response.get("missing_material_information") or []
+            ),
+            "clarification_required": response.get("clarification_required") is True,
+        },
+        confidence="DETERMINISTIC_OBJECTIVE_SUFFICIENT" if sufficient else "FAILED_CLOSED",
+        evidence=[
+            {
+                "source_type": "COMPLETE_ORIGINAL_REQUEST",
+                "artifact_hash": response.get("source_request_hash"),
+            },
+            {
+                "source_type": "DEVELOPMENT_INTENT_RESOLUTION",
+                "artifact_hash": response.get("development_intent_hash"),
+            },
+        ],
+        reasoning_path=_router_reasoning(router_response)
+        + [{"step": "PROJECT_OBJECTIVE_SUFFICIENCY", "status": response.get("objective_status")}],
+        sources=[str(response.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=None,
+        governance_status="PLATFORM_CORE_HUMAN_INTENT",
+        replay_status="REPLAY_VISIBLE" if response.get("replay_visible") is True else None,
+        warnings=list(response.get("missing_material_information") or []),
+        actions=[recommended],
+        reusable_components=list(response.get("reused_platform_core_services") or []),
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -768,6 +831,8 @@ def _selected_service(
         return CAPABILITY_COMPOSITION_COVERAGE_SERVICE
     if artifact_type == DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1:
         return DEVELOPMENT_COMPOSITION_PLAN_SERVICE
+    if artifact_type == PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1:
+        return PROJECT_OBJECTIVE_INFERENCE_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")

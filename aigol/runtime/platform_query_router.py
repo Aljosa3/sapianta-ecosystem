@@ -20,6 +20,10 @@ from aigol.runtime.platform_development_composition_plan import (
     PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_VERSION,
     compose_platform_development_plan_for_query,
 )
+from aigol.runtime.platform_project_objective_inference import (
+    PLATFORM_PROJECT_OBJECTIVE_INFERENCE_VERSION,
+    infer_platform_project_objective,
+)
 from aigol.runtime.generation_certification_composition import (
     GENERATION_CERTIFICATION_COMPOSITION_VERSION,
     compose_generation_certification,
@@ -52,6 +56,7 @@ GOVERNED_DEVELOPMENT_ROUTE = "GOVERNED_DEVELOPMENT_RUNTIME"
 GENERATION_CERTIFICATION_ROUTE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 CAPABILITY_COMPOSITION_COVERAGE_ROUTE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
+PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 
 
 ROUTER_BOUNDARY_FLAGS = {
@@ -111,6 +116,21 @@ class PlatformServiceRouteDescriptor:
 
 
 PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
+    PlatformServiceRouteDescriptor(
+        service_identifier=PROJECT_OBJECTIVE_INFERENCE_ROUTE,
+        service_owner="PLATFORM_CORE_HUMAN_INTENT",
+        implementation_owner="aigol.runtime.platform_project_objective_inference",
+        query_classes=("PROJECT_OBJECTIVE_INFERENCE",),
+        required_inputs=("query",),
+        response_artifact_type="PLATFORM_CORE_PROJECT_OBJECTIVE_INFERENCE_ARTIFACT_V1",
+        service_version=PLATFORM_PROJECT_OBJECTIVE_INFERENCE_VERSION,
+        adapter_name="_route_project_objective_inference",
+        routing_terms=(
+            "project objective inference",
+            "infer project objective",
+            "objective sufficiency",
+        ),
+    ),
     PlatformServiceRouteDescriptor(
         service_identifier=DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
         service_owner="PLATFORM_CORE_DEVELOPMENT_PLANNING",
@@ -463,7 +483,24 @@ def _route_development_composition_plan(
     )
 
 
+def _route_project_objective_inference(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    development_intent: dict[str, Any],
+    created_at: str,
+    **_: Any,
+) -> dict[str, Any]:
+    return infer_platform_project_objective(
+        request=query,
+        development_intent=development_intent,
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+
+
 ROUTE_ADAPTERS: dict[str, Callable[..., dict[str, Any]]] = {
+    PROJECT_OBJECTIVE_INFERENCE_ROUTE: _route_project_objective_inference,
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE: _route_development_composition_plan,
     CAPABILITY_COMPOSITION_COVERAGE_ROUTE: _route_capability_composition_coverage,
     GENERATION_CERTIFICATION_ROUTE: _route_generation_certification,
@@ -483,6 +520,13 @@ def _candidate_routes(
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
     candidates = [
+        _candidate(
+            service_identifier=PROJECT_OBJECTIVE_INFERENCE_ROUTE,
+            query_class="PROJECT_OBJECTIVE_INFERENCE",
+            score=_project_objective_inference_score(lowered),
+            required_evidence_available=True,
+            reason="Project Objective Inference composes complete-request objective evidence.",
+        ),
         _candidate(
             service_identifier=DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
             query_class="DEVELOPMENT_COMPOSITION_PLAN",
@@ -530,6 +574,7 @@ def _candidate_routes(
         ),
     ]
     built_in_services = {
+        PROJECT_OBJECTIVE_INFERENCE_ROUTE,
         PLATFORM_KNOWLEDGE_ROUTE,
         ROOT_CAUSE_TRACE_ROUTE,
         GOVERNED_DEVELOPMENT_ROUTE,
@@ -650,6 +695,16 @@ def _development_composition_plan_score(query: str) -> int:
         "platform development plan",
         "ordered implementation sequence",
         "implementation dependency graph",
+    )
+    matches = sum(1 for phrase in phrases if phrase in query)
+    return min(100, matches * 55 + (45 if matches else 0))
+
+
+def _project_objective_inference_score(query: str) -> int:
+    phrases = (
+        "project objective inference",
+        "infer project objective",
+        "objective sufficiency",
     )
     return min(100, sum(35 for phrase in phrases if phrase in query))
 

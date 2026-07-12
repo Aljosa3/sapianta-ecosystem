@@ -404,6 +404,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_COVERAGE_TO_DEVELOPMENT_PLAN_COMPOSITION",
         certification_version="G20-05",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME",
+        capability_owner="PLATFORM_CORE_HUMAN_INTENT",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G21-02",
+        certification_evidence=(
+            "docs/governance/G21_02_PLATFORM_CORE_PROJECT_OBJECTIVE_INFERENCE_RUNTIME_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-11",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_project_objective_inference",
+        verification_type="DETERMINISTIC_COMPLETE_REQUEST_TO_PROJECT_OBJECTIVE_COMPOSITION",
+        certification_version="G21-02",
+    ),
 )
 
 
