@@ -130,7 +130,7 @@ PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
         service_owner="PLATFORM_CORE_DEVELOPMENT_LIFECYCLE",
         implementation_owner="aigol.runtime.platform_durable_governed_work",
         query_classes=("DURABLE_GOVERNED_WORK",),
-        required_inputs=("query",),
+        required_inputs=("query", "development_plan_artifact"),
         response_artifact_type="PLATFORM_DURABLE_GOVERNED_WORK_ARTIFACT_V1",
         service_version=PLATFORM_DURABLE_GOVERNED_WORK_VERSION,
         adapter_name="_route_durable_governed_work",
@@ -277,6 +277,8 @@ def route_platform_query(
     generation_identifier: str | None = None,
     generation_evidence_profile: dict[str, Any] | None = None,
     composition_replay_evidence: list[dict[str, Any]] | None = None,
+    development_plan_artifact: dict[str, Any] | None = None,
+    project_objective_artifact: dict[str, Any] | None = None,
     governance_root: str = ".",
     created_at: str = "2026-07-11T00:00:00Z",
     route_descriptors: list[PlatformServiceRouteDescriptor] | tuple[PlatformServiceRouteDescriptor, ...] | None = None,
@@ -309,6 +311,7 @@ def route_platform_query(
             runtime_result=runtime_result,
             user_visible_result=user_visible_result,
         ),
+        development_plan_artifact_supplied=isinstance(development_plan_artifact, dict),
     )
     selected = _select_route(candidates)
     selected, lifecycle_precedence = _apply_lifecycle_precedence(
@@ -338,6 +341,8 @@ def route_platform_query(
             generation_identifier=generation_identifier,
             generation_evidence_profile=generation_evidence_profile,
             composition_replay_evidence=composition_replay_evidence,
+            development_plan_artifact=development_plan_artifact,
+            project_objective_artifact=project_objective_artifact,
             governance_root=governance_root,
             created_at=created_at,
             knowledge_probe=knowledge_probe,
@@ -522,23 +527,15 @@ def _route_development_composition_plan(
 
 def _route_durable_governed_work(
     *,
-    query: str,
-    workspace_state: dict[str, Any] | None,
-    composition_replay_evidence: list[dict[str, Any]] | None,
-    governance_root: str,
+    development_plan_artifact: dict[str, Any],
+    project_objective_artifact: dict[str, Any] | None,
     created_at: str,
     development_intent: dict[str, Any],
     **_: Any,
 ) -> dict[str, Any]:
-    plan = compose_platform_development_plan_for_query(
-        query=query,
-        workspace_state=workspace_state,
-        replay_evidence=composition_replay_evidence,
-        governance_root=governance_root,
-        created_at=created_at,
-    )
     return compose_durable_governed_work(
-        development_plan_artifact=plan,
+        development_plan_artifact=development_plan_artifact,
+        project_objective_artifact=project_objective_artifact,
         source_work_type=str(development_intent.get("work_type") or "AUDIT_ONLY"),
         created_at=created_at,
     )
@@ -579,6 +576,7 @@ def _candidate_routes(
     knowledge_probe: dict[str, Any],
     development_intent: dict[str, Any],
     runtime_or_replay_evidence_supplied: bool,
+    development_plan_artifact_supplied: bool,
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
     candidates = [
@@ -586,7 +584,10 @@ def _candidate_routes(
             service_identifier=DURABLE_GOVERNED_WORK_ROUTE,
             query_class="DURABLE_GOVERNED_WORK",
             score=_durable_governed_work_score(lowered),
-            required_evidence_available=True,
+            required_evidence_available=development_plan_artifact_supplied,
+            missing_required_inputs=()
+            if development_plan_artifact_supplied
+            else ("development_plan_artifact",),
             reason="Durable Governed Work binds a validated plan to reviewable lifecycle evidence.",
         ),
         _candidate(

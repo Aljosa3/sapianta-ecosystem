@@ -174,11 +174,13 @@ def test_aicli_plan_result_automatically_contains_durable_work(tmp_path) -> None
 
 
 def test_router_and_presentation_expose_durable_work_service() -> None:
+    plan = _plan(implementation_required=False)
     router = route_platform_query(
         query=(
             "Create a durable governed work artifact for platform knowledge and query "
             "routing with approval-ready governed work evidence."
         ),
+        development_plan_artifact=plan,
         created_at=CREATED_AT,
     )
     presentation = present_platform_response(router, created_at=CREATED_AT)
