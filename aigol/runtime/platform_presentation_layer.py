@@ -214,6 +214,11 @@ def _knowledge_presentation(
         ready = response.get("architectural_meta_audit_status") == (
             "ARCHITECTURAL_META_AUDIT_READY"
         )
+        assessment = (
+            response.get("architectural_certification_assessment")
+            if isinstance(response.get("architectural_certification_assessment"), dict)
+            else {}
+        )
         recommended = (
             "Review the composed architectural evidence."
             if ready
@@ -222,12 +227,24 @@ def _knowledge_presentation(
         return _adapter_result(
             presentation_status=PRESENTATION_READY if ready else PRESENTATION_FAILED_CLOSED,
             summary=(
-                "Architectural meta-audit evidence is ready for deterministic assessment."
+                str(assessment.get("assessment_summary"))
                 if ready
-                else "Architectural meta-audit failed closed because required evidence is missing."
+                else str(
+                    assessment.get("assessment_summary")
+                    or "Architectural meta-audit failed closed because required evidence is missing."
+                )
             ),
             answer={
                 "query_classification": "ARCHITECTURAL_META_AUDIT",
+                "architectural_certification_assessment_status": assessment.get(
+                    "assessment_status"
+                ),
+                "architectural_certification_verdict": assessment.get(
+                    "assessment_verdict"
+                ),
+                "required_evidence_sufficient": assessment.get(
+                    "required_evidence_sufficient"
+                ),
                 "capability_certification_record_count": response.get(
                     "capability_certification_record_count"
                 ),

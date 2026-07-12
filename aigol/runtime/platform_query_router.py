@@ -147,6 +147,11 @@ PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
             "architectural completion",
             "architecturally complete",
             "architectural completeness",
+            "architectural certification audit",
+            "platform certification audit",
+            "platform architectural certification",
+            "platform certification assessment",
+            "architectural certification",
         ),
     ),
     PlatformServiceRouteDescriptor(
@@ -517,6 +522,34 @@ def _route_architectural_meta_audit(
         missing.append("sufficient Project Objective evidence")
     if advisory_failure:
         missing.append(advisory_failure)
+    assessment_ready = not missing
+    certification_assessment = {
+        "assessment_status": (
+            "ARCHITECTURAL_CERTIFICATION_ASSESSMENT_READY"
+            if assessment_ready
+            else "ARCHITECTURAL_CERTIFICATION_ASSESSMENT_FAILED_CLOSED"
+        ),
+        "assessment_verdict": (
+            "EXISTING_CERTIFIED_PLATFORM_CAPABILITIES_SATISFY_REQUESTED_COMPOSITION"
+            if assessment_ready
+            else "ARCHITECTURAL_CERTIFICATION_NOT_DETERMINED"
+        ),
+        "assessment_summary": (
+            "Existing certified Platform capabilities provide the required read-only "
+            "architectural certification composition."
+            if assessment_ready
+            else "Architectural certification cannot be determined because required "
+            "deterministic evidence is missing."
+        ),
+        "required_evidence_sufficient": assessment_ready,
+        "capability_certification_record_count": len(registry),
+        "project_objective_hash": objective.get("artifact_hash"),
+        "governance_evidence_count": len(governance_evidence),
+        "replay_evidence_count": len(replay_evidence),
+        "architectural_health_advisory_used": isinstance(advisory, dict),
+        "required_evidence_missing": list(missing),
+    }
+    certification_assessment["artifact_hash"] = replay_hash(certification_assessment)
     response = deepcopy(knowledge_probe)
     response.update(
         {
@@ -535,6 +568,10 @@ def _route_architectural_meta_audit(
             "architectural_health_advisory": deepcopy(advisory),
             "architectural_health_advisory_used": isinstance(advisory, dict),
             "required_architectural_evidence_missing": missing,
+            "architectural_certification_assessment": certification_assessment,
+            "architectural_certification_assessment_hash": certification_assessment[
+                "artifact_hash"
+            ],
             "clause_role_interpretation": interpret_request_clause_roles(query),
             "provider_invoked": False,
             "worker_invoked": False,
@@ -714,7 +751,10 @@ def _candidate_routes(
         _candidate(
             service_identifier=ARCHITECTURAL_META_AUDIT_ROUTE,
             query_class="ARCHITECTURAL_META_AUDIT",
-            score=_architectural_meta_audit_score(requested_action_text),
+            score=max(
+                _architectural_meta_audit_score(requested_action_text),
+                _architectural_certification_score(lowered),
+            ),
             required_evidence_available=True,
             reason="Architectural Meta-Audit composes existing read-only Platform evidence.",
         ),
@@ -916,6 +956,17 @@ def _architectural_meta_audit_score(query: str) -> int:
         "architectural completion",
         "architecturally complete",
         "architectural completeness",
+    )
+    return 100 if any(phrase in query for phrase in phrases) else 0
+
+
+def _architectural_certification_score(query: str) -> int:
+    phrases = (
+        "architectural certification audit",
+        "platform certification audit",
+        "platform architectural certification",
+        "platform certification assessment",
+        "architectural certification",
     )
     return 100 if any(phrase in query for phrase in phrases) else 0
 
