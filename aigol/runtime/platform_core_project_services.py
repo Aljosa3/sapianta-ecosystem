@@ -11,6 +11,10 @@ from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_capability_certification_registry import (
     list_platform_capability_certifications,
 )
+from aigol.runtime.platform_project_objective_inference import (
+    infer_platform_project_objective,
+    validate_platform_project_objective,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -239,6 +243,38 @@ def prepare_unified_human_interface_project_context(
             governed_request=message,
         )
     )
+    project_objective = infer_platform_project_objective(
+        request=message,
+        development_intent=development_intent,
+        workspace_state=prior_state,
+        project_guidance=guidance,
+        created_at=created_at,
+    )
+    validate_platform_project_objective(project_objective)
+    development_intent = deepcopy(development_intent)
+    development_intent["project_objective_inference"] = deepcopy(project_objective)
+    development_intent["project_objective_inference_hash"] = project_objective["artifact_hash"]
+    development_intent["project_objective_sufficient"] = project_objective["objective_sufficient"]
+    if project_objective.get("work_type_binding_required") is True:
+        objective_work_type = str(project_objective["requested_work_type"])
+        development_intent["requested_work_type"] = objective_work_type
+        development_intent["work_type"] = objective_work_type
+        development_intent["prepared_work_type"] = objective_work_type
+        development_intent["work_type_source"] = "PROJECT_OBJECTIVE_INFERENCE"
+        development_intent["work_type_source_text"] = (
+            project_objective.get("objective_work_type_source")
+        )
+        development_intent["mutation_allowed"] = False
+        development_intent["runtime_implementation"] = False
+        development_intent["work_type_conflict_detected"] = False
+        development_intent["work_type_conflict_reason"] = None
+        development_intent["summary_admissible"] = False
+        development_intent["runtime_binding_admissible"] = False
+        development_intent["read_only_work_binding_admissible"] = True
+        development_intent["read_only_work_binding_status"] = GOVERNED_READ_ONLY_WORK_BOUND
+        development_intent["requires_human_approval"] = False
+        development_intent["project_objective_work_type_bound"] = True
+    development_intent["artifact_hash"] = replay_hash(development_intent)
     conversation_experience = human_conversation_experience_from_resolution(
         message=message,
         guidance=guidance,
@@ -282,6 +318,7 @@ def prepare_unified_human_interface_project_context(
         "project_workspace_replay_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
         "project_guidance": guidance,
         "knowledge_reuse": knowledge_reuse,
+        "project_objective_inference": project_objective,
         "clarification_continuity": clarification_continuity,
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
@@ -290,6 +327,7 @@ def prepare_unified_human_interface_project_context(
         "project_guidance_authority": "PLATFORM_CORE",
         "project_knowledge_reuse_authority": "PLATFORM_CORE",
         "development_intent_resolution_authority": "PLATFORM_CORE",
+        "project_objective_inference_authority": "PLATFORM_CORE",
         "human_conversation_experience_authority": "PLATFORM_CORE",
         "interface_authority": False,
         "interface_executes_project_services": False,
@@ -3098,7 +3136,12 @@ def deterministic_clarification_plan(
             "workspace_state_hash": workspace_state.get("artifact_hash") if isinstance(workspace_state, dict) else None,
             "replay_continuity_available": isinstance(workspace_state, dict),
             "clarification_continuity_available": bool(previous_answers),
-            "canonical_semantic_artifact_available": False,
+            "canonical_semantic_artifact_available": isinstance(
+                development_intent.get("project_objective_inference"), dict
+            ),
+            "project_objective_inference_hash": (
+                development_intent.get("project_objective_inference_hash")
+            ),
             "certification_registry_available": True,
             "certified_capability_count": len(certification_capabilities),
             "governance_evidence_available": bool(knowledge_reuse.get("relevant_certified_artifacts")),
@@ -3164,12 +3207,25 @@ def clarification_context_sufficiency_evaluation(
     remaining_slots: list[dict[str, Any]] = []
     satisfied_slots: list[str] = []
     satisfied_from_original_request: list[dict[str, Any]] = []
+    objective_inference = (
+        development_intent.get("project_objective_inference")
+        if isinstance(development_intent.get("project_objective_inference"), dict)
+        else {}
+    )
+    objective_satisfied_slots = set(
+        unique_strings(objective_inference.get("satisfied_semantic_slots"))
+        if objective_inference.get("objective_sufficient") is True
+        else []
+    )
     unresolved_slots: list[dict[str, Any]] = []
     for slot in _dedupe_missing_slots(candidate_missing_slots):
         slot_id = str(slot.get("slot_id") or "")
         accepted = _accepted_semantic_requirements(reply=prompt, slot_id=slot_id)
         required = _required_semantic_requirements(slot_id)
-        satisfied = (
+        satisfied_by_objective = (
+            not clarification_first_requested and slot_id in objective_satisfied_slots
+        )
+        satisfied = satisfied_by_objective or (
             not clarification_first_requested
             and bool(required)
             and all(requirement in accepted for requirement in required)
@@ -3185,6 +3241,8 @@ def clarification_context_sufficiency_evaluation(
                     "source": "ORIGINAL_REQUEST",
                     "accepted_semantic_requirements": accepted,
                     "required_semantic_requirements": required,
+                    "project_objective_inference_satisfied": satisfied_by_objective,
+                    "project_objective_inference_hash": objective_inference.get("artifact_hash"),
                     "source_hash": replay_hash(prompt),
                 }
             )
@@ -3222,6 +3280,9 @@ def clarification_context_sufficiency_evaluation(
         "project_guidance_hash": replay_hash(guidance),
         "knowledge_reuse_hash": replay_hash(knowledge_reuse),
         "development_intent_hash": development_intent.get("artifact_hash"),
+        "project_objective_inference_available": bool(objective_inference),
+        "project_objective_inference_hash": objective_inference.get("artifact_hash"),
+        "project_objective_sufficient": objective_inference.get("objective_sufficient") is True,
         "candidate_missing_slots": deepcopy(_dedupe_missing_slots(candidate_missing_slots)),
         "satisfied_from_original_request": satisfied_from_original_request,
         "satisfied_from_workspace_context": [],
