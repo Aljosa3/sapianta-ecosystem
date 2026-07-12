@@ -24,6 +24,10 @@ from aigol.runtime.platform_project_objective_inference import (
     PLATFORM_PROJECT_OBJECTIVE_INFERENCE_VERSION,
     infer_platform_project_objective,
 )
+from aigol.runtime.platform_durable_governed_work import (
+    PLATFORM_DURABLE_GOVERNED_WORK_VERSION,
+    compose_durable_governed_work,
+)
 from aigol.runtime.generation_certification_composition import (
     GENERATION_CERTIFICATION_COMPOSITION_VERSION,
     compose_generation_certification,
@@ -57,6 +61,7 @@ GENERATION_CERTIFICATION_ROUTE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE"
 CAPABILITY_COMPOSITION_COVERAGE_ROUTE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
+DURABLE_GOVERNED_WORK_ROUTE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 
 
 ROUTER_BOUNDARY_FLAGS = {
@@ -116,6 +121,21 @@ class PlatformServiceRouteDescriptor:
 
 
 PLATFORM_QUERY_ROUTE_DESCRIPTORS = (
+    PlatformServiceRouteDescriptor(
+        service_identifier=DURABLE_GOVERNED_WORK_ROUTE,
+        service_owner="PLATFORM_CORE_DEVELOPMENT_LIFECYCLE",
+        implementation_owner="aigol.runtime.platform_durable_governed_work",
+        query_classes=("DURABLE_GOVERNED_WORK",),
+        required_inputs=("query",),
+        response_artifact_type="PLATFORM_DURABLE_GOVERNED_WORK_ARTIFACT_V1",
+        service_version=PLATFORM_DURABLE_GOVERNED_WORK_VERSION,
+        adapter_name="_route_durable_governed_work",
+        routing_terms=(
+            "durable governed work",
+            "durable work artifact",
+            "approval-ready governed work",
+        ),
+    ),
     PlatformServiceRouteDescriptor(
         service_identifier=PROJECT_OBJECTIVE_INFERENCE_ROUTE,
         service_owner="PLATFORM_CORE_HUMAN_INTENT",
@@ -483,6 +503,30 @@ def _route_development_composition_plan(
     )
 
 
+def _route_durable_governed_work(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    composition_replay_evidence: list[dict[str, Any]] | None,
+    governance_root: str,
+    created_at: str,
+    development_intent: dict[str, Any],
+    **_: Any,
+) -> dict[str, Any]:
+    plan = compose_platform_development_plan_for_query(
+        query=query,
+        workspace_state=workspace_state,
+        replay_evidence=composition_replay_evidence,
+        governance_root=governance_root,
+        created_at=created_at,
+    )
+    return compose_durable_governed_work(
+        development_plan_artifact=plan,
+        source_work_type=str(development_intent.get("work_type") or "AUDIT_ONLY"),
+        created_at=created_at,
+    )
+
+
 def _route_project_objective_inference(
     *,
     query: str,
@@ -500,6 +544,7 @@ def _route_project_objective_inference(
 
 
 ROUTE_ADAPTERS: dict[str, Callable[..., dict[str, Any]]] = {
+    DURABLE_GOVERNED_WORK_ROUTE: _route_durable_governed_work,
     PROJECT_OBJECTIVE_INFERENCE_ROUTE: _route_project_objective_inference,
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE: _route_development_composition_plan,
     CAPABILITY_COMPOSITION_COVERAGE_ROUTE: _route_capability_composition_coverage,
@@ -520,6 +565,13 @@ def _candidate_routes(
 ) -> list[dict[str, Any]]:
     lowered = query.lower()
     candidates = [
+        _candidate(
+            service_identifier=DURABLE_GOVERNED_WORK_ROUTE,
+            query_class="DURABLE_GOVERNED_WORK",
+            score=_durable_governed_work_score(lowered),
+            required_evidence_available=True,
+            reason="Durable Governed Work binds a validated plan to reviewable lifecycle evidence.",
+        ),
         _candidate(
             service_identifier=PROJECT_OBJECTIVE_INFERENCE_ROUTE,
             query_class="PROJECT_OBJECTIVE_INFERENCE",
@@ -574,6 +626,7 @@ def _candidate_routes(
         ),
     ]
     built_in_services = {
+        DURABLE_GOVERNED_WORK_ROUTE,
         PROJECT_OBJECTIVE_INFERENCE_ROUTE,
         PLATFORM_KNOWLEDGE_ROUTE,
         ROOT_CAUSE_TRACE_ROUTE,
@@ -707,6 +760,16 @@ def _project_objective_inference_score(query: str) -> int:
         "objective sufficiency",
     )
     return min(100, sum(35 for phrase in phrases if phrase in query))
+
+
+def _durable_governed_work_score(query: str) -> int:
+    phrases = (
+        "durable governed work",
+        "durable work artifact",
+        "approval-ready governed work",
+    )
+    matches = sum(1 for phrase in phrases if phrase in query)
+    return min(100, matches * 55 + (45 if matches else 0))
 
 
 def _descriptor_score(query: str, descriptor: PlatformServiceRouteDescriptor) -> int:

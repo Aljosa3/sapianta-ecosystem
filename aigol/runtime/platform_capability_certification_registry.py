@@ -419,6 +419,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_COMPLETE_REQUEST_TO_PROJECT_OBJECTIVE_COMPOSITION",
         certification_version="G21-02",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME",
+        capability_owner="PLATFORM_CORE_DEVELOPMENT_LIFECYCLE",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G21-05",
+        certification_evidence=(
+            "docs/governance/G21_05_DURABLE_GOVERNED_WORK_ARTIFACT_RUNTIME_IMPLEMENTATION.md",
+        ),
+        certification_date="2026-07-12",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_durable_governed_work",
+        verification_type="DETERMINISTIC_PLAN_TO_DURABLE_GOVERNED_WORK_BINDING",
+        certification_version="G21-05",
+    ),
 )
 
 

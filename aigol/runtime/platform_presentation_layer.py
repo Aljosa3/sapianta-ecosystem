@@ -34,6 +34,9 @@ DEVELOPMENT_COMPOSITION_PLAN_RESPONSE_ARTIFACT_V1 = (
 PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1 = (
     "PLATFORM_CORE_PROJECT_OBJECTIVE_INFERENCE_ARTIFACT_V1"
 )
+DURABLE_GOVERNED_WORK_RESPONSE_ARTIFACT_V1 = (
+    "PLATFORM_DURABLE_GOVERNED_WORK_ARTIFACT_V1"
+)
 
 PLATFORM_KNOWLEDGE_SERVICE = "PLATFORM_KNOWLEDGE_RUNTIME"
 ROOT_CAUSE_TRACE_SERVICE = "DETERMINISTIC_ROOT_CAUSE_TRACE_RUNTIME"
@@ -42,6 +45,7 @@ GENERATION_CERTIFICATION_SERVICE = "GENERATION_CERTIFICATION_COMPOSITION_SERVICE
 CAPABILITY_COMPOSITION_COVERAGE_SERVICE = "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
 DEVELOPMENT_COMPOSITION_PLAN_SERVICE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 PROJECT_OBJECTIVE_INFERENCE_SERVICE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
+DURABLE_GOVERNED_WORK_SERVICE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -190,6 +194,11 @@ def _presentation_from_response(
         )
     if artifact_type == PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1:
         return _project_objective_inference_presentation(
+            service_response,
+            router_response=router_response,
+        )
+    if artifact_type == DURABLE_GOVERNED_WORK_RESPONSE_ARTIFACT_V1:
+        return _durable_governed_work_presentation(
             service_response,
             router_response=router_response,
         )
@@ -714,6 +723,77 @@ def _project_objective_inference_presentation(
     )
 
 
+def _durable_governed_work_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    ready = response.get("work_status") == "DURABLE_GOVERNED_WORK_READY_FOR_REVIEW"
+    no_implementation = (
+        response.get("work_status") == "DURABLE_GOVERNED_WORK_NO_IMPLEMENTATION_REQUIRED"
+    )
+    status = PRESENTATION_READY if ready or no_implementation else PRESENTATION_FAILED_CLOSED
+    summary = (
+        "Durable governed work is ready for explicit human review."
+        if ready
+        else "The durable governed work records that no implementation is required."
+        if no_implementation
+        else "Durable governed work creation failed closed."
+    )
+    recommended = (
+        "Review the durable work artifact; approval does not authorize execution."
+        if ready
+        else "Verify and close the read-only governed work."
+        if no_implementation
+        else "Resolve the source plan or lineage failure."
+    )
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "governed_work_id": response.get("governed_work_id"),
+            "work_status": response.get("work_status"),
+            "review_state": response.get("review_state"),
+            "approval_request_id": response.get("approval_request_id"),
+            "approval_request_ready": response.get("approval_request_ready") is True,
+            "source_work_type": response.get("source_work_type"),
+            "proposed_next_phase_work_type": response.get("proposed_next_phase_work_type"),
+            "ordered_implementation_sequence": deepcopy(
+                response.get("ordered_implementation_sequence") or []
+            ),
+            "validation_requirements": deepcopy(
+                response.get("validation_requirements") or []
+            ),
+            "implementation_boundary": deepcopy(response.get("implementation_boundary") or {}),
+        },
+        confidence="DETERMINISTIC_DURABLE_WORK_READY" if status == PRESENTATION_READY else "FAILED_CLOSED",
+        evidence=[
+            {
+                "source_type": "DEVELOPMENT_COMPOSITION_PLAN",
+                "artifact_hash": response.get("source_development_plan_hash"),
+            },
+            {
+                "source_type": "PROJECT_OBJECTIVE",
+                "artifact_hash": response.get("source_project_objective_hash"),
+            },
+            {
+                "source_type": "APPROVAL_REQUEST_CONTRACT",
+                "artifact_hash": response.get("approval_request_hash"),
+            },
+        ],
+        reasoning_path=_router_reasoning(router_response)
+        + [{"step": "DURABLE_GOVERNED_WORK_BINDING", "status": response.get("work_status")}],
+        sources=[str(response.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=None,
+        governance_status="PLATFORM_CORE_DEVELOPMENT_LIFECYCLE",
+        replay_status="REPLAY_VISIBLE" if response.get("replay_visible") is True else None,
+        warnings=[response.get("failure_reason")] if response.get("failure_reason") else [],
+        actions=[recommended],
+        reusable_components=list(response.get("reused_platform_core_services") or []),
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -833,6 +913,8 @@ def _selected_service(
         return DEVELOPMENT_COMPOSITION_PLAN_SERVICE
     if artifact_type == PROJECT_OBJECTIVE_INFERENCE_RESPONSE_ARTIFACT_V1:
         return PROJECT_OBJECTIVE_INFERENCE_SERVICE
+    if artifact_type == DURABLE_GOVERNED_WORK_RESPONSE_ARTIFACT_V1:
+        return DURABLE_GOVERNED_WORK_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")

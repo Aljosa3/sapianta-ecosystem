@@ -293,6 +293,7 @@ def prepare_unified_human_interface_project_context(
             workspace_state=prior_state,
             development_intent=development_intent,
             created_at=created_at,
+            durable_work_root=session_root / "durable_governed_work",
         )
         development_intent = development_intent_with_read_only_work_result(
             development_intent=development_intent,
@@ -323,12 +324,19 @@ def prepare_unified_human_interface_project_context(
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "governed_read_only_work_result": read_only_work_result,
+        "durable_governed_work_artifact": (
+            deepcopy(read_only_work_result.get("durable_governed_work_artifact"))
+            if isinstance(read_only_work_result, dict)
+            and isinstance(read_only_work_result.get("durable_governed_work_artifact"), dict)
+            else None
+        ),
         "project_workspace_authority": "PLATFORM_CORE",
         "project_guidance_authority": "PLATFORM_CORE",
         "project_knowledge_reuse_authority": "PLATFORM_CORE",
         "development_intent_resolution_authority": "PLATFORM_CORE",
         "project_objective_inference_authority": "PLATFORM_CORE",
         "human_conversation_experience_authority": "PLATFORM_CORE",
+        "durable_governed_work_authority": "PLATFORM_CORE",
         "interface_authority": False,
         "interface_executes_project_services": False,
         "replay_visible": True,
@@ -638,6 +646,7 @@ def run_governed_read_only_work_binding(
     workspace_state: dict[str, Any] | None,
     development_intent: dict[str, Any],
     created_at: str,
+    durable_work_root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Execute non-mutating work through existing read-only Platform Core services."""
 
@@ -663,6 +672,9 @@ def run_governed_read_only_work_binding(
             route_platform_query,
             validate_platform_query_router_response,
         )
+        from aigol.runtime.platform_durable_governed_work import (
+            compose_durable_governed_work,
+        )
 
         router_response = route_platform_query(
             query=prompt,
@@ -675,6 +687,32 @@ def run_governed_read_only_work_binding(
             created_at=created_at,
         )
         validate_platform_presentation(presentation)
+        service_response = router_response.get("service_response")
+        durable_work = None
+        if (
+            router_response.get("selected_service")
+            == "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
+            and isinstance(service_response, dict)
+            and service_response.get("artifact_type")
+            == "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_ARTIFACT_V1"
+        ):
+            plan_hash = str(service_response.get("artifact_hash") or "").split(":", 1)[-1]
+            replay_dir = (
+                Path(durable_work_root) / plan_hash[:24]
+                if durable_work_root is not None
+                else None
+            )
+            durable_work = compose_durable_governed_work(
+                development_plan_artifact=service_response,
+                project_objective_artifact=(
+                    intent.get("project_objective_inference")
+                    if isinstance(intent.get("project_objective_inference"), dict)
+                    else None
+                ),
+                source_work_type=work_type,
+                created_at=created_at,
+                replay_dir=replay_dir,
+            )
         result = {
             "artifact_type": "PLATFORM_CORE_GOVERNED_READ_ONLY_WORK_RESULT_V1",
             "runtime_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
@@ -698,6 +736,21 @@ def run_governed_read_only_work_binding(
             "presentation_summary": presentation.get("summary"),
             "presentation_answer": deepcopy(presentation.get("answer")),
             "presentation_recommended_next_step": presentation.get("recommended_next_step"),
+            "durable_governed_work_artifact": deepcopy(durable_work),
+            "durable_governed_work_artifact_hash": (
+                durable_work.get("artifact_hash") if isinstance(durable_work, dict) else None
+            ),
+            "durable_governed_work_id": (
+                durable_work.get("governed_work_id") if isinstance(durable_work, dict) else None
+            ),
+            "durable_governed_work_status": (
+                durable_work.get("work_status") if isinstance(durable_work, dict) else None
+            ),
+            "durable_governed_work_ready_for_review": (
+                isinstance(durable_work, dict)
+                and durable_work.get("work_status") == "DURABLE_GOVERNED_WORK_READY_FOR_REVIEW"
+            ),
+            "manual_copy_paste_required": False if isinstance(durable_work, dict) else None,
             "reusable_platform_core_components": unique_strings(
                 [
                     "UNIFIED_PLATFORM_QUERY_ROUTER",
