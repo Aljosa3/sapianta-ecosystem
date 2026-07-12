@@ -11,6 +11,7 @@ from aigol.runtime.platform_capability_certification_registry import (
     platform_capability_owner,
 )
 from aigol.runtime.platform_query_router import (
+    ARCHITECTURAL_META_AUDIT_ROUTE,
     CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
     DURABLE_GOVERNED_WORK_ROUTE,
@@ -126,6 +127,7 @@ def test_route_descriptors_are_reusable_platform_core_metadata() -> None:
     services = {descriptor["service_identifier"] for descriptor in descriptors}
 
     assert services == {
+        ARCHITECTURAL_META_AUDIT_ROUTE,
         CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
         DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
         DURABLE_GOVERNED_WORK_ROUTE,

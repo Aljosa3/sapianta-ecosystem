@@ -210,6 +210,54 @@ def _knowledge_presentation(
     *,
     router_response: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    if response.get("query_classification") == "ARCHITECTURAL_META_AUDIT":
+        ready = response.get("architectural_meta_audit_status") == (
+            "ARCHITECTURAL_META_AUDIT_READY"
+        )
+        recommended = (
+            "Review the composed architectural evidence."
+            if ready
+            else "Supply the missing deterministic architectural evidence."
+        )
+        return _adapter_result(
+            presentation_status=PRESENTATION_READY if ready else PRESENTATION_FAILED_CLOSED,
+            summary=(
+                "Architectural meta-audit evidence is ready for deterministic assessment."
+                if ready
+                else "Architectural meta-audit failed closed because required evidence is missing."
+            ),
+            answer={
+                "query_classification": "ARCHITECTURAL_META_AUDIT",
+                "capability_certification_record_count": response.get(
+                    "capability_certification_record_count"
+                ),
+                "project_objective_hash": response.get("project_objective_hash"),
+                "architectural_health_advisory_used": response.get(
+                    "architectural_health_advisory_used"
+                ),
+            },
+            confidence="DETERMINISTIC_EVIDENCE_READY" if ready else "FAILED_CLOSED",
+            evidence=[
+                {"source_type": "PLATFORM_KNOWLEDGE", "artifact_hash": response.get("artifact_hash")},
+                {"source_type": "PROJECT_OBJECTIVE", "artifact_hash": response.get("project_objective_hash")},
+                {"source_type": "GOVERNANCE_EVIDENCE", "items": deepcopy(response.get("governance_evidence") or [])},
+                {"source_type": "REPLAY_EVIDENCE", "items": deepcopy(response.get("replay_evidence") or [])},
+            ],
+            reasoning_path=_router_reasoning(router_response),
+            sources=list(response.get("governance_evidence") or []),
+            recommended_next_step=recommended,
+            certification_status=None,
+            governance_status="READ_ONLY_ARCHITECTURAL_META_AUDIT",
+            replay_status="REPLAY_VISIBLE",
+            warnings=list(response.get("required_architectural_evidence_missing") or []),
+            actions=[recommended],
+            reusable_components=[
+                "PLATFORM_KNOWLEDGE_RUNTIME",
+                "PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY",
+                "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME",
+                "ARCHITECTURAL_HEALTH_ADVISORY",
+            ],
+        )
     capability = response.get("canonical_capability_identifier") or response.get("goal_target") or "platform capability"
     if response.get("certified_capability_exists") is True:
         summary = f"{capability} exists as a certified Platform capability."
