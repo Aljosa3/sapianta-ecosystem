@@ -191,8 +191,9 @@ def run_human_interface_runtime_entry(
             "manual_chatgpt_codex_transfer_required": not runtime_bound,
             "execution_summary_presented": bool(latest_turn.get("execution_summary_reference")),
             "human_confirmation_presented": bool(latest_turn.get("human_confirmation_reference")),
-            "governance_authorization_reached": latest_turn.get("execution_authorization_status")
-            == "EXECUTION_AUTHORIZED",
+            "governance_authorization_reached": runtime_projection[
+                "governance_authorization_reached"
+            ],
             "provider_invocation_reached": runtime_projection["provider_invocation_reached"],
             "worker_execution_reached": runtime_projection["worker_execution_reached"],
             "replay_certification_reached": runtime_projection["replay_certification_reached"],
@@ -286,6 +287,14 @@ def _runtime_status_projection(
         turn_replay_root
         / "governed_bridge_certified_development_continuation"
         / "worker_lifecycle_continuation"
+        if turn_replay_root is not None
+        else None
+    )
+    execution_authorization_artifact = _read_replay_artifact_path(
+        turn_replay_root
+        / "governed_bridge_certified_development_continuation"
+        / "execution_authorization"
+        / "002_authorization_artifact_recorded.json"
         if turn_replay_root is not None
         else None
     )
@@ -400,12 +409,41 @@ def _runtime_status_projection(
         or latest_turn.get("replay_certification_status") == "REPLAY_CERTIFICATION_COMPLETED"
         or replay_certification_artifact.get("certification_status") == "REPLAY_CERTIFICATION_COMPLETED"
     )
+    latest_turn_authorization_status = latest_turn.get("execution_authorization_status")
+    execution_authorization_artifact_recognized = (
+        execution_authorization_artifact.get("artifact_type")
+        == "EXECUTION_AUTHORIZATION_ARTIFACT_V1"
+    )
+    authorization_status = (
+        latest_turn_authorization_status
+        if latest_turn_authorization_status is not None
+        else (
+            execution_authorization_artifact.get("authorization_status")
+            if execution_authorization_artifact_recognized
+            else None
+        )
+    )
+    governance_authorization_reached = authorization_status == "EXECUTION_AUTHORIZED"
     projection_evidence = {
         "latest_turn_used": bool(latest_turn),
         "turn_replay_discovery_used": turn_replay_root is not None,
         "turn_replay_root": str(turn_replay_root) if turn_replay_root is not None else None,
         "worker_lifecycle_replay_root": (
             str(worker_lifecycle_root) if worker_lifecycle_root is not None else None
+        ),
+        "execution_authorization_replay_inspected": bool(execution_authorization_artifact),
+        "execution_authorization_artifact_recognized": (
+            execution_authorization_artifact_recognized
+        ),
+        "execution_authorization_status": authorization_status,
+        "execution_authorization_status_source": (
+            "LATEST_TURN"
+            if latest_turn_authorization_status is not None
+            else (
+                "EXECUTION_AUTHORIZATION_REPLAY"
+                if execution_authorization_artifact_recognized
+                else "NOT_AVAILABLE"
+            )
         ),
         "worker_invocation_replay_inspected": bool(worker_invocation_artifact),
         "universal_provider_worker_binding_replay_inspected": bool(universal_worker_binding_artifact),
@@ -440,6 +478,7 @@ def _runtime_status_projection(
         ),
     }
     return {
+        "governance_authorization_reached": governance_authorization_reached,
         "provider_invocation_reached": provider_invocation_reached,
         "worker_execution_reached": worker_execution_reached,
         "replay_certification_reached": replay_certification_reached,

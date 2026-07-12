@@ -7,6 +7,8 @@ from pathlib import Path
 from aigol.cli import aicli, aigol_cli
 from aigol.runtime.human_interface_runtime_entry_service import (
     CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
+    CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_PARTIALLY_BOUND,
+    _runtime_status_projection,
     run_human_interface_runtime_entry,
 )
 
@@ -77,6 +79,130 @@ def test_canonical_runtime_entry_service_owns_shared_runtime_binding(tmp_path: P
         / "workspace_state"
         / "001_platform_core_workspace_state_recorded.json"
     ).exists()
+
+
+def _authorization_projection(
+    tmp_path: Path,
+    *,
+    latest_turn_status: str | None = None,
+    replay_status: str | None = None,
+) -> dict:
+    turn_root = tmp_path / "runtime" / "TURN-000026"
+    replay_reference = turn_root / "acli_governed_development_execution_bridge"
+    replay_reference.mkdir(parents=True)
+    if replay_status is not None:
+        _write_wrapped_artifact(
+            turn_root
+            / "governed_bridge_certified_development_continuation"
+            / "execution_authorization"
+            / "002_authorization_artifact_recorded.json",
+            {
+                "artifact_type": "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+                "authorization_status": replay_status,
+            },
+        )
+    latest_turn = {"replay_reference": str(replay_reference)}
+    if latest_turn_status is not None:
+        latest_turn["execution_authorization_status"] = latest_turn_status
+    return _runtime_status_projection({"failed_turns": 0}, latest_turn)
+
+
+def test_governance_authorization_projection_uses_latest_turn_field(tmp_path: Path) -> None:
+    projection = _authorization_projection(
+        tmp_path,
+        latest_turn_status="EXECUTION_AUTHORIZED",
+        replay_status="EXECUTION_NOT_AUTHORIZED",
+    )
+
+    assert projection["governance_authorization_reached"] is True
+    assert projection["projection_evidence"]["execution_authorization_status_source"] == (
+        "LATEST_TURN"
+    )
+
+
+def test_governance_authorization_projection_recovers_from_replay(tmp_path: Path) -> None:
+    projection = _authorization_projection(tmp_path, replay_status="EXECUTION_AUTHORIZED")
+
+    assert projection["governance_authorization_reached"] is True
+    assert projection["projection_evidence"]["execution_authorization_replay_inspected"] is True
+    assert projection["projection_evidence"]["execution_authorization_status_source"] == (
+        "EXECUTION_AUTHORIZATION_REPLAY"
+    )
+
+
+def test_governance_authorization_projection_fails_closed_without_evidence(tmp_path: Path) -> None:
+    projection = _authorization_projection(tmp_path)
+
+    assert projection["governance_authorization_reached"] is False
+    assert projection["projection_evidence"]["execution_authorization_status_source"] == (
+        "NOT_AVAILABLE"
+    )
+
+
+def test_governance_authorization_projection_rejects_non_authorized_replay(
+    tmp_path: Path,
+) -> None:
+    projection = _authorization_projection(
+        tmp_path,
+        replay_status="EXECUTION_AUTHORIZATION_DENIED",
+    )
+
+    assert projection["governance_authorization_reached"] is False
+    assert projection["projection_evidence"]["execution_authorization_status"] == (
+        "EXECUTION_AUTHORIZATION_DENIED"
+    )
+
+
+def test_recovered_authorization_does_not_override_partial_runtime_binding(
+    tmp_path: Path,
+) -> None:
+    def partially_bound_runtime(args, input_func, output_func):
+        input_func("")
+        output_func("runtime stopped before replay certification")
+        turn_root = Path(args.runtime_root) / "runtime" / "TURN-000026"
+        replay_reference = turn_root / "acli_governed_development_execution_bridge"
+        replay_reference.mkdir(parents=True)
+        _write_wrapped_artifact(
+            turn_root
+            / "governed_bridge_certified_development_continuation"
+            / "execution_authorization"
+            / "002_authorization_artifact_recorded.json",
+            {
+                "artifact_type": "EXECUTION_AUTHORIZATION_ARTIFACT_V1",
+                "authorization_status": "EXECUTION_AUTHORIZED",
+            },
+        )
+        return {
+            "command": "aigol conversation",
+            "runtime_root": args.runtime_root,
+            "turn_count": 1,
+            "failed_turns": 0,
+            "exit_reason": "EXIT_COMMAND",
+            "turns": [
+                {
+                    "provider_invocation_reached": True,
+                    "worker_invocation_status": "WORKER_INVOKED",
+                    "replay_certification_reached": False,
+                    "replay_reference": str(replay_reference),
+                }
+            ],
+        }
+
+    result = run_human_interface_runtime_entry(
+        interface_name="reference authorization replay interface",
+        session_id="UHI-G25-03-AUTHORIZATION-REPLAY",
+        human_requests=["Implement authorization replay projection."],
+        created_at="2026-07-12T00:00:00Z",
+        runtime_root=tmp_path,
+        workspace=".",
+        governed_runtime_runner=partially_bound_runtime,
+    )
+
+    assert result["governance_authorization_reached"] is True
+    assert result["replay_certification_reached"] is False
+    assert result["canonical_runtime_entry_status"] == (
+        CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_PARTIALLY_BOUND
+    )
 
 
 def test_canonical_runtime_entry_projects_status_from_replay_evidence(tmp_path: Path) -> None:
