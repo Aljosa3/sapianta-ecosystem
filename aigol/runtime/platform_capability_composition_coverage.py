@@ -119,6 +119,7 @@ CAPABILITY_FACET_BINDINGS: tuple[dict[str, Any], ...] = (
         "facet": "CAPABILITY_COMPOSITION_DISCOVERY",
         "terms": (
             "capability composition",
+            "capability coverage",
             "composition coverage",
             "composition discovery",
             "reusable capabilities",
