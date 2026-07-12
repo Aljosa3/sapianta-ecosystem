@@ -17,12 +17,15 @@ from aigol.runtime.platform_capability_composition_coverage import (
     discover_platform_capability_composition_coverage,
 )
 from aigol.runtime.platform_development_composition_plan import (
+    DEVELOPMENT_COMPOSITION_PLAN_FAILED_CLOSED,
     PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_VERSION,
     compose_platform_development_plan_for_query,
+    validate_platform_development_composition_plan,
 )
 from aigol.runtime.platform_project_objective_inference import (
     PLATFORM_PROJECT_OBJECTIVE_INFERENCE_VERSION,
     infer_platform_project_objective,
+    interpret_request_clause_roles,
 )
 from aigol.runtime.platform_durable_governed_work import (
     PLATFORM_DURABLE_GOVERNED_WORK_VERSION,
@@ -317,6 +320,8 @@ def route_platform_query(
     selected, lifecycle_precedence = _apply_lifecycle_precedence(
         selected=selected,
         candidates=candidates,
+        query=raw_query,
+        development_plan_artifact=development_plan_artifact,
     )
     route_status = _route_status(
         selected,
@@ -804,10 +809,22 @@ def _apply_lifecycle_precedence(
     *,
     selected: dict[str, Any],
     candidates: list[dict[str, Any]],
+    query: str,
+    development_plan_artifact: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Prefer an entry runtime over its automatic downstream lifecycle stages."""
+    """Select entry or downstream runtime from validated lifecycle state."""
 
     top_score = int(selected.get("score") or 0)
+    valid_plan = _valid_upstream_development_plan(development_plan_artifact)
+    upstream_plan_hash = valid_plan.get("artifact_hash") if valid_plan else None
+    clause_roles = interpret_request_clause_roles(query)
+    target_clauses = [
+        str(clause).lower() for clause in clause_roles.get("capability_target_clauses", [])
+    ]
+    downstream_target_requested = any(
+        "durable governed work" in clause and "approval" in clause
+        for clause in target_clauses
+    )
     tied_by_service = {
         str(candidate.get("service_identifier")): candidate
         for candidate in candidates
@@ -819,15 +836,46 @@ def _apply_lifecycle_precedence(
             route for route in downstream_routes if route in tied_by_service
         ]
         if isinstance(entry_candidate, dict) and suppressed:
+            downstream_candidate = tied_by_service.get(DURABLE_GOVERNED_WORK_ROUTE)
+            if (
+                isinstance(valid_plan, dict)
+                and downstream_target_requested
+                and isinstance(downstream_candidate, dict)
+            ):
+                return deepcopy(downstream_candidate), {
+                    "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
+                    "precedence_applied": True,
+                    "canonical_entry_runtime": entry_runtime,
+                    "selected_lifecycle_runtime": DURABLE_GOVERNED_WORK_ROUTE,
+                    "lifecycle_stage": "DURABLE_GOVERNED_WORK",
+                    "upstream_plan_hash": upstream_plan_hash,
+                    "suppressed_downstream_routes": [],
+                    "suppressed_entry_routes": [entry_runtime],
+                    "top_score": top_score,
+                    "reason": (
+                        "validated upstream plan and explicit Durable Governed Work to "
+                        "Approval target continue the downstream lifecycle"
+                    ),
+                    "precedence_reason": "VALIDATED_UPSTREAM_PLAN_DOWNSTREAM_TARGET",
+                    "clause_role_interpretation_reused": True,
+                    "platform_core_authority": True,
+                    "human_interface_authority": False,
+                }
             return deepcopy(entry_candidate), {
                 "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
                 "precedence_applied": True,
                 "canonical_entry_runtime": entry_runtime,
+                "selected_lifecycle_runtime": entry_runtime,
+                "lifecycle_stage": "DEVELOPMENT_COMPOSITION_PLAN",
+                "upstream_plan_hash": None,
                 "suppressed_downstream_routes": suppressed,
+                "suppressed_entry_routes": [],
                 "top_score": top_score,
                 "reason": (
                     "canonical entry runtime precedes automatic downstream lifecycle transition"
                 ),
+                "precedence_reason": "UNBOUND_CANONICAL_ENTRY_PRECEDENCE",
+                "clause_role_interpretation_reused": True,
                 "platform_core_authority": True,
                 "human_interface_authority": False,
             }
@@ -835,12 +883,32 @@ def _apply_lifecycle_precedence(
         "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
         "precedence_applied": False,
         "canonical_entry_runtime": None,
+        "selected_lifecycle_runtime": selected.get("service_identifier"),
+        "lifecycle_stage": None,
+        "upstream_plan_hash": upstream_plan_hash,
         "suppressed_downstream_routes": [],
+        "suppressed_entry_routes": [],
         "top_score": top_score,
         "reason": "no tied entry/downstream lifecycle relationship detected",
+        "precedence_reason": "NO_LIFECYCLE_TIE",
+        "clause_role_interpretation_reused": True,
         "platform_core_authority": True,
         "human_interface_authority": False,
     }
+
+
+def _valid_upstream_development_plan(
+    artifact: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if not isinstance(artifact, dict):
+        return None
+    try:
+        plan = validate_platform_development_composition_plan(artifact)
+    except FailClosedRuntimeError:
+        return None
+    if plan.get("plan_status") == DEVELOPMENT_COMPOSITION_PLAN_FAILED_CLOSED:
+        return None
+    return plan
 
 
 def _route_status(
@@ -858,7 +926,10 @@ def _route_status(
         if int(candidate["score"]) == top_score
     ]
     precedence = lifecycle_precedence if isinstance(lifecycle_precedence, dict) else {}
-    suppressed = set(precedence.get("suppressed_downstream_routes") or [])
+    suppressed = {
+        *(precedence.get("suppressed_downstream_routes") or []),
+        *(precedence.get("suppressed_entry_routes") or []),
+    }
     tied = [
         candidate
         for candidate in tied
