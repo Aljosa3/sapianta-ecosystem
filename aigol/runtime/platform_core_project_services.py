@@ -227,25 +227,31 @@ def prepare_unified_human_interface_project_context(
             session_root=session_root,
             created_at=created_at,
         )
+        effective_message = str(
+            development_intent.get("clarification_resolved_query")
+            if development_intent.get("query_class_continuity_applicable") is True
+            else message
+        )
     else:
         development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
+        effective_message = message
     goal_mapping = (
         development_intent.get("goal_mapping")
         if isinstance(development_intent.get("goal_mapping"), dict)
-        else goal_mapping_from_workspace(message=message, workspace_state=prior_state)
+        else goal_mapping_from_workspace(message=effective_message, workspace_state=prior_state)
     )
     knowledge_reuse = (
         goal_mapping.get("contextual_task_mapping")
         if isinstance(goal_mapping, dict) and isinstance(goal_mapping.get("contextual_task_mapping"), dict)
         else project_knowledge_context_from_workspace(
-            message=message,
+            message=effective_message,
             workspace_state=prior_state,
             goal_target="general_project_goal",
-            governed_request=message,
+            governed_request=effective_message,
         )
     )
     project_objective = infer_platform_project_objective(
-        request=message,
+        request=effective_message,
         development_intent=development_intent,
         workspace_state=prior_state,
         project_guidance=guidance,
@@ -277,7 +283,7 @@ def prepare_unified_human_interface_project_context(
         development_intent["project_objective_work_type_bound"] = True
     development_intent["artifact_hash"] = replay_hash(development_intent)
     conversation_experience = human_conversation_experience_from_resolution(
-        message=message,
+        message=effective_message,
         guidance=guidance,
         knowledge_reuse=knowledge_reuse,
         development_intent=development_intent,
@@ -290,7 +296,7 @@ def prepare_unified_human_interface_project_context(
     read_only_work_result = None
     if development_intent.get("read_only_work_binding_admissible") is True:
         read_only_work_result = run_governed_read_only_work_binding(
-            message=message,
+            message=effective_message,
             workspace_state=prior_state,
             development_intent=development_intent,
             created_at=created_at,
@@ -442,6 +448,48 @@ def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None
     }
 
 
+def clarification_explicitly_changes_query_intent(reply: str) -> bool:
+    """Return whether a clarification explicitly replaces the original intent."""
+
+    lowered = " ".join(require_string(reply, "reply").lower().split())
+    return any(
+        marker in lowered
+        for marker in (
+            "instead,",
+            "instead ",
+            "change the request to",
+            "change my request to",
+            "replace the original request",
+            "replace my original request",
+            "new request:",
+            "ignore the original request",
+        )
+    )
+
+
+def canonical_query_identity(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None,
+    created_at: str,
+) -> dict[str, str]:
+    """Resolve replay-visible query identity through the existing router."""
+
+    from aigol.runtime.platform_query_router import route_platform_query
+
+    response = route_platform_query(
+        query=require_string(query, "query"),
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+    return {
+        "query_class": require_string(response.get("selected_query_class"), "selected_query_class"),
+        "selected_service": require_string(response.get("selected_service"), "selected_service"),
+        "route_score": str(int(response.get("selected_route_score") or 0)),
+        "router_response_hash": require_string(response.get("artifact_hash"), "artifact_hash"),
+    }
+
+
 def resolve_uhi_clarification_continuity(
     *,
     message: str,
@@ -469,16 +517,73 @@ def resolve_uhi_clarification_continuity(
         satisfaction=satisfaction,
         question_bindings=question_bindings,
     )
+    original_query = require_string(
+        active_clarification_state.get("original_message"),
+        "active_clarification_state.original_message",
+    )
+    explicit_intent_change = clarification_explicitly_changes_query_intent(reply)
+    resolved_query = (
+        reply
+        if explicit_intent_change
+        else clarification_resolved_development_request(
+            reply=reply,
+            active_clarification_state=active_clarification_state,
+        )
+    )
+    original_query_identity = canonical_query_identity(
+        query=original_query,
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+    clarification_query_identity = canonical_query_identity(
+        query=reply,
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+    final_query_identity = canonical_query_identity(
+        query=resolved_query,
+        workspace_state=workspace_state,
+        created_at=created_at,
+    )
+    original_query_class = original_query_identity["query_class"]
+    final_query_class = final_query_identity["query_class"]
+    query_class_continuity_applicable = (
+        int(original_query_identity["route_score"]) == 100
+        and original_query_class
+        in {
+            "ARCHITECTURAL_META_AUDIT",
+            "CAPABILITY_COMPOSITION_DISCOVERY",
+            "DEVELOPMENT_COMPOSITION_PLAN",
+            "DURABLE_GOVERNED_WORK",
+            "GENERATION_CERTIFICATION",
+            "PROJECT_OBJECTIVE_INFERENCE",
+        }
+    )
+    query_class_continuity_preserved = (
+        query_class_continuity_applicable
+        and not explicit_intent_change
+        and final_query_class == original_query_class
+    )
+    query_class_continuity_decision = (
+        "QUERY_CLASS_RECLASSIFIED_EXPLICIT_INTENT_CHANGE"
+        if query_class_continuity_applicable and explicit_intent_change
+        else (
+            "ORIGINAL_QUERY_CLASS_PRESERVED"
+            if query_class_continuity_preserved
+            else (
+                "QUERY_CLASS_CONTINUITY_FAILED_CLOSED"
+                if query_class_continuity_applicable
+                else "QUERY_CLASS_CONTINUITY_NOT_APPLICABLE"
+            )
+        )
+    )
     if (
         reply_resolution.get("summary_admissible") is not True
         and satisfaction["clarification_satisfied"] is True
     ):
         resolution_source = "ORIGINAL_REQUEST_WITH_BOUND_CLARIFICATION_REPLY"
         reply_resolution = resolve_development_intent(
-            message=clarification_resolved_development_request(
-                reply=reply,
-                active_clarification_state=active_clarification_state,
-            ),
+            message=resolved_query,
             workspace_state=workspace_state,
         )
     reply_resolution = preserve_active_clarification_work_type(
@@ -501,6 +606,28 @@ def resolve_uhi_clarification_continuity(
         "reply_hash": replay_hash(reply),
         "reply_bound_to_active_clarification": True,
         "reply_resolution_source": resolution_source,
+        "original_query_hash": replay_hash(original_query),
+        "clarification_query_hash": replay_hash(reply),
+        "final_query_hash": replay_hash(resolved_query),
+        "original_query_class": original_query_class,
+        "clarification_query_class": clarification_query_identity["query_class"],
+        "final_query_class": final_query_class,
+        "original_selected_composition_capability": original_query_identity[
+            "selected_service"
+        ],
+        "clarification_selected_composition_capability": clarification_query_identity[
+            "selected_service"
+        ],
+        "final_selected_composition_capability": final_query_identity[
+            "selected_service"
+        ],
+        "query_class_continuity_preserved": query_class_continuity_preserved,
+        "query_class_continuity_applicable": query_class_continuity_applicable,
+        "clarification_explicit_intent_change": explicit_intent_change,
+        "query_class_continuity_decision": query_class_continuity_decision,
+        "query_class_continuity_failed_closed": (
+            query_class_continuity_decision == "QUERY_CLASS_CONTINUITY_FAILED_CLOSED"
+        ),
         "clarification_question_bindings": question_bindings,
         "clarification_satisfaction_verification": deepcopy(satisfaction),
         "clarification_completion_transition": deepcopy(completion),
@@ -582,6 +709,15 @@ def resolve_uhi_clarification_continuity(
         {
             "clarification_reply_bound": True,
             "clarification_reply_resolution_source": resolution_source,
+            "clarification_resolved_query": resolved_query,
+            "clarification_resolved_query_hash": replay_hash(resolved_query),
+            "original_query_class": original_query_class,
+            "clarification_query_class": clarification_query_identity["query_class"],
+            "final_query_class": final_query_class,
+            "query_class_continuity_preserved": query_class_continuity_preserved,
+            "query_class_continuity_applicable": query_class_continuity_applicable,
+            "clarification_explicit_intent_change": explicit_intent_change,
+            "query_class_continuity_decision": query_class_continuity_decision,
             "clarification_question_bindings": question_bindings,
             "clarification_satisfaction_verification": deepcopy(satisfaction),
             "clarification_completion_transition": deepcopy(completion),
@@ -621,6 +757,23 @@ def resolve_uhi_clarification_continuity(
             "platform_core_resolves_clarification": True,
         }
     )
+    if query_class_continuity_decision == "QUERY_CLASS_CONTINUITY_FAILED_CLOSED":
+        enriched_resolution.update(
+            {
+                "clarification_required": True,
+                "clarification_reason": (
+                    "clarification changed canonical query class without an explicit "
+                    "intent-change declaration"
+                ),
+                "summary_admissible": False,
+                "runtime_binding_admissible": False,
+                "read_only_work_binding_admissible": False,
+                "read_only_work_binding_status": GOVERNED_READ_ONLY_WORK_NOT_REQUIRED,
+                "read_only_work_result_required": False,
+                "requires_human_approval": False,
+                "query_class_continuity_failed_closed": True,
+            }
+        )
     enriched_resolution["artifact_hash"] = replay_hash(enriched_resolution)
     return enriched_resolution, continuity_artifact
 
