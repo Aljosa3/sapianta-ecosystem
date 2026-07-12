@@ -63,6 +63,10 @@ DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNT
 PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 DURABLE_GOVERNED_WORK_ROUTE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 
+LIFECYCLE_ROUTE_PRECEDENCE = {
+    DEVELOPMENT_COMPOSITION_PLAN_ROUTE: (DURABLE_GOVERNED_WORK_ROUTE,),
+}
+
 
 ROUTER_BOUNDARY_FLAGS = {
     "platform_core_authority": True,
@@ -307,7 +311,15 @@ def route_platform_query(
         ),
     )
     selected = _select_route(candidates)
-    route_status = _route_status(selected, candidates)
+    selected, lifecycle_precedence = _apply_lifecycle_precedence(
+        selected=selected,
+        candidates=candidates,
+    )
+    route_status = _route_status(
+        selected,
+        candidates,
+        lifecycle_precedence=lifecycle_precedence,
+    )
     selected_descriptor = _descriptor_for_service(descriptors, selected["service_identifier"])
     if route_status == ROUTE_READY:
         service_response = _invoke_route(
@@ -348,6 +360,11 @@ def route_platform_query(
         "candidate_routes": candidates,
         "required_evidence_missing": _required_evidence_missing(selected, route_status),
         "ambiguity_detected": route_status == ROUTE_CLARIFICATION_REQUIRED,
+        "lifecycle_precedence": lifecycle_precedence,
+        "lifecycle_precedence_applied": lifecycle_precedence["precedence_applied"],
+        "suppressed_downstream_lifecycle_routes": lifecycle_precedence[
+            "suppressed_downstream_routes"
+        ],
         "classification_evidence": {
             "platform_knowledge_query_classification": knowledge_probe["query_classification"],
             "platform_knowledge_artifact_hash": knowledge_probe["artifact_hash"],
@@ -782,7 +799,55 @@ def _select_route(candidates: list[dict[str, Any]]) -> dict[str, Any]:
     return deepcopy(candidates[0])
 
 
-def _route_status(selected: dict[str, Any], candidates: list[dict[str, Any]]) -> str:
+def _apply_lifecycle_precedence(
+    *,
+    selected: dict[str, Any],
+    candidates: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Prefer an entry runtime over its automatic downstream lifecycle stages."""
+
+    top_score = int(selected.get("score") or 0)
+    tied_by_service = {
+        str(candidate.get("service_identifier")): candidate
+        for candidate in candidates
+        if int(candidate.get("score") or 0) == top_score
+    }
+    for entry_runtime, downstream_routes in LIFECYCLE_ROUTE_PRECEDENCE.items():
+        entry_candidate = tied_by_service.get(entry_runtime)
+        suppressed = [
+            route for route in downstream_routes if route in tied_by_service
+        ]
+        if isinstance(entry_candidate, dict) and suppressed:
+            return deepcopy(entry_candidate), {
+                "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
+                "precedence_applied": True,
+                "canonical_entry_runtime": entry_runtime,
+                "suppressed_downstream_routes": suppressed,
+                "top_score": top_score,
+                "reason": (
+                    "canonical entry runtime precedes automatic downstream lifecycle transition"
+                ),
+                "platform_core_authority": True,
+                "human_interface_authority": False,
+            }
+    return deepcopy(selected), {
+        "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
+        "precedence_applied": False,
+        "canonical_entry_runtime": None,
+        "suppressed_downstream_routes": [],
+        "top_score": top_score,
+        "reason": "no tied entry/downstream lifecycle relationship detected",
+        "platform_core_authority": True,
+        "human_interface_authority": False,
+    }
+
+
+def _route_status(
+    selected: dict[str, Any],
+    candidates: list[dict[str, Any]],
+    *,
+    lifecycle_precedence: dict[str, Any] | None = None,
+) -> str:
     top_score = int(selected["score"])
     if top_score <= 0:
         return ROUTE_CLARIFICATION_REQUIRED
@@ -790,6 +855,13 @@ def _route_status(selected: dict[str, Any], candidates: list[dict[str, Any]]) ->
         candidate
         for candidate in candidates
         if int(candidate["score"]) == top_score
+    ]
+    precedence = lifecycle_precedence if isinstance(lifecycle_precedence, dict) else {}
+    suppressed = set(precedence.get("suppressed_downstream_routes") or [])
+    tied = [
+        candidate
+        for candidate in tied
+        if str(candidate.get("service_identifier")) not in suppressed
     ]
     if len(tied) > 1:
         return ROUTE_CLARIFICATION_REQUIRED

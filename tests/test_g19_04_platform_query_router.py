@@ -13,6 +13,7 @@ from aigol.runtime.platform_capability_certification_registry import (
 from aigol.runtime.platform_query_router import (
     CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
     DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
+    DURABLE_GOVERNED_WORK_ROUTE,
     GENERATION_CERTIFICATION_ROUTE,
     GOVERNED_DEVELOPMENT_ROUTE,
     PLATFORM_KNOWLEDGE_ROUTE,
@@ -127,6 +128,7 @@ def test_route_descriptors_are_reusable_platform_core_metadata() -> None:
     assert services == {
         CAPABILITY_COMPOSITION_COVERAGE_ROUTE,
         DEVELOPMENT_COMPOSITION_PLAN_ROUTE,
+        DURABLE_GOVERNED_WORK_ROUTE,
         GENERATION_CERTIFICATION_ROUTE,
         PLATFORM_KNOWLEDGE_ROUTE,
         PROJECT_OBJECTIVE_INFERENCE_ROUTE,
