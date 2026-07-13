@@ -479,6 +479,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_PLATFORM_VALIDATION_PLANNING",
         certification_version="G27-07",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_VALIDATION_PLAN_TO_CANDIDATE_COMPOSITION",
+        capability_owner="PLATFORM_CORE_VALIDATION_PLANNING",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G27-09",
+        certification_evidence=(
+            "docs/governance/G27_09_PLATFORM_VALIDATION_PLAN_TO_CANDIDATE_COMPOSITION.md",
+        ),
+        certification_date="2026-07-13",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_validation_plan_candidate_composition_runtime",
+        verification_type="DETERMINISTIC_VALIDATION_PLAN_TO_CANDIDATE_COMPOSITION",
+        certification_version="G27-09",
+    ),
 )
 
 
