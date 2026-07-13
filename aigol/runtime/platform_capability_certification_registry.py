@@ -434,6 +434,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_PLAN_TO_DURABLE_GOVERNED_WORK_BINDING",
         certification_version="G21-05",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="PLATFORM_CHANGE_NORMALIZATION",
+        capability_owner="PLATFORM_CORE_CHANGE_EVIDENCE",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G27-04",
+        certification_evidence=(
+            "docs/governance/G27_04_PLATFORM_CHANGE_NORMALIZATION_CAPABILITY.md",
+        ),
+        certification_date="2026-07-13",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.platform_change_normalization_runtime",
+        verification_type="DETERMINISTIC_CHANGE_ARTIFACT_NORMALIZATION",
+        certification_version="G27-04",
+    ),
 )
 
 
