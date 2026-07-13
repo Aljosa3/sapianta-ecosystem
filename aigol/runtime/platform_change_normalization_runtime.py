@@ -130,6 +130,16 @@ def reconstruct_platform_change_normalization_replay(replay_dir: str | Path) -> 
     }
 
 
+def validate_normalized_change_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
+    """Validate one canonical normalized change artifact for downstream consumers."""
+
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("normalized change artifact must be a JSON object")
+    candidate = deepcopy(artifact)
+    _verify_normalized_artifact(candidate)
+    return candidate
+
+
 def _validated_source(source_artifact: Any, source_reference: str, source_hash: str) -> dict[str, Any]:
     if not isinstance(source_artifact, dict):
         raise FailClosedRuntimeError("change normalization failed closed: source artifact must be a JSON object")
@@ -379,8 +389,54 @@ def _verify_normalized_artifact(artifact: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("normalized change hash mismatch")
     if artifact.get("replay_visible") is not True or artifact.get("read_only") is not True:
         raise FailClosedRuntimeError("normalized change artifact must be replay-visible and read-only")
+    if artifact.get("non_authoritative") is not True:
+        raise FailClosedRuntimeError("normalized change artifact must be non-authoritative")
     if any(value is not False for value in artifact.get("authority_flags", {}).values()):
         raise FailClosedRuntimeError("normalized change artifact cannot grant authority")
+    status = artifact.get("normalization_status")
+    if status not in {CHANGE_NORMALIZED, CHANGE_NORMALIZED_WITH_UNRESOLVED_MAPPINGS, FAILED_CLOSED}:
+        raise FailClosedRuntimeError("normalized change artifact status is invalid")
+    entries = artifact.get("change_entries")
+    unresolved = artifact.get("unresolved_mappings")
+    if not isinstance(entries, list) or not isinstance(unresolved, list):
+        raise FailClosedRuntimeError("normalized change artifact collections are invalid")
+    if artifact.get("change_entry_count") != len(entries):
+        raise FailClosedRuntimeError("normalized change artifact entry count mismatch")
+    if artifact.get("unresolved_mapping_count") != len(unresolved):
+        raise FailClosedRuntimeError("normalized change artifact unresolved count mismatch")
+    if status == FAILED_CLOSED and entries:
+        raise FailClosedRuntimeError("failed normalized change artifact cannot contain entries")
+    if status != FAILED_CLOSED and not entries:
+        raise FailClosedRuntimeError("successful normalized change artifact requires entries")
+    expected_unresolved = []
+    seen_paths: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise FailClosedRuntimeError("normalized change entry must be a JSON object")
+        _verify_hash(entry, "change_entry_hash", "normalized change entry hash mismatch")
+        path = _normalize_path(entry.get("target_path"))
+        if path in seen_paths:
+            raise FailClosedRuntimeError("normalized change artifact contains duplicate target path")
+        seen_paths.add(path)
+        if entry.get("operation_type") not in set(OPERATION_TYPES.values()):
+            raise FailClosedRuntimeError("normalized change entry operation is invalid")
+        _normalize_artifact_type(entry.get("artifact_type"))
+        _optional_hash(entry.get("before_hash"), "before_hash")
+        _optional_hash(entry.get("after_hash"), "after_hash")
+        entry_unresolved = entry.get("unresolved_mappings")
+        if not isinstance(entry_unresolved, list):
+            raise FailClosedRuntimeError("normalized change entry unresolved mappings are invalid")
+        expected_unresolved.extend(deepcopy(entry_unresolved))
+    expected_unresolved = sorted(
+        expected_unresolved,
+        key=lambda item: (str(item.get("target_path")), str(item.get("field")), str(item.get("reason"))),
+    )
+    if unresolved != expected_unresolved:
+        raise FailClosedRuntimeError("normalized change artifact unresolved mappings mismatch")
+    if status == CHANGE_NORMALIZED and unresolved:
+        raise FailClosedRuntimeError("normalized change status omits unresolved mappings")
+    if status == CHANGE_NORMALIZED_WITH_UNRESOLVED_MAPPINGS and not unresolved:
+        raise FailClosedRuntimeError("normalized change unresolved status requires mappings")
 
 
 def _normalized_change_hash(artifact: dict[str, Any]) -> str:
