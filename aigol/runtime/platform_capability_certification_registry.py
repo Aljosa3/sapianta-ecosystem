@@ -511,6 +511,23 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_VALIDATION_COMPLETION_CERTIFICATION_HANDOFF",
         certification_version="G27-11",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="CERTIFIED_CAPABILITY_INVOCATION_BINDING",
+        capability_owner="PLATFORM_CORE_CAPABILITY_DELEGATION",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G28-02",
+        certification_evidence=(
+            "docs/governance/G28_02_CERTIFIED_CAPABILITY_INVOCATION_BINDING.md",
+        ),
+        certification_date="2026-07-13",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.certified_capability_invocation_binding_runtime"
+        ),
+        verification_type="DETERMINISTIC_ALLOWLISTED_CAPABILITY_INVOCATION_BINDING",
+        certification_version="G28-02",
+    ),
 )
 
 
