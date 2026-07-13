@@ -494,6 +494,23 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_VALIDATION_PLAN_TO_CANDIDATE_COMPOSITION",
         certification_version="G27-09",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="VALIDATION_COMPLETION_REPLAY_CERTIFICATION_HANDOFF",
+        capability_owner="PLATFORM_CORE_REPLAY_LINEAGE",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G27-11",
+        certification_evidence=(
+            "docs/governance/G27_11_VALIDATION_COMPLETION_REPLAY_CERTIFICATION_HANDOFF.md",
+        ),
+        certification_date="2026-07-13",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.validation_completion_replay_certification_handoff_runtime"
+        ),
+        verification_type="DETERMINISTIC_VALIDATION_COMPLETION_CERTIFICATION_HANDOFF",
+        certification_version="G27-11",
+    ),
 )
 
 
