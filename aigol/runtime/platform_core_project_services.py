@@ -201,6 +201,7 @@ def prepare_unified_human_interface_project_context(
     runtime_root: str | Path,
     workspace: str | Path,
     created_at: str,
+    explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
@@ -301,6 +302,21 @@ def prepare_unified_human_interface_project_context(
             development_intent=development_intent,
             created_at=created_at,
             durable_work_root=session_root / "durable_governed_work",
+            session_id=session_id,
+            project_objective_artifact=project_objective,
+            candidate_discovery_evidence=(
+                development_intent.get("candidate_capability_discovery")
+                if isinstance(
+                    development_intent.get("candidate_capability_discovery"), dict
+                )
+                else None
+            ),
+            explicit_canonical_artifacts=explicit_canonical_artifacts,
+            semantic_route_root=(
+                session_root
+                / "semantic_capability_route"
+                / f"{next_index(session_root / 'semantic_capability_route', '*'):03d}_route"
+            ),
         )
         development_intent = development_intent_with_read_only_work_result(
             development_intent=development_intent,
@@ -331,6 +347,14 @@ def prepare_unified_human_interface_project_context(
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "governed_read_only_work_result": read_only_work_result,
+        "semantic_capability_runtime_route": (
+            deepcopy(read_only_work_result.get("semantic_capability_runtime_route"))
+            if isinstance(read_only_work_result, dict)
+            and isinstance(
+                read_only_work_result.get("semantic_capability_runtime_route"), dict
+            )
+            else None
+        ),
         "durable_governed_work_artifact": (
             deepcopy(read_only_work_result.get("durable_governed_work_artifact"))
             if isinstance(read_only_work_result, dict)
@@ -801,6 +825,11 @@ def run_governed_read_only_work_binding(
     development_intent: dict[str, Any],
     created_at: str,
     durable_work_root: str | Path | None = None,
+    session_id: str = "PLATFORM-CORE-READ-ONLY-SESSION",
+    project_objective_artifact: dict[str, Any] | None = None,
+    candidate_discovery_evidence: dict[str, Any] | None = None,
+    explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    semantic_route_root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Execute non-mutating work through existing read-only Platform Core services."""
 
@@ -818,6 +847,40 @@ def run_governed_read_only_work_binding(
         result["artifact_hash"] = replay_hash(result)
         return result
     try:
+        semantic_route = None
+        if isinstance(project_objective_artifact, dict):
+            from aigol.runtime.project_context_semantic_capability_route import (
+                ROUTE_NOT_ELIGIBLE,
+                run_project_context_semantic_capability_route,
+            )
+
+            semantic_root = (
+                Path(semantic_route_root)
+                if semantic_route_root is not None
+                else Path(durable_work_root or ".runtime/platform_core")
+                / "semantic_capability_route"
+            )
+            semantic_route = run_project_context_semantic_capability_route(
+                session_id=session_id,
+                message=prompt,
+                project_objective_artifact=project_objective_artifact,
+                project_objective_reference=str(
+                    project_objective_artifact.get("artifact_hash")
+                ),
+                explicit_canonical_artifacts=explicit_canonical_artifacts,
+                created_at=created_at,
+                replay_dir=semantic_root,
+                workspace_state=workspace_state,
+                candidate_discovery_evidence=candidate_discovery_evidence,
+            )
+            if semantic_route.get("route_status") != ROUTE_NOT_ELIGIBLE:
+                return _read_only_result_from_semantic_capability_route(
+                    message=prompt,
+                    development_intent=intent,
+                    created_at=created_at,
+                    semantic_route=semantic_route,
+                )
+
         from aigol.runtime.platform_presentation_layer import (
             present_platform_response,
             validate_platform_presentation,
@@ -891,6 +954,7 @@ def run_governed_read_only_work_binding(
             "presentation_answer": deepcopy(presentation.get("answer")),
             "presentation_recommended_next_step": presentation.get("recommended_next_step"),
             "durable_governed_work_artifact": deepcopy(durable_work),
+            "semantic_capability_runtime_route": deepcopy(semantic_route),
             "durable_governed_work_artifact_hash": (
                 durable_work.get("artifact_hash") if isinstance(durable_work, dict) else None
             ),
@@ -938,6 +1002,122 @@ def run_governed_read_only_work_binding(
         return result
 
 
+def _read_only_result_from_semantic_capability_route(
+    *,
+    message: str,
+    development_intent: dict[str, Any],
+    created_at: str,
+    semantic_route: dict[str, Any],
+) -> dict[str, Any]:
+    """Project the bounded G29-06 route into the existing read-only contract."""
+
+    route = deepcopy(semantic_route)
+    route_status = str(route.get("route_status") or "")
+    clarification = (
+        route.get("clarification_artifact")
+        if isinstance(route.get("clarification_artifact"), dict)
+        else None
+    )
+    presentation = (
+        route.get("canonical_platform_presentation")
+        if isinstance(route.get("canonical_platform_presentation"), dict)
+        else None
+    )
+    clarification_required = route_status == (
+        "SEMANTIC_CAPABILITY_ROUTE_CLARIFICATION_REQUIRED"
+    )
+    completed = route_status == "SEMANTIC_CAPABILITY_ROUTE_COMPLETED"
+    failed_closed = route_status == "SEMANTIC_CAPABILITY_ROUTE_FAILED_CLOSED"
+    work_type = str(
+        development_intent.get("work_type")
+        or development_intent.get("requested_work_type")
+        or ""
+    )
+    if clarification_required:
+        result_status = "GOVERNED_READ_ONLY_CLARIFICATION_REQUIRED"
+        presentation_status = "CLARIFICATION_REQUIRED"
+        summary = "Platform Core requires one clarification before capability invocation."
+        next_step = "Answer the Platform Core clarification question."
+    elif completed:
+        result_status = "GOVERNED_READ_ONLY_RESULT_READY"
+        presentation_status = presentation.get("presentation_status") if presentation else None
+        summary = presentation.get("summary") if presentation else None
+        next_step = presentation.get("recommended_next_step") if presentation else None
+    else:
+        result_status = "GOVERNED_READ_ONLY_WORK_FAILED_CLOSED"
+        presentation_status = "FAILED_CLOSED"
+        summary = "Semantic capability invocation failed closed."
+        next_step = "Review the replay-visible failure evidence before retrying."
+    result = {
+        "artifact_type": "PLATFORM_CORE_GOVERNED_READ_ONLY_WORK_RESULT_V1",
+        "runtime_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+        "binding_status": (
+            GOVERNED_READ_ONLY_WORK_FAILED_CLOSED if failed_closed else GOVERNED_READ_ONLY_WORK_BOUND
+        ),
+        "created_at": require_string(created_at, "created_at"),
+        "original_message": require_string(message, "message"),
+        "original_message_hash": replay_hash(message),
+        "requested_work_type": work_type,
+        "work_type": work_type,
+        "prepared_work_type": str(development_intent.get("prepared_work_type") or ""),
+        "read_only_work_binding_admissible": True,
+        "read_only_work_result_status": result_status,
+        "selected_read_only_service": (
+            "CANONICAL_PROJECT_CONTEXT_TO_SEMANTIC_CAPABILITY_RUNTIME_ROUTE_BINDING"
+        ),
+        "selected_query_class": "SEMANTIC_CAPABILITY_INVOCATION",
+        "platform_query_router_response": None,
+        "platform_query_router_response_hash": None,
+        "semantic_capability_runtime_route": route,
+        "semantic_capability_runtime_route_hash": route.get("artifact_hash"),
+        "selected_capability_identifier": route.get("selected_capability_identifier"),
+        "canonical_presentation": deepcopy(presentation),
+        "canonical_presentation_hash": (
+            presentation.get("presentation_hash") if presentation else None
+        ),
+        "presentation_artifact_type": presentation.get("artifact_type") if presentation else None,
+        "presentation_status": presentation_status,
+        "presentation_summary": summary,
+        "presentation_answer": deepcopy(presentation.get("answer")) if presentation else None,
+        "presentation_recommended_next_step": next_step,
+        "clarification_required": clarification_required,
+        "clarification_artifact": deepcopy(clarification),
+        "clarification_questions": (
+            deepcopy(clarification.get("clarification_questions", []))
+            if clarification
+            else []
+        ),
+        "failure_reason": route.get("failure_reason"),
+        "durable_governed_work_artifact": None,
+        "durable_governed_work_artifact_hash": None,
+        "durable_governed_work_id": None,
+        "durable_governed_work_status": None,
+        "durable_governed_work_ready_for_review": False,
+        "manual_copy_paste_required": False,
+        "reusable_platform_core_components": [
+            "CANONICAL_SEMANTIC_CAPABILITY_SELECTION_BINDING",
+            "PLATFORM_KNOWLEDGE_RUNTIME",
+            "CANONICAL_SEMANTIC_SELECTION_TO_CERTIFIED_CAPABILITY_INVOCATION_LIFECYCLE_BINDING",
+            "CERTIFIED_CAPABILITY_INVOCATION_BINDING",
+            "CANONICAL_PLATFORM_PRESENTATION_LAYER",
+        ],
+        "human_approval_required": False,
+        "human_interface_authority": False,
+        "platform_core_authority": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "runtime_implementation_invoked": False,
+        "implementation_summary_created": False,
+        "read_only": True,
+        "replay_visible": True,
+    }
+    result["artifact_hash"] = replay_hash(result)
+    return result
+
+
 def development_intent_with_read_only_work_result(
     *,
     development_intent: dict[str, Any],
@@ -969,15 +1149,27 @@ def human_conversation_experience_with_read_only_result(
 
     conversation = deepcopy(conversation_experience)
     result = read_only_work_result if isinstance(read_only_work_result, dict) else {}
+    clarification_required = result.get("clarification_required") is True
     conversation.update(
         {
-            "response_mode": "READ_ONLY_RESULT",
-            "user_headline": f"I completed governed {result.get('work_type')} read-only work.",
+            "response_mode": "CLARIFICATION" if clarification_required else "READ_ONLY_RESULT",
+            "user_headline": (
+                "Platform Core requires clarification before certified capability invocation."
+                if clarification_required
+                else f"I completed governed {result.get('work_type')} read-only work."
+            ),
             "user_explanation": (
-                "Platform Core routed the non-mutating request through read-only services "
+                "Platform Core did not invoke a capability because exact semantic or canonical "
+                "input evidence remains unresolved."
+                if clarification_required
+                else "Platform Core routed the non-mutating request through read-only services "
                 "and produced a canonical presentation artifact."
             ),
-            "recommended_next_user_action": "Review the governed read-only result.",
+            "recommended_next_user_action": (
+                "Answer the deterministic Platform Core clarification question."
+                if clarification_required
+                else "Review the governed read-only result."
+            ),
             "governed_read_only_work_result": deepcopy(result),
             "governed_read_only_work_result_hash": result.get("artifact_hash"),
             "read_only_work_binding_status": result.get("binding_status"),
@@ -989,6 +1181,11 @@ def human_conversation_experience_with_read_only_result(
             "read_only_work_repository_mutated": result.get("repository_mutated") is True,
         }
     )
+    if clarification_required:
+        conversation["clarification_required"] = True
+        conversation["clarification_questions"] = deepcopy(
+            result.get("clarification_questions") or []
+        )
     conversation["artifact_hash"] = replay_hash(conversation)
     return conversation
 

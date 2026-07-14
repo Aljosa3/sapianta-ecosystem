@@ -50,6 +50,7 @@ def run_human_interface_runtime_entry(
     governed_runtime_runner: GovernedRuntimeRunner,
     presentation: dict[str, Any] | None = None,
     operator_context: str = "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+    explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Enter the certified runtime from any Unified Human Interface."""
 
@@ -69,6 +70,7 @@ def run_human_interface_runtime_entry(
             runtime_root=root,
             workspace=workspace_text,
             created_at=created,
+            explicit_canonical_artifacts=explicit_canonical_artifacts,
         )
         for request in requests
     ]

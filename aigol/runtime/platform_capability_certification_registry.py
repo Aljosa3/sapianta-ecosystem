@@ -564,6 +564,27 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G29-04",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier=(
+            "CANONICAL_PROJECT_CONTEXT_TO_SEMANTIC_CAPABILITY_RUNTIME_ROUTE_BINDING"
+        ),
+        capability_owner="PLATFORM_CORE_SEMANTIC_CAPABILITY_RUNTIME_ROUTING",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G29-06",
+        certification_evidence=(
+            "docs/governance/G29_06_CANONICAL_PROJECT_CONTEXT_TO_SEMANTIC_CAPABILITY_RUNTIME_ROUTE_BINDING.md",
+        ),
+        certification_date="2026-07-14",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.project_context_semantic_capability_route"
+        ),
+        verification_type=(
+            "DETERMINISTIC_PROJECT_CONTEXT_TO_SEMANTIC_CAPABILITY_RUNTIME_ROUTE_BINDING"
+        ),
+        certification_version="G29-06",
+    ),
 )
 
 
