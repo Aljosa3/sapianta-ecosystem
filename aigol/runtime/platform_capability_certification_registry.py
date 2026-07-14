@@ -528,6 +528,21 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         verification_type="DETERMINISTIC_ALLOWLISTED_CAPABILITY_INVOCATION_BINDING",
         certification_version="G28-02",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="CANONICAL_SEMANTIC_CAPABILITY_SELECTION_BINDING",
+        capability_owner="PLATFORM_CORE_SEMANTIC_CAPABILITY_SELECTION",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G29-02",
+        certification_evidence=(
+            "docs/governance/G29_02_CANONICAL_SEMANTIC_CAPABILITY_SELECTION_BINDING.md",
+        ),
+        certification_date="2026-07-13",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner="aigol.runtime.semantic_capability_selection_runtime",
+        verification_type="DETERMINISTIC_SEMANTIC_CAPABILITY_SELECTION_BINDING",
+        certification_version="G29-02",
+    ),
 )
 
 

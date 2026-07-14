@@ -237,6 +237,101 @@ def certified_capability_invocation_adapters() -> dict[str, dict[str, Any]]:
     }
 
 
+_SEMANTIC_DESCRIPTORS = MappingProxyType(
+    {
+        PLATFORM_CHANGE_NORMALIZATION: {
+            "capability_identifier": PLATFORM_CHANGE_NORMALIZATION,
+            "objective_terms": (
+                "normalize platform change",
+                "normalize repository change",
+                "canonical change artifact",
+                "normalized change",
+            ),
+            "supported_actions": ("normalize", "canonicalize", "structure", "prepare"),
+            "supported_subjects": (
+                "implementation change",
+                "platform change",
+                "repository change",
+                "implementation manifest",
+                "mutation proposal",
+            ),
+            "expected_outcomes": ("normalized change", "canonical change evidence"),
+            "excluded_meanings": ("impact analysis", "analyze impact", "validation plan"),
+            "supported_work_types": ("AUDIT_ONLY", "ANALYSIS", "IMPLEMENTATION", "REVIEW"),
+            "required_semantic_slots": ("capability_action", "capability_subject", "input_artifact_family"),
+            "clarification_label": "normalize a described implementation change",
+        },
+        PLATFORM_CHANGE_IMPACT_ANALYSIS: {
+            "capability_identifier": PLATFORM_CHANGE_IMPACT_ANALYSIS,
+            "objective_terms": (
+                "platform change impact analysis",
+                "analyze platform change impact",
+                "repository change impact",
+                "change impact",
+            ),
+            "supported_actions": ("analyze", "analyse", "assess", "evaluate", "inspect"),
+            "supported_subjects": (
+                "normalized change",
+                "change impact",
+                "platform impact",
+                "repository impact",
+            ),
+            "expected_outcomes": ("impact analysis", "affected surfaces", "validation implications"),
+            "excluded_meanings": ("normalize change", "validation plan", "plan validation"),
+            "supported_work_types": ("AUDIT_ONLY", "ANALYSIS", "IMPLEMENTATION", "REVIEW"),
+            "required_semantic_slots": ("capability_action", "capability_subject", "input_artifact_family"),
+            "clarification_label": "analyze an existing normalized change",
+        },
+        PLATFORM_VALIDATION_PLANNING: {
+            "capability_identifier": PLATFORM_VALIDATION_PLANNING,
+            "objective_terms": (
+                "platform validation planning",
+                "create validation plan",
+                "plan platform validation",
+                "validation plan",
+            ),
+            "supported_actions": ("plan", "prepare", "compose", "create"),
+            "supported_subjects": (
+                "validation plan",
+                "platform validation",
+                "impact analysis",
+                "change impact artifact",
+            ),
+            "expected_outcomes": ("validation plan", "validation coverage", "validation requirements"),
+            "excluded_meanings": ("normalize change", "analyze impact", "analyse impact"),
+            "supported_work_types": ("AUDIT_ONLY", "ANALYSIS", "IMPLEMENTATION", "REVIEW"),
+            "required_semantic_slots": ("capability_action", "capability_subject", "input_artifact_family"),
+            "clarification_label": "create a validation plan from an existing impact analysis",
+        },
+    }
+)
+
+
+def certified_capability_semantic_descriptors() -> dict[str, dict[str, Any]]:
+    """Return immutable selection metadata for the explicit G28 adapter allowlist."""
+
+    descriptors: dict[str, dict[str, Any]] = {}
+    adapter_metadata = certified_capability_invocation_adapters()
+    for capability_id, source in sorted(_SEMANTIC_DESCRIPTORS.items()):
+        descriptor = {
+            **{
+                key: list(value) if isinstance(value, tuple) else deepcopy(value)
+                for key, value in source.items()
+            },
+            "accepted_canonical_input_artifact_types": list(
+                adapter_metadata[capability_id]["accepted_input_artifact_types"]
+            ),
+            "required_canonical_input_fields": list(
+                adapter_metadata[capability_id]["required_input_fields"]
+            ),
+            "semantic_descriptor_authority": "PLATFORM_CORE",
+            "human_interface_authority": False,
+        }
+        descriptor["semantic_descriptor_hash"] = replay_hash(descriptor)
+        descriptors[capability_id] = descriptor
+    return descriptors
+
+
 def invoke_certified_capability(
     *,
     invocation_id: str,
