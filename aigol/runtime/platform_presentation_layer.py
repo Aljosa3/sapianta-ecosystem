@@ -11,6 +11,11 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from aigol.runtime.certified_capability_invocation_binding_runtime import (
+    CERTIFIED_CAPABILITY_INVOCATION_COMPLETED,
+    CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1,
+    validate_certified_capability_invocation_result_artifact,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_query_router import PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1
 from aigol.runtime.transport.serialization import replay_hash
@@ -46,6 +51,7 @@ CAPABILITY_COMPOSITION_COVERAGE_SERVICE = "PLATFORM_CAPABILITY_COMPOSITION_COVER
 DEVELOPMENT_COMPOSITION_PLAN_SERVICE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME"
 PROJECT_OBJECTIVE_INFERENCE_SERVICE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 DURABLE_GOVERNED_WORK_SERVICE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
+CERTIFIED_CAPABILITY_INVOCATION_SERVICE = "CERTIFIED_CAPABILITY_INVOCATION_BINDING"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
 
 PRESENTATION_READY = "PRESENTATION_READY"
@@ -199,6 +205,11 @@ def _presentation_from_response(
         )
     if artifact_type == DURABLE_GOVERNED_WORK_RESPONSE_ARTIFACT_V1:
         return _durable_governed_work_presentation(
+            service_response,
+            router_response=router_response,
+        )
+    if artifact_type == CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1:
+        return _certified_capability_invocation_presentation(
             service_response,
             router_response=router_response,
         )
@@ -915,6 +926,75 @@ def _durable_governed_work_presentation(
     )
 
 
+def _certified_capability_invocation_presentation(
+    response: dict[str, Any],
+    *,
+    router_response: dict[str, Any] | None,
+) -> dict[str, Any]:
+    validated = validate_certified_capability_invocation_result_artifact(response)
+    completed = (
+        validated.get("invocation_status")
+        == CERTIFIED_CAPABILITY_INVOCATION_COMPLETED
+    )
+    status = PRESENTATION_READY if completed else PRESENTATION_FAILED_CLOSED
+    summary = (
+        "The selected certified Platform capability completed successfully."
+        if completed
+        else "The selected certified Platform capability invocation failed closed."
+    )
+    recommended = (
+        "Review the certified read-only capability result and its Replay reference."
+        if completed
+        else "Resolve the recorded discovery, certification, or canonical input failure."
+    )
+    return _adapter_result(
+        presentation_status=status,
+        summary=summary,
+        answer={
+            "selected_capability_identifier": validated.get("capability_identifier"),
+            "invocation_id": validated.get("invocation_id"),
+            "invocation_status": validated.get("invocation_status"),
+            "output_artifact_type": validated.get("output_artifact_type"),
+            "output_artifact_reference": validated.get("output_artifact_reference"),
+            "output_artifact_hash": validated.get("output_artifact_hash"),
+            "capability_replay_reference": validated.get("capability_replay_reference"),
+            "failure_reason": validated.get("failure_reason"),
+        },
+        confidence="DETERMINISTIC_CERTIFIED_CAPABILITY_RESULT" if completed else "FAILED_CLOSED",
+        evidence=[
+            {
+                "source_type": "CERTIFIED_CAPABILITY_INVOCATION_RESULT",
+                "artifact_hash": validated.get("artifact_hash"),
+                "platform_knowledge_response_hash": validated.get(
+                    "platform_knowledge_response_hash"
+                ),
+                "validated_inputs_record_hash": validated.get(
+                    "validated_inputs_record_hash"
+                ),
+            }
+        ],
+        reasoning_path=_router_reasoning(router_response)
+        + [
+            {
+                "step": "CERTIFIED_CAPABILITY_INVOCATION_RESULT_VALIDATION",
+                "status": validated.get("invocation_status"),
+            }
+        ],
+        sources=[str(validated.get("artifact_hash"))],
+        recommended_next_step=recommended,
+        certification_status=("CERTIFIED_CAPABILITY_INVOKED" if completed else None),
+        governance_status="PLATFORM_CORE_CERTIFIED_CAPABILITY_INVOCATION",
+        replay_status="REPLAY_VISIBLE" if validated.get("replay_visible") is True else None,
+        warnings=[validated.get("failure_reason")],
+        actions=[recommended],
+        reusable_components=[
+            "CANONICAL_SEMANTIC_CAPABILITY_SELECTION_BINDING",
+            "PLATFORM_KNOWLEDGE_RUNTIME",
+            "CERTIFIED_CAPABILITY_INVOCATION_BINDING",
+        ],
+    )
+
+
 def _router_only_presentation(router_response: dict[str, Any]) -> dict[str, Any]:
     route_status = str(router_response.get("route_status") or "")
     if route_status == "REQUIRED_EVIDENCE_MISSING":
@@ -1036,6 +1116,8 @@ def _selected_service(
         return PROJECT_OBJECTIVE_INFERENCE_SERVICE
     if artifact_type == DURABLE_GOVERNED_WORK_RESPONSE_ARTIFACT_V1:
         return DURABLE_GOVERNED_WORK_SERVICE
+    if artifact_type == CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1:
+        return CERTIFIED_CAPABILITY_INVOCATION_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")
