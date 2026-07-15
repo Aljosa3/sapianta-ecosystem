@@ -19,6 +19,7 @@ from aigol.runtime.human_interface_runtime_entry_service import (
     CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED,
     run_human_interface_runtime_entry,
 )
+from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
     prepare_unified_human_interface_project_context,
@@ -61,7 +62,10 @@ def run_reference_uhi_session(
     created = _require_string(created_at, "created_at")
     root = Path(runtime_root)
     workspace_path = str(Path(workspace))
-    output_writer("aicli reference UHI session started. Type a request, /approve, /cancel, or /exit.")
+    output_writer(
+        "aicli reference UHI session started. Type a request, /attach <reference>, "
+        "/approve, /cancel, or /exit."
+    )
 
     pending_summary: dict[str, Any] | None = None
     submitted_messages = 0
@@ -207,6 +211,89 @@ def run_reference_uhi_session(
             )
             output_writer("Pending request canceled.")
             transcript.append({"event": "cancel"})
+            continue
+        if normalized == "/attach" or normalized.startswith("/attach "):
+            reference = line_text.strip()[len("/attach") :].strip()
+            if not reference:
+                output_writer("Usage: /attach <opaque-canonical-artifact-reference>")
+                transcript.append({"event": "attachment_reference_missing"})
+                continue
+            if compose_buffer:
+                output_writer(
+                    "Composed request is not empty. Use /send or /cancel before attaching."
+                )
+                transcript.append({"event": "attachment_with_compose_buffer_rejected"})
+                continue
+            if pending_clarification is None:
+                output_writer(
+                    "No active Platform Core clarification accepts an artifact attachment."
+                )
+                transcript.append({"event": "attachment_without_clarification_rejected"})
+                continue
+            if not isinstance(
+                pending_clarification.get("operational_clarification_envelope"),
+                dict,
+            ):
+                output_writer(
+                    "The active Platform Core clarification does not accept an artifact attachment."
+                )
+                transcript.append({"event": "attachment_for_generic_clarification_rejected"})
+                continue
+            output_writer(
+                "Opaque artifact reference attached to the active Platform Core clarification."
+            )
+            try:
+                (
+                    pending_summary,
+                    pending_clarification,
+                    last_resolution,
+                    last_project_context,
+                    submitted_requests,
+                    multiline_requests,
+                ) = _submit_composed_request(
+                    compose_buffer=[
+                        "Opaque canonical artifact reference attached for the active "
+                        "Platform Core clarification."
+                    ],
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    output_writer=output_writer,
+                    transcript=transcript,
+                    artifact_references=(reference,),
+                )
+            except FailClosedRuntimeError as exc:
+                output_writer(f"Platform Core rejected the artifact attachment: {exc}")
+                transcript.append({"event": "attachment_failed_closed"})
+                continue
+            submitted_messages += submitted_requests
+            submitted_request_count += submitted_requests
+            clarification_count += 1 if pending_clarification is not None else 0
+            multiline_request_count += multiline_requests
+            transcript.append({"event": "opaque_artifact_attachment_submitted"})
+            _record_reference_workspace_state(
+                command_name="aicli",
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                session_status=session_status,
+                exit_reason="ARTIFACT_ATTACHMENT_SUBMITTED",
+                submitted_messages=submitted_messages,
+                submitted_request_count=submitted_request_count,
+                multiline_request_count=multiline_request_count,
+                canceled_compose_count=canceled_compose_count,
+                clarification_count=clarification_count,
+                approval_count=approval_count,
+                runtime_status=runtime_status,
+                runtime_result=runtime_result,
+                last_resolution=last_resolution,
+                last_project_context=last_project_context,
+                transcript=transcript,
+                pending_clarification=pending_clarification,
+                pending_summary=pending_summary,
+            )
             continue
         if normalized in AICLI_SEND_COMMANDS:
             if not compose_buffer:
@@ -1119,6 +1206,7 @@ def _render_help() -> str:
             "Commands:",
             "/send - submit the composed request",
             ". - submit the composed request",
+            "/attach <reference> - attach one opaque artifact to the active clarification",
             "/approve - approve the pending governed implementation summary",
             "/cancel - clear the compose buffer or discard the pending summary",
             "/exit - close the reference UHI session",

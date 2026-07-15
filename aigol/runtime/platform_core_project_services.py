@@ -524,6 +524,7 @@ def prepare_unified_human_interface_project_context(
         owner_specific_continuation=owner_specific_continuation,
         semantic_route=semantic_route,
         operational_clarification_envelope=operational_clarification_envelope,
+        ingress_capture=ingress_capture,
     )
     write_json_immutable(Path(turn_reference), operational_turn_binding)
     artifact = {
@@ -1011,6 +1012,7 @@ def _finalize_operational_turn_binding(
     owner_specific_continuation: dict[str, Any] | None,
     semantic_route: dict[str, Any] | None,
     operational_clarification_envelope: dict[str, Any] | None,
+    ingress_capture: dict[str, Any] | None,
 ) -> dict[str, Any]:
     if operational_classification is not None:
         turn_kind = operational_classification["turn_kind"]
@@ -1030,6 +1032,18 @@ def _finalize_operational_turn_binding(
             if owner_specific_continuation is not None
             else None
         )
+    ingress_resolution = (
+        ingress_capture.get("explicit_canonical_artifact_ingress_artifact")
+        if isinstance(ingress_capture, dict)
+        and isinstance(
+            ingress_capture.get("explicit_canonical_artifact_ingress_artifact"),
+            dict,
+        )
+        else None
+    )
+    attachment_bound = (
+        isinstance(origin_envelope, dict) and isinstance(ingress_resolution, dict)
+    )
     artifact = {
         "artifact_type": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1,
         "runtime_version": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION,
@@ -1101,6 +1115,22 @@ def _finalize_operational_turn_binding(
             if isinstance(operational_clarification_envelope, dict)
             else None
         ),
+        "in_session_opaque_artifact_attachment": attachment_bound,
+        "explicit_canonical_artifact_ingress_reference": (
+            ingress_capture.get("replay_reference")
+            if attachment_bound and isinstance(ingress_capture, dict)
+            else None
+        ),
+        "explicit_canonical_artifact_ingress_hash": (
+            ingress_resolution.get("artifact_hash")
+            if attachment_bound and isinstance(ingress_resolution, dict)
+            else None
+        ),
+        "explicit_canonical_artifact_ingress_status": (
+            ingress_resolution.get("ingress_status")
+            if attachment_bound and isinstance(ingress_resolution, dict)
+            else None
+        ),
         "classification_authority": "PLATFORM_CORE",
         "clarification_binding_authority": "PLATFORM_CORE",
         "human_interface_classified": False,
@@ -1162,6 +1192,29 @@ def validate_operational_turn_binding(artifact: dict[str, Any]) -> dict[str, Any
             "operational_clarification_envelope_hash"
         ):
             raise FailClosedRuntimeError("operational turn clarification lineage mismatch")
+    attachment_bound = candidate.get("in_session_opaque_artifact_attachment") is True
+    attachment_fields = (
+        candidate.get("explicit_canonical_artifact_ingress_reference"),
+        candidate.get("explicit_canonical_artifact_ingress_hash"),
+        candidate.get("explicit_canonical_artifact_ingress_status"),
+    )
+    if attachment_bound:
+        if candidate.get("turn_kind") != OPERATIONAL_CLARIFICATION_REPLY:
+            raise FailClosedRuntimeError(
+                "operational artifact attachment requires active clarification"
+            )
+        if not all(isinstance(value, str) and value for value in attachment_fields):
+            raise FailClosedRuntimeError(
+                "operational artifact attachment ingress lineage missing"
+            )
+        if candidate.get("originating_clarification_envelope_hash") is None:
+            raise FailClosedRuntimeError(
+                "operational artifact attachment clarification lineage missing"
+            )
+    elif any(value is not None for value in attachment_fields):
+        raise FailClosedRuntimeError(
+            "operational artifact attachment boundary mismatch"
+        )
     return candidate
 
 
@@ -1194,6 +1247,36 @@ def reconstruct_operational_turn_binding(
             )
             if route.get("artifact_hash") != turn.get("continuation_route_hash"):
                 raise FailClosedRuntimeError("operational turn continuation route tampering")
+        if turn.get("in_session_opaque_artifact_attachment") is True:
+            from aigol.runtime.explicit_canonical_artifact_ingress_runtime import (
+                reconstruct_explicit_canonical_artifact_ingress,
+            )
+
+            ingress = reconstruct_explicit_canonical_artifact_ingress(
+                turn["explicit_canonical_artifact_ingress_reference"]
+            )
+            if ingress.get("session_id") != turn.get("session_id"):
+                raise FailClosedRuntimeError(
+                    "operational artifact attachment session mismatch"
+                )
+            if ingress.get("ingress_resolution_hash") != turn.get(
+                "explicit_canonical_artifact_ingress_hash"
+            ):
+                raise FailClosedRuntimeError(
+                    "operational artifact attachment substitution detected"
+                )
+            if ingress.get("ingress_status") != turn.get(
+                "explicit_canonical_artifact_ingress_status"
+            ):
+                raise FailClosedRuntimeError(
+                    "operational artifact attachment status mismatch"
+                )
+            if ingress.get("downstream_route_hash") != turn.get(
+                "continuation_route_hash"
+            ):
+                raise FailClosedRuntimeError(
+                    "operational artifact attachment route lineage mismatch"
+                )
     return turn
 
 

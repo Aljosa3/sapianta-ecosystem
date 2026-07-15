@@ -237,7 +237,10 @@ def reconstruct_explicit_canonical_artifact_ingress(
             raise FailClosedRuntimeError("explicit artifact ingress snapshot hash mismatch")
     return {
         "ingress_id": resolution["ingress_id"],
+        "session_id": resolution["session_id"],
         "ingress_status": resolution["ingress_status"],
+        "ingress_request_hash": resolution["ingress_request_hash"],
+        "ingress_resolution_hash": resolution["artifact_hash"],
         "validated_canonical_artifacts": [
             deepcopy(record["validated_artifact"]) for record in records
         ],
