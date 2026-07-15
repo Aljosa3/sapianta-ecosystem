@@ -1087,7 +1087,11 @@ def _finalize_operational_turn_binding(
         "continuation_semantic_slot": (
             operational_clarification_envelope.get("semantic_slot")
             if isinstance(operational_clarification_envelope, dict)
-            else None
+            else (
+                origin_envelope.get("semantic_slot")
+                if isinstance(origin_envelope, dict)
+                else None
+            )
         ),
         "operational_clarification_envelope": deepcopy(
             operational_clarification_envelope
