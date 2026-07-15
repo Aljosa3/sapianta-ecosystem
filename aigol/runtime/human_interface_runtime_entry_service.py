@@ -264,6 +264,10 @@ def run_human_interface_runtime_entry(
             if isinstance(approved_implementation_turn_binding, dict)
             else None
         ),
+        approved_implementation_turn_binding=deepcopy(
+            approved_implementation_turn_binding
+        ),
+        approved_identity_consumption=deepcopy(approved_identity_consumption),
     )
     conversation_output: list[str] = []
     conversation_result = governed_runtime_runner(
@@ -330,6 +334,30 @@ def run_human_interface_runtime_entry(
             "human_confirmation_reference": latest_turn.get("human_confirmation_reference"),
             "runtime_replay_reference": latest_turn.get("replay_reference")
             or latest_turn.get("conversation_replay_reference"),
+            "approved_worker_payload_binding_status": latest_turn.get(
+                "approved_worker_payload_binding_status"
+            ),
+            "approved_worker_payload_binding_hash": latest_turn.get(
+                "approved_worker_payload_binding_hash"
+            ),
+            "approved_ppp_task_package_hash": latest_turn.get(
+                "approved_ppp_task_package_hash"
+            ),
+            "approved_implementation_request_hash": latest_turn.get(
+                "approved_implementation_request_hash"
+            ),
+            "approved_worker_implementation_payload_hash": latest_turn.get(
+                "approved_worker_implementation_payload_hash"
+            ),
+            "approved_worker_payload_dispatch_blocked": latest_turn.get(
+                "approved_worker_payload_dispatch_blocked"
+            )
+            is True,
+            "approved_worker_payload_failure_reason": latest_turn.get(
+                "failure_reason"
+            )
+            if latest_turn.get("approved_worker_payload_binding_hash")
+            else None,
             "conversation_output_tail": conversation_output[-12:],
             "governance_authority_preserved": True,
             "provider_platform_preserved": True,

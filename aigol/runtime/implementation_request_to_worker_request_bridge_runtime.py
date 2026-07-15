@@ -157,6 +157,16 @@ def _validate_implementation_request(request: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("implementation request to worker request failed closed: implementation scope invalid")
     if scope.get("allowed_next_step") != "WORKER_REQUEST_GENERATION":
         raise FailClosedRuntimeError("implementation request to worker request failed closed: implementation scope invalid")
+    if request.get("candidate_source_type") == "APPROVED_DURABLE_GOVERNED_WORK":
+        lineage = request.get("canonical_approved_work_lineage")
+        if not isinstance(lineage, dict):
+            raise FailClosedRuntimeError(
+                "implementation request to worker request failed closed: approved-work lineage missing"
+            )
+        if not isinstance(scope.get("field_lineage"), dict):
+            raise FailClosedRuntimeError(
+                "implementation request to worker request failed closed: payload lineage missing"
+            )
     constraints = request.get("governance_constraints")
     if not isinstance(constraints, dict) or constraints.get("worker_invocation_allowed") is not False:
         raise FailClosedRuntimeError("implementation request to worker request failed closed: governance constraints invalid")
@@ -187,6 +197,17 @@ def _worker_request_artifact(
     failure_reason: str | None,
 ) -> dict[str, Any]:
     constraints = _worker_constraints(worker_constraints)
+    implementation_scope = deepcopy(implementation_request["implementation_scope"])
+    repository_scope_status = implementation_scope.get("repository_scope_status")
+    repository_targets = deepcopy(implementation_scope.get("repository_targets") or [])
+    approved_durable_work_source = (
+        implementation_request.get("candidate_source_type")
+        == "APPROVED_DURABLE_GOVERNED_WORK"
+    )
+    unresolved_repository_scope = approved_durable_work_source and (
+        str(repository_scope_status or "").startswith("UNRESOLVED")
+        or not repository_targets
+    )
     artifact = {
         "artifact_type": WORKER_REQUEST_ARTIFACT_V1,
         "runtime_version": AIGOL_IMPLEMENTATION_REQUEST_TO_WORKER_REQUEST_BRIDGE_VERSION,
@@ -201,6 +222,10 @@ def _worker_request_artifact(
         "source_improvement_intent_hash": implementation_request["source_improvement_intent_hash"],
         "source_gap_artifact": implementation_request["source_gap_artifact"],
         "source_gap_hash": implementation_request["source_gap_hash"],
+        "candidate_source_type": implementation_request.get("candidate_source_type"),
+        "canonical_approved_work_lineage": deepcopy(
+            implementation_request.get("canonical_approved_work_lineage")
+        ),
         "replay_references": deepcopy(implementation_request["replay_references"]),
         "replay_hashes": deepcopy(implementation_request["replay_hashes"]),
         "human_approval_reference": implementation_request["human_approval_reference"],
@@ -208,6 +233,12 @@ def _worker_request_artifact(
         "human_approval_required": True,
         "human_authority_preserved": True,
         "worker_objective": implementation_request["implementation_objective"],
+        "implementation_scope": implementation_scope,
+        "worker_payload_field_lineage": deepcopy(
+            implementation_scope.get("field_lineage")
+        ),
+        "repository_scope_status": repository_scope_status,
+        "repository_targets": repository_targets,
         "worker_constraints": constraints,
         "governance_requirements": {
             "dispatch_requires_separate_governance": True,
@@ -224,7 +255,10 @@ def _worker_request_artifact(
         "created_at": _require_string(created_at, "created_at"),
         "certification_status": "CERTIFIED_IMPLEMENTATION_REQUEST_ACCEPTED",
         "replay_lineage_preserved": True,
-        "ready_for_worker_dispatch_governance": True,
+        "ready_for_worker_dispatch_governance": not unresolved_repository_scope,
+        "dispatch_blocked_by_unresolved_repository_scope": (
+            unresolved_repository_scope
+        ),
         "worker_dispatched": False,
         "worker_invoked": False,
         "implementation_executed": False,
@@ -279,6 +313,14 @@ def _failed_worker_request_artifact(
         "source_gap_hash": implementation_request_artifact.get("source_gap_hash")
         if isinstance(implementation_request_artifact, dict)
         else None,
+        "candidate_source_type": implementation_request_artifact.get("candidate_source_type")
+        if isinstance(implementation_request_artifact, dict)
+        else None,
+        "canonical_approved_work_lineage": deepcopy(
+            implementation_request_artifact.get("canonical_approved_work_lineage")
+        )
+        if isinstance(implementation_request_artifact, dict)
+        else None,
         "replay_references": [],
         "replay_hashes": [],
         "human_approval_reference": implementation_request_artifact.get("human_approval_reference")
@@ -290,6 +332,10 @@ def _failed_worker_request_artifact(
         "human_approval_required": True,
         "human_authority_preserved": True,
         "worker_objective": None,
+        "implementation_scope": {},
+        "worker_payload_field_lineage": {},
+        "repository_scope_status": None,
+        "repository_targets": [],
         "worker_constraints": deepcopy(DEFAULT_WORKER_CONSTRAINTS),
         "governance_requirements": {},
         "governance_classification": {},
@@ -300,6 +346,7 @@ def _failed_worker_request_artifact(
         "certification_status": FAILED_CLOSED,
         "replay_lineage_preserved": False,
         "ready_for_worker_dispatch_governance": False,
+        "dispatch_blocked_by_unresolved_repository_scope": False,
         "worker_dispatched": False,
         "worker_invoked": False,
         "implementation_executed": False,

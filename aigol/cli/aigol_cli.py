@@ -511,6 +511,10 @@ from aigol.runtime.acli_governed_development_execution_bridge import (
     propose_acli_governed_development_execution,
     render_acli_governed_development_bridge_summary,
 )
+from aigol.runtime.approved_durable_work_worker_payload_binding import (
+    bind_approved_durable_work_to_worker_payload,
+    render_approved_durable_work_worker_payload_binding,
+)
 from aigol.runtime.acli_human_friendly_explanation_runtime import (
     create_acli_human_friendly_explanation,
     render_acli_human_friendly_explanation,
@@ -1203,6 +1207,18 @@ def _continue_ppp_handoff_to_worker_request(
 
 def _canonical_human_interface_runtime_entry_context(args: argparse.Namespace) -> bool:
     return str(getattr(args, "operator_context", "") or "") == "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+
+
+def _approved_durable_work_worker_payload_binding_active(
+    args: argparse.Namespace,
+) -> bool:
+    return (
+        _canonical_human_interface_runtime_entry_context(args)
+        and isinstance(
+            getattr(args, "approved_implementation_turn_binding", None), dict
+        )
+        and isinstance(getattr(args, "approved_identity_consumption", None), dict)
+    )
 
 
 def _canonical_human_interface_governed_development_bridge_selection_active(
@@ -5388,6 +5404,48 @@ def run_interactive_conversation(
                             source_router_replay_reference=str(turn_root / "source_router"),
                     )
                 )
+            elif (
+                authoritative_workflow_id
+                == CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW
+                and _approved_durable_work_worker_payload_binding_active(args)
+            ):
+                approved_payload_capture = (
+                    bind_approved_durable_work_to_worker_payload(
+                        implementation_turn_binding=deepcopy(
+                            args.approved_implementation_turn_binding
+                        ),
+                        approval_consumption_artifact=deepcopy(
+                            args.approved_identity_consumption
+                        ),
+                        requested_by=(
+                            args.operator_context
+                            or "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+                        ),
+                        created_at=created_at,
+                        replay_dir=(
+                            turn_root
+                            / "approved_durable_work_worker_payload_binding"
+                        ),
+                    )
+                )
+                output_writer(
+                    render_approved_durable_work_worker_payload_binding(
+                        approved_payload_capture
+                    )
+                )
+                if approved_payload_capture.get("fail_closed") is True:
+                    failed_turns += 1
+                turns.append(
+                    _interactive_approved_durable_work_worker_payload_turn_summary(
+                        turn_id=turn_id,
+                        prompt_id=prompt_id,
+                        router_capture=router_capture,
+                        binding_capture=approved_payload_capture,
+                        source_router_replay_reference=str(
+                            turn_root / "source_router"
+                        ),
+                    )
+                )
             elif authoritative_workflow_id == CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW:
                 bridge_capture = propose_acli_governed_development_execution(
                     bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
@@ -7843,6 +7901,98 @@ def _interactive_conversational_cli_turn_summary(
         "approval_bypassed": False,
         "governance_mutated": False,
         "replay_mutated": False,
+    }
+
+
+def _interactive_approved_durable_work_worker_payload_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    binding_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    source_artifact = router_capture["source_of_truth_router_artifact"]
+    replay_reference = binding_capture.get("replay_reference")
+    return {
+        "turn_id": turn_id,
+        "prompt_id": prompt_id,
+        "selected_source": source_artifact["selected_source"],
+        "selection_reason": source_artifact["selection_reason"],
+        "response_status": binding_capture.get("binding_status"),
+        "response_source": "APPROVED_DURABLE_WORK_WORKER_PAYLOAD_BINDING",
+        "response_text": render_approved_durable_work_worker_payload_binding(
+            binding_capture
+        ),
+        "fail_closed": binding_capture.get("fail_closed") is True,
+        "failure_reason": binding_capture.get("failure_reason"),
+        "replay_reference": replay_reference,
+        "conversation_replay_reference": replay_reference,
+        "execution_summary_reference": replay_reference,
+        "human_confirmation_reference": binding_capture.get(
+            "source_approval_consumption_hash"
+        ),
+        "canonical_chain_id": prompt_id,
+        "current_chain_id": prompt_id,
+        "latest_chain_id": prompt_id,
+        "related_chain_id": None,
+        "suggested_inspection_commands": [],
+        "conversation_chain_continuity_replay_reference": None,
+        "source_router_replay_reference": source_router_replay_reference,
+        "conversational_workflow_id": (
+            CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW
+        ),
+        "existing_runtime": "approved_durable_work_worker_payload_binding",
+        "existing_cli_command": "aigol conversation",
+        "coverage": None,
+        "clarification_required": binding_capture.get(
+            "repository_scope_unresolved"
+        )
+        is True,
+        "open_clarification_detected": False,
+        "provider_invoked": False,
+        "provider_invocation_reached": False,
+        "worker_invoked": False,
+        "worker_assigned": False,
+        "worker_dispatched": False,
+        "worker_request_reached": False,
+        "worker_assignment_reached": False,
+        "worker_dispatch_reached": False,
+        "worker_invocation_reached": False,
+        "worker_execution_candidate_reached": False,
+        "external_task_package_reached": False,
+        "openai_provider_reached": False,
+        "authorization_created": False,
+        "execution_authorization_status": None,
+        "execution_requested": False,
+        "execution_started": False,
+        "dispatch_requested": False,
+        "invocation_requested": False,
+        "approval_bypassed": False,
+        "governance_mutated": False,
+        "repository_mutation_performed": False,
+        "validation_executed": False,
+        "replay_certification_reached": False,
+        "upstream_human_approval_consumed": True,
+        "approved_worker_payload_binding_status": binding_capture.get(
+            "binding_status"
+        ),
+        "approved_worker_payload_binding_hash": binding_capture.get(
+            "artifact_hash"
+        ),
+        "approved_ppp_task_package_hash": binding_capture.get(
+            "ppp_task_package_hash"
+        ),
+        "approved_implementation_request_hash": binding_capture.get(
+            "implementation_request_hash"
+        ),
+        "approved_worker_implementation_payload_hash": binding_capture.get(
+            "worker_implementation_payload_hash"
+        ),
+        "approved_worker_payload_dispatch_blocked": binding_capture.get(
+            "dispatch_blocked"
+        )
+        is True,
     }
 
 

@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 from aigol.cli import aicli, aigol_cli
 from aigol.provider.provider_proposal_envelope import create_provider_proposal_envelope
 from aigol.provider.providers.openai_provider import openai_provider_metadata
-from aigol.runtime.replay_certification_runtime import REPLAY_CERTIFICATION_COMPLETED
-from aigol.runtime.worker_invocation_runtime import WORKER_INVOKED
 
 
 CREATED_AT = "2026-07-08T00:00:00Z"
@@ -63,15 +59,7 @@ def _install_fake_providers(monkeypatch) -> FakeProviderAdapter:
     return proposal_adapter
 
 
-def _wrapped_artifact(replay_reference: str, filename: str) -> dict[str, Any]:
-    with (Path(replay_reference) / filename).open(encoding="utf-8") as handle:
-        wrapper = json.load(handle)
-    artifact = wrapper["artifact"]
-    assert isinstance(artifact, dict)
-    return artifact
-
-
-def test_approved_aicli_governed_development_bridge_continues_to_replay_certified(
+def test_approved_aicli_governed_development_binds_payload_before_dispatch(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -94,25 +82,33 @@ def test_approved_aicli_governed_development_bridge_continues_to_replay_certifie
 
     runtime_result = result["runtime_result"]
 
-    assert result["runtime_status"] == aicli.REFERENCE_UHI_BOUND
+    assert result["runtime_status"] == aicli.REFERENCE_UHI_PARTIALLY_BOUND
     assert result["aicli_authorizes"] is False
     assert result["aicli_executes"] is False
     assert result["aicli_owns_replay"] is False
-    assert runtime_result["runtime_response_source"] == "ACLI_GOVERNED_DEVELOPMENT_EXECUTION_BRIDGE"
-    assert runtime_result["runtime_response_status"] == "GOVERNED_DEVELOPMENT_BRIDGE_CERTIFIED_RUNTIME_COMPLETED"
-    assert runtime_result["worker_execution_reached"] is True
-    assert runtime_result["worker_invocation_status"] == WORKER_INVOKED
-    assert runtime_result["external_task_package_reached"] is True
-    assert runtime_result["replay_certification_reached"] is True
-    assert runtime_result["replay_certification_status"] == REPLAY_CERTIFICATION_COMPLETED
-    assert runtime_result["auto_continue_enabled"] is True
-    assert runtime_result["auto_continue_stop_reason"] == "WORKFLOW_COMPLETE"
-    assert runtime_result["manual_chatgpt_codex_transfer_required"] is False
-    assert proposal_adapter.calls == 1
-
-    replay_certification = _wrapped_artifact(
-        runtime_result["replay_certification_replay_reference"],
-        "000_replay_certification_artifact_recorded.json",
+    assert runtime_result["runtime_response_source"] == (
+        "APPROVED_DURABLE_WORK_WORKER_PAYLOAD_BINDING"
     )
-    assert replay_certification["certification_status"] == REPLAY_CERTIFICATION_COMPLETED
-    assert replay_certification["replay_lineage_preserved"] is True
+    assert runtime_result["runtime_response_status"] == (
+        "APPROVED_DURABLE_WORK_WORKER_PAYLOAD_SCOPE_UNRESOLVED_FAILED_CLOSED"
+    )
+    assert runtime_result["approved_worker_payload_binding_hash"].startswith(
+        "sha256:"
+    )
+    assert runtime_result["approved_ppp_task_package_hash"].startswith("sha256:")
+    assert runtime_result["approved_implementation_request_hash"].startswith(
+        "sha256:"
+    )
+    assert runtime_result[
+        "approved_worker_implementation_payload_hash"
+    ].startswith("sha256:")
+    assert runtime_result["approved_worker_payload_dispatch_blocked"] is True
+    assert runtime_result["governance_authorization_reached"] is False
+    assert runtime_result["provider_invocation_reached"] is False
+    assert runtime_result["worker_execution_reached"] is False
+    assert runtime_result["external_task_package_reached"] is False
+    assert runtime_result["replay_certification_reached"] is False
+    assert runtime_result["auto_continue_enabled"] is True
+    assert runtime_result["auto_continue_stop_reason"] == "FAILED_CLOSED"
+    assert runtime_result["manual_chatgpt_codex_transfer_required"] is True
+    assert proposal_adapter.calls == 0

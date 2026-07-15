@@ -22,6 +22,10 @@ IMPLEMENTATION_REQUEST_CREATED = "IMPLEMENTATION_REQUEST_CREATED"
 FAILED_CLOSED = "FAILED_CLOSED"
 HUMAN_APPROVAL_ARTIFACT_V1 = "HUMAN_APPROVAL_ARTIFACT_V1"
 APPROVED = "APPROVED"
+APPROVED_DURABLE_WORK_PPP_SOURCE = "APPROVED_DURABLE_GOVERNED_WORK"
+APPROVED_DURABLE_WORK_PPP_CERTIFICATION = (
+    "CERTIFIED_APPROVED_DURABLE_GOVERNED_WORK_ACCEPTED"
+)
 
 REPLAY_STEPS = (
     "implementation_request_recorded",
@@ -138,7 +142,36 @@ def _validate_ppp_candidate(candidate: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("governed implementation request failed closed: invalid artifact type")
     if candidate.get("candidate_status") != PPP_CANDIDATE_CREATED:
         raise FailClosedRuntimeError("governed implementation request failed closed: certified PPP candidate required")
-    if candidate.get("certification_status") != "CERTIFIED_IMPROVEMENT_INTENT_ACCEPTED":
+    allowed_certifications = {"CERTIFIED_IMPROVEMENT_INTENT_ACCEPTED"}
+    if candidate.get("candidate_source_type") == APPROVED_DURABLE_WORK_PPP_SOURCE:
+        allowed_certifications.add(APPROVED_DURABLE_WORK_PPP_CERTIFICATION)
+        lineage = candidate.get("source_approved_work_lineage")
+        if not isinstance(lineage, dict):
+            raise FailClosedRuntimeError(
+                "governed implementation request failed closed: approved-work lineage missing"
+            )
+        for field in (
+            "implementation_turn_binding_hash",
+            "approval_consumption_hash",
+            "development_composition_plan_hash",
+            "durable_governed_work_id",
+            "durable_governed_work_hash",
+            "proposal_preview_hash",
+            "approval_request_hash",
+        ):
+            _require_string(lineage.get(field), field)
+        approved_scope = candidate.get("approved_implementation_scope")
+        if not isinstance(approved_scope, dict):
+            raise FailClosedRuntimeError(
+                "governed implementation request failed closed: approved implementation scope missing"
+            )
+        if candidate.get("approved_implementation_scope_hash") != replay_hash(
+            approved_scope
+        ):
+            raise FailClosedRuntimeError(
+                "governed implementation request failed closed: approved implementation scope hash mismatch"
+            )
+    if candidate.get("certification_status") not in allowed_certifications:
         raise FailClosedRuntimeError("governed implementation request failed closed: certification validation failed")
     if candidate.get("replay_lineage_preserved") is not True:
         raise FailClosedRuntimeError("governed implementation request failed closed: replay lineage broken")
@@ -215,6 +248,10 @@ def _implementation_request_artifact(
         "source_improvement_intent_hash": candidate["source_improvement_intent_hash"],
         "source_gap_artifact": candidate["source_gap_reference"],
         "source_gap_hash": candidate["source_gap_hash"],
+        "candidate_source_type": candidate.get("candidate_source_type"),
+        "canonical_approved_work_lineage": deepcopy(
+            candidate.get("source_approved_work_lineage")
+        ),
         "replay_references": deepcopy(candidate["source_replay_references"]),
         "replay_hashes": deepcopy(candidate["source_replay_hashes"]),
         "human_approval_reference": approval["approval_id"],
@@ -277,6 +314,14 @@ def _failed_implementation_request_artifact(
         if isinstance(ppp_candidate_artifact, dict)
         else None,
         "source_gap_hash": ppp_candidate_artifact.get("source_gap_hash")
+        if isinstance(ppp_candidate_artifact, dict)
+        else None,
+        "candidate_source_type": ppp_candidate_artifact.get("candidate_source_type")
+        if isinstance(ppp_candidate_artifact, dict)
+        else None,
+        "canonical_approved_work_lineage": deepcopy(
+            ppp_candidate_artifact.get("source_approved_work_lineage")
+        )
         if isinstance(ppp_candidate_artifact, dict)
         else None,
         "replay_references": [],
@@ -375,6 +420,13 @@ def _scope(candidate: dict[str, Any], implementation_scope: dict[str, Any] | Non
         }
     if not isinstance(implementation_scope, dict):
         raise FailClosedRuntimeError("governed implementation request failed closed: implementation scope must be object")
+    if (
+        candidate.get("candidate_source_type") == APPROVED_DURABLE_WORK_PPP_SOURCE
+        and implementation_scope != candidate.get("approved_implementation_scope")
+    ):
+        raise FailClosedRuntimeError(
+            "governed implementation request failed closed: approved implementation scope substitution"
+        )
     forbidden = {
         "execute_now",
         "invoke_worker",

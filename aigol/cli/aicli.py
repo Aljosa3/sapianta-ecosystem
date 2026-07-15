@@ -1256,17 +1256,36 @@ def _render_read_only_result(conversation: dict[str, Any]) -> str:
 
 
 def _render_runtime_result(runtime_result: dict[str, Any], runtime_status: str) -> str:
-    return "\n".join(
-        [
-            "Certified runtime result",
-            f"runtime_status: {runtime_status}",
-            f"governance_authorization_reached: {runtime_result.get('governance_authorization_reached')}",
-            f"provider_invocation_reached: {runtime_result.get('provider_invocation_reached')}",
-            f"worker_execution_reached: {runtime_result.get('worker_execution_reached')}",
-            f"replay_certification_reached: {runtime_result.get('replay_certification_reached')}",
-            f"runtime_replay_reference: {runtime_result.get('runtime_replay_reference')}",
-        ]
-    )
+    lines = [
+        "Certified runtime result",
+        f"runtime_status: {runtime_status}",
+        f"governance_authorization_reached: {runtime_result.get('governance_authorization_reached')}",
+        f"provider_invocation_reached: {runtime_result.get('provider_invocation_reached')}",
+        f"worker_execution_reached: {runtime_result.get('worker_execution_reached')}",
+        f"replay_certification_reached: {runtime_result.get('replay_certification_reached')}",
+        f"runtime_replay_reference: {runtime_result.get('runtime_replay_reference')}",
+    ]
+    if runtime_result.get("approved_worker_payload_binding_hash"):
+        approved_binding = runtime_result.get("approved_implementation_turn_binding")
+        if not isinstance(approved_binding, dict):
+            approved_binding = {}
+        lines.extend(
+            [
+                "Approved durable governed work Worker payload",
+                f"binding_status: {runtime_result.get('approved_worker_payload_binding_status')}",
+                f"development_composition_plan_hash: {approved_binding.get('development_composition_plan_hash')}",
+                f"durable_governed_work_hash: {approved_binding.get('durable_governed_work_hash')}",
+                f"proposal_preview_hash: {approved_binding.get('proposal_preview_hash')}",
+                f"approval_request_hash: {approved_binding.get('approval_request_hash')}",
+                f"approval_consumption_hash: {runtime_result.get('approved_identity_consumption_hash')}",
+                f"ppp_task_package_hash: {runtime_result.get('approved_ppp_task_package_hash')}",
+                f"implementation_request_hash: {runtime_result.get('approved_implementation_request_hash')}",
+                f"worker_implementation_payload_hash: {runtime_result.get('approved_worker_implementation_payload_hash')}",
+                f"dispatch_blocked: {runtime_result.get('approved_worker_payload_dispatch_blocked')}",
+                f"failure_reason: {runtime_result.get('approved_worker_payload_failure_reason')}",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def _render_session_result(result: dict[str, Any]) -> str:
