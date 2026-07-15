@@ -952,8 +952,12 @@ def _render_project_context(project_context: dict[str, Any]) -> str:
         if isinstance(project_context.get("human_conversation_experience"), dict)
         else {}
     )
-    return "\n".join(
-        [
+    turn = (
+        project_context.get("operational_turn_binding")
+        if isinstance(project_context.get("operational_turn_binding"), dict)
+        else {}
+    )
+    lines = [
             "Platform Core project context",
             f"status: {conversation.get('user_headline')}",
             f"next_step: {conversation.get('recommended_next_user_action')}",
@@ -962,10 +966,23 @@ def _render_project_context(project_context: dict[str, Any]) -> str:
             f"project_guidance_authority: {project_context.get('project_guidance_authority')}",
             f"project_knowledge_reuse_authority: {project_context.get('project_knowledge_reuse_authority')}",
             f"recommended_next_governed_action: {guidance.get('recommended_next_governed_action')}",
-            f"knowledge_reuse_classification: {knowledge.get('classification')}",
-            f"reuse_recommended: {knowledge.get('reuse_recommended')}",
-        ]
-    )
+    ]
+    if turn.get("turn_kind") == "OPERATIONAL_PLATFORM_QUERY":
+        lines.extend(
+            [
+                "operational_turn_classification: PLATFORM_QUERY",
+                f"selected_query_class: {turn.get('selected_query_class')}",
+                f"selected_service: {turn.get('selected_service')}",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                f"knowledge_reuse_classification: {knowledge.get('classification')}",
+                f"reuse_recommended: {knowledge.get('reuse_recommended')}",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def _clarification_from_conversation(message: str, conversation: dict[str, Any]) -> dict[str, Any]:
@@ -990,6 +1007,11 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
         "work_type_conflict_detected": conversation.get("work_type_conflict_detected"),
         "work_type_conflict_reason": conversation.get("work_type_conflict_reason"),
         "clarification_questions": [str(question) for question in questions],
+        "operational_clarification_envelope": (
+            dict(conversation["operational_clarification_envelope"])
+            if isinstance(conversation.get("operational_clarification_envelope"), dict)
+            else None
+        ),
     }
 
 

@@ -58,6 +58,22 @@ PLATFORM_CORE_PREPARED_WORK_TYPE_RESOLUTION_VERSION = (
 PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION = (
     "G19_HI_10_GOVERNED_READ_ONLY_RUNTIME_BINDING_V1"
 )
+PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION = (
+    "G30_04_OPERATIONAL_PLATFORM_CORE_TURN_BINDING_INTEGRATION_V1"
+)
+PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1 = (
+    "PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1"
+)
+PLATFORM_CORE_CLARIFICATION_ENVELOPE_V1 = (
+    "PLATFORM_CORE_OPERATIONAL_CLARIFICATION_ENVELOPE_V1"
+)
+
+OPERATIONAL_PLATFORM_QUERY = "OPERATIONAL_PLATFORM_QUERY"
+OPERATIONAL_GOVERNED_WORK = "OPERATIONAL_GOVERNED_WORK"
+OPERATIONAL_CLARIFICATION_REPLY = "OPERATIONAL_CLARIFICATION_REPLY"
+PLATFORM_QUERY_ROUTER_BINDING = "PLATFORM_QUERY_ROUTER"
+PLATFORM_PROJECT_SERVICES_BINDING = "PLATFORM_CORE_PROJECT_SERVICES"
+G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER = "G29_SEMANTIC_CAPABILITY_SELECTION"
 
 GOVERNED_READ_ONLY_WORK_BOUND = "GOVERNED_READ_ONLY_WORK_BOUND"
 GOVERNED_READ_ONLY_WORK_NOT_REQUIRED = "GOVERNED_READ_ONLY_WORK_NOT_REQUIRED"
@@ -250,9 +266,41 @@ def prepare_unified_human_interface_project_context(
             runtime_bound_count=0,
         )
     )
+    turn_index = next_index(
+        session_root / "operational_turn_binding",
+        "*_operational_turn_binding_recorded.json",
+    )
+    turn_reference = str(
+        session_root
+        / "operational_turn_binding"
+        / f"{turn_index:03d}_operational_turn_binding_recorded.json"
+    )
     clarification_continuity = None
+    owner_specific_continuation: dict[str, Any] | None = None
+    informational_router_response: dict[str, Any] | None = None
+    operational_classification: dict[str, Any] | None = None
     active_clarification_state = replay_backed_uhi_clarification_state(prior_state)
-    if active_clarification_state is not None:
+    active_envelope = (
+        active_clarification_state.get("operational_clarification_envelope")
+        if isinstance(active_clarification_state, dict)
+        and isinstance(
+            active_clarification_state.get("operational_clarification_envelope"), dict
+        )
+        else None
+    )
+    if active_envelope is not None:
+        owner_specific_continuation = _bind_owner_specific_clarification_reply(
+            reply=message,
+            session_id=session_id,
+            active_envelope=active_envelope,
+            prior_workspace_state=prior_state,
+            created_at=created_at,
+            turn_reference=turn_reference,
+        )
+        development_intent = owner_specific_continuation["development_intent_resolution"]
+        clarification_continuity = owner_specific_continuation["clarification_continuity"]
+        effective_message = owner_specific_continuation["original_message"]
+    elif active_clarification_state is not None:
         development_intent, clarification_continuity = resolve_uhi_clarification_continuity(
             message=message,
             workspace_state=prior_state,
@@ -266,6 +314,24 @@ def prepare_unified_human_interface_project_context(
             else message
         )
     else:
+        operational_classification = _classify_new_operational_turn(
+            message=message,
+            workspace_state=prior_state,
+            created_at=created_at,
+            explicit_artifact_transport_present=bool(
+                explicit_canonical_artifacts
+                or explicit_canonical_artifact_references
+            ),
+            turn_reference=turn_reference,
+            session_id=session_id,
+        )
+        if (
+            operational_classification["binding_destination"]
+            == PLATFORM_QUERY_ROUTER_BINDING
+        ):
+            informational_router_response = operational_classification[
+                "platform_query_router_response"
+            ]
         development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
         effective_message = message
     goal_mapping = (
@@ -283,19 +349,30 @@ def prepare_unified_human_interface_project_context(
             governed_request=effective_message,
         )
     )
-    project_objective = infer_platform_project_objective(
-        request=effective_message,
-        development_intent=development_intent,
-        workspace_state=prior_state,
-        project_guidance=guidance,
-        created_at=created_at,
-    )
-    validate_platform_project_objective(project_objective)
+    if owner_specific_continuation is not None:
+        project_objective = validate_platform_project_objective(
+            owner_specific_continuation["originating_project_objective_artifact"]
+        )
+    elif informational_router_response is not None:
+        project_objective = None
+    else:
+        project_objective = infer_platform_project_objective(
+            request=effective_message,
+            development_intent=development_intent,
+            workspace_state=prior_state,
+            project_guidance=guidance,
+            created_at=created_at,
+        )
+        validate_platform_project_objective(project_objective)
     development_intent = deepcopy(development_intent)
-    development_intent["project_objective_inference"] = deepcopy(project_objective)
-    development_intent["project_objective_inference_hash"] = project_objective["artifact_hash"]
-    development_intent["project_objective_sufficient"] = project_objective["objective_sufficient"]
-    if project_objective.get("work_type_binding_required") is True:
+    if project_objective is not None:
+        development_intent["project_objective_inference"] = deepcopy(project_objective)
+        development_intent["project_objective_inference_hash"] = project_objective["artifact_hash"]
+        development_intent["project_objective_sufficient"] = project_objective["objective_sufficient"]
+    if (
+        project_objective is not None
+        and project_objective.get("work_type_binding_required") is True
+    ):
         objective_work_type = str(project_objective["requested_work_type"])
         development_intent["requested_work_type"] = objective_work_type
         development_intent["work_type"] = objective_work_type
@@ -314,6 +391,28 @@ def prepare_unified_human_interface_project_context(
         development_intent["read_only_work_binding_status"] = GOVERNED_READ_ONLY_WORK_BOUND
         development_intent["requires_human_approval"] = False
         development_intent["project_objective_work_type_bound"] = True
+    if informational_router_response is not None:
+        development_intent.update(
+            {
+                "clarification_required": False,
+                "clarification_reason": None,
+                "requested_work_type": "INFORMATIONAL_QUERY",
+                "work_type": "INFORMATIONAL_QUERY",
+                "prepared_work_type": "INFORMATIONAL_QUERY",
+                "work_type_source": "PLATFORM_QUERY_ROUTER_CLASSIFICATION",
+                "work_type_source_text": informational_router_response.get(
+                    "selected_query_class"
+                ),
+                "mutation_allowed": False,
+                "runtime_implementation": False,
+                "summary_admissible": False,
+                "runtime_binding_admissible": False,
+                "read_only_work_binding_admissible": True,
+                "read_only_work_binding_status": GOVERNED_READ_ONLY_WORK_BOUND,
+                "requires_human_approval": False,
+                "operational_turn_classification": OPERATIONAL_PLATFORM_QUERY,
+            }
+        )
     development_intent["artifact_hash"] = replay_hash(development_intent)
     conversation_experience = human_conversation_experience_from_resolution(
         message=effective_message,
@@ -327,7 +426,14 @@ def prepare_unified_human_interface_project_context(
         conversation_experience=conversation_experience,
     )
     read_only_work_result = None
-    if development_intent.get("read_only_work_binding_admissible") is True:
+    if informational_router_response is not None:
+        read_only_work_result = _read_only_result_from_platform_query_router(
+            message=message,
+            development_intent=development_intent,
+            created_at=created_at,
+            router_response=informational_router_response,
+        )
+    elif development_intent.get("read_only_work_binding_admissible") is True:
         if (
             isinstance(ingress_capture, dict)
             and ingress_capture.get("ingress_status")
@@ -369,6 +475,7 @@ def prepare_unified_human_interface_project_context(
                     / f"{next_index(session_root / 'semantic_capability_route', '*'):03d}_route"
                 ),
             )
+    if isinstance(read_only_work_result, dict):
         development_intent = development_intent_with_read_only_work_result(
             development_intent=development_intent,
             read_only_work_result=read_only_work_result,
@@ -377,6 +484,48 @@ def prepare_unified_human_interface_project_context(
             conversation_experience=conversation_experience,
             read_only_work_result=read_only_work_result,
         )
+    semantic_route = (
+        read_only_work_result.get("semantic_capability_runtime_route")
+        if isinstance(read_only_work_result, dict)
+        and isinstance(read_only_work_result.get("semantic_capability_runtime_route"), dict)
+        else None
+    )
+    operational_clarification_envelope = _operational_clarification_envelope(
+        session_id=session_id,
+        created_at=created_at,
+        turn_reference=turn_reference,
+        original_message=(
+            owner_specific_continuation["original_message"]
+            if owner_specific_continuation is not None
+            else message
+        ),
+        project_objective=project_objective,
+        semantic_route=semantic_route,
+        development_intent=development_intent,
+        parent_envelope=(
+            owner_specific_continuation.get("active_envelope")
+            if owner_specific_continuation is not None
+            else None
+        ),
+    )
+    if operational_clarification_envelope is not None:
+        conversation_experience = deepcopy(conversation_experience)
+        conversation_experience["operational_clarification_envelope"] = deepcopy(
+            operational_clarification_envelope
+        )
+        conversation_experience["artifact_hash"] = replay_hash(conversation_experience)
+    operational_turn_binding = _finalize_operational_turn_binding(
+        session_id=session_id,
+        created_at=created_at,
+        message=message,
+        turn_reference=turn_reference,
+        operational_classification=operational_classification,
+        active_clarification_state=active_clarification_state,
+        owner_specific_continuation=owner_specific_continuation,
+        semantic_route=semantic_route,
+        operational_clarification_envelope=operational_clarification_envelope,
+    )
+    write_json_immutable(Path(turn_reference), operational_turn_binding)
     artifact = {
         "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
         "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
@@ -395,6 +544,12 @@ def prepare_unified_human_interface_project_context(
         "knowledge_reuse": knowledge_reuse,
         "project_objective_inference": project_objective,
         "clarification_continuity": clarification_continuity,
+        "operational_turn_binding": deepcopy(operational_turn_binding),
+        "operational_turn_binding_reference": turn_reference,
+        "operational_turn_binding_hash": operational_turn_binding["artifact_hash"],
+        "operational_clarification_envelope": deepcopy(
+            operational_clarification_envelope
+        ),
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "governed_read_only_work_result": read_only_work_result,
@@ -467,6 +622,575 @@ def prepare_unified_human_interface_project_context(
             ),
         )
     return artifact
+
+
+def _classify_new_operational_turn(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    created_at: str,
+    explicit_artifact_transport_present: bool,
+    turn_reference: str,
+    session_id: str,
+) -> dict[str, Any]:
+    """Bind one new UHI turn using the existing Platform Query Router."""
+
+    from aigol.runtime.platform_query_router import (
+        GOVERNED_DEVELOPMENT_ROUTE,
+        route_platform_query,
+        validate_platform_query_router_response,
+    )
+
+    router = validate_platform_query_router_response(
+        route_platform_query(
+            query=require_string(message, "message"),
+            workspace_state=workspace_state,
+            created_at=created_at,
+        )
+    )
+    roles = interpret_request_clause_roles(message)
+    governed_action = bool(roles.get("requested_action_clauses"))
+    governed_work_type_declared = (
+        explicit_governed_work_type(message).get("work_type") is not None
+    )
+    classification_evidence = (
+        router.get("classification_evidence")
+        if isinstance(router.get("classification_evidence"), dict)
+        else {}
+    )
+    platform_knowledge_classification = classification_evidence.get(
+        "platform_knowledge_query_classification"
+    )
+    informational_query_addressed = (
+        platform_knowledge_classification not in {None, "UNKNOWN_PLATFORM_KNOWLEDGE"}
+        or require_string(message, "message").rstrip().endswith("?")
+    )
+    existing_development_clarification_signal = (
+        _vague_improvement_or_ideation_detected(message.lower())
+        or _reuse_request_detected(message.lower())
+    )
+    project_services_required = (
+        governed_action
+        or governed_work_type_declared
+        or explicit_artifact_transport_present
+        or router.get("selected_service") == GOVERNED_DEVELOPMENT_ROUTE
+        or existing_development_clarification_signal
+        or not informational_query_addressed
+    )
+    return {
+        "turn_kind": (
+            OPERATIONAL_GOVERNED_WORK
+            if project_services_required
+            else OPERATIONAL_PLATFORM_QUERY
+        ),
+        "binding_destination": (
+            PLATFORM_PROJECT_SERVICES_BINDING
+            if project_services_required
+            else PLATFORM_QUERY_ROUTER_BINDING
+        ),
+        "binding_reason": (
+            "EXISTING_GOVERNED_ACTION_EVIDENCE"
+            if governed_action or governed_work_type_declared
+            else (
+                "EXPLICIT_CANONICAL_ARTIFACT_TRANSPORT"
+                if explicit_artifact_transport_present
+                else (
+                    "EXISTING_QUERY_ROUTER_GOVERNED_DEVELOPMENT_ROUTE"
+                    if router.get("selected_service") == GOVERNED_DEVELOPMENT_ROUTE
+                    else (
+                        "EXISTING_PROJECT_SERVICES_CLARIFICATION_SIGNAL"
+                        if existing_development_clarification_signal
+                        or not informational_query_addressed
+                        else "EXISTING_QUERY_ROUTER_INFORMATIONAL_ROUTE"
+                    )
+                )
+            )
+        ),
+        "session_id": require_string(session_id, "session_id"),
+        "turn_reference": require_string(turn_reference, "turn_reference"),
+        "platform_query_router_response": deepcopy(router),
+        "platform_query_router_response_hash": router["artifact_hash"],
+        "selected_service": router.get("selected_service"),
+        "selected_query_class": router.get("selected_query_class"),
+        "selected_route_score": router.get("selected_route_score"),
+        "governed_action_evidence": deepcopy(roles.get("requested_action_clauses") or []),
+        "classification_authority": "PLATFORM_CORE_QUERY_ROUTER",
+        "human_interface_classified": False,
+    }
+
+
+def _read_only_result_from_platform_query_router(
+    *,
+    message: str,
+    development_intent: dict[str, Any],
+    created_at: str,
+    router_response: dict[str, Any],
+) -> dict[str, Any]:
+    """Project an already-classified informational query into the read-only contract."""
+
+    from aigol.runtime.platform_presentation_layer import (
+        present_platform_response,
+        validate_platform_presentation,
+    )
+    from aigol.runtime.platform_query_router import validate_platform_query_router_response
+
+    router = validate_platform_query_router_response(router_response)
+    presentation = validate_platform_presentation(
+        present_platform_response(router, created_at=created_at)
+    )
+    result = {
+        "artifact_type": "PLATFORM_CORE_GOVERNED_READ_ONLY_WORK_RESULT_V1",
+        "runtime_version": PLATFORM_CORE_READ_ONLY_WORK_BINDING_VERSION,
+        "binding_status": GOVERNED_READ_ONLY_WORK_BOUND,
+        "created_at": require_string(created_at, "created_at"),
+        "original_message": require_string(message, "message"),
+        "original_message_hash": replay_hash(message),
+        "requested_work_type": "INFORMATIONAL_QUERY",
+        "work_type": "INFORMATIONAL_QUERY",
+        "prepared_work_type": "INFORMATIONAL_QUERY",
+        "read_only_work_binding_admissible": True,
+        "read_only_work_result_status": "GOVERNED_READ_ONLY_RESULT_READY",
+        "selected_read_only_service": router.get("selected_service"),
+        "selected_query_class": router.get("selected_query_class"),
+        "platform_query_router_response": deepcopy(router),
+        "platform_query_router_response_hash": router.get("artifact_hash"),
+        "canonical_presentation": deepcopy(presentation),
+        "canonical_presentation_hash": presentation.get("presentation_hash"),
+        "presentation_artifact_type": presentation.get("artifact_type"),
+        "presentation_status": presentation.get("presentation_status"),
+        "presentation_summary": presentation.get("summary"),
+        "presentation_answer": deepcopy(presentation.get("answer")),
+        "presentation_recommended_next_step": presentation.get("recommended_next_step"),
+        "durable_governed_work_artifact": None,
+        "semantic_capability_runtime_route": None,
+        "reusable_platform_core_components": [
+            "UNIFIED_PLATFORM_QUERY_ROUTER",
+            "CANONICAL_PLATFORM_PRESENTATION_LAYER",
+        ],
+        "human_approval_required": False,
+        "human_interface_authority": False,
+        "platform_core_authority": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "governance_modified": False,
+        "replay_modified": False,
+        "runtime_implementation_invoked": False,
+        "implementation_summary_created": False,
+        "read_only": True,
+        "replay_visible": True,
+    }
+    result["artifact_hash"] = replay_hash(result)
+    return result
+
+
+def _operational_clarification_envelope(
+    *,
+    session_id: str,
+    created_at: str,
+    turn_reference: str,
+    original_message: str,
+    project_objective: dict[str, Any] | None,
+    semantic_route: dict[str, Any] | None,
+    development_intent: dict[str, Any],
+    parent_envelope: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Preserve canonical owner and slot metadata for a G29 clarification."""
+
+    if not isinstance(semantic_route, dict) or semantic_route.get("clarification_required") is not True:
+        return None
+    clarification = semantic_route.get("clarification_artifact")
+    if not isinstance(clarification, dict) or not isinstance(project_objective, dict):
+        raise FailClosedRuntimeError("operational clarification origin is incomplete")
+    selected_slot = clarification.get("selected_missing_slot")
+    if not isinstance(selected_slot, str) or not selected_slot.strip():
+        selected_slot = (
+            "canonical_artifact_reference"
+            if clarification.get("artifact_type")
+            == "SEMANTIC_CAPABILITY_ARTIFACT_BINDING_CLARIFICATION_ARTIFACT_V1"
+            else "capability_clarification"
+        )
+    envelope = {
+        "artifact_type": PLATFORM_CORE_CLARIFICATION_ENVELOPE_V1,
+        "runtime_version": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION,
+        "session_id": require_string(session_id, "session_id"),
+        "created_at": require_string(created_at, "created_at"),
+        "clarification_status": "ACTIVE",
+        "clarification_owner": G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER,
+        "clarification_runtime_identity": semantic_route.get("runtime_version"),
+        "semantic_slot": selected_slot,
+        "originating_turn_reference": require_string(turn_reference, "turn_reference"),
+        "originating_route_reference": semantic_route.get("replay_reference"),
+        "originating_route_hash": semantic_route.get("artifact_hash"),
+        "originating_selection_reference": semantic_route.get("selection_reference"),
+        "originating_selection_hash": semantic_route.get("selection_hash"),
+        "originating_project_objective_reference": semantic_route.get(
+            "project_objective_reference"
+        ),
+        "originating_project_objective_hash": project_objective.get("artifact_hash"),
+        "originating_project_objective_artifact": deepcopy(project_objective),
+        "originating_clarification_artifact": deepcopy(clarification),
+        "originating_clarification_hash": clarification.get("artifact_hash"),
+        "original_message": require_string(original_message, "original_message"),
+        "original_message_hash": replay_hash(original_message),
+        "requested_work_type": development_intent.get("requested_work_type"),
+        "work_type": development_intent.get("work_type"),
+        "prepared_work_type": development_intent.get("prepared_work_type"),
+        "work_type_source": development_intent.get("work_type_source"),
+        "work_type_source_text": development_intent.get("work_type_source_text"),
+        "mutation_allowed": development_intent.get("mutation_allowed"),
+        "runtime_implementation": development_intent.get("runtime_implementation"),
+        "clarification_questions": deepcopy(
+            clarification.get("clarification_questions") or []
+        ),
+        "parent_clarification_envelope_hash": (
+            parent_envelope.get("artifact_hash")
+            if isinstance(parent_envelope, dict)
+            else None
+        ),
+        "reply_interpretation_authority": "PLATFORM_CORE",
+        "human_interface_authority": False,
+        "replay_visible": True,
+    }
+    envelope["artifact_hash"] = replay_hash(envelope)
+    return validate_operational_clarification_envelope(envelope)
+
+
+def validate_operational_clarification_envelope(
+    envelope: dict[str, Any],
+    *,
+    expected_session_id: str | None = None,
+) -> dict[str, Any]:
+    """Fail closed on owner, slot, session, route, or artifact substitution."""
+
+    if not isinstance(envelope, dict):
+        raise FailClosedRuntimeError("operational clarification envelope must be an object")
+    candidate = deepcopy(envelope)
+    if candidate.get("artifact_type") != PLATFORM_CORE_CLARIFICATION_ENVELOPE_V1:
+        raise FailClosedRuntimeError("operational clarification envelope type mismatch")
+    supplied_hash = candidate.pop("artifact_hash", None)
+    if supplied_hash != replay_hash(candidate):
+        raise FailClosedRuntimeError("operational clarification envelope hash mismatch")
+    candidate["artifact_hash"] = supplied_hash
+    if expected_session_id is not None and candidate.get("session_id") != expected_session_id:
+        raise FailClosedRuntimeError("operational clarification cross-session reply rejected")
+    if candidate.get("clarification_owner") != G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER:
+        raise FailClosedRuntimeError("operational clarification owner substitution detected")
+    if not isinstance(candidate.get("semantic_slot"), str) or not candidate["semantic_slot"]:
+        raise FailClosedRuntimeError("operational clarification semantic slot missing")
+    from aigol.runtime.project_context_semantic_capability_route import (
+        reconstruct_project_context_semantic_capability_route,
+    )
+
+    route = reconstruct_project_context_semantic_capability_route(
+        candidate.get("originating_route_reference")
+    )
+    if route.get("artifact_hash") != candidate.get("originating_route_hash"):
+        raise FailClosedRuntimeError("operational clarification route tampering detected")
+    if route.get("session_id") != candidate.get("session_id"):
+        raise FailClosedRuntimeError("operational clarification route session mismatch")
+    clarification = route.get("clarification_artifact")
+    if not isinstance(clarification, dict) or clarification.get("artifact_hash") != candidate.get(
+        "originating_clarification_hash"
+    ):
+        raise FailClosedRuntimeError("operational clarification artifact substitution detected")
+    route_slot = clarification.get("selected_missing_slot")
+    if isinstance(route_slot, str) and route_slot != candidate.get("semantic_slot"):
+        raise FailClosedRuntimeError("operational clarification slot substitution detected")
+    objective = validate_platform_project_objective(
+        candidate.get("originating_project_objective_artifact")
+    )
+    if objective.get("artifact_hash") != candidate.get("originating_project_objective_hash"):
+        raise FailClosedRuntimeError("operational clarification objective substitution detected")
+    return candidate
+
+
+def _bind_owner_specific_clarification_reply(
+    *,
+    reply: str,
+    session_id: str,
+    active_envelope: dict[str, Any],
+    prior_workspace_state: dict[str, Any] | None,
+    created_at: str,
+    turn_reference: str,
+) -> dict[str, Any]:
+    """Return a reply to the Platform Core runtime that created the clarification."""
+
+    envelope = validate_operational_clarification_envelope(
+        active_envelope,
+        expected_session_id=session_id,
+    )
+    pending = (
+        prior_workspace_state.get("pending_clarification_request")
+        if isinstance(prior_workspace_state, dict)
+        else None
+    )
+    pending_envelope = (
+        pending.get("operational_clarification_envelope")
+        if isinstance(pending, dict)
+        else None
+    )
+    if not isinstance(pending_envelope, dict) or pending_envelope.get(
+        "artifact_hash"
+    ) != envelope.get("artifact_hash"):
+        raise FailClosedRuntimeError("operational clarification stale reply rejected")
+    original = require_string(envelope.get("original_message"), "original_message")
+    resolution = resolve_development_intent(
+        message=original,
+        workspace_state=prior_workspace_state,
+    )
+    resolution.update(
+        {
+            "clarification_required": False,
+            "clarification_reply_bound": True,
+            "clarification_owner": envelope["clarification_owner"],
+            "clarification_runtime_identity": envelope["clarification_runtime_identity"],
+            "active_clarification_open_slot": envelope["semantic_slot"],
+            "clarification_reply_hash": replay_hash(require_string(reply, "reply")),
+            "clarification_originating_route_reference": envelope[
+                "originating_route_reference"
+            ],
+            "clarification_originating_route_hash": envelope["originating_route_hash"],
+            "requested_work_type": envelope.get("requested_work_type"),
+            "work_type": envelope.get("work_type"),
+            "prepared_work_type": envelope.get("prepared_work_type"),
+            "work_type_source": envelope.get("work_type_source"),
+            "work_type_source_text": envelope.get("work_type_source_text"),
+            "mutation_allowed": envelope.get("mutation_allowed"),
+            "runtime_implementation": envelope.get("runtime_implementation"),
+            "summary_admissible": False,
+            "runtime_binding_admissible": False,
+            "read_only_work_binding_admissible": True,
+            "read_only_work_binding_status": GOVERNED_READ_ONLY_WORK_BOUND,
+            "requires_human_approval": False,
+            "project_objective_restarted": False,
+        }
+    )
+    resolution["artifact_hash"] = replay_hash(resolution)
+    continuity = {
+        "artifact_type": "PLATFORM_CORE_OWNER_SPECIFIC_CLARIFICATION_CONTINUITY_V1",
+        "runtime_version": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION,
+        "session_id": session_id,
+        "created_at": require_string(created_at, "created_at"),
+        "reply_hash": replay_hash(reply),
+        "reply_bound_to_active_clarification": True,
+        "clarification_owner": envelope["clarification_owner"],
+        "clarification_runtime_identity": envelope["clarification_runtime_identity"],
+        "semantic_slot": envelope["semantic_slot"],
+        "originating_turn_reference": envelope["originating_turn_reference"],
+        "originating_route_reference": envelope["originating_route_reference"],
+        "originating_route_hash": envelope["originating_route_hash"],
+        "active_clarification_envelope_hash": envelope["artifact_hash"],
+        "continuation_turn_reference": turn_reference,
+        "owner_specific_continuation": True,
+        "project_objective_restarted": False,
+        "human_interface_authority": False,
+        "platform_core_authority": True,
+        "replay_visible": True,
+    }
+    continuity["artifact_hash"] = replay_hash(continuity)
+    return {
+        "original_message": original,
+        "active_envelope": envelope,
+        "originating_project_objective_artifact": deepcopy(
+            envelope["originating_project_objective_artifact"]
+        ),
+        "development_intent_resolution": resolution,
+        "clarification_continuity": continuity,
+    }
+
+
+def _finalize_operational_turn_binding(
+    *,
+    session_id: str,
+    created_at: str,
+    message: str,
+    turn_reference: str,
+    operational_classification: dict[str, Any] | None,
+    active_clarification_state: dict[str, Any] | None,
+    owner_specific_continuation: dict[str, Any] | None,
+    semantic_route: dict[str, Any] | None,
+    operational_clarification_envelope: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if operational_classification is not None:
+        turn_kind = operational_classification["turn_kind"]
+        destination = operational_classification["binding_destination"]
+        router = operational_classification["platform_query_router_response"]
+        origin_envelope = None
+    else:
+        turn_kind = OPERATIONAL_CLARIFICATION_REPLY
+        destination = (
+            G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+            if owner_specific_continuation is not None
+            else PLATFORM_PROJECT_SERVICES_BINDING
+        )
+        router = None
+        origin_envelope = (
+            owner_specific_continuation.get("active_envelope")
+            if owner_specific_continuation is not None
+            else None
+        )
+    artifact = {
+        "artifact_type": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1,
+        "runtime_version": PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION,
+        "session_id": require_string(session_id, "session_id"),
+        "created_at": require_string(created_at, "created_at"),
+        "turn_reference": require_string(turn_reference, "turn_reference"),
+        "turn_kind": turn_kind,
+        "user_turn_hash": replay_hash(require_string(message, "message")),
+        "binding_destination": destination,
+        "binding_reason": (
+            operational_classification.get("binding_reason")
+            if operational_classification is not None
+            else "ACTIVE_CLARIFICATION_OWNER_BINDING"
+        ),
+        "platform_query_router_response": deepcopy(router),
+        "platform_query_router_response_hash": (
+            router.get("artifact_hash") if isinstance(router, dict) else None
+        ),
+        "selected_service": (
+            router.get("selected_service") if isinstance(router, dict) else None
+        ),
+        "selected_query_class": (
+            router.get("selected_query_class") if isinstance(router, dict) else None
+        ),
+        "originating_clarification_owner": (
+            origin_envelope.get("clarification_owner")
+            if isinstance(origin_envelope, dict)
+            else None
+        ),
+        "originating_semantic_slot": (
+            origin_envelope.get("semantic_slot")
+            if isinstance(origin_envelope, dict)
+            else None
+        ),
+        "originating_clarification_envelope_hash": (
+            origin_envelope.get("artifact_hash")
+            if isinstance(origin_envelope, dict)
+            else None
+        ),
+        "originating_turn_reference": (
+            origin_envelope.get("originating_turn_reference")
+            if isinstance(origin_envelope, dict)
+            else None
+        ),
+        "continuation_route_reference": (
+            semantic_route.get("replay_reference")
+            if isinstance(semantic_route, dict)
+            else None
+        ),
+        "continuation_route_hash": (
+            semantic_route.get("artifact_hash")
+            if isinstance(semantic_route, dict)
+            else None
+        ),
+        "continuation_semantic_slot": (
+            operational_clarification_envelope.get("semantic_slot")
+            if isinstance(operational_clarification_envelope, dict)
+            else None
+        ),
+        "operational_clarification_envelope": deepcopy(
+            operational_clarification_envelope
+        ),
+        "operational_clarification_envelope_hash": (
+            operational_clarification_envelope.get("artifact_hash")
+            if isinstance(operational_clarification_envelope, dict)
+            else None
+        ),
+        "classification_authority": "PLATFORM_CORE",
+        "clarification_binding_authority": "PLATFORM_CORE",
+        "human_interface_classified": False,
+        "human_interface_interpreted_reply": False,
+        "human_interface_authority": False,
+        "platform_core_authority": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return validate_operational_turn_binding(artifact)
+
+
+def validate_operational_turn_binding(artifact: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("operational turn binding must be an object")
+    candidate = deepcopy(artifact)
+    if candidate.get("artifact_type") != PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1:
+        raise FailClosedRuntimeError("operational turn binding type mismatch")
+    if candidate.get("runtime_version") != PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION:
+        raise FailClosedRuntimeError("operational turn binding version mismatch")
+    supplied_hash = candidate.pop("artifact_hash", None)
+    if supplied_hash != replay_hash(candidate):
+        raise FailClosedRuntimeError("operational turn binding hash mismatch")
+    candidate["artifact_hash"] = supplied_hash
+    if candidate.get("human_interface_authority") is not False:
+        raise FailClosedRuntimeError("operational turn binding interface authority invalid")
+    if candidate.get("turn_kind") in {OPERATIONAL_PLATFORM_QUERY, OPERATIONAL_GOVERNED_WORK}:
+        from aigol.runtime.platform_query_router import validate_platform_query_router_response
+
+        router = validate_platform_query_router_response(
+            candidate.get("platform_query_router_response")
+        )
+        if router.get("artifact_hash") != candidate.get("platform_query_router_response_hash"):
+            raise FailClosedRuntimeError("operational turn classification lineage mismatch")
+        if router.get("selected_service") != candidate.get("selected_service"):
+            raise FailClosedRuntimeError("operational turn selected route substitution detected")
+    elif candidate.get("turn_kind") == OPERATIONAL_CLARIFICATION_REPLY:
+        if candidate.get("binding_destination") == G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER:
+            if candidate.get("originating_clarification_owner") != (
+                G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+            ):
+                raise FailClosedRuntimeError("operational turn owner substitution detected")
+            if candidate.get("originating_semantic_slot") != candidate.get(
+                "continuation_semantic_slot"
+            ):
+                raise FailClosedRuntimeError("operational turn slot substitution detected")
+    else:
+        raise FailClosedRuntimeError("operational turn kind invalid")
+    envelope = candidate.get("operational_clarification_envelope")
+    if isinstance(envelope, dict):
+        validated = validate_operational_clarification_envelope(
+            envelope,
+            expected_session_id=str(candidate.get("session_id")),
+        )
+        if validated.get("artifact_hash") != candidate.get(
+            "operational_clarification_envelope_hash"
+        ):
+            raise FailClosedRuntimeError("operational turn clarification lineage mismatch")
+    return candidate
+
+
+def reconstruct_operational_turn_binding(
+    turn_reference: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct classification and owner-specific continuation Replay."""
+
+    turn = validate_operational_turn_binding(load_json(Path(turn_reference)))
+    if turn.get("turn_kind") == OPERATIONAL_CLARIFICATION_REPLY:
+        origin_reference = turn.get("originating_turn_reference")
+        if not origin_reference:
+            if turn.get("binding_destination") == G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER:
+                raise FailClosedRuntimeError("operational turn clarification origin missing")
+            return turn
+        origin = validate_operational_turn_binding(load_json(Path(origin_reference)))
+        if origin.get("operational_clarification_envelope_hash") != turn.get(
+            "originating_clarification_envelope_hash"
+        ):
+            raise FailClosedRuntimeError("operational turn stale clarification lineage")
+        if origin.get("session_id") != turn.get("session_id"):
+            raise FailClosedRuntimeError("operational turn cross-session lineage")
+        if turn.get("continuation_route_reference"):
+            from aigol.runtime.project_context_semantic_capability_route import (
+                reconstruct_project_context_semantic_capability_route,
+            )
+
+            route = reconstruct_project_context_semantic_capability_route(
+                turn["continuation_route_reference"]
+            )
+            if route.get("artifact_hash") != turn.get("continuation_route_hash"):
+                raise FailClosedRuntimeError("operational turn continuation route tampering")
+    return turn
 
 
 def record_unified_human_interface_workspace_state(
@@ -551,6 +1275,11 @@ def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None
         "clarification_question_bindings": deterministic_clarification_question_bindings(
             pending.get("clarification_questions")
         ),
+        "operational_clarification_envelope": deepcopy(
+            pending.get("operational_clarification_envelope")
+        )
+        if isinstance(pending.get("operational_clarification_envelope"), dict)
+        else None,
         "pending_clarification_request": deepcopy(pending),
         "replay_backed": True,
         "platform_core_authority": True,
@@ -2959,6 +3688,7 @@ def explicit_governed_work_type(message: str) -> dict[str, str | None]:
             "work type: audit_only",
             "work_type=audit_only",
             "audit_only",
+            "audit only",
         ),
         "IMPLEMENTATION": (
             "work_type: implementation",
