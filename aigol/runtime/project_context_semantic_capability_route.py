@@ -13,6 +13,7 @@ import re
 from typing import Any
 
 from aigol.runtime.certified_capability_invocation_binding_runtime import (
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
     PLATFORM_CHANGE_IMPACT_ANALYSIS,
     PLATFORM_CHANGE_NORMALIZATION,
     PLATFORM_VALIDATION_PLANNING,
@@ -441,6 +442,12 @@ def _compatible_artifacts(
 
 
 def _capability_inputs(capability_id: str, artifact: dict[str, Any]) -> dict[str, Any]:
+    if capability_id == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
+        return {
+            "composition_coverage_request_artifact": deepcopy(artifact),
+            "composition_coverage_request_reference": artifact.get("request_id"),
+            "composition_coverage_request_hash": artifact.get("artifact_hash"),
+        }
     if capability_id == PLATFORM_CHANGE_NORMALIZATION:
         reference_field = (
             "manifest_id"

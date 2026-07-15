@@ -13,6 +13,7 @@ from aigol.runtime.certified_capability_invocation_binding_runtime import (
     CERTIFIED_CAPABILITY_INVOCATION_COMPLETED,
     CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1,
     FAILED_CLOSED,
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
     PLATFORM_CHANGE_IMPACT_ANALYSIS,
     PLATFORM_CHANGE_NORMALIZATION,
     PLATFORM_VALIDATION_PLANNING,
@@ -159,7 +160,7 @@ def test_valid_discovery_invokes_allowlisted_impact_analysis_and_reconstructs(tm
     assert validate_certified_capability_invocation_result_artifact(result) == result
 
 
-def test_all_three_read_only_adapters_reuse_canonical_entry_points(tmp_path) -> None:
+def test_all_allowlisted_read_only_adapters_reuse_canonical_entry_points(tmp_path) -> None:
     impact = _impact(tmp_path)
     planning = _invoke(
         tmp_path,
@@ -177,6 +178,7 @@ def test_all_three_read_only_adapters_reuse_canonical_entry_points(tmp_path) -> 
         "PLATFORM_VALIDATION_PLAN_ARTIFACT_V1"
     )
     assert set(certified_capability_invocation_adapters()) == {
+        PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
         PLATFORM_CHANGE_NORMALIZATION,
         PLATFORM_CHANGE_IMPACT_ANALYSIS,
         PLATFORM_VALIDATION_PLANNING,

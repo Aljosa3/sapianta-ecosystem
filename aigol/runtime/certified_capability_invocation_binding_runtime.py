@@ -13,6 +13,14 @@ from aigol.runtime.governed_repository_mutation_runtime import (
 )
 from aigol.runtime.implementation_manifest_runtime import IMPLEMENTATION_MANIFEST_ARTIFACT_V1
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_capability_composition_coverage import (
+    COVERAGE_FAILED_CLOSED,
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1,
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1,
+    discover_platform_capability_composition_coverage,
+    validate_platform_capability_composition_coverage,
+    validate_platform_capability_composition_coverage_request,
+)
 from aigol.runtime.platform_capability_certification_registry import (
     CERTIFIED_STATES,
     PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY_VERSION,
@@ -55,6 +63,9 @@ FAILED_CLOSED = "FAILED_CLOSED"
 PLATFORM_CHANGE_NORMALIZATION = "PLATFORM_CHANGE_NORMALIZATION"
 PLATFORM_CHANGE_IMPACT_ANALYSIS = "PLATFORM_CHANGE_IMPACT_ANALYSIS"
 PLATFORM_VALIDATION_PLANNING = "PLATFORM_VALIDATION_PLANNING"
+PLATFORM_CAPABILITY_COMPOSITION_COVERAGE = (
+    "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
+)
 
 REPLAY_STEPS = (
     "platform_knowledge_discovery_source_recorded",
@@ -166,8 +177,59 @@ def _invoke_validation_planning(
     )
 
 
+def _invoke_capability_composition_coverage(
+    invocation_id: str,
+    inputs: dict[str, Any],
+    invoked_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    del invocation_id
+    request = validate_platform_capability_composition_coverage_request(
+        inputs["composition_coverage_request_artifact"]
+    )
+    artifact = discover_platform_capability_composition_coverage(
+        query=request["query"],
+        created_at=invoked_at,
+    )
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "platform_capability_composition_coverage_recorded",
+        "artifact": deepcopy(artifact),
+    }
+    wrapper["wrapper_hash"] = replay_hash(wrapper)
+    write_json_immutable(
+        replay_dir / "000_platform_capability_composition_coverage_recorded.json",
+        wrapper,
+    )
+    return {"platform_capability_composition_coverage_artifact": artifact}
+
+
 _ADAPTERS = MappingProxyType(
     {
+        PLATFORM_CAPABILITY_COMPOSITION_COVERAGE: CapabilityInvocationAdapter(
+            capability_identifier=PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
+            adapter_identifier=(
+                "G30_02_PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ADAPTER_V1"
+            ),
+            canonical_entry_point=(
+                "aigol.runtime.platform_capability_composition_coverage."
+                "discover_platform_capability_composition_coverage"
+            ),
+            accepted_input_artifact_types=(
+                PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1,
+            ),
+            required_input_fields=(
+                "composition_coverage_request_artifact",
+                "composition_coverage_request_reference",
+                "composition_coverage_request_hash",
+            ),
+            output_artifact_type=PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1,
+            output_capture_field="platform_capability_composition_coverage_artifact",
+            output_reference_field="query_hash",
+            output_status_field="coverage_status",
+            failed_status=COVERAGE_FAILED_CLOSED,
+            invoke=_invoke_capability_composition_coverage,
+        ),
         PLATFORM_CHANGE_NORMALIZATION: CapabilityInvocationAdapter(
             capability_identifier=PLATFORM_CHANGE_NORMALIZATION,
             adapter_identifier="G28_02_PLATFORM_CHANGE_NORMALIZATION_ADAPTER_V1",
@@ -239,6 +301,39 @@ def certified_capability_invocation_adapters() -> dict[str, dict[str, Any]]:
 
 _SEMANTIC_DESCRIPTORS = MappingProxyType(
     {
+        PLATFORM_CAPABILITY_COMPOSITION_COVERAGE: {
+            "capability_identifier": PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
+            "objective_terms": (
+                "platform capability composition coverage",
+                "capability composition coverage",
+                "certified capability coverage",
+                "reusable capability coverage",
+            ),
+            "supported_actions": ("analyze", "assess", "discover", "evaluate", "review"),
+            "supported_subjects": (
+                "capability composition",
+                "capability coverage",
+                "certified capabilities",
+                "reusable capabilities",
+            ),
+            "expected_outcomes": (
+                "capability coverage",
+                "certified composition",
+                "residual gaps",
+            ),
+            "excluded_meanings": (
+                "normalize change",
+                "analyze change impact",
+                "validation plan",
+            ),
+            "supported_work_types": ("AUDIT_ONLY", "ANALYSIS", "REVIEW"),
+            "required_semantic_slots": (
+                "capability_action",
+                "capability_subject",
+                "input_artifact_family",
+            ),
+            "clarification_label": "analyze certified Platform capability composition coverage",
+        },
         PLATFORM_CHANGE_NORMALIZATION: {
             "capability_identifier": PLATFORM_CHANGE_NORMALIZATION,
             "objective_terms": (
@@ -609,6 +704,11 @@ def reconstruct_certified_capability_invocation_replay(
     }
     if len(capability_ids) != 1:
         raise FailClosedRuntimeError("certified capability invocation capability lineage mismatch")
+    if capability_id == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
+        _reconstruct_capability_composition_coverage_replay(
+            replay_path=Path(str(result["capability_replay_reference"])),
+            expected_output=result["output_artifact"],
+        )
     return {
         "invocation_id": result["invocation_id"],
         "session_id": result["session_id"],
@@ -628,6 +728,32 @@ def reconstruct_certified_capability_invocation_replay(
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
     }
+
+
+def _reconstruct_capability_composition_coverage_replay(
+    *, replay_path: Path, expected_output: dict[str, Any]
+) -> None:
+    wrapper = load_json(
+        replay_path / "000_platform_capability_composition_coverage_recorded.json"
+    )
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != (
+        "platform_capability_composition_coverage_recorded"
+    ):
+        raise FailClosedRuntimeError(
+            "capability composition coverage replay ordering mismatch"
+        )
+    _verify_named_hash(
+        wrapper,
+        "wrapper_hash",
+        "capability composition coverage replay wrapper hash mismatch",
+    )
+    artifact = validate_platform_capability_composition_coverage(
+        wrapper.get("artifact")
+    )
+    if artifact.get("artifact_hash") != expected_output.get("artifact_hash"):
+        raise FailClosedRuntimeError(
+            "capability composition coverage replay output mismatch"
+        )
 
 
 def _validated_discovery(response: Any, capability_id: str) -> dict[str, Any]:
@@ -714,6 +840,26 @@ def _validated_inputs(
         artifact = _validate_normalization_input(inputs)
         reference = inputs["source_reference"]
         semantic_hash = inputs["source_hash"]
+    elif adapter.capability_identifier == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
+        artifact = validate_platform_capability_composition_coverage_request(
+            inputs["composition_coverage_request_artifact"]
+        )
+        reference = _require_string(
+            inputs["composition_coverage_request_reference"],
+            "composition_coverage_request_reference",
+        )
+        semantic_hash = _require_hash(
+            inputs["composition_coverage_request_hash"],
+            "composition_coverage_request_hash",
+        )
+        if artifact["request_id"] != reference:
+            raise FailClosedRuntimeError(
+                "certified capability invocation failed closed: input reference mismatch"
+            )
+        if artifact["artifact_hash"] != semantic_hash:
+            raise FailClosedRuntimeError(
+                "certified capability invocation failed closed: input hash mismatch"
+            )
     elif adapter.capability_identifier == PLATFORM_CHANGE_IMPACT_ANALYSIS:
         artifact = validate_normalized_change_artifact(inputs["normalized_change_artifact"])
         reference = _require_string(
@@ -828,6 +974,8 @@ def _validated_output(
         return validate_normalized_change_artifact(output)
     if adapter.capability_identifier == PLATFORM_CHANGE_IMPACT_ANALYSIS:
         return validate_platform_change_impact_artifact(output)
+    if adapter.capability_identifier == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
+        return validate_platform_capability_composition_coverage(output)
     return validate_platform_validation_plan_artifact(output)
 
 

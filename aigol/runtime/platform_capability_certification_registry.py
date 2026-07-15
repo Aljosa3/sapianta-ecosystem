@@ -382,6 +382,7 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         certification_milestone="G20-03",
         certification_evidence=(
             "docs/governance/G20_03_PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME_IMPLEMENTATION.md",
+            "docs/governance/G30_02_FIRST_POST_G29_CERTIFIED_CAPABILITY_ONBOARDING.md",
         ),
         certification_date="2026-07-11",
         architectural_owner="PLATFORM_CORE",

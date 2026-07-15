@@ -31,6 +31,13 @@ PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION = (
 PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1 = (
     "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1"
 )
+PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1 = (
+    "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1"
+)
+
+CAPABILITY_COMPOSITION_COVERAGE_REQUEST_CREATED = (
+    "CAPABILITY_COMPOSITION_COVERAGE_REQUEST_CREATED"
+)
 
 COVERAGE_COMPLETE = "CAPABILITY_COMPOSITION_COVERAGE_COMPLETE"
 COVERAGE_PARTIAL = "CAPABILITY_COMPOSITION_COVERAGE_PARTIAL"
@@ -143,6 +150,77 @@ KNOWN_COMPOSITION_DEPENDENCIES = {
         "CANONICAL_PLATFORM_PRESENTATION_LAYER",
     ),
 }
+
+
+def create_platform_capability_composition_coverage_request(
+    *,
+    request_id: str,
+    query: str,
+    created_at: str = "2026-07-15T00:00:00Z",
+) -> dict[str, Any]:
+    """Create the immutable canonical input used by the G29 onboarding route."""
+
+    raw_query = _require_string(query, "query")
+    artifact = {
+        "artifact_type": PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1,
+        "runtime_version": PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION,
+        "request_status": CAPABILITY_COMPOSITION_COVERAGE_REQUEST_CREATED,
+        "request_id": _require_string(request_id, "request_id"),
+        "query": raw_query,
+        "query_hash": replay_hash(raw_query),
+        "created_at": _require_string(created_at, "created_at"),
+        "read_only": True,
+        "replay_visible": True,
+        "human_interface_authority": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def validate_platform_capability_composition_coverage_request(
+    artifact: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate one immutable composition-coverage request artifact."""
+
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("capability composition coverage request must be a dict")
+    candidate = deepcopy(artifact)
+    if candidate.get("artifact_type") != (
+        PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1
+    ):
+        raise FailClosedRuntimeError("capability composition coverage request type is invalid")
+    if candidate.get("runtime_version") != PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION:
+        raise FailClosedRuntimeError("capability composition coverage request version is invalid")
+    if candidate.get("request_status") != CAPABILITY_COMPOSITION_COVERAGE_REQUEST_CREATED:
+        raise FailClosedRuntimeError("capability composition coverage request status is invalid")
+    _require_string(candidate.get("request_id"), "request_id")
+    query = _require_string(candidate.get("query"), "query")
+    if candidate.get("query_hash") != replay_hash(query):
+        raise FailClosedRuntimeError("capability composition coverage request query hash mismatch")
+    for field, expected in {
+        "read_only": True,
+        "replay_visible": True,
+        "human_interface_authority": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "governance_modified": False,
+        "replay_modified": False,
+    }.items():
+        if candidate.get(field) is not expected:
+            raise FailClosedRuntimeError(
+                "capability composition coverage request boundary invalid"
+            )
+    body = deepcopy(candidate)
+    actual_hash = body.pop("artifact_hash", None)
+    if replay_hash(body) != actual_hash:
+        raise FailClosedRuntimeError("capability composition coverage request hash mismatch")
+    return candidate
 
 
 def discover_platform_capability_composition_coverage(
@@ -581,7 +659,10 @@ __all__ = [
     "NO_GAP_EXISTING_CAPABILITY_SUFFICIENT",
     "NO_GAP_EXISTING_CERTIFIED_COMPOSITION_SUFFICIENT",
     "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_ARTIFACT_V1",
+    "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1",
     "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_VERSION",
+    "create_platform_capability_composition_coverage_request",
     "discover_platform_capability_composition_coverage",
     "validate_platform_capability_composition_coverage",
+    "validate_platform_capability_composition_coverage_request",
 ]

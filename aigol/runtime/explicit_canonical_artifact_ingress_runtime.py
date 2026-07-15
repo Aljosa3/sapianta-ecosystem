@@ -19,6 +19,10 @@ from aigol.runtime.implementation_manifest_runtime import (
     IMPLEMENTATION_MANIFEST_ARTIFACT_V1,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_capability_composition_coverage import (
+    PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1,
+    validate_platform_capability_composition_coverage_request,
+)
 from aigol.runtime.platform_change_impact_analysis_runtime import (
     PLATFORM_CHANGE_IMPACT_ARTIFACT_V1,
     validate_platform_change_impact_artifact,
@@ -418,6 +422,8 @@ def _validate_supported_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         raise FailClosedRuntimeError("explicit canonical artifact ingress artifact is not replay-visible")
     if artifact_type == NORMALIZED_CHANGE_ARTIFACT_V1:
         return validate_normalized_change_artifact(candidate)
+    if artifact_type == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1:
+        return validate_platform_capability_composition_coverage_request(candidate)
     if artifact_type == PLATFORM_CHANGE_IMPACT_ARTIFACT_V1:
         return validate_platform_change_impact_artifact(candidate)
     if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
@@ -512,7 +518,13 @@ def _verify_artifact_hash(artifact: dict[str, Any]) -> None:
 
 
 def _artifact_identity(artifact: dict[str, Any]) -> str:
-    for field in ("manifest_id", "proposal_id", "normalization_id", "impact_analysis_id"):
+    for field in (
+        "manifest_id",
+        "proposal_id",
+        "normalization_id",
+        "impact_analysis_id",
+        "request_id",
+    ):
         value = artifact.get(field)
         if isinstance(value, str) and value.strip():
             return value.strip()
