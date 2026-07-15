@@ -67,6 +67,15 @@ PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1 = (
 PLATFORM_CORE_CLARIFICATION_ENVELOPE_V1 = (
     "PLATFORM_CORE_OPERATIONAL_CLARIFICATION_ENVELOPE_V1"
 )
+PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_VERSION = (
+    "G30_07_FAIL_CLOSED_IN_SESSION_ARTIFACT_ATTACHMENT_RETRY_CONTINUITY_V1"
+)
+PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_STATE_V1 = (
+    "PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_STATE_V1"
+)
+ATTACHMENT_RETRY_ELIGIBLE = "ATTACHMENT_RETRY_ELIGIBLE"
+ATTACHMENT_RETRY_COMPLETED = "ATTACHMENT_RETRY_COMPLETED"
+ATTACHMENT_RETRY_TERMINAL = "ATTACHMENT_RETRY_TERMINAL"
 
 OPERATIONAL_PLATFORM_QUERY = "OPERATIONAL_PLATFORM_QUERY"
 OPERATIONAL_GOVERNED_WORK = "OPERATIONAL_GOVERNED_WORK"
@@ -223,6 +232,7 @@ def prepare_unified_human_interface_project_context(
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
     session_root = Path(runtime_root) / require_string(session_id, "session_id")
+    prior_state = latest_platform_core_workspace_state(session_root)
     ingress_capture: dict[str, Any] | None = None
     validated_explicit_artifacts = explicit_canonical_artifacts
     if explicit_canonical_artifact_references:
@@ -234,6 +244,13 @@ def prepare_unified_human_interface_project_context(
             raise FailClosedRuntimeError(
                 "explicit canonical artifact objects and references cannot be mixed"
             )
+        attachment_transport_hash = replay_hash(
+            list(explicit_canonical_artifact_references)
+        )
+        _reject_duplicate_attachment_attempt(
+            workspace_state=prior_state,
+            attachment_transport_hash=attachment_transport_hash,
+        )
         ingress_index = next_index(
             session_root / "explicit_artifact_ingress", "*_ingress"
         )
@@ -254,7 +271,8 @@ def prepare_unified_human_interface_project_context(
         validated_explicit_artifacts = tuple(
             ingress_capture["validated_canonical_artifacts"]
         )
-    prior_state = latest_platform_core_workspace_state(session_root)
+    else:
+        attachment_transport_hash = None
     guidance = (
         project_guidance_from_workspace_state(prior_state)
         if isinstance(prior_state, dict)
@@ -508,6 +526,63 @@ def prepare_unified_human_interface_project_context(
             else None
         ),
     )
+    attachment_retry_state = _record_artifact_attachment_retry_state(
+        session_id=session_id,
+        created_at=created_at,
+        turn_reference=turn_reference,
+        active_clarification_state=active_clarification_state,
+        active_envelope=active_envelope,
+        ingress_capture=ingress_capture,
+        semantic_route=semantic_route,
+        attachment_transport_hash=attachment_transport_hash,
+    )
+    if (
+        isinstance(attachment_retry_state, dict)
+        and attachment_retry_state.get("retry_eligible") is True
+        and isinstance(active_envelope, dict)
+    ):
+        operational_clarification_envelope = deepcopy(active_envelope)
+        conversation_experience = deepcopy(conversation_experience)
+        conversation_experience.update(
+            {
+                "artifact_attachment_retry_eligible": True,
+                "artifact_attachment_retry_state": deepcopy(
+                    attachment_retry_state
+                ),
+                "artifact_attachment_retry_original_message": active_envelope.get(
+                    "original_message"
+                ),
+                "clarification_questions": deepcopy(
+                    active_clarification_state.get("clarification_questions")
+                    if isinstance(active_clarification_state, dict)
+                    else []
+                ),
+                "operational_clarification_envelope": deepcopy(active_envelope),
+                "user_headline": (
+                    "The artifact attachment failed closed; the original "
+                    "clarification remains active."
+                ),
+                "user_explanation": (
+                    "Platform Core rejected the attachment before semantic "
+                    "continuation or capability invocation."
+                ),
+                "recommended_next_user_action": (
+                    "Attach a different opaque canonical artifact reference."
+                ),
+            }
+        )
+        conversation_experience["artifact_hash"] = replay_hash(
+            conversation_experience
+        )
+    elif isinstance(attachment_retry_state, dict):
+        conversation_experience = deepcopy(conversation_experience)
+        conversation_experience["artifact_attachment_retry_eligible"] = False
+        conversation_experience["artifact_attachment_retry_state"] = deepcopy(
+            attachment_retry_state
+        )
+        conversation_experience["artifact_hash"] = replay_hash(
+            conversation_experience
+        )
     if operational_clarification_envelope is not None:
         conversation_experience = deepcopy(conversation_experience)
         conversation_experience["operational_clarification_envelope"] = deepcopy(
@@ -525,6 +600,7 @@ def prepare_unified_human_interface_project_context(
         semantic_route=semantic_route,
         operational_clarification_envelope=operational_clarification_envelope,
         ingress_capture=ingress_capture,
+        attachment_retry_state=attachment_retry_state,
     )
     write_json_immutable(Path(turn_reference), operational_turn_binding)
     artifact = {
@@ -551,6 +627,7 @@ def prepare_unified_human_interface_project_context(
         "operational_clarification_envelope": deepcopy(
             operational_clarification_envelope
         ),
+        "artifact_attachment_retry_state": deepcopy(attachment_retry_state),
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "governed_read_only_work_result": read_only_work_result,
@@ -1001,6 +1078,387 @@ def _bind_owner_specific_clarification_reply(
     }
 
 
+def _record_artifact_attachment_retry_state(
+    *,
+    session_id: str,
+    created_at: str,
+    turn_reference: str,
+    active_clarification_state: dict[str, Any] | None,
+    active_envelope: dict[str, Any] | None,
+    ingress_capture: dict[str, Any] | None,
+    semantic_route: dict[str, Any] | None,
+    attachment_transport_hash: str | None,
+) -> dict[str, Any] | None:
+    """Record one deterministic attachment attempt owned by Platform Core."""
+
+    if not (
+        isinstance(active_envelope, dict)
+        and isinstance(ingress_capture, dict)
+        and isinstance(attachment_transport_hash, str)
+    ):
+        return None
+    envelope = validate_operational_clarification_envelope(
+        active_envelope,
+        expected_session_id=session_id,
+    )
+    pending = (
+        active_clarification_state.get("pending_clarification_request")
+        if isinstance(active_clarification_state, dict)
+        else None
+    )
+    prior_state = (
+        pending.get("artifact_attachment_retry_state")
+        if isinstance(pending, dict)
+        and isinstance(pending.get("artifact_attachment_retry_state"), dict)
+        else None
+    )
+    if isinstance(prior_state, dict):
+        prior_state = validate_artifact_attachment_retry_state(prior_state)
+        if prior_state.get("retry_eligible") is not True:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry rejected after terminal state"
+            )
+        if prior_state.get("session_id") != session_id:
+            raise FailClosedRuntimeError("artifact attachment retry session mismatch")
+        if prior_state.get("clarification_envelope_hash") != envelope.get(
+            "artifact_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "artifact attachment retry stale clarification"
+            )
+    ingress = ingress_capture.get("explicit_canonical_artifact_ingress_artifact")
+    if not isinstance(ingress, dict):
+        raise FailClosedRuntimeError(
+            "artifact attachment retry ingress resolution missing"
+        )
+    attempt_number = (
+        int(prior_state["attempt_number"]) + 1
+        if isinstance(prior_state, dict)
+        else 1
+    )
+    route_status = (
+        semantic_route.get("route_status")
+        if isinstance(semantic_route, dict)
+        else None
+    )
+    lifecycle_status = (
+        semantic_route.get("lifecycle_status")
+        if isinstance(semantic_route, dict)
+        else None
+    )
+    capability_invocation_started = lifecycle_status is not None
+    capability_invocation_completed = route_status == (
+        "SEMANTIC_CAPABILITY_ROUTE_COMPLETED"
+    )
+    retry_eligible = (
+        ingress.get("ingress_status")
+        == "EXPLICIT_CANONICAL_ARTIFACT_INGRESS_FAILED_CLOSED"
+        and semantic_route is None
+        and not capability_invocation_started
+    )
+    retry_status = (
+        ATTACHMENT_RETRY_ELIGIBLE
+        if retry_eligible
+        else (
+            ATTACHMENT_RETRY_COMPLETED
+            if capability_invocation_completed
+            else ATTACHMENT_RETRY_TERMINAL
+        )
+    )
+    attempt_identity = replay_hash(
+        {
+            "session_id": session_id,
+            "clarification_envelope_hash": envelope["artifact_hash"],
+            "attempt_number": attempt_number,
+            "attachment_transport_hash": attachment_transport_hash,
+        }
+    )
+    turn_path = Path(turn_reference)
+    index = turn_path.name.split("_", 1)[0]
+    attempt_reference = str(
+        turn_path.parent.parent
+        / "artifact_attachment_retry"
+        / f"{index}_artifact_attachment_attempt_recorded.json"
+    )
+    state = {
+        "artifact_type": PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_STATE_V1,
+        "runtime_version": PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_VERSION,
+        "session_id": require_string(session_id, "session_id"),
+        "created_at": require_string(created_at, "created_at"),
+        "attempt_number": attempt_number,
+        "attempt_identity": attempt_identity,
+        "attempt_reference": attempt_reference,
+        "attachment_transport_hash": attachment_transport_hash,
+        "clarification_owner": envelope["clarification_owner"],
+        "semantic_slot": envelope["semantic_slot"],
+        "clarification_envelope_hash": envelope["artifact_hash"],
+        "originating_turn_reference": envelope["originating_turn_reference"],
+        "originating_route_reference": envelope["originating_route_reference"],
+        "originating_route_hash": envelope["originating_route_hash"],
+        "originating_project_objective_hash": envelope[
+            "originating_project_objective_hash"
+        ],
+        "prior_attempt_reference": (
+            prior_state.get("attempt_reference")
+            if isinstance(prior_state, dict)
+            else None
+        ),
+        "prior_attempt_hash": (
+            prior_state.get("artifact_hash")
+            if isinstance(prior_state, dict)
+            else None
+        ),
+        "ingress_reference": ingress_capture["replay_reference"],
+        "ingress_request_hash": ingress.get("ingress_request_hash"),
+        "ingress_resolution_hash": ingress.get("artifact_hash"),
+        "ingress_status": ingress.get("ingress_status"),
+        "ingress_failure_reason": ingress.get("failure_reason"),
+        "continuation_route_reference": (
+            semantic_route.get("replay_reference")
+            if isinstance(semantic_route, dict)
+            else None
+        ),
+        "continuation_route_hash": (
+            semantic_route.get("artifact_hash")
+            if isinstance(semantic_route, dict)
+            else None
+        ),
+        "continuation_route_status": route_status,
+        "capability_invocation_started": capability_invocation_started,
+        "capability_invocation_completed": capability_invocation_completed,
+        "retry_status": retry_status,
+        "retry_eligible": retry_eligible,
+        "clarification_remains_active": retry_eligible,
+        "invalid_artifact_satisfied_slot": False,
+        "platform_core_retry_authority": True,
+        "human_interface_retry_authority": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "replay_visible": True,
+    }
+    state["artifact_hash"] = replay_hash(state)
+    state = validate_artifact_attachment_retry_state(state)
+    write_json_immutable(Path(attempt_reference), state)
+    return state
+
+
+def validate_artifact_attachment_retry_state(
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    if not isinstance(state, dict):
+        raise FailClosedRuntimeError("artifact attachment retry state required")
+    candidate = deepcopy(state)
+    if candidate.get("artifact_type") != (
+        PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_STATE_V1
+    ):
+        raise FailClosedRuntimeError("artifact attachment retry state type mismatch")
+    if candidate.get("runtime_version") != (
+        PLATFORM_CORE_ARTIFACT_ATTACHMENT_RETRY_VERSION
+    ):
+        raise FailClosedRuntimeError("artifact attachment retry state version mismatch")
+    supplied_hash = candidate.pop("artifact_hash", None)
+    if supplied_hash != replay_hash(candidate):
+        raise FailClosedRuntimeError("artifact attachment retry state hash mismatch")
+    candidate["artifact_hash"] = supplied_hash
+    if candidate.get("clarification_owner") != (
+        G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+    ):
+        raise FailClosedRuntimeError("artifact attachment retry owner substitution")
+    if candidate.get("semantic_slot") != "input_artifact_family":
+        raise FailClosedRuntimeError("artifact attachment retry slot substitution")
+    attempt_number = candidate.get("attempt_number")
+    if not isinstance(attempt_number, int) or attempt_number < 1:
+        raise FailClosedRuntimeError("artifact attachment retry attempt number invalid")
+    expected_identity = replay_hash(
+        {
+            "session_id": candidate.get("session_id"),
+            "clarification_envelope_hash": candidate.get(
+                "clarification_envelope_hash"
+            ),
+            "attempt_number": attempt_number,
+            "attachment_transport_hash": candidate.get(
+                "attachment_transport_hash"
+            ),
+        }
+    )
+    if candidate.get("attempt_identity") != expected_identity:
+        raise FailClosedRuntimeError("artifact attachment retry attempt substitution")
+    if attempt_number == 1:
+        if candidate.get("prior_attempt_reference") is not None or candidate.get(
+            "prior_attempt_hash"
+        ) is not None:
+            raise FailClosedRuntimeError("artifact attachment retry ordering mismatch")
+    elif not (
+        isinstance(candidate.get("prior_attempt_reference"), str)
+        and isinstance(candidate.get("prior_attempt_hash"), str)
+    ):
+        raise FailClosedRuntimeError("artifact attachment retry prior attempt missing")
+    if candidate.get("retry_status") not in {
+        ATTACHMENT_RETRY_ELIGIBLE,
+        ATTACHMENT_RETRY_COMPLETED,
+        ATTACHMENT_RETRY_TERMINAL,
+    }:
+        raise FailClosedRuntimeError("artifact attachment retry status invalid")
+    if candidate.get("retry_eligible") is True:
+        if candidate.get("retry_status") != ATTACHMENT_RETRY_ELIGIBLE:
+            raise FailClosedRuntimeError("artifact attachment retry eligibility mismatch")
+        if candidate.get("ingress_status") != (
+            "EXPLICIT_CANONICAL_ARTIFACT_INGRESS_FAILED_CLOSED"
+        ):
+            raise FailClosedRuntimeError("artifact attachment retry ingress mismatch")
+        if candidate.get("continuation_route_reference") is not None:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry reached semantic continuation"
+            )
+        if candidate.get("capability_invocation_started") is not False:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry reached capability invocation"
+            )
+        if candidate.get("clarification_remains_active") is not True:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry clarification continuity mismatch"
+            )
+    elif candidate.get("clarification_remains_active") is not False:
+        raise FailClosedRuntimeError(
+            "artifact attachment retry terminal clarification mismatch"
+        )
+    if candidate.get("retry_status") == ATTACHMENT_RETRY_COMPLETED:
+        if candidate.get("ingress_status") != (
+            "EXPLICIT_CANONICAL_ARTIFACT_INGRESS_COMPLETED"
+        ) or candidate.get("capability_invocation_completed") is not True:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry completion state mismatch"
+            )
+    if candidate.get("retry_status") == ATTACHMENT_RETRY_TERMINAL and candidate.get(
+        "retry_eligible"
+    ) is not False:
+        raise FailClosedRuntimeError("artifact attachment retry terminal state mismatch")
+    if candidate.get("invalid_artifact_satisfied_slot") is not False:
+        raise FailClosedRuntimeError("invalid artifact satisfied clarification slot")
+    for field, expected in {
+        "platform_core_retry_authority": True,
+        "human_interface_retry_authority": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "repository_mutated": False,
+        "replay_visible": True,
+    }.items():
+        if candidate.get(field) is not expected:
+            raise FailClosedRuntimeError("artifact attachment retry boundary mismatch")
+    return candidate
+
+
+def reconstruct_artifact_attachment_retry(
+    attempt_reference: str | Path,
+) -> dict[str, Any]:
+    current = validate_artifact_attachment_retry_state(
+        load_json(Path(attempt_reference))
+    )
+    history: list[dict[str, Any]] = []
+    cursor = current
+    seen_references: set[str] = set()
+    seen_transport_hashes: set[str] = set()
+    while True:
+        reference = str(cursor["attempt_reference"])
+        if reference in seen_references:
+            raise FailClosedRuntimeError("artifact attachment retry replay cycle")
+        seen_references.add(reference)
+        transport_hash = str(cursor["attachment_transport_hash"])
+        if transport_hash in seen_transport_hashes:
+            raise FailClosedRuntimeError("duplicate attachment attempt rejected")
+        seen_transport_hashes.add(transport_hash)
+        history.append(cursor)
+        prior_reference = cursor.get("prior_attempt_reference")
+        if prior_reference is None:
+            break
+        prior = validate_artifact_attachment_retry_state(
+            load_json(Path(prior_reference))
+        )
+        if prior.get("artifact_hash") != cursor.get("prior_attempt_hash"):
+            raise FailClosedRuntimeError("artifact attachment retry attempt substitution")
+        if prior.get("attempt_number") != cursor.get("attempt_number") - 1:
+            raise FailClosedRuntimeError("artifact attachment retry ordering mismatch")
+        for field in (
+            "session_id",
+            "clarification_owner",
+            "semantic_slot",
+            "clarification_envelope_hash",
+        ):
+            if prior.get(field) != cursor.get(field):
+                raise FailClosedRuntimeError(
+                    "artifact attachment retry continuity mismatch"
+                )
+        if cursor.get("attempt_number", 1) > 1 and prior.get("retry_eligible") is not True:
+            raise FailClosedRuntimeError(
+                "artifact attachment retry continued after terminal state"
+            )
+        cursor = prior
+    history.reverse()
+    if [item["attempt_number"] for item in history] != list(
+        range(1, len(history) + 1)
+    ):
+        raise FailClosedRuntimeError("artifact attachment retry ordering mismatch")
+    from aigol.runtime.explicit_canonical_artifact_ingress_runtime import (
+        reconstruct_explicit_canonical_artifact_ingress,
+    )
+
+    for attempt in history:
+        ingress = reconstruct_explicit_canonical_artifact_ingress(
+            attempt["ingress_reference"]
+        )
+        if ingress.get("session_id") != attempt.get("session_id"):
+            raise FailClosedRuntimeError("artifact attachment retry cross-session replay")
+        if ingress.get("ingress_request_hash") != attempt.get("ingress_request_hash"):
+            raise FailClosedRuntimeError("artifact attachment retry ingress substitution")
+        if ingress.get("ingress_resolution_hash") != attempt.get(
+            "ingress_resolution_hash"
+        ):
+            raise FailClosedRuntimeError("artifact attachment retry ingress substitution")
+        if ingress.get("ingress_status") != attempt.get("ingress_status"):
+            raise FailClosedRuntimeError("artifact attachment retry ingress status mismatch")
+        if ingress.get("downstream_route_hash") != attempt.get(
+            "continuation_route_hash"
+        ):
+            raise FailClosedRuntimeError("artifact attachment retry route mismatch")
+    return {
+        "attempt_count": len(history),
+        "attempt_history": deepcopy(history),
+        "current_retry_status": current["retry_status"],
+        "current_attempt_hash": current["artifact_hash"],
+        "clarification_envelope_hash": current["clarification_envelope_hash"],
+        "replay_hash": replay_hash(history),
+    }
+
+
+def _reject_duplicate_attachment_attempt(
+    *,
+    workspace_state: dict[str, Any] | None,
+    attachment_transport_hash: str,
+) -> None:
+    pending = (
+        workspace_state.get("pending_clarification_request")
+        if isinstance(workspace_state, dict)
+        else None
+    )
+    state = (
+        pending.get("artifact_attachment_retry_state")
+        if isinstance(pending, dict)
+        and isinstance(pending.get("artifact_attachment_retry_state"), dict)
+        else None
+    )
+    if not isinstance(state, dict):
+        return
+    reconstructed = reconstruct_artifact_attachment_retry(
+        state["attempt_reference"]
+    )
+    if any(
+        attempt.get("attachment_transport_hash") == attachment_transport_hash
+        for attempt in reconstructed["attempt_history"]
+    ):
+        raise FailClosedRuntimeError("duplicate attachment attempt rejected")
+
+
 def _finalize_operational_turn_binding(
     *,
     session_id: str,
@@ -1013,6 +1471,7 @@ def _finalize_operational_turn_binding(
     semantic_route: dict[str, Any] | None,
     operational_clarification_envelope: dict[str, Any] | None,
     ingress_capture: dict[str, Any] | None,
+    attachment_retry_state: dict[str, Any] | None,
 ) -> dict[str, Any]:
     if operational_classification is not None:
         turn_kind = operational_classification["turn_kind"]
@@ -1131,6 +1590,17 @@ def _finalize_operational_turn_binding(
             if attachment_bound and isinstance(ingress_resolution, dict)
             else None
         ),
+        "artifact_attachment_retry_state": deepcopy(attachment_retry_state),
+        "artifact_attachment_retry_reference": (
+            attachment_retry_state.get("attempt_reference")
+            if isinstance(attachment_retry_state, dict)
+            else None
+        ),
+        "artifact_attachment_retry_hash": (
+            attachment_retry_state.get("artifact_hash")
+            if isinstance(attachment_retry_state, dict)
+            else None
+        ),
         "classification_authority": "PLATFORM_CORE",
         "clarification_binding_authority": "PLATFORM_CORE",
         "human_interface_classified": False,
@@ -1215,6 +1685,50 @@ def validate_operational_turn_binding(artifact: dict[str, Any]) -> dict[str, Any
         raise FailClosedRuntimeError(
             "operational artifact attachment boundary mismatch"
         )
+    retry_state = candidate.get("artifact_attachment_retry_state")
+    if isinstance(retry_state, dict):
+        retry_state = validate_artifact_attachment_retry_state(retry_state)
+        if retry_state.get("attempt_reference") != candidate.get(
+            "artifact_attachment_retry_reference"
+        ) or retry_state.get("artifact_hash") != candidate.get(
+            "artifact_attachment_retry_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "artifact attachment retry turn lineage mismatch"
+            )
+        if retry_state.get("clarification_envelope_hash") != candidate.get(
+            "originating_clarification_envelope_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "operational turn stale clarification lineage: artifact attachment "
+                "retry clarification substitution"
+            )
+        if retry_state.get("session_id") != candidate.get("session_id"):
+            raise FailClosedRuntimeError(
+                "artifact attachment retry session substitution"
+            )
+        if retry_state.get("clarification_owner") != candidate.get(
+            "originating_clarification_owner"
+        ):
+            raise FailClosedRuntimeError(
+                "artifact attachment retry owner substitution"
+            )
+        if retry_state.get("semantic_slot") != candidate.get(
+            "originating_semantic_slot"
+        ):
+            raise FailClosedRuntimeError(
+                "artifact attachment retry slot substitution"
+            )
+        if retry_state.get("ingress_resolution_hash") != candidate.get(
+            "explicit_canonical_artifact_ingress_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "artifact attachment substitution: retry ingress lineage mismatch"
+            )
+    elif candidate.get("artifact_attachment_retry_reference") is not None or candidate.get(
+        "artifact_attachment_retry_hash"
+    ) is not None:
+        raise FailClosedRuntimeError("artifact attachment retry boundary mismatch")
     return candidate
 
 
@@ -1276,6 +1790,15 @@ def reconstruct_operational_turn_binding(
             ):
                 raise FailClosedRuntimeError(
                     "operational artifact attachment route lineage mismatch"
+                )
+            retry = reconstruct_artifact_attachment_retry(
+                turn["artifact_attachment_retry_reference"]
+            )
+            if retry.get("current_attempt_hash") != turn.get(
+                "artifact_attachment_retry_hash"
+            ):
+                raise FailClosedRuntimeError(
+                    "operational artifact attachment retry lineage mismatch"
                 )
     return turn
 
@@ -2119,6 +2642,11 @@ def _failed_read_only_work_result(
         ),
         "read_only_work_result_status": "GOVERNED_READ_ONLY_RESULT_FAILED_CLOSED",
         "failure_reason": failure_reason,
+        "selected_read_only_service": None,
+        "presentation_status": "FAILED_CLOSED",
+        "presentation_summary": (
+            "Platform Core rejected the read-only input before capability invocation."
+        ),
         "human_approval_required": False,
         "human_interface_authority": False,
         "platform_core_authority": True,

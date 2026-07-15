@@ -1001,6 +1001,17 @@ def _submit_composed_request(
         }
     )
     multiline_requests = 1 if len(compose_buffer) > 1 else 0
+    if conversation.get("artifact_attachment_retry_eligible") is True:
+        output_writer(_render_read_only_result(conversation))
+        clarification = _clarification_from_conversation(
+            str(
+                conversation.get("artifact_attachment_retry_original_message")
+                or message
+            ),
+            conversation,
+        )
+        output_writer(_render_clarification(clarification))
+        return None, clarification, resolution, project_context, 1, multiline_requests
     if resolution.get("clarification_required") is True or conversation.get("response_mode") == "CLARIFICATION":
         clarification = _clarification_from_conversation(message, conversation)
         output_writer(_render_clarification(clarification))
@@ -1099,6 +1110,11 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
             if isinstance(conversation.get("operational_clarification_envelope"), dict)
             else None
         ),
+        "artifact_attachment_retry_state": (
+            dict(conversation["artifact_attachment_retry_state"])
+            if isinstance(conversation.get("artifact_attachment_retry_state"), dict)
+            else None
+        ),
     }
 
 
@@ -1122,6 +1138,13 @@ def _render_clarification(clarification: dict[str, Any]) -> str:
         lines.append(str(clarification["user_headline"]))
     if clarification.get("user_explanation"):
         lines.append(str(clarification["user_explanation"]))
+    retry_state = clarification.get("artifact_attachment_retry_state")
+    if isinstance(retry_state, dict) and retry_state.get("retry_eligible") is True:
+        lines.append(
+            "The artifact attachment failed closed. The original Platform Core "
+            "clarification remains active for another /attach attempt."
+        )
+        lines.append(f"attachment_attempt: {retry_state.get('attempt_number')}")
     lines.append("questions:")
     for question in clarification.get("clarification_questions", []):
         lines.append(f"- {question}")
