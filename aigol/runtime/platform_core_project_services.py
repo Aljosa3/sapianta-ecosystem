@@ -480,7 +480,9 @@ def prepare_unified_human_interface_project_context(
                 session_id=session_id,
                 project_objective_artifact=project_objective,
                 candidate_discovery_evidence=(
-                    development_intent.get("candidate_capability_discovery")
+                    None
+                    if owner_specific_continuation is not None
+                    else development_intent.get("candidate_capability_discovery")
                     if isinstance(
                         development_intent.get("candidate_capability_discovery"), dict
                     )

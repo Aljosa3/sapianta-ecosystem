@@ -31,6 +31,10 @@ from aigol.runtime.platform_change_normalization_runtime import (
     NORMALIZED_CHANGE_ARTIFACT_V1,
     validate_normalized_change_artifact,
 )
+from aigol.runtime.product1_decision_validation_packet_certification_v1 import (
+    PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1,
+    validate_product1_decision_validation_request,
+)
 from aigol.runtime.transport.serialization import (
     load_json,
     replay_hash,
@@ -427,6 +431,8 @@ def _validate_supported_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
         return validate_normalized_change_artifact(candidate)
     if artifact_type == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_REQUEST_ARTIFACT_V1:
         return validate_platform_capability_composition_coverage_request(candidate)
+    if artifact_type == PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1:
+        return validate_product1_decision_validation_request(candidate)
     if artifact_type == PLATFORM_CHANGE_IMPACT_ARTIFACT_V1:
         return validate_platform_change_impact_artifact(candidate)
     if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1:

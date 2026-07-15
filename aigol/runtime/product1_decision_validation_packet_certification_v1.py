@@ -8,11 +8,31 @@ import re
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.multi_provider_operational_readiness_certification_v1 import (
+    FINAL_VERDICT_READY as MULTI_PROVIDER_READY,
+    reconstruct_multi_provider_operational_readiness_replay,
+)
+from aigol.runtime.product1_end_to_end_certification_v1 import (
+    FINAL_VERDICT_CERTIFIED as PRODUCT1_END_TO_END_CERTIFIED,
+    reconstruct_product1_end_to_end_certification_v1,
+)
 from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash, write_json_immutable
 
 
 MILESTONE_ID = "AIGOL_PRODUCT1_DECISION_VALIDATION_PACKET_CERTIFICATION_V1"
 PACKET_RUNTIME_VERSION = "AIGOL_PRODUCT1_DECISION_VALIDATION_PACKET_V1"
+PRODUCT1_DECISION_VALIDATION_PACKET_ARTIFACT_V1 = (
+    "PRODUCT1_DECISION_VALIDATION_PACKET_ARTIFACT_V1"
+)
+PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1 = (
+    "PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1"
+)
+PRODUCT1_DECISION_VALIDATION_REQUEST_RUNTIME_VERSION = (
+    "G31_02_PRODUCT1_DECISION_VALIDATION_REQUEST_V1"
+)
+PRODUCT1_DECISION_VALIDATION_REQUEST_CREATED = (
+    "PRODUCT1_DECISION_VALIDATION_REQUEST_CREATED"
+)
 DEFAULT_RUNTIME_ROOT = Path("runtime/product1_decision_validation_packet_certification_v1")
 CREATED_AT = "2026-06-22T00:00:00Z"
 
@@ -46,6 +66,69 @@ MANDATORY_PACKET_SECTIONS = (
     "independent_verification_workflow",
     "boundary_guarantees",
     "reviewer_next_actions",
+)
+
+REQUEST_BOUNDARY_FLAGS = {
+    "read_only": True,
+    "replay_visible": True,
+    "human_interface_authority": False,
+    "provider_invoked": False,
+    "worker_invoked": False,
+    "execution_authorized": False,
+    "repository_mutated": False,
+    "deployment_requested": False,
+    "artifact_discovery_performed": False,
+}
+
+PRODUCT1_SOURCE_RELATIVE_PATHS = {
+    "product1_coverage_report": (
+        "coverage_report/000_product1_end_to_end_coverage_report.json"
+    ),
+    "product1_evidence_package": (
+        "evidence_package/000_product1_end_to_end_evidence_package.json"
+    ),
+    "product1_replay_package": (
+        "replay_package/000_product1_end_to_end_replay_package.json"
+    ),
+    "product1_audit_review": (
+        "audit_review/000_product1_end_to_end_audit_review.json"
+    ),
+    "product1_certification_report": (
+        "certification_report/000_product1_end_to_end_certification_report.json"
+    ),
+}
+
+MULTI_PROVIDER_SOURCE_RELATIVE_PATHS = {
+    "multi_provider_certification_report": (
+        "certification_report/"
+        "000_multi_provider_operational_readiness_certification_report.json"
+    ),
+    "openai_participation": (
+        "provider_governance_replay/openai/participation/"
+        "000_cognition_participation.json"
+    ),
+    "openai_usage": (
+        "provider_governance_replay/openai/usage/000_provider_usage_metric.json"
+    ),
+    "claude_participation": (
+        "provider_governance_replay/claude/participation/"
+        "000_cognition_participation.json"
+    ),
+    "claude_usage": (
+        "provider_governance_replay/claude/usage/000_provider_usage_metric.json"
+    ),
+}
+
+SCENARIO_REPLAY_FILENAMES = (
+    "000_acli_session_started.json",
+    "001_natural_language_turns_recorded.json",
+    "002_intent_resolution_recorded.json",
+    "003_execution_summary_recorded.json",
+    "004_human_approval_recorded.json",
+    "005_authorization_recorded.json",
+    "006_worker_handoff_recorded.json",
+    "007_worker_execution_recorded.json",
+    "008_side_effect_verification_recorded.json",
 )
 
 
@@ -191,6 +274,389 @@ def reconstruct_product1_decision_validation_packet_certification_v1(cert_root: 
         "replay_reconstructed": replay["replay_reconstructed"] is True,
         "final_verdict": report["final_verdict"],
     }
+
+
+def create_product1_decision_validation_request(
+    *,
+    request_id: str,
+    product1_cert_root: str | Path,
+    multi_provider_cert_root: str | Path,
+    created_at: str,
+) -> dict[str, Any]:
+    """Create one immutable request from exact, caller-supplied evidence roots."""
+
+    product1_root = Path(product1_cert_root)
+    multi_provider_root = Path(multi_provider_cert_root)
+    source_manifest, scenario_replay_root = _source_manifest(
+        product1_root=product1_root,
+        multi_provider_root=multi_provider_root,
+    )
+    artifact = {
+        "artifact_type": PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1,
+        "runtime_version": PRODUCT1_DECISION_VALIDATION_REQUEST_RUNTIME_VERSION,
+        "request_id": _require_string(request_id, "request_id"),
+        "request_status": PRODUCT1_DECISION_VALIDATION_REQUEST_CREATED,
+        "requested_capability": "PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION",
+        "product1_cert_root": str(product1_root),
+        "multi_provider_cert_root": str(multi_provider_root),
+        "scenario_replay_root": str(scenario_replay_root),
+        "source_artifacts": source_manifest,
+        "source_artifact_count": len(source_manifest),
+        "source_manifest_hash": replay_hash(source_manifest),
+        "created_at": _require_string(created_at, "created_at"),
+        **REQUEST_BOUNDARY_FLAGS,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return validate_product1_decision_validation_request(artifact)
+
+
+def validate_product1_decision_validation_request(
+    artifact: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate request identity and every explicitly pinned source artifact."""
+
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request must be an object"
+        )
+    candidate = deepcopy(artifact)
+    _verify_artifact_hash(candidate)
+    if candidate.get("artifact_type") != (
+        PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request artifact type mismatch"
+        )
+    if candidate.get("runtime_version") != (
+        PRODUCT1_DECISION_VALIDATION_REQUEST_RUNTIME_VERSION
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request runtime version mismatch"
+        )
+    if candidate.get("request_status") != (
+        PRODUCT1_DECISION_VALIDATION_REQUEST_CREATED
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request status mismatch"
+        )
+    if candidate.get("requested_capability") != (
+        "PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION"
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request capability mismatch"
+        )
+    _require_string(candidate.get("request_id"), "request_id")
+    _require_string(candidate.get("created_at"), "created_at")
+    for field, expected in REQUEST_BOUNDARY_FLAGS.items():
+        if candidate.get(field) is not expected:
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation request boundary mismatch"
+            )
+
+    product1_root = Path(
+        _require_string(candidate.get("product1_cert_root"), "product1_cert_root")
+    )
+    multi_provider_root = Path(
+        _require_string(
+            candidate.get("multi_provider_cert_root"),
+            "multi_provider_cert_root",
+        )
+    )
+    expected_manifest, scenario_replay_root = _source_manifest(
+        product1_root=product1_root,
+        multi_provider_root=multi_provider_root,
+    )
+    supplied_manifest = candidate.get("source_artifacts")
+    if supplied_manifest != expected_manifest:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request source substitution"
+        )
+    if candidate.get("source_artifact_count") != len(expected_manifest):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request source count mismatch"
+        )
+    if candidate.get("source_manifest_hash") != replay_hash(expected_manifest):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request source manifest hash mismatch"
+        )
+    if candidate.get("scenario_replay_root") != str(scenario_replay_root):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request scenario lineage mismatch"
+        )
+    _validate_source_certification_lineage(
+        product1_root=product1_root,
+        multi_provider_root=multi_provider_root,
+        scenario_replay_root=scenario_replay_root,
+    )
+    return candidate
+
+
+def validate_product1_decision_validation_packet(
+    artifact: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate one generated enterprise Decision Validation Packet."""
+
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet must be an object"
+        )
+    candidate = deepcopy(artifact)
+    _verify_artifact_hash(candidate)
+    if candidate.get("artifact_type") != (
+        PRODUCT1_DECISION_VALIDATION_PACKET_ARTIFACT_V1
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet artifact type mismatch"
+        )
+    if candidate.get("runtime_version") != PACKET_RUNTIME_VERSION:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet runtime version mismatch"
+        )
+    missing = [section for section in MANDATORY_PACKET_SECTIONS if section not in candidate]
+    if missing:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet mandatory section missing"
+        )
+    boundaries = candidate.get("boundary_guarantees")
+    if not isinstance(boundaries, dict):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet boundaries missing"
+        )
+    if boundaries.get("provider_authority") is not False:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet provider boundary mismatch"
+        )
+    if boundaries.get("human_authority_preserved") is not True:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet human authority mismatch"
+        )
+    if candidate.get("replay_reference_summary", {}).get(
+        "replay_reconstructed"
+    ) is not True:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet Replay is not reconstructed"
+        )
+    _assert_secret_safe(candidate)
+    return candidate
+
+
+def generate_product1_decision_validation_packet(
+    *,
+    request_artifact: dict[str, Any],
+    invoked_at: str,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Generate the existing Product 1 packet from one validated explicit request."""
+
+    request = validate_product1_decision_validation_request(request_artifact)
+    timestamp = _require_string(invoked_at, "invoked_at")
+    path = Path(replay_dir)
+    replay_path = path / "000_product1_decision_validation_packet_generated.json"
+    if replay_path.exists():
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet Replay already exists"
+        )
+    source = _load_source_evidence(
+        product1_cert_root=request["product1_cert_root"],
+        multi_provider_cert_root=request["multi_provider_cert_root"],
+    )
+    packet = validate_product1_decision_validation_packet(
+        _generate_decision_validation_packet(source)
+    )
+    assertions = _assertions(packet, source)
+    if not all(assertions.values()):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet generation failed closed"
+        )
+    wrapper = {
+        "replay_index": 0,
+        "replay_step": "product1_decision_validation_packet_generated",
+        "request_artifact": deepcopy(request),
+        "request_artifact_hash": request["artifact_hash"],
+        "source_manifest_hash": request["source_manifest_hash"],
+        "artifact": deepcopy(packet),
+        "invoked_at": timestamp,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+    }
+    wrapper["wrapper_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path, wrapper)
+    return {
+        "decision_validation_packet_artifact": packet,
+        "request_artifact_hash": request["artifact_hash"],
+        "replay_reference": str(path),
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+    }
+
+
+def reconstruct_product1_decision_validation_packet_replay(
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct one operational packet invocation and its pinned source lineage."""
+
+    path = Path(replay_dir)
+    wrapper = load_json(
+        path / "000_product1_decision_validation_packet_generated.json"
+    )
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != (
+        "product1_decision_validation_packet_generated"
+    ):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet Replay ordering mismatch"
+        )
+    supplied_hash = wrapper.get("wrapper_hash")
+    body = deepcopy(wrapper)
+    body.pop("wrapper_hash", None)
+    if supplied_hash != replay_hash(body):
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet Replay wrapper hash mismatch"
+        )
+    request = validate_product1_decision_validation_request(
+        wrapper.get("request_artifact")
+    )
+    packet = validate_product1_decision_validation_packet(wrapper.get("artifact"))
+    source = _load_source_evidence(
+        product1_cert_root=request["product1_cert_root"],
+        multi_provider_cert_root=request["multi_provider_cert_root"],
+    )
+    expected_packet = validate_product1_decision_validation_packet(
+        _generate_decision_validation_packet(source)
+    )
+    if packet != expected_packet:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet deterministic reconstruction mismatch"
+        )
+    if wrapper.get("request_artifact_hash") != request["artifact_hash"]:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet request substitution"
+        )
+    if wrapper.get("source_manifest_hash") != request["source_manifest_hash"]:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation packet source substitution"
+        )
+    for field in (
+        "provider_invoked",
+        "worker_invoked",
+        "execution_authorized",
+        "repository_mutated",
+    ):
+        if wrapper.get(field) is not False:
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation packet current invocation boundary mismatch"
+            )
+    return {
+        "request_id": request["request_id"],
+        "request_artifact_hash": request["artifact_hash"],
+        "source_manifest_hash": request["source_manifest_hash"],
+        "packet_id": packet["packet_id"],
+        "packet_artifact_hash": packet["artifact_hash"],
+        "replay_reference": str(path),
+        "replay_hash": replay_hash([wrapper]),
+        "replay_reconstructed": True,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "execution_authorized": False,
+        "repository_mutated": False,
+    }
+
+
+def _source_manifest(
+    *,
+    product1_root: Path,
+    multi_provider_root: Path,
+) -> tuple[list[dict[str, Any]], Path]:
+    product1_evidence_path = (
+        product1_root / PRODUCT1_SOURCE_RELATIVE_PATHS["product1_evidence_package"]
+    )
+    product1_evidence = load_json(product1_evidence_path)
+    scenario = _select_product1_scenario(product1_evidence)
+    scenario_replay_root = Path(
+        _require_string(
+            scenario.get("observed", {}).get("source_reference"),
+            "scenario_replay_root",
+        )
+    )
+    sources: list[tuple[str, Path]] = [
+        (role, product1_root / relative_path)
+        for role, relative_path in PRODUCT1_SOURCE_RELATIVE_PATHS.items()
+    ]
+    sources.extend(
+        (
+            f"scenario_replay_{index:03d}",
+            scenario_replay_root / filename,
+        )
+        for index, filename in enumerate(SCENARIO_REPLAY_FILENAMES)
+    )
+    sources.extend(
+        (role, multi_provider_root / relative_path)
+        for role, relative_path in MULTI_PROVIDER_SOURCE_RELATIVE_PATHS.items()
+    )
+    manifest = []
+    for role, reference in sources:
+        source = load_json(reference)
+        manifest.append(
+            {
+                "source_role": role,
+                "source_reference": str(reference),
+                "source_content_hash": replay_hash(source),
+            }
+        )
+    return manifest, scenario_replay_root
+
+
+def _validate_source_certification_lineage(
+    *,
+    product1_root: Path,
+    multi_provider_root: Path,
+    scenario_replay_root: Path,
+) -> None:
+    product1 = reconstruct_product1_end_to_end_certification_v1(product1_root)
+    if product1.get("final_verdict") != PRODUCT1_END_TO_END_CERTIFIED:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request requires certified Product 1 evidence"
+        )
+    multi_provider = reconstruct_multi_provider_operational_readiness_replay(
+        multi_provider_root
+    )
+    if multi_provider.get("replay_reconstructed") is not True:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request provider Replay mismatch"
+        )
+    report = load_json(
+        multi_provider_root
+        / MULTI_PROVIDER_SOURCE_RELATIVE_PATHS[
+            "multi_provider_certification_report"
+        ]
+    )
+    _verify_artifact_hash(report)
+    if report.get("final_verdict") != MULTI_PROVIDER_READY:
+        raise FailClosedRuntimeError(
+            "Product 1 decision validation request requires provider readiness evidence"
+        )
+    for index, filename in enumerate(SCENARIO_REPLAY_FILENAMES):
+        wrapper = load_json(scenario_replay_root / filename)
+        if wrapper.get("replay_index") != index:
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation request scenario Replay ordering mismatch"
+            )
+        supplied_hash = wrapper.get("replay_hash")
+        body = deepcopy(wrapper)
+        body.pop("replay_hash", None)
+        if supplied_hash != replay_hash(body):
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation request scenario Replay hash mismatch"
+            )
+        replay_artifact = wrapper.get("artifact")
+        if not isinstance(replay_artifact, dict):
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation request scenario artifact missing"
+            )
+        _verify_artifact_hash(replay_artifact)
 
 
 def _load_source_evidence(
@@ -586,6 +1052,14 @@ def _secret_free_payload(payload: dict[str, Any]) -> bool:
 def _assert_secret_safe(payload: dict[str, Any]) -> None:
     if not _secret_free_payload(payload):
         raise FailClosedRuntimeError("decision validation packet certification failed closed: secret-like material recorded")
+
+
+def _require_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise FailClosedRuntimeError(
+            f"Product 1 decision validation packet {field_name} is required"
+        )
+    return value.strip()
 
 
 def _blockers(assertions: dict[str, bool]) -> list[dict[str, str]]:

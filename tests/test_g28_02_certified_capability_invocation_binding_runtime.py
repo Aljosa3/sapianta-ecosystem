@@ -17,6 +17,7 @@ from aigol.runtime.certified_capability_invocation_binding_runtime import (
     PLATFORM_CHANGE_IMPACT_ANALYSIS,
     PLATFORM_CHANGE_NORMALIZATION,
     PLATFORM_VALIDATION_PLANNING,
+    PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
     certified_capability_invocation_adapters,
     invoke_certified_capability,
     reconstruct_certified_capability_invocation_replay,
@@ -182,6 +183,7 @@ def test_all_allowlisted_read_only_adapters_reuse_canonical_entry_points(tmp_pat
         PLATFORM_CHANGE_NORMALIZATION,
         PLATFORM_CHANGE_IMPACT_ANALYSIS,
         PLATFORM_VALIDATION_PLANNING,
+        PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
     }
 
 

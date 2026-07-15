@@ -14,6 +14,7 @@ from typing import Any
 from aigol.runtime.certified_capability_invocation_binding_runtime import (
     CERTIFIED_CAPABILITY_INVOCATION_COMPLETED,
     CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1,
+    PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
     validate_certified_capability_invocation_result_artifact,
 )
 from aigol.runtime.models import FailClosedRuntimeError
@@ -947,19 +948,61 @@ def _certified_capability_invocation_presentation(
         if completed
         else "Resolve the recorded discovery, certification, or canonical input failure."
     )
+    answer = {
+        "selected_capability_identifier": validated.get("capability_identifier"),
+        "invocation_id": validated.get("invocation_id"),
+        "invocation_status": validated.get("invocation_status"),
+        "output_artifact_type": validated.get("output_artifact_type"),
+        "output_artifact_reference": validated.get("output_artifact_reference"),
+        "output_artifact_hash": validated.get("output_artifact_hash"),
+        "capability_replay_reference": validated.get("capability_replay_reference"),
+        "failure_reason": validated.get("failure_reason"),
+    }
+    if (
+        completed
+        and validated.get("capability_identifier")
+        == PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION
+    ):
+        packet = validated.get("output_artifact")
+        if not isinstance(packet, dict):
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation packet presentation source missing"
+            )
+        summary = (
+            "The Product 1 Decision Validation Packet was generated from pinned "
+            "certified Replay evidence. Historical evidence records Provider "
+            "participation and bounded Worker execution; this read-only packet "
+            "generation invoked neither a Provider nor a Worker."
+        )
+        answer["product1_decision_validation_packet"] = {
+            "packet_id": packet.get("packet_id"),
+            "packet_metadata": deepcopy(packet.get("packet_metadata")),
+            "decision_summary": deepcopy(packet.get("decision_summary")),
+            "provider_participation_summary": deepcopy(
+                packet.get("provider_participation_summary")
+            ),
+            "worker_participation_summary": deepcopy(
+                packet.get("worker_participation_summary")
+            ),
+            "approval_summary": deepcopy(packet.get("approval_summary")),
+            "authorization_summary": deepcopy(
+                packet.get("authorization_summary")
+            ),
+            "verification_summary": deepcopy(packet.get("verification_summary")),
+            "audit_conclusion": deepcopy(packet.get("audit_conclusion")),
+            "boundary_guarantees": deepcopy(packet.get("boundary_guarantees")),
+            "reviewer_next_actions": deepcopy(packet.get("reviewer_next_actions")),
+            "current_invocation": {
+                "provider_invoked": False,
+                "worker_invoked": False,
+                "execution_authorized": False,
+                "repository_mutated": False,
+            },
+        }
     return _adapter_result(
         presentation_status=status,
         summary=summary,
-        answer={
-            "selected_capability_identifier": validated.get("capability_identifier"),
-            "invocation_id": validated.get("invocation_id"),
-            "invocation_status": validated.get("invocation_status"),
-            "output_artifact_type": validated.get("output_artifact_type"),
-            "output_artifact_reference": validated.get("output_artifact_reference"),
-            "output_artifact_hash": validated.get("output_artifact_hash"),
-            "capability_replay_reference": validated.get("capability_replay_reference"),
-            "failure_reason": validated.get("failure_reason"),
-        },
+        answer=answer,
         confidence="DETERMINISTIC_CERTIFIED_CAPABILITY_RESULT" if completed else "FAILED_CLOSED",
         evidence=[
             {

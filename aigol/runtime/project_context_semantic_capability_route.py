@@ -17,6 +17,7 @@ from aigol.runtime.certified_capability_invocation_binding_runtime import (
     PLATFORM_CHANGE_IMPACT_ANALYSIS,
     PLATFORM_CHANGE_NORMALIZATION,
     PLATFORM_VALIDATION_PLANNING,
+    PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
     certified_capability_invocation_adapters,
     certified_capability_semantic_descriptors,
 )
@@ -442,6 +443,12 @@ def _compatible_artifacts(
 
 
 def _capability_inputs(capability_id: str, artifact: dict[str, Any]) -> dict[str, Any]:
+    if capability_id == PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION:
+        return {
+            "decision_validation_request_artifact": deepcopy(artifact),
+            "decision_validation_request_reference": artifact.get("request_id"),
+            "decision_validation_request_hash": artifact.get("artifact_hash"),
+        }
     if capability_id == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
         return {
             "composition_coverage_request_artifact": deepcopy(artifact),

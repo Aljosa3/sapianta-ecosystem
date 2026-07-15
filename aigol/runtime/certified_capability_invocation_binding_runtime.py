@@ -48,6 +48,14 @@ from aigol.runtime.platform_validation_planning_runtime import (
     plan_platform_validation,
     validate_platform_validation_plan_artifact,
 )
+from aigol.runtime.product1_decision_validation_packet_certification_v1 import (
+    PRODUCT1_DECISION_VALIDATION_PACKET_ARTIFACT_V1,
+    PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1,
+    generate_product1_decision_validation_packet,
+    reconstruct_product1_decision_validation_packet_replay,
+    validate_product1_decision_validation_packet,
+    validate_product1_decision_validation_request,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -65,6 +73,9 @@ PLATFORM_CHANGE_IMPACT_ANALYSIS = "PLATFORM_CHANGE_IMPACT_ANALYSIS"
 PLATFORM_VALIDATION_PLANNING = "PLATFORM_VALIDATION_PLANNING"
 PLATFORM_CAPABILITY_COMPOSITION_COVERAGE = (
     "PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME"
+)
+PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION = (
+    "PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION"
 )
 
 REPLAY_STEPS = (
@@ -204,8 +215,46 @@ def _invoke_capability_composition_coverage(
     return {"platform_capability_composition_coverage_artifact": artifact}
 
 
+def _invoke_product1_decision_validation_packet(
+    invocation_id: str,
+    inputs: dict[str, Any],
+    invoked_at: str,
+    replay_dir: Path,
+) -> dict[str, Any]:
+    del invocation_id
+    return generate_product1_decision_validation_packet(
+        request_artifact=inputs["decision_validation_request_artifact"],
+        invoked_at=invoked_at,
+        replay_dir=replay_dir,
+    )
+
+
 _ADAPTERS = MappingProxyType(
     {
+        PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION: CapabilityInvocationAdapter(
+            capability_identifier=PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
+            adapter_identifier=(
+                "G31_02_PRODUCT1_DECISION_VALIDATION_PACKET_ADAPTER_V1"
+            ),
+            canonical_entry_point=(
+                "aigol.runtime.product1_decision_validation_packet_certification_v1."
+                "generate_product1_decision_validation_packet"
+            ),
+            accepted_input_artifact_types=(
+                PRODUCT1_DECISION_VALIDATION_REQUEST_ARTIFACT_V1,
+            ),
+            required_input_fields=(
+                "decision_validation_request_artifact",
+                "decision_validation_request_reference",
+                "decision_validation_request_hash",
+            ),
+            output_artifact_type=PRODUCT1_DECISION_VALIDATION_PACKET_ARTIFACT_V1,
+            output_capture_field="decision_validation_packet_artifact",
+            output_reference_field="packet_id",
+            output_status_field="artifact_type",
+            failed_status=FAILED_CLOSED,
+            invoke=_invoke_product1_decision_validation_packet,
+        ),
         PLATFORM_CAPABILITY_COMPOSITION_COVERAGE: CapabilityInvocationAdapter(
             capability_identifier=PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
             adapter_identifier=(
@@ -301,6 +350,44 @@ def certified_capability_invocation_adapters() -> dict[str, dict[str, Any]]:
 
 _SEMANTIC_DESCRIPTORS = MappingProxyType(
     {
+        PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION: {
+            "capability_identifier": PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION,
+            "objective_terms": (
+                "product 1 decision validation packet",
+                "product1 decision validation packet",
+                "validate certified ai decision evidence",
+                "review certified ai decision evidence",
+                "explain certified ai decision evidence",
+            ),
+            "supported_actions": ("validate", "review", "explain", "audit"),
+            "supported_subjects": (
+                "decision validation packet",
+                "certified ai decision evidence",
+                "governed ai decision",
+                "replay-backed decision evidence",
+            ),
+            "expected_outcomes": (
+                "enterprise-readable decision validation packet",
+                "replay-backed decision validation",
+                "independent evidence review",
+            ),
+            "excluded_meanings": (
+                "execute decision",
+                "authorize execution",
+                "invoke provider",
+                "invoke worker",
+            ),
+            "supported_work_types": ("AUDIT_ONLY", "ANALYSIS", "REVIEW"),
+            "required_semantic_slots": (
+                "capability_action",
+                "capability_subject",
+                "input_artifact_family",
+            ),
+            "clarification_label": (
+                "generate a Product 1 Decision Validation Packet from existing "
+                "certified evidence"
+            ),
+        },
         PLATFORM_CAPABILITY_COMPOSITION_COVERAGE: {
             "capability_identifier": PLATFORM_CAPABILITY_COMPOSITION_COVERAGE,
             "objective_terms": (
@@ -709,6 +796,16 @@ def reconstruct_certified_capability_invocation_replay(
             replay_path=Path(str(result["capability_replay_reference"])),
             expected_output=result["output_artifact"],
         )
+    if capability_id == PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION:
+        reconstructed_packet = reconstruct_product1_decision_validation_packet_replay(
+            result["capability_replay_reference"]
+        )
+        if reconstructed_packet.get("packet_artifact_hash") != result.get(
+            "output_artifact_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "Product 1 decision validation packet Replay output mismatch"
+            )
     return {
         "invocation_id": result["invocation_id"],
         "session_id": result["session_id"],
@@ -840,6 +937,28 @@ def _validated_inputs(
         artifact = _validate_normalization_input(inputs)
         reference = inputs["source_reference"]
         semantic_hash = inputs["source_hash"]
+    elif adapter.capability_identifier == (
+        PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION
+    ):
+        artifact = validate_product1_decision_validation_request(
+            inputs["decision_validation_request_artifact"]
+        )
+        reference = _require_string(
+            inputs["decision_validation_request_reference"],
+            "decision_validation_request_reference",
+        )
+        semantic_hash = _require_hash(
+            inputs["decision_validation_request_hash"],
+            "decision_validation_request_hash",
+        )
+        if artifact["request_id"] != reference:
+            raise FailClosedRuntimeError(
+                "certified capability invocation failed closed: input reference mismatch"
+            )
+        if artifact["artifact_hash"] != semantic_hash:
+            raise FailClosedRuntimeError(
+                "certified capability invocation failed closed: input hash mismatch"
+            )
     elif adapter.capability_identifier == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
         artifact = validate_platform_capability_composition_coverage_request(
             inputs["composition_coverage_request_artifact"]
@@ -974,6 +1093,10 @@ def _validated_output(
         return validate_normalized_change_artifact(output)
     if adapter.capability_identifier == PLATFORM_CHANGE_IMPACT_ANALYSIS:
         return validate_platform_change_impact_artifact(output)
+    if adapter.capability_identifier == (
+        PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION
+    ):
+        return validate_product1_decision_validation_packet(output)
     if adapter.capability_identifier == PLATFORM_CAPABILITY_COMPOSITION_COVERAGE:
         return validate_platform_capability_composition_coverage(output)
     return validate_platform_validation_plan_artifact(output)

@@ -391,6 +391,26 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         certification_version="G20-03",
     ),
     CapabilityCertificationRecord(
+        capability_identifier="PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION",
+        capability_owner="PRODUCT1_AI_DECISION_VALIDATOR",
+        certification_status=CERTIFIED,
+        certification_scope=RUNTIME,
+        certification_milestone="G31-02",
+        certification_evidence=(
+            "docs/governance/AIGOL_PRODUCT1_DECISION_VALIDATION_PACKET_CERTIFICATION_V1.md",
+            "docs/governance/G31_02_PRODUCT1_DECISION_VALIDATION_PACKET_CERTIFIED_OPERATIONAL_ONBOARDING.md",
+        ),
+        certification_date="2026-07-15",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.product1_decision_validation_packet_certification_v1"
+        ),
+        verification_type=(
+            "DETERMINISTIC_PRODUCT1_DECISION_VALIDATION_PACKET_GENERATION"
+        ),
+        certification_version="G31-02",
+    ),
+    CapabilityCertificationRecord(
         capability_identifier="PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME",
         capability_owner="PLATFORM_CORE_DEVELOPMENT_PLANNING",
         certification_status=CERTIFIED,
