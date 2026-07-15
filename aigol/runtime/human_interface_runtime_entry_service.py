@@ -51,6 +51,7 @@ def run_human_interface_runtime_entry(
     presentation: dict[str, Any] | None = None,
     operator_context: str = "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
     explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     """Enter the certified runtime from any Unified Human Interface."""
 
@@ -71,6 +72,9 @@ def run_human_interface_runtime_entry(
             workspace=workspace_text,
             created_at=created,
             explicit_canonical_artifacts=explicit_canonical_artifacts,
+            explicit_canonical_artifact_references=(
+                explicit_canonical_artifact_references
+            ),
         )
         for request in requests
     ]
@@ -115,6 +119,10 @@ def run_human_interface_runtime_entry(
             ),
             "human_interface_runtime_entry_service_used": True,
             "human_interface_runtime_entry_orchestrates": False,
+            "human_interface_resolves_artifacts": False,
+            "human_interface_validates_artifacts": False,
+            "human_interface_selects_artifacts": False,
+            "human_interface_influences_semantic_selection": False,
             "platform_core_project_services_delegated": True,
             "platform_core_runtime_delegated": True,
             "manual_chatgpt_codex_transfer_required": False,

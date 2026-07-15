@@ -48,6 +48,7 @@ def run_reference_uhi_session(
     input_reader: Callable[[str], str] = input,
     output_writer: Callable[[str], None] = print,
     runtime_runner: RuntimeRunner | None = None,
+    artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     """Run the reference UHI session.
 
@@ -103,6 +104,7 @@ def run_reference_uhi_session(
                         created=created,
                         output_writer=output_writer,
                         transcript=transcript,
+                        artifact_references=artifact_references,
                     )
                     submitted_messages += submitted_requests
                     submitted_request_count += submitted_requests
@@ -225,6 +227,7 @@ def run_reference_uhi_session(
                 created=created,
                 output_writer=output_writer,
                 transcript=transcript,
+                artifact_references=artifact_references,
             )
             submitted_messages += submitted_requests
             submitted_request_count += submitted_requests
@@ -271,6 +274,7 @@ def run_reference_uhi_session(
                     created=created,
                     output_writer=output_writer,
                     transcript=transcript,
+                    artifact_references=artifact_references,
                 )
                 submitted_messages += submitted_requests
                 submitted_request_count += submitted_requests
@@ -316,6 +320,7 @@ def run_reference_uhi_session(
                     workspace=workspace_path,
                     governed_runtime_runner=run_interactive_conversation,
                     operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+                    explicit_canonical_artifact_references=artifact_references,
                 )
             else:
                 runtime_result = runtime_runner(
@@ -383,6 +388,9 @@ def run_reference_uhi_session(
         "aicli_owns_replay": False,
         "aicli_owns_workspace": False,
         "aicli_owns_goal_mapping": False,
+        "aicli_owns_artifact_resolution": False,
+        "aicli_owns_artifact_validation": False,
+        "aicli_owns_artifact_selection": False,
         "aicli_owns_provider_selection": False,
         "platform_core_services_delegated": True,
         "platform_core_project_services_context": last_project_context,
@@ -421,6 +429,7 @@ def run_reference_uhi_submit_session(
     input_reader: Callable[[str], str] | None = None,
     output_writer: Callable[[str], None] = print,
     runtime_runner: RuntimeRunner | None = None,
+    artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     """Run stdin submission and continue while Platform Core needs input."""
 
@@ -465,6 +474,7 @@ def run_reference_uhi_submit_session(
             created=created,
             output_writer=output_writer,
             transcript=transcript,
+            artifact_references=artifact_references,
         )
         submitted_messages += submitted_requests
         submitted_request_count += submitted_requests
@@ -539,6 +549,7 @@ def run_reference_uhi_submit_session(
                 created=created,
                 output_writer=output_writer,
                 transcript=transcript,
+                artifact_references=artifact_references,
             )
             submitted_messages += submitted_requests
             submitted_request_count += submitted_requests
@@ -600,6 +611,7 @@ def run_reference_uhi_submit_session(
                 workspace=workspace_path,
                 governed_runtime_runner=run_interactive_conversation,
                 operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+                explicit_canonical_artifact_references=artifact_references,
             )
         else:
             runtime_result = runtime_runner(
@@ -646,6 +658,9 @@ def run_reference_uhi_submit_session(
         "aicli_owns_replay": False,
         "aicli_owns_workspace": False,
         "aicli_owns_goal_mapping": False,
+        "aicli_owns_artifact_resolution": False,
+        "aicli_owns_artifact_validation": False,
+        "aicli_owns_artifact_selection": False,
         "aicli_owns_provider_selection": False,
         "platform_core_services_delegated": True,
         "platform_core_project_services_context": last_project_context,
@@ -815,6 +830,9 @@ def _record_reference_workspace_state(
         "aicli_owns_replay": False,
         "aicli_owns_workspace": False,
         "aicli_owns_goal_mapping": False,
+        "aicli_owns_artifact_resolution": False,
+        "aicli_owns_artifact_validation": False,
+        "aicli_owns_artifact_selection": False,
         "aicli_owns_provider_selection": False,
         "platform_core_services_delegated": True,
         "platform_core_project_services_context": last_project_context,
@@ -865,6 +883,7 @@ def _submit_composed_request(
     created: str,
     output_writer: Callable[[str], None],
     transcript: list[dict[str, Any]],
+    artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any], dict[str, Any], int, int]:
     message = "\n".join(compose_buffer)
     project_context = prepare_unified_human_interface_project_context(
@@ -874,6 +893,7 @@ def _submit_composed_request(
         runtime_root=root,
         workspace=workspace_path,
         created_at=created,
+        explicit_canonical_artifact_references=artifact_references,
     )
     output_writer("Request submitted to Platform Core.")
     output_writer(_render_project_context(project_context))
@@ -1096,6 +1116,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--created-at", default=DEFAULT_CREATED_AT)
     parser.add_argument("--runtime-root", default=DEFAULT_RUNTIME_ROOT)
     parser.add_argument("--workspace", default=".")
+    parser.add_argument(
+        "--artifact-reference",
+        action="append",
+        default=[],
+        help="Transport one opaque canonical Replay wrapper reference to Platform Core.",
+    )
     parser.add_argument("mode", nargs="?", choices=("submit",), help="Use stdin one-shot submission mode.")
     return parser
 
@@ -1109,6 +1135,7 @@ def main(argv: list[str] | None = None) -> int:
             runtime_root=args.runtime_root,
             workspace=args.workspace,
             input_reader=input,
+            artifact_references=args.artifact_reference,
         )
         return 0
     run_reference_uhi_session(
@@ -1116,6 +1143,7 @@ def main(argv: list[str] | None = None) -> int:
         created_at=args.created_at,
         runtime_root=args.runtime_root,
         workspace=args.workspace,
+        artifact_references=args.artifact_reference,
     )
     return 0
 

@@ -585,6 +585,25 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G29-06",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="EXPLICIT_CANONICAL_ARTIFACT_INGRESS_BINDING",
+        capability_owner="PLATFORM_CORE_CANONICAL_ARTIFACT_INGRESS",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G29-08",
+        certification_evidence=(
+            "docs/governance/G29_08_EXPLICIT_CANONICAL_ARTIFACT_INGRESS_BINDING.md",
+        ),
+        certification_date="2026-07-14",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.explicit_canonical_artifact_ingress_runtime"
+        ),
+        verification_type=(
+            "DETERMINISTIC_EXPLICIT_CANONICAL_ARTIFACT_INGRESS_BINDING"
+        ),
+        certification_version="G29-08",
+    ),
 )
 
 

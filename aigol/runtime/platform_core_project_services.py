@@ -202,10 +202,42 @@ def prepare_unified_human_interface_project_context(
     workspace: str | Path,
     created_at: str,
     explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
     session_root = Path(runtime_root) / require_string(session_id, "session_id")
+    ingress_capture: dict[str, Any] | None = None
+    validated_explicit_artifacts = explicit_canonical_artifacts
+    if explicit_canonical_artifact_references:
+        from aigol.runtime.explicit_canonical_artifact_ingress_runtime import (
+            run_explicit_canonical_artifact_ingress,
+        )
+
+        if explicit_canonical_artifacts:
+            raise FailClosedRuntimeError(
+                "explicit canonical artifact objects and references cannot be mixed"
+            )
+        ingress_index = next_index(
+            session_root / "explicit_artifact_ingress", "*_ingress"
+        )
+        ingress_root = (
+            session_root
+            / "explicit_artifact_ingress"
+            / f"{ingress_index:03d}_ingress"
+        )
+        ingress_capture = run_explicit_canonical_artifact_ingress(
+            ingress_id=f"G29-08-INGRESS-{session_id}-{ingress_index:03d}",
+            session_id=session_id,
+            opaque_artifact_references=explicit_canonical_artifact_references,
+            runtime_root=runtime_root,
+            workspace=workspace,
+            created_at=created_at,
+            replay_dir=ingress_root,
+        )
+        validated_explicit_artifacts = tuple(
+            ingress_capture["validated_canonical_artifacts"]
+        )
     prior_state = latest_platform_core_workspace_state(session_root)
     guidance = (
         project_guidance_from_workspace_state(prior_state)
@@ -296,28 +328,47 @@ def prepare_unified_human_interface_project_context(
     )
     read_only_work_result = None
     if development_intent.get("read_only_work_binding_admissible") is True:
-        read_only_work_result = run_governed_read_only_work_binding(
-            message=effective_message,
-            workspace_state=prior_state,
-            development_intent=development_intent,
-            created_at=created_at,
-            durable_work_root=session_root / "durable_governed_work",
-            session_id=session_id,
-            project_objective_artifact=project_objective,
-            candidate_discovery_evidence=(
-                development_intent.get("candidate_capability_discovery")
-                if isinstance(
-                    development_intent.get("candidate_capability_discovery"), dict
-                )
-                else None
-            ),
-            explicit_canonical_artifacts=explicit_canonical_artifacts,
-            semantic_route_root=(
-                session_root
-                / "semantic_capability_route"
-                / f"{next_index(session_root / 'semantic_capability_route', '*'):03d}_route"
-            ),
-        )
+        if (
+            isinstance(ingress_capture, dict)
+            and ingress_capture.get("ingress_status")
+            == "EXPLICIT_CANONICAL_ARTIFACT_INGRESS_FAILED_CLOSED"
+        ):
+            read_only_work_result = _failed_read_only_work_result(
+                message=effective_message,
+                development_intent=development_intent,
+                created_at=created_at,
+                failure_reason=str(ingress_capture.get("failure_reason")),
+            )
+            read_only_work_result["explicit_canonical_artifact_ingress_status"] = (
+                ingress_capture["ingress_status"]
+            )
+            read_only_work_result["explicit_canonical_artifact_ingress_reference"] = (
+                ingress_capture["replay_reference"]
+            )
+            read_only_work_result["artifact_hash"] = replay_hash(read_only_work_result)
+        else:
+            read_only_work_result = run_governed_read_only_work_binding(
+                message=effective_message,
+                workspace_state=prior_state,
+                development_intent=development_intent,
+                created_at=created_at,
+                durable_work_root=session_root / "durable_governed_work",
+                session_id=session_id,
+                project_objective_artifact=project_objective,
+                candidate_discovery_evidence=(
+                    development_intent.get("candidate_capability_discovery")
+                    if isinstance(
+                        development_intent.get("candidate_capability_discovery"), dict
+                    )
+                    else None
+                ),
+                explicit_canonical_artifacts=validated_explicit_artifacts,
+                semantic_route_root=(
+                    session_root
+                    / "semantic_capability_route"
+                    / f"{next_index(session_root / 'semantic_capability_route', '*'):03d}_route"
+                ),
+            )
         development_intent = development_intent_with_read_only_work_result(
             development_intent=development_intent,
             read_only_work_result=read_only_work_result,
@@ -347,6 +398,18 @@ def prepare_unified_human_interface_project_context(
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
         "governed_read_only_work_result": read_only_work_result,
+        "explicit_canonical_artifact_ingress": (
+            deepcopy(
+                ingress_capture.get("explicit_canonical_artifact_ingress_artifact")
+            )
+            if isinstance(ingress_capture, dict)
+            else None
+        ),
+        "explicit_canonical_artifact_ingress_reference": (
+            ingress_capture.get("replay_reference")
+            if isinstance(ingress_capture, dict)
+            else None
+        ),
         "semantic_capability_runtime_route": (
             deepcopy(read_only_work_result.get("semantic_capability_runtime_route"))
             if isinstance(read_only_work_result, dict)
@@ -374,12 +437,35 @@ def prepare_unified_human_interface_project_context(
         "replay_reference": str(session_root / "uhi_project_services"),
     }
     artifact["artifact_hash"] = replay_hash(artifact)
-    write_json_immutable(
+    project_context_path = (
         session_root
         / "uhi_project_services"
-        / f"{next_uhi_project_context_index(session_root):03d}_uhi_project_context_recorded.json",
+        / f"{next_uhi_project_context_index(session_root):03d}_uhi_project_context_recorded.json"
+    )
+    write_json_immutable(
+        project_context_path,
         artifact,
     )
+    if isinstance(ingress_capture, dict):
+        from aigol.runtime.explicit_canonical_artifact_ingress_runtime import (
+            link_explicit_canonical_artifact_ingress,
+        )
+
+        route = artifact.get("semantic_capability_runtime_route")
+        link_explicit_canonical_artifact_ingress(
+            replay_dir=ingress_capture["replay_reference"],
+            project_context_reference=str(project_context_path),
+            project_context_hash=artifact["artifact_hash"],
+            downstream_route_reference=(
+                route.get("replay_reference") if isinstance(route, dict) else None
+            ),
+            downstream_route_hash=(
+                route.get("artifact_hash") if isinstance(route, dict) else None
+            ),
+            downstream_route_status=(
+                route.get("route_status") if isinstance(route, dict) else None
+            ),
+        )
     return artifact
 
 
