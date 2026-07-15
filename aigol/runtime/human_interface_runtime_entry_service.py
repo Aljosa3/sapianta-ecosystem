@@ -52,6 +52,11 @@ def run_human_interface_runtime_entry(
     operator_context: str = "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
     explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
     explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
+    approved_implementation_turn_binding: dict[str, Any] | None = None,
+    approved_development_composition_plan_hash: str | None = None,
+    approved_durable_governed_work_hash: str | None = None,
+    approved_proposal_preview_hash: str | None = None,
+    approved_approval_request_hash: str | None = None,
 ) -> dict[str, Any]:
     """Enter the certified runtime from any Unified Human Interface."""
 
@@ -63,26 +68,74 @@ def run_human_interface_runtime_entry(
     requests = [_require_string(request, "human_request") for request in human_requests]
 
     result = deepcopy(presentation) if isinstance(presentation, dict) else {}
-    project_contexts = [
-        prepare_unified_human_interface_project_context(
-            interface_name=interface,
-            session_id=session,
-            message=request,
-            runtime_root=root,
-            workspace=workspace_text,
+    approved_identity_consumption = None
+    if approved_implementation_turn_binding is not None:
+        from aigol.runtime.platform_implementation_turn_durable_work_binding import (
+            consume_approved_implementation_turn_binding,
+        )
+
+        approved_identity_consumption = consume_approved_implementation_turn_binding(
+            binding_artifact=approved_implementation_turn_binding,
+            development_composition_plan_hash=_require_string(
+                approved_development_composition_plan_hash,
+                "approved_development_composition_plan_hash",
+            ),
+            durable_governed_work_hash=_require_string(
+                approved_durable_governed_work_hash,
+                "approved_durable_governed_work_hash",
+            ),
+            proposal_preview_hash=_require_string(
+                approved_proposal_preview_hash,
+                "approved_proposal_preview_hash",
+            ),
+            approval_request_hash=_require_string(
+                approved_approval_request_hash,
+                "approved_approval_request_hash",
+            ),
             created_at=created,
-            explicit_canonical_artifacts=explicit_canonical_artifacts,
-            explicit_canonical_artifact_references=(
-                explicit_canonical_artifact_references
+            replay_dir=_require_string(
+                approved_implementation_turn_binding.get("replay_reference"),
+                "approved_implementation_turn_replay_reference",
             ),
         )
-        for request in requests
-    ]
-    intent_resolutions = [
-        context["development_intent_resolution"]
-        for context in project_contexts
-        if isinstance(context.get("development_intent_resolution"), dict)
-    ]
+        project_contexts = []
+        intent_resolutions = [
+            {
+                "runtime_binding_admissible": True,
+                "canonical_runtime_prompt": requests[0],
+                "work_type": "IMPLEMENTATION",
+                "canonical_implementation_turn_binding": deepcopy(
+                    approved_implementation_turn_binding
+                ),
+                "canonical_implementation_turn_binding_hash": (
+                    approved_implementation_turn_binding.get("artifact_hash")
+                ),
+                "approved_identity_consumption": deepcopy(
+                    approved_identity_consumption
+                ),
+            }
+        ]
+    else:
+        project_contexts = [
+            prepare_unified_human_interface_project_context(
+                interface_name=interface,
+                session_id=session,
+                message=request,
+                runtime_root=root,
+                workspace=workspace_text,
+                created_at=created,
+                explicit_canonical_artifacts=explicit_canonical_artifacts,
+                explicit_canonical_artifact_references=(
+                    explicit_canonical_artifact_references
+                ),
+            )
+            for request in requests
+        ]
+        intent_resolutions = [
+            context["development_intent_resolution"]
+            for context in project_contexts
+            if isinstance(context.get("development_intent_resolution"), dict)
+        ]
     runtime_prompts = [
         str(resolution.get("canonical_runtime_prompt") or request)
         for request, resolution in zip(requests, intent_resolutions)
@@ -106,6 +159,18 @@ def run_human_interface_runtime_entry(
             "platform_core_project_services_context": project_contexts[-1] if project_contexts else None,
             "development_intent_resolutions": intent_resolutions,
             "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
+            "approved_implementation_turn_binding": deepcopy(
+                approved_implementation_turn_binding
+            ),
+            "approved_identity_consumption": deepcopy(approved_identity_consumption),
+            "approved_identity_consumption_hash": (
+                approved_identity_consumption.get("artifact_hash")
+                if isinstance(approved_identity_consumption, dict)
+                else None
+            ),
+            "approved_durable_work_identity_consumed": isinstance(
+                approved_identity_consumption, dict
+            ),
             "runtime_prompts": runtime_prompts,
             "read_only_work_results": read_only_work_results,
             "governed_read_only_work_result": (
@@ -169,6 +234,36 @@ def run_human_interface_runtime_entry(
         auto_continue=True,
         enable_llm_assisted_explanation=False,
         llm_explanation_provider_id="UNSPECIFIED_EXPLANATION_PROVIDER",
+        approved_implementation_turn_binding_hash=(
+            approved_implementation_turn_binding.get("artifact_hash")
+            if isinstance(approved_implementation_turn_binding, dict)
+            else None
+        ),
+        approved_identity_consumption_hash=(
+            approved_identity_consumption.get("artifact_hash")
+            if isinstance(approved_identity_consumption, dict)
+            else None
+        ),
+        approved_durable_governed_work_id=(
+            approved_implementation_turn_binding.get("durable_governed_work_id")
+            if isinstance(approved_implementation_turn_binding, dict)
+            else None
+        ),
+        approved_durable_governed_work_hash=(
+            approved_implementation_turn_binding.get("durable_governed_work_hash")
+            if isinstance(approved_implementation_turn_binding, dict)
+            else None
+        ),
+        approved_proposal_preview_hash=(
+            approved_implementation_turn_binding.get("proposal_preview_hash")
+            if isinstance(approved_implementation_turn_binding, dict)
+            else None
+        ),
+        approved_approval_request_hash=(
+            approved_implementation_turn_binding.get("approval_request_hash")
+            if isinstance(approved_implementation_turn_binding, dict)
+            else None
+        ),
     )
     conversation_output: list[str] = []
     conversation_result = governed_runtime_runner(
@@ -197,6 +292,9 @@ def run_human_interface_runtime_entry(
             "runtime_response_source": latest_turn.get("response_source"),
             "runtime_response_status": latest_turn.get("response_status"),
             "auto_continue_enabled": conversation_result.get("auto_continue_enabled") is True,
+            "approved_identity_transport_to_canonical_continuation": isinstance(
+                approved_identity_consumption, dict
+            ),
             "auto_continue_stop_reason": conversation_result.get("auto_continue_stop_reason"),
             "manual_chatgpt_codex_transfer_required": not runtime_bound,
             "execution_summary_presented": bool(latest_turn.get("execution_summary_reference")),

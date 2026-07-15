@@ -408,6 +408,21 @@ def run_reference_uhi_session(
                     governed_runtime_runner=run_interactive_conversation,
                     operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
                     explicit_canonical_artifact_references=artifact_references,
+                    approved_implementation_turn_binding=pending_summary.get(
+                        "canonical_implementation_turn_binding"
+                    ),
+                    approved_development_composition_plan_hash=pending_summary.get(
+                        "development_composition_plan_hash"
+                    ),
+                    approved_durable_governed_work_hash=pending_summary.get(
+                        "durable_governed_work_hash"
+                    ),
+                    approved_proposal_preview_hash=pending_summary.get(
+                        "proposal_preview_hash"
+                    ),
+                    approved_approval_request_hash=pending_summary.get(
+                        "approval_request_hash"
+                    ),
                 )
             else:
                 runtime_result = runtime_runner(
@@ -699,6 +714,21 @@ def run_reference_uhi_submit_session(
                 governed_runtime_runner=run_interactive_conversation,
                 operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
                 explicit_canonical_artifact_references=artifact_references,
+                approved_implementation_turn_binding=pending_summary.get(
+                    "canonical_implementation_turn_binding"
+                ),
+                approved_development_composition_plan_hash=pending_summary.get(
+                    "development_composition_plan_hash"
+                ),
+                approved_durable_governed_work_hash=pending_summary.get(
+                    "durable_governed_work_hash"
+                ),
+                approved_proposal_preview_hash=pending_summary.get(
+                    "proposal_preview_hash"
+                ),
+                approved_approval_request_hash=pending_summary.get(
+                    "approval_request_hash"
+                ),
             )
         else:
             runtime_result = runtime_runner(
@@ -1135,9 +1165,36 @@ def _render_summary(summary: dict[str, Any]) -> str:
         str(summary.get("summary_title") or "Governed implementation summary"),
         f"original_request: {summary.get('original_request')}",
         f"runtime_after_approval: {summary.get('runtime_after_approval')}",
-        str(summary.get("approval_explanation")),
-        "Type /approve to continue, or /cancel to discard.",
     ]
+    preview = summary.get("canonical_proposal_preview")
+    if isinstance(preview, dict):
+        lines.extend(
+            [
+                "Canonical durable governed-work proposal",
+                f"canonical_project_objective: {preview.get('canonical_project_objective')}",
+                f"knowledge_reuse_classification: {preview.get('knowledge_reuse_classification')}",
+                f"knowledge_reuse_recommended: {preview.get('knowledge_reuse_recommended')}",
+                f"repository_scope_status: {preview.get('repository_scope_status')}",
+                f"repository_scope_explanation: {preview.get('repository_scope_explanation')}",
+                f"bounded_work_scope: {preview.get('bounded_work_scope')}",
+                f"ordered_implementation_sequence: {preview.get('ordered_implementation_sequence')}",
+                f"focused_tests: {preview.get('focused_tests')}",
+                f"validation_requirements: {preview.get('validation_requirements')}",
+                f"development_composition_plan_hash: {summary.get('development_composition_plan_hash')}",
+                f"durable_governed_work_id: {summary.get('durable_governed_work_id')}",
+                f"durable_governed_work_hash: {summary.get('durable_governed_work_hash')}",
+                f"proposal_preview_hash: {summary.get('proposal_preview_hash')}",
+                f"approval_request_id: {summary.get('approval_request_id')}",
+                f"approval_request_hash: {summary.get('approval_request_hash')}",
+                "approval_is_execution_authorization: False",
+            ]
+        )
+    lines.extend(
+        [
+            str(summary.get("approval_explanation")),
+            "Type /approve to continue, or /cancel to discard.",
+        ]
+    )
     return "\n".join(lines)
 
 

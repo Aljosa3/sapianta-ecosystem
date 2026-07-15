@@ -443,6 +443,68 @@ def prepare_unified_human_interface_project_context(
         development_intent=development_intent,
         conversation_experience=conversation_experience,
     )
+    implementation_turn_binding = None
+    if (
+        development_intent.get("summary_admissible") is True
+        and development_intent.get("work_type") == "IMPLEMENTATION"
+        and project_objective is not None
+    ):
+        from aigol.runtime.platform_implementation_turn_durable_work_binding import (
+            IMPLEMENTATION_TURN_READY_FOR_APPROVAL,
+            compose_implementation_turn_durable_work_binding,
+        )
+
+        implementation_turn_binding = compose_implementation_turn_durable_work_binding(
+            request=effective_message,
+            project_objective_artifact=project_objective,
+            knowledge_reuse_artifact=knowledge_reuse,
+            workspace_state=prior_state,
+            workspace=workspace,
+            created_at=created_at,
+            replay_dir=(
+                session_root
+                / "implementation_turn_durable_work"
+                / f"{turn_index:03d}_binding"
+            ),
+        )
+        development_intent = deepcopy(development_intent)
+        development_intent["canonical_implementation_turn_binding"] = deepcopy(
+            implementation_turn_binding
+        )
+        development_intent["canonical_implementation_turn_binding_hash"] = (
+            implementation_turn_binding["artifact_hash"]
+        )
+        development_intent["development_composition_plan_hash"] = (
+            implementation_turn_binding["development_composition_plan_hash"]
+        )
+        development_intent["durable_governed_work_hash"] = (
+            implementation_turn_binding["durable_governed_work_hash"]
+        )
+        development_intent["proposal_preview_hash"] = implementation_turn_binding[
+            "proposal_preview_hash"
+        ]
+        development_intent["approval_request_hash"] = implementation_turn_binding[
+            "approval_request_hash"
+        ]
+        if (
+            implementation_turn_binding.get("binding_status")
+            != IMPLEMENTATION_TURN_READY_FOR_APPROVAL
+        ):
+            development_intent["summary_admissible"] = False
+            development_intent["runtime_binding_admissible"] = False
+            development_intent["requires_human_approval"] = False
+            development_intent["canonical_implementation_scope_unresolved"] = True
+            development_intent["clarification_reason"] = implementation_turn_binding.get(
+                "failure_reason"
+            )
+        development_intent["artifact_hash"] = replay_hash(development_intent)
+        conversation_experience = human_conversation_experience_from_resolution(
+            message=effective_message,
+            guidance=guidance,
+            knowledge_reuse=knowledge_reuse,
+            development_intent=development_intent,
+            workspace_state=prior_state,
+        )
     read_only_work_result = None
     if informational_router_response is not None:
         read_only_work_result = _read_only_result_from_platform_query_router(
@@ -632,6 +694,14 @@ def prepare_unified_human_interface_project_context(
         "artifact_attachment_retry_state": deepcopy(attachment_retry_state),
         "development_intent_resolution": development_intent,
         "human_conversation_experience": conversation_experience,
+        "canonical_implementation_turn_binding": deepcopy(
+            implementation_turn_binding
+        ),
+        "canonical_implementation_turn_binding_hash": (
+            implementation_turn_binding.get("artifact_hash")
+            if isinstance(implementation_turn_binding, dict)
+            else None
+        ),
         "governed_read_only_work_result": read_only_work_result,
         "explicit_canonical_artifact_ingress": (
             deepcopy(
@@ -4819,6 +4889,19 @@ def _conversation_approval_summary(
     summary_admissible = development_intent.get("summary_admissible") is True
     work_type = str(development_intent.get("work_type") or "IMPLEMENTATION")
     prepared_work_type = str(development_intent.get("prepared_work_type") or work_type)
+    implementation_binding = (
+        development_intent.get("canonical_implementation_turn_binding")
+        if isinstance(
+            development_intent.get("canonical_implementation_turn_binding"), dict
+        )
+        else None
+    )
+    proposal_preview = (
+        implementation_binding.get("proposal_preview_artifact")
+        if isinstance(implementation_binding, dict)
+        and isinstance(implementation_binding.get("proposal_preview_artifact"), dict)
+        else None
+    )
     return {
         "summary_type": (
             "GOVERNED_IMPLEMENTATION_SUMMARY"
@@ -4861,6 +4944,44 @@ def _conversation_approval_summary(
         "runtime_after_approval": "CERTIFIED_PLATFORM_CORE_RUNTIME" if summary_admissible else None,
         "approval_state": "PENDING_HUMAN_APPROVAL" if summary_admissible else "NOT_APPLICABLE",
         "approval_explanation": approval_explanation,
+        "canonical_implementation_turn_binding": deepcopy(implementation_binding),
+        "canonical_implementation_turn_binding_hash": (
+            implementation_binding.get("artifact_hash")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "canonical_proposal_preview": deepcopy(proposal_preview),
+        "development_composition_plan_hash": (
+            implementation_binding.get("development_composition_plan_hash")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "durable_governed_work_id": (
+            implementation_binding.get("durable_governed_work_id")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "durable_governed_work_hash": (
+            implementation_binding.get("durable_governed_work_hash")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "proposal_preview_hash": (
+            implementation_binding.get("proposal_preview_hash")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "approval_request_id": (
+            implementation_binding.get("approval_request_id")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "approval_request_hash": (
+            implementation_binding.get("approval_request_hash")
+            if isinstance(implementation_binding, dict)
+            else None
+        ),
+        "approval_is_execution_authorization": False,
         "human_interface_authorizes": False,
         "human_interface_executes": False,
         "acli_next_authorizes": False,
