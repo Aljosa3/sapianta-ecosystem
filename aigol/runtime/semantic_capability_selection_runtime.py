@@ -761,8 +761,8 @@ def _clarification_artifact(
         missing_slot = "capability_target_choice"
     elif any("input_artifact_family" in item["unresolved_semantic_slots"] for item in candidates):
         question = (
-            "Are you supplying a described implementation change, an existing normalized "
-            "change artifact, or an existing platform change impact artifact?"
+            "Can you supply one compatible existing canonical input artifact "
+            "for this request?"
         )
         missing_slot = "input_artifact_family"
     else:

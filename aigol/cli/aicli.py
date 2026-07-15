@@ -1013,7 +1013,19 @@ def _submit_composed_request(
         output_writer(_render_clarification(clarification))
         return None, clarification, resolution, project_context, 1, multiline_requests
     if resolution.get("clarification_required") is True or conversation.get("response_mode") == "CLARIFICATION":
-        clarification = _clarification_from_conversation(message, conversation)
+        operational_envelope = conversation.get(
+            "operational_clarification_envelope"
+        )
+        original_message = (
+            operational_envelope.get("original_message")
+            if isinstance(operational_envelope, dict)
+            and isinstance(operational_envelope.get("original_message"), str)
+            else message
+        )
+        clarification = _clarification_from_conversation(
+            original_message,
+            conversation,
+        )
         output_writer(_render_clarification(clarification))
         return None, clarification, resolution, project_context, 1, multiline_requests
     if resolution.get("summary_admissible") is True:

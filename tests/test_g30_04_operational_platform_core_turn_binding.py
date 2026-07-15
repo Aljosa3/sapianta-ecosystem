@@ -135,6 +135,59 @@ def test_g29_clarification_reply_preserves_owner_slot_and_objective(
     ] == turn["artifact_hash"]
 
 
+def test_textual_input_family_reply_fails_closed_with_canonical_transport_guidance(
+    tmp_path: Path,
+) -> None:
+    output: list[str] = []
+    result = aicli.run_reference_uhi_session(
+        session_id="G30-04-G29-TEXTUAL-INPUT-FAMILY",
+        runtime_root=tmp_path,
+        workspace=".",
+        created_at=CREATED_AT,
+        input_reader=_reader(
+            [
+                "Analyze Platform Capability Composition Coverage.",
+                "Audit only.",
+                "/send",
+                "I am supplying a described implementation change.",
+                "/send",
+                "described implementation change",
+                "/send",
+            ]
+        ),
+        output_writer=output.append,
+    )
+    context = result["platform_core_project_services_context"]
+    turn = context["operational_turn_binding"]
+    route = context["semantic_capability_runtime_route"]
+    envelope = context["operational_clarification_envelope"]
+    conversation = context["human_conversation_experience"]
+    rendered = "\n".join(output)
+
+    assert result["session_status"] == (
+        "REFERENCE_UHI_SESSION_AWAITING_HUMAN_CLARIFICATION"
+    )
+    assert turn["binding_destination"] == G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+    assert turn["originating_semantic_slot"] == "input_artifact_family"
+    assert turn["continuation_semantic_slot"] == "input_artifact_family"
+    assert envelope["original_message"] == AUDIT_REQUEST
+    assert rendered.count(f"original_request: {AUDIT_REQUEST}") == 3
+    assert "original_request: described implementation change" not in rendered
+    assert route["route_status"] == "SEMANTIC_CAPABILITY_ROUTE_CLARIFICATION_REQUIRED"
+    assert route["lifecycle_status"] is None
+    assert context["development_intent_resolution"]["clarification_reply_bound"] is True
+    assert conversation["clarification_reply_satisfied_semantic_slot"] is False
+    assert conversation["canonical_artifact_transport_required"] is True
+    assert "descriptive text is bound to the clarification owner" in rendered
+    assert "Use /attach <reference>" in rendered
+    assert route["provider_invoked"] is False
+    assert route["worker_invoked"] is False
+    assert route["repository_mutated"] is False
+    assert reconstruct_operational_turn_binding(turn["turn_reference"])[
+        "artifact_hash"
+    ] == turn["artifact_hash"]
+
+
 def test_clarification_envelope_rejects_owner_slot_and_session_substitution(
     tmp_path: Path,
 ) -> None:

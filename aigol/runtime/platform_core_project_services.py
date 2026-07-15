@@ -2575,6 +2575,39 @@ def human_conversation_experience_with_read_only_result(
     conversation = deepcopy(conversation_experience)
     result = read_only_work_result if isinstance(read_only_work_result, dict) else {}
     clarification_required = result.get("clarification_required") is True
+    clarification = (
+        result.get("clarification_artifact")
+        if isinstance(result.get("clarification_artifact"), dict)
+        else {}
+    )
+    canonical_input_required = (
+        clarification.get("selected_missing_slot") == "input_artifact_family"
+    )
+    if canonical_input_required:
+        user_explanation = (
+            "Platform Core did not invoke a capability. The "
+            "input_artifact_family slot requires one compatible existing "
+            "canonical artifact; descriptive text is bound to the "
+            "clarification owner but is not canonical input evidence."
+        )
+        recommended_next_user_action = (
+            "Use /attach <reference> to transport one compatible immutable "
+            "Replay wrapper."
+        )
+    elif clarification_required:
+        user_explanation = (
+            "Platform Core did not invoke a capability because exact semantic "
+            "or canonical input evidence remains unresolved."
+        )
+        recommended_next_user_action = (
+            "Answer the deterministic Platform Core clarification question."
+        )
+    else:
+        user_explanation = (
+            "Platform Core routed the non-mutating request through read-only "
+            "services and produced a canonical presentation artifact."
+        )
+        recommended_next_user_action = "Review the governed read-only result."
     conversation.update(
         {
             "response_mode": "CLARIFICATION" if clarification_required else "READ_ONLY_RESULT",
@@ -2583,18 +2616,8 @@ def human_conversation_experience_with_read_only_result(
                 if clarification_required
                 else f"I completed governed {result.get('work_type')} read-only work."
             ),
-            "user_explanation": (
-                "Platform Core did not invoke a capability because exact semantic or canonical "
-                "input evidence remains unresolved."
-                if clarification_required
-                else "Platform Core routed the non-mutating request through read-only services "
-                "and produced a canonical presentation artifact."
-            ),
-            "recommended_next_user_action": (
-                "Answer the deterministic Platform Core clarification question."
-                if clarification_required
-                else "Review the governed read-only result."
-            ),
+            "user_explanation": user_explanation,
+            "recommended_next_user_action": recommended_next_user_action,
             "governed_read_only_work_result": deepcopy(result),
             "governed_read_only_work_result_hash": result.get("artifact_hash"),
             "read_only_work_binding_status": result.get("binding_status"),
@@ -2610,6 +2633,10 @@ def human_conversation_experience_with_read_only_result(
         conversation["clarification_required"] = True
         conversation["clarification_questions"] = deepcopy(
             result.get("clarification_questions") or []
+        )
+        conversation["clarification_reply_satisfied_semantic_slot"] = False
+        conversation["canonical_artifact_transport_required"] = (
+            canonical_input_required
         )
     conversation["artifact_hash"] = replay_hash(conversation)
     return conversation
