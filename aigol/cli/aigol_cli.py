@@ -8177,6 +8177,9 @@ def _interactive_grounded_worker_request_execution_authorization_review_turn_sum
             "authorization_review_hash": authorization_review_capture.get(
                 "artifact_hash"
             ),
+            "authorization_review_artifact": deepcopy(
+                authorization_review_capture
+            ),
             "authorization_scope_hash": authorization_review_capture.get(
                 "authorization_scope_hash"
             ),

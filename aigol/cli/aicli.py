@@ -19,6 +19,11 @@ from aigol.runtime.human_interface_runtime_entry_service import (
     CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED,
     run_human_interface_runtime_entry,
 )
+from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
+    EXECUTION_DECISION_REJECTED,
+    bind_distinct_human_execution_decision,
+    render_distinct_human_execution_decision,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -68,6 +73,7 @@ def run_reference_uhi_session(
     )
 
     pending_summary: dict[str, Any] | None = None
+    pending_execution_review: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
@@ -137,6 +143,15 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_execution_review is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_EXECUTION_DECISION"
+                    exit_reason = "EOF_AWAITING_EXECUTION_DECISION"
+                    output_writer(
+                        "Platform Core is waiting for the distinct execution decision. "
+                        "Use /approve or /cancel."
+                    )
+                    transcript.append({"event": "eof_awaiting_execution_decision"})
+                    break
                 if pending_summary is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_HUMAN_APPROVAL"
                     exit_reason = "EOF_AWAITING_APPROVAL"
@@ -172,6 +187,12 @@ def run_reference_uhi_session(
         if not normalized and not compose_buffer:
             continue
         if normalized in {"/exit", "exit", "quit"}:
+            if pending_execution_review is not None:
+                output_writer(
+                    "Platform Core is waiting for the distinct execution decision. "
+                    "Use /approve or /cancel."
+                )
+                continue
             if compose_buffer:
                 output_writer("Composed request is not empty. Use /send, '.', or /cancel before exiting.")
                 continue
@@ -182,6 +203,22 @@ def run_reference_uhi_session(
             output_writer(_render_help())
             continue
         if normalized == "/cancel":
+            if pending_execution_review is not None:
+                runtime_result = _record_contextual_execution_decision(
+                    pending_execution_review=pending_execution_review,
+                    decision="REJECT",
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    runtime_result=runtime_result,
+                )
+                output_writer(render_distinct_human_execution_decision(
+                    runtime_result["execution_human_decision_result"]
+                ))
+                pending_execution_review = None
+                transcript.append({"event": "execution_decision_rejected"})
+                continue
             if compose_buffer:
                 canceled_compose_count += 1
                 compose_buffer.clear()
@@ -345,6 +382,23 @@ def run_reference_uhi_session(
             )
             continue
         if normalized == "/approve":
+            if pending_execution_review is not None:
+                approval_count += 1
+                runtime_result = _record_contextual_execution_decision(
+                    pending_execution_review=pending_execution_review,
+                    decision="APPROVE",
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    runtime_result=runtime_result,
+                )
+                output_writer(render_distinct_human_execution_decision(
+                    runtime_result["execution_human_decision_result"]
+                ))
+                pending_execution_review = None
+                transcript.append({"event": "execution_decision_approved"})
+                continue
             if pending_summary is None and compose_buffer:
                 (
                     pending_summary,
@@ -434,6 +488,16 @@ def run_reference_uhi_session(
                 )
             runtime_status = _reference_runtime_status(runtime_result)
             output_writer(_render_runtime_result(runtime_result, runtime_status))
+            review = runtime_result.get("authorization_review_artifact")
+            if isinstance(review, dict) and review.get(
+                "authorization_review_status"
+            ) == "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW_REQUIRED":
+                pending_execution_review = review
+                output_writer(
+                    "Development proposal approval is complete. A distinct execution "
+                    "decision is now pending. Type /approve to approve proceeding toward "
+                    "execution, or /cancel to reject it. No execution is authorized yet."
+                )
             pending_summary = None
             pending_clarification = None
             transcript.append({"event": "approved", "runtime_status": runtime_status})
@@ -461,6 +525,13 @@ def run_reference_uhi_session(
             )
             continue
 
+        if pending_execution_review is not None:
+            output_writer(
+                "Execution decision pending. Use exact /approve or /cancel; "
+                "other text does not confirm execution."
+            )
+            transcript.append({"event": "ambiguous_execution_decision_rejected"})
+            continue
         compose_buffer.append(line_text)
 
     result = {
@@ -479,7 +550,10 @@ def run_reference_uhi_session(
         "canceled_compose_count": canceled_compose_count,
         "clarification_question_count": clarification_count,
         "approval_count": approval_count,
-        "pending_approval": pending_summary is not None,
+        "pending_approval": (
+            pending_summary is not None or pending_execution_review is not None
+        ),
+        "pending_execution_decision": pending_execution_review is not None,
         "runtime_status": runtime_status,
         "runtime_entered": runtime_result is not None,
         "runtime_result": runtime_result,
@@ -810,6 +884,48 @@ def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     if runtime_result.get("canonical_runtime_entry_status") == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED:
         return REFERENCE_UHI_NOT_REQUIRED
     return REFERENCE_UHI_PARTIALLY_BOUND
+
+
+def _record_contextual_execution_decision(
+    *,
+    pending_execution_review: dict[str, Any],
+    decision: str,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    runtime_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Transport one contextual decision to its Platform Core binding owner."""
+
+    review_hash = _require_string(pending_execution_review.get("artifact_hash"),
+                                  "authorization_review_hash")
+    result = bind_distinct_human_execution_decision(
+        authorization_review_artifact=pending_execution_review,
+        human_decision=decision,
+        session_id=session,
+        decided_by="HUMAN_OPERATOR_VIA_AICLI",
+        decided_at=created,
+        workspace=workspace_path,
+        session_root=root / session,
+        replay_dir=root / session / f"EXECUTION-DECISION-{review_hash[-16:]}",
+    )
+    confirmation = result.get("human_confirmation_artifact") or {}
+    merged = dict(runtime_result or {})
+    merged.update({
+        "execution_human_decision_result": result,
+        "execution_human_decision_status": result.get("decision_status"),
+        "execution_human_decision_hash": result.get("artifact_hash"),
+        "execution_summary_human_confirmation": result.get("execution_summary_human_confirmation") is True,
+        "execution_decision_rejected": result.get("decision_status") == EXECUTION_DECISION_REJECTED,
+        "human_confirmation_reference": confirmation.get("confirmation_id"),
+        "human_confirmation_hash": result.get("human_confirmation_hash"),
+        "runtime_replay_reference": result.get("replay_reference"),
+        "execution_authorized": False,
+        "worker_selected": False,
+        "authorization_dispatch_blocked": True,
+    })
+    return merged
 
 
 def _read_clarification_reply(
@@ -1336,8 +1452,8 @@ def _render_help() -> str:
             "/send - submit the composed request",
             ". - submit the composed request",
             "/attach <reference> - attach one opaque artifact to the active clarification",
-            "/approve - approve the pending governed implementation summary",
-            "/cancel - clear the compose buffer or discard the pending summary",
+            "/approve - approve the pending proposal or distinct execution decision",
+            "/cancel - clear pending input or reject the distinct execution decision",
             "/exit - close the reference UHI session",
         ]
     )

@@ -386,6 +386,11 @@ def run_human_interface_runtime_entry(
             "authorization_review_hash": latest_turn.get(
                 "authorization_review_hash"
             ),
+            "authorization_review_artifact": deepcopy(
+                latest_turn.get("authorization_review_artifact")
+            )
+            if isinstance(latest_turn.get("authorization_review_artifact"), dict)
+            else None,
             "authorization_scope_hash": latest_turn.get(
                 "authorization_scope_hash"
             ),
