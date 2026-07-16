@@ -555,4 +555,3 @@ def test_aicli_owns_no_repository_selection_or_semantics(tmp_path: Path) -> None
     assert "detect_capabilities" not in source
     assert "grounded_repository_targets" in source
     assert "repository_scope_grounding_hash" in source
-
