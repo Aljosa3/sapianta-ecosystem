@@ -519,6 +519,10 @@ from aigol.runtime.approved_durable_work_repository_scope_grounding import (
     ground_approved_durable_work_repository_scope,
     render_approved_durable_work_repository_scope_grounding,
 )
+from aigol.runtime.grounded_worker_request_execution_authorization_binding import (
+    bind_grounded_worker_request_to_execution_authorization_review,
+    render_grounded_worker_request_execution_authorization_review,
+)
 from aigol.runtime.acli_human_friendly_explanation_runtime import (
     create_acli_human_friendly_explanation,
     render_acli_human_friendly_explanation,
@@ -1932,6 +1936,11 @@ def _interactive_current_lifecycle_stage(turn_summary: dict[str, Any]) -> str:
         return "APPROVAL"
     if turn_summary.get("execution_ready_continuation_status") == "EXECUTION_READY_CONTINUATION_CREATED":
         return "EXECUTION_READY"
+    if (
+        turn_summary.get("response_source")
+        == "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW"
+    ):
+        return "AUTHORIZATION_REVIEW"
     ordered_flags = (
         ("terminated", "TERMINATED"),
         ("post_execution_replay_reviewed", "REPLAY_REVIEWED"),
@@ -1967,7 +1976,11 @@ def _interactive_workflow_state(turn_summary: dict[str, Any], current_stage: str
     if _interactive_waiting_for_clarification(turn_summary):
         return WORKFLOW_STATUS_WAITING_FOR_OPERATOR
     response_status = str(turn_summary.get("response_status") or "")
-    if "APPROVAL_REQUIRED" in response_status or turn_summary.get("approval_required") is True:
+    if (
+        "APPROVAL_REQUIRED" in response_status
+        or turn_summary.get("approval_required") is True
+        or turn_summary.get("execution_authorization_required") is True
+    ):
         return WORKFLOW_STATUS_WAITING_FOR_APPROVAL
     if current_stage in {"TERMINATED", "REPLAY_CERTIFIED"}:
         return WORKFLOW_STATUS_COMPLETED
@@ -1992,6 +2005,11 @@ def _interactive_next_expected_action(
             return "Informational only: describe the required proposal change."
         return "Informational only: provide the requested operator clarification."
     if workflow_state == WORKFLOW_STATUS_WAITING_FOR_APPROVAL:
+        if turn_summary.get("execution_authorization_required") is True:
+            return (
+                "Informational only: provide a distinct execution-authorization "
+                "approval or rejection decision."
+            )
         return "Informational only: provide an explicit operator approval or rejection decision."
 
     domain = _interactive_workflow_domain_text(turn_summary)
@@ -5453,15 +5471,34 @@ def run_interactive_conversation(
                         repository_grounding_capture
                     )
                 )
-                if repository_grounding_capture.get("fail_closed") is True:
+                authorization_review_capture = (
+                    bind_grounded_worker_request_to_execution_authorization_review(
+                        repository_scope_grounding_artifact=(
+                            repository_grounding_capture
+                        ),
+                        workspace=args.workspace,
+                        created_at=created_at,
+                        replay_dir=(
+                            turn_root
+                            / "grounded_worker_request_execution_authorization_review"
+                        ),
+                    )
+                )
+                output_writer(
+                    render_grounded_worker_request_execution_authorization_review(
+                        authorization_review_capture
+                    )
+                )
+                if authorization_review_capture.get("fail_closed") is True:
                     failed_turns += 1
                 turns.append(
-                    _interactive_approved_durable_work_repository_grounding_turn_summary(
+                    _interactive_grounded_worker_request_execution_authorization_review_turn_summary(
                         turn_id=turn_id,
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         binding_capture=approved_payload_capture,
                         grounding_capture=repository_grounding_capture,
+                        authorization_review_capture=authorization_review_capture,
                         source_router_replay_reference=str(
                             turn_root / "source_router"
                         ),
@@ -8076,6 +8113,100 @@ def _interactive_approved_durable_work_repository_grounding_turn_summary(
                 "dispatch_blocked"
             )
             is True,
+        }
+    )
+    return summary
+
+
+def _interactive_grounded_worker_request_execution_authorization_review_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    binding_capture: dict[str, Any],
+    grounding_capture: dict[str, Any],
+    authorization_review_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    summary = _interactive_approved_durable_work_repository_grounding_turn_summary(
+        turn_id=turn_id,
+        prompt_id=prompt_id,
+        router_capture=router_capture,
+        binding_capture=binding_capture,
+        grounding_capture=grounding_capture,
+        source_router_replay_reference=source_router_replay_reference,
+    )
+    execution_summary = authorization_review_capture.get(
+        "execution_summary_artifact"
+    )
+    if not isinstance(execution_summary, dict):
+        execution_summary = {}
+    summary.update(
+        {
+            "response_status": authorization_review_capture.get(
+                "authorization_review_status"
+            ),
+            "response_source": (
+                "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW"
+            ),
+            "response_text": (
+                render_grounded_worker_request_execution_authorization_review(
+                    authorization_review_capture
+                )
+            ),
+            "fail_closed": authorization_review_capture.get("fail_closed") is True,
+            "failure_reason": authorization_review_capture.get("failure_reason"),
+            "replay_reference": authorization_review_capture.get(
+                "replay_reference"
+            ),
+            "conversation_replay_reference": authorization_review_capture.get(
+                "replay_reference"
+            ),
+            "execution_summary_reference": execution_summary.get("summary_id"),
+            "human_confirmation_reference": None,
+            "existing_runtime": (
+                "grounded_worker_request_execution_authorization_binding"
+            ),
+            "clarification_required": authorization_review_capture.get(
+                "fail_closed"
+            )
+            is True,
+            "authorization_review_status": authorization_review_capture.get(
+                "authorization_review_status"
+            ),
+            "authorization_review_hash": authorization_review_capture.get(
+                "artifact_hash"
+            ),
+            "authorization_scope_hash": authorization_review_capture.get(
+                "authorization_scope_hash"
+            ),
+            "execution_summary_hash": authorization_review_capture.get(
+                "execution_summary_hash"
+            ),
+            "distinct_human_execution_authorization_required": (
+                authorization_review_capture.get(
+                    "distinct_human_execution_authorization_required"
+                )
+                is True
+            ),
+            "human_confirmation_required": True,
+            "execution_authorization_required": True,
+            "approval_required": True,
+            "proposal_approval_is_execution_authorization": False,
+            "authorization_created": False,
+            "execution_authorized": False,
+            "worker_selected": False,
+            "worker_assigned": False,
+            "worker_dispatched": False,
+            "worker_invoked": False,
+            "provider_invoked": False,
+            "repository_mutation_performed": False,
+            "authorization_dispatch_blocked": (
+                authorization_review_capture.get(
+                    "dispatch_blocked_pending_authorization"
+                )
+                is True
+            ),
         }
     )
     return summary

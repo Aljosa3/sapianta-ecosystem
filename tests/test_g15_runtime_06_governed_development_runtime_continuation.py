@@ -87,10 +87,10 @@ def test_approved_aicli_governed_development_binds_payload_before_dispatch(
     assert result["aicli_executes"] is False
     assert result["aicli_owns_replay"] is False
     assert runtime_result["runtime_response_source"] == (
-        "CANONICAL_REPOSITORY_SCOPE_GROUNDING"
+        "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW"
     )
     assert runtime_result["runtime_response_status"] == (
-        "CANONICAL_REPOSITORY_SCOPE_UNRESOLVED_FAILED_CLOSED"
+        "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW_FAILED_CLOSED"
     )
     assert runtime_result["approved_worker_payload_binding_hash"].startswith(
         "sha256:"
@@ -108,6 +108,17 @@ def test_approved_aicli_governed_development_binds_payload_before_dispatch(
         "CANONICAL_REPOSITORY_SCOPE_UNRESOLVED_FAILED_CLOSED"
     )
     assert runtime_result["repository_scope_dispatch_blocked"] is True
+    assert runtime_result["authorization_review_hash"].startswith("sha256:")
+    assert runtime_result["authorization_review_status"] == (
+        "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW_FAILED_CLOSED"
+    )
+    assert runtime_result[
+        "distinct_human_execution_authorization_required"
+    ] is True
+    assert runtime_result["proposal_approval_is_execution_authorization"] is False
+    assert runtime_result["execution_authorized"] is False
+    assert runtime_result["worker_selected"] is False
+    assert runtime_result["authorization_dispatch_blocked"] is True
     assert runtime_result["governance_authorization_reached"] is False
     assert runtime_result["provider_invocation_reached"] is False
     assert runtime_result["worker_execution_reached"] is False

@@ -1291,6 +1291,16 @@ def _render_runtime_result(runtime_result: dict[str, Any], runtime_status: str) 
                 f"grounded_focused_test_targets: {runtime_result.get('grounded_focused_test_targets')}",
                 f"grounded_worker_request_hash: {runtime_result.get('grounded_worker_request_hash')}",
                 f"repository_scope_dispatch_blocked: {runtime_result.get('repository_scope_dispatch_blocked')}",
+                "Grounded Worker request execution-authorization review",
+                f"authorization_review_status: {runtime_result.get('authorization_review_status')}",
+                f"authorization_review_hash: {runtime_result.get('authorization_review_hash')}",
+                f"authorization_scope_hash: {runtime_result.get('authorization_scope_hash')}",
+                f"execution_summary_hash: {runtime_result.get('execution_summary_hash')}",
+                f"distinct_human_execution_authorization_required: {runtime_result.get('distinct_human_execution_authorization_required')}",
+                f"proposal_approval_is_execution_authorization: {runtime_result.get('proposal_approval_is_execution_authorization')}",
+                f"execution_authorized: {runtime_result.get('execution_authorized')}",
+                f"worker_selected: {runtime_result.get('worker_selected')}",
+                f"authorization_dispatch_blocked: {runtime_result.get('authorization_dispatch_blocked')}",
             ]
         )
     return "\n".join(lines)

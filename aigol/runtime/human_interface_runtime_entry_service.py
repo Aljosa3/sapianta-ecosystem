@@ -380,6 +380,40 @@ def run_human_interface_runtime_entry(
                 "repository_scope_dispatch_blocked"
             )
             is True,
+            "authorization_review_status": latest_turn.get(
+                "authorization_review_status"
+            ),
+            "authorization_review_hash": latest_turn.get(
+                "authorization_review_hash"
+            ),
+            "authorization_scope_hash": latest_turn.get(
+                "authorization_scope_hash"
+            ),
+            "execution_summary_hash": latest_turn.get(
+                "execution_summary_hash"
+            ),
+            "distinct_human_execution_authorization_required": latest_turn.get(
+                "distinct_human_execution_authorization_required"
+            )
+            is True,
+            "human_confirmation_required": latest_turn.get(
+                "human_confirmation_required"
+            )
+            is True,
+            "execution_authorization_required": latest_turn.get(
+                "execution_authorization_required"
+            )
+            is True,
+            "proposal_approval_is_execution_authorization": latest_turn.get(
+                "proposal_approval_is_execution_authorization"
+            )
+            is True,
+            "execution_authorized": latest_turn.get("execution_authorized") is True,
+            "worker_selected": latest_turn.get("worker_selected") is True,
+            "authorization_dispatch_blocked": latest_turn.get(
+                "authorization_dispatch_blocked"
+            )
+            is True,
             "conversation_output_tail": conversation_output[-12:],
             "governance_authority_preserved": True,
             "provider_platform_preserved": True,
