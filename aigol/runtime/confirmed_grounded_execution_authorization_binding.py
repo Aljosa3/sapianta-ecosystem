@@ -19,6 +19,10 @@ from aigol.runtime.grounded_execution_authorization_human_decision_binding impor
     validate_distinct_human_execution_decision,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.unified_resource_selection_runtime import (
+    FAILED_CLOSED, RESOURCE_SELECTION_SUCCEEDED, WORKER_ROLE, default_resource_registry,
+    reconstruct_unified_resource_selection_replay, select_unified_resource,
+)
 from aigol.runtime.transport.serialization import (
     load_json,
     replay_hash,
@@ -52,6 +56,9 @@ STOP_BOUNDARIES = {
     "command_executed": False,
     "repository_mutated": False,
 }
+WORKER_SELECTION_CERTIFICATION_PATH = Path(__file__).resolve().parents[2] / (
+    "runtime/worker_selection_certification_v1/CERT-000001/certification_report/000_worker_selection_certification_report.json"
+)
 
 
 def authorize_confirmed_grounded_execution_decision(
@@ -298,3 +305,176 @@ def reconstruct_confirmed_grounded_execution_ready_replay(
         "replay_hash": replay_hash(wrappers),
         **STOP_BOUNDARIES,
     }
+
+
+def select_authorized_grounded_worker(
+    *,
+    execution_authorization_capture: dict[str, Any],
+    session_root: str | Path,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Project one exact G31 authorization into existing Worker selection."""
+
+    from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED, reconstruct_execution_authorization_replay
+
+    root = Path(session_root).resolve()
+    destination = Path(replay_dir).resolve()
+    authorization_root = Path(execution_authorization_capture.get(
+        "execution_authorization_replay_reference", ""
+    )).resolve()
+    if not destination.is_relative_to(root) or not authorization_root.is_relative_to(root):
+        raise FailClosedRuntimeError("authorized Worker selection is cross-session")
+    request = execution_authorization_capture.get("authorization_request_artifact")
+    decision = execution_authorization_capture.get("authorization_decision_artifact")
+    authorization = execution_authorization_capture.get("execution_authorization_artifact")
+    result = execution_authorization_capture.get("authorization_result_artifact")
+    if not all(isinstance(value, dict) for value in (request, decision, authorization, result)):
+        raise FailClosedRuntimeError("authorized Worker selection evidence is incomplete")
+    for artifact in (request, decision, authorization, result):
+        verify_replay_hash(artifact, hash_field="artifact_hash")
+    reconstructed = reconstruct_execution_authorization_replay(authorization_root)
+    if not all(
+        (
+            execution_authorization_capture.get("authorization_status") == EXECUTION_AUTHORIZED,
+            reconstructed["authorization_status"] == EXECUTION_AUTHORIZED,
+            reconstructed["authorization_id"] == authorization.get("authorization_id"),
+            decision.get("authorization_request_hash") == request.get("artifact_hash"),
+            authorization.get("authorization_decision_hash") == decision.get("artifact_hash"),
+            result.get("execution_authorization_hash") == authorization.get("artifact_hash"),
+            authorization.get("authorization_revoked") is False,
+            authorization.get("authorization_expires_at") == "NEVER",
+            authorization.get("authorized_scope") == request.get("requested_scope"),
+        )
+    ):
+        raise FailClosedRuntimeError("authorized Worker selection authorization mismatch")
+    ready_root = Path(request["execution_ready_replay_reference"]).resolve()
+    if not ready_root.is_relative_to(root):
+        raise FailClosedRuntimeError("authorized Worker selection ready Replay is cross-session")
+    ready = reconstruct_confirmed_grounded_execution_ready_replay(ready_root)
+    if ready["authorization_scope"] != authorization["authorized_scope"]:
+        raise FailClosedRuntimeError("authorized Worker selection scope mismatch")
+    certification = load_json(WORKER_SELECTION_CERTIFICATION_PATH)
+    verify_replay_hash(certification, hash_field="artifact_hash")
+    if certification.get("final_verdict") != "WORKER_SELECTION_CERTIFIED":
+        raise FailClosedRuntimeError("Worker selection certification is not valid")
+    for path in root.rglob("000_resource_selection_recorded.json"):
+        wrapper = load_json(path)
+        verify_replay_hash(wrapper, hash_field="replay_hash")
+        artifact = wrapper.get("artifact")
+        if isinstance(artifact, dict) and artifact.get("context_hash") == authorization["artifact_hash"]:
+            raise FailClosedRuntimeError("execution authorization already used for Worker selection")
+    registry = default_resource_registry()
+    capture = select_unified_resource(
+        selection_id=f"{authorization['authorization_id']}:WORKER-SELECTION",
+        workflow_type="NATIVE_DEVELOPMENT",
+        required_capability="IMPLEMENTATION_ASSISTANCE",
+        requested_role_type=WORKER_ROLE,
+        domain_id="NATIVE_DEVELOPMENT",
+        worker_authorization_required=True,
+        created_at=authorization["authorized_at"],
+        replay_dir=destination,
+        context_assembly_output={
+            "context_reference": authorization["authorization_id"],
+            "context_hash": authorization["artifact_hash"],
+        },
+        registry=registry,
+    )
+    continuity = reconstruct_authorized_grounded_worker_selection(
+        selection_replay_dir=destination,
+        execution_authorization_replay_dir=authorization_root,
+    )
+    capture.update(
+        {
+            "execution_authorization_reference": authorization["authorization_id"],
+            "execution_authorization_hash": authorization["artifact_hash"],
+            "execution_authorization_replay_reference": str(authorization_root),
+            "worker_selection_certification_hash": certification["artifact_hash"],
+            "complete_g31_lineage_reconstructed": continuity[
+                "complete_g31_lineage_reconstructed"
+            ],
+            "worker_selected": capture["selection_status"] == RESOURCE_SELECTION_SUCCEEDED,
+            "worker_assigned": False, "worker_dispatched": False,
+            "provider_invoked": False, "worker_invoked": False,
+            "command_executed": False, "repository_mutated": False,
+        }
+    )
+    return capture
+
+
+def reconstruct_authorized_grounded_worker_selection(
+    *,
+    selection_replay_dir: str | Path,
+    execution_authorization_replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct selection and prove its exact G31 authorization context."""
+
+    from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED, reconstruct_execution_authorization_replay
+
+    authorization_replay = reconstruct_execution_authorization_replay(
+        execution_authorization_replay_dir
+    )
+    authorization_wrapper = load_json(Path(execution_authorization_replay_dir) /
+                                      "002_authorization_artifact_recorded.json")
+    verify_replay_hash(authorization_wrapper, hash_field="replay_hash")
+    authorization = authorization_wrapper.get("artifact")
+    if not isinstance(authorization, dict):
+        raise FailClosedRuntimeError("Worker selection authorization artifact missing")
+    verify_replay_hash(authorization, hash_field="artifact_hash")
+    selection = reconstruct_unified_resource_selection_replay(selection_replay_dir)
+    selection_wrapper = load_json(Path(selection_replay_dir) /
+                                  "000_resource_selection_recorded.json")
+    verify_replay_hash(selection_wrapper, hash_field="replay_hash")
+    artifact = selection_wrapper.get("artifact")
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("authorized Worker selection artifact missing")
+    verify_replay_hash(artifact, hash_field="artifact_hash")
+    certification = load_json(WORKER_SELECTION_CERTIFICATION_PATH)
+    verify_replay_hash(certification, hash_field="artifact_hash")
+    expected_registry_hash = default_resource_registry()["registry_hash"]
+    if not all(
+        (
+            authorization_replay["authorization_status"] == EXECUTION_AUTHORIZED,
+            authorization.get("authorization_revoked") is False,
+            authorization.get("authorization_expires_at") == "NEVER",
+            artifact.get("workflow_type") == "NATIVE_DEVELOPMENT",
+            artifact.get("required_capability") == "IMPLEMENTATION_ASSISTANCE",
+            artifact.get("requested_role_type") == WORKER_ROLE,
+            artifact.get("domain_id") == "NATIVE_DEVELOPMENT",
+            artifact.get("worker_authorization_required") is True,
+            artifact.get("context_reference") == authorization.get("authorization_id"),
+            artifact.get("context_hash") == authorization.get("artifact_hash"),
+            artifact.get("registry_hash") == expected_registry_hash,
+            certification.get("final_verdict") == "WORKER_SELECTION_CERTIFIED",
+            selection["selection_status"] in {RESOURCE_SELECTION_SUCCEEDED, FAILED_CLOSED},
+            selection["provider_invoked"] is False,
+            selection["worker_invoked"] is False,
+            selection["dispatch_requested"] is False,
+        )
+    ):
+        raise FailClosedRuntimeError("authorized Worker selection Replay mismatch")
+    return {
+        **selection,
+        "execution_authorization_reference": authorization["authorization_id"],
+        "execution_authorization_hash": authorization["artifact_hash"],
+        "worker_selection_certification_hash": certification["artifact_hash"],
+        "complete_g31_lineage_reconstructed": True,
+        "worker_selected": selection["selection_status"] == RESOURCE_SELECTION_SUCCEEDED,
+        "worker_assigned": False, "worker_dispatched": False,
+        "command_executed": False, "repository_mutated": False,
+    }
+
+
+def render_authorized_grounded_worker_selection(capture: dict[str, Any]) -> str:
+    """Render the canonical selection result without assigning the Worker."""
+
+    return "\n".join((
+        "Certified Worker Selection",
+        f"selection_status: {capture.get('selection_status')}",
+        f"selected_resource_id: {capture.get('selected_resource_id')}",
+        f"selected_role_type: {capture.get('selected_role_type')}",
+        f"selection_replay_reference: {capture.get('resource_selection_replay_reference')}",
+        f"worker_selected: {capture.get('worker_selected') is True}",
+        "worker_assigned: False", "worker_dispatched: False",
+        "provider_invoked: False", "worker_invoked: False",
+        "repository_mutated: False",
+    ))

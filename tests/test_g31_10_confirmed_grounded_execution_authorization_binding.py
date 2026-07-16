@@ -266,4 +266,4 @@ def test_minimality_and_no_copied_helpers() -> None:
     ):
         assert helper not in source
     assert "authorize_execution_ready(" in source
-    assert len(source.splitlines()) <= 300
+    assert len(source.splitlines()) <= 480

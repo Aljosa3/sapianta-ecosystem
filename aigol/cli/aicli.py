@@ -27,6 +27,8 @@ from aigol.runtime.grounded_execution_authorization_human_decision_binding impor
 )
 from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
     authorize_confirmed_grounded_execution_decision,
+    render_authorized_grounded_worker_selection,
+    select_authorized_grounded_worker,
 )
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.models import FailClosedRuntimeError
@@ -404,6 +406,8 @@ def run_reference_uhi_session(
                 output_writer(render_execution_authorization_summary(
                     runtime_result["execution_authorization_capture"]
                 ))
+                output_writer(render_authorized_grounded_worker_selection(
+                    runtime_result["authorized_worker_selection_capture"]))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -949,6 +953,22 @@ def _record_contextual_execution_decision(
                 "execution_authorization_replay_reference"
             ),
         })
+        if authorization.get("execution_authorized") is True:
+            selection = select_authorized_grounded_worker(
+                execution_authorization_capture=authorization,
+                session_root=root / session,
+                replay_dir=root / session / f"WORKER-SELECTION-{authorization['execution_authorization_artifact']['artifact_hash'][-16:]}",
+            )
+            merged.update({
+                "authorized_worker_selection_capture": selection,
+                "worker_selection_status": selection.get("selection_status"),
+                "selected_resource_id": selection.get("selected_resource_id"),
+                "selected_role_type": selection.get("selected_role_type"),
+                "worker_selected": selection.get("worker_selected") is True,
+                "worker_assigned": False, "worker_dispatched": False,
+                "runtime_replay_reference": selection.get(
+                    "resource_selection_replay_reference"),
+            })
     return merged
 
 
