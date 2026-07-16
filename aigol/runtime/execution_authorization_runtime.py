@@ -251,6 +251,8 @@ def reconstruct_execution_authorization_replay(replay_dir: str | Path) -> dict[s
         raise FailClosedRuntimeError("execution authorization replay summary lineage mismatch")
     if authorization.get("human_confirmation_hash") != request.get("human_confirmation_hash"):
         raise FailClosedRuntimeError("execution authorization replay confirmation lineage mismatch")
+    if authorization.get("authorized_scope") != request.get("requested_scope"):
+        raise FailClosedRuntimeError("execution authorization replay scope mismatch")
     if len({request["chain_id"], decision["chain_id"], authorization["chain_id"], result["chain_id"]}) != 1:
         raise FailClosedRuntimeError("execution authorization replay chain mismatch")
     if len(
@@ -312,7 +314,14 @@ def _load_execution_ready_lineage(replay_path: Path) -> dict[str, dict[str, Any]
     try:
         reconstructed = reconstruct_governed_implementation_dry_run_replay(replay_path)
     except FailClosedRuntimeError:
-        reconstructed = reconstruct_ocs_execution_readiness_replay(replay_path)
+        try:
+            reconstructed = reconstruct_ocs_execution_readiness_replay(replay_path)
+        except FailClosedRuntimeError:
+            from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
+                reconstruct_confirmed_grounded_execution_ready_replay,
+            )
+
+            reconstructed = reconstruct_confirmed_grounded_execution_ready_replay(replay_path)
     if reconstructed.get("execution_status") != EXECUTION_READY:
         raise FailClosedRuntimeError("execution authorization failed closed: execution is not ready")
     artifacts: list[dict[str, Any]] = []
@@ -448,6 +457,9 @@ def _authorization_request(
         lineage["validation"],
         lineage["ready"],
     )
+    packet_scope = packet.get("authorization_scope")
+    if packet_scope is not None and not isinstance(packet_scope, dict):
+        raise FailClosedRuntimeError("execution authorization scope is invalid")
     artifact = {
         "artifact_type": EXECUTION_AUTHORIZATION_REQUEST_ARTIFACT_V1,
         "runtime_version": AIGOL_EXECUTION_AUTHORIZATION_RUNTIME_VERSION,
@@ -472,7 +484,7 @@ def _authorization_request(
         "execution_summary_hash": execution_summary_artifact["artifact_hash"],
         "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
         "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
-        "requested_scope": {
+        "requested_scope": deepcopy(packet_scope) if packet_scope is not None else {
             "allowed_outputs": deepcopy(packet["allowed_outputs"]),
             "forbidden_operations": deepcopy(packet["forbidden_operations"]),
             "worker_role_requirements": deepcopy(packet["worker_role_requirements"]),
@@ -573,11 +585,7 @@ def _authorization_artifact(
         "execution_summary_hash": execution_summary_artifact["artifact_hash"],
         "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
         "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
-        "authorized_scope": {
-            "allowed_outputs": deepcopy(packet["allowed_outputs"]),
-            "forbidden_operations": deepcopy(packet["forbidden_operations"]),
-            "worker_role_requirements": deepcopy(packet["worker_role_requirements"]),
-        },
+        "authorized_scope": deepcopy(request["requested_scope"]),
         "authorizing_actor": _require_string(authorizing_actor, "authorizing_actor"),
         "authorized_at": _require_string(authorized_at, "authorized_at"),
         "authorization_expires_at": _require_string(authorization_expires_at, "authorization_expires_at"),

@@ -423,7 +423,7 @@ def test_presentation_distinguishes_both_approvals_and_actual_authority(
     assert "worker_dispatched: False" in rendered
 
 
-def test_real_aicli_contextual_second_approval_stops_before_authorization(
+def test_real_aicli_contextual_second_approval_preserves_g31_09_stop_evidence(
     tmp_path: Path,
 ) -> None:
     workspace = _workspace(tmp_path, "aicli-approve-workspace")
@@ -443,7 +443,8 @@ def test_real_aicli_contextual_second_approval_stops_before_authorization(
     assert result["approval_count"] == 2
     assert runtime["execution_human_decision_status"] == EXECUTION_DECISION_APPROVED
     assert runtime["execution_summary_human_confirmation"] is True
-    assert runtime["execution_authorized"] is False
+    assert runtime["execution_human_decision_result"]["execution_authorized"] is False
+    assert runtime["execution_authorized"] is True
     assert runtime["worker_selected"] is False
     assert "A distinct execution decision is now pending" in rendered
     assert "No execution is authorized yet" in rendered

@@ -20,10 +20,15 @@ from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
 from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
+    EXECUTION_DECISION_APPROVED,
     EXECUTION_DECISION_REJECTED,
     bind_distinct_human_execution_decision,
     render_distinct_human_execution_decision,
 )
+from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
+    authorize_confirmed_grounded_execution_decision,
+)
+from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -395,6 +400,9 @@ def run_reference_uhi_session(
                 )
                 output_writer(render_distinct_human_execution_decision(
                     runtime_result["execution_human_decision_result"]
+                ))
+                output_writer(render_execution_authorization_summary(
+                    runtime_result["execution_authorization_capture"]
                 ))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
@@ -925,6 +933,22 @@ def _record_contextual_execution_decision(
         "worker_selected": False,
         "authorization_dispatch_blocked": True,
     })
+    if result.get("decision_status") == EXECUTION_DECISION_APPROVED:
+        authorization = authorize_confirmed_grounded_execution_decision(
+            human_execution_decision_artifact=result,
+            workspace=workspace_path,
+            session_root=root / session,
+            replay_dir=root / session / f"EXECUTION-AUTHORIZATION-{result['artifact_hash'][-16:]}",
+        )
+        merged.update({
+            "execution_authorization_capture": authorization,
+            "execution_authorization_status": authorization.get("authorization_status"),
+            "execution_authorized": authorization.get("execution_authorized") is True,
+            "authorization_dispatch_blocked": True,
+            "runtime_replay_reference": authorization.get(
+                "execution_authorization_replay_reference"
+            ),
+        })
     return merged
 
 
