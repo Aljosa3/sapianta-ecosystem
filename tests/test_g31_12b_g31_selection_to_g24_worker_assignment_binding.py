@@ -202,7 +202,7 @@ def test_replayed_assignment_and_reordered_nested_replay_fail_closed(tmp_path: P
         reconstruct_worker_assignment_runtime_replay(root / "worker-assignment")
 
 
-def test_real_aicli_assigns_codex_and_stops_before_dispatch(tmp_path: Path) -> None:
+def test_real_aicli_preserves_assignment_stage_before_later_dispatch(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path, "g31-12b-aicli")
     output: list[str] = []
     values = iter([REQUEST, "/send", "/approve", "/approve", "/exit"])
@@ -214,7 +214,9 @@ def test_real_aicli_assigns_codex_and_stops_before_dispatch(tmp_path: Path) -> N
     runtime = result["runtime_result"]
     assert runtime["selected_resource_id"] == "CODEX"
     assert runtime["worker_assigned"] is True
-    for field in ("worker_dispatched", "provider_invoked", "worker_invoked", "command_executed", "repository_mutated"):
+    assert runtime["worker_dispatched"] is True
+    assert runtime["worker_assignment_capture"]["worker_dispatched"] is False
+    for field in ("provider_invoked", "worker_invoked", "command_executed", "repository_mutated"):
         assert runtime[field] is False
     rendered = "\n".join(output)
     assert "Worker Invocation Request" in rendered
@@ -233,4 +235,4 @@ def test_production_change_has_no_new_module_or_duplicate_helpers() -> None:
     assert "def _load_g31_selection_binding" in sources[0]
     for duplicate in ("def _verify_hash", "def _relative_path", "def _unique_relative_paths"):
         assert all(duplicate not in source for source in sources)
-    assert "dispatch_assigned_worker" not in sources[2]
+    assert "worker_dispatch.dispatch_assigned_worker" in sources[2]

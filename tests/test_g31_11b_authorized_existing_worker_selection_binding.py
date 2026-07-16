@@ -247,8 +247,9 @@ def test_real_aicli_selection_remains_exact_when_later_assignment_continues(tmp_
     assert runtime["execution_authorized"] is True
     assert runtime["worker_selected"] is True
     assert runtime["authorized_worker_selection_capture"]["worker_assigned"] is False
+    assert runtime["authorized_worker_selection_capture"]["worker_dispatched"] is False
     assert runtime["worker_assigned"] is True
-    assert runtime["worker_dispatched"] is False
+    assert runtime["worker_dispatched"] is True
     assert runtime["selected_resource_id"] == "CODEX"
     assert "Certified Worker Selection" in rendered
     assert "selected_resource_id: CODEX" in rendered

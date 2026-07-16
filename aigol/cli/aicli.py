@@ -33,6 +33,7 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime import worker_assignment_runtime as worker_assignment
+from aigol.runtime import worker_dispatch_runtime as worker_dispatch
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -414,6 +415,8 @@ def run_reference_uhi_session(
                     output_writer(worker_request.render_worker_invocation_request_summary(runtime_result["worker_invocation_request_capture"]))
                 if runtime_result.get("worker_assignment_capture"):
                     output_writer(worker_assignment.render_worker_assignment_summary(runtime_result["worker_assignment_capture"]))
+                if runtime_result.get("worker_dispatch_capture"):
+                    output_writer(worker_dispatch.render_worker_dispatch_summary(runtime_result["worker_dispatch_capture"]))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -1028,6 +1031,35 @@ def _record_contextual_execution_decision(
                             "worker_assignment_replay_reference"
                         ),
                     })
+                    if assignment.get("assignment_status") == worker_assignment.WORKER_ASSIGNED:
+                        assignment_artifact = assignment["worker_assignment_artifact"]
+                        dispatch = worker_dispatch.dispatch_assigned_worker(
+                            worker_dispatch_id=f"{assignment_artifact['worker_assignment_id']}:DISPATCH",
+                            worker_assignment_artifact=assignment_artifact,
+                            worker_assignment_replay_reference=assignment[
+                                "worker_assignment_replay_reference"
+                            ],
+                            dispatched_by="AIGOL_GOVERNANCE",
+                            dispatched_at=created,
+                            replay_dir=root / session / f"WORKER-DISPATCH-{assignment_artifact['artifact_hash'][-16:]}",
+                        )
+                        merged.update({
+                            "worker_dispatch_capture": dispatch,
+                            "worker_dispatch_status": dispatch.get("dispatch_status"),
+                            "worker_dispatched": (
+                                dispatch.get("dispatch_status") == worker_dispatch.WORKER_DISPATCHED
+                            ),
+                            "authorization_dispatch_blocked": (
+                                dispatch.get("dispatch_status") != worker_dispatch.WORKER_DISPATCHED
+                            ),
+                            "provider_invoked": False,
+                            "worker_invoked": False,
+                            "command_executed": False,
+                            "repository_mutated": False,
+                            "runtime_replay_reference": dispatch.get(
+                                "worker_dispatch_replay_reference"
+                            ),
+                        })
     return merged
 
 
