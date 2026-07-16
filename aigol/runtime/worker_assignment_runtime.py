@@ -151,6 +151,8 @@ def assign_worker_from_invocation_request(
             worker_invocation_request_artifact,
             Path(worker_invocation_request_replay_reference),
         )
+        if _worker_invocation_request_already_assigned(replay_path.parent, worker_invocation_request_reference=request["worker_invocation_request_id"], worker_invocation_request_hash=request["artifact_hash"]):
+            raise FailClosedRuntimeError("worker assignment failed closed: invocation request already assigned")
         if use_err_worker_lookup:
             err_selection_capture = select_resource_for_capability(
                 selection_id=f"{worker_assignment_id}:ERR_WORKER_SELECTION",
@@ -275,6 +277,7 @@ def reconstruct_worker_assignment_runtime_replay(replay_dir: str | Path) -> dict
     if evidence["worker_invocation_request_hash"] != assignment["worker_invocation_request_hash"]:
         raise FailClosedRuntimeError("worker assignment replay request lineage mismatch")
     _validate_assignment_artifact(assignment)
+    reconstruct_worker_invocation_request_replay(_resolve_replay_reference(evidence["worker_invocation_request_replay_reference"], anchor=replay_path))
     _validate_invocation_request_replay_reference(
         _resolve_replay_reference(
             evidence["worker_invocation_request_replay_reference"],
@@ -324,19 +327,50 @@ def render_worker_assignment_summary(capture: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def default_worker_registry_for_request(request: dict[str, Any], *, created_at: str) -> list[dict[str, Any]]:
+def default_worker_registry_for_request(
+    request: dict[str, Any],
+    *,
+    created_at: str,
+) -> list[dict[str, Any]]:
     """Return a deterministic in-memory registered Worker candidate for CLI continuity."""
 
     _validate_request_artifact(request)
+    g31 = request.get("g31_lineage")
+    selection = g31.get("resource_selection_artifact") if isinstance(g31, dict) else None
+    if selection is not None:
+        selection = deepcopy(selection)
+        _verify_artifact_hash(selection, "Worker selection artifact")
+        if not all((
+            selection.get("selection_status") == "RESOURCE_SELECTION_SUCCEEDED",
+            selection.get("selected_resource_id") == "CODEX",
+            selection.get("selected_resource_category") == "HYBRID_PROVIDER_WORKER",
+            selection.get("selected_role_type") == "WORKER_ROLE",
+            selection.get("selected_authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
+            selection.get("provider_invoked") is False,
+            selection.get("worker_invoked") is False,
+            selection.get("dispatch_requested") is False,
+        )):
+            raise FailClosedRuntimeError("worker assignment failed closed: selected Worker evidence mismatch")
+        worker_id = selection["selected_resource_id"]
+        worker_version = selection["selected_resource_version"]
+        declared_capabilities = [selection["required_capability"], request["worker_role"]]
+        capability_id = selection["required_capability"]
+        replay_reference = g31["resource_selection_replay_reference"]
+    else:
+        worker_id = f"AIGOL-WORKER-{_worker_id_fragment(request['target_worker_family'])}"
+        worker_version = "1.0.0"
+        declared_capabilities = [request["worker_role"]]
+        capability_id = request["worker_role"]
+        replay_reference = "IN_MEMORY_REGISTERED_WORKER_CANDIDATE"
     worker = {
         "artifact_type": WORKER_ARTIFACT_V1,
         "worker_runtime_version": AIGOL_WORKER_ASSIGNMENT_RUNTIME_VERSION,
-        "worker_id": f"AIGOL-WORKER-{_worker_id_fragment(request['target_worker_family'])}",
+        "worker_id": worker_id,
         "worker_type": request["target_worker_family"],
-        "worker_version": "1.0.0",
-        "declared_capabilities": [request["worker_role"]],
+        "worker_version": worker_version,
+        "declared_capabilities": declared_capabilities,
         "supported_request_types": ["WORKER_INVOCATION_REQUEST"],
-        "capability_id": request["worker_role"],
+        "capability_id": capability_id,
         "trust_boundary": "LOCAL_BOUNDED_WORKER",
         "state": AVAILABLE,
         "worker_family": request["target_worker_family"],
@@ -345,7 +379,8 @@ def default_worker_registry_for_request(request: dict[str, Any], *, created_at: 
         "allowed_outputs": deepcopy(request["allowed_outputs"]),
         "forbidden_operations": deepcopy(request["forbidden_operations"]),
         "created_at": _require_string(created_at, "created_at"),
-        "replay_reference": "IN_MEMORY_REGISTERED_WORKER_CANDIDATE",
+        "replay_reference": replay_reference,
+        **({"selected_resource_category": selection["selected_resource_category"], "selected_role_type": selection["selected_role_type"], "selected_authority_profile": selection["selected_authority_profile"]} if selection else {}),
         "replay_visible": True,
         "governance_authority": False,
         "approval_authority": False,
@@ -526,7 +561,8 @@ def _worker_invocation_request_already_assigned(
     worker_invocation_request_reference: str,
     worker_invocation_request_hash: str,
 ) -> bool:
-    for path in sorted(session_root.glob("TURN-*/worker_assignment")):
+    for artifact_path in sorted(session_root.rglob("002_assignment_artifact_recorded.json")):
+        path = artifact_path.parent
         try:
             reconstructed = reconstruct_worker_assignment_runtime_replay(path)
             wrapper = load_json(path / "002_assignment_artifact_recorded.json")
@@ -947,6 +983,7 @@ def _request_hash(request: dict[str, Any]) -> str:
             "forbidden_operations": request.get("forbidden_operations", []),
             "validation_requirements": request.get("validation_requirements", []),
             "replay_references": request.get("replay_references", {}),
+            **({"g31_lineage": request["g31_lineage"]} if request.get("g31_lineage") else {}),
         }
     )
 

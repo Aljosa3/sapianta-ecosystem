@@ -447,7 +447,8 @@ def test_real_aicli_contextual_second_approval_preserves_g31_09_stop_evidence(
     assert runtime["execution_authorized"] is True
     assert runtime["execution_human_decision_result"]["worker_selected"] is False
     assert runtime["worker_selected"] is True
-    assert runtime["worker_assigned"] is False
+    assert runtime["execution_human_decision_result"]["worker_assigned"] is False
+    assert runtime["worker_assigned"] is True
     assert "A distinct execution decision is now pending" in rendered
     assert "No execution is authorized yet" in rendered
 

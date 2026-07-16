@@ -32,6 +32,8 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
 )
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime import worker_assignment_runtime as worker_assignment
+from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
     prepare_unified_human_interface_project_context,
@@ -408,6 +410,10 @@ def run_reference_uhi_session(
                 ))
                 output_writer(render_authorized_grounded_worker_selection(
                     runtime_result["authorized_worker_selection_capture"]))
+                if runtime_result.get("worker_invocation_request_capture"):
+                    output_writer(worker_request.render_worker_invocation_request_summary(runtime_result["worker_invocation_request_capture"]))
+                if runtime_result.get("worker_assignment_capture"):
+                    output_writer(worker_assignment.render_worker_assignment_summary(runtime_result["worker_assignment_capture"]))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -969,6 +975,59 @@ def _record_contextual_execution_decision(
                 "runtime_replay_reference": selection.get(
                     "resource_selection_replay_reference"),
             })
+            if selection.get("worker_selected") is True:
+                selection_artifact = selection["resource_selection_artifact"]
+                invocation_request = worker_request.create_worker_invocation_request(
+                    invocation_request_id=f"{selection_artifact['selection_id']}:INVOCATION-REQUEST",
+                    execution_authorization_replay_reference=authorization[
+                        "execution_authorization_replay_reference"
+                    ],
+                    resource_selection_replay_reference=selection[
+                        "resource_selection_replay_reference"
+                    ],
+                    requested_by="PLATFORM_CORE_G31_ASSIGNMENT_BINDING",
+                    requested_at=created,
+                    replay_dir=root / session / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}",
+                )
+                merged.update({
+                    "worker_invocation_request_capture": invocation_request,
+                    "worker_invocation_request_status": invocation_request.get("request_status"),
+                    "worker_invocation_request_created": (
+                        invocation_request.get("request_status") == worker_request.WORKER_INVOCATION_REQUEST_CREATED
+                    ),
+                    "runtime_replay_reference": invocation_request.get(
+                        "worker_invocation_request_replay_reference"
+                    ),
+                })
+                if invocation_request.get("request_status") == worker_request.WORKER_INVOCATION_REQUEST_CREATED:
+                    request_artifact = invocation_request["worker_invocation_request_artifact"]
+                    assignment = worker_assignment.assign_worker_from_invocation_request(
+                        worker_assignment_id=f"{selection_artifact['selection_id']}:ASSIGNMENT",
+                        worker_invocation_request_artifact=request_artifact,
+                        worker_invocation_request_replay_reference=invocation_request[
+                            "worker_invocation_request_replay_reference"
+                        ],
+                        worker_registry_artifacts=worker_assignment.default_worker_registry_for_request(
+                            request_artifact,
+                            created_at=created,
+                        ),
+                        assigned_by="PLATFORM_CORE_G31_ASSIGNMENT_BINDING",
+                        assigned_at=created,
+                        replay_dir=root / session / f"WORKER-ASSIGNMENT-{request_artifact['artifact_hash'][-16:]}",
+                    )
+                    merged.update({
+                        "worker_assignment_capture": assignment,
+                        "worker_assignment_status": assignment.get("assignment_status"),
+                        "worker_assigned": assignment.get("assignment_status") == worker_assignment.WORKER_ASSIGNED,
+                        "worker_dispatched": False,
+                        "provider_invoked": False,
+                        "worker_invoked": False,
+                        "command_executed": False,
+                        "repository_mutated": False,
+                        "runtime_replay_reference": assignment.get(
+                            "worker_assignment_replay_reference"
+                        ),
+                    })
     return merged
 
 

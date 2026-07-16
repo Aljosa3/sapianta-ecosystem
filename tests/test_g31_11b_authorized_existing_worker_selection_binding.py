@@ -229,7 +229,7 @@ def test_reordered_selection_replay_fails_closed(tmp_path: Path) -> None:
         )
 
 
-def test_real_aicli_selects_and_presents_without_assignment(tmp_path: Path) -> None:
+def test_real_aicli_selection_remains_exact_when_later_assignment_continues(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path, "g31-11b-aicli")
     output: list[str] = []
     values = iter([REQUEST, "/send", "/approve", "/approve", "/exit"])
@@ -246,12 +246,14 @@ def test_real_aicli_selects_and_presents_without_assignment(tmp_path: Path) -> N
 
     assert runtime["execution_authorized"] is True
     assert runtime["worker_selected"] is True
-    assert runtime["worker_assigned"] is False
+    assert runtime["authorized_worker_selection_capture"]["worker_assigned"] is False
+    assert runtime["worker_assigned"] is True
     assert runtime["worker_dispatched"] is False
     assert runtime["selected_resource_id"] == "CODEX"
     assert "Certified Worker Selection" in rendered
     assert "selected_resource_id: CODEX" in rendered
-    assert "worker_assigned: False" in rendered
+    assert "Worker Invocation Request" in rendered
+    assert "Worker Assignment" in rendered
     assert "worker_dispatched: False" in rendered
 
 
