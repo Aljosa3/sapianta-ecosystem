@@ -87,10 +87,10 @@ def test_approved_aicli_governed_development_binds_payload_before_dispatch(
     assert result["aicli_executes"] is False
     assert result["aicli_owns_replay"] is False
     assert runtime_result["runtime_response_source"] == (
-        "APPROVED_DURABLE_WORK_WORKER_PAYLOAD_BINDING"
+        "CANONICAL_REPOSITORY_SCOPE_GROUNDING"
     )
     assert runtime_result["runtime_response_status"] == (
-        "APPROVED_DURABLE_WORK_WORKER_PAYLOAD_SCOPE_UNRESOLVED_FAILED_CLOSED"
+        "CANONICAL_REPOSITORY_SCOPE_UNRESOLVED_FAILED_CLOSED"
     )
     assert runtime_result["approved_worker_payload_binding_hash"].startswith(
         "sha256:"
@@ -103,6 +103,11 @@ def test_approved_aicli_governed_development_binds_payload_before_dispatch(
         "approved_worker_implementation_payload_hash"
     ].startswith("sha256:")
     assert runtime_result["approved_worker_payload_dispatch_blocked"] is True
+    assert runtime_result["repository_scope_grounding_hash"].startswith("sha256:")
+    assert runtime_result["repository_scope_grounding_status"] == (
+        "CANONICAL_REPOSITORY_SCOPE_UNRESOLVED_FAILED_CLOSED"
+    )
+    assert runtime_result["repository_scope_dispatch_blocked"] is True
     assert runtime_result["governance_authorization_reached"] is False
     assert runtime_result["provider_invocation_reached"] is False
     assert runtime_result["worker_execution_reached"] is False

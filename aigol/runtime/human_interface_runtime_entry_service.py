@@ -354,10 +354,32 @@ def run_human_interface_runtime_entry(
             )
             is True,
             "approved_worker_payload_failure_reason": latest_turn.get(
-                "failure_reason"
+                "approved_worker_payload_failure_reason"
             )
             if latest_turn.get("approved_worker_payload_binding_hash")
             else None,
+            "repository_scope_grounding_status": latest_turn.get(
+                "repository_scope_grounding_status"
+            ),
+            "repository_scope_grounding_hash": latest_turn.get(
+                "repository_scope_grounding_hash"
+            ),
+            "repository_cognition_snapshot_hash": latest_turn.get(
+                "repository_cognition_snapshot_hash"
+            ),
+            "grounded_repository_targets": deepcopy(
+                latest_turn.get("grounded_repository_targets") or []
+            ),
+            "grounded_focused_test_targets": deepcopy(
+                latest_turn.get("grounded_focused_test_targets") or []
+            ),
+            "grounded_worker_request_hash": latest_turn.get(
+                "grounded_worker_request_hash"
+            ),
+            "repository_scope_dispatch_blocked": latest_turn.get(
+                "repository_scope_dispatch_blocked"
+            )
+            is True,
             "conversation_output_tail": conversation_output[-12:],
             "governance_authority_preserved": True,
             "provider_platform_preserved": True,

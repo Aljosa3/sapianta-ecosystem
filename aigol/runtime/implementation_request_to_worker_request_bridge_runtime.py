@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from aigol.runtime.governed_implementation_request_runtime import (
@@ -124,6 +124,127 @@ def reconstruct_implementation_request_to_worker_request_bridge_replay(replay_di
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
     }
+
+
+def project_worker_request_repository_scope(
+    *,
+    worker_request_artifact: dict[str, Any],
+    repository_targets: list[str],
+    focused_test_targets: list[str],
+    repository_scope_grounding_identity: str,
+    repository_scope_grounding_hash: str,
+) -> dict[str, Any]:
+    """Project immutable Repository Cognition evidence into one Worker request.
+
+    This projection changes no objective, approval, constraint, or execution
+    flag.  It only replaces the explicitly unresolved repository-scope fields
+    of an approved durable-work request.
+    """
+
+    source = validate_worker_request_artifact(worker_request_artifact)
+    if source.get("candidate_source_type") != "APPROVED_DURABLE_GOVERNED_WORK":
+        raise FailClosedRuntimeError(
+            "Worker repository-scope projection requires approved durable work"
+        )
+    if source.get("dispatch_blocked_by_unresolved_repository_scope") is not True:
+        raise FailClosedRuntimeError(
+            "Worker repository-scope projection requires unresolved source scope"
+        )
+    targets = _unique_relative_paths(repository_targets, "repository_targets")
+    focused_tests = _unique_relative_paths(
+        focused_test_targets, "focused_test_targets"
+    )
+    if not targets or not focused_tests or not set(focused_tests).issubset(targets):
+        raise FailClosedRuntimeError(
+            "Worker repository-scope projection requires grounded source and test targets"
+        )
+    grounding_identity = _require_string(
+        repository_scope_grounding_identity,
+        "repository_scope_grounding_identity",
+    )
+    grounding_hash = _require_hash(
+        repository_scope_grounding_hash,
+        "repository_scope_grounding_hash",
+    )
+    projected = deepcopy(source)
+    scope = projected["implementation_scope"]
+    scope["repository_scope_status"] = "CANONICALLY_GROUNDED_BY_REPOSITORY_COGNITION"
+    scope["repository_targets"] = targets
+    scope["focused_test_requirements"] = focused_tests
+    scope["repository_scope_grounding_identity"] = grounding_identity
+    scope["repository_scope_grounding_hash"] = grounding_hash
+    scope["field_lineage"] = deepcopy(scope["field_lineage"])
+    scope["field_lineage"]["repository_scope"] = {
+        "source_artifact_type": "CANONICAL_REPOSITORY_SCOPE_GROUNDING_ARTIFACT_V1",
+        "source_identity": grounding_identity,
+        "source_hash": grounding_hash,
+    }
+    projected["repository_scope_status"] = scope["repository_scope_status"]
+    projected["repository_targets"] = targets
+    projected["repository_scope_grounding_identity"] = grounding_identity
+    projected["repository_scope_grounding_hash"] = grounding_hash
+    projected["ready_for_worker_dispatch_governance"] = True
+    projected["dispatch_blocked_by_unresolved_repository_scope"] = False
+    projected["artifact_hash"] = replay_hash(
+        {key: value for key, value in projected.items() if key != "artifact_hash"}
+    )
+    return validate_worker_request_artifact(projected)
+
+
+def validate_worker_request_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
+    """Validate an existing or repository-scope-projected Worker request."""
+
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("Worker request artifact must be a JSON object")
+    candidate = deepcopy(artifact)
+    _verify_artifact_hash(candidate)
+    if candidate.get("artifact_type") != WORKER_REQUEST_ARTIFACT_V1:
+        raise FailClosedRuntimeError("Worker request artifact type mismatch")
+    if candidate.get("request_status") != WORKER_REQUEST_CREATED:
+        raise FailClosedRuntimeError("Worker request must be created")
+    if candidate.get("replay_lineage_preserved") is not True:
+        raise FailClosedRuntimeError("Worker request Replay lineage is not preserved")
+    scope = candidate.get("implementation_scope")
+    if not isinstance(scope, dict) or not isinstance(scope.get("field_lineage"), dict):
+        raise FailClosedRuntimeError("Worker request implementation scope is invalid")
+    targets = scope.get("repository_targets")
+    if not isinstance(targets, list):
+        raise FailClosedRuntimeError("Worker request repository targets are invalid")
+    grounded = scope.get("repository_scope_status") == (
+        "CANONICALLY_GROUNDED_BY_REPOSITORY_COGNITION"
+    )
+    if grounded:
+        normalized = _unique_relative_paths(targets, "repository_targets")
+        if normalized != candidate.get("repository_targets"):
+            raise FailClosedRuntimeError("Worker request grounded targets mismatch")
+        grounding_hash = _require_hash(
+            scope.get("repository_scope_grounding_hash"),
+            "repository_scope_grounding_hash",
+        )
+        if candidate.get("repository_scope_grounding_hash") != grounding_hash:
+            raise FailClosedRuntimeError("Worker request grounding hash mismatch")
+        if candidate.get("repository_scope_grounding_identity") != scope.get(
+            "repository_scope_grounding_identity"
+        ):
+            raise FailClosedRuntimeError("Worker request grounding identity mismatch")
+        if candidate.get("ready_for_worker_dispatch_governance") is not True:
+            raise FailClosedRuntimeError("grounded Worker request readiness mismatch")
+        if candidate.get("dispatch_blocked_by_unresolved_repository_scope") is not False:
+            raise FailClosedRuntimeError("grounded Worker request dispatch boundary mismatch")
+    for flag in (
+        "implementation_executed",
+        "worker_dispatched",
+        "worker_invoked",
+        "provider_invoked",
+        "code_modified",
+        "governance_modified",
+        "authorization_created",
+        "execution_requested",
+        "dispatch_requested",
+    ):
+        if candidate.get(flag) is not False:
+            raise FailClosedRuntimeError(f"Worker request {flag} must remain false")
+    return candidate
 
 
 def _validate_implementation_request(request: dict[str, Any]) -> None:
@@ -509,6 +630,27 @@ def _string_list(value: Any) -> list[str]:
 
 def _hash_list(value: Any) -> list[str]:
     return [item for item in _string_list(value) if item.startswith("sha256:")]
+
+
+def _unique_relative_paths(value: Any, field_name: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise FailClosedRuntimeError(
+            f"implementation request to worker request failed closed: {field_name} are required"
+        )
+    normalized: list[str] = []
+    for item in value:
+        text = _require_string(item, field_name).replace("\\", "/")
+        path = PurePosixPath(text)
+        if path.is_absolute() or ".." in path.parts or text in {".", ""}:
+            raise FailClosedRuntimeError(
+                f"implementation request to worker request failed closed: {field_name} must be workspace-relative"
+            )
+        normalized.append(path.as_posix())
+    if len(set(normalized)) != len(normalized):
+        raise FailClosedRuntimeError(
+            f"implementation request to worker request failed closed: {field_name} contain duplicates"
+        )
+    return sorted(normalized)
 
 
 def _failure_reason(exc: Exception) -> str:

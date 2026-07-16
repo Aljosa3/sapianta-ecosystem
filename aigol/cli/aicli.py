@@ -1283,6 +1283,14 @@ def _render_runtime_result(runtime_result: dict[str, Any], runtime_status: str) 
                 f"worker_implementation_payload_hash: {runtime_result.get('approved_worker_implementation_payload_hash')}",
                 f"dispatch_blocked: {runtime_result.get('approved_worker_payload_dispatch_blocked')}",
                 f"failure_reason: {runtime_result.get('approved_worker_payload_failure_reason')}",
+                "Canonical repository-scope grounding",
+                f"grounding_status: {runtime_result.get('repository_scope_grounding_status')}",
+                f"repository_scope_grounding_hash: {runtime_result.get('repository_scope_grounding_hash')}",
+                f"repository_cognition_snapshot_hash: {runtime_result.get('repository_cognition_snapshot_hash')}",
+                f"grounded_repository_targets: {runtime_result.get('grounded_repository_targets')}",
+                f"grounded_focused_test_targets: {runtime_result.get('grounded_focused_test_targets')}",
+                f"grounded_worker_request_hash: {runtime_result.get('grounded_worker_request_hash')}",
+                f"repository_scope_dispatch_blocked: {runtime_result.get('repository_scope_dispatch_blocked')}",
             ]
         )
     return "\n".join(lines)

@@ -515,6 +515,10 @@ from aigol.runtime.approved_durable_work_worker_payload_binding import (
     bind_approved_durable_work_to_worker_payload,
     render_approved_durable_work_worker_payload_binding,
 )
+from aigol.runtime.approved_durable_work_repository_scope_grounding import (
+    ground_approved_durable_work_repository_scope,
+    render_approved_durable_work_repository_scope_grounding,
+)
 from aigol.runtime.acli_human_friendly_explanation_runtime import (
     create_acli_human_friendly_explanation,
     render_acli_human_friendly_explanation,
@@ -5433,14 +5437,31 @@ def run_interactive_conversation(
                         approved_payload_capture
                     )
                 )
-                if approved_payload_capture.get("fail_closed") is True:
+                repository_grounding_capture = (
+                    ground_approved_durable_work_repository_scope(
+                        worker_payload_binding_artifact=approved_payload_capture,
+                        workspace=args.workspace,
+                        created_at=created_at,
+                        replay_dir=(
+                            turn_root
+                            / "approved_durable_work_repository_scope_grounding"
+                        ),
+                    )
+                )
+                output_writer(
+                    render_approved_durable_work_repository_scope_grounding(
+                        repository_grounding_capture
+                    )
+                )
+                if repository_grounding_capture.get("fail_closed") is True:
                     failed_turns += 1
                 turns.append(
-                    _interactive_approved_durable_work_worker_payload_turn_summary(
+                    _interactive_approved_durable_work_repository_grounding_turn_summary(
                         turn_id=turn_id,
                         prompt_id=prompt_id,
                         router_capture=router_capture,
                         binding_capture=approved_payload_capture,
+                        grounding_capture=repository_grounding_capture,
                         source_router_replay_reference=str(
                             turn_root / "source_router"
                         ),
@@ -7993,7 +8014,71 @@ def _interactive_approved_durable_work_worker_payload_turn_summary(
             "dispatch_blocked"
         )
         is True,
+        "approved_worker_payload_failure_reason": binding_capture.get(
+            "failure_reason"
+        ),
     }
+
+
+def _interactive_approved_durable_work_repository_grounding_turn_summary(
+    *,
+    turn_id: str,
+    prompt_id: str,
+    router_capture: dict[str, Any],
+    binding_capture: dict[str, Any],
+    grounding_capture: dict[str, Any],
+    source_router_replay_reference: str,
+) -> dict[str, Any]:
+    summary = _interactive_approved_durable_work_worker_payload_turn_summary(
+        turn_id=turn_id,
+        prompt_id=prompt_id,
+        router_capture=router_capture,
+        binding_capture=binding_capture,
+        source_router_replay_reference=source_router_replay_reference,
+    )
+    summary.update(
+        {
+            "response_status": grounding_capture.get("grounding_status"),
+            "response_source": "CANONICAL_REPOSITORY_SCOPE_GROUNDING",
+            "response_text": render_approved_durable_work_repository_scope_grounding(
+                grounding_capture
+            ),
+            "fail_closed": grounding_capture.get("fail_closed") is True,
+            "failure_reason": grounding_capture.get("failure_reason"),
+            "replay_reference": grounding_capture.get("replay_reference"),
+            "conversation_replay_reference": grounding_capture.get(
+                "replay_reference"
+            ),
+            "execution_summary_reference": grounding_capture.get(
+                "replay_reference"
+            ),
+            "existing_runtime": "approved_durable_work_repository_scope_grounding",
+            "clarification_required": grounding_capture.get("fail_closed") is True,
+            "repository_scope_grounding_status": grounding_capture.get(
+                "grounding_status"
+            ),
+            "repository_scope_grounding_hash": grounding_capture.get(
+                "artifact_hash"
+            ),
+            "repository_cognition_snapshot_hash": grounding_capture.get(
+                "repository_cognition_snapshot_hash"
+            ),
+            "grounded_repository_targets": deepcopy(
+                grounding_capture.get("grounded_repository_targets") or []
+            ),
+            "grounded_focused_test_targets": deepcopy(
+                grounding_capture.get("grounded_focused_test_targets") or []
+            ),
+            "grounded_worker_request_hash": grounding_capture.get(
+                "grounded_worker_request_hash"
+            ),
+            "repository_scope_dispatch_blocked": grounding_capture.get(
+                "dispatch_blocked"
+            )
+            is True,
+        }
+    )
+    return summary
 
 
 def _interactive_acli_governed_development_bridge_turn_summary(
