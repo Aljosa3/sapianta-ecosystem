@@ -216,7 +216,9 @@ def test_real_aicli_preserves_assignment_stage_before_later_dispatch(tmp_path: P
     assert runtime["worker_assigned"] is True
     assert runtime["worker_dispatched"] is True
     assert runtime["worker_assignment_capture"]["worker_dispatched"] is False
-    for field in ("provider_invoked", "worker_invoked", "command_executed", "repository_mutated"):
+    assert runtime["worker_invoked"] is True
+    assert runtime["worker_assignment_capture"]["worker_invoked"] is False
+    for field in ("provider_invoked", "command_executed", "repository_mutated"):
         assert runtime[field] is False
     rendered = "\n".join(output)
     assert "Worker Invocation Request" in rendered

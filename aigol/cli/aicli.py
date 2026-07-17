@@ -34,6 +34,7 @@ from aigol.runtime.execution_authorization_runtime import render_execution_autho
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime import worker_assignment_runtime as worker_assignment
 from aigol.runtime import worker_dispatch_runtime as worker_dispatch
+from aigol.runtime import worker_invocation_runtime as worker_invocation
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -417,6 +418,8 @@ def run_reference_uhi_session(
                     output_writer(worker_assignment.render_worker_assignment_summary(runtime_result["worker_assignment_capture"]))
                 if runtime_result.get("worker_dispatch_capture"):
                     output_writer(worker_dispatch.render_worker_dispatch_summary(runtime_result["worker_dispatch_capture"]))
+                if runtime_result.get("worker_invocation_capture"):
+                    output_writer(worker_invocation.render_worker_invocation_summary(runtime_result["worker_invocation_capture"]))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -1060,6 +1063,33 @@ def _record_contextual_execution_decision(
                                 "worker_dispatch_replay_reference"
                             ),
                         })
+                        if dispatch.get("dispatch_status") == worker_dispatch.WORKER_DISPATCHED:
+                            dispatch_artifact = dispatch["worker_dispatch_artifact"]
+                            invocation = worker_invocation.invoke_dispatched_worker(
+                                worker_invocation_id=f"{dispatch_artifact['worker_dispatch_id']}:INVOCATION",
+                                worker_dispatch_artifact=dispatch_artifact,
+                                worker_dispatch_replay_reference=dispatch[
+                                    "worker_dispatch_replay_reference"
+                                ],
+                                invoked_by="AIGOL_GOVERNANCE",
+                                invoked_at=created,
+                                replay_dir=root / session / f"WORKER-INVOCATION-{dispatch_artifact['artifact_hash'][-16:]}",
+                            )
+                            merged.update({
+                                "worker_invocation_capture": invocation,
+                                "worker_invocation_status": invocation.get("invocation_status"),
+                                "worker_invoked": (
+                                    invocation.get("invocation_status") == worker_invocation.WORKER_INVOKED
+                                ),
+                                "provider_invoked": False,
+                                "execution_started": False,
+                                "command_executed": False,
+                                "result_created": False,
+                                "repository_mutated": False,
+                                "runtime_replay_reference": invocation.get(
+                                    "worker_invocation_replay_reference"
+                                ),
+                            })
     return merged
 
 

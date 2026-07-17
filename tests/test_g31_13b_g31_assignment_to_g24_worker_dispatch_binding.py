@@ -49,8 +49,10 @@ def test_aicli_directly_reaches_existing_g24_dispatch_and_reconstructs_lineage(
     assert runtime["worker_selected"] is True
     assert runtime["worker_assigned"] is True
     assert runtime["worker_dispatched"] is True
+    assert runtime["worker_invoked"] is True
     assert runtime["authorization_dispatch_blocked"] is False
     assert assignment["worker_dispatched"] is False
+    assert dispatch["worker_invoked"] is False
     assert dispatch["dispatch_status"] == WORKER_DISPATCHED
     assert dispatch["dispatch_evidence_artifact"]["artifact_type"] == WORKER_DISPATCH_EVIDENCE_ARTIFACT_V1
     assert dispatch["dispatch_classification_artifact"]["artifact_type"] == WORKER_DISPATCH_CLASSIFICATION_ARTIFACT_V1
@@ -176,13 +178,15 @@ def test_duplicate_dispatch_fails_without_changing_original_replay(tmp_path: Pat
     assert reconstruct_worker_dispatch_replay(replay_path)["replay_hash"] == before["replay_hash"]
 
 
-def test_binding_stops_before_invocation_and_adds_no_semantic_helpers(tmp_path: Path) -> None:
+def test_dispatch_stage_remains_non_invoking_before_later_invocation(tmp_path: Path) -> None:
     runtime, _, session_root = _run_aicli(tmp_path, "G31-13B-BOUNDARY")
-    for field in ("provider_invoked", "worker_invoked", "command_executed", "repository_mutated"):
+    assert runtime["worker_invoked"] is True
+    assert runtime["worker_dispatch_capture"]["worker_invoked"] is False
+    for field in ("provider_invoked", "command_executed", "repository_mutated"):
         assert runtime[field] is False
-    assert not list(session_root.glob("*WORKER-INVOCATION*"))
+    assert len(list(session_root.glob("WORKER-INVOCATION-*"))) == 1
     source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
     assert source.count("worker_dispatch.dispatch_assigned_worker(") == 1
-    assert "invoke_dispatched_worker" not in source
+    assert source.count("worker_invocation.invoke_dispatched_worker(") == 1
     for duplicate in ("def _verify_hash", "def _relative_path", "def _unique_relative_paths"):
         assert duplicate not in source
