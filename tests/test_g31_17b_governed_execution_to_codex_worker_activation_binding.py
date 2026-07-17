@@ -13,6 +13,7 @@ from aigol.runtime.codex_worker_activation_binding_runtime import (
     ACTIVATION_APPROVAL_SCOPE,
     ACTIVATION_TIMEOUT_SECONDS,
     activate_bounded_codex_worker,
+    reconstruct_codex_worker_activation_binding,
     reconstruct_codex_worker_activation_replay,
 )
 from aigol.runtime.models import FailClosedRuntimeError
@@ -88,6 +89,7 @@ def test_third_approval_activates_one_fixed_codex_worker_process(tmp_path: Path)
     assert approval["provider_invocation_allowed"] is False
     assert approval["worker_result_capture_allowed"] is False
     assert approval["repository_mutation_allowed"] is False
+    assert approval["timeout_seconds"] == ACTIVATION_TIMEOUT_SECONDS == 60
     assert activation["third_human_decision_recorded"] is True
     assert activation["worker_process_started"] is True
     assert activation["subprocess_invoked"] is True
@@ -110,6 +112,7 @@ def test_third_approval_activates_one_fixed_codex_worker_process(tmp_path: Path)
     )
     assert reconstructed["replay_artifact_count"] == 3
     assert "Bounded CODEX Worker Process Activation Review" in "\n".join(output)
+    assert "Execution Timeout: 60 seconds (finite; no retry)." in "\n".join(output)
 
 
 def test_two_decisions_only_leave_activation_pending_without_process(tmp_path: Path) -> None:
@@ -147,6 +150,75 @@ def test_injected_runner_failure_still_creates_truthful_transport_receipt(
     assert capture["worker_process_started"] is True
     assert capture["transport_receipt_created"] is True
     assert capture["semantic_worker_result_captured"] is False
+    diagnostics = capture["codex_transport_receipt"]["transport_diagnostics"]
+    assert diagnostics["stderr_byte_length"] == 0
+    assert diagnostics["stdout_truncated"] is False
+
+
+def test_transport_diagnostics_are_reconstructed_and_tamper_evident(tmp_path: Path) -> None:
+    runtime, root, workspace = _two_decisions(tmp_path, "G31-17B-DIAGNOSTICS")
+    capture = _activate_direct(
+        runtime, root, workspace, root / "activation",
+        RecordingRunner(returncode=8, stderr="classified failure"),
+    )
+    reconstructed = reconstruct_codex_worker_activation_binding(
+        activation_capture=capture,
+        governed_execution_capture=runtime["governed_worker_execution_capture"],
+        execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+        session_root=root,
+        workspace=workspace,
+    )
+    assert reconstructed["transport_receipt"]["transport_diagnostics"]["stderr_byte_length"] == 18
+
+    capture["bounded_dispatch"]["diagnostics"]["stderr_byte_length"] = 1
+    with pytest.raises(FailClosedRuntimeError, match="receipt or output hash mismatch"):
+        reconstruct_codex_worker_activation_binding(
+            activation_capture=capture,
+            governed_execution_capture=runtime["governed_worker_execution_capture"],
+            execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+            session_root=root,
+            workspace=workspace,
+        )
+
+
+def test_timeout_substitution_fails_closed_across_approval_request_and_receipt(tmp_path: Path) -> None:
+    runtime, root, workspace = _two_decisions(tmp_path, "G31-17B-TIMEOUT-BINDING")
+    capture = _activate_direct(
+        runtime, root, workspace, root / "activation", RecordingRunner()
+    )
+
+    changed = deepcopy(capture)
+    changed["activation_approval_artifact"]["timeout_seconds"] = 30
+    with pytest.raises(FailClosedRuntimeError):
+        reconstruct_codex_worker_activation_binding(
+            activation_capture=changed,
+            governed_execution_capture=runtime["governed_worker_execution_capture"],
+            execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+            session_root=root,
+            workspace=workspace,
+        )
+
+    changed = deepcopy(capture)
+    changed["codex_execution_request"]["timeout_seconds"] = 30
+    with pytest.raises(FailClosedRuntimeError, match="process request was substituted"):
+        reconstruct_codex_worker_activation_binding(
+            activation_capture=changed,
+            governed_execution_capture=runtime["governed_worker_execution_capture"],
+            execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+            session_root=root,
+            workspace=workspace,
+        )
+
+    changed = deepcopy(capture)
+    changed["bounded_dispatch"]["metadata"]["timeout_seconds"] = 30
+    with pytest.raises(FailClosedRuntimeError, match="receipt or output hash mismatch"):
+        reconstruct_codex_worker_activation_binding(
+            activation_capture=changed,
+            governed_execution_capture=runtime["governed_worker_execution_capture"],
+            execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+            session_root=root,
+            workspace=workspace,
+        )
 
 
 def test_timeout_and_output_capture_remain_bounded(tmp_path: Path) -> None:

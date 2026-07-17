@@ -79,7 +79,7 @@ from sapianta_system.runtime.execution_gate import (
 RUNTIME_VERSION = "G31_17B_CODEX_WORKER_ACTIVATION_BINDING_V1"
 ACTIVATION_APPROVAL_SCOPE = "RUN_BOUNDED_CODEX_WORKER_PROCESS_ONLY"
 CODEX_EXECUTABLE = "codex"
-ACTIVATION_TIMEOUT_SECONDS = 30
+ACTIVATION_TIMEOUT_SECONDS = 60
 REPLAY_STEPS = (
     "worker_activation_review_recorded",
     "worker_activation_approval_recorded",
@@ -430,6 +430,7 @@ def render_codex_worker_activation_review(capture: dict[str, Any]) -> str:
         "Bounded CODEX Worker Process Activation Review",
         f"Approval Scope: {ACTIVATION_APPROVAL_SCOPE}",
         f"Review Reference: {review.get('summary_id')}",
+        f"Execution Timeout: {ACTIVATION_TIMEOUT_SECONDS} seconds (finite; no retry).",
         "The next exact /approve permits one fixed codex exec process and one bounded transport receipt.",
         "Provider invocation, semantic result capture, and repository mutation remain prohibited.",
     ))
@@ -557,6 +558,7 @@ def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decide
         "approval_scope": ACTIVATION_APPROVAL_SCOPE, **deepcopy(SCOPE),
         "activation_review_reference": review["summary_id"],
         "activation_review_hash": review["artifact_hash"],
+        "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate": candidate["execution_candidate_id"],
         "source_execution_candidate_hash": candidate["artifact_hash"],
         "source_governed_execution": result["worker_execution_id"],
@@ -576,6 +578,7 @@ def _validate_activation_approval(approval: dict[str, Any], review: dict[str, An
         "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1, "approval_status": APPROVED,
         "approval_granted": True, "approval_scope": ACTIVATION_APPROVAL_SCOPE,
         "activation_review_hash": review["artifact_hash"],
+        "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate_hash": lineage["candidate"]["artifact_hash"],
         "source_governed_execution_hash": lineage["governed_result"]["artifact_hash"],
         "selected_resource_id": "CODEX", "registered_worker_id": CODEX_EXECUTION_WORKER_ID,

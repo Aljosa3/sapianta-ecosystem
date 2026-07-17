@@ -4,6 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from sapianta_system.runtime.codex_execution_adapter import create_codex_execution_request, execute_governed_codex
+from sapianta_system.runtime.codex_execution_adapter import governed_codex_execution_dispatch as dispatch
 from sapianta_system.runtime.codex_handoff import create_governed_codex_handoff, create_governed_codex_handoff_request
 from sapianta_system.runtime.codex_synthesis import create_governed_codex_task_request, synthesize_governed_codex_task
 from sapianta_system.runtime.execution_gate import authorize_downstream_execution, create_execution_authorization_request
@@ -109,6 +110,56 @@ def test_timeout_receipt_and_stdout_stderr_hashing():
     assert result["receipt"]["constitutional_statement"] == (
         "Bounded Codex execution remains governance-controlled and does not constitute autonomous execution."
     )
+
+
+def test_transport_diagnostics_are_bounded_and_replay_visible(monkeypatch):
+    ticks = iter((10.0, 10.125))
+    monkeypatch.setattr(dispatch, "monotonic", lambda: next(ticks))
+
+    result = execute_governed_codex(
+        _request(),
+        runner=lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=7, stdout="ø" * 4097, stderr="bounded failure"
+        ),
+    )
+    diagnostics = result["receipt"]["transport_diagnostics"]
+    assert result["status"] == "EXECUTION_FAILURE"
+    assert diagnostics == result["dispatch"]["diagnostics"]
+    assert diagnostics["duration_seconds"] == 0.125
+    assert diagnostics["exception_type"] == ""
+    assert diagnostics["exception_message"] == ""
+    assert diagnostics["stdout_character_length"] == 4097
+    assert diagnostics["stdout_byte_length"] == 8194
+    assert diagnostics["stdout_truncated"] is True
+    assert diagnostics["stderr_byte_length"] == len(b"bounded failure")
+    assert diagnostics["stderr_truncated"] is False
+    assert len(result["dispatch"]["stdout"]) == 4096
+
+
+def test_timeout_and_process_start_failures_preserve_classified_diagnostics(monkeypatch):
+    ticks = iter((20.0, 20.5, 30.0, 30.25))
+    monkeypatch.setattr(dispatch, "monotonic", lambda: next(ticks))
+
+    def timeout(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(
+            cmd=["codex", "exec", "redacted"], timeout=30,
+            output=b"partial", stderr=b"timed out",
+        )
+
+    timed_out = execute_governed_codex(_request(), runner=timeout)
+    timeout_diagnostics = timed_out["receipt"]["transport_diagnostics"]
+    assert timeout_diagnostics["exception_type"] == "TimeoutExpired"
+    assert timeout_diagnostics["exception_message"] == "process exceeded the bounded execution timeout"
+    assert timeout_diagnostics["stdout_byte_length"] == 7
+
+    def unavailable(*_args, **_kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "codex")
+
+    unavailable_result = execute_governed_codex(_request(), runner=unavailable)
+    unavailable_diagnostics = unavailable_result["receipt"]["transport_diagnostics"]
+    assert unavailable_result["dispatch"]["returncode"] == 125
+    assert unavailable_diagnostics["exception_type"] == "FileNotFoundError"
+    assert unavailable_diagnostics["exception_message"] == "No such file or directory"
 
 
 def test_browser_companion_integration():
