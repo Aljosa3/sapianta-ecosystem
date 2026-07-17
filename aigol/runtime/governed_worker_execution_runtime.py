@@ -13,7 +13,7 @@ from aigol.runtime.execution_summary_runtime import (
     verify_execution_summary_confirmation,
 )
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.transport.serialization import load_json, replay_hash, verify_replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_to_execution_governance_runtime import (
     WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1,
     WORKER_EXECUTION_CANDIDATE_CREATED,
@@ -30,6 +30,138 @@ REPLAY_STEPS = (
     "worker_execution_result_recorded",
     "worker_execution_returned",
 )
+EXECUTION_APPROVAL_SCOPE = "RUN_GOVERNED_WORKER_EXECUTION_ONLY"
+
+
+def project_g31_candidate_to_governed_execution(
+    *,
+    execution_candidate_capture: dict[str, Any],
+    session_root: str | Path,
+    executed_by: str,
+    executed_at: str,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Project the original G31 execution decision into evidence-only execution."""
+
+    from aigol.runtime.approved_durable_work_repository_scope_grounding import validate_approved_durable_work_repository_scope_grounding
+    from aigol.runtime.confirmed_grounded_execution_authorization_binding import reconstruct_confirmed_grounded_execution_ready_replay
+    from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED, reconstruct_execution_authorization_replay
+    from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
+        EXECUTION_DECISION_APPROVED, reconstruct_distinct_human_execution_decision,
+        validate_distinct_human_execution_decision,
+    )
+    from aigol.runtime.worker_invocation_runtime import reconstruct_worker_invocation_replay
+    from aigol.runtime.worker_invocation_to_execution_candidate_bridge_runtime import (
+        APPROVAL_SCOPE as CANDIDATE_APPROVAL_SCOPE,
+        reconstruct_worker_invocation_to_execution_candidate_bridge_replay,
+    )
+
+    root = Path(session_root).resolve()
+    destination = Path(replay_dir).resolve()
+    candidate_replay = Path(execution_candidate_capture.get(
+        "worker_execution_candidate_replay_reference", ""
+    )).resolve()
+    if not destination.is_relative_to(root) or not candidate_replay.is_relative_to(root):
+        raise FailClosedRuntimeError("G31 governed execution path is cross-session")
+    reconstructed_candidate = reconstruct_worker_invocation_to_execution_candidate_bridge_replay(
+        candidate_replay
+    )
+    wrapper = load_json(candidate_replay / "001_worker_invocation_execution_candidate_recorded.json")
+    verify_replay_hash(wrapper, hash_field="replay_hash")
+    candidate = wrapper.get("artifact")
+    _validate_execution_candidate(candidate)
+    supplied = execution_candidate_capture.get("worker_execution_candidate_artifact")
+    if not isinstance(supplied, dict) or supplied.get("artifact_hash") != candidate["artifact_hash"]:
+        raise FailClosedRuntimeError("G31 execution candidate capture mismatch")
+    if reconstructed_candidate["execution_candidate_id"] != candidate["execution_candidate_id"]:
+        raise FailClosedRuntimeError("G31 execution candidate Replay mismatch")
+    candidate_approval = execution_candidate_capture.get("candidate_only_human_approval_artifact")
+    _validate_artifact(candidate_approval)
+    if not all((
+        candidate_approval.get("approval_scope") == CANDIDATE_APPROVAL_SCOPE,
+        candidate_approval.get("worker_execution_allowed") is False,
+        candidate_approval.get("artifact_hash") == candidate.get("human_approval_hash"),
+    )):
+        raise FailClosedRuntimeError("G31 candidate-only approval integrity mismatch")
+
+    references = [Path(value).resolve() for value in candidate["replay_references"]]
+    if any(not value.is_relative_to(root) for value in references):
+        raise FailClosedRuntimeError("G31 governed execution lineage is cross-session")
+    invocation_paths = [value for value in references if (value / "002_invocation_artifact_recorded.json").is_file()]
+    authorization_paths = [value for value in references if (value / "002_authorization_artifact_recorded.json").is_file()]
+    ready_paths = [value for value in references if (value / "000_execution_candidate_recorded.json").is_file()]
+    if not all(len(paths) == 1 for paths in (invocation_paths, authorization_paths, ready_paths)):
+        raise FailClosedRuntimeError("G31 governed execution lineage references are incomplete")
+    invocation = reconstruct_worker_invocation_replay(invocation_paths[0])
+    authorization = reconstruct_execution_authorization_replay(authorization_paths[0])
+    ready = reconstruct_confirmed_grounded_execution_ready_replay(ready_paths[0])
+    authorization_wrapper = load_json(authorization_paths[0] / "002_authorization_artifact_recorded.json")
+    verify_replay_hash(authorization_wrapper, hash_field="replay_hash")
+    authorization_artifact = authorization_wrapper.get("artifact")
+    _validate_artifact(authorization_artifact)
+    if not all((
+        invocation["worker_invocation_id"] == candidate["source_worker_invocation"],
+        authorization["authorization_status"] == EXECUTION_AUTHORIZED,
+        authorization_artifact.get("authorization_revoked") is False,
+        authorization_artifact.get("authorized_scope") == ready["authorization_scope"],
+    )):
+        raise FailClosedRuntimeError("G31 invocation or authorization lineage mismatch")
+
+    ready_wrapper = load_json(ready_paths[0] / "000_execution_candidate_recorded.json")
+    verify_replay_hash(ready_wrapper, hash_field="replay_hash")
+    ready_candidate = ready_wrapper.get("artifact")
+    _validate_artifact(ready_candidate)
+    decision = validate_distinct_human_execution_decision(
+        ready_candidate.get("source_human_execution_decision_artifact"),
+        workspace=ready["authorization_scope"]["workspace_root"], session_root=root,
+    )
+    reconstructed_decision = reconstruct_distinct_human_execution_decision(
+        decision["replay_reference"], workspace=ready["authorization_scope"]["workspace_root"],
+        session_root=root,
+    )
+    grounding = validate_approved_durable_work_repository_scope_grounding(
+        decision["source_authorization_review_artifact"]["source_repository_scope_grounding_artifact"],
+        workspace=ready["authorization_scope"]["workspace_root"],
+    )
+    ppp = grounding["source_worker_payload_binding_artifact"]["ppp_task_package_artifact"]
+    if not all((
+        decision["decision_status"] == EXECUTION_DECISION_APPROVED,
+        reconstructed_decision["artifact_hash"] == decision["artifact_hash"],
+        authorization_artifact["human_confirmation_hash"] == decision["human_confirmation_hash"],
+        candidate["source_ppp_candidate"] == ppp["ppp_candidate_id"],
+        candidate["source_ppp_candidate_hash"] == ppp["artifact_hash"],
+    )):
+        raise FailClosedRuntimeError("G31 decision, confirmation, or PPP lineage mismatch")
+
+    approval = {
+        "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1,
+        "approval_id": f"{candidate['execution_candidate_id']}:EXECUTION-APPROVAL",
+        "approval_status": APPROVED, "approval_granted": True,
+        "source_execution_candidate": candidate["execution_candidate_id"],
+        "source_execution_candidate_hash": candidate["artifact_hash"],
+        "approval_scope": EXECUTION_APPROVAL_SCOPE, "worker_execution_allowed": True,
+        "implementation_result_creation_allowed": False, "worker_process_activation_allowed": False,
+        "provider_invocation_allowed": False, "command_execution_allowed": False,
+        "worker_output_creation_allowed": False, "result_capture_allowed": False,
+        "repository_mutation_allowed": False, "derived_compatibility_projection": True,
+        "source_human_execution_decision": decision["artifact_hash"],
+        "source_human_confirmation": decision["human_confirmation_hash"],
+        "source_execution_authorization": authorization_artifact["authorization_id"],
+        "source_execution_authorization_hash": authorization_artifact["artifact_hash"],
+        "third_human_decision_recorded": False,
+        "approved_by": decision["decided_by"], "approved_at": decision["decided_at"],
+    }
+    approval["artifact_hash"] = replay_hash(approval)
+    capture = run_governed_worker_execution(
+        execution_id=f"{candidate['execution_candidate_id']}:GOVERNED-EXECUTION",
+        execution_candidate_artifact=candidate, human_approval_artifact=approval,
+        executed_by=executed_by, executed_at=executed_at, replay_dir=destination,
+        execution_summary_artifact=decision["source_authorization_review_artifact"]["execution_summary_artifact"],
+        human_confirmation_artifact=decision["human_confirmation_artifact"],
+    )
+    capture["execution_scoped_human_approval_artifact"] = deepcopy(approval)
+    capture["source_human_decision_count"] = 2
+    return capture
 
 
 def run_governed_worker_execution(
@@ -169,6 +301,20 @@ def reconstruct_governed_worker_execution_replay(replay_dir: str | Path) -> dict
         "replay_artifact_count": replay_artifact_count,
         "replay_hash": replay_hash([result_wrapper, returned_wrapper]),
     }
+
+
+def render_governed_worker_execution_summary(capture: dict[str, Any]) -> str:
+    """Render governed-execution evidence without implying process activation."""
+
+    result = capture.get("worker_execution_result_artifact") or {}
+    return "\n".join((
+        "Governed Worker Execution Evidence",
+        f"Evidence Status: {result.get('execution_status')}",
+        f"Evidence Reference: {result.get('worker_execution_id')}",
+        "Deterministic governed-execution evidence was recorded; CODEX did not start.",
+        "No adapter, Provider, subprocess, command, Worker output, result capture, or mutation occurred.",
+        "A later governed transition is required before actual Worker activation.",
+    ))
 
 
 def _validate_execution_candidate(candidate: dict[str, Any]) -> None:

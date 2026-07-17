@@ -36,6 +36,7 @@ from aigol.runtime import worker_assignment_runtime as worker_assignment
 from aigol.runtime import worker_dispatch_runtime as worker_dispatch
 from aigol.runtime import worker_invocation_runtime as worker_invocation
 from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtime as worker_candidate
+from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -424,6 +425,10 @@ def run_reference_uhi_session(
                 if runtime_result.get("worker_execution_candidate_capture"):
                     output_writer(worker_candidate.render_worker_execution_candidate_summary(
                         runtime_result["worker_execution_candidate_capture"]
+                    ))
+                if runtime_result.get("governed_worker_execution_capture"):
+                    output_writer(governed_execution.render_governed_worker_execution_summary(
+                        runtime_result["governed_worker_execution_capture"]
                     ))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
@@ -1124,6 +1129,33 @@ def _record_contextual_execution_decision(
                                         "worker_execution_candidate_replay_reference"
                                     ),
                                 })
+                                if candidate.get("worker_execution_candidate_generated") is True:
+                                    execution = governed_execution.project_g31_candidate_to_governed_execution(
+                                        execution_candidate_capture=candidate,
+                                        session_root=root / session,
+                                        executed_by="PLATFORM_CORE_G31_GOVERNED_EXECUTION_BINDING",
+                                        executed_at=created,
+                                        replay_dir=root / session / (
+                                            "GOVERNED-WORKER-EXECUTION-"
+                                            f"{candidate['worker_execution_candidate_artifact']['artifact_hash'][-16:]}"
+                                        ),
+                                    )
+                                    merged.update({
+                                        "governed_worker_execution_capture": execution,
+                                        "governed_execution_evidence_created": execution.get(
+                                            "worker_execution_completed"
+                                        ) is True,
+                                        "provider_invoked": False,
+                                        "worker_process_started": False,
+                                        "execution_started": False,
+                                        "command_executed": False,
+                                        "worker_output_created": False,
+                                        "result_created": False,
+                                        "repository_mutated": False,
+                                        "runtime_replay_reference": execution.get(
+                                            "worker_execution_replay_reference"
+                                        ),
+                                    })
     return merged
 
 
