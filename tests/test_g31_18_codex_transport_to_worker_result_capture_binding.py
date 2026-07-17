@@ -192,7 +192,8 @@ def test_aicli_orchestrates_capture_without_fourth_decision(tmp_path: Path) -> N
     runtime = result["runtime_result"]
     assert result["approval_count"] == 3
     assert runtime["semantic_worker_result_captured"] is True
-    assert runtime["result_validated"] is False
+    assert runtime["result_validated"] is True
     assert runtime["result_accepted"] is False
+    assert result["aicli_validates"] is False
     assert result["aicli_accepts_result"] is False
     assert "CODEX Semantic Worker Result Capture" in "\n".join(output)

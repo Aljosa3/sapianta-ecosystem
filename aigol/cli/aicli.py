@@ -39,6 +39,7 @@ from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtim
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
+from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -446,6 +447,9 @@ def run_reference_uhi_session(
                 output_writer(codex_result.render_codex_worker_result_capture(
                     runtime_result["codex_worker_result_capture_binding_capture"]
                 ))
+                output_writer(codex_validation.render_codex_worker_semantic_validation(
+                    runtime_result["codex_worker_semantic_validation_binding_capture"]
+                ))
                 pending_activation_review = None
                 transcript.append({"event": "worker_activation_decision_approved"})
                 continue
@@ -670,6 +674,7 @@ def run_reference_uhi_session(
         "aicli_authorizes": False,
         "aicli_executes": False,
         "aicli_owns_replay": False,
+        "aicli_validates": False,
         "aicli_accepts_result": False,
         "aicli_owns_workspace": False,
         "aicli_owns_goal_mapping": False,
@@ -1279,6 +1284,21 @@ def _record_contextual_worker_activation_decision(
     )
     merged["codex_worker_result_capture_binding_capture"] = result
     merged.update({field: result[field] for field in codex_result.RESULT_TRUTH_FIELDS})
+    validation = codex_validation.validate_captured_codex_worker_result(
+        result_capture_binding_capture=result,
+        activation_capture=capture,
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+        validated_at=created,
+        replay_dir=(
+            root / session /
+            f"CODEX-WORKER-RESULT-VALIDATION-{result.get('worker_output_hash', '')[-16:]}"
+        ),
+    )
+    merged["codex_worker_semantic_validation_binding_capture"] = validation
+    merged.update({field: validation[field] for field in codex_validation.VALIDATION_TRUTH_FIELDS})
     return merged
 
 
