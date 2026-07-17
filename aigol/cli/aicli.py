@@ -35,6 +35,7 @@ from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime import worker_assignment_runtime as worker_assignment
 from aigol.runtime import worker_dispatch_runtime as worker_dispatch
 from aigol.runtime import worker_invocation_runtime as worker_invocation
+from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtime as worker_candidate
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -420,6 +421,10 @@ def run_reference_uhi_session(
                     output_writer(worker_dispatch.render_worker_dispatch_summary(runtime_result["worker_dispatch_capture"]))
                 if runtime_result.get("worker_invocation_capture"):
                     output_writer(worker_invocation.render_worker_invocation_summary(runtime_result["worker_invocation_capture"]))
+                if runtime_result.get("worker_execution_candidate_capture"):
+                    output_writer(worker_candidate.render_worker_execution_candidate_summary(
+                        runtime_result["worker_execution_candidate_capture"]
+                    ))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -1090,6 +1095,35 @@ def _record_contextual_execution_decision(
                                     "worker_invocation_replay_reference"
                                 ),
                             })
+                            if invocation.get("invocation_status") == worker_invocation.WORKER_INVOKED:
+                                invocation_artifact = invocation["worker_invocation_artifact"]
+                                candidate = worker_candidate.project_g31_invocation_to_execution_candidate(
+                                    worker_invocation_artifact=invocation_artifact,
+                                    worker_invocation_replay_reference=invocation[
+                                        "worker_invocation_replay_reference"
+                                    ],
+                                    session_root=root / session,
+                                    requested_by="PLATFORM_CORE_G31_CANDIDATE_BINDING",
+                                    created_at=created,
+                                    replay_dir=root / session / (
+                                        f"WORKER-EXECUTION-CANDIDATE-{invocation_artifact['artifact_hash'][-16:]}"
+                                    ),
+                                )
+                                merged.update({
+                                    "worker_execution_candidate_capture": candidate,
+                                    "execution_candidate_created": candidate.get(
+                                        "worker_execution_candidate_generated"
+                                    ) is True,
+                                    "provider_invoked": False,
+                                    "worker_process_started": False,
+                                    "execution_started": False,
+                                    "command_executed": False,
+                                    "result_created": False,
+                                    "repository_mutated": False,
+                                    "runtime_replay_reference": candidate.get(
+                                        "worker_execution_candidate_replay_reference"
+                                    ),
+                                })
     return merged
 
 

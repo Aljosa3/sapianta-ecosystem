@@ -7,6 +7,14 @@ from pathlib import Path
 from typing import Any
 
 from aigol.runtime.governed_implementation_request_runtime import APPROVED, HUMAN_APPROVAL_ARTIFACT_V1
+from aigol.runtime.approved_durable_work_repository_scope_grounding import validate_approved_durable_work_repository_scope_grounding
+from aigol.runtime.confirmed_grounded_execution_authorization_binding import reconstruct_confirmed_grounded_execution_ready_replay
+from aigol.runtime.execution_authorization_runtime import EXECUTION_AUTHORIZED, reconstruct_execution_authorization_replay
+from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
+    EXECUTION_DECISION_APPROVED,
+    reconstruct_distinct_human_execution_decision,
+    validate_distinct_human_execution_decision,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_runtime import (
@@ -45,6 +53,7 @@ def bridge_worker_invocation_to_execution_candidate(
     created_at: str,
     replay_dir: str | Path,
     execution_constraints: dict[str, Any] | None = None,
+    ppp_candidate_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create WORKER_EXECUTION_CANDIDATE_ARTIFACT_V1 from a certified Worker invocation."""
 
@@ -56,6 +65,7 @@ def bridge_worker_invocation_to_execution_candidate(
         lineage = _load_invocation_lineage(
             invocation=invocation,
             worker_invocation_replay_reference=worker_invocation_replay_reference,
+            ppp_candidate_artifact=ppp_candidate_artifact,
         )
         _validate_human_approval(approval, lineage["invocation"])
         bridge = _bridge_evidence_artifact(
@@ -93,6 +103,116 @@ def bridge_worker_invocation_to_execution_candidate(
         _persist_failure_if_possible(replay_path, 1, REPLAY_STEPS[1], candidate)
         _persist_failure_if_possible(replay_path, 2, REPLAY_STEPS[2], returned)
         return _capture(None, candidate, returned, replay_path)
+
+
+def project_g31_invocation_to_execution_candidate(
+    *,
+    worker_invocation_artifact: dict[str, Any],
+    worker_invocation_replay_reference: str,
+    session_root: str | Path,
+    requested_by: str,
+    created_at: str,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Project the existing second G31 decision into candidate-only evidence."""
+
+    root = Path(session_root).resolve()
+    destination = Path(replay_dir).resolve()
+    if not destination.is_relative_to(root):
+        raise FailClosedRuntimeError("G31 execution-candidate Replay is cross-session")
+    lineage = _load_invocation_lineage(
+        invocation=deepcopy(worker_invocation_artifact),
+        worker_invocation_replay_reference=worker_invocation_replay_reference,
+    )
+    authorization_path = Path(lineage["authorization_replay_reference"])
+    reconstructed_authorization = reconstruct_execution_authorization_replay(
+        authorization_path
+    )
+    authorization = _load_wrapped_artifact(
+        authorization_path / "002_authorization_artifact_recorded.json"
+    )
+    if not all(
+        (
+            reconstructed_authorization["authorization_status"] == EXECUTION_AUTHORIZED,
+            authorization.get("authorization_status") == EXECUTION_AUTHORIZED,
+            authorization.get("authorization_id") == lineage["invocation"]["authorization_reference"],
+            authorization.get("artifact_hash") == lineage["invocation"]["authorization_hash"],
+            authorization.get("authorization_revoked") is False,
+            authorization.get("authorization_transferable") is False,
+            authorization.get("authorization_recursive") is False,
+        )
+    ):
+        raise FailClosedRuntimeError("G31 execution authorization is not reusable")
+    ready = reconstruct_confirmed_grounded_execution_ready_replay(
+        lineage["execution_ready_replay_reference"]
+    )
+    dry_run = lineage["dry_run_candidate"]
+    decision = validate_distinct_human_execution_decision(
+        dry_run.get("source_human_execution_decision_artifact"),
+        workspace=ready["authorization_scope"]["workspace_root"],
+        session_root=root,
+    )
+    reconstructed_decision = reconstruct_distinct_human_execution_decision(
+        decision["replay_reference"],
+        workspace=ready["authorization_scope"]["workspace_root"],
+        session_root=root,
+    )
+    if not all(
+        (
+            decision["decision_status"] == EXECUTION_DECISION_APPROVED,
+            reconstructed_decision["artifact_hash"] == decision["artifact_hash"],
+            authorization["human_confirmation_hash"] == decision["human_confirmation_hash"],
+            authorization["authorized_scope"] == ready["authorization_scope"],
+        )
+    ):
+        raise FailClosedRuntimeError("G31 human decision or grounded scope mismatch")
+    grounding = validate_approved_durable_work_repository_scope_grounding(
+        decision["source_authorization_review_artifact"][
+            "source_repository_scope_grounding_artifact"
+        ],
+        workspace=ready["authorization_scope"]["workspace_root"],
+    )
+    payload = grounding["source_worker_payload_binding_artifact"]
+    ppp_candidate = payload["ppp_task_package_artifact"]
+    if payload["ppp_task_package_hash"] != ppp_candidate.get("artifact_hash"):
+        raise FailClosedRuntimeError("G31 authentic PPP candidate lineage mismatch")
+    approval = {
+        "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1,
+        "approval_id": f"{lineage['invocation']['worker_invocation_id']}:CANDIDATE-APPROVAL",
+        "approval_status": APPROVED,
+        "approval_granted": True,
+        "approval_scope": APPROVAL_SCOPE,
+        "source_worker_invocation": lineage["invocation"]["worker_invocation_id"],
+        "source_worker_invocation_hash": lineage["invocation"]["artifact_hash"],
+        "source_human_execution_decision": decision["artifact_hash"],
+        "source_human_confirmation": decision["human_confirmation_hash"],
+        "source_execution_authorization": authorization["authorization_id"],
+        "source_execution_authorization_hash": authorization["artifact_hash"],
+        "derived_compatibility_projection": True,
+        "third_human_decision_recorded": False,
+        "worker_execution_allowed": False,
+        "provider_invocation_allowed": False,
+        "execution_started": False,
+        "command_executed": False,
+        "implementation_result_creation_allowed": False,
+        "repository_mutation_allowed": False,
+        "approved_by": decision["decided_by"],
+        "approved_at": decision["decided_at"],
+    }
+    approval["artifact_hash"] = replay_hash(approval)
+    capture = bridge_worker_invocation_to_execution_candidate(
+        candidate_id=f"{lineage['invocation']['worker_invocation_id']}:EXECUTION-CANDIDATE",
+        worker_invocation_artifact=lineage["invocation"],
+        worker_invocation_replay_reference=worker_invocation_replay_reference,
+        human_approval_artifact=approval,
+        requested_by=requested_by,
+        created_at=created_at,
+        replay_dir=destination,
+        ppp_candidate_artifact=ppp_candidate,
+    )
+    capture["candidate_only_human_approval_artifact"] = deepcopy(approval)
+    capture["source_human_decision_count"] = 2
+    return capture
 
 
 def reconstruct_worker_invocation_to_execution_candidate_bridge_replay(
@@ -158,10 +278,27 @@ def reconstruct_worker_invocation_to_execution_candidate_bridge_replay(
     }
 
 
+def render_worker_execution_candidate_summary(capture: dict[str, Any]) -> str:
+    """Render the candidate evidence boundary without implying execution."""
+
+    candidate = capture.get("worker_execution_candidate_artifact") or {}
+    return "\n".join(
+        (
+            "Worker Execution Candidate",
+            f"Candidate Status: {candidate.get('candidate_status')}",
+            f"Candidate Reference: {candidate.get('execution_candidate_id')}",
+            "An execution candidate was created as governance evidence only; CODEX has not started.",
+            "No adapter activated, command ran, output/result was created, or repository changed.",
+            "A later governed transition is required before execution.",
+        )
+    )
+
+
 def _load_invocation_lineage(
     *,
     invocation: dict[str, Any],
     worker_invocation_replay_reference: str,
+    ppp_candidate_artifact: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     _validate_invocation_artifact(invocation)
     invocation_path = Path(_require_string(worker_invocation_replay_reference, "worker_invocation_replay_reference"))
@@ -225,6 +362,13 @@ def _load_invocation_lineage(
         anchor=authorization_path,
     )
     dry_run_candidate = _load_wrapped_artifact(execution_ready_path / "000_execution_candidate_recorded.json")
+    if ppp_candidate_artifact is not None:
+        ppp_candidate = deepcopy(ppp_candidate_artifact)
+        _verify_artifact_hash(ppp_candidate)
+        dry_run_candidate["upstream_lineage_reference"] = _require_string(
+            ppp_candidate.get("ppp_candidate_id"), "ppp_candidate_id"
+        )
+        dry_run_candidate["upstream_lineage_hash"] = ppp_candidate["artifact_hash"]
     return {
         "invocation": deepcopy(invocation),
         "invocation_replay_reference": str(invocation_path),
