@@ -37,6 +37,7 @@ from aigol.runtime import worker_dispatch_runtime as worker_dispatch
 from aigol.runtime import worker_invocation_runtime as worker_invocation
 from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtime as worker_candidate
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
+from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -67,6 +68,7 @@ def run_reference_uhi_session(
     input_reader: Callable[[str], str] = input,
     output_writer: Callable[[str], None] = print,
     runtime_runner: RuntimeRunner | None = None,
+    worker_process_runner: Callable[..., Any] | None = None,
     artifact_references: list[Any] | tuple[Any, ...] = (),
 ) -> dict[str, Any]:
     """Run the reference UHI session.
@@ -87,6 +89,7 @@ def run_reference_uhi_session(
 
     pending_summary: dict[str, Any] | None = None
     pending_execution_review: dict[str, Any] | None = None
+    pending_activation_review: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
@@ -156,6 +159,15 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_activation_review is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_WORKER_ACTIVATION_DECISION"
+                    exit_reason = "EOF_AWAITING_WORKER_ACTIVATION_DECISION"
+                    output_writer(
+                        "Platform Core is waiting for the bounded Worker activation decision. "
+                        "Use /approve or /cancel."
+                    )
+                    transcript.append({"event": "eof_awaiting_worker_activation_decision"})
+                    break
                 if pending_execution_review is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_EXECUTION_DECISION"
                     exit_reason = "EOF_AWAITING_EXECUTION_DECISION"
@@ -200,6 +212,12 @@ def run_reference_uhi_session(
         if not normalized and not compose_buffer:
             continue
         if normalized in {"/exit", "exit", "quit"}:
+            if pending_activation_review is not None:
+                output_writer(
+                    "Platform Core is waiting for the bounded Worker activation decision. "
+                    "Use /approve or /cancel."
+                )
+                continue
             if pending_execution_review is not None:
                 output_writer(
                     "Platform Core is waiting for the distinct execution decision. "
@@ -216,6 +234,21 @@ def run_reference_uhi_session(
             output_writer(_render_help())
             continue
         if normalized == "/cancel":
+            if pending_activation_review is not None:
+                runtime_result = dict(runtime_result or {})
+                runtime_result.update({
+                    "worker_activation_decision_rejected": True,
+                    "third_human_decision_recorded": True,
+                    "worker_process_activation_allowed": False,
+                    "worker_process_started": False,
+                    "provider_invoked": False,
+                    "semantic_worker_result_captured": False,
+                    "repository_mutated": False,
+                })
+                pending_activation_review = None
+                output_writer("Bounded CODEX Worker process activation rejected; no process started.")
+                transcript.append({"event": "worker_activation_decision_rejected"})
+                continue
             if pending_execution_review is not None:
                 runtime_result = _record_contextual_execution_decision(
                     pending_execution_review=pending_execution_review,
@@ -395,6 +428,23 @@ def run_reference_uhi_session(
             )
             continue
         if normalized == "/approve":
+            if pending_activation_review is not None:
+                approval_count += 1
+                runtime_result = _record_contextual_worker_activation_decision(
+                    pending_activation_review=pending_activation_review,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    runtime_result=runtime_result,
+                    runner=worker_process_runner,
+                )
+                output_writer(worker_activation.render_codex_worker_activation_result(
+                    runtime_result["codex_worker_activation_capture"]
+                ))
+                pending_activation_review = None
+                transcript.append({"event": "worker_activation_decision_approved"})
+                continue
             if pending_execution_review is not None:
                 approval_count += 1
                 runtime_result = _record_contextual_execution_decision(
@@ -429,6 +479,17 @@ def run_reference_uhi_session(
                 if runtime_result.get("governed_worker_execution_capture"):
                     output_writer(governed_execution.render_governed_worker_execution_summary(
                         runtime_result["governed_worker_execution_capture"]
+                    ))
+                    pending_activation_review = worker_activation.prepare_codex_worker_activation_review(
+                        governed_execution_capture=runtime_result["governed_worker_execution_capture"],
+                        execution_candidate_capture=runtime_result["worker_execution_candidate_capture"],
+                        session_root=root / session,
+                        workspace=workspace_path,
+                        created_at=created,
+                    )
+                    runtime_result["codex_worker_activation_review_capture"] = pending_activation_review
+                    output_writer(worker_activation.render_codex_worker_activation_review(
+                        pending_activation_review
                     ))
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
@@ -559,6 +620,13 @@ def run_reference_uhi_session(
             )
             continue
 
+        if pending_activation_review is not None:
+            output_writer(
+                "Worker activation decision pending. Use exact /approve or /cancel; "
+                "other text does not activate CODEX."
+            )
+            transcript.append({"event": "ambiguous_worker_activation_decision_rejected"})
+            continue
         if pending_execution_review is not None:
             output_writer(
                 "Execution decision pending. Use exact /approve or /cancel; "
@@ -586,8 +654,10 @@ def run_reference_uhi_session(
         "approval_count": approval_count,
         "pending_approval": (
             pending_summary is not None or pending_execution_review is not None
+            or pending_activation_review is not None
         ),
         "pending_execution_decision": pending_execution_review is not None,
+        "pending_worker_activation_decision": pending_activation_review is not None,
         "runtime_status": runtime_status,
         "runtime_entered": runtime_result is not None,
         "runtime_result": runtime_result,
@@ -1156,6 +1226,43 @@ def _record_contextual_execution_decision(
                                             "worker_execution_replay_reference"
                                         ),
                                     })
+    return merged
+
+
+def _record_contextual_worker_activation_decision(
+    *,
+    pending_activation_review: dict[str, Any],
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    runtime_result: dict[str, Any] | None,
+    runner: Callable[..., Any] | None,
+) -> dict[str, Any]:
+    """Transport the third decision to the Worker-owned activation binding."""
+
+    merged = dict(runtime_result or {})
+    review = pending_activation_review["activation_review_artifact"]
+    capture = worker_activation.activate_bounded_codex_worker(
+        activation_review_artifact=review,
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        human_decision="APPROVE",
+        decided_by="HUMAN_OPERATOR_VIA_AICLI",
+        decided_at=created,
+        session_root=root / session,
+        workspace=workspace_path,
+        replay_dir=root / session / f"CODEX-WORKER-ACTIVATION-{review['artifact_hash'][-16:]}",
+        runner=runner,
+    )
+    merged.update({
+        "codex_worker_activation_capture": capture,
+        "runtime_replay_reference": capture["activation_replay_reference"],
+        **{
+            field: capture[field]
+            for field in worker_activation.ACTIVATION_TRUTH_FIELDS
+        },
+    })
     return merged
 
 
