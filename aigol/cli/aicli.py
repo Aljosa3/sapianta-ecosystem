@@ -38,6 +38,7 @@ from aigol.runtime import worker_invocation_runtime as worker_invocation
 from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtime as worker_candidate
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
+from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -442,6 +443,9 @@ def run_reference_uhi_session(
                 output_writer(worker_activation.render_codex_worker_activation_result(
                     runtime_result["codex_worker_activation_capture"]
                 ))
+                output_writer(codex_result.render_codex_worker_result_capture(
+                    runtime_result["codex_worker_result_capture_binding_capture"]
+                ))
                 pending_activation_review = None
                 transcript.append({"event": "worker_activation_decision_approved"})
                 continue
@@ -666,6 +670,7 @@ def run_reference_uhi_session(
         "aicli_authorizes": False,
         "aicli_executes": False,
         "aicli_owns_replay": False,
+        "aicli_accepts_result": False,
         "aicli_owns_workspace": False,
         "aicli_owns_goal_mapping": False,
         "aicli_owns_artifact_resolution": False,
@@ -1263,6 +1268,17 @@ def _record_contextual_worker_activation_decision(
             for field in worker_activation.ACTIVATION_TRUTH_FIELDS
         },
     })
+    result = codex_result.capture_successful_codex_worker_result(
+        activation_capture=capture,
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+        captured_at=created,
+        replay_dir=root / session / f"CODEX-WORKER-RESULT-CAPTURE-{capture['codex_transport_receipt']['receipt_id'][-16:]}",
+    )
+    merged["codex_worker_result_capture_binding_capture"] = result
+    merged.update({field: result[field] for field in codex_result.RESULT_TRUTH_FIELDS})
     return merged
 
 

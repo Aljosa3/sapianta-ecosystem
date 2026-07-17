@@ -56,6 +56,12 @@ from sapianta_system.runtime.codex_execution_adapter import (
     create_codex_execution_request,
     execute_governed_codex,
 )
+from sapianta_system.runtime.codex_execution_adapter.governed_codex_execution_receipt import (
+    create_codex_execution_receipt,
+)
+from sapianta_system.runtime.codex_execution_adapter.governed_codex_execution_replay import (
+    build_codex_execution_replay_identity,
+)
 from sapianta_system.runtime.codex_handoff import (
     create_governed_codex_handoff,
     create_governed_codex_handoff_request,
@@ -269,6 +275,13 @@ def activate_bounded_codex_worker(
         "result_accepted": False,
         "command_authority_broadened": False,
         "repository_mutated": mutated,
+        "process_start_count": 1 if process_started else 0,
+        "approved_workspace": str(approved_workspace),
+        "codex_execution_request_id": request["codex_execution_request_id"],
+        "codex_execution_request_replay_identity": request["replay_identity"],
+        "codex_execution_response_replay_identity": response["replay_identity"],
+        "repository_snapshot_before": before,
+        "repository_snapshot_after": after,
     }
     _persist(destination, 2, response["receipt"], activation_truth=truth)
     if mutated:
@@ -279,11 +292,103 @@ def activate_bounded_codex_worker(
         "activation_review_artifact": deepcopy(review),
         "activation_approval_artifact": deepcopy(approval),
         "execution_authority_token": deepcopy(authority),
+        "codex_execution_request": deepcopy(request),
         "codex_transport_receipt": deepcopy(response["receipt"]),
         "bounded_dispatch": deepcopy(response["dispatch"]),
         "activation_replay_reference": str(destination),
         "approved_workspace": str(approved_workspace),
         **truth,
+    }
+
+
+def reconstruct_codex_worker_activation_binding(
+    *,
+    activation_capture: dict[str, Any],
+    governed_execution_capture: dict[str, Any],
+    execution_candidate_capture: dict[str, Any],
+    session_root: str | Path,
+    workspace: str | Path,
+) -> dict[str, Any]:
+    """Revalidate one supplied activation capture against its complete G31 lineage."""
+
+    root = Path(session_root).resolve()
+    approved_workspace = Path(workspace).resolve()
+    replay_path = Path(activation_capture.get("activation_replay_reference", "")).resolve()
+    if not replay_path.is_relative_to(root):
+        raise FailClosedRuntimeError("Codex activation binding is cross-session")
+    lineage = _reconstruct_lineage(
+        governed_execution_capture, execution_candidate_capture, root, approved_workspace
+    )
+    reconstructed = reconstruct_codex_worker_activation_replay(replay_path)
+    wrappers = [
+        load_json(replay_path / f"{index:03d}_{step}.json")
+        for index, step in enumerate(REPLAY_STEPS)
+    ]
+    review, approval, receipt = (wrapper["artifact"] for wrapper in wrappers)
+    if activation_capture.get("activation_review_artifact") != review:
+        raise FailClosedRuntimeError("Codex activation review capture mismatch")
+    if activation_capture.get("activation_approval_artifact") != approval:
+        raise FailClosedRuntimeError("Codex activation approval capture mismatch")
+    if replay_hash(activation_capture.get("codex_transport_receipt")) != replay_hash(receipt):
+        raise FailClosedRuntimeError("Codex activation receipt capture mismatch")
+    _validate_activation_approval(approval, verify_execution_summary(review), lineage)
+    request = activation_capture.get("codex_execution_request")
+    authority = activation_capture.get("execution_authority_token")
+    dispatch = activation_capture.get("bounded_dispatch")
+    if not all(isinstance(value, dict) for value in (request, authority, dispatch)):
+        raise FailClosedRuntimeError("Codex activation process binding is incomplete")
+    rebuilt_request = create_codex_execution_request(
+        handoff_package=request.get("handoff_package", {}),
+        authority_token=authority,
+        now=request.get("now", ""),
+        revoked_token_ids=set(request.get("revoked_token_ids", [])),
+        codex_executable=CODEX_EXECUTABLE,
+        timeout_seconds=ACTIVATION_TIMEOUT_SECONDS,
+    )
+    if rebuilt_request != request:
+        raise FailClosedRuntimeError("Codex activation process request was substituted")
+    expected_receipt = create_codex_execution_receipt(
+        authority_token=authority,
+        execution_status=activation_capture.get("activation_status", ""),
+        validation=receipt.get("validation_outcome", {}),
+        dispatch=dispatch,
+    )
+    if expected_receipt != receipt:
+        raise FailClosedRuntimeError("Codex activation receipt or output hash mismatch")
+    response_identity = build_codex_execution_replay_identity(
+        request=request, validation=receipt["validation_outcome"], dispatch=dispatch
+    )
+    truth = wrappers[2].get("activation_truth") or {}
+    checks = (
+        reconstructed.get("replay_artifact_count") == 3,
+        truth.get("codex_execution_request_id") == request["codex_execution_request_id"],
+        truth.get("codex_execution_request_replay_identity") == request["replay_identity"],
+        truth.get("codex_execution_response_replay_identity") == response_identity,
+        truth.get("approved_workspace") == str(approved_workspace),
+        review.get("execution_scope", {}).get("workspace_root") == str(approved_workspace),
+        review.get("execution_scope", {}).get("timeout_seconds") == ACTIVATION_TIMEOUT_SECONDS,
+        receipt.get("authority_token_id") == authority.get("token_id"),
+        activation_capture.get("approved_workspace") == str(approved_workspace),
+        activation_capture.get("provider_invoked") is False,
+        activation_capture.get("repository_mutated") is False,
+        truth.get("repository_snapshot_before") == truth.get("repository_snapshot_after"),
+        truth.get("repository_snapshot_after") == _repository_snapshot(approved_workspace, root),
+    )
+    if not all(checks):
+        raise FailClosedRuntimeError("Codex activation authority, workspace, or identity mismatch")
+    validate_approved_durable_work_repository_scope_grounding(
+        lineage["grounding"], workspace=approved_workspace
+    )
+    return {
+        "lineage": lineage,
+        "activation_review_artifact": deepcopy(review),
+        "activation_approval_artifact": deepcopy(approval),
+        "transport_receipt": deepcopy(receipt),
+        "bounded_dispatch": deepcopy(dispatch),
+        "codex_execution_request": deepcopy(request),
+        "activation_replay_reference": str(replay_path),
+        "activation_replay_hash": reconstructed["replay_hash"],
+        "activation_truth": deepcopy(truth),
     }
 
 
@@ -436,6 +541,8 @@ def _reconstruct_lineage(governed: dict[str, Any], candidate_capture: dict[str, 
     original = decision["source_authorization_review_artifact"]["execution_summary_artifact"]["original_request"]
     return {
         "candidate": candidate, "governed_result": result, "grounding": grounding,
+        "invocation": deepcopy(load_json(invocation_path / "002_invocation_artifact_recorded.json")["artifact"]),
+        "invocation_replay_reference": str(invocation_path),
         "decision": decision, "original_request": _required(original, "original_request"),
         "replay_references": [str(path) for path in references] + [str(candidate_path), str(governed_path)],
     }
