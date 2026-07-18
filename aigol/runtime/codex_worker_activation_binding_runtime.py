@@ -83,7 +83,8 @@ CODEX_EXECUTABLE = "codex"
 ACTIVATION_TIMEOUT_SECONDS = 60
 CODEX_SYNTHESIS_PREFIX = "runtime validation: "
 CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT = 240
-TASK_OUTCOME_CRITERIA_VERSION = "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V1"
+LEGACY_TASK_OUTCOME_CRITERIA_VERSION = "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V1"
+TASK_OUTCOME_CRITERIA_VERSION = "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V2"
 REPLAY_STEPS = (
     "worker_activation_review_recorded",
     "worker_activation_approval_recorded",
@@ -517,11 +518,26 @@ def reconstruct_codex_worker_activation_binding(
     lineage = _reconstruct_lineage(
         governed_execution_capture, execution_candidate_capture, root, approved_workspace
     )
-    worker_contract = _grounded_worker_execution_contract(lineage)
+    captured_contract = (
+        activation_capture.get("synthesis_preflight_capture", {})
+        .get("worker_execution_contract", {})
+    )
+    captured_criteria_version = (
+        captured_contract.get("task_outcome_criteria", {})
+        .get("criteria_version")
+    )
+    worker_contract = _grounded_worker_execution_contract(
+        lineage,
+        criteria_version=captured_criteria_version,
+    )
     preflight = _verified_synthesis_preflight(
         lineage["original_request"],
         worker_execution_contract=worker_contract,
     )
+    if activation_capture.get("synthesis_preflight_capture") != preflight:
+        raise FailClosedRuntimeError(
+            "Codex activation synthesis preflight or task-outcome criteria was substituted"
+        )
     reconstructed = reconstruct_codex_worker_activation_replay(replay_path)
     wrappers = [
         load_json(replay_path / f"{index:03d}_{step}.json")
@@ -795,7 +811,11 @@ def _reconstruct_lineage(governed: dict[str, Any], candidate_capture: dict[str, 
     }
 
 
-def _grounded_worker_execution_contract(lineage: dict[str, Any]) -> dict[str, Any]:
+def _grounded_worker_execution_contract(
+    lineage: dict[str, Any],
+    *,
+    criteria_version: str | None = None,
+) -> dict[str, Any]:
     """Project the exact approved task and grounded pair into Worker instructions."""
 
     grounding = lineage.get("grounding") or {}
@@ -830,26 +850,70 @@ def _grounded_worker_execution_contract(lineage: dict[str, Any]) -> dict[str, An
         grounded_targets=targets,
         requested_output_type=output_type,
     )
+    version = criteria_version or TASK_OUTCOME_CRITERIA_VERSION
+    if version not in {
+        LEGACY_TASK_OUTCOME_CRITERIA_VERSION,
+        TASK_OUTCOME_CRITERIA_VERSION,
+    }:
+        raise FailClosedRuntimeError("Codex Worker task-outcome criteria version mismatch")
     criteria = {
-        "criteria_version": TASK_OUTCOME_CRITERIA_VERSION,
+        "criteria_version": version,
         "established_stage": "BEFORE_THIRD_HUMAN_ACTIVATION_DECISION",
         "established_before_worker_execution": True,
         "authorized_task": original,
         "authorized_task_sha256": sha256(original.encode("utf-8")).hexdigest(),
         "required_output_type": output_type,
         "grounded_targets": deepcopy(targets),
-        "requirements": [
+        "human_judgment_required": True,
+        "result_acceptance_separate": True,
+        "repository_mutation_authority": False,
+    }
+    if version == LEGACY_TASK_OUTCOME_CRITERIA_VERSION:
+        criteria["requirements"] = [
             "HUMAN_MUST_REVIEW_EXACT_OUTPUT_AGAINST_EXACT_AUTHORIZED_TASK",
             "OUTPUT_TYPE_MUST_EQUAL_PREAUTHORIZED_OUTPUT_TYPE",
             "OUTPUT_TARGETS_MUST_NOT_EXCEED_GROUNDED_TARGETS",
             "PATCH_MUST_REMAIN_UNAPPLIED_DURING_TASK_OUTCOME_REVIEW",
             "TASK_SATISFACTION_MUST_NOT_IMPLY_RESULT_ACCEPTANCE",
             "TASK_SATISFACTION_MUST_NOT_AUTHORIZE_REPOSITORY_MUTATION",
-        ],
-        "human_judgment_required": True,
-        "result_acceptance_separate": True,
-        "repository_mutation_authority": False,
-    }
+        ]
+    else:
+        criteria.update({
+            "requirements": [
+                "OUTPUT_MUST_BE_SYNTACTICALLY_VALID_UNIFIED_DIFF",
+                "AT_LEAST_ONE_GROUNDED_IMPLEMENTATION_TARGET_MUST_CHANGE",
+                "EVERY_CHANGED_PATH_MUST_BE_WITHIN_GROUNDED_TARGET_SCOPE",
+                "NO_UNGROUNDED_PATH_MAY_CHANGE",
+                "REQUESTED_SEMANTIC_CHANGE_MUST_BE_REPRESENTED",
+                "PATCH_MUST_REMAIN_UNAPPLIED_DURING_TASK_OUTCOME_REVIEW",
+                "TASK_OUTCOME_REVIEW_MUST_NOT_CLAIM_TESTS_PASSED",
+                "TECHNICAL_QUALITY_REQUIRES_LATER_APPLICATION_AND_TEST_VALIDATION",
+                "TASK_SATISFACTION_MUST_NOT_IMPLY_RESULT_ACCEPTANCE",
+                "TASK_SATISFACTION_MUST_NOT_AUTHORIZE_REPOSITORY_MUTATION",
+            ],
+            "grounded_target_semantics": {
+                "inspection_targets": deepcopy(targets),
+                "allowed_change_targets": deepcopy(targets),
+                "every_grounded_target_must_appear_in_diff": False,
+                "every_grounded_target_must_change": False,
+                "unchanged_grounded_test_target_allowed": True,
+            },
+            "inspection_evidence_contract": {
+                "unified_diff_proves_file_inspection": False,
+                "affirmative_inspection_proof_required_for_task_outcome": False,
+                "structured_inspection_evidence_available": False,
+                "evidence_gap": (
+                    "No canonical structured Worker file-inspection evidence is "
+                    "currently bound to the task-outcome review."
+                ),
+            },
+            "test_validation_contract": {
+                "tests_may_be_claimed_passed_before_patch_application": False,
+                "tests_run_against_applied_patch": False,
+                "later_patch_application_required": True,
+                "later_test_validation_required": True,
+            },
+        })
     criteria["criteria_hash"] = replay_hash(criteria)
     contract["task_outcome_criteria"] = criteria
     return contract

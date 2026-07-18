@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from hashlib import sha256
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+import re
 from typing import Any
 
 from aigol.runtime import worker_result_capture_runtime as canonical_capture
@@ -225,6 +226,13 @@ def record_codex_task_outcome_human_decision(
         workspace=workspace,
     )
     approval_required = review["approval_required"]
+    blockers = review["review_packet"].get(
+        "deterministic_satisfaction_blockers", []
+    )
+    if outcome == TASK_OUTCOME_SATISFIED and blockers:
+        raise FailClosedRuntimeError(
+            "task-outcome satisfaction failed closed: " + "; ".join(blockers)
+        )
     _reject_repeated_decision(root, approval_required["artifact_hash"])
     human = record_human_decision(
         human_decision_id=(
@@ -339,7 +347,7 @@ def render_codex_task_outcome_review(review_capture: dict[str, Any]) -> str:
     targets = packet.get("grounded_targets") or {}
     criteria = packet.get("pre_execution_task_outcome_criteria") or {}
     observations = packet.get("task_outcome_observations") or {}
-    return "\n".join((
+    lines = [
         "Captured CODEX Task-Outcome Human Review",
         f"Approval Scope: {APPROVAL_SCOPE}",
         f"Original Task: {packet.get('original_contextual_request')}",
@@ -354,7 +362,15 @@ def render_codex_task_outcome_review(review_capture: dict[str, Any]) -> str:
         text,
         "Available Decisions: TASK_OUTCOME_SATISFIED, TASK_OUTCOME_UNSATISFIED, REWORK_REQUESTED",
         "AiCLI displays only; it does not review, accept, authorize mutation, or execute rework.",
-    ))
+    ]
+    if "task_outcome_satisfaction_eligible" in packet:
+        lines.extend((
+            "Deterministic Satisfaction Eligible: "
+            f"{packet['task_outcome_satisfaction_eligible']}",
+            "Deterministic Satisfaction Blockers: "
+            f"{packet['deterministic_satisfaction_blockers']}",
+        ))
+    return "\n".join(lines)
 
 
 def render_codex_task_outcome_decision(decision_capture: dict[str, Any]) -> str:
@@ -537,6 +553,15 @@ def _review_packet(
         "exact_worker_output_sha256": sources["output_sha256"],
     }
     review_identity = replay_hash(identity_seed)
+    observations = _output_observations(
+        sources["output_text"],
+        allowed_targets={
+            grounded_targets["implementation_target"],
+            grounded_targets["focused_test_target"],
+        },
+        implementation_targets={grounded_targets["implementation_target"]},
+        criteria=sources["criteria"],
+    )
     packet = {
         "artifact_type": TASK_OUTCOME_REVIEW_PACKET_ARTIFACT_V1,
         "runtime_version": RUNTIME_VERSION,
@@ -597,13 +622,7 @@ def _review_packet(
                 "replay_artifact_count"
             ],
         },
-        "task_outcome_observations": _output_observations(
-            sources["output_text"],
-            allowed_targets={
-                grounded_targets["implementation_target"],
-                grounded_targets["focused_test_target"],
-            },
-        ),
+        "task_outcome_observations": observations,
         "patch_applied": False,
         "tests_run_against_applied_patch": False,
         "missing_acceptance_evidence": [
@@ -623,6 +642,12 @@ def _review_packet(
         "replay_reference": replay_reference,
         "replay_visible": True,
     }
+    if sources["criteria"].get("criteria_version") != (
+        "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V1"
+    ):
+        blockers = _deterministic_satisfaction_blockers(observations)
+        packet["deterministic_satisfaction_blockers"] = blockers
+        packet["task_outcome_satisfaction_eligible"] = not blockers
     packet["artifact_hash"] = replay_hash(packet)
     return packet
 
@@ -733,7 +758,82 @@ def _validate_human_decision(
         )
 
 
-def _output_observations(output: str, *, allowed_targets: set[str]) -> dict[str, Any]:
+def _output_observations(
+    output: str,
+    *,
+    allowed_targets: set[str],
+    implementation_targets: set[str],
+    criteria: dict[str, Any],
+) -> dict[str, Any]:
+    if criteria.get("criteria_version") == "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V1":
+        return _legacy_output_observations(output, allowed_targets=allowed_targets)
+
+    parsed = _parse_unified_diff(output)
+    changed_paths = set(parsed["changed_paths"])
+    removed = parsed["removed_lines"]
+    added = parsed["added_lines"]
+    semantic = _explicit_semantic_change(criteria.get("authorized_task", ""))
+    semantic_present = (
+        any(semantic[0] in line for line in removed)
+        and any(semantic[1] in line for line in added)
+        if semantic is not None
+        else None
+    )
+    return {
+        "grounded_filenames": sorted(allowed_targets),
+        "grounded_filenames_referenced_in_output": sorted(
+            target for target in allowed_targets if target in output
+        ),
+        "both_grounded_filenames_referenced_in_output": all(
+            target in output for target in allowed_targets
+        ),
+        "unified_diff_markers_present": parsed["markers_present"],
+        "unified_diff_syntactically_valid": parsed["valid"],
+        "unified_diff_errors": parsed["errors"],
+        "diff_targets": sorted(changed_paths),
+        "changed_paths": sorted(changed_paths),
+        "changed_grounded_implementation_targets": sorted(
+            changed_paths.intersection(implementation_targets)
+        ),
+        "at_least_one_grounded_implementation_target_changed": bool(
+            changed_paths.intersection(implementation_targets)
+        ),
+        "all_changed_paths_grounded": changed_paths.issubset(allowed_targets),
+        "no_ungrounded_path_changed": changed_paths.issubset(allowed_targets),
+        "additional_target_present": not changed_paths.issubset(allowed_targets),
+        "path_traversal_present": parsed["path_traversal_present"],
+        "absolute_path_present": parsed["absolute_path_present"],
+        "renamed_or_substituted_target_present": parsed[
+            "renamed_or_substituted_target_present"
+        ],
+        "fake_or_empty_diff_section_present": parsed[
+            "fake_or_empty_diff_section_present"
+        ],
+        "removed_lines": removed,
+        "added_lines": added,
+        "requested_semantic_change": (
+            {"removed_term": semantic[0], "added_term": semantic[1]}
+            if semantic is not None
+            else None
+        ),
+        "requested_semantic_change_machine_check_available": semantic is not None,
+        "requested_semantic_change_present": semantic_present,
+        "status_to_summary_change_present": any(
+            "Status:" in line for line in removed
+        ) and any("Summary:" in line for line in added),
+        "tests_passed_claim_present": _tests_passed_claim_present(output),
+        "patch_applied_claim_present": _patch_applied_claim_present(output),
+        "grounded_file_inspection_proven": False,
+        "grounded_file_inspection_evidence_gap": (
+            "A unified diff proves changed paths, not which unchanged files were read."
+        ),
+        "downstream_task_description_only": not parsed["markers_present"],
+    }
+
+
+def _legacy_output_observations(
+    output: str, *, allowed_targets: set[str]
+) -> dict[str, Any]:
     lines = output.splitlines()
     old_headers = [line[4:] for line in lines if line.startswith("--- ")]
     new_headers = [line[4:] for line in lines if line.startswith("+++ ")]
@@ -766,6 +866,212 @@ def _output_observations(output: str, *, allowed_targets: set[str]) -> dict[str,
         ) and any("Summary:" in line for line in added),
         "downstream_task_description_only": not bool(old_headers and new_headers),
     }
+
+
+def _parse_unified_diff(output: str) -> dict[str, Any]:
+    lines = output.splitlines()
+    errors: list[str] = []
+    changed_paths: list[str] = []
+    removed_lines: list[str] = []
+    added_lines: list[str] = []
+    path_traversal_present = False
+    absolute_path_present = False
+    renamed_or_substituted_target_present = False
+    fake_or_empty_diff_section_present = False
+    index = 0
+    section_count = 0
+
+    while index < len(lines):
+        git_header_paths: tuple[str | None, str | None] | None = None
+        if lines[index].startswith("diff --git "):
+            parts = lines[index].split(" ")
+            if len(parts) != 4:
+                errors.append("malformed diff --git header")
+                break
+            git_old_path, git_old_error = _canonical_diff_path(parts[2])
+            git_new_path, git_new_error = _canonical_diff_path(parts[3])
+            for error in (git_old_error, git_new_error):
+                if error:
+                    errors.append(error)
+                path_traversal_present |= "traversal" in error
+                absolute_path_present |= "absolute" in error
+            git_header_paths = (git_old_path, git_new_path)
+            if git_old_path != git_new_path:
+                renamed_or_substituted_target_present = True
+                errors.append("renamed or substituted diff --git target")
+            index += 1
+            if index < len(lines) and lines[index].startswith("index "):
+                index += 1
+        if index >= len(lines) or not lines[index].startswith("--- "):
+            errors.append("content outside a unified-diff file section")
+            break
+        old_raw = _header_path(lines[index][4:])
+        index += 1
+        if index >= len(lines) or not lines[index].startswith("+++ "):
+            errors.append("missing unified-diff new-file header")
+            break
+        new_raw = _header_path(lines[index][4:])
+        index += 1
+        old_path, old_error = _canonical_diff_path(old_raw)
+        new_path, new_error = _canonical_diff_path(new_raw)
+        for raw, error in ((old_raw, old_error), (new_raw, new_error)):
+            if error:
+                errors.append(error)
+            path_traversal_present |= "traversal" in error
+            absolute_path_present |= "absolute" in error
+        if old_path is None or new_path is None:
+            continue
+        if old_path != new_path:
+            renamed_or_substituted_target_present = True
+            errors.append("renamed or substituted unified-diff target")
+        if git_header_paths is not None and git_header_paths != (old_path, new_path):
+            renamed_or_substituted_target_present = True
+            errors.append("diff --git and unified-diff targets do not match")
+        target = new_path
+        section_count += 1
+        section_hunks = 0
+        section_changes = 0
+        while index < len(lines) and not lines[index].startswith(("--- ", "diff --git ")):
+            match = re.fullmatch(
+                r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?",
+                lines[index],
+            )
+            if match is None:
+                errors.append("malformed unified-diff hunk header")
+                index += 1
+                while index < len(lines) and not lines[index].startswith(
+                    ("--- ", "diff --git ")
+                ):
+                    index += 1
+                break
+            section_hunks += 1
+            expected_old = int(match.group(2) or "1")
+            expected_new = int(match.group(4) or "1")
+            actual_old = actual_new = 0
+            index += 1
+            while index < len(lines) and not lines[index].startswith(
+                ("@@ ", "--- ", "diff --git ")
+            ):
+                line = lines[index]
+                if line.startswith("\\ No newline at end of file"):
+                    index += 1
+                    continue
+                if not line or line[0] not in {" ", "+", "-"}:
+                    errors.append("malformed unified-diff hunk line")
+                    index += 1
+                    continue
+                if line[0] in {" ", "-"}:
+                    actual_old += 1
+                if line[0] in {" ", "+"}:
+                    actual_new += 1
+                if line[0] == "-":
+                    removed_lines.append(line[1:])
+                    section_changes += 1
+                elif line[0] == "+":
+                    added_lines.append(line[1:])
+                    section_changes += 1
+                index += 1
+            if actual_old != expected_old or actual_new != expected_new:
+                errors.append("unified-diff hunk line counts do not match header")
+        if section_hunks == 0 or section_changes == 0:
+            fake_or_empty_diff_section_present = True
+            errors.append("empty or change-free unified-diff file section")
+        if target not in changed_paths:
+            changed_paths.append(target)
+
+    if section_count == 0:
+        errors.append("unified diff contains no changed file section")
+    return {
+        "valid": not errors,
+        "errors": list(dict.fromkeys(errors)),
+        "markers_present": any(line.startswith("--- ") for line in lines)
+        and any(line.startswith("+++ ") for line in lines),
+        "changed_paths": changed_paths,
+        "removed_lines": removed_lines,
+        "added_lines": added_lines,
+        "path_traversal_present": path_traversal_present,
+        "absolute_path_present": absolute_path_present,
+        "renamed_or_substituted_target_present": (
+            renamed_or_substituted_target_present
+        ),
+        "fake_or_empty_diff_section_present": fake_or_empty_diff_section_present,
+    }
+
+
+def _header_path(value: str) -> str:
+    return value.split("\t", 1)[0]
+
+
+def _canonical_diff_path(value: str) -> tuple[str | None, str]:
+    if not value or value == "/dev/null":
+        return None, "created or deleted paths are outside this grounded repair contract"
+    if value.startswith("/"):
+        return None, "absolute unified-diff path"
+    candidate = value[2:] if value.startswith(("a/", "b/")) else value
+    if "\\" in candidate:
+        return None, "path traversal or non-POSIX unified-diff path"
+    path = PurePosixPath(candidate)
+    if not candidate or candidate.startswith("/"):
+        return None, "absolute unified-diff path"
+    if any(part in {"", ".", ".."} for part in path.parts):
+        return None, "path traversal in unified-diff target"
+    return path.as_posix(), ""
+
+
+def _explicit_semantic_change(value: Any) -> tuple[str, str] | None:
+    if not isinstance(value, str):
+        return None
+    token = r"[A-Za-z0-9_.]+:?"
+    patterns = (
+        rf"(?P<old>{token})\s*(?:->|-to-)\s*(?P<new>{token})",
+        rf"\b(?:change|changing|replace|replacing)\s+"
+        rf"(?P<old>{token})\s+(?:to|with)\s+(?P<new>{token})",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, value, flags=re.IGNORECASE)
+        if match is not None:
+            return match.group("old"), match.group("new")
+    return None
+
+
+def _tests_passed_claim_present(output: str) -> bool:
+    lowered = output.casefold()
+    return any(
+        phrase in lowered
+        for phrase in ("tests passed", "all tests pass", "test suite passed")
+    )
+
+
+def _patch_applied_claim_present(output: str) -> bool:
+    lowered = output.casefold()
+    return any(
+        phrase in lowered
+        for phrase in ("patch applied", "changes applied", "files modified")
+    )
+
+
+def _deterministic_satisfaction_blockers(
+    observations: dict[str, Any],
+) -> list[str]:
+    blockers = []
+    checks = (
+        ("unified_diff_syntactically_valid", "unified diff is malformed"),
+        (
+            "at_least_one_grounded_implementation_target_changed",
+            "no grounded implementation target changed",
+        ),
+        ("all_changed_paths_grounded", "an ungrounded path changed"),
+    )
+    blockers.extend(message for field, message in checks if observations.get(field) is not True)
+    if observations.get("requested_semantic_change_machine_check_available") is True and (
+        observations.get("requested_semantic_change_present") is not True
+    ):
+        blockers.append("requested semantic change is absent")
+    if observations.get("tests_passed_claim_present") is True:
+        blockers.append("output claims tests passed before patch application")
+    if observations.get("patch_applied_claim_present") is True:
+        blockers.append("output claims the patch was applied")
+    return blockers
 
 
 def _load_review_wrappers(replay_path: Path) -> list[dict[str, Any]]:
