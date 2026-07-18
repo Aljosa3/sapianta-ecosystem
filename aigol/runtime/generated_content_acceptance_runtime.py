@@ -8,17 +8,21 @@ from typing import Any
 from aigol.runtime.generated_content_validation_runtime import (
     GENERATED_CONTENT_VALIDATED,
     GENERATED_CONTENT_VALIDATION_ARTIFACT_V1,
+    GENERATED_CONTENT_VALIDATION_ARTIFACT_V2,
     verify_generated_content_validation_artifact,
 )
 from aigol.runtime.generated_test_validation_runtime import (
     GENERATED_TEST_VALIDATED,
     GENERATED_TEST_VALIDATION_ARTIFACT_V1,
+    GENERATED_TEST_VALIDATION_ARTIFACT_V2,
     verify_generated_test_validation_artifact,
 )
 from aigol.runtime.implementation_manifest_runtime import (
     CREATE_ONLY,
     IMPLEMENTATION_MANIFEST_ARTIFACT_V1,
+    IMPLEMENTATION_MANIFEST_ARTIFACT_V2,
     IMPLEMENTATION_MANIFEST_CREATED,
+    REPLACE_CONTENT,
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import replay_hash
@@ -26,6 +30,10 @@ from aigol.runtime.transport.serialization import replay_hash
 
 AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_VERSION = "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_V1"
 GENERATED_CONTENT_ACCEPTANCE_ARTIFACT_V1 = "GENERATED_CONTENT_ACCEPTANCE_ARTIFACT_V1"
+GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2 = (
+    "GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2"
+)
+ACCEPTANCE_PREREQUISITES_SATISFIED = "ACCEPTANCE_PREREQUISITES_SATISFIED"
 AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_STATUS = "CERTIFIED"
 GENERATED_CONTENT_ACCEPTED = "GENERATED_CONTENT_ACCEPTED"
 FAILED_CLOSED = "FAILED_CLOSED"
@@ -59,6 +67,95 @@ AUTHORITY_FLAGS = {
     "authorizes_governance_mutation": False,
     "authorizes_replay_mutation": False,
 }
+
+
+def bind_generated_content_acceptance_prerequisites(
+    *,
+    prerequisite_id: str,
+    implementation_manifest_artifact: dict[str, Any],
+    generated_content_validation_artifact: dict[str, Any],
+    generated_test_validation_artifact: dict[str, Any],
+    created_at: str,
+) -> dict[str, Any]:
+    """Bind V2 replacement prerequisites without performing human acceptance."""
+
+    try:
+        manifest = _validate_manifest(implementation_manifest_artifact)
+        if manifest.get("artifact_type") != IMPLEMENTATION_MANIFEST_ARTIFACT_V2:
+            raise FailClosedRuntimeError(
+                "generated content acceptance prerequisites failed closed: V2 replacement manifest required"
+            )
+        content = _validate_content_validation(generated_content_validation_artifact, manifest)
+        tests = _validate_test_validation(generated_test_validation_artifact, manifest)
+        status = ACCEPTANCE_PREREQUISITES_SATISFIED
+        failure_reason = None
+    except Exception as exc:
+        manifest = _manifest_stub(implementation_manifest_artifact)
+        content = _validation_stub(generated_content_validation_artifact, "generated_content_validation_hash")
+        tests = _validation_stub(generated_test_validation_artifact, "generated_test_validation_hash")
+        status = FAILED_CLOSED
+        failure_reason = _failure_reason(exc)
+    artifact = {
+        "artifact_type": GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2,
+        "runtime_version": "AIGOL_GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_RUNTIME_V2",
+        "prerequisite_id": _safe_string(prerequisite_id, "UNKNOWN"),
+        "created_at": _safe_string(created_at, "UNKNOWN"),
+        "prerequisite_status": status,
+        "implementation_manifest_reference": manifest["manifest_id"],
+        "implementation_manifest_artifact_hash": manifest["artifact_hash"],
+        "implementation_manifest_hash": manifest["implementation_manifest_hash"],
+        "generated_content_validation_reference": content["validation_id"],
+        "generated_content_validation_artifact_hash": content["artifact_hash"],
+        "generated_content_validation_hash": content["generated_content_validation_hash"],
+        "generated_test_validation_reference": tests["validation_id"],
+        "generated_test_validation_artifact_hash": tests["artifact_hash"],
+        "generated_test_validation_hash": tests["generated_test_validation_hash"],
+        "canonical_chain_id": manifest["canonical_chain_id"],
+        "implementation_bundle_id": manifest["implementation_bundle_id"],
+        "operation_mode": manifest["operation_mode"],
+        "replacement_manifest_created": status == ACCEPTANCE_PREREQUISITES_SATISFIED,
+        "content_validation_passed": status == ACCEPTANCE_PREREQUISITES_SATISFIED,
+        "test_validation_passed": status == ACCEPTANCE_PREREQUISITES_SATISFIED,
+        "acceptance_prerequisites_satisfied": status == ACCEPTANCE_PREREQUISITES_SATISFIED,
+        "ready_for_acceptance": status == ACCEPTANCE_PREREQUISITES_SATISFIED,
+        "result_accepted": False,
+        "main_repository_mutated": False,
+        "mutation_authorized": False,
+        "commit_created": False,
+        "deployed": False,
+        "released": False,
+        "acceptance_owner_called": False,
+        "read_only": True,
+        "replay_visible": True,
+        "authority_flags": deepcopy(AUTHORITY_FLAGS),
+        "failure_reason": failure_reason,
+    }
+    artifact["prerequisite_hash"] = _compute_prerequisite_hash(artifact)
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return {
+        "acceptance_prerequisite_artifact": deepcopy(artifact),
+        "prerequisite_status": status,
+        "acceptance_prerequisites_satisfied": artifact["acceptance_prerequisites_satisfied"],
+        "ready_for_acceptance": artifact["ready_for_acceptance"],
+        "result_accepted": False,
+        "main_repository_mutated": False,
+        "mutation_authorized": False,
+        "failure_reason": failure_reason,
+    }
+
+
+def verify_generated_content_acceptance_prerequisite_artifact(artifact: dict[str, Any]) -> None:
+    if not isinstance(artifact, dict) or artifact.get("artifact_type") != (
+        GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2
+    ):
+        raise FailClosedRuntimeError("generated content acceptance prerequisite artifact type mismatch")
+    if artifact.get("prerequisite_hash") != _compute_prerequisite_hash(artifact):
+        raise FailClosedRuntimeError("generated content acceptance prerequisite hash mismatch")
+    actual = artifact.get("artifact_hash")
+    value = deepcopy(artifact)
+    value.pop("artifact_hash", None)
+    if actual != replay_hash(value):
+        raise FailClosedRuntimeError("generated content acceptance prerequisite artifact hash mismatch")
 
 
 def accept_generated_content(
@@ -181,12 +278,16 @@ def _validate_manifest(value: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise FailClosedRuntimeError("generated content acceptance failed closed: manifest must be a JSON object")
     manifest = deepcopy(value)
-    if manifest.get("artifact_type") != IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+    artifact_type = manifest.get("artifact_type")
+    if artifact_type not in {IMPLEMENTATION_MANIFEST_ARTIFACT_V1, IMPLEMENTATION_MANIFEST_ARTIFACT_V2}:
         raise FailClosedRuntimeError("generated content acceptance failed closed: invalid manifest artifact type")
     if manifest.get("manifest_status") != IMPLEMENTATION_MANIFEST_CREATED:
         raise FailClosedRuntimeError("generated content acceptance failed closed: manifest is not created")
-    if manifest.get("operation_mode") != CREATE_ONLY:
-        raise FailClosedRuntimeError("generated content acceptance failed closed: manifest must be CREATE_ONLY")
+    expected_operation = CREATE_ONLY if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1 else REPLACE_CONTENT
+    if manifest.get("operation_mode") != expected_operation:
+        if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+            raise FailClosedRuntimeError("generated content acceptance failed closed: manifest must be CREATE_ONLY")
+        raise FailClosedRuntimeError("generated content acceptance failed closed: manifest must be REPLACE_CONTENT")
     _verify_artifact_hash(manifest, "manifest")
     if manifest.get("implementation_manifest_hash") != _compute_manifest_hash(manifest):
         raise FailClosedRuntimeError("generated content acceptance failed closed: manifest hash mismatch")
@@ -198,7 +299,12 @@ def _validate_content_validation(artifact: dict[str, Any], manifest: dict[str, A
         raise FailClosedRuntimeError("generated content acceptance failed closed: content validation missing")
     validation = deepcopy(artifact)
     verify_generated_content_validation_artifact(validation)
-    if validation.get("artifact_type") != GENERATED_CONTENT_VALIDATION_ARTIFACT_V1:
+    expected_type = (
+        GENERATED_CONTENT_VALIDATION_ARTIFACT_V2
+        if manifest["operation_mode"] == REPLACE_CONTENT
+        else GENERATED_CONTENT_VALIDATION_ARTIFACT_V1
+    )
+    if validation.get("artifact_type") != expected_type:
         raise FailClosedRuntimeError("generated content acceptance failed closed: invalid content validation artifact")
     if validation.get("validation_status") != GENERATED_CONTENT_VALIDATED:
         raise FailClosedRuntimeError("generated content acceptance failed closed: content validation not successful")
@@ -211,7 +317,12 @@ def _validate_test_validation(artifact: dict[str, Any], manifest: dict[str, Any]
         raise FailClosedRuntimeError("generated content acceptance failed closed: test validation missing")
     validation = deepcopy(artifact)
     verify_generated_test_validation_artifact(validation)
-    if validation.get("artifact_type") != GENERATED_TEST_VALIDATION_ARTIFACT_V1:
+    expected_type = (
+        GENERATED_TEST_VALIDATION_ARTIFACT_V2
+        if manifest["operation_mode"] == REPLACE_CONTENT
+        else GENERATED_TEST_VALIDATION_ARTIFACT_V1
+    )
+    if validation.get("artifact_type") != expected_type:
         raise FailClosedRuntimeError("generated content acceptance failed closed: invalid test validation artifact")
     if validation.get("validation_status") != GENERATED_TEST_VALIDATED:
         raise FailClosedRuntimeError("generated content acceptance failed closed: test validation not successful")
@@ -230,6 +341,8 @@ def _require_manifest_binding(validation: dict[str, Any], manifest: dict[str, An
         raise FailClosedRuntimeError(f"generated content acceptance failed closed: {label} chain mismatch")
     if validation.get("implementation_bundle_id") != manifest["implementation_bundle_id"]:
         raise FailClosedRuntimeError(f"generated content acceptance failed closed: {label} bundle mismatch")
+    if validation.get("operation_mode") != manifest["operation_mode"]:
+        raise FailClosedRuntimeError(f"generated content acceptance failed closed: {label} operation mismatch")
 
 
 def _validate_human_acceptance(evidence: dict[str, Any]) -> dict[str, str]:
@@ -356,7 +469,19 @@ def _compute_acceptance_hash(artifact: dict[str, Any]) -> str:
     return replay_hash(value)
 
 
+def _compute_prerequisite_hash(artifact: dict[str, Any]) -> str:
+    value = deepcopy(artifact)
+    value.pop("artifact_hash", None)
+    value.pop("prerequisite_hash", None)
+    return replay_hash(value)
+
+
 def _compute_manifest_hash(manifest: dict[str, Any]) -> str:
+    if manifest.get("artifact_type") == IMPLEMENTATION_MANIFEST_ARTIFACT_V2:
+        value = deepcopy(manifest)
+        value.pop("implementation_manifest_hash", None)
+        value.pop("artifact_hash", None)
+        return replay_hash(value)
     return replay_hash(
         {
             "manifest_id": manifest["manifest_id"],
@@ -434,8 +559,12 @@ __all__ = [
     "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_STATUS",
     "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_VERSION",
     "FAILED_CLOSED",
+    "ACCEPTANCE_PREREQUISITES_SATISFIED",
     "GENERATED_CONTENT_ACCEPTANCE_ARTIFACT_V1",
+    "GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2",
     "GENERATED_CONTENT_ACCEPTED",
     "accept_generated_content",
+    "bind_generated_content_acceptance_prerequisites",
     "verify_generated_content_acceptance_artifact",
+    "verify_generated_content_acceptance_prerequisite_artifact",
 ]

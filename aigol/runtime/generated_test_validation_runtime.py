@@ -3,20 +3,26 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import PurePosixPath
 from typing import Any
 
 from aigol.runtime.implementation_manifest_runtime import (
     CREATE_ONLY,
     IMPLEMENTATION_MANIFEST_ARTIFACT_V1,
+    IMPLEMENTATION_MANIFEST_ARTIFACT_V2,
     IMPLEMENTATION_MANIFEST_CREATED,
+    REPLACE_CONTENT,
+    VALIDATE_EXISTING,
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import replay_hash
 
 
 AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION = "AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_V1"
+AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION_V2 = "AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_V2"
 GENERATED_TEST_VALIDATION_ARTIFACT_V1 = "GENERATED_TEST_VALIDATION_ARTIFACT_V1"
+GENERATED_TEST_VALIDATION_ARTIFACT_V2 = "GENERATED_TEST_VALIDATION_ARTIFACT_V2"
 AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_STATUS = "CERTIFIED"
 GENERATED_TEST_VALIDATED = "GENERATED_TEST_VALIDATED"
 FAILED_CLOSED = "FAILED_CLOSED"
@@ -82,8 +88,16 @@ def validate_generated_tests(
         failure_reason = _failure_reason(exc)
 
     artifact = {
-        "artifact_type": GENERATED_TEST_VALIDATION_ARTIFACT_V1,
-        "runtime_version": AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION,
+        "artifact_type": (
+            GENERATED_TEST_VALIDATION_ARTIFACT_V2
+            if manifest["operation_mode"] == REPLACE_CONTENT
+            else GENERATED_TEST_VALIDATION_ARTIFACT_V1
+        ),
+        "runtime_version": (
+            AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION_V2
+            if manifest["operation_mode"] == REPLACE_CONTENT
+            else AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION
+        ),
         "validation_id": _safe_string(validation_id, "UNKNOWN"),
         "created_at": _safe_string(created_at, "UNKNOWN"),
         "validation_status": status,
@@ -139,7 +153,10 @@ def verify_generated_test_validation_artifact(artifact: dict[str, Any]) -> None:
 
     if not isinstance(artifact, dict):
         raise FailClosedRuntimeError("generated test validation artifact must be a JSON object")
-    if artifact.get("artifact_type") != GENERATED_TEST_VALIDATION_ARTIFACT_V1:
+    if artifact.get("artifact_type") not in {
+        GENERATED_TEST_VALIDATION_ARTIFACT_V1,
+        GENERATED_TEST_VALIDATION_ARTIFACT_V2,
+    }:
         raise FailClosedRuntimeError("generated test validation artifact type mismatch")
     actual_validation_hash = artifact.get("generated_test_validation_hash")
     if actual_validation_hash != _compute_validation_hash(artifact):
@@ -155,12 +172,16 @@ def _validate_manifest(value: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise FailClosedRuntimeError("generated test validation failed closed: manifest must be a JSON object")
     manifest = deepcopy(value)
-    if manifest.get("artifact_type") != IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+    artifact_type = manifest.get("artifact_type")
+    if artifact_type not in {IMPLEMENTATION_MANIFEST_ARTIFACT_V1, IMPLEMENTATION_MANIFEST_ARTIFACT_V2}:
         raise FailClosedRuntimeError("generated test validation failed closed: invalid manifest artifact type")
     if manifest.get("manifest_status") != IMPLEMENTATION_MANIFEST_CREATED:
         raise FailClosedRuntimeError("generated test validation failed closed: manifest is not created")
-    if manifest.get("operation_mode") != CREATE_ONLY:
-        raise FailClosedRuntimeError("generated test validation failed closed: manifest must be CREATE_ONLY")
+    expected_operation = CREATE_ONLY if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1 else REPLACE_CONTENT
+    if manifest.get("operation_mode") != expected_operation:
+        if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+            raise FailClosedRuntimeError("generated test validation failed closed: manifest must be CREATE_ONLY")
+        raise FailClosedRuntimeError("generated test validation failed closed: manifest must be REPLACE_CONTENT")
     _verify_manifest_artifact_hash(manifest)
     if manifest.get("implementation_manifest_hash") != _compute_manifest_hash(manifest):
         raise FailClosedRuntimeError("generated test validation failed closed: manifest hash mismatch")
@@ -225,6 +246,8 @@ def _validate_test_artifact(
         raise FailClosedRuntimeError("generated test validation failed closed: test artifact does not match manifest")
     target_path = _normalize_test_path(test.get("target_path"))
     artifact_type = _require_allowed_test_artifact_type(test.get("artifact_type"))
+    if test.get("operation") == VALIDATE_EXISTING:
+        return _validate_existing_test_artifact(test, target_path, artifact_type, implementation_files)
     if test.get("operation") != CREATE_ONLY:
         raise FailClosedRuntimeError("generated test validation failed closed: test operation must be CREATE_ONLY")
     content = _require_content(test.get("content"))
@@ -274,8 +297,79 @@ def _validate_test_artifact(
     }
 
 
-def _validation_checks(manifest: dict[str, Any], test_results: list[dict[str, Any]]) -> dict[str, bool]:
+def _validate_existing_test_artifact(
+    test: dict[str, Any], target_path: str, artifact_type: str,
+    implementation_files: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    if test.get("existing_target") is not True or test.get("file_type") != "REGULAR_FILE":
+        raise FailClosedRuntimeError("generated test validation failed closed: existing regular test required")
+    if not isinstance(test.get("file_mode"), int):
+        raise FailClosedRuntimeError("generated test validation failed closed: test file mode invalid")
+    content = _require_text(test.get("content"), "test content")
+    content_sha256 = _exact_sha256(test.get("content_sha256"), "test content_sha256")
+    if content_sha256 != _byte_sha256(content):
+        raise FailClosedRuntimeError("generated test validation failed closed: test byte hash mismatch")
+    if test.get("content_size_bytes") != len(content.encode("utf-8")):
+        raise FailClosedRuntimeError("generated test validation failed closed: test content size mismatch")
+    linked_file_ids = _string_list(test.get("tests_file_entries"), "tests_file_entries", allow_empty=False)
+    if any(file_id not in implementation_files for file_id in linked_file_ids):
+        raise FailClosedRuntimeError("generated test validation failed closed: unknown replacement file linkage")
+    linked_targets = sorted(implementation_files[file_id]["target_path"] for file_id in linked_file_ids)
+    if test.get("expected_coverage_targets") != linked_targets:
+        raise FailClosedRuntimeError("generated test validation failed closed: replacement coverage linkage mismatch")
+    command = _command_list(test.get("validation_command"))
+    if command != ["python", "-m", "pytest", target_path]:
+        raise FailClosedRuntimeError("generated test validation failed closed: grounded test command mismatch")
+    result = test.get("validation_result_artifact")
+    if not isinstance(result, dict):
+        raise FailClosedRuntimeError("generated test validation failed closed: validation result missing")
+    _verify_embedded_artifact(result)
+    if not all((
+        result.get("artifact_hash") == test.get("validation_result_hash"),
+        result.get("result_id") == test.get("validation_result_reference"),
+        result.get("command_status") == "VALIDATION_COMMAND_COMPLETED",
+        result.get("exit_code") == 0,
+        result.get("command") == command,
+        result.get("shell_execution_used") is False,
+        result.get("provider_invoked") is False,
+        result.get("worker_invoked") is False,
+        result.get("repair_invoked") is False,
+        test.get("validation_status") == "VALIDATION_COMMAND_COMPLETED",
+        test.get("exit_code") == 0,
+        test.get("shell_execution_used") is False,
+    )):
+        raise FailClosedRuntimeError("generated test validation failed closed: focused test result unsuccessful")
+    _exact_sha256(test.get("validation_replay_hash"), "validation_replay_hash")
+    _require_string(test.get("validation_replay_reference"), "validation_replay_reference")
+    if test.get("test_entry_hash") != replay_hash(_without_hash(test, "test_entry_hash")):
+        raise FailClosedRuntimeError("generated test validation failed closed: test entry hash mismatch")
+    _require_false_authority_flags(test.get("authority_flags"))
     return {
+        "test_entry_id": test["test_entry_id"],
+        "target_path": target_path,
+        "artifact_type": artifact_type,
+        "operation": VALIDATE_EXISTING,
+        "content_sha256": content_sha256,
+        "test_entry_hash": test["test_entry_hash"],
+        "tests_file_entries": linked_file_ids,
+        "linked_implementation_targets": linked_targets,
+        "validation_result_reference": test["validation_result_reference"],
+        "validation_result_hash": test["validation_result_hash"],
+        "validation_replay_reference": test["validation_replay_reference"],
+        "validation_replay_hash": test["validation_replay_hash"],
+        "test_artifact_present": True,
+        "test_hash_valid": True,
+        "test_path_valid": True,
+        "test_artifact_type_valid": True,
+        "manifest_to_test_consistency_valid": True,
+        "implementation_to_test_linkage_valid": True,
+        "execution_receipt_valid": True,
+        "authority_preserved": True,
+    }
+
+
+def _validation_checks(manifest: dict[str, Any], test_results: list[dict[str, Any]]) -> dict[str, bool]:
+    checks = {
         "test_artifact_presence_valid": len(test_results) == manifest["test_count"],
         "test_artifact_hashes_valid": all(result["test_hash_valid"] for result in test_results),
         "test_artifact_paths_valid": all(result["test_path_valid"] for result in test_results),
@@ -292,6 +386,11 @@ def _validation_checks(manifest: dict[str, Any], test_results: list[dict[str, An
         "approval_creation_absent": True,
         "execution_authorization_absent": True,
     }
+    if manifest["operation_mode"] == REPLACE_CONTENT:
+        checks["existing_test_execution_receipts_valid"] = all(
+            result.get("execution_receipt_valid") is True for result in test_results
+        )
+    return checks
 
 
 def _failed_checks() -> dict[str, bool]:
@@ -338,6 +437,11 @@ def _compute_validation_hash(artifact: dict[str, Any]) -> str:
 
 
 def _compute_manifest_hash(manifest: dict[str, Any]) -> str:
+    if manifest.get("artifact_type") == IMPLEMENTATION_MANIFEST_ARTIFACT_V2:
+        value = deepcopy(manifest)
+        value.pop("implementation_manifest_hash", None)
+        value.pop("artifact_hash", None)
+        return replay_hash(value)
     return replay_hash(
         {
             "manifest_id": manifest["manifest_id"],
@@ -438,6 +542,40 @@ def _require_content(value: Any) -> str:
     return value
 
 
+def _require_text(value: Any, label: str) -> str:
+    if not isinstance(value, str):
+        raise FailClosedRuntimeError(f"generated test validation failed closed: {label} missing")
+    return value
+
+
+def _exact_sha256(value: Any, label: str) -> str:
+    text = _require_string(value, label)
+    digest = text.removeprefix("sha256:")
+    if not text.startswith("sha256:") or len(digest) != 64 or any(
+        character not in "0123456789abcdef" for character in digest
+    ):
+        raise FailClosedRuntimeError(f"generated test validation failed closed: {label} invalid")
+    return text
+
+
+def _byte_sha256(value: str) -> str:
+    return "sha256:" + sha256(value.encode("utf-8")).hexdigest()
+
+
+def _command_list(value: Any) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise FailClosedRuntimeError("generated test validation failed closed: validation command required")
+    return [_require_string(item, "validation command") for item in value]
+
+
+def _verify_embedded_artifact(value: dict[str, Any]) -> None:
+    actual = value.get("artifact_hash")
+    candidate = deepcopy(value)
+    candidate.pop("artifact_hash", None)
+    if actual != replay_hash(candidate):
+        raise FailClosedRuntimeError("generated test validation failed closed: validation result hash mismatch")
+
+
 def _safe_string(value: Any, fallback: str) -> str:
     return value.strip() if isinstance(value, str) and value.strip() else fallback
 
@@ -450,9 +588,11 @@ def _failure_reason(exc: Exception) -> str:
 __all__ = [
     "AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_STATUS",
     "AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION",
+    "AIGOL_GENERATED_TEST_VALIDATION_RUNTIME_VERSION_V2",
     "FAILED_CLOSED",
     "GENERATED_TEST_VALIDATED",
     "GENERATED_TEST_VALIDATION_ARTIFACT_V1",
+    "GENERATED_TEST_VALIDATION_ARTIFACT_V2",
     "validate_generated_tests",
     "verify_generated_test_validation_artifact",
 ]

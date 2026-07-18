@@ -3,20 +3,25 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import PurePosixPath
 from typing import Any
 
 from aigol.runtime.implementation_manifest_runtime import (
     CREATE_ONLY,
     IMPLEMENTATION_MANIFEST_ARTIFACT_V1,
+    IMPLEMENTATION_MANIFEST_ARTIFACT_V2,
     IMPLEMENTATION_MANIFEST_CREATED,
+    REPLACE_CONTENT,
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import replay_hash
 
 
 AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION = "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_V1"
+AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION_V2 = "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_V2"
 GENERATED_CONTENT_VALIDATION_ARTIFACT_V1 = "GENERATED_CONTENT_VALIDATION_ARTIFACT_V1"
+GENERATED_CONTENT_VALIDATION_ARTIFACT_V2 = "GENERATED_CONTENT_VALIDATION_ARTIFACT_V2"
 AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_STATUS = "CERTIFIED"
 GENERATED_CONTENT_VALIDATED = "GENERATED_CONTENT_VALIDATED"
 FAILED_CLOSED = "FAILED_CLOSED"
@@ -77,7 +82,10 @@ def validate_generated_content(
     try:
         manifest = _validate_manifest(implementation_manifest_artifact)
         file_results = [_validate_file_entry(entry) for entry in manifest["file_entries"]]
-        test_results = [_validate_test_entry(entry, file_results) for entry in manifest["test_entries"]]
+        test_results = (
+            [] if manifest["operation_mode"] == REPLACE_CONTENT
+            else [_validate_test_entry(entry, file_results) for entry in manifest["test_entries"]]
+        )
         _validate_bundle_consistency(manifest, file_results, test_results)
         checks = _validation_checks(manifest, file_results, test_results)
         status = GENERATED_CONTENT_VALIDATED
@@ -91,8 +99,16 @@ def validate_generated_content(
         failure_reason = _failure_reason(exc)
 
     artifact = {
-        "artifact_type": GENERATED_CONTENT_VALIDATION_ARTIFACT_V1,
-        "runtime_version": AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION,
+        "artifact_type": (
+            GENERATED_CONTENT_VALIDATION_ARTIFACT_V2
+            if manifest["operation_mode"] == REPLACE_CONTENT
+            else GENERATED_CONTENT_VALIDATION_ARTIFACT_V1
+        ),
+        "runtime_version": (
+            AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION_V2
+            if manifest["operation_mode"] == REPLACE_CONTENT
+            else AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION
+        ),
         "validation_id": _safe_string(validation_id, "UNKNOWN"),
         "created_at": _safe_string(created_at, "UNKNOWN"),
         "validation_status": status,
@@ -151,7 +167,10 @@ def verify_generated_content_validation_artifact(artifact: dict[str, Any]) -> No
 
     if not isinstance(artifact, dict):
         raise FailClosedRuntimeError("generated content validation artifact must be a JSON object")
-    if artifact.get("artifact_type") != GENERATED_CONTENT_VALIDATION_ARTIFACT_V1:
+    if artifact.get("artifact_type") not in {
+        GENERATED_CONTENT_VALIDATION_ARTIFACT_V1,
+        GENERATED_CONTENT_VALIDATION_ARTIFACT_V2,
+    }:
         raise FailClosedRuntimeError("generated content validation artifact type mismatch")
     actual_validation_hash = artifact.get("generated_content_validation_hash")
     if actual_validation_hash != _compute_validation_hash(artifact):
@@ -167,12 +186,16 @@ def _validate_manifest(value: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise FailClosedRuntimeError("generated content validation failed closed: manifest must be a JSON object")
     manifest = deepcopy(value)
-    if manifest.get("artifact_type") != IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+    artifact_type = manifest.get("artifact_type")
+    if artifact_type not in {IMPLEMENTATION_MANIFEST_ARTIFACT_V1, IMPLEMENTATION_MANIFEST_ARTIFACT_V2}:
         raise FailClosedRuntimeError("generated content validation failed closed: invalid manifest artifact type")
     if manifest.get("manifest_status") != IMPLEMENTATION_MANIFEST_CREATED:
         raise FailClosedRuntimeError("generated content validation failed closed: manifest is not created")
-    if manifest.get("operation_mode") != CREATE_ONLY:
-        raise FailClosedRuntimeError("generated content validation failed closed: manifest must be CREATE_ONLY")
+    expected_operation = CREATE_ONLY if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1 else REPLACE_CONTENT
+    if manifest.get("operation_mode") != expected_operation:
+        if artifact_type == IMPLEMENTATION_MANIFEST_ARTIFACT_V1:
+            raise FailClosedRuntimeError("generated content validation failed closed: manifest must be CREATE_ONLY")
+        raise FailClosedRuntimeError("generated content validation failed closed: manifest must be REPLACE_CONTENT")
     _verify_manifest_artifact_hash(manifest)
     if manifest.get("implementation_manifest_hash") != _compute_manifest_hash(manifest):
         raise FailClosedRuntimeError("generated content validation failed closed: manifest hash mismatch")
@@ -180,6 +203,10 @@ def _validate_manifest(value: dict[str, Any]) -> dict[str, Any]:
         raise FailClosedRuntimeError("generated content validation failed closed: file entries are required")
     if not isinstance(manifest.get("test_entries"), list):
         raise FailClosedRuntimeError("generated content validation failed closed: test entries must be a list")
+    if expected_operation == REPLACE_CONTENT:
+        patch = _require_content(manifest.get("exact_patch"))
+        if _exact_sha256(manifest.get("patch_sha256"), "patch_sha256") != _byte_sha256(patch):
+            raise FailClosedRuntimeError("generated content validation failed closed: patch hash mismatch")
     return manifest
 
 
@@ -188,6 +215,8 @@ def _validate_file_entry(entry: dict[str, Any]) -> dict[str, Any]:
         raise FailClosedRuntimeError("generated content validation failed closed: file entry must be a JSON object")
     normalized_path = _normalize_target_path(entry.get("target_path"))
     artifact_type = _require_allowed_artifact_type(entry.get("artifact_type"))
+    if entry.get("operation") == REPLACE_CONTENT:
+        return _validate_replacement_file_entry(entry, normalized_path, artifact_type)
     if entry.get("operation") != CREATE_ONLY:
         raise FailClosedRuntimeError("generated content validation failed closed: file operation must be CREATE_ONLY")
     if entry.get("preflight_target_state") != "MUST_NOT_EXIST":
@@ -212,6 +241,57 @@ def _validate_file_entry(entry: dict[str, Any]) -> dict[str, Any]:
         "path_allowed": True,
         "artifact_type_allowed": True,
         "create_only_valid": True,
+        "content_hash_valid": True,
+        "authority_preserved": True,
+    }
+
+
+def _validate_replacement_file_entry(
+    entry: dict[str, Any], normalized_path: str, artifact_type: str,
+) -> dict[str, Any]:
+    if entry.get("existing_target") is not True or entry.get("preflight_target_state") != "MUST_EXIST_REGULAR_FILE":
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement existing target required")
+    if entry.get("original_target_path") != normalized_path or entry.get("resulting_target_path") != normalized_path:
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement path identity changed")
+    preimage = _require_text(entry.get("preimage_content"), "preimage_content")
+    postimage = _require_text(entry.get("postimage_content"), "postimage_content")
+    preimage_hash = _exact_sha256(entry.get("preimage_sha256"), "preimage_sha256")
+    postimage_hash = _exact_sha256(entry.get("postimage_sha256"), "postimage_sha256")
+    if preimage_hash != _byte_sha256(preimage) or postimage_hash != _byte_sha256(postimage):
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement byte hash mismatch")
+    _exact_sha256(entry.get("patch_sha256"), "patch_sha256")
+    if entry.get("expected_postimage_size_bytes") != len(postimage.encode("utf-8")):
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement postimage size mismatch")
+    if not all((
+        entry.get("path_identity_unchanged") is True,
+        entry.get("file_type") == "REGULAR_FILE",
+        entry.get("postimage_file_type") == "REGULAR_FILE",
+        entry.get("file_mode") == entry.get("postimage_file_mode"),
+        isinstance(entry.get("file_mode"), int),
+    )):
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement type or mode changed")
+    for flag in (
+        "create_allowed", "delete_allowed", "rename_allowed", "binary_patch_allowed",
+        "symlink_allowed", "submodule_allowed", "path_traversal_allowed",
+    ):
+        if entry.get(flag) is not False:
+            raise FailClosedRuntimeError(f"generated content validation failed closed: {flag} must be false")
+    if entry.get("file_entry_hash") != replay_hash(_without_hash(entry, "file_entry_hash")):
+        raise FailClosedRuntimeError("generated content validation failed closed: file entry hash mismatch")
+    _require_false_authority_flags(entry.get("authority_flags"))
+    return {
+        "entry_id": _require_string(entry.get("file_entry_id"), "file_entry_id"),
+        "target_path": normalized_path,
+        "artifact_type": artifact_type,
+        "operation": REPLACE_CONTENT,
+        "preimage_sha256": preimage_hash,
+        "postimage_sha256": postimage_hash,
+        "patch_sha256": entry["patch_sha256"],
+        "entry_hash": entry["file_entry_hash"],
+        "expected_postimage_size_bytes": entry["expected_postimage_size_bytes"],
+        "path_allowed": True,
+        "artifact_type_allowed": True,
+        "replacement_constraints_valid": True,
         "content_hash_valid": True,
         "authority_preserved": True,
     }
@@ -265,13 +345,17 @@ def _validate_bundle_consistency(
 ) -> None:
     if manifest.get("file_count") != len(file_results):
         raise FailClosedRuntimeError("generated content validation failed closed: file count mismatch")
-    if manifest.get("test_count") != len(test_results):
+    if manifest.get("operation_mode") == CREATE_ONLY and manifest.get("test_count") != len(test_results):
         raise FailClosedRuntimeError("generated content validation failed closed: test count mismatch")
     paths = [result["target_path"] for result in file_results + test_results]
     if len(paths) != len(set(paths)):
         raise FailClosedRuntimeError("generated content validation failed closed: duplicate target path")
     if not _string_list(manifest.get("validation_requirements"), "validation_requirements", allow_empty=False):
         raise FailClosedRuntimeError("generated content validation failed closed: validation requirements missing")
+    if manifest.get("operation_mode") == REPLACE_CONTENT and any(
+        result.get("patch_sha256") != manifest.get("patch_sha256") for result in file_results
+    ):
+        raise FailClosedRuntimeError("generated content validation failed closed: replacement patch binding mismatch")
     _require_false_authority_flags(manifest.get("authority_flags"))
     if any(operation not in manifest.get("forbidden_operations", []) for operation in FORBIDDEN_OPERATIONS):
         raise FailClosedRuntimeError("generated content validation failed closed: forbidden operations incomplete")
@@ -282,22 +366,34 @@ def _validation_checks(
     file_results: list[dict[str, Any]],
     test_results: list[dict[str, Any]],
 ) -> dict[str, bool]:
-    return {
+    checks = {
         "manifest_consistency_valid": manifest["artifact_type"] == IMPLEMENTATION_MANIFEST_ARTIFACT_V1,
         "manifest_hash_valid": manifest["implementation_manifest_hash"] == _compute_manifest_hash(manifest),
         "file_content_hashes_valid": all(result["content_hash_valid"] for result in file_results),
         "test_content_hashes_valid": all(result["content_hash_valid"] for result in test_results),
         "artifact_types_valid": all(result["artifact_type_allowed"] for result in file_results + test_results),
         "allowed_paths_valid": all(result["path_allowed"] for result in file_results + test_results),
-        "create_only_constraints_valid": all(result["create_only_valid"] for result in file_results + test_results),
         "bundle_consistency_valid": manifest["file_count"] == len(file_results)
-        and manifest["test_count"] == len(test_results),
+        and (
+            manifest["operation_mode"] == REPLACE_CONTENT
+            or manifest["test_count"] == len(test_results)
+        ),
         "filesystem_mutation_absent": True,
         "provider_invocation_absent": True,
         "worker_invocation_absent": True,
         "approval_creation_absent": True,
         "execution_authorization_absent": True,
     }
+    if manifest["operation_mode"] == REPLACE_CONTENT:
+        checks["manifest_consistency_valid"] = manifest["artifact_type"] == IMPLEMENTATION_MANIFEST_ARTIFACT_V2
+        checks["replacement_constraints_valid"] = all(
+            result["replacement_constraints_valid"] for result in file_results
+        )
+    else:
+        checks["create_only_constraints_valid"] = all(
+            result["create_only_valid"] for result in file_results + test_results
+        )
+    return checks
 
 
 def _failed_checks() -> dict[str, bool]:
@@ -346,6 +442,11 @@ def _compute_validation_hash(artifact: dict[str, Any]) -> str:
 
 
 def _compute_manifest_hash(manifest: dict[str, Any]) -> str:
+    if manifest.get("artifact_type") == IMPLEMENTATION_MANIFEST_ARTIFACT_V2:
+        value = deepcopy(manifest)
+        value.pop("implementation_manifest_hash", None)
+        value.pop("artifact_hash", None)
+        return replay_hash(value)
     return replay_hash(
         {
             "manifest_id": manifest["manifest_id"],
@@ -446,6 +547,26 @@ def _require_content(value: Any) -> str:
     return value
 
 
+def _require_text(value: Any, label: str) -> str:
+    if not isinstance(value, str):
+        raise FailClosedRuntimeError(f"generated content validation failed closed: {label} missing")
+    return value
+
+
+def _exact_sha256(value: Any, label: str) -> str:
+    text = _require_string(value, label)
+    digest = text.removeprefix("sha256:")
+    if not text.startswith("sha256:") or len(digest) != 64 or any(
+        character not in "0123456789abcdef" for character in digest
+    ):
+        raise FailClosedRuntimeError(f"generated content validation failed closed: {label} invalid")
+    return text
+
+
+def _byte_sha256(value: str) -> str:
+    return "sha256:" + sha256(value.encode("utf-8")).hexdigest()
+
+
 def _safe_string(value: Any, fallback: str) -> str:
     return value.strip() if isinstance(value, str) and value.strip() else fallback
 
@@ -458,9 +579,11 @@ def _failure_reason(exc: Exception) -> str:
 __all__ = [
     "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_STATUS",
     "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION",
+    "AIGOL_GENERATED_CONTENT_VALIDATION_RUNTIME_VERSION_V2",
     "FAILED_CLOSED",
     "GENERATED_CONTENT_VALIDATED",
     "GENERATED_CONTENT_VALIDATION_ARTIFACT_V1",
+    "GENERATED_CONTENT_VALIDATION_ARTIFACT_V2",
     "validate_generated_content",
     "verify_generated_content_validation_artifact",
 ]
