@@ -41,6 +41,7 @@ from aigol.runtime import governed_worker_execution_runtime as governed_executio
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
+from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_review
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -87,15 +88,17 @@ def run_reference_uhi_session(
     workspace_path = str(Path(workspace))
     output_writer(
         "aicli reference UHI session started. Type a request, /attach <reference>, "
-        "/approve, /cancel, or /exit."
+        "/approve, /satisfied, /unsatisfied, /rework, /cancel, or /exit."
     )
 
     pending_summary: dict[str, Any] | None = None
     pending_execution_review: dict[str, Any] | None = None
     pending_activation_review: dict[str, Any] | None = None
+    pending_task_outcome_review: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
+    human_task_outcome_decision_count = 0
     runtime_result: dict[str, Any] | None = None
     runtime_status = REFERENCE_UHI_NOT_REQUIRED
     session_status = "REFERENCE_UHI_SESSION_ACTIVE"
@@ -165,6 +168,15 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_task_outcome_review is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_TASK_OUTCOME_DECISION"
+                    exit_reason = "EOF_AWAITING_TASK_OUTCOME_DECISION"
+                    output_writer(
+                        "Platform Core is waiting for the task-outcome human decision. "
+                        "Use /satisfied, /unsatisfied, or /rework."
+                    )
+                    transcript.append({"event": "eof_awaiting_task_outcome_decision"})
+                    break
                 if pending_activation_review is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_WORKER_ACTIVATION_DECISION"
                     exit_reason = "EOF_AWAITING_WORKER_ACTIVATION_DECISION"
@@ -218,6 +230,12 @@ def run_reference_uhi_session(
         if not normalized and not compose_buffer:
             continue
         if normalized in {"/exit", "exit", "quit"}:
+            if pending_task_outcome_review is not None:
+                output_writer(
+                    "Platform Core is waiting for the task-outcome human decision. "
+                    "Use /satisfied, /unsatisfied, or /rework."
+                )
+                continue
             if pending_activation_review is not None:
                 output_writer(
                     "Platform Core is waiting for the bounded Worker activation decision. "
@@ -240,6 +258,13 @@ def run_reference_uhi_session(
             output_writer(_render_help())
             continue
         if normalized == "/cancel":
+            if pending_task_outcome_review is not None:
+                output_writer(
+                    "Task-outcome review is pending. Use /unsatisfied or /rework to "
+                    "record an explicit human outcome; /cancel records no decision."
+                )
+                transcript.append({"event": "task_outcome_cancel_rejected"})
+                continue
             if pending_activation_review is not None:
                 runtime_result = dict(runtime_result or {})
                 runtime_result.update({
@@ -437,6 +462,37 @@ def run_reference_uhi_session(
                 pending_summary=pending_summary,
             )
             continue
+        if normalized in {"/satisfied", "/unsatisfied", "/rework"}:
+            if pending_task_outcome_review is None:
+                output_writer("No captured Worker task outcome is pending human review.")
+                transcript.append({"event": "task_outcome_decision_without_review"})
+                continue
+            outcome = {
+                "/satisfied": codex_task_review.TASK_OUTCOME_SATISFIED,
+                "/unsatisfied": codex_task_review.TASK_OUTCOME_UNSATISFIED,
+                "/rework": codex_task_review.REWORK_REQUESTED,
+            }[normalized]
+            runtime_result = _record_contextual_task_outcome_decision(
+                pending_task_outcome_review=pending_task_outcome_review,
+                task_outcome_decision=outcome,
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                runtime_result=runtime_result,
+            )
+            output_writer(codex_task_review.render_codex_task_outcome_decision(
+                runtime_result["codex_task_outcome_human_decision_capture"]
+            ))
+            pending_task_outcome_review = None
+            human_task_outcome_decision_count += 1
+            transcript.append({
+                "event": "task_outcome_human_decision_recorded",
+                "task_outcome_decision": outcome,
+            })
+            session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+            exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
+            break
         if normalized == "/approve":
             if pending_activation_review is not None:
                 approval_count += 1
@@ -458,6 +514,50 @@ def run_reference_uhi_session(
                 output_writer(codex_validation.render_codex_worker_semantic_validation(
                     runtime_result["codex_worker_semantic_validation_binding_capture"]
                 ))
+                validation = runtime_result[
+                    "codex_worker_semantic_validation_binding_capture"
+                ]
+                if validation.get("g31_semantic_validation_status") == (
+                    codex_validation.SUCCESS
+                ):
+                    try:
+                        runtime_result = _prepare_contextual_task_outcome_review(
+                            session=session,
+                            root=root,
+                            workspace_path=workspace_path,
+                            created=created,
+                            runtime_result=runtime_result,
+                        )
+                    except FailClosedRuntimeError as exc:
+                        runtime_result["task_outcome_review_blocked"] = True
+                        runtime_result["task_outcome_review_blocker"] = str(exc)
+                        output_writer(
+                            "Exact-byte task-outcome review failed closed: "
+                            f"{exc}"
+                        )
+                    else:
+                        pending_task_outcome_review = runtime_result[
+                            "codex_task_outcome_review_capture"
+                        ]
+                        output_writer(codex_task_review.render_codex_task_outcome_review(
+                            pending_task_outcome_review
+                        ))
+                        output_writer(_render_task_outcome_review_lineage(
+                            pending_task_outcome_review
+                        ))
+                        output_writer(
+                            "Exact-byte task-outcome decision pending. Use /satisfied, "
+                            "/unsatisfied, or /rework. No decision accepts or applies the patch."
+                        )
+                else:
+                    runtime_result["task_outcome_review_blocked"] = True
+                    runtime_result["task_outcome_review_blocker"] = (
+                        "G31 governance validation did not return RESULT_VALIDATED"
+                    )
+                    output_writer(
+                        "Task-outcome review was not requested because G31 governance "
+                        "validation did not return RESULT_VALIDATED."
+                    )
                 pending_activation_review = None
                 transcript.append({"event": "worker_activation_decision_approved"})
                 continue
@@ -648,6 +748,13 @@ def run_reference_uhi_session(
             )
             continue
 
+        if pending_task_outcome_review is not None:
+            output_writer(
+                "Task-outcome human decision pending. Use exact /satisfied, "
+                "/unsatisfied, or /rework."
+            )
+            transcript.append({"event": "ambiguous_task_outcome_decision_rejected"})
+            continue
         if pending_activation_review is not None:
             output_writer(
                 "Worker activation decision pending. Use exact /approve or /cancel; "
@@ -683,9 +790,16 @@ def run_reference_uhi_session(
         "pending_approval": (
             pending_summary is not None or pending_execution_review is not None
             or pending_activation_review is not None
+            or pending_task_outcome_review is not None
         ),
         "pending_execution_decision": pending_execution_review is not None,
         "pending_worker_activation_decision": pending_activation_review is not None,
+        "pending_task_outcome_decision": pending_task_outcome_review is not None,
+        "human_execution_decision_count": approval_count,
+        "human_task_outcome_decision_count": human_task_outcome_decision_count,
+        "total_human_decision_count": (
+            approval_count + human_task_outcome_decision_count
+        ),
         "runtime_status": runtime_status,
         "runtime_entered": runtime_result is not None,
         "runtime_result": runtime_result,
@@ -1351,6 +1465,162 @@ def _record_contextual_worker_activation_decision(
     return merged
 
 
+def _prepare_contextual_task_outcome_review(
+    *,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    runtime_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Bind exact in-memory output to one review-only human continuation."""
+
+    merged = dict(runtime_result)
+    validation = merged["codex_worker_semantic_validation_binding_capture"]
+    validation_artifact = validation.get("worker_result_validation_artifact") or {}
+    review = codex_task_review.prepare_codex_task_outcome_review(
+        result_capture_binding_capture=merged[
+            "codex_worker_result_capture_binding_capture"
+        ],
+        validation_binding_capture=validation,
+        activation_capture=merged["codex_worker_activation_capture"],
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+        prepared_at=created,
+        replay_dir=(
+            root / session / "CODEX-TASK-OUTCOME-REVIEW-"
+            f"{validation_artifact.get('artifact_hash', '')[-16:]}"
+        ),
+    )
+    reconstruction = codex_task_review.reconstruct_codex_task_outcome_review(
+        review_capture=review,
+        result_capture_binding_capture=merged[
+            "codex_worker_result_capture_binding_capture"
+        ],
+        validation_binding_capture=validation,
+        activation_capture=merged["codex_worker_activation_capture"],
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+    )
+    merged.update({
+        "codex_task_outcome_review_capture": review,
+        "codex_task_outcome_review_reconstruction": reconstruction,
+        "task_outcome_review_status": review["review_status"],
+        "task_outcome_review_replay_created": True,
+        "task_outcome_review_count": 1,
+        "human_task_outcome_decision_recorded": False,
+    })
+    return merged
+
+
+def _record_contextual_task_outcome_decision(
+    *,
+    pending_task_outcome_review: dict[str, Any],
+    task_outcome_decision: str,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    runtime_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Record one explicit review outcome without acceptance or execution."""
+
+    merged = dict(runtime_result or {})
+    review_packet = pending_task_outcome_review["task_outcome_review_packet_artifact"]
+    decision = codex_task_review.record_codex_task_outcome_human_decision(
+        review_capture=pending_task_outcome_review,
+        task_outcome_decision=task_outcome_decision,
+        decision_reason=(
+            "Human operator selected the explicit task-outcome decision after "
+            "AiCLI displayed the exact captured Worker output and bound lineage."
+        ),
+        decided_by="HUMAN_OPERATOR_VIA_AICLI",
+        decided_at=created,
+        result_capture_binding_capture=merged[
+            "codex_worker_result_capture_binding_capture"
+        ],
+        validation_binding_capture=merged[
+            "codex_worker_semantic_validation_binding_capture"
+        ],
+        activation_capture=merged["codex_worker_activation_capture"],
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+        human_decision_replay_dir=(
+            root / session / "CODEX-TASK-OUTCOME-HUMAN-DECISION-"
+            f"{review_packet['artifact_hash'][-16:]}"
+        ),
+    )
+    reconstruction = codex_task_review.reconstruct_codex_task_outcome_human_decision(
+        decision_capture=decision,
+        review_capture=pending_task_outcome_review,
+        result_capture_binding_capture=merged[
+            "codex_worker_result_capture_binding_capture"
+        ],
+        validation_binding_capture=merged[
+            "codex_worker_semantic_validation_binding_capture"
+        ],
+        activation_capture=merged["codex_worker_activation_capture"],
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session,
+        workspace=workspace_path,
+    )
+    merged.update({
+        "codex_task_outcome_human_decision_capture": decision,
+        "codex_task_outcome_human_decision_reconstruction": reconstruction,
+        "task_outcome_review_status": task_outcome_decision,
+        "task_outcome_review_replay_created": True,
+        "task_outcome_review_count": 1,
+        "human_task_outcome_decision_recorded": True,
+        **{
+            field: decision[field]
+            for field in (
+                "task_outcome_satisfaction_evaluated",
+                "task_outcome_satisfied",
+                "rework_requested",
+                "result_accepted",
+                "repository_mutation_authorized",
+                "repository_mutated",
+                "automatic_retry_performed",
+                "additional_worker_process_started",
+                "commit_created",
+                "deployed",
+                "released",
+            )
+        },
+    })
+    return merged
+
+
+def _render_task_outcome_review_lineage(review: dict[str, Any]) -> str:
+    """Render identities required for a human decision; acquire no authority."""
+
+    packet = review["task_outcome_review_packet_artifact"]
+    capture = packet["capture_binding"]
+    capture_artifact = capture["artifact"]
+    validation = packet["governance_validation_binding"]
+    validation_artifact = validation["artifact"]
+    return "\n".join((
+        "Exact Task-Outcome Review Lineage",
+        f"Capture Identity: {capture_artifact['worker_result_capture_id']}",
+        f"Capture Artifact Hash: {capture_artifact['artifact_hash']}",
+        f"Capture Replay Hash: {capture['replay_hash']}",
+        f"Governance Validation Identity: {validation_artifact['worker_result_validation_id']}",
+        f"Governance Validation Artifact Hash: {validation_artifact['artifact_hash']}",
+        f"Governance Validation Status: {validation['status']}",
+        f"Governance Validation Meaning: {validation['canonical_meaning']}",
+        f"Patch Applied: {packet['patch_applied']}",
+        "Tests Run Against Applied Patch: "
+        f"{packet['tests_run_against_applied_patch']}",
+    ))
+
+
 def _read_clarification_reply(
     *,
     input_reader: Callable[[str], str],
@@ -1898,6 +2168,9 @@ def _render_help() -> str:
             ". - submit the composed request",
             "/attach <reference> - attach one opaque artifact to the active clarification",
             "/approve - approve the pending proposal or distinct execution decision",
+            "/satisfied - record that the captured Worker output satisfies its task",
+            "/unsatisfied - record that the captured Worker output does not satisfy its task",
+            "/rework - request future governed rework without starting another Worker",
             "/cancel - clear pending input or reject the distinct execution decision",
             "/exit - close the reference UHI session",
         ]
