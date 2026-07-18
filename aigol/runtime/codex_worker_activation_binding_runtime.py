@@ -68,6 +68,7 @@ from sapianta_system.runtime.codex_handoff import (
 )
 from sapianta_system.runtime.codex_synthesis import (
     create_governed_codex_task_request,
+    create_governed_codex_worker_execution_contract,
     synthesize_governed_codex_task,
 )
 from sapianta_system.runtime.execution_gate import (
@@ -76,7 +77,7 @@ from sapianta_system.runtime.execution_gate import (
 )
 
 
-RUNTIME_VERSION = "G31_17B_CODEX_WORKER_ACTIVATION_BINDING_V1"
+RUNTIME_VERSION = "G31_21B_CODEX_WORKER_PROMPT_FIDELITY_BINDING_V1"
 ACTIVATION_APPROVAL_SCOPE = "RUN_BOUNDED_CODEX_WORKER_PROCESS_ONLY"
 CODEX_EXECUTABLE = "codex"
 ACTIVATION_TIMEOUT_SECONDS = 60
@@ -100,15 +101,26 @@ ACTIVATION_TRUTH_FIELDS = (
     "worker_process_started", "subprocess_invoked", "fixed_codex_exec_command_used",
     "transport_receipt_created", "provider_invoked", "semantic_worker_result_captured",
     "result_accepted", "command_authority_broadened", "repository_mutated",
+    "worker_prompt_fidelity_verified", "authorized_task_is_primary",
+    "grounded_implementation_target_present", "grounded_test_target_present",
+    "requested_output_type", "file_mutation_allowed",
 )
 
 
-def preflight_codex_worker_synthesis(original_request: str) -> dict[str, Any]:
-    """Use the canonical synthesis owner before any G31 human decision."""
+def preflight_codex_worker_synthesis(
+    original_request: str,
+    *,
+    worker_execution_contract: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Use the canonical synthesis owner for admission or grounded activation."""
 
     raw = _required(original_request, "original_request")
     final = f"{CODEX_SYNTHESIS_PREFIX}{raw}"
-    synthesis_request = create_governed_codex_task_request(natural_language=final)
+    contract = deepcopy(worker_execution_contract)
+    synthesis_request = create_governed_codex_task_request(
+        natural_language=final,
+        worker_execution_contract=contract,
+    )
     synthesis = synthesize_governed_codex_task(synthesis_request)
     within_bound = len(final) <= CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT
     handoff = (
@@ -121,7 +133,35 @@ def preflight_codex_worker_synthesis(original_request: str) -> dict[str, Any]:
         if synthesis.get("status") == "SYNTHESIZED"
         else None
     )
-    ready = within_bound and isinstance(handoff, dict) and handoff.get("status") == "HANDOFF_READY"
+    prompt = synthesis.get("codex_prompt_preview") if isinstance(synthesis, dict) else None
+    prompt_hash = (
+        sha256(prompt.encode("utf-8")).hexdigest()
+        if isinstance(prompt, str) and prompt
+        else None
+    )
+    grounded_targets = contract.get("grounded_targets", []) if isinstance(contract, dict) else []
+    target_roles = {
+        item.get("target_role") for item in grounded_targets if isinstance(item, dict)
+    }
+    faithful = bool(
+        isinstance(contract, dict)
+        and synthesis.get("worker_execution_contract") == contract
+        and synthesis.get("bounded_prompt_sha256") == prompt_hash
+        and "WORKER ROLE:" in str(prompt)
+        and "PRIMARY AUTHORIZED TASK:" in str(prompt)
+        and "GROUNDED TARGETS:" in str(prompt)
+        and "REQUIRED OUTPUT:" in str(prompt)
+        and "Prepare a bounded runtime validation task." not in str(prompt)
+        and "Preview-only downstream Codex task formation" not in str(prompt)
+    )
+    ready = bool(
+        within_bound
+        and isinstance(handoff, dict)
+        and handoff.get("status") == "HANDOFF_READY"
+        and handoff.get("codex_prompt") == prompt
+        and handoff.get("bounded_prompt_sha256") == prompt_hash
+        and (contract is None or faithful)
+    )
     value = {
         "runtime_version": RUNTIME_VERSION,
         "synthesis_preflight_performed": True,
@@ -136,6 +176,17 @@ def preflight_codex_worker_synthesis(original_request: str) -> dict[str, Any]:
         "maximum_character_count": CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT,
         "character_counting_contract": "PYTHON_UNICODE_CODE_POINTS",
         "final_synthesized_request_sha256": sha256(final.encode("utf-8")).hexdigest(),
+        "worker_execution_contract": contract,
+        "worker_execution_contract_hash": replay_hash(contract) if contract is not None else None,
+        "bounded_codex_prompt": prompt,
+        "bounded_codex_prompt_sha256": prompt_hash,
+        "bounded_codex_prompt_character_count": len(prompt) if isinstance(prompt, str) else 0,
+        "worker_prompt_fidelity_verified": faithful,
+        "authorized_task_is_primary": faithful,
+        "grounded_implementation_target_present": "IMPLEMENTATION" in target_roles,
+        "grounded_test_target_present": "FOCUSED_TEST" in target_roles,
+        "requested_output_type": contract.get("requested_output_type") if isinstance(contract, dict) else None,
+        "file_mutation_allowed": False,
         "governed_codex_task_request": deepcopy(synthesis_request),
         "governed_codex_synthesis_response": deepcopy(synthesis),
         "governed_codex_handoff": deepcopy(handoff),
@@ -167,8 +218,13 @@ def render_codex_worker_synthesis_preflight(capture: dict[str, Any]) -> str:
 def _verified_synthesis_preflight(
     original_request: str,
     supplied: dict[str, Any] | None = None,
+    *,
+    worker_execution_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    expected = preflight_codex_worker_synthesis(original_request)
+    expected = preflight_codex_worker_synthesis(
+        original_request,
+        worker_execution_contract=worker_execution_contract,
+    )
     if supplied is not None and supplied != expected:
         raise FailClosedRuntimeError("Codex synthesis preflight or request was substituted")
     if not all((
@@ -185,6 +241,19 @@ def _verified_synthesis_preflight(
         == replay_hash({key: value for key, value in expected.items() if key != "synthesis_preflight_hash"}),
         isinstance(expected["governed_codex_handoff"], dict),
         expected["governed_codex_handoff"].get("status") == "HANDOFF_READY",
+        expected["governed_codex_handoff"].get("codex_prompt")
+        == expected["bounded_codex_prompt"],
+        expected["governed_codex_handoff"].get("bounded_prompt_sha256")
+        == expected["bounded_codex_prompt_sha256"],
+        worker_execution_contract is None
+        or all((
+            expected["worker_execution_contract"] == worker_execution_contract,
+            expected["worker_prompt_fidelity_verified"] is True,
+            expected["authorized_task_is_primary"] is True,
+            expected["grounded_implementation_target_present"] is True,
+            expected["grounded_test_target_present"] is True,
+            expected["file_mutation_allowed"] is False,
+        )),
     )):
         raise FailClosedRuntimeError("Codex synthesis preflight failed closed")
     return expected
@@ -206,8 +275,13 @@ def prepare_codex_worker_activation_review(
     )
     candidate = lineage["candidate"]
     result = lineage["governed_result"]
-    preflight = _verified_synthesis_preflight(
+    admission_preflight = _verified_synthesis_preflight(
         lineage["original_request"], synthesis_preflight_capture
+    )
+    worker_contract = _grounded_worker_execution_contract(lineage)
+    preflight = _verified_synthesis_preflight(
+        lineage["original_request"],
+        worker_execution_contract=worker_contract,
     )
     review = create_execution_summary(
         summary_id=f"{result['worker_execution_id']}:CODEX-WORKER-ACTIVATION-REVIEW",
@@ -216,10 +290,23 @@ def prepare_codex_worker_activation_review(
             "intent_type": ACTIVATION_APPROVAL_SCOPE,
             "source_execution_candidate": candidate["execution_candidate_id"],
             "source_governed_execution": result["worker_execution_id"],
+            "request_admission_preflight_hash": admission_preflight[
+                "synthesis_preflight_hash"
+            ],
             "synthesis_preflight_hash": preflight["synthesis_preflight_hash"],
             "synthesis_request_replay_identity": preflight["governed_codex_task_request"]["replay_identity"],
             "synthesis_response_replay_identity": preflight["governed_codex_synthesis_response"]["replay_identity"],
             "final_synthesized_request_sha256": preflight["final_synthesized_request_sha256"],
+            "bounded_codex_prompt_sha256": preflight[
+                "bounded_codex_prompt_sha256"
+            ],
+            "worker_execution_contract_hash": preflight[
+                "worker_execution_contract_hash"
+            ],
+            "worker_role": worker_contract["worker_role"],
+            "grounded_targets": deepcopy(worker_contract["grounded_targets"]),
+            "requested_output_type": worker_contract["requested_output_type"],
+            "worker_constraints": deepcopy(worker_contract["constraints"]),
             "final_character_count": preflight["final_character_count"],
             "maximum_character_count": preflight["maximum_character_count"],
         },
@@ -254,6 +341,7 @@ def prepare_codex_worker_activation_review(
     )
     return {
         "runtime_version": RUNTIME_VERSION,
+        "request_admission_preflight_capture": deepcopy(admission_preflight),
         "synthesis_preflight_capture": deepcopy(preflight),
         "activation_review_artifact": review,
         "activation_review_required": True,
@@ -307,7 +395,11 @@ def activate_bounded_codex_worker(
     _reject_reused_approval(root, approval["approval_id"])
 
     original = lineage["original_request"]
-    preflight = _verified_synthesis_preflight(original)
+    worker_contract = _grounded_worker_execution_contract(lineage)
+    preflight = _verified_synthesis_preflight(
+        original,
+        worker_execution_contract=worker_contract,
+    )
     handoff = deepcopy(preflight["governed_codex_handoff"])
     authority = authorize_downstream_execution(
         create_execution_authorization_request(
@@ -366,6 +458,16 @@ def activate_bounded_codex_worker(
         "result_accepted": False,
         "command_authority_broadened": False,
         "repository_mutated": mutated,
+        "worker_prompt_fidelity_verified": True,
+        "authorized_task_is_primary": True,
+        "grounded_implementation_target_present": True,
+        "grounded_test_target_present": True,
+        "requested_output_type": worker_contract["requested_output_type"],
+        "file_mutation_allowed": False,
+        "bounded_codex_prompt_sha256": preflight["bounded_codex_prompt_sha256"],
+        "worker_execution_contract_hash": preflight[
+            "worker_execution_contract_hash"
+        ],
         "process_start_count": 1 if process_started else 0,
         "approved_workspace": str(approved_workspace),
         "codex_execution_request_id": request["codex_execution_request_id"],
@@ -380,6 +482,7 @@ def activate_bounded_codex_worker(
     return {
         "runtime_version": RUNTIME_VERSION,
         "activation_status": response["status"],
+        "synthesis_preflight_capture": deepcopy(preflight),
         "activation_review_artifact": deepcopy(review),
         "activation_approval_artifact": deepcopy(approval),
         "execution_authority_token": deepcopy(authority),
@@ -409,6 +512,11 @@ def reconstruct_codex_worker_activation_binding(
         raise FailClosedRuntimeError("Codex activation binding is cross-session")
     lineage = _reconstruct_lineage(
         governed_execution_capture, execution_candidate_capture, root, approved_workspace
+    )
+    worker_contract = _grounded_worker_execution_contract(lineage)
+    preflight = _verified_synthesis_preflight(
+        lineage["original_request"],
+        worker_execution_contract=worker_contract,
     )
     reconstructed = reconstruct_codex_worker_activation_replay(replay_path)
     wrappers = [
@@ -450,6 +558,9 @@ def reconstruct_codex_worker_activation_binding(
         request=request, validation=receipt["validation_outcome"], dispatch=dispatch
     )
     truth = wrappers[2].get("activation_truth") or {}
+    interpreted = review.get("interpreted_intent") or {}
+    exact_prompt = preflight["bounded_codex_prompt"]
+    exact_prompt_hash = preflight["bounded_codex_prompt_sha256"]
     checks = (
         reconstructed.get("replay_artifact_count") == 3,
         truth.get("codex_execution_request_id") == request["codex_execution_request_id"],
@@ -459,6 +570,33 @@ def reconstruct_codex_worker_activation_binding(
         review.get("execution_scope", {}).get("workspace_root") == str(approved_workspace),
         review.get("execution_scope", {}).get("timeout_seconds") == ACTIVATION_TIMEOUT_SECONDS,
         receipt.get("authority_token_id") == authority.get("token_id"),
+        interpreted.get("synthesis_preflight_hash")
+        == preflight["synthesis_preflight_hash"],
+        interpreted.get("bounded_codex_prompt_sha256") == exact_prompt_hash,
+        interpreted.get("worker_execution_contract_hash")
+        == preflight["worker_execution_contract_hash"],
+        interpreted.get("worker_role") == worker_contract["worker_role"],
+        interpreted.get("grounded_targets") == worker_contract["grounded_targets"],
+        interpreted.get("requested_output_type")
+        == worker_contract["requested_output_type"],
+        interpreted.get("worker_constraints") == worker_contract["constraints"],
+        approval.get("bounded_codex_prompt_sha256") == exact_prompt_hash,
+        approval.get("worker_execution_contract_hash")
+        == preflight["worker_execution_contract_hash"],
+        request.get("handoff_package") == preflight["governed_codex_handoff"],
+        request.get("bounded_prompt_sha256") == exact_prompt_hash,
+        authority.get("bounded_prompt_sha256") == exact_prompt_hash,
+        receipt.get("bounded_prompt_sha256") == exact_prompt_hash,
+        dispatch.get("metadata", {}).get("args")
+        == [CODEX_EXECUTABLE, "exec", exact_prompt],
+        truth.get("bounded_codex_prompt_sha256") == exact_prompt_hash,
+        truth.get("worker_execution_contract_hash")
+        == preflight["worker_execution_contract_hash"],
+        truth.get("worker_prompt_fidelity_verified") is True,
+        truth.get("authorized_task_is_primary") is True,
+        truth.get("grounded_implementation_target_present") is True,
+        truth.get("grounded_test_target_present") is True,
+        truth.get("file_mutation_allowed") is False,
         activation_capture.get("approved_workspace") == str(approved_workspace),
         activation_capture.get("provider_invoked") is False,
         activation_capture.get("repository_mutated") is False,
@@ -502,6 +640,12 @@ def reconstruct_codex_worker_activation_replay(replay_dir: str | Path) -> dict[s
     receipt = wrappers[2].get("artifact")
     if not isinstance(receipt, dict) or not receipt.get("receipt_id") or not receipt.get("replay_identity"):
         raise FailClosedRuntimeError("Codex activation Replay receipt is invalid")
+    if not all((
+        approval.get("bounded_codex_prompt_sha256"),
+        approval.get("bounded_codex_prompt_sha256")
+        == receipt.get("bounded_prompt_sha256"),
+    )):
+        raise FailClosedRuntimeError("Codex activation Replay prompt continuity mismatch")
     truth = wrappers[2].get("activation_truth")
     if not isinstance(truth, dict) or truth.get("transport_receipt_created") is not True:
         raise FailClosedRuntimeError("Codex activation Replay truth is incomplete")
@@ -517,11 +661,16 @@ def reconstruct_codex_worker_activation_replay(replay_dir: str | Path) -> dict[s
 
 def render_codex_worker_activation_review(capture: dict[str, Any]) -> str:
     review = capture.get("activation_review_artifact") or {}
+    preflight = capture.get("synthesis_preflight_capture") or {}
+    contract = preflight.get("worker_execution_contract") or {}
     return "\n".join((
         "Bounded CODEX Worker Process Activation Review",
         f"Approval Scope: {ACTIVATION_APPROVAL_SCOPE}",
         f"Review Reference: {review.get('summary_id')}",
         f"Execution Timeout: {ACTIVATION_TIMEOUT_SECONDS} seconds (finite; no retry).",
+        f"Worker Prompt SHA-256: {preflight.get('bounded_codex_prompt_sha256')}",
+        f"Grounded Targets: {contract.get('grounded_targets')}",
+        f"Requested Output: {contract.get('requested_output_type')}",
         "The next exact /approve permits one fixed codex exec process and one bounded transport receipt.",
         "Provider invocation, semantic result capture, and repository mutation remain prohibited.",
     ))
@@ -640,6 +789,43 @@ def _reconstruct_lineage(governed: dict[str, Any], candidate_capture: dict[str, 
     }
 
 
+def _grounded_worker_execution_contract(lineage: dict[str, Any]) -> dict[str, Any]:
+    """Project the exact approved task and grounded pair into Worker instructions."""
+
+    grounding = lineage.get("grounding") or {}
+    evidence = grounding.get("target_evidence")
+    if not isinstance(evidence, list) or len(evidence) != 2:
+        raise FailClosedRuntimeError(
+            "Codex Worker prompt requires exactly one grounded implementation/test pair"
+        )
+    role_map = {"SOURCE": "IMPLEMENTATION", "FOCUSED_TEST": "FOCUSED_TEST"}
+    targets = []
+    for item in evidence:
+        if not isinstance(item, dict) or item.get("target_role") not in role_map:
+            raise FailClosedRuntimeError("Codex Worker prompt target role mismatch")
+        targets.append({
+            "target_role": role_map[item["target_role"]],
+            "target_path": _required(item.get("target_path"), "grounded target path"),
+            "target_evidence_hash": _required(
+                item.get("target_evidence_hash"), "grounded target evidence hash"
+            ),
+        })
+    if {item["target_role"] for item in targets} != {"IMPLEMENTATION", "FOCUSED_TEST"}:
+        raise FailClosedRuntimeError("Codex Worker prompt grounded roles are incomplete")
+    if len({item["target_path"] for item in targets}) != 2:
+        raise FailClosedRuntimeError("Codex Worker prompt grounded targets are duplicated")
+    original = _required(lineage.get("original_request"), "original_request")
+    output_type = (
+        "UNIFIED_DIFF" if "unified diff" in original.casefold()
+        else "AUTHORIZED_TASK_RESULT"
+    )
+    return create_governed_codex_worker_execution_contract(
+        authorized_task=original,
+        grounded_targets=targets,
+        requested_output_type=output_type,
+    )
+
+
 def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decided_by: str, decided_at: str) -> dict[str, Any]:
     result, candidate = lineage["governed_result"], lineage["candidate"]
     interpreted = review.get("interpreted_intent") or {}
@@ -654,6 +840,16 @@ def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decide
         "final_synthesized_request_sha256": interpreted.get(
             "final_synthesized_request_sha256"
         ),
+        "bounded_codex_prompt_sha256": interpreted.get(
+            "bounded_codex_prompt_sha256"
+        ),
+        "worker_execution_contract_hash": interpreted.get(
+            "worker_execution_contract_hash"
+        ),
+        "worker_role": interpreted.get("worker_role"),
+        "grounded_targets": deepcopy(interpreted.get("grounded_targets")),
+        "requested_output_type": interpreted.get("requested_output_type"),
+        "worker_constraints": deepcopy(interpreted.get("worker_constraints")),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate": candidate["execution_candidate_id"],
         "source_execution_candidate_hash": candidate["artifact_hash"],
@@ -679,6 +875,16 @@ def _validate_activation_approval(approval: dict[str, Any], review: dict[str, An
         "final_synthesized_request_sha256": interpreted.get(
             "final_synthesized_request_sha256"
         ),
+        "bounded_codex_prompt_sha256": interpreted.get(
+            "bounded_codex_prompt_sha256"
+        ),
+        "worker_execution_contract_hash": interpreted.get(
+            "worker_execution_contract_hash"
+        ),
+        "worker_role": interpreted.get("worker_role"),
+        "grounded_targets": interpreted.get("grounded_targets"),
+        "requested_output_type": interpreted.get("requested_output_type"),
+        "worker_constraints": interpreted.get("worker_constraints"),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate_hash": lineage["candidate"]["artifact_hash"],
         "source_governed_execution_hash": lineage["governed_result"]["artifact_hash"],

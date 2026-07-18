@@ -507,6 +507,9 @@ def run_reference_uhi_session(
                         ),
                     )
                     runtime_result["codex_worker_activation_review_capture"] = pending_activation_review
+                    runtime_result["codex_worker_activation_synthesis_preflight_capture"] = deepcopy(
+                        pending_activation_review["synthesis_preflight_capture"]
+                    )
                     output_writer(worker_activation.render_codex_worker_activation_review(
                         pending_activation_review
                     ))

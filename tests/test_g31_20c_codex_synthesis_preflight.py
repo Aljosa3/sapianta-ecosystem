@@ -142,6 +142,7 @@ def test_exact_synthesized_request_hash_binds_review_approval_and_dispatch(
     runtime, root, workspace = _two_decisions(tmp_path, "G31-20C-HASH-BINDING")
     preflight = runtime["codex_synthesis_preflight_capture"]
     review_capture = _prepare(runtime, root, workspace, preflight)
+    activation_preflight = review_capture["synthesis_preflight_capture"]
     review = review_capture["activation_review_artifact"]
     interpreted = review["interpreted_intent"]
     runner = RecordingRunner(stdout="Authentic bounded CODEX semantic output.")
@@ -150,15 +151,22 @@ def test_exact_synthesized_request_hash_binds_review_approval_and_dispatch(
     )
     approval = activation["activation_approval_artifact"]
 
-    assert interpreted["synthesis_preflight_hash"] == preflight["synthesis_preflight_hash"]
-    assert interpreted["final_synthesized_request_sha256"] == preflight[
+    assert interpreted["request_admission_preflight_hash"] == preflight[
+        "synthesis_preflight_hash"
+    ]
+    assert interpreted["synthesis_preflight_hash"] == activation_preflight[
+        "synthesis_preflight_hash"
+    ]
+    assert interpreted["final_synthesized_request_sha256"] == activation_preflight[
         "final_synthesized_request_sha256"
     ]
-    assert approval["synthesis_preflight_hash"] == preflight["synthesis_preflight_hash"]
-    assert approval["final_synthesized_request_sha256"] == preflight[
+    assert approval["synthesis_preflight_hash"] == activation_preflight[
+        "synthesis_preflight_hash"
+    ]
+    assert approval["final_synthesized_request_sha256"] == activation_preflight[
         "final_synthesized_request_sha256"
     ]
-    assert activation["codex_execution_request"]["handoff_package"] == preflight[
+    assert activation["codex_execution_request"]["handoff_package"] == activation_preflight[
         "governed_codex_handoff"
     ]
-    assert runner.calls[0][0][2] == preflight["governed_codex_handoff"]["codex_prompt"]
+    assert runner.calls[0][0][2] == activation_preflight["bounded_codex_prompt"]
