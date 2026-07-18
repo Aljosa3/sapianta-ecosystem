@@ -99,7 +99,10 @@ def ground_approved_durable_work_repository_scope(
     ]
     materially_ambiguous = (
         len(matching) == 1
-        and len(matching[0].get("implementation") or []) != 1
+        and (
+            len(matching[0].get("implementation") or []) != 1
+            or len(matching[0].get("tests") or []) != 1
+        )
     )
     if len(matching) != 1 or materially_ambiguous:
         artifact = _grounding_artifact(
@@ -234,6 +237,10 @@ def validate_approved_durable_work_repository_scope_grounding(
             raise FailClosedRuntimeError(
                 f"repository-scope grounding authority boundary mismatch: {field}"
             )
+    if workspace is not None and Path(
+        _require_string(candidate.get("workspace_root"), "workspace_root")
+    ).resolve() != Path(workspace).resolve():
+        raise FailClosedRuntimeError("repository-scope grounding is cross-session")
     evidence = candidate.get("target_evidence")
     if not isinstance(evidence, list):
         raise FailClosedRuntimeError("repository target evidence must be a list")
