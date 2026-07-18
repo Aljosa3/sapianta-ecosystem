@@ -215,6 +215,10 @@ def render_codex_worker_semantic_validation(capture: dict[str, Any]) -> str:
     return "\n".join((
         "CODEX Semantic Worker Result Validation",
         f"Validation Status: {status}",
+        f"Canonical Meaning: {capture.get('canonical_validation_meaning')}",
+        "Task Outcome Satisfaction Evaluated: "
+        f"{capture.get('task_outcome_satisfaction_evaluated')}",
+        f"Task Outcome Satisfied: {capture.get('task_outcome_satisfied')}",
         f"Validation Reference: {capture.get('worker_result_validation_reference')}",
         f"Replay Reference: {capture.get('worker_result_validation_replay_reference')}",
         "Validation is deterministic evidence processing; AiCLI did not validate or accept the result.",
@@ -292,6 +296,11 @@ def _failed(reason: str, *, captured: bool, canonical_called: bool) -> dict[str,
         "runtime_version": RUNTIME_VERSION,
         "g31_semantic_validation_status": FAILED_CLOSED,
         "validation_status": result_validation.FAILED_CLOSED,
+        "canonical_validation_meaning": (
+            result_validation.CANONICAL_RESULT_VALIDATION_MEANING
+        ),
+        "task_outcome_satisfaction_evaluated": False,
+        "task_outcome_satisfied": False,
         "failure_reason": reason,
         "semantic_worker_result_captured": captured,
         "semantic_validation_performed": canonical_called,

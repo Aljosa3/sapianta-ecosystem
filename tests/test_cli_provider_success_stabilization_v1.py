@@ -67,6 +67,7 @@ def test_successful_provider_returns_execution_completed(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -78,6 +79,7 @@ def test_governed_return_generated_on_success(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -89,6 +91,7 @@ def test_continuity_verified_true_on_success(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -100,6 +103,7 @@ def test_provider_stdout_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -110,6 +114,7 @@ def test_provider_stderr_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -124,6 +129,7 @@ def test_provider_failure_still_fail_closed(monkeypatch, tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -137,6 +143,7 @@ def test_invalid_continuity_still_blocked(tmp_path):
     result = run_execution_handoff(
         ingress_artifact={},
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -178,6 +185,7 @@ def test_replay_continuity_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=10,
     )
 
@@ -186,15 +194,15 @@ def test_replay_continuity_preserved(tmp_path):
 
 
 def test_governed_return_hash_preserved(tmp_path):
-    first = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), timeout_seconds=10)
-    second = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), timeout_seconds=10)
+    first = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), runtime_root=tmp_path / "runtime", timeout_seconds=10)
+    second = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), runtime_root=tmp_path / "runtime", timeout_seconds=10)
 
     assert first["governed_return_hash"] == second["governed_return_hash"]
     assert first["governed_return"]["governed_return_hash"] == first["governed_return_hash"]
 
 
 def test_terminal_rendering_includes_success_command(tmp_path):
-    result = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), timeout_seconds=10)
+    result = run_execution_handoff(ingress_artifact=_artifact(), workspace_path=str(tmp_path), runtime_root=tmp_path / "runtime", timeout_seconds=10)
     rendered = render_command_result(result)
 
     assert "AIGOL EXECUTION RESULT" in rendered

@@ -29,6 +29,7 @@ WORKER_RESULT_VALIDATION_ARTIFACT_V1 = "WORKER_RESULT_VALIDATION_ARTIFACT_V1"
 WORKER_RESULT_VALIDATION_RESULT_ARTIFACT_V1 = "WORKER_RESULT_VALIDATION_RESULT_ARTIFACT_V1"
 RESULT_VALIDATED = "RESULT_VALIDATED"
 FAILED_CLOSED = "FAILED_CLOSED"
+CANONICAL_RESULT_VALIDATION_MEANING = "GOVERNANCE_POLICY_AND_LINEAGE_VALIDATION_ONLY"
 
 REPLAY_STEPS = (
     "validation_evidence_recorded",
@@ -256,6 +257,11 @@ def reconstruct_worker_result_validation_replay(replay_dir: str | Path) -> dict[
     return {
         "worker_result_validation_id": validation["worker_result_validation_id"],
         "validation_status": result["validation_status"],
+        "canonical_validation_meaning": validation["canonical_validation_meaning"],
+        "task_outcome_satisfaction_evaluated": validation[
+            "task_outcome_satisfaction_evaluated"
+        ],
+        "task_outcome_satisfied": validation["task_outcome_satisfied"],
         "worker_result_capture_reference": validation["worker_result_capture_reference"],
         "execution_reference": validation.get("execution_reference"),
         "execution_hash": validation.get("execution_hash"),
@@ -283,6 +289,10 @@ def render_worker_result_validation_summary(capture: dict[str, Any]) -> str:
         "Worker Result Validation",
         "",
         f"Validation Status: {capture.get('validation_status')}",
+        f"Canonical Meaning: {capture.get('canonical_validation_meaning')}",
+        "Task Outcome Satisfaction Evaluated: "
+        f"{capture.get('task_outcome_satisfaction_evaluated')}",
+        f"Task Outcome Satisfied: {capture.get('task_outcome_satisfied')}",
         f"Worker Result Validation Reference: {capture.get('worker_result_validation_reference')}",
         f"Worker Result Capture Reference: {capture.get('worker_result_capture_reference')}",
         f"Validated Worker: {capture.get('worker_id')}",
@@ -601,6 +611,9 @@ def _validation_artifact(
         "runtime_version": AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_VERSION,
         "worker_result_validation_id": _require_string(worker_result_validation_id, "worker_result_validation_id"),
         "validation_status": RESULT_VALIDATED,
+        "canonical_validation_meaning": CANONICAL_RESULT_VALIDATION_MEANING,
+        "task_outcome_satisfaction_evaluated": False,
+        "task_outcome_satisfied": False,
         "validation_evidence_reference": evidence["validation_evidence_id"],
         "validation_evidence_hash": evidence["artifact_hash"],
         "validation_classification_reference": classification["validation_classification_id"],
@@ -660,6 +673,11 @@ def _result_artifact(
         "runtime_version": AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_VERSION,
         "validation_result_id": f"{_require_string(worker_result_validation_id, 'worker_result_validation_id')}:RESULT",
         "validation_status": status,
+        "canonical_validation_meaning": validation["canonical_validation_meaning"],
+        "task_outcome_satisfaction_evaluated": validation[
+            "task_outcome_satisfaction_evaluated"
+        ],
+        "task_outcome_satisfied": validation["task_outcome_satisfied"],
         "validation_evidence_reference": evidence["validation_evidence_id"],
         "validation_evidence_hash": evidence["artifact_hash"],
         "validation_classification_reference": classification["validation_classification_id"],
@@ -696,6 +714,9 @@ def _failed_result(
         "runtime_version": AIGOL_WORKER_RESULT_VALIDATION_RUNTIME_VERSION,
         "validation_result_id": f"{worker_result_validation_id}:RESULT",
         "validation_status": FAILED_CLOSED,
+        "canonical_validation_meaning": CANONICAL_RESULT_VALIDATION_MEANING,
+        "task_outcome_satisfaction_evaluated": False,
+        "task_outcome_satisfied": False,
         "validation_evidence_reference": None,
         "validation_evidence_hash": None,
         "validation_classification_reference": None,
@@ -783,6 +804,15 @@ def _validate_validation_artifact(validation: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("worker result validation failed closed: invalid validation artifact")
     if validation.get("validation_status") != RESULT_VALIDATED:
         raise FailClosedRuntimeError("worker result validation failed closed: invalid validation status")
+    if not all((
+        validation.get("canonical_validation_meaning")
+        == CANONICAL_RESULT_VALIDATION_MEANING,
+        validation.get("task_outcome_satisfaction_evaluated") is False,
+        validation.get("task_outcome_satisfied") is False,
+    )):
+        raise FailClosedRuntimeError(
+            "worker result validation failed closed: task outcome authority violation"
+        )
     execution_bound = bool(validation.get("execution_reference"))
     for field, expected in _post_validation_boundary_flags(execution_bound=execution_bound).items():
         if validation.get(field) is not expected:

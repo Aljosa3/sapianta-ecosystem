@@ -97,6 +97,7 @@ def test_controlled_execution_handoff_callable(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_accepted_native_response,
     )
@@ -130,6 +131,7 @@ def test_fail_closed_behavior_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact={},
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_accepted_native_response,
     )
@@ -158,6 +160,7 @@ def test_provider_continuity_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_accepted_native_response,
     )

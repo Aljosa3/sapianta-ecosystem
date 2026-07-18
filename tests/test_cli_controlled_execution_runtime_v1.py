@@ -56,6 +56,7 @@ def test_cli_execution_handoff_callable(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -68,6 +69,7 @@ def test_provider_continuity_reached(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -80,6 +82,7 @@ def test_provider_invoked_true_on_valid_continuity(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -91,6 +94,7 @@ def test_governed_return_generated(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -103,6 +107,7 @@ def test_governed_return_hash_generated(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -115,6 +120,7 @@ def test_replay_continuity_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -127,6 +133,7 @@ def test_execution_blocked_on_invalid_continuity(tmp_path):
     result = run_execution_handoff(
         ingress_artifact={},
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -140,6 +147,7 @@ def test_execution_failed_on_provider_failure(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_failure_handler,
     )
@@ -154,6 +162,7 @@ def test_execution_completed_on_successful_provider_return(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -167,6 +176,7 @@ def test_continuity_verified_true_on_valid_path(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )
@@ -220,6 +230,7 @@ def test_diagnostic_evidence_preserved(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_failure_handler,
     )
@@ -236,6 +247,7 @@ def test_terminal_execution_result_rendering(tmp_path):
     result = run_execution_handoff(
         ingress_artifact=_artifact(),
         workspace_path=str(tmp_path),
+        runtime_root=tmp_path / "runtime",
         timeout_seconds=30,
         native_message_handler=_success_handler,
     )

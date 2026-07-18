@@ -135,6 +135,12 @@ def _runtime_paths(*, runtime_root: str | Path | None = None, replay_identity: s
 
 
 def persist_governed_return_artifact(*, artifact: dict, provider_result: dict | None = None, runtime_root: str | Path | None = None) -> dict:
+    if runtime_root is None:
+        return {
+            "status": "PERSISTENCE_FAILED",
+            "fail_closed": True,
+            "errors": ["explicit runtime_root is required; implicit default persistence is disabled"],
+        }
     if artifact.get("artifact_type") != ARTIFACT_TYPE or artifact.get("governed_return_hash", "").startswith("sha256:") is not True:
         return {"status": "PERSISTENCE_FAILED", "fail_closed": True, "errors": ["invalid governed return artifact"]}
     replay_identity = str(artifact.get("replay_identity", "")).strip()
