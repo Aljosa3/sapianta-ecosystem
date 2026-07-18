@@ -878,6 +878,7 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
     absolute_path_present = False
     renamed_or_substituted_target_present = False
     fake_or_empty_diff_section_present = False
+    file_patches: list[dict[str, Any]] = []
     index = 0
     section_count = 0
 
@@ -928,9 +929,12 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
             renamed_or_substituted_target_present = True
             errors.append("diff --git and unified-diff targets do not match")
         target = new_path
+        if target in changed_paths:
+            errors.append("duplicate unified-diff target section")
         section_count += 1
         section_hunks = 0
         section_changes = 0
+        hunks: list[dict[str, Any]] = []
         while index < len(lines) and not lines[index].startswith(("--- ", "diff --git ")):
             match = re.fullmatch(
                 r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: .*)?",
@@ -948,12 +952,14 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
             expected_old = int(match.group(2) or "1")
             expected_new = int(match.group(4) or "1")
             actual_old = actual_new = 0
+            hunk_lines: list[str] = []
             index += 1
             while index < len(lines) and not lines[index].startswith(
                 ("@@ ", "--- ", "diff --git ")
             ):
                 line = lines[index]
                 if line.startswith("\\ No newline at end of file"):
+                    hunk_lines.append(line)
                     index += 1
                     continue
                 if not line or line[0] not in {" ", "+", "-"}:
@@ -970,14 +976,23 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
                 elif line[0] == "+":
                     added_lines.append(line[1:])
                     section_changes += 1
+                hunk_lines.append(line)
                 index += 1
             if actual_old != expected_old or actual_new != expected_new:
                 errors.append("unified-diff hunk line counts do not match header")
+            hunks.append({
+                "old_start": int(match.group(1)),
+                "old_count": expected_old,
+                "new_start": int(match.group(3)),
+                "new_count": expected_new,
+                "lines": hunk_lines,
+            })
         if section_hunks == 0 or section_changes == 0:
             fake_or_empty_diff_section_present = True
             errors.append("empty or change-free unified-diff file section")
         if target not in changed_paths:
             changed_paths.append(target)
+        file_patches.append({"target_path": target, "hunks": hunks})
 
     if section_count == 0:
         errors.append("unified diff contains no changed file section")
@@ -989,6 +1004,7 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
         "changed_paths": changed_paths,
         "removed_lines": removed_lines,
         "added_lines": added_lines,
+        "file_patches": file_patches,
         "path_traversal_present": path_traversal_present,
         "absolute_path_present": absolute_path_present,
         "renamed_or_substituted_target_present": (
@@ -996,6 +1012,68 @@ def _parse_unified_diff(output: str) -> dict[str, Any]:
         ),
         "fake_or_empty_diff_section_present": fake_or_empty_diff_section_present,
     }
+
+
+def derive_unified_diff_postimages(
+    output: str,
+    *,
+    preimages: dict[str, str],
+    allowed_targets: set[str],
+) -> dict[str, str]:
+    """Validate one existing-file unified diff and derive exact postimages."""
+
+    parsed = _parse_unified_diff(output)
+    if parsed["valid"] is not True:
+        raise FailClosedRuntimeError(
+            "unified-diff application preflight failed closed: "
+            + "; ".join(parsed["errors"])
+        )
+    changed_paths = set(parsed["changed_paths"])
+    if not changed_paths or not changed_paths.issubset(allowed_targets):
+        raise FailClosedRuntimeError(
+            "unified-diff application preflight failed closed: changed target is ungrounded"
+        )
+    if set(preimages) != changed_paths:
+        raise FailClosedRuntimeError(
+            "unified-diff application preflight failed closed: exact changed preimages required"
+        )
+    postimages: dict[str, str] = {}
+    for file_patch in parsed["file_patches"]:
+        target = file_patch["target_path"]
+        preimage = preimages.get(target)
+        if not isinstance(preimage, str):
+            raise FailClosedRuntimeError(
+                "unified-diff application preflight failed closed: preimage missing"
+            )
+        source_lines = preimage.splitlines()
+        source_cursor = 0
+        result_lines: list[str] = []
+        for hunk in file_patch["hunks"]:
+            hunk_start = hunk["old_start"] - 1
+            if hunk_start < source_cursor or hunk_start > len(source_lines):
+                raise FailClosedRuntimeError(
+                    "unified-diff application preflight failed closed: hunk position mismatch"
+                )
+            result_lines.extend(source_lines[source_cursor:hunk_start])
+            source_cursor = hunk_start
+            for line in hunk["lines"]:
+                if line.startswith("\\ No newline at end of file"):
+                    continue
+                marker, text = line[0], line[1:]
+                if marker in {" ", "-"}:
+                    if source_cursor >= len(source_lines) or source_lines[source_cursor] != text:
+                        raise FailClosedRuntimeError(
+                            "unified-diff application preflight failed closed: preimage context mismatch"
+                        )
+                    if marker == " ":
+                        result_lines.append(source_lines[source_cursor])
+                    source_cursor += 1
+                elif marker == "+":
+                    result_lines.append(text)
+        result_lines.extend(source_lines[source_cursor:])
+        trailing_newline = "\n" if preimage.endswith("\n") else ""
+        postimages[target] = "\n".join(result_lines) + trailing_newline
+    return postimages
 
 
 def _header_path(value: str) -> str:

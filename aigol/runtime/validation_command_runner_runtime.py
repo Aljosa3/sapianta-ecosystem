@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 from typing import Any
@@ -18,6 +19,7 @@ VALIDATION_COMMAND_REQUEST_CERTIFIED = "CERTIFIED_VALIDATION_COMMAND_REQUEST"
 VALIDATION_COMMAND_COMPLETED = "VALIDATION_COMMAND_COMPLETED"
 VALIDATION_COMMAND_FAILED = "VALIDATION_COMMAND_FAILED"
 FAILED_CLOSED = "FAILED_CLOSED"
+MAX_CAPTURED_OUTPUT_BYTES = 4096
 
 REPLAY_STEPS = (
     "validation_command_request_recorded",
@@ -165,6 +167,8 @@ def _execute_request(*, request: dict[str, Any], executed_by: str, executed_at: 
         check=False,
     )
     status = VALIDATION_COMMAND_COMPLETED if completed.returncode == 0 else VALIDATION_COMMAND_FAILED
+    stdout = _bounded_stream(completed.stdout)
+    stderr = _bounded_stream(completed.stderr)
     artifact = {
         "artifact_type": VALIDATION_COMMAND_RESULT_ARTIFACT_V1,
         "runtime_version": AIGOL_VALIDATION_COMMAND_RUNNER_RUNTIME_VERSION,
@@ -176,8 +180,15 @@ def _execute_request(*, request: dict[str, Any], executed_by: str, executed_at: 
         "command_display": request["command_display"],
         "cwd": request["cwd"],
         "exit_code": completed.returncode,
-        "stdout": completed.stdout,
-        "stderr": completed.stderr,
+        "stdout": stdout["text"],
+        "stderr": stderr["text"],
+        "stdout_byte_length": stdout["byte_length"],
+        "stderr_byte_length": stderr["byte_length"],
+        "stdout_sha256": stdout["sha256"],
+        "stderr_sha256": stderr["sha256"],
+        "stdout_truncated": stdout["truncated"],
+        "stderr_truncated": stderr["truncated"],
+        "maximum_captured_output_bytes": MAX_CAPTURED_OUTPUT_BYTES,
         "replay_references": deepcopy(request["replay_references"]),
         "replay_hashes": deepcopy(request["replay_hashes"]),
         "executed_by": _require_string(executed_by, "executed_by"),
@@ -219,6 +230,13 @@ def _failed_result_artifact(
         "exit_code": None,
         "stdout": "",
         "stderr": "",
+        "stdout_byte_length": 0,
+        "stderr_byte_length": 0,
+        "stdout_sha256": "sha256:" + sha256(b"").hexdigest(),
+        "stderr_sha256": "sha256:" + sha256(b"").hexdigest(),
+        "stdout_truncated": False,
+        "stderr_truncated": False,
+        "maximum_captured_output_bytes": MAX_CAPTURED_OUTPUT_BYTES,
         "replay_references": [],
         "replay_hashes": [],
         "executed_by": executed_by if isinstance(executed_by, str) else None,
@@ -261,6 +279,18 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("validation command runner failed closed: arbitrary shell cannot be allowed")
     if request.get("allowlist_enforced") is not True or request.get("arbitrary_execution_prevented") is not True:
         raise FailClosedRuntimeError("validation command runner failed closed: allowlist evidence missing")
+
+
+def _bounded_stream(value: Any) -> dict[str, Any]:
+    text = value if isinstance(value, str) else ""
+    encoded = text.encode("utf-8")
+    bounded = encoded[:MAX_CAPTURED_OUTPUT_BYTES]
+    return {
+        "text": bounded.decode("utf-8", errors="ignore"),
+        "byte_length": len(encoded),
+        "sha256": "sha256:" + sha256(encoded).hexdigest(),
+        "truncated": len(encoded) > MAX_CAPTURED_OUTPUT_BYTES,
+    }
 
 
 def _validate_command_argv(command: Any) -> list[str]:
