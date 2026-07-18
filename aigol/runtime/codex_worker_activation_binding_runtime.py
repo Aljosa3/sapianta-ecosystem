@@ -83,6 +83,7 @@ CODEX_EXECUTABLE = "codex"
 ACTIVATION_TIMEOUT_SECONDS = 60
 CODEX_SYNTHESIS_PREFIX = "runtime validation: "
 CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT = 240
+TASK_OUTCOME_CRITERIA_VERSION = "G31_PRE_EXECUTION_TASK_OUTCOME_CRITERIA_V1"
 REPLAY_STEPS = (
     "worker_activation_review_recorded",
     "worker_activation_approval_recorded",
@@ -307,6 +308,9 @@ def prepare_codex_worker_activation_review(
             "grounded_targets": deepcopy(worker_contract["grounded_targets"]),
             "requested_output_type": worker_contract["requested_output_type"],
             "worker_constraints": deepcopy(worker_contract["constraints"]),
+            "task_outcome_criteria_hash": worker_contract[
+                "task_outcome_criteria"
+            ]["criteria_hash"],
             "final_character_count": preflight["final_character_count"],
             "maximum_character_count": preflight["maximum_character_count"],
         },
@@ -580,6 +584,8 @@ def reconstruct_codex_worker_activation_binding(
         interpreted.get("requested_output_type")
         == worker_contract["requested_output_type"],
         interpreted.get("worker_constraints") == worker_contract["constraints"],
+        interpreted.get("task_outcome_criteria_hash")
+        == worker_contract["task_outcome_criteria"]["criteria_hash"],
         approval.get("bounded_codex_prompt_sha256") == exact_prompt_hash,
         approval.get("worker_execution_contract_hash")
         == preflight["worker_execution_contract_hash"],
@@ -819,11 +825,34 @@ def _grounded_worker_execution_contract(lineage: dict[str, Any]) -> dict[str, An
         "UNIFIED_DIFF" if "unified diff" in original.casefold()
         else "AUTHORIZED_TASK_RESULT"
     )
-    return create_governed_codex_worker_execution_contract(
+    contract = create_governed_codex_worker_execution_contract(
         authorized_task=original,
         grounded_targets=targets,
         requested_output_type=output_type,
     )
+    criteria = {
+        "criteria_version": TASK_OUTCOME_CRITERIA_VERSION,
+        "established_stage": "BEFORE_THIRD_HUMAN_ACTIVATION_DECISION",
+        "established_before_worker_execution": True,
+        "authorized_task": original,
+        "authorized_task_sha256": sha256(original.encode("utf-8")).hexdigest(),
+        "required_output_type": output_type,
+        "grounded_targets": deepcopy(targets),
+        "requirements": [
+            "HUMAN_MUST_REVIEW_EXACT_OUTPUT_AGAINST_EXACT_AUTHORIZED_TASK",
+            "OUTPUT_TYPE_MUST_EQUAL_PREAUTHORIZED_OUTPUT_TYPE",
+            "OUTPUT_TARGETS_MUST_NOT_EXCEED_GROUNDED_TARGETS",
+            "PATCH_MUST_REMAIN_UNAPPLIED_DURING_TASK_OUTCOME_REVIEW",
+            "TASK_SATISFACTION_MUST_NOT_IMPLY_RESULT_ACCEPTANCE",
+            "TASK_SATISFACTION_MUST_NOT_AUTHORIZE_REPOSITORY_MUTATION",
+        ],
+        "human_judgment_required": True,
+        "result_acceptance_separate": True,
+        "repository_mutation_authority": False,
+    }
+    criteria["criteria_hash"] = replay_hash(criteria)
+    contract["task_outcome_criteria"] = criteria
+    return contract
 
 
 def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decided_by: str, decided_at: str) -> dict[str, Any]:
@@ -850,6 +879,9 @@ def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decide
         "grounded_targets": deepcopy(interpreted.get("grounded_targets")),
         "requested_output_type": interpreted.get("requested_output_type"),
         "worker_constraints": deepcopy(interpreted.get("worker_constraints")),
+        "task_outcome_criteria_hash": interpreted.get(
+            "task_outcome_criteria_hash"
+        ),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate": candidate["execution_candidate_id"],
         "source_execution_candidate_hash": candidate["artifact_hash"],
@@ -885,6 +917,9 @@ def _validate_activation_approval(approval: dict[str, Any], review: dict[str, An
         "grounded_targets": interpreted.get("grounded_targets"),
         "requested_output_type": interpreted.get("requested_output_type"),
         "worker_constraints": interpreted.get("worker_constraints"),
+        "task_outcome_criteria_hash": interpreted.get(
+            "task_outcome_criteria_hash"
+        ),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate_hash": lineage["candidate"]["artifact_hash"],
         "source_governed_execution_hash": lineage["governed_result"]["artifact_hash"],
