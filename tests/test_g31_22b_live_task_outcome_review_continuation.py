@@ -38,7 +38,7 @@ EXACT_TWO_TARGET_DIFF = (
     "+    return f'Summary: {value}'\n"
     "--- a/tests/test_human_interface.py\n"
     "+++ b/tests/test_human_interface.py\n"
-    "@@ -2,3 +2,3 @@\n"
+    "@@ -2,2 +2,2 @@\n"
     " def test_render_summary():\n"
     "-    assert render_summary('ready') == \"Summary: ready\"\n"
     "+    assert render_summary('ready') == 'Summary: ready'\n"

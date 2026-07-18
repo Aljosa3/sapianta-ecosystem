@@ -103,6 +103,9 @@ def reconstruct_human_decision_replay(replay_dir: str | Path) -> dict[str, Any]:
         "terminal_status": decision["terminal_status"],
         "clarification_required": decision["clarification_required"],
         "implementation_authorized": decision["implementation_authorized"],
+        "implementation_authorization_allowed": decision.get(
+            "implementation_authorization_allowed", True
+        ),
         "execution_requested": False,
         "dispatch_requested": False,
         "worker_invoked": False,
@@ -168,6 +171,13 @@ def _validate_approval_required(artifact: dict[str, Any]) -> dict[str, Any]:
     _verify_artifact_hash(request, "approval request")
     if request.get("approval_status") != HUMAN_APPROVAL_REQUIRED:
         raise FailClosedRuntimeError("human decision failed closed: approval request is not pending")
+    if (
+        "implementation_authorization_allowed" in request
+        and not isinstance(request["implementation_authorization_allowed"], bool)
+    ):
+        raise FailClosedRuntimeError(
+            "human decision failed closed: implementation authority boundary is malformed"
+        )
     if request.get("artifact_hash") != artifact.get("approval_hash"):
         raise FailClosedRuntimeError("human decision failed closed: approval lineage mismatch")
     return deepcopy(artifact)
@@ -249,6 +259,9 @@ def _base_decision_artifact(
 ) -> dict[str, Any]:
     packet = approval_required["approval_resume_packet"]
     request = packet["approval_request_artifact"]
+    implementation_authorization_allowed = request.get(
+        "implementation_authorization_allowed", True
+    )
     status_by_decision = {
         APPROVE: HUMAN_DECISION_RECORDED,
         REJECT: GOVERNED_REJECTION_RECORDED,
@@ -277,8 +290,12 @@ def _base_decision_artifact(
         "proposal_hash": request["proposal_hash"],
         "terminal_status": terminal_by_decision[decision],
         "clarification_required": decision == REQUEST_MODIFICATION,
-        "implementation_authorized": decision == APPROVE,
-        "implementation_rejected": decision == REJECT,
+        "implementation_authorized": (
+            decision == APPROVE and implementation_authorization_allowed
+        ),
+        "implementation_rejected": (
+            decision == REJECT and implementation_authorization_allowed
+        ),
         "modification_requested": decision == REQUEST_MODIFICATION,
         "decided_by": _require_string(decided_by, "decided_by"),
         "decided_at": _require_string(decided_at, "decided_at"),
@@ -286,6 +303,10 @@ def _base_decision_artifact(
         "replay_visible": True,
         "failure_reason": failure_reason,
     }
+    if "implementation_authorization_allowed" in request:
+        artifact["implementation_authorization_allowed"] = (
+            implementation_authorization_allowed
+        )
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
@@ -310,6 +331,10 @@ def _returned_artifact(decision: dict[str, Any]) -> dict[str, Any]:
         "replay_visible": True,
         "failure_reason": decision["failure_reason"],
     }
+    if "implementation_authorization_allowed" in decision:
+        artifact["implementation_authorization_allowed"] = decision[
+            "implementation_authorization_allowed"
+        ]
     artifact["artifact_hash"] = replay_hash(artifact)
     return artifact
 
