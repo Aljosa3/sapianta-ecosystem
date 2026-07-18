@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Callable
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -100,6 +101,7 @@ def run_reference_uhi_session(
     session_status = "REFERENCE_UHI_SESSION_ACTIVE"
     last_resolution: dict[str, Any] | None = None
     last_project_context: dict[str, Any] | None = None
+    synthesis_preflight_capture: dict[str, Any] | None = None
     pending_clarification: dict[str, Any] | None = None
     compose_buffer: list[str] = []
     pending_input_lines: list[str] = []
@@ -124,6 +126,7 @@ def run_reference_uhi_session(
                         last_project_context,
                         submitted_requests,
                         multiline_requests,
+                        synthesis_preflight_capture,
                     ) = _submit_composed_request(
                         compose_buffer=compose_buffer,
                         session=session,
@@ -133,6 +136,7 @@ def run_reference_uhi_session(
                         output_writer=output_writer,
                         transcript=transcript,
                         artifact_references=artifact_references,
+                        codex_activation_preflight_required=runtime_runner is None,
                     )
                     submitted_messages += submitted_requests
                     submitted_request_count += submitted_requests
@@ -335,6 +339,7 @@ def run_reference_uhi_session(
                     last_project_context,
                     submitted_requests,
                     multiline_requests,
+                    synthesis_preflight_capture,
                 ) = _submit_composed_request(
                     compose_buffer=[
                         "Opaque canonical artifact reference attached for the active "
@@ -347,6 +352,7 @@ def run_reference_uhi_session(
                     output_writer=output_writer,
                     transcript=transcript,
                     artifact_references=(reference,),
+                    codex_activation_preflight_required=runtime_runner is None,
                 )
             except FailClosedRuntimeError as exc:
                 output_writer(f"Platform Core rejected the artifact attachment: {exc}")
@@ -391,6 +397,7 @@ def run_reference_uhi_session(
                 last_project_context,
                 submitted_requests,
                 multiline_requests,
+                synthesis_preflight_capture,
             ) = _submit_composed_request(
                 compose_buffer=compose_buffer,
                 session=session,
@@ -400,6 +407,7 @@ def run_reference_uhi_session(
                 output_writer=output_writer,
                 transcript=transcript,
                 artifact_references=artifact_references,
+                codex_activation_preflight_required=runtime_runner is None,
             )
             submitted_messages += submitted_requests
             submitted_request_count += submitted_requests
@@ -494,6 +502,9 @@ def run_reference_uhi_session(
                         session_root=root / session,
                         workspace=workspace_path,
                         created_at=created,
+                        synthesis_preflight_capture=runtime_result.get(
+                            "codex_synthesis_preflight_capture"
+                        ),
                     )
                     runtime_result["codex_worker_activation_review_capture"] = pending_activation_review
                     output_writer(worker_activation.render_codex_worker_activation_review(
@@ -510,6 +521,7 @@ def run_reference_uhi_session(
                     last_project_context,
                     submitted_requests,
                     multiline_requests,
+                    synthesis_preflight_capture,
                 ) = _submit_composed_request(
                     compose_buffer=compose_buffer,
                     session=session,
@@ -519,6 +531,7 @@ def run_reference_uhi_session(
                     output_writer=output_writer,
                     transcript=transcript,
                     artifact_references=artifact_references,
+                    codex_activation_preflight_required=runtime_runner is None,
                 )
                 submitted_messages += submitted_requests
                 submitted_request_count += submitted_requests
@@ -588,6 +601,10 @@ def run_reference_uhi_session(
                     created_at=created,
                     runtime_root=root,
                     workspace=workspace_path,
+                )
+            if synthesis_preflight_capture is not None:
+                runtime_result["codex_synthesis_preflight_capture"] = deepcopy(
+                    synthesis_preflight_capture
                 )
             runtime_status = _reference_runtime_status(runtime_result)
             output_writer(_render_runtime_result(runtime_result, runtime_status))
@@ -669,6 +686,25 @@ def run_reference_uhi_session(
         "runtime_status": runtime_status,
         "runtime_entered": runtime_result is not None,
         "runtime_result": runtime_result,
+        "synthesis_preflight_capture": synthesis_preflight_capture,
+        **(
+            {
+                field: synthesis_preflight_capture[field]
+                for field in (
+                    "synthesis_preflight_performed", "synthesis_within_bound",
+                    "raw_character_count", "prefix_character_count",
+                    "final_character_count", "maximum_character_count",
+                    "human_decision_count", "process_start_count",
+                )
+            }
+            if synthesis_preflight_capture is not None
+            else {
+                "synthesis_preflight_performed": False,
+                "synthesis_within_bound": False,
+                "human_decision_count": approval_count,
+                "process_start_count": 0,
+            }
+        ),
         "development_intent_resolution": last_resolution,
         "transcript": transcript,
         "aicli_authorizes": False,
@@ -736,6 +772,7 @@ def run_reference_uhi_submit_session(
     pending_clarification: dict[str, Any] | None = None
     last_resolution: dict[str, Any] | None = None
     last_project_context: dict[str, Any] | None = None
+    synthesis_preflight_capture: dict[str, Any] | None = None
     transcript: list[dict[str, Any]] = []
     submitted_messages = 0
     submitted_request_count = 0
@@ -756,6 +793,7 @@ def run_reference_uhi_submit_session(
             last_project_context,
             submitted_requests,
             multiline_requests,
+            synthesis_preflight_capture,
         ) = _submit_composed_request(
             compose_buffer=request.split("\n"),
             session=session,
@@ -765,6 +803,7 @@ def run_reference_uhi_submit_session(
             output_writer=output_writer,
             transcript=transcript,
             artifact_references=artifact_references,
+            codex_activation_preflight_required=runtime_runner is None,
         )
         submitted_messages += submitted_requests
         submitted_request_count += submitted_requests
@@ -831,6 +870,7 @@ def run_reference_uhi_submit_session(
                 last_project_context,
                 submitted_requests,
                 multiline_requests,
+                synthesis_preflight_capture,
             ) = _submit_composed_request(
                 compose_buffer=reply_text.split("\n"),
                 session=session,
@@ -840,6 +880,7 @@ def run_reference_uhi_submit_session(
                 output_writer=output_writer,
                 transcript=transcript,
                 artifact_references=artifact_references,
+                codex_activation_preflight_required=runtime_runner is None,
             )
             submitted_messages += submitted_requests
             submitted_request_count += submitted_requests
@@ -926,6 +967,10 @@ def run_reference_uhi_submit_session(
                 runtime_root=root,
                 workspace=workspace_path,
             )
+        if synthesis_preflight_capture is not None:
+            runtime_result["codex_synthesis_preflight_capture"] = deepcopy(
+                synthesis_preflight_capture
+            )
         runtime_status = _reference_runtime_status(runtime_result)
         output_writer(_render_runtime_result(runtime_result, runtime_status))
         pending_summary = None
@@ -956,6 +1001,7 @@ def run_reference_uhi_submit_session(
         "runtime_status": runtime_status,
         "runtime_entered": runtime_result is not None,
         "runtime_result": runtime_result,
+        "synthesis_preflight_capture": synthesis_preflight_capture,
         "development_intent_resolution": last_resolution,
         "transcript": transcript,
         "aicli_authorizes": False,
@@ -1491,7 +1537,16 @@ def _submit_composed_request(
     output_writer: Callable[[str], None],
     transcript: list[dict[str, Any]],
     artifact_references: list[Any] | tuple[Any, ...] = (),
-) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any], dict[str, Any], int, int]:
+    codex_activation_preflight_required: bool = True,
+) -> tuple[
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    dict[str, Any],
+    dict[str, Any],
+    int,
+    int,
+    dict[str, Any] | None,
+]:
     message = "\n".join(compose_buffer)
     project_context = prepare_unified_human_interface_project_context(
         interface_name="aicli",
@@ -1531,7 +1586,7 @@ def _submit_composed_request(
             conversation,
         )
         output_writer(_render_clarification(clarification))
-        return None, clarification, resolution, project_context, 1, multiline_requests
+        return None, clarification, resolution, project_context, 1, multiline_requests, None
     if resolution.get("clarification_required") is True or conversation.get("response_mode") == "CLARIFICATION":
         operational_envelope = conversation.get(
             "operational_clarification_envelope"
@@ -1547,16 +1602,29 @@ def _submit_composed_request(
             conversation,
         )
         output_writer(_render_clarification(clarification))
-        return None, clarification, resolution, project_context, 1, multiline_requests
+        return None, clarification, resolution, project_context, 1, multiline_requests, None
     if resolution.get("summary_admissible") is True:
         summary = _summary_from_conversation(conversation)
+        if not codex_activation_preflight_required:
+            output_writer(_render_summary(summary))
+            return summary, None, resolution, project_context, 1, multiline_requests, None
+        preflight = worker_activation.preflight_codex_worker_synthesis(
+            _require_string(summary["canonical_runtime_prompt"], "canonical_runtime_prompt")
+        )
+        output_writer(worker_activation.render_codex_worker_synthesis_preflight(preflight))
+        if preflight["synthesis_preflight_status"] != "SYNTHESIS_PREFLIGHT_READY":
+            output_writer(
+                "Canonical CODEX synthesis preflight failed closed before human approval."
+            )
+            transcript.append({"event": "codex_synthesis_preflight_failed_closed"})
+            return None, None, resolution, project_context, 1, multiline_requests, preflight
         output_writer(_render_summary(summary))
-        return summary, None, resolution, project_context, 1, multiline_requests
+        return summary, None, resolution, project_context, 1, multiline_requests, preflight
     if conversation.get("response_mode") == "READ_ONLY_RESULT":
         output_writer(_render_read_only_result(conversation))
-        return None, None, resolution, project_context, 1, multiline_requests
+        return None, None, resolution, project_context, 1, multiline_requests, None
     output_writer(_render_non_development_response(conversation))
-    return None, None, resolution, project_context, 1, multiline_requests
+    return None, None, resolution, project_context, 1, multiline_requests, None
 
 
 def _summary_from_conversation(conversation: dict[str, Any]) -> dict[str, Any]:

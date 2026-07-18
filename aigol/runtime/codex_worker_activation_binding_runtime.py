@@ -80,6 +80,8 @@ RUNTIME_VERSION = "G31_17B_CODEX_WORKER_ACTIVATION_BINDING_V1"
 ACTIVATION_APPROVAL_SCOPE = "RUN_BOUNDED_CODEX_WORKER_PROCESS_ONLY"
 CODEX_EXECUTABLE = "codex"
 ACTIVATION_TIMEOUT_SECONDS = 60
+CODEX_SYNTHESIS_PREFIX = "runtime validation: "
+CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT = 240
 REPLAY_STEPS = (
     "worker_activation_review_recorded",
     "worker_activation_approval_recorded",
@@ -101,6 +103,93 @@ ACTIVATION_TRUTH_FIELDS = (
 )
 
 
+def preflight_codex_worker_synthesis(original_request: str) -> dict[str, Any]:
+    """Use the canonical synthesis owner before any G31 human decision."""
+
+    raw = _required(original_request, "original_request")
+    final = f"{CODEX_SYNTHESIS_PREFIX}{raw}"
+    synthesis_request = create_governed_codex_task_request(natural_language=final)
+    synthesis = synthesize_governed_codex_task(synthesis_request)
+    within_bound = len(final) <= CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT
+    handoff = (
+        create_governed_codex_handoff(
+            create_governed_codex_handoff_request(
+                synthesis_response=synthesis,
+                original_human_request=raw,
+            )
+        )
+        if synthesis.get("status") == "SYNTHESIZED"
+        else None
+    )
+    ready = within_bound and isinstance(handoff, dict) and handoff.get("status") == "HANDOFF_READY"
+    value = {
+        "runtime_version": RUNTIME_VERSION,
+        "synthesis_preflight_performed": True,
+        "synthesis_preflight_status": "SYNTHESIS_PREFLIGHT_READY" if ready else "SYNTHESIS_PREFLIGHT_FAILED_CLOSED",
+        "synthesis_within_bound": within_bound,
+        "raw_request": raw,
+        "canonical_prefix": CODEX_SYNTHESIS_PREFIX,
+        "final_synthesized_request": final,
+        "raw_character_count": len(raw),
+        "prefix_character_count": len(CODEX_SYNTHESIS_PREFIX),
+        "final_character_count": len(final),
+        "maximum_character_count": CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT,
+        "character_counting_contract": "PYTHON_UNICODE_CODE_POINTS",
+        "final_synthesized_request_sha256": sha256(final.encode("utf-8")).hexdigest(),
+        "governed_codex_task_request": deepcopy(synthesis_request),
+        "governed_codex_synthesis_response": deepcopy(synthesis),
+        "governed_codex_handoff": deepcopy(handoff),
+        "human_decision_count": 0,
+        "process_start_count": 0,
+        "provider_invoked": False,
+        "repository_mutated": False,
+    }
+    value["synthesis_preflight_hash"] = replay_hash(value)
+    return value
+
+
+def render_codex_worker_synthesis_preflight(capture: dict[str, Any]) -> str:
+    """Render canonical preflight evidence without giving AiCLI authority."""
+
+    return "\n".join((
+        "Bounded CODEX synthesis preflight",
+        f"Status: {capture.get('synthesis_preflight_status')}",
+        f"Raw characters: {capture.get('raw_character_count')}",
+        f"Canonical prefix characters: {capture.get('prefix_character_count')}",
+        f"Final characters: {capture.get('final_character_count')}",
+        f"Maximum characters: {capture.get('maximum_character_count')}",
+        f"Within bound: {capture.get('synthesis_within_bound')}",
+        f"Final request SHA-256: {capture.get('final_synthesized_request_sha256')}",
+        "No human decision or Worker process has occurred.",
+    ))
+
+
+def _verified_synthesis_preflight(
+    original_request: str,
+    supplied: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    expected = preflight_codex_worker_synthesis(original_request)
+    if supplied is not None and supplied != expected:
+        raise FailClosedRuntimeError("Codex synthesis preflight or request was substituted")
+    if not all((
+        expected["synthesis_preflight_performed"] is True,
+        expected["synthesis_within_bound"] is True,
+        expected["raw_character_count"] + expected["prefix_character_count"]
+        == expected["final_character_count"],
+        expected["final_character_count"] <= expected["maximum_character_count"]
+        == CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT,
+        expected["canonical_prefix"] == CODEX_SYNTHESIS_PREFIX,
+        expected["final_synthesized_request"]
+        == f"{CODEX_SYNTHESIS_PREFIX}{original_request}",
+        expected["synthesis_preflight_hash"]
+        == replay_hash({key: value for key, value in expected.items() if key != "synthesis_preflight_hash"}),
+        isinstance(expected["governed_codex_handoff"], dict),
+        expected["governed_codex_handoff"].get("status") == "HANDOFF_READY",
+    )):
+        raise FailClosedRuntimeError("Codex synthesis preflight failed closed")
+    return expected
+
+
 def prepare_codex_worker_activation_review(
     *,
     governed_execution_capture: dict[str, Any],
@@ -108,6 +197,7 @@ def prepare_codex_worker_activation_review(
     session_root: str | Path,
     workspace: str | Path,
     created_at: str,
+    synthesis_preflight_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Reconstruct G31 evidence and form a non-authoritative third review."""
 
@@ -116,6 +206,9 @@ def prepare_codex_worker_activation_review(
     )
     candidate = lineage["candidate"]
     result = lineage["governed_result"]
+    preflight = _verified_synthesis_preflight(
+        lineage["original_request"], synthesis_preflight_capture
+    )
     review = create_execution_summary(
         summary_id=f"{result['worker_execution_id']}:CODEX-WORKER-ACTIVATION-REVIEW",
         original_request=lineage["original_request"],
@@ -123,6 +216,12 @@ def prepare_codex_worker_activation_review(
             "intent_type": ACTIVATION_APPROVAL_SCOPE,
             "source_execution_candidate": candidate["execution_candidate_id"],
             "source_governed_execution": result["worker_execution_id"],
+            "synthesis_preflight_hash": preflight["synthesis_preflight_hash"],
+            "synthesis_request_replay_identity": preflight["governed_codex_task_request"]["replay_identity"],
+            "synthesis_response_replay_identity": preflight["governed_codex_synthesis_response"]["replay_identity"],
+            "final_synthesized_request_sha256": preflight["final_synthesized_request_sha256"],
+            "final_character_count": preflight["final_character_count"],
+            "maximum_character_count": preflight["maximum_character_count"],
         },
         selected_route={
             "selected_resource_id": "CODEX",
@@ -155,6 +254,7 @@ def prepare_codex_worker_activation_review(
     )
     return {
         "runtime_version": RUNTIME_VERSION,
+        "synthesis_preflight_capture": deepcopy(preflight),
         "activation_review_artifact": review,
         "activation_review_required": True,
         "third_human_decision_recorded": False,
@@ -207,17 +307,8 @@ def activate_bounded_codex_worker(
     _reject_reused_approval(root, approval["approval_id"])
 
     original = lineage["original_request"]
-    synthesis_request = create_governed_codex_task_request(
-        natural_language=f"runtime validation: {original}"
-    )
-    synthesis = synthesize_governed_codex_task(synthesis_request)
-    handoff = create_governed_codex_handoff(
-        create_governed_codex_handoff_request(
-            synthesis_response=synthesis, original_human_request=original
-        )
-    )
-    if handoff.get("status") != "HANDOFF_READY":
-        raise FailClosedRuntimeError("approved G31 request cannot form a bounded Codex handoff")
+    preflight = _verified_synthesis_preflight(original)
+    handoff = deepcopy(preflight["governed_codex_handoff"])
     authority = authorize_downstream_execution(
         create_execution_authorization_request(
             handoff_package=handoff,
@@ -551,6 +642,7 @@ def _reconstruct_lineage(governed: dict[str, Any], candidate_capture: dict[str, 
 
 def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decided_by: str, decided_at: str) -> dict[str, Any]:
     result, candidate = lineage["governed_result"], lineage["candidate"]
+    interpreted = review.get("interpreted_intent") or {}
     artifact = {
         "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1,
         "approval_id": f"{result['worker_execution_id']}:CODEX-WORKER-ACTIVATION-APPROVAL",
@@ -558,6 +650,10 @@ def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decide
         "approval_scope": ACTIVATION_APPROVAL_SCOPE, **deepcopy(SCOPE),
         "activation_review_reference": review["summary_id"],
         "activation_review_hash": review["artifact_hash"],
+        "synthesis_preflight_hash": interpreted.get("synthesis_preflight_hash"),
+        "final_synthesized_request_sha256": interpreted.get(
+            "final_synthesized_request_sha256"
+        ),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate": candidate["execution_candidate_id"],
         "source_execution_candidate_hash": candidate["artifact_hash"],
@@ -574,10 +670,15 @@ def _activation_approval(review: dict[str, Any], lineage: dict[str, Any], decide
 
 def _validate_activation_approval(approval: dict[str, Any], review: dict[str, Any], lineage: dict[str, Any]) -> None:
     _verify_artifact(approval)
+    interpreted = review.get("interpreted_intent") or {}
     expected = {
         "artifact_type": HUMAN_APPROVAL_ARTIFACT_V1, "approval_status": APPROVED,
         "approval_granted": True, "approval_scope": ACTIVATION_APPROVAL_SCOPE,
         "activation_review_hash": review["artifact_hash"],
+        "synthesis_preflight_hash": interpreted.get("synthesis_preflight_hash"),
+        "final_synthesized_request_sha256": interpreted.get(
+            "final_synthesized_request_sha256"
+        ),
         "timeout_seconds": ACTIVATION_TIMEOUT_SECONDS,
         "source_execution_candidate_hash": lineage["candidate"]["artifact_hash"],
         "source_governed_execution_hash": lineage["governed_result"]["artifact_hash"],
