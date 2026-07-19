@@ -70,7 +70,7 @@ def _run(tmp_path: Path, session: str, tail: list[str], *, patch: str = VALID_PA
     return result, output, runtime_root / session, workspace, runner
 
 
-def _forbid(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+def _forbid(monkeypatch: pytest.MonkeyPatch, *, execute: bool = True) -> dict[str, int]:
     calls = {"execute": 0, "binder": 0, "accept": 0}
 
     def forbidden(name: str):
@@ -79,7 +79,8 @@ def _forbid(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
             raise AssertionError(f"{name} must not be called by R02")
         return _raise
 
-    monkeypatch.setattr(disposable, "execute_disposable_patch_validation", forbidden("execute"))
+    if execute:
+        monkeypatch.setattr(disposable, "execute_disposable_patch_validation", forbidden("execute"))
     monkeypatch.setattr(prerequisites, "bind_codex_replacement_acceptance_prerequisites", forbidden("binder"))
     monkeypatch.setattr(acceptance, "accept_generated_content", forbidden("accept"))
     return calls
@@ -88,18 +89,18 @@ def _forbid(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 def test_satisfied_path_prepares_and_records_existing_disposable_decision(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls = _forbid(monkeypatch)
+    calls = _forbid(monkeypatch, execute=False)
     result, output, root, workspace, runner = _run(tmp_path, "G31-R02-APPROVE", ["/satisfied", "/approve"])
     runtime = result["runtime_result"]
     review = runtime["disposable_patch_validation_review_capture"]
     decision = runtime["disposable_patch_validation_human_decision_capture"]
 
-    assert result["exit_reason"] == "DISPOSABLE_PATCH_VALIDATION_HUMAN_DECISION_RECORDED"
+    assert result["exit_reason"] == "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
     assert result["pending_disposable_patch_validation_decision"] is False
     assert runtime["task_outcome_satisfied"] is True
     assert runtime["disposable_patch_validation_review_pending"] is False
     assert runtime["disposable_patch_validation_decision_recorded"] is True
-    assert runtime["disposable_patch_validation_executed"] is False
+    assert runtime["disposable_patch_validation_executed"] is True
     assert runtime["ready_for_acceptance"] is False
     assert runtime["result_accepted"] is False
     assert runtime["mutation_authorized"] is False
@@ -122,7 +123,7 @@ def test_satisfied_path_prepares_and_records_existing_disposable_decision(
     assert human_decision_runtime.reconstruct_human_decision_replay(
         decision["human_decision_replay_reference"]
     )["decision"] == human_decision.APPROVE
-    assert not Path(review["disposable_patch_validation_plan_artifact"]["disposable_workspace"]).exists()
+    assert Path(review["disposable_patch_validation_plan_artifact"]["disposable_workspace"]).exists()
     assert calls == {"execute": 0, "binder": 0, "accept": 0}
 
 

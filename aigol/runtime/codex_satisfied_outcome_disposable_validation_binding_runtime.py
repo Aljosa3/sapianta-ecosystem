@@ -549,6 +549,28 @@ def reconstruct_disposable_patch_validation_outcome(
     }
 
 
+def render_disposable_patch_validation_outcome(outcome_capture: dict[str, Any]) -> str:
+    """Render the canonical disposable outcome without implying acceptance."""
+
+    outcome = outcome_capture.get("outcome_artifact") or {}
+    _verify_artifact(outcome, "disposable validation outcome")
+    return "\n".join((
+        "Captured Disposable Patch Validation Outcome",
+        f"Execution Status: {outcome.get('execution_status')}",
+        f"Disposable Workspace: {outcome.get('disposable_workspace')}",
+        f"Patch Applied: {outcome.get('disposable_patch_applied')}",
+        f"Content Validation Passed: {outcome.get('content_validation_passed')}",
+        f"Focused Test Executed: {outcome.get('grounded_test_execution_performed')}",
+        f"Focused Test Passed: {outcome.get('grounded_test_validation_passed')}",
+        f"Source Repository Unchanged: {outcome.get('source_repository_unchanged')}",
+        f"Failure Reason: {outcome.get('failure_reason')}",
+        "Ready For Acceptance: False",
+        "Result Accepted: False",
+        "Mutation Authorized: False",
+        "Main Repository Mutated: False",
+    ))
+
+
 def _reconstruct_sources(
     *,
     task_outcome_decision_capture: dict[str, Any],
@@ -1135,6 +1157,7 @@ __all__ = [
     "prepare_disposable_patch_validation_review",
     "record_disposable_patch_validation_human_decision",
     "render_disposable_patch_validation_review",
+    "render_disposable_patch_validation_outcome",
     "execute_disposable_patch_validation",
     "reconstruct_disposable_patch_validation_review",
     "reconstruct_disposable_patch_validation_outcome",

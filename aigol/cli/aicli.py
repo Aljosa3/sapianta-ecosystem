@@ -575,8 +575,16 @@ def run_reference_uhi_session(
                 pending_disposable_patch_validation_review = None
                 approval_count += 1
                 transcript.append({"event": "disposable_patch_validation_decision_approved"})
+                runtime_result = _execute_contextual_disposable_patch_validation(
+                    session=session, root=root, workspace_path=workspace_path,
+                    created=created, runtime_result=runtime_result,
+                )
+                output_writer(disposable_validation.render_disposable_patch_validation_outcome(
+                    runtime_result["disposable_patch_validation_outcome_capture"]
+                ))
+                transcript.append({"event": "disposable_patch_validation_outcome_recorded"})
                 session_status = "REFERENCE_UHI_SESSION_COMPLETED"
-                exit_reason = "DISPOSABLE_PATCH_VALIDATION_HUMAN_DECISION_RECORDED"
+                exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
                 break
             if pending_activation_review is not None:
                 approval_count += 1
@@ -1738,6 +1746,46 @@ def _record_contextual_disposable_patch_validation_decision(
         "disposable_patch_validation_review_pending": False, "disposable_patch_validation_decision_recorded": True,
         "disposable_patch_validation_executed": False, "ready_for_acceptance": False, "result_accepted": False,
         "mutation_authorized": False, "main_repository_mutated": False})
+    return merged
+
+
+def _execute_contextual_disposable_patch_validation(
+    *, session: str, root: Path, workspace_path: str, created: str,
+    runtime_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Call and reconstruct exactly one existing G31-23A disposable execution."""
+
+    merged = dict(runtime_result)
+    review = merged["disposable_patch_validation_review_capture"]
+    plan = review["disposable_patch_validation_plan_artifact"]
+    lineage = dict(task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"], review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
+    outcome = disposable_validation.execute_disposable_patch_validation(
+        review_binding_capture=review,
+        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
+        executed_by="HUMAN_OPERATOR_VIA_AICLI", executed_at=created,
+        replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-OUTCOME-{plan['artifact_hash'][-16:]}",
+        **lineage,
+    )
+    reconstruction = disposable_validation.reconstruct_disposable_patch_validation_outcome(
+        outcome_capture=outcome, review_binding_capture=review,
+        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
+        **lineage,
+    )
+    artifact = outcome["outcome_artifact"]
+    merged.update({"disposable_patch_validation_outcome_capture": outcome,
+        "disposable_patch_validation_outcome_reconstruction": reconstruction,
+        "disposable_patch_validation_approved": True,
+        "disposable_patch_validation_executed": artifact["disposable_patch_application_attempted"],
+        "disposable_patch_application_succeeded": artifact["disposable_patch_applied"] and artifact["content_validation_passed"],
+        "focused_validation_executed": artifact["grounded_test_execution_performed"],
+        "focused_validation_succeeded": artifact["grounded_test_validation_passed"],
+        "ready_for_acceptance": False, "result_accepted": False,
+        "mutation_authorized": False, "main_repository_mutated": False})
+    merged.update({key: outcome[key] for key in (
+        "disposable_patch_applied", "content_validation_performed", "content_validation_passed",
+        "grounded_test_execution_performed", "grounded_test_validation_passed",
+        "ready_for_generated_content_acceptance", "repository_mutation_authorized",
+        "failure_reason")})
     return merged
 
 
