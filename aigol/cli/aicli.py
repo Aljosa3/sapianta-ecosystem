@@ -42,6 +42,8 @@ from aigol.runtime import codex_worker_activation_binding_runtime as worker_acti
 from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
 from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_review
+from aigol.runtime import codex_satisfied_outcome_disposable_validation_binding_runtime as disposable_validation
+from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -95,6 +97,7 @@ def run_reference_uhi_session(
     pending_execution_review: dict[str, Any] | None = None
     pending_activation_review: dict[str, Any] | None = None
     pending_task_outcome_review: dict[str, Any] | None = None
+    pending_disposable_patch_validation_review: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
@@ -168,6 +171,15 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_disposable_patch_validation_review is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_DISPOSABLE_PATCH_VALIDATION_DECISION"
+                    exit_reason = "EOF_AWAITING_DISPOSABLE_PATCH_VALIDATION_DECISION"
+                    output_writer(
+                        "Platform Core is waiting for the disposable patch-validation decision. "
+                        "Use /approve or /cancel."
+                    )
+                    transcript.append({"event": "eof_awaiting_disposable_patch_validation_decision"})
+                    break
                 if pending_task_outcome_review is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_TASK_OUTCOME_DECISION"
                     exit_reason = "EOF_AWAITING_TASK_OUTCOME_DECISION"
@@ -230,6 +242,12 @@ def run_reference_uhi_session(
         if not normalized and not compose_buffer:
             continue
         if normalized in {"/exit", "exit", "quit"}:
+            if pending_disposable_patch_validation_review is not None:
+                output_writer(
+                    "Platform Core is waiting for the disposable patch-validation decision. "
+                    "Use /approve or /cancel."
+                )
+                continue
             if pending_task_outcome_review is not None:
                 output_writer(
                     "Platform Core is waiting for the task-outcome human decision. "
@@ -265,6 +283,24 @@ def run_reference_uhi_session(
                 )
                 transcript.append({"event": "task_outcome_cancel_rejected"})
                 continue
+            if pending_disposable_patch_validation_review is not None:
+                runtime_result = _record_contextual_disposable_patch_validation_decision(
+                    pending_review=pending_disposable_patch_validation_review,
+                    decision=human_decision.REJECT,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    runtime_result=runtime_result,
+                )
+                output_writer(human_decision.render_human_decision_summary(
+                    runtime_result["disposable_patch_validation_human_decision_capture"]
+                ))
+                pending_disposable_patch_validation_review = None
+                transcript.append({"event": "disposable_patch_validation_decision_rejected"})
+                session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+                exit_reason = "DISPOSABLE_PATCH_VALIDATION_HUMAN_DECISION_RECORDED"
+                break
             if pending_activation_review is not None:
                 runtime_result = dict(runtime_result or {})
                 runtime_result.update({
@@ -490,10 +526,58 @@ def run_reference_uhi_session(
                 "event": "task_outcome_human_decision_recorded",
                 "task_outcome_decision": outcome,
             })
+            if outcome == codex_task_review.TASK_OUTCOME_SATISFIED:
+                try:
+                    runtime_result = _prepare_contextual_disposable_patch_validation_review(
+                        session=session,
+                        root=root,
+                        workspace_path=workspace_path,
+                        created=created,
+                        runtime_result=runtime_result,
+                    )
+                except FailClosedRuntimeError as exc:
+                    runtime_result["disposable_patch_validation_review_blocked"] = True
+                    runtime_result["disposable_patch_validation_review_blocker"] = str(exc)
+                    output_writer(f"Disposable patch-validation review failed closed: {exc}")
+                    session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+                    exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
+                    break
+                pending_disposable_patch_validation_review = runtime_result[
+                    "disposable_patch_validation_review_capture"
+                ]
+                output_writer(disposable_validation.render_disposable_patch_validation_review(
+                    pending_disposable_patch_validation_review,
+                    runtime_result["codex_task_outcome_review_capture"],
+                ))
+                output_writer(
+                    "Disposable-only validation decision pending. Use /approve to record "
+                    "APPROVE or /cancel to record REJECT. No patch or test has run."
+                )
+                transcript.append({"event": "disposable_patch_validation_review_prepared"})
+                continue
             session_status = "REFERENCE_UHI_SESSION_COMPLETED"
             exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
             break
         if normalized == "/approve":
+            if pending_disposable_patch_validation_review is not None:
+                runtime_result = _record_contextual_disposable_patch_validation_decision(
+                    pending_review=pending_disposable_patch_validation_review,
+                    decision=human_decision.APPROVE,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    runtime_result=runtime_result,
+                )
+                output_writer(human_decision.render_human_decision_summary(
+                    runtime_result["disposable_patch_validation_human_decision_capture"]
+                ))
+                pending_disposable_patch_validation_review = None
+                approval_count += 1
+                transcript.append({"event": "disposable_patch_validation_decision_approved"})
+                session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+                exit_reason = "DISPOSABLE_PATCH_VALIDATION_HUMAN_DECISION_RECORDED"
+                break
             if pending_activation_review is not None:
                 approval_count += 1
                 runtime_result = _record_contextual_worker_activation_decision(
@@ -748,6 +832,13 @@ def run_reference_uhi_session(
             )
             continue
 
+        if pending_disposable_patch_validation_review is not None:
+            output_writer(
+                "Disposable patch-validation decision pending. Use exact /approve or /cancel; "
+                "other text does not apply a patch or run a test."
+            )
+            transcript.append({"event": "ambiguous_disposable_patch_validation_decision_rejected"})
+            continue
         if pending_task_outcome_review is not None:
             output_writer(
                 "Task-outcome human decision pending. Use exact /satisfied, "
@@ -791,10 +882,14 @@ def run_reference_uhi_session(
             pending_summary is not None or pending_execution_review is not None
             or pending_activation_review is not None
             or pending_task_outcome_review is not None
+            or pending_disposable_patch_validation_review is not None
         ),
         "pending_execution_decision": pending_execution_review is not None,
         "pending_worker_activation_decision": pending_activation_review is not None,
         "pending_task_outcome_decision": pending_task_outcome_review is not None,
+        "pending_disposable_patch_validation_decision": (
+            pending_disposable_patch_validation_review is not None
+        ),
         "human_execution_decision_count": approval_count,
         "human_task_outcome_decision_count": human_task_outcome_decision_count,
         "total_human_decision_count": (
@@ -1595,6 +1690,54 @@ def _record_contextual_task_outcome_decision(
             )
         },
     })
+    return merged
+
+
+def _prepare_contextual_disposable_patch_validation_review(
+    *, session: str, root: Path, workspace_path: str, created: str,
+    runtime_result: dict[str, Any],
+) -> dict[str, Any]:
+    merged = dict(runtime_result)
+    decision = merged["codex_task_outcome_human_decision_capture"]
+    identity = decision["human_decision_capture"]["human_decision_artifact"]["artifact_hash"][-16:]
+    lineage = dict(task_outcome_decision_capture=decision, review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
+    review = disposable_validation.prepare_disposable_patch_validation_review(
+        disposable_workspace=root / session / f"DISPOSABLE-PATCH-VALIDATION-{identity}",
+        prepared_at=created,
+        replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-REVIEW-{identity}",
+        **lineage,
+    )
+    reconstruction = disposable_validation.reconstruct_disposable_patch_validation_review(
+        review_binding_capture=review, **lineage,
+    )
+    merged.update({"disposable_patch_validation_review_capture": review, "disposable_patch_validation_review_reconstruction": reconstruction,
+        "disposable_patch_validation_review_pending": True, "disposable_patch_validation_decision_recorded": False,
+        "disposable_patch_validation_executed": False, "ready_for_acceptance": False, "result_accepted": False,
+        "mutation_authorized": False, "main_repository_mutated": False})
+    return merged
+
+
+def _record_contextual_disposable_patch_validation_decision(
+    *, pending_review: dict[str, Any], decision: str, session: str, root: Path,
+    workspace_path: str, created: str, runtime_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Record and reconstruct one existing disposable-only decision; never execute it."""
+
+    merged = dict(runtime_result or {})
+    plan = pending_review["disposable_patch_validation_plan_artifact"]
+    lineage = dict(task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"], review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
+    capture = disposable_validation.record_disposable_patch_validation_human_decision(
+        review_binding_capture=pending_review, decision=decision,
+        decision_reason="Human operator selected the explicit disposable validation decision in AiCLI.",
+        decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=created,
+        human_decision_replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-HUMAN-DECISION-{plan['artifact_hash'][-16:]}",
+        **lineage,
+    )
+    merged.update({"disposable_patch_validation_human_decision_capture": capture,
+        "disposable_patch_validation_human_decision_reconstruction": human_decision.reconstruct_human_decision_replay(capture["human_decision_replay_reference"]),
+        "disposable_patch_validation_review_pending": False, "disposable_patch_validation_decision_recorded": True,
+        "disposable_patch_validation_executed": False, "ready_for_acceptance": False, "result_accepted": False,
+        "mutation_authorized": False, "main_repository_mutated": False})
     return merged
 
 

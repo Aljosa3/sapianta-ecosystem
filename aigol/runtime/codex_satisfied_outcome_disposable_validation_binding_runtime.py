@@ -209,6 +209,21 @@ def reconstruct_disposable_patch_validation_review(
     }
 
 
+def render_disposable_patch_validation_review(
+    review_binding_capture: dict[str, Any],
+    task_outcome_review_capture: dict[str, Any],
+) -> str:
+    """Render the existing disposable-only review without granting authority."""
+
+    plan = review_binding_capture.get("disposable_patch_validation_plan_artifact") or {}
+    packet = task_outcome_review_capture.get("task_outcome_review_packet_artifact") or {}
+    text = (packet.get("exact_worker_output") or {}).get("text")
+    if not isinstance(text, str):
+        raise FailClosedRuntimeError("disposable validation review exact Worker output is invalid")
+    _verify_artifact(plan, "disposable validation plan")
+    return "\n".join(("Captured Disposable Patch Validation Review", f"Plan: {plan.get('plan_id')}", f"Target Paths: {plan.get('changed_paths')}", f"Disposable Workspace: {plan.get('disposable_workspace')}", f"Focused Test: {plan.get('grounded_test_command')}", "Exact Worker Result:", text, "Exact Proposed Patch:", str(plan.get("patch_text")), "Separate APPROVE applies only in the disposable workspace; source mutation, acceptance, and mutation authorization remain false."))
+
+
 def record_disposable_patch_validation_human_decision(
     *,
     review_binding_capture: dict[str, Any],
@@ -1119,6 +1134,7 @@ __all__ = [
     "FAILED_CLOSED",
     "prepare_disposable_patch_validation_review",
     "record_disposable_patch_validation_human_decision",
+    "render_disposable_patch_validation_review",
     "execute_disposable_patch_validation",
     "reconstruct_disposable_patch_validation_review",
     "reconstruct_disposable_patch_validation_outcome",
