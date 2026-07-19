@@ -44,6 +44,7 @@ from aigol.runtime import codex_worker_result_to_semantic_validation_binding_run
 from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_review
 from aigol.runtime import codex_satisfied_outcome_disposable_validation_binding_runtime as disposable_validation
 from aigol.runtime import codex_replacement_acceptance_prerequisite_binding_runtime as replacement_prerequisites
+from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
@@ -270,10 +271,28 @@ def run_reference_uhi_session(
                 "human_content_acceptance_decision_reconstruction": reconstruction,
                 "result_accepted": False, "mutation_authorized": False, "main_repository_mutated": False})
             output_writer(human_decision.render_content_acceptance_decision(capture))
+            if outcome == human_decision.ACCEPTED:
+                artifact = capture["human_decision_artifact"]
+                accepted = generated_acceptance.accept_generated_content_from_content_acceptance_decision(
+                    acceptance_id=f"G31-GENERATED-CONTENT-ACCEPTANCE-{artifact['artifact_hash'][-16:]}",
+                    decision_capture=capture,
+                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                    created_at=created, session_root=root / session,
+                    replay_dir=root / session / f"GENERATED-CONTENT-ACCEPTANCE-{artifact['artifact_hash'][-16:]}")
+                accepted_reconstruction = generated_acceptance.reconstruct_generated_content_acceptance_from_decision_replay(
+                    acceptance_capture=accepted, decision_capture=capture,
+                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                    session_root=root / session)
+                runtime_result.update({"generated_content_acceptance_capture": accepted,
+                    "generated_content_acceptance_reconstruction": accepted_reconstruction,
+                    "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
+                output_writer(generated_acceptance.render_generated_content_acceptance_from_decision(
+                    accepted, runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]))
             pending_content_acceptance_context = None
             transcript.append({"event": "human_content_acceptance_decision_recorded", "outcome": outcome})
             session_status = "REFERENCE_UHI_SESSION_COMPLETED"
-            exit_reason = "HUMAN_CONTENT_ACCEPTANCE_DECISION_RECORDED"
+            exit_reason = ("GENERATED_CONTENT_ACCEPTANCE_RECORDED" if outcome == human_decision.ACCEPTED
+                           else "HUMAN_CONTENT_ACCEPTANCE_DECISION_RECORDED")
             break
         if normalized in {"/exit", "exit", "quit"}:
             if pending_disposable_patch_validation_review is not None:

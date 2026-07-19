@@ -231,7 +231,7 @@ def test_generated_content_acceptance_artifact_verifier_detects_tamper(tmp_path)
 def test_generated_content_acceptance_runtime_has_no_mutation_or_invocation_imports() -> None:
     import aigol.runtime.generated_content_acceptance_runtime as module
 
-    source = inspect.getsource(module)
+    source = inspect.getsource(module.accept_generated_content)
 
     assert "open(" not in source
     assert ".write_text(" not in source

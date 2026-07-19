@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 from aigol.runtime.generated_content_validation_runtime import (
@@ -25,7 +26,7 @@ from aigol.runtime.implementation_manifest_runtime import (
     REPLACE_CONTENT,
 )
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
 AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_VERSION = "AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_V1"
@@ -37,6 +38,7 @@ ACCEPTANCE_PREREQUISITES_SATISFIED = "ACCEPTANCE_PREREQUISITES_SATISFIED"
 AIGOL_GENERATED_CONTENT_ACCEPTANCE_RUNTIME_STATUS = "CERTIFIED"
 GENERATED_CONTENT_ACCEPTED = "GENERATED_CONTENT_ACCEPTED"
 FAILED_CLOSED = "FAILED_CLOSED"
+CONTENT_ACCEPTANCE_REPLAY_STEP = "generated_content_acceptance_from_decision_recorded"
 
 ACCEPTANCE_DECISION = "ACCEPTED"
 ACCEPTANCE_SCOPE = "CONTENT_ACCEPTANCE_ONLY"
@@ -272,6 +274,160 @@ def verify_generated_content_acceptance_artifact(artifact: dict[str, Any]) -> No
     expected_input.pop("artifact_hash", None)
     if actual_artifact_hash != replay_hash(expected_input):
         raise FailClosedRuntimeError("generated content acceptance artifact hash mismatch")
+
+
+def accept_generated_content_from_content_acceptance_decision(
+    *, acceptance_id: str, decision_capture: dict[str, Any], binding_capture: dict[str, Any], created_at: str,
+    session_root: str | Path, replay_dir: str | Path,) -> dict[str, Any]:
+    """Consume one exact V2 ACCEPTED decision through the existing acceptance owner."""
+    root, path = Path(session_root).resolve(), Path(replay_dir).resolve()
+    if not path.is_relative_to(root):
+        raise FailClosedRuntimeError("generated content acceptance decision Replay is cross-session")
+    replay_path = path / f"000_{CONTENT_ACCEPTANCE_REPLAY_STEP}.json"
+    if replay_path.exists():
+        raise FailClosedRuntimeError("generated content acceptance decision destination already exists")
+    decision, context, reconstructed = _validated_content_acceptance_decision(decision_capture, binding_capture, root)
+    prior_keys = _prior_decision_acceptance_lineage(root, decision["artifact_hash"])
+    manifest, content, tests = _replacement_acceptance_inputs(binding_capture)
+    acceptance = accept_generated_content(acceptance_id=acceptance_id,
+        implementation_manifest_artifact=manifest, generated_content_validation_artifact=content,
+        generated_test_validation_artifact=tests,
+        human_acceptance_evidence={
+            "actor_id": decision["decided_by"], "decision": ACCEPTANCE_DECISION,
+            "accepted_at": decision["decided_at"], "acceptance_scope": ACCEPTANCE_SCOPE,
+            "acceptance_statement": ACCEPTANCE_STATEMENT},
+        created_at=created_at, prior_acceptance_lineage_keys=prior_keys)
+    artifact = acceptance["generated_content_acceptance_artifact"]
+    verify_generated_content_acceptance_artifact(artifact)
+    if acceptance.get("acceptance_status") != GENERATED_CONTENT_ACCEPTED:
+        raise FailClosedRuntimeError(acceptance.get("failure_reason") or "generated content acceptance failed closed")
+    wrapper = {
+        "replay_index": 0, "replay_step": CONTENT_ACCEPTANCE_REPLAY_STEP,
+        "event_type": CONTENT_ACCEPTANCE_REPLAY_STEP.upper(), "artifact": deepcopy(artifact),
+        "human_decision_reference": decision["human_decision_id"], "human_decision_hash": decision["artifact_hash"],
+        "human_decision_replay_reference": decision_capture["human_decision_replay_reference"],
+        "human_decision_replay_hash": reconstructed["replay_hash"], "subject_binding_hash": context["subject_binding_hash"],
+        "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False,
+    }
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(replay_path, wrapper)
+    capture = deepcopy(acceptance)
+    capture.update({"human_decision_reference": decision["human_decision_id"], "human_decision_hash": decision["artifact_hash"],
+        "human_decision_replay_reference": decision_capture["human_decision_replay_reference"],
+        "acceptance_replay_reference": str(path), "acceptance_replay_hash": wrapper["replay_hash"],
+        "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
+    return capture
+
+
+def reconstruct_generated_content_acceptance_from_decision_replay(
+    *, acceptance_capture: dict[str, Any], decision_capture: dict[str, Any], binding_capture: dict[str, Any],
+    session_root: str | Path,) -> dict[str, Any]:
+    """Reconstruct one accepted-result wrapper and its exact human authority."""
+    root = Path(session_root).resolve()
+    path = Path(acceptance_capture.get("acceptance_replay_reference", "")).resolve()
+    if not path.is_relative_to(root):
+        raise FailClosedRuntimeError("generated content acceptance Replay is cross-session")
+    wrapper = load_json(path / f"000_{CONTENT_ACCEPTANCE_REPLAY_STEP}.json")
+    _verify_acceptance_replay_wrapper(wrapper)
+    decision, context, reconstructed = _validated_content_acceptance_decision(decision_capture, binding_capture, root)
+    artifact = wrapper.get("artifact")
+    verify_generated_content_acceptance_artifact(artifact)
+    manifest, content, tests = _replacement_acceptance_inputs(binding_capture)
+    checks = (acceptance_capture.get("generated_content_acceptance_artifact") == artifact,
+        artifact.get("acceptance_status") == GENERATED_CONTENT_ACCEPTED,
+        artifact.get("implementation_manifest_artifact_hash") == manifest.get("artifact_hash"),
+        artifact.get("generated_content_validation_artifact_hash") == content.get("artifact_hash"),
+        artifact.get("generated_test_validation_artifact_hash") == tests.get("artifact_hash"),
+        artifact.get("human_actor_id") == decision.get("decided_by"), artifact.get("human_decision") == decision.get("decision_outcome"),
+        artifact.get("human_accepted_at") == decision.get("decided_at"),
+        wrapper.get("human_decision_reference") == decision.get("human_decision_id"),
+        wrapper.get("human_decision_hash") == decision.get("artifact_hash"),
+        wrapper.get("human_decision_replay_hash") == reconstructed.get("replay_hash"),
+        wrapper.get("subject_binding_hash") == context.get("subject_binding_hash"),
+        wrapper.get("result_accepted") is True, wrapper.get("mutation_authorized") is False,
+        wrapper.get("main_repository_mutated") is False)
+    if not all(checks):
+        raise FailClosedRuntimeError("generated content acceptance decision Replay identity mismatch")
+    return {"acceptance_id": artifact["acceptance_id"], "acceptance_status": artifact["acceptance_status"],
+        "acceptance_lineage_key": artifact["acceptance_lineage_key"],
+        "human_decision_reference": decision["human_decision_id"], "result_accepted": True,
+        "mutation_authorized": False, "main_repository_mutated": False,
+        "replay_artifact_count": 1, "replay_hash": wrapper["replay_hash"]}
+
+
+def render_generated_content_acceptance_from_decision(
+    acceptance_capture: dict[str, Any], binding_capture: dict[str, Any],) -> str:
+    """Render accepted content without implying source application."""
+    artifact = acceptance_capture.get("generated_content_acceptance_artifact") or {}
+    verify_generated_content_acceptance_artifact(artifact)
+    manifest, _, _ = _replacement_acceptance_inputs(binding_capture)
+    files = manifest["file_entries"]
+    return "\n".join(("Generated Content Accepted",
+        f"Accepted Result: {artifact['acceptance_id']}", f"Operation: {manifest['operation_mode']}",
+        *(f"Target: {item['target_path']} {item['preimage_sha256']} -> {item['postimage_sha256']}" for item in files),
+        f"Human Decision: {acceptance_capture['human_decision_reference']}",
+        f"Human Decision Replay: {acceptance_capture['human_decision_replay_reference']}",
+        f"Acceptance Replay: {acceptance_capture['acceptance_replay_reference']}",
+        "Result Accepted: True", "Mutation Authorized: False", "Main Repository Mutated: False",
+        "The validated result is accepted; repository mutation has not occurred."))
+
+
+def _validated_content_acceptance_decision(
+    decision_capture: dict[str, Any], binding_capture: dict[str, Any], root: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    from aigol.runtime import human_decision_runtime as human_decision
+    if not isinstance(decision_capture, dict) or not isinstance(binding_capture, dict): raise FailClosedRuntimeError("exact V2 content-acceptance evidence required")
+    reconstructed = human_decision.reconstruct_content_acceptance_decision_replay(
+        decision_capture=decision_capture, binding_capture=binding_capture, session_root=root,
+    )
+    decision = decision_capture.get("human_decision_artifact") or {}
+    context = decision_capture.get("content_acceptance_context_artifact") or {}
+    _verify_artifact_hash(decision, "human content-acceptance decision")
+    _verify_artifact_hash(context, "human content-acceptance context")
+    false_fields = ("result_accepted", "mutation_authorized", "main_repository_mutated",
+                    "execution_authorized", "provider_invoked", "worker_invoked",
+                    "command_executed", "patch_applied", "automatic_approval")
+    checks = (decision.get("artifact_type") == human_decision.HUMAN_DECISION_ARTIFACT_V2,
+        decision.get("decision_type") == human_decision.CONTENT_ACCEPTANCE,
+        decision.get("decision_scope") == human_decision.CONTENT_ACCEPTANCE_ONLY,
+        decision.get("decision_outcome") == human_decision.ACCEPTED, reconstructed.get("decision_outcome") == human_decision.ACCEPTED,
+        decision.get("context_hash") == context.get("artifact_hash"), decision.get("decided_by") == context.get("human_actor_id"),
+        decision.get("subject_binding_hash") == context.get("subject_binding_hash"),
+        all(decision.get(field) is False for field in false_fields))
+    if not all(checks):
+        raise FailClosedRuntimeError("exact V2 ACCEPTED content-acceptance decision required")
+    return decision, context, reconstructed
+
+
+def _replacement_acceptance_inputs(
+    binding_capture: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    try:
+        manifest = binding_capture["implementation_manifest_capture"]["implementation_manifest_artifact"]
+        content = binding_capture["generated_content_validation_capture"]["generated_content_validation_artifact"]
+        tests = binding_capture["generated_test_validation_capture"]["generated_test_validation_artifact"]
+    except (KeyError, TypeError) as exc:
+        raise FailClosedRuntimeError("generated content acceptance binding inputs missing") from exc
+    return manifest, content, tests
+
+
+def _prior_decision_acceptance_lineage(root: Path, decision_hash: str) -> list[str]:
+    keys = []
+    for path in root.rglob(f"000_{CONTENT_ACCEPTANCE_REPLAY_STEP}.json"):
+        wrapper = load_json(path); _verify_acceptance_replay_wrapper(wrapper)
+        artifact = wrapper.get("artifact") or {}; verify_generated_content_acceptance_artifact(artifact)
+        if wrapper.get("human_decision_hash") == decision_hash:
+            raise FailClosedRuntimeError("human content-acceptance decision already consumed")
+        keys.append(artifact["acceptance_lineage_key"])
+    return keys
+
+
+def _verify_acceptance_replay_wrapper(wrapper: dict[str, Any]) -> None:
+    if wrapper.get("replay_index") != 0 or wrapper.get("replay_step") != CONTENT_ACCEPTANCE_REPLAY_STEP:
+        raise FailClosedRuntimeError("generated content acceptance Replay ordering mismatch")
+    actual = wrapper.get("replay_hash"); value = deepcopy(wrapper); value.pop("replay_hash", None)
+    if actual != replay_hash(value):
+        raise FailClosedRuntimeError("generated content acceptance Replay hash mismatch")
 
 
 def _validate_manifest(value: dict[str, Any]) -> dict[str, Any]:
@@ -564,7 +720,10 @@ __all__ = [
     "GENERATED_CONTENT_ACCEPTANCE_PREREQUISITES_ARTIFACT_V2",
     "GENERATED_CONTENT_ACCEPTED",
     "accept_generated_content",
+    "accept_generated_content_from_content_acceptance_decision",
     "bind_generated_content_acceptance_prerequisites",
+    "reconstruct_generated_content_acceptance_from_decision_replay",
+    "render_generated_content_acceptance_from_decision",
     "verify_generated_content_acceptance_artifact",
     "verify_generated_content_acceptance_prerequisite_artifact",
 ]

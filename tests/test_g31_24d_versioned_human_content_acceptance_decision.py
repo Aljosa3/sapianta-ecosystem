@@ -54,7 +54,19 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 def test_aicli_accept_records_exact_v2_decision_without_downstream(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    downstream = _forbid_downstream(monkeypatch)
+    downstream = {"accept": 0, "authorization": 0}
+    real_accept = acceptance.accept_generated_content
+
+    def accept_once(**kwargs):
+        downstream["accept"] += 1
+        return real_accept(**kwargs)
+
+    def forbid_authorization(*_args: object, **_kwargs: object) -> None:
+        downstream["authorization"] += 1
+        raise AssertionError("G31-24E must stop before mutation authorization")
+
+    monkeypatch.setattr(acceptance, "accept_generated_content", accept_once)
+    monkeypatch.setattr(mutation_authorization, "authorize_filesystem_mutation", forbid_authorization)
     real_execute = disposable.execute_disposable_patch_validation
     real_command = disposable.execute_validation_command
     real_mutation = disposable.execute_governed_repository_mutation
@@ -81,7 +93,7 @@ def test_aicli_accept_records_exact_v2_decision_without_downstream(
     context = capture["content_acceptance_context_artifact"]
     subject = context["subject_binding"]
 
-    assert result["exit_reason"] == "HUMAN_CONTENT_ACCEPTANCE_DECISION_RECORDED"
+    assert result["exit_reason"] == "GENERATED_CONTENT_ACCEPTANCE_RECORDED"
     assert artifact["artifact_type"] == decision.HUMAN_DECISION_ARTIFACT_V2
     assert artifact["decision_type"] == decision.CONTENT_ACCEPTANCE
     assert artifact["decision_scope"] == decision.CONTENT_ACCEPTANCE_ONLY
@@ -94,11 +106,12 @@ def test_aicli_accept_records_exact_v2_decision_without_downstream(
     assert subject["operation_mode"] == "REPLACE_CONTENT"
     assert subject["replacement_files"][0]["preimage_sha256"].startswith("sha256:")
     assert subject["replacement_files"][0]["postimage_sha256"].startswith("sha256:")
-    assert runtime["result_accepted"] is False
+    assert runtime["result_accepted"] is True
     assert runtime["mutation_authorized"] is False
     assert runtime["main_repository_mutated"] is False
     assert calls == {"execute": 1, "command": 1, "patch": 1, "binder": 1}
-    assert downstream == {"accept": 0, "authorization": 0}
+    assert downstream == {"accept": 1, "authorization": 0}
+    assert runtime["generated_content_acceptance_reconstruction"]["result_accepted"] is True
     assert len(runner.calls) == 1
     assert subprocess.run(
         ["git", "status", "--short"], cwd=source, check=True, capture_output=True, text=True
@@ -106,7 +119,8 @@ def test_aicli_accept_records_exact_v2_decision_without_downstream(
     rendered = "\n".join(output)
     assert "Human Content-Acceptance Decision Required" in rendered
     assert "Decision Outcome: ACCEPTED" in rendered
-    assert "Result Accepted: False" in rendered
+    assert "Generated Content Accepted" in rendered
+    assert "Result Accepted: True" in rendered
 
 
 def test_aicli_reject_records_v2_rejected_and_never_accepts(
