@@ -78,7 +78,7 @@ def test_positive_r02_decision_executes_existing_owner_once_and_reconstructs(
     target = Path(plan["disposable_workspace"])
 
     assert len(execute_calls) == 1
-    assert result["exit_reason"] == "REPLACEMENT_ACCEPTANCE_PREREQUISITES_BOUND"
+    assert result["exit_reason"] == "EOF_AWAITING_CONTENT_ACCEPTANCE_DECISION"
     assert artifact["execution_status"] == disposable.COMPLETED
     assert runtime["disposable_patch_validation_approved"] is True
     assert runtime["disposable_patch_validation_executed"] is True

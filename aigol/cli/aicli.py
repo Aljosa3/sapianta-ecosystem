@@ -99,6 +99,7 @@ def run_reference_uhi_session(
     pending_activation_review: dict[str, Any] | None = None
     pending_task_outcome_review: dict[str, Any] | None = None
     pending_disposable_patch_validation_review: dict[str, Any] | None = None
+    pending_content_acceptance_context: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
@@ -172,6 +173,12 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_content_acceptance_context is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_CONTENT_ACCEPTANCE_DECISION"
+                    exit_reason = "EOF_AWAITING_CONTENT_ACCEPTANCE_DECISION"
+                    output_writer("Validated content is awaiting /accept or /reject.")
+                    transcript.append({"event": "eof_awaiting_content_acceptance_decision"})
+                    break
                 if pending_disposable_patch_validation_review is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_DISPOSABLE_PATCH_VALIDATION_DECISION"
                     exit_reason = "EOF_AWAITING_DISPOSABLE_PATCH_VALIDATION_DECISION"
@@ -242,6 +249,32 @@ def run_reference_uhi_session(
         normalized = line_text.strip().lower()
         if not normalized and not compose_buffer:
             continue
+        if pending_content_acceptance_context is not None:
+            if normalized not in {"/accept", "/reject"}:
+                output_writer("Content-acceptance context accepts only /accept or /reject.")
+                transcript.append({"event": "invalid_content_acceptance_response"})
+                continue
+            outcome = human_decision.ACCEPTED if normalized == "/accept" else human_decision.REJECTED
+            capture = human_decision.record_content_acceptance_decision(
+                context_capture=pending_content_acceptance_context,
+                binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                decision_outcome=outcome, decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=created,
+                session_root=root / session,
+            )
+            reconstruction = human_decision.reconstruct_content_acceptance_decision_replay(
+                decision_capture=capture,
+                binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                session_root=root / session,
+            )
+            runtime_result.update({"human_content_acceptance_decision_capture": capture,
+                "human_content_acceptance_decision_reconstruction": reconstruction,
+                "result_accepted": False, "mutation_authorized": False, "main_repository_mutated": False})
+            output_writer(human_decision.render_content_acceptance_decision(capture))
+            pending_content_acceptance_context = None
+            transcript.append({"event": "human_content_acceptance_decision_recorded", "outcome": outcome})
+            session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+            exit_reason = "HUMAN_CONTENT_ACCEPTANCE_DECISION_RECORDED"
+            break
         if normalized in {"/exit", "exit", "quit"}:
             if pending_disposable_patch_validation_review is not None:
                 output_writer(
@@ -599,7 +632,18 @@ def run_reference_uhi_session(
                         )
                     )
                     transcript.append({"event": "replacement_acceptance_prerequisites_bound"})
-                    exit_reason = "REPLACEMENT_ACCEPTANCE_PREREQUISITES_BOUND"
+                    binding = runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]["binding_artifact"]
+                    pending_content_acceptance_context = human_decision.prepare_content_acceptance_decision_context(
+                        context_id=f"G31-CONTENT-ACCEPTANCE-{binding['artifact_hash'][-16:]}",
+                        binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                        human_actor_id="HUMAN_OPERATOR_VIA_AICLI", presented_at=created,
+                        session_root=root / session,
+                        replay_dir=root / session / f"CONTENT-ACCEPTANCE-DECISION-{binding['artifact_hash'][-16:]}",
+                    )
+                    runtime_result["human_content_acceptance_context_capture"] = pending_content_acceptance_context
+                    output_writer(human_decision.render_content_acceptance_decision_context(pending_content_acceptance_context))
+                    transcript.append({"event": "human_content_acceptance_context_presented"})
+                    continue
                 else:
                     exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
                 session_status = "REFERENCE_UHI_SESSION_COMPLETED"

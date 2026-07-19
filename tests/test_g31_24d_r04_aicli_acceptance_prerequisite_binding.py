@@ -90,7 +90,7 @@ def test_successful_r03_outcome_binds_exact_ten_captures_once(
     reconstructed = runtime["codex_replacement_acceptance_prerequisite_binding_reconstruction"]
     manifest = capture["implementation_manifest_capture"]["implementation_manifest_artifact"]
 
-    assert result["exit_reason"] == "REPLACEMENT_ACCEPTANCE_PREREQUISITES_BOUND"
+    assert result["exit_reason"] == "EOF_AWAITING_CONTENT_ACCEPTANCE_DECISION"
     assert len(bind_calls) == execute_calls == command_calls == 1
     expected = {
         "disposable_validation_outcome_capture": "disposable_patch_validation_outcome_capture",
@@ -119,6 +119,7 @@ def test_successful_r03_outcome_binds_exact_ten_captures_once(
     assert "Captured Replacement Acceptance Prerequisites" in presentation
     assert "Operation: REPLACE_CONTENT" in presentation
     assert "Ready For Human Acceptance: True" in presentation
+    assert "Human Content-Acceptance Decision Required" in presentation
     assert "Result Accepted: False" in presentation
     assert "Mutation Authorized: False" in presentation
     assert downstream == {"accept": 0, "authorization": 0}
