@@ -324,6 +324,45 @@ def reconstruct_codex_replacement_acceptance_prerequisite_binding(
     }
 
 
+def render_codex_replacement_acceptance_prerequisites(
+    binding_capture: dict[str, Any], reconstruction: dict[str, Any],
+) -> str:
+    """Render ready-for-human-acceptance evidence without accepting content."""
+
+    binding = binding_capture.get("binding_artifact") or {}
+    manifest = (binding_capture.get("implementation_manifest_capture") or {}).get(
+        "implementation_manifest_artifact"
+    ) or {}
+    _verify_artifact(binding, "replacement prerequisite binding")
+    _verify_artifact(manifest, "replacement implementation manifest")
+    if reconstruction.get("binding_hash") != binding["artifact_hash"]:
+        raise FailClosedRuntimeError("replacement prerequisite presentation identity mismatch")
+    files = []
+    for entry in manifest["file_entries"]:
+        files.extend((
+            f"Target Relative Path: {entry['target_path']}",
+            f"Original File SHA-256: {entry['preimage_sha256']}",
+            f"Replacement Content SHA-256: {entry['postimage_sha256']}",
+        ))
+    return "\n".join((
+        "Captured Replacement Acceptance Prerequisites",
+        f"Operation: {manifest['operation_mode']}",
+        *files,
+        f"Disposable Execution Result: {COMPLETED}",
+        f"Content Validation Passed: {binding['content_validation_passed']}",
+        f"Focused Test Validation Passed: {binding['test_validation_passed']}",
+        f"Acceptance Prerequisites Satisfied: {binding['acceptance_prerequisites_satisfied']}",
+        f"Result Identity: {binding['binding_id']}",
+        f"Result Hash: {binding['artifact_hash']}",
+        f"Replay Reference: {binding_capture['binding_replay_reference']}",
+        f"Replay Hash: {reconstruction['replay_hash']}",
+        "Ready For Human Acceptance: True",
+        "Result Accepted: False",
+        "Mutation Authorized: False",
+        "Main Repository Mutated: False",
+    ))
+
+
 def _require_successful_disposable_outcome(
     outcome: Any, reconstructed: dict[str, Any], plan: dict[str, Any],
 ) -> None:
@@ -561,4 +600,5 @@ __all__ = [
     "REPLACE_CONTENT",
     "bind_codex_replacement_acceptance_prerequisites",
     "reconstruct_codex_replacement_acceptance_prerequisite_binding",
+    "render_codex_replacement_acceptance_prerequisites",
 ]

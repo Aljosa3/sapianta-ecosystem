@@ -36,7 +36,9 @@ def _git_source_workspace(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(r02, "_workspace", git_workspace)
 
 
-def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
+def _forbid_downstream(
+    monkeypatch: pytest.MonkeyPatch, *, binder: bool = True,
+) -> dict[str, int]:
     calls = {"binder": 0, "accept": 0, "authorization": 0}
 
     def forbidden(name: str):
@@ -45,7 +47,8 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
             raise AssertionError(f"R03 must not call {name}")
         return _raise
 
-    monkeypatch.setattr(prerequisites, "bind_codex_replacement_acceptance_prerequisites", forbidden("binder"))
+    if binder:
+        monkeypatch.setattr(prerequisites, "bind_codex_replacement_acceptance_prerequisites", forbidden("binder"))
     monkeypatch.setattr(acceptance, "accept_generated_content", forbidden("accept"))
     monkeypatch.setattr(mutation_authorization, "authorize_filesystem_mutation", forbidden("authorization"))
     return calls
@@ -54,7 +57,7 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 def test_positive_r02_decision_executes_existing_owner_once_and_reconstructs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    downstream = _forbid_downstream(monkeypatch)
+    downstream = _forbid_downstream(monkeypatch, binder=False)
     real_execute = disposable.execute_disposable_patch_validation
     execute_calls: list[dict] = []
 
@@ -75,14 +78,14 @@ def test_positive_r02_decision_executes_existing_owner_once_and_reconstructs(
     target = Path(plan["disposable_workspace"])
 
     assert len(execute_calls) == 1
-    assert result["exit_reason"] == "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
+    assert result["exit_reason"] == "REPLACEMENT_ACCEPTANCE_PREREQUISITES_BOUND"
     assert artifact["execution_status"] == disposable.COMPLETED
     assert runtime["disposable_patch_validation_approved"] is True
     assert runtime["disposable_patch_validation_executed"] is True
     assert runtime["disposable_patch_application_succeeded"] is True
     assert runtime["focused_validation_executed"] is True
     assert runtime["focused_validation_succeeded"] is True
-    assert runtime["ready_for_acceptance"] is False
+    assert runtime["ready_for_acceptance"] is True
     assert runtime["result_accepted"] is False
     assert runtime["mutation_authorized"] is False
     assert runtime["main_repository_mutated"] is False

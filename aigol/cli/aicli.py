@@ -43,6 +43,7 @@ from aigol.runtime import codex_transport_to_worker_result_capture_binding_runti
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
 from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_review
 from aigol.runtime import codex_satisfied_outcome_disposable_validation_binding_runtime as disposable_validation
+from aigol.runtime import codex_replacement_acceptance_prerequisite_binding_runtime as replacement_prerequisites
 from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
@@ -583,8 +584,25 @@ def run_reference_uhi_session(
                     runtime_result["disposable_patch_validation_outcome_capture"]
                 ))
                 transcript.append({"event": "disposable_patch_validation_outcome_recorded"})
+                outcome_artifact = runtime_result[
+                    "disposable_patch_validation_outcome_capture"
+                ]["outcome_artifact"]
+                if outcome_artifact["execution_status"] == disposable_validation.COMPLETED:
+                    runtime_result = _bind_contextual_replacement_acceptance_prerequisites(
+                        session=session, root=root, workspace_path=workspace_path,
+                        created=created, runtime_result=runtime_result,
+                    )
+                    output_writer(
+                        replacement_prerequisites.render_codex_replacement_acceptance_prerequisites(
+                            runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                            runtime_result["codex_replacement_acceptance_prerequisite_binding_reconstruction"],
+                        )
+                    )
+                    transcript.append({"event": "replacement_acceptance_prerequisites_bound"})
+                    exit_reason = "REPLACEMENT_ACCEPTANCE_PREREQUISITES_BOUND"
+                else:
+                    exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
                 session_status = "REFERENCE_UHI_SESSION_COMPLETED"
-                exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
                 break
             if pending_activation_review is not None:
                 approval_count += 1
@@ -1786,6 +1804,44 @@ def _execute_contextual_disposable_patch_validation(
         "grounded_test_execution_performed", "grounded_test_validation_passed",
         "ready_for_generated_content_acceptance", "repository_mutation_authorized",
         "failure_reason")})
+    return merged
+
+
+def _bind_contextual_replacement_acceptance_prerequisites(
+    *, session: str, root: Path, workspace_path: str, created: str,
+    runtime_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Bind one exact successful R03 outcome through the existing G31-23B owner."""
+
+    merged = dict(runtime_result)
+    outcome = merged["disposable_patch_validation_outcome_capture"]
+    outcome_hash = outcome["outcome_artifact"]["artifact_hash"]
+    capture = replacement_prerequisites.bind_codex_replacement_acceptance_prerequisites(
+        disposable_validation_outcome_capture=outcome,
+        disposable_validation_review_capture=merged["disposable_patch_validation_review_capture"],
+        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
+        task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"],
+        task_outcome_review_capture=merged["codex_task_outcome_review_capture"],
+        result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"],
+        governance_validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"],
+        activation_capture=merged["codex_worker_activation_capture"],
+        governed_execution_capture=merged["governed_worker_execution_capture"],
+        execution_candidate_capture=merged["worker_execution_candidate_capture"],
+        session_root=root / session, source_workspace=workspace_path, created_at=created,
+        replay_dir=root / session / f"G31-REPLACEMENT-ACCEPTANCE-PREREQUISITES-{outcome_hash[-16:]}",
+    )
+    reconstruction = (
+        replacement_prerequisites.reconstruct_codex_replacement_acceptance_prerequisite_binding(
+            binding_capture=capture, session_root=root / session,
+        )
+    )
+    merged["codex_replacement_acceptance_prerequisite_binding_capture"] = capture
+    merged["codex_replacement_acceptance_prerequisite_binding_reconstruction"] = reconstruction
+    merged.update({key: capture[key] for key in (
+        "replacement_manifest_created", "acceptance_prerequisites_satisfied",
+        "ready_for_acceptance", "result_accepted", "mutation_authorized",
+        "main_repository_mutated",
+    )})
     return merged
 
 
