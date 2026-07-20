@@ -30,6 +30,12 @@ AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V2, HUMAN_DECISION_ARTIFACT_V2, HUMAN_DECIS
 CONTENT_ACCEPTANCE, CONTENT_ACCEPTANCE_ONLY = "CONTENT_ACCEPTANCE", "CONTENT_ACCEPTANCE_ONLY"
 ACCEPTED, REJECTED = "ACCEPTED", "REJECTED"
 CONTENT_DECISION_REPLAY_STEPS = ("content_acceptance_context_presented", "content_acceptance_request_recorded", "content_acceptance_decision_recorded", "content_acceptance_decision_returned")
+MUTATION_AUTHORIZATION, EXISTING_FILE_REPLACE_ONLY = "MUTATION_AUTHORIZATION", "EXISTING_FILE_REPLACE_ONLY"
+MUTATION_APPROVED = "APPROVED"
+MUTATION_DECISION_REPLAY_STEPS = ("mutation_decision_context_presented", "mutation_decision_request_recorded", "mutation_decision_recorded", "mutation_decision_returned")
+AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3 = "AIGOL_HUMAN_DECISION_RUNTIME_V3"
+HUMAN_DECISION_ARTIFACT_V3 = "HUMAN_DECISION_ARTIFACT_V3"
+HUMAN_DECISION_RETURNED_V3 = "HUMAN_DECISION_RETURNED_V3"
 
 
 def record_human_decision(
@@ -281,6 +287,123 @@ def render_content_acceptance_decision(capture: dict[str, Any]) -> str:
         f"Subject Binding Hash: {artifact['subject_binding_hash']}",
         f"Replay Reference: {capture['human_decision_replay_reference']}",
         "Result Accepted: False", "Mutation Authorized: False", "Main Repository Mutated: False"))
+
+
+def prepare_existing_file_mutation_decision_context(
+    *, context_id: str, candidate_capture: dict[str, Any], acceptance_capture: dict[str, Any],
+    content_decision_capture: dict[str, Any], binding_capture: dict[str, Any],
+    repository_grounding_artifact: dict[str, Any], human_actor_id: str, presented_at: str,
+    session_root: str | Path, replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Prepare one V3 decision context over an exact replayed V2 candidate."""
+    root, path = Path(session_root).resolve(), Path(replay_dir).resolve()
+    if not path.is_relative_to(root): raise FailClosedRuntimeError("mutation decision context is cross-session")
+    _ensure_mutation_replay_available(path)
+    subject = _mutation_decision_subject(candidate_capture, acceptance_capture, content_decision_capture,
+                                         binding_capture, repository_grounding_artifact, root, human_actor_id)
+    context = {"artifact_type": "HUMAN_MUTATION_DECISION_CONTEXT_PRESENTED_V3", "runtime_version": AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3,
+        "context_id": _require_string(context_id, "context_id"), "human_actor_id": _require_string(human_actor_id, "human_actor_id"),
+        "decision_type": MUTATION_AUTHORIZATION, "decision_scope": EXISTING_FILE_REPLACE_ONLY,
+        "valid_decision_outcomes": [MUTATION_APPROVED, REJECTED], "subject_binding": subject,
+        "subject_binding_hash": subject["binding_hash"], "presented_at": _require_string(presented_at, "presented_at"), **_mutation_boundaries()}
+    context["artifact_hash"] = replay_hash(context)
+    request = {"artifact_type": "HUMAN_MUTATION_DECISION_REQUESTED_V3", "runtime_version": AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3,
+        "context_reference": context["context_id"], "context_hash": context["artifact_hash"],
+        "decision_type": MUTATION_AUTHORIZATION, "decision_scope": EXISTING_FILE_REPLACE_ONLY,
+        "valid_decision_outcomes": [MUTATION_APPROVED, REJECTED], "human_actor_id": context["human_actor_id"],
+        "requested_at": context["presented_at"], **_mutation_boundaries()}
+    request["artifact_hash"] = replay_hash(request)
+    return {"context_artifact": context, "request_artifact": request, "human_mutation_decision_replay_reference": str(path), "decision_pending": True}
+
+
+def record_existing_file_mutation_decision(
+    *, context_capture: dict[str, Any], candidate_capture: dict[str, Any], acceptance_capture: dict[str, Any],
+    content_decision_capture: dict[str, Any], binding_capture: dict[str, Any], repository_grounding_artifact: dict[str, Any],
+    decision_outcome: str, decided_by: str, decided_at: str, session_root: str | Path,
+) -> dict[str, Any]:
+    """Record exact APPROVED or REJECTED future-mutation intent, never authorization."""
+    root, path = Path(session_root).resolve(), Path(context_capture.get("human_mutation_decision_replay_reference", "")).resolve()
+    if not path.is_relative_to(root): raise FailClosedRuntimeError("mutation decision Replay is cross-session")
+    _ensure_mutation_replay_available(path)
+    actor = _require_string(decided_by, "decided_by")
+    context, request = context_capture.get("context_artifact"), context_capture.get("request_artifact")
+    _validate_mutation_artifact(context, "HUMAN_MUTATION_DECISION_CONTEXT_PRESENTED_V3")
+    _validate_mutation_artifact(request, "HUMAN_MUTATION_DECISION_REQUESTED_V3")
+    subject = _mutation_decision_subject(candidate_capture, acceptance_capture, content_decision_capture,
+                                         binding_capture, repository_grounding_artifact, root, actor)
+    if not all((context.get("subject_binding") == subject, request.get("context_hash") == context["artifact_hash"],
+                actor == context.get("human_actor_id"), decision_outcome in {MUTATION_APPROVED, REJECTED})):
+        raise FailClosedRuntimeError("mutation decision subject, actor, or outcome invalid")
+    _reject_mutation_decision_reuse(root, subject["candidate_hash"])
+    decision = {"artifact_type": HUMAN_DECISION_ARTIFACT_V3, "runtime_version": AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3,
+        "human_decision_id": f"{context['context_id']}:DECISION", "decision_status": "MUTATION_DECISION_RECORDED",
+        "decision_type": MUTATION_AUTHORIZATION, "decision_scope": EXISTING_FILE_REPLACE_ONLY, "decision_outcome": decision_outcome,
+        "context_reference": context["context_id"], "context_hash": context["artifact_hash"], "request_hash": request["artifact_hash"],
+        "subject_binding_hash": subject["binding_hash"], "candidate_id": subject["candidate_id"],
+        "candidate_hash": subject["candidate_hash"], "candidate_replay_hash": subject["candidate_replay_hash"],
+        "candidate_provenance_binding_hash": subject["candidate_provenance_binding_hash"],
+        "decided_by": actor, "decided_at": _require_string(decided_at, "decided_at"), **_mutation_boundaries(recorded=True)}
+    decision["artifact_hash"] = replay_hash(decision)
+    returned = {"artifact_type": HUMAN_DECISION_RETURNED_V3, "runtime_version": AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3,
+        "human_decision_reference": decision["human_decision_id"], "human_decision_hash": decision["artifact_hash"],
+        "decision_type": MUTATION_AUTHORIZATION, "decision_scope": EXISTING_FILE_REPLACE_ONLY, "decision_outcome": decision_outcome,
+        "subject_binding_hash": subject["binding_hash"], "candidate_id": subject["candidate_id"],
+        "candidate_hash": subject["candidate_hash"], "candidate_replay_hash": subject["candidate_replay_hash"],
+        "candidate_provenance_binding_hash": subject["candidate_provenance_binding_hash"], **_mutation_boundaries(recorded=True)}
+    returned["artifact_hash"] = replay_hash(returned)
+    for index, artifact in enumerate((context, request, decision, returned)): _persist_mutation_step(path, index, artifact)
+    capture = {"human_mutation_decision_artifact": deepcopy(decision), "human_mutation_decision_returned_artifact": deepcopy(returned),
+        "human_mutation_decision_context_artifact": deepcopy(context), "human_mutation_decision_request_artifact": deepcopy(request),
+        "human_mutation_decision_replay_reference": str(path), "mutation_decision_recorded": True,
+        "mutation_decision_approved": decision_outcome == MUTATION_APPROVED, "mutation_authorized": False, "main_repository_mutated": False}
+    capture["human_mutation_decision_capture_hash"] = replay_hash(capture)
+    return capture
+
+
+def reconstruct_existing_file_mutation_decision_replay(
+    *, decision_capture: dict[str, Any], candidate_capture: dict[str, Any], acceptance_capture: dict[str, Any],
+    content_decision_capture: dict[str, Any], binding_capture: dict[str, Any], repository_grounding_artifact: dict[str, Any], session_root: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct the four-step V3 mutation-decision Replay."""
+    root, path = Path(session_root).resolve(), Path(decision_capture.get("human_mutation_decision_replay_reference", "")).resolve()
+    if not path.is_relative_to(root): raise FailClosedRuntimeError("mutation decision Replay is cross-session")
+    wrappers = [_load_mutation_wrapper(path, index) for index in range(4)]
+    context, request, decision, returned = [item["artifact"] for item in wrappers]
+    _validate_mutation_artifact(context, "HUMAN_MUTATION_DECISION_CONTEXT_PRESENTED_V3")
+    _validate_mutation_artifact(request, "HUMAN_MUTATION_DECISION_REQUESTED_V3")
+    _validate_mutation_artifact(decision, HUMAN_DECISION_ARTIFACT_V3)
+    _validate_mutation_artifact(returned, HUMAN_DECISION_RETURNED_V3)
+    subject = _mutation_decision_subject(candidate_capture, acceptance_capture, content_decision_capture,
+                                         binding_capture, repository_grounding_artifact, root, context["human_actor_id"])
+    checks = (decision_capture.get("human_mutation_decision_artifact") == decision,
+        context.get("subject_binding") == subject, request.get("context_hash") == context.get("artifact_hash"),
+        decision.get("context_hash") == context.get("artifact_hash"), decision.get("request_hash") == request.get("artifact_hash"),
+        decision.get("subject_binding_hash") == subject["binding_hash"], decision.get("decided_by") == context.get("human_actor_id"), decision.get("decision_outcome") in {MUTATION_APPROVED, REJECTED},
+        decision.get("candidate_id") == subject["candidate_id"], decision.get("candidate_hash") == subject["candidate_hash"],
+        decision.get("candidate_replay_hash") == subject["candidate_replay_hash"], decision.get("candidate_provenance_binding_hash") == subject["candidate_provenance_binding_hash"],
+        returned.get("human_decision_hash") == decision.get("artifact_hash"), returned.get("decision_outcome") == decision.get("decision_outcome"),
+        returned.get("candidate_id") == subject["candidate_id"], returned.get("candidate_hash") == subject["candidate_hash"],
+        returned.get("candidate_replay_hash") == subject["candidate_replay_hash"], returned.get("candidate_provenance_binding_hash") == subject["candidate_provenance_binding_hash"],
+        decision.get("mutation_decision_recorded") is True, decision.get("mutation_authorized") is False, decision.get("main_repository_mutated") is False)
+    if not all(checks): raise FailClosedRuntimeError("mutation decision Replay identity mismatch")
+    return {"human_decision_id": decision["human_decision_id"], "decision_outcome": decision["decision_outcome"],
+        "mutation_decision_recorded": True, "mutation_decision_approved": decision["decision_outcome"] == MUTATION_APPROVED,
+        "mutation_authorized": False, "main_repository_mutated": False, "replay_artifact_count": 4, "replay_hash": replay_hash(wrappers)}
+
+
+def render_existing_file_mutation_decision_context(context_capture: dict[str, Any]) -> str:
+    context = context_capture.get("context_artifact") or {}; _verify_artifact_hash(context, "mutation decision context")
+    subject = context["subject_binding"]
+    return "\n".join(("Human Mutation Decision Required", f"Target: {subject['target_path']}", f"Operation: {subject['operation']}",
+        f"Preimage: {subject['preimage_sha256']}", f"Postimage: {subject['postimage_sha256']}",
+        "This is distinct from content acceptance. APPROVED permits only a later authorization request.",
+        "No repository file will be changed in this generation."))
+
+
+def render_existing_file_mutation_decision(decision_capture: dict[str, Any]) -> str:
+    artifact = decision_capture.get("human_mutation_decision_artifact") or {}; _verify_artifact_hash(artifact, "mutation decision")
+    return "\n".join(("Human Mutation Decision", f"Outcome: {artifact['decision_outcome']}",
+        "Mutation Authorized: False", "Main Repository Mutated: False"))
 
 
 def _validate_approval_required(artifact: dict[str, Any]) -> dict[str, Any]:
@@ -601,6 +724,107 @@ def _reject_content_decision_reuse(root: Path, subject_hash: str) -> None:
         artifact = wrapper.get("artifact") or {}; _verify_artifact_hash(artifact, "content-acceptance decision")
         if artifact.get("subject_binding_hash") == subject_hash:
             raise FailClosedRuntimeError("content-acceptance decision subject already decided")
+
+
+def _mutation_decision_subject(
+    candidate_capture: dict[str, Any], acceptance_capture: dict[str, Any],
+    content_decision_capture: dict[str, Any], binding_capture: dict[str, Any],
+    repository_grounding_artifact: dict[str, Any], root: Path, human_actor_id: str,
+) -> dict[str, Any]:
+    """Reconstruct the exact V2 candidate before accepting any V3 decision."""
+    from aigol.runtime.platform_core_existing_file_mutation_candidate import (
+        reconstruct_g31_accepted_existing_file_mutation_candidate_replay,
+        validate_g31_accepted_existing_file_mutation_candidate,
+    )
+
+    actor = _require_string(human_actor_id, "human_actor_id")
+    reconstructed = reconstruct_g31_accepted_existing_file_mutation_candidate_replay(
+        candidate_capture=candidate_capture, acceptance_capture=acceptance_capture,
+        decision_capture=content_decision_capture, binding_capture=binding_capture,
+        repository_grounding_artifact=repository_grounding_artifact, session_root=root,
+    )
+    candidate = candidate_capture.get("existing_file_mutation_candidate_artifact") or {}
+    validate_g31_accepted_existing_file_mutation_candidate(candidate)
+    provenance = candidate.get("candidate_provenance") or {}
+    if not all((candidate_capture.get("existing_file_mutation_candidate_created") is True,
+                candidate_capture.get("result_accepted") is True,
+                candidate_capture.get("human_mutation_decision_recorded") is False,
+                candidate_capture.get("mutation_authorized") is False,
+                candidate_capture.get("main_repository_mutated") is False,
+                candidate_capture.get("candidate_replay_hash") == reconstructed["replay_hash"],
+                candidate.get("candidate_id") == reconstructed["candidate_id"],
+                candidate.get("artifact_hash") == reconstructed["candidate_hash"],
+                candidate.get("candidate_provenance_binding_hash") == reconstructed["candidate_provenance_binding_hash"],
+                provenance.get("operation") == "REPLACE_CONTENT", candidate.get("operation") == "REPLACE_CONTENT",
+                candidate.get("file_count") == 1)):
+        raise FailClosedRuntimeError("mutation decision requires one unconsumed accepted V2 candidate")
+    subject = {
+        "candidate_id": candidate["candidate_id"], "candidate_hash": candidate["artifact_hash"],
+        "candidate_replay_reference": candidate_capture["candidate_replay_reference"],
+        "candidate_replay_hash": reconstructed["replay_hash"],
+        "candidate_provenance_binding_hash": reconstructed["candidate_provenance_binding_hash"],
+        "human_actor_id": actor, "candidate_provenance": deepcopy(provenance),
+        "operation": provenance["operation"], "target_path": provenance["target_path"],
+        "preimage_sha256": provenance["preimage_sha256"], "postimage_sha256": provenance["postimage_sha256"],
+    }
+    subject["binding_hash"] = replay_hash(subject)
+    return subject
+
+
+def _mutation_boundaries(*, recorded: bool = False) -> dict[str, bool]:
+    return {
+        "result_accepted": True, "existing_file_mutation_candidate_created": True,
+        "human_mutation_decision_recorded": recorded, "mutation_decision_recorded": recorded,
+        "mutation_authorized": False,
+        "main_repository_mutated": False, "execution_authorized": False,
+        "provider_invoked": False, "worker_invoked": False, "command_executed": False,
+        "patch_applied": False, "automatic_approval": False, "replay_visible": True,
+    }
+
+
+def _ensure_mutation_replay_available(path: Path) -> None:
+    if any((path / f"{index:03d}_{step}.json").exists()
+           for index, step in enumerate(MUTATION_DECISION_REPLAY_STEPS)):
+        raise FailClosedRuntimeError("mutation decision destination already exists")
+
+
+def _persist_mutation_step(path: Path, index: int, artifact: dict[str, Any]) -> None:
+    step = MUTATION_DECISION_REPLAY_STEPS[index]
+    _verify_artifact_hash(artifact, "mutation decision artifact")
+    wrapper = {"replay_index": index, "replay_step": step, "event_type": step.upper(), "artifact": deepcopy(artifact)}
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    write_json_immutable(path / f"{index:03d}_{step}.json", wrapper)
+
+
+def _load_mutation_wrapper(path: Path, index: int) -> dict[str, Any]:
+    step = MUTATION_DECISION_REPLAY_STEPS[index]
+    wrapper = load_json(path / f"{index:03d}_{step}.json")
+    _verify_wrapper_hash(wrapper)
+    if not isinstance(wrapper.get("artifact"), dict) or wrapper.get("replay_index") != index or wrapper.get("replay_step") != step:
+        raise FailClosedRuntimeError("mutation decision Replay ordering mismatch")
+    return wrapper
+
+
+def _validate_mutation_artifact(artifact: Any, artifact_type: str) -> None:
+    if not isinstance(artifact, dict):
+        raise FailClosedRuntimeError("mutation decision artifact is required")
+    _verify_artifact_hash(artifact, "mutation decision artifact")
+    if not all((artifact.get("artifact_type") == artifact_type,
+                artifact.get("runtime_version") == AIGOL_HUMAN_DECISION_RUNTIME_VERSION_V3,
+                artifact.get("decision_type") == MUTATION_AUTHORIZATION,
+                artifact.get("decision_scope") == EXISTING_FILE_REPLACE_ONLY,
+                artifact.get("mutation_authorized") is False,
+                artifact.get("main_repository_mutated") is False)):
+        raise FailClosedRuntimeError("mutation decision artifact contract mismatch")
+
+
+def _reject_mutation_decision_reuse(root: Path, candidate_hash: str) -> None:
+    for path in root.rglob("002_mutation_decision_recorded.json"):
+        wrapper = _load_mutation_wrapper(path.parent, 2)
+        artifact = wrapper["artifact"]
+        _validate_mutation_artifact(artifact, HUMAN_DECISION_ARTIFACT_V3)
+        if artifact.get("subject_binding_hash") and artifact.get("candidate_hash") == candidate_hash:
+            raise FailClosedRuntimeError("mutation decision candidate already decided")
 
 
 def _require_string(value: Any, label: str) -> str:
