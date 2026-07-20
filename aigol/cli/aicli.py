@@ -289,17 +289,23 @@ def run_reference_uhi_session(
                     "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
                 output_writer(generated_acceptance.render_generated_content_acceptance_from_decision(
                     accepted, runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]))
+                activation_binding = worker_activation.reconstruct_codex_worker_activation_binding(
+                    activation_capture=runtime_result["codex_worker_activation_capture"],
+                    governed_execution_capture=runtime_result["governed_worker_execution_capture"],
+                    execution_candidate_capture=runtime_result["worker_execution_candidate_capture"],
+                    session_root=root / session, workspace=workspace_path)
+                grounding = activation_binding["lineage"]["grounding"]
                 candidate_capture = existing_file_candidate.create_g31_accepted_existing_file_mutation_candidate(
                     candidate_id=f"G31-EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}",
                     acceptance_capture=accepted, decision_capture=capture,
                     binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    repository_grounding_artifact=runtime_result["codex_worker_activation_capture"]["lineage"]["grounding"],
+                    repository_grounding_artifact=grounding,
                     session_root=root / session, created_by="HUMAN_OPERATOR_VIA_AICLI", created_at=created,
                     replay_dir=root / session / f"EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}")
                 candidate_reconstruction = existing_file_candidate.reconstruct_g31_accepted_existing_file_mutation_candidate_replay(
                     candidate_capture=candidate_capture, acceptance_capture=accepted, decision_capture=capture,
                     binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    repository_grounding_artifact=runtime_result["codex_worker_activation_capture"]["lineage"]["grounding"],
+                    repository_grounding_artifact=grounding,
                     session_root=root / session)
                 runtime_result.update({"existing_file_mutation_candidate_capture": candidate_capture,
                     "existing_file_mutation_candidate_reconstruction": candidate_reconstruction,

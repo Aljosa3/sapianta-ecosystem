@@ -10,6 +10,7 @@ import pytest
 from aigol.runtime import generated_content_acceptance_runtime as acceptance
 from aigol.runtime import human_decision_runtime as decision
 from aigol.runtime import platform_core_existing_file_mutation_candidate as candidate
+from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime.models import FailClosedRuntimeError
 import test_g31_24d_r02_aicli_task_outcome_to_disposable_review_binding as r02
 
@@ -41,7 +42,12 @@ def _accepted(tmp_path: Path, name: str = "G31-24G"):
     accepted = acceptance.accept_generated_content_from_content_acceptance_decision(
         acceptance_id=f"{name}-ACCEPTANCE", decision_capture=content, binding_capture=binding,
         created_at=r02.CREATED_AT, session_root=root, replay_dir=root / "ACCEPTANCE")
-    grounding = runtime["codex_worker_activation_capture"]["lineage"]["grounding"]
+    activation = worker_activation.reconstruct_codex_worker_activation_binding(
+        activation_capture=runtime["codex_worker_activation_capture"],
+        governed_execution_capture=runtime["governed_worker_execution_capture"],
+        execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+        session_root=root, workspace=source)
+    grounding = activation["lineage"]["grounding"]
     return accepted, content, binding, grounding, root, source, runner
 
 
@@ -94,6 +100,7 @@ def test_aicli_transports_candidate_after_acceptance_without_authorization(tmp_p
     result, output, root, source, runner = r02._run(tmp_path, "G31-24G-AICLI", ["/satisfied", "/approve", "/accept"])
     runtime = result["runtime_result"]
     capture = runtime["existing_file_mutation_candidate_capture"]
+    assert "lineage" not in runtime["codex_worker_activation_capture"]
     assert result["exit_reason"] == "GENERATED_CONTENT_ACCEPTANCE_RECORDED"
     assert runtime["result_accepted"] is True
     assert runtime["existing_file_mutation_candidate_created"] is True
@@ -104,8 +111,23 @@ def test_aicli_transports_candidate_after_acceptance_without_authorization(tmp_p
         candidate_capture=capture, acceptance_capture=runtime["generated_content_acceptance_capture"],
         decision_capture=runtime["human_content_acceptance_decision_capture"],
         binding_capture=runtime["codex_replacement_acceptance_prerequisite_binding_capture"],
-        repository_grounding_artifact=runtime["codex_worker_activation_capture"]["lineage"]["grounding"],
+        repository_grounding_artifact=worker_activation.reconstruct_codex_worker_activation_binding(
+            activation_capture=runtime["codex_worker_activation_capture"],
+            governed_execution_capture=runtime["governed_worker_execution_capture"],
+            execution_candidate_capture=runtime["worker_execution_candidate_capture"],
+            session_root=root, workspace=source)["lineage"]["grounding"],
         session_root=root)["replay_artifact_count"] == 3
     assert "Existing-File Mutation Candidate" in "\n".join(output)
     assert len(runner.calls) == 1
     assert subprocess.run(["git", "status", "--short"], cwd=source, check=True, capture_output=True, text=True).stdout == ""
+
+
+def test_aicli_fails_closed_before_candidate_if_activation_reconstruction_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def failed_reconstruction(**_kwargs):
+        raise FailClosedRuntimeError("activation reconstruction failed closed")
+
+    monkeypatch.setattr(r02.aicli.worker_activation, "reconstruct_codex_worker_activation_binding", failed_reconstruction)
+    with pytest.raises(FailClosedRuntimeError, match="activation reconstruction failed closed"):
+        r02._run(tmp_path, "G31-24G-AICLI-FAIL-CLOSED", ["/satisfied", "/approve", "/accept"])
