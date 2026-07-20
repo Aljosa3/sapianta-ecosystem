@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from base64 import b64encode
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -12,10 +14,16 @@ from aigol.authorization.authorization_runtime import (
     persist_existing_authorization_binding_replay, reconstruct_existing_authorization_binding_replay)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_existing_file_mutation_candidate import (
+    validate_g31_accepted_existing_file_mutation_candidate,
     validate_existing_file_mutation_candidate,
 )
 from aigol.runtime.transport.serialization import replay_hash
 from aigol.workers.filesystem_replace_worker import AUTHORIZED_REPLACE_SCOPE, FILESYSTEM_REPLACE_WORKER_ID
+from aigol.workers.filesystem_replace_worker import (
+    AUTHENTICATED_REPLACE_REQUEST_TYPE_V2, HARDENED_REPLACE_VERSION,
+    _execute_authenticated_replace_v2, _recover_authenticated_replace_v2,
+    g31_replace_destinations, validate_authenticated_replace_request_v2,
+)
 
 
 EXISTING_FILE_GOVERNANCE_VERSION = "G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1"
@@ -341,6 +349,70 @@ def reconstruct_g31_mutation_authorization_actor_and_replay(
             "authorization_consumed": False, "replace_request_created": False, "worker_invoked": False,
             "provider_invoked": False, "command_executed": False, "repository_mutated": False,
             "main_repository_mutated": False, "actor_replay_binding_hash": actual}
+
+
+def create_g31_authenticated_replace_request(*, actor_replay_capture: dict[str, Any], **evidence: Any) -> dict[str, Any]:
+    """Project only reconstructed actor-bound authorization into the hardened owner."""
+    authorization = reconstruct_g31_mutation_authorization_actor_and_replay(actor_replay_capture=actor_replay_capture, **evidence)
+    candidate = validate_g31_accepted_existing_file_mutation_candidate(evidence["candidate_capture"].get("existing_file_mutation_candidate_artifact") or {})
+    provenance = candidate["candidate_provenance"]
+    manifest = ((evidence["binding_capture"].get("implementation_manifest_capture") or {}).get("implementation_manifest_artifact") or {})
+    entries = manifest.get("file_entries")
+    entry = entries[0] if isinstance(entries, list) and len(entries) == 1 else {}
+    source = entry.get("preimage_content")
+    replacement = entry.get("postimage_content")
+    if not isinstance(source, str) or not isinstance(replacement, str):
+        raise FailClosedRuntimeError("authenticated replace requires reconstructed manifest bytes")
+    source_bytes, replacement_bytes = source.encode("utf-8"), replacement.encode("utf-8")
+    raw_source = "sha256:" + sha256(source_bytes).hexdigest()
+    raw_replacement = "sha256:" + sha256(replacement_bytes).hexdigest()
+    checks = (
+        authorization["candidate_id"] == candidate["candidate_id"], authorization["candidate_hash"] == candidate["artifact_hash"], authorization["candidate_provenance_binding_hash"] == provenance["binding_hash"],
+        authorization["target_path"] == candidate["target_path"] == provenance["target_path"] == entry.get("target_path"),
+        authorization["expected_source_sha256"] == provenance["preimage_sha256"] == entry.get("preimage_sha256") == raw_source,
+        provenance["postimage_sha256"] == entry.get("postimage_sha256") == raw_replacement, provenance["manifest_hash"] == manifest.get("artifact_hash"), provenance["repository_root"] == str(Path(evidence["workspace"]).resolve()),
+        provenance["repository_grounding_hash"] == evidence["repository_grounding_artifact"].get("grounding_evidence_hash"), provenance["source_mode"] == str(entry.get("file_mode")), provenance["replacement_mode"] == str(entry.get("postimage_file_mode")),
+        not provenance.get("source_content_hash") or provenance["source_content_hash"] == replay_hash(source),
+        not provenance.get("replacement_content_hash") or provenance["replacement_content_hash"] == replay_hash(replacement),
+        candidate["operation"] == provenance["operation"] == entry.get("operation") == "REPLACE_CONTENT",
+    )
+    if not all(checks):
+        raise FailClosedRuntimeError("authenticated replace manifest or authorization lineage mismatch")
+    destinations = g31_replace_destinations(evidence["session_root"], authorization["authorization_hash"], provenance["repository_root"], provenance["target_path"])
+    request = {
+        "request_type": AUTHENTICATED_REPLACE_REQUEST_TYPE_V2, "runtime_version": HARDENED_REPLACE_VERSION,
+        "request_id": f"{authorization['authorization_id']}:HARDENED-REPLACE-V2",
+        "canonical_authorization_actor": authorization["canonical_authorization_actor"],
+        "authorization_record": deepcopy(authorization["authorization_record"]),
+        "authorization_id": authorization["authorization_id"], "authorization_hash": authorization["authorization_hash"],
+        "authorization_status": authorization["authorization_status"], "authorization_scope": authorization["authorization_scope"],
+        "worker_id": authorization["worker_id"], "authorization_replay_reference": authorization["authorization_replay_reference"],
+        "authorization_replay_hash": authorization["authorization_replay_hash"], "actor_replay_binding_hash": authorization["actor_replay_binding_hash"], "r02_authorization_binding_hash": authorization["r02_authorization_binding_hash"],
+        "candidate_id": authorization["candidate_id"], "candidate_hash": authorization["candidate_hash"],
+        "candidate_replay_hash": authorization["candidate_replay_hash"], "candidate_provenance_binding_hash": authorization["candidate_provenance_binding_hash"],
+        "mutation_decision_id": authorization["mutation_decision_id"], "mutation_decision_hash": authorization["mutation_decision_hash"], "mutation_decision_outcome": authorization["mutation_decision_outcome"],
+        "mutation_decision_scope": authorization["mutation_decision_scope"], "mutation_decision_actor": authorization["mutation_decision_actor"], "mutation_decision_replay_hash": authorization["mutation_decision_replay_hash"],
+        "session_id": authorization["session_id"], "session_root": str(Path(evidence["session_root"]).resolve()),
+        "repository_identity": provenance["repository_identity"], "repository_root": provenance["repository_root"],
+        "repository_grounding_hash": provenance["repository_grounding_hash"], "manifest_hash": provenance["manifest_hash"],
+        "operation": "REPLACE_CONTENT", "worker_operation": "REPLACE_EXISTING_TEXT_FILE",
+        "target_path": provenance["target_path"], "preimage_sha256": raw_source, "postimage_sha256": raw_replacement,
+        "source_content_hash": replay_hash(source), "replacement_content_hash": replay_hash(replacement),
+        "preimage_bytes_b64": b64encode(source_bytes).decode("ascii"), "replacement_bytes_b64": b64encode(replacement_bytes).decode("ascii"),
+        "source_mode": provenance["source_mode"], "replacement_mode": provenance["replacement_mode"],
+        "destinations": destinations, "authorization_consumed": False, "replace_request_created": True,
+        "worker_invoked": False, "provider_invoked": False, "command_executed": False, "repository_mutated": False, "main_repository_mutated": False, "replay_visible": True,
+    }
+    request["request_hash"] = replay_hash(request)
+    return validate_authenticated_replace_request_v2(request)
+def execute_g31_authenticated_replace(*, actor_replay_capture: dict[str, Any], **evidence: Any) -> dict[str, Any]:
+    """Non-live hardened entry point; reconstructs authorization before any write."""
+    return _execute_authenticated_replace_v2(create_g31_authenticated_replace_request(
+        actor_replay_capture=actor_replay_capture, **evidence))
+def recover_g31_authenticated_replace(*, actor_replay_capture: dict[str, Any], **evidence: Any) -> dict[str, Any]:
+    """Recover an interrupted hardened replacement from its authenticated journal."""
+    return _recover_authenticated_replace_v2(create_g31_authenticated_replace_request(
+        actor_replay_capture=actor_replay_capture, **evidence))
 
 
 def _g31_authorization_subject(
