@@ -45,6 +45,7 @@ from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_
 from aigol.runtime import codex_satisfied_outcome_disposable_validation_binding_runtime as disposable_validation
 from aigol.runtime import codex_replacement_acceptance_prerequisite_binding_runtime as replacement_prerequisites
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
+from aigol.runtime import platform_core_existing_file_mutation_candidate as existing_file_candidate
 from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
@@ -288,6 +289,23 @@ def run_reference_uhi_session(
                     "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
                 output_writer(generated_acceptance.render_generated_content_acceptance_from_decision(
                     accepted, runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]))
+                candidate_capture = existing_file_candidate.create_g31_accepted_existing_file_mutation_candidate(
+                    candidate_id=f"G31-EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}",
+                    acceptance_capture=accepted, decision_capture=capture,
+                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                    repository_grounding_artifact=runtime_result["codex_worker_activation_capture"]["lineage"]["grounding"],
+                    session_root=root / session, created_by="HUMAN_OPERATOR_VIA_AICLI", created_at=created,
+                    replay_dir=root / session / f"EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}")
+                candidate_reconstruction = existing_file_candidate.reconstruct_g31_accepted_existing_file_mutation_candidate_replay(
+                    candidate_capture=candidate_capture, acceptance_capture=accepted, decision_capture=capture,
+                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
+                    repository_grounding_artifact=runtime_result["codex_worker_activation_capture"]["lineage"]["grounding"],
+                    session_root=root / session)
+                runtime_result.update({"existing_file_mutation_candidate_capture": candidate_capture,
+                    "existing_file_mutation_candidate_reconstruction": candidate_reconstruction,
+                    "existing_file_mutation_candidate_created": True, "human_mutation_decision_recorded": False,
+                    "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
+                output_writer(existing_file_candidate.render_g31_accepted_existing_file_mutation_candidate(candidate_capture))
             pending_content_acceptance_context = None
             transcript.append({"event": "human_content_acceptance_decision_recorded", "outcome": outcome})
             session_status = "REFERENCE_UHI_SESSION_COMPLETED"
