@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from aigol.authorization.authorization_record import create_authorization_record, validate_authorization_record
+from aigol.authorization.authorization_runtime import (
+    CANONICAL_AUTHORIZATION_ACTOR, EXISTING_AUTHORIZATION_BINDING_VERSION,
+    persist_existing_authorization_binding_replay, reconstruct_existing_authorization_binding_replay)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_existing_file_mutation_candidate import (
     validate_existing_file_mutation_candidate,
@@ -218,6 +221,126 @@ def reconstruct_g31_existing_file_mutation_authorization_binding(
         "repository_mutated": False, "main_repository_mutated": False,
         "authorization_binding_hash": actual_hash,
     }
+
+
+def bind_g31_mutation_authorization_actor_and_replay(
+    *, authorization_capture: dict[str, Any], candidate_capture: dict[str, Any],
+    candidate_reconstruction: dict[str, Any], mutation_decision_capture: dict[str, Any],
+    mutation_decision_reconstruction: dict[str, Any], acceptance_capture: dict[str, Any],
+    content_decision_capture: dict[str, Any], binding_capture: dict[str, Any],
+    repository_grounding_artifact: dict[str, Any], activation_capture: dict[str, Any],
+    activation_binding: dict[str, Any], governed_execution_capture: dict[str, Any],
+    execution_candidate_capture: dict[str, Any], session_root: str | Path, workspace: str | Path,
+) -> dict[str, Any]:
+    """Bind the canonical Governance actor and Replay to an existing R02 record."""
+
+    root = Path(session_root).resolve()
+    reconstructed = reconstruct_g31_existing_file_mutation_authorization_binding(
+        authorization_capture=authorization_capture, candidate_capture=candidate_capture,
+        candidate_reconstruction=candidate_reconstruction, mutation_decision_capture=mutation_decision_capture,
+        mutation_decision_reconstruction=mutation_decision_reconstruction, acceptance_capture=acceptance_capture,
+        content_decision_capture=content_decision_capture, binding_capture=binding_capture,
+        repository_grounding_artifact=repository_grounding_artifact, activation_capture=activation_capture,
+        activation_binding=activation_binding, governed_execution_capture=governed_execution_capture,
+        execution_candidate_capture=execution_candidate_capture, session_root=root, workspace=workspace)
+    subject = _g31_authorization_subject(
+        candidate_capture=candidate_capture, candidate_reconstruction=candidate_reconstruction,
+        mutation_decision_capture=mutation_decision_capture,
+        mutation_decision_reconstruction=mutation_decision_reconstruction,
+        acceptance_capture=acceptance_capture, content_decision_capture=content_decision_capture,
+        binding_capture=binding_capture, repository_grounding_artifact=repository_grounding_artifact,
+        activation_capture=activation_capture, activation_binding=activation_binding,
+        governed_execution_capture=governed_execution_capture,
+        execution_candidate_capture=execution_candidate_capture, session_root=root, workspace=workspace)
+    record = validate_authorization_record(authorization_capture.get("authorization_record"))
+    decision = mutation_decision_capture.get("human_mutation_decision_artifact") or {}
+    replay_path = root / "G31_MUTATION_AUTHORIZATION_REPLAY_V1"
+    if any(authorization_capture.get(field) is True for field in (
+        "authorization_consumed", "replace_request_created", "patch_created", "worker_invoked",
+        "provider_invoked", "command_executed", "repository_mutated", "main_repository_mutated", "rollback_performed", "recovery_required", "mutation_completed", "mutation_terminated")):
+        raise FailClosedRuntimeError("authorization actor binding requires an unconsumed stop state")
+    artifact = {
+        "artifact_type": "EXISTING_MUTATION_AUTHORIZATION_ACTOR_BINDING_V1",
+        "runtime_version": EXISTING_AUTHORIZATION_BINDING_VERSION,
+        "canonical_authorization_actor": CANONICAL_AUTHORIZATION_ACTOR,
+        "authorization_record": deepcopy(record), "authorization_id": record["authorization_id"],
+        "authorization_hash": record["authorization_hash"], "authorization_status": record["authorization_status"],
+        "authorization_scope": record["authorization_scope"], "worker_id": record["worker_id"],
+        "r02_authorization_binding_hash": authorization_capture["authorization_binding_hash"],
+        "session_id": subject["session_id"], "activation_id": activation_binding["activation_approval_artifact"]["approval_id"], "activation_hash": activation_binding["activation_approval_artifact"]["artifact_hash"], "activation_replay_reference": subject["activation_replay_reference"],
+        "activation_replay_hash": subject["activation_replay_hash"], "candidate_id": subject["candidate_id"],
+        "candidate_hash": subject["candidate_hash"], "candidate_replay_hash": subject["candidate_replay_hash"],
+        "candidate_provenance_binding_hash": subject["candidate_provenance_binding_hash"],
+        "mutation_decision_id": subject["mutation_decision_id"],
+        "mutation_decision_hash": subject["mutation_decision_hash"],
+        "mutation_decision_outcome": subject["decision_outcome"],
+        "mutation_decision_scope": decision.get("decision_scope"),
+        "mutation_decision_actor": decision.get("decided_by"),
+        "mutation_decision_replay_hash": subject["mutation_decision_replay_hash"],
+        "target_path": subject["target_path"], "expected_source_sha256": subject["expected_source_sha256"],
+        "authorization_replay_reference": str(replay_path), "authorization_consumed": False,
+        "replace_request_created": False, "worker_invoked": False, "provider_invoked": False,
+        "command_executed": False, "repository_mutated": False, "main_repository_mutated": False,
+        "replay_visible": True,
+    }
+    if reconstructed["mutation_authorized"] is not True or not all(
+            isinstance(artifact.get(field), str) and artifact[field] for field in (
+                "mutation_decision_scope", "mutation_decision_actor")):
+        raise FailClosedRuntimeError("authorization actor binding lineage is incomplete")
+    artifact["artifact_hash"] = replay_hash(artifact)
+    replay = persist_existing_authorization_binding_replay(
+        binding=artifact, replay_dir=replay_path, session_root=root)
+    capture = {"runtime_version": EXISTING_AUTHORIZATION_BINDING_VERSION,
+               "authorization_binding_artifact": deepcopy(artifact),
+               "authorization_replay_reference": replay["authorization_replay_reference"],
+               "authorization_replay_hash": replay["authorization_replay_hash"],
+               "authorization_actor_bound": True, "authorization_replay_recorded": True,
+               "mutation_authorized": True, "authorization_consumed": False,
+               "replace_request_created": False, "worker_invoked": False, "provider_invoked": False,
+               "command_executed": False, "repository_mutated": False, "main_repository_mutated": False}
+    capture["actor_replay_binding_hash"] = replay_hash(capture)
+    return capture
+
+
+def reconstruct_g31_mutation_authorization_actor_and_replay(
+    *, actor_replay_capture: dict[str, Any], **evidence: Any) -> dict[str, Any]:
+    """Reconstruct the actor-bound Replay without issuing authorization."""
+
+    capture = deepcopy(actor_replay_capture); actual = capture.pop("actor_replay_binding_hash", None)
+    if actual != replay_hash(capture):
+        raise FailClosedRuntimeError("authorization actor Replay capture hash mismatch")
+    root = Path(evidence["session_root"]).resolve()
+    replay = reconstruct_existing_authorization_binding_replay(
+        capture.get("authorization_replay_reference", ""), session_root=root)
+    artifact = capture.get("authorization_binding_artifact") or {}
+    record = validate_authorization_record((evidence["authorization_capture"] or {}).get("authorization_record"))
+    r02 = reconstruct_g31_existing_file_mutation_authorization_binding(**evidence)
+    subject = _g31_authorization_subject(**{key: evidence[key] for key in (
+        "candidate_capture", "candidate_reconstruction", "mutation_decision_capture",
+        "mutation_decision_reconstruction", "acceptance_capture", "content_decision_capture",
+        "binding_capture", "repository_grounding_artifact", "activation_capture", "activation_binding",
+        "governed_execution_capture", "execution_candidate_capture", "session_root", "workspace")})
+    decision = evidence["mutation_decision_capture"].get("human_mutation_decision_artifact") or {}
+    checks = (replay.get("authorization_binding_artifact") == artifact, capture.get("authorization_replay_hash") == replay.get("authorization_replay_hash"),
+        artifact.get("canonical_authorization_actor") == CANONICAL_AUTHORIZATION_ACTOR, artifact.get("runtime_version") == EXISTING_AUTHORIZATION_BINDING_VERSION, artifact.get("artifact_type") == "EXISTING_MUTATION_AUTHORIZATION_ACTOR_BINDING_V1", artifact.get("authorization_record") == record,
+        artifact.get("authorization_hash") == record["authorization_hash"], artifact.get("r02_authorization_binding_hash") == evidence["authorization_capture"].get("authorization_binding_hash"),
+        artifact.get("session_id") == root.name == subject["session_id"], artifact.get("activation_id") == evidence["activation_binding"]["activation_approval_artifact"]["approval_id"], artifact.get("activation_hash") == evidence["activation_binding"]["activation_approval_artifact"]["artifact_hash"], artifact.get("candidate_hash") == subject["candidate_hash"], artifact.get("mutation_decision_hash") == subject["mutation_decision_hash"],
+        artifact.get("mutation_decision_actor") == decision.get("decided_by"), artifact.get("mutation_decision_scope") == decision.get("decision_scope"),
+        artifact.get("target_path") == subject["target_path"], artifact.get("expected_source_sha256") == subject["expected_source_sha256"],
+        r02.get("mutation_authorized") is True, capture.get("authorization_actor_bound") is True, capture.get("authorization_replay_recorded") is True, capture.get("mutation_authorized") is True, all(artifact.get(field) is False for field in ("authorization_consumed", "replace_request_created", "worker_invoked", "provider_invoked", "command_executed", "repository_mutated", "main_repository_mutated")), all(capture.get(field) is False for field in (
+            "authorization_consumed", "replace_request_created", "worker_invoked", "provider_invoked",
+            "command_executed", "repository_mutated", "main_repository_mutated")))
+    if not all(checks):
+        raise FailClosedRuntimeError("authorization actor Replay reconstruction mismatch")
+    return {"canonical_authorization_actor": CANONICAL_AUTHORIZATION_ACTOR, "authorization_replay_reference": replay["authorization_replay_reference"],
+            "authorization_replay_hash": replay["authorization_replay_hash"], "authorization_record": deepcopy(record), "authorization_id": record["authorization_id"], "authorization_hash": record["authorization_hash"],
+            "authorization_status": record["authorization_status"], "authorization_scope": record["authorization_scope"], "worker_id": record["worker_id"], "r02_authorization_binding_hash": artifact["r02_authorization_binding_hash"],
+            "session_id": artifact["session_id"], "activation_id": artifact["activation_id"], "activation_hash": artifact["activation_hash"], "activation_replay_reference": artifact["activation_replay_reference"], "activation_replay_hash": artifact["activation_replay_hash"], "candidate_id": artifact["candidate_id"], "candidate_hash": artifact["candidate_hash"], "candidate_replay_hash": artifact["candidate_replay_hash"], "candidate_provenance_binding_hash": artifact["candidate_provenance_binding_hash"],
+            "mutation_decision_id": artifact["mutation_decision_id"], "mutation_decision_hash": artifact["mutation_decision_hash"], "mutation_decision_outcome": artifact["mutation_decision_outcome"], "mutation_decision_scope": artifact["mutation_decision_scope"], "mutation_decision_actor": artifact["mutation_decision_actor"], "mutation_decision_replay_hash": artifact["mutation_decision_replay_hash"], "target_path": artifact["target_path"], "expected_source_sha256": artifact["expected_source_sha256"],
+            "authorization_actor_bound": True, "authorization_replay_recorded": True, "mutation_authorized": True,
+            "authorization_consumed": False, "replace_request_created": False, "worker_invoked": False,
+            "provider_invoked": False, "command_executed": False, "repository_mutated": False,
+            "main_repository_mutated": False, "actor_replay_binding_hash": actual}
 
 
 def _g31_authorization_subject(

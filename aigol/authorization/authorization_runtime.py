@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import os
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from aigol.authorization.authorization_record import (
 )
 from aigol.authorization.authorization_validator import validate_authorization_inputs
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash, write_json_immutable
 
 
 AUTHORIZATION_RUNTIME_VERSION = "MINIMAL_GOVERNED_WORKER_AUTHORIZATION_RUNTIME_V1"
@@ -20,6 +21,8 @@ AUTHORIZATION_CREATED = "AUTHORIZATION_CREATED"
 AUTHORIZATION_RETURNED = "AUTHORIZATION_RETURNED"
 FAILED_CLOSED = "FAILED_CLOSED"
 REPLAY_STEPS = ("authorization_created", "authorization_returned")
+CANONICAL_AUTHORIZATION_ACTOR, EXISTING_AUTHORIZATION_BINDING_VERSION = "governed_authorization_runtime", "G31_24G_R04_R04_R01_AUTHORIZATION_BINDING_V1"
+EXISTING_AUTHORIZATION_BINDING_STEPS = ("authorization_owner_resolved", "authorization_binding_recorded", "authorization_returned")
 
 
 def authorize_worker_request(
@@ -97,7 +100,7 @@ def reconstruct_authorization_replay(replay_dir: str | Path) -> dict[str, Any]:
     return {
         "who_proposed": created["proposal_id"],
         "who_reviewed": created["governance_review"],
-        "who_authorized": "governed_authorization_runtime",
+        "who_authorized": CANONICAL_AUTHORIZATION_ACTOR,
         "worker_authorized": created["worker_id"],
         "scope_authorized": created["authorization_scope"],
         "authorization_timestamp": created["authorization_timestamp"],
@@ -110,6 +113,88 @@ def reconstruct_authorization_replay(replay_dir: str | Path) -> dict[str, Any]:
         "authority_origin": "governed_authorization_only",
         "replay_hash": replay_hash(wrappers),
     }
+
+
+def persist_existing_authorization_binding_replay(
+    *, binding: dict[str, Any], replay_dir: str | Path, session_root: str | Path) -> dict[str, Any]:
+    """Persist an actor-bound Replay around one already-created authorization."""
+
+    root, path = Path(session_root).resolve(), Path(replay_dir).resolve()
+    if not path.is_relative_to(root):
+        raise FailClosedRuntimeError("authorization binding Replay is cross-session")
+    _verify_artifact_hash(binding); record = validate_authorization_record(binding.get("authorization_record"))
+    if not all((binding.get("runtime_version") == EXISTING_AUTHORIZATION_BINDING_VERSION,
+                binding.get("canonical_authorization_actor") == CANONICAL_AUTHORIZATION_ACTOR,
+                binding.get("authorization_replay_reference") == str(path),
+                binding.get("session_id") == root.name, binding.get("authorization_record") == record, binding.get("authorization_id") == record["authorization_id"], binding.get("authorization_hash") == record["authorization_hash"], binding.get("authorization_status") == record["authorization_status"], binding.get("authorization_scope") == record["authorization_scope"], binding.get("worker_id") == record["worker_id"], isinstance(binding.get("r02_authorization_binding_hash"), str), all(binding.get(field) is False for field in ("authorization_consumed", "replace_request_created", "worker_invoked", "provider_invoked", "command_executed", "repository_mutated", "main_repository_mutated")))):
+        raise FailClosedRuntimeError("authorization binding identity is invalid")
+    _ensure_existing_binding_available(root, path, binding["authorization_hash"])
+    owner = {
+        "artifact_type": "AUTHORIZATION_OWNER_RESOLVED_BINDING_V1",
+        "runtime_version": EXISTING_AUTHORIZATION_BINDING_VERSION,
+        "canonical_authorization_actor": CANONICAL_AUTHORIZATION_ACTOR,
+        "session_id": binding["session_id"], "authorization_id": binding["authorization_id"],
+        "authorization_hash": binding["authorization_hash"],
+        "r02_authorization_binding_hash": binding["r02_authorization_binding_hash"],
+        "authorization_consumed": False, "worker_invoked": False,
+        "repository_mutated": False, "replay_visible": True,
+    }
+    owner["artifact_hash"] = replay_hash(owner)
+    returned = {
+        "artifact_type": "AUTHORIZATION_BINDING_RETURNED_V1",
+        "runtime_version": EXISTING_AUTHORIZATION_BINDING_VERSION,
+        "canonical_authorization_actor": CANONICAL_AUTHORIZATION_ACTOR,
+        "authorization_id": binding["authorization_id"],
+        "authorization_hash": binding["authorization_hash"],
+        "authorization_binding_hash": binding["artifact_hash"],
+        "owner_resolution_hash": owner["artifact_hash"],
+        "authorization_status": binding["authorization_status"],
+        "authorization_consumed": False, "replace_request_created": False,
+        "worker_invoked": False, "repository_mutated": False,
+        "main_repository_mutated": False, "replay_visible": True,
+    }
+    returned["artifact_hash"] = replay_hash(returned)
+    for index, artifact in enumerate((owner, binding, returned)):
+        _persist_existing_binding_step(path, index, artifact)
+    return reconstruct_existing_authorization_binding_replay(path, session_root=root)
+
+
+def reconstruct_existing_authorization_binding_replay(
+    replay_dir: str | Path, *, session_root: str | Path) -> dict[str, Any]:
+    """Reconstruct one existing-record actor and authorization Replay binding."""
+
+    root, path = Path(session_root).resolve(), Path(replay_dir).resolve()
+    if not path.is_relative_to(root):
+        raise FailClosedRuntimeError("authorization binding Replay is cross-session")
+    expected_files = {f"{index:03d}_{step}.json" for index, step in enumerate(EXISTING_AUTHORIZATION_BINDING_STEPS)}
+    if not path.is_dir() or {item.name for item in path.iterdir()} != expected_files:
+        raise FailClosedRuntimeError("authorization binding Replay file set mismatch")
+    wrappers = []
+    for index, step in enumerate(EXISTING_AUTHORIZATION_BINDING_STEPS):
+        wrapper = load_json(path / f"{index:03d}_{step}.json")
+        if wrapper.get("replay_index") != index or wrapper.get("replay_step") != step:
+            raise FailClosedRuntimeError("authorization binding Replay ordering mismatch")
+        _verify_wrapper_hash(wrapper)
+        _verify_artifact_hash(wrapper.get("artifact") or {})
+        wrappers.append(wrapper)
+    owner, binding, returned = [wrapper["artifact"] for wrapper in wrappers]; record = validate_authorization_record(binding.get("authorization_record"))
+    if not all((owner.get("artifact_type") == "AUTHORIZATION_OWNER_RESOLVED_BINDING_V1", owner.get("runtime_version") == EXISTING_AUTHORIZATION_BINDING_VERSION, binding.get("artifact_type") == "EXISTING_MUTATION_AUTHORIZATION_ACTOR_BINDING_V1", binding.get("runtime_version") == EXISTING_AUTHORIZATION_BINDING_VERSION, returned.get("artifact_type") == "AUTHORIZATION_BINDING_RETURNED_V1", returned.get("runtime_version") == EXISTING_AUTHORIZATION_BINDING_VERSION,
+                owner.get("canonical_authorization_actor") == CANONICAL_AUTHORIZATION_ACTOR,
+                binding.get("canonical_authorization_actor") == CANONICAL_AUTHORIZATION_ACTOR, returned.get("canonical_authorization_actor") == CANONICAL_AUTHORIZATION_ACTOR,
+                owner.get("session_id") == root.name == binding.get("session_id"),
+                binding.get("authorization_replay_reference") == str(path),
+                owner.get("authorization_id") == binding.get("authorization_id"),
+                returned.get("authorization_id") == binding.get("authorization_id"),
+                owner.get("authorization_hash") == binding.get("authorization_hash"),
+                returned.get("authorization_hash") == binding.get("authorization_hash"),
+                returned.get("authorization_binding_hash") == binding.get("artifact_hash"),
+                returned.get("owner_resolution_hash") == owner.get("artifact_hash"), owner.get("r02_authorization_binding_hash") == binding.get("r02_authorization_binding_hash"),
+                binding.get("authorization_record") == record, binding.get("authorization_id") == record["authorization_id"], binding.get("authorization_hash") == record["authorization_hash"], binding.get("authorization_status") == record["authorization_status"], binding.get("authorization_scope") == record["authorization_scope"], binding.get("worker_id") == record["worker_id"], returned.get("authorization_status") == "AUTHORIZED", all(item.get(field) is False for item in (owner, binding, returned) for field in ("authorization_consumed", "worker_invoked", "repository_mutated")), all(binding.get(field) is False for field in ("replace_request_created", "provider_invoked", "command_executed", "main_repository_mutated")), returned.get("replace_request_created") is False, returned.get("main_repository_mutated") is False)):
+        raise FailClosedRuntimeError("authorization binding Replay identity mismatch")
+    return {"canonical_authorization_actor": CANONICAL_AUTHORIZATION_ACTOR, "authorization_replay_reference": str(path), "authorization_replay_hash": replay_hash(wrappers),
+            "authorization_binding_artifact": deepcopy(binding),
+            "authorization_consumed": False, "replace_request_created": False,
+            "worker_invoked": False, "repository_mutated": False, "main_repository_mutated": False}
 
 
 def _created_artifact(*, record: dict[str, Any], validated: dict[str, Any], authorization_timestamp: str) -> dict[str, Any]:
@@ -257,6 +342,36 @@ def _persist_failure_if_possible(replay_dir: Path, index: int, step: str, artifa
         except FailClosedRuntimeError:
             return
 
+
+def _ensure_existing_binding_available(root: Path, path: Path, authorization_hash: str) -> None:
+    if any((path / f"{index:03d}_{step}.json").exists()
+           for index, step in enumerate(EXISTING_AUTHORIZATION_BINDING_STEPS)):
+        raise FailClosedRuntimeError("authorization binding Replay destination already exists")
+    for existing in root.rglob(f"001_{EXISTING_AUTHORIZATION_BINDING_STEPS[1]}.json"):
+        wrapper = load_json(existing); _verify_wrapper_hash(wrapper)
+        artifact = wrapper.get("artifact") or {}; _verify_artifact_hash(artifact)
+        if artifact.get("authorization_hash") == authorization_hash:
+            raise FailClosedRuntimeError("authorization already has an actor and Replay binding")
+
+
+def _persist_existing_binding_step(path: Path, index: int, artifact: dict[str, Any]) -> None:
+    step = EXISTING_AUTHORIZATION_BINDING_STEPS[index]
+    _verify_artifact_hash(artifact)
+    wrapper = {"replay_index": index, "replay_step": step, "artifact": deepcopy(artifact),
+               "replay_service_version": EXISTING_AUTHORIZATION_BINDING_VERSION}
+    wrapper["replay_hash"] = replay_hash(wrapper)
+    destination = path / f"{index:03d}_{step}.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError as exc:
+        raise FailClosedRuntimeError("authorization binding Replay destination already exists") from exc
+    try:
+        payload = (canonical_serialize(wrapper) + "\n").encode("utf-8")
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(payload); stream.flush(); os.fsync(stream.fileno())
+    except Exception:
+        raise FailClosedRuntimeError("authorization binding Replay persistence failed closed")
 
 def _verify_artifact_hash(artifact: dict[str, Any]) -> None:
     if "artifact_hash" not in artifact:
