@@ -174,7 +174,7 @@ def test_invocation_evidence_stops_before_execution_and_external_activation(tmp_
     assert not list(session_root.rglob("000_execution_started.json"))
     assert not list(session_root.glob("WORKER-RESULT-*"))
 
-    aicli_source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
+    aicli_source = Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8")
     invocation_source = inspect.getsource(invoke_dispatched_worker)
     assert aicli_source.count("worker_invocation.invoke_dispatched_worker(") == 1
     for forbidden in (

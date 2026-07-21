@@ -185,7 +185,7 @@ def test_dispatch_stage_remains_non_invoking_before_later_invocation(tmp_path: P
     for field in ("provider_invoked", "command_executed", "repository_mutated"):
         assert runtime[field] is False
     assert len(list(session_root.glob("WORKER-INVOCATION-*"))) == 1
-    source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
+    source = Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8")
     assert source.count("worker_dispatch.dispatch_assigned_worker(") == 1
     assert source.count("worker_invocation.invoke_dispatched_worker(") == 1
     for duplicate in ("def _verify_hash", "def _relative_path", "def _unique_relative_paths"):

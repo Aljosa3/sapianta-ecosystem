@@ -176,7 +176,7 @@ def test_tamper_alias_actor_session_duplicate_and_replay_fail_closed(
         with pytest.raises(FailClosedRuntimeError, match="actor or outcome"):
             decision.record_content_acceptance_decision(
                 context_capture=context, binding_capture=binding, decision_outcome=outcome,
-                decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+                decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
             )
     with pytest.raises(FailClosedRuntimeError, match="actor or outcome"):
         decision.record_content_acceptance_decision(
@@ -188,7 +188,7 @@ def test_tamper_alias_actor_session_duplicate_and_replay_fail_closed(
     with pytest.raises(FailClosedRuntimeError, match="readiness"):
         decision.record_content_acceptance_decision(
             context_capture=context, binding_capture=changed, decision_outcome=decision.ACCEPTED,
-            decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+            decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
         )
     changed = deepcopy(binding)
     changed["generated_content_validation_capture"]["generated_content_validation_artifact"][
@@ -197,7 +197,7 @@ def test_tamper_alias_actor_session_duplicate_and_replay_fail_closed(
     with pytest.raises(FailClosedRuntimeError):
         decision.record_content_acceptance_decision(
             context_capture=context, binding_capture=changed, decision_outcome=decision.ACCEPTED,
-            decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+            decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
         )
     changed = deepcopy(binding)
     changed["implementation_manifest_capture"]["implementation_manifest_artifact"][
@@ -206,12 +206,12 @@ def test_tamper_alias_actor_session_duplicate_and_replay_fail_closed(
     with pytest.raises(FailClosedRuntimeError):
         decision.record_content_acceptance_decision(
             context_capture=context, binding_capture=changed, decision_outcome=decision.ACCEPTED,
-            decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+            decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
         )
     with pytest.raises(FailClosedRuntimeError, match="cross-session"):
         decision.record_content_acceptance_decision(
             context_capture=context, binding_capture=binding, decision_outcome=decision.ACCEPTED,
-            decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT,
+            decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT,
             session_root=tmp_path / "OTHER-SESSION",
         )
     assert not replay_path.exists()
@@ -232,23 +232,23 @@ def test_tamper_alias_actor_session_duplicate_and_replay_fail_closed(
     monkeypatch.setattr(mutation_authorization, "authorize_filesystem_mutation", stopped("authorization"))
     capture = decision.record_content_acceptance_decision(
         context_capture=context, binding_capture=binding, decision_outcome=decision.ACCEPTED,
-        decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+        decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
     )
     assert stop_calls == {"execute": 0, "command": 0, "patch": 0, "binder": 0, "accept": 0, "authorization": 0}
     with pytest.raises(FailClosedRuntimeError, match="destination already exists"):
         decision.record_content_acceptance_decision(
             context_capture=context, binding_capture=binding, decision_outcome=decision.ACCEPTED,
-            decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=CREATED_AT, session_root=root,
+            decided_by="HUMAN_OPERATOR", decided_at=CREATED_AT, session_root=root,
         )
     second_context = decision.prepare_content_acceptance_decision_context(
         context_id="DUPLICATE-SUBJECT", binding_capture=binding,
-        human_actor_id="HUMAN_OPERATOR_VIA_AICLI", presented_at=CREATED_AT,
+        human_actor_id="HUMAN_OPERATOR", presented_at=CREATED_AT,
         session_root=root, replay_dir=root / "SECOND-CONTENT-DECISION",
     )
     with pytest.raises(FailClosedRuntimeError, match="subject already decided"):
         decision.record_content_acceptance_decision(
             context_capture=second_context, binding_capture=binding,
-            decision_outcome=decision.ACCEPTED, decided_by="HUMAN_OPERATOR_VIA_AICLI",
+            decision_outcome=decision.ACCEPTED, decided_by="HUMAN_OPERATOR",
             decided_at=CREATED_AT, session_root=root,
         )
     substituted = deepcopy(capture)

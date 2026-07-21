@@ -50,7 +50,7 @@ def _decision_ready(tmp_path: Path, session: str, outcome: str):
     binding = runtime["codex_replacement_acceptance_prerequisite_binding_capture"]
     capture = decision.record_content_acceptance_decision(
         context_capture=context, binding_capture=binding, decision_outcome=outcome,
-        decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=r02.CREATED_AT, session_root=root,
+        decided_by="HUMAN_OPERATOR", decided_at=r02.CREATED_AT, session_root=root,
     )
     return capture, binding, root, source, runner
 

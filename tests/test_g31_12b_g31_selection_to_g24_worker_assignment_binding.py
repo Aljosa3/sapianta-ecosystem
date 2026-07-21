@@ -232,7 +232,7 @@ def test_production_change_has_no_new_module_or_duplicate_helpers() -> None:
     sources = [
         Path("aigol/runtime/worker_invocation_request_runtime.py").read_text(encoding="utf-8"),
         Path("aigol/runtime/worker_assignment_runtime.py").read_text(encoding="utf-8"),
-        Path("aigol/cli/aicli.py").read_text(encoding="utf-8"),
+        Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8"),
     ]
     assert "def _load_g31_selection_binding" in sources[0]
     for duplicate in ("def _verify_hash", "def _relative_path", "def _unique_relative_paths"):

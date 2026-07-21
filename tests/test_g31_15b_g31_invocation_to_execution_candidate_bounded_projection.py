@@ -114,8 +114,8 @@ def test_changed_invocation_or_duplicate_candidate_fails_closed(tmp_path: Path) 
     )["candidate_status"] == "WORKER_EXECUTION_CANDIDATE_CREATED"
 
 
-def test_aicli_has_one_candidate_edge_and_no_forbidden_execution_imports() -> None:
-    source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
+def test_common_entry_has_one_candidate_edge_and_no_forbidden_execution_imports() -> None:
+    source = Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8")
     implementation = inspect.getsource(project_g31_invocation_to_execution_candidate)
     assert source.count("worker_candidate.project_g31_invocation_to_execution_candidate(") == 1
     for forbidden in (

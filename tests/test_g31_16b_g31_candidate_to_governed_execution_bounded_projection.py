@@ -102,8 +102,8 @@ def test_changed_candidate_and_duplicate_destination_fail_closed(tmp_path: Path)
 
 def test_projection_has_no_process_provider_result_or_mutation_path() -> None:
     implementation = inspect.getsource(project_g31_candidate_to_governed_execution)
-    aicli_source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
-    assert aicli_source.count("governed_execution.project_g31_candidate_to_governed_execution(") == 1
+    common_source = Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8")
+    assert common_source.count("governed_execution.project_g31_candidate_to_governed_execution(") == 1
     for forbidden in (
         "start_execution(", "external_worker_adapter_runtime", "openai_external",
         "subprocess.run", "capture_worker_result(", "repository_mutation_worker",

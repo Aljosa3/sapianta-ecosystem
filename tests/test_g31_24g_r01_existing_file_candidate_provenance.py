@@ -11,6 +11,7 @@ from aigol.runtime import generated_content_acceptance_runtime as acceptance
 from aigol.runtime import human_decision_runtime as decision
 from aigol.runtime import platform_core_existing_file_mutation_candidate as candidate
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
+from aigol.runtime import human_interface_runtime_entry_service as common_entry
 from aigol.runtime.models import FailClosedRuntimeError
 import test_g31_24d_r02_aicli_task_outcome_to_disposable_review_binding as r02
 
@@ -37,7 +38,7 @@ def _accepted(tmp_path: Path, name: str = "G31-24G"):
     binding = runtime["codex_replacement_acceptance_prerequisite_binding_capture"]
     content = decision.record_content_acceptance_decision(
         context_capture=runtime["human_content_acceptance_context_capture"], binding_capture=binding,
-        decision_outcome=decision.ACCEPTED, decided_by="HUMAN_OPERATOR_VIA_AICLI",
+        decision_outcome=decision.ACCEPTED, decided_by="HUMAN_OPERATOR",
         decided_at=r02.CREATED_AT, session_root=root)
     accepted = acceptance.accept_generated_content_from_content_acceptance_decision(
         acceptance_id=f"{name}-ACCEPTANCE", decision_capture=content, binding_capture=binding,
@@ -57,7 +58,7 @@ def test_exact_accepted_result_creates_and_reconstructs_v2_candidate(tmp_path: P
     capture = candidate.create_g31_accepted_existing_file_mutation_candidate(
         candidate_id="G31-24G-CANDIDATE", acceptance_capture=accepted, decision_capture=content,
         binding_capture=binding, repository_grounding_artifact=grounding, session_root=root,
-        created_by="HUMAN_OPERATOR_VIA_AICLI", created_at=r02.CREATED_AT, replay_dir=root / "CANDIDATE")
+        created_by="HUMAN_OPERATOR", created_at=r02.CREATED_AT, replay_dir=root / "CANDIDATE")
     reconstructed = candidate.reconstruct_g31_accepted_existing_file_mutation_candidate_replay(
         candidate_capture=capture, acceptance_capture=accepted, decision_capture=content,
         binding_capture=binding, repository_grounding_artifact=grounding, session_root=root)
@@ -128,6 +129,6 @@ def test_aicli_fails_closed_before_candidate_if_activation_reconstruction_fails(
     def failed_reconstruction(**_kwargs):
         raise FailClosedRuntimeError("activation reconstruction failed closed")
 
-    monkeypatch.setattr(r02.aicli.worker_activation, "reconstruct_codex_worker_activation_binding", failed_reconstruction)
+    monkeypatch.setattr(common_entry.worker_activation, "reconstruct_codex_worker_activation_binding", failed_reconstruction)
     with pytest.raises(FailClosedRuntimeError, match="activation reconstruction failed closed"):
         r02._run(tmp_path, "G31-24G-AICLI-FAIL-CLOSED", ["/satisfied", "/approve", "/accept"])

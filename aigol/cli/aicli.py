@@ -18,36 +18,24 @@ from aigol.cli.aigol_cli import run_interactive_conversation
 from aigol.runtime.human_interface_runtime_entry_service import (
     CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
     CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED,
+    G31_APPROVE,
+    G31_CONTENT_ACCEPTANCE_DECISION,
+    G31_CONTENT_ACCEPTED,
+    G31_CONTENT_REJECTED,
+    G31_DISPOSABLE_VALIDATION_DECISION,
+    G31_EXECUTION_DECISION,
+    G31_MUTATION_APPROVED,
+    G31_MUTATION_DECISION,
+    G31_MUTATION_REJECTED,
+    G31_REJECT,
+    G31_REWORK_REQUESTED,
+    G31_TASK_OUTCOME_DECISION,
+    G31_TASK_OUTCOME_SATISFIED,
+    G31_TASK_OUTCOME_UNSATISFIED,
+    G31_WORKER_ACTIVATION_DECISION,
     run_human_interface_runtime_entry,
 )
-from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
-    EXECUTION_DECISION_APPROVED,
-    EXECUTION_DECISION_REJECTED,
-    bind_distinct_human_execution_decision,
-    render_distinct_human_execution_decision,
-)
-from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
-    authorize_confirmed_grounded_execution_decision,
-    render_authorized_grounded_worker_selection,
-    select_authorized_grounded_worker,
-)
-from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.models import FailClosedRuntimeError
-from aigol.runtime import worker_assignment_runtime as worker_assignment
-from aigol.runtime import worker_dispatch_runtime as worker_dispatch
-from aigol.runtime import worker_invocation_runtime as worker_invocation
-from aigol.runtime import worker_invocation_to_execution_candidate_bridge_runtime as worker_candidate
-from aigol.runtime import governed_worker_execution_runtime as governed_execution
-from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
-from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
-from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
-from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_review
-from aigol.runtime import codex_satisfied_outcome_disposable_validation_binding_runtime as disposable_validation
-from aigol.runtime import codex_replacement_acceptance_prerequisite_binding_runtime as replacement_prerequisites
-from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
-from aigol.runtime import platform_core_existing_file_mutation_candidate as existing_file_candidate
-from aigol.runtime import human_decision_runtime as human_decision
-from aigol.runtime import worker_invocation_request_runtime as worker_request
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
     prepare_unified_human_interface_project_context,
@@ -102,6 +90,7 @@ def run_reference_uhi_session(
     pending_task_outcome_review: dict[str, Any] | None = None
     pending_disposable_patch_validation_review: dict[str, Any] | None = None
     pending_content_acceptance_context: dict[str, Any] | None = None
+    pending_mutation_decision_context: dict[str, Any] | None = None
     submitted_messages = 0
     clarification_count = 0
     approval_count = 0
@@ -175,6 +164,12 @@ def run_reference_uhi_session(
                         pending_clarification=pending_clarification,
                         pending_summary=pending_summary,
                     )
+                if pending_mutation_decision_context is not None:
+                    session_status = "REFERENCE_UHI_SESSION_AWAITING_MUTATION_DECISION"
+                    exit_reason = "GENERATED_CONTENT_ACCEPTANCE_RECORDED"
+                    output_writer("Existing-file mutation intent is awaiting exact APPROVED or REJECTED.")
+                    transcript.append({"event": "eof_awaiting_mutation_decision"})
+                    break
                 if pending_content_acceptance_context is not None:
                     session_status = "REFERENCE_UHI_SESSION_AWAITING_CONTENT_ACCEPTANCE_DECISION"
                     exit_reason = "EOF_AWAITING_CONTENT_ACCEPTANCE_DECISION"
@@ -251,71 +246,59 @@ def run_reference_uhi_session(
         normalized = line_text.strip().lower()
         if not normalized and not compose_buffer:
             continue
+        if pending_mutation_decision_context is not None:
+            exact_outcome = line_text.strip()
+            if exact_outcome not in {G31_MUTATION_APPROVED, G31_MUTATION_REJECTED}:
+                output_writer(
+                    "Mutation-decision context accepts only exact APPROVED or REJECTED."
+                )
+                transcript.append({"event": "invalid_mutation_decision_response"})
+                continue
+            runtime_result = _continue_g31_application_action(
+                runtime_result=runtime_result,
+                action=exact_outcome,
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                worker_process_runner=worker_process_runner,
+            )
+            _write_g31_presentations(runtime_result, output_writer)
+            pending_mutation_decision_context = None
+            transcript.append({
+                "event": "human_mutation_decision_recorded",
+                "outcome": exact_outcome,
+            })
+            session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+            exit_reason = "HUMAN_MUTATION_DECISION_RECORDED"
+            break
         if pending_content_acceptance_context is not None:
             if normalized not in {"/accept", "/reject"}:
                 output_writer("Content-acceptance context accepts only /accept or /reject.")
                 transcript.append({"event": "invalid_content_acceptance_response"})
                 continue
-            outcome = human_decision.ACCEPTED if normalized == "/accept" else human_decision.REJECTED
-            capture = human_decision.record_content_acceptance_decision(
-                context_capture=pending_content_acceptance_context,
-                binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                decision_outcome=outcome, decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=created,
-                session_root=root / session,
+            outcome = G31_CONTENT_ACCEPTED if normalized == "/accept" else G31_CONTENT_REJECTED
+            runtime_result = _continue_g31_application_action(
+                runtime_result=runtime_result,
+                action=outcome,
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                worker_process_runner=worker_process_runner,
             )
-            reconstruction = human_decision.reconstruct_content_acceptance_decision_replay(
-                decision_capture=capture,
-                binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                session_root=root / session,
+            _write_g31_presentations(runtime_result, output_writer)
+            pending_mutation_decision_context = _g31_pending_context(
+                runtime_result, G31_MUTATION_DECISION
             )
-            runtime_result.update({"human_content_acceptance_decision_capture": capture,
-                "human_content_acceptance_decision_reconstruction": reconstruction,
-                "result_accepted": False, "mutation_authorized": False, "main_repository_mutated": False})
-            output_writer(human_decision.render_content_acceptance_decision(capture))
-            if outcome == human_decision.ACCEPTED:
-                artifact = capture["human_decision_artifact"]
-                accepted = generated_acceptance.accept_generated_content_from_content_acceptance_decision(
-                    acceptance_id=f"G31-GENERATED-CONTENT-ACCEPTANCE-{artifact['artifact_hash'][-16:]}",
-                    decision_capture=capture,
-                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    created_at=created, session_root=root / session,
-                    replay_dir=root / session / f"GENERATED-CONTENT-ACCEPTANCE-{artifact['artifact_hash'][-16:]}")
-                accepted_reconstruction = generated_acceptance.reconstruct_generated_content_acceptance_from_decision_replay(
-                    acceptance_capture=accepted, decision_capture=capture,
-                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    session_root=root / session)
-                runtime_result.update({"generated_content_acceptance_capture": accepted,
-                    "generated_content_acceptance_reconstruction": accepted_reconstruction,
-                    "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
-                output_writer(generated_acceptance.render_generated_content_acceptance_from_decision(
-                    accepted, runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]))
-                activation_binding = worker_activation.reconstruct_codex_worker_activation_binding(
-                    activation_capture=runtime_result["codex_worker_activation_capture"],
-                    governed_execution_capture=runtime_result["governed_worker_execution_capture"],
-                    execution_candidate_capture=runtime_result["worker_execution_candidate_capture"],
-                    session_root=root / session, workspace=workspace_path)
-                grounding = activation_binding["lineage"]["grounding"]
-                candidate_capture = existing_file_candidate.create_g31_accepted_existing_file_mutation_candidate(
-                    candidate_id=f"G31-EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}",
-                    acceptance_capture=accepted, decision_capture=capture,
-                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    repository_grounding_artifact=grounding,
-                    session_root=root / session, created_by="HUMAN_OPERATOR_VIA_AICLI", created_at=created,
-                    replay_dir=root / session / f"EXISTING-FILE-CANDIDATE-{artifact['artifact_hash'][-16:]}")
-                candidate_reconstruction = existing_file_candidate.reconstruct_g31_accepted_existing_file_mutation_candidate_replay(
-                    candidate_capture=candidate_capture, acceptance_capture=accepted, decision_capture=capture,
-                    binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                    repository_grounding_artifact=grounding,
-                    session_root=root / session)
-                runtime_result.update({"existing_file_mutation_candidate_capture": candidate_capture,
-                    "existing_file_mutation_candidate_reconstruction": candidate_reconstruction,
-                    "existing_file_mutation_candidate_created": True, "human_mutation_decision_recorded": False,
-                    "result_accepted": True, "mutation_authorized": False, "main_repository_mutated": False})
-                output_writer(existing_file_candidate.render_g31_accepted_existing_file_mutation_candidate(candidate_capture))
+            if pending_mutation_decision_context is not None:
+                transcript.append({"event": "human_mutation_decision_context_presented"})
             pending_content_acceptance_context = None
             transcript.append({"event": "human_content_acceptance_decision_recorded", "outcome": outcome})
+            if pending_mutation_decision_context is not None:
+                continue
             session_status = "REFERENCE_UHI_SESSION_COMPLETED"
-            exit_reason = ("GENERATED_CONTENT_ACCEPTANCE_RECORDED" if outcome == human_decision.ACCEPTED
+            exit_reason = ("GENERATED_CONTENT_ACCEPTANCE_RECORDED" if outcome == G31_CONTENT_ACCEPTED
                            else "HUMAN_CONTENT_ACCEPTANCE_DECISION_RECORDED")
             break
         if normalized in {"/exit", "exit", "quit"}:
@@ -361,51 +344,46 @@ def run_reference_uhi_session(
                 transcript.append({"event": "task_outcome_cancel_rejected"})
                 continue
             if pending_disposable_patch_validation_review is not None:
-                runtime_result = _record_contextual_disposable_patch_validation_decision(
-                    pending_review=pending_disposable_patch_validation_review,
-                    decision=human_decision.REJECT,
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_REJECT,
                     session=session,
                     root=root,
                     workspace_path=workspace_path,
                     created=created,
-                    runtime_result=runtime_result,
+                    worker_process_runner=worker_process_runner,
                 )
-                output_writer(human_decision.render_human_decision_summary(
-                    runtime_result["disposable_patch_validation_human_decision_capture"]
-                ))
+                _write_g31_presentations(runtime_result, output_writer)
                 pending_disposable_patch_validation_review = None
                 transcript.append({"event": "disposable_patch_validation_decision_rejected"})
                 session_status = "REFERENCE_UHI_SESSION_COMPLETED"
                 exit_reason = "DISPOSABLE_PATCH_VALIDATION_HUMAN_DECISION_RECORDED"
                 break
             if pending_activation_review is not None:
-                runtime_result = dict(runtime_result or {})
-                runtime_result.update({
-                    "worker_activation_decision_rejected": True,
-                    "third_human_decision_recorded": True,
-                    "worker_process_activation_allowed": False,
-                    "worker_process_started": False,
-                    "provider_invoked": False,
-                    "semantic_worker_result_captured": False,
-                    "repository_mutated": False,
-                })
-                pending_activation_review = None
-                output_writer("Bounded CODEX Worker process activation rejected; no process started.")
-                transcript.append({"event": "worker_activation_decision_rejected"})
-                continue
-            if pending_execution_review is not None:
-                runtime_result = _record_contextual_execution_decision(
-                    pending_execution_review=pending_execution_review,
-                    decision="REJECT",
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_REJECT,
                     session=session,
                     root=root,
                     workspace_path=workspace_path,
                     created=created,
-                    runtime_result=runtime_result,
+                    worker_process_runner=worker_process_runner,
                 )
-                output_writer(render_distinct_human_execution_decision(
-                    runtime_result["execution_human_decision_result"]
-                ))
+                _write_g31_presentations(runtime_result, output_writer)
+                pending_activation_review = None
+                transcript.append({"event": "worker_activation_decision_rejected"})
+                continue
+            if pending_execution_review is not None:
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_REJECT,
+                    session=session,
+                    root=root,
+                    workspace_path=workspace_path,
+                    created=created,
+                    worker_process_runner=worker_process_runner,
+                )
+                _write_g31_presentations(runtime_result, output_writer)
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_rejected"})
                 continue
@@ -581,235 +559,100 @@ def run_reference_uhi_session(
                 transcript.append({"event": "task_outcome_decision_without_review"})
                 continue
             outcome = {
-                "/satisfied": codex_task_review.TASK_OUTCOME_SATISFIED,
-                "/unsatisfied": codex_task_review.TASK_OUTCOME_UNSATISFIED,
-                "/rework": codex_task_review.REWORK_REQUESTED,
+                "/satisfied": G31_TASK_OUTCOME_SATISFIED,
+                "/unsatisfied": G31_TASK_OUTCOME_UNSATISFIED,
+                "/rework": G31_REWORK_REQUESTED,
             }[normalized]
-            runtime_result = _record_contextual_task_outcome_decision(
-                pending_task_outcome_review=pending_task_outcome_review,
-                task_outcome_decision=outcome,
+            runtime_result = _continue_g31_application_action(
+                runtime_result=runtime_result,
+                action=outcome,
                 session=session,
                 root=root,
                 workspace_path=workspace_path,
                 created=created,
-                runtime_result=runtime_result,
+                worker_process_runner=worker_process_runner,
             )
-            output_writer(codex_task_review.render_codex_task_outcome_decision(
-                runtime_result["codex_task_outcome_human_decision_capture"]
-            ))
+            _write_g31_presentations(runtime_result, output_writer)
             pending_task_outcome_review = None
             human_task_outcome_decision_count += 1
             transcript.append({
                 "event": "task_outcome_human_decision_recorded",
                 "task_outcome_decision": outcome,
             })
-            if outcome == codex_task_review.TASK_OUTCOME_SATISFIED:
-                try:
-                    runtime_result = _prepare_contextual_disposable_patch_validation_review(
-                        session=session,
-                        root=root,
-                        workspace_path=workspace_path,
-                        created=created,
-                        runtime_result=runtime_result,
-                    )
-                except FailClosedRuntimeError as exc:
-                    runtime_result["disposable_patch_validation_review_blocked"] = True
-                    runtime_result["disposable_patch_validation_review_blocker"] = str(exc)
-                    output_writer(f"Disposable patch-validation review failed closed: {exc}")
-                    session_status = "REFERENCE_UHI_SESSION_COMPLETED"
-                    exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
-                    break
-                pending_disposable_patch_validation_review = runtime_result[
-                    "disposable_patch_validation_review_capture"
-                ]
-                output_writer(disposable_validation.render_disposable_patch_validation_review(
-                    pending_disposable_patch_validation_review,
-                    runtime_result["codex_task_outcome_review_capture"],
-                ))
-                output_writer(
-                    "Disposable-only validation decision pending. Use /approve to record "
-                    "APPROVE or /cancel to record REJECT. No patch or test has run."
+            if outcome == G31_TASK_OUTCOME_SATISFIED:
+                pending_disposable_patch_validation_review = _g31_pending_context(
+                    runtime_result, G31_DISPOSABLE_VALIDATION_DECISION
                 )
-                transcript.append({"event": "disposable_patch_validation_review_prepared"})
-                continue
+                if pending_disposable_patch_validation_review is not None:
+                    transcript.append(
+                        {"event": "disposable_patch_validation_review_prepared"}
+                    )
+                    continue
+                session_status = "REFERENCE_UHI_SESSION_COMPLETED"
+                exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
+                break
             session_status = "REFERENCE_UHI_SESSION_COMPLETED"
             exit_reason = "TASK_OUTCOME_HUMAN_DECISION_RECORDED"
             break
         if normalized == "/approve":
             if pending_disposable_patch_validation_review is not None:
-                runtime_result = _record_contextual_disposable_patch_validation_decision(
-                    pending_review=pending_disposable_patch_validation_review,
-                    decision=human_decision.APPROVE,
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_APPROVE,
                     session=session,
                     root=root,
                     workspace_path=workspace_path,
                     created=created,
-                    runtime_result=runtime_result,
+                    worker_process_runner=worker_process_runner,
                 )
-                output_writer(human_decision.render_human_decision_summary(
-                    runtime_result["disposable_patch_validation_human_decision_capture"]
-                ))
+                _write_g31_presentations(runtime_result, output_writer)
                 pending_disposable_patch_validation_review = None
                 approval_count += 1
                 transcript.append({"event": "disposable_patch_validation_decision_approved"})
-                runtime_result = _execute_contextual_disposable_patch_validation(
-                    session=session, root=root, workspace_path=workspace_path,
-                    created=created, runtime_result=runtime_result,
-                )
-                output_writer(disposable_validation.render_disposable_patch_validation_outcome(
-                    runtime_result["disposable_patch_validation_outcome_capture"]
-                ))
                 transcript.append({"event": "disposable_patch_validation_outcome_recorded"})
-                outcome_artifact = runtime_result[
-                    "disposable_patch_validation_outcome_capture"
-                ]["outcome_artifact"]
-                if outcome_artifact["execution_status"] == disposable_validation.COMPLETED:
-                    runtime_result = _bind_contextual_replacement_acceptance_prerequisites(
-                        session=session, root=root, workspace_path=workspace_path,
-                        created=created, runtime_result=runtime_result,
-                    )
-                    output_writer(
-                        replacement_prerequisites.render_codex_replacement_acceptance_prerequisites(
-                            runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                            runtime_result["codex_replacement_acceptance_prerequisite_binding_reconstruction"],
-                        )
-                    )
+                pending_content_acceptance_context = _g31_pending_context(
+                    runtime_result, G31_CONTENT_ACCEPTANCE_DECISION
+                )
+                if pending_content_acceptance_context is not None:
                     transcript.append({"event": "replacement_acceptance_prerequisites_bound"})
-                    binding = runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"]["binding_artifact"]
-                    pending_content_acceptance_context = human_decision.prepare_content_acceptance_decision_context(
-                        context_id=f"G31-CONTENT-ACCEPTANCE-{binding['artifact_hash'][-16:]}",
-                        binding_capture=runtime_result["codex_replacement_acceptance_prerequisite_binding_capture"],
-                        human_actor_id="HUMAN_OPERATOR_VIA_AICLI", presented_at=created,
-                        session_root=root / session,
-                        replay_dir=root / session / f"CONTENT-ACCEPTANCE-DECISION-{binding['artifact_hash'][-16:]}",
-                    )
-                    runtime_result["human_content_acceptance_context_capture"] = pending_content_acceptance_context
-                    output_writer(human_decision.render_content_acceptance_decision_context(pending_content_acceptance_context))
                     transcript.append({"event": "human_content_acceptance_context_presented"})
                     continue
-                else:
-                    exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
+                exit_reason = "DISPOSABLE_PATCH_VALIDATION_OUTCOME_RECORDED"
                 session_status = "REFERENCE_UHI_SESSION_COMPLETED"
                 break
             if pending_activation_review is not None:
                 approval_count += 1
-                runtime_result = _record_contextual_worker_activation_decision(
-                    pending_activation_review=pending_activation_review,
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_APPROVE,
                     session=session,
                     root=root,
                     workspace_path=workspace_path,
                     created=created,
-                    runtime_result=runtime_result,
-                    runner=worker_process_runner,
+                    worker_process_runner=worker_process_runner,
                 )
-                output_writer(worker_activation.render_codex_worker_activation_result(
-                    runtime_result["codex_worker_activation_capture"]
-                ))
-                output_writer(codex_result.render_codex_worker_result_capture(
-                    runtime_result["codex_worker_result_capture_binding_capture"]
-                ))
-                output_writer(codex_validation.render_codex_worker_semantic_validation(
-                    runtime_result["codex_worker_semantic_validation_binding_capture"]
-                ))
-                validation = runtime_result[
-                    "codex_worker_semantic_validation_binding_capture"
-                ]
-                if validation.get("g31_semantic_validation_status") == (
-                    codex_validation.SUCCESS
-                ):
-                    try:
-                        runtime_result = _prepare_contextual_task_outcome_review(
-                            session=session,
-                            root=root,
-                            workspace_path=workspace_path,
-                            created=created,
-                            runtime_result=runtime_result,
-                        )
-                    except FailClosedRuntimeError as exc:
-                        runtime_result["task_outcome_review_blocked"] = True
-                        runtime_result["task_outcome_review_blocker"] = str(exc)
-                        output_writer(
-                            "Exact-byte task-outcome review failed closed: "
-                            f"{exc}"
-                        )
-                    else:
-                        pending_task_outcome_review = runtime_result[
-                            "codex_task_outcome_review_capture"
-                        ]
-                        output_writer(codex_task_review.render_codex_task_outcome_review(
-                            pending_task_outcome_review
-                        ))
-                        output_writer(_render_task_outcome_review_lineage(
-                            pending_task_outcome_review
-                        ))
-                        output_writer(
-                            "Exact-byte task-outcome decision pending. Use /satisfied, "
-                            "/unsatisfied, or /rework. No decision accepts or applies the patch."
-                        )
-                else:
-                    runtime_result["task_outcome_review_blocked"] = True
-                    runtime_result["task_outcome_review_blocker"] = (
-                        "G31 governance validation did not return RESULT_VALIDATED"
-                    )
-                    output_writer(
-                        "Task-outcome review was not requested because G31 governance "
-                        "validation did not return RESULT_VALIDATED."
-                    )
+                _write_g31_presentations(runtime_result, output_writer)
+                pending_task_outcome_review = _g31_pending_context(
+                    runtime_result, G31_TASK_OUTCOME_DECISION
+                )
                 pending_activation_review = None
                 transcript.append({"event": "worker_activation_decision_approved"})
                 continue
             if pending_execution_review is not None:
                 approval_count += 1
-                runtime_result = _record_contextual_execution_decision(
-                    pending_execution_review=pending_execution_review,
-                    decision="APPROVE",
+                runtime_result = _continue_g31_application_action(
+                    runtime_result=runtime_result,
+                    action=G31_APPROVE,
                     session=session,
                     root=root,
                     workspace_path=workspace_path,
                     created=created,
-                    runtime_result=runtime_result,
+                    worker_process_runner=worker_process_runner,
                 )
-                output_writer(render_distinct_human_execution_decision(
-                    runtime_result["execution_human_decision_result"]
-                ))
-                output_writer(render_execution_authorization_summary(
-                    runtime_result["execution_authorization_capture"]
-                ))
-                output_writer(render_authorized_grounded_worker_selection(
-                    runtime_result["authorized_worker_selection_capture"]))
-                if runtime_result.get("worker_invocation_request_capture"):
-                    output_writer(worker_request.render_worker_invocation_request_summary(runtime_result["worker_invocation_request_capture"]))
-                if runtime_result.get("worker_assignment_capture"):
-                    output_writer(worker_assignment.render_worker_assignment_summary(runtime_result["worker_assignment_capture"]))
-                if runtime_result.get("worker_dispatch_capture"):
-                    output_writer(worker_dispatch.render_worker_dispatch_summary(runtime_result["worker_dispatch_capture"]))
-                if runtime_result.get("worker_invocation_capture"):
-                    output_writer(worker_invocation.render_worker_invocation_summary(runtime_result["worker_invocation_capture"]))
-                if runtime_result.get("worker_execution_candidate_capture"):
-                    output_writer(worker_candidate.render_worker_execution_candidate_summary(
-                        runtime_result["worker_execution_candidate_capture"]
-                    ))
-                if runtime_result.get("governed_worker_execution_capture"):
-                    output_writer(governed_execution.render_governed_worker_execution_summary(
-                        runtime_result["governed_worker_execution_capture"]
-                    ))
-                    pending_activation_review = worker_activation.prepare_codex_worker_activation_review(
-                        governed_execution_capture=runtime_result["governed_worker_execution_capture"],
-                        execution_candidate_capture=runtime_result["worker_execution_candidate_capture"],
-                        session_root=root / session,
-                        workspace=workspace_path,
-                        created_at=created,
-                        synthesis_preflight_capture=runtime_result.get(
-                            "codex_synthesis_preflight_capture"
-                        ),
-                    )
-                    runtime_result["codex_worker_activation_review_capture"] = pending_activation_review
-                    runtime_result["codex_worker_activation_synthesis_preflight_capture"] = deepcopy(
-                        pending_activation_review["synthesis_preflight_capture"]
-                    )
-                    output_writer(worker_activation.render_codex_worker_activation_review(
-                        pending_activation_review
-                    ))
+                _write_g31_presentations(runtime_result, output_writer)
+                pending_activation_review = _g31_pending_context(
+                    runtime_result, G31_WORKER_ACTIVATION_DECISION
+                )
                 pending_execution_review = None
                 transcript.append({"event": "execution_decision_approved"})
                 continue
@@ -902,22 +745,30 @@ def run_reference_uhi_session(
                     runtime_root=root,
                     workspace=workspace_path,
                 )
+                review = runtime_result.get("authorization_review_artifact")
+                if isinstance(review, dict) and review.get(
+                    "authorization_review_status"
+                ) == "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW_REQUIRED":
+                    runtime_result = run_human_interface_runtime_entry(
+                        interface_name="aicli",
+                        session_id=session,
+                        human_requests=[],
+                        created_at=created,
+                        runtime_root=root,
+                        workspace=workspace_path,
+                        governed_runtime_runner=run_interactive_conversation,
+                        g31_application_state=runtime_result,
+                    )
             if synthesis_preflight_capture is not None:
                 runtime_result["codex_synthesis_preflight_capture"] = deepcopy(
                     synthesis_preflight_capture
                 )
             runtime_status = _reference_runtime_status(runtime_result)
             output_writer(_render_runtime_result(runtime_result, runtime_status))
-            review = runtime_result.get("authorization_review_artifact")
-            if isinstance(review, dict) and review.get(
-                "authorization_review_status"
-            ) == "GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_REVIEW_REQUIRED":
-                pending_execution_review = review
-                output_writer(
-                    "Development proposal approval is complete. A distinct execution "
-                    "decision is now pending. Type /approve to approve proceeding toward "
-                    "execution, or /cancel to reject it. No execution is authorized yet."
-                )
+            pending_execution_review = _g31_pending_context(
+                runtime_result, G31_EXECUTION_DECISION
+            )
+            _write_g31_presentations(runtime_result, output_writer)
             pending_summary = None
             pending_clarification = None
             transcript.append({"event": "approved", "runtime_status": runtime_status})
@@ -996,6 +847,7 @@ def run_reference_uhi_session(
             or pending_activation_review is not None
             or pending_task_outcome_review is not None
             or pending_disposable_patch_validation_review is not None
+            or pending_mutation_decision_context is not None
         ),
         "pending_execution_decision": pending_execution_review is not None,
         "pending_worker_activation_decision": pending_activation_review is not None,
@@ -1003,6 +855,7 @@ def run_reference_uhi_session(
         "pending_disposable_patch_validation_decision": (
             pending_disposable_patch_validation_review is not None
         ),
+        "pending_mutation_decision": pending_mutation_decision_context is not None,
         "human_execution_decision_count": approval_count,
         "human_task_outcome_decision_count": human_task_outcome_decision_count,
         "total_human_decision_count": (
@@ -1371,588 +1224,64 @@ def _reference_runtime_status(runtime_result: dict[str, Any]) -> str:
     return REFERENCE_UHI_PARTIALLY_BOUND
 
 
-def _record_contextual_execution_decision(
+def _continue_g31_application_action(
     *,
-    pending_execution_review: dict[str, Any],
-    decision: str,
+    runtime_result: dict[str, Any] | None,
+    action: str,
     session: str,
     root: Path,
     workspace_path: str,
     created: str,
-    runtime_result: dict[str, Any] | None,
+    worker_process_runner: Callable[..., Any] | None,
 ) -> dict[str, Any]:
-    """Transport one contextual decision to its Platform Core binding owner."""
+    """Transport one canonical value to the shared application entry."""
 
-    review_hash = _require_string(pending_execution_review.get("artifact_hash"),
-                                  "authorization_review_hash")
-    result = bind_distinct_human_execution_decision(
-        authorization_review_artifact=pending_execution_review,
-        human_decision=decision,
+    if not isinstance(runtime_result, dict):
+        raise FailClosedRuntimeError("canonical G31 application result is required")
+    return run_human_interface_runtime_entry(
+        interface_name="aicli",
         session_id=session,
-        decided_by="HUMAN_OPERATOR_VIA_AICLI",
-        decided_at=created,
+        human_requests=[],
+        created_at=created,
+        runtime_root=root,
         workspace=workspace_path,
-        session_root=root / session,
-        replay_dir=root / session / f"EXECUTION-DECISION-{review_hash[-16:]}",
+        governed_runtime_runner=run_interactive_conversation,
+        g31_application_state=runtime_result,
+        g31_human_action=action,
+        g31_human_actor_id="HUMAN_OPERATOR",
+        g31_worker_process_runner=worker_process_runner,
     )
-    confirmation = result.get("human_confirmation_artifact") or {}
-    merged = dict(runtime_result or {})
-    merged.update({
-        "execution_human_decision_result": result,
-        "execution_human_decision_status": result.get("decision_status"),
-        "execution_human_decision_hash": result.get("artifact_hash"),
-        "execution_summary_human_confirmation": result.get("execution_summary_human_confirmation") is True,
-        "execution_decision_rejected": result.get("decision_status") == EXECUTION_DECISION_REJECTED,
-        "human_confirmation_reference": confirmation.get("confirmation_id"),
-        "human_confirmation_hash": result.get("human_confirmation_hash"),
-        "runtime_replay_reference": result.get("replay_reference"),
-        "execution_authorized": False,
-        "worker_selected": False,
-        "authorization_dispatch_blocked": True,
-    })
-    if result.get("decision_status") == EXECUTION_DECISION_APPROVED:
-        authorization = authorize_confirmed_grounded_execution_decision(
-            human_execution_decision_artifact=result,
-            workspace=workspace_path,
-            session_root=root / session,
-            replay_dir=root / session / f"EXECUTION-AUTHORIZATION-{result['artifact_hash'][-16:]}",
-        )
-        merged.update({
-            "execution_authorization_capture": authorization,
-            "execution_authorization_status": authorization.get("authorization_status"),
-            "execution_authorized": authorization.get("execution_authorized") is True,
-            "authorization_dispatch_blocked": True,
-            "runtime_replay_reference": authorization.get(
-                "execution_authorization_replay_reference"
-            ),
-        })
-        if authorization.get("execution_authorized") is True:
-            selection = select_authorized_grounded_worker(
-                execution_authorization_capture=authorization,
-                session_root=root / session,
-                replay_dir=root / session / f"WORKER-SELECTION-{authorization['execution_authorization_artifact']['artifact_hash'][-16:]}",
-            )
-            merged.update({
-                "authorized_worker_selection_capture": selection,
-                "worker_selection_status": selection.get("selection_status"),
-                "selected_resource_id": selection.get("selected_resource_id"),
-                "selected_role_type": selection.get("selected_role_type"),
-                "worker_selected": selection.get("worker_selected") is True,
-                "worker_assigned": False, "worker_dispatched": False,
-                "runtime_replay_reference": selection.get(
-                    "resource_selection_replay_reference"),
-            })
-            if selection.get("worker_selected") is True:
-                selection_artifact = selection["resource_selection_artifact"]
-                invocation_request = worker_request.create_worker_invocation_request(
-                    invocation_request_id=f"{selection_artifact['selection_id']}:INVOCATION-REQUEST",
-                    execution_authorization_replay_reference=authorization[
-                        "execution_authorization_replay_reference"
-                    ],
-                    resource_selection_replay_reference=selection[
-                        "resource_selection_replay_reference"
-                    ],
-                    requested_by="PLATFORM_CORE_G31_ASSIGNMENT_BINDING",
-                    requested_at=created,
-                    replay_dir=root / session / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}",
-                )
-                merged.update({
-                    "worker_invocation_request_capture": invocation_request,
-                    "worker_invocation_request_status": invocation_request.get("request_status"),
-                    "worker_invocation_request_created": (
-                        invocation_request.get("request_status") == worker_request.WORKER_INVOCATION_REQUEST_CREATED
-                    ),
-                    "runtime_replay_reference": invocation_request.get(
-                        "worker_invocation_request_replay_reference"
-                    ),
-                })
-                if invocation_request.get("request_status") == worker_request.WORKER_INVOCATION_REQUEST_CREATED:
-                    request_artifact = invocation_request["worker_invocation_request_artifact"]
-                    assignment = worker_assignment.assign_worker_from_invocation_request(
-                        worker_assignment_id=f"{selection_artifact['selection_id']}:ASSIGNMENT",
-                        worker_invocation_request_artifact=request_artifact,
-                        worker_invocation_request_replay_reference=invocation_request[
-                            "worker_invocation_request_replay_reference"
-                        ],
-                        worker_registry_artifacts=worker_assignment.default_worker_registry_for_request(
-                            request_artifact,
-                            created_at=created,
-                        ),
-                        assigned_by="PLATFORM_CORE_G31_ASSIGNMENT_BINDING",
-                        assigned_at=created,
-                        replay_dir=root / session / f"WORKER-ASSIGNMENT-{request_artifact['artifact_hash'][-16:]}",
-                    )
-                    merged.update({
-                        "worker_assignment_capture": assignment,
-                        "worker_assignment_status": assignment.get("assignment_status"),
-                        "worker_assigned": assignment.get("assignment_status") == worker_assignment.WORKER_ASSIGNED,
-                        "worker_dispatched": False,
-                        "provider_invoked": False,
-                        "worker_invoked": False,
-                        "command_executed": False,
-                        "repository_mutated": False,
-                        "runtime_replay_reference": assignment.get(
-                            "worker_assignment_replay_reference"
-                        ),
-                    })
-                    if assignment.get("assignment_status") == worker_assignment.WORKER_ASSIGNED:
-                        assignment_artifact = assignment["worker_assignment_artifact"]
-                        dispatch = worker_dispatch.dispatch_assigned_worker(
-                            worker_dispatch_id=f"{assignment_artifact['worker_assignment_id']}:DISPATCH",
-                            worker_assignment_artifact=assignment_artifact,
-                            worker_assignment_replay_reference=assignment[
-                                "worker_assignment_replay_reference"
-                            ],
-                            dispatched_by="AIGOL_GOVERNANCE",
-                            dispatched_at=created,
-                            replay_dir=root / session / f"WORKER-DISPATCH-{assignment_artifact['artifact_hash'][-16:]}",
-                        )
-                        merged.update({
-                            "worker_dispatch_capture": dispatch,
-                            "worker_dispatch_status": dispatch.get("dispatch_status"),
-                            "worker_dispatched": (
-                                dispatch.get("dispatch_status") == worker_dispatch.WORKER_DISPATCHED
-                            ),
-                            "authorization_dispatch_blocked": (
-                                dispatch.get("dispatch_status") != worker_dispatch.WORKER_DISPATCHED
-                            ),
-                            "provider_invoked": False,
-                            "worker_invoked": False,
-                            "command_executed": False,
-                            "repository_mutated": False,
-                            "runtime_replay_reference": dispatch.get(
-                                "worker_dispatch_replay_reference"
-                            ),
-                        })
-                        if dispatch.get("dispatch_status") == worker_dispatch.WORKER_DISPATCHED:
-                            dispatch_artifact = dispatch["worker_dispatch_artifact"]
-                            invocation = worker_invocation.invoke_dispatched_worker(
-                                worker_invocation_id=f"{dispatch_artifact['worker_dispatch_id']}:INVOCATION",
-                                worker_dispatch_artifact=dispatch_artifact,
-                                worker_dispatch_replay_reference=dispatch[
-                                    "worker_dispatch_replay_reference"
-                                ],
-                                invoked_by="AIGOL_GOVERNANCE",
-                                invoked_at=created,
-                                replay_dir=root / session / f"WORKER-INVOCATION-{dispatch_artifact['artifact_hash'][-16:]}",
-                            )
-                            merged.update({
-                                "worker_invocation_capture": invocation,
-                                "worker_invocation_status": invocation.get("invocation_status"),
-                                "worker_invoked": (
-                                    invocation.get("invocation_status") == worker_invocation.WORKER_INVOKED
-                                ),
-                                "provider_invoked": False,
-                                "execution_started": False,
-                                "command_executed": False,
-                                "result_created": False,
-                                "repository_mutated": False,
-                                "runtime_replay_reference": invocation.get(
-                                    "worker_invocation_replay_reference"
-                                ),
-                            })
-                            if invocation.get("invocation_status") == worker_invocation.WORKER_INVOKED:
-                                invocation_artifact = invocation["worker_invocation_artifact"]
-                                candidate = worker_candidate.project_g31_invocation_to_execution_candidate(
-                                    worker_invocation_artifact=invocation_artifact,
-                                    worker_invocation_replay_reference=invocation[
-                                        "worker_invocation_replay_reference"
-                                    ],
-                                    session_root=root / session,
-                                    requested_by="PLATFORM_CORE_G31_CANDIDATE_BINDING",
-                                    created_at=created,
-                                    replay_dir=root / session / (
-                                        f"WORKER-EXECUTION-CANDIDATE-{invocation_artifact['artifact_hash'][-16:]}"
-                                    ),
-                                )
-                                merged.update({
-                                    "worker_execution_candidate_capture": candidate,
-                                    "execution_candidate_created": candidate.get(
-                                        "worker_execution_candidate_generated"
-                                    ) is True,
-                                    "provider_invoked": False,
-                                    "worker_process_started": False,
-                                    "execution_started": False,
-                                    "command_executed": False,
-                                    "result_created": False,
-                                    "repository_mutated": False,
-                                    "runtime_replay_reference": candidate.get(
-                                        "worker_execution_candidate_replay_reference"
-                                    ),
-                                })
-                                if candidate.get("worker_execution_candidate_generated") is True:
-                                    execution = governed_execution.project_g31_candidate_to_governed_execution(
-                                        execution_candidate_capture=candidate,
-                                        session_root=root / session,
-                                        executed_by="PLATFORM_CORE_G31_GOVERNED_EXECUTION_BINDING",
-                                        executed_at=created,
-                                        replay_dir=root / session / (
-                                            "GOVERNED-WORKER-EXECUTION-"
-                                            f"{candidate['worker_execution_candidate_artifact']['artifact_hash'][-16:]}"
-                                        ),
-                                    )
-                                    merged.update({
-                                        "governed_worker_execution_capture": execution,
-                                        "governed_execution_evidence_created": execution.get(
-                                            "worker_execution_completed"
-                                        ) is True,
-                                        "provider_invoked": False,
-                                        "worker_process_started": False,
-                                        "execution_started": False,
-                                        "command_executed": False,
-                                        "worker_output_created": False,
-                                        "result_created": False,
-                                        "repository_mutated": False,
-                                        "runtime_replay_reference": execution.get(
-                                            "worker_execution_replay_reference"
-                                        ),
-                                    })
-    return merged
 
 
-def _record_contextual_worker_activation_decision(
-    *,
-    pending_activation_review: dict[str, Any],
-    session: str,
-    root: Path,
-    workspace_path: str,
-    created: str,
+def _g31_pending_context(
     runtime_result: dict[str, Any] | None,
-    runner: Callable[..., Any] | None,
-) -> dict[str, Any]:
-    """Transport the third decision to the Worker-owned activation binding."""
+    action_type: str,
+) -> dict[str, Any] | None:
+    """Read the public pending-action envelope for terminal continuity only."""
 
-    merged = dict(runtime_result or {})
-    review = pending_activation_review["activation_review_artifact"]
-    capture = worker_activation.activate_bounded_codex_worker(
-        activation_review_artifact=review,
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        human_decision="APPROVE",
-        decided_by="HUMAN_OPERATOR_VIA_AICLI",
-        decided_at=created,
-        session_root=root / session,
-        workspace=workspace_path,
-        replay_dir=root / session / f"CODEX-WORKER-ACTIVATION-{review['artifact_hash'][-16:]}",
-        runner=runner,
-    )
-    merged.update({
-        "codex_worker_activation_capture": capture,
-        "runtime_replay_reference": capture["activation_replay_reference"],
-        **{
-            field: capture[field]
-            for field in worker_activation.ACTIVATION_TRUTH_FIELDS
-        },
-    })
-    result = codex_result.capture_successful_codex_worker_result(
-        activation_capture=capture,
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-        captured_at=created,
-        replay_dir=root / session / f"CODEX-WORKER-RESULT-CAPTURE-{capture['codex_transport_receipt']['receipt_id'][-16:]}",
-    )
-    merged["codex_worker_result_capture_binding_capture"] = result
-    merged.update({field: result[field] for field in codex_result.RESULT_TRUTH_FIELDS})
-    validation = codex_validation.validate_captured_codex_worker_result(
-        result_capture_binding_capture=result,
-        activation_capture=capture,
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-        validated_at=created,
-        replay_dir=(
-            root / session /
-            f"CODEX-WORKER-RESULT-VALIDATION-{result.get('worker_output_hash', '')[-16:]}"
-        ),
-    )
-    merged["codex_worker_semantic_validation_binding_capture"] = validation
-    merged.update({field: validation[field] for field in codex_validation.VALIDATION_TRUTH_FIELDS})
-    return merged
+    if not isinstance(runtime_result, dict):
+        return None
+    pending = runtime_result.get("g31_pending_action")
+    if not isinstance(pending, dict) or pending.get("action_type") != action_type:
+        return None
+    context = pending.get("context")
+    return context if isinstance(context, dict) else None
 
 
-def _prepare_contextual_task_outcome_review(
-    *,
-    session: str,
-    root: Path,
-    workspace_path: str,
-    created: str,
-    runtime_result: dict[str, Any],
-) -> dict[str, Any]:
-    """Bind exact in-memory output to one review-only human continuation."""
-
-    merged = dict(runtime_result)
-    validation = merged["codex_worker_semantic_validation_binding_capture"]
-    validation_artifact = validation.get("worker_result_validation_artifact") or {}
-    review = codex_task_review.prepare_codex_task_outcome_review(
-        result_capture_binding_capture=merged[
-            "codex_worker_result_capture_binding_capture"
-        ],
-        validation_binding_capture=validation,
-        activation_capture=merged["codex_worker_activation_capture"],
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-        prepared_at=created,
-        replay_dir=(
-            root / session / "CODEX-TASK-OUTCOME-REVIEW-"
-            f"{validation_artifact.get('artifact_hash', '')[-16:]}"
-        ),
-    )
-    reconstruction = codex_task_review.reconstruct_codex_task_outcome_review(
-        review_capture=review,
-        result_capture_binding_capture=merged[
-            "codex_worker_result_capture_binding_capture"
-        ],
-        validation_binding_capture=validation,
-        activation_capture=merged["codex_worker_activation_capture"],
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-    )
-    merged.update({
-        "codex_task_outcome_review_capture": review,
-        "codex_task_outcome_review_reconstruction": reconstruction,
-        "task_outcome_review_status": review["review_status"],
-        "task_outcome_review_replay_created": True,
-        "task_outcome_review_count": 1,
-        "human_task_outcome_decision_recorded": False,
-    })
-    return merged
-
-
-def _record_contextual_task_outcome_decision(
-    *,
-    pending_task_outcome_review: dict[str, Any],
-    task_outcome_decision: str,
-    session: str,
-    root: Path,
-    workspace_path: str,
-    created: str,
+def _write_g31_presentations(
     runtime_result: dict[str, Any] | None,
-) -> dict[str, Any]:
-    """Record one explicit review outcome without acceptance or execution."""
+    output_writer: Callable[[str], None],
+) -> None:
+    """Render only strings selected by the shared application entry."""
 
-    merged = dict(runtime_result or {})
-    review_packet = pending_task_outcome_review["task_outcome_review_packet_artifact"]
-    decision = codex_task_review.record_codex_task_outcome_human_decision(
-        review_capture=pending_task_outcome_review,
-        task_outcome_decision=task_outcome_decision,
-        decision_reason=(
-            "Human operator selected the explicit task-outcome decision after "
-            "AiCLI displayed the exact captured Worker output and bound lineage."
-        ),
-        decided_by="HUMAN_OPERATOR_VIA_AICLI",
-        decided_at=created,
-        result_capture_binding_capture=merged[
-            "codex_worker_result_capture_binding_capture"
-        ],
-        validation_binding_capture=merged[
-            "codex_worker_semantic_validation_binding_capture"
-        ],
-        activation_capture=merged["codex_worker_activation_capture"],
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-        human_decision_replay_dir=(
-            root / session / "CODEX-TASK-OUTCOME-HUMAN-DECISION-"
-            f"{review_packet['artifact_hash'][-16:]}"
-        ),
-    )
-    reconstruction = codex_task_review.reconstruct_codex_task_outcome_human_decision(
-        decision_capture=decision,
-        review_capture=pending_task_outcome_review,
-        result_capture_binding_capture=merged[
-            "codex_worker_result_capture_binding_capture"
-        ],
-        validation_binding_capture=merged[
-            "codex_worker_semantic_validation_binding_capture"
-        ],
-        activation_capture=merged["codex_worker_activation_capture"],
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session,
-        workspace=workspace_path,
-    )
-    merged.update({
-        "codex_task_outcome_human_decision_capture": decision,
-        "codex_task_outcome_human_decision_reconstruction": reconstruction,
-        "task_outcome_review_status": task_outcome_decision,
-        "task_outcome_review_replay_created": True,
-        "task_outcome_review_count": 1,
-        "human_task_outcome_decision_recorded": True,
-        **{
-            field: decision[field]
-            for field in (
-                "task_outcome_satisfaction_evaluated",
-                "task_outcome_satisfied",
-                "rework_requested",
-                "result_accepted",
-                "repository_mutation_authorized",
-                "repository_mutated",
-                "automatic_retry_performed",
-                "additional_worker_process_started",
-                "commit_created",
-                "deployed",
-                "released",
-            )
-        },
-    })
-    return merged
-
-
-def _prepare_contextual_disposable_patch_validation_review(
-    *, session: str, root: Path, workspace_path: str, created: str,
-    runtime_result: dict[str, Any],
-) -> dict[str, Any]:
-    merged = dict(runtime_result)
-    decision = merged["codex_task_outcome_human_decision_capture"]
-    identity = decision["human_decision_capture"]["human_decision_artifact"]["artifact_hash"][-16:]
-    lineage = dict(task_outcome_decision_capture=decision, review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
-    review = disposable_validation.prepare_disposable_patch_validation_review(
-        disposable_workspace=root / session / f"DISPOSABLE-PATCH-VALIDATION-{identity}",
-        prepared_at=created,
-        replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-REVIEW-{identity}",
-        **lineage,
-    )
-    reconstruction = disposable_validation.reconstruct_disposable_patch_validation_review(
-        review_binding_capture=review, **lineage,
-    )
-    merged.update({"disposable_patch_validation_review_capture": review, "disposable_patch_validation_review_reconstruction": reconstruction,
-        "disposable_patch_validation_review_pending": True, "disposable_patch_validation_decision_recorded": False,
-        "disposable_patch_validation_executed": False, "ready_for_acceptance": False, "result_accepted": False,
-        "mutation_authorized": False, "main_repository_mutated": False})
-    return merged
-
-
-def _record_contextual_disposable_patch_validation_decision(
-    *, pending_review: dict[str, Any], decision: str, session: str, root: Path,
-    workspace_path: str, created: str, runtime_result: dict[str, Any] | None,
-) -> dict[str, Any]:
-    """Record and reconstruct one existing disposable-only decision; never execute it."""
-
-    merged = dict(runtime_result or {})
-    plan = pending_review["disposable_patch_validation_plan_artifact"]
-    lineage = dict(task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"], review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
-    capture = disposable_validation.record_disposable_patch_validation_human_decision(
-        review_binding_capture=pending_review, decision=decision,
-        decision_reason="Human operator selected the explicit disposable validation decision in AiCLI.",
-        decided_by="HUMAN_OPERATOR_VIA_AICLI", decided_at=created,
-        human_decision_replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-HUMAN-DECISION-{plan['artifact_hash'][-16:]}",
-        **lineage,
-    )
-    merged.update({"disposable_patch_validation_human_decision_capture": capture,
-        "disposable_patch_validation_human_decision_reconstruction": human_decision.reconstruct_human_decision_replay(capture["human_decision_replay_reference"]),
-        "disposable_patch_validation_review_pending": False, "disposable_patch_validation_decision_recorded": True,
-        "disposable_patch_validation_executed": False, "ready_for_acceptance": False, "result_accepted": False,
-        "mutation_authorized": False, "main_repository_mutated": False})
-    return merged
-
-
-def _execute_contextual_disposable_patch_validation(
-    *, session: str, root: Path, workspace_path: str, created: str,
-    runtime_result: dict[str, Any],
-) -> dict[str, Any]:
-    """Call and reconstruct exactly one existing G31-23A disposable execution."""
-
-    merged = dict(runtime_result)
-    review = merged["disposable_patch_validation_review_capture"]
-    plan = review["disposable_patch_validation_plan_artifact"]
-    lineage = dict(task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"], review_capture=merged["codex_task_outcome_review_capture"], result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"], validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"], activation_capture=merged["codex_worker_activation_capture"], governed_execution_capture=merged["governed_worker_execution_capture"], execution_candidate_capture=merged["worker_execution_candidate_capture"], session_root=root / session, source_workspace=workspace_path)
-    outcome = disposable_validation.execute_disposable_patch_validation(
-        review_binding_capture=review,
-        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
-        executed_by="HUMAN_OPERATOR_VIA_AICLI", executed_at=created,
-        replay_dir=root / session / f"DISPOSABLE-PATCH-VALIDATION-OUTCOME-{plan['artifact_hash'][-16:]}",
-        **lineage,
-    )
-    reconstruction = disposable_validation.reconstruct_disposable_patch_validation_outcome(
-        outcome_capture=outcome, review_binding_capture=review,
-        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
-        **lineage,
-    )
-    artifact = outcome["outcome_artifact"]
-    merged.update({"disposable_patch_validation_outcome_capture": outcome,
-        "disposable_patch_validation_outcome_reconstruction": reconstruction,
-        "disposable_patch_validation_approved": True,
-        "disposable_patch_validation_executed": artifact["disposable_patch_application_attempted"],
-        "disposable_patch_application_succeeded": artifact["disposable_patch_applied"] and artifact["content_validation_passed"],
-        "focused_validation_executed": artifact["grounded_test_execution_performed"],
-        "focused_validation_succeeded": artifact["grounded_test_validation_passed"],
-        "ready_for_acceptance": False, "result_accepted": False,
-        "mutation_authorized": False, "main_repository_mutated": False})
-    merged.update({key: outcome[key] for key in (
-        "disposable_patch_applied", "content_validation_performed", "content_validation_passed",
-        "grounded_test_execution_performed", "grounded_test_validation_passed",
-        "ready_for_generated_content_acceptance", "repository_mutation_authorized",
-        "failure_reason")})
-    return merged
-
-
-def _bind_contextual_replacement_acceptance_prerequisites(
-    *, session: str, root: Path, workspace_path: str, created: str,
-    runtime_result: dict[str, Any],
-) -> dict[str, Any]:
-    """Bind one exact successful R03 outcome through the existing G31-23B owner."""
-
-    merged = dict(runtime_result)
-    outcome = merged["disposable_patch_validation_outcome_capture"]
-    outcome_hash = outcome["outcome_artifact"]["artifact_hash"]
-    capture = replacement_prerequisites.bind_codex_replacement_acceptance_prerequisites(
-        disposable_validation_outcome_capture=outcome,
-        disposable_validation_review_capture=merged["disposable_patch_validation_review_capture"],
-        application_decision_capture=merged["disposable_patch_validation_human_decision_capture"],
-        task_outcome_decision_capture=merged["codex_task_outcome_human_decision_capture"],
-        task_outcome_review_capture=merged["codex_task_outcome_review_capture"],
-        result_capture_binding_capture=merged["codex_worker_result_capture_binding_capture"],
-        governance_validation_binding_capture=merged["codex_worker_semantic_validation_binding_capture"],
-        activation_capture=merged["codex_worker_activation_capture"],
-        governed_execution_capture=merged["governed_worker_execution_capture"],
-        execution_candidate_capture=merged["worker_execution_candidate_capture"],
-        session_root=root / session, source_workspace=workspace_path, created_at=created,
-        replay_dir=root / session / f"G31-REPLACEMENT-ACCEPTANCE-PREREQUISITES-{outcome_hash[-16:]}",
-    )
-    reconstruction = (
-        replacement_prerequisites.reconstruct_codex_replacement_acceptance_prerequisite_binding(
-            binding_capture=capture, session_root=root / session,
-        )
-    )
-    merged["codex_replacement_acceptance_prerequisite_binding_capture"] = capture
-    merged["codex_replacement_acceptance_prerequisite_binding_reconstruction"] = reconstruction
-    merged.update({key: capture[key] for key in (
-        "replacement_manifest_created", "acceptance_prerequisites_satisfied",
-        "ready_for_acceptance", "result_accepted", "mutation_authorized",
-        "main_repository_mutated",
-    )})
-    return merged
-
-
-def _render_task_outcome_review_lineage(review: dict[str, Any]) -> str:
-    """Render identities required for a human decision; acquire no authority."""
-
-    packet = review["task_outcome_review_packet_artifact"]
-    capture = packet["capture_binding"]
-    capture_artifact = capture["artifact"]
-    validation = packet["governance_validation_binding"]
-    validation_artifact = validation["artifact"]
-    return "\n".join((
-        "Exact Task-Outcome Review Lineage",
-        f"Capture Identity: {capture_artifact['worker_result_capture_id']}",
-        f"Capture Artifact Hash: {capture_artifact['artifact_hash']}",
-        f"Capture Replay Hash: {capture['replay_hash']}",
-        f"Governance Validation Identity: {validation_artifact['worker_result_validation_id']}",
-        f"Governance Validation Artifact Hash: {validation_artifact['artifact_hash']}",
-        f"Governance Validation Status: {validation['status']}",
-        f"Governance Validation Meaning: {validation['canonical_meaning']}",
-        f"Patch Applied: {packet['patch_applied']}",
-        "Tests Run Against Applied Patch: "
-        f"{packet['tests_run_against_applied_patch']}",
-    ))
+    if not isinstance(runtime_result, dict):
+        return
+    presentations = runtime_result.get("g31_canonical_presentations")
+    if not isinstance(presentations, list):
+        return
+    for presentation in presentations:
+        if isinstance(presentation, str) and presentation:
+            output_writer(presentation)
 
 
 def _read_clarification_reply(
@@ -2215,10 +1544,20 @@ def _submit_composed_request(
         if not codex_activation_preflight_required:
             output_writer(_render_summary(summary))
             return summary, None, resolution, project_context, 1, multiline_requests, None
-        preflight = worker_activation.preflight_codex_worker_synthesis(
-            _require_string(summary["canonical_runtime_prompt"], "canonical_runtime_prompt")
+        preflight_result = run_human_interface_runtime_entry(
+            interface_name="aicli",
+            session_id=session,
+            human_requests=[],
+            created_at=created,
+            runtime_root=root,
+            workspace=workspace_path,
+            governed_runtime_runner=run_interactive_conversation,
+            g31_synthesis_preflight_prompt=_require_string(
+                summary["canonical_runtime_prompt"], "canonical_runtime_prompt"
+            ),
         )
-        output_writer(worker_activation.render_codex_worker_synthesis_preflight(preflight))
+        preflight = preflight_result["codex_synthesis_preflight_capture"]
+        _write_g31_presentations(preflight_result, output_writer)
         if preflight["synthesis_preflight_status"] != "SYNTHESIS_PREFLIGHT_READY":
             output_writer(
                 "Canonical CODEX synthesis preflight failed closed before human approval."
