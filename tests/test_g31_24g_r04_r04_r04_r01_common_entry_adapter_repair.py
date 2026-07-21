@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from aigol.runtime import human_decision_runtime as decision
+from aigol.runtime import codex_worker_activation_binding_runtime as activation
 from aigol.runtime import platform_core_existing_file_governance as governance
 from aigol.runtime import platform_core_existing_file_mutation_candidate as candidate
 from aigol.runtime.human_interface_runtime_entry_service import (
@@ -47,6 +48,10 @@ def _pending_state(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
 ) -> tuple[Path, dict]:
     root = tmp_path / name
+    grounding = {
+        "grounding_evidence_hash": "grounding-hash",
+        "workspace_root": "/isolated/repository",
+    }
     provenance = {
         "session_id": root.name,
         "repository_identity": "repo-identity",
@@ -118,7 +123,21 @@ def _pending_state(
         "reconstruct_g31_accepted_existing_file_mutation_candidate_replay",
         reconstruct_candidate,
     )
-    grounding: dict = {}
+    candidate_reconstruction = reconstruct_candidate()
+    activation_binding = {
+        "lineage": {"grounding": grounding},
+        "activation_replay_reference": str(root / "ACTIVATION"),
+        "activation_replay_hash": "activation-replay-hash",
+        "activation_approval_artifact": {
+            "approval_id": f"{name}-ACTIVATION",
+            "artifact_hash": "activation-approval-hash",
+        },
+    }
+    monkeypatch.setattr(
+        activation,
+        "reconstruct_codex_worker_activation_binding",
+        lambda **_kwargs: deepcopy(activation_binding),
+    )
     acceptance: dict = {}
     content: dict = {}
     binding: dict = {}
@@ -136,10 +155,17 @@ def _pending_state(
     )
     return root, {
         "existing_file_mutation_candidate_capture": candidate_capture,
+        "existing_file_mutation_candidate_reconstruction": candidate_reconstruction,
         "generated_content_acceptance_capture": acceptance,
         "human_content_acceptance_decision_capture": content,
         "codex_replacement_acceptance_prerequisite_binding_capture": binding,
         "repository_grounding_artifact": grounding,
+        "codex_worker_activation_capture": {
+            "activation_replay_reference": str(root / "ACTIVATION")
+        },
+        "codex_worker_activation_binding_reconstruction": activation_binding,
+        "governed_worker_execution_capture": {},
+        "worker_execution_candidate_capture": {},
         "result_accepted": True,
         "g31_pending_action": {
             "action_type": G31_MUTATION_DECISION,
@@ -161,8 +187,20 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
 ) -> None:
     root, state = _pending_state(tmp_path, monkeypatch, f"COMMON-{outcome}")
     calls: dict[str, int] = {}
+    original_authorize = governance.authorize_g31_approved_existing_file_mutation
+    original_bind = governance.bind_g31_mutation_authorization_actor_and_replay
+    for symbol, original in (
+        ("authorize_g31_approved_existing_file_mutation", original_authorize),
+        ("bind_g31_mutation_authorization_actor_and_replay", original_bind),
+    ):
+        calls[symbol] = 0
+
+        def observed(*args, _symbol=symbol, _original=original, **kwargs):
+            calls[_symbol] += 1
+            return _original(*args, **kwargs)
+
+        monkeypatch.setattr(governance, symbol, observed)
     for owner, symbol in (
-        (governance, "authorize_g31_approved_existing_file_mutation"),
         (governance, "create_g31_authenticated_replace_request"),
         (governance, "execute_g31_authenticated_replace"),
         (filesystem_replace_worker, "execute_filesystem_replace_request"),
@@ -189,9 +227,20 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
     assert artifact["decided_by"] == ACTOR
     assert result["human_mutation_decision_reconstruction"]["replay_artifact_count"] == 4
     assert result["mutation_decision_approved"] is approved
-    assert result["mutation_authorized"] is False
+    assert result["mutation_authorized"] is approved
+    assert result["authorization_actor_bound"] is approved
+    assert result["authorization_replay_recorded"] is approved
     assert result["repository_mutated"] is False
-    assert all(count == 0 for count in calls.values())
+    assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
+    assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)
+    assert all(
+        calls[symbol] == 0
+        for symbol in (
+            "create_g31_authenticated_replace_request",
+            "execute_g31_authenticated_replace",
+            "execute_filesystem_replace_request",
+        )
+    )
     assert "aicli" not in InMemoryAdapter.transport.__code__.co_names
 
 

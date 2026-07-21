@@ -25,6 +25,7 @@ from aigol.runtime import codex_worker_result_to_semantic_validation_binding_run
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
+from aigol.runtime import platform_core_existing_file_governance as existing_file_governance
 from aigol.runtime import platform_core_existing_file_mutation_candidate as existing_file_candidate
 from aigol.runtime import worker_assignment_runtime as worker_assignment
 from aigol.runtime import worker_dispatch_runtime as worker_dispatch
@@ -844,6 +845,33 @@ def _continue_g31_application_transition(
                 state["human_mutation_decision_capture"]
             )
         )
+        if action == human_decision.MUTATION_APPROVED:
+            state = _authorize_g31_mutation_decision(
+                session=session,
+                root=root,
+                workspace_path=workspace_path,
+                created=created,
+                runtime_result=state,
+            )
+            authorization = state[
+                "mutation_authorization_actor_replay_reconstruction"
+            ]
+            presentations.append(
+                "\n".join(
+                    (
+                        "Canonical Existing-File Mutation Authorization",
+                        f"Authorization ID: {authorization['authorization_id']}",
+                        f"Authorization Status: {authorization['authorization_status']}",
+                        "Canonical Authorization Actor: "
+                        f"{authorization['canonical_authorization_actor']}",
+                        f"Target Path: {authorization['target_path']}",
+                        "Authorization Replay Recorded: True",
+                        "Authorization Consumed: False",
+                        "Replacement Request Created: False",
+                        "Repository Mutated: False",
+                    )
+                )
+            )
     else:
         raise FailClosedRuntimeError(f"unsupported G31 pending action: {action_type}")
 
@@ -1870,6 +1898,105 @@ def _record_g31_mutation_decision(
             "main_repository_mutated": False,
         }
     )
+    return merged
+
+
+def _authorize_g31_mutation_decision(
+    *,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    runtime_result: dict[str, Any],
+) -> dict[str, Any]:
+    """Sequence exact reconstructed APPROVED V3 evidence through existing owners."""
+
+    merged = deepcopy(runtime_result)
+    decision = merged.get("human_mutation_decision_capture") or {}
+    artifact = decision.get("human_mutation_decision_artifact") or {}
+    session_root = root / session
+    evidence = {
+        "candidate_capture": merged["existing_file_mutation_candidate_capture"],
+        "candidate_reconstruction": merged[
+            "existing_file_mutation_candidate_reconstruction"
+        ],
+        "mutation_decision_capture": decision,
+        "mutation_decision_reconstruction": merged[
+            "human_mutation_decision_reconstruction"
+        ],
+        "acceptance_capture": merged["generated_content_acceptance_capture"],
+        "content_decision_capture": merged[
+            "human_content_acceptance_decision_capture"
+        ],
+        "binding_capture": merged[
+            "codex_replacement_acceptance_prerequisite_binding_capture"
+        ],
+        "repository_grounding_artifact": merged["repository_grounding_artifact"],
+        "activation_capture": merged["codex_worker_activation_capture"],
+        "activation_binding": merged[
+            "codex_worker_activation_binding_reconstruction"
+        ],
+        "governed_execution_capture": merged["governed_worker_execution_capture"],
+        "execution_candidate_capture": merged["worker_execution_candidate_capture"],
+        "session_root": session_root,
+        "workspace": workspace_path,
+    }
+    authorization = existing_file_governance.authorize_g31_approved_existing_file_mutation(
+        authorization_id=(
+            "G31-MUTATION-AUTHORIZATION-" + artifact["artifact_hash"][-16:]
+        ),
+        authorization_timestamp=created,
+        **evidence,
+    )
+    authorization_reconstruction = (
+        existing_file_governance.reconstruct_g31_existing_file_mutation_authorization_binding(
+            authorization_capture=authorization,
+            **evidence,
+        )
+    )
+    actor_replay = existing_file_governance.bind_g31_mutation_authorization_actor_and_replay(
+        authorization_capture=authorization,
+        **evidence,
+    )
+    actor_replay_reconstruction = (
+        existing_file_governance.reconstruct_g31_mutation_authorization_actor_and_replay(
+            actor_replay_capture=actor_replay,
+            authorization_capture=authorization,
+            **evidence,
+        )
+    )
+    merged.update(
+        {
+            "mutation_authorization_capture": authorization,
+            "mutation_authorization_reconstruction": authorization_reconstruction,
+            "mutation_authorization_actor_replay_capture": actor_replay,
+            "mutation_authorization_actor_replay_reconstruction": (
+                actor_replay_reconstruction
+            ),
+            "mutation_authorization_id": actor_replay_reconstruction[
+                "authorization_id"
+            ],
+            "mutation_authorization_hash": actor_replay_reconstruction[
+                "authorization_hash"
+            ],
+            "runtime_replay_reference": actor_replay_reconstruction[
+                "authorization_replay_reference"
+            ],
+        }
+    )
+    for field in (
+        "mutation_authorized",
+        "authorization_actor_bound",
+        "authorization_replay_recorded",
+        "authorization_consumed",
+        "replace_request_created",
+        "worker_invoked",
+        "provider_invoked",
+        "command_executed",
+        "repository_mutated",
+        "main_repository_mutated",
+    ):
+        merged[field] = actor_replay_reconstruction[field]
     return merged
 
 
