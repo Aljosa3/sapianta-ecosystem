@@ -143,7 +143,9 @@ def test_common_entry_consumes_exact_request_once_and_stops_before_execution(
     }
     assert result["authorization_consumed"] is True
     assert result["replace_request_created"] is True
-    assert result.get("worker_selected") is not True
+    assert result["worker_selected"] is True
+    assert result["selected_resource_id"] == "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"
+    assert result["worker_selection_status"] == "RESOURCE_SELECTION_SUCCEEDED"
     assert result.get("worker_dispatched") is not True
     assert result["worker_invoked"] is False
     assert result["provider_invoked"] is False
@@ -158,7 +160,8 @@ def test_common_entry_consumes_exact_request_once_and_stops_before_execution(
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Authorization Consumed: True" in rendered
     assert "Authorization Consumption Reached: True" in rendered
-    assert "Worker Selection Reached: False" in rendered
+    assert "Worker Selection Reached: True" in rendered
+    assert "selected_resource_id: FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER" in rendered
     assert "terminal_prompt" not in request
     assert "slash_command" not in request
 

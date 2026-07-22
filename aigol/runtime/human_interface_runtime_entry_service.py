@@ -881,9 +881,14 @@ def _continue_g31_application_transition(
                         "Single-Use Consumption Identity: "
                         f"{consumption['consumption_identity']}",
                         "Authorization Consumption Reached: True",
-                        "Worker Selection Reached: False",
+                        "Worker Selection Reached: True",
                         "Repository Mutated: False",
                     )
+                )
+            )
+            presentations.append(
+                render_authorized_grounded_worker_selection(
+                    state["consumed_replacement_worker_selection_capture"]
                 )
             )
     else:
@@ -1992,6 +1997,13 @@ def _authorize_g31_mutation_decision(
             request
         )
     )
+    selection = existing_file_governance.bind_consumed_g31_authenticated_replace_worker_selection(
+        authenticated_request=request,
+        authorization_reconstruction=actor_replay_reconstruction,
+        consumption_reconstruction=consumption_reconstruction,
+        replay_dir=session_root
+        / f"FILESYSTEM-REPLACE-WORKER-SELECTION-{request['request_hash'][-16:]}",
+    )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2028,8 +2040,24 @@ def _authorize_g31_mutation_decision(
             "authorization_consumption_replay_hash": consumption_reconstruction[
                 "replay_hash"
             ],
-            "runtime_replay_reference": consumption_reconstruction[
-                "request_replay_reference"
+            "consumed_replacement_worker_selection_capture": selection,
+            "consumed_replacement_worker_selection_reconstruction": selection[
+                "certified_selection_reconstruction"
+            ],
+            "consumed_replacement_selection_context": selection[
+                "consumed_replacement_selection_context"
+            ],
+            "consumed_replacement_selection_context_hash": selection[
+                "consumed_replacement_selection_context_hash"
+            ],
+            "worker_selection_status": selection["selection_status"],
+            "selected_resource_id": selection["selected_resource_id"],
+            "selected_role_type": selection["selected_role_type"],
+            "worker_selected": selection["worker_selected"],
+            "worker_assigned": False,
+            "worker_dispatched": False,
+            "runtime_replay_reference": selection[
+                "resource_selection_replay_reference"
             ],
         }
     )

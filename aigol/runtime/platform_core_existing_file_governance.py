@@ -17,12 +17,18 @@ from aigol.runtime.platform_core_existing_file_mutation_candidate import (
     validate_g31_accepted_existing_file_mutation_candidate,
     validate_existing_file_mutation_candidate,
 )
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import load_json, replay_hash
+from aigol.runtime.unified_resource_selection_runtime import (
+    RESOURCE_SELECTION_SUCCEEDED, WORKER_ROLE, default_resource_registry,
+    reconstruct_unified_resource_selection_replay, select_unified_resource,
+)
+from aigol.runtime.worker_selection_certification_v1 import validate_worker_selection_certification_v1
 from aigol.workers.filesystem_replace_worker import AUTHORIZED_REPLACE_SCOPE, FILESYSTEM_REPLACE_WORKER_ID
 from aigol.workers.filesystem_replace_worker import (
     AUTHENTICATED_REPLACE_REQUEST_TYPE_V2, HARDENED_REPLACE_VERSION,
     _execute_authenticated_replace_v2, _recover_authenticated_replace_v2,
-    g31_replace_destinations, validate_authenticated_replace_request_v2,
+    g31_replace_destinations, reconstruct_authenticated_replace_replay_v2,
+    validate_authenticated_replace_request_v2,
 )
 
 
@@ -30,6 +36,11 @@ EXISTING_FILE_GOVERNANCE_VERSION = "G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_
 EXISTING_FILE_MUTATION_APPROVAL_ARTIFACT_V1 = "EXISTING_FILE_MUTATION_APPROVAL_ARTIFACT_V1"
 G31_EXISTING_FILE_MUTATION_AUTHORIZATION_BINDING_VERSION = (
     "G31_24G_R04_R02_EXISTING_FILE_MUTATION_AUTHORIZATION_BINDING_V2"
+)
+R08B_REGISTRY_HASH = "sha256:74357af9a2ba666d73241381e5a4c24ac7687e41b67efe6746cb86d3ac6e7d64"
+R08B_CERTIFICATION_HASH = "sha256:03cbf0fc4e8ae562ffe25235aff1c7a6fbd559c23fc8c4fad48e15a1c56b1b45"
+R08B_CERTIFICATION_PATH = Path(__file__).resolve().parents[2] / (
+    "runtime/worker_selection_certification_v1/CERT-000002/certification_report/000_worker_selection_certification_report.json"
 )
 
 
@@ -405,6 +416,203 @@ def create_g31_authenticated_replace_request(*, actor_replay_capture: dict[str, 
     }
     request["request_hash"] = replay_hash(request)
     return validate_authenticated_replace_request_v2(request)
+
+
+def bind_consumed_g31_authenticated_replace_worker_selection(
+    *,
+    authenticated_request: dict[str, Any],
+    authorization_reconstruction: dict[str, Any],
+    consumption_reconstruction: dict[str, Any],
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Project exact consumed R07 evidence into the certified selector and stop."""
+
+    request = validate_authenticated_replace_request_v2(authenticated_request)
+    if not isinstance(authorization_reconstruction, dict) or not isinstance(
+        consumption_reconstruction, dict
+    ):
+        raise FailClosedRuntimeError("consumed replacement selection evidence is incomplete")
+    parent = reconstruct_authenticated_replace_replay_v2(request)
+    request_wrapper = load_json(Path(request["destinations"]["request"]))
+    request_stage_hash = replay_hash([request_wrapper])
+    authorization = authorization_reconstruction
+    consumption = consumption_reconstruction
+    if not all(
+        (
+            authorization.get("authorization_id") == request["authorization_id"],
+            authorization.get("authorization_hash") == request["authorization_hash"],
+            authorization.get("authorization_status") == request["authorization_status"] == "AUTHORIZED",
+            authorization.get("authorization_replay_hash") == request["authorization_replay_hash"],
+            authorization.get("canonical_authorization_actor") == request["canonical_authorization_actor"],
+            authorization.get("worker_id") == request["worker_id"] == FILESYSTEM_REPLACE_WORKER_ID,
+            authorization.get("session_id") == request["session_id"],
+            authorization.get("candidate_id") == request["candidate_id"],
+            authorization.get("candidate_hash") == request["candidate_hash"],
+            authorization.get("mutation_decision_id") == request["mutation_decision_id"],
+            authorization.get("mutation_decision_hash") == request["mutation_decision_hash"],
+            authorization.get("target_path") == request["target_path"],
+            authorization.get("expected_source_sha256") == request["preimage_sha256"],
+            parent.get("event_keys") == ["request", "consumption"],
+            parent.get("latest_event") == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+            parent.get("replay_artifact_count") == 2,
+            parent.get("request_id") == request["request_id"],
+            parent.get("request_hash") == request["request_hash"],
+            parent.get("authorization_id") == request["authorization_id"],
+            consumption.get("request_id") == parent["request_id"],
+            consumption.get("request_hash") == parent["request_hash"],
+            consumption.get("authorization_id") == parent["authorization_id"],
+            consumption.get("authorization_hash") == request["authorization_hash"],
+            consumption.get("consumption_identity") == request["authorization_hash"],
+            consumption.get("request_stage_replay_hash") == request_stage_hash,
+            consumption.get("request_replay_reference") == parent["request_replay_reference"],
+            consumption.get("replay_hash") == parent["replay_hash"],
+            consumption.get("authorization_consumed") is True,
+            consumption.get("worker_selected") is False,
+            consumption.get("worker_dispatched") is False,
+            consumption.get("worker_invoked") is False,
+            consumption.get("provider_invoked") is False,
+            consumption.get("command_executed") is False,
+            consumption.get("repository_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError("consumed replacement selection lineage mismatch")
+
+    registry = default_resource_registry()
+    try:
+        checked_certification = load_json(R08B_CERTIFICATION_PATH)
+    except (OSError, ValueError, TypeError) as exc:
+        raise FailClosedRuntimeError(
+            "consumed replacement selection certification is unavailable"
+        ) from exc
+    certification = validate_worker_selection_certification_v1(
+        checked_certification, registry
+    )
+    resources = [
+        value for value in registry["resources"]
+        if value.get("resource_id") == FILESYSTEM_REPLACE_WORKER_ID
+    ]
+    resource = resources[0] if len(resources) == 1 else {}
+    bindings = resource.get("role_bindings") or ()
+    role = bindings[0] if len(bindings) == 1 else {}
+    if not all(
+        (
+            registry["registry_hash"] == R08B_REGISTRY_HASH,
+            certification["artifact_hash"] == R08B_CERTIFICATION_HASH,
+            resource.get("resource_version") == EXISTING_FILE_GOVERNANCE_VERSION,
+            resource.get("resource_category") == "WORKER",
+            resource.get("lifecycle_status") == "AVAILABLE",
+            role.get("role_type") == WORKER_ROLE,
+            role.get("capability_ids") == ("REPLACE_EXISTING_TEXT_FILE",),
+            role.get("authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
+            role.get("domain_scope") == ("NATIVE_DEVELOPMENT",),
+        )
+    ):
+        raise FailClosedRuntimeError("consumed replacement selection certification mismatch")
+
+    context_identity = (
+        f"{request['request_id']}:R07-CONSUMED-REPLACEMENT-SELECTION-CONTEXT"
+    )
+    context = {
+        "context_type": "R07_CONSUMED_REPLACEMENT_SELECTION_CONTEXT_V1",
+        "context_identity": context_identity,
+        "worker_id": request["worker_id"],
+        "worker_version": resource["resource_version"],
+        "operation": request["worker_operation"],
+        "role_type": role["role_type"],
+        "authority_profile": role["authority_profile"],
+        "domain_id": "NATIVE_DEVELOPMENT",
+        "worker_authorization_required": True,
+        "repository_identity": request["repository_identity"],
+        "session_identity": request["session_id"],
+        "decision_identity": request["mutation_decision_id"],
+        "decision_hash": request["mutation_decision_hash"],
+        "authorization_identity": request["authorization_id"],
+        "authorization_hash": request["authorization_hash"],
+        "authenticated_request_identity": request["request_id"],
+        "authenticated_request_hash": request["request_hash"],
+        "consumption_identity": consumption["consumption_identity"],
+        "consumption_hash": parent["last_wrapper_hash"],
+        "consumption_replay_hash": parent["replay_hash"],
+        "target_identity": {
+            "target_path": request["target_path"],
+            "preimage_sha256": request["preimage_sha256"],
+            "postimage_sha256": request["postimage_sha256"],
+            "source_content_hash": request["source_content_hash"],
+            "replacement_content_hash": request["replacement_content_hash"],
+            "source_mode": request["source_mode"],
+            "replacement_mode": request["replacement_mode"],
+        },
+        "predecessor_ordering": ["request", "consumption"],
+        "parent_replay_reference": parent["request_replay_reference"],
+        "parent_replay_hash": parent["replay_hash"],
+        "certified_registry_hash": registry["registry_hash"],
+        "certification_report_hash": certification["artifact_hash"],
+    }
+    context_hash = replay_hash(context)
+    selection = select_unified_resource(
+        selection_id=f"{request['request_id']}:CERTIFIED-WORKER-SELECTION",
+        workflow_type="NATIVE_DEVELOPMENT",
+        required_capability=request["worker_operation"],
+        requested_role_type=WORKER_ROLE,
+        domain_id="NATIVE_DEVELOPMENT",
+        created_at=authorization["authorization_record"]["authorization_timestamp"],
+        replay_dir=replay_dir,
+        worker_authorization_required=True,
+        min_trust_level="HIGH",
+        preferred_resource_id=request["worker_id"],
+        context_assembly_output={
+            "context_reference": context_identity,
+            "context_hash": context_hash,
+        },
+        registry=registry,
+    )
+    artifact = selection["resource_selection_artifact"]
+    reconstructed = reconstruct_unified_resource_selection_replay(replay_dir)
+    if not all(
+        (
+            selection["selection_status"] == RESOURCE_SELECTION_SUCCEEDED,
+            selection["selected_resource_id"] == FILESYSTEM_REPLACE_WORKER_ID,
+            selection["selected_role_type"] == WORKER_ROLE,
+            artifact.get("selected_resource_version") == EXISTING_FILE_GOVERNANCE_VERSION,
+            artifact.get("selected_authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
+            artifact.get("required_capability") == request["worker_operation"],
+            artifact.get("registry_hash") == R08B_REGISTRY_HASH,
+            artifact.get("context_reference") == context_identity,
+            artifact.get("context_hash") == context_hash,
+            reconstructed.get("selection_status") == RESOURCE_SELECTION_SUCCEEDED,
+            reconstructed.get("selected_resource_id") == FILESYSTEM_REPLACE_WORKER_ID,
+            reconstructed.get("required_capability") == request["worker_operation"],
+            reconstructed.get("registry_hash") == R08B_REGISTRY_HASH,
+            selection.get("provider_invoked") is False,
+            selection.get("worker_invoked") is False,
+            selection.get("dispatch_requested") is False,
+            selection.get("execution_requested") is False,
+        )
+    ):
+        raise FailClosedRuntimeError("consumed replacement Worker selection mismatch")
+    selection.update(
+        {
+            "consumed_replacement_selection_context": context,
+            "consumed_replacement_selection_context_hash": context_hash,
+            "parent_request_consumption_reconstruction": parent,
+            "certified_selection_reconstruction": reconstructed,
+            "worker_selected": True,
+            "worker_assigned": False,
+            "worker_dispatched": False,
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "execution_requested": False,
+            "command_executed": False,
+            "target_opened": False,
+            "repository_mutated": False,
+            "restoration_started": False,
+            "rollback_started": False,
+            "recovery_started": False,
+        }
+    )
+    return selection
+
+
 def execute_g31_authenticated_replace(*, actor_replay_capture: dict[str, Any], **evidence: Any) -> dict[str, Any]:
     """Non-live hardened entry point; reconstructs authorization before any write."""
     return _execute_authenticated_replace_v2(create_g31_authenticated_replace_request(
