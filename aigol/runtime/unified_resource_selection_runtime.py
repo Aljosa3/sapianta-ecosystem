@@ -157,6 +157,30 @@ DEFAULT_RESOURCES = (
         ),
     },
     {
+        "resource_id": "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER",
+        "resource_category": WORKER,
+        "display_name": "Filesystem Replace Existing Text File Worker",
+        "resource_version": "G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1",
+        "trust_level": "HIGH",
+        "lifecycle_status": "AVAILABLE",
+        "selection_priority": 55,
+        "certification_evidence": (
+            "docs/governance/G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1.md",
+            "docs/governance/G8_12A_EXISTING_FILE_MUTATION_ARCHITECTURE_REVIEW_V1.md",
+            "docs/governance/G8_99_GENERATION_8_RUNTIME_ADOPTION_CERTIFICATION_REVIEW_V1.md",
+            "docs/governance/G31_24G_R04_R04_R02_EXISTING_REPLACE_OWNER_ATOMICITY_CONSUMPTION_AND_RECOVERY_HARDENING.md",
+        ),
+        "role_bindings": (
+            {
+                "role_type": WORKER_ROLE,
+                "role_status": "AVAILABLE",
+                "capability_ids": ("REPLACE_EXISTING_TEXT_FILE",),
+                "authority_profile": "WORKER_AUTHORIZED_TASK_ONLY",
+                "domain_scope": ("NATIVE_DEVELOPMENT",),
+            },
+        ),
+    },
+    {
         "resource_id": "UNIFIED_REPLAY_RECONSTRUCTION_RUNTIME",
         "resource_category": GOVERNANCE_RUNTIME,
         "display_name": "Unified Replay Reconstruction Runtime",
@@ -317,6 +341,9 @@ def reconstruct_unified_resource_selection_replay(replay_dir: str | Path) -> dic
     """Reconstruct unified resource selection replay evidence."""
 
     replay_path = Path(replay_dir)
+    expected_files = {f"{index:03d}_{step}.json" for index, step in enumerate(REPLAY_STEPS)}
+    if {path.name for path in replay_path.glob("*.json")} != expected_files:
+        raise FailClosedRuntimeError("resource selection replay file set mismatch")
     wrappers: list[dict[str, Any]] = []
     for index, step in enumerate(REPLAY_STEPS):
         wrapper = load_json(replay_path / f"{index:03d}_{step}.json")
@@ -715,6 +742,9 @@ def _validate_registry(registry: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("resource selection failed closed: duplicate resource registration")
     for resource in resources:
         _validate_resource(resource, profiles)
+    declared_hash = registry.get("registry_hash")
+    if declared_hash is not None and declared_hash != replay_hash(_registry_hash_input(registry)):
+        raise FailClosedRuntimeError("resource selection failed closed: registry hash mismatch")
 
 
 def _validate_resource(resource: dict[str, Any], profiles: dict[str, Any]) -> None:

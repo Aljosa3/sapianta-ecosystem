@@ -9,11 +9,18 @@ from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, load_json, replay_hash, write_json_immutable
+from aigol.runtime.unified_resource_selection_runtime import (
+    RESOURCE_SELECTION_SUCCEEDED,
+    WORKER_ROLE,
+    default_resource_registry,
+    reconstruct_unified_resource_selection_replay,
+    select_unified_resource,
+)
 
 
 MILESTONE_ID = "AIGOL_WORKER_SELECTION_CERTIFICATION_V1"
 DEFAULT_REPLAY_BASE = Path("runtime/worker_selection_certification_v1")
-CREATED_AT = "2026-06-22T00:00:00Z"
+CREATED_AT = "2026-07-22T00:00:00Z"
 
 FINAL_VERDICT_CERTIFIED = "WORKER_SELECTION_CERTIFIED"
 FINAL_VERDICT_GAPS = "WORKER_SELECTION_GAPS_FOUND"
@@ -99,10 +106,31 @@ SCENARIOS: tuple[dict[str, Any], ...] = (
         "validation_result": "NOT_APPLICABLE",
         "failover_used": False,
     },
+    {
+        "scenario_id": "WSG-008",
+        "coverage": "filesystem_replace_worker_selection",
+        "required_capability": "REPLACE_EXISTING_TEXT_FILE",
+        "selected_worker": "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER",
+        "expected_status": "SELECTED",
+        "candidates": ["FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"],
+        "validation_result": "PASS",
+        "failover_used": False,
+    },
 )
 
 
 WORKER_DECLARATIONS: dict[str, dict[str, Any]] = {
+    "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER": {
+        "worker_class": "DETERMINISTIC_WORKER",
+        "role_identity_reference": "governance://worker/FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER",
+        "capability_ids": ["REPLACE_EXISTING_TEXT_FILE"],
+        "task_types": ["REPLACE_EXISTING_TEXT_FILE"],
+        "deterministic_validation_available": True,
+        "requires_llm": False,
+        "certification_status": "CERTIFIED",
+        "cost_profile": "LOW",
+        "latency_profile": "LOW",
+    },
     "deterministic_file_worker": {
         "worker_class": "DETERMINISTIC_WORKER",
         "capability_ids": ["file_create"],
@@ -180,16 +208,121 @@ WORKER_DECLARATIONS: dict[str, dict[str, Any]] = {
 }
 
 
+def validate_worker_selection_certification_v1(
+    certification: dict[str, Any], registry: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate checked selection certification against its exact registry."""
+
+    _verify_artifact_hash(certification)
+    resources = [
+        item for item in registry.get("resources", ())
+        if item.get("resource_id") == "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"
+    ]
+    if not all(
+        (
+            certification.get("final_verdict") == FINAL_VERDICT_CERTIFIED,
+            certification.get("resource_registry_hash") == registry.get("registry_hash"),
+            len(resources) == 1,
+            certification.get("certified_resource_hash") == replay_hash(resources[0]),
+            replay_hash(certification.get("certified_resource")) == replay_hash(resources[0]),
+        )
+    ):
+        raise FailClosedRuntimeError("Worker selection certification is not valid")
+    return deepcopy(certification)
+
+
 def run_worker_selection_certification_v1(
     *,
     replay_base: str | Path | None = None,
 ) -> dict[str, Any]:
     base = Path(replay_base) if replay_base is not None else DEFAULT_REPLAY_BASE
+    registry = default_resource_registry()
+    resources = [
+        item for item in registry["resources"]
+        if item.get("resource_id") == "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"
+    ]
+    if len(resources) != 1:
+        raise FailClosedRuntimeError("replacement Worker selection registration is not exact")
+    certified_resource = resources[0]
+    role_bindings = certified_resource.get("role_bindings", ())
+    expected_evidence = (
+        "docs/governance/G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1.md",
+        "docs/governance/G8_12A_EXISTING_FILE_MUTATION_ARCHITECTURE_REVIEW_V1.md",
+        "docs/governance/G8_99_GENERATION_8_RUNTIME_ADOPTION_CERTIFICATION_REVIEW_V1.md",
+        "docs/governance/G31_24G_R04_R04_R02_EXISTING_REPLACE_OWNER_ATOMICITY_CONSUMPTION_AND_RECOVERY_HARDENING.md",
+    )
+    if not all(
+        (
+            certified_resource.get("resource_category") == "WORKER",
+            certified_resource.get("resource_version") == "G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1",
+            certified_resource.get("trust_level") == "HIGH",
+            certified_resource.get("lifecycle_status") == "AVAILABLE",
+            certified_resource.get("certification_evidence") == expected_evidence,
+            len(role_bindings) == 1,
+            role_bindings[0].get("role_type") == "WORKER_ROLE",
+            role_bindings[0].get("role_status") == "AVAILABLE",
+            role_bindings[0].get("capability_ids") == ("REPLACE_EXISTING_TEXT_FILE",),
+            role_bindings[0].get("authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
+            role_bindings[0].get("domain_scope") == ("NATIVE_DEVELOPMENT",),
+        )
+    ):
+        raise FailClosedRuntimeError("replacement Worker selection registration is incompatible")
+    certified_resource_hash = replay_hash(certified_resource)
     cert_root = _next_cert_root(base)
-    scenario_results = [_run_scenario(cert_root / "scenarios" / spec["scenario_id"], spec) for spec in SCENARIOS]
+    scenario_results = []
+    for spec in SCENARIOS:
+        scenario_root = cert_root / "scenarios" / spec["scenario_id"]
+        result = _run_scenario(scenario_root, spec)
+        if spec["scenario_id"] == "WSG-008":
+            selection_root = scenario_root / "unified_selection_replay"
+            selection = select_unified_resource(
+                selection_id="WSG-008-FILESYSTEM-REPLACE-WORKER-SELECTION",
+                workflow_type="NATIVE_DEVELOPMENT",
+                required_capability="REPLACE_EXISTING_TEXT_FILE",
+                requested_role_type=WORKER_ROLE,
+                domain_id="NATIVE_DEVELOPMENT",
+                created_at=CREATED_AT,
+                replay_dir=selection_root,
+                worker_authorization_required=True,
+                min_trust_level="HIGH",
+                preferred_resource_id="FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER",
+                registry=registry,
+            )
+            selection_reconstruction = reconstruct_unified_resource_selection_replay(selection_root)
+            selection_artifact = selection["resource_selection_artifact"]
+            result["assertions"]["canonical_registry_selection_succeeded"] = all(
+                (
+                    selection["selection_status"] == RESOURCE_SELECTION_SUCCEEDED,
+                    selection["selected_resource_id"] == "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER",
+                    selection_artifact["selected_resource_version"] == "G8_12_EXISTING_FILE_MUTATION_IMPLEMENTATION_V1",
+                    selection["selected_role_type"] == WORKER_ROLE,
+                    selection_artifact["selected_authority_profile"] == "WORKER_AUTHORIZED_TASK_ONLY",
+                    selection["registry_hash"] == registry["registry_hash"],
+                    selection["provider_invoked"] is False,
+                    selection["worker_invoked"] is False,
+                    selection["execution_requested"] is False,
+                    selection["dispatch_requested"] is False,
+                    selection_reconstruction["replay_artifact_count"] == 2,
+                )
+            )
+            result["canonical_selection_reference"] = str(selection_root)
+            result["canonical_selection_hash"] = selection_artifact["artifact_hash"]
+            result["canonical_selection_replay_hash"] = selection_reconstruction["replay_hash"]
+            result["scenario_verdict"] = (
+                "CERTIFIED" if all(result["assertions"].values()) else "GAPS_FOUND"
+            )
+        scenario_results.append(result)
     reconstruction = reconstruct_worker_selection_replay(cert_root)
     secret_free = _secret_free(cert_root)
     assertions = _assertions(scenario_results=scenario_results, reconstruction=reconstruction, secret_free=secret_free)
+    assertions["canonical_registry_bound"] = registry["registry_hash"] == replay_hash(
+        {
+            "registry_version": registry["registry_version"],
+            "resources": registry["resources"],
+            "authority_profiles": registry["authority_profiles"],
+        }
+    )
+    assertions["replacement_resource_identity_bound"] = certified_resource_hash == replay_hash(certified_resource)
     final_verdict = FINAL_VERDICT_CERTIFIED if all(assertions.values()) else FINAL_VERDICT_GAPS
 
     coverage = _with_hash(
@@ -197,6 +330,8 @@ def run_worker_selection_certification_v1(
             "artifact_type": "WORKER_SELECTION_COVERAGE_REPORT_V1",
             "runtime_version": MILESTONE_ID,
             "created_at": CREATED_AT,
+            "resource_registry_hash": registry["registry_hash"],
+            "certified_resource_hash": certified_resource_hash,
             "scenario_count": len(scenario_results),
             "coverage": [item["coverage"] for item in scenario_results],
             "scenario_verdicts": {item["scenario_id"]: item["scenario_verdict"] for item in scenario_results},
@@ -209,6 +344,9 @@ def run_worker_selection_certification_v1(
             "artifact_type": "WORKER_SELECTION_EVIDENCE_PACKAGE_V1",
             "runtime_version": MILESTONE_ID,
             "created_at": CREATED_AT,
+            "resource_registry_hash": registry["registry_hash"],
+            "certified_resource": deepcopy(certified_resource),
+            "certified_resource_hash": certified_resource_hash,
             "cert_root": str(cert_root),
             "scenario_results": scenario_results,
             "reviewer_auditability": {
@@ -226,6 +364,8 @@ def run_worker_selection_certification_v1(
             "artifact_type": "WORKER_SELECTION_REPLAY_PACKAGE_V1",
             "runtime_version": MILESTONE_ID,
             "created_at": CREATED_AT,
+            "resource_registry_hash": registry["registry_hash"],
+            "certified_resource_hash": certified_resource_hash,
             "cert_root": str(cert_root),
             "replay_reconstruction": reconstruction,
             "scenario_replay_references": {
@@ -239,6 +379,14 @@ def run_worker_selection_certification_v1(
             "artifact_type": "WORKER_SELECTION_CERTIFICATION_REPORT_V1",
             "runtime_version": MILESTONE_ID,
             "created_at": CREATED_AT,
+            "resource_registry_hash": registry["registry_hash"],
+            "certified_resource": deepcopy(certified_resource),
+            "certified_resource_hash": certified_resource_hash,
+            "upstream_lineage_references": [
+                "G31_24G_R04_R04_R05_CANONICAL_APPROVED_V3_DECISION_TO_MUTATION_AUTHORIZATION_BINDING",
+                "G31_24G_R04_R04_R06_MUTATION_AUTHORIZATION_TO_AUTHENTICATED_REPLACEMENT_REQUEST_BINDING",
+                "G31_24G_R04_R04_R07_AUTHENTICATED_REPLACEMENT_REQUEST_TO_SINGLE_USE_AUTHORIZATION_CONSUMPTION_BINDING",
+            ],
             "cert_root": str(cert_root),
             "coverage_report_hash": coverage["artifact_hash"],
             "evidence_package_hash": evidence["artifact_hash"],
@@ -303,6 +451,9 @@ def reconstruct_worker_selection_replay(cert_root: str | Path) -> dict[str, Any]
                 "failure_reason": str(exc),
             }
         )
+    expected_scenarios = len(SCENARIOS) if any(
+        item["scenario_id"] == "WSG-008" for item in scenario_records
+    ) else len(SCENARIOS) - 1
     return _with_hash(
         {
             "artifact_type": "WORKER_SELECTION_REPLAY_RECONSTRUCTION_V1",
@@ -310,7 +461,7 @@ def reconstruct_worker_selection_replay(cert_root: str | Path) -> dict[str, Any]
             "created_at": CREATED_AT,
             "scenario_count": len(scenario_records),
             "scenario_records": scenario_records,
-            "replay_reconstructed": len(scenario_records) == len(SCENARIOS)
+            "replay_reconstructed": len(scenario_records) == expected_scenarios
             and all(item["rationale_recorded"] and item["suitability_scores_recorded"] for item in scenario_records),
         }
     )
@@ -673,6 +824,7 @@ def _assertions(
         "worker_failover_certified": "worker_failover" in coverage,
         "worker_validation_failure_certified": "worker_validation_failure" in coverage,
         "capability_mismatch_certified": "capability_mismatch" in coverage,
+        "filesystem_replace_worker_selection_certified": "filesystem_replace_worker_selection" in coverage,
         "all_scenarios_certified": all(item["scenario_verdict"] == "CERTIFIED" for item in scenario_results),
         "selection_rationale_recorded": all(item["selection_rationale_recorded"] for item in scenario_results),
         "suitability_score_recorded": all(item["suitability_score_recorded"] for item in scenario_results),

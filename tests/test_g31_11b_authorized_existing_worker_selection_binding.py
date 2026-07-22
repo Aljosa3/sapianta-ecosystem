@@ -15,7 +15,6 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, with_replay_hash
 from aigol.runtime.unified_resource_selection_runtime import (
-    FAILED_CLOSED,
     RESOURCE_SELECTION_SUCCEEDED,
     _registry_hash_input,
 )
@@ -96,13 +95,8 @@ def test_existing_no_match_and_ambiguity_remain_fail_closed(
     registry = _registry_hash(registry)
     monkeypatch.setattr(binding, "default_resource_registry", lambda: deepcopy(registry))
 
-    capture, _, _, _ = _selected(tmp_path, f"G31-11B-{mode}")
-
-    assert capture["selection_status"] == FAILED_CLOSED
-    assert capture["worker_selected"] is False
-    assert mode.lower().replace("_", " ") in capture["failure_reason"] or (
-        mode == "NO_MATCH" and "no eligible resource" in capture["failure_reason"]
-    )
+    with pytest.raises(FailClosedRuntimeError, match="certification is not valid"):
+        _selected(tmp_path, f"G31-11B-{mode}")
 
 
 @pytest.mark.parametrize(
@@ -203,7 +197,7 @@ def test_hash_invalid_worker_certification_fails_before_selection(
     path.write_text(json.dumps(certification), encoding="utf-8")
     monkeypatch.setattr(binding, "WORKER_SELECTION_CERTIFICATION_PATH", path)
 
-    with pytest.raises(FailClosedRuntimeError, match="runtime replay hash mismatch"):
+    with pytest.raises(FailClosedRuntimeError, match="worker selection artifact hash mismatch"):
         select_authorized_grounded_worker(
             execution_authorization_capture=authorization,
             session_root=session_root,

@@ -23,6 +23,7 @@ from aigol.runtime.unified_resource_selection_runtime import (
     FAILED_CLOSED, RESOURCE_SELECTION_SUCCEEDED, WORKER_ROLE, default_resource_registry,
     reconstruct_unified_resource_selection_replay, select_unified_resource,
 )
+from aigol.runtime.worker_selection_certification_v1 import validate_worker_selection_certification_v1
 from aigol.runtime.transport.serialization import (
     load_json,
     replay_hash,
@@ -57,7 +58,7 @@ STOP_BOUNDARIES = {
     "repository_mutated": False,
 }
 WORKER_SELECTION_CERTIFICATION_PATH = Path(__file__).resolve().parents[2] / (
-    "runtime/worker_selection_certification_v1/CERT-000001/certification_report/000_worker_selection_certification_report.json"
+    "runtime/worker_selection_certification_v1/CERT-000002/certification_report/000_worker_selection_certification_report.json"
 )
 
 
@@ -353,17 +354,14 @@ def select_authorized_grounded_worker(
     ready = reconstruct_confirmed_grounded_execution_ready_replay(ready_root)
     if ready["authorization_scope"] != authorization["authorized_scope"]:
         raise FailClosedRuntimeError("authorized Worker selection scope mismatch")
-    certification = load_json(WORKER_SELECTION_CERTIFICATION_PATH)
-    verify_replay_hash(certification, hash_field="artifact_hash")
-    if certification.get("final_verdict") != "WORKER_SELECTION_CERTIFIED":
-        raise FailClosedRuntimeError("Worker selection certification is not valid")
+    registry = default_resource_registry()
+    certification = validate_worker_selection_certification_v1(load_json(WORKER_SELECTION_CERTIFICATION_PATH), registry)
     for path in root.rglob("000_resource_selection_recorded.json"):
         wrapper = load_json(path)
         verify_replay_hash(wrapper, hash_field="replay_hash")
         artifact = wrapper.get("artifact")
         if isinstance(artifact, dict) and artifact.get("context_hash") == authorization["artifact_hash"]:
             raise FailClosedRuntimeError("execution authorization already used for Worker selection")
-    registry = default_resource_registry()
     capture = select_unified_resource(
         selection_id=f"{authorization['authorization_id']}:WORKER-SELECTION",
         workflow_type="NATIVE_DEVELOPMENT",
@@ -428,9 +426,9 @@ def reconstruct_authorized_grounded_worker_selection(
     if not isinstance(artifact, dict):
         raise FailClosedRuntimeError("authorized Worker selection artifact missing")
     verify_replay_hash(artifact, hash_field="artifact_hash")
-    certification = load_json(WORKER_SELECTION_CERTIFICATION_PATH)
-    verify_replay_hash(certification, hash_field="artifact_hash")
-    expected_registry_hash = default_resource_registry()["registry_hash"]
+    registry = default_resource_registry()
+    certification = validate_worker_selection_certification_v1(load_json(WORKER_SELECTION_CERTIFICATION_PATH), registry)
+    expected_registry_hash = registry["registry_hash"]
     if not all(
         (
             authorization_replay["authorization_status"] == EXECUTION_AUTHORIZED,

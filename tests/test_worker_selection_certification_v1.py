@@ -20,8 +20,15 @@ def test_worker_selection_certifies_all_required_scenarios(tmp_path):
     assert all(result["assertions"].values())
 
     scenarios = {item["scenario_id"]: item for item in result["scenario_results"]}
-    assert set(scenarios) == {"WSG-001", "WSG-002", "WSG-003", "WSG-004", "WSG-005", "WSG-006", "WSG-007"}
+    assert set(scenarios) == {
+        "WSG-001", "WSG-002", "WSG-003", "WSG-004", "WSG-005", "WSG-006",
+        "WSG-007", "WSG-008",
+    }
     assert all(item["scenario_verdict"] == "CERTIFIED" for item in scenarios.values())
+    assert scenarios["WSG-008"]["selected_worker"] == (
+        "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"
+    )
+    assert scenarios["WSG-008"]["assertions"]["canonical_registry_selection_succeeded"] is True
 
 
 def test_worker_selection_records_rationale_scores_and_rejections(tmp_path):
@@ -57,7 +64,7 @@ def test_worker_selection_replay_reconstructs(tmp_path):
     reconstruction = reconstruct_worker_selection_replay(result["cert_root"])
 
     assert reconstruction["replay_reconstructed"] is True
-    assert reconstruction["scenario_count"] == 7
+    assert reconstruction["scenario_count"] == 8
     assert all(item["authority_preserved"] for item in reconstruction["scenario_records"])
 
 
