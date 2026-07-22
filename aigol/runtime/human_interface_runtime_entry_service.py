@@ -882,6 +882,9 @@ def _continue_g31_application_transition(
                         f"{consumption['consumption_identity']}",
                         "Authorization Consumption Reached: True",
                         "Worker Selection Reached: True",
+                        "Worker Invocation Request Created: "
+                        f"{state['worker_invocation_request_created']}",
+                        "Worker Assignment Reached: False",
                         "Repository Mutated: False",
                     )
                 )
@@ -889,6 +892,11 @@ def _continue_g31_application_transition(
             presentations.append(
                 render_authorized_grounded_worker_selection(
                     state["consumed_replacement_worker_selection_capture"]
+                )
+            )
+            presentations.append(
+                worker_request.render_worker_invocation_request_summary(
+                    state["worker_invocation_request_capture"]
                 )
             )
     else:
@@ -2004,6 +2012,24 @@ def _authorize_g31_mutation_decision(
         replay_dir=session_root
         / f"FILESYSTEM-REPLACE-WORKER-SELECTION-{request['request_hash'][-16:]}",
     )
+    selection_artifact = selection["resource_selection_artifact"]
+    invocation_request = (
+        worker_request.create_authenticated_replacement_worker_invocation_request(
+            invocation_request_id=(
+                f"{selection_artifact['selection_id']}:INVOCATION-REQUEST"
+            ),
+            authenticated_request=request,
+            consumption_reconstruction=consumption_reconstruction,
+            resource_selection_capture=selection,
+            worker_selection_certification_reference=str(
+                existing_file_governance.R08B_CERTIFICATION_PATH
+            ),
+            requested_by="PLATFORM_CORE_G31_INVOCATION_REQUEST_COMPATIBILITY",
+            requested_at=created,
+            replay_dir=session_root
+            / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}",
+        )
+    )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2054,10 +2080,17 @@ def _authorize_g31_mutation_decision(
             "selected_resource_id": selection["selected_resource_id"],
             "selected_role_type": selection["selected_role_type"],
             "worker_selected": selection["worker_selected"],
+            "worker_invocation_request_capture": invocation_request,
+            "worker_invocation_request_status": invocation_request[
+                "request_status"
+            ],
+            "worker_invocation_request_created": invocation_request[
+                "request_status"
+            ] == worker_request.WORKER_INVOCATION_REQUEST_CREATED,
             "worker_assigned": False,
             "worker_dispatched": False,
-            "runtime_replay_reference": selection[
-                "resource_selection_replay_reference"
+            "runtime_replay_reference": invocation_request[
+                "worker_invocation_request_replay_reference"
             ],
         }
     )

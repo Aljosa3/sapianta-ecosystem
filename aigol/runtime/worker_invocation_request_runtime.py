@@ -28,6 +28,19 @@ from aigol.runtime.governed_implementation_dry_run import (
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.ocs_execution_readiness_runtime import reconstruct_ocs_execution_readiness_replay
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
+from aigol.runtime.unified_resource_selection_runtime import (
+    RESOURCE_SELECTION_SUCCEEDED,
+    default_resource_registry,
+    reconstruct_unified_resource_selection_replay,
+)
+from aigol.runtime.worker_selection_certification_v1 import (
+    validate_worker_selection_certification_v1,
+)
+from aigol.workers.filesystem_replace_worker import (
+    AUTHENTICATED_REPLACE_REQUEST_TYPE_V2,
+    reconstruct_authenticated_replace_replay_v2,
+    validate_authenticated_replace_request_v2,
+)
 
 
 AIGOL_WORKER_INVOCATION_REQUEST_RUNTIME_VERSION = "AIGOL_WORKER_INVOCATION_REQUEST_RUNTIME_V1"
@@ -39,6 +52,9 @@ WORKER_INVOCATION_REQUEST_ARTIFACT_V1 = "WORKER_INVOCATION_REQUEST_ARTIFACT_V1"
 WORKER_INVOCATION_REQUEST_RESULT_ARTIFACT_V1 = "WORKER_INVOCATION_REQUEST_RESULT_ARTIFACT_V1"
 WORKER_INVOCATION_REQUEST_CREATED = "WORKER_INVOCATION_REQUEST_CREATED"
 FAILED_CLOSED = "FAILED_CLOSED"
+AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1 = (
+    "AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1"
+)
 
 REPLAY_STEPS = (
     "invocation_request_evidence_recorded",
@@ -162,40 +178,16 @@ def create_worker_invocation_request(
             Path(execution_authorization_replay_reference), requested_at,
             resource_selection_replay_reference,
         )
-        evidence = _evidence_artifact(
+        return _create_request_from_lineage(
             invocation_request_id=invocation_request_id,
-            execution_authorization_replay_reference=execution_authorization_replay_reference,
-            lineage=lineage,
-            requested_at=requested_at,
-        )
-        classification = _classification_artifact(
-            invocation_request_id=invocation_request_id,
-            evidence=evidence,
-            lineage=lineage,
-            requested_at=requested_at,
-        )
-        request = _request_artifact(
-            invocation_request_id=invocation_request_id,
-            evidence=evidence,
-            classification=classification,
+            execution_authorization_replay_reference=(
+                execution_authorization_replay_reference
+            ),
             lineage=lineage,
             requested_by=requested_by,
             requested_at=requested_at,
+            replay_path=replay_path,
         )
-        result = _result_artifact(
-            invocation_request_id=invocation_request_id,
-            evidence=evidence,
-            classification=classification,
-            request=request,
-            requested_at=requested_at,
-            status=WORKER_INVOCATION_REQUEST_CREATED,
-            failure_reason=None,
-        )
-        _persist_step(replay_path, 0, REPLAY_STEPS[0], evidence)
-        _persist_step(replay_path, 1, REPLAY_STEPS[1], classification)
-        _persist_step(replay_path, 2, REPLAY_STEPS[2], request)
-        _persist_step(replay_path, 3, REPLAY_STEPS[3], result)
-        return _capture(evidence, classification, request, result, replay_path)
     except Exception as exc:
         result = _failed_result(
             invocation_request_id=invocation_request_id,
@@ -207,10 +199,107 @@ def create_worker_invocation_request(
         return _capture(None, None, None, result, replay_path)
 
 
+def create_authenticated_replacement_worker_invocation_request(
+    *,
+    invocation_request_id: str,
+    authenticated_request: dict[str, Any],
+    consumption_reconstruction: dict[str, Any],
+    resource_selection_capture: dict[str, Any],
+    worker_selection_certification_reference: str,
+    requested_by: str,
+    requested_at: str,
+    replay_dir: str | Path,
+) -> dict[str, Any]:
+    """Translate reconstructed request lineage into the existing request family."""
+
+    replay_path = Path(replay_dir)
+    try:
+        _ensure_replay_available(replay_path)
+        compatibility = _load_authenticated_replacement_selection_lineage(
+            authenticated_request=authenticated_request,
+            consumption_reconstruction=consumption_reconstruction,
+            resource_selection_capture=resource_selection_capture,
+            worker_selection_certification_reference=(
+                worker_selection_certification_reference
+            ),
+            anchor=replay_path,
+        )
+        lineage = _project_authenticated_replacement_lineage(compatibility)
+        return _create_request_from_lineage(
+            invocation_request_id=invocation_request_id,
+            execution_authorization_replay_reference=authenticated_request[
+                "authorization_replay_reference"
+            ],
+            lineage=lineage,
+            requested_by=requested_by,
+            requested_at=requested_at,
+            replay_path=replay_path,
+        )
+    except Exception as exc:
+        result = _failed_result(
+            invocation_request_id=invocation_request_id,
+            execution_authorization_replay_reference=str(
+                authenticated_request.get("authorization_replay_reference")
+                if isinstance(authenticated_request, dict) else "UNAVAILABLE"
+            ),
+            requested_at=requested_at,
+            failure_reason=_failure_reason(exc),
+        )
+        _persist_failure_if_possible(replay_path, 3, REPLAY_STEPS[3], result)
+        return _capture(None, None, None, result, replay_path)
+
+
+def _create_request_from_lineage(
+    *, invocation_request_id: str,
+    execution_authorization_replay_reference: str,
+    lineage: dict[str, Any], requested_by: str,
+    requested_at: str, replay_path: Path,
+) -> dict[str, Any]:
+    evidence = _evidence_artifact(
+        invocation_request_id=invocation_request_id,
+        execution_authorization_replay_reference=(
+            execution_authorization_replay_reference
+        ),
+        lineage=lineage,
+        requested_at=requested_at,
+    )
+    classification = _classification_artifact(
+        invocation_request_id=invocation_request_id,
+        evidence=evidence,
+        lineage=lineage,
+        requested_at=requested_at,
+    )
+    request = _request_artifact(
+        invocation_request_id=invocation_request_id,
+        evidence=evidence,
+        classification=classification,
+        lineage=lineage,
+        requested_by=requested_by,
+        requested_at=requested_at,
+    )
+    result = _result_artifact(
+        invocation_request_id=invocation_request_id,
+        evidence=evidence,
+        classification=classification,
+        request=request,
+        requested_at=requested_at,
+        status=WORKER_INVOCATION_REQUEST_CREATED,
+        failure_reason=None,
+    )
+    for index, artifact in enumerate((evidence, classification, request, result)):
+        _persist_step(replay_path, index, REPLAY_STEPS[index], artifact)
+    return _capture(evidence, classification, request, result, replay_path)
+
+
 def reconstruct_worker_invocation_request_replay(replay_dir: str | Path) -> dict[str, Any]:
     """Reconstruct Worker invocation request replay deterministically."""
 
     replay_path = Path(replay_dir)
+    expected_files = {
+        f"{index:03d}_{step}.json" for index, step in enumerate(REPLAY_STEPS)
+    }
+    if {path.name for path in replay_path.glob("*.json")} != expected_files:
+        raise FailClosedRuntimeError("worker invocation request replay file set mismatch")
     wrappers: list[dict[str, Any]] = []
     for index, step in enumerate(REPLAY_STEPS):
         wrapper = load_json(replay_path / f"{index:03d}_{step}.json")
@@ -238,16 +327,36 @@ def reconstruct_worker_invocation_request_replay(replay_dir: str | Path) -> dict
     if evidence["execution_packet_hash"] != request["execution_packet_hash"]:
         raise FailClosedRuntimeError("worker invocation request replay packet lineage mismatch")
     _validate_request_artifact(request)
-    authorization_replay_path = _resolve_replay_reference(
-        evidence["execution_authorization_replay_reference"],
-        anchor=replay_path,
-    )
-    lineage = _load_authorized_lineage(
-        authorization_replay_path, request["requested_at"],
-        (request.get("g31_lineage") or {}).get("resource_selection_replay_reference"),
-    )
-    if request.get("g31_lineage") != lineage.get("g31_lineage"):
-        raise FailClosedRuntimeError("worker invocation request replay selection lineage mismatch")
+    compatibility = request.get("compatibility_lineage")
+    if compatibility:
+        reconstructed_compatibility = _load_authenticated_replacement_selection_lineage(
+            authenticated_request=compatibility.get("authenticated_request"),
+            consumption_reconstruction=compatibility.get("consumption_reconstruction"),
+            resource_selection_capture=compatibility.get("resource_selection_capture"),
+            worker_selection_certification_reference=compatibility.get(
+                "worker_selection_certification_reference"
+            ),
+            anchor=replay_path,
+        )
+        if compatibility != reconstructed_compatibility:
+            raise FailClosedRuntimeError(
+                "worker invocation request replay compatibility lineage mismatch"
+            )
+    else:
+        authorization_replay_path = _resolve_replay_reference(
+            evidence["execution_authorization_replay_reference"],
+            anchor=replay_path,
+        )
+        lineage = _load_authorized_lineage(
+            authorization_replay_path, request["requested_at"],
+            (request.get("g31_lineage") or {}).get(
+                "resource_selection_replay_reference"
+            ),
+        )
+        if request.get("g31_lineage") != lineage.get("g31_lineage"):
+            raise FailClosedRuntimeError(
+                "worker invocation request replay selection lineage mismatch"
+            )
     return {
         "worker_invocation_request_id": request["worker_invocation_request_id"],
         "request_status": result["request_status"],
@@ -261,11 +370,233 @@ def reconstruct_worker_invocation_request_replay(replay_dir: str | Path) -> dict
         "validation_requirements": deepcopy(request["validation_requirements"]),
         "request_hash": request["request_hash"],
         **({"complete_g31_lineage_reconstructed": True} if request.get("g31_lineage") else {}),
+        **(
+            {"complete_authenticated_replacement_lineage_reconstructed": True}
+            if compatibility else {}
+        ),
         "replay_visible": True,
         "replay_artifact_count": len(wrappers),
         "replay_hash": replay_hash(wrappers),
         **_boundary_flags(),
         "failure_reason": result["failure_reason"],
+    }
+
+
+def _load_authenticated_replacement_selection_lineage(
+    *, authenticated_request: Any, consumption_reconstruction: Any,
+    resource_selection_capture: Any,
+    worker_selection_certification_reference: Any, anchor: Path,
+) -> dict[str, Any]:
+    request = validate_authenticated_replace_request_v2(authenticated_request)
+    if not isinstance(consumption_reconstruction, dict) or not isinstance(
+        resource_selection_capture, dict
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: replacement lineage is incomplete"
+        )
+    session_root = Path(request["session_root"]).resolve()
+    request_replay = reconstruct_authenticated_replace_replay_v2(request)
+    selection_reference = _resolve_replay_reference(
+        resource_selection_capture.get("resource_selection_replay_reference"),
+        anchor=anchor,
+    ).resolve()
+    if not selection_reference.is_relative_to(session_root):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: selection is cross-session"
+        )
+    selection_reconstruction = reconstruct_unified_resource_selection_replay(
+        selection_reference
+    )
+    selection_wrapper = load_json(
+        selection_reference / "000_resource_selection_recorded.json"
+    )
+    _verify_wrapper_hash(selection_wrapper)
+    selection = selection_wrapper.get("artifact")
+    if not isinstance(selection, dict):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: Worker selection is missing"
+        )
+    _verify_artifact_hash(selection, "Worker selection artifact")
+
+    certification_reference = _resolve_replay_reference(
+        worker_selection_certification_reference, anchor=anchor
+    ).resolve()
+    try:
+        certification = validate_worker_selection_certification_v1(
+            load_json(certification_reference), default_resource_registry()
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: selection certification unavailable"
+        ) from exc
+    context = resource_selection_capture.get(
+        "consumed_replacement_selection_context"
+    )
+    context_hash = resource_selection_capture.get(
+        "consumed_replacement_selection_context_hash"
+    )
+    parent = resource_selection_capture.get(
+        "parent_request_consumption_reconstruction"
+    )
+    captured_reconstruction = resource_selection_capture.get(
+        "certified_selection_reconstruction"
+    )
+    if not isinstance(context, dict) or context_hash != replay_hash(context):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: selection context invalid"
+        )
+    if not isinstance(parent, dict) or not all(
+        (
+            request_replay.get("event_keys") == ["request", "consumption"],
+            request_replay.get("latest_event") == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+            request_replay.get("replay_artifact_count") == 2,
+            parent == request_replay,
+            consumption_reconstruction.get("request_id") == request["request_id"],
+            consumption_reconstruction.get("request_hash") == request["request_hash"],
+            consumption_reconstruction.get("authorization_id")
+            == request["authorization_id"],
+            consumption_reconstruction.get("authorization_hash")
+            == request["authorization_hash"],
+            consumption_reconstruction.get("consumption_identity")
+            == request["authorization_hash"],
+            consumption_reconstruction.get("request_replay_reference")
+            == request_replay["request_replay_reference"],
+            consumption_reconstruction.get("replay_hash")
+            == request_replay["replay_hash"],
+            consumption_reconstruction.get("authorization_consumed") is True,
+            consumption_reconstruction.get("worker_selected") is False,
+            consumption_reconstruction.get("worker_dispatched") is False,
+            consumption_reconstruction.get("worker_invoked") is False,
+            consumption_reconstruction.get("provider_invoked") is False,
+            consumption_reconstruction.get("command_executed") is False,
+            consumption_reconstruction.get("repository_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: consumption lineage mismatch"
+        )
+    if not all(
+        (
+            resource_selection_capture.get("selection_status")
+            == RESOURCE_SELECTION_SUCCEEDED,
+            resource_selection_capture.get("resource_selection_artifact") == selection,
+            captured_reconstruction == selection_reconstruction,
+            selection_reconstruction.get("selection_status")
+            == RESOURCE_SELECTION_SUCCEEDED,
+            selection.get("selected_resource_id") == request["worker_id"],
+            selection.get("required_capability") == request["worker_operation"],
+            selection.get("selected_role_type") == context.get("role_type"),
+            selection.get("selected_authority_profile")
+            == context.get("authority_profile"),
+            selection.get("selected_resource_version") == context.get("worker_version"),
+            selection.get("context_reference") == context.get("context_identity"),
+            selection.get("context_hash") == context_hash,
+            context.get("authenticated_request_identity") == request["request_id"],
+            context.get("authenticated_request_hash") == request["request_hash"],
+            context.get("authorization_identity") == request["authorization_id"],
+            context.get("authorization_hash") == request["authorization_hash"],
+            context.get("consumption_identity")
+            == consumption_reconstruction.get("consumption_identity"),
+            context.get("consumption_replay_hash") == request_replay["replay_hash"],
+            context.get("certified_registry_hash") == selection.get("registry_hash"),
+            context.get("certification_report_hash") == certification["artifact_hash"],
+            selection.get("provider_invoked") is False,
+            selection.get("worker_invoked") is False,
+            selection.get("dispatch_requested") is False,
+            resource_selection_capture.get("worker_assigned") is False,
+            resource_selection_capture.get("worker_dispatched") is False,
+            resource_selection_capture.get("execution_requested") is False,
+            resource_selection_capture.get("command_executed") is False,
+            resource_selection_capture.get("repository_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: selection lineage mismatch"
+        )
+    return {
+        "lineage_type": AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1,
+        "authenticated_request": request,
+        "consumption_reconstruction": deepcopy(consumption_reconstruction),
+        "resource_selection_capture": {
+            "resource_selection_artifact": deepcopy(selection),
+            "resource_selection_replay_reference": str(selection_reference),
+            "consumed_replacement_selection_context": deepcopy(context),
+            "consumed_replacement_selection_context_hash": context_hash,
+            "parent_request_consumption_reconstruction": deepcopy(parent),
+            "certified_selection_reconstruction": deepcopy(selection_reconstruction),
+            "selection_status": resource_selection_capture["selection_status"],
+            "worker_assigned": False,
+            "worker_dispatched": False,
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "execution_requested": False,
+            "command_executed": False,
+            "repository_mutated": False,
+        },
+        "worker_selection_certification_reference": str(certification_reference),
+        "worker_selection_certification_hash": certification["artifact_hash"],
+    }
+
+
+def _project_authenticated_replacement_lineage(
+    compatibility: dict[str, Any],
+) -> dict[str, Any]:
+    request = compatibility["authenticated_request"]
+    selection_capture = compatibility["resource_selection_capture"]
+    selection = selection_capture["resource_selection_artifact"]
+    context = selection_capture["consumed_replacement_selection_context"]
+    context_hash = selection_capture["consumed_replacement_selection_context_hash"]
+    authorization = {
+        "chain_id": context_hash,
+        "authorization_id": request["authorization_id"],
+        "artifact_hash": request["authorization_hash"],
+        "authorization_status": request["authorization_status"],
+        "execution_ready_reference": context["context_identity"],
+        "execution_ready_hash": context_hash,
+        "execution_candidate_reference": selection["selection_id"],
+        "execution_candidate_hash": selection["artifact_hash"],
+        "approval_status": request["mutation_decision_outcome"],
+        "approval_reference": request["mutation_decision_id"],
+        "approval_hash": request["mutation_decision_hash"],
+    }
+    packet = {
+        "packet_id": request["request_id"],
+        "artifact_hash": request["request_hash"],
+        "worker_role_requirements": [selection["selected_role_type"]],
+        "allowed_outputs": [request["target_path"]],
+        "forbidden_operations": [
+            "PROVIDER_INVOCATION",
+            "SHELL_COMMAND_EXECUTION",
+            "MUTATION_OUTSIDE_AUTHENTICATED_TARGET",
+        ],
+        "required_validations": [
+            "AUTHENTICATED_REQUEST_REPLAY",
+            "SINGLE_USE_CONSUMPTION_REPLAY",
+            "CERTIFIED_SELECTION_REPLAY",
+            "PREIMAGE_SHA256",
+            "REPLACEMENT_CONTENT_HASH",
+        ],
+    }
+    candidate = {
+        "target_domain": selection["domain_id"],
+        "handoff_reference": request["request_id"],
+        "handoff_hash": request["request_hash"],
+        "target_worker": selection["selected_resource_id"],
+    }
+    return {
+        "authorization": authorization,
+        "packet": packet,
+        "candidate": candidate,
+        "checks": {
+            "authorization_lineage": True,
+            "authenticated_request_lineage": True,
+            "single_use_consumption_lineage": True,
+            "certified_selection_lineage": True,
+            "replay_continuity": True,
+            "authority_continuity": True,
+        },
+        "g31_lineage": None,
+        "compatibility_lineage": compatibility,
     }
 
 
@@ -593,6 +924,10 @@ def _request_artifact(
     }
     if lineage.get("g31_lineage"):
         artifact["g31_lineage"] = deepcopy(lineage["g31_lineage"])
+    if lineage.get("compatibility_lineage"):
+        artifact["compatibility_lineage"] = deepcopy(
+            lineage["compatibility_lineage"]
+        )
     artifact["request_hash"] = _request_hash(artifact)
     artifact["artifact_hash"] = replay_hash(artifact)
     _validate_request_artifact(artifact)
@@ -712,6 +1047,11 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
         if request.get(field) is not expected:
             raise FailClosedRuntimeError("worker invocation request failed closed: authority violation")
     g31 = request.get("g31_lineage")
+    compatibility = request.get("compatibility_lineage")
+    if g31 is not None and compatibility is not None:
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: lineage is ambiguous"
+        )
     if g31 is not None:
         selection = g31.get("resource_selection_artifact") if isinstance(g31, dict) else None
         if not isinstance(selection, dict) or not all((
@@ -725,6 +1065,44 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
             isinstance(g31.get("worker_selection_certification_hash"), str),
         )):
             raise FailClosedRuntimeError("worker invocation request failed closed: selection authority invalid")
+    if compatibility is not None:
+        if not isinstance(compatibility, dict) or compatibility.get(
+            "lineage_type"
+        ) != AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1:
+            raise FailClosedRuntimeError(
+                "worker invocation request failed closed: compatibility lineage invalid"
+            )
+        source = compatibility.get("authenticated_request") or {}
+        selection_capture = compatibility.get("resource_selection_capture") or {}
+        selection = selection_capture.get("resource_selection_artifact") or {}
+        context = selection_capture.get(
+            "consumed_replacement_selection_context"
+        ) or {}
+        if not all(
+            (
+                source.get("request_type") == AUTHENTICATED_REPLACE_REQUEST_TYPE_V2,
+                request.get("authorization_reference") == source.get("authorization_id"),
+                request.get("authorization_hash") == source.get("authorization_hash"),
+                request.get("execution_packet_reference") == source.get("request_id"),
+                request.get("execution_packet_hash") == source.get("request_hash"),
+                request.get("chain_id")
+                == selection_capture.get(
+                    "consumed_replacement_selection_context_hash"
+                ),
+                request.get("worker_role") == selection.get("selected_role_type"),
+                request.get("target_worker_family")
+                == selection.get("selected_resource_id"),
+                request.get("target_domain") == selection.get("domain_id"),
+                selection.get("required_capability") == source.get("worker_operation"),
+                selection.get("context_hash") == replay_hash(context),
+                selection.get("provider_invoked") is False,
+                selection.get("worker_invoked") is False,
+                selection.get("dispatch_requested") is False,
+            )
+        ):
+            raise FailClosedRuntimeError(
+                "worker invocation request failed closed: compatibility authority invalid"
+            )
 
 
 def _domain_execution_ready_bridge_index(root: Path, domain_name: str) -> list[dict[str, Any]]:
@@ -809,6 +1187,10 @@ def _request_hash(request: dict[str, Any]) -> str:
             "validation_requirements": request.get("validation_requirements", []),
             "replay_references": request.get("replay_references", {}),
             **({"g31_lineage": request["g31_lineage"]} if request.get("g31_lineage") else {}),
+            **(
+                {"compatibility_lineage": request["compatibility_lineage"]}
+                if request.get("compatibility_lineage") else {}
+            ),
         }
     )
 
