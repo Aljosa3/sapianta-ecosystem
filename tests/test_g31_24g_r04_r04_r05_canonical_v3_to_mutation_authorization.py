@@ -50,7 +50,6 @@ def _transport(
 def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     calls: dict[str, int] = {}
     targets = (
-        (governance, "create_g31_authenticated_replace_request"),
         (governance, "execute_g31_authenticated_replace"),
         (governance, "recover_g31_authenticated_replace"),
         (filesystem_replace_worker, "execute_filesystem_replace_request"),
@@ -125,6 +124,10 @@ def test_exact_approved_uses_one_canonical_authorization_and_actor_replay(
     assert reconstructed["authorization_replay_recorded"] is True
     assert reconstructed["authorization_consumed"] is False
     assert reconstructed["replace_request_created"] is False
+    assert result["replace_request_created"] is True
+    assert result["authenticated_replacement_request"]["authorization_hash"] == (
+        reconstructed["authorization_hash"]
+    )
     assert result["g31_pending_action"] is None
     assert result["repository_mutated"] is False
     assert result["main_repository_mutated"] is False
@@ -286,7 +289,9 @@ def test_shared_entry_and_static_adapter_boundaries() -> None:
     assert "run_human_interface_runtime_entry(" in aicli
     assert "authorize_g31_approved_existing_file_mutation(" not in aicli
     assert "bind_g31_mutation_authorization_actor_and_replay(" not in aicli
-    assert "create_g31_authenticated_replace_request(" not in service
+    assert "create_g31_authenticated_replace_request(" in service
+    assert "create_g31_authenticated_replace_request(" not in aicli
+    assert "record_authenticated_replace_request_v2(" not in aicli
     assert "aigol.cli" not in service
     assert "aigol.cli" not in canonical
     assert "aicli" not in InMemoryAdapter.transport.__code__.co_names

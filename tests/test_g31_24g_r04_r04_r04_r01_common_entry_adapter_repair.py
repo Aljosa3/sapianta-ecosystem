@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import Path
 
 import pytest
@@ -48,6 +49,8 @@ def _pending_state(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
 ) -> tuple[Path, dict]:
     root = tmp_path / name
+    source = "before\n"
+    replacement = "after\n"
     grounding = {
         "grounding_evidence_hash": "grounding-hash",
         "workspace_root": "/isolated/repository",
@@ -63,8 +66,8 @@ def _pending_state(
         "prerequisite_hash": "prerequisite-hash",
         "manifest_hash": "manifest-hash",
         "target_path": "aigol/runtime/human_interface.py",
-        "preimage_sha256": "preimage-hash",
-        "postimage_sha256": "postimage-hash",
+        "preimage_sha256": "sha256:" + sha256(source.encode()).hexdigest(),
+        "postimage_sha256": "sha256:" + sha256(replacement.encode()).hexdigest(),
         "source_mode": "0o100644",
         "replacement_mode": "0o100644",
         "content_validation_hash": "content-validation-hash",
@@ -140,7 +143,25 @@ def _pending_state(
     )
     acceptance: dict = {}
     content: dict = {}
-    binding: dict = {}
+    binding: dict = {
+        "implementation_manifest_capture": {
+            "implementation_manifest_artifact": {
+                "artifact_hash": provenance["manifest_hash"],
+                "file_entries": [
+                    {
+                        "operation": "REPLACE_CONTENT",
+                        "target_path": provenance["target_path"],
+                        "preimage_content": source,
+                        "postimage_content": replacement,
+                        "preimage_sha256": provenance["preimage_sha256"],
+                        "postimage_sha256": provenance["postimage_sha256"],
+                        "file_mode": provenance["source_mode"],
+                        "postimage_file_mode": provenance["replacement_mode"],
+                    }
+                ],
+            }
+        }
+    }
     context = decision.prepare_existing_file_mutation_decision_context(
         context_id=f"{name}-DECISION",
         candidate_capture=candidate_capture,
@@ -202,8 +223,21 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
         monkeypatch.setattr(governance, symbol, observed)
     for owner, symbol in (
         (governance, "create_g31_authenticated_replace_request"),
+        (filesystem_replace_worker, "record_authenticated_replace_request_v2"),
+    ):
+        original = getattr(owner, symbol)
+        calls[symbol] = 0
+
+        def observed(*args, _symbol=symbol, _original=original, **kwargs):
+            calls[_symbol] += 1
+            return _original(*args, **kwargs)
+
+        monkeypatch.setattr(owner, symbol, observed)
+    for owner, symbol in (
         (governance, "execute_g31_authenticated_replace"),
         (filesystem_replace_worker, "execute_filesystem_replace_request"),
+        (filesystem_replace_worker, "_execute_authenticated_replace_v2"),
+        (filesystem_replace_worker, "_recover_authenticated_replace_v2"),
     ):
         calls[symbol] = 0
 
@@ -230,15 +264,20 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
     assert result["mutation_authorized"] is approved
     assert result["authorization_actor_bound"] is approved
     assert result["authorization_replay_recorded"] is approved
+    assert result["replace_request_created"] is approved
+    assert result["authorization_consumed"] is False
     assert result["repository_mutated"] is False
     assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
     assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)
+    assert calls["create_g31_authenticated_replace_request"] == int(approved)
+    assert calls["record_authenticated_replace_request_v2"] == int(approved)
     assert all(
         calls[symbol] == 0
         for symbol in (
-            "create_g31_authenticated_replace_request",
             "execute_g31_authenticated_replace",
             "execute_filesystem_replace_request",
+            "_execute_authenticated_replace_v2",
+            "_recover_authenticated_replace_v2",
         )
     )
     assert "aicli" not in InMemoryAdapter.transport.__code__.co_names

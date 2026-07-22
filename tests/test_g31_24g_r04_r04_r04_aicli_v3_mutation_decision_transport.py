@@ -44,6 +44,7 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     observed = (
         "authorize_g31_approved_existing_file_mutation",
         "bind_g31_mutation_authorization_actor_and_replay",
+        "create_g31_authenticated_replace_request",
     )
     for name in observed:
         original = getattr(governance, name)
@@ -55,7 +56,6 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
 
         monkeypatch.setattr(governance, name, observe)
     targets = (
-        (governance, "create_g31_authenticated_replace_request"),
         (governance, "execute_g31_authenticated_replace"),
         (governance, "recover_g31_authenticated_replace"),
         (replace_worker, "execute_filesystem_replace_request"),
@@ -117,7 +117,6 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
         assert runtime[field] is approved
     for field in (
         "authorization_consumed",
-        "replace_request_created",
         "worker_invoked",
         "provider_invoked",
         "command_executed",
@@ -125,6 +124,7 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
         "main_repository_mutated",
     ):
         assert runtime[field] is False
+    assert runtime["replace_request_created"] is approved
     assert runtime["human_mutation_decision_actor"] == ACTOR
     assert runtime["repository_grounding_artifact"] == (
         runtime["codex_worker_activation_binding_reconstruction"]["lineage"]["grounding"]
@@ -139,17 +139,19 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
         assert "Canonical Existing-File Mutation Authorization" in rendered
     assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
     assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)
+    assert calls["create_g31_authenticated_replace_request"] == int(approved)
     assert all(
         count == 0
         for name, count in calls.items()
         if name not in {
             "authorize_g31_approved_existing_file_mutation",
             "bind_g31_mutation_authorization_actor_and_replay",
+            "create_g31_authenticated_replace_request",
         }
     )
     assert len(runner.calls) == 1
     assert (root / "G31_MUTATION_AUTHORIZATION_REPLAY_V1").exists() is approved
-    assert not (root / "G31_EXISTING_FILE_REPLACE_V2").exists()
+    assert (root / "G31_EXISTING_FILE_REPLACE_V2").exists() is approved
     assert subprocess.run(
         ["git", "status", "--short"], cwd=source, check=True, capture_output=True, text=True
     ).stdout == ""

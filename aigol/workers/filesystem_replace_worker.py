@@ -342,10 +342,34 @@ def reconstruct_authenticated_replace_replay_v2(request: dict[str, Any]) -> dict
             raise FailClosedRuntimeError("hardened replace Replay is reordered, duplicated, or branched")
         current = matches[0]; ordered.append(current); remaining.remove(current); previous = current["replay_hash"]
     latest = ordered[-1]["artifact"]
-    return {"request_hash": request["request_hash"], "authorization_id": request["authorization_id"],
+    return {"request_id": request["request_id"], "request_hash": request["request_hash"],
+            "request_replay_reference": str(lifecycle),
+            "authorization_id": request["authorization_id"],
             "event_keys": [item["event_key"] for item in ordered], "latest_event": latest["event_type"],
             "latest_artifact": deepcopy(latest), "replay_artifact_count": len(ordered),
             "replay_hash": replay_hash(ordered), "last_wrapper_hash": ordered[-1]["replay_hash"]}
+def record_authenticated_replace_request_v2(request: dict[str, Any]) -> dict[str, Any]:
+    """Persist and reconstruct only the authenticated request-stage Replay event."""
+    request = validate_authenticated_replace_request_v2(request)
+    lifecycle = Path(request["destinations"]["request"]).parent
+    if lifecycle.exists() and any(lifecycle.iterdir()):
+        raise FailClosedRuntimeError(
+            "authenticated replace request Replay already exists or conflicts"
+        )
+    _persist_v2_event(request, "request", "REQUEST_VALIDATED", {}, None)
+    reconstruction = reconstruct_authenticated_replace_replay_v2(request)
+    if not all((
+        reconstruction.get("request_id") == request["request_id"],
+        reconstruction.get("request_hash") == request["request_hash"],
+        reconstruction.get("authorization_id") == request["authorization_id"],
+        reconstruction.get("event_keys") == ["request"],
+        reconstruction.get("latest_event") == "REQUEST_VALIDATED",
+        reconstruction.get("replay_artifact_count") == 1,
+    )):
+        raise FailClosedRuntimeError(
+            "authenticated replace request Replay reconstruction mismatch"
+        )
+    return reconstruction
 def _execute_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]:
     """Execute one authenticated, consumed, journaled, atomic existing-file replacement."""
     request = validate_authenticated_replace_request_v2(request)

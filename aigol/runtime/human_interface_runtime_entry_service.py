@@ -49,6 +49,7 @@ from aigol.runtime.platform_core_project_services import (
     prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
 )
+from aigol.workers import filesystem_replace_worker
 
 
 CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_SERVICE_VERSION = (
@@ -856,6 +857,10 @@ def _continue_g31_application_transition(
             authorization = state[
                 "mutation_authorization_actor_replay_reconstruction"
             ]
+            request = state["authenticated_replacement_request"]
+            request_replay = state[
+                "authenticated_replacement_request_reconstruction"
+            ]
             presentations.append(
                 "\n".join(
                     (
@@ -867,7 +872,13 @@ def _continue_g31_application_transition(
                         f"Target Path: {authorization['target_path']}",
                         "Authorization Replay Recorded: True",
                         "Authorization Consumed: False",
-                        "Replacement Request Created: False",
+                        "Authenticated Replacement Request",
+                        f"Request ID: {request['request_id']}",
+                        f"Request Hash: {request['request_hash']}",
+                        f"Request Replay Hash: {request_replay['replay_hash']}",
+                        "Replacement Request Created: True",
+                        "Authorization Consumption Reached: False",
+                        "Worker Selection Reached: False",
                         "Repository Mutated: False",
                     )
                 )
@@ -1965,6 +1976,14 @@ def _authorize_g31_mutation_decision(
             **evidence,
         )
     )
+    request = existing_file_governance.create_g31_authenticated_replace_request(
+        actor_replay_capture=actor_replay,
+        authorization_capture=authorization,
+        **evidence,
+    )
+    request_reconstruction = (
+        filesystem_replace_worker.record_authenticated_replace_request_v2(request)
+    )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -1979,8 +1998,20 @@ def _authorize_g31_mutation_decision(
             "mutation_authorization_hash": actor_replay_reconstruction[
                 "authorization_hash"
             ],
-            "runtime_replay_reference": actor_replay_reconstruction[
-                "authorization_replay_reference"
+            "authenticated_replacement_request": request,
+            "authenticated_replacement_request_reconstruction": (
+                request_reconstruction
+            ),
+            "authenticated_replacement_request_id": request["request_id"],
+            "authenticated_replacement_request_hash": request["request_hash"],
+            "authenticated_replacement_request_replay_reference": (
+                request_reconstruction["request_replay_reference"]
+            ),
+            "authenticated_replacement_request_replay_hash": (
+                request_reconstruction["replay_hash"]
+            ),
+            "runtime_replay_reference": request_reconstruction[
+                "request_replay_reference"
             ],
         }
     )
@@ -1997,6 +2028,7 @@ def _authorize_g31_mutation_decision(
         "main_repository_mutated",
     ):
         merged[field] = actor_replay_reconstruction[field]
+    merged["replace_request_created"] = True
     return merged
 
 
