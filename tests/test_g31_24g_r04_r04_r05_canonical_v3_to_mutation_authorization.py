@@ -273,7 +273,7 @@ def test_duplicate_public_transition_fails_before_second_authorization(
     assert replay_files == sorted(
         (root / "G31_MUTATION_AUTHORIZATION_REPLAY_V1").glob("*.json")
     )
-    assert first["authorization_consumed"] is False
+    assert first["authorization_consumed"] is True
 
 
 def test_shared_entry_and_static_adapter_boundaries() -> None:
@@ -292,6 +292,7 @@ def test_shared_entry_and_static_adapter_boundaries() -> None:
     assert "create_g31_authenticated_replace_request(" in service
     assert "create_g31_authenticated_replace_request(" not in aicli
     assert "record_authenticated_replace_request_v2(" not in aicli
+    assert "consume_authenticated_replace_authorization_v2(" not in aicli
     assert "aigol.cli" not in service
     assert "aigol.cli" not in canonical
     assert "aicli" not in InMemoryAdapter.transport.__code__.co_names

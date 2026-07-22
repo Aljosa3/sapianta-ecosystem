@@ -116,7 +116,6 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
     ):
         assert runtime[field] is approved
     for field in (
-        "authorization_consumed",
         "worker_invoked",
         "provider_invoked",
         "command_executed",
@@ -125,6 +124,7 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
     ):
         assert runtime[field] is False
     assert runtime["replace_request_created"] is approved
+    assert runtime["authorization_consumed"] is approved
     assert runtime["human_mutation_decision_actor"] == ACTOR
     assert runtime["repository_grounding_artifact"] == (
         runtime["codex_worker_activation_binding_reconstruction"]["lineage"]["grounding"]

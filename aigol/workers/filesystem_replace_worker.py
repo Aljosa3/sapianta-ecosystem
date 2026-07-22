@@ -322,6 +322,24 @@ def reconstruct_authenticated_replace_replay_v2(request: dict[str, Any]) -> dict
     if lifecycle.exists() and any(item.name not in allowed for item in lifecycle.iterdir()):
         raise FailClosedRuntimeError("hardened replace Replay contains an unexpected artifact")
     wrappers = []
+    artifact_identity = {
+        "artifact_type": "FILESYSTEM_REPLACE_WORKER_EVENT_V2",
+        "runtime_version": HARDENED_REPLACE_VERSION,
+        "request_hash": request["request_hash"],
+        "authorization_id": request["authorization_id"],
+        "authorization_hash": request["authorization_hash"],
+        "authorization_actor": request["canonical_authorization_actor"],
+        "authorization_replay_hash": request["authorization_replay_hash"],
+        "candidate_hash": request["candidate_hash"],
+        "decision_hash": request["mutation_decision_hash"],
+        "repository_identity": request["repository_identity"],
+        "repository_grounding_hash": request["repository_grounding_hash"],
+        "target_path": request["target_path"],
+        "preimage_sha256": request["preimage_sha256"],
+        "postimage_sha256": request["postimage_sha256"],
+        "source_mode": request["source_mode"],
+        "replacement_mode": request["replacement_mode"],
+    }
     for key in V2_EVENT_KEYS:
         path = Path(request["destinations"][key])
         if path.exists():
@@ -329,8 +347,22 @@ def reconstruct_authenticated_replace_replay_v2(request: dict[str, Any]) -> dict
             artifact = wrapper.get("artifact") or {}; artifact_value = deepcopy(artifact)
             artifact_hash = artifact_value.pop("artifact_hash", None)
             if not all((actual == replay_hash(expected), artifact_hash == replay_hash(artifact_value),
-                        wrapper.get("event_key") == key, artifact.get("request_hash") == request["request_hash"])):
+                        wrapper.get("event_key") == key,
+                        all(artifact.get(field) == value for field, value in artifact_identity.items()))):
                 raise FailClosedRuntimeError("hardened replace Replay hash or identity mismatch")
+            if key == "request" and not all((
+                artifact.get("event_type") == "REQUEST_VALIDATED",
+                artifact.get("payload") == {},
+                wrapper.get("previous_replay_hash") is None,
+            )):
+                raise FailClosedRuntimeError("hardened replace request Replay mismatch")
+            if key == "consumption" and not all((
+                artifact.get("event_type") == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+                artifact.get("payload") == {
+                    "consumption_identity": request["authorization_hash"]
+                },
+            )):
+                raise FailClosedRuntimeError("hardened replace consumption Replay mismatch")
             wrappers.append(wrapper)
     if not wrappers:
         raise FailClosedRuntimeError("hardened replace Replay is unavailable")
@@ -370,6 +402,67 @@ def record_authenticated_replace_request_v2(request: dict[str, Any]) -> dict[str
             "authenticated replace request Replay reconstruction mismatch"
         )
     return reconstruction
+
+
+def consume_authenticated_replace_authorization_v2(request: dict[str, Any]) -> dict[str, Any]:
+    """Claim one validated request authorization without reaching execution."""
+    request = validate_authenticated_replace_request_v2(request)
+    request_replay = reconstruct_authenticated_replace_replay_v2(request)
+    request_artifact = request_replay.get("latest_artifact") or {}
+    if not all((
+        request_replay.get("request_id") == request["request_id"],
+        request_replay.get("request_hash") == request["request_hash"],
+        request_replay.get("authorization_id") == request["authorization_id"],
+        request_replay.get("event_keys") == ["request"],
+        request_replay.get("latest_event") == "REQUEST_VALIDATED",
+        request_artifact.get("payload") == {},
+        request_replay.get("replay_artifact_count") == 1,
+    )):
+        raise FailClosedRuntimeError(
+            "authenticated replace consumption requires exact request-only Replay"
+        )
+    try:
+        _persist_v2_event(
+            request, "consumption", "AUTHORIZATION_CONSUMPTION_CLAIMED",
+            {"consumption_identity": request["authorization_hash"]},
+            request_replay["last_wrapper_hash"],
+        )
+    except FileExistsError as exc:
+        raise FailClosedRuntimeError(
+            "authenticated replace authorization was already consumed"
+        ) from exc
+    reconstruction = reconstruct_authenticated_replace_replay_v2(request)
+    consumption = reconstruction.get("latest_artifact") or {}
+    if not all((
+        reconstruction.get("request_id") == request["request_id"],
+        reconstruction.get("request_hash") == request["request_hash"],
+        reconstruction.get("authorization_id") == request["authorization_id"],
+        reconstruction.get("event_keys") == ["request", "consumption"],
+        reconstruction.get("latest_event") == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+        consumption.get("payload") == {
+            "consumption_identity": request["authorization_hash"]
+        },
+        reconstruction.get("replay_artifact_count") == 2,
+    )):
+        raise FailClosedRuntimeError(
+            "authenticated replace authorization consumption Replay mismatch"
+        )
+    return {
+        **reconstruction,
+        "request_stage_replay_hash": request_replay["replay_hash"],
+        "authorization_hash": request["authorization_hash"],
+        "consumption_identity": request["authorization_hash"],
+        "authorization_consumed": True,
+        "worker_selected": False,
+        "worker_dispatched": False,
+        "worker_invoked": False,
+        "provider_invoked": False,
+        "command_executed": False,
+        "repository_mutated": False,
+        "main_repository_mutated": False,
+    }
+
+
 def _execute_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]:
     """Execute one authenticated, consumed, journaled, atomic existing-file replacement."""
     request = validate_authenticated_replace_request_v2(request)

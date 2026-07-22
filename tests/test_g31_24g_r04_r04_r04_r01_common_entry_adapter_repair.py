@@ -265,7 +265,7 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
     assert result["authorization_actor_bound"] is approved
     assert result["authorization_replay_recorded"] is approved
     assert result["replace_request_created"] is approved
-    assert result["authorization_consumed"] is False
+    assert result["authorization_consumed"] is approved
     assert result["repository_mutated"] is False
     assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
     assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)

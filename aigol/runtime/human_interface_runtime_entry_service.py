@@ -861,6 +861,7 @@ def _continue_g31_application_transition(
             request_replay = state[
                 "authenticated_replacement_request_reconstruction"
             ]
+            consumption = state["authorization_consumption_reconstruction"]
             presentations.append(
                 "\n".join(
                     (
@@ -871,13 +872,15 @@ def _continue_g31_application_transition(
                         f"{authorization['canonical_authorization_actor']}",
                         f"Target Path: {authorization['target_path']}",
                         "Authorization Replay Recorded: True",
-                        "Authorization Consumed: False",
+                        "Authorization Consumed: True",
                         "Authenticated Replacement Request",
                         f"Request ID: {request['request_id']}",
                         f"Request Hash: {request['request_hash']}",
                         f"Request Replay Hash: {request_replay['replay_hash']}",
                         "Replacement Request Created: True",
-                        "Authorization Consumption Reached: False",
+                        "Single-Use Consumption Identity: "
+                        f"{consumption['consumption_identity']}",
+                        "Authorization Consumption Reached: True",
                         "Worker Selection Reached: False",
                         "Repository Mutated: False",
                     )
@@ -1984,6 +1987,11 @@ def _authorize_g31_mutation_decision(
     request_reconstruction = (
         filesystem_replace_worker.record_authenticated_replace_request_v2(request)
     )
+    consumption_reconstruction = (
+        filesystem_replace_worker.consume_authenticated_replace_authorization_v2(
+            request
+        )
+    )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2010,7 +2018,17 @@ def _authorize_g31_mutation_decision(
             "authenticated_replacement_request_replay_hash": (
                 request_reconstruction["replay_hash"]
             ),
-            "runtime_replay_reference": request_reconstruction[
+            "authorization_consumption_reconstruction": consumption_reconstruction,
+            "authorization_consumption_identity": consumption_reconstruction[
+                "consumption_identity"
+            ],
+            "authorization_consumption_replay_reference": (
+                consumption_reconstruction["request_replay_reference"]
+            ),
+            "authorization_consumption_replay_hash": consumption_reconstruction[
+                "replay_hash"
+            ],
+            "runtime_replay_reference": consumption_reconstruction[
                 "request_replay_reference"
             ],
         }
@@ -2029,6 +2047,7 @@ def _authorize_g31_mutation_decision(
     ):
         merged[field] = actor_replay_reconstruction[field]
     merged["replace_request_created"] = True
+    merged["authorization_consumed"] = True
     return merged
 
 

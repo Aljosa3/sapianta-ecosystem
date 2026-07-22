@@ -108,7 +108,7 @@ def _contains_key(value: object, names: set[str]) -> bool:
     return False
 
 
-def test_common_entry_records_one_authenticated_request_and_stops_before_consumption(
+def test_common_entry_retains_one_authenticated_request_before_consumption_stage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root, state = _pending_state(tmp_path, monkeypatch, "R06-APPROVED")
@@ -144,7 +144,7 @@ def test_common_entry_records_one_authenticated_request_and_stops_before_consump
     ]
     provenance = candidate["candidate_provenance"]
 
-    assert calls == {"create": 1, "record": 1, "events": ["request"]}
+    assert calls == {"create": 1, "record": 1, "events": ["request", "consumption"]}
     assert request["authorization_id"] == authorization["authorization_id"]
     assert request["authorization_hash"] == authorization["authorization_hash"]
     assert request["authorization_replay_hash"] == authorization[
@@ -174,16 +174,16 @@ def test_common_entry_records_one_authenticated_request_and_stops_before_consump
         "request_hash"
     ]
     assert result["replace_request_created"] is True
-    assert result["authorization_consumed"] is False
+    assert result["authorization_consumed"] is True
     assert result["worker_invoked"] is False
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
     assert result["repository_mutated"] is False
     assert result["main_repository_mutated"] is False
     assert all(count == 0 for count in forbidden.values())
-    assert len(list(Path(reconstruction["request_replay_reference"]).glob("*.json"))) == 1
-    assert not Path(request["destinations"]["consumption"]).exists()
-    assert "Authorization Consumption Reached: False" in "\n".join(
+    assert len(list(Path(reconstruction["request_replay_reference"]).glob("*.json"))) == 2
+    assert Path(request["destinations"]["consumption"]).exists()
+    assert "Authorization Consumption Reached: True" in "\n".join(
         result["g31_canonical_presentations"]
     )
     assert not _contains_key(
@@ -355,7 +355,7 @@ def test_duplicate_and_conflicting_request_replay_fail_closed(
     assert before == sorted(
         Path(result["authenticated_replacement_request_replay_reference"]).glob("*.json")
     )
-    assert not Path(request["destinations"]["consumption"]).exists()
+    assert Path(request["destinations"]["consumption"]).exists()
 
 
 def test_request_replay_tamper_fails_reconstruction(
@@ -373,7 +373,7 @@ def test_request_replay_tamper_fails_reconstruction(
     )
     with pytest.raises(FailClosedRuntimeError):
         worker.reconstruct_authenticated_replace_replay_v2(request)
-    assert not Path(request["destinations"]["consumption"]).exists()
+    assert Path(request["destinations"]["consumption"]).exists()
 
 
 def test_common_entry_and_adapter_import_boundaries() -> None:
@@ -393,6 +393,7 @@ def test_common_entry_and_adapter_import_boundaries() -> None:
     for symbol in (
         "create_g31_authenticated_replace_request(",
         "record_authenticated_replace_request_v2(",
+        "consume_authenticated_replace_authorization_v2(",
         "reconstruct_authenticated_replace_replay_v2(",
         "_execute_authenticated_replace_v2(",
         "_recover_authenticated_replace_v2(",
@@ -400,6 +401,7 @@ def test_common_entry_and_adapter_import_boundaries() -> None:
         assert symbol not in aicli
     assert "create_g31_authenticated_replace_request(" in service
     assert "record_authenticated_replace_request_v2(" in service
+    assert "consume_authenticated_replace_authorization_v2(" in service
     assert "_execute_authenticated_replace_v2(" not in service
     assert "_recover_authenticated_replace_v2(" not in service
     assert "aigol.cli" not in service
