@@ -885,6 +885,7 @@ def _continue_g31_application_transition(
                         "Worker Invocation Request Created: "
                         f"{state['worker_invocation_request_created']}",
                         "Worker Assignment Reached: True",
+                        "Worker Dispatch Reached: True",
                         "Repository Mutated: False",
                     )
                 )
@@ -902,6 +903,11 @@ def _continue_g31_application_transition(
             presentations.append(
                 worker_assignment.render_worker_assignment_summary(
                     state["worker_assignment_capture"]
+                )
+            )
+            presentations.append(
+                worker_dispatch.render_worker_dispatch_summary(
+                    state["worker_dispatch_capture"]
                 )
             )
     else:
@@ -2085,6 +2091,55 @@ def _authorize_g31_mutation_decision(
         raise FailClosedRuntimeError(
             "G31 mutation continuation failed closed: Worker assignment Replay mismatch"
         )
+    assignment_artifact = assignment["worker_assignment_artifact"]
+    dispatch = worker_dispatch.dispatch_assigned_worker(
+        worker_dispatch_id=f"{assignment_artifact['worker_assignment_id']}:DISPATCH",
+        worker_assignment_artifact=assignment_artifact,
+        worker_assignment_replay_reference=assignment[
+            "worker_assignment_replay_reference"
+        ],
+        dispatched_by="PLATFORM_CORE_G31_DISPATCH_BINDING",
+        dispatched_at=created,
+        replay_dir=session_root
+        / f"WORKER-DISPATCH-{assignment_artifact['artifact_hash'][-16:]}",
+    )
+    if dispatch.get("dispatch_status") != worker_dispatch.WORKER_DISPATCHED:
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker dispatch failed"
+        )
+    dispatch_reconstruction = worker_dispatch.reconstruct_worker_dispatch_replay(
+        dispatch["worker_dispatch_replay_reference"]
+    )
+    dispatch_artifact = dispatch["worker_dispatch_artifact"]
+    if not all(
+        (
+            dispatch_reconstruction.get("dispatch_status")
+            == worker_dispatch.WORKER_DISPATCHED,
+            dispatch_reconstruction.get("worker_dispatch_id")
+            == dispatch.get("worker_dispatch_reference"),
+            dispatch_reconstruction.get("worker_assignment_reference")
+            == assignment_artifact.get("worker_assignment_id"),
+            dispatch_artifact.get("worker_assignment_hash")
+            == assignment_artifact.get("artifact_hash"),
+            dispatch_reconstruction.get("worker_id")
+            == selection.get("selected_resource_id"),
+            dispatch_reconstruction.get("chain_id")
+            == invocation_request_artifact.get("chain_id"),
+            dispatch_reconstruction.get("worker_invocation_request_reference")
+            == invocation_request_artifact.get("worker_invocation_request_id"),
+            dispatch_reconstruction.get("worker_assigned") is True,
+            dispatch_reconstruction.get("worker_dispatched") is True,
+            dispatch_reconstruction.get("dispatch_requested") is True,
+            dispatch_reconstruction.get("worker_invoked") is False,
+            dispatch_reconstruction.get("execution_started") is False,
+            dispatch_reconstruction.get("result_created") is False,
+            dispatch_reconstruction.get("governance_mutated") is False,
+            dispatch_reconstruction.get("replay_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker dispatch Replay mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2153,8 +2208,17 @@ def _authorize_g31_mutation_decision(
                 "replay_hash"
             ],
             "assigned_worker_id": assignment["worker_id"],
+            "worker_dispatch_capture": dispatch,
+            "worker_dispatch_reconstruction": dispatch_reconstruction,
+            "worker_dispatch_status": dispatch["dispatch_status"],
+            "worker_dispatch_id": dispatch["worker_dispatch_reference"],
+            "worker_dispatch_replay_reference": dispatch[
+                "worker_dispatch_replay_reference"
+            ],
+            "worker_dispatch_replay_hash": dispatch_reconstruction["replay_hash"],
             "worker_assigned": True,
-            "worker_dispatched": False,
+            "worker_dispatched": True,
+            "dispatch_requested": True,
             "provider_invoked": False,
             "worker_invoked": False,
             "execution_started": False,
@@ -2169,8 +2233,8 @@ def _authorize_g31_mutation_decision(
             "recovery_started": False,
             "governance_mutated": False,
             "replay_mutated": False,
-            "runtime_replay_reference": assignment[
-                "worker_assignment_replay_reference"
+            "runtime_replay_reference": dispatch[
+                "worker_dispatch_replay_reference"
             ],
         }
     )

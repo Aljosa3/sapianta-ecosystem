@@ -92,14 +92,12 @@ def test_exact_r08c_lineage_creates_existing_invocation_request_and_reconstructs
     assert target.read_text(encoding="utf-8") != "replacement bytes\n"
 
 
-def test_common_entry_creates_request_and_stops_before_assignment(
+def test_common_entry_preserves_request_through_dispatch_and_stops_before_invocation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root, state = _pending_state(tmp_path, monkeypatch, "R09B-COMMON")
     calls: dict[str, int] = {}
     forbidden = (
-        (entry.worker_assignment, "assign_worker_from_invocation_request"),
-        (entry.worker_dispatch, "dispatch_assigned_worker"),
         (entry.worker_invocation, "invoke_dispatched_worker"),
         (entry.existing_file_governance, "execute_g31_authenticated_replace"),
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
@@ -131,8 +129,8 @@ def test_common_entry_creates_request_and_stops_before_assignment(
     assert result["authorization_consumption_identity"] == artifact[
         "compatibility_lineage"
     ]["consumption_reconstruction"]["consumption_identity"]
-    assert result["worker_assigned"] is False
-    assert result["worker_dispatched"] is False
+    assert result["worker_assigned"] is True
+    assert result["worker_dispatched"] is True
     assert result["worker_invoked"] is False
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
@@ -140,8 +138,11 @@ def test_common_entry_creates_request_and_stops_before_assignment(
     assert all(count == 0 for count in calls.values())
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Invocation Request Created: True" in rendered
-    assert "Worker Assignment Reached: False" in rendered
+    assert "Worker Assignment Reached: True" in rendered
+    assert "Worker Dispatch Reached: True" in rendered
     assert "No Worker has been assigned, dispatched, invoked, or executed." in rendered
+    assert f"Dispatched Worker: {WORKER_ID}" in rendered
+    assert "No Worker has been invoked, executed, or produced results." in rendered
 
 
 @pytest.mark.parametrize(

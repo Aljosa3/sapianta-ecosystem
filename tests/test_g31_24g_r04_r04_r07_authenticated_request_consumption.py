@@ -87,8 +87,6 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
         (worker, "_open_v2_target"),
         (worker, "_atomic_restore_v2"),
         (entry, "select_authorized_grounded_worker"),
-        (entry.worker_assignment, "assign_worker_from_invocation_request"),
-        (entry.worker_dispatch, "dispatch_assigned_worker"),
         (entry.worker_invocation, "invoke_dispatched_worker"),
     )
     for owner, symbol in targets:
@@ -146,7 +144,8 @@ def test_common_entry_consumes_exact_request_once_and_stops_before_execution(
     assert result["worker_selected"] is True
     assert result["selected_resource_id"] == "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER"
     assert result["worker_selection_status"] == "RESOURCE_SELECTION_SUCCEEDED"
-    assert result.get("worker_dispatched") is not True
+    assert result["worker_assigned"] is True
+    assert result["worker_dispatched"] is True
     assert result["worker_invoked"] is False
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False

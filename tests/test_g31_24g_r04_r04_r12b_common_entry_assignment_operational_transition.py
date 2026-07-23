@@ -28,7 +28,6 @@ def _forbid_later_lifecycle(
 ) -> dict[str, int]:
     calls: dict[str, int] = {}
     targets = (
-        (entry.worker_dispatch, "dispatch_assigned_worker"),
         (entry.worker_invocation, "invoke_dispatched_worker"),
         (entry.governed_execution, "run_governed_worker_execution"),
         (entry.existing_file_governance, "execute_g31_authenticated_replace"),
@@ -125,8 +124,10 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     ]
     assert reconstruction["canonical_chain_id"] == request["chain_id"]
     assert result["worker_assignment_replay_hash"] == reconstruction["replay_hash"]
+    assert result["worker_dispatch_status"] == entry.worker_dispatch.WORKER_DISPATCHED
+    assert result["worker_dispatched"] is True
     assert result["runtime_replay_reference"] == result[
-        "worker_assignment_replay_reference"
+        "worker_dispatch_replay_reference"
     ]
     assert sorted(
         path.name
@@ -138,7 +139,6 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
         "003_assignment_result_recorded.json",
     ]
     for field in (
-        "worker_dispatched",
         "provider_invoked",
         "worker_invoked",
         "execution_started",
@@ -153,8 +153,11 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     assert selection["worker_assigned"] is False
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Assignment Reached: True" in rendered
+    assert "Worker Dispatch Reached: True" in rendered
     assert f"Assigned Worker: {WORKER_ID}" in rendered
     assert "No Worker has been dispatched, invoked, or executed." in rendered
+    assert f"Dispatched Worker: {WORKER_ID}" in rendered
+    assert "No Worker has been invoked, executed, or produced results." in rendered
 
 
 @pytest.mark.parametrize("mode", ("registry", "reconstruction"))
@@ -221,7 +224,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
         assert result["worker_assignment_status"] == entry.worker_assignment.WORKER_ASSIGNED
         assert result["assigned_worker_id"] == WORKER_ID
         assert result["worker_assigned"] is True
-        assert result["worker_dispatched"] is False
+        assert result["worker_dispatched"] is True
         assert result["worker_invoked"] is False
         assert result["provider_invoked"] is False
         assert result["repository_mutated"] is False
@@ -233,7 +236,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
     assert "run_human_interface_runtime_entry(" in cli_source
 
 
-def test_common_entry_binding_is_worker_neutral_and_stops_before_dispatch() -> None:
+def test_common_entry_binding_is_worker_neutral_and_stops_before_invocation() -> None:
     source = inspect.getsource(entry._authorize_g31_mutation_decision)
 
     assert "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER" not in source
@@ -242,7 +245,8 @@ def test_common_entry_binding_is_worker_neutral_and_stops_before_dispatch() -> N
     assert source.count("default_worker_registry_for_request(") == 1
     assert source.count("assign_worker_from_invocation_request(") == 1
     assert source.count("reconstruct_worker_assignment_runtime_replay(") == 1
-    assert "dispatch_assigned_worker(" not in source
+    assert source.count("dispatch_assigned_worker(") == 1
+    assert source.count("reconstruct_worker_dispatch_replay(") == 1
     assert "invoke_dispatched_worker(" not in source
     assert "execute_governed_worker(" not in source
     assert "execute_g31_authenticated_replace(" not in source
