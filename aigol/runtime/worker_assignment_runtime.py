@@ -20,6 +20,7 @@ from aigol.runtime.external_resource_registry_runtime import (
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 from aigol.runtime.worker_invocation_request_runtime import (
+    AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1,
     WORKER_INVOCATION_REQUEST_ARTIFACT_V1,
     WORKER_INVOCATION_REQUEST_CREATED,
     reconstruct_worker_invocation_request_replay,
@@ -336,8 +337,19 @@ def default_worker_registry_for_request(
 
     _validate_request_artifact(request)
     g31 = request.get("g31_lineage")
-    selection = g31.get("resource_selection_artifact") if isinstance(g31, dict) else None
-    if selection is not None:
+    compatibility = request.get("compatibility_lineage")
+    selection_metadata: dict[str, Any] = {}
+    if compatibility is not None:
+        selection, replay_reference, selection_metadata = (
+            _certified_compatibility_worker_projection(request, compatibility)
+        )
+        worker_id = selection["selected_resource_id"]
+        worker_version = selection["selected_resource_version"]
+        declared_capabilities = [selection["required_capability"], request["worker_role"]]
+        capability_id = selection["required_capability"]
+    else:
+        selection = g31.get("resource_selection_artifact") if isinstance(g31, dict) else None
+    if compatibility is None and selection is not None:
         selection = deepcopy(selection)
         _verify_artifact_hash(selection, "Worker selection artifact")
         if not all((
@@ -356,7 +368,12 @@ def default_worker_registry_for_request(
         declared_capabilities = [selection["required_capability"], request["worker_role"]]
         capability_id = selection["required_capability"]
         replay_reference = g31["resource_selection_replay_reference"]
-    else:
+        selection_metadata = {
+            "selected_resource_category": selection["selected_resource_category"],
+            "selected_role_type": selection["selected_role_type"],
+            "selected_authority_profile": selection["selected_authority_profile"],
+        }
+    elif compatibility is None:
         worker_id = f"AIGOL-WORKER-{_worker_id_fragment(request['target_worker_family'])}"
         worker_version = "1.0.0"
         declared_capabilities = [request["worker_role"]]
@@ -380,7 +397,7 @@ def default_worker_registry_for_request(
         "forbidden_operations": deepcopy(request["forbidden_operations"]),
         "created_at": _require_string(created_at, "created_at"),
         "replay_reference": replay_reference,
-        **({"selected_resource_category": selection["selected_resource_category"], "selected_role_type": selection["selected_role_type"], "selected_authority_profile": selection["selected_authority_profile"]} if selection else {}),
+        **selection_metadata,
         "replay_visible": True,
         "governance_authority": False,
         "approval_authority": False,
@@ -395,6 +412,92 @@ def default_worker_registry_for_request(
     }
     worker["artifact_hash"] = replay_hash(worker)
     return [worker]
+
+
+def _certified_compatibility_worker_projection(
+    request: dict[str, Any],
+    compatibility: Any,
+) -> tuple[dict[str, Any], str, dict[str, Any]]:
+    if request.get("g31_lineage") is not None or not isinstance(compatibility, dict):
+        raise FailClosedRuntimeError(
+            "worker assignment failed closed: certified Worker lineage is ambiguous"
+        )
+    capture = compatibility.get("resource_selection_capture")
+    selection = capture.get("resource_selection_artifact") if isinstance(capture, dict) else None
+    context = (
+        capture.get("consumed_replacement_selection_context")
+        if isinstance(capture, dict)
+        else None
+    )
+    source = compatibility.get("authenticated_request")
+    if not all(
+        (
+            compatibility.get("lineage_type")
+            == AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1,
+            isinstance(selection, dict),
+            isinstance(context, dict),
+            isinstance(source, dict),
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker assignment failed closed: certified Worker lineage is invalid"
+        )
+    selection = deepcopy(selection)
+    _verify_artifact_hash(selection, "Worker selection artifact")
+    context_hash = capture.get("consumed_replacement_selection_context_hash")
+    replay_reference = capture.get("resource_selection_replay_reference")
+    certification_hash = compatibility.get("worker_selection_certification_hash")
+    if not all(
+        (
+            capture.get("selection_status") == "RESOURCE_SELECTION_SUCCEEDED",
+            selection.get("selection_status") == "RESOURCE_SELECTION_SUCCEEDED",
+            selection.get("selected_resource_id") == request.get("target_worker_family"),
+            selection.get("selected_resource_id") == context.get("worker_id"),
+            selection.get("selected_resource_version") == context.get("worker_version"),
+            selection.get("selected_resource_category") == "WORKER",
+            selection.get("selected_role_type") == request.get("worker_role"),
+            selection.get("selected_role_type") == context.get("role_type"),
+            selection.get("required_capability") == source.get("worker_operation"),
+            selection.get("required_capability") == context.get("operation"),
+            selection.get("selected_authority_profile")
+            == context.get("authority_profile"),
+            selection.get("domain_id") == request.get("target_domain"),
+            selection.get("domain_id") == context.get("domain_id"),
+            selection.get("context_reference") == context.get("context_identity"),
+            selection.get("context_hash") == context_hash,
+            context_hash == replay_hash(context),
+            selection.get("registry_hash") == context.get("certified_registry_hash"),
+            certification_hash == context.get("certification_report_hash"),
+            isinstance(replay_reference, str) and bool(replay_reference.strip()),
+            selection.get("worker_authorization_required") is True,
+            selection.get("provider_invoked") is False,
+            selection.get("worker_invoked") is False,
+            selection.get("dispatch_requested") is False,
+            capture.get("worker_assigned") is False,
+            capture.get("worker_dispatched") is False,
+            capture.get("execution_requested") is False,
+            capture.get("command_executed") is False,
+            capture.get("repository_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker assignment failed closed: certified Worker selection mismatch"
+        )
+    return (
+        selection,
+        replay_reference,
+        {
+            "selected_resource_category": selection["selected_resource_category"],
+            "selected_role_type": selection["selected_role_type"],
+            "selected_authority_profile": selection["selected_authority_profile"],
+            "selected_domain_id": selection["domain_id"],
+            "selection_artifact_hash": selection["artifact_hash"],
+            "selection_context_reference": selection["context_reference"],
+            "selection_context_hash": selection["context_hash"],
+            "selection_registry_hash": selection["registry_hash"],
+            "worker_selection_certification_hash": certification_hash,
+        },
+    )
 
 
 def _worker_artifact_from_err_selection(
