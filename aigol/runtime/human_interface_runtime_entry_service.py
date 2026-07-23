@@ -884,7 +884,7 @@ def _continue_g31_application_transition(
                         "Worker Selection Reached: True",
                         "Worker Invocation Request Created: "
                         f"{state['worker_invocation_request_created']}",
-                        "Worker Assignment Reached: False",
+                        "Worker Assignment Reached: True",
                         "Repository Mutated: False",
                     )
                 )
@@ -897,6 +897,11 @@ def _continue_g31_application_transition(
             presentations.append(
                 worker_request.render_worker_invocation_request_summary(
                     state["worker_invocation_request_capture"]
+                )
+            )
+            presentations.append(
+                worker_assignment.render_worker_assignment_summary(
+                    state["worker_assignment_capture"]
                 )
             )
     else:
@@ -2030,6 +2035,56 @@ def _authorize_g31_mutation_decision(
             / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}",
         )
     )
+    invocation_request_artifact = invocation_request[
+        "worker_invocation_request_artifact"
+    ]
+    assignment = worker_assignment.assign_worker_from_invocation_request(
+        worker_assignment_id=f"{selection_artifact['selection_id']}:ASSIGNMENT",
+        worker_invocation_request_artifact=invocation_request_artifact,
+        worker_invocation_request_replay_reference=invocation_request[
+            "worker_invocation_request_replay_reference"
+        ],
+        worker_registry_artifacts=worker_assignment.default_worker_registry_for_request(
+            invocation_request_artifact,
+            created_at=created,
+        ),
+        assigned_by="PLATFORM_CORE_G31_ASSIGNMENT_BINDING",
+        assigned_at=created,
+        replay_dir=session_root
+        / f"WORKER-ASSIGNMENT-{invocation_request_artifact['artifact_hash'][-16:]}",
+    )
+    if assignment.get("assignment_status") != worker_assignment.WORKER_ASSIGNED:
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker assignment failed"
+        )
+    assignment_reconstruction = (
+        worker_assignment.reconstruct_worker_assignment_runtime_replay(
+            assignment["worker_assignment_replay_reference"]
+        )
+    )
+    if not all(
+        (
+            assignment_reconstruction.get("assignment_status")
+            == worker_assignment.WORKER_ASSIGNED,
+            assignment_reconstruction.get("worker_assignment_id")
+            == assignment.get("worker_assignment_reference"),
+            assignment_reconstruction.get("worker_id")
+            == selection.get("selected_resource_id"),
+            assignment_reconstruction.get("canonical_chain_id")
+            == invocation_request_artifact.get("chain_id"),
+            assignment_reconstruction.get("worker_invocation_request_reference")
+            == invocation_request_artifact.get("worker_invocation_request_id"),
+            assignment_reconstruction.get("worker_assigned") is True,
+            assignment_reconstruction.get("worker_dispatched") is False,
+            assignment_reconstruction.get("worker_invoked") is False,
+            assignment_reconstruction.get("execution_started") is False,
+            assignment_reconstruction.get("governance_mutated") is False,
+            assignment_reconstruction.get("replay_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker assignment Replay mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2087,10 +2142,35 @@ def _authorize_g31_mutation_decision(
             "worker_invocation_request_created": invocation_request[
                 "request_status"
             ] == worker_request.WORKER_INVOCATION_REQUEST_CREATED,
-            "worker_assigned": False,
+            "worker_assignment_capture": assignment,
+            "worker_assignment_reconstruction": assignment_reconstruction,
+            "worker_assignment_status": assignment["assignment_status"],
+            "worker_assignment_id": assignment["worker_assignment_reference"],
+            "worker_assignment_replay_reference": assignment[
+                "worker_assignment_replay_reference"
+            ],
+            "worker_assignment_replay_hash": assignment_reconstruction[
+                "replay_hash"
+            ],
+            "assigned_worker_id": assignment["worker_id"],
+            "worker_assigned": True,
             "worker_dispatched": False,
-            "runtime_replay_reference": invocation_request[
-                "worker_invocation_request_replay_reference"
+            "provider_invoked": False,
+            "worker_invoked": False,
+            "execution_started": False,
+            "execution_requested": False,
+            "result_created": False,
+            "command_executed": False,
+            "target_opened": False,
+            "repository_mutated": False,
+            "main_repository_mutated": False,
+            "restoration_started": False,
+            "rollback_started": False,
+            "recovery_started": False,
+            "governance_mutated": False,
+            "replay_mutated": False,
+            "runtime_replay_reference": assignment[
+                "worker_assignment_replay_reference"
             ],
         }
     )
