@@ -984,6 +984,10 @@ def _request_hash(request: dict[str, Any]) -> str:
             "validation_requirements": request.get("validation_requirements", []),
             "replay_references": request.get("replay_references", {}),
             **({"g31_lineage": request["g31_lineage"]} if request.get("g31_lineage") else {}),
+            **(
+                {"compatibility_lineage": request["compatibility_lineage"]}
+                if request.get("compatibility_lineage") else {}
+            ),
         }
     )
 
