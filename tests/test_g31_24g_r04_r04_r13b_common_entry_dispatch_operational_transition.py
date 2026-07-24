@@ -31,8 +31,6 @@ def _forbid_post_dispatch_lifecycle(
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
         (entry.filesystem_replace_worker, "_execute_authenticated_replace_v2"),
         (entry.filesystem_replace_worker, "_recover_authenticated_replace_v2"),
-        (entry.filesystem_replace_worker, "_open_v2_target"),
-        (entry.filesystem_replace_worker, "_atomic_restore_v2"),
     )
     for owner, symbol in targets:
         calls[symbol] = 0
@@ -89,7 +87,7 @@ def test_common_entry_dispatches_exact_assignment_and_reconstructs_replay(
     assert result["execution_started"] is True
     assert result["execution_requested"] is True
     assert result["result_created"] is False
-    assert result["repository_mutated"] is False
+    assert result["repository_mutated"] is True
     assert dispatch_capture["worker_id"] == WORKER_ID
     assert dispatch_artifact["worker_assignment_reference"] == assignment_artifact[
         "worker_assignment_id"
@@ -190,7 +188,7 @@ def test_aicli_receives_common_entry_dispatch_without_dispatch_authority(
         action=decision.MUTATION_APPROVED,
         session=cli_root.name,
         root=cli_root.parent,
-        workspace_path="/isolated/repository",
+        workspace_path=cli_state["repository_grounding_artifact"]["workspace_root"],
         created=CREATED,
         worker_process_runner=None,
     )
@@ -202,7 +200,7 @@ def test_aicli_receives_common_entry_dispatch_without_dispatch_authority(
         assert result["worker_dispatched"] is True
         assert result["worker_invoked"] is True
         assert result["provider_invoked"] is False
-        assert result["repository_mutated"] is False
+        assert result["repository_mutated"] is True
         assert dispatch["worker_id"] == WORKER_ID
     assert memory["g31_application_interface_transport"] == "in_memory_test_adapter"
     assert cli["g31_application_interface_transport"] == "aicli"

@@ -890,7 +890,8 @@ def _continue_g31_application_transition(
                         "Worker Invocation Reached: True",
                         "Worker Execution Handoff Reached: True",
                         f"Execution Status: {state['worker_execution_status']}",
-                        "Repository Mutated: False",
+                        "Filesystem Replace Worker Executed: True",
+                        "Repository Mutated: True",
                     )
                 )
             )
@@ -928,11 +929,13 @@ def _continue_g31_application_transition(
                         "Execution Replay Reference: "
                         f"{state['worker_execution_replay_reference']}",
                         "Execution start evidence has been recorded.",
-                        "No Worker implementation has executed.",
+                        "The certified Filesystem Replace Worker has executed.",
+                        "Authorization consumption was not repeated.",
+                        "Worker Replay continued from the certified consumption event.",
                         "No Provider has been invoked.",
                         "No command has executed.",
                         "No Worker result has been captured.",
-                        "No repository has been modified.",
+                        "The authenticated repository target has been modified.",
                     )
                 )
             )
@@ -2331,6 +2334,63 @@ def _authorize_g31_mutation_decision(
         raise FailClosedRuntimeError(
             "G31 mutation continuation failed closed: Worker execution Replay mismatch"
         )
+    filesystem_execution = (
+        filesystem_replace_worker.execute_consumed_authenticated_replace_v2(
+            authenticated_request=request,
+            consumption_reconstruction=consumption_reconstruction,
+            worker_invocation_request_artifact=invocation_request_artifact,
+            worker_assignment_artifact=assignment_artifact,
+            execution_artifact=execution_artifact,
+            execution_reconstruction=execution_reconstruction,
+        )
+    )
+    filesystem_reconstruction = (
+        filesystem_replace_worker.reconstruct_authenticated_replace_replay_v2(
+            request
+        )
+    )
+    if not all(
+        (
+            filesystem_execution.get("execution_status") == "COMPLETED",
+            filesystem_execution.get("request_id") == request.get("request_id"),
+            filesystem_execution.get("request_hash") == request.get("request_hash"),
+            filesystem_execution.get("authorization_id")
+            == request.get("authorization_id"),
+            filesystem_execution.get("authorization_hash")
+            == request.get("authorization_hash"),
+            filesystem_execution.get("authorization_consumed") is True,
+            filesystem_execution.get("worker_invoked") is True,
+            filesystem_execution.get("provider_invoked") is False,
+            filesystem_execution.get("command_executed") is False,
+            filesystem_execution.get("repository_mutated") is True,
+            filesystem_execution.get("main_repository_mutated") is True,
+            filesystem_execution.get("restoration_performed") is False,
+            filesystem_execution.get("recovery_required") is False,
+            filesystem_execution.get("mutation_terminated") is False,
+            filesystem_reconstruction.get("request_id") == request.get("request_id"),
+            filesystem_reconstruction.get("request_hash")
+            == request.get("request_hash"),
+            filesystem_reconstruction.get("authorization_id")
+            == request.get("authorization_id"),
+            filesystem_reconstruction.get("event_keys")
+            == [
+                "request",
+                "consumption",
+                "journal",
+                "started",
+                "atomic",
+                "result",
+                "completion",
+            ],
+            filesystem_reconstruction.get("latest_event") == "MUTATION_COMPLETED",
+            filesystem_reconstruction.get("replay_artifact_count") == 7,
+            filesystem_execution.get("replay_hash")
+            == filesystem_reconstruction.get("replay_hash"),
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker failed"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2425,6 +2485,17 @@ def _authorize_g31_mutation_decision(
             "worker_execution_replay_hash": execution_reconstruction[
                 "replay_hash"
             ],
+            "filesystem_replace_worker_capture": filesystem_execution,
+            "filesystem_replace_worker_reconstruction": filesystem_reconstruction,
+            "filesystem_replace_worker_status": filesystem_execution[
+                "execution_status"
+            ],
+            "filesystem_replace_worker_replay_reference": (
+                filesystem_reconstruction["request_replay_reference"]
+            ),
+            "filesystem_replace_worker_replay_hash": filesystem_reconstruction[
+                "replay_hash"
+            ],
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
@@ -2432,12 +2503,12 @@ def _authorize_g31_mutation_decision(
             "worker_invoked": True,
             "execution_started": True,
             "execution_requested": True,
-            "worker_execution_performed": False,
+            "worker_execution_performed": True,
             "result_created": False,
             "command_executed": False,
-            "target_opened": False,
-            "repository_mutated": False,
-            "main_repository_mutated": False,
+            "target_opened": True,
+            "repository_mutated": True,
+            "main_repository_mutated": True,
             "restoration_started": False,
             "rollback_started": False,
             "recovery_started": False,
@@ -2460,6 +2531,10 @@ def _authorize_g31_mutation_decision(
         merged[field] = actor_replay_reconstruction[field]
     merged["replace_request_created"] = True
     merged["authorization_consumed"] = True
+    merged["repository_mutated"] = filesystem_execution["repository_mutated"]
+    merged["main_repository_mutated"] = filesystem_execution[
+        "main_repository_mutated"
+    ]
     return merged
 
 

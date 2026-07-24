@@ -73,7 +73,7 @@ def _transport(root: Path, state: dict) -> dict:
         human_requests=[],
         created_at=CREATED,
         runtime_root=root.parent,
-        workspace="/isolated/repository",
+        workspace=state["repository_grounding_artifact"]["workspace_root"],
         governed_runtime_runner=lambda *_args, **_kwargs: {},
         g31_application_state=state,
         g31_human_action=decision.MUTATION_APPROVED,
@@ -90,8 +90,6 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
         (worker, "execute_filesystem_replace_request"),
         (worker, "_execute_authenticated_replace_v2"),
         (worker, "_recover_authenticated_replace_v2"),
-        (worker, "_open_v2_target"),
-        (worker, "_atomic_restore_v2"),
     )
     for owner, symbol in targets:
         calls[symbol] = 0
@@ -146,7 +144,13 @@ def test_common_entry_selects_exact_consumed_worker_and_stops(
         assert capture[field] is False
     assert all(value == 0 for value in forbidden.values())
     assert worker.reconstruct_authenticated_replace_replay_v2(request)["event_keys"] == [
-        "request", "consumption"
+        "request",
+        "consumption",
+        "journal",
+        "started",
+        "atomic",
+        "result",
+        "completion",
     ]
     assert capture["certified_selection_reconstruction"]["replay_artifact_count"] == 2
     rendered = "\n".join(result["g31_canonical_presentations"])
@@ -167,7 +171,7 @@ def test_aicli_and_in_memory_adapters_receive_same_canonical_selection(
         action=decision.MUTATION_APPROVED,
         session=cli_root.name,
         root=cli_root.parent,
-        workspace_path="/isolated/repository",
+        workspace_path=cli_state["repository_grounding_artifact"]["workspace_root"],
         created=CREATED,
         worker_process_runner=None,
     )

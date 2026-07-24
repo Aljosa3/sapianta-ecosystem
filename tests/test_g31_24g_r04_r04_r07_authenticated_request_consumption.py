@@ -35,7 +35,7 @@ def _transport(root: Path, state: dict, value: str) -> dict:
         human_requests=[],
         created_at=CREATED,
         runtime_root=root.parent,
-        workspace="/isolated/repository",
+        workspace=state["repository_grounding_artifact"]["workspace_root"],
         governed_runtime_runner=lambda *_args, **_kwargs: {},
         g31_application_state=state,
         g31_human_action=value,
@@ -84,8 +84,6 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
         (worker, "execute_filesystem_replace_request"),
         (worker, "_execute_authenticated_replace_v2"),
         (worker, "_recover_authenticated_replace_v2"),
-        (worker, "_open_v2_target"),
-        (worker, "_atomic_restore_v2"),
         (entry, "select_authorized_grounded_worker"),
     )
     for owner, symbol in targets:
@@ -126,7 +124,18 @@ def test_common_entry_consumes_exact_request_once_and_stops_before_execution(
     request_stage = result["authenticated_replacement_request_reconstruction"]
     consumption = result["authorization_consumption_reconstruction"]
 
-    assert calls == {"consume": 1, "events": ["request", "consumption"]}
+    assert calls == {
+        "consume": 1,
+        "events": [
+            "request",
+            "consumption",
+            "journal",
+            "started",
+            "atomic",
+            "result",
+            "completion",
+        ],
+    }
     assert request_stage["event_keys"] == ["request"]
     assert consumption["event_keys"] == ["request", "consumption"]
     assert consumption["latest_event"] == "AUTHORIZATION_CONSUMPTION_CLAIMED"
@@ -148,13 +157,21 @@ def test_common_entry_consumes_exact_request_once_and_stops_before_execution(
     assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
-    assert result["repository_mutated"] is False
-    assert result["main_repository_mutated"] is False
+    assert result["repository_mutated"] is True
+    assert result["main_repository_mutated"] is True
     assert all(count == 0 for count in forbidden.values())
     assert sorted(
         path.name
         for path in Path(consumption["request_replay_reference"]).glob("*.json")
-    ) == ["000_request.json", "001_consumption.json"]
+    ) == [
+        "000_request.json",
+        "001_consumption.json",
+        "002_journal.json",
+        "003_started.json",
+        "004_atomic.json",
+        "005_result.json",
+        "008_completion.json",
+    ]
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Authorization Consumed: True" in rendered
     assert "Authorization Consumption Reached: True" in rendered

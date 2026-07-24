@@ -469,16 +469,68 @@ def _execute_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]
     if Path(request["destinations"]["consumption"]).exists():
         raise FailClosedRuntimeError("hardened replace authorization was already consumed")
     context = _open_v2_target(request, expected="preimage", require_clean=True)
-    previous = None; consumed = replaced = restored = False; temporary_name = Path(request["destinations"]["temporary_file"]).name
+    previous = None
     try:
         previous = _persist_v2_event(request, "request", "REQUEST_VALIDATED", {}, previous)
         previous = _persist_v2_event(request, "consumption", "AUTHORIZATION_CONSUMPTION_CLAIMED",
                                      {"consumption_identity": request["authorization_hash"]}, previous)
-        consumed = True
+        return _execute_authenticated_replace_after_consumption_v2(
+            request=request,
+            context=context,
+            previous=previous,
+            terminate_on_journal_failure=True,
+        )
+    except Exception:
+        _close_v2_context(context)
+        raise
+
+
+def execute_consumed_authenticated_replace_v2(
+    *,
+    authenticated_request: dict[str, Any],
+    consumption_reconstruction: dict[str, Any],
+    worker_invocation_request_artifact: dict[str, Any],
+    worker_assignment_artifact: dict[str, Any],
+    execution_artifact: dict[str, Any],
+    execution_reconstruction: dict[str, Any],
+) -> dict[str, Any]:
+    """Continue the existing Worker from one exact consumed G31 authorization."""
+
+    request = validate_authenticated_replace_request_v2(authenticated_request)
+    consumed = _validate_consumed_execution_continuity_v2(
+        request=request,
+        consumption_reconstruction=consumption_reconstruction,
+        worker_invocation_request_artifact=worker_invocation_request_artifact,
+        worker_assignment_artifact=worker_assignment_artifact,
+        execution_artifact=execution_artifact,
+        execution_reconstruction=execution_reconstruction,
+    )
+    context = _open_v2_target(request, expected="preimage", require_clean=True)
+    return _execute_authenticated_replace_after_consumption_v2(
+        request=request,
+        context=context,
+        previous=consumed["last_wrapper_hash"],
+        terminate_on_journal_failure=False,
+    )
+
+
+def _execute_authenticated_replace_after_consumption_v2(
+    *,
+    request: dict[str, Any],
+    context: dict[str, Any],
+    previous: str,
+    terminate_on_journal_failure: bool,
+) -> dict[str, Any]:
+    """Run the single existing atomic replacement body after consumption."""
+
+    replaced = restored = journaled = False
+    temporary_name = Path(request["destinations"]["temporary_file"]).name
+    try:
         journal = {"original_bytes_b64": request["preimage_bytes_b64"], "original_mode": request["source_mode"],
                    "device": context["stat"].st_dev, "inode": context["stat"].st_ino,
                    "link_count": context["stat"].st_nlink, "preimage_sha256": request["preimage_sha256"]}
         previous = _persist_v2_event(request, "journal", "PRE_WRITE_JOURNAL_PERSISTED", journal, previous)
+        journaled = True
         previous = _persist_v2_event(request, "started", "REPLACEMENT_STARTED", {}, previous)
         _write_v2_temporary(context, temporary_name, b64decode(request["replacement_bytes_b64"]),
                             _mode(request["replacement_mode"]), restoration=False)
@@ -500,12 +552,12 @@ def _execute_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]
     except Exception as exc:
         _unlink_v2_if_present(context, temporary_name)
         reason = _failure_reason(exc)
-        if consumed and replaced:
+        if not journaled and not terminate_on_journal_failure:
+            raise FailClosedRuntimeError(reason) from exc
+        if replaced:
             restored = _atomic_restore_v2(context, request, journal)
             previous = _safe_v2_event(request, "rollback", "ATOMIC_RESTORATION_COMPLETED" if restored else "ATOMIC_RESTORATION_FAILED",
                                       {"restoration_performed": restored}, previous)
-        if not consumed:
-            raise FailClosedRuntimeError(reason) from exc
         terminal = {"execution_status": "TERMINATED", "authorization_consumed": True,
                     "repository_mutated": bool(replaced and not restored),
                     "main_repository_mutated": bool(replaced and not restored),
@@ -515,6 +567,221 @@ def _execute_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]
         return _v2_capture(request, terminal)
     finally:
         _close_v2_context(context)
+
+
+def _validate_consumed_execution_continuity_v2(
+    *,
+    request: dict[str, Any],
+    consumption_reconstruction: dict[str, Any],
+    worker_invocation_request_artifact: dict[str, Any],
+    worker_assignment_artifact: dict[str, Any],
+    execution_artifact: dict[str, Any],
+    execution_reconstruction: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate the immutable G31 consumption and start-only execution boundary."""
+
+    for artifact, label in (
+        (worker_invocation_request_artifact, "Worker invocation request artifact"),
+        (worker_assignment_artifact, "Worker assignment artifact"),
+        (execution_artifact, "Execution artifact"),
+    ):
+        _verify_artifact_hash(artifact, label)
+    if not isinstance(consumption_reconstruction, dict) or not isinstance(
+        execution_reconstruction, dict
+    ):
+        raise FailClosedRuntimeError(
+            "consumed filesystem replace continuation evidence is incomplete"
+        )
+
+    reconstructed = reconstruct_authenticated_replace_replay_v2(request)
+    compatibility = worker_invocation_request_artifact.get(
+        "compatibility_lineage"
+    )
+    source = (
+        compatibility.get("authenticated_request")
+        if isinstance(compatibility, dict)
+        else None
+    )
+    compatible_consumption = (
+        compatibility.get("consumption_reconstruction")
+        if isinstance(compatibility, dict)
+        else None
+    )
+    selection_capture = (
+        compatibility.get("resource_selection_capture")
+        if isinstance(compatibility, dict)
+        else None
+    )
+    selection = (
+        selection_capture.get("resource_selection_artifact")
+        if isinstance(selection_capture, dict)
+        else None
+    )
+    context = (
+        selection_capture.get("consumed_replacement_selection_context")
+        if isinstance(selection_capture, dict)
+        else None
+    )
+    execution_context = execution_artifact.get("execution_context")
+    expected_consumption = {
+        "request_id": request["request_id"],
+        "request_hash": request["request_hash"],
+        "authorization_id": request["authorization_id"],
+        "authorization_hash": request["authorization_hash"],
+        "consumption_identity": request["authorization_hash"],
+        "request_replay_reference": reconstructed["request_replay_reference"],
+        "replay_hash": reconstructed["replay_hash"],
+        "last_wrapper_hash": reconstructed["last_wrapper_hash"],
+    }
+    if not all(
+        (
+            reconstructed.get("event_keys") == ["request", "consumption"],
+            reconstructed.get("latest_event")
+            == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+            reconstructed.get("replay_artifact_count") == 2,
+            all(
+                consumption_reconstruction.get(field) == value
+                for field, value in expected_consumption.items()
+            ),
+            consumption_reconstruction.get("authorization_consumed") is True,
+            consumption_reconstruction.get("worker_selected") is False,
+            consumption_reconstruction.get("worker_dispatched") is False,
+            consumption_reconstruction.get("worker_invoked") is False,
+            consumption_reconstruction.get("provider_invoked") is False,
+            consumption_reconstruction.get("command_executed") is False,
+            consumption_reconstruction.get("repository_mutated") is False,
+            source == request,
+            compatible_consumption == consumption_reconstruction,
+            isinstance(selection, dict),
+            isinstance(context, dict),
+            selection.get("selected_resource_id") == FILESYSTEM_REPLACE_WORKER_ID,
+            selection.get("required_capability")
+            == OPERATION_REPLACE_EXISTING_TEXT_FILE,
+            selection.get("selected_authority_profile")
+            == "WORKER_AUTHORIZED_TASK_ONLY",
+            selection.get("provider_invoked") is False,
+            selection.get("worker_invoked") is False,
+            context.get("authenticated_request_identity") == request["request_id"],
+            context.get("authenticated_request_hash") == request["request_hash"],
+            context.get("authorization_identity") == request["authorization_id"],
+            context.get("authorization_hash") == request["authorization_hash"],
+            context.get("consumption_identity") == request["authorization_hash"],
+            context.get("consumption_replay_hash") == reconstructed["replay_hash"],
+            worker_invocation_request_artifact.get("artifact_type")
+            == "WORKER_INVOCATION_REQUEST_ARTIFACT_V1",
+            worker_invocation_request_artifact.get("request_status")
+            == "WORKER_INVOCATION_REQUEST_CREATED",
+            worker_invocation_request_artifact.get("authorization_reference")
+            == request["authorization_id"],
+            worker_invocation_request_artifact.get("authorization_hash")
+            == request["authorization_hash"],
+            worker_invocation_request_artifact.get("execution_packet_reference")
+            == request["request_id"],
+            worker_invocation_request_artifact.get("execution_packet_hash")
+            == request["request_hash"],
+            worker_invocation_request_artifact.get("target_worker_family")
+            == FILESYSTEM_REPLACE_WORKER_ID,
+            worker_invocation_request_artifact.get("chain_id")
+            == selection_capture.get(
+                "consumed_replacement_selection_context_hash"
+            ),
+            worker_invocation_request_artifact.get("worker_assigned") is False,
+            worker_invocation_request_artifact.get("worker_dispatched") is False,
+            worker_invocation_request_artifact.get("worker_invoked") is False,
+            worker_invocation_request_artifact.get("execution_started") is False,
+            worker_invocation_request_artifact.get("result_created") is False,
+            worker_invocation_request_artifact.get("governance_mutated") is False,
+            worker_invocation_request_artifact.get("replay_mutated") is False,
+            worker_assignment_artifact.get("artifact_type")
+            == "WORKER_ASSIGNMENT_ARTIFACT_V1",
+            worker_assignment_artifact.get("assignment_status")
+            == "WORKER_ASSIGNED",
+            worker_assignment_artifact.get("worker_id")
+            == FILESYSTEM_REPLACE_WORKER_ID,
+            worker_assignment_artifact.get("capability_id")
+            == OPERATION_REPLACE_EXISTING_TEXT_FILE,
+            worker_assignment_artifact.get("worker_invocation_request_reference")
+            == worker_invocation_request_artifact.get(
+                "worker_invocation_request_id"
+            ),
+            worker_assignment_artifact.get("worker_invocation_request_hash")
+            == worker_invocation_request_artifact.get("artifact_hash"),
+            worker_assignment_artifact.get("execution_packet_reference")
+            == request["request_id"],
+            worker_assignment_artifact.get("execution_packet_hash")
+            == request["request_hash"],
+            worker_assignment_artifact.get("canonical_chain_id")
+            == worker_invocation_request_artifact.get("chain_id"),
+            worker_assignment_artifact.get("worker_assigned") is True,
+            worker_assignment_artifact.get("worker_dispatched") is False,
+            worker_assignment_artifact.get("worker_invoked") is False,
+            worker_assignment_artifact.get("execution_started") is False,
+            worker_assignment_artifact.get("result_created") is False,
+            execution_artifact.get("artifact_type") == "EXECUTION_ARTIFACT_V1",
+            execution_artifact.get("execution_status") == "EXECUTING",
+            execution_artifact.get("worker_reference")
+            == FILESYSTEM_REPLACE_WORKER_ID,
+            execution_artifact.get("worker_assignment_reference")
+            == worker_assignment_artifact.get("worker_assignment_id"),
+            execution_artifact.get("worker_assignment_hash")
+            == worker_assignment_artifact.get("artifact_hash"),
+            execution_artifact.get("execution_request_reference")
+            == worker_invocation_request_artifact.get(
+                "worker_invocation_request_id"
+            ),
+            execution_artifact.get("readiness_reference")
+            == request["request_id"],
+            execution_artifact.get("canonical_chain_id")
+            == worker_invocation_request_artifact.get("chain_id"),
+            execution_artifact.get("capability_id")
+            == worker_assignment_artifact.get("capability_id"),
+            execution_artifact.get("started_by") == "AIGOL",
+            execution_artifact.get("execution_started") is True,
+            execution_artifact.get("provider_authority") is False,
+            execution_artifact.get("worker_self_started") is False,
+            execution_artifact.get("completion_recorded") is False,
+            execution_artifact.get("result_certified") is False,
+            execution_artifact.get("governance_mutated") is False,
+            execution_artifact.get("replay_mutated") is False,
+            isinstance(execution_context, dict),
+            execution_context.get("worker_reference")
+            == FILESYSTEM_REPLACE_WORKER_ID,
+            execution_context.get("capability_id")
+            == OPERATION_REPLACE_EXISTING_TEXT_FILE,
+            execution_context.get("allowed_effects")
+            == ["RECORD_EXECUTION_START"],
+            execution_reconstruction.get("execution_id")
+            == execution_artifact.get("execution_id"),
+            execution_reconstruction.get("canonical_chain_id")
+            == execution_artifact.get("canonical_chain_id"),
+            execution_reconstruction.get("worker_invocation_reference")
+            == execution_artifact.get("worker_invocation_reference"),
+            execution_reconstruction.get("dispatch_reference")
+            == execution_artifact.get("dispatch_reference"),
+            execution_reconstruction.get("worker_assignment_reference")
+            == execution_artifact.get("worker_assignment_reference"),
+            execution_reconstruction.get("worker_reference")
+            == execution_artifact.get("worker_reference"),
+            execution_reconstruction.get("execution_request_reference")
+            == execution_artifact.get("execution_request_reference"),
+            execution_reconstruction.get("execution_status") == "EXECUTING",
+            execution_reconstruction.get("started_by") == "AIGOL",
+            execution_reconstruction.get("execution_context")
+            == execution_artifact.get("execution_context"),
+            execution_reconstruction.get("replay_reference")
+            == execution_artifact.get("replay_reference"),
+            execution_reconstruction.get("provider_authority") is False,
+            execution_reconstruction.get("completion_recorded") is False,
+            execution_reconstruction.get("result_certified") is False,
+            execution_reconstruction.get("governance_mutated") is False,
+            execution_reconstruction.get("replay_mutated") is False,
+            execution_reconstruction.get("replay_artifact_count") == 2,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "consumed filesystem replace continuation lineage mismatch"
+        )
+    return reconstructed
 def _recover_authenticated_replace_v2(request: dict[str, Any]) -> dict[str, Any]:
     """Use the durable authenticated journal to restore an interrupted V2 replacement."""
     request = validate_authenticated_replace_request_v2(request)

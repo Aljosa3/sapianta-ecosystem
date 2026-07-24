@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
+from subprocess import run as run_process
 
 import pytest
 
@@ -31,13 +32,14 @@ class InMemoryAdapter:
         self.root = root
 
     def transport(self, state: dict, value: str, *, actor: str = ACTOR) -> dict:
+        workspace = state["repository_grounding_artifact"]["workspace_root"]
         return run_human_interface_runtime_entry(
             interface_name="in_memory_test_adapter",
             session_id=self.root.name,
             human_requests=[],
             created_at=CREATED,
             runtime_root=self.root.parent,
-            workspace="/isolated/repository",
+            workspace=workspace,
             governed_runtime_runner=lambda *_args, **_kwargs: {},
             g31_application_state=state,
             g31_human_action=value,
@@ -51,14 +53,36 @@ def _pending_state(
     root = tmp_path / name
     source = "before\n"
     replacement = "after\n"
+    repository = tmp_path / f"{name}-repository"
+    target = repository / "aigol/runtime/human_interface.py"
+    target.parent.mkdir(parents=True)
+    target.write_text(source, encoding="utf-8")
+    target.chmod(0o644)
+    for command in (
+        ("git", "init"),
+        ("git", "config", "user.email", "tests@example.invalid"),
+        ("git", "config", "user.name", "Tests"),
+        ("git", "add", "."),
+        ("git", "commit", "-m", "baseline"),
+    ):
+        completed = run_process(
+            command,
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise AssertionError(completed.stderr)
+    repository_root = str(repository.resolve())
     grounding = {
         "grounding_evidence_hash": "grounding-hash",
-        "workspace_root": "/isolated/repository",
+        "workspace_root": repository_root,
     }
     provenance = {
         "session_id": root.name,
         "repository_identity": "repo-identity",
-        "repository_root": "/isolated/repository",
+        "repository_root": repository_root,
         "repository_grounding_hash": "grounding-hash",
         "accepted_result_hash": "accepted-hash",
         "acceptance_hash": "acceptance-hash",
@@ -266,7 +290,7 @@ def test_in_memory_adapter_uses_common_entry_for_exact_v3_decision(
     assert result["authorization_replay_recorded"] is approved
     assert result["replace_request_created"] is approved
     assert result["authorization_consumed"] is approved
-    assert result["repository_mutated"] is False
+    assert result["repository_mutated"] is approved
     assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
     assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)
     assert calls["create_g31_authenticated_replace_request"] == int(approved)

@@ -35,8 +35,6 @@ def _forbid_post_execution_handoff(
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
         (entry.filesystem_replace_worker, "_execute_authenticated_replace_v2"),
         (entry.filesystem_replace_worker, "_recover_authenticated_replace_v2"),
-        (entry.filesystem_replace_worker, "_open_v2_target"),
-        (entry.filesystem_replace_worker, "_atomic_restore_v2"),
     )
     for owner, symbol in targets:
         calls[symbol] = 0
@@ -98,12 +96,12 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     assert result["worker_execution_status"] == entry.execution_runtime.EXECUTING
     assert result["execution_started"] is True
     assert result["execution_requested"] is True
-    assert result["worker_execution_performed"] is False
+    assert result["worker_execution_performed"] is True
     assert result["provider_invoked"] is False
     assert result["result_created"] is False
     assert result["command_executed"] is False
-    assert result["target_opened"] is False
-    assert result["repository_mutated"] is False
+    assert result["target_opened"] is True
+    assert result["repository_mutated"] is True
     assert result["governance_mutated"] is False
     assert result["replay_mutated"] is False
     assert execution["worker_invocation_reference"] == invocation[
@@ -157,10 +155,10 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Execution Handoff Reached: True" in rendered
     assert "Execution Status: EXECUTING" in rendered
-    assert "No Worker implementation has executed." in rendered
+    assert "The certified Filesystem Replace Worker has executed." in rendered
     assert "No Provider has been invoked." in rendered
     assert "No Worker result has been captured." in rendered
-    assert "No repository has been modified." in rendered
+    assert "The authenticated repository target has been modified." in rendered
 
 
 @pytest.mark.parametrize("mode", ("execution", "reconstruction"))
@@ -219,7 +217,7 @@ def test_aicli_receives_execution_handoff_without_execution_authority(
         action=decision.MUTATION_APPROVED,
         session=cli_root.name,
         root=cli_root.parent,
-        workspace_path="/isolated/repository",
+        workspace_path=cli_state["repository_grounding_artifact"]["workspace_root"],
         created=CREATED,
         worker_process_runner=None,
     )
@@ -228,10 +226,10 @@ def test_aicli_receives_execution_handoff_without_execution_authority(
         execution = result["worker_execution_capture"]["execution_artifact"]
         assert result["worker_execution_status"] == entry.execution_runtime.EXECUTING
         assert result["execution_started"] is True
-        assert result["worker_execution_performed"] is False
+        assert result["worker_execution_performed"] is True
         assert result["provider_invoked"] is False
         assert result["result_created"] is False
-        assert result["repository_mutated"] is False
+        assert result["repository_mutated"] is True
         assert execution["worker_reference"] == WORKER_ID
         assert execution["capability_id"] == CAPABILITY
     assert memory["g31_application_interface_transport"] == "in_memory_test_adapter"
@@ -242,7 +240,7 @@ def test_aicli_receives_execution_handoff_without_execution_authority(
     assert "run_human_interface_runtime_entry(" in cli_source
 
 
-def test_common_entry_execution_binding_is_worker_neutral_and_stops_before_physical_execution() -> None:
+def test_common_entry_execution_binding_is_worker_neutral_before_owned_continuation() -> None:
     source = inspect.getsource(entry._authorize_g31_mutation_decision)
 
     assert "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER" not in source
@@ -254,3 +252,4 @@ def test_common_entry_execution_binding_is_worker_neutral_and_stops_before_physi
     assert "capture_successful_codex_worker_result(" not in source
     assert "execute_g31_authenticated_replace(" not in source
     assert "execute_filesystem_replace_request(" not in source
+    assert source.count("execute_consumed_authenticated_replace_v2(") == 1

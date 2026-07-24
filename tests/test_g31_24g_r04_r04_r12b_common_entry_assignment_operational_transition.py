@@ -34,8 +34,6 @@ def _forbid_later_lifecycle(
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
         (entry.filesystem_replace_worker, "_execute_authenticated_replace_v2"),
         (entry.filesystem_replace_worker, "_recover_authenticated_replace_v2"),
-        (entry.filesystem_replace_worker, "_open_v2_target"),
-        (entry.filesystem_replace_worker, "_atomic_restore_v2"),
     )
     for owner, symbol in targets:
         calls[symbol] = 0
@@ -140,12 +138,12 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     for field in (
         "provider_invoked",
         "command_executed",
-        "repository_mutated",
-        "main_repository_mutated",
         "governance_mutated",
         "replay_mutated",
     ):
         assert result.get(field) is False
+    assert result["repository_mutated"] is True
+    assert result["main_repository_mutated"] is True
     assert result["execution_started"] is True
     assert result["execution_requested"] is True
     assert result["worker_invoked"] is True
@@ -214,7 +212,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
         action=decision.MUTATION_APPROVED,
         session=cli_root.name,
         root=cli_root.parent,
-        workspace_path="/isolated/repository",
+        workspace_path=cli_state["repository_grounding_artifact"]["workspace_root"],
         created=CREATED,
         worker_process_runner=None,
     )
@@ -226,7 +224,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
         assert result["worker_dispatched"] is True
         assert result["worker_invoked"] is True
         assert result["provider_invoked"] is False
-        assert result["repository_mutated"] is False
+        assert result["repository_mutated"] is True
     assert memory["g31_application_interface_transport"] == "in_memory_test_adapter"
     assert cli["g31_application_interface_transport"] == "aicli"
     cli_source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")

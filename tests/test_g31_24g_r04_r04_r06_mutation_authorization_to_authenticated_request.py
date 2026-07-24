@@ -31,7 +31,7 @@ def _transport(
     *,
     actor: str = ACTOR,
     session: str | None = None,
-    workspace: str = "/isolated/repository",
+    workspace: str | None = None,
 ) -> dict:
     return run_human_interface_runtime_entry(
         interface_name="in_memory_r06_adapter",
@@ -39,7 +39,8 @@ def _transport(
         human_requests=[],
         created_at=CREATED,
         runtime_root=root.parent,
-        workspace=workspace,
+        workspace=workspace
+        or state["repository_grounding_artifact"]["workspace_root"],
         governed_runtime_runner=lambda *_args, **_kwargs: {},
         g31_application_state=state,
         g31_human_action=value,
@@ -72,7 +73,7 @@ def _request_evidence(state: dict, root: Path) -> dict:
         "governed_execution_capture": state["governed_worker_execution_capture"],
         "execution_candidate_capture": state["worker_execution_candidate_capture"],
         "session_root": root,
-        "workspace": "/isolated/repository",
+        "workspace": state["repository_grounding_artifact"]["workspace_root"],
     }
 
 
@@ -84,8 +85,6 @@ def _forbid_execution(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
         (worker, "execute_filesystem_replace_request"),
         (worker, "_execute_authenticated_replace_v2"),
         (worker, "_recover_authenticated_replace_v2"),
-        (worker, "_open_v2_target"),
-        (worker, "_atomic_restore_v2"),
     )
     for owner, symbol in targets:
         calls[symbol] = 0
@@ -144,7 +143,19 @@ def test_common_entry_retains_one_authenticated_request_before_consumption_stage
     ]
     provenance = candidate["candidate_provenance"]
 
-    assert calls == {"create": 1, "record": 1, "events": ["request", "consumption"]}
+    assert calls == {
+        "create": 1,
+        "record": 1,
+        "events": [
+            "request",
+            "consumption",
+            "journal",
+            "started",
+            "atomic",
+            "result",
+            "completion",
+        ],
+    }
     assert request["authorization_id"] == authorization["authorization_id"]
     assert request["authorization_hash"] == authorization["authorization_hash"]
     assert request["authorization_replay_hash"] == authorization[
@@ -178,10 +189,10 @@ def test_common_entry_retains_one_authenticated_request_before_consumption_stage
     assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
-    assert result["repository_mutated"] is False
-    assert result["main_repository_mutated"] is False
+    assert result["repository_mutated"] is True
+    assert result["main_repository_mutated"] is True
     assert all(count == 0 for count in forbidden.values())
-    assert len(list(Path(reconstruction["request_replay_reference"]).glob("*.json"))) == 2
+    assert len(list(Path(reconstruction["request_replay_reference"]).glob("*.json"))) == 7
     assert Path(request["destinations"]["consumption"]).exists()
     assert "Authorization Consumption Reached: True" in "\n".join(
         result["g31_canonical_presentations"]

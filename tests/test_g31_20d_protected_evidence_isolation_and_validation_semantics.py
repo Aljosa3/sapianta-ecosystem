@@ -45,9 +45,13 @@ def _ingress() -> dict:
     )
 
 
-def _hashes(root: Path) -> dict[str, str]:
+def _hashes(root: Path) -> dict[str, str | None]:
     return {
-        name: sha256((root / name).read_bytes()).hexdigest()
+        name: (
+            sha256((root / name).read_bytes()).hexdigest()
+            if (root / name).is_file()
+            else None
+        )
         for name in PROTECTED
     }
 

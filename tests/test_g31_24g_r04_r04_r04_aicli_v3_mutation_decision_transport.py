@@ -116,13 +116,10 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
     ):
         assert runtime[field] is approved
     assert runtime["worker_invoked"] is approved
-    for field in (
-        "provider_invoked",
-        "command_executed",
-        "repository_mutated",
-        "main_repository_mutated",
-    ):
+    for field in ("provider_invoked", "command_executed"):
         assert runtime[field] is False
+    for field in ("repository_mutated", "main_repository_mutated"):
+        assert runtime[field] is approved
     assert runtime["replace_request_created"] is approved
     assert runtime["authorization_consumed"] is approved
     assert runtime["human_mutation_decision_actor"] == ACTOR
@@ -137,6 +134,7 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
     assert "Main Repository Mutated: False" in rendered
     if approved:
         assert "Canonical Existing-File Mutation Authorization" in rendered
+        assert "Repository Mutated: True" in rendered
     assert calls["authorize_g31_approved_existing_file_mutation"] == int(approved)
     assert calls["bind_g31_mutation_authorization_actor_and_replay"] == int(approved)
     assert calls["create_g31_authenticated_replace_request"] == int(approved)
@@ -152,9 +150,10 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
     assert len(runner.calls) == 1
     assert (root / "G31_MUTATION_AUTHORIZATION_REPLAY_V1").exists() is approved
     assert (root / "G31_EXISTING_FILE_REPLACE_V2").exists() is approved
-    assert subprocess.run(
+    status = subprocess.run(
         ["git", "status", "--short"], cwd=source, check=True, capture_output=True, text=True
-    ).stdout == ""
+    ).stdout
+    assert status == (" M aigol/runtime/human_interface.py\n" if approved else "")
 
 
 def test_legacy_and_invalid_vocabulary_then_eof_creates_no_v3_decision(

@@ -30,7 +30,7 @@ def _transport(
     value: str,
     *,
     session: str | None = None,
-    workspace: str = "/isolated/repository",
+    workspace: str | None = None,
     actor: str = ACTOR,
 ) -> dict:
     return run_human_interface_runtime_entry(
@@ -39,7 +39,10 @@ def _transport(
         human_requests=[],
         created_at=CREATED,
         runtime_root=root.parent,
-        workspace=workspace,
+        workspace=workspace
+        or state["existing_file_mutation_candidate_capture"][
+            "existing_file_mutation_candidate_artifact"
+        ]["candidate_provenance"]["repository_root"],
         governed_runtime_runner=lambda *_args, **_kwargs: {},
         g31_application_state=state,
         g31_human_action=value,
@@ -129,8 +132,8 @@ def test_exact_approved_uses_one_canonical_authorization_and_actor_replay(
         reconstructed["authorization_hash"]
     )
     assert result["g31_pending_action"] is None
-    assert result["repository_mutated"] is False
-    assert result["main_repository_mutated"] is False
+    assert result["repository_mutated"] is True
+    assert result["main_repository_mutated"] is True
     assert len(list((root / "G31_MUTATION_AUTHORIZATION_REPLAY_V1").glob("*.json"))) == 3
     assert "Canonical Existing-File Mutation Authorization" in "\n".join(
         result["g31_canonical_presentations"]

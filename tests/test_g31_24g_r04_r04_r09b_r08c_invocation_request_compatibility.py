@@ -100,7 +100,6 @@ def test_common_entry_preserves_request_through_invocation_and_stops_before_exec
     forbidden = (
         (entry.existing_file_governance, "execute_g31_authenticated_replace"),
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
-        (entry.filesystem_replace_worker, "_open_v2_target"),
     )
     for owner, symbol in forbidden:
         calls[symbol] = 0
@@ -133,7 +132,7 @@ def test_common_entry_preserves_request_through_invocation_and_stops_before_exec
     assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
-    assert result["repository_mutated"] is False
+    assert result["repository_mutated"] is True
     assert all(count == 0 for count in calls.values())
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Invocation Request Created: True" in rendered
