@@ -23,6 +23,10 @@ from aigol.runtime import codex_transport_to_worker_result_capture_binding_runti
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
 from aigol.runtime import execution_runtime
+from aigol.runtime import (
+    filesystem_replace_worker_output_to_result_capture_binding_runtime
+    as filesystem_result_capture,
+)
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
@@ -891,6 +895,7 @@ def _continue_g31_application_transition(
                         "Worker Execution Handoff Reached: True",
                         f"Execution Status: {state['worker_execution_status']}",
                         "Filesystem Replace Worker Executed: True",
+                        "Filesystem Replace Worker Result Captured: True",
                         "Repository Mutated: True",
                     )
                 )
@@ -932,9 +937,11 @@ def _continue_g31_application_transition(
                         "The certified Filesystem Replace Worker has executed.",
                         "Authorization consumption was not repeated.",
                         "Worker Replay continued from the certified consumption event.",
+                        "The authentic Worker output has been captured.",
                         "No Provider has been invoked.",
                         "No command has executed.",
-                        "No Worker result has been captured.",
+                        "No Worker result has been validated.",
+                        "No final Execution certification has occurred.",
                         "The authenticated repository target has been modified.",
                     )
                 )
@@ -2391,6 +2398,91 @@ def _authorize_g31_mutation_decision(
         raise FailClosedRuntimeError(
             "G31 mutation continuation failed closed: Filesystem Replace Worker failed"
         )
+    result_capture_replay_dir = (
+        session_root
+        / f"WORKER-RESULT-CAPTURE-{execution_artifact['artifact_hash'][-16:]}"
+    )
+    filesystem_result = (
+        filesystem_result_capture.capture_completed_filesystem_replace_worker_result(
+            authenticated_request=request,
+            filesystem_worker_capture=filesystem_execution,
+            filesystem_worker_reconstruction=filesystem_reconstruction,
+            worker_invocation_artifact=invocation_artifact,
+            worker_invocation_replay_reference=invocation[
+                "worker_invocation_replay_reference"
+            ],
+            worker_assignment_artifact=assignment_artifact,
+            execution_artifact=execution_artifact,
+            execution_replay=execution["execution_replay"],
+            execution_reconstruction=execution_reconstruction,
+            execution_replay_reference=str(execution_replay_dir),
+            captured_at=created,
+            replay_dir=result_capture_replay_dir,
+        )
+    )
+    if (
+        filesystem_result.get("g31_filesystem_result_capture_status")
+        != filesystem_result_capture.SUCCESS
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            f"Result Capture failed: {filesystem_result.get('failure_reason')}"
+        )
+    filesystem_result_reconstruction = (
+        filesystem_result_capture.reconstruct_filesystem_replace_worker_result_capture_binding(
+            binding_capture=filesystem_result,
+            authenticated_request=request,
+            filesystem_worker_capture=filesystem_execution,
+            filesystem_worker_reconstruction=filesystem_reconstruction,
+            worker_invocation_artifact=invocation_artifact,
+            worker_invocation_replay_reference=invocation[
+                "worker_invocation_replay_reference"
+            ],
+            worker_assignment_artifact=assignment_artifact,
+            execution_artifact=execution_artifact,
+            execution_replay=execution["execution_replay"],
+            execution_reconstruction=execution_reconstruction,
+            execution_replay_reference=str(execution_replay_dir),
+        )
+    )
+    if not all(
+        (
+            filesystem_result_reconstruction.get(
+                "g31_filesystem_result_capture_status"
+            )
+            == filesystem_result_capture.SUCCESS,
+            filesystem_result_reconstruction.get("execution_reference")
+            == execution_artifact.get("execution_id"),
+            filesystem_result_reconstruction.get(
+                "filesystem_replace_worker_capture_hash"
+            )
+            == filesystem_execution.get("capture_hash"),
+            filesystem_result_reconstruction.get(
+                "filesystem_replace_worker_replay_hash"
+            )
+            == filesystem_reconstruction.get("replay_hash"),
+            filesystem_result_reconstruction.get("worker_result_captured")
+            is True,
+            filesystem_result_reconstruction.get("result_created") is True,
+            filesystem_result_reconstruction.get("result_validated") is False,
+            filesystem_result_reconstruction.get(
+                "post_execution_replay_reviewed"
+            )
+            is False,
+            filesystem_result_reconstruction.get("execution_certified")
+            is False,
+            filesystem_result_reconstruction.get("provider_invoked") is False,
+            filesystem_result_reconstruction.get("command_executed") is False,
+            filesystem_result_reconstruction.get("repository_mutated") is True,
+            filesystem_result_reconstruction.get("governance_mutated") is False,
+            filesystem_result_reconstruction.get("replay_mutated") is False,
+            filesystem_result_reconstruction.get("replay_artifact_count") == 4,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            "Result Capture reconstruction mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2496,6 +2588,25 @@ def _authorize_g31_mutation_decision(
             "filesystem_replace_worker_replay_hash": filesystem_reconstruction[
                 "replay_hash"
             ],
+            "filesystem_replace_worker_result_capture": filesystem_result,
+            "filesystem_replace_worker_result_capture_reconstruction": (
+                filesystem_result_reconstruction
+            ),
+            "filesystem_replace_worker_result_capture_status": (
+                filesystem_result["g31_filesystem_result_capture_status"]
+            ),
+            "filesystem_replace_worker_output_artifact": filesystem_result[
+                "filesystem_replace_worker_output_artifact"
+            ],
+            "filesystem_replace_worker_output_hash": filesystem_result[
+                "filesystem_replace_worker_output_hash"
+            ],
+            "filesystem_replace_worker_result_capture_replay_reference": (
+                filesystem_result["worker_result_capture_replay_reference"]
+            ),
+            "filesystem_replace_worker_result_capture_replay_hash": (
+                filesystem_result_reconstruction["replay_hash"]
+            ),
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
@@ -2504,7 +2615,11 @@ def _authorize_g31_mutation_decision(
             "execution_started": True,
             "execution_requested": True,
             "worker_execution_performed": True,
-            "result_created": False,
+            "worker_result_captured": True,
+            "result_created": True,
+            "result_validated": False,
+            "post_execution_replay_reviewed": False,
+            "execution_certified": False,
             "command_executed": False,
             "target_opened": True,
             "repository_mutated": True,

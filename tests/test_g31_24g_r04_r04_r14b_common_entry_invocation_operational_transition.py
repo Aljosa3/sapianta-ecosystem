@@ -77,7 +77,7 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     artifact = invocation["worker_invocation_artifact"]
     reconstruction = result["worker_invocation_reconstruction"]
 
-    assert calls == {"invocation": 1, "reconstruction": 1}
+    assert calls == {"invocation": 1, "reconstruction": 3}
     assert all(count == 0 for count in forbidden.values())
     assert result["g31_application_sequenced_by_common_entry"] is True
     assert result["worker_invocation_status"] == entry.worker_invocation.WORKER_INVOKED
@@ -88,7 +88,9 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     assert result["provider_invoked"] is False
     assert result["execution_started"] is True
     assert result["execution_requested"] is True
-    assert result["result_created"] is False
+    assert result["worker_result_captured"] is True
+    assert result["result_created"] is True
+    assert result["result_validated"] is False
     assert result["command_executed"] is False
     assert result["repository_mutated"] is True
     assert result["governance_mutated"] is False
@@ -155,7 +157,9 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
         "003_invocation_result_recorded.json",
     ]
     assert len(list(root.rglob("000_execution_started.json"))) == 1
-    assert not list(root.glob("WORKER-RESULT-*"))
+    result_replays = list(root.glob("WORKER-RESULT-CAPTURE-*"))
+    assert len(result_replays) == 1
+    assert len(list(result_replays[0].glob("*.json"))) == 4
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Invocation Reached: True" in rendered
     assert "Invocation Status: WORKER_INVOKED" in rendered

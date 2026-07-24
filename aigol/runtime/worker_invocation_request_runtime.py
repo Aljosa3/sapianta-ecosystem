@@ -395,7 +395,7 @@ def _load_authenticated_replacement_selection_lineage(
             "worker invocation request failed closed: replacement lineage is incomplete"
         )
     session_root = Path(request["session_root"]).resolve()
-    request_replay = reconstruct_authenticated_replace_replay_v2(request)
+    request_replay = _reconstruct_authenticated_consumption_prefix(request)
     selection_reference = _resolve_replay_reference(
         resource_selection_capture.get("resource_selection_replay_reference"),
         anchor=anchor,
@@ -597,6 +597,74 @@ def _project_authenticated_replacement_lineage(
         },
         "g31_lineage": None,
         "compatibility_lineage": compatibility,
+    }
+
+
+def _reconstruct_authenticated_consumption_prefix(
+    request: dict[str, Any],
+) -> dict[str, Any]:
+    """Reconstruct the immutable consumption prefix after later Worker appends."""
+
+    current = reconstruct_authenticated_replace_replay_v2(request)
+    if (
+        current.get("event_keys", [])[:2] != ["request", "consumption"]
+        or current.get("replay_artifact_count", 0) < 2
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: consumption prefix missing"
+        )
+    request_wrapper = load_json(Path(request["destinations"]["request"]))
+    consumption_wrapper = load_json(Path(request["destinations"]["consumption"]))
+    for wrapper, key in (
+        (request_wrapper, "request"),
+        (consumption_wrapper, "consumption"),
+    ):
+        _verify_wrapper_hash(wrapper)
+        artifact = wrapper.get("artifact")
+        if not isinstance(artifact, dict):
+            raise FailClosedRuntimeError(
+                "worker invocation request failed closed: consumption prefix invalid"
+            )
+        _verify_artifact_hash(artifact, "authenticated replacement Replay artifact")
+        if (
+            wrapper.get("event_key") != key
+            or artifact.get("request_hash") != request["request_hash"]
+            or artifact.get("authorization_id") != request["authorization_id"]
+            or artifact.get("authorization_hash") != request["authorization_hash"]
+        ):
+            raise FailClosedRuntimeError(
+                "worker invocation request failed closed: consumption prefix invalid"
+            )
+    if not all(
+        (
+            request_wrapper.get("previous_replay_hash") is None,
+            request_wrapper["artifact"].get("event_type") == "REQUEST_VALIDATED",
+            request_wrapper["artifact"].get("payload") == {},
+            consumption_wrapper.get("previous_replay_hash")
+            == request_wrapper.get("replay_hash"),
+            consumption_wrapper["artifact"].get("event_type")
+            == "AUTHORIZATION_CONSUMPTION_CLAIMED",
+            consumption_wrapper["artifact"].get("payload")
+            == {"consumption_identity": request["authorization_hash"]},
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: consumption prefix invalid"
+        )
+    wrappers = [request_wrapper, consumption_wrapper]
+    return {
+        "request_id": request["request_id"],
+        "request_hash": request["request_hash"],
+        "request_replay_reference": str(
+            Path(request["destinations"]["request"]).parent
+        ),
+        "authorization_id": request["authorization_id"],
+        "event_keys": ["request", "consumption"],
+        "latest_event": "AUTHORIZATION_CONSUMPTION_CLAIMED",
+        "latest_artifact": deepcopy(consumption_wrapper["artifact"]),
+        "replay_artifact_count": 2,
+        "replay_hash": replay_hash(wrappers),
+        "last_wrapper_hash": consumption_wrapper["replay_hash"],
     }
 
 

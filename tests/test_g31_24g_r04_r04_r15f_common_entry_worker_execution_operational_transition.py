@@ -82,7 +82,7 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     execution = result["worker_execution_capture"]["execution_artifact"]
     reconstruction = result["worker_execution_reconstruction"]
 
-    assert calls == {"execution": 1, "reconstruction": 1}
+    assert calls == {"execution": 1, "reconstruction": 3}
     assert all(count == 0 for count in forbidden.values())
     assert supplied["invocation_artifact"] == invocation
     assert supplied["invocation_replay"] == invocation_capture[
@@ -98,7 +98,9 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     assert result["execution_requested"] is True
     assert result["worker_execution_performed"] is True
     assert result["provider_invoked"] is False
-    assert result["result_created"] is False
+    assert result["worker_result_captured"] is True
+    assert result["result_created"] is True
+    assert result["result_validated"] is False
     assert result["command_executed"] is False
     assert result["target_opened"] is True
     assert result["repository_mutated"] is True
@@ -151,13 +153,16 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
         "000_execution_started.json",
         "001_execution_returned.json",
     ]
-    assert not list(root.glob("WORKER-RESULT-*"))
+    result_replays = list(root.glob("WORKER-RESULT-CAPTURE-*"))
+    assert len(result_replays) == 1
+    assert len(list(result_replays[0].glob("*.json"))) == 4
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Execution Handoff Reached: True" in rendered
     assert "Execution Status: EXECUTING" in rendered
     assert "The certified Filesystem Replace Worker has executed." in rendered
     assert "No Provider has been invoked." in rendered
-    assert "No Worker result has been captured." in rendered
+    assert "The authentic Worker output has been captured." in rendered
+    assert "No Worker result has been validated." in rendered
     assert "The authenticated repository target has been modified." in rendered
 
 
@@ -228,7 +233,9 @@ def test_aicli_receives_execution_handoff_without_execution_authority(
         assert result["execution_started"] is True
         assert result["worker_execution_performed"] is True
         assert result["provider_invoked"] is False
-        assert result["result_created"] is False
+        assert result["worker_result_captured"] is True
+        assert result["result_created"] is True
+        assert result["result_validated"] is False
         assert result["repository_mutated"] is True
         assert execution["worker_reference"] == WORKER_ID
         assert execution["capability_id"] == CAPABILITY
