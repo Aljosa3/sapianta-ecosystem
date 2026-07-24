@@ -184,7 +184,9 @@ def test_invocation_evidence_stops_before_execution_and_external_activation(tmp_
         "subprocess",
     ):
         assert forbidden not in invocation_source
-        assert forbidden not in aicli_source
+        if forbidden != "start_execution(":
+            assert forbidden not in aicli_source
+    assert aicli_source.count("execution_runtime.start_execution(") == 1
     assert "import requests" not in invocation_source
     assert "import requests" not in aicli_source
     for duplicate in ("def _verify_hash", "def _relative_path", "def _unique_relative_paths"):

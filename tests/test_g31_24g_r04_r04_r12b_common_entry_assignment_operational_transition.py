@@ -126,7 +126,7 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     assert result["worker_dispatch_status"] == entry.worker_dispatch.WORKER_DISPATCHED
     assert result["worker_dispatched"] is True
     assert result["runtime_replay_reference"] == result[
-        "worker_invocation_replay_reference"
+        "worker_execution_replay_reference"
     ]
     assert sorted(
         path.name
@@ -139,8 +139,6 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     ]
     for field in (
         "provider_invoked",
-        "execution_started",
-        "execution_requested",
         "command_executed",
         "repository_mutated",
         "main_repository_mutated",
@@ -148,6 +146,8 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
         "replay_mutated",
     ):
         assert result.get(field) is False
+    assert result["execution_started"] is True
+    assert result["execution_requested"] is True
     assert result["worker_invoked"] is True
     assert selection["worker_assigned"] is False
     rendered = "\n".join(result["g31_canonical_presentations"])

@@ -88,8 +88,8 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     assert result["dispatch_requested"] is True
     assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
-    assert result["execution_started"] is False
-    assert result["execution_requested"] is False
+    assert result["execution_started"] is True
+    assert result["execution_requested"] is True
     assert result["result_created"] is False
     assert result["command_executed"] is False
     assert result["repository_mutated"] is False
@@ -145,7 +145,7 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     assert reconstruction["result_created"] is False
     assert result["worker_invocation_replay_hash"] == reconstruction["replay_hash"]
     assert result["runtime_replay_reference"] == result[
-        "worker_invocation_replay_reference"
+        "worker_execution_replay_reference"
     ]
     assert sorted(
         path.name
@@ -156,7 +156,7 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
         "002_invocation_artifact_recorded.json",
         "003_invocation_result_recorded.json",
     ]
-    assert not list(root.rglob("000_execution_started.json"))
+    assert len(list(root.rglob("000_execution_started.json"))) == 1
     assert not list(root.glob("WORKER-RESULT-*"))
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Invocation Reached: True" in rendered
@@ -235,7 +235,7 @@ def test_aicli_receives_common_entry_invocation_without_invocation_authority(
         assert result["worker_dispatched"] is True
         assert result["worker_invoked"] is True
         assert result["provider_invoked"] is False
-        assert result["execution_started"] is False
+        assert result["execution_started"] is True
         assert result["repository_mutated"] is False
         assert artifact["worker_id"] == WORKER_ID
     assert memory["g31_application_interface_transport"] == "in_memory_test_adapter"
@@ -246,7 +246,7 @@ def test_aicli_receives_common_entry_invocation_without_invocation_authority(
     assert "run_human_interface_runtime_entry(" in cli_source
 
 
-def test_common_entry_invocation_binding_is_worker_neutral_and_stops_before_execution() -> None:
+def test_common_entry_invocation_binding_is_worker_neutral_and_stops_before_physical_execution() -> None:
     source = inspect.getsource(entry._authorize_g31_mutation_decision)
 
     assert "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER" not in source

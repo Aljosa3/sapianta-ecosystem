@@ -22,6 +22,7 @@ from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_
 from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
+from aigol.runtime import execution_runtime
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
@@ -887,6 +888,8 @@ def _continue_g31_application_transition(
                         "Worker Assignment Reached: True",
                         "Worker Dispatch Reached: True",
                         "Worker Invocation Reached: True",
+                        "Worker Execution Handoff Reached: True",
+                        f"Execution Status: {state['worker_execution_status']}",
                         "Repository Mutated: False",
                     )
                 )
@@ -914,6 +917,23 @@ def _continue_g31_application_transition(
             presentations.append(
                 worker_invocation.render_worker_invocation_summary(
                     state["worker_invocation_capture"]
+                )
+            )
+            presentations.append(
+                "\n".join(
+                    (
+                        "Worker Execution Handoff",
+                        f"Execution ID: {state['worker_execution_id']}",
+                        f"Execution Status: {state['worker_execution_status']}",
+                        "Execution Replay Reference: "
+                        f"{state['worker_execution_replay_reference']}",
+                        "Execution start evidence has been recorded.",
+                        "No Worker implementation has executed.",
+                        "No Provider has been invoked.",
+                        "No command has executed.",
+                        "No Worker result has been captured.",
+                        "No repository has been modified.",
+                    )
                 )
             )
     else:
@@ -2208,6 +2228,109 @@ def _authorize_g31_mutation_decision(
         raise FailClosedRuntimeError(
             "G31 mutation continuation failed closed: Worker invocation Replay mismatch"
         )
+    execution_replay_dir = (
+        session_root
+        / f"WORKER-EXECUTION-{invocation_artifact['artifact_hash'][-16:]}"
+    )
+    execution = execution_runtime.start_execution(
+        execution_id=f"{invocation_artifact['worker_invocation_id']}:EXECUTION",
+        invocation_artifact=invocation_artifact,
+        invocation_replay=invocation["invocation_result_artifact"],
+        dispatch_artifact=dispatch_artifact,
+        worker_assignment_artifact=assignment_artifact,
+        canonical_chain_id=invocation_artifact["chain_id"],
+        execution_metadata={
+            "execution_mode": "START_ONLY",
+            "runtime_boundary": "INVOKED_TO_EXECUTING",
+            "result_handling": "OUT_OF_SCOPE",
+        },
+        execution_context={
+            "worker_reference": invocation_artifact["worker_id"],
+            "request_type": "WORKER_INVOCATION_REQUEST",
+            "capability_id": assignment_artifact["capability_id"],
+            "allowed_effects": ["RECORD_EXECUTION_START"],
+        },
+        started_by="AIGOL",
+        started_at=created,
+        replay_reference=str(execution_replay_dir),
+        replay_dir=execution_replay_dir,
+    )
+    execution_artifact = execution.get("execution_artifact")
+    if (
+        not isinstance(execution_artifact, dict)
+        or execution_artifact.get("execution_status") != execution_runtime.EXECUTING
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker execution failed"
+        )
+    execution_reconstruction = execution_runtime.reconstruct_execution_replay(
+        execution_replay_dir
+    )
+    if not all(
+        (
+            execution_artifact.get("execution_status")
+            == execution_runtime.EXECUTING,
+            execution_artifact.get("worker_invocation_reference")
+            == invocation_artifact.get("worker_invocation_id"),
+            execution_artifact.get("worker_invocation_hash")
+            == invocation_artifact.get("artifact_hash"),
+            execution_artifact.get("worker_invocation_replay_hash")
+            == invocation["invocation_result_artifact"].get("artifact_hash"),
+            execution_artifact.get("dispatch_reference")
+            == dispatch_artifact.get("worker_dispatch_id"),
+            execution_artifact.get("dispatch_hash")
+            == dispatch_artifact.get("artifact_hash"),
+            execution_artifact.get("worker_assignment_reference")
+            == assignment_artifact.get("worker_assignment_id"),
+            execution_artifact.get("worker_assignment_hash")
+            == assignment_artifact.get("artifact_hash"),
+            execution_artifact.get("worker_reference")
+            == invocation_artifact.get("worker_id"),
+            execution_artifact.get("worker_hash")
+            == invocation_artifact.get("worker_hash"),
+            execution_artifact.get("execution_request_reference")
+            == invocation_request_artifact.get("worker_invocation_request_id"),
+            execution_artifact.get("readiness_reference")
+            == invocation_request_artifact.get("execution_packet_reference"),
+            execution_artifact.get("canonical_chain_id")
+            == invocation_request_artifact.get("chain_id"),
+            execution_artifact.get("capability_id")
+            == assignment_artifact.get("capability_id"),
+            execution_artifact.get("started_by") == "AIGOL",
+            execution_artifact.get("execution_started") is True,
+            execution_artifact.get("provider_authority") is False,
+            execution_artifact.get("worker_self_started") is False,
+            execution_artifact.get("completion_recorded") is False,
+            execution_artifact.get("result_certified") is False,
+            execution_artifact.get("governance_mutated") is False,
+            execution_artifact.get("replay_mutated") is False,
+            execution_reconstruction.get("execution_status")
+            == execution_runtime.EXECUTING,
+            execution_reconstruction.get("execution_id")
+            == execution_artifact.get("execution_id"),
+            execution_reconstruction.get("worker_invocation_reference")
+            == invocation_artifact.get("worker_invocation_id"),
+            execution_reconstruction.get("dispatch_reference")
+            == dispatch_artifact.get("worker_dispatch_id"),
+            execution_reconstruction.get("worker_assignment_reference")
+            == assignment_artifact.get("worker_assignment_id"),
+            execution_reconstruction.get("worker_reference")
+            == invocation_artifact.get("worker_id"),
+            execution_reconstruction.get("execution_request_reference")
+            == invocation_request_artifact.get("worker_invocation_request_id"),
+            execution_reconstruction.get("canonical_chain_id")
+            == invocation_request_artifact.get("chain_id"),
+            execution_reconstruction.get("provider_authority") is False,
+            execution_reconstruction.get("completion_recorded") is False,
+            execution_reconstruction.get("result_certified") is False,
+            execution_reconstruction.get("governance_mutated") is False,
+            execution_reconstruction.get("replay_mutated") is False,
+            execution_reconstruction.get("replay_artifact_count") == 2,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker execution Replay mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2294,13 +2417,22 @@ def _authorize_g31_mutation_decision(
             "worker_invocation_replay_hash": invocation_reconstruction[
                 "replay_hash"
             ],
+            "worker_execution_capture": execution,
+            "worker_execution_reconstruction": execution_reconstruction,
+            "worker_execution_status": execution_artifact["execution_status"],
+            "worker_execution_id": execution_artifact["execution_id"],
+            "worker_execution_replay_reference": str(execution_replay_dir),
+            "worker_execution_replay_hash": execution_reconstruction[
+                "replay_hash"
+            ],
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
             "provider_invoked": False,
             "worker_invoked": True,
-            "execution_started": False,
-            "execution_requested": False,
+            "execution_started": True,
+            "execution_requested": True,
+            "worker_execution_performed": False,
             "result_created": False,
             "command_executed": False,
             "target_opened": False,
@@ -2311,9 +2443,7 @@ def _authorize_g31_mutation_decision(
             "recovery_started": False,
             "governance_mutated": False,
             "replay_mutated": False,
-            "runtime_replay_reference": invocation[
-                "worker_invocation_replay_reference"
-            ],
+            "runtime_replay_reference": str(execution_replay_dir),
         }
     )
     for field in (

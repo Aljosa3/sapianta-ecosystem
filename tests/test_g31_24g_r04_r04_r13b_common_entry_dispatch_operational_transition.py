@@ -86,8 +86,8 @@ def test_common_entry_dispatches_exact_assignment_and_reconstructs_replay(
     assert result["worker_dispatch_status"] == entry.worker_dispatch.WORKER_DISPATCHED
     assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
-    assert result["execution_started"] is False
-    assert result["execution_requested"] is False
+    assert result["execution_started"] is True
+    assert result["execution_requested"] is True
     assert result["result_created"] is False
     assert result["repository_mutated"] is False
     assert dispatch_capture["worker_id"] == WORKER_ID
@@ -114,7 +114,7 @@ def test_common_entry_dispatches_exact_assignment_and_reconstructs_replay(
     assert reconstruction["execution_started"] is False
     assert result["worker_dispatch_replay_hash"] == reconstruction["replay_hash"]
     assert result["runtime_replay_reference"] == result[
-        "worker_invocation_replay_reference"
+        "worker_execution_replay_reference"
     ]
     assert sorted(
         path.name
