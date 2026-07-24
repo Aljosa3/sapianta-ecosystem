@@ -302,7 +302,7 @@ def _execution_artifact(
         "readiness_reference": invocation["readiness_reference"],
         "execution_request_reference": invocation["execution_request_reference"],
         "request_type": invocation["request_type"],
-        "capability_id": invocation["capability_id"],
+        "capability_id": assignment["capability_id"],
         "started_by": _normalize_token(started_by, "started_by"),
         "started_at": _require_string(started_at, "started_at"),
         "execution_status": EXECUTING,
@@ -512,7 +512,6 @@ def _validate_invocation_artifact(invocation: dict[str, Any], canonical_chain_id
     _require_string(normalized.get("worker_hash"), "worker_hash")
     _require_string(normalized.get("execution_request_reference"), "execution_request_reference")
     _require_string(normalized.get("request_type"), "request_type")
-    _require_string(normalized.get("capability_id"), "capability_id")
     _require_string(normalized.get("invoked_at"), "invoked_at")
     return normalized
 
@@ -613,6 +612,10 @@ def _validate_worker_assignment_artifact(
         raise FailClosedRuntimeError("execution failed closed: worker mismatch")
     if normalized.get("execution_request_reference") != invocation["execution_request_reference"]:
         raise FailClosedRuntimeError("execution failed closed: execution request mismatch")
+    capability_id = _require_string(normalized.get("capability_id"), "capability_id")
+    invocation_capability = invocation.get("capability_id")
+    if invocation_capability is not None and invocation_capability != capability_id:
+        raise FailClosedRuntimeError("execution failed closed: capability mismatch")
     if not _false_or_absent(assignment, "provider_authority"):
         raise FailClosedRuntimeError("execution failed closed: provider authority introduced")
     if not _false_or_absent(assignment, "worker_self_assigned"):
@@ -633,7 +636,6 @@ def _normalize_invocation_for_execution(invocation: dict[str, Any]) -> dict[str,
     normalized.setdefault("execution_request_reference", invocation.get("worker_invocation_request_reference"))
     normalized.setdefault("readiness_reference", invocation.get("execution_packet_reference"))
     normalized.setdefault("request_type", "WORKER_INVOCATION_REQUEST")
-    normalized.setdefault("capability_id", invocation.get("worker_role"))
     normalized.setdefault("execution_performed", False)
     normalized.setdefault("completion_recorded", False)
     normalized.setdefault("automatic_authorization", False)
