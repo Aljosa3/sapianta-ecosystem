@@ -476,7 +476,11 @@ def _validate_invocation_artifact(invocation: dict[str, Any], canonical_chain_id
         raise FailClosedRuntimeError("execution failed closed: invalid invocation artifact")
     if invocation.get("invocation_status") != INVOKED:
         raise FailClosedRuntimeError("execution failed closed: invalid invocation state")
-    if invocation.get("invoked_by") not in {"AIGOL", "AIGOL_GOVERNANCE"}:
+    if invocation.get("invoked_by") not in {
+        "AIGOL",
+        "AIGOL_GOVERNANCE",
+        "PLATFORM_CORE_G31_INVOCATION_BINDING",
+    }:
         raise FailClosedRuntimeError("execution failed closed: invocation must be AiGOL-created")
     normalized = _normalize_invocation_for_execution(invocation)
     if normalized.get("canonical_chain_id") != canonical_chain_id:
