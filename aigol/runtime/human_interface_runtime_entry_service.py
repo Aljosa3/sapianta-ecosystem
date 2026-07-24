@@ -886,6 +886,7 @@ def _continue_g31_application_transition(
                         f"{state['worker_invocation_request_created']}",
                         "Worker Assignment Reached: True",
                         "Worker Dispatch Reached: True",
+                        "Worker Invocation Reached: True",
                         "Repository Mutated: False",
                     )
                 )
@@ -908,6 +909,11 @@ def _continue_g31_application_transition(
             presentations.append(
                 worker_dispatch.render_worker_dispatch_summary(
                     state["worker_dispatch_capture"]
+                )
+            )
+            presentations.append(
+                worker_invocation.render_worker_invocation_summary(
+                    state["worker_invocation_capture"]
                 )
             )
     else:
@@ -2140,6 +2146,68 @@ def _authorize_g31_mutation_decision(
         raise FailClosedRuntimeError(
             "G31 mutation continuation failed closed: Worker dispatch Replay mismatch"
         )
+    invocation = worker_invocation.invoke_dispatched_worker(
+        worker_invocation_id=(
+            f"{dispatch_artifact['worker_dispatch_id']}:INVOCATION"
+        ),
+        worker_dispatch_artifact=dispatch_artifact,
+        worker_dispatch_replay_reference=dispatch[
+            "worker_dispatch_replay_reference"
+        ],
+        invoked_by="PLATFORM_CORE_G31_INVOCATION_BINDING",
+        invoked_at=created,
+        replay_dir=session_root
+        / f"WORKER-INVOCATION-{dispatch_artifact['artifact_hash'][-16:]}",
+    )
+    if invocation.get("invocation_status") != worker_invocation.WORKER_INVOKED:
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker invocation failed"
+        )
+    invocation_reconstruction = (
+        worker_invocation.reconstruct_worker_invocation_replay(
+            invocation["worker_invocation_replay_reference"]
+        )
+    )
+    invocation_artifact = invocation["worker_invocation_artifact"]
+    if not all(
+        (
+            invocation_reconstruction.get("invocation_status")
+            == worker_invocation.WORKER_INVOKED,
+            invocation_reconstruction.get("worker_invocation_id")
+            == invocation.get("worker_invocation_reference"),
+            invocation_reconstruction.get("worker_dispatch_reference")
+            == dispatch_artifact.get("worker_dispatch_id"),
+            invocation_artifact.get("worker_dispatch_hash")
+            == dispatch_artifact.get("artifact_hash"),
+            invocation_reconstruction.get("worker_assignment_reference")
+            == assignment_artifact.get("worker_assignment_id"),
+            invocation_reconstruction.get("worker_invocation_request_reference")
+            == invocation_request_artifact.get("worker_invocation_request_id"),
+            invocation_reconstruction.get("authorization_reference")
+            == invocation_request_artifact.get("authorization_reference"),
+            invocation_reconstruction.get("execution_packet_reference")
+            == invocation_request_artifact.get("execution_packet_reference"),
+            invocation_reconstruction.get("worker_id")
+            == selection.get("selected_resource_id"),
+            invocation_reconstruction.get("chain_id")
+            == invocation_request_artifact.get("chain_id"),
+            invocation_reconstruction.get("worker_assigned") is True,
+            invocation_reconstruction.get("worker_dispatched") is True,
+            invocation_reconstruction.get("dispatch_requested") is True,
+            invocation_reconstruction.get("worker_invoked") is True,
+            invocation_reconstruction.get("execution_started") is False,
+            invocation_reconstruction.get("result_created") is False,
+            invocation_reconstruction.get("result_validated") is False,
+            invocation_reconstruction.get("post_execution_replay_reviewed")
+            is False,
+            invocation_reconstruction.get("terminated") is False,
+            invocation_reconstruction.get("governance_mutated") is False,
+            invocation_reconstruction.get("replay_mutated") is False,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Worker invocation Replay mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2216,11 +2284,21 @@ def _authorize_g31_mutation_decision(
                 "worker_dispatch_replay_reference"
             ],
             "worker_dispatch_replay_hash": dispatch_reconstruction["replay_hash"],
+            "worker_invocation_capture": invocation,
+            "worker_invocation_reconstruction": invocation_reconstruction,
+            "worker_invocation_status": invocation["invocation_status"],
+            "worker_invocation_id": invocation["worker_invocation_reference"],
+            "worker_invocation_replay_reference": invocation[
+                "worker_invocation_replay_reference"
+            ],
+            "worker_invocation_replay_hash": invocation_reconstruction[
+                "replay_hash"
+            ],
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
             "provider_invoked": False,
-            "worker_invoked": False,
+            "worker_invoked": True,
             "execution_started": False,
             "execution_requested": False,
             "result_created": False,
@@ -2233,8 +2311,8 @@ def _authorize_g31_mutation_decision(
             "recovery_started": False,
             "governance_mutated": False,
             "replay_mutated": False,
-            "runtime_replay_reference": dispatch[
-                "worker_dispatch_replay_reference"
+            "runtime_replay_reference": invocation[
+                "worker_invocation_replay_reference"
             ],
         }
     )
@@ -2244,7 +2322,6 @@ def _authorize_g31_mutation_decision(
         "authorization_replay_recorded",
         "authorization_consumed",
         "replace_request_created",
-        "worker_invoked",
         "provider_invoked",
         "command_executed",
         "repository_mutated",

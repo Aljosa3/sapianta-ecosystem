@@ -115,8 +115,8 @@ def test_exact_v3_outcome_is_transported_reconstructed_presented_and_stopped(
         "mutation_authorized", "authorization_actor_bound", "authorization_replay_recorded",
     ):
         assert runtime[field] is approved
+    assert runtime["worker_invoked"] is approved
     for field in (
-        "worker_invoked",
         "provider_invoked",
         "command_executed",
         "repository_mutated",

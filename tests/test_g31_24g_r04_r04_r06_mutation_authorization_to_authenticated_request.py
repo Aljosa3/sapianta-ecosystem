@@ -175,7 +175,7 @@ def test_common_entry_retains_one_authenticated_request_before_consumption_stage
     ]
     assert result["replace_request_created"] is True
     assert result["authorization_consumed"] is True
-    assert result["worker_invoked"] is False
+    assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
     assert result["repository_mutated"] is False

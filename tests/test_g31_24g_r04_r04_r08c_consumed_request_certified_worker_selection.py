@@ -85,7 +85,6 @@ def _forbid_downstream(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     calls: dict[str, int] = {}
     targets = (
         (entry.worker_request, "create_worker_invocation_request"),
-        (entry.worker_invocation, "invoke_dispatched_worker"),
         (governance, "execute_g31_authenticated_replace"),
         (governance, "recover_g31_authenticated_replace"),
         (worker, "execute_filesystem_replace_request"),

@@ -28,7 +28,6 @@ def _forbid_later_lifecycle(
 ) -> dict[str, int]:
     calls: dict[str, int] = {}
     targets = (
-        (entry.worker_invocation, "invoke_dispatched_worker"),
         (entry.governed_execution, "run_governed_worker_execution"),
         (entry.existing_file_governance, "execute_g31_authenticated_replace"),
         (entry.existing_file_governance, "recover_g31_authenticated_replace"),
@@ -127,7 +126,7 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     assert result["worker_dispatch_status"] == entry.worker_dispatch.WORKER_DISPATCHED
     assert result["worker_dispatched"] is True
     assert result["runtime_replay_reference"] == result[
-        "worker_dispatch_replay_reference"
+        "worker_invocation_replay_reference"
     ]
     assert sorted(
         path.name
@@ -140,7 +139,6 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
     ]
     for field in (
         "provider_invoked",
-        "worker_invoked",
         "execution_started",
         "execution_requested",
         "command_executed",
@@ -150,6 +148,7 @@ def test_common_entry_assigns_exact_certified_worker_and_reconstructs_replay(
         "replay_mutated",
     ):
         assert result.get(field) is False
+    assert result["worker_invoked"] is True
     assert selection["worker_assigned"] is False
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Worker Assignment Reached: True" in rendered
@@ -225,7 +224,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
         assert result["assigned_worker_id"] == WORKER_ID
         assert result["worker_assigned"] is True
         assert result["worker_dispatched"] is True
-        assert result["worker_invoked"] is False
+        assert result["worker_invoked"] is True
         assert result["provider_invoked"] is False
         assert result["repository_mutated"] is False
     assert memory["g31_application_interface_transport"] == "in_memory_test_adapter"
@@ -236,7 +235,7 @@ def test_aicli_receives_common_entry_assignment_without_assignment_authority(
     assert "run_human_interface_runtime_entry(" in cli_source
 
 
-def test_common_entry_binding_is_worker_neutral_and_stops_before_invocation() -> None:
+def test_common_entry_binding_is_worker_neutral_and_stops_before_execution() -> None:
     source = inspect.getsource(entry._authorize_g31_mutation_decision)
 
     assert "FILESYSTEM_REPLACE_EXISTING_TEXT_FILE_WORKER" not in source
@@ -247,6 +246,7 @@ def test_common_entry_binding_is_worker_neutral_and_stops_before_invocation() ->
     assert source.count("reconstruct_worker_assignment_runtime_replay(") == 1
     assert source.count("dispatch_assigned_worker(") == 1
     assert source.count("reconstruct_worker_dispatch_replay(") == 1
-    assert "invoke_dispatched_worker(" not in source
+    assert source.count("invoke_dispatched_worker(") == 1
+    assert source.count("reconstruct_worker_invocation_replay(") == 1
     assert "execute_governed_worker(" not in source
     assert "execute_g31_authenticated_replace(" not in source

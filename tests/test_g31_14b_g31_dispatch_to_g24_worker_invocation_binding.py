@@ -176,7 +176,7 @@ def test_invocation_evidence_stops_before_execution_and_external_activation(tmp_
 
     aicli_source = Path("aigol/runtime/human_interface_runtime_entry_service.py").read_text(encoding="utf-8")
     invocation_source = inspect.getsource(invoke_dispatched_worker)
-    assert aicli_source.count("worker_invocation.invoke_dispatched_worker(") == 1
+    assert aicli_source.count("worker_invocation.invoke_dispatched_worker(") == 2
     for forbidden in (
         "bridge_worker_invocation_to_execution_candidate",
         "start_execution(",

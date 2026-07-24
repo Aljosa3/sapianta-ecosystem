@@ -92,13 +92,12 @@ def test_exact_r08c_lineage_creates_existing_invocation_request_and_reconstructs
     assert target.read_text(encoding="utf-8") != "replacement bytes\n"
 
 
-def test_common_entry_preserves_request_through_dispatch_and_stops_before_invocation(
+def test_common_entry_preserves_request_through_invocation_and_stops_before_execution(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     root, state = _pending_state(tmp_path, monkeypatch, "R09B-COMMON")
     calls: dict[str, int] = {}
     forbidden = (
-        (entry.worker_invocation, "invoke_dispatched_worker"),
         (entry.existing_file_governance, "execute_g31_authenticated_replace"),
         (entry.filesystem_replace_worker, "execute_filesystem_replace_request"),
         (entry.filesystem_replace_worker, "_open_v2_target"),
@@ -131,7 +130,7 @@ def test_common_entry_preserves_request_through_dispatch_and_stops_before_invoca
     ]["consumption_reconstruction"]["consumption_identity"]
     assert result["worker_assigned"] is True
     assert result["worker_dispatched"] is True
-    assert result["worker_invoked"] is False
+    assert result["worker_invoked"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
     assert result["repository_mutated"] is False
@@ -140,9 +139,12 @@ def test_common_entry_preserves_request_through_dispatch_and_stops_before_invoca
     assert "Worker Invocation Request Created: True" in rendered
     assert "Worker Assignment Reached: True" in rendered
     assert "Worker Dispatch Reached: True" in rendered
+    assert "Worker Invocation Reached: True" in rendered
     assert "No Worker has been assigned, dispatched, invoked, or executed." in rendered
     assert f"Dispatched Worker: {WORKER_ID}" in rendered
     assert "No Worker has been invoked, executed, or produced results." in rendered
+    assert f"Invoked Worker: {WORKER_ID}" in rendered
+    assert "No Worker process or execution has started." in rendered
 
 
 @pytest.mark.parametrize(
