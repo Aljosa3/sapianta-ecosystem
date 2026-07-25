@@ -77,7 +77,7 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     artifact = invocation["worker_invocation_artifact"]
     reconstruction = result["worker_invocation_reconstruction"]
 
-    assert calls == {"invocation": 1, "reconstruction": 3}
+    assert calls == {"invocation": 1, "reconstruction": 5}
     assert all(count == 0 for count in forbidden.values())
     assert result["g31_application_sequenced_by_common_entry"] is True
     assert result["worker_invocation_status"] == entry.worker_invocation.WORKER_INVOKED
@@ -90,7 +90,7 @@ def test_common_entry_invokes_exact_dispatch_once_and_reconstructs_replay(
     assert result["execution_requested"] is True
     assert result["worker_result_captured"] is True
     assert result["result_created"] is True
-    assert result["result_validated"] is False
+    assert result["result_validated"] is True
     assert result["command_executed"] is False
     assert result["repository_mutated"] is True
     assert result["governance_mutated"] is False

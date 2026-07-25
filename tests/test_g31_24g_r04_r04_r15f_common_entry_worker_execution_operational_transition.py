@@ -82,7 +82,7 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     execution = result["worker_execution_capture"]["execution_artifact"]
     reconstruction = result["worker_execution_reconstruction"]
 
-    assert calls == {"execution": 1, "reconstruction": 3}
+    assert calls == {"execution": 1, "reconstruction": 5}
     assert all(count == 0 for count in forbidden.values())
     assert supplied["invocation_artifact"] == invocation
     assert supplied["invocation_replay"] == invocation_capture[
@@ -100,7 +100,7 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     assert result["provider_invoked"] is False
     assert result["worker_result_captured"] is True
     assert result["result_created"] is True
-    assert result["result_validated"] is False
+    assert result["result_validated"] is True
     assert result["command_executed"] is False
     assert result["target_opened"] is True
     assert result["repository_mutated"] is True
@@ -162,7 +162,7 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     assert "The certified Filesystem Replace Worker has executed." in rendered
     assert "No Provider has been invoked." in rendered
     assert "The authentic Worker output has been captured." in rendered
-    assert "No Worker result has been validated." in rendered
+    assert "validated for governance policy and lineage" in rendered
     assert "The authenticated repository target has been modified." in rendered
 
 
@@ -235,7 +235,7 @@ def test_aicli_receives_execution_handoff_without_execution_authority(
         assert result["provider_invoked"] is False
         assert result["worker_result_captured"] is True
         assert result["result_created"] is True
-        assert result["result_validated"] is False
+        assert result["result_validated"] is True
         assert result["repository_mutated"] is True
         assert execution["worker_reference"] == WORKER_ID
         assert execution["capability_id"] == CAPABILITY

@@ -129,7 +129,7 @@ def test_common_entry_continues_consumed_authorization_once_through_existing_wor
     assert result["command_executed"] is False
     assert result["worker_result_captured"] is True
     assert result["result_created"] is True
-    assert result["result_validated"] is False
+    assert result["result_validated"] is True
     assert result["repository_mutated"] is True
     assert result["main_repository_mutated"] is True
     assert execution["execution_status"] == entry.execution_runtime.EXECUTING
@@ -138,6 +138,7 @@ def test_common_entry_continues_consumed_authorization_once_through_existing_wor
     rendered = "\n".join(result["g31_canonical_presentations"])
     assert "Filesystem Replace Worker Executed: True" in rendered
     assert "Filesystem Replace Worker Result Captured: True" in rendered
+    assert "Filesystem Replace Worker Result Validated: True" in rendered
     assert "Authorization consumption was not repeated." in rendered
 
 

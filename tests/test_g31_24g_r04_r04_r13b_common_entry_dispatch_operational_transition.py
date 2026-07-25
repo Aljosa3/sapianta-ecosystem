@@ -88,7 +88,7 @@ def test_common_entry_dispatches_exact_assignment_and_reconstructs_replay(
     assert result["execution_requested"] is True
     assert result["worker_result_captured"] is True
     assert result["result_created"] is True
-    assert result["result_validated"] is False
+    assert result["result_validated"] is True
     assert result["repository_mutated"] is True
     assert dispatch_capture["worker_id"] == WORKER_ID
     assert dispatch_artifact["worker_assignment_reference"] == assignment_artifact[
