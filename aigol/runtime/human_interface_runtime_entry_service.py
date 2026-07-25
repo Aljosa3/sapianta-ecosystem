@@ -31,6 +31,10 @@ from aigol.runtime import (
     filesystem_replace_worker_result_capture_to_result_validation_binding_runtime
     as filesystem_result_validation,
 )
+from aigol.runtime import (
+    filesystem_replace_worker_schema_aware_authorization_lineage_resolver_runtime
+    as filesystem_post_execution_review,
+)
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
@@ -901,6 +905,7 @@ def _continue_g31_application_transition(
                         "Filesystem Replace Worker Executed: True",
                         "Filesystem Replace Worker Result Captured: True",
                         "Filesystem Replace Worker Result Validated: True",
+                        "Filesystem Replace Worker Replay Reviewed: True",
                         "Repository Mutated: True",
                     )
                 )
@@ -945,11 +950,12 @@ def _continue_g31_application_transition(
                         "The authentic Worker output has been captured.",
                         "The captured Worker result has been validated for "
                         "governance policy and lineage.",
+                        "The validated execution Replay has completed "
+                        "post-execution integrity review.",
                         "Task outcome satisfaction has not been evaluated.",
                         "No Provider has been invoked.",
                         "No command has executed.",
-                        "No result acceptance or post-execution Replay review "
-                        "has occurred.",
+                        "No result acceptance has occurred.",
                         "No final Execution certification has occurred.",
                         "The authenticated repository target has been modified.",
                     )
@@ -2596,6 +2602,129 @@ def _authorize_g31_mutation_decision(
             "G31 mutation continuation failed closed: Filesystem Replace Worker "
             "Result Validation reconstruction mismatch"
         )
+    post_execution_review_replay_dir = (
+        session_root
+        / (
+            "POST-EXECUTION-REPLAY-REVIEW-"
+            f"{filesystem_validation['worker_result_validation_artifact']['artifact_hash'][-16:]}"
+        )
+    )
+    filesystem_review = (
+        filesystem_post_execution_review.review_validated_filesystem_replace_worker_result(
+            validation_binding_capture=filesystem_validation,
+            result_capture_binding_capture=filesystem_result,
+            authenticated_request=request,
+            filesystem_worker_capture=filesystem_execution,
+            filesystem_worker_reconstruction=filesystem_reconstruction,
+            worker_invocation_artifact=invocation_artifact,
+            worker_invocation_replay_reference=invocation[
+                "worker_invocation_replay_reference"
+            ],
+            worker_assignment_artifact=assignment_artifact,
+            execution_artifact=execution_artifact,
+            execution_replay=execution["execution_replay"],
+            execution_reconstruction=execution_reconstruction,
+            execution_replay_reference=str(execution_replay_dir),
+            reviewed_at=created,
+            replay_dir=post_execution_review_replay_dir,
+        )
+    )
+    if (
+        filesystem_review.get(
+            "g31_filesystem_post_execution_replay_review_status"
+        )
+        != filesystem_post_execution_review.SUCCESS
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            "Post-Execution Replay Review failed: "
+            f"{filesystem_review.get('failure_reason')}"
+        )
+    filesystem_review_reconstruction = (
+        filesystem_post_execution_review.reconstruct_filesystem_replace_worker_post_execution_replay_review_binding(
+            review_binding_capture=filesystem_review,
+            validation_binding_capture=filesystem_validation,
+            result_capture_binding_capture=filesystem_result,
+            authenticated_request=request,
+            filesystem_worker_capture=filesystem_execution,
+            filesystem_worker_reconstruction=filesystem_reconstruction,
+            worker_invocation_artifact=invocation_artifact,
+            worker_invocation_replay_reference=invocation[
+                "worker_invocation_replay_reference"
+            ],
+            worker_assignment_artifact=assignment_artifact,
+            execution_artifact=execution_artifact,
+            execution_replay=execution["execution_replay"],
+            execution_reconstruction=execution_reconstruction,
+            execution_replay_reference=str(execution_replay_dir),
+        )
+    )
+    if not all(
+        (
+            filesystem_review_reconstruction.get(
+                "g31_filesystem_post_execution_replay_review_status"
+            )
+            == filesystem_post_execution_review.SUCCESS,
+            filesystem_review_reconstruction.get("review_status")
+            == filesystem_post_execution_review.replay_review.REVIEW_COMPLETED,
+            filesystem_review_reconstruction.get(
+                "worker_result_validation_reference"
+            )
+            == filesystem_validation[
+                "worker_result_validation_artifact"
+            ].get("worker_result_validation_id"),
+            filesystem_review_reconstruction.get(
+                "worker_result_validation_hash"
+            )
+            == filesystem_validation[
+                "worker_result_validation_artifact"
+            ].get("artifact_hash"),
+            filesystem_review_reconstruction.get(
+                "authorization_commitment_kind"
+            )
+            == filesystem_post_execution_review.RECORD_HASH_COMMITMENT,
+            filesystem_review_reconstruction.get(
+                "authorization_commitment"
+            )
+            == request.get("authorization_hash"),
+            filesystem_review_reconstruction.get("worker_output_hash")
+            == filesystem_result.get("filesystem_replace_worker_output_hash"),
+            filesystem_review_reconstruction.get(
+                "filesystem_replace_worker_capture_hash"
+            )
+            == filesystem_execution.get("capture_hash"),
+            filesystem_review_reconstruction.get(
+                "filesystem_replace_worker_replay_hash"
+            )
+            == filesystem_reconstruction.get("replay_hash"),
+            filesystem_review_reconstruction.get("worker_result_captured")
+            is True,
+            filesystem_review_reconstruction.get("result_created") is True,
+            filesystem_review_reconstruction.get("result_validated") is True,
+            filesystem_review_reconstruction.get(
+                "task_outcome_satisfaction_evaluated"
+            )
+            is False,
+            filesystem_review_reconstruction.get("result_accepted") is False,
+            filesystem_review_reconstruction.get(
+                "post_execution_replay_reviewed"
+            )
+            is True,
+            filesystem_review_reconstruction.get("execution_certified")
+            is False,
+            filesystem_review_reconstruction.get("provider_invoked") is False,
+            filesystem_review_reconstruction.get("command_executed") is False,
+            filesystem_review_reconstruction.get("repository_mutated") is True,
+            filesystem_review_reconstruction.get("governance_mutated")
+            is False,
+            filesystem_review_reconstruction.get("replay_mutated") is False,
+            filesystem_review_reconstruction.get("replay_artifact_count") == 4,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            "Post-Execution Replay Review reconstruction mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2737,6 +2866,40 @@ def _authorize_g31_mutation_decision(
             "filesystem_replace_worker_result_validation_replay_hash": (
                 filesystem_validation_reconstruction["replay_hash"]
             ),
+            "filesystem_replace_worker_post_execution_replay_review": (
+                filesystem_review
+            ),
+            "filesystem_replace_worker_post_execution_replay_review_reconstruction": (
+                filesystem_review_reconstruction
+            ),
+            "filesystem_replace_worker_post_execution_replay_review_status": (
+                filesystem_review[
+                    "g31_filesystem_post_execution_replay_review_status"
+                ]
+            ),
+            "filesystem_replace_worker_post_execution_replay_review_reference": (
+                filesystem_review[
+                    "post_execution_replay_review_reference"
+                ]
+            ),
+            "filesystem_replace_worker_post_execution_replay_review_replay_reference": (
+                filesystem_review[
+                    "post_execution_replay_review_replay_reference"
+                ]
+            ),
+            "filesystem_replace_worker_post_execution_replay_review_replay_hash": (
+                filesystem_review_reconstruction["replay_hash"]
+            ),
+            "filesystem_replace_worker_authorization_lineage_schema": (
+                filesystem_review_reconstruction[
+                    "authorization_lineage_schema"
+                ]
+            ),
+            "filesystem_replace_worker_authorization_commitment_kind": (
+                filesystem_review_reconstruction[
+                    "authorization_commitment_kind"
+                ]
+            ),
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
@@ -2748,7 +2911,7 @@ def _authorize_g31_mutation_decision(
             "worker_result_captured": True,
             "result_created": True,
             "result_validated": True,
-            "post_execution_replay_reviewed": False,
+            "post_execution_replay_reviewed": True,
             "execution_certified": False,
             "command_executed": False,
             "target_opened": True,

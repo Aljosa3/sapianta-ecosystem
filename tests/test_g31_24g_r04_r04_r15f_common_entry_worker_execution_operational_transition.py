@@ -82,7 +82,7 @@ def test_common_entry_starts_exact_execution_once_and_reconstructs_replay(
     execution = result["worker_execution_capture"]["execution_artifact"]
     reconstruction = result["worker_execution_reconstruction"]
 
-    assert calls == {"execution": 1, "reconstruction": 5}
+    assert calls == {"execution": 1, "reconstruction": 7}
     assert all(count == 0 for count in forbidden.values())
     assert supplied["invocation_artifact"] == invocation
     assert supplied["invocation_replay"] == invocation_capture[

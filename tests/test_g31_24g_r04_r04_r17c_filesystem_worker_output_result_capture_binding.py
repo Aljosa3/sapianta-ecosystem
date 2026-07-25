@@ -173,7 +173,7 @@ def test_common_entry_captures_exact_worker_output_once(
     assert result["worker_result_captured"] is True
     assert result["result_created"] is True
     assert result["result_validated"] is True
-    assert result["post_execution_replay_reviewed"] is False
+    assert result["post_execution_replay_reviewed"] is True
     assert result["execution_certified"] is False
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
