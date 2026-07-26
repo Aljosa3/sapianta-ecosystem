@@ -543,7 +543,7 @@ def resolve_authorization_lineage(
     )
     checks = (
         reconstructed_request.get(
-            "complete_authenticated_replacement_lineage_reconstructed"
+            "complete_worker_selection_lineage_reconstructed"
         )
         is True,
         request_evidence.get("execution_authorization_replay_reference")

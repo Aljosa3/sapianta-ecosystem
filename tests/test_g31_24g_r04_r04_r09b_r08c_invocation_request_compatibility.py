@@ -8,6 +8,10 @@ from pathlib import Path
 import pytest
 
 from aigol.runtime import human_interface_runtime_entry_service as entry
+from aigol.runtime import (
+    filesystem_replace_worker_selection_lineage_resolver_runtime
+    as filesystem_selection_lineage,
+)
 from aigol.runtime import worker_invocation_request_runtime as invocation_request
 from aigol.runtime.human_decision_runtime import MUTATION_APPROVED
 from aigol.runtime.models import FailClosedRuntimeError
@@ -31,13 +35,19 @@ def _request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str = "R09B"
         tmp_path, monkeypatch, name
     )
     replay_dir = Path(request["session_root"]) / f"{name}-WORKER-REQUEST"
-    capture = invocation_request.create_authenticated_replacement_worker_invocation_request(
+    capture = invocation_request.create_worker_invocation_request_from_selection_lineage(
         invocation_request_id=f"{name}:INVOCATION-REQUEST",
-        authenticated_request=request,
-        consumption_reconstruction=consumption,
-        resource_selection_capture=selection,
-        worker_selection_certification_reference=str(
-            entry.existing_file_governance.R08B_CERTIFICATION_PATH
+        worker_selection_lineage_resolver=lambda: (
+            filesystem_selection_lineage
+            .resolve_authenticated_replacement_worker_selection_lineage(
+                authenticated_request=request,
+                consumption_reconstruction=consumption,
+                resource_selection_capture=selection,
+                worker_selection_certification_reference=str(
+                    entry.existing_file_governance.R08B_CERTIFICATION_PATH
+                ),
+                anchor=replay_dir,
+            )
         ),
         requested_by="G31_R09B_TEST",
         requested_at=CREATED,
@@ -68,7 +78,7 @@ def test_exact_r08c_lineage_creates_existing_invocation_request_and_reconstructs
     assert artifact["worker_role"] == "WORKER_ROLE"
     assert artifact["allowed_outputs"] == [request["target_path"]]
     assert compatibility["lineage_type"] == (
-        invocation_request.AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1
+        filesystem_selection_lineage.AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1
     )
     assert compatibility["authenticated_request"] == request
     assert compatibility["consumption_reconstruction"] == consumption
@@ -78,7 +88,7 @@ def test_exact_r08c_lineage_creates_existing_invocation_request_and_reconstructs
     assert compatibility["worker_selection_certification_hash"] == (
         entry.existing_file_governance.R08B_CERTIFICATION_HASH
     )
-    assert reconstructed["complete_authenticated_replacement_lineage_reconstructed"] is True
+    assert reconstructed["complete_worker_selection_lineage_reconstructed"] is True
     assert reconstructed["request_hash"] == artifact["request_hash"]
     assert reconstructed["target_worker_family"] == WORKER_ID
     for field in (
@@ -189,12 +199,18 @@ def test_changed_lineage_fails_before_request_artifact(
             tmp_path / "different-session" / "selection"
         )
     replay_dir = Path(request["session_root"]) / f"FAILED-{mode}"
-    capture = invocation_request.create_authenticated_replacement_worker_invocation_request(
+    capture = invocation_request.create_worker_invocation_request_from_selection_lineage(
         invocation_request_id=f"FAILED-{mode}",
-        authenticated_request=request,
-        consumption_reconstruction=consumption,
-        resource_selection_capture=selection,
-        worker_selection_certification_reference=certification,
+        worker_selection_lineage_resolver=lambda: (
+            filesystem_selection_lineage
+            .resolve_authenticated_replacement_worker_selection_lineage(
+                authenticated_request=request,
+                consumption_reconstruction=consumption,
+                resource_selection_capture=selection,
+                worker_selection_certification_reference=certification,
+                anchor=replay_dir,
+            )
+        ),
         requested_by="G31_R09B_TEST",
         requested_at=CREATED,
         replay_dir=replay_dir,
@@ -234,9 +250,9 @@ def test_compatibility_owner_has_no_worker_identity_branch_or_assignment_call() 
     source = "\n".join(
         inspect.getsource(symbol)
         for symbol in (
-            invocation_request.create_authenticated_replacement_worker_invocation_request,
-            invocation_request._load_authenticated_replacement_selection_lineage,
-            invocation_request._project_authenticated_replacement_lineage,
+            invocation_request.create_worker_invocation_request_from_selection_lineage,
+            invocation_request.validate_worker_selection_lineage_projection,
+            invocation_request._project_worker_selection_lineage,
         )
     )
     assert WORKER_ID not in source
@@ -245,5 +261,5 @@ def test_compatibility_owner_has_no_worker_identity_branch_or_assignment_call() 
     assert "dispatch_assigned_worker" not in source
     assert "invoke_dispatched_worker" not in source
     cli_source = Path("aigol/cli/aicli.py").read_text(encoding="utf-8")
-    assert "create_authenticated_replacement_worker_invocation_request(" not in cli_source
+    assert "create_worker_invocation_request_from_selection_lineage(" not in cli_source
     assert "run_human_interface_runtime_entry(" in cli_source

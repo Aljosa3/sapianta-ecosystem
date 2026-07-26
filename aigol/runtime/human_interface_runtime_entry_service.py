@@ -35,6 +35,10 @@ from aigol.runtime import (
     filesystem_replace_worker_schema_aware_authorization_lineage_resolver_runtime
     as filesystem_post_execution_review,
 )
+from aigol.runtime import (
+    filesystem_replace_worker_selection_lineage_resolver_runtime
+    as filesystem_selection_lineage,
+)
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_termination_runtime as governed_termination
 from aigol.runtime import (
@@ -2081,21 +2085,36 @@ def _authorize_g31_mutation_decision(
         / f"FILESYSTEM-REPLACE-WORKER-SELECTION-{request['request_hash'][-16:]}",
     )
     selection_artifact = selection["resource_selection_artifact"]
+    invocation_request_replay_dir = (
+        session_root
+        / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}"
+    )
+
+    def resolve_filesystem_worker_selection_lineage() -> dict[str, Any]:
+        return (
+            filesystem_selection_lineage
+            .resolve_authenticated_replacement_worker_selection_lineage(
+                authenticated_request=request,
+                consumption_reconstruction=consumption_reconstruction,
+                resource_selection_capture=selection,
+                worker_selection_certification_reference=str(
+                    existing_file_governance.R08B_CERTIFICATION_PATH
+                ),
+                anchor=invocation_request_replay_dir,
+            )
+        )
+
     invocation_request = (
-        worker_request.create_authenticated_replacement_worker_invocation_request(
+        worker_request.create_worker_invocation_request_from_selection_lineage(
             invocation_request_id=(
                 f"{selection_artifact['selection_id']}:INVOCATION-REQUEST"
             ),
-            authenticated_request=request,
-            consumption_reconstruction=consumption_reconstruction,
-            resource_selection_capture=selection,
-            worker_selection_certification_reference=str(
-                existing_file_governance.R08B_CERTIFICATION_PATH
+            worker_selection_lineage_resolver=(
+                resolve_filesystem_worker_selection_lineage
             ),
             requested_by="PLATFORM_CORE_G31_INVOCATION_REQUEST_COMPATIBILITY",
             requested_at=created,
-            replay_dir=session_root
-            / f"WORKER-REQUEST-{selection_artifact['artifact_hash'][-16:]}",
+            replay_dir=invocation_request_replay_dir,
         )
     )
     invocation_request_artifact = invocation_request[
