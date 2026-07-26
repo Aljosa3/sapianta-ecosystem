@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Callable
 
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.executable_domain_bundle_runtime import (
@@ -51,6 +51,11 @@ REPLAY_STEPS = (
     "review_artifact_recorded",
     "review_result_recorded",
 )
+
+ChainArtifactLoader = Callable[
+    [dict[str, Any]],
+    dict[str, dict[str, Any]],
+]
 
 
 def detect_domain_post_execution_replay_review_entry_intent(human_prompt: str) -> dict[str, Any]:
@@ -155,6 +160,7 @@ def review_validated_worker_result(
     reviewed_by: str,
     reviewed_at: str,
     replay_dir: str | Path,
+    chain_artifact_loader: ChainArtifactLoader | None = None,
 ) -> dict[str, Any]:
     """Review a validated execution chain without retry, mutation, or termination."""
 
@@ -164,6 +170,7 @@ def review_validated_worker_result(
         lineage = _load_validation_lineage(
             Path(worker_result_validation_replay_reference),
             worker_result_validation_artifact,
+            chain_artifact_loader=chain_artifact_loader,
         )
         output_binding = _load_output_binding_lineage(
             real_output_binding_artifact,
@@ -242,7 +249,11 @@ def review_validated_worker_result(
         return _capture(None, None, None, result, replay_path)
 
 
-def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str, Any]:
+def reconstruct_post_execution_replay_review(
+    replay_dir: str | Path,
+    *,
+    chain_artifact_loader: ChainArtifactLoader | None = None,
+) -> dict[str, Any]:
     """Reconstruct post-execution replay review deterministically."""
 
     replay_path = Path(replay_dir)
@@ -268,7 +279,12 @@ def reconstruct_post_execution_replay_review(replay_dir: str | Path) -> dict[str
     if len({evidence["chain_id"], classification["chain_id"], review["chain_id"], result["chain_id"]}) != 1:
         raise FailClosedRuntimeError("post-execution replay review chain mismatch")
     _validate_review_artifact(review)
-    _load_validation_lineage(Path(evidence["worker_result_validation_replay_reference"]), None, review=review)
+    _load_validation_lineage(
+        Path(evidence["worker_result_validation_replay_reference"]),
+        None,
+        review=review,
+        chain_artifact_loader=chain_artifact_loader,
+    )
     _load_output_binding_lineage(
         None,
         evidence.get("real_output_binding_replay_reference"),
@@ -336,6 +352,7 @@ def _load_validation_lineage(
     provided_validation: dict[str, Any] | None,
     *,
     review: dict[str, Any] | None = None,
+    chain_artifact_loader: ChainArtifactLoader | None = None,
 ) -> dict[str, Any]:
     reconstructed = reconstruct_worker_result_validation_replay(validation_replay_path)
     if reconstructed.get("validation_status") != RESULT_VALIDATED:
@@ -378,7 +395,8 @@ def _load_validation_lineage(
             if review.get(field) != validation.get(field):
                 raise FailClosedRuntimeError("post-execution replay review failed closed: validation mismatch")
 
-    chain = _load_chain_artifacts(validation_evidence)
+    loader = chain_artifact_loader or _load_chain_artifacts
+    chain = loader(validation_evidence)
     checks = {
         "review_continuity": review is None or review.get("worker_result_validation_hash") == validation["artifact_hash"],
         "validation_continuity": validation_result["worker_result_validation_hash"] == validation["artifact_hash"],

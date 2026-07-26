@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from threading import RLock
-from typing import Any, Iterator
+from typing import Any
 
 from aigol.authorization.authorization_runtime import (
     CANONICAL_AUTHORIZATION_ACTOR,
@@ -53,7 +51,6 @@ RECORD_HASH_COMMITMENT = "AUTHORIZATION_RECORD_HASH"
 COMPATIBILITY_LINEAGE_TYPE = "AUTHENTICATED_REPLACEMENT_SELECTION_LINEAGE_V1"
 
 _ORIGINAL_CHAIN_LOADER = replay_review._load_chain_artifacts
-_SCHEMA_PRESENTATION_LOCK = RLock()
 
 
 def review_validated_filesystem_replace_worker_result(
@@ -121,25 +118,25 @@ def review_validated_filesystem_replace_worker_result(
             destination=destination,
         )
         canonical_called = True
-        with present_schema_aware_authorization_lineage():
-            canonical = replay_review.review_validated_worker_result(
-                post_execution_replay_review_id=review_id,
-                worker_result_validation_artifact=binding["validation"],
-                worker_result_validation_replay_reference=str(
-                    binding["validation_replay_path"]
-                ),
-                reviewed_by=REVIEWED_BY,
-                reviewed_at=_required(reviewed_at, "reviewed_at"),
-                replay_dir=destination,
-            )
-            if canonical.get("review_status") == replay_review.REVIEW_COMPLETED:
-                reconstructed = (
-                    replay_review.reconstruct_post_execution_replay_review(
-                        destination
-                    )
+        canonical = replay_review.review_validated_worker_result(
+            post_execution_replay_review_id=review_id,
+            worker_result_validation_artifact=binding["validation"],
+            worker_result_validation_replay_reference=str(
+                binding["validation_replay_path"]
+            ),
+            reviewed_by=REVIEWED_BY,
+            reviewed_at=_required(reviewed_at, "reviewed_at"),
+            replay_dir=destination,
+            chain_artifact_loader=_load_schema_aware_chain_artifacts,
+        )
+        if canonical.get("review_status") == replay_review.REVIEW_COMPLETED:
+            reconstructed = (
+                reconstruct_schema_aware_post_execution_replay_review(
+                    destination
                 )
-            else:
-                reconstructed = None
+            )
+        else:
+            reconstructed = None
         if canonical.get("review_status") == replay_review.FAILED_CLOSED:
             return {
                 **deepcopy(canonical),
@@ -269,10 +266,9 @@ def reconstruct_filesystem_replace_worker_post_execution_replay_review_binding(
         request_binding.get("post_execution_replay_review_id"),
         "post_execution_replay_review_id",
     )
-    with present_schema_aware_authorization_lineage():
-        reconstructed = replay_review.reconstruct_post_execution_replay_review(
-            replay_path
-        )
+    reconstructed = reconstruct_schema_aware_post_execution_replay_review(
+        replay_path
+    )
     _validate_canonical_reconstruction(
         canonical=review_binding_capture,
         reconstruction=reconstructed,
@@ -344,20 +340,15 @@ def reconstruct_filesystem_replace_worker_post_execution_replay_review_binding(
     }
 
 
-@contextmanager
-def present_schema_aware_authorization_lineage() -> Iterator[None]:
-    """Present authenticated lineage without changing Replay Review source."""
+def reconstruct_schema_aware_post_execution_replay_review(
+    replay_reference: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct one review through immutable invocation-scoped lineage."""
 
-    with _SCHEMA_PRESENTATION_LOCK:
-        if replay_review._load_chain_artifacts is not _ORIGINAL_CHAIN_LOADER:
-            raise FailClosedRuntimeError(
-                "schema-aware Authorization lineage presentation conflict"
-            )
-        replay_review._load_chain_artifacts = _load_schema_aware_chain_artifacts
-        try:
-            yield
-        finally:
-            replay_review._load_chain_artifacts = _ORIGINAL_CHAIN_LOADER
+    return replay_review.reconstruct_post_execution_replay_review(
+        replay_reference,
+        chain_artifact_loader=_load_schema_aware_chain_artifacts,
+    )
 
 
 def _load_schema_aware_chain_artifacts(
