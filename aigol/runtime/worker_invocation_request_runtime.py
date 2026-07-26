@@ -44,6 +44,11 @@ WORKER_INVOCATION_REQUEST_RESULT_ARTIFACT_V1 = "WORKER_INVOCATION_REQUEST_RESULT
 WORKER_INVOCATION_REQUEST_CREATED = "WORKER_INVOCATION_REQUEST_CREATED"
 FAILED_CLOSED = "FAILED_CLOSED"
 WORKER_SELECTION_LINEAGE_PROJECTION_V1 = "WORKER_SELECTION_LINEAGE_PROJECTION_V1"
+ELIGIBLE_WORKER_RESOURCE_CATEGORIES = frozenset(
+    {"WORKER", "HYBRID_PROVIDER_WORKER"}
+)
+CANONICAL_WORKER_ROLE = "WORKER_ROLE"
+NON_AUTHORITATIVE_WORKER_PROFILE = "WORKER_AUTHORIZED_TASK_ONLY"
 
 WorkerSelectionLineageResolver = Callable[[], dict[str, Any]]
 
@@ -709,7 +714,8 @@ def _load_authorized_lineage(
         if not resource_selection_replay_reference:
             raise FailClosedRuntimeError("worker invocation request failed closed: G31 Worker selection is required")
         g31_lineage = _load_g31_selection_binding(
-            Path(resource_selection_replay_reference), auth_replay_path
+            Path(resource_selection_replay_reference),
+            auth_replay_path,
         )
         g31_lineage["authorization_scope"] = deepcopy(auth_request.get("requested_scope"))
     return {
@@ -784,7 +790,10 @@ def _load_execution_ready_lineage(replay_path: Path) -> dict[str, dict[str, Any]
             "ready": ready, "g31_ready": g31_ready}
 
 
-def _load_g31_selection_binding(selection_path: Path, auth_path: Path) -> dict[str, Any]:
+def _load_g31_selection_binding(
+    selection_path: Path,
+    auth_path: Path,
+) -> dict[str, Any]:
     from aigol.runtime.confirmed_grounded_execution_authorization_binding import reconstruct_authorized_grounded_worker_selection
     from aigol.runtime.unified_resource_selection_runtime import RESOURCE_SELECTION_SUCCEEDED
 
@@ -800,13 +809,12 @@ def _load_g31_selection_binding(selection_path: Path, auth_path: Path) -> dict[s
     if not isinstance(selection, dict):
         raise FailClosedRuntimeError("worker invocation request failed closed: Worker selection is missing")
     _verify_artifact_hash(selection, "Worker selection artifact")
+    validate_historical_worker_selection_identity(
+        selection,
+    )
     if not all(
         (
             reconstructed.get("selection_status") == RESOURCE_SELECTION_SUCCEEDED,
-            selection.get("selected_resource_id") == "CODEX",
-            selection.get("selected_resource_category") == "HYBRID_PROVIDER_WORKER",
-            selection.get("selected_role_type") == "WORKER_ROLE",
-            selection.get("selected_authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
             selection.get("context_hash") == reconstructed.get("execution_authorization_hash"),
             selection.get("provider_invoked") is False,
             selection.get("worker_invoked") is False,
@@ -882,7 +890,11 @@ def _classification_artifact(
         "invocation_request_evidence_hash": evidence["artifact_hash"],
         "chain_id": evidence["chain_id"],
         "worker_role": worker_role,
-        "target_worker_family": _target_worker_family(candidate, worker_role),
+        "target_worker_family": _target_worker_family_for_lineage(
+            lineage,
+            candidate,
+            worker_role,
+        ),
         "allowed_outputs": deepcopy(packet["allowed_outputs"]),
         "forbidden_operations": deepcopy(packet["forbidden_operations"]),
         "validation_requirements": deepcopy(packet["required_validations"]),
@@ -1081,11 +1093,13 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
         )
     if g31 is not None:
         selection = g31.get("resource_selection_artifact") if isinstance(g31, dict) else None
-        if not isinstance(selection, dict) or not all((
-            selection.get("selected_resource_id") == "CODEX",
-            selection.get("selected_resource_category") == "HYBRID_PROVIDER_WORKER",
-            selection.get("selected_role_type") == "WORKER_ROLE",
-            selection.get("selected_authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
+        if not isinstance(selection, dict):
+            raise FailClosedRuntimeError("worker invocation request failed closed: selection authority invalid")
+        validate_historical_worker_selection_identity(
+            selection,
+            target_worker_family=request.get("target_worker_family"),
+        )
+        if not all((
             selection.get("provider_invoked") is False, g31.get("provider_authority") is False,
             isinstance(g31.get("authorization_scope"), dict),
             isinstance(g31.get("resource_selection_replay_reference"), str),
@@ -1097,6 +1111,40 @@ def _validate_request_artifact(request: dict[str, Any]) -> None:
             compatibility,
             request_artifact=request,
         )
+
+
+def validate_historical_worker_selection_identity(
+    selection: dict[str, Any],
+    *,
+    target_worker_family: Any | None = None,
+) -> str:
+    """Validate legacy G31 selection identity by immutable relationships."""
+
+    selected_worker_identity = _require_string(
+        selection.get("selected_resource_id"),
+        "selected_resource_id",
+    )
+    request_bound_worker_identity = (
+        _require_string(target_worker_family, "target_worker_family")
+        if target_worker_family is not None
+        else selected_worker_identity
+    )
+    if not all(
+        (
+            selection.get("selection_status") == RESOURCE_SELECTION_SUCCEEDED,
+            selected_worker_identity == request_bound_worker_identity,
+            selection.get("selected_resource_category")
+            in ELIGIBLE_WORKER_RESOURCE_CATEGORIES,
+            selection.get("selected_role_type") == CANONICAL_WORKER_ROLE,
+            selection.get("selected_authority_profile")
+            == NON_AUTHORITATIVE_WORKER_PROFILE,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "worker invocation request failed closed: Worker selection "
+            "identity continuity invalid"
+        )
+    return selected_worker_identity
 
 
 def _domain_execution_ready_bridge_index(root: Path, domain_name: str) -> list[dict[str, Any]]:
@@ -1213,6 +1261,23 @@ def _worker_role(packet: dict[str, Any]) -> str:
 def _target_worker_family(candidate: dict[str, Any], worker_role: str) -> str:
     value = candidate.get("target_worker") or worker_role
     return _require_string(value, "target_worker_family")
+
+
+def _target_worker_family_for_lineage(
+    lineage: dict[str, Any],
+    candidate: dict[str, Any],
+    worker_role: str,
+) -> str:
+    g31 = lineage.get("g31_lineage")
+    if isinstance(g31, dict):
+        selection = g31.get("resource_selection_artifact")
+        if not isinstance(selection, dict):
+            raise FailClosedRuntimeError(
+                "worker invocation request failed closed: Worker selection "
+                "is missing"
+            )
+        return validate_historical_worker_selection_identity(selection)
+    return _target_worker_family(candidate, worker_role)
 
 
 def _validate_not_expired(expires_at: Any, requested_at: str) -> None:

@@ -23,6 +23,7 @@ from aigol.runtime.worker_invocation_request_runtime import (
     WORKER_INVOCATION_REQUEST_ARTIFACT_V1,
     WORKER_INVOCATION_REQUEST_CREATED,
     reconstruct_worker_invocation_request_replay,
+    validate_historical_worker_selection_identity,
     validate_worker_selection_lineage_projection,
 )
 from aigol.runtime.worker_runtime import AVAILABLE, ASSIGNED, WORKER_ARTIFACT_V1, WORKER_ASSIGNMENT_ARTIFACT_V1
@@ -352,18 +353,16 @@ def default_worker_registry_for_request(
     if compatibility is None and selection is not None:
         selection = deepcopy(selection)
         _verify_artifact_hash(selection, "Worker selection artifact")
+        worker_id = validate_historical_worker_selection_identity(
+            selection,
+            target_worker_family=request.get("target_worker_family"),
+        )
         if not all((
-            selection.get("selection_status") == "RESOURCE_SELECTION_SUCCEEDED",
-            selection.get("selected_resource_id") == "CODEX",
-            selection.get("selected_resource_category") == "HYBRID_PROVIDER_WORKER",
-            selection.get("selected_role_type") == "WORKER_ROLE",
-            selection.get("selected_authority_profile") == "WORKER_AUTHORIZED_TASK_ONLY",
             selection.get("provider_invoked") is False,
             selection.get("worker_invoked") is False,
             selection.get("dispatch_requested") is False,
         )):
             raise FailClosedRuntimeError("worker assignment failed closed: selected Worker evidence mismatch")
-        worker_id = selection["selected_resource_id"]
         worker_version = selection["selected_resource_version"]
         declared_capabilities = [selection["required_capability"], request["worker_role"]]
         capability_id = selection["required_capability"]
