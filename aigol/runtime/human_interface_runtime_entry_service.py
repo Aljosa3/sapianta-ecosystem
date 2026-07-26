@@ -37,6 +37,10 @@ from aigol.runtime import (
 )
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
 from aigol.runtime import governed_termination_runtime as governed_termination
+from aigol.runtime import (
+    governed_termination_to_final_execution_certification_binding_runtime
+    as final_execution_certification,
+)
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import platform_core_existing_file_governance as existing_file_governance
@@ -957,7 +961,8 @@ def _continue_g31_application_transition(
                         "No Provider has been invoked.",
                         "No command has executed.",
                         "No result acceptance has occurred.",
-                        "No final Execution certification has occurred.",
+                        "Final Execution certification has completed through "
+                        "the unchanged Certification owner.",
                         "The authenticated repository target has been modified.",
                     )
                 )
@@ -2800,6 +2805,49 @@ def _authorize_g31_mutation_decision(
             "G31 mutation continuation failed closed: Filesystem Replace Worker "
             "Governed Termination reconstruction mismatch"
         )
+    final_execution_certification_replay_dir = (
+        session_root
+        / (
+            "FINAL-EXECUTION-CERTIFICATION-"
+            f"{filesystem_termination['governed_termination_artifact']['artifact_hash'][-16:]}"
+        )
+    )
+
+    def reconstruct_filesystem_governed_termination(
+        replay_reference: str | Path,
+    ) -> dict[str, Any]:
+        return governed_termination.reconstruct_governed_termination_replay(
+            replay_reference,
+            replay_review_reconstructor=filesystem_replay_review_reconstructor,
+        )
+
+    filesystem_certification = (
+        final_execution_certification.certify_governed_termination(
+            binding_id=(
+                f"{filesystem_termination['governed_termination_reference']}:"
+                "FINAL-EXECUTION-CERTIFICATION"
+            ),
+            terminal_capture=filesystem_termination,
+            termination_replay_reference=filesystem_termination[
+                "governed_termination_replay_reference"
+            ],
+            termination_reconstructor=(
+                reconstruct_filesystem_governed_termination
+            ),
+            certified_by="AIGOL_GOVERNANCE",
+            certified_at=created,
+            replay_dir=final_execution_certification_replay_dir,
+        )
+    )
+    if (
+        filesystem_certification.get("binding_status")
+        != final_execution_certification.SUCCESS
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            "Final Execution Certification failed: "
+            f"{filesystem_certification.get('failure_reason')}"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2995,6 +3043,42 @@ def _authorize_g31_mutation_decision(
             "filesystem_replace_worker_governed_termination_replay_hash": (
                 filesystem_termination_reconstruction["replay_hash"]
             ),
+            "filesystem_replace_worker_final_execution_certification": (
+                filesystem_certification
+            ),
+            "filesystem_replace_worker_final_execution_certification_status": (
+                filesystem_certification["binding_status"]
+            ),
+            "filesystem_replace_worker_final_execution_certification_reference": (
+                filesystem_certification[
+                    "final_execution_certification_reference"
+                ]
+            ),
+            "filesystem_replace_worker_final_execution_certification_hash": (
+                filesystem_certification[
+                    "final_execution_certification_hash"
+                ]
+            ),
+            "filesystem_replace_worker_final_execution_certification_replay_reference": (
+                filesystem_certification[
+                    "final_execution_certification_replay_reference"
+                ]
+            ),
+            "filesystem_replace_worker_final_execution_certification_replay_hash": (
+                filesystem_certification[
+                    "final_execution_certification_replay_hash"
+                ]
+            ),
+            "filesystem_replace_worker_final_execution_certification_projection": (
+                filesystem_certification[
+                    "result_validation_compatibility_projection"
+                ]
+            ),
+            "filesystem_replace_worker_final_execution_certification_projection_hash": (
+                filesystem_certification[
+                    "result_validation_compatibility_projection_hash"
+                ]
+            ),
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
@@ -3008,7 +3092,7 @@ def _authorize_g31_mutation_decision(
             "result_validated": True,
             "post_execution_replay_reviewed": True,
             "terminated": True,
-            "execution_certified": False,
+            "execution_certified": True,
             "command_executed": False,
             "target_opened": True,
             "repository_mutated": True,

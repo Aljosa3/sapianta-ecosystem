@@ -168,7 +168,7 @@ def test_common_entry_resolves_record_hash_lineage_and_reviews_once(
     assert result["result_validated"] is True
     assert result["post_execution_replay_reviewed"] is True
     assert result["result_accepted"] is state["result_accepted"]
-    assert result["execution_certified"] is False
+    assert result["execution_certified"] is True
     assert result["repository_mutated"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False

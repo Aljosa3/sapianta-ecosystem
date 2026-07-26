@@ -179,7 +179,7 @@ def test_common_entry_validates_exact_filesystem_result_once(
     assert result["repository_mutated"] is True
     assert result["main_repository_mutated"] is True
     assert result["post_execution_replay_reviewed"] is True
-    assert result["execution_certified"] is False
+    assert result["execution_certified"] is True
     assert result["provider_invoked"] is False
     assert result["command_executed"] is False
     assert validation["task_outcome_satisfaction_evaluated"] is False

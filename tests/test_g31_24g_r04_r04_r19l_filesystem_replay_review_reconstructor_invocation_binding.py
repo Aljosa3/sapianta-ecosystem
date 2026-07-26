@@ -70,13 +70,14 @@ def test_common_entry_supplies_filesystem_reconstructor_per_invocation(
     assert supplied == [
         entry.filesystem_post_execution_review.reconstruct_schema_aware_post_execution_replay_review,
         entry.filesystem_post_execution_review.reconstruct_schema_aware_post_execution_replay_review,
+        entry.filesystem_post_execution_review.reconstruct_schema_aware_post_execution_replay_review,
     ]
     assert capture["termination_status"] == termination.TERMINATED
     assert reconstructed["termination_status"] == termination.TERMINATED
     assert reconstructed["post_execution_replay_reviewed"] is True
     assert reconstructed["terminated"] is True
     assert result["terminated"] is True
-    assert result["execution_certified"] is False
+    assert result["execution_certified"] is True
     assert result["governance_mutated"] is False
     assert result["replay_mutated"] is False
     assert len(list(replay_reference.glob("*.json"))) == 4
