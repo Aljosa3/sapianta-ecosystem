@@ -147,10 +147,11 @@ def test_historical_default_and_generic_replay_owner_remain_unchanged() -> None:
     )
 
 
-def test_downstream_termination_uses_stable_compatibility_entry() -> None:
+def test_downstream_termination_retains_adapter_neutral_default() -> None:
     assert termination.reconstruct_post_execution_replay_review is (
-        resolver.reconstruct_schema_aware_post_execution_replay_review
+        resolver.replay_review.reconstruct_post_execution_replay_review
     )
-    assert "write_json_immutable" not in inspect.getsource(
-        resolver.reconstruct_schema_aware_post_execution_replay_review
+    assert (
+        "filesystem_replace_worker_schema_aware_authorization_lineage"
+        not in inspect.getsource(termination)
     )
