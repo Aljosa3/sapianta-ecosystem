@@ -7,12 +7,14 @@ from pathlib import Path
 import re
 from typing import Any
 
+from aigol.runtime.filesystem_replace_worker_schema_aware_authorization_lineage_resolver_runtime import (
+    reconstruct_schema_aware_post_execution_replay_review as reconstruct_post_execution_replay_review,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.post_execution_replay_review_runtime import (
     INTEGRITY_VERIFIED,
     POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1,
     REVIEW_COMPLETED,
-    reconstruct_post_execution_replay_review,
 )
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 

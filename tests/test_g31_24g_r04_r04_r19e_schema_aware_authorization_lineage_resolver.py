@@ -383,6 +383,7 @@ def test_resolver_is_non_authoritative_and_review_owner_is_unchanged() -> None:
     binding_source = inspect.getsource(
         resolver.review_validated_filesystem_replace_worker_result
     )
+    resolver_source = inspect.getsource(resolver)
 
     assert source.count(
         "review_validated_filesystem_replace_worker_result("
@@ -392,6 +393,10 @@ def test_resolver_is_non_authoritative_and_review_owner_is_unchanged() -> None:
     assert "validate_worker_result(" not in binding_source
     assert "capture_worker_result(" not in binding_source
     assert "execute_consumed_authenticated_replace_v2" not in binding_source
+    assert "chain_artifact_loader=_load_schema_aware_chain_artifacts" in (
+        binding_source
+    )
+    assert "replay_review._load_chain_artifacts =" not in resolver_source
     assert resolver.replay_review._load_chain_artifacts is (
         resolver._ORIGINAL_CHAIN_LOADER
     )
