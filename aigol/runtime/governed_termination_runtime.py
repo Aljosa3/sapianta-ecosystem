@@ -5,16 +5,14 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Callable
 
-from aigol.runtime.filesystem_replace_worker_schema_aware_authorization_lineage_resolver_runtime import (
-    reconstruct_schema_aware_post_execution_replay_review as reconstruct_post_execution_replay_review,
-)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.post_execution_replay_review_runtime import (
     INTEGRITY_VERIFIED,
     POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1,
     REVIEW_COMPLETED,
+    reconstruct_post_execution_replay_review,
 )
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
@@ -35,6 +33,8 @@ REPLAY_STEPS = (
     "termination_artifact_recorded",
     "termination_result_recorded",
 )
+
+ReplayReviewReconstructor = Callable[[str | Path], dict[str, Any]]
 
 
 def detect_domain_governed_termination_entry_intent(human_prompt: str) -> dict[str, Any]:
@@ -76,6 +76,9 @@ def find_latest_domain_replay_review_for_termination(
     *,
     session_root: str | Path,
     domain_name: str,
+    replay_review_reconstructor: ReplayReviewReconstructor = (
+        reconstruct_post_execution_replay_review
+    ),
 ) -> dict[str, Any]:
     """Find the latest reviewed replay for a domain without governed termination."""
 
@@ -86,7 +89,10 @@ def find_latest_domain_replay_review_for_termination(
     candidates: list[dict[str, Any]] = []
     for path in sorted(root.glob("TURN-*/post_execution_replay_review")):
         try:
-            reconstructed = reconstruct_post_execution_replay_review(path)
+            reconstructed = _reconstruct_review(
+                path,
+                replay_review_reconstructor,
+            )
             evidence_wrapper = load_json(path / "000_review_evidence_recorded.json")
             _verify_wrapper_hash(evidence_wrapper)
             evidence = evidence_wrapper.get("artifact")
@@ -109,6 +115,7 @@ def find_latest_domain_replay_review_for_termination(
             root,
             review_reference=str(review.get("post_execution_replay_review_id") or ""),
             review_hash=str(review.get("artifact_hash") or ""),
+            replay_review_reconstructor=replay_review_reconstructor,
         ):
             continue
         candidates.append(
@@ -135,6 +142,9 @@ def terminate_reviewed_operation(
     terminated_by: str,
     terminated_at: str,
     replay_dir: str | Path,
+    replay_review_reconstructor: ReplayReviewReconstructor = (
+        reconstruct_post_execution_replay_review
+    ),
 ) -> dict[str, Any]:
     """Close a reviewed operation without continuation, mutation, or new work."""
 
@@ -144,6 +154,7 @@ def terminate_reviewed_operation(
         review = _load_review_lineage(
             Path(post_execution_replay_review_replay_reference),
             post_execution_replay_review_artifact,
+            replay_review_reconstructor=replay_review_reconstructor,
         )
         evidence = _evidence_artifact(
             termination_id=governed_termination_id,
@@ -194,7 +205,13 @@ def terminate_reviewed_operation(
         return _capture(None, None, None, result, replay_path)
 
 
-def reconstruct_governed_termination_replay(replay_dir: str | Path) -> dict[str, Any]:
+def reconstruct_governed_termination_replay(
+    replay_dir: str | Path,
+    *,
+    replay_review_reconstructor: ReplayReviewReconstructor = (
+        reconstruct_post_execution_replay_review
+    ),
+) -> dict[str, Any]:
     """Reconstruct governed termination replay deterministically."""
 
     replay_path = Path(replay_dir)
@@ -220,7 +237,12 @@ def reconstruct_governed_termination_replay(replay_dir: str | Path) -> dict[str,
     if len({evidence["chain_id"], classification["chain_id"], termination["chain_id"], result["chain_id"]}) != 1:
         raise FailClosedRuntimeError("governed termination replay chain mismatch")
     _validate_termination_artifact(termination)
-    _load_review_lineage(Path(evidence["post_execution_replay_review_replay_reference"]), None, termination=termination)
+    _load_review_lineage(
+        Path(evidence["post_execution_replay_review_replay_reference"]),
+        None,
+        termination=termination,
+        replay_review_reconstructor=replay_review_reconstructor,
+    )
     return {
         "governed_termination_id": termination["governed_termination_id"],
         "termination_status": result["termination_status"],
@@ -262,13 +284,45 @@ def render_governed_termination_summary(capture: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _reconstruct_review(
+    review_replay_path: Path,
+    reconstructor: ReplayReviewReconstructor,
+) -> dict[str, Any]:
+    if not callable(reconstructor):
+        raise FailClosedRuntimeError(
+            "governed termination failed closed: Replay Review "
+            "reconstructor is invalid"
+        )
+    try:
+        reconstructed = reconstructor(review_replay_path)
+    except FailClosedRuntimeError:
+        raise
+    except Exception as exc:
+        raise FailClosedRuntimeError(
+            "governed termination failed closed: Replay Review "
+            f"reconstruction failed: {exc}"
+        ) from exc
+    if not isinstance(reconstructed, dict):
+        raise FailClosedRuntimeError(
+            "governed termination failed closed: Replay Review "
+            "reconstruction is invalid"
+        )
+    return reconstructed
+
+
 def _load_review_lineage(
     review_replay_path: Path,
     provided_review: dict[str, Any] | None,
     *,
     termination: dict[str, Any] | None = None,
+    replay_review_reconstructor: ReplayReviewReconstructor = (
+        reconstruct_post_execution_replay_review
+    ),
 ) -> dict[str, Any]:
-    reconstructed = reconstruct_post_execution_replay_review(review_replay_path)
+    reconstructed = _reconstruct_review(
+        review_replay_path,
+        replay_review_reconstructor,
+    )
     if reconstructed.get("review_status") != REVIEW_COMPLETED:
         raise FailClosedRuntimeError("governed termination failed closed: replay review invalid")
     wrappers = []
@@ -609,10 +663,14 @@ def _review_already_terminated(
     *,
     review_reference: str,
     review_hash: str,
+    replay_review_reconstructor: ReplayReviewReconstructor,
 ) -> bool:
     for path in root.glob("TURN-*/governed_termination"):
         try:
-            reconstructed = reconstruct_governed_termination_replay(path)
+            reconstructed = reconstruct_governed_termination_replay(
+                path,
+                replay_review_reconstructor=replay_review_reconstructor,
+            )
             wrapper = load_json(path / "002_termination_artifact_recorded.json")
             _verify_wrapper_hash(wrapper)
             termination = wrapper.get("artifact")
