@@ -36,6 +36,7 @@ from aigol.runtime import (
     as filesystem_post_execution_review,
 )
 from aigol.runtime import generated_content_acceptance_runtime as generated_acceptance
+from aigol.runtime import governed_termination_runtime as governed_termination
 from aigol.runtime import governed_worker_execution_runtime as governed_execution
 from aigol.runtime import human_decision_runtime as human_decision
 from aigol.runtime import platform_core_existing_file_governance as existing_file_governance
@@ -2725,6 +2726,80 @@ def _authorize_g31_mutation_decision(
             "G31 mutation continuation failed closed: Filesystem Replace Worker "
             "Post-Execution Replay Review reconstruction mismatch"
         )
+    governed_termination_replay_dir = (
+        session_root
+        / (
+            "GOVERNED-TERMINATION-"
+            f"{filesystem_review['post_execution_replay_review_artifact']['artifact_hash'][-16:]}"
+        )
+    )
+    filesystem_replay_review_reconstructor = (
+        filesystem_post_execution_review.reconstruct_schema_aware_post_execution_replay_review
+    )
+    filesystem_termination = governed_termination.terminate_reviewed_operation(
+        governed_termination_id=(
+            f"{filesystem_review['post_execution_replay_review_reference']}:"
+            "GOVERNED-TERMINATION"
+        ),
+        post_execution_replay_review_artifact=filesystem_review[
+            "post_execution_replay_review_artifact"
+        ],
+        post_execution_replay_review_replay_reference=filesystem_review[
+            "post_execution_replay_review_replay_reference"
+        ],
+        terminated_by="AIGOL_GOVERNANCE",
+        terminated_at=created,
+        replay_dir=governed_termination_replay_dir,
+        replay_review_reconstructor=filesystem_replay_review_reconstructor,
+    )
+    if (
+        filesystem_termination.get("termination_status")
+        != governed_termination.TERMINATED
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            f"Governed Termination failed: {filesystem_termination.get('failure_reason')}"
+        )
+    filesystem_termination_reconstruction = (
+        governed_termination.reconstruct_governed_termination_replay(
+            governed_termination_replay_dir,
+            replay_review_reconstructor=filesystem_replay_review_reconstructor,
+        )
+    )
+    if not all(
+        (
+            filesystem_termination_reconstruction.get("termination_status")
+            == governed_termination.TERMINATED,
+            filesystem_termination_reconstruction.get(
+                "post_execution_replay_review_reference"
+            )
+            == filesystem_review["post_execution_replay_review_reference"],
+            filesystem_termination_reconstruction.get(
+                "worker_result_validation_reference"
+            )
+            == filesystem_validation[
+                "worker_result_validation_artifact"
+            ].get("worker_result_validation_id"),
+            filesystem_termination_reconstruction.get("execution_reference")
+            == execution_artifact.get("execution_id"),
+            filesystem_termination_reconstruction.get("worker_id")
+            == invocation_artifact.get("worker_id"),
+            filesystem_termination_reconstruction.get("terminated") is True,
+            filesystem_termination_reconstruction.get(
+                "post_execution_replay_reviewed"
+            )
+            is True,
+            filesystem_termination_reconstruction.get("governance_mutated")
+            is False,
+            filesystem_termination_reconstruction.get("replay_mutated") is False,
+            filesystem_termination_reconstruction.get("replay_artifact_count")
+            == 4,
+        )
+    ):
+        raise FailClosedRuntimeError(
+            "G31 mutation continuation failed closed: Filesystem Replace Worker "
+            "Governed Termination reconstruction mismatch"
+        )
     merged.update(
         {
             "mutation_authorization_capture": authorization,
@@ -2900,6 +2975,26 @@ def _authorize_g31_mutation_decision(
                     "authorization_commitment_kind"
                 ]
             ),
+            "filesystem_replace_worker_governed_termination": (
+                filesystem_termination
+            ),
+            "filesystem_replace_worker_governed_termination_reconstruction": (
+                filesystem_termination_reconstruction
+            ),
+            "filesystem_replace_worker_governed_termination_status": (
+                filesystem_termination["termination_status"]
+            ),
+            "filesystem_replace_worker_governed_termination_reference": (
+                filesystem_termination["governed_termination_reference"]
+            ),
+            "filesystem_replace_worker_governed_termination_replay_reference": (
+                filesystem_termination[
+                    "governed_termination_replay_reference"
+                ]
+            ),
+            "filesystem_replace_worker_governed_termination_replay_hash": (
+                filesystem_termination_reconstruction["replay_hash"]
+            ),
             "worker_assigned": True,
             "worker_dispatched": True,
             "dispatch_requested": True,
@@ -2912,6 +3007,7 @@ def _authorize_g31_mutation_decision(
             "result_created": True,
             "result_validated": True,
             "post_execution_replay_reviewed": True,
+            "terminated": True,
             "execution_certified": False,
             "command_executed": False,
             "target_opened": True,
