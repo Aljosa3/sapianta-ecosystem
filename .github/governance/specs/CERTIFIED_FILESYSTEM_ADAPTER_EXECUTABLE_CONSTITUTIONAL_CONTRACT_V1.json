@@ -1,0 +1,826 @@
+{
+  "artifact_type": "EXECUTABLE_CONSTITUTIONAL_CONTRACT_V1",
+  "schema_id": "ECC_V1",
+  "schema_version": "1.0.0",
+  "contract_id": "CERTIFIED_FILESYSTEM_ADAPTER_EXECUTABLE_CONSTITUTIONAL_CONTRACT",
+  "contract_version": "1.0.0",
+  "constitutional_id": "CERTIFIED_ADAPTER_CONSTITUTIONAL_SPECIFICATION",
+  "constitutional_version": "V31",
+  "compatibility_version": "1.0.0",
+  "title": "Certified Filesystem Adapter Executable Constitutional Contract V1",
+  "description": "Adapter-neutral executable constitutional requirements instantiated for the certified Filesystem Adapter reference lifecycle without transferring Platform Core authority or ownership.",
+  "compatibility": {
+    "supported_schema_versions": ["1.0.0"],
+    "supported_contract_versions": ["1.0.0"],
+    "supported_compatibility_versions": ["1.0.0"],
+    "supported_validator_versions": ["1.0.0"],
+    "supported_constitutional_versions": ["V31"],
+    "historical_support": "REQUIRED",
+    "historical_contracts": [],
+    "unsupported_version_behavior": "FAIL_CLOSED",
+    "forward_compatibility": "EXPLICIT_ONLY",
+    "backward_compatibility": "EXPLICIT_ONLY"
+  },
+  "deprecation": {
+    "state": "ACTIVE"
+  },
+  "requirements": [
+    {
+      "requirement_id": "ASSIGN-001",
+      "title": "Adapter does not assign workers or authority",
+      "description": "The Filesystem Adapter must not assign a worker or create Assignment authority.",
+      "owner": "ASSIGNMENT",
+      "category": "ASSIGNMENT",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/assigns_workers"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "ASSIGN_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "ASSIGN_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "AUTH-001",
+      "title": "Adapter does not authorize execution",
+      "description": "The Filesystem Adapter must not authorize execution or upgrade authenticated input into authority.",
+      "owner": "AUTHORIZATION",
+      "category": "AUTHORIZATION",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/authorizes_execution"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "AUTH_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "AUTH_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "CERT-001",
+      "title": "Certification remains externally owned",
+      "description": "The Filesystem Adapter must not certify execution; the unchanged Certification owner must issue certification.",
+      "owner": "CERTIFICATION",
+      "category": "CERTIFICATION",
+      "verification_class": "CERTIFICATION",
+      "validation_scope": "CERTIFICATION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "CERTIFICATION", "evidence_type": "REPLAY_CERTIFICATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "OPTIONAL", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "CERTIFICATION", "pointer": "/certified_by"}, "right": {"kind": "LITERAL", "value": "AIGOL_GOVERNANCE"}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "CERT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "CERT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "CERT-002",
+      "title": "Certification lineage is continuous and exactly once",
+      "description": "Final certification must authenticate terminal lineage and duplicate certification must be rejected.",
+      "owner": "CERTIFICATION",
+      "category": "CERTIFICATION",
+      "verification_class": "CERTIFICATION",
+      "validation_scope": "CERTIFICATION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["TERM-002"],
+      "evidence": [
+        {"evidence_id": "CERTIFICATION", "evidence_type": "REPLAY_CERTIFICATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "OPTIONAL", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "CERTIFICATION", "pointer": "/certification_status"}, "right": {"kind": "LITERAL", "value": "REPLAY_CERTIFICATION_COMPLETED"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "CERTIFICATION", "pointer": "/replay_lineage_preserved"}, "right": {"kind": "LITERAL", "value": true}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/duplicate_certification_rejected"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "CERT_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "CERT_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "COMPAT-001",
+      "title": "Historical compatibility remains preserved",
+      "description": "Historical Authorization, Replay, selection, Invocation, Assignment, termination and certification formats must remain independently reconstructable.",
+      "owner": "PLATFORM_CORE",
+      "category": "HISTORICAL_COMPATIBILITY",
+      "verification_class": "COMPATIBILITY",
+      "validation_scope": "HISTORICAL_RECONSTRUCTION",
+      "severity": "COMPATIBILITY",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["REPLAY-003"],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/historical_compatibility_preserved"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "COMPAT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "COMPAT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "DEP-001",
+      "title": "Compatibility dependencies are invocation scoped",
+      "description": "Worker-specific resolvers and reconstructors must be supplied only for the current invocation.",
+      "owner": "PLATFORM_CORE",
+      "category": "DEPENDENCY_INJECTION",
+      "verification_class": "DEPENDENCY",
+      "validation_scope": "INVOCATION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/invocation_scoped_dependencies"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "DEP_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "DEP_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "DEP-002",
+      "title": "No mutable dependency routing state exists",
+      "description": "The Filesystem Adapter must introduce no registry, mutable global, routing state or context manager for constitutional dependency selection.",
+      "owner": "PLATFORM_CORE",
+      "category": "DEPENDENCY_INJECTION",
+      "verification_class": "STATIC",
+      "validation_scope": "REPOSITORY",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/mutable_globals_present"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/resolver_registry_present"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/routing_state_present"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/context_manager_routing_present"}, "right": {"kind": "LITERAL", "value": false}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "DEP_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "DEP_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "DET-001",
+      "title": "Adapter behavior is deterministic",
+      "description": "Identical authenticated inputs and immutable evidence must produce identical projections, ordering and hashes.",
+      "owner": "ADAPTER_LAYER",
+      "category": "DETERMINISM",
+      "verification_class": "REPLAY",
+      "validation_scope": "REPLAY",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["REPLAY-003"],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/deterministic_replay_preserved"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "DET_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "DET_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "DISPATCH-001",
+      "title": "Adapter does not dispatch work",
+      "description": "The Filesystem Adapter must not create Dispatch authority or dispatch Workers.",
+      "owner": "DISPATCH",
+      "category": "DISPATCH",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/dispatches_workers"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "DISPATCH_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "DISPATCH_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "EXT-001",
+      "title": "Future adapters require no Platform Core owner changes",
+      "description": "The Filesystem reference lifecycle must remain reusable by future replay-capable workers through adapter binding only.",
+      "owner": "PLATFORM_CORE",
+      "category": "EXTENSIBILITY",
+      "verification_class": "COMPATIBILITY",
+      "validation_scope": "ADAPTER",
+      "severity": "COMPATIBILITY",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["COMPAT-001", "DEP-001", "DEP-002", "PROD-001", "WORKER-001"],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/generic_platform_core_unchanged"}, "right": {"kind": "LITERAL", "value": true}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/future_worker_adapter_binding_supported"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "EXT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "EXT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-001",
+      "title": "Unsupported schemas fail closed",
+      "description": "Unsupported lineage, projection, Replay or compatibility schemas must be rejected before downstream evidence.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "COMPATIBILITY",
+      "validation_scope": "ADAPTER",
+      "severity": "FATAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/unsupported_schema_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-002",
+      "title": "Incomplete evidence fails closed",
+      "description": "Missing required artifacts, wrappers, references or commitments must be rejected.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "STRUCTURAL",
+      "validation_scope": "ADAPTER",
+      "severity": "FATAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/incomplete_evidence_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-003",
+      "title": "Substituted evidence fails closed",
+      "description": "Artifact, wrapper, contract, lineage or compatibility substitution must be rejected.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "FATAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/substituted_evidence_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_003_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_003_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-004",
+      "title": "Cross-family evidence fails closed",
+      "description": "A worker identity or lineage from another worker family must be rejected before Invocation evidence.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "LINEAGE",
+      "validation_scope": "INVOCATION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/cross_family_evidence_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_004_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_004_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-005",
+      "title": "Cross-session evidence fails closed",
+      "description": "Evidence outside the authenticated invocation session must be rejected.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/cross_session_evidence_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_005_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_005_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-006",
+      "title": "Duplicate lifecycle evidence fails closed",
+      "description": "Duplicate consumption, review, termination or certification must be rejected before the duplicate owner invocation.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "REPLAY",
+      "validation_scope": "SESSION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/duplicate_lifecycle_evidence_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_006_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_006_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "FAIL-007",
+      "title": "Inconsistent commitments fail closed",
+      "description": "Inconsistent identities, references, hashes, wrapper hashes, ordering or chain commitments must be rejected.",
+      "owner": "ADAPTER_LAYER",
+      "category": "FAIL_CLOSED",
+      "verification_class": "LINEAGE",
+      "validation_scope": "REPLAY",
+      "severity": "FATAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/inconsistent_commitments_rejected"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "FAIL_007_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "FAIL_007_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "INPUT-001",
+      "title": "Adapter consumes authenticated canonical projections",
+      "description": "The Filesystem Adapter must consume the worker-neutral selection-lineage projection and preserve its authenticated commitments.",
+      "owner": "ADAPTER_LAYER",
+      "category": "LINEAGE",
+      "verification_class": "STRUCTURAL",
+      "validation_scope": "INVOCATION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/artifact_type"}, "right": {"kind": "LITERAL", "value": "WORKER_SELECTION_LINEAGE_PROJECTION_V1"}},
+        {"operator": "EXISTS", "operand": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/source_lineage_hash"}},
+        {"operator": "EXISTS", "operand": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authorization_hash"}},
+        {"operator": "EXISTS", "operand": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/execution_packet_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/selected_authority_profile"}, "right": {"kind": "LITERAL", "value": "WORKER_AUTHORIZED_TASK_ONLY"}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "INPUT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "INPUT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "INVOKE-001",
+      "title": "Invocation lineage remains continuous",
+      "description": "Result Validation must preserve the exact authenticated Worker Invocation reference, hash and chain.",
+      "owner": "INVOCATION",
+      "category": "INVOCATION",
+      "verification_class": "LINEAGE",
+      "validation_scope": "INVOCATION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["LINEAGE-003"],
+      "evidence": [
+        {"evidence_id": "INVOCATION", "evidence_type": "WORKER_INVOCATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "VALIDATION", "evidence_type": "WORKER_RESULT_VALIDATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/worker_invocation_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "INVOCATION", "pointer": "/artifact_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "INVOCATION", "pointer": "/chain_id"}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "INVOKE_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "INVOKE_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "LINEAGE-001",
+      "title": "Adapter does not mutate constitutional lineage",
+      "description": "The Filesystem Adapter must preserve source-lineage commitments rather than rewriting or upgrading them.",
+      "owner": "PLATFORM_CORE",
+      "category": "LINEAGE",
+      "verification_class": "LINEAGE",
+      "validation_scope": "INVOCATION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EXISTS", "operand": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/source_lineage"}},
+        {"operator": "EXISTS", "operand": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/source_lineage_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/mutates_governance"}, "right": {"kind": "LITERAL", "value": false}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "LINEAGE_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "LINEAGE_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "LINEAGE-002",
+      "title": "Authorization lineage remains continuous",
+      "description": "Authorization identity and hash must remain exact from worker-neutral selection through Result Validation.",
+      "owner": "AUTHORIZATION",
+      "category": "LINEAGE",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["INPUT-001"],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "VALIDATION", "evidence_type": "WORKER_RESULT_VALIDATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/authorization_reference"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authorization_reference"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/authorization_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authorization_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/chain_id"}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "LINEAGE_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "LINEAGE_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "LINEAGE-003",
+      "title": "Assignment lineage remains continuous",
+      "description": "The exact Worker Assignment reference, hash, Authorization and request-bound chain must remain continuous.",
+      "owner": "ASSIGNMENT",
+      "category": "LINEAGE",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["LINEAGE-002"],
+      "evidence": [
+        {"evidence_id": "ASSIGNMENT", "evidence_type": "WORKER_ASSIGNMENT_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "VALIDATION", "evidence_type": "WORKER_RESULT_VALIDATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/worker_assignment_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "ASSIGNMENT", "pointer": "/artifact_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/authorization_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "ASSIGNMENT", "pointer": "/authorization_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "ASSIGNMENT", "pointer": "/canonical_chain_id"}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "LINEAGE_003_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "LINEAGE_003_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "OUTPUT-001",
+      "title": "Adapter output preserves authenticated scope",
+      "description": "Filesystem output must preserve Authorization and chain commitments and remain within authenticated allowed outputs.",
+      "owner": "ADAPTER_LAYER",
+      "category": "LINEAGE",
+      "verification_class": "STRUCTURAL",
+      "validation_scope": "INVOCATION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["INPUT-001"],
+      "evidence": [
+        {"evidence_id": "OUTPUT", "evidence_type": "FILESYSTEM_REPLACE_WORKER_OUTPUT_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "SUBSET_OF", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "OUTPUT", "pointer": "/produced_outputs"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/allowed_outputs"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "OUTPUT", "pointer": "/authorization_reference"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authorization_reference"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "OUTPUT", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/chain_id"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "OUTPUT", "pointer": "/replay_visible"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "OUTPUT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "OUTPUT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "OWN-001",
+      "title": "Adapter does not reinterpret constitutional ownership",
+      "description": "The Filesystem Adapter must preserve all certified constitutional owners without ownership substitution.",
+      "owner": "PLATFORM_CORE",
+      "category": "OWNERSHIP",
+      "verification_class": "STATIC",
+      "validation_scope": "REPOSITORY",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/constitutional_owners_unchanged"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "OWN_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "OWN_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "PROD-001",
+      "title": "Production orchestration performs runtime binding",
+      "description": "Production orchestration, not the Adapter or generic constitutional owners, must supply invocation-scoped compatibility dependencies.",
+      "owner": "PRODUCTION_ORCHESTRATION",
+      "category": "PRODUCTION_BINDING",
+      "verification_class": "DEPENDENCY",
+      "validation_scope": "INVOCATION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["DEP-001"],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/production_orchestration_binds_dependencies"}, "right": {"kind": "LITERAL", "value": true}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "PROD_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "PROD_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "REPLAY-001",
+      "title": "Replay ownership remains external to the Adapter",
+      "description": "The Filesystem Adapter may produce replay-visible projections but must not own or mutate Replay.",
+      "owner": "REPLAY",
+      "category": "REPLAY",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/mutates_replay"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "REPLAY_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "REPLAY_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "REPLAY-002",
+      "title": "Replay ordering and hashes remain deterministic",
+      "description": "Post-Execution Replay Review must authenticate immutable ordered artifacts, wrapper hashes and chain continuity.",
+      "owner": "REPLAY",
+      "category": "REPLAY",
+      "verification_class": "REPLAY",
+      "validation_scope": "REPLAY",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["RESULT-001"],
+      "evidence": [
+        {"evidence_id": "REVIEW", "evidence_type": "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/replay_integrity_assessment"}, "right": {"kind": "LITERAL", "value": "INTEGRITY_VERIFIED"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/authority_integrity_assessment"}, "right": {"kind": "LITERAL", "value": "INTEGRITY_VERIFIED"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/validation_integrity_assessment"}, "right": {"kind": "LITERAL", "value": "INTEGRITY_VERIFIED"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/replay_visible"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "REPLAY_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "REPLAY_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "REPLAY-003",
+      "title": "Replay reconstruction is independent and invocation scoped",
+      "description": "Schema-aware Replay Review reconstruction must use immutable lineage and invocation-scoped dependencies without changing generic Replay Review.",
+      "owner": "REPLAY",
+      "category": "REPLAY",
+      "verification_class": "REPLAY",
+      "validation_scope": "HISTORICAL_RECONSTRUCTION",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["REPLAY-002"],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/independent_reconstruction_preserved"}, "right": {"kind": "LITERAL", "value": true}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/reconstructor_invocation_scoped"}, "right": {"kind": "LITERAL", "value": true}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/generic_replay_review_unchanged"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "REPLAY_003_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "REPLAY_003_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "RESULT-001",
+      "title": "Result lineage remains continuous",
+      "description": "Result Capture, Result Validation and Replay Review must preserve exact artifact hashes and chain identity.",
+      "owner": "RESULT_VALIDATION",
+      "category": "RESULT_VALIDATION",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["INVOKE-001", "OUTPUT-001"],
+      "evidence": [
+        {"evidence_id": "CAPTURE", "evidence_type": "WORKER_RESULT_CAPTURE_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "VALIDATION", "evidence_type": "WORKER_RESULT_VALIDATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "REVIEW", "evidence_type": "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/worker_result_capture_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "CAPTURE", "pointer": "/artifact_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/worker_result_validation_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/artifact_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "CAPTURE", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/chain_id"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "VALIDATION", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/chain_id"}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "RESULT_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "RESULT_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "SELECTION-001",
+      "title": "Adapter does not select workers",
+      "description": "Worker selection must remain outside the Filesystem Adapter and be consumed only through authenticated projection.",
+      "owner": "PLATFORM_CORE",
+      "category": "AUTHORITY",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/selects_workers"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "SELECTION_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "SELECTION_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "TERM-001",
+      "title": "Adapter does not terminate execution",
+      "description": "The Filesystem Adapter must not terminate execution or acquire Governed Termination authority.",
+      "owner": "GOVERNED_TERMINATION",
+      "category": "GOVERNED_TERMINATION",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": [],
+      "evidence": [
+        {"evidence_id": "PROFILE", "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "PROHIBITED", "chain_binding": "PROHIBITED", "lineage_binding": "OPTIONAL", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "PROFILE", "pointer": "/adapter_terminates_execution"}, "right": {"kind": "LITERAL", "value": false}},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "TERM_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "TERM_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "TERM-002",
+      "title": "Governed Termination remains externally owned and continuous",
+      "description": "The unchanged Governed Termination owner must terminate only after authenticated Replay Review and preserve terminal lineage.",
+      "owner": "GOVERNED_TERMINATION",
+      "category": "GOVERNED_TERMINATION",
+      "verification_class": "LINEAGE",
+      "validation_scope": "SESSION",
+      "severity": "CRITICAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["REPLAY-003"],
+      "evidence": [
+        {"evidence_id": "REVIEW", "evidence_type": "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true},
+        {"evidence_id": "TERMINATION", "evidence_type": "GOVERNED_TERMINATION_ARTIFACT_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "TERMINATION", "pointer": "/post_execution_replay_review_hash"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/artifact_hash"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "TERMINATION", "pointer": "/chain_id"}, "right": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "REVIEW", "pointer": "/chain_id"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "TERMINATION", "pointer": "/terminated_by"}, "right": {"kind": "LITERAL", "value": "AIGOL_GOVERNANCE"}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "TERMINATION", "pointer": "/replay_visible"}, "right": {"kind": "LITERAL", "value": true}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "TERM_002_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "TERM_002_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    },
+    {
+      "requirement_id": "WORKER-001",
+      "title": "Worker implementation remains isolated behind the Adapter",
+      "description": "The Adapter must not absorb Worker implementation, Provider invocation, command execution or repository mutation authority.",
+      "owner": "WORKER_IMPLEMENTATION",
+      "category": "OWNERSHIP",
+      "verification_class": "STATIC",
+      "validation_scope": "ADAPTER",
+      "severity": "CONSTITUTIONAL",
+      "mandatory": true,
+      "applicability": {"mode": "ALWAYS"},
+      "dependencies": ["DEP-001"],
+      "evidence": [
+        {"evidence_id": "SELECTION", "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1", "required": true, "artifact_reference": "REQUIRED", "artifact_hash": {"presence": "REQUIRED", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "wrapper_hash": {"presence": "OPTIONAL", "algorithm": "SHA-256", "format": "PREFIXED_LOWERCASE_HEX"}, "session_binding": "REQUIRED", "chain_binding": "REQUIRED", "lineage_binding": "REQUIRED", "version_binding": {"presence": "REQUIRED", "supported_versions": ["1.0.0"]}, "immutable_reference": true}
+      ],
+      "rule": {"operator": "ALL", "rules": [
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/invokes_workers"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/invokes_providers"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/executes_commands"}, "right": {"kind": "LITERAL", "value": false}},
+        {"operator": "EQUALS", "left": {"kind": "REFERENCE", "source": "EVIDENCE", "evidence_id": "SELECTION", "pointer": "/authority_flags/mutates_repository"}, "right": {"kind": "LITERAL", "value": false}}
+      ]},
+      "pass_criteria": {"condition": "RULE_TRUE", "reason_code": "WORKER_001_SATISFIED"},
+      "fail_criteria": {"condition": "RULE_FALSE", "reason_code": "WORKER_001_VIOLATED"},
+      "replay_visible": true,
+      "certification_applicability": "REQUIRED",
+      "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
+    }
+  ],
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
