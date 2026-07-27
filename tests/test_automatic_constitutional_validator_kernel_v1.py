@@ -14,6 +14,10 @@ from aigol.constitutional_validator_kernel import (
 )
 from aigol.constitutional_validator_kernel.canonical import canonical_hash
 from aigol.constitutional_validator_kernel.rules import evaluate_rule
+from aigol.runtime.constitutional_validator_replay import (
+    record_constitutional_validator_result,
+    reconstruct_constitutional_validator_replay,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -584,3 +588,25 @@ def test_rule_equality_is_type_strict_and_subset_is_order_independent() -> None:
 
     assert evaluate_rule(unequal, evidence).passed is False
     assert evaluate_rule(subset, evidence).passed is True
+
+
+def test_certified_validator_result_is_replay_visible_through_platform_replay(tmp_path: Path) -> None:
+    result = _validate(_certified_filesystem_inputs())
+
+    capture = record_constitutional_validator_result(
+        validation_result=result,
+        recorded_at="2026-07-27T12:00:00Z",
+        replay_dir=tmp_path / "constitutional-validator-replay",
+    )
+    reconstructed = reconstruct_constitutional_validator_replay(
+        tmp_path / "constitutional-validator-replay"
+    )
+
+    assert capture["replay_owner"] == "PLATFORM_CORE_REPLAY"
+    assert capture["validator_replay_persisted"] is False
+    assert reconstructed["validator_result"] == result.to_dict()
+    assert reconstructed["contract"]["contract_hash"] == result.contract_hash
+    assert reconstructed["evidence_manifest"]["manifest_hash"] == result.manifest_hash
+    assert reconstructed["overall_status"] == "PASS"
+    assert reconstructed["governance_assessed"] is False
+    assert reconstructed["certification_performed"] is False
