@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import inspect
 import json
 
@@ -24,6 +25,10 @@ from aigol.runtime.transport.serialization import load_json, replay_hash
 from aigol.runtime.constitutional_replay_governance import (
     ConstitutionalGovernanceStatus,
     evaluate_constitutional_replay,
+)
+from aigol.runtime.constitutional_governance_certification import (
+    ConstitutionalCertificationStatus,
+    certify_constitutional_governance,
 )
 
 
@@ -238,4 +243,73 @@ def test_governance_module_is_replay_driven_and_does_not_write_or_invoke_validat
     source = inspect.getsource(replay_governance)
 
     assert "constitutional_validator_kernel" not in source
+    assert "write_json_immutable" not in source
+
+
+def test_certification_consumes_only_a_governance_assessment_without_authority_effect(tmp_path) -> None:
+    replay_dir = tmp_path / "validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+    assessment = evaluate_constitutional_replay(replay_dir)
+    before = assessment.to_dict()
+
+    certification = certify_constitutional_governance(assessment)
+
+    assert assessment.to_dict() == before
+    assert certification.certification_status is ConstitutionalCertificationStatus.COMPLIANCE_CERTIFIED
+    assert certification.constitutional_status is ConstitutionalGovernanceStatus.COMPLIANT
+    assert certification.governance_assessment_hash == assessment.assessment_hash
+    assert certification.replay_identity == assessment.replay_identity
+    assert certification.certification_performed is True
+    assert certification.governance_modified is False
+    assert certification.replay_modified is False
+    assert certification.validator_invoked is False
+    assert certification.evidence_accessed is False
+    assert certification.authorization_created is False
+    assert certification.worker_assigned is False
+    assert certification.provider_invoked is False
+    assert certification.execution_requested is False
+    assert certification == certify_constitutional_governance(assessment)
+
+
+def test_certification_certifies_governance_non_compliance_without_execution_effect(tmp_path) -> None:
+    replay_dir = tmp_path / "failed-validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(ValidationStatus.FAIL), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+
+    certification = certify_constitutional_governance(evaluate_constitutional_replay(replay_dir))
+
+    assert certification.certification_status is ConstitutionalCertificationStatus.NON_COMPLIANCE_CERTIFIED
+    assert certification.failure_codes == ("REQUIREMENT_VIOLATED",)
+    assert certification.execution_requested is False
+
+
+def test_certification_fails_closed_when_governance_assessment_is_substituted(tmp_path) -> None:
+    replay_dir = tmp_path / "validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+    assessment = evaluate_constitutional_replay(replay_dir)
+    substituted = replace(
+        assessment,
+        constitutional_status=ConstitutionalGovernanceStatus.NON_COMPLIANT,
+    )
+
+    with pytest.raises(FailClosedRuntimeError, match="assessment hash mismatch"):
+        certify_constitutional_governance(substituted)
+
+    rehashed_substitution = substituted.with_assessment_hash()
+    with pytest.raises(FailClosedRuntimeError, match="assessment identity is invalid"):
+        certify_constitutional_governance(rehashed_substitution)
+
+
+def test_certification_module_has_no_direct_upstream_execution_dependency() -> None:
+    import aigol.runtime.constitutional_governance_certification as certification_module
+
+    source = inspect.getsource(certification_module)
+
+    assert "constitutional_validator" not in source
+    assert "reconstruct_constitutional" not in source
     assert "write_json_immutable" not in source
