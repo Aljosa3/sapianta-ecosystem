@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import inspect
 import json
 
 import pytest
@@ -20,6 +21,10 @@ from aigol.runtime.constitutional_validator_replay import (
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import load_json, replay_hash
+from aigol.runtime.constitutional_replay_governance import (
+    ConstitutionalGovernanceStatus,
+    evaluate_constitutional_replay,
+)
 
 
 RECORDED_AT = "2026-07-27T12:00:00Z"
@@ -177,3 +182,60 @@ def test_tampered_validator_result_fails_reconstruction(tmp_path) -> None:
 
     with pytest.raises(FailClosedRuntimeError, match="result hash mismatch"):
         reconstruct_constitutional_validator_replay(replay_dir)
+
+
+def test_governance_interprets_verified_replay_without_authority_effect(tmp_path) -> None:
+    replay_dir = tmp_path / "validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+
+    assessment = evaluate_constitutional_replay(replay_dir)
+
+    assert assessment.constitutional_status is ConstitutionalGovernanceStatus.COMPLIANT
+    assert assessment.validator_status == "PASS"
+    assert assessment.governance_assessed is True
+    assert assessment.read_only is True
+    assert assessment.replay_modified is False
+    assert assessment.validator_invoked is False
+    assert assessment.certification_performed is False
+    assert assessment.authorization_created is False
+    assert assessment.worker_assigned is False
+    assert assessment.provider_invoked is False
+    assert assessment.execution_requested is False
+    assert assessment == evaluate_constitutional_replay(replay_dir)
+
+
+def test_governance_interprets_failed_replay_as_constitutional_non_compliance(tmp_path) -> None:
+    replay_dir = tmp_path / "failed-validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(ValidationStatus.FAIL), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+
+    assessment = evaluate_constitutional_replay(replay_dir)
+
+    assert assessment.constitutional_status is ConstitutionalGovernanceStatus.NON_COMPLIANT
+    assert assessment.failure_codes == ("REQUIREMENT_VIOLATED",)
+
+
+def test_governance_fails_closed_when_validator_replay_is_tampered(tmp_path) -> None:
+    replay_dir = tmp_path / "validator-replay"
+    record_constitutional_validator_result(
+        validation_result=_result(), recorded_at=RECORDED_AT, replay_dir=replay_dir
+    )
+    path = replay_dir / "000_constitutional_validator_result_recorded.json"
+    wrapper = load_json(path)
+    wrapper["artifact"]["result_summary"]["overall_status"] = "FAIL"
+    path.write_text(json.dumps(wrapper), encoding="utf-8")
+
+    with pytest.raises(FailClosedRuntimeError, match="wrapper hash mismatch"):
+        evaluate_constitutional_replay(replay_dir)
+
+
+def test_governance_module_is_replay_driven_and_does_not_write_or_invoke_validator() -> None:
+    import aigol.runtime.constitutional_replay_governance as replay_governance
+
+    source = inspect.getsource(replay_governance)
+
+    assert "constitutional_validator_kernel" not in source
+    assert "write_json_immutable" not in source

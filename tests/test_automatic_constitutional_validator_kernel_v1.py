@@ -18,6 +18,10 @@ from aigol.runtime.constitutional_validator_replay import (
     record_constitutional_validator_result,
     reconstruct_constitutional_validator_replay,
 )
+from aigol.runtime.constitutional_replay_governance import (
+    ConstitutionalGovernanceStatus,
+    evaluate_constitutional_replay,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -601,6 +605,7 @@ def test_certified_validator_result_is_replay_visible_through_platform_replay(tm
     reconstructed = reconstruct_constitutional_validator_replay(
         tmp_path / "constitutional-validator-replay"
     )
+    assessment = evaluate_constitutional_replay(tmp_path / "constitutional-validator-replay")
 
     assert capture["replay_owner"] == "PLATFORM_CORE_REPLAY"
     assert capture["validator_replay_persisted"] is False
@@ -610,3 +615,6 @@ def test_certified_validator_result_is_replay_visible_through_platform_replay(tm
     assert reconstructed["overall_status"] == "PASS"
     assert reconstructed["governance_assessed"] is False
     assert reconstructed["certification_performed"] is False
+    assert assessment.constitutional_status is ConstitutionalGovernanceStatus.COMPLIANT
+    assert assessment.contract_hash == result.contract_hash
+    assert assessment.manifest_hash == result.manifest_hash
