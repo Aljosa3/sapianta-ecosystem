@@ -822,5 +822,5 @@
       "compatibility": {"introduced_in_contract_version": "1.0.0", "supported_compatibility_versions": ["1.0.0"], "historical_support": "REQUIRED"}
     }
   ],
-  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  "contract_hash": "sha256:ba5e7812bef060247acc963f598ce01ced18b989cfd29101b8e1113b8f896aa8"
 }

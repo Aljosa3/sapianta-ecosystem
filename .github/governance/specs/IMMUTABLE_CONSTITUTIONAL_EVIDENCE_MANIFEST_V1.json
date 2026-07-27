@@ -1,0 +1,740 @@
+{
+  "artifact_type": "IMMUTABLE_CONSTITUTIONAL_EVIDENCE_MANIFEST_SPECIFICATION_V1",
+  "schema_id": "ICEM_V1",
+  "schema_version": "1.0.0",
+  "specification_id": "IMMUTABLE_CONSTITUTIONAL_EVIDENCE_MANIFEST_V1",
+  "specification_version": "1.0.0",
+  "constitutional_version": "V31",
+  "title": "Immutable Constitutional Evidence Manifest V1",
+  "description": "Canonical immutable binding specification for one certified Executable Constitutional Contract and its authenticated Platform Core, Adapter, Worker, Replay and Certification evidence. This specification creates no authority, lifecycle, runtime, validator, Replay implementation, Provider implementation or Worker implementation.",
+  "constitutional_baseline": [
+    "GENERATION_31_CONSTITUTIONALLY_CLOSED",
+    "READY_FOR_CERTIFIED_PLATFORM_CORE_BASELINE_V31",
+    "CERTIFIED_ADAPTER_CONSTITUTIONAL_SPECIFICATION",
+    "EXECUTABLE_CONSTITUTIONAL_CONTRACT_STANDARD",
+    "ECC_V1_SCHEMA_CERTIFIED_READY",
+    "CERTIFIED_FILESYSTEM_ADAPTER_EXECUTABLE_CONSTITUTIONAL_CONTRACT_V1_READY"
+  ],
+  "scope": {
+    "classification": "ARCHITECTURE_AND_GOVERNANCE_ARTIFACT",
+    "platform_core": "PCBV31",
+    "authoritative_core_count": 1,
+    "introduces_constitutional_owner": false,
+    "introduces_lifecycle": false,
+    "implements_validator": false,
+    "implements_runtime": false,
+    "implements_replay": false,
+    "implements_provider": false,
+    "implements_worker": false
+  },
+  "contract_binding": {
+    "contract_reference": ".github/governance/specs/CERTIFIED_FILESYSTEM_ADAPTER_EXECUTABLE_CONSTITUTIONAL_CONTRACT_V1.json",
+    "contract_id": "CERTIFIED_FILESYSTEM_ADAPTER_EXECUTABLE_CONSTITUTIONAL_CONTRACT",
+    "contract_version": "1.0.0",
+    "contract_schema_id": "ECC_V1",
+    "contract_schema_version": "1.0.0",
+    "contract_hash": "sha256:ba5e7812bef060247acc963f598ce01ced18b989cfd29101b8e1113b8f896aa8",
+    "binding_semantics": [
+      "A manifest instance binds exactly one complete certified contract.",
+      "The contract reference, identifier, version, schema identifier, schema version and canonical contract hash must all match.",
+      "The contract hash is recomputed from the referenced contract before evidence evaluation.",
+      "A manifest cannot extend, omit, override or reinterpret contract requirements."
+    ]
+  },
+  "canonical_manifest_schema": {
+    "instance_artifact_type": "IMMUTABLE_CONSTITUTIONAL_EVIDENCE_MANIFEST_V1",
+    "object_policy": {
+      "closed_objects": true,
+      "unknown_fields": "REJECT",
+      "duplicate_keys": "REJECT",
+      "null_values": "REJECT",
+      "floating_point_values": "REJECT",
+      "non_nfc_strings": "REJECT",
+      "placeholder_values": "REJECT",
+      "unordered_set_encoding": "REJECT"
+    },
+    "root_required_fields": [
+      "artifact_type",
+      "schema_id",
+      "schema_version",
+      "manifest_id",
+      "manifest_version",
+      "constitutional_version",
+      "contract_binding",
+      "validation_context",
+      "evidence_order",
+      "evidence_records",
+      "manifest_hash"
+    ],
+    "root_field_model": [
+      {
+        "field": "artifact_type",
+        "type": "STRING",
+        "constraint": "EQUALS_IMMUTABLE_CONSTITUTIONAL_EVIDENCE_MANIFEST_V1"
+      },
+      {
+        "field": "schema_id",
+        "type": "STRING",
+        "constraint": "EQUALS_ICEM_V1"
+      },
+      {
+        "field": "schema_version",
+        "type": "SEMANTIC_VERSION_STRING",
+        "constraint": "SUPPORTED_EXACTLY"
+      },
+      {
+        "field": "manifest_id",
+        "type": "NON_EMPTY_IDENTIFIER_STRING",
+        "constraint": "UNIQUE_WITHIN_CONSTITUTIONAL_EVIDENCE_DOMAIN"
+      },
+      {
+        "field": "manifest_version",
+        "type": "SEMANTIC_VERSION_STRING",
+        "constraint": "SUPPORTED_EXACTLY"
+      },
+      {
+        "field": "constitutional_version",
+        "type": "STRING",
+        "constraint": "EQUALS_V31"
+      },
+      {
+        "field": "contract_binding",
+        "type": "CONTRACT_BINDING_V1",
+        "constraint": "EXACT_SINGLE_CERTIFIED_CONTRACT"
+      },
+      {
+        "field": "validation_context",
+        "type": "VALIDATION_CONTEXT_V1",
+        "constraint": "INVOCATION_SCOPED_AND_IMMUTABLE"
+      },
+      {
+        "field": "evidence_order",
+        "type": "NON_EMPTY_UNIQUE_STRING_ARRAY",
+        "constraint": "EXACT_PROFILE_ORDER"
+      },
+      {
+        "field": "evidence_records",
+        "type": "NON_EMPTY_EVIDENCE_RECORD_ARRAY",
+        "constraint": "ONE_RECORD_PER_EVIDENCE_ORDER_ENTRY"
+      },
+      {
+        "field": "manifest_hash",
+        "type": "PREFIXED_LOWERCASE_SHA256",
+        "constraint": "CANONICAL_SELF_HASH"
+      }
+    ],
+    "contract_binding_required_fields": [
+      "contract_reference",
+      "contract_id",
+      "contract_version",
+      "contract_schema_id",
+      "contract_schema_version",
+      "contract_hash"
+    ],
+    "validation_context_required_fields": [
+      "validation_id",
+      "validation_scope",
+      "invocation_id",
+      "session_id",
+      "chain_id",
+      "platform_core_version",
+      "adapter_id",
+      "adapter_version"
+    ],
+    "validation_context_constraints": {
+      "validation_scope": "COMPLETE_CERTIFIED_FILESYSTEM_ADAPTER_LIFECYCLE",
+      "platform_core_version": "V31",
+      "all_identifiers": "NON_EMPTY",
+      "immutability": "REQUIRED",
+      "cross_session_reuse": "PROHIBITED",
+      "cross_chain_reuse": "PROHIBITED"
+    },
+    "evidence_record_discriminators": [
+      "STATIC_EVIDENCE_RECORD_V1",
+      "LIFECYCLE_EVIDENCE_RECORD_V1",
+      "CERTIFICATION_EVIDENCE_RECORD_V1"
+    ],
+    "common_evidence_record_required_fields": [
+      "record_type",
+      "evidence_id",
+      "evidence_type",
+      "evidence_class",
+      "constitutional_owner",
+      "authority_effect",
+      "artifact_reference",
+      "artifact_hash",
+      "artifact_version",
+      "lineage_commitments",
+      "replay_binding"
+    ],
+    "lifecycle_evidence_record_additional_required_fields": [
+      "invocation_id",
+      "session_id",
+      "chain_id"
+    ],
+    "certification_evidence_record_additional_required_fields": [
+      "invocation_id",
+      "session_id",
+      "derived_chain_id"
+    ],
+    "optional_evidence_record_fields": [
+      "wrapper_reference",
+      "wrapper_hash",
+      "replay_reference",
+      "replay_hash"
+    ],
+    "optional_field_semantics": "An optional field is omitted when unavailable or inapplicable. Null and sentinel placeholder values are prohibited.",
+    "artifact_reference_model": {
+      "type": "IMMUTABLE_REFERENCE_STRING",
+      "content_addressed_or_repository_anchored": true,
+      "mutable_aliases": "REJECT",
+      "path_traversal": "REJECT",
+      "empty_reference": "REJECT"
+    },
+    "hash_field_model": {
+      "algorithm": "SHA-256",
+      "format": "PREFIXED_LOWERCASE_HEX",
+      "regular_expression": "^sha256:[0-9a-f]{64}$",
+      "zero_hash": "REJECT",
+      "recomputation": "REQUIRED"
+    },
+    "lineage_commitment_model": {
+      "type": "ARRAY",
+      "minimum_items": 1,
+      "unique_by": "lineage_id",
+      "canonical_order": "PROFILE_DECLARED",
+      "required_fields": [
+        "lineage_id",
+        "artifact_reference",
+        "artifact_hash",
+        "relationship"
+      ],
+      "allowed_relationships": [
+        "AUTHENTICATES",
+        "DERIVES_FROM",
+        "PRECEDES",
+        "CONTINUES",
+        "PROJECTS_WITHOUT_AUTHORITY",
+        "CERTIFIES"
+      ]
+    },
+    "replay_binding_model": {
+      "required_fields": [
+        "mode",
+        "replay_visible",
+        "replay_owner"
+      ],
+      "allowed_modes": [
+        "NOT_APPLICABLE",
+        "OPTIONAL_REFERENCE",
+        "REQUIRED_REFERENCE",
+        "DERIVED_REQUIRED_REFERENCE"
+      ],
+      "replay_owner": "PLATFORM_CORE_REPLAY",
+      "manifest_may_create_or_modify_replay": false
+    }
+  },
+  "identity_and_hashing_model": {
+    "manifest_identity": [
+      "manifest_id",
+      "manifest_version",
+      "constitutional_version",
+      "contract_binding.contract_id",
+      "contract_binding.contract_version",
+      "contract_binding.contract_hash",
+      "validation_context.validation_id",
+      "validation_context.invocation_id",
+      "validation_context.session_id",
+      "validation_context.chain_id"
+    ],
+    "canonical_encoding": "UTF-8_JSON",
+    "unicode_normalization": "NFC",
+    "object_key_order": "LEXICOGRAPHIC_CODE_POINT_ORDER",
+    "array_order": "SIGNIFICANT",
+    "insignificant_whitespace": "REMOVED",
+    "number_model": "INTEGER_ONLY",
+    "boolean_encoding": "JSON_TRUE_OR_FALSE",
+    "self_hash_algorithm": "SHA-256",
+    "self_hash_input": "COMPLETE_CANONICAL_MANIFEST_WITH_MANIFEST_HASH_FIELD_OMITTED",
+    "hash_format": "PREFIXED_LOWERCASE_HEX",
+    "artifact_hash_input": "CANONICAL_REFERENCED_ARTIFACT_BYTES_ACCORDING_TO_ITS_CERTIFIED_HASH_MODEL",
+    "wrapper_hash_input": "CANONICAL_REFERENCED_WRAPPER_BYTES_ACCORDING_TO_ITS_CERTIFIED_HASH_MODEL",
+    "replay_hash_input": "CANONICAL_REFERENCED_REPLAY_BYTES_ACCORDING_TO_ITS_CERTIFIED_HASH_MODEL",
+    "manifest_mutability": "IMMUTABLE_AFTER_HASHING",
+    "rehash_on_change": "A changed manifest is a different manifest and cannot retain the prior identity or hash."
+  },
+  "filesystem_evidence_profile": {
+    "profile_id": "CERTIFIED_FILESYSTEM_ADAPTER_EVIDENCE_PROFILE_V1",
+    "profile_version": "1.0.0",
+    "adapter_id": "FILESYSTEM_ADAPTER",
+    "adapter_version": "1.0.0",
+    "platform_core_version": "V31",
+    "authority_effect": "NONE",
+    "evidence_order": [
+      "ADAPTER_PROFILE",
+      "WORKER_SELECTION_LINEAGE",
+      "WORKER_ASSIGNMENT",
+      "WORKER_INVOCATION",
+      "WORKER_OUTPUT",
+      "RESULT_CAPTURE",
+      "RESULT_VALIDATION",
+      "REPLAY_REVIEW",
+      "GOVERNED_TERMINATION",
+      "FINAL_CERTIFICATION"
+    ],
+    "records": [
+      {
+        "evidence_id": "ADAPTER_PROFILE",
+        "record_type": "STATIC_EVIDENCE_RECORD_V1",
+        "evidence_type": "CERTIFIED_FILESYSTEM_ADAPTER_CONSTITUTIONAL_PROFILE_V1",
+        "evidence_class": "ADAPTER",
+        "constitutional_owner": "ADAPTER_LAYER",
+        "authority_effect": "NONE",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "PROHIBITED",
+        "session_binding": "PROHIBITED",
+        "chain_binding": "PROHIBITED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "NOT_APPLICABLE",
+        "source_requirement_ids": [
+          "CERT-002",
+          "COMPAT-001",
+          "DEP-001",
+          "DEP-002",
+          "DET-001",
+          "EXT-001",
+          "FAIL-001",
+          "FAIL-002",
+          "FAIL-003",
+          "FAIL-004",
+          "FAIL-005",
+          "FAIL-006",
+          "FAIL-007",
+          "OWN-001",
+          "PROD-001",
+          "REPLAY-003",
+          "TERM-001"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_SELECTION_LINEAGE",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "WORKER_SELECTION_LINEAGE_PROJECTION_V1",
+        "evidence_class": "ADAPTER",
+        "constitutional_owner": "WORKER_SELECTION_LINEAGE_RESOLVER",
+        "authority_effect": "NONE",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "OPTIONAL",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "OPTIONAL_REFERENCE",
+        "source_requirement_ids": [
+          "ASSIGN-001",
+          "AUTH-001",
+          "DISPATCH-001",
+          "INPUT-001",
+          "LINEAGE-001",
+          "LINEAGE-002",
+          "OUTPUT-001",
+          "REPLAY-001",
+          "SELECTION-001",
+          "WORKER-001"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_ASSIGNMENT",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "WORKER_ASSIGNMENT_ARTIFACT_V1",
+        "evidence_class": "PLATFORM_CORE",
+        "constitutional_owner": "ASSIGNMENT",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "LINEAGE-003"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_INVOCATION",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "WORKER_INVOCATION_ARTIFACT_V1",
+        "evidence_class": "PLATFORM_CORE",
+        "constitutional_owner": "INVOCATION",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "INVOKE-001"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_OUTPUT",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "FILESYSTEM_REPLACE_WORKER_OUTPUT_ARTIFACT_V1",
+        "evidence_class": "WORKER",
+        "constitutional_owner": "FILESYSTEM_REPLACE_WORKER",
+        "authority_effect": "NONE",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "OPTIONAL",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "OPTIONAL_REFERENCE",
+        "source_requirement_ids": [
+          "OUTPUT-001"
+        ]
+      },
+      {
+        "evidence_id": "RESULT_CAPTURE",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "WORKER_RESULT_CAPTURE_ARTIFACT_V1",
+        "evidence_class": "PLATFORM_CORE",
+        "constitutional_owner": "RESULT_CAPTURE",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "RESULT-001"
+        ]
+      },
+      {
+        "evidence_id": "RESULT_VALIDATION",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "WORKER_RESULT_VALIDATION_ARTIFACT_V1",
+        "evidence_class": "PLATFORM_CORE",
+        "constitutional_owner": "RESULT_VALIDATION",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "INVOKE-001",
+          "LINEAGE-002",
+          "LINEAGE-003",
+          "RESULT-001"
+        ]
+      },
+      {
+        "evidence_id": "REPLAY_REVIEW",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "POST_EXECUTION_REPLAY_REVIEW_ARTIFACT_V1",
+        "evidence_class": "REPLAY",
+        "constitutional_owner": "POST_EXECUTION_REPLAY_REVIEW",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "REPLAY-002",
+          "RESULT-001",
+          "TERM-002"
+        ]
+      },
+      {
+        "evidence_id": "GOVERNED_TERMINATION",
+        "record_type": "LIFECYCLE_EVIDENCE_RECORD_V1",
+        "evidence_type": "GOVERNED_TERMINATION_ARTIFACT_V1",
+        "evidence_class": "PLATFORM_CORE",
+        "constitutional_owner": "GOVERNED_TERMINATION",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "TERM-002"
+        ]
+      },
+      {
+        "evidence_id": "FINAL_CERTIFICATION",
+        "record_type": "CERTIFICATION_EVIDENCE_RECORD_V1",
+        "evidence_type": "REPLAY_CERTIFICATION_ARTIFACT_V1",
+        "evidence_class": "CERTIFICATION",
+        "constitutional_owner": "CERTIFICATION",
+        "authority_effect": "PLATFORM_CORE_ONLY",
+        "artifact_hash": "REQUIRED",
+        "wrapper_hash": "REQUIRED",
+        "session_binding": "REQUIRED",
+        "chain_binding": "DERIVED_REQUIRED",
+        "lineage_binding": "REQUIRED",
+        "replay_binding": "DERIVED_REQUIRED_REFERENCE",
+        "source_requirement_ids": [
+          "CERT-001",
+          "CERT-002"
+        ]
+      }
+    ]
+  },
+  "binding_model": {
+    "record_count": 10,
+    "record_id_uniqueness": "REQUIRED",
+    "record_type_exactness": "REQUIRED",
+    "evidence_type_exactness": "REQUIRED",
+    "profile_order_exactness": "REQUIRED",
+    "contract_requirement_coverage": "EVERY_MANDATORY_REQUIREMENT_HAS_ALL_DECLARED_EVIDENCE",
+    "extra_evidence_behavior": "REJECT",
+    "missing_evidence_behavior": "REJECT",
+    "duplicate_evidence_behavior": "REJECT",
+    "substituted_evidence_behavior": "REJECT",
+    "binding_time": "BEFORE_RULE_EVALUATION",
+    "authority_semantics": "The manifest authenticates and binds evidence but never creates, transfers, upgrades or exercises constitutional authority."
+  },
+  "session_chain_and_lineage_commitments": {
+    "session_rule": "Every lifecycle and certification record must bind the validation context session_id. Any different, missing or ambiguous session fails closed.",
+    "invocation_rule": "Every lifecycle and certification record must bind the validation context invocation_id directly or through an authenticated immutable lineage commitment.",
+    "chain_rule": "Every lifecycle record must bind the validation context chain_id. Certification must derive the same chain from authenticated ordered upstream references and hashes.",
+    "lineage_rule": "Each record must commit to the exact authenticated predecessor references and hashes required by its certified lifecycle position.",
+    "ordered_predecessor_model": [
+      {
+        "evidence_id": "ADAPTER_PROFILE",
+        "required_predecessors": [
+          "CERTIFIED_FILESYSTEM_ADAPTER_EXECUTABLE_CONSTITUTIONAL_CONTRACT"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_SELECTION_LINEAGE",
+        "required_predecessors": [
+          "AUTHENTICATED_AUTHORIZATION_LINEAGE",
+          "AUTHENTICATED_WORKER_CANDIDATE_EVIDENCE",
+          "AUTHENTICATED_WORKER_SELECTION_EVIDENCE"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_ASSIGNMENT",
+        "required_predecessors": [
+          "WORKER_SELECTION_LINEAGE"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_INVOCATION",
+        "required_predecessors": [
+          "WORKER_SELECTION_LINEAGE",
+          "WORKER_ASSIGNMENT"
+        ]
+      },
+      {
+        "evidence_id": "WORKER_OUTPUT",
+        "required_predecessors": [
+          "WORKER_INVOCATION"
+        ]
+      },
+      {
+        "evidence_id": "RESULT_CAPTURE",
+        "required_predecessors": [
+          "WORKER_OUTPUT",
+          "WORKER_INVOCATION"
+        ]
+      },
+      {
+        "evidence_id": "RESULT_VALIDATION",
+        "required_predecessors": [
+          "RESULT_CAPTURE",
+          "WORKER_OUTPUT"
+        ]
+      },
+      {
+        "evidence_id": "REPLAY_REVIEW",
+        "required_predecessors": [
+          "RESULT_VALIDATION"
+        ]
+      },
+      {
+        "evidence_id": "GOVERNED_TERMINATION",
+        "required_predecessors": [
+          "REPLAY_REVIEW",
+          "RESULT_VALIDATION"
+        ]
+      },
+      {
+        "evidence_id": "FINAL_CERTIFICATION",
+        "required_predecessors": [
+          "GOVERNED_TERMINATION",
+          "REPLAY_REVIEW",
+          "RESULT_VALIDATION"
+        ]
+      }
+    ],
+    "cross_session_binding": "REJECT",
+    "cross_chain_binding": "REJECT",
+    "cross_invocation_binding": "REJECT",
+    "lineage_substitution": "REJECT",
+    "lineage_cycle": "REJECT",
+    "lineage_gap": "REJECT"
+  },
+  "replay_binding_model": {
+    "replay_is_evidence": true,
+    "replay_is_authority": false,
+    "manifest_replay_access": "READ_ONLY",
+    "manifest_replay_mutation": "PROHIBITED",
+    "replay_reference_hash_pair": "ATOMIC",
+    "replay_record_order": "PRESERVE_CERTIFIED_ORDER",
+    "replay_wrapper_hashes": "PRESERVE_EXACTLY",
+    "replay_artifact_hashes": "PRESERVE_EXACTLY",
+    "replay_chain_continuity": "REQUIRED",
+    "independent_reconstruction": "REQUIRED_WHERE_DECLARED_BY_CONTRACT",
+    "historical_replay_formats": "PRESERVED",
+    "unsupported_replay_schema": "FAIL_CLOSED"
+  },
+  "compatibility_model": {
+    "supported_manifest_schema_versions": [
+      "1.0.0"
+    ],
+    "supported_manifest_versions": [
+      "1.0.0"
+    ],
+    "supported_contract_schema_versions": [
+      "1.0.0"
+    ],
+    "supported_contract_versions": [
+      "1.0.0"
+    ],
+    "supported_validator_input_versions": [
+      "1.0.0"
+    ],
+    "supported_platform_core_versions": [
+      "V31"
+    ],
+    "supported_adapter_profiles": [
+      {
+        "profile_id": "CERTIFIED_FILESYSTEM_ADAPTER_EVIDENCE_PROFILE_V1",
+        "profile_version": "1.0.0"
+      }
+    ],
+    "forward_compatibility": "EXPLICIT_ONLY",
+    "backward_compatibility": "EXPLICIT_ONLY",
+    "historical_compatibility": "REQUIRED",
+    "unknown_version": "FAIL_CLOSED",
+    "deprecated_version": "FAIL_CLOSED_UNLESS_EXPLICITLY_ACCEPTED_BY_A_CERTIFIED_COMPATIBILITY_PROFILE"
+  },
+  "validator_input_specification": {
+    "input_version": "1.0.0",
+    "inputs": [
+      "EXACT_MANIFEST_INSTANCE_BYTES",
+      "READ_ONLY_ARTIFACT_RESOLVER",
+      "READ_ONLY_CONTRACT_RESOLVER"
+    ],
+    "resolution_semantics": "References are resolved read-only and authenticated by recomputing their declared canonical hashes.",
+    "evaluation_preconditions_in_order": [
+      "PARSE_CANONICAL_JSON",
+      "VALIDATE_CLOSED_SCHEMA",
+      "VALIDATE_SUPPORTED_VERSIONS",
+      "RECOMPUTE_MANIFEST_HASH",
+      "RESOLVE_AND_AUTHENTICATE_SINGLE_CONTRACT",
+      "VALIDATE_EXACT_EVIDENCE_PROFILE",
+      "RESOLVE_AND_AUTHENTICATE_EVIDENCE",
+      "VALIDATE_SESSION_CHAIN_AND_LINEAGE",
+      "VALIDATE_REPLAY_COMMITMENTS",
+      "VERIFY_CONSTITUTIONAL_OWNERSHIP",
+      "CONFIRM_MANIFEST_COMPLETENESS",
+      "PERMIT_CONTRACT_RULE_EVALUATION"
+    ],
+    "precondition_failure_behavior": "STOP_AND_FAIL_CLOSED",
+    "side_effects": "PROHIBITED",
+    "authority_effect": "NONE",
+    "runtime_execution": "PROHIBITED",
+    "worker_invocation": "PROHIBITED",
+    "provider_invocation": "PROHIBITED",
+    "repository_mutation": "PROHIBITED",
+    "replay_mutation": "PROHIBITED"
+  },
+  "constitutional_ownership_verification": {
+    "platform_core_is_single_constitutional_core": true,
+    "manifest_owns_evidence": false,
+    "manifest_owns_authorization": false,
+    "manifest_owns_assignment": false,
+    "manifest_owns_dispatch": false,
+    "manifest_owns_invocation": false,
+    "manifest_owns_result_capture": false,
+    "manifest_owns_result_validation": false,
+    "manifest_owns_replay": false,
+    "manifest_owns_replay_review": false,
+    "manifest_owns_governed_termination": false,
+    "manifest_owns_certification": false,
+    "adapter_is_non_authoritative": true,
+    "worker_output_is_non_authoritative": true,
+    "certification_remains_exclusive": true,
+    "owner_mismatch_behavior": "FAIL_CLOSED"
+  },
+  "fail_closed_conditions": [
+    "MALFORMED_OR_NON_CANONICAL_MANIFEST",
+    "UNKNOWN_OR_DUPLICATE_FIELD",
+    "NULL_FLOAT_NON_NFC_OR_PLACEHOLDER_VALUE",
+    "UNSUPPORTED_MANIFEST_SCHEMA_OR_VERSION",
+    "UNSUPPORTED_CONTRACT_SCHEMA_OR_VERSION",
+    "UNSUPPORTED_VALIDATOR_INPUT_VERSION",
+    "UNSUPPORTED_PLATFORM_CORE_VERSION",
+    "UNSUPPORTED_ADAPTER_PROFILE",
+    "MISSING_DUPLICATE_EXTRA_OR_OUT_OF_ORDER_EVIDENCE",
+    "MISSING_OR_MUTABLE_REFERENCE",
+    "ZERO_MALFORMED_MISSING_OR_MISMATCHED_HASH",
+    "CONTRACT_REFERENCE_ID_VERSION_SCHEMA_OR_HASH_MISMATCH",
+    "EVIDENCE_TYPE_VERSION_OR_OWNER_MISMATCH",
+    "ARTIFACT_WRAPPER_OR_REPLAY_HASH_MISMATCH",
+    "SUBSTITUTED_EVIDENCE",
+    "CROSS_SESSION_CROSS_CHAIN_OR_CROSS_INVOCATION_EVIDENCE",
+    "INCOMPLETE_CYCLIC_OR_INCONSISTENT_LINEAGE",
+    "REPLAY_ORDER_REFERENCE_HASH_OR_CHAIN_DISCONTINUITY",
+    "MANIFEST_HASH_MISMATCH",
+    "ATTEMPTED_AUTHORITY_CREATION_TRANSFER_OR_UPGRADE",
+    "ATTEMPTED_RUNTIME_WORKER_PROVIDER_REPLAY_OR_REPOSITORY_MUTATION",
+    "INCOMPLETE_MANDATORY_CONTRACT_REQUIREMENT_COVERAGE"
+  ],
+  "completeness_audit": {
+    "canonical_schema_defined": true,
+    "manifest_identity_defined": true,
+    "hashing_model_defined": true,
+    "evidence_record_model_defined": true,
+    "single_contract_binding_defined": true,
+    "platform_core_evidence_defined": true,
+    "adapter_evidence_defined": true,
+    "worker_evidence_defined": true,
+    "hash_commitments_defined": true,
+    "session_commitments_defined": true,
+    "chain_commitments_defined": true,
+    "lineage_commitments_defined": true,
+    "version_compatibility_defined": true,
+    "replay_commitments_defined": true,
+    "validator_input_defined": true,
+    "constitutional_ownership_verification_defined": true,
+    "fail_closed_conditions_defined": true,
+    "manifest_instance_placeholders_permitted": false,
+    "live_evidence_fabricated_by_specification": false,
+    "status": "COMPLETE"
+  },
+  "constitutional_consistency_report": {
+    "pcbv31_preserved": true,
+    "certified_owners_preserved": true,
+    "adapter_neutrality_preserved": true,
+    "filesystem_role": "CERTIFIED_REFERENCE_IMPLEMENTATION",
+    "historical_compatibility_preserved": true,
+    "replay_determinism_preserved": true,
+    "fail_closed_behavior_preserved": true,
+    "new_owner_introduced": false,
+    "new_lifecycle_introduced": false,
+    "runtime_behavior_changed": false,
+    "unresolved_constitutional_blocker": false,
+    "assessment": "CONSTITUTIONALLY_CONSISTENT"
+  },
+  "specification_hash": "sha256:4d47e8bfa2239313db56aca42afdd06602f0834a5690507969de6d18401c5d8e"
+}
