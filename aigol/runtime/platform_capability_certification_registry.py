@@ -786,6 +786,29 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G43-01",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier=(
+            "CONSTITUTIONAL_DEVELOPMENT_CONTINUITY_MANAGER"
+        ),
+        capability_owner="PLATFORM_CORE_DEVELOPMENT_CONTINUITY",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G44-01",
+        certification_evidence=(
+            "docs/governance/G44_01_CONSTITUTIONAL_DEVELOPMENT_CONTINUITY_MANAGER.md",
+            "docs/governance/G44_01_CONSTITUTIONAL_DEVELOPMENT_CONTINUITY_MANAGER_CERTIFICATION_REPORT.md",
+        ),
+        certification_date="2026-07-28",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime."
+            "constitutional_development_continuity_manager_runtime"
+        ),
+        verification_type=(
+            "DETERMINISTIC_CHECKPOINT_RESUME_CONTINUITY_VERIFICATION"
+        ),
+        certification_version="G44-01",
+    ),
 )
 
 
