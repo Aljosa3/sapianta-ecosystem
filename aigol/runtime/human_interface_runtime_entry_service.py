@@ -22,6 +22,28 @@ from aigol.runtime import codex_task_outcome_human_review_runtime as codex_task_
 from aigol.runtime import codex_transport_to_worker_result_capture_binding_runtime as codex_result
 from aigol.runtime import codex_worker_activation_binding_runtime as worker_activation
 from aigol.runtime import codex_worker_result_to_semantic_validation_binding_runtime as codex_validation
+from aigol.runtime import (
+    canonical_governed_development_condensation_g31_input_binding_runtime
+    as condensation_input_binding,
+)
+from aigol.runtime import (
+    canonical_governed_development_condensation_human_decision_runtime
+    as condensation_decision,
+)
+from aigol.runtime import (
+    canonical_governed_development_condensation_human_review_runtime
+    as condensation_review,
+)
+from aigol.runtime import (
+    canonical_governed_development_condensation_replay as condensation_replay,
+)
+from aigol.runtime import (
+    canonical_governed_development_condensation_runtime as condensation_proposal,
+)
+from aigol.runtime import (
+    canonical_governed_development_condensation_validation_runtime
+    as condensation_validation,
+)
 from aigol.runtime import execution_runtime
 from aigol.runtime import (
     filesystem_replace_worker_output_to_result_capture_binding_runtime
@@ -71,6 +93,7 @@ from aigol.runtime.platform_core_project_services import (
     prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
 )
+from aigol.runtime.transport.serialization import replay_hash
 from aigol.workers import filesystem_replace_worker
 
 
@@ -89,6 +112,10 @@ CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_NOT_REQUIRED = (
 G31_APPLICATION_TRANSITION_VERSION = (
     "G31_COMMON_HUMAN_INTERFACE_APPLICATION_TRANSITION_V1"
 )
+CANONICAL_CONDENSATION_ENTRY_INTEGRATION_VERSION = (
+    "G35_13_CANONICAL_CONDENSATION_ENTRY_INTEGRATION_V1"
+)
+G31_CANONICAL_CONDENSATION_DECISION = "G31_CANONICAL_CONDENSATION_DECISION"
 G31_EXECUTION_DECISION = "G31_EXECUTION_DECISION"
 G31_WORKER_ACTIVATION_DECISION = "G31_WORKER_ACTIVATION_DECISION"
 G31_TASK_OUTCOME_DECISION = "G31_TASK_OUTCOME_DECISION"
@@ -132,6 +159,7 @@ def run_human_interface_runtime_entry(
     g31_human_actor_id: str = "HUMAN_OPERATOR",
     g31_worker_process_runner: Callable[..., Any] | None = None,
     g31_synthesis_preflight_prompt: str | None = None,
+    canonical_condensation_proposal_inputs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Enter the certified runtime from any Unified Human Interface."""
 
@@ -141,10 +169,58 @@ def run_human_interface_runtime_entry(
     root = Path(runtime_root)
     workspace_text = str(Path(workspace))
     if g31_synthesis_preflight_prompt is not None:
-        preflight = worker_activation.preflight_codex_worker_synthesis(
-            _require_string(
-                g31_synthesis_preflight_prompt, "g31_synthesis_preflight_prompt"
+        prompt = _require_string(
+            g31_synthesis_preflight_prompt, "g31_synthesis_preflight_prompt"
+        )
+        condensation_required = (
+            len(worker_activation.CODEX_SYNTHESIS_PREFIX + prompt)
+            > worker_activation.CODEX_SYNTHESIS_MAXIMUM_CHARACTER_COUNT
+        )
+        if condensation_required:
+            if canonical_condensation_proposal_inputs is None:
+                preflight = worker_activation.preflight_codex_worker_synthesis(
+                    prompt
+                )
+                return _g31_application_result(
+                    {
+                        "canonical_condensation_entry_integration_version": (
+                            CANONICAL_CONDENSATION_ENTRY_INTEGRATION_VERSION
+                        ),
+                        "canonical_condensation_entry_status": (
+                            "CANONICAL_CONDENSATION_PROPOSAL_INPUT_REQUIRED_"
+                            "FAILED_CLOSED"
+                        ),
+                        "canonical_condensation_required": True,
+                        "canonical_condensation_direct_input_over_bound": True,
+                        "codex_synthesis_preflight_capture": preflight,
+                    },
+                    interface_name=interface,
+                    presentations=(
+                        worker_activation.render_codex_worker_synthesis_preflight(
+                            preflight
+                        ),
+                        "Canonical condensation is required before this exact "
+                        "over-bound request can reach a later G31 preflight.",
+                    ),
+                )
+            return _begin_canonical_condensation_entry_transition(
+                interface_name=interface,
+                session=session,
+                root=root,
+                workspace_path=workspace_text,
+                created=created,
+                original_request=prompt,
+                reviewed_by=_require_string(
+                    g31_human_actor_id, "g31_human_actor_id"
+                ),
+                proposal_inputs=canonical_condensation_proposal_inputs,
             )
+        if canonical_condensation_proposal_inputs is not None:
+            raise FailClosedRuntimeError(
+                "direct exact G31 input cannot contain condensation proposal inputs"
+            )
+        preflight = worker_activation.preflight_codex_worker_synthesis(
+            prompt
         )
         return _g31_application_result(
             {"codex_synthesis_preflight_capture": preflight},
@@ -559,6 +635,390 @@ def run_human_interface_runtime_entry(
     return _g31_application_result(result, interface_name=interface)
 
 
+def _begin_canonical_condensation_entry_transition(
+    *,
+    interface_name: str,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    original_request: str,
+    reviewed_by: str,
+    proposal_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    """Prepare one over-bound request for an explicit semantic decision."""
+
+    if not isinstance(proposal_inputs, dict):
+        raise FailClosedRuntimeError(
+            "canonical condensation proposal inputs must be an object"
+        )
+    required_fields = {
+        "original_request_id",
+        "clarification_evidence",
+        "clarification_complete",
+        "completed_objective_id",
+        "completed_objective",
+        "project_id",
+        "semantic_commitments",
+        "source_requirements",
+        "requirement_mappings",
+        "proposed_synthesis_body",
+    }
+    optional_fields = {
+        "invocation_id",
+        "chain_id",
+        "unresolved_ambiguities",
+        "proposal_method",
+        "proposal_method_evidence",
+    }
+    supplied_fields = set(proposal_inputs)
+    missing = sorted(required_fields - supplied_fields)
+    unexpected = sorted(supplied_fields - required_fields - optional_fields)
+    if missing or unexpected:
+        raise FailClosedRuntimeError(
+            "canonical condensation proposal input field mismatch: "
+            f"missing={missing}, unexpected={unexpected}"
+        )
+
+    proposal = condensation_proposal.create_canonical_condensation_proposal(
+        original_request_id=proposal_inputs["original_request_id"],
+        original_request=original_request,
+        clarification_evidence=proposal_inputs["clarification_evidence"],
+        clarification_complete=proposal_inputs["clarification_complete"],
+        completed_objective_id=proposal_inputs["completed_objective_id"],
+        completed_objective=proposal_inputs["completed_objective"],
+        project_id=proposal_inputs["project_id"],
+        workspace_id=workspace_path,
+        session_id=session,
+        invocation_id=proposal_inputs.get("invocation_id"),
+        chain_id=proposal_inputs.get("chain_id"),
+        semantic_commitments=proposal_inputs["semantic_commitments"],
+        source_requirements=proposal_inputs["source_requirements"],
+        requirement_mappings=proposal_inputs["requirement_mappings"],
+        proposed_synthesis_body=proposal_inputs["proposed_synthesis_body"],
+        unresolved_ambiguities=proposal_inputs.get("unresolved_ambiguities", ()),
+        proposal_method=proposal_inputs.get(
+            "proposal_method",
+            condensation_proposal.CANONICAL_CONDENSATION_PROPOSAL_METHOD,
+        ),
+        proposal_method_evidence=proposal_inputs.get("proposal_method_evidence"),
+    )
+    validation = condensation_validation.validate_canonical_condensation_proposal(
+        proposal,
+        expected_context={
+            "project_id": proposal_inputs["project_id"],
+            "workspace_id": workspace_path,
+            "session_id": session,
+            "invocation_id": proposal_inputs.get("invocation_id"),
+            "chain_id": proposal_inputs.get("chain_id"),
+            "original_request_sha256": condensation_proposal.content_sha256(
+                original_request
+            ),
+            "completed_objective_sha256": condensation_proposal.content_sha256(
+                proposal_inputs["completed_objective"]
+            ),
+        },
+    )
+    phase1_replay_dir = (
+        root
+        / session
+        / (
+            "CANONICAL-CONDENSATION-PHASE1-"
+            f"{proposal['condensation_hash'].removeprefix('sha256:')[:24]}"
+        )
+    )
+    phase1_capture = (
+        condensation_replay.record_canonical_condensation_phase1_replay(
+            proposal=proposal,
+            validation_result=validation,
+            recorded_at=created,
+            replay_dir=phase1_replay_dir,
+        )
+    )
+    state = {
+        "canonical_condensation_entry_integration_version": (
+            CANONICAL_CONDENSATION_ENTRY_INTEGRATION_VERSION
+        ),
+        "canonical_condensation_entry_status": (
+            "CANONICAL_CONDENSATION_VALIDATION_FAILED_CLOSED"
+            if validation["validation_status"]
+            != condensation_validation.CANONICAL_CONDENSATION_VALIDATION_PASS
+            else "CANONICAL_CONDENSATION_HUMAN_REVIEW_REQUIRED"
+        ),
+        "canonical_condensation_required": True,
+        "canonical_condensation_direct_input_over_bound": True,
+        "canonical_condensation_original_request": original_request,
+        "canonical_condensation_proposal_capture": proposal,
+        "canonical_condensation_validation_capture": validation,
+        "canonical_condensation_phase1_replay_capture": phase1_capture,
+        "canonical_condensation_phase1_replay_reference": str(
+            phase1_replay_dir
+        ),
+        "canonical_condensation_human_review_capture": None,
+        "canonical_condensation_human_decision_capture": None,
+        "canonical_condensation_g31_input_binding_capture": None,
+        "canonical_condensation_preflight_continuity_capture": None,
+        "codex_synthesis_preflight_capture": None,
+        "semantic_representation_approved": False,
+        "execution_authorized": False,
+        "worker_selected": False,
+        "worker_invoked": False,
+        "provider_invoked": False,
+        "repository_mutated": False,
+    }
+    if (
+        validation["validation_status"]
+        != condensation_validation.CANONICAL_CONDENSATION_VALIDATION_PASS
+    ):
+        return _g31_application_result(
+            state,
+            interface_name=interface_name,
+            presentations=(
+                "Canonical condensation validation failed closed. No human "
+                "approval, G31 preflight, Worker, Provider, or mutation occurred.",
+            ),
+        )
+
+    review = condensation_review.create_canonical_condensation_human_review(
+        proposal=proposal,
+        validation_result=validation,
+        phase1_replay_dir=phase1_replay_dir,
+        reviewed_by=reviewed_by,
+        presented_at=created,
+    )
+    state["canonical_condensation_human_review_capture"] = review
+    return _g31_application_result(
+        state,
+        interface_name=interface_name,
+        pending_action=_pending_action(
+            G31_CANONICAL_CONDENSATION_DECISION,
+            (G31_APPROVE, G31_REJECT),
+            review,
+        ),
+        presentations=(
+            condensation_review.render_canonical_condensation_human_review(
+                review,
+                phase1_replay_dir=phase1_replay_dir,
+            ),
+        ),
+    )
+
+
+def _continue_canonical_condensation_entry_transition(
+    *,
+    interface_name: str,
+    session: str,
+    root: Path,
+    workspace_path: str,
+    created: str,
+    state: dict[str, Any],
+    review: dict[str, Any],
+    action: str,
+    actor: str,
+) -> tuple[dict[str, Any], list[str]]:
+    """Bind an explicit review decision and invoke only the unchanged preflight."""
+
+    if state.get("canonical_condensation_human_review_capture") != review:
+        raise FailClosedRuntimeError(
+            "canonical condensation pending review state mismatch"
+        )
+    phase1_reference = review.get("phase1_replay_reference")
+    if not isinstance(phase1_reference, dict):
+        raise FailClosedRuntimeError(
+            "canonical condensation Phase 1 Replay reference is required"
+        )
+    phase1_replay_dir = Path(
+        _require_string(
+            phase1_reference.get("replay_location"),
+            "canonical_condensation_phase1_replay_location",
+        )
+    )
+    proposal = review.get("condensation_proposal")
+    if not isinstance(proposal, dict):
+        raise FailClosedRuntimeError(
+            "canonical condensation review proposal is required"
+        )
+    source_request = review.get("source_request")
+    if (
+        not isinstance(source_request, dict)
+        or state.get("canonical_condensation_proposal_capture") != proposal
+        or state.get("canonical_condensation_validation_capture")
+        != review.get("deterministic_validation_result")
+        or state.get("canonical_condensation_phase1_replay_reference")
+        != str(phase1_replay_dir)
+        or state.get("canonical_condensation_original_request")
+        != source_request.get("original_request")
+    ):
+        raise FailClosedRuntimeError(
+            "canonical condensation retained entry evidence mismatch"
+        )
+    lineage = proposal.get("source_lineage")
+    project_workspace = (
+        lineage.get("project_workspace") if isinstance(lineage, dict) else None
+    )
+    if (
+        not isinstance(project_workspace, dict)
+        or lineage.get("session_id") != session
+        or project_workspace.get("workspace_id") != workspace_path
+    ):
+        raise FailClosedRuntimeError(
+            "canonical condensation entry context lineage mismatch"
+        )
+
+    decision = condensation_decision.create_canonical_condensation_human_decision(
+        review=review,
+        phase1_replay_dir=phase1_replay_dir,
+        decision=action,
+        decided_by=actor,
+        decided_at=created,
+    )
+    phase2_replay_dir = (
+        root
+        / session
+        / (
+            "CANONICAL-CONDENSATION-PHASE2-"
+            f"{decision['human_decision_hash'].removeprefix('sha256:')[:24]}"
+        )
+    )
+    phase2_capture = (
+        condensation_replay.record_canonical_condensation_review_decision_replay(
+            phase1_replay_dir=phase1_replay_dir,
+            review=review,
+            decision=decision,
+            recorded_at=created,
+            replay_dir=phase2_replay_dir,
+        )
+    )
+    state.update(
+        {
+            "canonical_condensation_human_decision_capture": decision,
+            "canonical_condensation_phase2_replay_capture": phase2_capture,
+            "canonical_condensation_phase2_replay_reference": str(
+                phase2_replay_dir
+            ),
+            "semantic_representation_approved": action == G31_APPROVE,
+        }
+    )
+    if action == G31_REJECT:
+        state["canonical_condensation_entry_status"] = (
+            "CANONICAL_CONDENSATION_REJECTED"
+        )
+        return state, [
+            "Canonical condensation rejected. No G31 preflight, Worker, "
+            "Provider, authorization, or mutation occurred."
+        ]
+
+    binding = (
+        condensation_input_binding.create_canonical_condensation_g31_input_binding(
+            approved_replay_dir=phase2_replay_dir
+        )
+    )
+    preflight = worker_activation.preflight_codex_worker_synthesis(
+        binding["g31_function_argument"]
+    )
+    continuity = _canonical_condensation_preflight_continuity(
+        binding=binding,
+        preflight=preflight,
+    )
+    state.update(
+        {
+            "canonical_condensation_entry_status": (
+                "CANONICAL_CONDENSATION_G31_PREFLIGHT_READY"
+                if preflight["synthesis_preflight_status"]
+                == "SYNTHESIS_PREFLIGHT_READY"
+                else "CANONICAL_CONDENSATION_G31_PREFLIGHT_FAILED_CLOSED"
+            ),
+            "canonical_condensation_g31_input_binding_capture": binding,
+            "canonical_condensation_preflight_continuity_capture": continuity,
+            "codex_synthesis_preflight_capture": preflight,
+        }
+    )
+    return state, [
+        "Canonical condensation was explicitly approved and bound through the "
+        "certified dedicated G31 input-binding runtime.",
+        worker_activation.render_codex_worker_synthesis_preflight(preflight),
+    ]
+
+
+def _canonical_condensation_preflight_continuity(
+    *,
+    binding: dict[str, Any],
+    preflight: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove the unchanged G31 capture consumed exact Model D values."""
+
+    expected = binding.get("preflight_input_tuple")
+    if not isinstance(expected, dict):
+        raise FailClosedRuntimeError(
+            "canonical condensation preflight input tuple is required"
+        )
+    expected_argument = expected.get("g31_function_argument")
+    expected_final = expected.get("g31_final_measured_request")
+    if not isinstance(expected_argument, dict) or not isinstance(
+        expected_final, dict
+    ):
+        raise FailClosedRuntimeError(
+            "canonical condensation preflight value commitments are required"
+        )
+    checks = {
+        "raw_request_equal": preflight.get("raw_request")
+        == expected_argument.get("value")
+        == binding.get("g31_function_argument"),
+        "canonical_prefix_equal": preflight.get("canonical_prefix")
+        == binding.get("approved_projection_prefix"),
+        "final_request_equal": preflight.get("final_synthesized_request")
+        == expected_final.get("value")
+        == binding.get("g31_final_measured_request"),
+        "raw_character_count_equal": preflight.get("raw_character_count")
+        == expected_argument.get("code_point_count"),
+        "prefix_character_count_equal": preflight.get("prefix_character_count")
+        == binding.get("approved_projection_prefix_commitment", {}).get(
+            "code_point_count"
+        ),
+        "final_character_count_equal": preflight.get("final_character_count")
+        == expected_final.get("code_point_count"),
+        "maximum_character_count_equal": preflight.get(
+            "maximum_character_count"
+        )
+        == binding.get(
+            "maximum_g31_final_measured_request_code_point_count"
+        ),
+        "character_counting_contract_equal": preflight.get(
+            "character_counting_contract"
+        )
+        == expected_final.get("character_counting_contract"),
+        "final_request_sha256_equal": preflight.get(
+            "final_synthesized_request_sha256"
+        )
+        == expected_final.get("sha256"),
+    }
+    if not all(checks.values()):
+        raise FailClosedRuntimeError(
+            "canonical condensation to unchanged G31 preflight continuity mismatch"
+        )
+    artifact = {
+        "artifact_type": (
+            "CANONICAL_CONDENSATION_G31_PREFLIGHT_CONTINUITY_CAPTURE_V1"
+        ),
+        "integration_version": CANONICAL_CONDENSATION_ENTRY_INTEGRATION_VERSION,
+        "binding_id": binding.get("binding_id"),
+        "binding_hash": binding.get("binding_hash"),
+        "preflight_hash": preflight.get("synthesis_preflight_hash"),
+        "preflight_input_tuple_hash": binding.get("preflight_input_tuple_hash"),
+        "checks": checks,
+        "all_equal": True,
+        "g31_preflight_invoked": True,
+        "g31_preflight_behavior_modified": False,
+        "authorization_created": False,
+        "execution_authorized": False,
+        "worker_invoked": False,
+        "provider_invoked": False,
+        "repository_mutated": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
 def _continue_g31_application_transition(
     *,
     interface_name: str,
@@ -613,7 +1073,20 @@ def _continue_g31_application_transition(
     presentations: list[str] = []
     next_pending: dict[str, Any] | None = None
 
-    if action_type == G31_EXECUTION_DECISION:
+    if action_type == G31_CANONICAL_CONDENSATION_DECISION:
+        state, presentations = _continue_canonical_condensation_entry_transition(
+            interface_name=interface_name,
+            session=session,
+            root=root,
+            workspace_path=workspace_path,
+            created=created,
+            state=state,
+            review=context,
+            action=action,
+            actor=actor,
+        )
+
+    elif action_type == G31_EXECUTION_DECISION:
         state = _record_g31_execution_decision(
             pending_execution_review=context,
             decision=action,
