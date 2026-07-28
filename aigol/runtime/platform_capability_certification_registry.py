@@ -625,6 +625,25 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G29-08",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="INTELLIGENT_VALIDATION_ENGINE_V0",
+        capability_owner="PLATFORM_CORE_VALIDATION_PLANNING",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G36-01",
+        certification_evidence=(
+            "docs/governance/G36_01_INTELLIGENT_VALIDATION_ENGINE_V0.md",
+        ),
+        certification_date="2026-07-28",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime.intelligent_validation_engine_v0"
+        ),
+        verification_type=(
+            "DETERMINISTIC_IMPACT_CLASSIFICATION_AND_VALIDATION_RECOMMENDATION"
+        ),
+        certification_version="G36-01",
+    ),
 )
 
 
