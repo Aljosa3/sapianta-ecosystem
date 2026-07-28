@@ -743,6 +743,29 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G41-01",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier=(
+            "CONSTITUTIONAL_DEVELOPMENT_WORKFLOW_INTEGRATION"
+        ),
+        capability_owner="PLATFORM_CORE_VALIDATION_PLANNING",
+        certification_status=CERTIFIED,
+        certification_scope=IMPLEMENTATION,
+        certification_milestone="G42-01",
+        certification_evidence=(
+            "docs/governance/G42_01_CONSTITUTIONAL_DEVELOPMENT_WORKFLOW_INTEGRATION.md",
+            "docs/governance/G42_01_CONSTITUTIONAL_DEVELOPMENT_WORKFLOW_INTEGRATION_CERTIFICATION_REPORT.md",
+        ),
+        certification_date="2026-07-28",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime."
+            "constitutional_development_workflow_integration_runtime"
+        ),
+        verification_type=(
+            "DEFAULT_IVE_4_DEVELOPMENT_VALIDATION_WORKFLOW_INTEGRATION"
+        ),
+        certification_version="G42-01",
+    ),
 )
 
 
