@@ -444,58 +444,84 @@ def prepare_unified_human_interface_project_context(
         conversation_experience=conversation_experience,
     )
     implementation_turn_binding = None
+    development_governance_integration = None
     if (
         development_intent.get("summary_admissible") is True
         and development_intent.get("work_type") == "IMPLEMENTATION"
         and project_objective is not None
     ):
+        from aigol.runtime.constitutional_development_governance_operational_integration import (
+            G47_OPERATIONAL_INTEGRATION_READY,
+            integrate_constitutional_development_governance,
+        )
         from aigol.runtime.platform_implementation_turn_durable_work_binding import (
             IMPLEMENTATION_TURN_READY_FOR_APPROVAL,
-            compose_implementation_turn_durable_work_binding,
         )
 
-        implementation_turn_binding = compose_implementation_turn_durable_work_binding(
-            request=effective_message,
-            project_objective_artifact=project_objective,
-            knowledge_reuse_artifact=knowledge_reuse,
-            workspace_state=prior_state,
-            workspace=workspace,
-            created_at=created_at,
-            replay_dir=(
-                session_root
-                / "implementation_turn_durable_work"
-                / f"{turn_index:03d}_binding"
-            ),
+        development_governance_integration = (
+            integrate_constitutional_development_governance(
+                request=effective_message,
+                project_objective_artifact=project_objective,
+                knowledge_reuse_artifact=knowledge_reuse,
+                workspace_state=prior_state,
+                workspace=workspace,
+                created_at=created_at,
+                replay_dir=(
+                    session_root
+                    / "development_governance"
+                    / f"{turn_index:03d}_integration"
+                ),
+            )
+        )
+        implementation_turn_binding = development_governance_integration.get(
+            "implementation_turn_binding"
         )
         development_intent = deepcopy(development_intent)
-        development_intent["canonical_implementation_turn_binding"] = deepcopy(
-            implementation_turn_binding
+        development_intent["constitutional_development_governance"] = deepcopy(
+            development_governance_integration
         )
-        development_intent["canonical_implementation_turn_binding_hash"] = (
-            implementation_turn_binding["artifact_hash"]
+        development_intent["constitutional_development_governance_hash"] = (
+            development_governance_integration["artifact_hash"]
         )
-        development_intent["development_composition_plan_hash"] = (
-            implementation_turn_binding["development_composition_plan_hash"]
+        development_intent["constitutional_development_governance_bundle_hash"] = (
+            development_governance_integration["governance_bundle_hash"]
         )
-        development_intent["durable_governed_work_hash"] = (
-            implementation_turn_binding["durable_governed_work_hash"]
+        development_intent["constitutional_development_governance_bundle_state"] = (
+            development_governance_integration["bundle_state"]
         )
-        development_intent["proposal_preview_hash"] = implementation_turn_binding[
-            "proposal_preview_hash"
-        ]
-        development_intent["approval_request_hash"] = implementation_turn_binding[
-            "approval_request_hash"
-        ]
         if (
-            implementation_turn_binding.get("binding_status")
+            development_governance_integration.get("integration_status")
+            != G47_OPERATIONAL_INTEGRATION_READY
+            or not isinstance(implementation_turn_binding, dict)
+            or implementation_turn_binding.get("binding_status")
             != IMPLEMENTATION_TURN_READY_FOR_APPROVAL
         ):
             development_intent["summary_admissible"] = False
             development_intent["runtime_binding_admissible"] = False
             development_intent["requires_human_approval"] = False
             development_intent["canonical_implementation_scope_unresolved"] = True
-            development_intent["clarification_reason"] = implementation_turn_binding.get(
-                "failure_reason"
+            development_intent["clarification_reason"] = (
+                "Development Governance did not permit bounded planning: "
+                f"{development_governance_integration['governance_disposition']}"
+            )
+        else:
+            development_intent["canonical_implementation_turn_binding"] = deepcopy(
+                implementation_turn_binding
+            )
+            development_intent["canonical_implementation_turn_binding_hash"] = (
+                implementation_turn_binding["artifact_hash"]
+            )
+            development_intent["development_composition_plan_hash"] = (
+                implementation_turn_binding["development_composition_plan_hash"]
+            )
+            development_intent["durable_governed_work_hash"] = (
+                implementation_turn_binding["durable_governed_work_hash"]
+            )
+            development_intent["proposal_preview_hash"] = (
+                implementation_turn_binding["proposal_preview_hash"]
+            )
+            development_intent["approval_request_hash"] = (
+                implementation_turn_binding["approval_request_hash"]
             )
         development_intent["artifact_hash"] = replay_hash(development_intent)
         conversation_experience = human_conversation_experience_from_resolution(
@@ -696,6 +722,14 @@ def prepare_unified_human_interface_project_context(
         "human_conversation_experience": conversation_experience,
         "canonical_implementation_turn_binding": deepcopy(
             implementation_turn_binding
+        ),
+        "constitutional_development_governance": deepcopy(
+            development_governance_integration
+        ),
+        "constitutional_development_governance_hash": (
+            development_governance_integration.get("artifact_hash")
+            if isinstance(development_governance_integration, dict)
+            else None
         ),
         "canonical_implementation_turn_binding_hash": (
             implementation_turn_binding.get("artifact_hash")
@@ -4902,6 +4936,14 @@ def _conversation_approval_summary(
         and isinstance(implementation_binding.get("proposal_preview_artifact"), dict)
         else None
     )
+    development_governance = (
+        development_intent.get("constitutional_development_governance")
+        if isinstance(
+            development_intent.get("constitutional_development_governance"),
+            dict,
+        )
+        else None
+    )
     return {
         "summary_type": (
             "GOVERNED_IMPLEMENTATION_SUMMARY"
@@ -4951,6 +4993,26 @@ def _conversation_approval_summary(
             else None
         ),
         "canonical_proposal_preview": deepcopy(proposal_preview),
+        "constitutional_development_governance_bundle_hash": (
+            development_governance.get("governance_bundle_hash")
+            if isinstance(development_governance, dict)
+            else None
+        ),
+        "constitutional_development_governance_bundle_state": (
+            development_governance.get("bundle_state")
+            if isinstance(development_governance, dict)
+            else None
+        ),
+        "constitutional_development_governance_disposition": (
+            development_governance.get("governance_disposition")
+            if isinstance(development_governance, dict)
+            else None
+        ),
+        "constitutional_development_governance_planning_eligible": (
+            development_governance.get("planning_eligible")
+            if isinstance(development_governance, dict)
+            else False
+        ),
         "development_composition_plan_hash": (
             implementation_binding.get("development_composition_plan_hash")
             if isinstance(implementation_binding, dict)

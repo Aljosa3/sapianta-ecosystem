@@ -1684,6 +1684,23 @@ def _render_summary(summary: dict[str, Any]) -> str:
                 f"ordered_implementation_sequence: {preview.get('ordered_implementation_sequence')}",
                 f"focused_tests: {preview.get('focused_tests')}",
                 f"validation_requirements: {preview.get('validation_requirements')}",
+                "Development Governance pre-planning barrier",
+                (
+                    "governance_disposition: "
+                    f"{summary.get('constitutional_development_governance_disposition')}"
+                ),
+                (
+                    "planning_eligible: "
+                    f"{summary.get('constitutional_development_governance_planning_eligible')}"
+                ),
+                (
+                    "governance_bundle_state: "
+                    f"{summary.get('constitutional_development_governance_bundle_state')}"
+                ),
+                (
+                    "governance_bundle_hash: "
+                    f"{summary.get('constitutional_development_governance_bundle_hash')}"
+                ),
                 f"development_composition_plan_hash: {summary.get('development_composition_plan_hash')}",
                 f"durable_governed_work_id: {summary.get('durable_governed_work_id')}",
                 f"durable_governed_work_hash: {summary.get('durable_governed_work_hash')}",

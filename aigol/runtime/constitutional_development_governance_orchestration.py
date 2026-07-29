@@ -8,9 +8,9 @@ planning eligibility.  It canonically serializes, hashes, validates, and
 reconstructs the reference-only Governance bundle.  It does not integrate a
 planner, persist Replay, or reconstruct a Replay protocol.
 
-The explicitly deferred public functions raise
-``DevelopmentGovernanceDeferredImplementationError`` deterministically until
-their owning implementation generations complete them.
+G47-01D completes the mechanical bundle-state and governance-eligible
+durable-work projections without changing the certified decision reductions.
+The deferred exception type remains public for API compatibility.
 """
 
 from __future__ import annotations
@@ -337,12 +337,7 @@ STAGE_ARTIFACT_TYPES = {
     ),
 }
 
-DEFERRED_RESPONSIBILITIES = (
-    "PLANNER_ADMISSIBILITY",
-    "DURABLE_WORK_BINDING",
-    "REPLAY_INTEGRATION",
-    "AICLI_INTEGRATION",
-)
+DEFERRED_RESPONSIBILITIES: tuple[str, ...] = ()
 
 
 class DevelopmentGovernanceRuntimeError(FailClosedRuntimeError):
@@ -1242,12 +1237,17 @@ def reconstruct_constitutional_development_governance_bundle(
 def derive_bundle_state(
     governance_disposition: DevelopmentGovernanceDisposition,
 ) -> str:
-    """Derive bundle state after disposition projection is implemented."""
+    """Project bundle state mechanically from the certified disposition."""
 
-    del governance_disposition
-    raise DevelopmentGovernanceDeferredImplementationError(
-        "Development Governance bundle-state derivation is deferred beyond "
-        "G47-01C"
+    _require_instance(
+        governance_disposition,
+        DevelopmentGovernanceDisposition,
+        "Governance disposition",
+    )
+    return _require_member(
+        governance_disposition.governance_disposition,
+        GOVERNANCE_DISPOSITIONS,
+        "governance_disposition",
     )
 
 
@@ -1261,23 +1261,72 @@ def compose_governance_eligible_implementation_turn_durable_work_binding(
     workspace: str | Path,
     created_at: str,
     replay_dir: str | Path,
+    governance_bundle: ConstitutionalDevelopmentGovernanceBundle | None = None,
+    stage_outputs: tuple[DevelopmentGovernanceStageArtifact, ...] | None = None,
 ) -> dict[str, Any]:
-    """Bind planning-eligible work after the dedicated integration generation."""
+    """Bind certified planning eligibility to existing planning and durable work."""
 
-    del (
-        planning_eligibility,
-        request,
-        project_objective_artifact,
-        knowledge_reuse_artifact,
-        workspace_state,
-        workspace,
-        created_at,
-        replay_dir,
+    if governance_bundle is None or stage_outputs is None:
+        raise DevelopmentGovernanceRuntimeError(
+            "governance-eligible durable-work binding requires the complete bundle"
+        )
+    reconstructed = reconstruct_constitutional_development_governance_bundle(
+        bundle=governance_bundle,
+        stage_outputs=stage_outputs,
     )
-    raise DevelopmentGovernanceDeferredImplementationError(
-        "Development Governance durable-work binding is deferred beyond "
-        "G47-01C"
+    eligibility = stage_outputs[5]
+    disposition = stage_outputs[4]
+    if not isinstance(eligibility, DevelopmentGovernancePlanningEligibility):
+        raise DevelopmentGovernanceRuntimeError(
+            "governance-eligible durable-work binding eligibility is invalid"
+        )
+    if not isinstance(disposition, DevelopmentGovernanceDisposition):
+        raise DevelopmentGovernanceRuntimeError(
+            "governance-eligible durable-work binding disposition is invalid"
+        )
+    if eligibility != planning_eligibility:
+        raise DevelopmentGovernanceRuntimeError(
+            "governance-eligible durable-work binding substituted eligibility"
+        )
+    if (
+        eligibility.planning_eligible is not True
+        or disposition.governance_disposition
+        != "BOUNDED_PLANNING_PERMITTED"
+        or derive_bundle_state(disposition) != "BOUNDED_PLANNING_PERMITTED"
+    ):
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance did not permit bounded planning"
+        )
+
+    from aigol.runtime.platform_implementation_turn_durable_work_binding import (
+        compose_implementation_turn_durable_work_binding,
+        implementation_turn_planning_scope_from_plan,
     )
+
+    binding = compose_implementation_turn_durable_work_binding(
+        request=request,
+        project_objective_artifact=project_objective_artifact,
+        knowledge_reuse_artifact=knowledge_reuse_artifact,
+        workspace_state=workspace_state,
+        workspace=workspace,
+        created_at=created_at,
+        replay_dir=Path(replay_dir) / "implementation_turn",
+    )
+    plan_scope = implementation_turn_planning_scope_from_plan(
+        binding["development_composition_plan_artifact"]
+    )
+    if plan_scope != eligibility.residual_gap:
+        raise DevelopmentGovernanceRuntimeError(
+            "planner output scope differs from certified Governance scope"
+        )
+    return {
+        "governance_bundle": reconstructed,
+        "bundle_state": derive_bundle_state(disposition),
+        "planning_eligibility": eligibility,
+        "implementation_turn_binding": binding,
+        "governance_bundle_hash": reconstructed.bundle_hash,
+        "implementation_turn_binding_hash": binding["artifact_hash"],
+    }
 
 
 def _validate_evidence_reference(

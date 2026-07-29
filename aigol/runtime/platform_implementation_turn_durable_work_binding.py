@@ -89,30 +89,13 @@ def compose_implementation_turn_durable_work_binding(
         "knowledge_reuse_artifact",
     )
     workspace_path = Path(workspace)
-    coverage = discover_platform_capability_composition_coverage(
-        query=raw_request,
+    coverage = prepare_implementation_turn_capability_coverage(
+        request=raw_request,
+        knowledge_reuse_artifact=knowledge_reuse,
         workspace_state=workspace_state,
-        governance_root=workspace_path,
+        workspace=workspace_path,
         created_at=created_at,
     )
-    if (
-        coverage.get("coverage_status") == COVERAGE_FAILED_CLOSED
-        and _bounded_project_capability_gap_evidence(
-            knowledge_reuse=knowledge_reuse,
-            coverage=coverage,
-        )
-    ):
-        coverage = _project_capability_gap_coverage_projection(coverage)
-    elif (
-        coverage.get("minimal_required_platform_extension", {}).get("required")
-        is not True
-        and knowledge_reuse.get("new_work_required") is True
-    ):
-        coverage = _project_required_extension_gap(
-            coverage,
-            knowledge_reuse=knowledge_reuse,
-        )
-    validate_platform_capability_composition_coverage(coverage)
     plan = compose_platform_development_plan(
         capability_coverage_artifact=coverage,
         created_at=created_at,
@@ -205,6 +188,87 @@ def compose_implementation_turn_durable_work_binding(
     validate_implementation_turn_durable_work_binding(artifact)
     _persist_binding(Path(replay_dir), artifact)
     return deepcopy(artifact)
+
+
+def prepare_implementation_turn_capability_coverage(
+    *,
+    request: str,
+    knowledge_reuse_artifact: dict[str, Any],
+    workspace_state: dict[str, Any] | None,
+    workspace: str | Path,
+    created_at: str,
+) -> dict[str, Any]:
+    """Prepare the existing deterministic coverage input before planning."""
+
+    raw_request = _require_string(request, "request")
+    knowledge_reuse = _validate_hash_bound_snapshot(
+        knowledge_reuse_artifact,
+        "knowledge_reuse_artifact",
+    )
+    coverage = discover_platform_capability_composition_coverage(
+        query=raw_request,
+        workspace_state=workspace_state,
+        governance_root=Path(workspace),
+        created_at=created_at,
+    )
+    if (
+        coverage.get("coverage_status") == COVERAGE_FAILED_CLOSED
+        and _bounded_project_capability_gap_evidence(
+            knowledge_reuse=knowledge_reuse,
+            coverage=coverage,
+        )
+    ):
+        coverage = _project_capability_gap_coverage_projection(coverage)
+    elif (
+        coverage.get("minimal_required_platform_extension", {}).get("required")
+        is not True
+        and knowledge_reuse.get("new_work_required") is True
+    ):
+        coverage = _project_required_extension_gap(
+            coverage,
+            knowledge_reuse=knowledge_reuse,
+        )
+    return validate_platform_capability_composition_coverage(coverage)
+
+
+def implementation_turn_planning_scope_from_coverage(
+    coverage_artifact: dict[str, Any],
+) -> tuple[str, ...]:
+    """Project the exact deterministic scope that the existing planner receives."""
+
+    coverage = validate_platform_capability_composition_coverage(
+        coverage_artifact
+    )
+    scope = {
+        str(item.get("facet"))
+        for item in coverage.get("uncovered_residual_gaps") or []
+        if isinstance(item, dict) and item.get("facet")
+    }
+    extension = coverage.get("minimal_required_platform_extension")
+    if isinstance(extension, dict) and extension.get("required") is True:
+        classification = extension.get("classification")
+        if isinstance(classification, str) and classification:
+            scope.add(classification)
+    return tuple(sorted(scope))
+
+
+def implementation_turn_planning_scope_from_plan(
+    plan_artifact: dict[str, Any],
+) -> tuple[str, ...]:
+    """Project the exact deterministic scope emitted by the existing planner."""
+
+    plan = validate_platform_development_composition_plan(plan_artifact)
+    scope = {
+        str(item.get("facet"))
+        for item in plan.get("residual_capability_gaps") or []
+        if isinstance(item, dict) and item.get("facet")
+    }
+    extension = plan.get("minimal_required_platform_extension")
+    if isinstance(extension, dict) and extension.get("required") is True:
+        classification = extension.get("classification")
+        if isinstance(classification, str) and classification:
+            scope.add(classification)
+    return tuple(sorted(scope))
 
 
 def validate_implementation_turn_durable_work_binding(
@@ -761,6 +825,9 @@ __all__ = [
     "PLATFORM_IMPLEMENTATION_TURN_PROPOSAL_PREVIEW_ARTIFACT_V1",
     "compose_implementation_turn_durable_work_binding",
     "consume_approved_implementation_turn_binding",
+    "implementation_turn_planning_scope_from_coverage",
+    "implementation_turn_planning_scope_from_plan",
+    "prepare_implementation_turn_capability_coverage",
     "reconstruct_implementation_turn_approval_consumption",
     "reconstruct_implementation_turn_durable_work_binding",
     "validate_implementation_turn_approval_consumption",
