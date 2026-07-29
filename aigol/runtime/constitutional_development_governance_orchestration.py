@@ -1,4 +1,4 @@
-"""Constitutional Development Governance orchestration skeleton for G47-01A.
+"""Constitutional Development Governance runtime through G47-01C-R02.
 
 This module realizes the immutable runtime structure, canonical stage order,
 and deterministic constitutional semantics frozen by the G47-00B
@@ -16,11 +16,16 @@ their owning implementation generations complete them.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields, is_dataclass, replace
+import hashlib
 from pathlib import Path
 import re
 from typing import Any, TypeAlias
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.platform_capability_certification_registry import (
+    PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY_VERSION,
+    lookup_platform_capability_certification,
+)
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
@@ -184,6 +189,18 @@ GOVERNANCE_DISPOSITIONS = frozenset(
 )
 
 SUPPORTED_EVIDENCE_VERSION = "V1"
+_SUPPORTED_EVIDENCE_TYPE_CONTRACTS = {
+    "DEVELOPMENT_GOVERNANCE_EVIDENCE_V1": {
+        "artifact_version": SUPPORTED_EVIDENCE_VERSION,
+        "authority_registry_version": (
+            PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY_VERSION
+        ),
+        "source_reference_binding": "CERTIFICATION_EVIDENCE",
+        "content_hash_binding": "AUTHORITATIVE_SOURCE_BYTES",
+        "compatibility_scope_binding": "CDD_BASELINE",
+        "supersession_binding": "CERTIFICATION_RECORD",
+    },
+}
 SUPPORTED_CERTIFICATION_STATES = frozenset(
     {
         "CERTIFIED",
@@ -281,7 +298,6 @@ SUPPORTED_EVIDENCE_CLAIMS = {
     ),
 }
 
-ARTIFACT_TYPE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_V[0-9]+$")
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 TASK_INTAKE_STAGE = "TASK_INTAKE"
@@ -533,10 +549,11 @@ def orchestrate_constitutional_development_governance(
 ) -> ConstitutionalDevelopmentGovernanceBundle:
     """Validate and compose all G47 stages in the frozen canonical order.
 
-    The function deliberately performs no semantic reduction.  Every stage
-    output is supplied by its owning stage, structurally validated through its
-    public validator, and then referenced by the immutable bundle skeleton.
-    Any exception terminates composition immediately.
+    Every stage output is supplied by its owning stage, validated through its
+    public validator, and then referenced by the immutable bundle.  Need,
+    disposition, and eligibility semantics are mechanically checked against
+    their complete upstream context.  Any exception terminates composition
+    immediately.
     """
 
     intake = validate_development_governance_task_intake(task_intake)
@@ -741,6 +758,10 @@ def validate_development_governance_evidence_snapshot(
 ) -> DevelopmentGovernanceEvidenceSnapshot:
     """Validate the canonical Evidence Validity Predicate and conflicts."""
 
+    if expected_cdd_id is None or expected_baseline is None:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence validation requires authoritative CDD and baseline context"
+        )
     _require_instance(
         artifact,
         DevelopmentGovernanceEvidenceSnapshot,
@@ -755,14 +776,11 @@ def validate_development_governance_evidence_snapshot(
     _require_string(artifact.snapshot_id, "snapshot_id")
     _require_string(artifact.cdd_id, "cdd_id")
     _require_string(artifact.baseline_reference, "baseline_reference")
-    if expected_cdd_id is not None and artifact.cdd_id != expected_cdd_id:
+    if artifact.cdd_id != expected_cdd_id:
         raise DevelopmentGovernanceRuntimeError(
             "evidence snapshot does not bind the expected CDD classification"
         )
-    if (
-        expected_baseline is not None
-        and artifact.baseline_reference != expected_baseline
-    ):
+    if artifact.baseline_reference != expected_baseline:
         raise DevelopmentGovernanceRuntimeError(
             "evidence snapshot baseline differs from CDD"
         )
@@ -773,8 +791,8 @@ def validate_development_governance_evidence_snapshot(
     seen_ids: set[str] = set()
     hashes_by_source: dict[str, str] = {}
     claims_by_authority: dict[
-        tuple[str, str, str, tuple[str, ...]],
-        str,
+        tuple[str, str, str],
+        list[DevelopmentGovernanceEvidenceReference],
     ] = {}
     for item in artifact.evidence_items:
         _validate_evidence_reference(
@@ -794,20 +812,10 @@ def validate_development_governance_evidence_snapshot(
             raise DevelopmentGovernanceRuntimeError(
                 "evidence source resolves to conflicting content hashes"
             )
-        authority_key = (
-            item.subject_id,
-            item.claim_type,
-            item.canonical_owner,
-            item.covered_facets,
+        _register_authoritative_claim(
+            claims_by_authority,
+            item,
         )
-        prior_claim = claims_by_authority.setdefault(
-            authority_key,
-            item.claim_value,
-        )
-        if prior_claim != item.claim_value:
-            raise DevelopmentGovernanceRuntimeError(
-                "one authoritative owner supplied conflicting evidence"
-            )
     return artifact
 
 
@@ -864,8 +872,6 @@ def validate_need_assessment(
     ):
         _require_string_tuple(value, name)
         _require_canonical_tuple(value, name)
-    if task_intake is None and cdd_classification is None and evidence_snapshot is None:
-        return artifact
     if (
         task_intake is None
         or cdd_classification is None
@@ -949,14 +955,6 @@ def validate_development_governance_disposition(
         artifact.explicit_prohibitions,
         "explicit_prohibitions",
     )
-    context = (
-        task_intake,
-        cdd_classification,
-        evidence_snapshot,
-        need_assessment,
-    )
-    if all(item is None for item in context):
-        return artifact
     if (
         task_intake is None
         or cdd_classification is None
@@ -1032,8 +1030,6 @@ def validate_planning_eligibility(
     ):
         _require_string_tuple(value, name)
         _require_canonical_tuple(value, name)
-    if need_assessment is None and governance_disposition is None:
-        return artifact
     if need_assessment is None or governance_disposition is None:
         raise DevelopmentGovernanceRuntimeError(
             "planning eligibility validation requires complete context"
@@ -1313,11 +1309,14 @@ def _validate_evidence_reference(
         (artifact.compatibility_scope, "evidence compatibility_scope"),
     ):
         _require_string(value, name)
-    if not ARTIFACT_TYPE_PATTERN.fullmatch(artifact.artifact_type):
+    evidence_contract = _SUPPORTED_EVIDENCE_TYPE_CONTRACTS.get(
+        artifact.artifact_type
+    )
+    if evidence_contract is None:
         raise DevelopmentGovernanceRuntimeError(
             "evidence artifact_type is unsupported"
         )
-    if artifact.artifact_version != SUPPORTED_EVIDENCE_VERSION:
+    if artifact.artifact_version != evidence_contract["artifact_version"]:
         raise DevelopmentGovernanceRuntimeError(
             "evidence artifact_version is unsupported"
         )
@@ -1350,6 +1349,10 @@ def _validate_evidence_reference(
         raise DevelopmentGovernanceRuntimeError(
             "evidence item baseline differs from the snapshot baseline"
         )
+    _validate_authoritative_evidence_context(
+        artifact,
+        expected_baseline=expected_baseline,
+    )
     _require_member(
         artifact.certification_status,
         SUPPORTED_CERTIFICATION_STATES,
@@ -1479,6 +1482,112 @@ def _validate_evidence_reference(
             raise DevelopmentGovernanceRuntimeError(
                 "complete realization evidence is internally inconsistent"
             )
+
+
+def _validate_authoritative_evidence_context(
+    artifact: DevelopmentGovernanceEvidenceReference,
+    *,
+    expected_baseline: str,
+) -> None:
+    try:
+        authority = lookup_platform_capability_certification(
+            artifact.subject_id
+        )
+    except FailClosedRuntimeError as exc:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence subject has no authoritative certified owner binding"
+        ) from exc
+
+    if artifact.subject_id != authority["capability_identifier"]:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence subject identity is not canonical"
+        )
+    expected_owner = authority["capability_owner"]
+    expected_architectural_owner = authority["architectural_owner"]
+    if artifact.canonical_owner != expected_owner:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence canonical_owner differs from authoritative ownership"
+        )
+    if artifact.architectural_owner != expected_architectural_owner:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence architectural_owner differs from authoritative ownership"
+        )
+    if artifact.certification_status != authority["certification_status"]:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence certification status differs from authoritative record"
+        )
+    if artifact.certification_scope != authority["certification_scope"]:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence certification scope differs from authoritative record"
+        )
+    if artifact.certification_required is not True:
+        raise DevelopmentGovernanceRuntimeError(
+            "authoritative evidence must preserve certification requirement"
+        )
+
+    expected_supersession = (
+        "SUPERSEDED"
+        if authority["certification_status"] == "SUPERSEDED"
+        or authority["superseded_by"] is not None
+        else "CURRENT"
+    )
+    if artifact.supersession_state != expected_supersession:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence supersession scope differs from authoritative record"
+        )
+    if artifact.compatibility_scope != expected_baseline:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence compatibility scope differs from the authoritative baseline"
+        )
+
+    authoritative_sources = tuple(authority["certification_evidence"])
+    if artifact.source_reference not in authoritative_sources:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence source reference is not authoritative for its owner"
+        )
+    source_path = Path(__file__).resolve().parents[2] / artifact.source_reference
+    if not source_path.is_file():
+        raise DevelopmentGovernanceRuntimeError(
+            "authoritative evidence source is unavailable"
+        )
+    source_hash = "sha256:" + hashlib.sha256(source_path.read_bytes()).hexdigest()
+    if artifact.content_hash != source_hash:
+        raise DevelopmentGovernanceRuntimeError(
+            "evidence content hash differs from the authoritative source"
+        )
+
+
+def _register_authoritative_claim(
+    claims_by_authority: dict[
+        tuple[str, str, str],
+        list[DevelopmentGovernanceEvidenceReference],
+    ],
+    artifact: DevelopmentGovernanceEvidenceReference,
+) -> None:
+    authority_key = (
+        artifact.subject_id,
+        artifact.claim_type,
+        artifact.canonical_owner,
+    )
+    prior_claims = claims_by_authority.setdefault(authority_key, [])
+    for prior in prior_claims:
+        if (
+            prior.claim_value != artifact.claim_value
+            and _authoritative_claim_scopes_overlap(prior, artifact)
+        ):
+            raise DevelopmentGovernanceRuntimeError(
+                "one authoritative owner supplied overlapping conflicting evidence"
+            )
+    prior_claims.append(artifact)
+
+
+def _authoritative_claim_scopes_overlap(
+    first: DevelopmentGovernanceEvidenceReference,
+    second: DevelopmentGovernanceEvidenceReference,
+) -> bool:
+    if not first.covered_facets or not second.covered_facets:
+        return True
+    return bool(set(first.covered_facets).intersection(second.covered_facets))
 
 
 def _evaluate_need_assessment_outcome(
