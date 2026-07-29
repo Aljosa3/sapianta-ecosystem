@@ -4,8 +4,9 @@ This module realizes the immutable runtime structure, canonical stage order,
 and deterministic constitutional semantics frozen by the G47-00B
 implementation contract.  It validates evidence, evaluates Need Assessment
 predicates without priority, reduces Governance disposition, and validates
-planning eligibility.  It does not integrate a planner, serialize artifacts,
-write Replay, or reconstruct persisted evidence.
+planning eligibility.  It canonically serializes, hashes, validates, and
+reconstructs the reference-only Governance bundle.  It does not integrate a
+planner, persist Replay, or reconstruct a Replay protocol.
 
 The explicitly deferred public functions raise
 ``DevelopmentGovernanceDeferredImplementationError`` deterministically until
@@ -14,16 +15,17 @@ their owning implementation generations complete them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, is_dataclass, replace
 from pathlib import Path
 import re
 from typing import Any, TypeAlias
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
 DEVELOPMENT_GOVERNANCE_RUNTIME_VERSION = (
-    "G47_01B_DEVELOPMENT_GOVERNANCE_CORE_LOGIC_RUNTIME_V1"
+    "G47_01C_DEVELOPMENT_GOVERNANCE_CANONICAL_BUNDLE_RUNTIME_V1"
 )
 
 DEVELOPMENT_GOVERNANCE_TASK_INTAKE_ARTIFACT_V1 = (
@@ -300,11 +302,27 @@ CANONICAL_STAGE_ORDER = (
     CANONICAL_BUNDLE_STAGE,
 )
 
+STAGE_ARTIFACT_TYPES = {
+    TASK_INTAKE_STAGE: DEVELOPMENT_GOVERNANCE_TASK_INTAKE_ARTIFACT_V1,
+    CDD_CLASSIFICATION_STAGE: (
+        DEVELOPMENT_GOVERNANCE_CDD_CLASSIFICATION_ARTIFACT_V1
+    ),
+    EVIDENCE_SNAPSHOT_STAGE: (
+        DEVELOPMENT_GOVERNANCE_EVIDENCE_SNAPSHOT_ARTIFACT_V1
+    ),
+    NEED_ASSESSMENT_STAGE: (
+        DEVELOPMENT_GOVERNANCE_NEED_ASSESSMENT_ARTIFACT_V1
+    ),
+    GOVERNANCE_DISPOSITION_STAGE: (
+        DEVELOPMENT_GOVERNANCE_DISPOSITION_ARTIFACT_V1
+    ),
+    PLANNING_ELIGIBILITY_STAGE: (
+        DEVELOPMENT_GOVERNANCE_PLANNING_ELIGIBILITY_ARTIFACT_V1
+    ),
+}
+
 DEFERRED_RESPONSIBILITIES = (
     "PLANNER_ADMISSIBILITY",
-    "BUNDLE_HASHING",
-    "SERIALIZATION",
-    "RECONSTRUCTION",
     "DURABLE_WORK_BINDING",
     "REPLAY_INTEGRATION",
     "AICLI_INTEGRATION",
@@ -471,23 +489,26 @@ class DevelopmentGovernancePlanningEligibility:
 
 @dataclass(frozen=True, slots=True)
 class DevelopmentGovernanceStageReference:
-    """Immutable in-memory reference to one canonical stage output."""
+    """Immutable hash-bound reference to one canonical stage output."""
 
     stage: str
     artifact_type: str
     artifact_id: str
+    artifact_hash: str
 
 
 @dataclass(frozen=True, slots=True)
 class ConstitutionalDevelopmentGovernanceBundle:
-    """Immutable bundle skeleton containing ordered stage references only."""
+    """Immutable canonical bundle containing ordered references and hashes."""
 
     artifact_type: str
     runtime_version: str
     bundle_id: str
+    bundle_identity: str
     baseline_reference: str
     stage_order: tuple[str, ...]
     stage_references: tuple[DevelopmentGovernanceStageReference, ...]
+    bundle_hash: str
 
 
 DevelopmentGovernanceStageArtifact: TypeAlias = (
@@ -553,39 +574,47 @@ def orchestrate_constitutional_development_governance(
         eligibility=eligibility,
     )
 
+    stage_references = (
+        _stage_reference(TASK_INTAKE_STAGE, intake, intake.intake_id),
+        _stage_reference(CDD_CLASSIFICATION_STAGE, cdd, cdd.cdd_id),
+        _stage_reference(
+            EVIDENCE_SNAPSHOT_STAGE,
+            evidence,
+            evidence.snapshot_id,
+        ),
+        _stage_reference(
+            NEED_ASSESSMENT_STAGE,
+            need,
+            need.need_assessment_id,
+        ),
+        _stage_reference(
+            GOVERNANCE_DISPOSITION_STAGE,
+            disposition,
+            disposition.disposition_id,
+        ),
+        _stage_reference(
+            PLANNING_ELIGIBILITY_STAGE,
+            eligibility,
+            eligibility.planning_eligibility_id,
+        ),
+    )
+    identity = _generate_bundle_identity(
+        baseline_reference=intake.active_baseline_reference,
+        stage_references=stage_references,
+    )
     bundle = ConstitutionalDevelopmentGovernanceBundle(
         artifact_type=(
             CONSTITUTIONAL_DEVELOPMENT_GOVERNANCE_BUNDLE_ARTIFACT_V1
         ),
         runtime_version=DEVELOPMENT_GOVERNANCE_RUNTIME_VERSION,
         bundle_id=_require_string(bundle_id, "bundle_id"),
+        bundle_identity=identity,
         baseline_reference=intake.active_baseline_reference,
         stage_order=CANONICAL_STAGE_ORDER,
-        stage_references=(
-            _stage_reference(TASK_INTAKE_STAGE, intake, intake.intake_id),
-            _stage_reference(CDD_CLASSIFICATION_STAGE, cdd, cdd.cdd_id),
-            _stage_reference(
-                EVIDENCE_SNAPSHOT_STAGE,
-                evidence,
-                evidence.snapshot_id,
-            ),
-            _stage_reference(
-                NEED_ASSESSMENT_STAGE,
-                need,
-                need.need_assessment_id,
-            ),
-            _stage_reference(
-                GOVERNANCE_DISPOSITION_STAGE,
-                disposition,
-                disposition.disposition_id,
-            ),
-            _stage_reference(
-                PLANNING_ELIGIBILITY_STAGE,
-                eligibility,
-                eligibility.planning_eligibility_id,
-            ),
-        ),
+        stage_references=stage_references,
+        bundle_hash="",
     )
+    bundle = replace(bundle, bundle_hash=_canonical_artifact_hash(bundle))
     return validate_constitutional_development_governance_bundle(bundle)
 
 
@@ -1036,7 +1065,7 @@ def validate_planning_eligibility(
 def validate_constitutional_development_governance_bundle(
     artifact: ConstitutionalDevelopmentGovernanceBundle,
 ) -> ConstitutionalDevelopmentGovernanceBundle:
-    """Validate canonical bundle structure and frozen stage ordering."""
+    """Validate bundle structure, ordering, identity, and canonical hash."""
 
     _require_instance(
         artifact,
@@ -1050,7 +1079,13 @@ def validate_constitutional_development_governance_bundle(
         "Development Governance bundle",
     )
     _require_string(artifact.bundle_id, "bundle_id")
+    _require_string(artifact.bundle_identity, "bundle_identity")
     _require_string(artifact.baseline_reference, "baseline_reference")
+    if not artifact.bundle_identity.startswith("DG-BUNDLE:sha256:"):
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance bundle identity is invalid"
+        )
+    _require_hash(artifact.bundle_hash, "bundle_hash")
     if artifact.stage_order != CANONICAL_STAGE_ORDER:
         raise DevelopmentGovernanceRuntimeError(
             "Development Governance stage order is invalid"
@@ -1064,6 +1099,7 @@ def validate_constitutional_development_governance_bundle(
         raise DevelopmentGovernanceRuntimeError(
             "Development Governance stage references are incomplete"
         )
+    seen_artifact_ids: set[str] = set()
     for expected_stage, reference in zip(
         expected,
         artifact.stage_references,
@@ -1077,9 +1113,42 @@ def validate_constitutional_development_governance_bundle(
             raise DevelopmentGovernanceRuntimeError(
                 "Development Governance stage reference order is invalid"
             )
-        _require_string(reference.artifact_type, "stage artifact_type")
+        if (
+            reference.artifact_type
+            != STAGE_ARTIFACT_TYPES[expected_stage]
+        ):
+            raise DevelopmentGovernanceRuntimeError(
+                "Development Governance stage artifact type is invalid"
+            )
         _require_string(reference.artifact_id, "stage artifact_id")
+        _require_hash(reference.artifact_hash, "stage artifact_hash")
+        if reference.artifact_id in seen_artifact_ids:
+            raise DevelopmentGovernanceRuntimeError(
+                "Development Governance stage artifact identity is duplicated"
+            )
+        seen_artifact_ids.add(reference.artifact_id)
+    expected_identity = _generate_bundle_identity(
+        baseline_reference=artifact.baseline_reference,
+        stage_references=artifact.stage_references,
+    )
+    if artifact.bundle_identity != expected_identity:
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance bundle identity mismatch"
+        )
+    if artifact.bundle_hash != _canonical_artifact_hash(artifact):
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance bundle hash mismatch"
+        )
     return artifact
+
+
+def serialize_constitutional_development_governance_bundle(
+    artifact: ConstitutionalDevelopmentGovernanceBundle,
+) -> str:
+    """Return the validated bundle in canonical JSON form."""
+
+    bundle = validate_constitutional_development_governance_bundle(artifact)
+    return canonical_serialize(_canonical_value(bundle))
 
 
 def reconstruct_constitutional_development_governance_bundle(
@@ -1087,12 +1156,91 @@ def reconstruct_constitutional_development_governance_bundle(
     bundle: ConstitutionalDevelopmentGovernanceBundle,
     stage_outputs: tuple[DevelopmentGovernanceStageArtifact, ...],
 ) -> ConstitutionalDevelopmentGovernanceBundle:
-    """Reconstruct a bundle after reconstruction logic is implemented."""
+    """Rebuild and verify a bundle from its ordered stage outputs."""
 
-    del bundle, stage_outputs
-    raise DevelopmentGovernanceDeferredImplementationError(
-        "Development Governance reconstruction is deferred beyond G47-01A"
+    source_bundle = validate_constitutional_development_governance_bundle(
+        bundle
     )
+    if not isinstance(stage_outputs, tuple):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction stage_outputs must be an immutable tuple"
+        )
+    expected_types = (
+        DevelopmentGovernanceTaskIntake,
+        DevelopmentGovernanceCDDClassification,
+        DevelopmentGovernanceEvidenceSnapshot,
+        DevelopmentGovernanceNeedAssessment,
+        DevelopmentGovernanceDisposition,
+        DevelopmentGovernancePlanningEligibility,
+    )
+    if len(stage_outputs) != len(expected_types):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction stage outputs are incomplete"
+        )
+    for artifact, expected_type in zip(stage_outputs, expected_types):
+        _require_instance(
+            artifact,
+            expected_type,
+            "reconstruction stage output",
+        )
+
+    intake = stage_outputs[0]
+    cdd = stage_outputs[1]
+    evidence = stage_outputs[2]
+    need = stage_outputs[3]
+    disposition = stage_outputs[4]
+    eligibility = stage_outputs[5]
+    if not isinstance(intake, DevelopmentGovernanceTaskIntake):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction Task Intake type is invalid"
+        )
+    if not isinstance(cdd, DevelopmentGovernanceCDDClassification):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction CDD type is invalid"
+        )
+    if not isinstance(evidence, DevelopmentGovernanceEvidenceSnapshot):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction evidence type is invalid"
+        )
+    if not isinstance(need, DevelopmentGovernanceNeedAssessment):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction Need Assessment type is invalid"
+        )
+    if not isinstance(disposition, DevelopmentGovernanceDisposition):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction disposition type is invalid"
+        )
+    if not isinstance(
+        eligibility,
+        DevelopmentGovernancePlanningEligibility,
+    ):
+        raise DevelopmentGovernanceRuntimeError(
+            "reconstruction planning eligibility type is invalid"
+        )
+
+    reconstructed = orchestrate_constitutional_development_governance(
+        bundle_id=source_bundle.bundle_id,
+        task_intake=intake,
+        cdd_classification=cdd,
+        evidence_snapshot=evidence,
+        need_assessment=need,
+        governance_disposition=disposition,
+        planning_eligibility=eligibility,
+    )
+    if reconstructed != source_bundle:
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance reconstruction differs from the bundle"
+        )
+    if (
+        serialize_constitutional_development_governance_bundle(reconstructed)
+        != serialize_constitutional_development_governance_bundle(
+            source_bundle
+        )
+    ):
+        raise DevelopmentGovernanceRuntimeError(
+            "Development Governance reconstruction serialization mismatch"
+        )
+    return reconstructed
 
 
 def derive_bundle_state(
@@ -1103,7 +1251,7 @@ def derive_bundle_state(
     del governance_disposition
     raise DevelopmentGovernanceDeferredImplementationError(
         "Development Governance bundle-state derivation is deferred beyond "
-        "G47-01A"
+        "G47-01C"
     )
 
 
@@ -1132,7 +1280,7 @@ def compose_governance_eligible_implementation_turn_durable_work_binding(
     )
     raise DevelopmentGovernanceDeferredImplementationError(
         "Development Governance durable-work binding is deferred beyond "
-        "G47-01A"
+        "G47-01C"
     )
 
 
@@ -1861,6 +2009,63 @@ def _stage_reference(
             "stage artifact_type",
         ),
         artifact_id=_require_string(artifact_id, "stage artifact_id"),
+        artifact_hash=_canonical_artifact_hash(artifact),
+    )
+
+
+def _generate_bundle_identity(
+    *,
+    baseline_reference: str,
+    stage_references: tuple[DevelopmentGovernanceStageReference, ...],
+) -> str:
+    identity_body = {
+        "artifact_type": (
+            CONSTITUTIONAL_DEVELOPMENT_GOVERNANCE_BUNDLE_ARTIFACT_V1
+        ),
+        "runtime_version": DEVELOPMENT_GOVERNANCE_RUNTIME_VERSION,
+        "baseline_reference": _require_string(
+            baseline_reference,
+            "baseline_reference",
+        ),
+        "stage_order": list(CANONICAL_STAGE_ORDER),
+        "stage_references": _canonical_value(stage_references),
+    }
+    return "DG-BUNDLE:" + replay_hash(identity_body)
+
+
+def _canonical_artifact_hash(artifact: Any) -> str:
+    body = _canonical_value(artifact)
+    if not isinstance(body, dict):
+        raise DevelopmentGovernanceRuntimeError(
+            "canonical artifact body must be an object"
+        )
+    body.pop("bundle_hash", None)
+    return replay_hash(body)
+
+
+def _canonical_value(value: Any) -> Any:
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _canonical_value(getattr(value, field.name))
+            for field in fields(value)
+        }
+    if isinstance(value, tuple):
+        return [_canonical_value(item) for item in value]
+    if isinstance(value, list):
+        return [_canonical_value(item) for item in value]
+    if isinstance(value, dict):
+        if not all(isinstance(key, str) for key in value):
+            raise DevelopmentGovernanceRuntimeError(
+                "canonical mapping keys must be strings"
+            )
+        return {
+            key: _canonical_value(item)
+            for key, item in sorted(value.items())
+        }
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise DevelopmentGovernanceRuntimeError(
+        "Development Governance value is not canonically serializable"
     )
 
 
@@ -1891,6 +2096,15 @@ def _require_string(value: Any, name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise DevelopmentGovernanceRuntimeError(f"{name} is required")
     return value
+
+
+def _require_hash(value: Any, name: str) -> str:
+    candidate = _require_string(value, name)
+    if not SHA256_PATTERN.fullmatch(candidate):
+        raise DevelopmentGovernanceRuntimeError(
+            f"{name} must be canonical sha256"
+        )
+    return candidate
 
 
 def _require_optional_string(value: Any, name: str) -> str | None:
@@ -1952,6 +2166,7 @@ __all__ = [
     "REALIZATION_CATEGORIES",
     "REALIZATION_IMPACTS",
     "REPOSITORY_MUTATION_REQUESTED",
+    "STAGE_ARTIFACT_TYPES",
     "SUBSTANTIVE_NEED_OUTCOMES",
     "SUPPORTED_CERTIFICATION_STATES",
     "SUPPORTED_COMPATIBILITY_STATES",
@@ -1974,6 +2189,7 @@ __all__ = [
     "derive_bundle_state",
     "orchestrate_constitutional_development_governance",
     "reconstruct_constitutional_development_governance_bundle",
+    "serialize_constitutional_development_governance_bundle",
     "validate_cdd_classification",
     "validate_constitutional_development_governance_bundle",
     "validate_development_governance_disposition",
