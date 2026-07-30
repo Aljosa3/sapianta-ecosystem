@@ -274,13 +274,19 @@ def _objective_subject(request: str, discovery: dict[str, Any]) -> str:
     patterns = (
         r"\bfor implementing\s+(.+?)(?:\.|;|\n|$)",
         r"\b(?:audit|review|analyse|analyze|validate|verify|confirm)\s+(.+?)(?:\.|;|\n|$)",
-        r"\b(?:implement|build|create|add|improve)\s+(.+?)(?:\.|;|\n|$)",
+        r"\b(?:implement|build|create|add|improve|extend|refactor|fix|repair|"
+        r"update|support|continue)\s+(.+?)(?:\.|;|\n|$)",
     )
     for pattern in patterns:
         match = re.search(pattern, request, flags=re.IGNORECASE)
         if match:
             subject = " ".join(match.group(1).strip(" .,:;").split())
-            if subject:
+            if subject and subject.lower() not in {
+                "it",
+                "project",
+                "system",
+                "this",
+            }:
                 return subject
     selected = discovery.get("selected_candidate_capability")
     if isinstance(selected, dict):
@@ -298,7 +304,24 @@ def _requested_outcomes(lowered: str) -> list[str]:
         ("certified_composition_discovery", ("certified composition", "certified capabilities")),
         ("residual_gap_analysis", ("what is missing", "residual gap", "uncovered")),
         ("governed_development_plan", ("governed development plan", "development composition plan")),
-        ("implementation", ("implement ", "build ", "create ", "add ")),
+        (
+            "implementation",
+            (
+                "implement ",
+                "build ",
+                "create ",
+                "add ",
+                "improve ",
+                "extend ",
+                "refactor ",
+                "fix ",
+                "repair ",
+                "update ",
+                "support ",
+                "continue ",
+                " to support ",
+            ),
+        ),
         ("audit_or_analysis", ("audit", "analyse", "analyze", "review", "validate", "verify", "confirm")),
     )
     for outcome, terms in signals:

@@ -443,12 +443,45 @@ def prepare_unified_human_interface_project_context(
         development_intent=development_intent,
         conversation_experience=conversation_experience,
     )
+    project_objective_ready_for_governance = (
+        isinstance(project_objective, dict)
+        and project_objective.get("objective_sufficient") is True
+        and isinstance(
+            project_objective.get("canonical_project_objective"),
+            str,
+        )
+        and bool(project_objective["canonical_project_objective"].strip())
+    )
+    if (
+        development_intent.get("summary_admissible") is True
+        and development_intent.get("work_type") == "IMPLEMENTATION"
+        and project_objective is not None
+        and not project_objective_ready_for_governance
+    ):
+        development_intent = deepcopy(development_intent)
+        development_intent["summary_admissible"] = False
+        development_intent["runtime_binding_admissible"] = False
+        development_intent["requires_human_approval"] = False
+        development_intent["clarification_required"] = True
+        development_intent["canonical_implementation_scope_unresolved"] = True
+        development_intent["clarification_reason"] = (
+            "project objective inference requires clarification before "
+            "Development Governance"
+        )
+        development_intent["artifact_hash"] = replay_hash(development_intent)
+        conversation_experience = human_conversation_experience_from_resolution(
+            message=effective_message,
+            guidance=guidance,
+            knowledge_reuse=knowledge_reuse,
+            development_intent=development_intent,
+            workspace_state=prior_state,
+        )
     implementation_turn_binding = None
     development_governance_integration = None
     if (
         development_intent.get("summary_admissible") is True
         and development_intent.get("work_type") == "IMPLEMENTATION"
-        and project_objective is not None
+        and project_objective_ready_for_governance
     ):
         from aigol.runtime.constitutional_development_governance_operational_integration import (
             G47_OPERATIONAL_INTEGRATION_READY,
@@ -5287,6 +5320,10 @@ def clarification_context_sufficiency_evaluation(
         if objective_inference.get("objective_sufficient") is True
         else []
     )
+    objective_inference_blocks_original_request_sufficiency = (
+        bool(objective_inference)
+        and objective_inference.get("objective_sufficient") is not True
+    )
     unresolved_slots: list[dict[str, Any]] = []
     for slot in _dedupe_missing_slots(candidate_missing_slots):
         slot_id = str(slot.get("slot_id") or "")
@@ -5297,6 +5334,7 @@ def clarification_context_sufficiency_evaluation(
         )
         satisfied = satisfied_by_objective or (
             not clarification_first_requested
+            and not objective_inference_blocks_original_request_sufficiency
             and bool(required)
             and all(requirement in accepted for requirement in required)
         )

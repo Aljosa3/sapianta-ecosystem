@@ -809,6 +809,26 @@ PLATFORM_CAPABILITY_CERTIFICATION_RECORDS = (
         ),
         certification_version="G44-01",
     ),
+    CapabilityCertificationRecord(
+        capability_identifier="CONSTITUTIONAL_DEVELOPMENT_GOVERNANCE",
+        capability_owner="PLATFORM_CORE_DEVELOPMENT_GOVERNANCE",
+        certification_status=CERTIFIED,
+        certification_scope=END_TO_END,
+        certification_milestone="G47-FINAL",
+        certification_evidence=(
+            "docs/governance/G47_FINAL_CONSTITUTIONAL_CLOSURE_REPORT.md",
+        ),
+        certification_date="2026-07-29",
+        architectural_owner="PLATFORM_CORE",
+        implementation_owner=(
+            "aigol.runtime."
+            "constitutional_development_governance_operational_integration"
+        ),
+        verification_type=(
+            "DETERMINISTIC_DEVELOPMENT_GOVERNANCE_AND_OPERATIONAL_BARRIER"
+        ),
+        certification_version="G47-FINAL",
+    ),
 )
 
 
