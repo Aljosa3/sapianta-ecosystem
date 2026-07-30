@@ -1,0 +1,964 @@
+{
+  "artifact_type": "PCBV31_BASELINE_IDENTITY_RECORD_V1",
+  "schema_id": "PCBV31_BIR_V1",
+  "schema_version": "1.0.0",
+  "record_id": "PCBV31_BASELINE_IDENTITY",
+  "record_version": "1.0.1",
+  "status": "IMMUTABLE_BASELINE_IDENTITY_REPAIRED",
+  "title": "Platform Core Baseline V31 Identity Record",
+  "constitutional_baseline": [
+    "GENERATION_31_CONSTITUTIONALLY_CLOSED",
+    "READY_FOR_CERTIFIED_PLATFORM_CORE_BASELINE_V31",
+    "READY_FOR_CERTIFIED_DEVELOPMENT_BASELINE_V47"
+  ],
+  "audit_references": [
+    "PCBV31_CONSTITUTIONAL_BOUNDARY_REQUIRES_REFINEMENT",
+    "PARTIALLY_AGREE_WITH_G50_02",
+    "G50_03_R01_BASELINE_IDENTITY_COMPLETENESS_AND_TAXONOMY_REPAIR"
+  ],
+  "scope": {
+    "classification": "GOVERNANCE_ONLY_CONSTITUTIONAL_IDENTITY_RECORD",
+    "constitutional_version": "V31",
+    "platform_core_identity": "PCBV31",
+    "inventory_scope": "EXHAUSTIVE_FOR_THE_DECLARED_RELEVANT_V31_REVIEW_SET",
+    "introduces_constitutional_authority": false,
+    "changes_historical_certification": false,
+    "changes_runtime": false,
+    "changes_replay": false,
+    "changes_approval": false,
+    "changes_authorization": false,
+    "changes_worker_or_provider_contracts": false
+  },
+  "authoritative_identity": {
+    "repository_identity": "SAPIANTA",
+    "revision_model": "EXACT_GIT_COMMIT_AND_TREE",
+    "source_commit": "b030e8c2e02713f7a72c7ed00385a05d121c6143",
+    "source_tree": "8541db4a012bfe77a65192e0653d37182ee3d414",
+    "source_parent_commit": "b2e95091fc35aacbcc02c334120e9baffd3cd7d8",
+    "source_commit_subject": "G31 R21E: neutralize historical worker selection identity",
+    "source_commit_date": "2026-07-26T21:24:33+02:00",
+    "immediate_successor_commit": "ddb2593c3fbb99d8ac33ed10ac98b69c74e94f80",
+    "immediate_successor_parent": "b030e8c2e02713f7a72c7ed00385a05d121c6143",
+    "immediate_successor_subject": "docs(governance): certify G32-07 filesystem adapter executable constitutional contract v1",
+    "historical_cutoff_rule": "PCBV31 is exactly the repository state identified by source_commit and source_tree. The immediate successor begins post-V31 work and is not part of PCBV31.",
+    "authentication": {
+      "method": "LOCAL_GIT_OBJECT_AND_DIRECT_PARENT_CONTINUITY",
+      "commit_object_verified": true,
+      "tree_object_verified": true,
+      "parent_continuity_verified": true,
+      "immediate_successor_continuity_verified": true,
+      "cryptographic_signature_claimed": false
+    }
+  },
+  "constitutional_terminology": [
+    {
+      "term": "Platform Core",
+      "definition": "In V31-era evidence, Platform Core names the single accepted platform baseline and is identified as PCBV31. In current architecture, Platform Core names the evolving governed platform containing PCBV31 plus separately certified post-V31 capabilities. The current scope is therefore broader than the historical PCBV31 baseline without contradicting the V31-era coextensive identity."
+    },
+    {
+      "term": "PCBV31",
+      "definition": "The closed V31 certified reference realization identified exclusively by the exact authenticated source_commit and source_tree in this record. PCBV31 does not expand when later Platform Core components or later versions of identically named files are added."
+    },
+    {
+      "term": "PCBV31 execution spine",
+      "definition": "The V31-owned deterministic sequencing and binding chain that accepts a constitutionally prepared request at the certified entry socket, preserves authority and evidence continuity across governed execution stages, and reaches the independent Certification handoff. It does not absorb the independent protocol owners it binds."
+    },
+    {
+      "term": "Platform Core capability",
+      "definition": "A bounded capability governed within Platform Core. A capability realization is part of the historical PCBV31 membership only when committed evidence assigns its exact V31 implementation to Platform Core and this record classifies it as PCBV31_EXECUTION_SPINE or PCBV31_BASELINE_SUPPORT."
+    },
+    {
+      "term": "Post-V31 Platform capability",
+      "definition": "A Platform Core capability introduced after the authenticated PCBV31 source_commit. It remains outside PCBV31 unless a new constitutional baseline expressly supersedes V31."
+    },
+    {
+      "term": "PCBV31 baseline support",
+      "definition": "A record-local inventory label for an exact V31 Platform Core-owned implementation that supports the certified baseline but is not part of the G31 execution-spine subset. This label organizes authenticated evidence and does not claim to be pre-existing canonical constitutional vocabulary."
+    }
+  ],
+  "terminology_reconciliation": {
+    "historical_manifest_statement": "\"platform_core\": \"PCBV31\"",
+    "historical_meaning": "At V31 there was one accepted Platform Core baseline, identified as PCBV31.",
+    "current_meaning": "Platform Core has subsequently acquired separately certified post-V31 capabilities while PCBV31 remains the closed historical V31 realization.",
+    "non_contradiction_rule": "The historical identity is version-scoped. It does not require current Platform Core and historical PCBV31 to remain coextensive.",
+    "canonical_layer_relationship": "This record classifies implementation ownership inside the existing canonical layer and authority models. It creates no new layer, authority tier, or protocol family."
+  },
+  "constitutional_membership_decision": {
+    "evaluated_model_a": "Every relevant implementation blob present in the authenticated tree is a PCBV31 member.",
+    "evaluated_model_b": "Only evidence-assigned Platform Core realization components are PCBV31 members; other blobs retain independent, external, tooling, or historical dispositions.",
+    "determination": "MODEL_B_RESPONSIBILITY_AND_EVIDENCE_BOUND_MEMBERSHIP",
+    "reasoning": [
+      "G31 evidence certifies an explicit lifecycle and its owner-preserving bindings rather than converting every repository blob into the execution spine.",
+      "G8 planning evidence delegates Governance, Replay, Worker Platform, and OCS responsibilities to their existing owners.",
+      "G15 capability-registry evidence distinguishes Platform Core metadata ownership from runtime, Worker, Provider, Replay, Approval, and Human Interface authority.",
+      "G34 adapter topology requires adapter-specific logic and evidence to remain outside PCBV31 despite co-location in the authenticated repository tree."
+    ],
+    "membership_rule": "The complete PCBV31 constitutional membership within the declared review set is the union of PCBV31_EXECUTION_SPINE and PCBV31_BASELINE_SUPPORT. All other dispositions identify authenticated V31-tree context but not PCBV31 constitutional membership.",
+    "tree_presence_alone_establishes_membership": false,
+    "unresolved_membership_ambiguity": false
+  },
+  "membership_rules": [
+    "Membership is evaluated against the exact source_tree, not against the current working tree or a mutable branch name.",
+    "An included path identifies only the blob and responsibility present at the source_tree; later revisions of the same path do not inherit PCBV31 membership.",
+    "A component absent from the source_tree is excluded from PCBV31.",
+    "A path classified as PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION is present in the V31 tree but remains owned by its independent protocol authority.",
+    "The term PCBV31_BASELINE_SUPPORT is a taxonomy introduced by this record and carries only the bounded meaning declared in constitutional_terminology.",
+    "A bound independent protocol owner is not absorbed into PCBV31 by invocation, evidence exchange, or lifecycle dependency.",
+    "Adapter-specific logic, Workers, Providers, interfaces, and post-V31 capabilities remain external unless this record explicitly identifies a V31-owned boundary binding.",
+    "Changing a certified socket, ownership boundary, authority boundary, execution-spine responsibility, or source identity requires a new constitutional baseline rather than mutation of this record."
+  ],
+  "complete_reviewed_inventory": {
+    "coverage_classification": "EXHAUSTIVE_FOR_DECLARED_RELEVANT_V31_REVIEW_SET",
+    "coverage_statement": "The inventory exhaustively classifies every Python implementation path selected by the review contract: all aigol/runtime platform_*.py and platform_core_*.py files; all Approval, Authorization, Replay, Worker lifecycle, Human Interface, adapter, capability, planning, validation, mutation-governance, termination, and certification-binding matches; every exact execution-spine and prior support path; every implementation owner named by the V31 capability certification registry; and all Python files under aigol/workers, aigol/provider, aigol/cli, and aigol/acli_next.",
+    "excluded_from_completeness_claim": "Unselected historical runtime experiments and domain implementations are not claimed as reviewed merely because they exist elsewhere in the repository tree.",
+    "relevance_exclusion_rule": "A V31 Python path outside this set is not used to prove or deny PCBV31 membership: it is neither named by the required review families, the certified G31 spine, the prior record, nor the V31 capability registry implementation-owner evidence. It requires a new evidence-based review before any future membership claim.",
+    "v31_present_path_count": 274,
+    "post_v31_not_present_path_count": 18,
+    "total_disposition_count": 292,
+    "previous_recorded_v31_path_count": 37,
+    "previously_omitted_v31_path_count": 237,
+    "disposition_counts": {
+      "PCBV31_EXECUTION_SPINE": 29,
+      "PCBV31_BASELINE_SUPPORT": 68,
+      "PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION": 59,
+      "EXTERNAL_CONTRACT_BOUND_OWNER": 33,
+      "EXTERNAL_ADAPTER_OR_INTERFACE": 50,
+      "HISTORICAL_SUPPORT_NOT_CONSTITUTIONAL_MEMBER": 19,
+      "TEST_OR_TOOLING_ONLY": 16,
+      "POST_V31_NOT_PRESENT_IN_BASELINE": 18
+    },
+    "disposition_semantics": {
+      "PCBV31_EXECUTION_SPINE": "Exact V31 implementation participating in the explicitly certified G31 execution lifecycle.",
+      "PCBV31_BASELINE_SUPPORT": "Exact V31 Platform Core-owned support implementation outside the execution-spine subset; this is record-local taxonomy.",
+      "PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION": "Implementation present in the V31 tree but constitutionally owned by Approval, Authorization, Replay, Governance, Certification, or another independently preserved protocol owner.",
+      "EXTERNAL_CONTRACT_BOUND_OWNER": "Worker, Provider, or other execution owner bound by contract but not owned by PCBV31.",
+      "EXTERNAL_ADAPTER_OR_INTERFACE": "Interface or adapter implementation outside PCBV31, including adapter-specific evidence bindings.",
+      "HISTORICAL_SUPPORT_NOT_CONSTITUTIONAL_MEMBER": "Historical helper or superseded parallel surface for which the reviewed evidence does not establish PCBV31 constitutional membership.",
+      "TEST_OR_TOOLING_ONLY": "Certification harness, audit helper, inspection command, or tooling surface rather than a PCBV31 runtime member.",
+      "POST_V31_NOT_PRESENT_IN_BASELINE": "Current Platform Core capability path proven absent from the authenticated V31 source tree."
+    },
+    "dispositions": [
+      {
+        "disposition": "PCBV31_EXECUTION_SPINE",
+        "path_count": 29,
+        "source_paths": [
+          "aigol/runtime/approved_durable_work_repository_scope_grounding.py",
+          "aigol/runtime/approved_durable_work_worker_payload_binding.py",
+          "aigol/runtime/codex_replacement_acceptance_prerequisite_binding_runtime.py",
+          "aigol/runtime/codex_satisfied_outcome_disposable_validation_binding_runtime.py",
+          "aigol/runtime/codex_task_outcome_human_review_runtime.py",
+          "aigol/runtime/codex_transport_to_worker_result_capture_binding_runtime.py",
+          "aigol/runtime/codex_worker_activation_binding_runtime.py",
+          "aigol/runtime/codex_worker_result_to_semantic_validation_binding_runtime.py",
+          "aigol/runtime/confirmed_grounded_execution_authorization_binding.py",
+          "aigol/runtime/execution_runtime.py",
+          "aigol/runtime/generated_content_acceptance_runtime.py",
+          "aigol/runtime/governed_termination_runtime.py",
+          "aigol/runtime/governed_termination_to_final_execution_certification_binding_runtime.py",
+          "aigol/runtime/governed_worker_execution_runtime.py",
+          "aigol/runtime/grounded_execution_authorization_human_decision_binding.py",
+          "aigol/runtime/grounded_worker_request_execution_authorization_binding.py",
+          "aigol/runtime/human_interface_runtime_entry_service.py",
+          "aigol/runtime/platform_core_existing_file_governance.py",
+          "aigol/runtime/platform_core_existing_file_mutation_candidate.py",
+          "aigol/runtime/platform_implementation_turn_durable_work_binding.py",
+          "aigol/runtime/post_execution_replay_review_runtime.py",
+          "aigol/runtime/unified_resource_selection_runtime.py",
+          "aigol/runtime/worker_assignment_runtime.py",
+          "aigol/runtime/worker_dispatch_runtime.py",
+          "aigol/runtime/worker_invocation_request_runtime.py",
+          "aigol/runtime/worker_invocation_runtime.py",
+          "aigol/runtime/worker_invocation_to_execution_candidate_bridge_runtime.py",
+          "aigol/runtime/worker_result_capture_runtime.py",
+          "aigol/runtime/worker_result_validation_runtime.py"
+        ]
+      },
+      {
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "path_count": 68,
+        "source_paths": [
+          "aigol/runtime/canonical_semantic_artifact_runtime.py",
+          "aigol/runtime/capabilities/__init__.py",
+          "aigol/runtime/capabilities/capability_executor.py",
+          "aigol/runtime/capabilities/capability_policy.py",
+          "aigol/runtime/capabilities/capability_registry.py",
+          "aigol/runtime/capabilities/capability_request.py",
+          "aigol/runtime/capabilities/capability_result.py",
+          "aigol/runtime/capabilities/capability_validator.py",
+          "aigol/runtime/capability_delta_runtime.py",
+          "aigol/runtime/capability_normalization_runtime.py",
+          "aigol/runtime/certified_capability_invocation_binding_runtime.py",
+          "aigol/runtime/existing_file_mutation_runtime.py",
+          "aigol/runtime/filesystem_read_only_capability.py",
+          "aigol/runtime/generated_content_validation_runtime.py",
+          "aigol/runtime/generated_test_validation_runtime.py",
+          "aigol/runtime/governed_repository_mutation_runtime.py",
+          "aigol/runtime/governed_validation_runtime.py",
+          "aigol/runtime/governed_validation_suite_runtime.py",
+          "aigol/runtime/implementation_plan_to_execution_request_runtime.py",
+          "aigol/runtime/live_runtime_usage_validation.py",
+          "aigol/runtime/live_semantic_pressure_validation.py",
+          "aigol/runtime/multi_file_mutation_runtime.py",
+          "aigol/runtime/platform_capability_certification_registry.py",
+          "aigol/runtime/platform_capability_composition_coverage.py",
+          "aigol/runtime/platform_change_impact_analysis_runtime.py",
+          "aigol/runtime/platform_change_normalization_runtime.py",
+          "aigol/runtime/platform_communication_wrapper_wiring.py",
+          "aigol/runtime/platform_core_capability_lookup.py",
+          "aigol/runtime/platform_core_cognition_layer.py",
+          "aigol/runtime/platform_core_daily_operational_exposure.py",
+          "aigol/runtime/platform_core_execution_planning_service.py",
+          "aigol/runtime/platform_core_existing_file_rollback.py",
+          "aigol/runtime/platform_core_existing_file_validation.py",
+          "aigol/runtime/platform_core_git_commit_candidate.py",
+          "aigol/runtime/platform_core_git_commit_result.py",
+          "aigol/runtime/platform_core_multi_file_mutation_candidate.py",
+          "aigol/runtime/platform_core_multi_file_mutation_validation.py",
+          "aigol/runtime/platform_core_mutation_rollback.py",
+          "aigol/runtime/platform_core_mutation_validation.py",
+          "aigol/runtime/platform_core_ocs_execution_preview.py",
+          "aigol/runtime/platform_core_ocs_mutation_candidate.py",
+          "aigol/runtime/platform_core_patch_mutation_candidate.py",
+          "aigol/runtime/platform_core_patch_mutation_rollback.py",
+          "aigol/runtime/platform_core_patch_mutation_validation.py",
+          "aigol/runtime/platform_core_project_services.py",
+          "aigol/runtime/platform_core_rollback_candidate.py",
+          "aigol/runtime/platform_core_rollback_validation.py",
+          "aigol/runtime/platform_core_root_cause_trace.py",
+          "aigol/runtime/platform_core_validation_allowlist.py",
+          "aigol/runtime/platform_core_validation_candidate.py",
+          "aigol/runtime/platform_core_validation_result.py",
+          "aigol/runtime/platform_core_validation_suite_candidate.py",
+          "aigol/runtime/platform_development_composition_plan.py",
+          "aigol/runtime/platform_durable_governed_work.py",
+          "aigol/runtime/platform_knowledge_runtime.py",
+          "aigol/runtime/platform_presentation_layer.py",
+          "aigol/runtime/platform_project_objective_inference.py",
+          "aigol/runtime/platform_query_router.py",
+          "aigol/runtime/platform_validation_plan_candidate_composition_runtime.py",
+          "aigol/runtime/platform_validation_planning_runtime.py",
+          "aigol/runtime/project_context_semantic_capability_route.py",
+          "aigol/runtime/read_only_capability_attachment.py",
+          "aigol/runtime/result_validation_runtime.py",
+          "aigol/runtime/semantic_capability_invocation_lifecycle_runtime.py",
+          "aigol/runtime/semantic_capability_selection_runtime.py",
+          "aigol/runtime/single_file_patch_mutation_runtime.py",
+          "aigol/runtime/transport/serialization.py",
+          "aigol/runtime/validation_command_runner_runtime.py"
+        ]
+      },
+      {
+        "disposition": "PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION",
+        "path_count": 59,
+        "source_paths": [
+          "aigol/runtime/approval/__init__.py",
+          "aigol/runtime/approval/approval_contract.py",
+          "aigol/runtime/approval/approval_engine.py",
+          "aigol/runtime/approval/approval_registry.py",
+          "aigol/runtime/approval/approval_replay.py",
+          "aigol/runtime/approval/approval_request.py",
+          "aigol/runtime/approval/approval_result.py",
+          "aigol/runtime/approval/approval_validator.py",
+          "aigol/runtime/capability_attachment_governance_runtime.py",
+          "aigol/runtime/capability_lifecycle_governance_runtime.py",
+          "aigol/runtime/continuity/continuity_replay.py",
+          "aigol/runtime/domain_approval_entry_to_execution_ready_authorization_bridge_runtime.py",
+          "aigol/runtime/execution_authorization_runtime.py",
+          "aigol/runtime/first_live_provider_dispatch_authorization_instantiation.py",
+          "aigol/runtime/generation_certification_composition.py",
+          "aigol/runtime/goals/goal_replay.py",
+          "aigol/runtime/governed_contract_authorization_gate.py",
+          "aigol/runtime/human_decision_runtime.py",
+          "aigol/runtime/memory/memory_replay.py",
+          "aigol/runtime/native_development_replay_safe_handoff_hardening.py",
+          "aigol/runtime/ocs_replay_derived_intent_runtime.py",
+          "aigol/runtime/platform_core_dependency_governance.py",
+          "aigol/runtime/platform_core_deployment_governance.py",
+          "aigol/runtime/platform_core_existing_file_replay.py",
+          "aigol/runtime/platform_core_git_commit_governance.py",
+          "aigol/runtime/platform_core_git_commit_replay.py",
+          "aigol/runtime/platform_core_git_remote_governance.py",
+          "aigol/runtime/platform_core_governance_mutation_authorization.py",
+          "aigol/runtime/platform_core_governance_preview.py",
+          "aigol/runtime/platform_core_multi_file_mutation_governance.py",
+          "aigol/runtime/platform_core_multi_file_mutation_replay.py",
+          "aigol/runtime/platform_core_patch_mutation_governance.py",
+          "aigol/runtime/platform_core_patch_mutation_replay.py",
+          "aigol/runtime/platform_core_replay_mutation_evidence.py",
+          "aigol/runtime/platform_core_replay_preview.py",
+          "aigol/runtime/platform_core_rollback_governance.py",
+          "aigol/runtime/platform_core_rollback_replay.py",
+          "aigol/runtime/platform_core_validation_governance.py",
+          "aigol/runtime/platform_core_validation_replay.py",
+          "aigol/runtime/platform_core_validation_suite_governance.py",
+          "aigol/runtime/platform_core_validation_suite_replay.py",
+          "aigol/runtime/policy/policy_replay.py",
+          "aigol/runtime/replay_certification_runtime.py",
+          "aigol/runtime/replay_derived_intent_resource_selection_ppp_integration_runtime.py",
+          "aigol/runtime/replay_derived_intent_resource_selection_routing_runtime.py",
+          "aigol/runtime/replay_derived_translation_learning_runtime.py",
+          "aigol/runtime/replay_gap_detection_runtime.py",
+          "aigol/runtime/replay_observation_layer.py",
+          "aigol/runtime/replay_resolution_strategy.py",
+          "aigol/runtime/replay_to_improvement_intent_runtime.py",
+          "aigol/runtime/retry/retry_replay.py",
+          "aigol/runtime/routing/routing_replay.py",
+          "aigol/runtime/session_lineage_replay_validator.py",
+          "aigol/runtime/transport/replay.py",
+          "aigol/runtime/unified_replay_reconstruction_runtime.py",
+          "aigol/runtime/validation_completion_replay_certification_handoff_runtime.py",
+          "aigol/runtime/worker_dispatch_to_worker_invocation_governance_runtime.py",
+          "aigol/runtime/worker_invocation_to_execution_governance_runtime.py",
+          "aigol/runtime/worker_request_to_worker_dispatch_governance_runtime.py"
+        ]
+      },
+      {
+        "disposition": "EXTERNAL_CONTRACT_BOUND_OWNER",
+        "path_count": 33,
+        "source_paths": [
+          "aigol/provider/__init__.py",
+          "aigol/provider/certified_provider_attachment.py",
+          "aigol/provider/provider_proposal_envelope.py",
+          "aigol/provider/provider_registry.py",
+          "aigol/provider/provider_runtime.py",
+          "aigol/provider/providers/__init__.py",
+          "aigol/provider/providers/openai_provider.py",
+          "aigol/runtime/codex_worker_platform_integration.py",
+          "aigol/runtime/domain_and_worker_resolution_registry.py",
+          "aigol/runtime/external_runtime_inspection_worker.py",
+          "aigol/runtime/first_external_llm_worker_runtime.py",
+          "aigol/runtime/first_mutating_worker_runtime.py",
+          "aigol/runtime/g5_pgsp_worker_runtime_orchestration.py",
+          "aigol/runtime/implementation_request_to_worker_request_bridge_runtime.py",
+          "aigol/runtime/live_provider_invocation_prerequisites.py",
+          "aigol/runtime/platform_core_worker_preview.py",
+          "aigol/runtime/real_openai_api_invocation.py",
+          "aigol/runtime/replay_inspector_worker.py",
+          "aigol/runtime/repository_mutation_worker_runtime.py",
+          "aigol/runtime/universal_provider_worker_runtime.py",
+          "aigol/runtime/worker_lifecycle.py",
+          "aigol/runtime/worker_runtime.py",
+          "aigol/workers/__init__.py",
+          "aigol/workers/dependency_management_worker.py",
+          "aigol/workers/deployment_worker.py",
+          "aigol/workers/domain_artifact_worker.py",
+          "aigol/workers/filesystem_patch_worker.py",
+          "aigol/workers/filesystem_rollback_worker.py",
+          "aigol/workers/filesystem_worker.py",
+          "aigol/workers/git_commit_worker.py",
+          "aigol/workers/git_remote_worker.py",
+          "aigol/workers/github_worker.py",
+          "aigol/workers/validation_command_worker.py"
+        ]
+      },
+      {
+        "disposition": "EXTERNAL_ADAPTER_OR_INTERFACE",
+        "path_count": 50,
+        "source_paths": [
+          "aigol/acli_next/__init__.py",
+          "aigol/acli_next/conversational.py",
+          "aigol/acli_next/daily_dashboard.py",
+          "aigol/acli_next/entrypoint.py",
+          "aigol/acli_next/execution_plan.py",
+          "aigol/acli_next/interactive.py",
+          "aigol/acli_next/readonly_worker.py",
+          "aigol/cli/__init__.py",
+          "aigol/cli/aicli.py",
+          "aigol/cli/aigol_cli.py",
+          "aigol/cli/commands/__init__.py",
+          "aigol/cli/commands/approval.py",
+          "aigol/cli/commands/bridge.py",
+          "aigol/cli/commands/chain_inspection.py",
+          "aigol/cli/commands/cognition.py",
+          "aigol/cli/commands/continuity.py",
+          "aigol/cli/commands/dashboard.py",
+          "aigol/cli/commands/diagnostics.py",
+          "aigol/cli/commands/dispatch.py",
+          "aigol/cli/commands/execution.py",
+          "aigol/cli/commands/governance.py",
+          "aigol/cli/commands/implementation_epoch.py",
+          "aigol/cli/commands/ingress.py",
+          "aigol/cli/commands/moc.py",
+          "aigol/cli/commands/plan.py",
+          "aigol/cli/commands/replay.py",
+          "aigol/cli/commands/return_continuity.py",
+          "aigol/cli/commands/return_flow.py",
+          "aigol/cli/commands/run_governed.py",
+          "aigol/cli/commands/status.py",
+          "aigol/cli/render/__init__.py",
+          "aigol/cli/render/status_renderer.py",
+          "aigol/cli/render/terminal_cards.py",
+          "aigol/provider/provider_adapter.py",
+          "aigol/runtime/acli_authorization_bridge.py",
+          "aigol/runtime/acli_human_friendly_explanation_runtime.py",
+          "aigol/runtime/acli_llm_assisted_explanation_runtime.py",
+          "aigol/runtime/acli_uhcl_adapter_rendering.py",
+          "aigol/runtime/external_worker_adapter_runtime.py",
+          "aigol/runtime/filesystem_mutation_authorization_runtime.py",
+          "aigol/runtime/filesystem_mutation_runtime.py",
+          "aigol/runtime/filesystem_replace_worker_output_to_result_capture_binding_runtime.py",
+          "aigol/runtime/filesystem_replace_worker_result_capture_to_result_validation_binding_runtime.py",
+          "aigol/runtime/filesystem_replace_worker_schema_aware_authorization_lineage_resolver_runtime.py",
+          "aigol/runtime/filesystem_replace_worker_selection_lineage_resolver_runtime.py",
+          "aigol/runtime/human_prompt_to_governed_readonly_result.py",
+          "aigol/runtime/ocs_to_ppp_continuation_adapter_runtime.py",
+          "aigol/runtime/openai_external_worker_provider_adapter.py",
+          "aigol/runtime/openai_provider_adapter.py",
+          "aigol/workers/filesystem_replace_worker.py"
+        ]
+      },
+      {
+        "disposition": "HISTORICAL_SUPPORT_NOT_CONSTITUTIONAL_MEMBER",
+        "path_count": 19,
+        "source_paths": [
+          "aigol/runtime/clarified_intent_resource_selection_ppp_integration_runtime.py",
+          "aigol/runtime/clarified_intent_resource_selection_routing_runtime.py",
+          "aigol/runtime/continuity/continuation_result.py",
+          "aigol/runtime/conversation_ppp_resource_selection_routing.py",
+          "aigol/runtime/dispatch_runtime.py",
+          "aigol/runtime/governed_result_summary.py",
+          "aigol/runtime/models.py",
+          "aigol/runtime/policy/policy_result.py",
+          "aigol/runtime/ready_for_dispatch_runtime.py",
+          "aigol/runtime/result_evaluation_runtime.py",
+          "aigol/runtime/result_runtime.py",
+          "aigol/runtime/retry/retry_result.py",
+          "aigol/runtime/review/review_result.py",
+          "aigol/runtime/routing/capability_route.py",
+          "aigol/runtime/routing/routing_result.py",
+          "aigol/runtime/sandbox/capability_registry.py",
+          "aigol/runtime/sandbox/sandbox_result.py",
+          "aigol/runtime/ubtr_cognition_result_integration_runtime.py",
+          "aigol/runtime/unified_resource_selection_ppp_integration.py"
+        ]
+      },
+      {
+        "disposition": "TEST_OR_TOOLING_ONLY",
+        "path_count": 16,
+        "source_paths": [
+          "aigol/runtime/acli_live_session_real_worker_execution_certification_v1.py",
+          "aigol/runtime/capability_audit_runtime.py",
+          "aigol/runtime/capability_delta_regression_review_runtime.py",
+          "aigol/runtime/human_intent_clarification_execution_authorization_boundary_certification_v1.py",
+          "aigol/runtime/human_intent_clarification_worker_handoff_certification_v1.py",
+          "aigol/runtime/human_intent_clarification_worker_invocation_certification_v1.py",
+          "aigol/runtime/human_intent_end_to_end_real_user_worker_execution_certification_v1.py",
+          "aigol/runtime/human_intent_real_worker_side_effect_certification_v1.py",
+          "aigol/runtime/llm_worker_execution_certification_v1.py",
+          "aigol/runtime/observability/capability_inspector.py",
+          "aigol/runtime/product1_decision_validation_packet_certification_v1.py",
+          "aigol/runtime/replay_derived_improvement_certification_v1.py",
+          "aigol/runtime/replay_derived_improvement_operationalization_certification_v1.py",
+          "aigol/runtime/replay_reproducibility_certification_v1.py",
+          "aigol/runtime/replay_summary_command.py",
+          "aigol/runtime/worker_selection_certification_v1.py"
+        ]
+      },
+      {
+        "disposition": "POST_V31_NOT_PRESENT_IN_BASELINE",
+        "path_count": 18,
+        "source_paths": [
+          "aigol/runtime/canonical_governed_development_condensation_g31_input_binding_runtime.py",
+          "aigol/runtime/canonical_governed_development_condensation_human_decision_runtime.py",
+          "aigol/runtime/canonical_governed_development_condensation_human_review_runtime.py",
+          "aigol/runtime/canonical_governed_development_condensation_replay.py",
+          "aigol/runtime/canonical_governed_development_condensation_runtime.py",
+          "aigol/runtime/canonical_governed_development_condensation_validation_runtime.py",
+          "aigol/runtime/constitutional_development_continuity_manager_runtime.py",
+          "aigol/runtime/constitutional_development_governance_operational_integration.py",
+          "aigol/runtime/constitutional_development_governance_orchestration.py",
+          "aigol/runtime/constitutional_development_supervisor_runtime.py",
+          "aigol/runtime/constitutional_development_workflow_integration_runtime.py",
+          "aigol/runtime/intelligent_validation_engine_v0.py",
+          "aigol/runtime/intelligent_validation_engine_v1.py",
+          "aigol/runtime/intelligent_validation_engine_v2.py",
+          "aigol/runtime/intelligent_validation_engine_v3.py",
+          "aigol/runtime/intelligent_validation_entry_integration_runtime.py",
+          "aigol/runtime/intelligent_validation_orchestrator_v4.py",
+          "aigol/runtime/platform_core_conversation_boundary.py"
+        ]
+      }
+    ]
+  },
+  "execution_spine_components": [
+    {
+      "component_id": "PCBV31_ENTRY_AND_GOVERNED_WORK_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Accept the certified human-interface entry and bind an approved implementation turn to durable governed work, a goal-faithful payload, and canonical repository scope.",
+      "implementation_paths": [
+        "aigol/runtime/human_interface_runtime_entry_service.py",
+        "aigol/runtime/platform_implementation_turn_durable_work_binding.py",
+        "aigol/runtime/approved_durable_work_worker_payload_binding.py",
+        "aigol/runtime/approved_durable_work_repository_scope_grounding.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_04_CANONICAL_IMPLEMENTATION_TURN_TO_DURABLE_GOVERNED_WORK_PROPOSAL_BINDING.md",
+        "docs/governance/G31_05_APPROVED_DURABLE_GOVERNED_WORK_TO_GOAL_FAITHFUL_WORKER_IMPLEMENTATION_PAYLOAD_BINDING.md",
+        "docs/governance/G31_06_APPROVED_DURABLE_GOVERNED_WORK_CANONICAL_REPOSITORY_SCOPE_GROUNDING.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_DECISION_AND_AUTHORIZATION_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Bind the grounded Worker request to independent execution Authorization, distinct Human decision evidence, and the confirmed grounded execution decision without creating Approval or Authorization authority.",
+      "implementation_paths": [
+        "aigol/runtime/grounded_worker_request_execution_authorization_binding.py",
+        "aigol/runtime/grounded_execution_authorization_human_decision_binding.py",
+        "aigol/runtime/confirmed_grounded_execution_authorization_binding.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_08_CANONICALLY_GROUNDED_WORKER_REQUEST_EXECUTION_AUTHORIZATION_BINDING.md",
+        "docs/governance/G31_09_DISTINCT_HUMAN_EXECUTION_DECISION_BINDING.md",
+        "docs/governance/G31_10_CONFIRMED_GROUNDED_EXECUTION_DECISION_EXECUTION_AUTHORIZATION_BINDING.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_RESOURCE_SELECTION_AND_INVOCATION_REQUEST_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Consume certified resource-selection evidence and project it into an adapter-neutral Worker invocation request while preserving the external owner of adapter-specific selection authentication.",
+      "implementation_paths": [
+        "aigol/runtime/unified_resource_selection_runtime.py",
+        "aigol/runtime/worker_invocation_request_runtime.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_11A_EXISTING_CERTIFIED_WORKER_SELECTION_REUSE_BINDING_AUDIT.md",
+        "docs/governance/G31_11B_G31_10_AUTHORIZATION_EXISTING_CERTIFIED_WORKER_SELECTION_BINDING.md",
+        "docs/governance/G31_24G_R04_R04_R21C_ADAPTER_NEUTRAL_WORKER_SELECTION_LINEAGE_RESOLVER_IMPLEMENTATION.md",
+        "docs/governance/G31_24G_R04_R04_R21E_HISTORICAL_WORKER_SELECTION_IDENTITY_NEUTRALIZATION.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_ASSIGNMENT_DISPATCH_AND_INVOCATION_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Sequence the certified Worker assignment, dispatch, invocation, and execution-candidate projection contracts without taking ownership of Worker implementation.",
+      "implementation_paths": [
+        "aigol/runtime/worker_assignment_runtime.py",
+        "aigol/runtime/worker_dispatch_runtime.py",
+        "aigol/runtime/worker_invocation_runtime.py",
+        "aigol/runtime/worker_invocation_to_execution_candidate_bridge_runtime.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_12B_G31_SELECTION_TO_EXISTING_CERTIFIED_G24_WORKER_ASSIGNMENT_BINDING.md",
+        "docs/governance/G31_13B_G31_ASSIGNMENT_TO_EXISTING_CERTIFIED_G24_WORKER_DISPATCH_DIRECT_BINDING.md",
+        "docs/governance/G31_14B_G31_DISPATCH_TO_EXISTING_CERTIFIED_G24_WORKER_INVOCATION_DIRECT_BINDING.md",
+        "docs/governance/G31_15B_G31_INVOCATION_TO_EXISTING_EXECUTION_CANDIDATE_BOUNDED_PROJECTION.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_GOVERNED_EXECUTION_AND_WORKER_ACTIVATION_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Bind the execution candidate to the existing governed execution boundary and certified CODEX Worker activation without assuming Worker or Provider ownership.",
+      "implementation_paths": [
+        "aigol/runtime/execution_runtime.py",
+        "aigol/runtime/governed_worker_execution_runtime.py",
+        "aigol/runtime/codex_worker_activation_binding_runtime.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_16B_G31_CANDIDATE_TO_EXISTING_GOVERNED_EXECUTION_BOUNDED_PROJECTION.md",
+        "docs/governance/G31_17B_GOVERNED_EXECUTION_TO_CODEX_WORKER_ACTIVATION_BINDING.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_RESULT_CAPTURE_VALIDATION_AND_ACCEPTANCE_BINDING",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Bind transport output to semantic result capture, deterministic validation, Human review, acceptance prerequisites, and the bounded mutation candidate without transferring acceptance or mutation authority.",
+      "implementation_paths": [
+        "aigol/runtime/codex_transport_to_worker_result_capture_binding_runtime.py",
+        "aigol/runtime/codex_worker_result_to_semantic_validation_binding_runtime.py",
+        "aigol/runtime/worker_result_capture_runtime.py",
+        "aigol/runtime/worker_result_validation_runtime.py",
+        "aigol/runtime/codex_task_outcome_human_review_runtime.py",
+        "aigol/runtime/codex_satisfied_outcome_disposable_validation_binding_runtime.py",
+        "aigol/runtime/codex_replacement_acceptance_prerequisite_binding_runtime.py",
+        "aigol/runtime/generated_content_acceptance_runtime.py",
+        "aigol/runtime/platform_core_existing_file_mutation_candidate.py",
+        "aigol/runtime/platform_core_existing_file_governance.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_18_CODEX_TRANSPORT_TO_SEMANTIC_WORKER_RESULT_CAPTURE_BINDING.md",
+        "docs/governance/G31_20_CAPTURED_CODEX_WORKER_RESULT_TO_SEMANTIC_VALIDATION_BINDING.md"
+      ]
+    },
+    {
+      "component_id": "PCBV31_REPLAY_REVIEW_TERMINATION_AND_CERTIFICATION_HANDOFF",
+      "constitutional_owner": "PCBV31_EXECUTION_SPINE",
+      "responsibility": "Sequence read-only post-execution Replay review, governed termination, and the exact terminal handoff to the independent Certification owner.",
+      "implementation_paths": [
+        "aigol/runtime/post_execution_replay_review_runtime.py",
+        "aigol/runtime/governed_termination_runtime.py",
+        "aigol/runtime/governed_termination_to_final_execution_certification_binding_runtime.py"
+      ],
+      "evidence_references": [
+        "docs/governance/G31_24G_R04_R04_R20C_FILESYSTEM_GOVERNED_TERMINATION_TO_FINAL_EXECUTION_CERTIFICATION_COMPATIBILITY_BINDING.md"
+      ]
+    }
+  ],
+  "baseline_support_component_summary_scope": "NON_EXHAUSTIVE_RESPONSIBILITY_SUMMARY; the authoritative exhaustive path classification is complete_reviewed_inventory.",
+  "baseline_support_components": [
+    {
+      "component_id": "V31_PROJECT_SERVICES_AND_OBJECTIVE_INFERENCE",
+      "classification": "PCBV31_BASELINE_SUPPORT",
+      "responsibility": "Prepare project context, objective evidence, clarification state, and the V31 entry conditions consumed by the execution spine.",
+      "implementation_paths": [
+        "aigol/runtime/platform_core_project_services.py",
+        "aigol/runtime/platform_project_objective_inference.py"
+      ]
+    },
+    {
+      "component_id": "V31_DEVELOPMENT_PLANNING_AND_DURABLE_WORK",
+      "classification": "PCBV31_BASELINE_SUPPORT",
+      "responsibility": "Provide the distinct V31 advisory execution-preview plan, governed development-composition plan, and durable-work artifacts; these support components are not execution-spine authority or a universal execution engine.",
+      "implementation_paths": [
+        "aigol/runtime/platform_core_execution_planning_service.py",
+        "aigol/runtime/platform_development_composition_plan.py",
+        "aigol/runtime/platform_durable_governed_work.py"
+      ]
+    },
+    {
+      "component_id": "V31_KNOWLEDGE_QUERY_AND_CAPABILITY_SUPPORT",
+      "classification": "PCBV31_BASELINE_SUPPORT",
+      "responsibility": "Provide V31 knowledge reuse, query routing, capability-composition coverage, and certified capability lookup used by the V31 reference realization.",
+      "implementation_paths": [
+        "aigol/runtime/platform_knowledge_runtime.py",
+        "aigol/runtime/platform_query_router.py",
+        "aigol/runtime/platform_capability_composition_coverage.py",
+        "aigol/runtime/platform_capability_certification_registry.py"
+      ]
+    },
+    {
+      "component_id": "V31_PRESENTATION_AND_CANONICAL_SERIALIZATION_SUPPORT",
+      "classification": "PCBV31_BASELINE_SUPPORT",
+      "responsibility": "Provide V31 presentation and canonical serialization support without acquiring decision, execution, Replay, or Certification authority.",
+      "implementation_paths": [
+        "aigol/runtime/platform_presentation_layer.py",
+        "aigol/runtime/transport/serialization.py"
+      ]
+    }
+  ],
+  "capability_framework_identity": {
+    "constitutional_disposition": "PCBV31_BASELINE_SUPPORT",
+    "framework_membership_rule": "The exact V31 Platform Core-owned lookup, certification-metadata, composition-coverage, and generic capability-contract implementations are baseline support rather than execution-spine stages.",
+    "required_sibling_classification": [
+      {
+        "implementation_path": "aigol/runtime/platform_capability_composition_coverage.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "responsibility": "Computes deterministic certified capability coverage for governed development composition."
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_capability_certification_registry.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "responsibility": "Indexes authoritative certification evidence as deterministic metadata without granting execution or certification authority."
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_capability_lookup.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "responsibility": "Provides the canonical read-only capability lookup surface used by Platform Core planning previews."
+      }
+    ],
+    "generic_framework_paths": [
+      "aigol/runtime/capabilities/__init__.py",
+      "aigol/runtime/capabilities/capability_executor.py",
+      "aigol/runtime/capabilities/capability_policy.py",
+      "aigol/runtime/capabilities/capability_registry.py",
+      "aigol/runtime/capabilities/capability_request.py",
+      "aigol/runtime/capabilities/capability_result.py",
+      "aigol/runtime/capabilities/capability_validator.py"
+    ],
+    "registry_record_rule": "The registry implementation blob at the authenticated V31 tree is baseline support. Registry records added after source_commit are post-V31 metadata and are not PCBV31 members.",
+    "authority_limits": [
+      "The framework does not authorize execution.",
+      "The framework does not replace Governance evidence.",
+      "The framework does not invoke Workers or Providers merely by lookup or registration.",
+      "Capability attachment and lifecycle Governance implementations retain independent Governance ownership."
+    ],
+    "evidence_references": [
+      "docs/governance/G15_GOVERNANCE_01_PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY.md",
+      "docs/governance/G20_03_PLATFORM_CAPABILITY_COMPOSITION_COVERAGE_RUNTIME_IMPLEMENTATION.md",
+      "docs/governance/G8_06D_PLATFORM_CORE_EXECUTION_PLANNING_SERVICE_REFACTORING_V1.md"
+    ]
+  },
+  "planning_identity": {
+    "planning_authority": "ADVISORY_AND_NON_AUTHORIZING",
+    "execution_spine_membership": false,
+    "implementations": [
+      {
+        "implementation_path": "aigol/runtime/platform_development_composition_plan.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "responsibility": "Produces the governed development composition plan from capability coverage, residual gaps, ordered work, dependencies, validation, and implementation boundaries.",
+        "lifecycle_relationship": "Its exact approved plan artifact is consumed before G31 durable-work and execution-spine activation."
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_execution_planning_service.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "responsibility": "Coordinates read-only Worker handoff and advisory execution-plan previews over delegated owner helpers.",
+        "lifecycle_relationship": "It remains a preview coordinator and is not the G31 development-composition owner or an execution-spine stage."
+      }
+    ],
+    "delegated_helper_dispositions": [
+      {
+        "implementation_path": "aigol/runtime/platform_core_capability_lookup.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "owner": "CANONICAL_CAPABILITY_LOOKUP"
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_governance_preview.py",
+        "disposition": "PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION",
+        "owner": "GOVERNANCE"
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_replay_preview.py",
+        "disposition": "PCBV31_BOUND_INDEPENDENT_PROTOCOL_IMPLEMENTATION",
+        "owner": "PLATFORM_CORE_REPLAY"
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_worker_preview.py",
+        "disposition": "EXTERNAL_CONTRACT_BOUND_OWNER",
+        "owner": "WORKER_PLATFORM"
+      },
+      {
+        "implementation_path": "aigol/runtime/platform_core_ocs_execution_preview.py",
+        "disposition": "PCBV31_BASELINE_SUPPORT",
+        "owner": "OCS_PREVIEW"
+      }
+    ],
+    "authority_limits": [
+      "Neither planning implementation authorizes execution or mutation.",
+      "Neither planning implementation replaces Governance, Approval, Authorization, Replay, Worker, or Provider ownership.",
+      "Planning output becomes lifecycle input only through separately validated and approved bindings."
+    ],
+    "evidence_references": [
+      "docs/governance/G8_06D_PLATFORM_CORE_EXECUTION_PLANNING_SERVICE_REFACTORING_V1.md",
+      "docs/governance/G20_05_PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNTIME_IMPLEMENTATION.md",
+      "docs/governance/G31_04_CANONICAL_IMPLEMENTATION_TURN_TO_DURABLE_GOVERNED_WORK_PROPOSAL_BINDING.md"
+    ]
+  },
+  "certified_sockets": [
+    {
+      "socket_id": "PCBV31_HUMAN_INTERFACE_RUNTIME_ENTRY_SOCKET",
+      "direction": "INBOUND",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/human_interface_runtime_entry_service.py::run_human_interface_runtime_entry",
+      "contract": "Accepts constitutionally prepared input and exposes the certified V31 sequencing boundary. Interface presentation and semantic decision ownership remain external."
+    },
+    {
+      "socket_id": "PCBV31_RESOURCE_SELECTION_SOCKET",
+      "direction": "INBOUND",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/unified_resource_selection_runtime.py::select_unified_resource",
+      "contract": "Consumes certified selection inputs and emits adapter-neutral selection evidence. Adapter-specific authentication and routing remain external."
+    },
+    {
+      "socket_id": "PCBV31_WORKER_ASSIGNMENT_SOCKET",
+      "direction": "OUTBOUND_TO_INDEPENDENT_WORKER_LIFECYCLE",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/worker_assignment_runtime.py::assign_worker_from_invocation_request",
+      "contract": "Binds a certified invocation request to assignment evidence without owning the selected Worker."
+    },
+    {
+      "socket_id": "PCBV31_WORKER_INVOCATION_SOCKET",
+      "direction": "OUTBOUND_TO_INDEPENDENT_WORKER_LIFECYCLE",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/worker_invocation_runtime.py::invoke_dispatched_worker",
+      "contract": "Invokes through the certified dispatch boundary without owning Worker or Provider implementation."
+    },
+    {
+      "socket_id": "PCBV31_RESULT_CAPTURE_SOCKET",
+      "direction": "INBOUND_FROM_INDEPENDENT_WORKER_LIFECYCLE",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/worker_result_capture_runtime.py::capture_worker_result",
+      "contract": "Accepts immutable Worker-output evidence for governed result handling without changing Worker or Provider semantics."
+    },
+    {
+      "socket_id": "PCBV31_REPLAY_REVIEW_SOCKET",
+      "direction": "BOUND_TO_INDEPENDENT_REPLAY_OWNER",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/post_execution_replay_review_runtime.py::review_validated_worker_result",
+      "contract": "Consumes read-only Replay evidence. Replay observes and reconstructs but does not authorize execution."
+    },
+    {
+      "socket_id": "PCBV31_FINAL_CERTIFICATION_HANDOFF_SOCKET",
+      "direction": "OUTBOUND_TO_INDEPENDENT_CERTIFICATION_OWNER",
+      "owner": "PCBV31_EXECUTION_SPINE",
+      "implementation_reference": "aigol/runtime/governed_termination_to_final_execution_certification_binding_runtime.py::certify_governed_termination",
+      "contract": "Authenticates the exact terminal lifecycle and invokes the existing Certification owner without absorbing or changing Certification."
+    }
+  ],
+  "bound_independent_protocol_owners": [
+    {
+      "owner": "HUMAN_AUTHORITY",
+      "binding_role": "Provides explicit decisions and approvals required by the V31 lifecycle.",
+      "independence_rule": "PCBV31 records and binds Human decisions but cannot create, infer, or replace Human Authority."
+    },
+    {
+      "owner": "APPROVAL",
+      "binding_role": "Owns approval state and approval validation.",
+      "independence_rule": "PCBV31 consumes approved artifacts and does not grant approval."
+    },
+    {
+      "owner": "AUTHORIZATION",
+      "binding_role": "Owns execution and mutation authorization.",
+      "independence_rule": "PCBV31 binds authorization evidence and cannot issue or weaken authorization."
+    },
+    {
+      "owner": "PLATFORM_CORE_REPLAY",
+      "binding_role": "Owns immutable evidence capture and deterministic reconstruction.",
+      "independence_rule": "Replay is read-only with respect to authority; PCBV31 cannot use Replay evidence as authorization."
+    },
+    {
+      "owner": "GOVERNANCE",
+      "binding_role": "Owns constitutional admissibility and governance constraints.",
+      "independence_rule": "PCBV31 executes within Governance constraints and does not redefine them."
+    },
+    {
+      "owner": "CERTIFICATION",
+      "binding_role": "Owns terminal constitutional certification.",
+      "independence_rule": "PCBV31 supplies an authenticated terminal handoff and cannot self-certify."
+    }
+  ],
+  "explicit_exclusions": [
+    {
+      "classification": "EXTERNAL_ADAPTERS_AND_ADAPTER_SPECIFIC_LOGIC",
+      "examples": [
+        "Filesystem Adapter",
+        "Git Adapter",
+        "REST Adapter",
+        "Browser Adapter",
+        "MCP Adapter",
+        "LLM Adapter",
+        "Robot Adapter"
+      ],
+      "reason": "Adapters use certified PCBV31 sockets but adapter-specific routing, protocols, evidence, Workers, and certification profiles remain external."
+    },
+    {
+      "classification": "INDEPENDENT_EXECUTION_OWNERS",
+      "examples": [
+        "Workers",
+        "Providers",
+        "AiCLI",
+        "Human Interaction presentation"
+      ],
+      "reason": "PCBV31 binds their certified inputs and outputs but does not own their implementation or semantic authority."
+    },
+    {
+      "classification": "POST_V31_PLATFORM_CAPABILITIES",
+      "examples": [
+        "Canonical Governed Development Condensation",
+        "Intelligent Validation Engine IVE-0 through IVE-4",
+        "G38 Intelligent Validation Entry Integration",
+        "G42 Constitutional Development Workflow Integration",
+        "G43 Constitutional Development Supervisor",
+        "G44 Constitutional Development Continuity Manager",
+        "G47 Development Governance",
+        "G49 Conversation Boundary"
+      ],
+      "reason": "These capabilities were introduced after the authenticated PCBV31 source_commit and do not retroactively extend PCBV31."
+    },
+    {
+      "classification": "POST_V31_ARTIFACT_REVISIONS",
+      "examples": [
+        "Later revisions of Project Services",
+        "Later revisions of Objective Inference",
+        "Later revisions of Runtime Entry",
+        "Capability certification records created after V31"
+      ],
+      "reason": "Path identity does not override the exact-blob membership rule."
+    },
+    {
+      "classification": "INDEPENDENT_PROTOCOL_SEMANTICS",
+      "examples": [
+        "Replay protocol semantics",
+        "Approval semantics",
+        "Authorization semantics",
+        "Governance semantics",
+        "Certification semantics"
+      ],
+      "reason": "Composition with PCBV31 does not transfer constitutional ownership."
+    }
+  ],
+  "constitutional_invariants": [
+    "PCBV31 remains a closed historical reference realization.",
+    "Platform Core may evolve through separately owned capabilities without silently changing PCBV31.",
+    "The execution spine sequences and binds certified responsibilities; it does not become their constitutional owner.",
+    "All authority transitions remain explicit, deterministic, evidence-bound, and fail closed.",
+    "Replay remains read-only with respect to execution authority.",
+    "Adapters remain external and replaceable through certified sockets.",
+    "A changed spine, socket, authority boundary, or source identity requires a new constitutional baseline."
+  ],
+  "evidence_references": [
+    {
+      "reference": ".github/governance/specs/IMMUTABLE_CONSTITUTIONAL_EVIDENCE_MANIFEST_V1.json",
+      "relationship": "DECLARES_PCBV31_AS_THE_SINGLE_V31_PLATFORM_CORE_AND_PRESERVES_REPLAY_OWNER_INDEPENDENCE"
+    },
+    {
+      "reference": "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md",
+      "relationship": "GOVERNS_CONSTITUTIONAL_ARCHITECTURE"
+    },
+    {
+      "reference": "docs/governance/CANONICAL_LAYER_MODEL.md",
+      "relationship": "GOVERNS_LAYER_IDENTITY"
+    },
+    {
+      "reference": "docs/governance/CONSTITUTIONAL_INVARIANTS.md",
+      "relationship": "GOVERNS_INVARIANTS"
+    },
+    {
+      "reference": "docs/governance/GOVERNANCE_ENFORCEMENT_HIERARCHY.md",
+      "relationship": "GOVERNS_AUTHORITY_PRECEDENCE"
+    },
+    {
+      "reference": "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+      "relationship": "GOVERNS_LINEAGE"
+    },
+    {
+      "reference": "docs/governance/STABLE_SUBSTRATE_DECLARATION_V1.md",
+      "relationship": "GOVERNS_STABLE_SUBSTRATE_BOUNDARY"
+    },
+    {
+      "reference": "docs/governance/G31_24G_R04_R04_R20C_FILESYSTEM_GOVERNED_TERMINATION_TO_FINAL_EXECUTION_CERTIFICATION_COMPATIBILITY_BINDING.md",
+      "relationship": "AUTHENTICATES_TERMINAL_V31_LIFECYCLE_AND_INDEPENDENT_CERTIFICATION_HANDOFF"
+    },
+    {
+      "reference": "docs/governance/G31_24G_R04_R04_R21C_ADAPTER_NEUTRAL_WORKER_SELECTION_LINEAGE_RESOLVER_IMPLEMENTATION.md",
+      "relationship": "AUTHENTICATES_ADAPTER_NEUTRAL_SELECTION_BOUNDARY"
+    },
+    {
+      "reference": "docs/governance/G31_24G_R04_R04_R21E_HISTORICAL_WORKER_SELECTION_IDENTITY_NEUTRALIZATION.md",
+      "relationship": "AUTHENTICATES_FINAL_G31_HISTORICAL_STATE"
+    },
+    {
+      "reference": "docs/governance/G34_02_GENERIC_ADAPTER_TOPOLOGY_SPECIFICATION_V1.md",
+      "relationship": "CONFIRMS_EXTERNAL_ADAPTER_ARCHITECTURE_AND_NEW_BASELINE_THRESHOLD"
+    }
+  ],
+  "evidence_and_dependent_hash_summary": {
+    "unique_evidence_reference_count": 31,
+    "all_evidence_references_resolve": true,
+    "dependent_specifications_referencing_this_record_or_its_prior_hash": [],
+    "dependent_specification_hash_status": "NO_DEPENDENT_SPECIFICATION_HASHES_TO_RECOMPUTE",
+    "historical_evidence_mutated": false
+  },
+  "immutability_and_versioning": {
+    "mutation_policy": "PROHIBITED_AFTER_ESTABLISHMENT",
+    "correction_policy": "CREATE_A_NEW_VERSION_WITH_EXPLICIT_SUPERSESSION_LINEAGE",
+    "historical_certification_policy": "NEVER_REWRITE_OR_REINTERPRET",
+    "new_baseline_triggers": [
+      "SOURCE_IDENTITY_CHANGE",
+      "EXECUTION_SPINE_CHANGE",
+      "CERTIFIED_SOCKET_CHANGE",
+      "CONSTITUTIONAL_OWNERSHIP_CHANGE",
+      "AUTHORITY_BOUNDARY_CHANGE"
+    ]
+  },
+  "canonical_hash_model": {
+    "encoding": "UTF-8_JSON",
+    "unicode_normalization": "NFC",
+    "object_key_order": "LEXICOGRAPHIC_CODE_POINT_ORDER",
+    "array_order": "SIGNIFICANT",
+    "insignificant_whitespace": "REMOVED",
+    "number_model": "INTEGER_ONLY",
+    "algorithm": "SHA-256",
+    "hash_input": "COMPLETE_CANONICAL_RECORD_WITH_RECORD_HASH_FIELD_OMITTED",
+    "hash_format": "PREFIXED_LOWERCASE_HEX"
+  },
+  "record_hash": "sha256:b3941e4671662446951a0bbb4e579aab8568cd694400b9101c427c3ba4500417"
+}
