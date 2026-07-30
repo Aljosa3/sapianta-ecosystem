@@ -19,7 +19,7 @@ def _reader(values: list[str]):
 def test_submit_mode_accepts_large_multiline_prompt_once(tmp_path: Path) -> None:
     output: list[str] = []
     request_lines = [
-        "Implement a Generation 15 replay observation validation utility.",
+        "Implement a Generation 15 replay evidence observation utility.",
         "",
         "Requirements:",
         "- preserve Platform Core ownership",

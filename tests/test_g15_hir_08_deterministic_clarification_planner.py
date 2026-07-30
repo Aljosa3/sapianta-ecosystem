@@ -92,7 +92,7 @@ def test_existing_workspace_context_suppresses_unnecessary_continuation_clarific
         session_id="G15-HIR-08-CONTEXT",
         runtime_root=tmp_path,
         workspace=".",
-        stdin_reader=lambda: "Implement replay validation support.",
+        stdin_reader=lambda: "Implement replay evidence support.",
         input_reader=_reader(["/approve"]),
         output_writer=lambda _line: None,
         runtime_runner=runner,
