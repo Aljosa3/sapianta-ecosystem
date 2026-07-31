@@ -10102,6 +10102,44 @@ def _run_acli_next_runtime_bound_session(
     return result
 
 
+def return_platform_change_normalization_completion_to_acli(
+    *,
+    session_id: str,
+    human_request: str,
+    created_at: str,
+    replay_dir: Path,
+    workspace: str,
+    worker_capability_completion_capture: dict[str, Any],
+) -> dict[str, Any]:
+    """Return one authenticated capability completion through AiCLI and HIR.
+
+    This is a presentation-only continuation.  The completion adapter has
+    already authenticated the Worker, Authorization, and replay evidence.
+    """
+
+    result = run_human_interface_runtime_entry(
+        interface_name="aigol next",
+        session_id=session_id,
+        human_requests=[human_request],
+        created_at=created_at,
+        runtime_root=replay_dir,
+        workspace=workspace,
+        governed_runtime_runner=run_interactive_conversation,
+        operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        worker_capability_completion_capture=worker_capability_completion_capture,
+    )
+    return {
+        **result,
+        "runtime_binding_version": ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION,
+        "acli_capability_completion_returned": True,
+        "acli_next_runtime_orchestrates": False,
+        "acli_next_runtime_authorizes": False,
+        "acli_next_runtime_executes": False,
+        "replay_authority_preserved": True,
+        "worker_execution_authority_preserved": True,
+    }
+
+
 def _acli_next_status_from_canonical_entry(result: dict[str, Any]) -> str:
     status = result.get("canonical_runtime_entry_status")
     if status == CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND:

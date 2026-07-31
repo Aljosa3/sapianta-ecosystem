@@ -160,6 +160,7 @@ def run_human_interface_runtime_entry(
     g31_worker_process_runner: Callable[..., Any] | None = None,
     g31_synthesis_preflight_prompt: str | None = None,
     canonical_condensation_proposal_inputs: dict[str, Any] | None = None,
+    worker_capability_completion_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Enter the certified runtime from any Unified Human Interface."""
 
@@ -168,6 +169,41 @@ def run_human_interface_runtime_entry(
     created = _require_string(created_at, "created_at")
     root = Path(runtime_root)
     workspace_text = str(Path(workspace))
+    if worker_capability_completion_capture is not None:
+        from aigol.runtime.platform_change_normalization_worker_completion_adapter import (
+            present_platform_change_normalization_worker_completion,
+        )
+
+        completion = present_platform_change_normalization_worker_completion(
+            worker_capability_completion_capture
+        )
+        return {
+            "canonical_runtime_entry_service_version": (
+                CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_SERVICE_VERSION
+            ),
+            "canonical_runtime_entry_interface": interface,
+            "canonical_runtime_entry_session_id": session,
+            "canonical_runtime_entry_workspace": workspace_text,
+            "canonical_runtime_entry_status": CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
+            "runtime_binding_status": CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY_BOUND,
+            "runtime_entered": False,
+            "human_interface_completion_returned": True,
+            "worker_capability_completion": completion,
+            "human_visible_completion_result": deepcopy(
+                completion["human_visible_result"]
+            ),
+            "governance_authorization_reached": None,
+            "provider_invocation_reached": False,
+            "worker_execution_reached": True,
+            "replay_certification_reached": False,
+            "human_interface_runtime_entry_orchestrates": False,
+            "human_interface_resolves_artifacts": False,
+            "human_interface_validates_artifacts": False,
+            "human_interface_selects_artifacts": False,
+            "human_interface_influences_semantic_selection": False,
+            "platform_core_runtime_delegated": True,
+            "manual_chatgpt_codex_transfer_required": False,
+        }
     if g31_synthesis_preflight_prompt is not None:
         prompt = _require_string(
             g31_synthesis_preflight_prompt, "g31_synthesis_preflight_prompt"
