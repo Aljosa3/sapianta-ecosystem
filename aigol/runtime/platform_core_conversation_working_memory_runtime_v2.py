@@ -185,7 +185,13 @@ INTERFACE_IDENTITIES = frozenset(
 )
 
 ACTIVE = "ACTIVE"
+SUSPENDED = "SUSPENDED"
+CLOSED = "CLOSED"
 COLLECTING = "COLLECTING"
+CLARIFYING = "CLARIFYING"
+CANDIDATE_REVIEW = "CANDIDATE_REVIEW"
+COMMITMENT_PENDING = "COMMITMENT_PENDING"
+HANDED_OFF = "HANDED_OFF"
 BOUND = "BOUND"
 LEGACY_REVIEW_REQUIRED = "LEGACY_REVIEW_REQUIRED"
 NATIVE_V2 = "NATIVE_V2"
@@ -198,6 +204,20 @@ MAX_SLOT_HISTORY_ENTRIES = 32
 MAX_NORMALIZATION_RULE_IDS = 16
 MAX_PARTICIPANTS = 8
 MAX_CARDINALITY_KEY_CHARACTERS = 256
+MAX_CLARIFICATION_CANDIDATES = 8
+
+PLATFORM_CORE_CONVERSATION_PROTOCOL_CONTROL_SCHEMA_V1 = (
+    "PLATFORM_CORE_CONVERSATION_PROTOCOL_CONTROL_SCHEMA_V1"
+)
+PLATFORM_CORE_CANDIDATE_PROJECTION_SCHEMA_V1 = (
+    "PLATFORM_CORE_CANDIDATE_PROJECTION_SCHEMA_V1"
+)
+PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1 = (
+    "PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1"
+)
+PLATFORM_CORE_CONFIRMATION_BINDING_SCHEMA_V1 = (
+    "PLATFORM_CORE_CONFIRMATION_BINDING_SCHEMA_V1"
+)
 
 _V2_STATE_FIELDS = frozenset(
     {
@@ -250,7 +270,77 @@ _SEMANTIC_MEMORY_FIELDS = frozenset(
         "semantic_memory_runtime_version",
         "normalization_ruleset_version",
         "semantic_slots",
+        "protocol_control",
         "legacy_import",
+    }
+)
+
+_PROTOCOL_CONTROL_FIELDS = frozenset(
+    {
+        "protocol_control_type",
+        "clarification_control",
+        "candidate_projection",
+        "confirmation_binding",
+    }
+)
+
+_CLARIFICATION_FIELDS = frozenset(
+    {
+        "clarification_id",
+        "trigger_slot_id",
+        "trigger_reason",
+        "source_global_revision",
+        "source_semantic_revision",
+        "candidate_values",
+        "question_template_id",
+        "clarification_fingerprint",
+        "no_progress_count",
+        "status",
+    }
+)
+
+_CANDIDATE_PROJECTION_FIELDS = frozenset(
+    {
+        "projection_type",
+        "projection_ruleset_version",
+        "source_semantic_revision",
+        "semantic_values",
+    }
+)
+
+_PROJECTED_VALUE_FIELDS = frozenset(
+    {
+        "slot_id",
+        "slot_class",
+        "slot_role",
+        "cardinality_key",
+        "canonical_value",
+        "equivalence_key",
+        "materiality",
+    }
+)
+
+_CONFIRMATION_BINDING_FIELDS = frozenset(
+    {
+        "confirmation_binding_type",
+        "candidate_source_global_revision",
+        "confirmation_global_revision",
+        "semantic_revision",
+        "candidate_digest",
+        "presentation_digest",
+        "participant_binding_digest",
+        "confirmed_at",
+        "control_act",
+    }
+)
+
+_CANDIDATE_BINDING_FIELDS = frozenset(
+    {
+        "semantic_revision",
+        "candidate_projection_ruleset_version",
+        "candidate_digest",
+        "review_status",
+        "bound_at_global_revision",
     }
 )
 
@@ -940,6 +1030,7 @@ def _semantic_memory(
     conversation_identity: str,
     semantic_slots: list[dict[str, Any]] | tuple[dict[str, Any], ...],
     legacy_import: dict[str, Any] | None,
+    protocol_control: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not isinstance(semantic_slots, (list, tuple)):
         raise FailClosedRuntimeError("semantic slots must be a collection")
@@ -966,6 +1057,11 @@ def _semantic_memory(
             PLATFORM_CORE_SEMANTIC_NORMALIZATION_RULESET_V1
         ),
         "semantic_slots": slots,
+        "protocol_control": _validate_protocol_control(
+            _empty_protocol_control()
+            if protocol_control is None
+            else protocol_control
+        ),
         "legacy_import": deepcopy(legacy_import),
     }
 
@@ -991,9 +1087,235 @@ def _validate_semantic_memory(
         conversation_identity=conversation_identity,
         semantic_slots=candidate["semantic_slots"],
         legacy_import=_validate_legacy_import(candidate["legacy_import"]),
+        protocol_control=candidate["protocol_control"],
     )
     if candidate != normalized:
         raise FailClosedRuntimeError("semantic memory is not canonical")
+    return candidate
+
+
+def _empty_protocol_control() -> dict[str, Any]:
+    return {
+        "protocol_control_type": (
+            PLATFORM_CORE_CONVERSATION_PROTOCOL_CONTROL_SCHEMA_V1
+        ),
+        "clarification_control": None,
+        "candidate_projection": None,
+        "confirmation_binding": None,
+    }
+
+
+def _validate_protocol_control(value: Any) -> dict[str, Any]:
+    candidate = _closed_object(
+        value, _PROTOCOL_CONTROL_FIELDS, "protocol control"
+    )
+    _reject_forbidden_keys(candidate)
+    if candidate["protocol_control_type"] != (
+        PLATFORM_CORE_CONVERSATION_PROTOCOL_CONTROL_SCHEMA_V1
+    ):
+        raise FailClosedRuntimeError("protocol control type is invalid")
+    candidate["clarification_control"] = _validate_clarification_control(
+        candidate["clarification_control"]
+    )
+    candidate["candidate_projection"] = _validate_candidate_projection(
+        candidate["candidate_projection"]
+    )
+    candidate["confirmation_binding"] = _validate_confirmation_binding(
+        candidate["confirmation_binding"]
+    )
+    if candidate["confirmation_binding"] is not None and (
+        candidate["candidate_projection"] is None
+    ):
+        raise FailClosedRuntimeError(
+            "confirmation binding requires a candidate projection"
+        )
+    return candidate
+
+
+def _validate_clarification_control(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    candidate = _closed_object(
+        value, _CLARIFICATION_FIELDS, "clarification control"
+    )
+    _require_local_identity(
+        candidate["clarification_id"],
+        "clarification_id",
+        prefix="clarification-local-sha256:",
+    )
+    trigger = candidate["trigger_slot_id"]
+    if not isinstance(trigger, str) or not (
+        trigger.startswith("conversation-slot-sha256:")
+        or trigger.startswith("required-slot:")
+    ):
+        raise FailClosedRuntimeError("clarification trigger slot is invalid")
+    _closed_value(
+        candidate["trigger_reason"],
+        {"MISSING", "PARTIAL", "CONFLICTED", "STALE", "UNCONFIRMED", "UNSUPPORTED"},
+        "clarification trigger reason",
+    )
+    _nonnegative_integer(
+        candidate["source_global_revision"], "clarification global revision"
+    )
+    _nonnegative_integer(
+        candidate["source_semantic_revision"],
+        "clarification semantic revision",
+    )
+    values = candidate["candidate_values"]
+    if not isinstance(values, list) or len(values) > MAX_CLARIFICATION_CANDIDATES:
+        raise FailClosedRuntimeError("clarification candidate values are invalid")
+    normalized_values = [_exact_text(item, "candidate value") for item in values]
+    if values != sorted(set(normalized_values)):
+        raise FailClosedRuntimeError(
+            "clarification candidate values are not canonical"
+        )
+    _closed_value(
+        candidate["question_template_id"],
+        {
+            "CLARIFY_CONFLICT_V1",
+            "CLARIFY_REQUIRED_ACTION_V1",
+            "CLARIFY_REQUIRED_SUBJECT_V1",
+            "CLARIFY_REQUIRED_OUTCOME_V1",
+            "CLARIFY_REQUIRED_WORK_TYPE_V1",
+            "CLARIFY_ASSUMPTION_V1",
+            "CLARIFY_DEPENDENCY_V1",
+            "CLARIFY_REFERENCE_V1",
+            "CLARIFY_QUALIFIER_V1",
+            "CLARIFY_UNSUPPORTED_V1",
+        },
+        "clarification question template",
+    )
+    _require_digest(
+        candidate["clarification_fingerprint"],
+        "clarification_fingerprint",
+        "clarification-sha256:",
+    )
+    no_progress = _nonnegative_integer(
+        candidate["no_progress_count"], "clarification no progress count"
+    )
+    if no_progress > 1:
+        raise FailClosedRuntimeError("clarification no progress count is invalid")
+    _closed_value(
+        candidate["status"],
+        {"PENDING", "ANSWERED", "RESOLVED", "CANCELED", "FAILED_CLOSED"},
+        "clarification status",
+    )
+    return candidate
+
+
+def _validate_candidate_projection(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    candidate = _closed_object(
+        value, _CANDIDATE_PROJECTION_FIELDS, "candidate projection"
+    )
+    if candidate["projection_type"] != PLATFORM_CORE_CANDIDATE_PROJECTION_SCHEMA_V1:
+        raise FailClosedRuntimeError("candidate projection type is invalid")
+    if candidate["projection_ruleset_version"] != (
+        PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1
+    ):
+        raise FailClosedRuntimeError("candidate projection ruleset is invalid")
+    _nonnegative_integer(
+        candidate["source_semantic_revision"],
+        "candidate source semantic revision",
+    )
+    values = candidate["semantic_values"]
+    if not isinstance(values, list) or not values or len(values) > MAX_SEMANTIC_SLOTS:
+        raise FailClosedRuntimeError("candidate semantic values are invalid")
+    normalized: list[dict[str, Any]] = []
+    for value_item in values:
+        item = _closed_object(
+            value_item, _PROJECTED_VALUE_FIELDS, "candidate semantic value"
+        )
+        slot_class = _closed_value(
+            item["slot_class"], SEMANTIC_SLOT_CLASSES, "slot_class"
+        )
+        slot_role = _slot_role(slot_class, item["slot_role"])
+        cardinality = _cardinality_key(
+            slot_class, slot_role, item["cardinality_key"]
+        )
+        _require_local_identity(
+            item["slot_id"],
+            "candidate slot identity",
+            prefix="conversation-slot-sha256:",
+        )
+        canonical = _canonical_slot_value(
+            slot_class, slot_role, item["canonical_value"]
+        )
+        if item["equivalence_key"] != _equivalence_key(
+            slot_class, slot_role, canonical
+        ):
+            raise FailClosedRuntimeError(
+                "candidate semantic equivalence is invalid"
+            )
+        _closed_value(
+            item["materiality"], MATERIALITY_VALUES, "materiality"
+        )
+        normalized.append(item)
+    normalized = sorted(
+        normalized,
+        key=lambda item: (
+            _CLASS_ORDER[item["slot_class"]],
+            item["slot_role"],
+            item["cardinality_key"],
+            item["slot_id"],
+        ),
+    )
+    if candidate["semantic_values"] != normalized:
+        raise FailClosedRuntimeError("candidate semantic values are not canonical")
+    if len({item["slot_id"] for item in normalized}) != len(normalized):
+        raise FailClosedRuntimeError("candidate semantic values contain duplicates")
+    candidate["semantic_values"] = normalized
+    return candidate
+
+
+def _validate_confirmation_binding(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    candidate = _closed_object(
+        value, _CONFIRMATION_BINDING_FIELDS, "confirmation binding"
+    )
+    if candidate["confirmation_binding_type"] != (
+        PLATFORM_CORE_CONFIRMATION_BINDING_SCHEMA_V1
+    ):
+        raise FailClosedRuntimeError("confirmation binding type is invalid")
+    for field in (
+        "candidate_source_global_revision",
+        "confirmation_global_revision",
+        "semantic_revision",
+    ):
+        _nonnegative_integer(candidate[field], field)
+    for field in (
+        "candidate_digest",
+        "presentation_digest",
+        "participant_binding_digest",
+    ):
+        _require_digest(candidate[field], field, "sha256:")
+    confirmed = _canonical_timestamp(candidate["confirmed_at"], "confirmed_at")
+    if candidate["confirmed_at"] != confirmed:
+        raise FailClosedRuntimeError("confirmation timestamp is not canonical")
+    if candidate["control_act"] != "CONFIRM_CANDIDATE":
+        raise FailClosedRuntimeError("confirmation control act is invalid")
+    return candidate
+
+
+def _validate_candidate_binding(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    candidate = _closed_object(
+        value, _CANDIDATE_BINDING_FIELDS, "candidate binding"
+    )
+    _nonnegative_integer(candidate["semantic_revision"], "candidate semantic revision")
+    if candidate["candidate_projection_ruleset_version"] != (
+        PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1
+    ):
+        raise FailClosedRuntimeError("candidate binding ruleset is invalid")
+    _require_digest(candidate["candidate_digest"], "candidate_digest", "sha256:")
+    if candidate["review_status"] != "AWAITING_HUMAN_REVIEW":
+        raise FailClosedRuntimeError("candidate review status is invalid")
+    _nonnegative_integer(
+        candidate["bound_at_global_revision"], "candidate bound revision"
+    )
     return candidate
 
 
@@ -1096,15 +1418,74 @@ def _validate_envelope(
         "scope_status": BOUND,
     }:
         raise FailClosedRuntimeError("Envelope context scope is invalid")
-    if candidate["availability_state"] != ACTIVE:
-        raise FailClosedRuntimeError("Envelope state machine is not implemented")
-    if candidate["conversation_phase"] != COLLECTING:
-        raise FailClosedRuntimeError("conversation state machine is not implemented")
-    if candidate["active_objective_candidate_binding"] is not None:
-        raise FailClosedRuntimeError("Objective candidate binding is not implemented")
-    for field in ("suspended_at", "restored_at", "closed_at"):
-        if candidate[field] is not None:
-            raise FailClosedRuntimeError("Envelope lifecycle transitions are not implemented")
+    availability = _closed_value(
+        candidate["availability_state"],
+        {ACTIVE, SUSPENDED, CLOSED},
+        "Envelope availability state",
+    )
+    phase = _closed_value(
+        candidate["conversation_phase"],
+        {
+            COLLECTING,
+            CLARIFYING,
+            CANDIDATE_REVIEW,
+            COMMITMENT_PENDING,
+            HANDED_OFF,
+        },
+        "conversation phase",
+    )
+    if phase in {COMMITMENT_PENDING, HANDED_OFF}:
+        raise FailClosedRuntimeError("Objective Commitment phases are not implemented")
+    candidate_binding = _validate_candidate_binding(
+        candidate["active_objective_candidate_binding"]
+    )
+    suspended_at = _optional_canonical_timestamp(
+        candidate["suspended_at"], "suspended_at"
+    )
+    restored_at = _optional_canonical_timestamp(
+        candidate["restored_at"], "restored_at"
+    )
+    closed_at = _optional_canonical_timestamp(candidate["closed_at"], "closed_at")
+    if availability == ACTIVE:
+        if closed_at is not None:
+            raise FailClosedRuntimeError("active Envelope cannot be closed")
+        if (suspended_at is None) != (restored_at is None):
+            raise FailClosedRuntimeError("active Envelope restoration is incomplete")
+        if suspended_at is not None and _parse_timestamp(
+            restored_at, "restored_at"
+        ) < _parse_timestamp(suspended_at, "suspended_at"):
+            raise FailClosedRuntimeError("Envelope restoration precedes suspension")
+    elif availability == SUSPENDED:
+        if suspended_at is None or restored_at is not None or closed_at is not None:
+            raise FailClosedRuntimeError("suspended Envelope lifecycle is invalid")
+    else:
+        if closed_at is None:
+            raise FailClosedRuntimeError("closed Envelope requires closed_at")
+    for field, timestamp in (
+        ("suspended_at", suspended_at),
+        ("restored_at", restored_at),
+        ("closed_at", closed_at),
+    ):
+        if timestamp is not None:
+            parsed = _parse_timestamp(timestamp, field)
+            if parsed < _parse_timestamp(
+                created, "created_at"
+            ) or parsed > _parse_timestamp(updated, "updated_at"):
+                raise FailClosedRuntimeError(
+                    "Envelope lifecycle time is outside document bounds"
+                )
+    if closed_at is not None:
+        closed = _parse_timestamp(closed_at, "closed_at")
+        for field, timestamp in (
+            ("suspended_at", suspended_at),
+            ("restored_at", restored_at),
+        ):
+            if timestamp is not None and closed < _parse_timestamp(
+                timestamp, field
+            ):
+                raise FailClosedRuntimeError(
+                    "Envelope closure precedes lifecycle state"
+                )
     binding = _closed_object(
         candidate["semantic_memory_binding"],
         _SEMANTIC_BINDING_FIELDS,
@@ -1119,6 +1500,7 @@ def _validate_envelope(
         raise FailClosedRuntimeError("Envelope semantic memory binding is invalid")
     candidate["participants"] = participants
     candidate["context_scope"] = context
+    candidate["active_objective_candidate_binding"] = candidate_binding
     candidate["semantic_memory_binding"] = binding
     return candidate
 
@@ -1334,6 +1716,72 @@ def _validate_cross_component_bindings(
                 raise FailClosedRuntimeError(
                     "semantic slot history timestamp is outside Envelope bounds"
                 )
+    control = semantic_memory["protocol_control"]
+    clarification = control["clarification_control"]
+    projection = control["candidate_projection"]
+    confirmation = control["confirmation_binding"]
+    candidate_binding = envelope["active_objective_candidate_binding"]
+    if clarification is not None:
+        if clarification["source_global_revision"] > revision or (
+            clarification["source_semantic_revision"] != semantic_revision
+        ):
+            raise FailClosedRuntimeError(
+                "clarification revision binding is invalid"
+            )
+    if (projection is None) != (candidate_binding is None):
+        raise FailClosedRuntimeError("candidate projection binding is incomplete")
+    if projection is not None:
+        if projection["source_semantic_revision"] != semantic_revision:
+            raise FailClosedRuntimeError(
+                "candidate projection semantic revision is invalid"
+            )
+        if candidate_binding != {
+            "semantic_revision": semantic_revision,
+            "candidate_projection_ruleset_version": (
+                PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1
+            ),
+            "candidate_digest": _checksum(projection),
+            "review_status": "AWAITING_HUMAN_REVIEW",
+            "bound_at_global_revision": candidate_binding[
+                "bound_at_global_revision"
+            ],
+        }:
+            raise FailClosedRuntimeError("candidate projection binding is invalid")
+        if candidate_binding["bound_at_global_revision"] > revision:
+            raise FailClosedRuntimeError("candidate bound revision exceeds state")
+    if confirmation is not None:
+        if projection is None or candidate_binding is None:
+            raise FailClosedRuntimeError("confirmation candidate is absent")
+        if confirmation["candidate_source_global_revision"] != (
+            candidate_binding["bound_at_global_revision"]
+        ):
+            raise FailClosedRuntimeError("confirmation candidate revision is invalid")
+        if confirmation["confirmation_global_revision"] > revision or (
+            confirmation["semantic_revision"] != semantic_revision
+        ):
+            raise FailClosedRuntimeError("confirmation revision is invalid")
+        if confirmation["candidate_digest"] != candidate_binding["candidate_digest"]:
+            raise FailClosedRuntimeError("confirmation candidate digest is invalid")
+        if confirmation["participant_binding_digest"] != _checksum(
+            envelope["participants"]
+        ):
+            raise FailClosedRuntimeError("confirmation participant binding is invalid")
+        confirmed = _parse_timestamp(confirmation["confirmed_at"], "confirmed_at")
+        if confirmed < created or confirmed > updated:
+            raise FailClosedRuntimeError("confirmation timestamp is outside Envelope")
+    phase = envelope["conversation_phase"]
+    if phase == COLLECTING and any(
+        item is not None for item in (clarification, projection, confirmation)
+    ):
+        raise FailClosedRuntimeError("collecting phase contains protocol controls")
+    if phase == CLARIFYING and (
+        clarification is None or projection is not None or confirmation is not None
+    ):
+        raise FailClosedRuntimeError("clarifying phase controls are invalid")
+    if phase == CANDIDATE_REVIEW and (
+        clarification is not None or projection is None
+    ):
+        raise FailClosedRuntimeError("candidate review controls are invalid")
     if migration["migration_status"] == NATIVE_V2:
         if envelope["origin_interface_identity"] != LOCAL_CONVERSATION_V2:
             raise FailClosedRuntimeError("native V2 interface binding is invalid")
@@ -1527,6 +1975,15 @@ def _exact_text(value: Any, field_name: str) -> str:
     return value
 
 
+def _optional_canonical_timestamp(value: Any, field_name: str) -> str | None:
+    if value is None:
+        return None
+    timestamp = _canonical_timestamp(value, field_name)
+    if value != timestamp:
+        raise FailClosedRuntimeError(f"{field_name} is not canonical")
+    return timestamp
+
+
 def _bounded_token(
     value: Any,
     field_name: str,
@@ -1679,6 +2136,9 @@ __all__ = [
     "ASSERTED_NOT_AUTHENTICATED",
     "BOUND",
     "CAPABILITY_HINT",
+    "CANDIDATE_REVIEW",
+    "CLOSED",
+    "CLARIFYING",
     "COLLECTING",
     "COMPLETE",
     "CONDITIONAL",
@@ -1698,6 +2158,10 @@ __all__ = [
     "OUTPUT",
     "PLATFORM_CORE_CONVERSATION_WORKING_MEMORY_RUNTIME_V2",
     "PLATFORM_CORE_CONVERSATION_WORKING_MEMORY_SCHEMA_V2",
+    "PLATFORM_CORE_CONVERSATION_PROTOCOL_CONTROL_SCHEMA_V1",
+    "PLATFORM_CORE_CANDIDATE_PROJECTION_RULESET_V1",
+    "PLATFORM_CORE_CANDIDATE_PROJECTION_SCHEMA_V1",
+    "PLATFORM_CORE_CONFIRMATION_BINDING_SCHEMA_V1",
     "PLATFORM_CORE_SEMANTIC_CWM_SCHEMA_V2",
     "PRESERVATION",
     "PRIMARY",
@@ -1708,6 +2172,7 @@ __all__ = [
     "SECONDARY",
     "SEMANTIC_REFERENCE",
     "SEMANTIC_SLOT_CLASSES",
+    "SUSPENDED",
     "WORK_TYPE",
     "conversation_working_memory_conversation_identity_v2",
     "create_conversation_working_memory_state_v2",

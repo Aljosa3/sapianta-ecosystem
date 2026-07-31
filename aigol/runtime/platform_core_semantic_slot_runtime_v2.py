@@ -382,6 +382,10 @@ def prepare_semantic_slot_state_update_v2(
         raise FailClosedRuntimeError("semantic update revision does not match")
     if current["migration_metadata"]["migration_status"] != cwm_v2.NATIVE_V2:
         raise FailClosedRuntimeError("legacy semantic review is not implemented")
+    if current["envelope"]["availability_state"] != cwm_v2.ACTIVE:
+        raise FailClosedRuntimeError(
+            "semantic update requires an active conversation"
+        )
     if operation not in _OPERATIONS:
         raise FailClosedRuntimeError("semantic slot operation is invalid")
     observed = cwm_v2._canonical_timestamp(observed_at, "observed_at")
@@ -763,7 +767,12 @@ def _prepare_state_replacement(
     candidate["envelope_revision"] += 1
     candidate["semantic_revision"] += 1
     candidate["envelope"]["updated_at"] = observed_at
+    candidate["envelope"]["conversation_phase"] = cwm_v2.COLLECTING
+    candidate["envelope"]["active_objective_candidate_binding"] = None
     candidate["semantic_memory"]["semantic_slots"] = semantic_slots
+    candidate["semantic_memory"]["protocol_control"] = (
+        cwm_v2._empty_protocol_control()
+    )
     candidate["envelope"]["semantic_memory_binding"] = {
         "semantic_memory_type": cwm_v2.PLATFORM_CORE_SEMANTIC_CWM_SCHEMA_V2,
         "global_revision": candidate["revision"],
