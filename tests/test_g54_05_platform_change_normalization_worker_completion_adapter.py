@@ -135,8 +135,18 @@ def _execution_ready(tmp_path) -> tuple[dict, object]:
     return ready, replay_dir
 
 
-def _completion_inputs(tmp_path) -> dict:
-    route, route_dir = _semantic_route(tmp_path)
+def _completion_inputs(
+    tmp_path,
+    *,
+    semantic_route: dict | None = None,
+    semantic_route_replay_reference: object | None = None,
+    include_trace: bool = False,
+) -> dict | tuple[dict, dict]:
+    if semantic_route is None:
+        route, route_dir = _semantic_route(tmp_path)
+    else:
+        route = semantic_route
+        route_dir = semantic_route_replay_reference
     ready, ready_dir = _execution_ready(tmp_path)
     binding = bind_platform_change_normalization_to_execution_ready(
         binding_id="BINDING-G54-05-000001",
@@ -233,7 +243,7 @@ def _completion_inputs(tmp_path) -> dict:
         validated_at=CREATED_AT,
         replay_dir=tmp_path / "result_validation",
     )
-    return {
+    inputs = {
         "completion_id": "COMPLETION-G54-05-000001",
         "capability_execution_binding_artifact": binding["capability_execution_binding_artifact"],
         "capability_execution_binding_replay_reference": binding["capability_execution_binding_replay_reference"],
@@ -246,6 +256,19 @@ def _completion_inputs(tmp_path) -> dict:
         "completed_by": "HUMAN_OPERATOR",
         "completed_at": CREATED_AT,
         "replay_dir": tmp_path / "completion",
+    }
+    if not include_trace:
+        return inputs
+    return inputs, {
+        "binding": binding,
+        "authorization": authorization,
+        "request": request,
+        "assignment": assignment,
+        "dispatch": dispatch,
+        "invocation": invocation,
+        "execution": execution,
+        "capture": capture,
+        "validation": validation,
     }
 
 
