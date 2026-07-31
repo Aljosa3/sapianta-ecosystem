@@ -297,6 +297,8 @@ def prepare_unified_human_interface_project_context(
     owner_specific_continuation: dict[str, Any] | None = None
     informational_router_response: dict[str, Any] | None = None
     operational_classification: dict[str, Any] | None = None
+    admission_precedence: dict[str, Any] | None = None
+    admission_reference: Path | None = None
     active_clarification_state = replay_backed_uhi_clarification_state(prior_state)
     active_envelope = (
         active_clarification_state.get("operational_clarification_envelope")
@@ -332,6 +334,29 @@ def prepare_unified_human_interface_project_context(
             else message
         )
     else:
+        from aigol.runtime.platform_core_admission_precedence_runtime import (
+            determine_platform_core_admission_precedence,
+        )
+
+        admission_index = next_index(
+            session_root / "admission_precedence",
+            "*_admission_precedence_recorded.json",
+        )
+        admission_reference = (
+            session_root
+            / "admission_precedence"
+            / f"{admission_index:03d}_admission_precedence_recorded.json"
+        )
+        admission_precedence = determine_platform_core_admission_precedence(
+            request=message,
+            explicit_canonical_artifacts=validated_explicit_artifacts,
+            active_workspace_objective=(
+                prior_state.get("active_development_objective")
+                if isinstance(prior_state, dict)
+                else None
+            ),
+            replay_reference=admission_reference,
+        )
         operational_classification = _classify_new_operational_turn(
             message=message,
             workspace_state=prior_state,
@@ -350,7 +375,11 @@ def prepare_unified_human_interface_project_context(
             informational_router_response = operational_classification[
                 "platform_query_router_response"
             ]
-        development_intent = resolve_development_intent(message=message, workspace_state=prior_state)
+        development_intent = resolve_development_intent(
+            message=message,
+            workspace_state=prior_state,
+            admission_precedence=admission_precedence,
+        )
         effective_message = message
     goal_mapping = (
         development_intent.get("goal_mapping")
@@ -747,6 +776,17 @@ def prepare_unified_human_interface_project_context(
         "operational_turn_binding": deepcopy(operational_turn_binding),
         "operational_turn_binding_reference": turn_reference,
         "operational_turn_binding_hash": operational_turn_binding["artifact_hash"],
+        "admission_precedence": deepcopy(admission_precedence),
+        "admission_precedence_reference": (
+            str(admission_reference)
+            if admission_reference is not None
+            else None
+        ),
+        "admission_precedence_hash": (
+            admission_precedence.get("artifact_hash")
+            if isinstance(admission_precedence, dict)
+            else None
+        ),
         "operational_clarification_envelope": deepcopy(
             operational_clarification_envelope
         ),
@@ -3882,6 +3922,8 @@ def discover_candidate_capabilities(
     *,
     message: str,
     workspace_state: dict[str, Any] | None,
+    active_workspace_fallback_allowed: bool = True,
+    generic_capability_catalog_allowed: bool = True,
 ) -> dict[str, Any]:
     """Infer candidate Platform Core capabilities from ordinary human language."""
 
@@ -3902,19 +3944,25 @@ def discover_candidate_capabilities(
         else None
     )
     candidates: list[dict[str, Any]] = []
-    for capability in CAPABILITY_CATALOG:
-        evidence = [term for term in capability["keywords"] if term in target_text]
-        if not evidence:
-            continue
-        candidate = _candidate_capability(
-            capability=capability,
-            evidence=evidence,
-            message=raw_message,
-            workspace_state=workspace_state,
-            knowledge_index=knowledge_index,
-        )
-        candidates.append(candidate)
-    if not candidates and active_objective and _workspace_reference_detected(lowered):
+    if generic_capability_catalog_allowed:
+        for capability in CAPABILITY_CATALOG:
+            evidence = [term for term in capability["keywords"] if term in target_text]
+            if not evidence:
+                continue
+            candidate = _candidate_capability(
+                capability=capability,
+                evidence=evidence,
+                message=raw_message,
+                workspace_state=workspace_state,
+                knowledge_index=knowledge_index,
+            )
+            candidates.append(candidate)
+    if (
+        not candidates
+        and active_workspace_fallback_allowed
+        and active_objective
+        and _workspace_reference_detected(lowered)
+    ):
         candidates.append(
             _active_objective_candidate(
                 active_objective=active_objective,
@@ -4129,17 +4177,94 @@ def _workspace_reference_detected(lowered: str) -> bool:
     )
 
 
+def _validated_admission_precedence(
+    admission_precedence: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if admission_precedence is None:
+        return None
+    from aigol.runtime.platform_core_admission_precedence_runtime import (
+        validate_platform_core_admission_precedence,
+    )
+
+    return validate_platform_core_admission_precedence(admission_precedence)
+
+
+def _work_type_for_explicit_capability_admission(
+    *,
+    work_type_resolution: dict[str, Any],
+    admission_precedence: dict[str, Any],
+) -> dict[str, Any]:
+    resolution = deepcopy(work_type_resolution)
+    override = str(
+        admission_precedence.get("admission_work_type_override") or ""
+    )
+    if override not in NON_MUTATING_GOVERNED_WORK_TYPES:
+        raise FailClosedRuntimeError(
+            "explicit capability admission work type must remain non-mutating"
+        )
+    resolution.update(
+        {
+            "requested_work_type": override,
+            "work_type": override,
+            "work_type_source": (
+                "EXPLICIT_CERTIFIED_CAPABILITY_ADMISSION_PRECEDENCE"
+            ),
+            "work_type_source_text": admission_precedence.get(
+                "admission_candidate_identifier"
+            ),
+            "mutation_allowed": False,
+            "runtime_implementation": False,
+            "work_type_change_allowed": False,
+            "explicit_work_type_change_declared": False,
+            "work_type_conflict_detected": False,
+            "work_type_conflict_reason": None,
+            "admission_precedence_hash": admission_precedence.get(
+                "artifact_hash"
+            ),
+        }
+    )
+    resolution["artifact_hash"] = replay_hash(
+        {
+            key: value
+            for key, value in resolution.items()
+            if key != "artifact_hash"
+        }
+    )
+    return resolution
+
+
 def resolve_development_intent(
     *,
     message: str,
     workspace_state: dict[str, Any] | None = None,
+    admission_precedence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Resolve deterministic development intent once for summary and runtime binding."""
 
     raw_message = require_string(message, "message")
+    admission = _validated_admission_precedence(admission_precedence)
+    explicit_capability_admission = bool(
+        isinstance(admission, dict)
+        and admission.get("admission_status")
+        == "EXPLICIT_CERTIFIED_CAPABILITY_REQUEST_ADMITTED"
+    )
+    capability_admission_clarification = bool(
+        isinstance(admission, dict)
+        and admission.get("admission_status")
+        == "CAPABILITY_ADMISSION_CLARIFICATION_REQUIRED"
+    )
     candidate_capability_discovery = discover_candidate_capabilities(
         message=raw_message,
         workspace_state=workspace_state,
+        active_workspace_fallback_allowed=(
+            admission.get("active_workspace_fallback_allowed") is True
+            if isinstance(admission, dict)
+            else True
+        ),
+        generic_capability_catalog_allowed=not (
+            explicit_capability_admission
+            or capability_admission_clarification
+        ),
     )
     candidate_goal_target = str(candidate_capability_discovery.get("selected_goal_target") or "")
     base_goal_detected = goal_oriented_request_detected(raw_message)
@@ -4147,7 +4272,11 @@ def resolve_development_intent(
         candidate_goal_target not in {"", "general_project_goal"}
         and not _clarification_first_request_detected(raw_message)
     )
-    goal_detected = base_goal_detected or actionable_candidate_detected
+    goal_detected = (
+        base_goal_detected
+        or actionable_candidate_detected
+        or explicit_capability_admission
+    )
     guided_detected = guided_development_request_detected(raw_message)
     continuation_detected = continuation_development_request_detected(raw_message)
     collaborative_detected = collaborative_development_request_detected(raw_message)
@@ -4194,8 +4323,19 @@ def resolve_development_intent(
         clarification_reason = "multiple inferred capability targets remain plausible"
     if not goal_detected and not guided_detected:
         clarification_reason = "request is not a deterministic development request"
+    if capability_admission_clarification:
+        clarification_required = True
+        clarification_reason = str(
+            admission.get("clarification_reason")
+            or "explicit certified capability admission requires clarification"
+        )
 
     work_type_resolution = resolve_governed_work_type(raw_message)
+    if explicit_capability_admission:
+        work_type_resolution = _work_type_for_explicit_capability_admission(
+            work_type_resolution=work_type_resolution,
+            admission_precedence=admission,
+        )
     requested_work_type = str(work_type_resolution["requested_work_type"])
     canonical_runtime_prompt = canonical_development_runtime_prompt(governed_request)
     native_runtime_admissible = is_native_development_prompt(canonical_runtime_prompt)
@@ -4243,6 +4383,13 @@ def resolve_development_intent(
             "capability_resolution_decision"
         ),
         "human_capability_name_required": False,
+        "admission_precedence": deepcopy(admission),
+        "admission_precedence_hash": (
+            admission.get("artifact_hash")
+            if isinstance(admission, dict)
+            else None
+        ),
+        "explicit_certified_capability_admission": explicit_capability_admission,
         "clarification_required": clarification_required,
         "clarification_reason": clarification_reason,
         "goal_mapping": deepcopy(goal_mapping),
@@ -4793,8 +4940,15 @@ def development_intent_with_context_sufficiency(
         intent.get("clarification_completed") is False
         and intent.get("clarification_continuity_status") == "CLARIFICATION_STILL_REQUIRED"
     )
+    capability_admission_clarification_still_required = (
+        isinstance(intent.get("admission_precedence"), dict)
+        and intent["admission_precedence"].get("admission_status")
+        == "CAPABILITY_ADMISSION_CLARIFICATION_REQUIRED"
+    )
     clarification_required_after = (
-        slot_sufficiency_requires_clarification or active_clarification_still_required
+        slot_sufficiency_requires_clarification
+        or active_clarification_still_required
+        or capability_admission_clarification_still_required
     )
     intent["clarification_context_sufficiency_version"] = (
         PLATFORM_CORE_CLARIFICATION_CONTEXT_SUFFICIENCY_VERSION
@@ -4806,6 +4960,9 @@ def development_intent_with_context_sufficiency(
     )
     intent["active_clarification_still_required_after_context_sufficiency"] = (
         active_clarification_still_required
+    )
+    intent["capability_admission_clarification_still_required"] = (
+        capability_admission_clarification_still_required
     )
     intent["clarification_context_sufficiency_evaluation"] = deepcopy(sufficiency)
     intent["candidate_missing_semantic_slots"] = deepcopy(
