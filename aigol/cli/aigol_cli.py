@@ -3290,6 +3290,7 @@ def build_parser() -> argparse.ArgumentParser:
     next_cmd = subcommands.add_parser("next")
     next_cmd.add_argument("--session-id", default=None)
     next_cmd.add_argument("--prompt", action="append", default=None)
+    next_cmd.add_argument("--canonical-artifact-json", action="append", default=None)
     next_cmd.add_argument("--created-at", default="2026-07-02T00:00:00Z")
     next_cmd.add_argument("--runtime-root", default=".runtime/acli_next_conversational")
     next_cmd.add_argument("--workspace", default=".")
@@ -9975,6 +9976,25 @@ def _acli_next_conversational_prompts(args: argparse.Namespace) -> list[str]:
     return ["show governed development status"]
 
 
+def _acli_next_canonical_artifacts(args: argparse.Namespace) -> list[dict[str, Any]]:
+    artifacts: list[dict[str, Any]] = []
+    for index, value in enumerate(
+        getattr(args, "canonical_artifact_json", None) or [], start=1
+    ):
+        try:
+            artifact = json.loads(value)
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise FailClosedRuntimeError(
+                f"ACLI Next canonical artifact {index} must be valid JSON"
+            ) from exc
+        if not isinstance(artifact, dict):
+            raise FailClosedRuntimeError(
+                f"ACLI Next canonical artifact {index} must be a JSON object"
+            )
+        artifacts.append(artifact)
+    return artifacts
+
+
 def _should_run_persistent_acli_next(args: argparse.Namespace) -> bool:
     return (
         args.command == "next"
@@ -10066,6 +10086,7 @@ def _run_acli_next_runtime_bound_session(
     created_at: str,
     replay_dir: Path,
     workspace: str,
+    explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     presentation = run_acli_next_conversational_session(
         session_id=session_id,
@@ -10084,6 +10105,7 @@ def _run_acli_next_runtime_bound_session(
         governed_runtime_runner=run_interactive_conversation,
         presentation=presentation,
         operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        explicit_canonical_artifacts=explicit_canonical_artifacts,
     )
     result["runtime_binding_version"] = ACLI_NEXT_RUNTIME_BINDING_IMPLEMENTATION_VERSION
     result["runtime_binding_status"] = _acli_next_status_from_canonical_entry(result)
@@ -10522,6 +10544,7 @@ def run_command(args: argparse.Namespace) -> dict:
             created_at=args.created_at,
             replay_dir=Path(args.runtime_root),
             workspace=args.workspace,
+            explicit_canonical_artifacts=_acli_next_canonical_artifacts(args),
         )
     if args.command == "next" and args.next_command == "session":
         return run_acli_next_session(
