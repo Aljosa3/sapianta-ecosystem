@@ -8,6 +8,7 @@ certified runtime path.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections.abc import Callable
 from copy import deepcopy
@@ -38,6 +39,9 @@ from aigol.runtime.human_interface_runtime_entry_service import (
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.human_interface_conversation_runtime_v2 import (
     run_hir_conversation_terminal_v2,
+)
+from aigol.runtime.human_interface_conversation_execution_integration_v2 import (
+    run_complete_conversation_execution_terminal_v2,
 )
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
@@ -1885,6 +1889,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--human-identity", default="local-human")
     parser.add_argument("--ttl-seconds", type=int, default=3600)
     parser.add_argument(
+        "--canonical-artifact-json",
+        action="append",
+        default=[],
+        help="Transport one explicit canonical JSON object to Conversation execution.",
+    )
+    parser.add_argument(
+        "--canonical-artifact-path",
+        action="append",
+        default=[],
+        help="Transport one explicit canonical JSON-object file to Conversation execution.",
+    )
+    parser.add_argument(
         "--artifact-reference",
         action="append",
         default=[],
@@ -1893,7 +1909,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "mode",
         nargs="?",
-        choices=("submit", "conversation-v2"),
+        choices=("submit", "conversation-v2", "conversation-execute-v2"),
         help="Use stdin one-shot submission or isolated Conversation V2 mode.",
     )
     return parser
@@ -1901,6 +1917,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mode == "conversation-execute-v2":
+        run_complete_conversation_execution_terminal_v2(
+            session_id=args.session_id,
+            created_at=args.created_at,
+            runtime_root=args.runtime_root,
+            workspace=args.workspace,
+            human_identity=args.human_identity,
+            ttl_seconds=args.ttl_seconds,
+            explicit_canonical_artifacts=_conversation_execution_artifacts(args),
+        )
+        return 0
     if args.mode == "conversation-v2":
         run_hir_conversation_terminal_v2(
             session_identity=args.session_id,
@@ -1929,6 +1956,34 @@ def main(argv: list[str] | None = None) -> int:
         artifact_references=args.artifact_reference,
     )
     return 0
+
+
+def _conversation_execution_artifacts(args: argparse.Namespace) -> list[dict[str, Any]]:
+    artifacts: list[dict[str, Any]] = []
+    sources: list[tuple[str, str]] = [
+        ("JSON", value) for value in args.canonical_artifact_json
+    ]
+    for value in args.canonical_artifact_path:
+        path = Path(value)
+        try:
+            sources.append((str(path), path.read_text(encoding="utf-8")))
+        except OSError as exc:
+            raise FailClosedRuntimeError(
+                "Conversation execution canonical artifact is unreadable"
+            ) from exc
+    for label, source in sources:
+        try:
+            artifact = json.loads(source)
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise FailClosedRuntimeError(
+                f"Conversation execution canonical artifact {label} is invalid JSON"
+            ) from exc
+        if not isinstance(artifact, dict):
+            raise FailClosedRuntimeError(
+                "Conversation execution canonical artifact must be a JSON object"
+            )
+        artifacts.append(artifact)
+    return artifacts
 
 
 if __name__ == "__main__":
