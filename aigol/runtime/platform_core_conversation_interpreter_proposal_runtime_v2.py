@@ -690,6 +690,14 @@ def compare_validated_candidate_operation_sets_v2(
     return comparison
 
 
+def validate_candidate_operation_set_v2(
+    candidate_operation_set: dict[str, Any],
+) -> dict[str, Any]:
+    """Revalidate one candidate set without granting commit authority."""
+
+    return _validate_candidate_operation_set(candidate_operation_set)
+
+
 def _validate_proposal_envelope(proposal: Any) -> dict[str, Any]:
     if not isinstance(proposal, dict):
         _reject("PROPOSAL_SCHEMA_INVALID", "proposal must be an object")
@@ -1544,5 +1552,6 @@ __all__ = [
     "create_proposed_semantic_operation_v2",
     "create_source_span_v2",
     "create_source_turn_binding_v2",
+    "validate_candidate_operation_set_v2",
     "validate_conversation_interpreter_proposal_v2",
 ]
