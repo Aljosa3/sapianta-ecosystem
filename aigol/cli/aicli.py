@@ -36,6 +36,9 @@ from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.human_interface_conversation_runtime_v2 import (
+    run_hir_conversation_terminal_v2,
+)
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
     prepare_unified_human_interface_project_context,
@@ -1879,18 +1882,35 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--created-at", default=DEFAULT_CREATED_AT)
     parser.add_argument("--runtime-root", default=DEFAULT_RUNTIME_ROOT)
     parser.add_argument("--workspace", default=".")
+    parser.add_argument("--human-identity", default="local-human")
+    parser.add_argument("--ttl-seconds", type=int, default=3600)
     parser.add_argument(
         "--artifact-reference",
         action="append",
         default=[],
         help="Transport one opaque canonical Replay wrapper reference to Platform Core.",
     )
-    parser.add_argument("mode", nargs="?", choices=("submit",), help="Use stdin one-shot submission mode.")
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        choices=("submit", "conversation-v2"),
+        help="Use stdin one-shot submission or isolated Conversation V2 mode.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mode == "conversation-v2":
+        run_hir_conversation_terminal_v2(
+            session_identity=args.session_id,
+            created_at=args.created_at,
+            runtime_root=args.runtime_root,
+            workspace_identity=args.workspace,
+            human_identity=args.human_identity,
+            ttl_seconds=args.ttl_seconds,
+        )
+        return 0
     if args.mode == "submit":
         run_reference_uhi_submit_session(
             session_id=args.session_id,
