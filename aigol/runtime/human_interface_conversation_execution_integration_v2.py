@@ -641,14 +641,22 @@ def run_complete_conversation_execution_terminal_v2(
     )
     output_writer("execution_summary_hash: " + prepared["execution_summary"]["artifact_hash"])
     output_writer("next: " + prepared["expected_authorization_action"])
-    try:
-        action = input_reader("aicli-v2-authorization> ").strip()
-    except (EOFError, StopIteration):
-        return {
-            "preparation_status": EXECUTION_PREPARED_AWAITING_AUTHORIZATION,
-            "execution_authorized": False,
-            "worker_dispatched": False,
-        }
+    while True:
+        try:
+            action = input_reader("aicli-v2-authorization> ").strip()
+        except (EOFError, StopIteration):
+            return {
+                "preparation_status": EXECUTION_PREPARED_AWAITING_AUTHORIZATION,
+                "execution_authorized": False,
+                "worker_dispatched": False,
+            }
+        if action == prepared["expected_authorization_action"]:
+            break
+        output_writer(
+            "authorization_refused: EXACT_EXECUTION_SUMMARY_HASH_REQUIRED"
+        )
+        output_writer("execution_authorized: false")
+        output_writer("worker_dispatched: false")
     completed = authorize_and_execute_prepared_objective_v2(
         prepared, explicit_authorization_action=action
     )
