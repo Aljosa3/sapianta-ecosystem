@@ -16,6 +16,11 @@ from typing import Any, Callable
 from urllib import error, request
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.authenticated_provider_selection_runtime import (
+    reconstruct_authenticated_provider_selection,
+    select_authenticated_provider,
+    validate_authenticated_provider_selection,
+)
 from aigol.runtime.ocs_context_assembly_runtime import (
     OCS_CONTEXT_ASSEMBLED,
     OCS_CONTEXT_ASSEMBLY_ARTIFACT_V1,
@@ -38,6 +43,9 @@ OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses"
 DEFAULT_OPENAI_MODEL = "gpt-5.1"
 DEFAULT_TIMEOUT_SECONDS = 20
 MAX_PROVIDER_RESPONSE_CHARS = 8192
+PROVIDER_SELECTION_CAPABILITY = "PROPOSAL_GENERATION"
+PROVIDER_SELECTION_WORKFLOW = "LLM_COGNITION_PROVIDER"
+PROVIDER_SELECTION_DOMAIN = "GOVERNANCE"
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED_CLOSED = "FAILED_CLOSED"
@@ -111,6 +119,15 @@ def run_llm_cognition_provider_runtime(
         )
         if approval_evidence["human_approved"] is not True:
             raise FailClosedRuntimeError("explicit human approval is required before cognition provider invocation")
+        provider_selection = select_authenticated_provider(
+            selection_id=f"{cognition_provider_request_id}:UNIFIED-PROVIDER-SELECTION",
+            provider_id=provider_id,
+            workflow_type=PROVIDER_SELECTION_WORKFLOW,
+            required_capability=PROVIDER_SELECTION_CAPABILITY,
+            domain_id=PROVIDER_SELECTION_DOMAIN,
+            created_at=created_at,
+            replay_dir=replay_path,
+        )
         credential_policy = _load_governed_provider_credentials(provider_id=provider_id, credential_env=credential_env)
         request_artifact = create_llm_cognition_provider_request(
             cognition_provider_request_id=cognition_provider_request_id,
@@ -123,6 +140,7 @@ def run_llm_cognition_provider_runtime(
             approval_evidence=approval_evidence,
             credential_policy=credential_policy,
             timeout_seconds=timeout_seconds,
+            provider_selection=provider_selection,
         )
         _persist_step(replay_path, 0, REPLAY_STEPS[0], request_artifact)
         response_artifact = invoke_approved_cognition_provider(
@@ -224,11 +242,17 @@ def create_llm_cognition_provider_request(
     approval_evidence: dict[str, Any],
     credential_policy: dict[str, Any],
     timeout_seconds: int,
+    provider_selection: dict[str, Any],
 ) -> dict[str, Any]:
     context = _validate_ocs_context_artifact(ocs_context_artifact)
     contract = _validate_provider_contract(provider_contract, provider_id=provider_id)
     _verify_artifact_hash(_public_artifact(credential_policy), "credential policy")
     provider = _normalize_provider_id(provider_id)
+    selection = validate_authenticated_provider_selection(
+        binding=provider_selection,
+        provider_id=provider,
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
     request_text = _require_string(human_request, "human_request")
     timeout = _normalize_timeout(timeout_seconds)
     prompt = _provider_prompt(human_request=request_text, context=context)
@@ -269,6 +293,7 @@ def create_llm_cognition_provider_request(
         },
         "provider_contract_hash": contract["artifact_hash"],
         "credential_policy_hash": credential_policy["artifact_hash"],
+        "provider_selection": selection,
         "approval_evidence": approval_evidence,
         "lineage_refs": {
             "human_request_hash": replay_hash(request_text),
@@ -277,6 +302,8 @@ def create_llm_cognition_provider_request(
             "provider_contract_hash": contract["artifact_hash"],
             "credential_policy_hash": credential_policy["artifact_hash"],
             "approval_evidence_hash": approval_evidence["approval_evidence_hash"],
+            "provider_selection_hash": selection["artifact_hash"],
+            "provider_selection_replay_hash": selection["selection_replay_hash"],
         },
         "authority_flags": deepcopy(AUTHORITY_FLAGS),
         "replay_visible": True,
@@ -359,6 +386,8 @@ def invoke_approved_cognition_provider(
             "ocs_context_artifact_hash": request_artifact["ocs_context_reference"]["context_artifact_hash"],
             "provider_contract_hash": request_artifact["provider_contract_hash"],
             "approval_evidence_hash": request_artifact["approval_evidence"]["approval_evidence_hash"],
+            "provider_selection_hash": request_artifact["lineage_refs"]["provider_selection_hash"],
+            "provider_selection_replay_hash": request_artifact["lineage_refs"]["provider_selection_replay_hash"],
         },
         "replay_visible": True,
         "provider_invoked": True,
@@ -404,6 +433,8 @@ def create_llm_cognition_provider_replay_binding(
             "llm_cognition_provider_response_artifact_hash": response_artifact["artifact_hash"],
             "provider_contract_hash": request_artifact["provider_contract_hash"],
             "approval_evidence_hash": request_artifact["approval_evidence"]["approval_evidence_hash"],
+            "provider_selection_hash": request_artifact["lineage_refs"]["provider_selection_hash"],
+            "provider_selection_replay_hash": request_artifact["lineage_refs"]["provider_selection_replay_hash"],
         },
         "governance_preservation": {
             "constitutional_invariant": [
@@ -455,12 +486,21 @@ def reconstruct_llm_cognition_provider_replay(replay_dir: str | Path) -> dict[st
     request_artifact = wrappers[0]["artifact"]
     response_artifact = wrappers[1]["artifact"]
     binding = wrappers[2]["artifact"]
+    selection = request_artifact.get("provider_selection")
+    reconstruct_authenticated_provider_selection(
+        replay_dir=replay_path,
+        binding=selection,
+        provider_id=request_artifact.get("provider_id"),
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
     if response_artifact.get("provider_request_hash") != request_artifact["artifact_hash"]:
         raise FailClosedRuntimeError("LLM cognition provider replay response request hash mismatch")
     if binding["lineage_refs"]["llm_cognition_provider_request_artifact_hash"] != request_artifact["artifact_hash"]:
         raise FailClosedRuntimeError("LLM cognition provider replay request lineage mismatch")
     if binding["lineage_refs"]["llm_cognition_provider_response_artifact_hash"] != response_artifact["artifact_hash"]:
         raise FailClosedRuntimeError("LLM cognition provider replay response lineage mismatch")
+    if binding["lineage_refs"].get("provider_selection_hash") != selection.get("artifact_hash"):
+        raise FailClosedRuntimeError("LLM cognition provider selection lineage mismatch")
     return {
         "milestone_id": MILESTONE_ID,
         "final_classification": FINAL_CLASSIFICATION,
@@ -472,6 +512,7 @@ def reconstruct_llm_cognition_provider_replay(replay_dir: str | Path) -> dict[st
         "provider_identity": deepcopy(binding.get("provider_identity")),
         "provider_metadata": deepcopy(binding.get("provider_metadata")),
         "lineage_refs": deepcopy(binding.get("lineage_refs", {})),
+        "provider_selection_owner": selection.get("selection_owner"),
         "authority_flags": deepcopy(binding.get("authority_flags", {})),
         "replay_artifact_count": len(wrappers),
         "replay_visible": True,
@@ -619,6 +660,11 @@ def _validate_request_artifact(artifact: dict[str, Any]) -> None:
     if artifact.get("request_hash") != _compute_request_hash(artifact):
         raise FailClosedRuntimeError("LLM cognition provider request hash mismatch")
     _validate_authority_flags(artifact.get("authority_flags"))
+    validate_authenticated_provider_selection(
+        binding=artifact.get("provider_selection"),
+        provider_id=artifact.get("provider_id"),
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
 
 
 def _validate_response_artifact(artifact: dict[str, Any]) -> None:

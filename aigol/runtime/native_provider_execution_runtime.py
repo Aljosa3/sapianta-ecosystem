@@ -15,6 +15,11 @@ from typing import Any, Callable
 from urllib import error, request
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.authenticated_provider_selection_runtime import (
+    reconstruct_authenticated_provider_selection,
+    select_authenticated_provider,
+    validate_authenticated_provider_selection,
+)
 from aigol.runtime.execution_summary_runtime import (
     create_execution_summary,
     create_execution_summary_confirmation,
@@ -32,6 +37,9 @@ OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses"
 DEFAULT_OPENAI_MODEL = "gpt-5.1"
 DEFAULT_TIMEOUT_SECONDS = 20
 MAX_PROVIDER_RESPONSE_CHARS = 8192
+PROVIDER_SELECTION_CAPABILITY = "PROPOSAL_GENERATION"
+PROVIDER_SELECTION_WORKFLOW = "NATIVE_PROVIDER_EXECUTION"
+PROVIDER_SELECTION_DOMAIN = "NATIVE_DEVELOPMENT"
 
 STATUS_COMPLETED = "COMPLETED"
 STATUS_FAILED_CLOSED = "FAILED_CLOSED"
@@ -67,6 +75,7 @@ def run_native_provider_execution(
 
     replay_path = Path(replay_dir)
     try:
+        _ensure_replay_available(replay_path)
         approval = _approval_evidence(
             execution_id=execution_id,
             human_approved=human_approved,
@@ -75,6 +84,15 @@ def run_native_provider_execution(
         )
         if approval["human_approved"] is not True:
             raise FailClosedRuntimeError("explicit human approval is required before provider invocation")
+        provider_selection = select_authenticated_provider(
+            selection_id=f"{execution_id}:UNIFIED-PROVIDER-SELECTION",
+            provider_id=provider_id,
+            workflow_type=PROVIDER_SELECTION_WORKFLOW,
+            required_capability=PROVIDER_SELECTION_CAPABILITY,
+            domain_id=PROVIDER_SELECTION_DOMAIN,
+            created_at=created_at,
+            replay_dir=replay_path,
+        )
         summary = execution_summary_artifact or create_execution_summary(
             summary_id=f"{execution_id}:EXECUTION-SUMMARY",
             original_request=human_request,
@@ -129,6 +147,7 @@ def run_native_provider_execution(
             execution_summary_artifact=summary,
             human_confirmation_artifact=confirmation,
             timeout_seconds=timeout_seconds,
+            provider_selection=provider_selection,
         )
         _persist_step(replay_path, 1, "provider_request", provider_request)
         provider_response = invoke_provider_once(
@@ -215,9 +234,15 @@ def create_provider_request(
     execution_summary_artifact: dict[str, Any],
     human_confirmation_artifact: dict[str, Any],
     timeout_seconds: int,
+    provider_selection: dict[str, Any],
 ) -> dict[str, Any]:
     _verify_artifact_hash(_public_artifact(credential_policy))
     provider = _normalize_provider_id(provider_id)
+    selection = validate_authenticated_provider_selection(
+        binding=provider_selection,
+        provider_id=provider,
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
     schema_id = _schema_for_provider(provider)
     timeout = _normalize_timeout(timeout_seconds)
     request_text = _require_string(human_request, "human_request")
@@ -248,6 +273,7 @@ def create_provider_request(
         "execution_summary_hash": execution_summary_artifact["artifact_hash"],
         "human_confirmation_reference": human_confirmation_artifact["confirmation_id"],
         "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
+        "provider_selection": selection,
         "created_at": _require_string(created_at, "created_at"),
         "lineage_refs": {
             "human_request_hash": replay_hash(request_text),
@@ -255,6 +281,8 @@ def create_provider_request(
             "approval_evidence_hash": replay_hash(approval_evidence),
             "execution_summary_hash": execution_summary_artifact["artifact_hash"],
             "human_confirmation_hash": human_confirmation_artifact["artifact_hash"],
+            "provider_selection_hash": selection["artifact_hash"],
+            "provider_selection_replay_hash": selection["selection_replay_hash"],
         },
         "provider_authority": False,
         "implementation_authority": False,
@@ -272,6 +300,11 @@ def invoke_provider_once(
     transport: ProviderTransport | None = None,
 ) -> dict[str, Any]:
     _verify_artifact_hash(provider_request)
+    validate_authenticated_provider_selection(
+        binding=provider_request.get("provider_selection"),
+        provider_id=provider_request.get("provider_id"),
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
     if not _is_nonempty_string(credential_secret):
         raise FailClosedRuntimeError("provider credential secret is unavailable")
     provider_id = provider_request["provider_id"]
@@ -382,6 +415,8 @@ def create_replay_binding(
             "provider_response_hash": provider_response["artifact_hash"],
             "normalized_provider_response_hash": normalized_response["artifact_hash"],
             "human_request_hash": provider_request["lineage_refs"]["human_request_hash"],
+            "provider_selection_hash": provider_request["lineage_refs"]["provider_selection_hash"],
+            "provider_selection_replay_hash": provider_request["lineage_refs"]["provider_selection_replay_hash"],
         },
         "governance_preservation": {
             "human_approval_boundary_preserved": True,
@@ -411,6 +446,16 @@ def reconstruct_native_provider_execution_replay(replay_dir: str | Path) -> dict
         _verify_artifact_hash(artifact)
         wrappers.append(wrapper)
     final = wrappers[-1]["artifact"]
+    provider_request = wrappers[1]["artifact"]
+    selection = provider_request.get("provider_selection")
+    reconstruct_authenticated_provider_selection(
+        replay_dir=replay_path,
+        binding=selection,
+        provider_id=provider_request.get("provider_id"),
+        required_capability=PROVIDER_SELECTION_CAPABILITY,
+    )
+    if final.get("lineage_refs", {}).get("provider_selection_hash") != selection.get("artifact_hash"):
+        raise FailClosedRuntimeError("native provider execution selection lineage mismatch")
     return {
         "milestone_id": MILESTONE_ID,
         "final_classification": FINAL_CLASSIFICATION,
@@ -419,6 +464,7 @@ def reconstruct_native_provider_execution_replay(replay_dir: str | Path) -> dict
         "provider_invoked": final.get("provider_invoked") is True,
         "provider_id": final.get("provider_id"),
         "lineage_refs": final.get("lineage_refs", {}),
+        "provider_selection_owner": selection.get("selection_owner"),
         "replay_artifact_count": len(wrappers),
         "replay_visible": True,
         "append_only_valid": True,
@@ -596,6 +642,13 @@ def _persist_failure_sequence(replay_dir: Path, failure: dict[str, Any]) -> None
             artifact.pop("artifact_hash", None)
             artifact["artifact_hash"] = replay_hash(artifact)
             _persist_step(replay_dir, index, step, artifact)
+
+
+def _ensure_replay_available(replay_path: Path) -> None:
+    for index, step in enumerate(REPLAY_STEPS):
+        path = replay_path / f"{index:03d}_{step}.json"
+        if path.exists():
+            raise FailClosedRuntimeError(f"append-only runtime artifact already exists: {path.name}")
 
 
 def _public_artifact(artifact: dict[str, Any] | None) -> dict[str, Any]:
