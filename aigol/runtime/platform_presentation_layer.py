@@ -19,6 +19,10 @@ from aigol.runtime.certified_capability_invocation_binding_runtime import (
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_query_router import PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1
+from aigol.runtime.self_knowledge_platform_conversation_integration import (
+    SELF_KNOWLEDGE_PLATFORM_CORE_RESPONSE_V1,
+    validate_platform_core_self_knowledge_response,
+)
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -54,6 +58,7 @@ PROJECT_OBJECTIVE_INFERENCE_SERVICE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNT
 DURABLE_GOVERNED_WORK_SERVICE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 CERTIFIED_CAPABILITY_INVOCATION_SERVICE = "CERTIFIED_CAPABILITY_INVOCATION_BINDING"
 PLATFORM_QUERY_ROUTER_SERVICE = "UNIFIED_PLATFORM_QUERY_ROUTER"
+SELF_KNOWLEDGE_SERVICE = "SELF_KNOWLEDGE_QUERY_RUNTIME"
 
 PRESENTATION_READY = "PRESENTATION_READY"
 PRESENTATION_MISSING_EVIDENCE = "PRESENTATION_MISSING_EVIDENCE"
@@ -181,6 +186,8 @@ def _presentation_from_response(
     if isinstance(router_response, dict) and not isinstance(router_response.get("service_response"), dict):
         return _router_only_presentation(router_response)
     artifact_type = service_response.get("artifact_type")
+    if artifact_type == SELF_KNOWLEDGE_PLATFORM_CORE_RESPONSE_V1:
+        return _self_knowledge_presentation(service_response)
     if artifact_type == PLATFORM_KNOWLEDGE_RESPONSE_ARTIFACT_V1:
         return _knowledge_presentation(service_response, router_response=router_response)
     if artifact_type == ROOT_CAUSE_TRACE_RESPONSE_ARTIFACT_V1:
@@ -215,6 +222,90 @@ def _presentation_from_response(
             router_response=router_response,
         )
     raise FailClosedRuntimeError("platform presentation unsupported source artifact type")
+
+
+def _self_knowledge_presentation(response: dict[str, Any]) -> dict[str, Any]:
+    validated = validate_platform_core_self_knowledge_response(response)
+    query_response = validated["query_response"]
+    available = validated["projection_status"] == "AVAILABLE"
+    subject = validated["query_subject"]
+    source_references = deepcopy(validated["source_references"])
+    limitation_state = "NOT_APPLICABLE"
+    if subject == "KNOWN_LIMITATIONS":
+        limitation_state = (
+            "AUTHENTICATED_LIMITATIONS_PRESENT"
+            if available
+            else "AUTHENTICATED_LIMITATIONS_UNAVAILABLE"
+        )
+    summary = (
+        f"NON-AUTHORITATIVE READ-ONLY SELF KNOWLEDGE: {subject} — "
+        f"{validated['projection_status']}"
+    )
+    return _adapter_result(
+        presentation_status=(PRESENTATION_READY if available else PRESENTATION_MISSING_EVIDENCE),
+        summary=summary,
+        answer={
+            "authority_label": "NON_AUTHORITATIVE_READ_ONLY_SELF_KNOWLEDGE",
+            "conversation_authority": False,
+            "query_subject": subject,
+            "projection_status": validated["projection_status"],
+            "unavailable_reason": validated["unavailable_reason"],
+            "limitation_state": limitation_state,
+            "snapshot_identity": {
+                "artifact_type": validated["snapshot_artifact_type"],
+                "version": validated["snapshot_version"],
+                "hash": validated["snapshot_hash"],
+            },
+            "snapshot_digest": validated["snapshot_hash"],
+            "manifest_identity": {
+                "artifact_type": validated["manifest_artifact_type"],
+                "version": validated["manifest_version"],
+                "hash": validated["manifest_hash"],
+            },
+            "source_references": source_references,
+            "facts": deepcopy(query_response["facts"]),
+            "objective_created": False,
+            "g47_evidence_created": False,
+            "authorization_created": False,
+            "worker_invoked": False,
+            "provider_invoked": False,
+            "replay_authority": False,
+            "execution_evidence_created": False,
+        },
+        confidence="DETERMINISTIC_AUTHENTICATED_PROJECTION",
+        evidence=source_references,
+        reasoning_path=[
+            {
+                "step": "SELF_KNOWLEDGE_SNAPSHOT_VALIDATION",
+                "snapshot_validation_hash": validated["snapshot_validation_hash"],
+            },
+            {
+                "step": "SELF_KNOWLEDGE_QUERY_PROJECTION",
+                "query_request_hash": validated["query_request_hash"],
+                "query_response_hash": query_response["response_hash"],
+            },
+            {
+                "step": "NON_AUTHORITATIVE_CONVERSATION_RENDERING",
+                "authority": False,
+            },
+        ],
+        sources=[reference["path"] for reference in source_references],
+        recommended_next_step=(
+            "Review the exact authenticated source projections; no authority or execution action is available."
+            if available
+            else "The requested authenticated evidence is unavailable; no answer was inferred."
+        ),
+        certification_status=None,
+        governance_status=None,
+        replay_status=None,
+        warnings=[validated["unavailable_reason"]] if validated["unavailable_reason"] else [],
+        actions=[],
+        reusable_components=[
+            "SELF_KNOWLEDGE_SNAPSHOT_VALIDATION_RUNTIME",
+            "SELF_KNOWLEDGE_QUERY_RUNTIME",
+            "CANONICAL_PLATFORM_PRESENTATION_LAYER",
+        ],
+    )
 
 
 def _knowledge_presentation(
@@ -1161,6 +1252,8 @@ def _selected_service(
         return DURABLE_GOVERNED_WORK_SERVICE
     if artifact_type == CERTIFIED_CAPABILITY_INVOCATION_RESULT_ARTIFACT_V1:
         return CERTIFIED_CAPABILITY_INVOCATION_SERVICE
+    if artifact_type == SELF_KNOWLEDGE_PLATFORM_CORE_RESPONSE_V1:
+        return SELF_KNOWLEDGE_SERVICE
     if artifact_type == PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1:
         return PLATFORM_QUERY_ROUTER_SERVICE
     raise FailClosedRuntimeError("platform presentation cannot infer selected service")
@@ -1173,7 +1266,7 @@ def _query_from_sources(
 ) -> str | None:
     if isinstance(router_response, dict) and isinstance(router_response.get("query"), str):
         return str(router_response["query"])
-    for field_name in ("query", "raw_prompt", "governed_request"):
+    for field_name in ("query", "request_text", "raw_prompt", "governed_request"):
         value = service_response.get(field_name)
         if isinstance(value, str) and value.strip():
             return value

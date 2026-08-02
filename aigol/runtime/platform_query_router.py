@@ -51,6 +51,10 @@ from aigol.runtime.platform_knowledge_runtime import (
     PLATFORM_KNOWLEDGE_RUNTIME_VERSION,
     query_platform_knowledge,
 )
+from aigol.runtime.self_knowledge_platform_conversation_integration import (
+    run_platform_core_self_knowledge_query,
+    validate_platform_core_self_knowledge_response,
+)
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -70,6 +74,7 @@ DEVELOPMENT_COMPOSITION_PLAN_ROUTE = "PLATFORM_DEVELOPMENT_COMPOSITION_PLAN_RUNT
 PROJECT_OBJECTIVE_INFERENCE_ROUTE = "PLATFORM_PROJECT_OBJECTIVE_INFERENCE_RUNTIME"
 DURABLE_GOVERNED_WORK_ROUTE = "PLATFORM_DURABLE_GOVERNED_WORK_RUNTIME"
 ARCHITECTURAL_META_AUDIT_ROUTE = "PLATFORM_ARCHITECTURAL_META_AUDIT_COMPOSITION"
+SELF_KNOWLEDGE_ROUTE = "SELF_KNOWLEDGE_QUERY_RUNTIME"
 
 CONSTITUTIONAL_ASSESSMENT_RULE = "PLATFORM_CORE_CONSTITUTIONAL_ASSESSMENT_RULE_V1"
 CONSTITUTIONAL_REQUIRED_CAPABILITIES = (
@@ -307,6 +312,20 @@ def platform_query_route_descriptors() -> list[dict[str, Any]]:
     """Return routable Platform Core service descriptors."""
 
     return [descriptor.to_dict() for descriptor in PLATFORM_QUERY_ROUTE_DESCRIPTORS]
+
+
+def route_explicit_self_knowledge_query(
+    *,
+    request: str,
+    repository_root: str = ".",
+) -> dict[str, Any]:
+    """Route one explicit bounded Self Knowledge request read-only."""
+
+    response = run_platform_core_self_knowledge_query(
+        request_text=_require_string(request, "request"),
+        repository_root=repository_root,
+    )
+    return validate_platform_core_self_knowledge_response(response)
 
 
 def route_platform_query(
