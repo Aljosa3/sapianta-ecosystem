@@ -504,6 +504,7 @@ from aigol.runtime.acli_governed_development_execution_bridge import (
     ACLI_GOVERNED_DEVELOPMENT_BRIDGE_PROPOSAL_CAPTURE_V1,
     ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1,
     APPROVAL_REQUIRED as ACLI_GOVERNED_DEVELOPMENT_APPROVAL_REQUIRED,
+    AWAITING_CONSTITUTIONAL_COMPLETION,
     EXECUTION_COMPLETED as ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
     FAILED_CLOSED as ACLI_GOVERNED_DEVELOPMENT_FAILED_CLOSED,
     MODIFICATION_REQUESTED as ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED,
@@ -3924,7 +3925,10 @@ def run_interactive_conversation(
                     workspace_root=args.workspace,
                     replay_dir=turn_root / "acli_governed_development_execution_bridge",
                 )
-                if bridge_capture.get("bridge_status") == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED:
+                if bridge_capture.get("bridge_status") in {
+                    ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED,
+                    AWAITING_CONSTITUTIONAL_COMPLETION,
+                }:
                     pending_governed_development_bridge = None
                     pending_governed_development_bridge_restored = False
                     pending_governed_development_resume_presented = False
@@ -8344,6 +8348,10 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         replay_certification = {}
     bridge_status = bridge_capture.get("bridge_status")
     completed = bridge_status == ACLI_GOVERNED_DEVELOPMENT_EXECUTION_COMPLETED
+    awaiting_constitutional_completion = (
+        bridge_status
+        == AWAITING_CONSTITUTIONAL_COMPLETION
+    )
     modification_requested = bridge_status == ACLI_GOVERNED_DEVELOPMENT_MODIFICATION_REQUESTED
     rejected = bridge_status == "REJECTED"
     authorization_created = (
@@ -8428,12 +8436,16 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "approval_required": (
             bridge_capture.get("approval_required") is True
             and not completed
+            and not awaiting_constitutional_completion
             and not modification_requested
             and not rejected
         ),
         "operator_revision_requested": modification_requested,
-        "execution_requested": completed or certified_worker_continuation.get("execution_requested") is True,
+        "execution_requested": completed
+        or awaiting_constitutional_completion
+        or certified_worker_continuation.get("execution_requested") is True,
         "execution_started": completed
+        or awaiting_constitutional_completion
         or _continuation_flag_reached(
             "external_task_package_reached",
             certified_continuation,
@@ -8449,7 +8461,7 @@ def _interactive_acli_governed_development_bridge_turn_summary(
             worker_lifecycle,
         ),
         "approval_bypassed": bridge_capture.get("approval_bypassed") is True,
-        "governance_mutated": completed,
+        "governance_mutated": completed or awaiting_constitutional_completion,
         "repository_mutation_performed": bridge_capture.get("mutation_performed") is True,
         "validation_executed": bridge_capture.get("validation_executed") is True,
         "upstream_human_approval_consumed": bridge_capture.get("upstream_human_approval_consumed") is True,

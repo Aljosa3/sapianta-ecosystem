@@ -29,7 +29,7 @@ from aigol.runtime.governed_repository_mutation_runtime import (
     execute_governed_repository_mutation,
 )
 from aigol.runtime.governed_development_workflow_runtime import (
-    GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED,
+    AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION,
     create_governed_development_approval,
     create_governed_development_proposal,
     execute_governed_development_workflow,
@@ -507,8 +507,9 @@ def test_governed_development_revalidates_before_each_component(tmp_path: Path) 
         replay_dir=tmp_path / "development-replay",
     )
 
-    assert capture["execution_status"] == GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED, capture[
-        "failure_reason"
-    ]
+    assert (
+        capture["execution_status"]
+        == AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION
+    ), capture["failure_reason"]
     assert (workspace / governance_target).is_file()
     assert (workspace / target).is_file()

@@ -9,7 +9,7 @@ from typing import Any
 
 from aigol.runtime.governed_development_workflow_runtime import (
     APPROVED,
-    GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED,
+    AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION,
     create_governed_development_approval,
     create_governed_development_proposal,
     execute_governed_development_workflow,
@@ -35,6 +35,9 @@ ACLI_GOVERNED_DEVELOPMENT_SCOPE_PROJECTION_V1 = (
 
 APPROVAL_REQUIRED = "APPROVAL_REQUIRED"
 EXECUTION_COMPLETED = "EXECUTION_COMPLETED"
+AWAITING_CONSTITUTIONAL_COMPLETION = (
+    AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION
+)
 FAILED_CLOSED = "FAILED_CLOSED"
 REJECTED = "REJECTED"
 REQUEST_MODIFICATION = "REQUEST_MODIFICATION"
@@ -365,7 +368,7 @@ def approve_and_execute_acli_governed_development(
             replay_dir=replay_path / "governed_development_workflow",
         )
         workflow_replay = {}
-        if workflow_capture.get("execution_status") == GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED:
+        if workflow_capture.get("execution_status") == AWAITING_CONSTITUTIONAL_COMPLETION:
             workflow_replay = reconstruct_governed_development_workflow_replay(
                 workflow_capture["governed_development_replay_reference"]
             )
@@ -376,8 +379,9 @@ def approve_and_execute_acli_governed_development(
             "prompt_id": pending["prompt_id"],
             "workflow_id": WORKFLOW_ID,
             "bridge_status": (
-                EXECUTION_COMPLETED
-                if workflow_capture.get("execution_status") == GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED
+                AWAITING_CONSTITUTIONAL_COMPLETION
+                if workflow_capture.get("execution_status")
+                == AWAITING_CONSTITUTIONAL_COMPLETION
                 else FAILED_CLOSED
             ),
             "decision": APPROVED,
@@ -386,13 +390,21 @@ def approve_and_execute_acli_governed_development(
             "approval_hash": approval["artifact_hash"],
             "workflow_capture": workflow_capture,
             "workflow_replay": workflow_replay,
-            "approval_required": True,
+            "approval_required": False,
             "approval_bypassed": False,
-            "mutation_performed": workflow_capture.get("execution_status") == GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED,
+            "mutation_performed": (
+                workflow_capture.get("execution_status")
+                == AWAITING_CONSTITUTIONAL_COMPLETION
+            ),
             "worker_invoked": (
                 (workflow_capture.get("governed_repository_mutation_capture") or {}).get("worker_invoked") is True
             ),
-            "validation_executed": workflow_capture.get("execution_status") == GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED,
+            "validation_executed": (
+                workflow_capture.get("execution_status")
+                == AWAITING_CONSTITUTIONAL_COMPLETION
+            ),
+            "constitutional_completion_reached": False,
+            "promotion_eligible": False,
             "repository_mutation_worker_protections_preserved": workflow_capture.get(
                 "repository_mutation_worker_protections_preserved"
             )
@@ -580,7 +592,7 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
                 "",
                 "Operator Summary",
                 "",
-                "Approved and executed.",
+                "Approved mutation and validation completed; constitutional completion is pending.",
                 "",
                 "ACLI used your approval to run the governed development workflow.",
                 "",
@@ -589,6 +601,7 @@ def render_acli_governed_development_bridge_summary(capture: dict[str, Any]) -> 
                 "- the repository mutation worker path was used",
                 "- validation ran successfully",
                 "- replay evidence was recorded",
+                "- G48 certification and governed promotion remain required",
                 "",
                 "Safety checks:",
                 "- approval was not bypassed",

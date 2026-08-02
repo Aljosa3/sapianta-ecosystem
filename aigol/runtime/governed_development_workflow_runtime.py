@@ -29,10 +29,13 @@ from aigol.runtime.constitutional_reuse_proof_production_gate import (
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
-AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_VERSION = "AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_V2"
+AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_VERSION = "AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_V3"
 GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V2"
 GOVERNED_DEVELOPMENT_APPROVAL_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_APPROVAL_ARTIFACT_V1"
-GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V1"
+GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V2"
+AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION = (
+    "AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION"
+)
 GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED = "GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED"
 FAILED_CLOSED = "FAILED_CLOSED"
 
@@ -307,7 +310,7 @@ def execute_governed_development_workflow(
         )
         outcome = _outcome_artifact(
             execution_id=execution_id,
-            status=GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED,
+            status=AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION,
             proposal=proposal,
             approval=approval,
             governance_capture=governance_capture,
@@ -374,6 +377,10 @@ def reconstruct_governed_development_workflow_replay(replay_dir: str | Path) -> 
         raise FailClosedRuntimeError("governed development governance component hash mismatch")
     if outcome["governed_repository_mutation_hash"] != repository_outcome["artifact_hash"]:
         raise FailClosedRuntimeError("governed development repository component hash mismatch")
+    if outcome.get("reuse_proof_g47_scope_binding_hash") != proposal.get(
+        "reuse_proof_g47_scope_binding_hash"
+    ):
+        raise FailClosedRuntimeError("governed development constitutional scope binding mismatch")
     return {
         "execution_id": outcome["execution_id"],
         "execution_status": outcome["execution_status"],
@@ -419,6 +426,9 @@ def _outcome_artifact(
         "proposal_hash": proposal["artifact_hash"],
         "approval_id": approval["approval_id"],
         "approval_hash": approval["artifact_hash"],
+        "reuse_proof_g47_scope_binding_hash": proposal[
+            "reuse_proof_g47_scope_binding_hash"
+        ],
         "governance_artifact_creation_hash": governance_outcome["artifact_hash"],
         "governance_artifact_creation_replay_hash": governance_replay["replay_hash"],
         "governed_repository_mutation_hash": repository_outcome["artifact_hash"],
@@ -431,6 +441,8 @@ def _outcome_artifact(
         "validation_allowlists_preserved": True,
         "repository_mutation_worker_protections_preserved": True,
         "acli_governed_development_ready_claimed": False,
+        "constitutional_completion_reached": False,
+        "promotion_eligible": False,
         "executed_by": _require_string(executed_by, "executed_by"),
         "executed_at": _require_string(executed_at, "executed_at"),
         "failure_reason": failure_reason,
@@ -456,6 +468,7 @@ def _failed_outcome_artifact(
         "proposal_hash": None,
         "approval_id": None,
         "approval_hash": None,
+        "reuse_proof_g47_scope_binding_hash": None,
         "governance_artifact_creation_hash": None,
         "governance_artifact_creation_replay_hash": None,
         "governed_repository_mutation_hash": None,
@@ -468,6 +481,8 @@ def _failed_outcome_artifact(
         "validation_allowlists_preserved": True,
         "repository_mutation_worker_protections_preserved": True,
         "acli_governed_development_ready_claimed": False,
+        "constitutional_completion_reached": False,
+        "promotion_eligible": False,
         "executed_by": executed_by if isinstance(executed_by, str) else None,
         "executed_at": executed_at if isinstance(executed_at, str) else None,
         "failure_reason": failure_reason,

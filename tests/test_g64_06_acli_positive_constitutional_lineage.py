@@ -252,7 +252,9 @@ def test_positive_acli_path_runs_g63_and_fresh_g47_before_bridge_and_worker(
         "sha256:"
     )
     assert proposal_turn["reuse_proof_g47_scope_binding_hash"].startswith("sha256:")
-    assert execution_turn["response_status"] == "EXECUTION_COMPLETED"
+    assert execution_turn["response_status"] == (
+        "AWAITING_CONSTITUTIONAL_CERTIFICATION_AND_PROMOTION"
+    )
     assert execution_turn["worker_invoked"] is True
     assert execution_turn["repository_mutation_performed"] is True
     lineage_replay = (

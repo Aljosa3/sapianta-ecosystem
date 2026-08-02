@@ -155,6 +155,29 @@ def certify_constitutional_governance(
     return certification.with_certification_hash()
 
 
+def validate_constitutional_certification(
+    assessment: ConstitutionalGovernanceAssessment,
+    certification: ConstitutionalCertification,
+) -> ConstitutionalCertification:
+    """Validate externally supplied Certification evidence against its owner input."""
+
+    _verify_governance_assessment(assessment)
+    if not isinstance(certification, ConstitutionalCertification):
+        raise FailClosedRuntimeError(
+            "constitutional Certification requires immutable Certification evidence"
+        )
+    expected = certify_constitutional_governance(assessment)
+    if certification != expected:
+        raise FailClosedRuntimeError(
+            "constitutional Certification evidence does not match Governance assessment"
+        )
+    if certification.certification_hash != replay_hash(
+        certification.to_dict(include_hash=False)
+    ):
+        raise FailClosedRuntimeError("constitutional Certification hash mismatch")
+    return certification
+
+
 def _verify_governance_assessment(assessment: Any) -> None:
     if not isinstance(assessment, ConstitutionalGovernanceAssessment):
         raise FailClosedRuntimeError("constitutional Certification requires an immutable Governance assessment")
@@ -260,4 +283,5 @@ __all__ = [
     "ConstitutionalCertification",
     "ConstitutionalCertificationStatus",
     "certify_constitutional_governance",
+    "validate_constitutional_certification",
 ]
