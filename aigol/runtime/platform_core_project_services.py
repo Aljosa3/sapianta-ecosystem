@@ -234,6 +234,7 @@ def prepare_unified_human_interface_project_context(
     reuse_proof_exemption_code: str | None = None,
     reuse_proof_exemption_evidence: dict[str, Any] | None = None,
     reuse_proof_authenticated_baseline: dict[str, Any] | None = None,
+    reuse_proof_proposed_scope: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
@@ -536,14 +537,33 @@ def prepare_unified_human_interface_project_context(
             and isinstance(source_proof.get("authenticated_baseline"), dict)
             else None
         )
-        proposed_scope = {
-            "entry_point": "PLATFORM_CORE_PROJECT_SERVICES",
-            "work_type": "IMPLEMENTATION",
-            "project_objective_hash": project_objective["artifact_hash"],
-            "knowledge_reuse_hash": replay_hash(knowledge_reuse),
-            "target_paths": [],
-            "governance_target_paths": [],
-        }
+        if reuse_proof_proposed_scope is not None and not isinstance(
+            reuse_proof_proposed_scope,
+            dict,
+        ):
+            raise FailClosedRuntimeError(
+                "reuse proof proposed scope must be an object"
+            )
+        proposed_scope = (
+            deepcopy(reuse_proof_proposed_scope)
+            if isinstance(reuse_proof_proposed_scope, dict)
+            else {
+                "entry_point": "PLATFORM_CORE_PROJECT_SERVICES",
+                "target_paths": [],
+                "governance_target_paths": [],
+            }
+        )
+        for field, expected in (
+            ("work_type", "IMPLEMENTATION"),
+            ("project_objective_hash", project_objective["artifact_hash"]),
+            ("knowledge_reuse_hash", replay_hash(knowledge_reuse)),
+        ):
+            supplied = proposed_scope.get(field)
+            if supplied is not None and supplied != expected:
+                raise FailClosedRuntimeError(
+                    f"reuse proof proposed scope {field} conflicts with Platform Core"
+                )
+            proposed_scope[field] = expected
         applicability = (
             validate_reuse_proof_applicability(reuse_proof_applicability)
             if isinstance(reuse_proof_applicability, dict)

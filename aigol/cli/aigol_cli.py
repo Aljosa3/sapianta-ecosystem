@@ -511,6 +511,9 @@ from aigol.runtime.acli_governed_development_execution_bridge import (
     propose_acli_governed_development_execution,
     render_acli_governed_development_bridge_summary,
 )
+from aigol.runtime.acli_positive_constitutional_lineage_runtime import (
+    prepare_acli_positive_constitutional_lineage,
+)
 from aigol.runtime.approved_durable_work_worker_payload_binding import (
     bind_approved_durable_work_to_worker_payload,
     render_approved_durable_work_worker_payload_binding,
@@ -614,6 +617,35 @@ def _bind_supported_executable_domain_bundle(
 
 def _json(data: dict[str, Any]) -> str:
     return json.dumps(data, sort_keys=True, separators=(",", ":"))
+
+
+def _optional_constitutional_artifact(
+    args: argparse.Namespace,
+    *,
+    direct_field: str,
+    path_field: str,
+) -> dict[str, Any] | None:
+    direct = getattr(args, direct_field, None)
+    path_value = str(getattr(args, path_field, "") or "").strip()
+    if isinstance(direct, dict) and path_value:
+        raise FailClosedRuntimeError(
+            f"{direct_field} and {path_field} cannot both be supplied"
+        )
+    if direct is not None:
+        if not isinstance(direct, dict):
+            raise FailClosedRuntimeError(f"{direct_field} must be an artifact")
+        return deepcopy(direct)
+    if not path_value:
+        return None
+    loaded = load_json(Path(path_value))
+    if not isinstance(loaded, dict):
+        raise FailClosedRuntimeError(f"{path_field} must contain a JSON object")
+    if "artifact" in loaded and not isinstance(loaded.get("artifact"), dict):
+        raise FailClosedRuntimeError(
+            f"{path_field} artifact wrapper must contain an object"
+        )
+    artifact = loaded.get("artifact") if "artifact" in loaded else loaded
+    return deepcopy(artifact)
 
 
 def _replay_visible_context_source(
@@ -3227,6 +3259,8 @@ def build_parser() -> argparse.ArgumentParser:
     conversation.add_argument("--auto-continue", action="store_true")
     conversation.add_argument("--enable-llm-assisted-explanation", action="store_true")
     conversation.add_argument("--llm-explanation-provider-id", default="UNSPECIFIED_EXPLANATION_PROVIDER")
+    conversation.add_argument("--reuse-proof-input-json", default="")
+    conversation.add_argument("--reuse-proof-result-json", default="")
 
     show_latest_chain = subcommands.add_parser("show-latest-chain")
     show_latest_chain.add_argument("--replay-root", default=".")
@@ -3548,6 +3582,23 @@ def run_interactive_conversation(
         getattr(args, "llm_explanation_provider_id", "UNSPECIFIED_EXPLANATION_PROVIDER")
         or "UNSPECIFIED_EXPLANATION_PROVIDER"
     )
+    reuse_proof_input_artifact = _optional_constitutional_artifact(
+        args,
+        direct_field="reuse_proof_input_artifact",
+        path_field="reuse_proof_input_json",
+    )
+    reuse_proof_result_artifact = _optional_constitutional_artifact(
+        args,
+        direct_field="reuse_proof_result_artifact",
+        path_field="reuse_proof_result_json",
+    )
+    if (
+        reuse_proof_input_artifact is not None
+        and reuse_proof_result_artifact is not None
+    ):
+        raise FailClosedRuntimeError(
+            "AiCLI conversation accepts one reuse proof artifact, not both"
+        )
     pending_auto_continuation: str | None = None
     pending_post_entry_continuation: dict[str, Any] | None = None
     auto_continue_turns = 0
@@ -5506,11 +5557,28 @@ def run_interactive_conversation(
                     )
                 )
             elif authoritative_workflow_id == CONVERSATIONAL_GOVERNED_DEVELOPMENT_WORKFLOW:
+                routing_capture_for_bridge = conversational_routing_capture or {}
+                if (
+                    reuse_proof_input_artifact is not None
+                    or reuse_proof_result_artifact is not None
+                ):
+                    lineage_capture = prepare_acli_positive_constitutional_lineage(
+                        lineage_id=f"{prompt_id}:ACLI-POSITIVE-CONSTITUTIONAL-LINEAGE",
+                        prompt_id=prompt_id,
+                        human_prompt=human_prompt,
+                        conversational_routing_capture=routing_capture_for_bridge,
+                        workspace_root=args.workspace,
+                        created_at=created_at,
+                        replay_dir=turn_root / "acli_positive_constitutional_lineage",
+                        reuse_proof_input=reuse_proof_input_artifact,
+                        reuse_proof_result=reuse_proof_result_artifact,
+                    )
+                    routing_capture_for_bridge = lineage_capture["routing_capture"]
                 bridge_capture = propose_acli_governed_development_execution(
                     bridge_id=f"{prompt_id}:ACLI-GOVERNED-DEVELOPMENT-BRIDGE",
                     prompt_id=prompt_id,
                     human_prompt=human_prompt,
-                    conversational_routing_capture=conversational_routing_capture or {},
+                    conversational_routing_capture=routing_capture_for_bridge,
                     universal_intake_artifact=universal_intake_capture["universal_intake_artifact"],
                     workspace_root=args.workspace,
                     proposed_by=args.operator_context or "HUMAN_OPERATOR",
@@ -8315,6 +8383,18 @@ def _interactive_acli_governed_development_bridge_turn_summary(
         "conversational_workflow_id": bridge_capture.get("workflow_id"),
         "existing_runtime": "acli_governed_development_execution_bridge",
         "existing_cli_command": "aigol conversation",
+        "acli_positive_constitutional_lineage_id": bridge_capture.get(
+            "acli_positive_constitutional_lineage_id"
+        ),
+        "acli_positive_constitutional_lineage_hash": bridge_capture.get(
+            "acli_positive_constitutional_lineage_hash"
+        ),
+        "constitutional_lineage_transport_hash": bridge_capture.get(
+            "constitutional_lineage_transport_hash"
+        ),
+        "reuse_proof_g47_scope_binding_hash": bridge_capture.get(
+            "reuse_proof_g47_scope_binding_hash"
+        ),
         "coverage": None,
         "clarification_required": False,
         "open_clarification_detected": False,

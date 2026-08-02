@@ -29,6 +29,9 @@ ACLI_GOVERNED_DEVELOPMENT_BRIDGE_PROPOSAL_CAPTURE_V1 = (
 ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1 = (
     "ACLI_GOVERNED_DEVELOPMENT_BRIDGE_EXECUTION_CAPTURE_V1"
 )
+ACLI_GOVERNED_DEVELOPMENT_SCOPE_PROJECTION_V1 = (
+    "ACLI_GOVERNED_DEVELOPMENT_SCOPE_PROJECTION_V1"
+)
 
 APPROVAL_REQUIRED = "APPROVAL_REQUIRED"
 EXECUTION_COMPLETED = "EXECUTION_COMPLETED"
@@ -44,6 +47,88 @@ REQUESTED_IDENTIFIER_MODE = "REQUESTED_IDENTIFIER"
 GENERATED_FALLBACK_MODE = "GENERATED_FALLBACK"
 AMBIGUOUS_FAIL_CLOSED_MODE = "AMBIGUOUS_FAIL_CLOSED"
 COLLISION_FAIL_CLOSED_MODE = "COLLISION_FAIL_CLOSED"
+
+
+def derive_acli_governed_development_scope(
+    *,
+    prompt_id: str,
+    human_prompt: str,
+    conversational_routing_capture: dict[str, Any],
+    workspace_root: str | Path,
+) -> dict[str, Any]:
+    """Project the bridge-owned mutation scope without creating a proposal."""
+
+    routing_decision = _require_artifact(
+        conversational_routing_capture.get("routing_decision_artifact"),
+        "routing_decision_artifact",
+    )
+    workflow_selection = _require_artifact(
+        conversational_routing_capture.get("workflow_selection_artifact"),
+        "workflow_selection_artifact",
+    )
+    if workflow_selection.get("workflow_id") != WORKFLOW_ID:
+        raise FailClosedRuntimeError(
+            "ACLI governed development bridge failed closed: workflow mismatch"
+        )
+    workspace = Path(workspace_root)
+    if not workspace.exists() or not workspace.is_dir():
+        raise FailClosedRuntimeError(
+            "ACLI governed development bridge failed closed: workspace missing"
+        )
+    seed = replay_hash(
+        {
+            "prompt_id": _require_string(prompt_id, "prompt_id"),
+            "human_prompt": _require_string(human_prompt, "human_prompt"),
+            "workflow_selection_hash": workflow_selection["artifact_hash"],
+        }
+    )[7:23]
+    naming_decision = _proposal_naming_decision(
+        human_prompt=human_prompt,
+        seed=seed,
+        workspace=workspace,
+    )
+    repository_mutation = _repository_file_mutation(
+        seed=seed,
+        human_prompt=human_prompt,
+        artifact_identifier=naming_decision["selected_artifact_identifier"],
+    )
+    governance_artifact = _governance_artifact(
+        seed=seed,
+        human_prompt=human_prompt,
+        naming_decision=naming_decision,
+    )
+    proposed_scope = {
+        "entry_point": "ACLI_GOVERNED_DEVELOPMENT",
+        "work_type": "IMPLEMENTATION",
+        "target_paths": [repository_mutation["target_path"]],
+        "governance_target_paths": [governance_artifact["target_path"]],
+        "allowed_intermediate_deltas": [
+            {
+                "target_path": governance_artifact["target_path"],
+                "content_hash": replay_hash(governance_artifact["proposed_content"]),
+            }
+        ],
+    }
+    artifact = {
+        "artifact_type": ACLI_GOVERNED_DEVELOPMENT_SCOPE_PROJECTION_V1,
+        "runtime_version": ACLI_GOVERNED_DEVELOPMENT_EXECUTION_BRIDGE_VERSION,
+        "prompt_id": prompt_id,
+        "human_prompt_hash": replay_hash(human_prompt),
+        "routing_decision_reference": routing_decision["routing_decision_id"],
+        "routing_decision_hash": routing_decision["artifact_hash"],
+        "workflow_selection_reference": workflow_selection["workflow_selection_id"],
+        "workflow_selection_hash": workflow_selection["artifact_hash"],
+        "proposed_scope": proposed_scope,
+        "naming_decision": naming_decision,
+        "repository_mutation": repository_mutation,
+        "governance_artifact": governance_artifact,
+        "proposal_created": False,
+        "approval_created": False,
+        "repository_mutated": False,
+        "worker_invoked": False,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
 
 
 def propose_acli_governed_development_execution(
@@ -91,18 +176,13 @@ def propose_acli_governed_development_execution(
             universal_intake_artifact=universal_intake_artifact,
             created_at=created_at,
         )
-        seed = replay_hash(
-            {
-                "prompt_id": prompt_id,
-                "human_prompt": human_prompt,
-                "workflow_selection_hash": workflow_selection["artifact_hash"],
-            }
-        )[7:23]
-        naming_decision = _proposal_naming_decision(
+        scope_projection = derive_acli_governed_development_scope(
+            prompt_id=prompt_id,
             human_prompt=human_prompt,
-            seed=seed,
-            workspace=workspace,
+            conversational_routing_capture=conversational_routing_capture,
+            workspace_root=workspace,
         )
+        naming_decision = scope_projection["naming_decision"]
         supplied_scope_binding = (
             reuse_proof_g47_scope_binding
             if isinstance(reuse_proof_g47_scope_binding, dict)
@@ -111,11 +191,7 @@ def propose_acli_governed_development_execution(
         scope_binding = validate_reuse_proof_g47_scope_binding(
             supplied_scope_binding
         )
-        repository_mutation = _repository_file_mutation(
-            seed=seed,
-            human_prompt=human_prompt,
-            artifact_identifier=naming_decision["selected_artifact_identifier"],
-        )
+        repository_mutation = scope_projection["repository_mutation"]
         if scope_binding["proposed_scope"].get("target_paths") != [
             repository_mutation["target_path"]
         ]:
@@ -128,11 +204,7 @@ def propose_acli_governed_development_execution(
             raise FailClosedRuntimeError(
                 "FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT"
             )
-        expected_governance = _governance_artifact(
-            seed=seed,
-            human_prompt=human_prompt,
-            naming_decision=naming_decision,
-        )
+        expected_governance = scope_projection["governance_artifact"]
         if scope_binding["proposed_scope"].get("allowed_intermediate_deltas") != [
             {
                 "target_path": expected_governance["target_path"],
@@ -191,6 +263,25 @@ def propose_acli_governed_development_execution(
             "proposal_artifact": proposal,
             "reuse_proof_g47_scope_binding": scope_binding,
             "reuse_proof_g47_scope_binding_hash": scope_binding["artifact_hash"],
+            "acli_positive_constitutional_lineage_id": (
+                conversational_routing_capture.get(
+                    "acli_positive_constitutional_lineage_id"
+                )
+            ),
+            "acli_positive_constitutional_lineage_hash": (
+                conversational_routing_capture.get(
+                    "acli_positive_constitutional_lineage_hash"
+                )
+            ),
+            "constitutional_lineage_transport_hash": (
+                conversational_routing_capture.get(
+                    "constitutional_lineage_transport_hash"
+                )
+            ),
+            "governed_development_scope_projection": scope_projection,
+            "governed_development_scope_projection_hash": scope_projection[
+                "artifact_hash"
+            ],
             "proposal_naming_decision": naming_decision,
             "proposal_preview_artifact": proposal_preview,
             "approval_required": True,
@@ -743,7 +834,7 @@ def _governance_artifact(*, seed: str, human_prompt: str, naming_decision: dict[
             "- Replay remains source of truth.",
             "",
         ]
-    )
+    ).strip()
     return {
         "target_path": target_path,
         "artifact_title": title,
