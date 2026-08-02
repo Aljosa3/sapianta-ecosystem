@@ -52,8 +52,17 @@ from aigol.runtime.platform_knowledge_runtime import (
     query_platform_knowledge,
 )
 from aigol.runtime.self_knowledge_platform_conversation_integration import (
+    SELF_KNOWLEDGE_PLATFORM_CONVERSATION_INTEGRATION_VERSION,
+    SELF_KNOWLEDGE_PLATFORM_CORE_RESPONSE_V1,
     run_platform_core_self_knowledge_query,
     validate_platform_core_self_knowledge_response,
+)
+from aigol.runtime.self_knowledge_request_classification import (
+    CLARIFICATION_REQUIRED as SELF_KNOWLEDGE_CLARIFICATION_REQUIRED,
+    DEVELOPMENT_OBJECTIVE,
+    SELF_KNOWLEDGE_QUERY,
+    classify_self_knowledge_request,
+    validate_self_knowledge_request_classification,
 )
 from aigol.runtime.transport.serialization import replay_hash
 
@@ -328,6 +337,123 @@ def route_explicit_self_knowledge_query(
     return validate_platform_core_self_knowledge_response(response)
 
 
+def _route_preclassified_self_knowledge_request(
+    *,
+    query: str,
+    request_classification: dict[str, Any],
+    repository_root: str,
+    created_at: str,
+) -> dict[str, Any]:
+    """Wrap one pre-objective G65 request in the existing router contract."""
+
+    classification = validate_self_knowledge_request_classification(
+        request_classification
+    )
+    classification_status = classification["request_classification"]
+    if classification_status not in {
+        SELF_KNOWLEDGE_QUERY,
+        SELF_KNOWLEDGE_CLARIFICATION_REQUIRED,
+    }:
+        raise FailClosedRuntimeError(
+            "preclassified Self Knowledge route requires a bounded classification"
+        )
+    route_ready = classification_status == SELF_KNOWLEDGE_QUERY
+    service_response = (
+        route_explicit_self_knowledge_query(
+            request=classification["canonical_self_knowledge_request"],
+            repository_root=repository_root,
+        )
+        if route_ready
+        else None
+    )
+    descriptor = PlatformServiceRouteDescriptor(
+        service_identifier=SELF_KNOWLEDGE_ROUTE,
+        service_owner="PLATFORM_CORE_READ_ONLY_KNOWLEDGE",
+        implementation_owner=(
+            "aigol.runtime.self_knowledge_platform_conversation_integration"
+        ),
+        query_classes=(SELF_KNOWLEDGE_QUERY,),
+        required_inputs=(
+            "authenticated_self_knowledge_manifest",
+            "validated_self_knowledge_snapshot",
+            "closed_query_subject",
+        ),
+        response_artifact_type=SELF_KNOWLEDGE_PLATFORM_CORE_RESPONSE_V1,
+        service_version=(
+            SELF_KNOWLEDGE_PLATFORM_CONVERSATION_INTEGRATION_VERSION
+        ),
+        adapter_name="route_explicit_self_knowledge_query",
+        routing_terms=(),
+    ).to_dict()
+    candidate = _candidate(
+        service_identifier=SELF_KNOWLEDGE_ROUTE,
+        query_class=SELF_KNOWLEDGE_QUERY,
+        score=100 if route_ready else 0,
+        required_evidence_available=route_ready,
+        missing_required_inputs=(
+            () if route_ready else ("exactly_one_closed_self_knowledge_subject",)
+        ),
+        reason=(
+            "Exact pre-objective Self Knowledge request classification."
+            if route_ready
+            else "Self Knowledge wording did not resolve to exactly one closed subject."
+        ),
+    )
+    lifecycle_precedence = {
+        "artifact_type": "PLATFORM_QUERY_LIFECYCLE_PRECEDENCE_DECISION_V1",
+        "precedence_applied": False,
+        "canonical_entry_runtime": None,
+        "selected_lifecycle_runtime": SELF_KNOWLEDGE_ROUTE,
+        "lifecycle_stage": None,
+        "upstream_plan_hash": None,
+        "suppressed_downstream_routes": [],
+        "suppressed_entry_routes": [],
+        "top_score": candidate["score"],
+        "reason": "Self Knowledge is outside the governed development lifecycle.",
+        "precedence_reason": "PRE_OBJECTIVE_SELF_KNOWLEDGE_CLASSIFICATION",
+        "clause_role_interpretation_reused": False,
+        "platform_core_authority": True,
+        "human_interface_authority": False,
+    }
+    response = {
+        "artifact_type": PLATFORM_QUERY_ROUTER_RESPONSE_ARTIFACT_V1,
+        "platform_query_router_version": PLATFORM_QUERY_ROUTER_VERSION,
+        "query": query,
+        "query_hash": replay_hash(query),
+        "created_at": _require_string(created_at, "created_at"),
+        "route_status": ROUTE_READY if route_ready else ROUTE_CLARIFICATION_REQUIRED,
+        "selected_service": SELF_KNOWLEDGE_ROUTE,
+        "selected_query_class": SELF_KNOWLEDGE_QUERY,
+        "selected_route_score": candidate["score"],
+        "selected_route_descriptor": descriptor,
+        "candidate_routes": [candidate],
+        "required_evidence_missing": list(candidate["missing_required_inputs"]),
+        "ambiguity_detected": not route_ready,
+        "lifecycle_precedence": lifecycle_precedence,
+        "lifecycle_precedence_applied": False,
+        "suppressed_downstream_lifecycle_routes": [],
+        "classification_evidence": {
+            "self_knowledge_request_classification": classification,
+            "self_knowledge_request_classification_hash": classification[
+                "artifact_hash"
+            ],
+            "classification_before_objective_inference": True,
+            "project_objective_inference_invoked": False,
+            "development_intent_resolution_invoked_by_router": False,
+            "clause_role_interpretation_authoritative": False,
+            "requested_action_clauses": [],
+        },
+        "service_response": service_response,
+        "service_response_hash": _service_response_hash(service_response),
+        "service_invoked": route_ready,
+        "future_services_registerable": True,
+        "route_descriptors": [descriptor],
+        **ROUTER_BOUNDARY_FLAGS,
+    }
+    response["artifact_hash"] = replay_hash(response)
+    return response
+
+
 def route_platform_query(
     *,
     query: str,
@@ -348,13 +474,34 @@ def route_platform_query(
     development_plan_artifact: dict[str, Any] | None = None,
     project_objective_artifact: dict[str, Any] | None = None,
     governance_root: str = ".",
+    repository_root: str = ".",
     created_at: str = "2026-07-11T00:00:00Z",
     route_descriptors: list[PlatformServiceRouteDescriptor] | tuple[PlatformServiceRouteDescriptor, ...] | None = None,
     route_adapters: dict[str, Callable[..., dict[str, Any]]] | None = None,
+    request_classification: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Classify a platform query and dispatch to the selected Platform Core service."""
 
     raw_query = _require_string(query, "query")
+    if request_classification is None:
+        classification = validate_self_knowledge_request_classification(
+            classify_self_knowledge_request(raw_query)
+        )
+    elif isinstance(request_classification, dict):
+        classification = validate_self_knowledge_request_classification(
+            request_classification
+        )
+    else:
+        raise FailClosedRuntimeError(
+            "request classification must be a validated object"
+        )
+    if classification["request_classification"] != DEVELOPMENT_OBJECTIVE:
+        return _route_preclassified_self_knowledge_request(
+            query=raw_query,
+            request_classification=classification,
+            repository_root=repository_root,
+            created_at=created_at,
+        )
     descriptors = _descriptors(route_descriptors)
     knowledge_probe = query_platform_knowledge(
         query=raw_query,

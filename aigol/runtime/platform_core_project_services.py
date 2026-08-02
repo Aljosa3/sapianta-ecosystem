@@ -16,6 +16,13 @@ from aigol.runtime.platform_project_objective_inference import (
     interpret_request_clause_roles,
     validate_platform_project_objective,
 )
+from aigol.runtime.self_knowledge_request_classification import (
+    CLARIFICATION_REQUIRED as SELF_KNOWLEDGE_CLARIFICATION_REQUIRED,
+    DEVELOPMENT_OBJECTIVE,
+    SELF_KNOWLEDGE_QUERY,
+    classify_self_knowledge_request,
+    validate_self_knowledge_request_classification,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
@@ -341,29 +348,33 @@ def prepare_unified_human_interface_project_context(
             else message
         )
     else:
-        from aigol.runtime.platform_core_admission_precedence_runtime import (
-            determine_platform_core_admission_precedence,
+        request_classification = validate_self_knowledge_request_classification(
+            classify_self_knowledge_request(message)
         )
+        if request_classification["request_classification"] == DEVELOPMENT_OBJECTIVE:
+            from aigol.runtime.platform_core_admission_precedence_runtime import (
+                determine_platform_core_admission_precedence,
+            )
 
-        admission_index = next_index(
-            session_root / "admission_precedence",
-            "*_admission_precedence_recorded.json",
-        )
-        admission_reference = (
-            session_root
-            / "admission_precedence"
-            / f"{admission_index:03d}_admission_precedence_recorded.json"
-        )
-        admission_precedence = determine_platform_core_admission_precedence(
-            request=message,
-            explicit_canonical_artifacts=validated_explicit_artifacts,
-            active_workspace_objective=(
-                prior_state.get("active_development_objective")
-                if isinstance(prior_state, dict)
-                else None
-            ),
-            replay_reference=admission_reference,
-        )
+            admission_index = next_index(
+                session_root / "admission_precedence",
+                "*_admission_precedence_recorded.json",
+            )
+            admission_reference = (
+                session_root
+                / "admission_precedence"
+                / f"{admission_index:03d}_admission_precedence_recorded.json"
+            )
+            admission_precedence = determine_platform_core_admission_precedence(
+                request=message,
+                explicit_canonical_artifacts=validated_explicit_artifacts,
+                active_workspace_objective=(
+                    prior_state.get("active_development_objective")
+                    if isinstance(prior_state, dict)
+                    else None
+                ),
+                replay_reference=admission_reference,
+            )
         operational_classification = _classify_new_operational_turn(
             message=message,
             workspace_state=prior_state,
@@ -374,6 +385,8 @@ def prepare_unified_human_interface_project_context(
             ),
             turn_reference=turn_reference,
             session_id=session_id,
+            repository_root=str(Path(workspace)),
+            request_classification=request_classification,
         )
         if (
             operational_classification["binding_destination"]
@@ -1072,22 +1085,61 @@ def _classify_new_operational_turn(
     explicit_artifact_transport_present: bool,
     turn_reference: str,
     session_id: str,
+    repository_root: str,
+    request_classification: dict[str, Any],
 ) -> dict[str, Any]:
     """Bind one new UHI turn using the existing Platform Query Router."""
 
     from aigol.runtime.platform_query_router import (
         GOVERNED_DEVELOPMENT_ROUTE,
+        SELF_KNOWLEDGE_ROUTE,
         route_platform_query,
         validate_platform_query_router_response,
     )
 
+    classified_request = validate_self_knowledge_request_classification(
+        request_classification
+    )
     router = validate_platform_query_router_response(
         route_platform_query(
             query=require_string(message, "message"),
             workspace_state=workspace_state,
             created_at=created_at,
+            repository_root=repository_root,
+            request_classification=classified_request,
         )
     )
+    if classified_request["request_classification"] in {
+        SELF_KNOWLEDGE_QUERY,
+        SELF_KNOWLEDGE_CLARIFICATION_REQUIRED,
+    }:
+        if router.get("selected_service") != SELF_KNOWLEDGE_ROUTE:
+            raise FailClosedRuntimeError(
+                "Self Knowledge request classification route owner mismatch"
+            )
+        return {
+            "turn_kind": OPERATIONAL_PLATFORM_QUERY,
+            "binding_destination": PLATFORM_QUERY_ROUTER_BINDING,
+            "binding_reason": (
+                "PRE_OBJECTIVE_SELF_KNOWLEDGE_QUERY_CLASSIFICATION"
+                if classified_request["request_classification"]
+                == SELF_KNOWLEDGE_QUERY
+                else "PRE_OBJECTIVE_SELF_KNOWLEDGE_CLARIFICATION"
+            ),
+            "session_id": require_string(session_id, "session_id"),
+            "turn_reference": require_string(turn_reference, "turn_reference"),
+            "platform_query_router_response": deepcopy(router),
+            "platform_query_router_response_hash": router["artifact_hash"],
+            "selected_service": router.get("selected_service"),
+            "selected_query_class": router.get("selected_query_class"),
+            "selected_route_score": router.get("selected_route_score"),
+            "governed_action_evidence": [],
+            "request_classification": deepcopy(classified_request),
+            "request_classification_hash": classified_request["artifact_hash"],
+            "classification_authority": "PLATFORM_CORE_REQUEST_CLASSIFICATION",
+            "objective_inference_allowed": False,
+            "human_interface_classified": False,
+        }
     roles = interpret_request_clause_roles(message)
     governed_action = bool(roles.get("requested_action_clauses"))
     governed_work_type_declared = (
