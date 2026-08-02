@@ -289,6 +289,7 @@ def execute_disposable_patch_validation(
     executed_by: str,
     executed_at: str,
     replay_dir: str | Path,
+    reuse_proof_g47_scope_binding: dict[str, Any],
 ) -> dict[str, Any]:
     """Copy, apply, content-check, and test one exact approved V2 patch."""
 
@@ -350,6 +351,7 @@ def execute_disposable_patch_validation(
             ],
             created_by=_required(executed_by, "executed_by"),
             created_at=_required(executed_at, "executed_at"),
+            reuse_proof_g47_scope_binding=reuse_proof_g47_scope_binding,
         )
         approval = create_governed_repository_mutation_approval(
             approval_id=f"{plan['plan_id']}:DISPOSABLE-MUTATION-APPROVAL",

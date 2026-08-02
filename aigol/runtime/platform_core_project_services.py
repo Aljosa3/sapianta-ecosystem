@@ -228,6 +228,12 @@ def prepare_unified_human_interface_project_context(
     created_at: str,
     explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
     explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
+    reuse_proof_input: dict[str, Any] | None = None,
+    reuse_proof_result: dict[str, Any] | None = None,
+    reuse_proof_applicability: dict[str, Any] | None = None,
+    reuse_proof_exemption_code: str | None = None,
+    reuse_proof_exemption_evidence: dict[str, Any] | None = None,
+    reuse_proof_authenticated_baseline: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
@@ -507,6 +513,89 @@ def prepare_unified_human_interface_project_context(
         )
     implementation_turn_binding = None
     development_governance_integration = None
+    reuse_proof_production_admission = None
+    reuse_proof_g47_scope_binding = None
+    if (
+        development_intent.get("summary_admissible") is True
+        and development_intent.get("work_type") == "IMPLEMENTATION"
+        and project_objective_ready_for_governance
+    ):
+        from aigol.runtime.constitutional_reuse_proof_production_gate import (
+            READY_FOR_FRESH_G47,
+            classify_reuse_proof_applicability,
+            prepare_reuse_proof_production_admission,
+            validate_reuse_proof_applicability,
+        )
+
+        source_proof = reuse_proof_result or reuse_proof_input
+        baseline = deepcopy(reuse_proof_authenticated_baseline) if isinstance(
+            reuse_proof_authenticated_baseline, dict
+        ) else (
+            deepcopy(source_proof.get("authenticated_baseline"))
+            if isinstance(source_proof, dict)
+            and isinstance(source_proof.get("authenticated_baseline"), dict)
+            else None
+        )
+        proposed_scope = {
+            "entry_point": "PLATFORM_CORE_PROJECT_SERVICES",
+            "work_type": "IMPLEMENTATION",
+            "project_objective_hash": project_objective["artifact_hash"],
+            "knowledge_reuse_hash": replay_hash(knowledge_reuse),
+            "target_paths": [],
+            "governance_target_paths": [],
+        }
+        applicability = (
+            validate_reuse_proof_applicability(reuse_proof_applicability)
+            if isinstance(reuse_proof_applicability, dict)
+            else classify_reuse_proof_applicability(
+                applicability_id=f"G64-04-APP:{session_id}:{turn_index:03d}",
+                request_reference=f"{session_id}:{turn_index:03d}",
+                request_hash=replay_hash(effective_message),
+                project_objective_reference=project_objective["artifact_type"],
+                project_objective_hash=project_objective["artifact_hash"],
+                authenticated_baseline=baseline,
+                proposed_scope=proposed_scope,
+                change_characteristics=_reuse_proof_change_characteristics(
+                    effective_message,
+                    reuse_proof_exemption_code,
+                ),
+                exemption_code=reuse_proof_exemption_code,
+                exemption_evidence=reuse_proof_exemption_evidence,
+                created_at=created_at,
+            )
+        )
+        reuse_proof_production_admission = prepare_reuse_proof_production_admission(
+            admission_id=f"G64-04-ADMISSION:{session_id}:{turn_index:03d}",
+            applicability_artifact=applicability,
+            proof_input=reuse_proof_input,
+            proof_result=reuse_proof_result,
+            repository_root=workspace,
+            workspace_state=prior_state,
+            created_at=created_at,
+        )
+        development_intent = deepcopy(development_intent)
+        development_intent["reuse_proof_production_admission"] = deepcopy(
+            reuse_proof_production_admission
+        )
+        development_intent["reuse_proof_production_admission_hash"] = (
+            reuse_proof_production_admission["artifact_hash"]
+        )
+        if reuse_proof_production_admission["admission_status"] != READY_FOR_FRESH_G47:
+            development_intent["summary_admissible"] = False
+            development_intent["runtime_binding_admissible"] = False
+            development_intent["requires_human_approval"] = False
+            development_intent["canonical_implementation_scope_unresolved"] = True
+            development_intent["clarification_reason"] = (
+                reuse_proof_production_admission["admission_status"]
+            )
+        development_intent["artifact_hash"] = replay_hash(development_intent)
+        conversation_experience = human_conversation_experience_from_resolution(
+            message=effective_message,
+            guidance=guidance,
+            knowledge_reuse=knowledge_reuse,
+            development_intent=development_intent,
+            workspace_state=prior_state,
+        )
     if (
         development_intent.get("summary_admissible") is True
         and development_intent.get("work_type") == "IMPLEMENTATION"
@@ -533,7 +622,16 @@ def prepare_unified_human_interface_project_context(
                     / "development_governance"
                     / f"{turn_index:03d}_integration"
                 ),
+                reuse_proof_admission=reuse_proof_production_admission,
             )
+        )
+        from aigol.runtime.constitutional_reuse_proof_production_gate import (
+            bind_reuse_proof_admission_to_g47,
+        )
+
+        reuse_proof_g47_scope_binding = bind_reuse_proof_admission_to_g47(
+            admission_artifact=reuse_proof_production_admission,
+            g47_operational_record=development_governance_integration,
         )
         implementation_turn_binding = development_governance_integration.get(
             "implementation_turn_binding"
@@ -550,6 +648,12 @@ def prepare_unified_human_interface_project_context(
         )
         development_intent["constitutional_development_governance_bundle_state"] = (
             development_governance_integration["bundle_state"]
+        )
+        development_intent["reuse_proof_g47_scope_binding"] = deepcopy(
+            reuse_proof_g47_scope_binding
+        )
+        development_intent["reuse_proof_g47_scope_binding_hash"] = (
+            reuse_proof_g47_scope_binding["artifact_hash"]
         )
         if (
             development_governance_integration.get("integration_status")
@@ -804,6 +908,22 @@ def prepare_unified_human_interface_project_context(
             if isinstance(development_governance_integration, dict)
             else None
         ),
+        "reuse_proof_production_admission": deepcopy(
+            reuse_proof_production_admission
+        ),
+        "reuse_proof_production_admission_hash": (
+            reuse_proof_production_admission.get("artifact_hash")
+            if isinstance(reuse_proof_production_admission, dict)
+            else None
+        ),
+        "reuse_proof_g47_scope_binding": deepcopy(
+            reuse_proof_g47_scope_binding
+        ),
+        "reuse_proof_g47_scope_binding_hash": (
+            reuse_proof_g47_scope_binding.get("artifact_hash")
+            if isinstance(reuse_proof_g47_scope_binding, dict)
+            else None
+        ),
         "canonical_implementation_turn_binding_hash": (
             implementation_turn_binding.get("artifact_hash")
             if isinstance(implementation_turn_binding, dict)
@@ -879,6 +999,49 @@ def prepare_unified_human_interface_project_context(
             ),
         )
     return artifact
+
+
+def _reuse_proof_change_characteristics(
+    request: str,
+    exemption_code: str | None,
+) -> dict[str, bool]:
+    """Conservatively prevent caller-supplied exemption tokens from bypassing G63."""
+
+    normalized = " ".join(str(request).lower().split())
+    architecture_terms = (
+        "new component",
+        "new capability",
+        "create ",
+        "register ",
+        "onboard ",
+        "deprecate ",
+        "replace ",
+        "change owner",
+        "change route",
+        "change default",
+        "new api",
+        "new registry",
+    )
+    if any(term in normalized for term in architecture_terms):
+        return {"creates_component": True}
+    if exemption_code == "EXACT_CERTIFIED_BEHAVIOR_REPAIR" and any(
+        term in normalized for term in ("fix ", "repair ", "restore ")
+    ):
+        return {}
+    if exemption_code == "NON_SEMANTIC_CONTENT_CORRECTION" and any(
+        term in normalized for term in ("typo", "spelling", "formatting only")
+    ):
+        return {}
+    if exemption_code == "READ_ONLY_NON_PROPOSING_WORK" and any(
+        term in normalized for term in ("read-only", "read only", "do not implement")
+    ):
+        return {}
+    if exemption_code == "UNCHANGED_CERTIFIED_CAPABILITY_EXECUTION" and (
+        "execute existing certified" in normalized
+        or "run existing certified" in normalized
+    ):
+        return {}
+    return {"changes_public_contract": True}
 
 
 def _classify_new_operational_turn(

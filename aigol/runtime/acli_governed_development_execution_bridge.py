@@ -16,6 +16,9 @@ from aigol.runtime.governed_development_workflow_runtime import (
     reconstruct_governed_development_workflow_replay,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.constitutional_reuse_proof_production_gate import (
+    validate_reuse_proof_g47_scope_binding,
+)
 from aigol.runtime.transport.serialization import replay_hash, write_json_immutable
 
 
@@ -54,6 +57,7 @@ def propose_acli_governed_development_execution(
     proposed_by: str,
     created_at: str,
     replay_dir: str | Path,
+    reuse_proof_g47_scope_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate a bounded governed development proposal from an ACLI-routed prompt."""
 
@@ -99,22 +103,51 @@ def propose_acli_governed_development_execution(
             seed=seed,
             workspace=workspace,
         )
+        supplied_scope_binding = (
+            reuse_proof_g47_scope_binding
+            if isinstance(reuse_proof_g47_scope_binding, dict)
+            else conversational_routing_capture.get("reuse_proof_g47_scope_binding")
+        )
+        scope_binding = validate_reuse_proof_g47_scope_binding(
+            supplied_scope_binding
+        )
+        repository_mutation = _repository_file_mutation(
+            seed=seed,
+            human_prompt=human_prompt,
+            artifact_identifier=naming_decision["selected_artifact_identifier"],
+        )
+        if scope_binding["proposed_scope"].get("target_paths") != [
+            repository_mutation["target_path"]
+        ]:
+            raise FailClosedRuntimeError(
+                "FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT"
+            )
+        if scope_binding["proposed_scope"].get("governance_target_paths") != [
+            naming_decision["selected_target_path"]
+        ]:
+            raise FailClosedRuntimeError(
+                "FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT"
+            )
+        expected_governance = _governance_artifact(
+            seed=seed,
+            human_prompt=human_prompt,
+            naming_decision=naming_decision,
+        )
+        if scope_binding["proposed_scope"].get("allowed_intermediate_deltas") != [
+            {
+                "target_path": expected_governance["target_path"],
+                "content_hash": replay_hash(expected_governance["proposed_content"]),
+            }
+        ]:
+            raise FailClosedRuntimeError(
+                "FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT"
+            )
         proposal = create_governed_development_proposal(
             proposal_id=f"{bridge_id}:PROPOSAL",
             original_request_reference=routing_decision["routing_decision_id"],
             resolved_intent_reference=workflow_selection["workflow_selection_id"],
-            governance_artifact=_governance_artifact(
-                seed=seed,
-                human_prompt=human_prompt,
-                naming_decision=naming_decision,
-            ),
-            repository_file_mutations=[
-                _repository_file_mutation(
-                    seed=seed,
-                    human_prompt=human_prompt,
-                    artifact_identifier=naming_decision["selected_artifact_identifier"],
-                )
-            ],
+            governance_artifact=expected_governance,
+            repository_file_mutations=[repository_mutation],
             repository_validation_command=["git", "diff", "--check"],
             replay_references=[
                 conversational_routing_capture["conversational_cli_routing_replay_reference"],
@@ -130,6 +163,7 @@ def propose_acli_governed_development_execution(
             ],
             created_by=proposed_by,
             created_at=created_at,
+            reuse_proof_g47_scope_binding=scope_binding,
         )
         repository_context = _repository_context_artifact(
             bridge_id=bridge_id,
@@ -155,6 +189,8 @@ def propose_acli_governed_development_execution(
             "workflow_artifact": deepcopy(workflow_selection),
             "repository_context_artifact": repository_context,
             "proposal_artifact": proposal,
+            "reuse_proof_g47_scope_binding": scope_binding,
+            "reuse_proof_g47_scope_binding_hash": scope_binding["artifact_hash"],
             "proposal_naming_decision": naming_decision,
             "proposal_preview_artifact": proposal_preview,
             "approval_required": True,
@@ -833,7 +869,7 @@ def _failed_capture(
         "prompt_id": prompt_id,
         "workflow_id": WORKFLOW_ID,
         "bridge_status": status,
-        "approval_required": True,
+        "approval_required": False,
         "approval_bypassed": False,
         "mutation_performed": False,
         "worker_invoked": False,

@@ -7,6 +7,8 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+from aigol.runtime.models import FailClosedRuntimeError
+
 from aigol.runtime.constitutional_development_governance_orchestration import (
     CONSTITUTIONAL_DEVELOPMENT_GOVERNANCE_BUNDLE_ARTIFACT_V1,
     DEVELOPMENT_GOVERNANCE_CDD_CLASSIFICATION_ARTIFACT_V1,
@@ -42,6 +44,9 @@ from aigol.runtime.platform_implementation_turn_durable_work_binding import (
 from aigol.runtime.platform_project_objective_inference import (
     validate_platform_project_objective,
 )
+from aigol.runtime.constitutional_reuse_proof_production_gate import (
+    validate_reuse_proof_production_admission,
+)
 from aigol.runtime.transport.serialization import (
     load_json,
     replay_hash,
@@ -49,11 +54,17 @@ from aigol.runtime.transport.serialization import (
 )
 
 
-G47_OPERATIONAL_INTEGRATION_VERSION = (
+LEGACY_G47_OPERATIONAL_INTEGRATION_VERSION = (
     "G47_01D_DEVELOPMENT_GOVERNANCE_OPERATIONAL_INTEGRATION_V1"
 )
-G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1 = (
+LEGACY_G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1 = (
     "G47_DEVELOPMENT_GOVERNANCE_OPERATIONAL_INTEGRATION_ARTIFACT_V1"
+)
+G47_OPERATIONAL_INTEGRATION_VERSION = (
+    "G64_04_DEVELOPMENT_GOVERNANCE_REUSE_ADMISSION_INTEGRATION_V2"
+)
+G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1 = (
+    "G47_DEVELOPMENT_GOVERNANCE_OPERATIONAL_INTEGRATION_ARTIFACT_V2"
 )
 G47_OPERATIONAL_INTEGRATION_READY = "G47_OPERATIONAL_INTEGRATION_READY"
 G47_OPERATIONAL_INTEGRATION_TERMINATED = "G47_OPERATIONAL_INTEGRATION_TERMINATED"
@@ -81,10 +92,20 @@ def integrate_constitutional_development_governance(
     workspace: str | Path,
     created_at: str,
     replay_dir: str | Path,
+    reuse_proof_admission: dict[str, Any],
 ) -> dict[str, Any]:
     """Run the certified G47 barrier before invoking the existing planner."""
 
+    admission = validate_reuse_proof_production_admission(reuse_proof_admission)
     objective = validate_platform_project_objective(project_objective_artifact)
+    if admission["request_hash"] != replay_hash(request):
+        raise DevelopmentGovernanceRuntimeError(
+            "G47 reuse proof admission request mismatch"
+        )
+    if admission["project_objective_hash"] != objective["artifact_hash"]:
+        raise DevelopmentGovernanceRuntimeError(
+            "G47 reuse proof admission Project Objective mismatch"
+        )
     coverage = prepare_implementation_turn_capability_coverage(
         request=request,
         knowledge_reuse_artifact=knowledge_reuse_artifact,
@@ -131,6 +152,9 @@ def integrate_constitutional_development_governance(
     record = {
         "artifact_type": G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1,
         "runtime_version": G47_OPERATIONAL_INTEGRATION_VERSION,
+        "reuse_proof_admission": admission,
+        "reuse_proof_admission_id": admission["admission_id"],
+        "reuse_proof_admission_hash": admission["artifact_hash"],
         "integration_status": (
             G47_OPERATIONAL_INTEGRATION_READY
             if bound is not None
@@ -175,14 +199,37 @@ def validate_constitutional_development_governance_operational_record(
         raise DevelopmentGovernanceRuntimeError(
             "G47 operational integration record must be an object"
         )
-    if artifact.get("artifact_type") != G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1:
+    legacy = (
+        artifact.get("artifact_type") == LEGACY_G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1
+        and artifact.get("runtime_version") == LEGACY_G47_OPERATIONAL_INTEGRATION_VERSION
+    )
+    if artifact.get("artifact_type") not in {
+        G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1,
+        LEGACY_G47_OPERATIONAL_INTEGRATION_ARTIFACT_V1,
+    }:
         raise DevelopmentGovernanceRuntimeError(
             "G47 operational integration artifact type is invalid"
         )
-    if artifact.get("runtime_version") != G47_OPERATIONAL_INTEGRATION_VERSION:
+    if not legacy and artifact.get("runtime_version") != G47_OPERATIONAL_INTEGRATION_VERSION:
         raise DevelopmentGovernanceRuntimeError(
             "G47 operational integration version is invalid"
         )
+    if not legacy:
+        try:
+            admission = validate_reuse_proof_production_admission(
+                artifact.get("reuse_proof_admission")
+            )
+        except FailClosedRuntimeError as exc:
+            raise DevelopmentGovernanceRuntimeError(
+                "FAILED_CLOSED_REUSE_ADMISSION_REQUIRED"
+            ) from exc
+        if (
+            artifact.get("reuse_proof_admission_id") != admission["admission_id"]
+            or artifact.get("reuse_proof_admission_hash") != admission["artifact_hash"]
+        ):
+            raise DevelopmentGovernanceRuntimeError(
+                "G47 operational reuse proof admission lineage mismatch"
+            )
     if artifact.get("integration_status") not in {
         G47_OPERATIONAL_INTEGRATION_READY,
         G47_OPERATIONAL_INTEGRATION_TERMINATED,

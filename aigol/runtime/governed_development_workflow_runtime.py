@@ -22,11 +22,15 @@ from aigol.runtime.governed_repository_mutation_runtime import (
     reconstruct_governed_repository_mutation_replay,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.constitutional_reuse_proof_production_gate import (
+    validate_reuse_proof_current_baseline,
+    validate_reuse_proof_g47_scope_binding,
+)
 from aigol.runtime.transport.serialization import load_json, replay_hash, write_json_immutable
 
 
-AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_VERSION = "AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_V1"
-GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V1"
+AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_VERSION = "AIGOL_GOVERNED_DEVELOPMENT_WORKFLOW_RUNTIME_V2"
+GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V2"
 GOVERNED_DEVELOPMENT_APPROVAL_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_APPROVAL_ARTIFACT_V1"
 GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V1 = "GOVERNED_DEVELOPMENT_OUTCOME_ARTIFACT_V1"
 GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED = "GOVERNED_DEVELOPMENT_WORKFLOW_COMPLETED"
@@ -61,6 +65,7 @@ def create_governed_development_proposal(
     replay_hashes: list[str],
     created_by: str,
     created_at: str,
+    reuse_proof_g47_scope_binding: dict[str, Any],
 ) -> dict[str, Any]:
     """Create a top-level governed development proposal with component proposals."""
 
@@ -69,11 +74,43 @@ def create_governed_development_proposal(
     proposal_id_value = _require_string(proposal_id, "proposal_id")
     original_ref = _require_string(original_request_reference, "original_request_reference")
     intent_ref = _require_string(resolved_intent_reference, "resolved_intent_reference")
+    scope_binding = validate_reuse_proof_g47_scope_binding(
+        reuse_proof_g47_scope_binding
+    )
+    mutation_paths = [
+        _require_string(item.get("target_path"), "repository_file_mutations.target_path")
+        for item in repository_file_mutations
+        if isinstance(item, dict)
+    ]
+    if scope_binding["proposed_scope"].get("target_paths") != mutation_paths:
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT")
+    governance_target = _require_string(
+        governance_artifact.get("target_path"), "governance_artifact.target_path"
+    )
+    if scope_binding["proposed_scope"].get("governance_target_paths") != [
+        governance_target
+    ]:
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT")
+    expected_intermediate_deltas = [
+        {
+            "target_path": governance_target,
+            "content_hash": replay_hash(
+                _require_string(
+                    governance_artifact.get("proposed_content"),
+                    "governance_artifact.proposed_content",
+                )
+            ),
+        }
+    ]
+    if scope_binding["proposed_scope"].get("allowed_intermediate_deltas") != (
+        expected_intermediate_deltas
+    ):
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT")
     governance_proposal = create_governance_artifact_proposal(
         proposal_id=f"{proposal_id_value}:GOVERNANCE-ARTIFACT",
         original_request_reference=original_ref,
         resolved_intent_reference=intent_ref,
-        target_path=_require_string(governance_artifact.get("target_path"), "governance_artifact.target_path"),
+        target_path=governance_target,
         artifact_title=_require_string(governance_artifact.get("artifact_title"), "governance_artifact.artifact_title"),
         artifact_purpose=_require_string(
             governance_artifact.get("artifact_purpose"), "governance_artifact.artifact_purpose"
@@ -99,6 +136,7 @@ def create_governed_development_proposal(
         replay_hashes=[*hashes, governance_proposal["artifact_hash"]],
         created_by=created_by,
         created_at=created_at,
+        reuse_proof_g47_scope_binding=scope_binding,
     )
     artifact = {
         "artifact_type": GOVERNED_DEVELOPMENT_PROPOSAL_ARTIFACT_V1,
@@ -109,6 +147,8 @@ def create_governed_development_proposal(
         "resolved_intent_reference": intent_ref,
         "governance_artifact_proposal": deepcopy(governance_proposal),
         "repository_mutation_proposal": deepcopy(repository_proposal),
+        "reuse_proof_g47_scope_binding": scope_binding,
+        "reuse_proof_g47_scope_binding_hash": scope_binding["artifact_hash"],
         "component_order": ["GOVERNANCE_ARTIFACT_CREATION", "GOVERNED_REPOSITORY_MUTATION"],
         "human_approval_required": True,
         "mutation_allowed_before_approval": False,
@@ -190,6 +230,10 @@ def execute_governed_development_workflow(
         _validate_proposal(proposal)
         _validate_approval(approval, proposal)
         _validate_workflow_artifact(workflow_artifact)
+        validate_reuse_proof_current_baseline(
+            scope_binding=proposal["reuse_proof_g47_scope_binding"],
+            repository_root=repository_root,
+        )
         governance_approval = create_governance_artifact_approval(
             approval_id=f"{approval['approval_id']}:GOVERNANCE-ARTIFACT",
             proposal_artifact=proposal["governance_artifact_proposal"],
@@ -254,7 +298,10 @@ def execute_governed_development_workflow(
             replay_dir=replay_path / "governed_repository_mutation",
         )
         if repository_capture["execution_status"] != GOVERNED_REPOSITORY_MUTATION_COMPLETED:
-            raise FailClosedRuntimeError("FAIL_CLOSED_GOVERNED_REPOSITORY_MUTATION_FAILED")
+            raise FailClosedRuntimeError(
+                "FAIL_CLOSED_GOVERNED_REPOSITORY_MUTATION_FAILED:"
+                f"{repository_capture.get('failure_reason')}"
+            )
         repository_replay = reconstruct_governed_repository_mutation_replay(
             repository_capture["governed_repository_mutation_replay_reference"]
         )
@@ -492,6 +539,18 @@ def _validate_proposal(proposal: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("governed development failed closed: component order mismatch")
     _verify_artifact_hash(proposal.get("governance_artifact_proposal"))
     _verify_artifact_hash(proposal.get("repository_mutation_proposal"))
+    binding = validate_reuse_proof_g47_scope_binding(
+        proposal.get("reuse_proof_g47_scope_binding")
+    )
+    if proposal.get("reuse_proof_g47_scope_binding_hash") != binding["artifact_hash"]:
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_ADMISSION_REQUIRED")
+    if (
+        proposal["repository_mutation_proposal"].get(
+            "reuse_proof_g47_scope_binding_hash"
+        )
+        != binding["artifact_hash"]
+    ):
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_ADMISSION_REQUIRED")
 
 
 def _validate_approval(approval: dict[str, Any] | None, proposal: dict[str, Any]) -> None:

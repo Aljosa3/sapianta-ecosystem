@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path, PurePosixPath
+import subprocess
 from typing import Any
 
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.constitutional_reuse_proof_production_gate import (
+    validate_reuse_proof_g47_scope_binding,
+)
 from aigol.runtime.repository_mutation_worker_runtime import (
     REPOSITORY_MUTATION_COMPLETED,
     apply_repository_mutation,
@@ -21,8 +25,8 @@ from aigol.runtime.validation_command_runner_runtime import (
 )
 
 
-AIGOL_GOVERNED_REPOSITORY_MUTATION_RUNTIME_VERSION = "AIGOL_GOVERNED_REPOSITORY_MUTATION_RUNTIME_V1"
-GOVERNED_REPOSITORY_MUTATION_PROPOSAL_ARTIFACT_V1 = "GOVERNED_REPOSITORY_MUTATION_PROPOSAL_ARTIFACT_V1"
+AIGOL_GOVERNED_REPOSITORY_MUTATION_RUNTIME_VERSION = "AIGOL_GOVERNED_REPOSITORY_MUTATION_RUNTIME_V2"
+GOVERNED_REPOSITORY_MUTATION_PROPOSAL_ARTIFACT_V1 = "GOVERNED_REPOSITORY_MUTATION_PROPOSAL_ARTIFACT_V2"
 GOVERNED_REPOSITORY_MUTATION_APPROVAL_ARTIFACT_V1 = "GOVERNED_REPOSITORY_MUTATION_APPROVAL_ARTIFACT_V1"
 GOVERNED_REPOSITORY_MUTATION_OUTCOME_ARTIFACT_V1 = "GOVERNED_REPOSITORY_MUTATION_OUTCOME_ARTIFACT_V1"
 GOVERNED_REPOSITORY_MUTATION_COMPLETED = "GOVERNED_REPOSITORY_MUTATION_COMPLETED"
@@ -66,11 +70,18 @@ def create_governed_repository_mutation_proposal(
     replay_hashes: list[str],
     created_by: str,
     created_at: str,
+    reuse_proof_g47_scope_binding: dict[str, Any],
 ) -> dict[str, Any]:
     """Create a pre-approval proposal for bounded repository mutation."""
 
     mutations = _validate_file_mutations(file_mutations)
     command = _validate_validation_command(validation_command or DEFAULT_VALIDATION_COMMAND)
+    scope_binding = validate_reuse_proof_g47_scope_binding(
+        reuse_proof_g47_scope_binding
+    )
+    target_paths = [mutation["target_path"] for mutation in mutations]
+    if scope_binding["proposed_scope"].get("target_paths") != target_paths:
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT")
     artifact = {
         "artifact_type": GOVERNED_REPOSITORY_MUTATION_PROPOSAL_ARTIFACT_V1,
         "runtime_version": AIGOL_GOVERNED_REPOSITORY_MUTATION_RUNTIME_VERSION,
@@ -82,7 +93,9 @@ def create_governed_repository_mutation_proposal(
         "resolved_intent_reference": _require_string(resolved_intent_reference, "resolved_intent_reference"),
         "file_mutations": mutations,
         "file_mutation_count": len(mutations),
-        "target_paths": [mutation["target_path"] for mutation in mutations],
+        "target_paths": target_paths,
+        "reuse_proof_g47_scope_binding": scope_binding,
+        "reuse_proof_g47_scope_binding_hash": scope_binding["artifact_hash"],
         "validation_plan": {"required_command": command},
         "human_approval_required": True,
         "mutation_allowed_before_approval": False,
@@ -166,12 +179,27 @@ def execute_governed_repository_mutation(
         _validate_approval(approval, proposal)
         _validate_workflow_artifact(workflow_artifact)
         _validate_context_artifact(repository_context_artifact, proposal)
+        _validate_current_repository_baseline(
+            Path(repository_root),
+            proposal["reuse_proof_g47_scope_binding"],
+        )
         worker_proposal = create_patch_proposal_artifact(
             proposal_id=f"PATCH-{proposal['proposal_id']}",
             file_mutations=deepcopy(proposal["file_mutations"]),
-            replay_references=[*proposal["replay_references"], approval["approval_id"]],
-            replay_hashes=[*proposal["replay_hashes"], approval["artifact_hash"]],
-            authorization_references=[approval["approval_id"]],
+            replay_references=[
+                *proposal["replay_references"],
+                proposal["reuse_proof_g47_scope_binding"]["binding_id"],
+                approval["approval_id"],
+            ],
+            replay_hashes=[
+                *proposal["replay_hashes"],
+                proposal["reuse_proof_g47_scope_binding_hash"],
+                approval["artifact_hash"],
+            ],
+            authorization_references=[
+                proposal["reuse_proof_g47_scope_binding"]["binding_id"],
+                approval["approval_id"],
+            ],
             created_by=executed_by,
             created_at=executed_at,
         )
@@ -459,6 +487,13 @@ def _validate_proposal(proposal: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("governed repository mutation failed closed: mutation before approval forbidden")
     _validate_file_mutations(proposal.get("file_mutations"))
     _validate_validation_command(proposal.get("validation_plan", {}).get("required_command"))
+    binding = validate_reuse_proof_g47_scope_binding(
+        proposal.get("reuse_proof_g47_scope_binding")
+    )
+    if proposal.get("reuse_proof_g47_scope_binding_hash") != binding["artifact_hash"]:
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_ADMISSION_REQUIRED")
+    if binding["proposed_scope"].get("target_paths") != proposal.get("target_paths"):
+        raise FailClosedRuntimeError("FAIL_CLOSED_REUSE_DECISION_SCOPE_CONFLICT")
 
 
 def _validate_approval(approval: dict[str, Any] | None, proposal: dict[str, Any]) -> None:
@@ -490,6 +525,60 @@ def _validate_context_artifact(context_artifact: dict[str, Any], proposal: dict[
     target_paths = context_artifact.get("target_paths")
     if target_paths is not None and target_paths != proposal["target_paths"]:
         raise FailClosedRuntimeError("FAIL_CLOSED_INSUFFICIENT_REPOSITORY_CONTEXT")
+
+
+def _validate_current_repository_baseline(
+    repository_root: Path,
+    scope_binding: dict[str, Any],
+) -> None:
+    """Reject stale proof immediately before Worker proposal creation."""
+
+    binding = validate_reuse_proof_g47_scope_binding(scope_binding)
+    baseline = binding.get("authenticated_baseline")
+    if not isinstance(baseline, dict):
+        raise FailClosedRuntimeError("FAILED_CLOSED_BASELINE_MISMATCH")
+
+    def git_value(*args: str) -> str:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            raise FailClosedRuntimeError("FAILED_CLOSED_BASELINE_MISMATCH")
+        return completed.stdout.strip()
+
+    if (
+        git_value("rev-parse", "HEAD") != baseline["commit"]
+        or git_value("rev-parse", "HEAD^") != baseline["parent"]
+        or git_value("rev-parse", "HEAD^{tree}") != baseline["tree"]
+    ):
+        raise FailClosedRuntimeError("PROOF_STALE_REEVALUATION_REQUIRED")
+
+    allowed = binding["proposed_scope"].get("allowed_intermediate_deltas", [])
+    if not isinstance(allowed, list):
+        raise FailClosedRuntimeError("FAILED_CLOSED_UNAUTHENTICATED_DRIFT")
+    allowed_by_path = {
+        item.get("target_path"): item.get("content_hash")
+        for item in allowed
+        if isinstance(item, dict)
+    }
+    status_lines = [
+        line
+        for line in git_value(
+            "status", "--porcelain", "--untracked-files=all"
+        ).splitlines()
+        if line
+    ]
+    changed_paths = {line[3:].strip() for line in status_lines}
+    if changed_paths != set(allowed_by_path):
+        raise FailClosedRuntimeError("FAILED_CLOSED_UNAUTHENTICATED_DRIFT")
+    for target_path, expected_hash in allowed_by_path.items():
+        path = repository_root / str(target_path)
+        if not path.is_file() or replay_hash(path.read_text(encoding="utf-8")) != expected_hash:
+            raise FailClosedRuntimeError("FAILED_CLOSED_UNAUTHENTICATED_DRIFT")
 
 
 def _validate_file_mutations(file_mutations: Any) -> list[dict[str, Any]]:

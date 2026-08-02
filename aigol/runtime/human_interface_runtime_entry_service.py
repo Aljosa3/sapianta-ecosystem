@@ -2180,6 +2180,14 @@ def _execute_g31_disposable_patch_validation(
     lineage = _g31_disposable_lineage(
         merged, session_root=root / session, workspace_path=workspace_path
     )
+    from aigol.runtime.constitutional_reuse_proof_production_gate import (
+        validate_reuse_proof_g47_scope_binding,
+    )
+
+    reuse_scope_binding = validate_reuse_proof_g47_scope_binding(
+        merged.get("reuse_proof_g47_scope_binding")
+        or review.get("reuse_proof_g47_scope_binding")
+    )
     outcome = disposable_validation.execute_disposable_patch_validation(
         review_binding_capture=review,
         application_decision_capture=merged[
@@ -2190,6 +2198,7 @@ def _execute_g31_disposable_patch_validation(
         replay_dir=root
         / session
         / f"DISPOSABLE-PATCH-VALIDATION-OUTCOME-{plan['artifact_hash'][-16:]}",
+        reuse_proof_g47_scope_binding=reuse_scope_binding,
         **lineage,
     )
     reconstruction = disposable_validation.reconstruct_disposable_patch_validation_outcome(

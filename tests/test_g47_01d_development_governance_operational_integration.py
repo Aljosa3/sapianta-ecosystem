@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -23,16 +24,48 @@ from aigol.runtime.transport.serialization import load_json, replay_hash
 
 CREATED_AT = "2026-07-29T00:00:00Z"
 READY_REQUEST = (
-    "Improve the human interface runtime and canonical presentation for "
-    "terminal development summaries. Include focused tests and validation."
+    "Fix the regressed human interface terminal summary and restore its exact "
+    "certified presentation behavior. Include focused tests and validation."
 )
 REVIEW_REQUEST = "Implement a new read-only Platform Core capability."
+G64_BASELINE = {
+    "commit": "1" * 40,
+    "parent": "2" * 40,
+    "tree": "3" * 40,
+    "worktree_clean": True,
+    "governing_sources": [
+        {"path": "G64-03", "sha256": replay_hash("G64-03")}
+    ],
+    "known_limitations": ["Focused G47 compatibility fixture."],
+}
+G64_EXEMPTION = {
+    "evidence_complete": True,
+    "architecture_delta": False,
+    "prior_certification_hash": replay_hash("G47 certified behavior"),
+}
 
 
 def _context(tmp_path: Path, request: str, session_id: str) -> dict:
     workspace = tmp_path / f"{session_id}_workspace"
     workspace.mkdir()
-    (workspace / ".git").mkdir()
+    subprocess.run(["git", "init"], cwd=workspace, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "g47@example.invalid"], cwd=workspace, check=True)
+    subprocess.run(["git", "config", "user.name", "G47 Test"], cwd=workspace, check=True)
+    (workspace / "BASELINE.txt").write_text("one\n", encoding="utf-8")
+    subprocess.run(["git", "add", "BASELINE.txt"], cwd=workspace, check=True)
+    subprocess.run(["git", "commit", "-m", "parent"], cwd=workspace, check=True, capture_output=True)
+    (workspace / "BASELINE.txt").write_text("two\n", encoding="utf-8")
+    subprocess.run(["git", "add", "BASELINE.txt"], cwd=workspace, check=True)
+    subprocess.run(["git", "commit", "-m", "head"], cwd=workspace, check=True, capture_output=True)
+    baseline = deepcopy(G64_BASELINE)
+    for field, revision in (("commit", "HEAD"), ("parent", "HEAD^"), ("tree", "HEAD^{tree}")):
+        baseline[field] = subprocess.run(
+            ["git", "rev-parse", revision],
+            cwd=workspace,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
     return prepare_unified_human_interface_project_context(
         interface_name="aicli",
         session_id=session_id,
@@ -40,6 +73,9 @@ def _context(tmp_path: Path, request: str, session_id: str) -> dict:
         runtime_root=tmp_path / "runtime",
         workspace=workspace,
         created_at=CREATED_AT,
+        reuse_proof_exemption_code="EXACT_CERTIFIED_BEHAVIOR_REPAIR",
+        reuse_proof_exemption_evidence=G64_EXEMPTION,
+        reuse_proof_authenticated_baseline=baseline,
     )
 
 
@@ -63,16 +99,14 @@ def test_existing_capability_framework_bounds_new_realization(
     tmp_path: Path,
 ) -> None:
     context = _context(tmp_path, REVIEW_REQUEST, "G47-01D-REVIEW")
-    governance = context["constitutional_development_governance"]
     resolution = context["development_intent_resolution"]
 
-    assert governance["integration_status"] == G47_OPERATIONAL_INTEGRATION_READY
-    assert governance["governance_disposition"] == "BOUNDED_PLANNING_PERMITTED"
-    assert governance["planning_eligible"] is True
-    need = governance["stage_outputs"][3]
-    assert need["outcome"] == "NEW_REALIZATION_JUSTIFIED"
-    assert context["canonical_implementation_turn_binding"] is not None
-    assert resolution["summary_admissible"] is True
+    assert context["constitutional_development_governance"] is None
+    assert context["canonical_implementation_turn_binding"] is None
+    assert context["reuse_proof_production_admission"]["admission_status"] == (
+        "WAITING_FOR_REUSE_PROOF_EVIDENCE"
+    )
+    assert resolution["summary_admissible"] is False
 
 
 def test_direct_planner_bypass_without_bundle_fails_closed() -> None:
@@ -147,7 +181,7 @@ def test_additive_replay_reconstructs_and_tampering_fails_closed(
         )
 
 
-def test_aicli_transports_and_renders_governance_projection(
+def test_aicli_fails_closed_before_governance_without_reuse_proof(
     tmp_path: Path,
 ) -> None:
     output: list[str] = []
@@ -163,10 +197,12 @@ def test_aicli_transports_and_renders_governance_projection(
     )
     rendered = "\n".join(output)
 
-    assert result["pending_approval"] is True
-    assert "Development Governance pre-planning barrier" in rendered
-    assert "governance_disposition: BOUNDED_PLANNING_PERMITTED" in rendered
-    assert "planning_eligible: True" in rendered
-    assert "governance_bundle_hash: sha256:" in rendered
+    project_context = result["platform_core_project_services_context"]
+    assert result["pending_approval"] is False
+    assert project_context["reuse_proof_production_admission"]["admission_status"] == (
+        "WAITING_FOR_REUSE_PROOF_EVIDENCE"
+    )
+    assert project_context["constitutional_development_governance"] is None
+    assert "pending_approval: False" in rendered
     assert result["aicli_authorizes"] is False
     assert result["aicli_executes"] is False
