@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPOSITORY_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+
+cd "$REPOSITORY_ROOT"
+
+echo "[SAPIANTA] Running repository governance conformance..."
+if ! CONFORMANCE_OUTPUT=$(python3 -m runtime.governance.governance_conformance_engine); then
+    printf '%s\n' "$CONFORMANCE_OUTPUT"
+    echo "[SAPIANTA] Commit blocked: governance conformance execution failed." >&2
+    exit 1
+fi
+printf '%s\n' "$CONFORMANCE_OUTPUT"
+if ! printf '%s\n' "$CONFORMANCE_OUTPUT" | grep -q '"status": "CONFORMANT"'; then
+    echo "[SAPIANTA] Commit blocked: repository governance is not conformant." >&2
+    exit 1
+fi
+
+# The canonical nested hook owns promotion_gate_v02 and check_layer_freeze.
+# Reuse that hook so their fail-closed behavior has one implementation owner.
+if [ -x "$REPOSITORY_ROOT/sapianta_system/scripts/hooks/pre-commit" ]; then
+    echo "[SAPIANTA] Running nested constitutional governance hook..."
+    (
+        cd "$REPOSITORY_ROOT/sapianta_system"
+        scripts/hooks/pre-commit
+    )
+else
+    echo "[SAPIANTA] Commit blocked: canonical nested governance hook missing." >&2
+    exit 1
+fi
+
+exit 0
