@@ -1,0 +1,254 @@
+{
+  "artifact_type": "SELF_KNOWLEDGE_EVIDENCE_MANIFEST_V1",
+  "constitutional_baseline": "CONSTITUTIONAL_GOVERNANCE_CLOSED",
+  "manifest_contract": "G65_01_SELF_KNOWLEDGE_ARCHITECTURE_CERTIFIED",
+  "manifest_hash": "sha256:9d211313d3561b45f780741c87485a415d2846ab794300598853a83f53d37866",
+  "manifest_version": "G65_02_SELF_KNOWLEDGE_EVIDENCE_MANIFEST_V1",
+  "required_source_classes": [
+    "CAPABILITY_REGISTRY",
+    "CERTIFIED_HISTORY",
+    "CONSTITUTION",
+    "ENFORCEMENT_AND_LINEAGE",
+    "GOVERNANCE_STATE",
+    "KNOWN_LIMITATION",
+    "OWNER_AND_BOUNDARY"
+  ],
+  "self_knowledge_architecture_verdict": "SELF_KNOWLEDGE_ARCHITECTURE_CERTIFIED",
+  "source_digest_algorithm": "SHA-256",
+  "sources": [
+    {
+      "authority_class": "GOVERNED_METADATA",
+      "path": "aigol/runtime/platform_capability_certification_registry.py",
+      "required": true,
+      "schema_or_section_identifier": "CapabilityCertificationRecord",
+      "sha256": "sha256:7dc7065b0a57691e411e38b1da9b64d4b6e41bdc1a7b3e8976c49b0c3c150d7b",
+      "source_class": "CAPABILITY_REGISTRY",
+      "source_id": "PLATFORM_CAPABILITY_CERTIFICATION_REGISTRY_RUNTIME"
+    },
+    {
+      "authority_class": "CANONICAL_MANIFEST",
+      "path": ".github/governance/manifests/PLATFORM_CORE_CAPABILITY_REGISTRY_V1.json",
+      "required": true,
+      "schema_or_section_identifier": "PLATFORM_CORE_CAPABILITY_REGISTRY_V1",
+      "sha256": "sha256:263cddb1f7791436b5dedebd9a6436e8407169e84d83f789e8d618b35c580875",
+      "source_class": "CAPABILITY_REGISTRY",
+      "source_id": "PLATFORM_CORE_CAPABILITY_REGISTRY_MANIFEST"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_01_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_01_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1",
+      "sha256": "sha256:f24cc3bf5bd88357789d1471be6facee39ce8029cf33f76f216873dccd85ea68",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_01_CLOSURE_AUDIT"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_02_CONSTITUTIONAL_GOVERNANCE_CLOSURE_REPAIR_SEQUENCING_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_02_CONSTITUTIONAL_GOVERNANCE_CLOSURE_REPAIR_SEQUENCING_REPORT_V1",
+      "sha256": "sha256:5fdd00d56651defd1389ee3aa4ac3d4316df118063c74b0fcc1329cedc31e46d",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_02_REPAIR_SEQUENCE"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_03_CONSTITUTIONAL_REUSE_PROOF_PRODUCTION_INTEGRATION_DESIGN_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_03_CONSTITUTIONAL_REUSE_PROOF_PRODUCTION_INTEGRATION_DESIGN_REPORT_V1",
+      "sha256": "sha256:b50b784dc489afb8115da5ef77761ceda18e46a09a2efd81c4094d47a43d5774",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_03_REUSE_PROOF_DESIGN"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_04_CONSTITUTIONAL_REUSE_PROOF_PRODUCTION_INTEGRATION_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_04_CONSTITUTIONAL_REUSE_PROOF_PRODUCTION_INTEGRATION_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:6b1cf8c7c8ca236d1e6a213b7a533b2ea040866db5cacf86d5358187029895c7",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_04_REUSE_PROOF_IMPLEMENTATION"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_05_CONSTITUTIONAL_GOVERNANCE_REVALIDATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_05_CONSTITUTIONAL_GOVERNANCE_REVALIDATION_REPORT_V1",
+      "sha256": "sha256:8ae6a74b64c9967d7db329750e148df0727f49582564584eded9bc709ce08623",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_05_REVALIDATION"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_06_AICLI_POSITIVE_CONSTITUTIONAL_LINEAGE_INTEGRATION_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_06_AICLI_POSITIVE_CONSTITUTIONAL_LINEAGE_INTEGRATION_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:095e6d4a7bd0362b8ac63b7dc5a01e9006fc835a8f9f765b93f9e1438aaa472c",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_06_AICLI_LINEAGE"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_07_CONSTITUTIONAL_CERTIFICATION_COMPLETION_GATE_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_07_CONSTITUTIONAL_CERTIFICATION_COMPLETION_GATE_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:c7a8ceee750f5b0cd0dc37605e6626899bb3f58fdc9ba09e493bb965b4ad5695",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_07_COMPLETION_GATE"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_08_GOVERNANCE_HOOK_DRIFT_REPAIR_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_08_GOVERNANCE_HOOK_DRIFT_REPAIR_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:77c1f8a9239ac1f85d9f5c8b805aac27f7e9b5b5e77d8b574e921174bf5877a1",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_08_HOOK_REPAIR"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_09_CONSTITUTIONAL_PROVIDER_OWNERSHIP_CONSOLIDATION_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_09_CONSTITUTIONAL_PROVIDER_OWNERSHIP_CONSOLIDATION_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:e576d1e74185da3dba93f8656c2e3b84016ca9be2e0bc5b4db797d0eb2719e3a",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_09_PROVIDER_OWNERSHIP"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_10_REPOSITORY_WIDE_NEGATIVE_CONSTITUTIONAL_CLOSURE_VALIDATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_10_REPOSITORY_WIDE_NEGATIVE_CONSTITUTIONAL_CLOSURE_VALIDATION_REPORT_V1",
+      "sha256": "sha256:94fc412501d461f99336c744e0b6a8560aa6f1560a8699633ae69e00c4e78123",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_10_NEGATIVE_VALIDATION"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_11_FINAL_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_11_FINAL_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1",
+      "sha256": "sha256:673c79ffc9650a0c095dd4cf7ce4868bb10d651560bfaa9c28564ad99c013c2b",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G64_11_FINAL_CLOSURE"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G65_01_SELF_KNOWLEDGE_ARCHITECTURE_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G65_01_SELF_KNOWLEDGE_ARCHITECTURE_REPORT_V1",
+      "sha256": "sha256:430b2805340dc9dae4c9ba7d451f720c17f12b06b11c54cd31130fbddef66121",
+      "source_class": "CERTIFIED_HISTORY",
+      "source_id": "G65_01_SELF_KNOWLEDGE_ARCHITECTURE"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/CANONICAL_LAYER_MODEL.md",
+      "required": true,
+      "schema_or_section_identifier": "CANONICAL_LAYER_MODEL",
+      "sha256": "sha256:05b9a9ff6028301b60d978270050cda49e80b0befa534c160356c4a03486a78c",
+      "source_class": "CONSTITUTION",
+      "source_id": "CANONICAL_LAYER_MODEL"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/CONSTITUTIONAL_ARCHITECTURE_SPEC_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "CONSTITUTIONAL_ARCHITECTURE_SPEC_V1",
+      "sha256": "sha256:e32f5772b3650befb5be4cd0201735aeddeebb47838684751c25939d27955650",
+      "source_class": "CONSTITUTION",
+      "source_id": "CONSTITUTIONAL_ARCHITECTURE_SPEC"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/CONSTITUTIONAL_INVARIANTS.md",
+      "required": true,
+      "schema_or_section_identifier": "CONSTITUTIONAL_INVARIANTS",
+      "sha256": "sha256:9483798a6b06ab57dfdfe4273aceebfba49fa3df29607bedf0b578d8e4efa6e4",
+      "source_class": "CONSTITUTION",
+      "source_id": "CONSTITUTIONAL_INVARIANTS"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/STABLE_SUBSTRATE_DECLARATION_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "STABLE_SUBSTRATE_DECLARATION_V1",
+      "sha256": "sha256:79d3b4707293eaf4b23dbd5d26e3cdc038da223698ed126ff518e380adffe2bb",
+      "source_class": "CONSTITUTION",
+      "source_id": "STABLE_SUBSTRATE_DECLARATION"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/GOVERNANCE_ENFORCEMENT_HIERARCHY.md",
+      "required": true,
+      "schema_or_section_identifier": "GOVERNANCE_ENFORCEMENT_HIERARCHY",
+      "sha256": "sha256:1996e4f307421fde2057c044f263703a8780f37828643ff6ea3eb964bcfe2b72",
+      "source_class": "ENFORCEMENT_AND_LINEAGE",
+      "source_id": "GOVERNANCE_ENFORCEMENT_HIERARCHY"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+      "required": true,
+      "schema_or_section_identifier": "GOVERNANCE_LINEAGE_MODEL",
+      "sha256": "sha256:9bc5f4b4e557cc0cf76f90526714a9715205f64ee7b1c7245a6c19e15688003d",
+      "source_class": "ENFORCEMENT_AND_LINEAGE",
+      "source_id": "GOVERNANCE_LINEAGE_MODEL"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_08_GOVERNANCE_HOOK_DRIFT_REPAIR_IMPLEMENTATION_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_08_GOVERNANCE_HOOK_DRIFT_REPAIR_IMPLEMENTATION_REPORT_V1",
+      "sha256": "sha256:77c1f8a9239ac1f85d9f5c8b805aac27f7e9b5b5e77d8b574e921174bf5877a1",
+      "source_class": "GOVERNANCE_STATE",
+      "source_id": "G64_08_CONFORMANCE_EVIDENCE"
+    },
+    {
+      "authority_class": "DOCUMENTATION_ONLY",
+      "path": "runtime/governance/master/SYSTEM_STATE.md",
+      "required": true,
+      "schema_or_section_identifier": "SYSTEM_STATE",
+      "sha256": "sha256:cc92be25b2ae35fbdb6c7cd3ac53fc4c6f6d84c0de87b388d9cb7344fa3f479d",
+      "source_class": "GOVERNANCE_STATE",
+      "source_id": "SYSTEM_STATE"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_11_FINAL_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_11_REMAINING_RISKS",
+      "sha256": "sha256:673c79ffc9650a0c095dd4cf7ce4868bb10d651560bfaa9c28564ad99c013c2b",
+      "source_class": "KNOWN_LIMITATION",
+      "source_id": "G64_11_RESIDUAL_RISKS"
+    },
+    {
+      "authority_class": "CANONICAL_CONSTITUTION",
+      "path": "docs/governance/GOVERNANCE_LINEAGE_MODEL.md",
+      "required": true,
+      "schema_or_section_identifier": "GOVERNANCE_LINEAGE_MODEL_LIMITATIONS",
+      "sha256": "sha256:9bc5f4b4e557cc0cf76f90526714a9715205f64ee7b1c7245a6c19e15688003d",
+      "source_class": "KNOWN_LIMITATION",
+      "source_id": "GOVERNANCE_LINEAGE_LIMITATIONS"
+    },
+    {
+      "authority_class": "RUNTIME_ENFORCED",
+      "path": "aigol/runtime/platform_core_conversation_interpreter_proposal_runtime_v2.py",
+      "required": true,
+      "schema_or_section_identifier": "PLATFORM_CORE_CONVERSATION_INTERPRETER_PROPOSAL_RUNTIME_V2",
+      "sha256": "sha256:bab87dee4df9ef4f64ca5b7f9f56a57f79fd71cc913ded6f14bec7922830f5f4",
+      "source_class": "OWNER_AND_BOUNDARY",
+      "source_id": "CONVERSATION_NON_AUTHORITY_VALIDATOR"
+    },
+    {
+      "authority_class": "CERTIFIED_G48_EVIDENCE",
+      "path": "docs/governance/G64_11_FINAL_CONSTITUTIONAL_GOVERNANCE_CLOSURE_AUDIT_REPORT_V1.md",
+      "required": true,
+      "schema_or_section_identifier": "G64_11_RESPONSIBILITY_BOUNDARIES",
+      "sha256": "sha256:673c79ffc9650a0c095dd4cf7ce4868bb10d651560bfaa9c28564ad99c013c2b",
+      "source_class": "OWNER_AND_BOUNDARY",
+      "source_id": "G64_11_OWNER_BOUNDARIES"
+    }
+  ]
+}
