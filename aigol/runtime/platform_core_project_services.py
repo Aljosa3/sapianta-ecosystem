@@ -330,11 +330,21 @@ def prepare_unified_human_interface_project_context(
         )
         else None
     )
+    active_owner_bound_envelope = (
+        active_clarification_state.get("owner_bound_clarification_envelope")
+        if isinstance(active_clarification_state, dict)
+        and isinstance(
+            active_clarification_state.get("owner_bound_clarification_envelope"),
+            dict,
+        )
+        else None
+    )
     validated_precedence = None
     validated_flow_binding = None
     production_flow_isolation = None
     bound_read_only_target = None
     bound_clarification_target = False
+    owner_bound_continuation = False
     if human_intent_precedence_decision is not None or (
         production_conversation_flow_binding is not None
     ):
@@ -357,38 +367,70 @@ def prepare_unified_human_interface_project_context(
             validate_production_conversation_flow_binding_replay_predecessors_v1,
         )
 
-        validated_precedence = validate_human_intent_precedence_decision_v1(
-            human_intent_precedence_decision,
-            expected_session_identity=session_id,
-            expected_request_hash=replay_hash(message),
-        )
-        validated_flow_binding = (
-            validate_production_conversation_flow_binding_replay_predecessors_v1(
-                production_conversation_flow_binding,
+        if active_owner_bound_envelope is not None:
+            from aigol.runtime.production_conversation_flow_binding import (
+                validate_owner_bound_clarification_envelope_v1,
+            )
+
+            active_owner_bound_envelope = (
+                validate_owner_bound_clarification_envelope_v1(
+                    active_owner_bound_envelope,
+                    expected_session_identity=session_id,
+                )
+            )
+            validated_flow_binding = (
+                validate_production_conversation_flow_binding_replay_predecessors_v1(
+                    production_conversation_flow_binding,
+                )
+            )
+            validated_precedence = validate_human_intent_precedence_decision_v1(
+                human_intent_precedence_decision,
+                expected_session_identity=session_id,
+                expected_request_hash=validated_flow_binding["request_hash"],
+            )
+            if active_owner_bound_envelope["conversation_identity"] != (
+                validated_flow_binding["conversation_identity"]
+            ) or active_owner_bound_envelope["expected_revision"] != (
+                validated_flow_binding["cwm_revision"]
+            ):
+                raise FailClosedRuntimeError(
+                    "owner-bound clarification continuation state is stale"
+                )
+            owner_bound_continuation = True
+        else:
+            validated_precedence = validate_human_intent_precedence_decision_v1(
+                human_intent_precedence_decision,
+                expected_session_identity=session_id,
                 expected_request_hash=replay_hash(message),
             )
-        )
+            validated_flow_binding = (
+                validate_production_conversation_flow_binding_replay_predecessors_v1(
+                    production_conversation_flow_binding,
+                    expected_request_hash=replay_hash(message),
+                )
+            )
         if validated_precedence["request_classification_hash"] != (
             validated_flow_binding["request_classification_hash"]
         ):
             raise FailClosedRuntimeError(
                 "production Conversation request classification substitution detected"
             )
-        disposition = validated_precedence["decision_disposition"]
-        if disposition == NEW_HUMAN_INTENT:
-            active_clarification_state = None
-            active_envelope = None
-        elif disposition == CLARIFICATION_REPLY:
-            if active_envelope is None or active_envelope.get("artifact_hash") != (
-                validated_precedence["active_clarification_hash"]
-            ):
+        if not owner_bound_continuation:
+            disposition = validated_precedence["decision_disposition"]
+            if disposition == NEW_HUMAN_INTENT:
+                active_clarification_state = None
+                active_envelope = None
+            elif disposition == CLARIFICATION_REPLY:
+                if active_envelope is None or active_envelope.get("artifact_hash") != (
+                    validated_precedence["active_clarification_hash"]
+                ):
+                    raise FailClosedRuntimeError(
+                        "production Conversation clarification origin is absent or stale"
+                    )
+            elif disposition in {AMBIGUOUS_STATE_RELATIONSHIP, HUMAN_STOP}:
                 raise FailClosedRuntimeError(
-                    "production Conversation clarification origin is absent or stale"
+                    "production Conversation precedence stops before Project Services"
                 )
-        elif disposition in {AMBIGUOUS_STATE_RELATIONSHIP, HUMAN_STOP}:
-            raise FailClosedRuntimeError(
-                "production Conversation precedence stops before Project Services"
-            )
         if validated_flow_binding["objective_commitment_required"] is True:
             production_flow_isolation = _enforce_production_flow_isolation(
                 session_root=session_root,
@@ -410,6 +452,12 @@ def prepare_unified_human_interface_project_context(
                 precedence=validated_precedence,
                 flow_binding=validated_flow_binding,
                 production_flow_isolation=production_flow_isolation,
+                clarification_continuity=(
+                    active_clarification_state
+                    if owner_bound_continuation
+                    else None
+                ),
+                precedence_reused_for_continuation=owner_bound_continuation,
             )
         if validated_flow_binding["requested_target_flow_id"] in {
             CFA_SELF_KNOWLEDGE,
@@ -421,7 +469,6 @@ def prepare_unified_human_interface_project_context(
         elif validated_flow_binding["requested_target_flow_id"] == (
             CFA_CLARIFICATION
         ):
-            bound_clarification_target = True
             production_flow_isolation = _enforce_production_flow_isolation(
                 session_root=session_root,
                 session_id=session_id,
@@ -430,6 +477,19 @@ def prepare_unified_human_interface_project_context(
                 attempted_flow_id=CFA_CLARIFICATION,
                 attempted_owner=validated_flow_binding["requested_target_owner"],
             )
+            if owner_bound_continuation:
+                if active_owner_bound_envelope["originating_owner"] != (
+                    G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+                ):
+                    raise FailClosedRuntimeError(
+                        "owner-bound clarification continuation owner is unsupported"
+                    )
+                active_envelope = _operational_envelope_for_owner_bound_continuation(
+                    session_id=session_id,
+                    owner_bound_envelope=active_owner_bound_envelope,
+                )
+            else:
+                bound_clarification_target = True
         else:
             _enforce_production_flow_isolation(
                 session_root=session_root,
@@ -495,6 +555,11 @@ def prepare_unified_human_interface_project_context(
             prior_workspace_state=prior_state,
             created_at=created_at,
             turn_reference=turn_reference,
+            owner_bound_envelope=(
+                active_owner_bound_envelope
+                if owner_bound_continuation
+                else None
+            ),
         )
         development_intent = owner_specific_continuation["development_intent_resolution"]
         clarification_continuity = owner_specific_continuation["clarification_continuity"]
@@ -1108,7 +1173,8 @@ def prepare_unified_human_interface_project_context(
         ),
         "human_intent_precedence_before_restored_context": isinstance(
             validated_precedence, dict
-        ),
+        )
+        and not owner_bound_continuation,
         "project_workspace_restored": prior_state is not None,
         "project_workspace_replay_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
         "project_guidance": guidance,
@@ -1528,6 +1594,8 @@ def _objective_commitment_gate_project_context(
     precedence: dict[str, Any],
     flow_binding: dict[str, Any],
     production_flow_isolation: dict[str, Any],
+    clarification_continuity: dict[str, Any] | None = None,
+    precedence_reused_for_continuation: bool = False,
 ) -> dict[str, Any]:
     clarification_references = [
         reference
@@ -1620,7 +1688,9 @@ def _objective_commitment_gate_project_context(
         "production_flow_isolation_enforcement_reference": (
             production_flow_isolation["replay_reference"]
         ),
-        "human_intent_precedence_before_restored_context": True,
+        "human_intent_precedence_before_restored_context": not (
+            precedence_reused_for_continuation
+        ),
         "project_workspace_restored": prior_state is not None,
         "project_workspace_replay_reference": (
             prior_state.get("replay_reference")
@@ -1630,7 +1700,7 @@ def _objective_commitment_gate_project_context(
         "project_guidance": deepcopy(guidance),
         "knowledge_reuse": knowledge_reuse,
         "project_objective_inference": None,
-        "clarification_continuity": None,
+        "clarification_continuity": deepcopy(clarification_continuity),
         "operational_turn_binding": None,
         "operational_turn_binding_reference": None,
         "operational_turn_binding_hash": None,
@@ -2134,6 +2204,7 @@ def _bind_owner_specific_clarification_reply(
     prior_workspace_state: dict[str, Any] | None,
     created_at: str,
     turn_reference: str,
+    owner_bound_envelope: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a reply to the Platform Core runtime that created the clarification."""
 
@@ -2146,15 +2217,43 @@ def _bind_owner_specific_clarification_reply(
         if isinstance(prior_workspace_state, dict)
         else None
     )
-    pending_envelope = (
-        pending.get("operational_clarification_envelope")
-        if isinstance(pending, dict)
-        else None
-    )
-    if not isinstance(pending_envelope, dict) or pending_envelope.get(
-        "artifact_hash"
-    ) != envelope.get("artifact_hash"):
-        raise FailClosedRuntimeError("operational clarification stale reply rejected")
+    if isinstance(owner_bound_envelope, dict):
+        from aigol.runtime.production_conversation_flow_binding import (
+            validate_owner_bound_clarification_envelope_v1,
+        )
+
+        common = validate_owner_bound_clarification_envelope_v1(
+            owner_bound_envelope,
+            expected_session_identity=session_id,
+            expected_originating_owner=envelope["clarification_owner"],
+        )
+        pending_common = (
+            pending.get("owner_bound_clarification_envelope")
+            if isinstance(pending, dict)
+            else None
+        )
+        if not isinstance(pending_common, dict) or pending_common.get(
+            "artifact_hash"
+        ) != common["artifact_hash"]:
+            raise FailClosedRuntimeError(
+                "owner-bound clarification stale reply rejected"
+            )
+        if common["originating_artifact_hash"] != envelope["artifact_hash"]:
+            raise FailClosedRuntimeError(
+                "owner-bound clarification source substitution detected"
+            )
+    else:
+        pending_envelope = (
+            pending.get("operational_clarification_envelope")
+            if isinstance(pending, dict)
+            else None
+        )
+        if not isinstance(pending_envelope, dict) or pending_envelope.get(
+            "artifact_hash"
+        ) != envelope.get("artifact_hash"):
+            raise FailClosedRuntimeError(
+                "operational clarification stale reply rejected"
+            )
     original = require_string(envelope.get("original_message"), "original_message")
     resolution = resolve_development_intent(
         message=original,
@@ -2219,6 +2318,49 @@ def _bind_owner_specific_clarification_reply(
         "development_intent_resolution": resolution,
         "clarification_continuity": continuity,
     }
+
+
+def _operational_envelope_for_owner_bound_continuation(
+    *,
+    session_id: str,
+    owner_bound_envelope: dict[str, Any],
+) -> dict[str, Any]:
+    """Recover the existing G29 owner artifact referenced by the common envelope."""
+
+    from aigol.runtime.production_conversation_flow_binding import (
+        validate_owner_bound_clarification_envelope_v1,
+    )
+
+    common = validate_owner_bound_clarification_envelope_v1(
+        owner_bound_envelope,
+        expected_session_identity=session_id,
+        expected_originating_owner=G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER,
+    )
+    turn = reconstruct_operational_turn_binding(
+        common["originating_artifact_reference"]
+    )
+    if turn.get("session_id") != session_id:
+        raise FailClosedRuntimeError(
+            "owner-bound clarification originating turn is cross-session"
+        )
+    envelope = turn.get("operational_clarification_envelope")
+    if not isinstance(envelope, dict):
+        raise FailClosedRuntimeError(
+            "owner-bound clarification originating owner artifact is absent"
+        )
+    validated = validate_operational_clarification_envelope(
+        envelope,
+        expected_session_id=session_id,
+    )
+    if validated["artifact_hash"] != common["originating_artifact_hash"]:
+        raise FailClosedRuntimeError(
+            "owner-bound clarification originating artifact was substituted"
+        )
+    if validated["clarification_owner"] != common["originating_owner"]:
+        raise FailClosedRuntimeError(
+            "owner-bound clarification originating owner was substituted"
+        )
+    return validated
 
 
 def _record_artifact_attachment_retry_state(
@@ -3070,6 +3212,11 @@ def replay_backed_uhi_clarification_state(workspace_state: dict[str, Any] | None
             pending.get("operational_clarification_envelope")
         )
         if isinstance(pending.get("operational_clarification_envelope"), dict)
+        else None,
+        "owner_bound_clarification_envelope": deepcopy(
+            pending.get("owner_bound_clarification_envelope")
+        )
+        if isinstance(pending.get("owner_bound_clarification_envelope"), dict)
         else None,
         "pending_clarification_request": deepcopy(pending),
         "replay_backed": True,

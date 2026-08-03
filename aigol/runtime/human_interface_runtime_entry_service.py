@@ -522,7 +522,10 @@ def run_human_interface_runtime_entry(
             created_at=created,
             completion=result,
             turn_results=[],
-            pending_clarification=None,
+            pending_clarification=_owner_bound_pending_clarification(
+                project_contexts[-1] if project_contexts else None,
+                requests[-1] if requests else None,
+            ),
             pending_summary=None,
         )
         result["project_workspace_replay_reference"] = workspace_state["replay_reference"]
@@ -1614,6 +1617,55 @@ def _g31_application_result(
         }
     )
     return result
+
+
+def _owner_bound_pending_clarification(
+    project_context: dict[str, Any] | None,
+    request: str | None,
+) -> dict[str, Any] | None:
+    """Project an existing common envelope onto the existing workspace surface."""
+
+    if not isinstance(project_context, dict):
+        return None
+    conversation = project_context.get("human_conversation_experience")
+    envelope = project_context.get("owner_bound_clarification_envelope")
+    if not isinstance(conversation, dict) or not isinstance(envelope, dict):
+        return None
+    if conversation.get("response_mode") != "CLARIFICATION":
+        return None
+    questions = conversation.get("clarification_questions")
+    return {
+        "original_message": request,
+        "clarification_required": True,
+        "clarification_authority": "PLATFORM_CORE",
+        "conversation_response_mode": conversation.get("response_mode"),
+        "user_headline": conversation.get("user_headline"),
+        "user_explanation": conversation.get("user_explanation"),
+        "requested_work_type": conversation.get("requested_work_type"),
+        "work_type": conversation.get("work_type"),
+        "prepared_work_type": conversation.get("prepared_work_type"),
+        "work_type_source": conversation.get("work_type_source"),
+        "work_type_source_text": conversation.get("work_type_source_text"),
+        "mutation_allowed": conversation.get("mutation_allowed"),
+        "runtime_implementation": conversation.get("runtime_implementation"),
+        "work_type_change_allowed": conversation.get("work_type_change_allowed"),
+        "work_type_conflict_detected": conversation.get(
+            "work_type_conflict_detected"
+        ),
+        "work_type_conflict_reason": conversation.get("work_type_conflict_reason"),
+        "clarification_questions": (
+            [str(question) for question in questions]
+            if isinstance(questions, list)
+            else []
+        ),
+        "owner_bound_clarification_envelope": deepcopy(envelope),
+        "operational_clarification_envelope": None,
+        "artifact_attachment_retry_state": deepcopy(
+            conversation.get("artifact_attachment_retry_state")
+        )
+        if isinstance(conversation.get("artifact_attachment_retry_state"), dict)
+        else None,
+    }
 
 
 def _render_g31_execution_progress(state: dict[str, Any]) -> list[str]:

@@ -269,7 +269,7 @@ def test_clarification_replay_reconstruction_is_deterministic(
     ]["artifact_hash"]
 
 
-def test_d1_restoration_remains_unimplemented_after_transport_convergence(
+def test_g66_12_reuses_g66_11_transport_without_changing_its_artifacts(
     tmp_path: Path,
 ) -> None:
     session = "G66-11-D1-UNCHANGED"
@@ -287,9 +287,15 @@ def test_d1_restoration_remains_unimplemented_after_transport_convergence(
     assert first["platform_core_project_services_context"][
         "owner_bound_clarification_envelope"
     ] is not None
-    assert second["human_intent_precedence_decision"][
-        "active_clarification_identity"
-    ] is None
-    assert second["human_intent_precedence_decision"][
-        "decision_disposition"
-    ] == "NEW_HUMAN_INTENT"
+    assert second["human_intent_precedence_decision"] == first[
+        "platform_core_project_services_context"
+    ]["human_intent_precedence_decision"]
+    assert second["production_conversation_flow_binding"] == first[
+        "platform_core_project_services_context"
+    ]["production_conversation_flow_binding"]
+    assert second["production_conversation_binding"][
+        "clarification_continuation_restored"
+    ] is True
+    assert second["production_conversation_binding"][
+        "human_intent_reclassified"
+    ] is False

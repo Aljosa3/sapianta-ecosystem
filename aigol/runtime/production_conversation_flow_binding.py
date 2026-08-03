@@ -815,10 +815,20 @@ def compose_production_conversation_flow_binding_v1(
     request = _text(request_text, "request_text")
     session = _text(session_identity, "session_identity")
     timestamp = cwm_v2._canonical_timestamp(created_at, "created_at")
+    active = _active_clarification_envelope(prior_workspace_state)
+    if isinstance(active, dict) and active.get("artifact_type") == (
+        OWNER_BOUND_CLARIFICATION_ENVELOPE_V1
+    ):
+        return _restore_owner_bound_clarification_continuation(
+            active_envelope=active,
+            session_identity=session,
+            runtime_root=runtime_root,
+            workspace_identity=workspace_identity,
+            observed_at=timestamp,
+        )
     classification = validate_self_knowledge_request_classification(
         classify_self_knowledge_request(request)
     )
-    active = _active_clarification_envelope(prior_workspace_state)
     precedence = create_human_intent_precedence_decision_v1(
         request_text=request,
         interface_identity=interface_identity,
@@ -1108,12 +1118,185 @@ def _active_clarification_envelope(
     )
 
     state = replay_backed_uhi_clarification_state(prior_workspace_state)
-    envelope = (
-        state.get("operational_clarification_envelope")
-        if isinstance(state, dict)
-        else None
-    )
+    envelope = None
+    if isinstance(state, dict):
+        envelope = state.get("owner_bound_clarification_envelope")
+        if not isinstance(envelope, dict):
+            envelope = state.get("operational_clarification_envelope")
     return deepcopy(envelope) if isinstance(envelope, dict) else None
+
+
+def _restore_owner_bound_clarification_continuation(
+    *,
+    active_envelope: dict[str, Any],
+    session_identity: str,
+    runtime_root: str | Path,
+    workspace_identity: str | Path,
+    observed_at: str,
+) -> dict[str, Any]:
+    """Reconnect existing workspace, CWM, owner, and flow evidence for D1."""
+
+    envelope = validate_owner_bound_clarification_envelope_v1(
+        active_envelope,
+        expected_session_identity=session_identity,
+    )
+    if cwm_v2._parse_timestamp(
+        envelope["expires_at"], "expires_at"
+    ) <= cwm_v2._parse_timestamp(observed_at, "observed_at"):
+        _fail("owner-bound clarification restoration is expired")
+
+    prior_context, context_reference = _project_context_for_clarification(
+        runtime_root=runtime_root,
+        session_identity=session_identity,
+        clarification_envelope=envelope,
+    )
+    binding = validate_production_conversation_flow_binding_replay_predecessors_v1(
+        prior_context["production_conversation_flow_binding"]
+    )
+    precedence = validate_human_intent_precedence_decision_v1(
+        prior_context["human_intent_precedence_decision"],
+        expected_session_identity=session_identity,
+        expected_request_hash=binding["request_hash"],
+    )
+    if precedence["request_classification_hash"] != binding[
+        "request_classification_hash"
+    ]:
+        _fail("restored clarification Human Intent lineage is inconsistent")
+    if envelope["conversation_identity"] != binding["conversation_identity"]:
+        _fail("restored clarification Conversation identity substitution detected")
+    if envelope["expected_revision"] != binding["cwm_revision"]:
+        _fail("restored clarification CWM revision substitution detected")
+
+    conversation_session = session_identity + ":production-conversation-v1"
+    cwm_root = Path(runtime_root) / "production_conversation_cwm"
+    state = cwm_v2.recover_conversation_working_memory_state_v2(
+        runtime_root=cwm_root,
+        workspace_identity=workspace_identity,
+        session_identity=conversation_session,
+        observed_at=observed_at,
+    )
+    if state is None:
+        _fail("restored clarification Conversation Working Memory is absent")
+    state = cwm_v2.validate_conversation_working_memory_state_v2(state)
+    if state["envelope"]["conversation_identity"] != binding[
+        "conversation_identity"
+    ]:
+        _fail("restored clarification Conversation identity is inconsistent")
+    if state["revision"] != binding["cwm_revision"]:
+        _fail("restored clarification Conversation revision is stale")
+    if replay_hash(state) != binding["cwm_state_hash"]:
+        _fail("restored clarification Conversation Working Memory was mutated")
+
+    predecessor_artifacts = {
+        reference["stage"]: load_json(Path(reference["replay_reference"]))
+        for reference in binding["ordered_predecessor_references"]
+    }
+    binding_reference = _flow_binding_reference(binding)
+    validation_reference = next(
+        reference["replay_reference"]
+        for reference in binding["ordered_predecessor_references"]
+        if reference["stage"] == "PROPOSAL_VALIDATION"
+    )
+    commit_reference = next(
+        (
+            reference["replay_reference"]
+            for reference in binding["ordered_predecessor_references"]
+            if reference["stage"] == "PROPOSAL_COMMIT"
+        ),
+        None,
+    )
+    replay_root = str(Path(binding_reference).parent)
+    return {
+        "human_intent_precedence_decision": precedence,
+        "request_classification": None,
+        "conversation_identity": state["envelope"]["conversation_identity"],
+        "conversation_state": state,
+        "source_turn_binding": None,
+        "deterministic_proposal": predecessor_artifacts.get(
+            "INTERPRETER_PROPOSAL"
+        ),
+        "g61_proposal_assistance_disposition": (
+            "NOT_REINVOKED_EXISTING_CLARIFICATION_CONTINUATION"
+        ),
+        "proposal_validation": predecessor_artifacts.get("PROPOSAL_VALIDATION"),
+        "proposal_commit": predecessor_artifacts.get("PROPOSAL_COMMIT"),
+        "objective_readiness_report": predecessor_artifacts.get(
+            "OBJECTIVE_READINESS"
+        ),
+        "platform_flow_selection": {
+            "selection_owner": binding["selection_owner"],
+            "selection_only": True,
+            "route_status": binding["route_sufficiency_status"],
+            "service_invoked": False,
+            "selection_reused": True,
+        },
+        "owner_bound_clarification_envelope": envelope,
+        "production_conversation_flow_binding": binding,
+        "production_conversation_flow_binding_reference": binding_reference,
+        "production_conversation_replay_reference": replay_root,
+        "proposal_validation_precedes_commit": commit_reference is None
+        or binding["owner_local_replay_references"].index(validation_reference)
+        < binding["owner_local_replay_references"].index(commit_reference),
+        "clarification_continuation_restored": True,
+        "clarification_continuation_context_reference": context_reference,
+        "originating_owner_restored": envelope["originating_owner"],
+        "conversation_working_memory_reused": True,
+        "production_flow_binding_reused": True,
+        "human_intent_reclassified": False,
+        "platform_query_router_reinvoked": False,
+        "project_services_invoked": False,
+        "new_constitutional_owner_created": False,
+    }
+
+
+def _project_context_for_clarification(
+    *,
+    runtime_root: str | Path,
+    session_identity: str,
+    clarification_envelope: dict[str, Any],
+) -> tuple[dict[str, Any], str]:
+    context_root = Path(runtime_root) / session_identity / "uhi_project_services"
+    matches: list[tuple[dict[str, Any], str]] = []
+    for path in sorted(context_root.glob("*_uhi_project_context_recorded.json")):
+        candidate = load_json(path)
+        stored_hash = candidate.get("artifact_hash")
+        body = dict(candidate)
+        body.pop("artifact_hash", None)
+        if stored_hash != replay_hash(body):
+            _fail("restored Project Services clarification Replay was tampered")
+        envelope = candidate.get("owner_bound_clarification_envelope")
+        if not isinstance(envelope, dict) or envelope.get("artifact_hash") != (
+            clarification_envelope["artifact_hash"]
+        ):
+            continue
+        if candidate.get("session_id") != session_identity:
+            _fail("restored clarification Project Services session mismatch")
+        validated = validate_owner_bound_clarification_envelope_v1(
+            envelope,
+            expected_session_identity=session_identity,
+            expected_originating_owner=clarification_envelope[
+                "originating_owner"
+            ],
+        )
+        if validated != clarification_envelope:
+            _fail("restored clarification owner-bound envelope substitution detected")
+        matches.append((candidate, str(path)))
+    if not matches:
+        _fail("owner-bound clarification has no existing Project Services Replay")
+    return matches[-1]
+
+
+def _flow_binding_reference(binding: dict[str, Any]) -> str:
+    replay_roots = {
+        Path(reference).parent
+        for reference in binding["owner_local_replay_references"]
+    }
+    for replay_root in sorted(replay_roots):
+        for path in sorted(replay_root.glob("*_flow_binding.json")):
+            candidate = load_json(path)
+            if candidate.get("artifact_hash") == binding["artifact_hash"]:
+                return str(path)
+    _fail("restored production Conversation flow binding reference is absent")
 
 
 def _deterministic_source_turn_operation(

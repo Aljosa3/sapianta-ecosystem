@@ -229,7 +229,7 @@ def test_conversation_identity_and_revisions_survive_separate_default_turns(
     assert first_binding["cwm_state_hash"] != second_binding["cwm_state_hash"]
 
 
-def test_defect_common_clarification_is_not_restored_for_the_next_reply(
+def test_repaired_common_clarification_restores_the_same_flow_for_next_reply(
     tmp_path: Path,
 ) -> None:
     session = "G66-08-COMMON-CLARIFICATION"
@@ -251,16 +251,22 @@ def test_defect_common_clarification_is_not_restored_for_the_next_reply(
     )
     contexts = _contexts(tmp_path, session)
     first_envelope = contexts[0]["owner_bound_clarification_envelope"]
+    first_precedence = contexts[0]["human_intent_precedence_decision"]
     second_precedence = contexts[1]["human_intent_precedence_decision"]
 
     assert first_envelope["originating_owner"] == (
         "CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY"
     )
-    assert second_precedence["decision_disposition"] == "NEW_HUMAN_INTENT"
-    assert second_precedence["active_clarification_identity"] is None
+    assert second_precedence == first_precedence
     assert contexts[1]["production_conversation_flow_binding"][
         "requested_target_flow_id"
-    ] == CFA_PLATFORM_KNOWLEDGE
+    ] == CFA_DEVELOPMENT_GOVERNANCE
+    assert contexts[1]["production_conversation_flow_binding"] == contexts[0][
+        "production_conversation_flow_binding"
+    ]
+    assert contexts[1]["clarification_continuity"][
+        "owner_bound_clarification_envelope"
+    ] == first_envelope
     assert result["approval_count"] == 0
     assert result["runtime_entered"] is False
 
@@ -300,12 +306,13 @@ def test_defect_default_typed_multi_turn_never_reaches_objective_commitment(
 
     assert len(bindings) == 7
     assert len({item["conversation_identity"] for item in bindings}) == 1
-    assert [item["cwm_revision"] for item in bindings] == list(range(1, 8))
+    assert [item["cwm_revision"] for item in bindings] == [1] * 7
     assert bindings[0]["requested_target_flow_id"] == CFA_DEVELOPMENT_GOVERNANCE
     assert all(
-        item["requested_target_flow_id"] == CFA_PLATFORM_KNOWLEDGE
+        item["requested_target_flow_id"] == CFA_DEVELOPMENT_GOVERNANCE
         for item in bindings[1:]
     )
+    assert all(item == bindings[0] for item in bindings[1:])
     assert all(
         item["semantic_commit_identity"] is not None for item in bindings
     )
