@@ -613,6 +613,114 @@ def route_platform_query(
     return response
 
 
+def select_platform_query_route(
+    *,
+    query: str,
+    workspace_state: dict[str, Any] | None = None,
+    request_classification: dict[str, Any] | None = None,
+    development_plan_artifact: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the existing router's selection without invoking its service.
+
+    This is the selection-only attachment used by the constitutional
+    production-conversation binding.  It deliberately reuses the same
+    classifier, descriptors, candidate scoring, tie handling, evidence gates,
+    and lifecycle precedence as :func:`route_platform_query` while leaving the
+    selected service to Project Services.
+    """
+
+    raw_query = _require_string(query, "query")
+    if request_classification is None:
+        classification = validate_self_knowledge_request_classification(
+            classify_self_knowledge_request(raw_query)
+        )
+    elif isinstance(request_classification, dict):
+        classification = validate_self_knowledge_request_classification(
+            request_classification
+        )
+    else:
+        raise FailClosedRuntimeError(
+            "request classification must be a validated object"
+        )
+
+    if classification["request_classification"] == SELF_KNOWLEDGE_QUERY:
+        return {
+            "selection_owner": PLATFORM_QUERY_ROUTER_VERSION,
+            "selection_only": True,
+            "route_status": ROUTE_READY,
+            "selected_service": SELF_KNOWLEDGE_ROUTE,
+            "selected_query_class": SELF_KNOWLEDGE_QUERY,
+            "selected_route_score": None,
+            "ambiguity_detected": False,
+            "required_evidence_missing": [],
+            "service_invoked": False,
+            "request_classification": classification,
+        }
+    if classification["request_classification"] == (
+        SELF_KNOWLEDGE_CLARIFICATION_REQUIRED
+    ):
+        return {
+            "selection_owner": PLATFORM_QUERY_ROUTER_VERSION,
+            "selection_only": True,
+            "route_status": ROUTE_CLARIFICATION_REQUIRED,
+            "selected_service": SELF_KNOWLEDGE_ROUTE,
+            "selected_query_class": SELF_KNOWLEDGE_CLARIFICATION_REQUIRED,
+            "selected_route_score": None,
+            "ambiguity_detected": True,
+            "required_evidence_missing": [],
+            "service_invoked": False,
+            "request_classification": classification,
+        }
+
+    descriptors = _descriptors(None)
+    knowledge_probe = query_platform_knowledge(
+        query=raw_query,
+        workspace_state=workspace_state,
+    )
+    development_intent = resolve_development_intent(
+        message=raw_query,
+        workspace_state=workspace_state,
+    )
+    candidates = _candidate_routes(
+        query=raw_query,
+        descriptors=descriptors,
+        knowledge_probe=knowledge_probe,
+        development_intent=development_intent,
+        runtime_or_replay_evidence_supplied=False,
+        development_plan_artifact_supplied=isinstance(
+            development_plan_artifact, dict
+        ),
+    )
+    selected = _select_route(candidates)
+    selected, lifecycle_precedence = _apply_lifecycle_precedence(
+        selected=selected,
+        candidates=candidates,
+        query=raw_query,
+        development_plan_artifact=development_plan_artifact,
+    )
+    route_status = _route_status(
+        selected,
+        candidates,
+        lifecycle_precedence=lifecycle_precedence,
+    )
+    return {
+        "selection_owner": PLATFORM_QUERY_ROUTER_VERSION,
+        "selection_only": True,
+        "route_status": route_status,
+        "selected_service": selected["service_identifier"],
+        "selected_query_class": selected["query_class"],
+        "selected_route_score": selected["score"],
+        "ambiguity_detected": route_status == ROUTE_CLARIFICATION_REQUIRED,
+        "required_evidence_missing": _required_evidence_missing(
+            selected, route_status
+        ),
+        "service_invoked": False,
+        "request_classification": classification,
+        "candidate_routes": candidates,
+        "lifecycle_precedence": lifecycle_precedence,
+    }
+
+
 def validate_platform_query_router_response(response: dict[str, Any]) -> dict[str, Any]:
     """Validate a router response artifact."""
 

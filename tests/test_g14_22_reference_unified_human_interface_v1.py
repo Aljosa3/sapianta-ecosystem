@@ -249,7 +249,7 @@ def test_aicli_source_remains_thin_adapter() -> None:
 
     for token in forbidden:
         assert token not in source
-    assert "prepare_unified_human_interface_project_context(" in source
+    assert "prepare_unified_human_interface_project_context(" not in source
     assert "record_unified_human_interface_workspace_state(" in source
     assert "_run_certified_runtime(" not in source
     assert "run_human_interface_runtime_entry(" in source

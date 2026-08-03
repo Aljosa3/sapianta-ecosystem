@@ -45,7 +45,6 @@ from aigol.runtime.human_interface_conversation_execution_integration_v2 import 
 )
 from aigol.runtime.platform_core_project_services import (
     guided_development_clarification,
-    prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
 )
 
@@ -1491,15 +1490,22 @@ def _submit_composed_request(
     dict[str, Any] | None,
 ]:
     message = "\n".join(compose_buffer)
-    project_context = prepare_unified_human_interface_project_context(
+    canonical_entry = run_human_interface_runtime_entry(
         interface_name="aicli",
         session_id=session,
-        message=message,
+        human_requests=[message],
+        created_at=created,
         runtime_root=root,
         workspace=workspace_path,
-        created_at=created,
+        governed_runtime_runner=run_interactive_conversation,
+        operator_context="AICLI_NEW_TURN_PRE_APPROVAL",
         explicit_canonical_artifact_references=artifact_references,
     )
+    project_context = canonical_entry.get("platform_core_project_services_context")
+    if not isinstance(project_context, dict):
+        raise FailClosedRuntimeError(
+            "canonical Human Entry returned no Platform Core project context"
+        )
     output_writer("Request submitted to Platform Core.")
     output_writer(_render_project_context(project_context))
     resolution = project_context["development_intent_resolution"]
@@ -1516,6 +1522,13 @@ def _submit_composed_request(
             "clarification_required": resolution.get("clarification_required"),
             "conversation_response_mode": conversation.get("response_mode"),
             "project_context_reference": project_context.get("replay_reference"),
+            "canonical_human_entry_used": canonical_entry.get(
+                "human_interface_runtime_entry_service_used"
+            )
+            is True,
+            "production_conversation_flow_binding_hash": (
+                canonical_entry.get("production_conversation_flow_binding") or {}
+            ).get("artifact_hash"),
         }
     )
     multiline_requests = 1 if len(compose_buffer) > 1 else 0

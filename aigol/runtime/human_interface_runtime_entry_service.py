@@ -90,6 +90,7 @@ from aigol.runtime.grounded_execution_authorization_human_decision_binding impor
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.platform_core_project_services import (
+    latest_platform_core_workspace_state,
     prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
 )
@@ -328,8 +329,26 @@ def run_human_interface_runtime_entry(
             }
         ]
     else:
-        project_contexts = [
-            prepare_unified_human_interface_project_context(
+        from aigol.runtime.production_conversation_flow_binding import (
+            compose_production_conversation_flow_binding_v1,
+        )
+
+        production_conversation_bindings = []
+        project_contexts = []
+        for request in requests:
+            prior_workspace_state = latest_platform_core_workspace_state(
+                root / session
+            )
+            production_binding = compose_production_conversation_flow_binding_v1(
+                interface_identity=interface,
+                session_identity=session,
+                request_text=request,
+                runtime_root=root,
+                workspace_identity=workspace_text,
+                created_at=created,
+                prior_workspace_state=prior_workspace_state,
+            )
+            context = prepare_unified_human_interface_project_context(
                 interface_name=interface,
                 session_id=session,
                 message=request,
@@ -340,9 +359,19 @@ def run_human_interface_runtime_entry(
                 explicit_canonical_artifact_references=(
                     explicit_canonical_artifact_references
                 ),
+                human_intent_precedence_decision=production_binding[
+                    "human_intent_precedence_decision"
+                ],
+                production_conversation_flow_binding=production_binding[
+                    "production_conversation_flow_binding"
+                ],
             )
-            for request in requests
-        ]
+            production_binding["project_services_invoked"] = True
+            production_binding["project_services_context_hash"] = context.get(
+                "artifact_hash"
+            )
+            production_conversation_bindings.append(production_binding)
+            project_contexts.append(context)
         intent_resolutions = [
             context["development_intent_resolution"]
             for context in project_contexts
@@ -352,6 +381,7 @@ def run_human_interface_runtime_entry(
         str(resolution.get("canonical_runtime_prompt") or request)
         for request, resolution in zip(requests, intent_resolutions)
         if resolution.get("runtime_binding_admissible") is True
+        and operator_context != "AICLI_NEW_TURN_PRE_APPROVAL"
     ]
     read_only_work_results = [
         context.get("governed_read_only_work_result")
@@ -369,6 +399,57 @@ def run_human_interface_runtime_entry(
             "canonical_runtime_entry_workspace": workspace_text,
             "platform_core_project_services_contexts": project_contexts,
             "platform_core_project_services_context": project_contexts[-1] if project_contexts else None,
+            "production_conversation_bindings": (
+                production_conversation_bindings
+                if approved_implementation_turn_binding is None
+                else []
+            ),
+            "production_conversation_binding": (
+                production_conversation_bindings[-1]
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "production_conversation_flow_binding": (
+                production_conversation_bindings[-1][
+                    "production_conversation_flow_binding"
+                ]
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "human_intent_precedence_decision": (
+                production_conversation_bindings[-1][
+                    "human_intent_precedence_decision"
+                ]
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "owner_bound_clarification_envelope": (
+                production_conversation_bindings[-1].get(
+                    "owner_bound_clarification_envelope"
+                )
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "canonical_presentation_flow_binding_hash": (
+                production_conversation_bindings[-1][
+                    "production_conversation_flow_binding"
+                ]["artifact_hash"]
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "canonical_presentation_response_mode": (
+                (
+                    project_contexts[-1].get("human_conversation_experience")
+                    or {}
+                ).get("response_mode")
+                if project_contexts
+                else None
+            ),
             "development_intent_resolutions": intent_resolutions,
             "development_intent_resolution": intent_resolutions[-1] if intent_resolutions else None,
             "approved_implementation_turn_binding": deepcopy(
@@ -401,6 +482,11 @@ def run_human_interface_runtime_entry(
             "human_interface_selects_artifacts": False,
             "human_interface_influences_semantic_selection": False,
             "platform_core_project_services_delegated": True,
+            "production_conversation_binding_orchestrated": bool(
+                approved_implementation_turn_binding is None
+                and production_conversation_bindings
+            ),
+            "production_conversation_new_owner_created": False,
             "platform_core_runtime_delegated": True,
             "manual_chatgpt_codex_transfer_required": False,
         }

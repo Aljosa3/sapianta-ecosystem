@@ -242,6 +242,8 @@ def prepare_unified_human_interface_project_context(
     reuse_proof_exemption_evidence: dict[str, Any] | None = None,
     reuse_proof_authenticated_baseline: dict[str, Any] | None = None,
     reuse_proof_proposed_scope: dict[str, Any] | None = None,
+    human_intent_precedence_decision: dict[str, Any] | None = None,
+    production_conversation_flow_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Prepare the canonical Platform Core project-services context for any UHI."""
 
@@ -322,6 +324,71 @@ def prepare_unified_human_interface_project_context(
         )
         else None
     )
+    validated_precedence = None
+    validated_flow_binding = None
+    if human_intent_precedence_decision is not None or (
+        production_conversation_flow_binding is not None
+    ):
+        if not isinstance(human_intent_precedence_decision, dict) or not isinstance(
+            production_conversation_flow_binding, dict
+        ):
+            raise FailClosedRuntimeError(
+                "production Conversation precedence and flow binding must be paired"
+            )
+        from aigol.runtime.production_conversation_flow_binding import (
+            AMBIGUOUS_STATE_RELATIONSHIP,
+            CLARIFICATION_REPLY,
+            HUMAN_STOP,
+            NEW_HUMAN_INTENT,
+            validate_human_intent_precedence_decision_v1,
+            validate_production_conversation_flow_binding_replay_predecessors_v1,
+        )
+
+        validated_precedence = validate_human_intent_precedence_decision_v1(
+            human_intent_precedence_decision,
+            expected_session_identity=session_id,
+            expected_request_hash=replay_hash(message),
+        )
+        validated_flow_binding = (
+            validate_production_conversation_flow_binding_replay_predecessors_v1(
+                production_conversation_flow_binding,
+                expected_request_hash=replay_hash(message),
+            )
+        )
+        if validated_precedence["request_classification_hash"] != (
+            validated_flow_binding["request_classification_hash"]
+        ):
+            raise FailClosedRuntimeError(
+                "production Conversation request classification substitution detected"
+            )
+        disposition = validated_precedence["decision_disposition"]
+        if disposition == NEW_HUMAN_INTENT:
+            active_clarification_state = None
+            active_envelope = None
+        elif disposition == CLARIFICATION_REPLY:
+            if active_envelope is None or active_envelope.get("artifact_hash") != (
+                validated_precedence["active_clarification_hash"]
+            ):
+                raise FailClosedRuntimeError(
+                    "production Conversation clarification origin is absent or stale"
+                )
+        elif disposition in {AMBIGUOUS_STATE_RELATIONSHIP, HUMAN_STOP}:
+            raise FailClosedRuntimeError(
+                "production Conversation precedence stops before Project Services"
+            )
+        if validated_flow_binding["objective_commitment_required"] is True:
+            return _objective_commitment_gate_project_context(
+                interface_name=interface_name,
+                session_id=session_id,
+                workspace=workspace,
+                created_at=created_at,
+                message=message,
+                session_root=session_root,
+                prior_state=prior_state,
+                guidance=guidance,
+                precedence=validated_precedence,
+                flow_binding=validated_flow_binding,
+            )
     if active_envelope is not None:
         owner_specific_continuation = _bind_owner_specific_clarification_reply(
             reply=message,
@@ -904,6 +971,21 @@ def prepare_unified_human_interface_project_context(
         "workspace": str(Path(workspace)),
         "created_at": require_string(created_at, "created_at"),
         "message_hash": replay_hash(message),
+        "human_intent_precedence_decision": deepcopy(validated_precedence),
+        "human_intent_precedence_decision_hash": (
+            validated_precedence.get("artifact_hash")
+            if isinstance(validated_precedence, dict)
+            else None
+        ),
+        "production_conversation_flow_binding": deepcopy(validated_flow_binding),
+        "production_conversation_flow_binding_hash": (
+            validated_flow_binding.get("artifact_hash")
+            if isinstance(validated_flow_binding, dict)
+            else None
+        ),
+        "human_intent_precedence_before_restored_context": isinstance(
+            validated_precedence, dict
+        ),
         "project_workspace_restored": prior_state is not None,
         "project_workspace_replay_reference": prior_state.get("replay_reference") if isinstance(prior_state, dict) else None,
         "project_guidance": guidance,
@@ -1031,6 +1113,158 @@ def prepare_unified_human_interface_project_context(
                 route.get("route_status") if isinstance(route, dict) else None
             ),
         )
+    return artifact
+
+
+def _objective_commitment_gate_project_context(
+    *,
+    interface_name: str,
+    session_id: str,
+    workspace: str | Path,
+    created_at: str,
+    message: str,
+    session_root: Path,
+    prior_state: dict[str, Any] | None,
+    guidance: dict[str, Any],
+    precedence: dict[str, Any],
+    flow_binding: dict[str, Any],
+) -> dict[str, Any]:
+    clarification_references = [
+        reference
+        for reference in flow_binding["ordered_predecessor_references"]
+        if reference["stage"] == "OWNER_BOUND_CLARIFICATION"
+    ]
+    if len(clarification_references) != 1:
+        raise FailClosedRuntimeError(
+            "actionable production Conversation binding lacks one clarification"
+        )
+    from aigol.runtime.production_conversation_flow_binding import (
+        validate_owner_bound_clarification_envelope_v1,
+    )
+
+    clarification = validate_owner_bound_clarification_envelope_v1(
+        load_json(Path(clarification_references[0]["replay_reference"])),
+        expected_session_identity=session_id,
+        expected_originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY",
+    )
+    required = ", ".join(clarification["required_field_or_evidence_codes"])
+    question = (
+        "Provide the missing Conversation evidence before Objective Commitment: "
+        f"{required}."
+    )
+    development_intent = {
+        "clarification_required": True,
+        "clarification_questions": [question],
+        "summary_admissible": False,
+        "runtime_binding_admissible": False,
+        "canonical_runtime_prompt": None,
+        "work_type": None,
+        "objective_commitment_required": True,
+        "requested_target_flow_id": flow_binding["requested_target_flow_id"],
+        "permitted_next_flow_id": flow_binding["permitted_next_flow_id"],
+    }
+    conversation_experience = {
+        "response_mode": "CLARIFICATION",
+        "user_headline": "Conversation Objective readiness is incomplete.",
+        "user_explanation": (
+            "Platform Core preserved the requested actionable target but did "
+            "not infer an Objective, admit work, or enter Governance."
+        ),
+        "recommended_next_user_action": question,
+        "clarification_questions": [question],
+        "owner_bound_clarification_envelope": deepcopy(clarification),
+        "objective_commitment_required": True,
+        "mutation_allowed": False,
+        "runtime_implementation": False,
+    }
+    conversation_experience["artifact_hash"] = replay_hash(
+        conversation_experience
+    )
+    goal_mapping = goal_mapping_from_workspace(
+        message=message,
+        workspace_state=prior_state,
+    )
+    knowledge_reuse = (
+        goal_mapping.get("contextual_task_mapping")
+        if isinstance(goal_mapping, dict)
+        and isinstance(goal_mapping.get("contextual_task_mapping"), dict)
+        else project_knowledge_context_from_workspace(
+            message=message,
+            workspace_state=prior_state,
+            goal_target="general_project_goal",
+            governed_request=message,
+        )
+    )
+    artifact = {
+        "artifact_type": "UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
+        "runtime_version": PLATFORM_CORE_UHI_PROJECT_SERVICES_INTEGRATION_VERSION,
+        "platform_core_project_services_version": PLATFORM_CORE_PROJECT_SERVICES_VERSION,
+        "platform_core_human_conversation_experience_version": (
+            PLATFORM_CORE_HUMAN_CONVERSATION_EXPERIENCE_VERSION
+        ),
+        "interface_name": require_string(interface_name, "interface_name"),
+        "session_id": require_string(session_id, "session_id"),
+        "workspace": str(Path(workspace)),
+        "created_at": require_string(created_at, "created_at"),
+        "message_hash": replay_hash(message),
+        "human_intent_precedence_decision": deepcopy(precedence),
+        "human_intent_precedence_decision_hash": precedence["artifact_hash"],
+        "production_conversation_flow_binding": deepcopy(flow_binding),
+        "production_conversation_flow_binding_hash": flow_binding["artifact_hash"],
+        "human_intent_precedence_before_restored_context": True,
+        "project_workspace_restored": prior_state is not None,
+        "project_workspace_replay_reference": (
+            prior_state.get("replay_reference")
+            if isinstance(prior_state, dict)
+            else None
+        ),
+        "project_guidance": deepcopy(guidance),
+        "knowledge_reuse": knowledge_reuse,
+        "project_objective_inference": None,
+        "clarification_continuity": None,
+        "operational_turn_binding": None,
+        "operational_turn_binding_reference": None,
+        "operational_turn_binding_hash": None,
+        "admission_precedence": None,
+        "admission_precedence_reference": None,
+        "admission_precedence_hash": None,
+        "operational_clarification_envelope": None,
+        "owner_bound_clarification_envelope": deepcopy(clarification),
+        "artifact_attachment_retry_state": None,
+        "development_intent_resolution": development_intent,
+        "human_conversation_experience": conversation_experience,
+        "canonical_implementation_turn_binding": None,
+        "constitutional_development_governance": None,
+        "constitutional_development_governance_hash": None,
+        "reuse_proof_production_admission": None,
+        "reuse_proof_production_admission_hash": None,
+        "reuse_proof_g47_scope_binding": None,
+        "reuse_proof_g47_scope_binding_hash": None,
+        "canonical_implementation_turn_binding_hash": None,
+        "governed_read_only_work_result": None,
+        "explicit_canonical_artifact_ingress": None,
+        "explicit_canonical_artifact_ingress_reference": None,
+        "semantic_capability_runtime_route": None,
+        "durable_governed_work_artifact": None,
+        "project_workspace_authority": "PLATFORM_CORE",
+        "project_guidance_authority": "PLATFORM_CORE",
+        "project_knowledge_reuse_authority": "PLATFORM_CORE",
+        "development_intent_resolution_authority": "PLATFORM_CORE",
+        "project_objective_inference_authority": "PLATFORM_CORE",
+        "human_conversation_experience_authority": "PLATFORM_CORE",
+        "durable_governed_work_authority": "PLATFORM_CORE",
+        "interface_authority": False,
+        "interface_executes_project_services": False,
+        "replay_visible": True,
+        "replay_reference": str(session_root / "uhi_project_services"),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    project_context_path = (
+        session_root
+        / "uhi_project_services"
+        / f"{next_uhi_project_context_index(session_root):03d}_uhi_project_context_recorded.json"
+    )
+    write_json_immutable(project_context_path, artifact)
     return artifact
 
 

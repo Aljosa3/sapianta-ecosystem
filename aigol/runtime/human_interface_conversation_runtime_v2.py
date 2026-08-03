@@ -58,13 +58,18 @@ def create_hir_conversation_session_v2(
     human_identity: str,
     created_at: str,
     ttl_seconds: int = 3600,
+    interface_identity: str = "AiCLI",
 ) -> dict[str, Any]:
-    """Create one native Conversation V2 episode for AiCLI/HIR transport."""
+    """Create one native Conversation V2 episode for a declared HIR transport."""
 
     human = _text(human_identity, "human_identity")
     participants = sorted([
         _participant(cwm_v2.HUMAN_ORIGINATOR, human, cwm_v2.LOCAL_ASSERTION),
-        _participant(cwm_v2.INTERFACE_TRANSPORT, "AiCLI", cwm_v2.RUNTIME_DECLARATION),
+        _participant(
+            cwm_v2.INTERFACE_TRANSPORT,
+            _text(interface_identity, "interface_identity"),
+            cwm_v2.RUNTIME_DECLARATION,
+        ),
         _participant(
             cwm_v2.CONVERSATION_OWNER_RUNTIME,
             HIR_CONVERSATION_LAYER_INTEGRATION_RUNTIME_V2,
