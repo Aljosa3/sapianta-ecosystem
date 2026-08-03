@@ -221,7 +221,7 @@ def test_replay_reconstructs_every_capability_through_completion_owner(
 ) -> None:
     replay = _execute(_prepare(tmp_path))["replay_evidence"]
 
-    assert len(replay) == 11
+    assert len(replay) == 14
     assert replay["capability_route"]["route_status"] == (
         "SEMANTIC_CAPABILITY_ROUTE_COMPLETED"
     )
@@ -229,6 +229,13 @@ def test_replay_reconstructs_every_capability_through_completion_owner(
     assert replay["worker_dispatch"]["dispatch_status"] == "WORKER_DISPATCHED"
     assert replay["worker_invocation"]["invocation_status"] == "WORKER_INVOKED"
     assert replay["completion"]["completion_status"] == WORKER_CAPABILITY_COMPLETED
+    assert replay["post_execution_replay_review"]["review_status"] == (
+        "REVIEW_COMPLETED"
+    )
+    assert replay["governed_termination"]["termination_status"] == "TERMINATED"
+    assert replay["final_execution_certification"]["certification_status"] == (
+        "REPLAY_CERTIFICATION_COMPLETED"
+    )
 
 
 def test_completion_returns_through_hir_and_remains_non_authoritative_in_aicli(
@@ -344,7 +351,10 @@ def test_real_terminal_orchestration_is_complete_and_human_readable(
         "worker_dispatch: WORKER_DISPATCHED",
         "worker_invocation: WORKER_INVOKED",
         "completion: WORKER_CAPABILITY_COMPLETED",
-        "replay_evidence: 11 stages reconstructed",
+        "post_execution_replay_review: REVIEW_COMPLETED",
+        "governed_termination: TERMINATED",
+        "final_certification: G31_FINAL_EXECUTION_CERTIFICATION_COMPLETED",
+        "replay_evidence: 14 stages reconstructed",
         "pipeline_status: COMPLETE_PIPELINE_RETURNED_TO_AICLI",
     ):
         assert evidence in transcript

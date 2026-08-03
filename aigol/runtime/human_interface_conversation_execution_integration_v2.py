@@ -30,10 +30,21 @@ from aigol.runtime.execution_runtime import reconstruct_execution_replay, start_
 from aigol.runtime.execution_summary_runtime import (
     create_execution_summary,
     create_execution_summary_confirmation,
+    verify_execution_summary,
+)
+from aigol.runtime.governed_termination_runtime import (
+    TERMINATED,
+    reconstruct_governed_termination_replay,
+    terminate_reviewed_operation,
+)
+from aigol.runtime import (
+    governed_termination_to_final_execution_certification_binding_runtime
+    as final_execution_certification,
 )
 from aigol.runtime.governed_implementation_dry_run import (
     EXECUTION_READY,
     prepare_governed_implementation_dry_run,
+    reconstruct_governed_implementation_dry_run_replay,
 )
 from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
@@ -46,6 +57,7 @@ from aigol.runtime.platform_change_normalization_execution_binding_runtime impor
     PLATFORM_CHANGE_NORMALIZATION,
     bind_platform_change_normalization_to_execution_ready,
     reconstruct_platform_change_normalization_execution_binding_replay,
+    validate_platform_change_normalization_execution_binding,
 )
 from aigol.runtime.platform_change_normalization_worker_completion_adapter import (
     WORKER_CAPABILITY_COMPLETED,
@@ -59,6 +71,11 @@ from aigol.runtime.platform_core_objective_commitment_runtime_v2 import (
 from aigol.runtime.project_context_semantic_capability_route import (
     ROUTE_COMPLETED,
     reconstruct_project_context_semantic_capability_route,
+)
+from aigol.runtime.post_execution_replay_review_runtime import (
+    REVIEW_COMPLETED,
+    reconstruct_post_execution_replay_review,
+    review_validated_worker_result,
 )
 from aigol.runtime.transport.serialization import (
     load_json,
@@ -104,6 +121,10 @@ EXECUTION_PREPARED_AWAITING_AUTHORIZATION = (
     "EXECUTION_PREPARED_AWAITING_AUTHORIZATION"
 )
 COMPLETE_PIPELINE_RETURNED_TO_AICLI = "COMPLETE_PIPELINE_RETURNED_TO_AICLI"
+PREPARATION_ARTIFACT_NAME = "001_execution_prepared.json"
+COMMITMENT_EVIDENCE_NAME = "001_committed_objective.json"
+EXECUTION_SUMMARY_EVIDENCE_NAME = "001_execution_summary.json"
+PLATFORM_CONTEXT_EVIDENCE_NAME = "001_platform_core_project_context.json"
 
 
 def admit_committed_objective_to_platform_core_v2(
@@ -230,6 +251,7 @@ def prepare_committed_objective_execution_v2(
     *,
     commitment_record: dict[str, Any],
     explicit_canonical_artifacts: list[dict[str, Any]],
+    explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
     runtime_root: str | Path,
     workspace: str | Path,
     session_id: str,
@@ -241,6 +263,9 @@ def prepare_committed_objective_execution_v2(
     admitted = admit_committed_objective_to_platform_core_v2(
         commitment_record=commitment_record,
         explicit_canonical_artifacts=explicit_canonical_artifacts,
+        explicit_canonical_artifact_references=(
+            explicit_canonical_artifact_references
+        ),
         runtime_root=runtime_root,
         workspace=workspace,
         session_id=session_id,
@@ -368,6 +393,15 @@ def prepare_committed_objective_execution_v2(
         created_by="HUMAN_INTERFACE_RUNTIME",
         created_at=timestamp,
     )
+    commitment_reference = root / COMMITMENT_EVIDENCE_NAME
+    execution_summary_reference = root / EXECUTION_SUMMARY_EVIDENCE_NAME
+    platform_context = hir_admission.get("platform_core_project_services_context")
+    if not isinstance(platform_context, dict):
+        _fail("Platform Core project context is absent")
+    platform_context_reference = root / PLATFORM_CONTEXT_EVIDENCE_NAME
+    _write_or_verify(commitment_reference, record)
+    _write_or_verify(execution_summary_reference, execution_summary)
+    _write_or_verify(platform_context_reference, platform_context)
     prepared_artifact = _with_hash(
         {
             "artifact_type": "COMMITTED_OBJECTIVE_EXECUTION_PREPARATION_ARTIFACT_V1",
@@ -383,19 +417,38 @@ def prepare_committed_objective_execution_v2(
             "semantic_capability_route_hash": route["artifact_hash"],
             "capability_execution_binding_hash": binding_artifact["artifact_hash"],
             "execution_summary_hash": execution_summary["artifact_hash"],
+            "commitment_record_reference": str(commitment_reference),
+            "execution_summary_reference": str(execution_summary_reference),
+            "platform_core_project_context_reference": str(
+                platform_context_reference
+            ),
+            "semantic_capability_route_replay_reference": route[
+                "replay_reference"
+            ],
+            "execution_ready_replay_reference": execution_ready[
+                "governed_implementation_dry_run_replay_reference"
+            ],
+            "capability_execution_binding_replay_reference": binding[
+                "capability_execution_binding_replay_reference"
+            ],
             "expected_authorization_action": (
                 f"/authorize {execution_summary['artifact_hash']}"
             ),
             "development_governance_prompt": development_prompt,
+            "integration_root": str(root),
+            "human_actor": actor,
+            "session_id": session,
+            "workspace": str(Path(workspace).resolve()),
             "authorization_granted": False,
             "worker_dispatched": False,
             "execution_started": False,
             "created_at": timestamp,
         }
     )
-    _write_or_verify(root / "001_execution_prepared.json", prepared_artifact)
+    _write_or_verify(root / PREPARATION_ARTIFACT_NAME, prepared_artifact)
     return {
         "integration_runtime_version": FIRST_COMPLETE_CONVERSATION_EXECUTION_INTEGRATION_V2,
+        "admission_status": "COMMITTED_OBJECTIVE_ADMITTED_TO_PLATFORM_CORE",
         "preparation_status": EXECUTION_PREPARED_AWAITING_AUTHORIZATION,
         "commitment_record": record,
         "handoff_artifact": handoff,
@@ -418,13 +471,191 @@ def prepare_committed_objective_execution_v2(
         "session_id": session,
         "workspace": str(Path(workspace).resolve()),
         "created_at": timestamp,
+        "authorization_granted": False,
+        "worker_dispatched": False,
+        "execution_started": False,
     }
+
+
+def reconstruct_committed_objective_execution_preparation_v2(
+    preparation_reference: str | Path,
+) -> dict[str, Any]:
+    """Reconstruct one pending preparation from its immutable owner evidence."""
+
+    path = Path(preparation_reference)
+    prepared_artifact = _load_hashed_artifact(
+        path,
+        artifact_type="COMMITTED_OBJECTIVE_EXECUTION_PREPARATION_ARTIFACT_V1",
+        label="committed Objective execution preparation",
+    )
+    if prepared_artifact.get("preparation_status") != (
+        EXECUTION_PREPARED_AWAITING_AUTHORIZATION
+    ):
+        _fail("committed Objective execution preparation is not pending")
+    root = path.parent.resolve()
+    recorded_root = Path(
+        _text(prepared_artifact.get("integration_root"), "integration_root")
+    ).resolve()
+    if recorded_root != root:
+        _fail("committed Objective execution preparation root differs")
+
+    commitment_path = _inside_root(
+        prepared_artifact.get("commitment_record_reference"),
+        root,
+        "commitment_record_reference",
+    )
+    summary_path = _inside_root(
+        prepared_artifact.get("execution_summary_reference"),
+        root,
+        "execution_summary_reference",
+    )
+    context_path = _inside_root(
+        prepared_artifact.get("platform_core_project_context_reference"),
+        root,
+        "platform_core_project_context_reference",
+    )
+    route_path = _inside_root(
+        prepared_artifact.get("semantic_capability_route_replay_reference"),
+        root,
+        "semantic_capability_route_replay_reference",
+    )
+    ready_path = _inside_root(
+        prepared_artifact.get("execution_ready_replay_reference"),
+        root,
+        "execution_ready_replay_reference",
+    )
+    binding_path = _inside_root(
+        prepared_artifact.get("capability_execution_binding_replay_reference"),
+        root,
+        "capability_execution_binding_replay_reference",
+    )
+
+    record = validate_objective_commitment_record_v2(load_json(commitment_path))
+    summary = verify_execution_summary(load_json(summary_path))
+    platform_context = _load_hashed_artifact(
+        context_path,
+        artifact_type="UNIFIED_HUMAN_INTERFACE_PROJECT_CONTEXT_ARTIFACT_V1",
+        label="Platform Core project context",
+    )
+    route = reconstruct_project_context_semantic_capability_route(route_path)
+    ready = reconstruct_governed_implementation_dry_run_replay(ready_path)
+    binding_reconstruction = (
+        reconstruct_platform_change_normalization_execution_binding_replay(
+            binding_path
+        )
+    )
+    binding_wrapper = load_json(
+        binding_path / "001_capability_execution_binding_recorded.json"
+    )
+    binding_artifact = validate_platform_change_normalization_execution_binding(
+        binding_wrapper.get("artifact")
+    )
+
+    checks = (
+        replay_hash(record) == prepared_artifact.get("commitment_record_digest"),
+        record.get("commitment_identity")
+        == prepared_artifact.get("commitment_identity"),
+        summary.get("artifact_hash")
+        == prepared_artifact.get("execution_summary_hash"),
+        prepared_artifact.get("expected_authorization_action")
+        == f"/authorize {summary['artifact_hash']}",
+        route.get("artifact_hash")
+        == prepared_artifact.get("semantic_capability_route_hash"),
+        ready.get("execution_status") == EXECUTION_READY,
+        ready.get("replay_hash")
+        == binding_artifact.get("execution_ready_replay_hash"),
+        binding_reconstruction.get("binding_status")
+        == CAPABILITY_EXECUTION_BINDING_READY_FOR_AUTHORIZATION,
+        binding_artifact.get("artifact_hash")
+        == prepared_artifact.get("capability_execution_binding_hash"),
+        platform_context.get("project_objective_inference", {}).get(
+            "artifact_hash"
+        )
+        == prepared_artifact.get("platform_core_objective_hash"),
+        platform_context.get("admission_precedence", {}).get("artifact_hash")
+        == prepared_artifact.get("platform_core_admission_hash"),
+    )
+    if not all(checks):
+        _fail("committed Objective execution preparation lineage differs")
+
+    return {
+        "integration_runtime_version": FIRST_COMPLETE_CONVERSATION_EXECUTION_INTEGRATION_V2,
+        "preparation_status": EXECUTION_PREPARED_AWAITING_AUTHORIZATION,
+        "commitment_record": record,
+        "platform_core_project_context": platform_context,
+        "semantic_capability_route": {
+            **route,
+            "replay_reference": str(route_path),
+        },
+        "execution_ready": {
+            **ready,
+            "governed_implementation_dry_run_replay_reference": str(ready_path),
+        },
+        "capability_execution_binding": {
+            "capability_execution_binding_artifact": binding_artifact,
+            "capability_execution_binding_replay_reference": str(binding_path),
+        },
+        "execution_summary": summary,
+        "expected_authorization_action": prepared_artifact[
+            "expected_authorization_action"
+        ],
+        "prepared_artifact": prepared_artifact,
+        "integration_root": str(root),
+        "human_actor": prepared_artifact["human_actor"],
+        "session_id": prepared_artifact["session_id"],
+        "workspace": prepared_artifact["workspace"],
+        "created_at": prepared_artifact["created_at"],
+        "preparation_reconstructed": True,
+    }
+
+
+def authorize_pending_committed_objective_execution_v2(
+    *,
+    runtime_root: str | Path,
+    session_id: str,
+    explicit_authorization_action: str,
+    human_actor: str,
+    authorized_at: str,
+) -> dict[str, Any]:
+    """Continue the one exact pending G66 preparation through its owners."""
+
+    root = Path(runtime_root)
+    session = _text(session_id, "session_id")
+    candidates = [
+        path
+        for path in sorted(
+            (root / "conversation_execution_v2").glob(
+                f"*/{PREPARATION_ARTIFACT_NAME}"
+            )
+        )
+        if not (path.parent / "002_execution_completed.json").exists()
+    ]
+    if len(candidates) != 1:
+        _fail("exactly one pending committed Objective preparation is required")
+    prepared = reconstruct_committed_objective_execution_preparation_v2(
+        candidates[0]
+    )
+    if prepared["session_id"] != session:
+        _fail("pending committed Objective preparation session differs")
+    actor = _text(human_actor, "human_actor")
+    if prepared["human_actor"] != actor:
+        _fail("pending committed Objective preparation Human actor differs")
+    completed = authorize_and_execute_prepared_objective_v2(
+        prepared,
+        explicit_authorization_action=explicit_authorization_action,
+        authorizing_actor=actor,
+        authorized_at=_text(authorized_at, "authorized_at"),
+    )
+    completed["prepared"] = prepared
+    return completed
 
 
 def authorize_and_execute_prepared_objective_v2(
     prepared: dict[str, Any],
     *,
     explicit_authorization_action: str,
+    authorizing_actor: str | None = None,
+    authorized_at: str | None = None,
 ) -> dict[str, Any]:
     """Authorize one exact prepared summary and delegate the full Worker path."""
 
@@ -438,8 +669,19 @@ def authorize_and_execute_prepared_objective_v2(
         _fail("exact /authorize execution-summary hash is required")
     record = validate_objective_commitment_record_v2(prepared["commitment_record"])
     root = Path(_text(prepared["integration_root"], "integration_root"))
-    actor = _text(prepared["human_actor"], "human_actor")
-    timestamp = _text(prepared["created_at"], "created_at")
+    prepared_actor = _text(prepared["human_actor"], "human_actor")
+    actor = (
+        _text(authorizing_actor, "authorizing_actor")
+        if authorizing_actor is not None
+        else prepared_actor
+    )
+    if actor != prepared_actor:
+        _fail("authorizing actor differs from committed Objective Human actor")
+    timestamp = (
+        _text(authorized_at, "authorized_at")
+        if authorized_at is not None
+        else _text(prepared["created_at"], "created_at")
+    )
     chain = "G60-02-" + record["commitment_identity"].removeprefix(
         "objective-commitment-local-sha256:"
     )[:24]
@@ -592,6 +834,58 @@ def authorize_and_execute_prepared_objective_v2(
     )
     if completion.get("completion_status") != WORKER_CAPABILITY_COMPLETED:
         _fail("existing Completion owner refused Worker completion evidence")
+    replay_review = review_validated_worker_result(
+        post_execution_replay_review_id=f"{chain}:POST-EXECUTION-REPLAY-REVIEW",
+        worker_result_validation_artifact=validation[
+            "worker_result_validation_artifact"
+        ],
+        worker_result_validation_replay_reference=validation[
+            "worker_result_validation_replay_reference"
+        ],
+        reviewed_by=actor,
+        reviewed_at=timestamp,
+        replay_dir=root / "post_execution_replay_review",
+    )
+    if replay_review.get("review_status") != REVIEW_COMPLETED:
+        _fail(
+            replay_review.get("failure_reason")
+            or "existing Replay Review owner refused validated Worker result"
+        )
+    termination = terminate_reviewed_operation(
+        governed_termination_id=f"{chain}:GOVERNED-TERMINATION",
+        post_execution_replay_review_artifact=replay_review[
+            "post_execution_replay_review_artifact"
+        ],
+        post_execution_replay_review_replay_reference=replay_review[
+            "post_execution_replay_review_replay_reference"
+        ],
+        terminated_by=actor,
+        terminated_at=timestamp,
+        replay_dir=root / "governed_termination",
+    )
+    if termination.get("termination_status") != TERMINATED:
+        _fail(
+            termination.get("failure_reason")
+            or "existing Governed Termination owner refused reviewed operation"
+        )
+    certification = final_execution_certification.certify_governed_termination(
+        binding_id=f"{chain}:FINAL-EXECUTION-CERTIFICATION",
+        terminal_capture=termination,
+        termination_replay_reference=termination[
+            "governed_termination_replay_reference"
+        ],
+        termination_reconstructor=reconstruct_governed_termination_replay,
+        certified_by=actor,
+        certified_at=timestamp,
+        replay_dir=root / "final_execution_certification",
+    )
+    if certification.get("binding_status") != (
+        final_execution_certification.SUCCESS
+    ):
+        _fail(
+            certification.get("failure_reason")
+            or "existing final Certification owner refused terminal evidence"
+        )
     hir_return = run_human_interface_runtime_entry(
         interface_name="aicli conversation-execute-v2",
         session_id=prepared["session_id"],
@@ -613,6 +907,9 @@ def authorize_and_execute_prepared_objective_v2(
         capture=capture,
         validation=validation,
         completion=completion,
+        replay_review=replay_review,
+        termination=termination,
+        certification=certification,
     )
     completed_artifact = _with_hash(
         {
@@ -629,6 +926,15 @@ def authorize_and_execute_prepared_objective_v2(
             "worker_completion_hash": completion[
                 "worker_capability_completion_artifact"
             ]["artifact_hash"],
+            "post_execution_replay_review_hash": replay_review[
+                "post_execution_replay_review_artifact"
+            ]["artifact_hash"],
+            "governed_termination_hash": termination[
+                "governed_termination_artifact"
+            ]["artifact_hash"],
+            "final_execution_certification_hash": certification[
+                "final_execution_certification_hash"
+            ],
             "human_visible_result_hash": replay_hash(
                 hir_return["human_visible_completion_result"]
             ),
@@ -637,6 +943,9 @@ def authorize_and_execute_prepared_objective_v2(
             "worker_dispatched": True,
             "execution_started": True,
             "completion_recorded": True,
+            "post_execution_replay_reviewed": True,
+            "governed_termination_recorded": True,
+            "execution_certified": True,
             "hir_returned": True,
             "aicli_presented": True,
             "completed_at": timestamp,
@@ -655,6 +964,9 @@ def authorize_and_execute_prepared_objective_v2(
         "worker_result_capture": capture,
         "worker_result_validation": validation,
         "worker_completion": completion,
+        "post_execution_replay_review": replay_review,
+        "governed_termination": termination,
+        "final_execution_certification": certification,
         "hir_return": hir_return,
         "human_visible_completion_result": hir_return[
             "human_visible_completion_result"
@@ -746,6 +1058,9 @@ def run_complete_conversation_execution_terminal_v2(
     output_writer("worker_result_capture: WORKER_RESULT_CAPTURED")
     output_writer("worker_result_validation: RESULT_VALIDATED")
     output_writer("completion: WORKER_CAPABILITY_COMPLETED")
+    output_writer("post_execution_replay_review: REVIEW_COMPLETED")
+    output_writer("governed_termination: TERMINATED")
+    output_writer("final_certification: G31_FINAL_EXECUTION_CERTIFICATION_COMPLETED")
     visible = completed["human_visible_completion_result"]
     output_writer(
         "human_completion: "
@@ -781,6 +1096,9 @@ def _reconstruct_all(**captures: Any) -> dict[str, dict[str, Any]]:
     capture = captures["capture"]
     validation = captures["validation"]
     completion = captures["completion"]
+    replay_review = captures["replay_review"]
+    termination = captures["termination"]
+    certification = captures["certification"]
     return {
         "capability_route": reconstruct_project_context_semantic_capability_route(
             route["replay_reference"]
@@ -813,6 +1131,20 @@ def _reconstruct_all(**captures: Any) -> dict[str, dict[str, Any]]:
         "completion": reconstruct_platform_change_normalization_worker_completion_replay(
             completion["worker_capability_completion_replay_reference"]
         ),
+        "post_execution_replay_review": reconstruct_post_execution_replay_review(
+            replay_review["post_execution_replay_review_replay_reference"]
+        ),
+        "governed_termination": reconstruct_governed_termination_replay(
+            termination["governed_termination_replay_reference"]
+        ),
+        "final_execution_certification": (
+            final_execution_certification.replay_certification
+            .reconstruct_replay_certification_replay(
+                certification[
+                    "final_execution_certification_replay_reference"
+                ]
+            )
+        ),
     }
 
 
@@ -843,6 +1175,34 @@ def _write_or_verify(path: Path, value: dict[str, Any]) -> None:
     write_json_immutable(path, value)
 
 
+def _load_hashed_artifact(
+    path: Path,
+    *,
+    artifact_type: str,
+    label: str,
+) -> dict[str, Any]:
+    artifact = load_json(path)
+    if not isinstance(artifact, dict) or artifact.get("artifact_type") != (
+        artifact_type
+    ):
+        _fail(f"{label} type is invalid")
+    supplied_hash = artifact.get("artifact_hash")
+    candidate = deepcopy(artifact)
+    candidate.pop("artifact_hash", None)
+    if supplied_hash != replay_hash(candidate):
+        _fail(f"{label} hash differs")
+    return artifact
+
+
+def _inside_root(value: Any, root: Path, label: str) -> Path:
+    path = Path(_text(value, label)).resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError:
+        _fail(f"{label} leaves the committed Objective execution root")
+    return path
+
+
 def _text(value: Any, name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         _fail(f"{name} is required")
@@ -858,8 +1218,10 @@ __all__ = [
     "EXECUTION_PREPARED_AWAITING_AUTHORIZATION",
     "FIRST_COMPLETE_CONVERSATION_EXECUTION_INTEGRATION_V2",
     "admit_committed_objective_to_platform_core_v2",
+    "authorize_pending_committed_objective_execution_v2",
     "authorize_and_execute_prepared_objective_v2",
     "prepare_committed_objective_execution_v2",
+    "reconstruct_committed_objective_execution_preparation_v2",
     "run_complete_conversation_execution_terminal_v2",
     "validate_committed_objective_admission_transport_v2",
 ]

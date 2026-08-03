@@ -539,7 +539,7 @@ def test_replay_verification_reconstructs_and_rejects_tampering(
         conversation, state, confirm_at=_time(5), commit_at=_time(6)
     )
     completed = _execute_commitment(tmp_path, commitment)
-    assert len(completed["replay_evidence"]) == 11
+    assert len(completed["replay_evidence"]) == 14
     replay_dir = Path(
         completed["authorization"]["execution_authorization_replay_reference"]
     )

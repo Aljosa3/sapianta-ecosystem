@@ -281,6 +281,7 @@ def run_human_interface_runtime_entry(
     requests = [_require_string(request, "human_request") for request in human_requests]
 
     result = deepcopy(presentation) if isinstance(presentation, dict) else {}
+    constitutional_execution_spine_completion = None
     committed_objective_record = result.pop(
         "g60_02_committed_objective_record", None
     )
@@ -363,6 +364,27 @@ def run_human_interface_runtime_entry(
         production_conversation_bindings = []
         project_contexts = [context]
         intent_resolutions = [context["development_intent_resolution"]]
+    elif len(requests) == 1 and requests[0].strip().startswith("/authorize "):
+        from aigol.runtime.human_interface_conversation_execution_integration_v2 import (
+            authorize_pending_committed_objective_execution_v2,
+        )
+
+        constitutional_execution_spine_completion = (
+            authorize_pending_committed_objective_execution_v2(
+                runtime_root=(
+                    root / session / "canonical_typed_semantic_admission"
+                ),
+                session_id=session,
+                explicit_authorization_action=requests[0],
+                human_actor=g31_human_actor_id,
+                authorized_at=created,
+            )
+        )
+        prepared = constitutional_execution_spine_completion["prepared"]
+        context = prepared["platform_core_project_context"]
+        production_conversation_bindings = []
+        project_contexts = [context]
+        intent_resolutions = [context["development_intent_resolution"]]
     else:
         from aigol.runtime.production_conversation_flow_binding import (
             compose_production_conversation_flow_binding_v1,
@@ -386,10 +408,10 @@ def run_human_interface_runtime_entry(
             commitment = production_binding.get("objective_commitment")
             if isinstance(commitment, dict):
                 from aigol.runtime.human_interface_conversation_execution_integration_v2 import (
-                    admit_committed_objective_to_platform_core_v2,
+                    prepare_committed_objective_execution_v2,
                 )
 
-                admitted = admit_committed_objective_to_platform_core_v2(
+                prepared = prepare_committed_objective_execution_v2(
                     commitment_record=commitment["commitment_record"],
                     explicit_canonical_artifacts=[
                         deepcopy(item) for item in explicit_canonical_artifacts
@@ -405,14 +427,15 @@ def run_human_interface_runtime_entry(
                     human_actor=g31_human_actor_id,
                     created_at=created,
                 )
-                context = admitted["hir_admission"].get(
+                context = prepared["hir_admission"].get(
                     "platform_core_project_services_context"
                 )
                 if not isinstance(context, dict):
                     raise FailClosedRuntimeError(
                         "committed Objective admission context is absent"
                     )
-                production_binding["g60_02_admission_handoff"] = admitted
+                production_binding["g60_02_admission_handoff"] = prepared
+                production_binding["g60_02_execution_preparation"] = prepared
             else:
                 context = prepare_unified_human_interface_project_context(
                     interface_name=interface,
@@ -521,6 +544,17 @@ def run_human_interface_runtime_entry(
                 if approved_implementation_turn_binding is None
                 and production_conversation_bindings
                 else None
+            ),
+            "committed_objective_execution_preparation": (
+                production_conversation_bindings[-1].get(
+                    "g60_02_execution_preparation"
+                )
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "constitutional_execution_spine_completion": (
+                constitutional_execution_spine_completion
             ),
             "canonical_presentation_flow_binding_hash": (
                 production_conversation_bindings[-1][
