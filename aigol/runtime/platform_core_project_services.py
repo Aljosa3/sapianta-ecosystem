@@ -1039,7 +1039,29 @@ def prepare_unified_human_interface_project_context(
         conversation_experience["artifact_hash"] = replay_hash(
             conversation_experience
         )
-    if operational_clarification_envelope is not None:
+    owner_bound_clarification_envelope = None
+    if (
+        isinstance(validated_flow_binding, dict)
+        and conversation_experience.get("response_mode") == "CLARIFICATION"
+    ):
+        owner_bound_clarification_envelope = (
+            _owner_bound_clarification_transport_from_existing_envelope(
+                flow_binding=validated_flow_binding,
+                operational_envelope=operational_clarification_envelope,
+                session_id=session_id,
+                created_at=created_at,
+                turn_reference=turn_reference,
+            )
+        )
+        conversation_experience = deepcopy(conversation_experience)
+        conversation_experience.pop("operational_clarification_envelope", None)
+        conversation_experience["owner_bound_clarification_envelope"] = deepcopy(
+            owner_bound_clarification_envelope
+        )
+        conversation_experience["artifact_hash"] = replay_hash(
+            conversation_experience
+        )
+    elif operational_clarification_envelope is not None:
         conversation_experience = deepcopy(conversation_experience)
         conversation_experience["operational_clarification_envelope"] = deepcopy(
             operational_clarification_envelope
@@ -1055,6 +1077,7 @@ def prepare_unified_human_interface_project_context(
         owner_specific_continuation=owner_specific_continuation,
         semantic_route=semantic_route,
         operational_clarification_envelope=operational_clarification_envelope,
+        owner_bound_clarification_envelope=owner_bound_clarification_envelope,
         ingress_capture=ingress_capture,
         attachment_retry_state=attachment_retry_state,
     )
@@ -1106,8 +1129,13 @@ def prepare_unified_human_interface_project_context(
             if isinstance(admission_precedence, dict)
             else None
         ),
-        "operational_clarification_envelope": deepcopy(
-            operational_clarification_envelope
+        "operational_clarification_envelope": (
+            None
+            if isinstance(validated_flow_binding, dict)
+            else deepcopy(operational_clarification_envelope)
+        ),
+        "owner_bound_clarification_envelope": deepcopy(
+            owner_bound_clarification_envelope
         ),
         "artifact_attachment_retry_state": deepcopy(attachment_retry_state),
         "development_intent_resolution": development_intent,
@@ -2012,6 +2040,92 @@ def validate_operational_clarification_envelope(
     return candidate
 
 
+def _owner_bound_clarification_from_flow_binding(
+    *,
+    flow_binding: dict[str, Any],
+    session_id: str,
+) -> dict[str, Any]:
+    """Load the canonical clarification predecessor already bound by G66-07."""
+
+    from aigol.runtime.production_conversation_flow_binding import (
+        validate_owner_bound_clarification_envelope_v1,
+    )
+
+    references = [
+        reference
+        for reference in flow_binding["ordered_predecessor_references"]
+        if reference["stage"] == "OWNER_BOUND_CLARIFICATION"
+    ]
+    if len(references) != 1:
+        raise FailClosedRuntimeError(
+            "production clarification transport requires one owner-bound predecessor"
+        )
+    envelope = validate_owner_bound_clarification_envelope_v1(
+        load_json(Path(references[0]["replay_reference"])),
+        expected_session_identity=session_id,
+    )
+    if replay_hash(envelope) != references[0]["artifact_hash"] or envelope[
+        "clarification_identity"
+    ] != flow_binding["clarification_identity"]:
+        raise FailClosedRuntimeError(
+            "production clarification predecessor lineage mismatch"
+        )
+    if envelope["conversation_identity"] != flow_binding["conversation_identity"]:
+        raise FailClosedRuntimeError(
+            "production clarification Conversation substitution detected"
+        )
+    return envelope
+
+
+def _owner_bound_clarification_transport_from_existing_envelope(
+    *,
+    flow_binding: dict[str, Any],
+    operational_envelope: dict[str, Any] | None,
+    session_id: str,
+    created_at: str,
+    turn_reference: str,
+) -> dict[str, Any]:
+    """Adapt owner-local clarification evidence to the existing G66 envelope."""
+
+    from aigol.runtime.production_conversation_flow_binding import (
+        CFA_CLARIFICATION,
+        create_owner_bound_clarification_envelope_v1,
+        validate_owner_bound_clarification_envelope_v1,
+    )
+
+    predecessor = _owner_bound_clarification_from_flow_binding(
+        flow_binding=flow_binding,
+        session_id=session_id,
+    )
+    if operational_envelope is None:
+        return predecessor
+    source = validate_operational_clarification_envelope(
+        operational_envelope,
+        expected_session_id=session_id,
+    )
+    envelope = create_owner_bound_clarification_envelope_v1(
+        originating_flow_id=CFA_CLARIFICATION,
+        originating_owner=source["clarification_owner"],
+        originating_artifact_reference=turn_reference,
+        originating_artifact_hash=source["artifact_hash"],
+        workspace_identity_hash=flow_binding["workspace_identity_hash"],
+        session_identity=session_id,
+        conversation_identity=flow_binding["conversation_identity"],
+        subject_identity=source["semantic_slot"],
+        expected_revision=flow_binding["cwm_revision"],
+        reason_code="OWNER_SPECIFIC_OPERATIONAL_CLARIFICATION",
+        required_field_or_evidence_codes=[source["semantic_slot"]],
+        permitted_reply_kind="OWNER_BOUND_REPLY",
+        created_at=created_at,
+        expires_at=predecessor["expires_at"],
+    )
+    return validate_owner_bound_clarification_envelope_v1(
+        envelope,
+        expected_session_identity=session_id,
+        expected_originating_owner=source["clarification_owner"],
+    )
+
+
 def _bind_owner_specific_clarification_reply(
     *,
     reply: str,
@@ -2499,6 +2613,7 @@ def _finalize_operational_turn_binding(
     owner_specific_continuation: dict[str, Any] | None,
     semantic_route: dict[str, Any] | None,
     operational_clarification_envelope: dict[str, Any] | None,
+    owner_bound_clarification_envelope: dict[str, Any] | None,
     ingress_capture: dict[str, Any] | None,
     attachment_retry_state: dict[str, Any] | None,
 ) -> dict[str, Any]:
@@ -2603,6 +2718,14 @@ def _finalize_operational_turn_binding(
             if isinstance(operational_clarification_envelope, dict)
             else None
         ),
+        "owner_bound_clarification_envelope": deepcopy(
+            owner_bound_clarification_envelope
+        ),
+        "owner_bound_clarification_envelope_hash": (
+            owner_bound_clarification_envelope.get("artifact_hash")
+            if isinstance(owner_bound_clarification_envelope, dict)
+            else None
+        ),
         "in_session_opaque_artifact_attachment": attachment_bound,
         "explicit_canonical_artifact_ingress_reference": (
             ingress_capture.get("replay_reference")
@@ -2691,6 +2814,35 @@ def validate_operational_turn_binding(artifact: dict[str, Any]) -> dict[str, Any
             "operational_clarification_envelope_hash"
         ):
             raise FailClosedRuntimeError("operational turn clarification lineage mismatch")
+    owner_bound = candidate.get("owner_bound_clarification_envelope")
+    if isinstance(owner_bound, dict):
+        from aigol.runtime.production_conversation_flow_binding import (
+            validate_owner_bound_clarification_envelope_v1,
+        )
+
+        validated_owner_bound = validate_owner_bound_clarification_envelope_v1(
+            owner_bound,
+            expected_session_identity=str(candidate.get("session_id")),
+        )
+        if validated_owner_bound["artifact_hash"] != candidate.get(
+            "owner_bound_clarification_envelope_hash"
+        ):
+            raise FailClosedRuntimeError(
+                "operational turn owner-bound clarification lineage mismatch"
+            )
+        if isinstance(envelope, dict):
+            if validated_owner_bound["originating_owner"] != envelope.get(
+                "clarification_owner"
+            ) or validated_owner_bound["originating_artifact_hash"] != envelope.get(
+                "artifact_hash"
+            ):
+                raise FailClosedRuntimeError(
+                    "operational clarification owner-bound transport substitution"
+                )
+    elif candidate.get("owner_bound_clarification_envelope_hash") is not None:
+        raise FailClosedRuntimeError(
+            "operational turn owner-bound clarification boundary mismatch"
+        )
     attachment_bound = candidate.get("in_session_opaque_artifact_attachment") is True
     attachment_fields = (
         candidate.get("explicit_canonical_artifact_ingress_reference"),

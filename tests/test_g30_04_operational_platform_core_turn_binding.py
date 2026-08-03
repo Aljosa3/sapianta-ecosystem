@@ -19,6 +19,9 @@ from aigol.runtime.platform_core_project_services import (
     validate_operational_clarification_envelope,
     validate_operational_turn_binding,
 )
+from aigol.runtime.production_conversation_flow_binding import (
+    validate_owner_bound_clarification_envelope_v1,
+)
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -275,10 +278,16 @@ def test_aicli_transports_platform_core_envelope_without_semantic_authority(
         output_writer=output.append,
     )
     context = result["platform_core_project_services_context"]
-    envelope = context["operational_clarification_envelope"]
+    envelope = context["owner_bound_clarification_envelope"]
 
-    assert envelope["clarification_owner"] == G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
-    assert envelope["semantic_slot"] == "input_artifact_family"
+    assert context["operational_clarification_envelope"] is None
+    assert validate_owner_bound_clarification_envelope_v1(
+        envelope,
+        expected_session_identity="G30-04-HI-BOUNDARY",
+        expected_originating_owner=G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER,
+    ) == envelope
+    assert envelope["originating_owner"] == G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
+    assert envelope["subject_identity"] == "input_artifact_family"
     assert envelope["human_interface_authority"] is False
     assert result["aicli_authorizes"] is False
     assert result["aicli_executes"] is False

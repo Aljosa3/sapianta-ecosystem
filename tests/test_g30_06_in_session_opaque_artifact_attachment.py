@@ -19,6 +19,9 @@ from aigol.runtime.platform_core_project_services import (
     validate_operational_clarification_envelope,
     validate_operational_turn_binding,
 )
+from aigol.runtime.production_conversation_flow_binding import (
+    validate_owner_bound_clarification_envelope_v1,
+)
 from aigol.runtime.transport.serialization import replay_hash
 
 
@@ -248,25 +251,28 @@ def test_clarification_rejects_wrong_session_and_owner_substitution(
         [*REQUEST_LINES, "/send", "/exit"],
         session_id="G30-06-ENVELOPE",
     )
-    envelope = result["platform_core_project_services_context"][
-        "operational_clarification_envelope"
-    ]
+    context = result["platform_core_project_services_context"]
+    envelope = context["owner_bound_clarification_envelope"]
 
     with pytest.raises(FailClosedRuntimeError, match="cross-session"):
-        validate_operational_clarification_envelope(
+        validate_owner_bound_clarification_envelope_v1(
             envelope,
-            expected_session_id="WRONG-SESSION",
+            expected_session_identity="WRONG-SESSION",
         )
 
     owner = deepcopy(envelope)
-    owner["clarification_owner"] = "SUBSTITUTED_OWNER"
+    owner["originating_owner"] = "SUBSTITUTED_OWNER"
     owner["artifact_hash"] = replay_hash(
         {key: value for key, value in owner.items() if key != "artifact_hash"}
     )
     with pytest.raises(FailClosedRuntimeError, match="owner substitution"):
-        validate_operational_clarification_envelope(owner)
+        validate_owner_bound_clarification_envelope_v1(
+            owner,
+            expected_originating_owner=G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER,
+        )
 
-    assert envelope["clarification_owner"] == (
+    assert context["operational_clarification_envelope"] is None
+    assert envelope["originating_owner"] == (
         G29_SEMANTIC_SELECTION_CLARIFICATION_OWNER
     )
 

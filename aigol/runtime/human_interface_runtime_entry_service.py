@@ -370,6 +370,12 @@ def run_human_interface_runtime_entry(
             production_binding["project_services_context_hash"] = context.get(
                 "artifact_hash"
             )
+            if isinstance(
+                context.get("owner_bound_clarification_envelope"), dict
+            ):
+                production_binding["owner_bound_clarification_envelope"] = deepcopy(
+                    context["owner_bound_clarification_envelope"]
+                )
             production_conversation_bindings.append(production_binding)
             project_contexts.append(context)
         intent_resolutions = [

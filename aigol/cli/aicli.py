@@ -1529,6 +1529,9 @@ def _submit_composed_request(
             "production_conversation_flow_binding_hash": (
                 canonical_entry.get("production_conversation_flow_binding") or {}
             ).get("artifact_hash"),
+            "owner_bound_clarification_envelope_hash": (
+                canonical_entry.get("owner_bound_clarification_envelope") or {}
+            ).get("artifact_hash"),
         }
     )
     multiline_requests = 1 if len(compose_buffer) > 1 else 0
@@ -1651,8 +1654,15 @@ def _render_project_context(project_context: dict[str, Any]) -> str:
 
 def _clarification_from_conversation(message: str, conversation: dict[str, Any]) -> dict[str, Any]:
     questions = conversation.get("clarification_questions")
+    owner_bound = (
+        dict(conversation["owner_bound_clarification_envelope"])
+        if isinstance(conversation.get("owner_bound_clarification_envelope"), dict)
+        else None
+    )
     if not isinstance(questions, list) or not questions:
-        return guided_development_clarification(message)
+        clarification = guided_development_clarification(message)
+        clarification["owner_bound_clarification_envelope"] = owner_bound
+        return clarification
     return {
         "original_message": message,
         "clarification_required": True,
@@ -1671,6 +1681,7 @@ def _clarification_from_conversation(message: str, conversation: dict[str, Any])
         "work_type_conflict_detected": conversation.get("work_type_conflict_detected"),
         "work_type_conflict_reason": conversation.get("work_type_conflict_reason"),
         "clarification_questions": [str(question) for question in questions],
+        "owner_bound_clarification_envelope": owner_bound,
         "operational_clarification_envelope": (
             dict(conversation["operational_clarification_envelope"])
             if isinstance(conversation.get("operational_clarification_envelope"), dict)

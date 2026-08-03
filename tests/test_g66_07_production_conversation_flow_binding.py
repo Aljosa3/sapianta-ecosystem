@@ -165,7 +165,7 @@ def test_exact_self_knowledge_traverses_conversation_binding_without_objective(
     assert result["runtime_entered"] is False
 
 
-def test_current_turn_precedence_runs_before_restored_clarification(
+def test_common_clarification_transport_does_not_preempt_current_turn_without_d1(
     tmp_path: Path,
 ) -> None:
     first = aicli.run_reference_uhi_submit_session(
@@ -189,9 +189,14 @@ def test_current_turn_precedence_runs_before_restored_clarification(
     decision = result["human_intent_precedence_decision"]
     context = result["platform_core_project_services_context"]
 
-    assert decision["active_clarification_owner"] == (
+    first_context = first["platform_core_project_services_context"]
+    assert first_context["owner_bound_clarification_envelope"][
+        "originating_owner"
+    ] == (
         "G29_SEMANTIC_CAPABILITY_SELECTION"
     )
+    assert first_context["operational_clarification_envelope"] is None
+    assert decision["active_clarification_owner"] is None
     assert decision["decision_disposition"] == NEW_HUMAN_INTENT
     assert context["human_intent_precedence_before_restored_context"] is True
     assert context["human_conversation_experience"]["response_mode"] == (
