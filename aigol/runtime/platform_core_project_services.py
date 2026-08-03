@@ -71,6 +71,12 @@ PLATFORM_CORE_OPERATIONAL_TURN_BINDING_VERSION = (
 PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1 = (
     "PLATFORM_CORE_OPERATIONAL_TURN_BINDING_ARTIFACT_V1"
 )
+PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_VERSION = (
+    "G66_10_PRODUCTION_FLOW_ISOLATION_ENFORCEMENT_V1"
+)
+PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_DECISION_V1 = (
+    "PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_DECISION_V1"
+)
 PLATFORM_CORE_CLARIFICATION_ENVELOPE_V1 = (
     "PLATFORM_CORE_OPERATIONAL_CLARIFICATION_ENVELOPE_V1"
 )
@@ -326,6 +332,9 @@ def prepare_unified_human_interface_project_context(
     )
     validated_precedence = None
     validated_flow_binding = None
+    production_flow_isolation = None
+    bound_read_only_target = None
+    bound_clarification_target = False
     if human_intent_precedence_decision is not None or (
         production_conversation_flow_binding is not None
     ):
@@ -337,6 +346,10 @@ def prepare_unified_human_interface_project_context(
             )
         from aigol.runtime.production_conversation_flow_binding import (
             AMBIGUOUS_STATE_RELATIONSHIP,
+            CFA_CLARIFICATION,
+            CFA_OBJECTIVE_COMMITMENT,
+            CFA_PLATFORM_KNOWLEDGE,
+            CFA_SELF_KNOWLEDGE,
             CLARIFICATION_REPLY,
             HUMAN_STOP,
             NEW_HUMAN_INTENT,
@@ -377,6 +390,14 @@ def prepare_unified_human_interface_project_context(
                 "production Conversation precedence stops before Project Services"
             )
         if validated_flow_binding["objective_commitment_required"] is True:
+            production_flow_isolation = _enforce_production_flow_isolation(
+                session_root=session_root,
+                session_id=session_id,
+                created_at=created_at,
+                flow_binding=validated_flow_binding,
+                attempted_flow_id=CFA_OBJECTIVE_COMMITMENT,
+                attempted_owner=validated_flow_binding["permitted_next_owner"],
+            )
             return _objective_commitment_gate_project_context(
                 interface_name=interface_name,
                 session_id=session_id,
@@ -388,8 +409,85 @@ def prepare_unified_human_interface_project_context(
                 guidance=guidance,
                 precedence=validated_precedence,
                 flow_binding=validated_flow_binding,
+                production_flow_isolation=production_flow_isolation,
             )
-    if active_envelope is not None:
+        if validated_flow_binding["requested_target_flow_id"] in {
+            CFA_SELF_KNOWLEDGE,
+            CFA_PLATFORM_KNOWLEDGE,
+        }:
+            bound_read_only_target = validated_flow_binding[
+                "requested_target_flow_id"
+            ]
+        elif validated_flow_binding["requested_target_flow_id"] == (
+            CFA_CLARIFICATION
+        ):
+            bound_clarification_target = True
+            production_flow_isolation = _enforce_production_flow_isolation(
+                session_root=session_root,
+                session_id=session_id,
+                created_at=created_at,
+                flow_binding=validated_flow_binding,
+                attempted_flow_id=CFA_CLARIFICATION,
+                attempted_owner=validated_flow_binding["requested_target_owner"],
+            )
+        else:
+            _enforce_production_flow_isolation(
+                session_root=session_root,
+                session_id=session_id,
+                created_at=created_at,
+                flow_binding=validated_flow_binding,
+                attempted_flow_id=validated_flow_binding[
+                    "requested_target_flow_id"
+                ],
+                attempted_owner="PLATFORM_CORE_PROJECT_SERVICES",
+            )
+    if bound_read_only_target is not None:
+        (
+            informational_router_response,
+            operational_classification,
+            development_intent,
+            production_flow_isolation,
+        ) = _execute_bound_read_only_flow(
+            message=message,
+            workspace_state=prior_state,
+            created_at=created_at,
+            turn_reference=turn_reference,
+            session_id=session_id,
+            repository_root=str(Path(workspace)),
+            session_root=session_root,
+            flow_binding=validated_flow_binding,
+        )
+        effective_message = message
+    elif bound_clarification_target:
+        request_classification = validate_self_knowledge_request_classification(
+            classify_self_knowledge_request(message)
+        )
+        operational_classification = _classify_new_operational_turn(
+            message=message,
+            workspace_state=prior_state,
+            created_at=created_at,
+            explicit_artifact_transport_present=bool(
+                explicit_canonical_artifacts
+                or explicit_canonical_artifact_references
+            ),
+            turn_reference=turn_reference,
+            session_id=session_id,
+            repository_root=str(Path(workspace)),
+            request_classification=request_classification,
+        )
+        if (
+            operational_classification["binding_destination"]
+            == PLATFORM_QUERY_ROUTER_BINDING
+        ):
+            informational_router_response = operational_classification[
+                "platform_query_router_response"
+            ]
+        development_intent = resolve_development_intent(
+            message=message,
+            workspace_state=prior_state,
+        )
+        effective_message = message
+    elif active_envelope is not None:
         owner_specific_continuation = _bind_owner_specific_clarification_reply(
             reply=message,
             session_id=session_id,
@@ -864,24 +962,26 @@ def prepare_unified_human_interface_project_context(
         and isinstance(read_only_work_result.get("semantic_capability_runtime_route"), dict)
         else None
     )
-    operational_clarification_envelope = _operational_clarification_envelope(
-        session_id=session_id,
-        created_at=created_at,
-        turn_reference=turn_reference,
-        original_message=(
-            owner_specific_continuation["original_message"]
-            if owner_specific_continuation is not None
-            else message
-        ),
-        project_objective=project_objective,
-        semantic_route=semantic_route,
-        development_intent=development_intent,
-        parent_envelope=(
-            owner_specific_continuation.get("active_envelope")
-            if owner_specific_continuation is not None
-            else None
-        ),
-    )
+    operational_clarification_envelope = None
+    if bound_read_only_target is None:
+        operational_clarification_envelope = _operational_clarification_envelope(
+            session_id=session_id,
+            created_at=created_at,
+            turn_reference=turn_reference,
+            original_message=(
+                owner_specific_continuation["original_message"]
+                if owner_specific_continuation is not None
+                else message
+            ),
+            project_objective=project_objective,
+            semantic_route=semantic_route,
+            development_intent=development_intent,
+            parent_envelope=(
+                owner_specific_continuation.get("active_envelope")
+                if owner_specific_continuation is not None
+                else None
+            ),
+        )
     attachment_retry_state = _record_artifact_attachment_retry_state(
         session_id=session_id,
         created_at=created_at,
@@ -1083,6 +1183,20 @@ def prepare_unified_human_interface_project_context(
         "replay_visible": True,
         "replay_reference": str(session_root / "uhi_project_services"),
     }
+    if isinstance(production_flow_isolation, dict):
+        artifact.update(
+            {
+                "production_flow_isolation_enforcement": deepcopy(
+                    production_flow_isolation
+                ),
+                "production_flow_isolation_enforcement_hash": (
+                    production_flow_isolation["artifact_hash"]
+                ),
+                "production_flow_isolation_enforcement_reference": (
+                    production_flow_isolation["replay_reference"]
+                ),
+            }
+        )
     artifact["artifact_hash"] = replay_hash(artifact)
     project_context_path = (
         session_root
@@ -1116,6 +1230,263 @@ def prepare_unified_human_interface_project_context(
     return artifact
 
 
+def _enforce_production_flow_isolation(
+    *,
+    session_root: Path,
+    session_id: str,
+    created_at: str,
+    flow_binding: dict[str, Any],
+    attempted_flow_id: str,
+    attempted_owner: str,
+) -> dict[str, Any]:
+    """Record and enforce one Platform transition authorized by a G66 binding."""
+
+    binding_hash = require_string(flow_binding.get("artifact_hash"), "artifact_hash")
+    target = (
+        require_string(flow_binding.get("requested_target_flow_id"), "requested_target_flow_id"),
+        require_string(flow_binding.get("requested_target_owner"), "requested_target_owner"),
+    )
+    successor = (
+        require_string(flow_binding.get("permitted_next_flow_id"), "permitted_next_flow_id"),
+        require_string(flow_binding.get("permitted_next_owner"), "permitted_next_owner"),
+    )
+    attempted = (
+        require_string(attempted_flow_id, "attempted_flow_id"),
+        require_string(attempted_owner, "attempted_owner"),
+    )
+    allowed_transitions = [
+        {"flow_id": flow_id, "owner": owner}
+        for flow_id, owner in dict.fromkeys((target, successor))
+    ]
+    permitted = attempted in {target, successor}
+    evidence_root = session_root / "production_flow_isolation"
+    reference = evidence_root / (
+        f"{next_index(evidence_root, '*_production_flow_isolation_decision.json'):03d}"
+        "_production_flow_isolation_decision.json"
+    )
+    artifact = {
+        "artifact_type": PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_DECISION_V1,
+        "runtime_version": PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_VERSION,
+        "decision_owner": "PLATFORM_CORE_PROJECT_SERVICES",
+        "session_id": require_string(session_id, "session_id"),
+        "created_at": require_string(created_at, "created_at"),
+        "production_conversation_flow_binding_hash": binding_hash,
+        "request_hash": require_string(flow_binding.get("request_hash"), "request_hash"),
+        "requested_target_flow_id": target[0],
+        "requested_target_owner": target[1],
+        "permitted_next_flow_id": successor[0],
+        "permitted_next_owner": successor[1],
+        "allowed_transitions": allowed_transitions,
+        "attempted_flow_id": attempted[0],
+        "attempted_owner": attempted[1],
+        "transition_disposition": (
+            "PRODUCTION_FLOW_TRANSITION_ACCEPTED"
+            if permitted
+            else "PRODUCTION_FLOW_TRANSITION_REJECTED"
+        ),
+        "transition_permitted": permitted,
+        "failure_reason": (
+            None
+            if permitted
+            else "attempted Platform transition is not selected by the validated flow binding"
+        ),
+        "legacy_raw_classification_invoked_by_isolation": False,
+        "project_objective_inference_invoked_by_isolation": False,
+        "project_clarification_invoked_by_isolation": False,
+        "governance_invoked_by_isolation": False,
+        "authorization_created_by_isolation": False,
+        "worker_selected_by_isolation": False,
+        "execution_invoked_by_isolation": False,
+        "replay_visible": True,
+        "replay_reference": str(reference),
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    write_json_immutable(reference, artifact)
+    if not permitted:
+        raise FailClosedRuntimeError(artifact["failure_reason"])
+    return artifact
+
+
+def _bound_read_only_intent_projection(
+    *,
+    message: str,
+    flow_binding: dict[str, Any],
+    router_response: dict[str, Any],
+) -> dict[str, Any]:
+    """Project an already selected read-only branch without reclassifying intent."""
+
+    artifact = {
+        "artifact_type": "PLATFORM_CORE_BOUND_READ_ONLY_INTENT_PROJECTION_V1",
+        "runtime_version": PLATFORM_CORE_PRODUCTION_FLOW_ISOLATION_VERSION,
+        "resolution_authority": "PLATFORM_CORE_PROJECT_SERVICES",
+        "raw_prompt": require_string(message, "message"),
+        "raw_prompt_hash": replay_hash(message),
+        "requested_target_flow_id": flow_binding["requested_target_flow_id"],
+        "requested_target_owner": flow_binding["requested_target_owner"],
+        "permitted_next_flow_id": flow_binding["permitted_next_flow_id"],
+        "permitted_next_owner": flow_binding["permitted_next_owner"],
+        "production_conversation_flow_binding_hash": flow_binding["artifact_hash"],
+        "selected_service": router_response["selected_service"],
+        "selected_query_class": router_response["selected_query_class"],
+        "platform_query_router_response_hash": router_response["artifact_hash"],
+        "clarification_required": False,
+        "clarification_reason": None,
+        "goal_mapping": None,
+        "candidate_capability_discovery": None,
+        "summary_admissible": False,
+        "runtime_binding_admissible": False,
+        "canonical_runtime_prompt": None,
+        "governed_request": message,
+        "requested_work_type": "INFORMATIONAL_QUERY",
+        "work_type": "INFORMATIONAL_QUERY",
+        "prepared_work_type": "INFORMATIONAL_QUERY",
+        "work_type_source": "VALIDATED_PRODUCTION_CONVERSATION_FLOW_BINDING",
+        "work_type_source_text": flow_binding["requested_target_flow_id"],
+        "mutation_allowed": False,
+        "runtime_implementation": False,
+        "work_type_conflict_detected": False,
+        "read_only_work_binding_admissible": True,
+        "read_only_work_binding_status": GOVERNED_READ_ONLY_WORK_BOUND,
+        "read_only_work_result_required": True,
+        "requires_human_approval": False,
+        "operational_turn_classification": OPERATIONAL_PLATFORM_QUERY,
+        "legacy_raw_classification_invoked": False,
+        "project_objective_inference_allowed": False,
+        "project_clarification_allowed": False,
+        "provider_invoked": False,
+        "worker_invoked": False,
+        "governance_modified": False,
+        "repository_mutated": False,
+        "replay_visible": True,
+    }
+    artifact["artifact_hash"] = replay_hash(artifact)
+    return artifact
+
+
+def _execute_bound_read_only_flow(
+    *,
+    message: str,
+    workspace_state: dict[str, Any] | None,
+    created_at: str,
+    turn_reference: str,
+    session_id: str,
+    repository_root: str,
+    session_root: Path,
+    flow_binding: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Invoke only the read-only service selected by the validated binding."""
+
+    from aigol.runtime.platform_query_router import (
+        PLATFORM_KNOWLEDGE_ROUTE,
+        PLATFORM_QUERY_ROUTE_DESCRIPTORS,
+        SELF_KNOWLEDGE_ROUTE,
+        route_platform_query,
+        validate_platform_query_router_response,
+    )
+    from aigol.runtime.production_conversation_flow_binding import (
+        CFA_PLATFORM_KNOWLEDGE,
+        CFA_SELF_KNOWLEDGE,
+    )
+
+    target_to_service = {
+        CFA_SELF_KNOWLEDGE: SELF_KNOWLEDGE_ROUTE,
+        CFA_PLATFORM_KNOWLEDGE: PLATFORM_KNOWLEDGE_ROUTE,
+    }
+    target = flow_binding["requested_target_flow_id"]
+    expected_service = target_to_service.get(target)
+    if expected_service is None:
+        return _enforce_production_flow_isolation(
+            session_root=session_root,
+            session_id=session_id,
+            created_at=created_at,
+            flow_binding=flow_binding,
+            attempted_flow_id=target,
+            attempted_owner="PLATFORM_CORE_PROJECT_SERVICES",
+        )
+    isolation = _enforce_production_flow_isolation(
+        session_root=session_root,
+        session_id=session_id,
+        created_at=created_at,
+        flow_binding=flow_binding,
+        attempted_flow_id=target,
+        attempted_owner=flow_binding["requested_target_owner"],
+    )
+    request_classification = validate_self_knowledge_request_classification(
+        classify_self_knowledge_request(message)
+    )
+    if request_classification["artifact_hash"] != flow_binding[
+        "request_classification_hash"
+    ]:
+        _enforce_production_flow_isolation(
+            session_root=session_root,
+            session_id=session_id,
+            created_at=created_at,
+            flow_binding=flow_binding,
+            attempted_flow_id="CFA-REQUEST-CLASSIFICATION-SUBSTITUTION-V1",
+            attempted_owner="PLATFORM_CORE_REQUEST_CLASSIFICATION",
+        )
+    permitted_descriptors = tuple(
+        descriptor
+        for descriptor in PLATFORM_QUERY_ROUTE_DESCRIPTORS
+        if descriptor.service_identifier == expected_service
+    )
+    try:
+        router = validate_platform_query_router_response(
+            route_platform_query(
+                query=message,
+                workspace_state=workspace_state,
+                created_at=created_at,
+                repository_root=repository_root,
+                request_classification=request_classification,
+                route_descriptors=permitted_descriptors,
+            )
+        )
+    except FailClosedRuntimeError:
+        _enforce_production_flow_isolation(
+            session_root=session_root,
+            session_id=session_id,
+            created_at=created_at,
+            flow_binding=flow_binding,
+            attempted_flow_id="CFA-UNRESOLVED-PLATFORM-ROUTER-TRANSITION-V1",
+            attempted_owner="PLATFORM_QUERY_ROUTER",
+        )
+        raise
+    if router.get("selected_service") != expected_service:
+        _enforce_production_flow_isolation(
+            session_root=session_root,
+            session_id=session_id,
+            created_at=created_at,
+            flow_binding=flow_binding,
+            attempted_flow_id="CFA-INCOMPATIBLE-PLATFORM-SERVICE-V1",
+            attempted_owner=str(router.get("selected_service")),
+        )
+    operational_classification = {
+        "turn_kind": OPERATIONAL_PLATFORM_QUERY,
+        "binding_destination": PLATFORM_QUERY_ROUTER_BINDING,
+        "binding_reason": "VALIDATED_PRODUCTION_CONVERSATION_FLOW_BINDING",
+        "session_id": require_string(session_id, "session_id"),
+        "turn_reference": require_string(turn_reference, "turn_reference"),
+        "platform_query_router_response": deepcopy(router),
+        "platform_query_router_response_hash": router["artifact_hash"],
+        "selected_service": router["selected_service"],
+        "selected_query_class": router["selected_query_class"],
+        "selected_route_score": router["selected_route_score"],
+        "governed_action_evidence": [],
+        "request_classification": deepcopy(request_classification),
+        "request_classification_hash": request_classification["artifact_hash"],
+        "classification_authority": "PLATFORM_QUERY_ROUTER",
+        "objective_inference_allowed": False,
+        "human_interface_classified": False,
+        "legacy_raw_classification_invoked": False,
+    }
+    intent = _bound_read_only_intent_projection(
+        message=message,
+        flow_binding=flow_binding,
+        router_response=router,
+    )
+    return router, operational_classification, intent, isolation
+
+
 def _objective_commitment_gate_project_context(
     *,
     interface_name: str,
@@ -1128,6 +1499,7 @@ def _objective_commitment_gate_project_context(
     guidance: dict[str, Any],
     precedence: dict[str, Any],
     flow_binding: dict[str, Any],
+    production_flow_isolation: dict[str, Any],
 ) -> dict[str, Any]:
     clarification_references = [
         reference
@@ -1211,6 +1583,15 @@ def _objective_commitment_gate_project_context(
         "human_intent_precedence_decision_hash": precedence["artifact_hash"],
         "production_conversation_flow_binding": deepcopy(flow_binding),
         "production_conversation_flow_binding_hash": flow_binding["artifact_hash"],
+        "production_flow_isolation_enforcement": deepcopy(
+            production_flow_isolation
+        ),
+        "production_flow_isolation_enforcement_hash": production_flow_isolation[
+            "artifact_hash"
+        ],
+        "production_flow_isolation_enforcement_reference": (
+            production_flow_isolation["replay_reference"]
+        ),
         "human_intent_precedence_before_restored_context": True,
         "project_workspace_restored": prior_state is not None,
         "project_workspace_replay_reference": (

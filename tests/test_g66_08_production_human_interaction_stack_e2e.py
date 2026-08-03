@@ -315,25 +315,27 @@ def test_defect_default_typed_multi_turn_never_reaches_objective_commitment(
 
 
 @pytest.mark.parametrize(
-    ("human_text", "response_mode"),
+    "human_text",
     [
-        ("I have an idea.", "CLARIFICATION"),
-        ("florbulate the quux matrix", "INFORMATIONAL"),
-        ("\x00", "INFORMATIONAL"),
+        "I have an idea.",
+        "florbulate the quux matrix",
+        "\x00",
     ],
 )
-def test_defect_ambiguous_unsupported_and_malformed_requests_cross_flow_boundary(
+def test_repaired_bound_platform_knowledge_requests_do_not_cross_flow_boundary(
     tmp_path: Path,
     human_text: str,
-    response_mode: str,
 ) -> None:
     result = _submit(tmp_path, human_text, session="G66-08-INVALID-REQUEST")
     context = result["platform_core_project_services_context"]
     binding = context["production_conversation_flow_binding"]
 
     assert binding["requested_target_flow_id"] == CFA_PLATFORM_KNOWLEDGE
-    assert context["project_objective_inference"] is not None
-    assert context["human_conversation_experience"]["response_mode"] == response_mode
+    assert context["project_objective_inference"] is None
+    assert context["human_conversation_experience"]["response_mode"] == (
+        "READ_ONLY_RESULT"
+    )
+    assert context["operational_clarification_envelope"] is None
     assert context.get("owner_bound_clarification_envelope") is None
 
 

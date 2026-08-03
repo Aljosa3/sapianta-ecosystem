@@ -181,7 +181,7 @@ def test_additive_replay_reconstructs_and_tampering_fails_closed(
         )
 
 
-def test_aicli_fails_closed_before_governance_without_reuse_proof(
+def test_aicli_bound_read_only_target_does_not_enter_governance_or_reuse_proof(
     tmp_path: Path,
 ) -> None:
     output: list[str] = []
@@ -199,8 +199,13 @@ def test_aicli_fails_closed_before_governance_without_reuse_proof(
 
     project_context = result["platform_core_project_services_context"]
     assert result["pending_approval"] is False
-    assert project_context["reuse_proof_production_admission"]["admission_status"] == (
-        "WAITING_FOR_REUSE_PROOF_EVIDENCE"
+    assert project_context["production_conversation_flow_binding"][
+        "requested_target_flow_id"
+    ] == "CFA-PLATFORM-KNOWLEDGE-V1"
+    assert project_context["project_objective_inference"] is None
+    assert project_context["reuse_proof_production_admission"] is None
+    assert project_context["human_conversation_experience"]["response_mode"] == (
+        "READ_ONLY_RESULT"
     )
     assert project_context["constitutional_development_governance"] is None
     assert "pending_approval: False" in rendered

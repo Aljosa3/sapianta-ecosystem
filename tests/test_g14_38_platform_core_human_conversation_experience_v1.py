@@ -50,7 +50,9 @@ def test_platform_core_conversation_model_clarifies_vague_human_requests(tmp_pat
         assert conversation["fail_closed_explanation"]
 
 
-def test_aicli_renders_platform_core_conversation_clarification(tmp_path: Path) -> None:
+def test_aicli_honors_bound_platform_knowledge_without_legacy_clarification(
+    tmp_path: Path,
+) -> None:
     output: list[str] = []
     result = aicli.run_reference_uhi_session(
         session_id="G14-38-AICLI",
@@ -62,11 +64,18 @@ def test_aicli_renders_platform_core_conversation_clarification(tmp_path: Path) 
     )
     rendered = "\n".join(output)
 
-    assert result["clarification_question_count"] == 1
+    context = result["platform_core_project_services_context"]
+
+    assert result["clarification_question_count"] == 0
     assert result["runtime_entered"] is False
-    assert "I can help turn this into governed development work." in rendered
-    assert "What should be improved or built?" in rendered
-    assert result["platform_core_project_services_context"]["human_conversation_experience_authority"] == (
+    assert "I can help turn this into governed development work." not in rendered
+    assert "What should be improved or built?" not in rendered
+    assert context["production_conversation_flow_binding"][
+        "requested_target_flow_id"
+    ] == "CFA-PLATFORM-KNOWLEDGE-V1"
+    assert context["project_objective_inference"] is None
+    assert context["operational_clarification_envelope"] is None
+    assert context["human_conversation_experience_authority"] == (
         "PLATFORM_CORE"
     )
 
