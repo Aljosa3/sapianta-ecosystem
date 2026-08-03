@@ -35,6 +35,10 @@ DETERMINISTIC_HIR_PARSER_VERSION = "1.0.0"
 OBJECTIVE_COMMITMENT_CREATED = "OBJECTIVE_COMMITMENT_CREATED"
 SESSION_ACTIVE = "SESSION_ACTIVE"
 SESSION_STOPPED_AT_COMMITMENT = "SESSION_STOPPED_AT_OBJECTIVE_COMMITMENT"
+SEMANTIC_TURN = "SEMANTIC_TURN"
+CANDIDATE_CONFIRMATION = "CANDIDATE_CONFIRMATION"
+OBJECTIVE_COMMITMENT = "OBJECTIVE_COMMITMENT"
+NON_PROTOCOL_TURN = "NON_PROTOCOL_TURN"
 
 _SEMANTIC_COMMANDS = {
     "action": (cwm_v2.OPERATIVE_ACTION, cwm_v2.PRIMARY, cwm_v2.PRIMARY),
@@ -245,6 +249,10 @@ def admit_hir_semantic_turn_v2(
         "proposal_id": validation["proposal_id"],
         "proposal_commit_disposition": proposal_commit["disposition"],
         "proposal_commit_identity": proposal_commit["commit_identity"],
+        "source_turn_binding": deepcopy(turn_binding),
+        "interpreter_proposal": deepcopy(proposal),
+        "proposal_validation": deepcopy(validation),
+        "proposal_commit": deepcopy(proposal_commit),
         "protocol_state": protocol_state,
         "state": persisted,
         **_boundary_flags(),
@@ -254,6 +262,20 @@ def admit_hir_semantic_turn_v2(
             persisted
         )
     return result
+
+
+def classify_hir_conversation_turn_v2(source_turn_text: str) -> str:
+    """Classify only the existing closed G60 control grammar."""
+
+    text = _text(source_turn_text, "source_turn_text")
+    if text.startswith("/confirm "):
+        return CANDIDATE_CONFIRMATION
+    if text.startswith("/commit "):
+        return OBJECTIVE_COMMITMENT
+    prefix = text.split(":", 1)[0].strip().lower() if ":" in text else None
+    if prefix in _SEMANTIC_COMMANDS:
+        return SEMANTIC_TURN
+    return NON_PROTOCOL_TURN
 
 
 def confirm_hir_candidate_v2(
@@ -493,17 +515,32 @@ def _parse_semantic_turn(source_turn_text: str) -> tuple[str, str]:
     return key, value
 
 
+def hir_semantic_turn_matches_next_required_v2(
+    state: dict[str, Any], source_turn_text: str
+) -> bool:
+    """Return whether one existing typed command addresses the next G59 slot."""
+
+    current = machine_v2.validate_conversation_state_machine_state_v2(state)
+    key, _value = _parse_semantic_turn(source_turn_text)
+    slot_class = _SEMANTIC_COMMANDS[key][0]
+    return slot_class == _next_required_slot_class(current)
+
+
 def _require_next_slot_class(state: dict[str, Any], slot_class: str) -> None:
+    expected = _next_required_slot_class(state)
+    if expected is None:
+        raise FailClosedRuntimeError("required semantic slots are already complete")
+    if slot_class != expected:
+        raise FailClosedRuntimeError(f"next required semantic field is {expected}")
+
+
+def _next_required_slot_class(state: dict[str, Any]) -> str | None:
     present = {
         slot["slot_class"]
         for slot in state["semantic_memory"]["semantic_slots"]
         if slot["status"] not in {cwm_v2.CONFLICTED, cwm_v2.STALE}
     }
-    expected = next((item for item in _REQUIRED_ORDER if item not in present), None)
-    if expected is None:
-        raise FailClosedRuntimeError("required semantic slots are already complete")
-    if slot_class != expected:
-        raise FailClosedRuntimeError(f"next required semantic field is {expected}")
+    return next((item for item in _REQUIRED_ORDER if item not in present), None)
 
 
 def _dependencies(state: dict[str, Any], slot_class: str) -> list[str]:
@@ -567,12 +604,18 @@ def _text(value: Any, name: str) -> str:
 
 
 __all__ = [
+    "CANDIDATE_CONFIRMATION",
     "HIR_CONVERSATION_LAYER_INTEGRATION_RUNTIME_V2",
+    "NON_PROTOCOL_TURN",
+    "OBJECTIVE_COMMITMENT",
     "OBJECTIVE_COMMITMENT_CREATED",
+    "SEMANTIC_TURN",
     "SESSION_STOPPED_AT_COMMITMENT",
     "admit_hir_semantic_turn_v2",
+    "classify_hir_conversation_turn_v2",
     "confirm_hir_candidate_v2",
     "create_hir_conversation_session_v2",
     "create_hir_objective_commitment_v2",
+    "hir_semantic_turn_matches_next_required_v2",
     "run_hir_conversation_terminal_v2",
 ]

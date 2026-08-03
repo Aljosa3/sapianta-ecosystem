@@ -271,7 +271,7 @@ def test_repaired_common_clarification_restores_the_same_flow_for_next_reply(
     assert result["runtime_entered"] is False
 
 
-def test_defect_default_typed_multi_turn_never_reaches_objective_commitment(
+def test_default_typed_multi_turn_reaches_candidate_but_requires_exact_controls(
     tmp_path: Path,
 ) -> None:
     session = "G66-08-MULTI-TURN"
@@ -306,13 +306,14 @@ def test_defect_default_typed_multi_turn_never_reaches_objective_commitment(
 
     assert len(bindings) == 7
     assert len({item["conversation_identity"] for item in bindings}) == 1
-    assert [item["cwm_revision"] for item in bindings] == [1] * 7
+    assert [item["cwm_revision"] for item in bindings] == [1, 4, 6, 8, 10, 10, 10]
     assert bindings[0]["requested_target_flow_id"] == CFA_DEVELOPMENT_GOVERNANCE
     assert all(
         item["requested_target_flow_id"] == CFA_DEVELOPMENT_GOVERNANCE
         for item in bindings[1:]
     )
-    assert all(item == bindings[0] for item in bindings[1:])
+    assert len({item["artifact_hash"] for item in bindings[:5]}) == 5
+    assert bindings[4] == bindings[5] == bindings[6]
     assert all(
         item["semantic_commit_identity"] is not None for item in bindings
     )

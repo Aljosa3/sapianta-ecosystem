@@ -388,10 +388,40 @@ def prepare_unified_human_interface_project_context(
                 expected_session_identity=session_id,
                 expected_request_hash=validated_flow_binding["request_hash"],
             )
+            continuation_advanced = False
+            if active_owner_bound_envelope["expected_revision"] != (
+                validated_flow_binding["cwm_revision"]
+            ):
+                continuation_references = [
+                    reference
+                    for reference in validated_flow_binding[
+                        "ordered_predecessor_references"
+                    ]
+                    if reference["stage"]
+                    == "OWNER_BOUND_CLARIFICATION_CONTINUATION"
+                ]
+                if len(continuation_references) == 1:
+                    continued_from = validate_owner_bound_clarification_envelope_v1(
+                        load_json(
+                            Path(continuation_references[0]["replay_reference"])
+                        ),
+                        expected_session_identity=session_id,
+                        expected_originating_owner=active_owner_bound_envelope[
+                            "originating_owner"
+                        ],
+                    )
+                    continuation_advanced = (
+                        continued_from["artifact_hash"]
+                        == active_owner_bound_envelope["artifact_hash"]
+                        and validated_flow_binding["cwm_revision"]
+                        > active_owner_bound_envelope["expected_revision"]
+                    )
             if active_owner_bound_envelope["conversation_identity"] != (
                 validated_flow_binding["conversation_identity"]
-            ) or active_owner_bound_envelope["expected_revision"] != (
-                validated_flow_binding["cwm_revision"]
+            ) or (
+                active_owner_bound_envelope["expected_revision"]
+                != validated_flow_binding["cwm_revision"]
+                and not continuation_advanced
             ):
                 raise FailClosedRuntimeError(
                     "owner-bound clarification continuation state is stale"

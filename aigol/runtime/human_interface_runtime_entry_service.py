@@ -281,6 +281,9 @@ def run_human_interface_runtime_entry(
     requests = [_require_string(request, "human_request") for request in human_requests]
 
     result = deepcopy(presentation) if isinstance(presentation, dict) else {}
+    committed_objective_record = result.pop(
+        "g60_02_committed_objective_record", None
+    )
     approved_identity_consumption = None
     if approved_implementation_turn_binding is not None:
         from aigol.runtime.platform_implementation_turn_durable_work_binding import (
@@ -328,6 +331,38 @@ def run_human_interface_runtime_entry(
                 ),
             }
         ]
+    elif committed_objective_record is not None:
+        if operator_context != "G60_02_COMMITTED_OBJECTIVE_HANDOFF":
+            raise FailClosedRuntimeError(
+                "committed Objective transport requires the exact G60-02 context"
+            )
+        if len(requests) != 1:
+            raise FailClosedRuntimeError(
+                "committed Objective transport requires exactly one request"
+            )
+        from aigol.runtime.human_interface_conversation_execution_integration_v2 import (
+            validate_committed_objective_admission_transport_v2,
+        )
+
+        validate_committed_objective_admission_transport_v2(
+            committed_objective_record,
+            platform_core_prompt=requests[0],
+        )
+        context = prepare_unified_human_interface_project_context(
+            interface_name=interface,
+            session_id=session,
+            message=requests[0],
+            runtime_root=root,
+            workspace=workspace_text,
+            created_at=created,
+            explicit_canonical_artifacts=explicit_canonical_artifacts,
+            explicit_canonical_artifact_references=(
+                explicit_canonical_artifact_references
+            ),
+        )
+        production_conversation_bindings = []
+        project_contexts = [context]
+        intent_resolutions = [context["development_intent_resolution"]]
     else:
         from aigol.runtime.production_conversation_flow_binding import (
             compose_production_conversation_flow_binding_v1,
@@ -348,24 +383,55 @@ def run_human_interface_runtime_entry(
                 created_at=created,
                 prior_workspace_state=prior_workspace_state,
             )
-            context = prepare_unified_human_interface_project_context(
-                interface_name=interface,
-                session_id=session,
-                message=request,
-                runtime_root=root,
-                workspace=workspace_text,
-                created_at=created,
-                explicit_canonical_artifacts=explicit_canonical_artifacts,
-                explicit_canonical_artifact_references=(
-                    explicit_canonical_artifact_references
-                ),
-                human_intent_precedence_decision=production_binding[
-                    "human_intent_precedence_decision"
-                ],
-                production_conversation_flow_binding=production_binding[
-                    "production_conversation_flow_binding"
-                ],
-            )
+            commitment = production_binding.get("objective_commitment")
+            if isinstance(commitment, dict):
+                from aigol.runtime.human_interface_conversation_execution_integration_v2 import (
+                    admit_committed_objective_to_platform_core_v2,
+                )
+
+                admitted = admit_committed_objective_to_platform_core_v2(
+                    commitment_record=commitment["commitment_record"],
+                    explicit_canonical_artifacts=[
+                        deepcopy(item) for item in explicit_canonical_artifacts
+                    ],
+                    explicit_canonical_artifact_references=(
+                        explicit_canonical_artifact_references
+                    ),
+                    runtime_root=(
+                        root / session / "canonical_typed_semantic_admission"
+                    ),
+                    workspace=workspace_text,
+                    session_id=session,
+                    human_actor=g31_human_actor_id,
+                    created_at=created,
+                )
+                context = admitted["hir_admission"].get(
+                    "platform_core_project_services_context"
+                )
+                if not isinstance(context, dict):
+                    raise FailClosedRuntimeError(
+                        "committed Objective admission context is absent"
+                    )
+                production_binding["g60_02_admission_handoff"] = admitted
+            else:
+                context = prepare_unified_human_interface_project_context(
+                    interface_name=interface,
+                    session_id=session,
+                    message=request,
+                    runtime_root=root,
+                    workspace=workspace_text,
+                    created_at=created,
+                    explicit_canonical_artifacts=explicit_canonical_artifacts,
+                    explicit_canonical_artifact_references=(
+                        explicit_canonical_artifact_references
+                    ),
+                    human_intent_precedence_decision=production_binding[
+                        "human_intent_precedence_decision"
+                    ],
+                    production_conversation_flow_binding=production_binding[
+                        "production_conversation_flow_binding"
+                    ],
+                )
             production_binding["project_services_invoked"] = True
             production_binding["project_services_context_hash"] = context.get(
                 "artifact_hash"
@@ -435,6 +501,22 @@ def run_human_interface_runtime_entry(
             "owner_bound_clarification_envelope": (
                 production_conversation_bindings[-1].get(
                     "owner_bound_clarification_envelope"
+                )
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "canonical_typed_semantic_composition": (
+                production_conversation_bindings[-1].get(
+                    "canonical_typed_semantic_composition"
+                )
+                if approved_implementation_turn_binding is None
+                and production_conversation_bindings
+                else None
+            ),
+            "committed_objective_admission": (
+                production_conversation_bindings[-1].get(
+                    "g60_02_admission_handoff"
                 )
                 if approved_implementation_turn_binding is None
                 and production_conversation_bindings

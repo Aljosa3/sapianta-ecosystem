@@ -17,7 +17,9 @@ from aigol.runtime import human_interface_conversation_runtime_v2 as hir_v2
 from aigol.runtime import platform_core_conversation_interpreter_proposal_runtime_v2 as proposal_v2
 from aigol.runtime import platform_core_conversation_objective_readiness_runtime_v2 as readiness_v2
 from aigol.runtime import platform_core_conversation_proposal_commit_runtime_v2 as commit_v2
+from aigol.runtime import platform_core_conversation_state_machine_runtime_v2 as machine_v2
 from aigol.runtime import platform_core_conversation_working_memory_runtime_v2 as cwm_v2
+from aigol.runtime import platform_core_semantic_slot_runtime_v2 as slots_v2
 from aigol.runtime.human_execution_intent_detection import (
     GENERIC_GOVERNED_EXECUTION_REQUEST,
     detect_human_execution_intent,
@@ -756,12 +758,20 @@ def validate_production_conversation_flow_binding_v1(
         for reference in candidate["ordered_predecessor_references"]
     ]
     if candidate["objective_commitment_required"] is True:
-        if predecessor_stages.count("OBJECTIVE_READINESS") != 1 or (
-            predecessor_stages.count("OWNER_BOUND_CLARIFICATION") != 1
+        committed = predecessor_stages.count("OBJECTIVE_COMMITMENT") == 1
+        if predecessor_stages.count("OBJECTIVE_READINESS") != 1:
+            _fail("actionable flow lacks Objective Readiness evidence")
+        if committed:
+            if predecessor_stages.count("HUMAN_CONFIRMATION") != 1:
+                _fail("Objective Commitment lacks exact Human confirmation")
+            if predecessor_stages.count("OWNER_BOUND_CLARIFICATION") != 0 or (
+                candidate["clarification_identity"] is not None
+            ):
+                _fail("committed actionable flow retains stale clarification")
+        elif predecessor_stages.count("OWNER_BOUND_CLARIFICATION") != 1 or (
+            candidate["clarification_identity"] is None
         ):
             _fail("actionable flow lacks readiness clarification evidence")
-        if candidate["clarification_identity"] is None:
-            _fail("actionable flow lacks Objective readiness clarification")
     elif "OBJECTIVE_READINESS" in predecessor_stages:
         _fail("read-only flow contains actionable readiness evidence")
     if candidate["proposal_validation_disposition"] == proposal_v2.ADMISSIBLE:
@@ -819,13 +829,38 @@ def compose_production_conversation_flow_binding_v1(
     if isinstance(active, dict) and active.get("artifact_type") == (
         OWNER_BOUND_CLARIFICATION_ENVELOPE_V1
     ):
-        return _restore_owner_bound_clarification_continuation(
+        restored = _restore_owner_bound_clarification_continuation(
             active_envelope=active,
             session_identity=session,
             runtime_root=runtime_root,
             workspace_identity=workspace_identity,
             observed_at=timestamp,
         )
+        control = hir_v2.classify_hir_conversation_turn_v2(request)
+        if (
+            active["originating_owner"]
+            == "CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY"
+            and control != hir_v2.NON_PROTOCOL_TURN
+        ):
+            if control == hir_v2.SEMANTIC_TURN and not (
+                hir_v2.hir_semantic_turn_matches_next_required_v2(
+                    restored["conversation_state"], request
+                )
+            ):
+                return restored
+            return _compose_canonical_typed_semantic_turn(
+                interface_identity=interface_identity,
+                session_identity=session,
+                request_text=request,
+                runtime_root=runtime_root,
+                workspace_identity=workspace_identity,
+                created_at=timestamp,
+                prior_workspace_state=prior_workspace_state,
+                restored_continuation=restored,
+                active_clarification=active,
+                control=control,
+            )
+        return restored
     classification = validate_self_knowledge_request_classification(
         classify_self_knowledge_request(request)
     )
@@ -855,6 +890,28 @@ def compose_production_conversation_flow_binding_v1(
             created_at=timestamp,
             interface_identity=interface_identity,
         )["state"]
+    control = hir_v2.classify_hir_conversation_turn_v2(request)
+    if control == hir_v2.SEMANTIC_TURN:
+        return _compose_canonical_typed_semantic_turn(
+            interface_identity=interface_identity,
+            session_identity=session,
+            request_text=request,
+            runtime_root=runtime_root,
+            workspace_identity=workspace_identity,
+            created_at=timestamp,
+            prior_workspace_state=prior_workspace_state,
+            restored_continuation=None,
+            active_clarification=None,
+            control=control,
+            precedence=precedence,
+            request_classification=classification,
+            state=state,
+        )
+    if control in {
+        hir_v2.CANDIDATE_CONFIRMATION,
+        hir_v2.OBJECTIVE_COMMITMENT,
+    }:
+        _fail("G60 protocol control has no active Objective-readiness owner")
     source_turn = proposal_v2.create_source_turn_binding_v2(
         conversation_identity=state["envelope"]["conversation_identity"],
         session_identity_hash=state["envelope"]["session_identity_hash"],
@@ -962,6 +1019,18 @@ def compose_production_conversation_flow_binding_v1(
         predecessors.append(_predecessor("PROPOSAL_COMMIT", commit, commit_path))
         replay_references.append(str(commit_path))
         next_index = 4
+    if target in {CFA_DEVELOPMENT_GOVERNANCE, CFA_EXECUTION}:
+        classification_path = (
+            turn_root / f"{next_index:03d}_request_classification.json"
+        )
+        write_json_immutable(classification_path, classification)
+        predecessors.append(
+            _predecessor(
+                "REQUEST_CLASSIFICATION", classification, classification_path
+            )
+        )
+        replay_references.append(str(classification_path))
+        next_index += 1
     readiness_path = None
     if objective_readiness is not None:
         readiness_path = turn_root / f"{next_index:03d}_objective_readiness.json"
@@ -1029,7 +1098,7 @@ def compose_production_conversation_flow_binding_v1(
         selection_disposition=selection_disposition,
         clarification_envelope=clarification,
         ordered_predecessor_references=predecessors,
-        owner_local_replay_references=replay_references,
+        owner_local_replay_references=sorted(set(replay_references)),
         created_at=timestamp,
     )
     binding_path = turn_root / f"{next_index:03d}_flow_binding.json"
@@ -1060,6 +1129,397 @@ def compose_production_conversation_flow_binding_v1(
         "project_services_invoked": False,
         "new_constitutional_owner_created": False,
     }
+
+
+def _compose_canonical_typed_semantic_turn(
+    *,
+    interface_identity: str,
+    session_identity: str,
+    request_text: str,
+    runtime_root: str | Path,
+    workspace_identity: str | Path,
+    created_at: str,
+    prior_workspace_state: dict[str, Any] | None,
+    restored_continuation: dict[str, Any] | None,
+    active_clarification: dict[str, Any] | None,
+    control: str,
+    precedence: dict[str, Any] | None = None,
+    request_classification: dict[str, Any] | None = None,
+    state: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Compose the existing G60 typed protocol under the current G66 binding."""
+
+    request = _text(request_text, "request_text")
+    session = _text(session_identity, "session_identity")
+    timestamp = cwm_v2._canonical_timestamp(created_at, "created_at")
+    restored = restored_continuation if isinstance(restored_continuation, dict) else None
+    classification_reconstructed = False
+    if restored is not None:
+        precedence = restored["human_intent_precedence_decision"]
+        request_classification = restored["request_classification"]
+        state = restored["conversation_state"]
+        if not isinstance(request_classification, dict):
+            request_classification = _reconstruct_bound_request_classification(
+                proposal=restored["deterministic_proposal"],
+                binding=restored["production_conversation_flow_binding"],
+            )
+            classification_reconstructed = True
+    if not isinstance(precedence, dict) or not isinstance(
+        request_classification, dict
+    ) or not isinstance(state, dict):
+        _fail("canonical typed semantic composition predecessors are absent")
+    classification = validate_self_knowledge_request_classification(
+        request_classification
+    )
+    current = cwm_v2.validate_conversation_working_memory_state_v2(state)
+    conversation_session = session + ":production-conversation-v1"
+    cwm_root = Path(runtime_root) / "production_conversation_cwm"
+    source_turn = proposal_v2.create_source_turn_binding_v2(
+        conversation_identity=current["envelope"]["conversation_identity"],
+        session_identity_hash=current["envelope"]["session_identity_hash"],
+        expected_cwm_revision=current["revision"],
+        source_turn_text=request,
+    )
+
+    proposal = None
+    validation = None
+    commit = None
+    confirmation = None
+    commitment = None
+    candidate_review = None
+    expected_confirmation_action = None
+    expected_commit_action = None
+    persisted_state = current
+    if control == hir_v2.SEMANTIC_TURN:
+        semantic = hir_v2.admit_hir_semantic_turn_v2(
+            runtime_root=cwm_root,
+            workspace_identity=workspace_identity,
+            session_identity=conversation_session,
+            source_turn_text=request,
+            observed_at=timestamp,
+        )
+        source_turn = semantic["source_turn_binding"]
+        proposal = semantic["interpreter_proposal"]
+        validation = semantic["proposal_validation"]
+        commit = semantic["proposal_commit"]
+        persisted_state = semantic["state"]
+        if restored is not None:
+            persisted_state = _assert_canonical_source_references_for_typed_reduction(
+                state=persisted_state,
+                runtime_root=cwm_root,
+                workspace_identity=workspace_identity,
+                session_identity=conversation_session,
+                observed_at=timestamp,
+            )
+        candidate_review = semantic.get("candidate_review")
+        if isinstance(candidate_review, dict):
+            candidate_digest = candidate_review["presentation"]["candidate_digest"]
+            expected_confirmation_action = f"/confirm {candidate_digest}"
+    elif control == hir_v2.CANDIDATE_CONFIRMATION:
+        if restored is None:
+            _fail("candidate confirmation lacks owner-bound continuation")
+        proposal = restored["deterministic_proposal"]
+        validation = restored["proposal_validation"]
+        commit = restored["proposal_commit"]
+        confirmation = hir_v2.confirm_hir_candidate_v2(
+            runtime_root=cwm_root,
+            workspace_identity=workspace_identity,
+            session_identity=conversation_session,
+            explicit_confirmation_action=request,
+            observed_at=timestamp,
+        )
+        persisted_state = confirmation["state"]
+        expected_commit_action = confirmation["expected_commit_action"]
+    elif control == hir_v2.OBJECTIVE_COMMITMENT:
+        if restored is None:
+            _fail("Objective Commitment lacks owner-bound continuation")
+        proposal = restored["deterministic_proposal"]
+        validation = restored["proposal_validation"]
+        commit = restored["proposal_commit"]
+        commitment = hir_v2.create_hir_objective_commitment_v2(
+            runtime_root=cwm_root,
+            workspace_identity=workspace_identity,
+            session_identity=conversation_session,
+            explicit_commit_action=request,
+            observed_at=timestamp,
+        )
+    else:
+        _fail("canonical typed semantic control is invalid")
+    if not isinstance(proposal, dict) or not isinstance(
+        validation, dict
+    ) or not isinstance(commit, dict):
+        _fail("canonical typed semantic proposal lineage is incomplete")
+
+    if restored is None:
+        target, successor, selection_disposition, route_status, route_capture = (
+            _select_flow(
+                request=request,
+                classification=classification,
+                precedence=precedence,
+                validation=validation,
+                workspace_state=prior_workspace_state,
+            )
+        )
+    else:
+        prior_binding = restored["production_conversation_flow_binding"]
+        target = prior_binding["requested_target_flow_id"]
+        successor = prior_binding["permitted_next_flow_id"]
+        selection_disposition = prior_binding["selection_disposition"]
+        route_status = prior_binding["route_sufficiency_status"]
+        route_capture = deepcopy(restored["platform_flow_selection"])
+
+    if commitment is not None:
+        objective_readiness = commitment["commitment_request"]["readiness_report"]
+    elif confirmation is not None:
+        objective_readiness = confirmation["readiness_report"]
+    else:
+        objective_readiness = readiness_v2.evaluate_objective_readiness_v2(
+            persisted_state,
+            expected_revision=persisted_state["revision"],
+            expected_semantic_revision=persisted_state["semantic_revision"],
+            observed_at=timestamp,
+        )
+    objective_readiness = readiness_v2.validate_objective_readiness_report_v2(
+        objective_readiness
+    )
+    route_status = objective_readiness["readiness_disposition"]
+
+    turn_root = _turn_root(
+        runtime_root=runtime_root,
+        session_identity=session,
+        source_turn_identity=source_turn["source_turn_identity"],
+    )
+    artifacts = [
+        ("HUMAN_INTENT_PRECEDENCE", precedence, "human_intent_precedence"),
+        ("INTERPRETER_PROPOSAL", proposal, "interpreter_proposal"),
+        ("PROPOSAL_VALIDATION", validation, "proposal_validation"),
+        ("PROPOSAL_COMMIT", commit, "proposal_commit"),
+        ("REQUEST_CLASSIFICATION", classification, "request_classification"),
+    ]
+    predecessors: list[dict[str, Any]] = []
+    replay_references: list[str] = []
+    for index, (stage, artifact, label) in enumerate(artifacts):
+        path = turn_root / f"{index:03d}_{label}.json"
+        write_json_immutable(path, artifact)
+        predecessors.append(_predecessor(stage, artifact, path))
+        replay_references.append(str(path))
+    next_index = len(artifacts)
+    if isinstance(active_clarification, dict):
+        continuation_path = turn_root / f"{next_index:03d}_continuation_predecessor.json"
+        write_json_immutable(continuation_path, active_clarification)
+        predecessors.append(
+            _predecessor(
+                "OWNER_BOUND_CLARIFICATION_CONTINUATION",
+                active_clarification,
+                continuation_path,
+            )
+        )
+        replay_references.append(str(continuation_path))
+        next_index += 1
+    if commitment is not None and restored is not None:
+        prior_confirmation = next(
+            (
+                reference
+                for reference in restored["production_conversation_flow_binding"][
+                    "ordered_predecessor_references"
+                ]
+                if reference["stage"] == "HUMAN_CONFIRMATION"
+            ),
+            None,
+        )
+        if not isinstance(prior_confirmation, dict):
+            _fail("Objective Commitment lacks exact Human confirmation evidence")
+        predecessors.append(deepcopy(prior_confirmation))
+        replay_references.append(prior_confirmation["replay_reference"])
+    elif confirmation is not None:
+        confirmation_path = turn_root / f"{next_index:03d}_human_confirmation.json"
+        write_json_immutable(confirmation_path, confirmation)
+        predecessors.append(
+            _predecessor("HUMAN_CONFIRMATION", confirmation, confirmation_path)
+        )
+        replay_references.append(str(confirmation_path))
+        next_index += 1
+    readiness_path = turn_root / f"{next_index:03d}_objective_readiness.json"
+    write_json_immutable(readiness_path, objective_readiness)
+    predecessors.append(
+        _predecessor("OBJECTIVE_READINESS", objective_readiness, readiness_path)
+    )
+    replay_references.append(str(readiness_path))
+    next_index += 1
+
+    clarification = None
+    if commitment is not None:
+        commitment_path = turn_root / f"{next_index:03d}_objective_commitment.json"
+        write_json_immutable(commitment_path, commitment)
+        predecessors.append(
+            _predecessor("OBJECTIVE_COMMITMENT", commitment, commitment_path)
+        )
+        replay_references.append(str(commitment_path))
+        next_index += 1
+    elif confirmation is not None:
+        clarification = _clarification_for_exact_objective_commitment(
+            readiness=objective_readiness,
+            readiness_reference=str(readiness_path),
+            precedence=precedence,
+            state=persisted_state,
+            expected_commit_action=expected_commit_action,
+            created_at=timestamp,
+        )
+    elif expected_confirmation_action is not None:
+        clarification = _clarification_for_exact_candidate_confirmation(
+            readiness=objective_readiness,
+            readiness_reference=str(readiness_path),
+            precedence=precedence,
+            state=persisted_state,
+            expected_confirmation_action=expected_confirmation_action,
+            created_at=timestamp,
+        )
+    else:
+        clarification = _clarification_for_objective_readiness(
+            readiness=objective_readiness,
+            readiness_reference=str(readiness_path),
+            precedence=precedence,
+            state=persisted_state,
+            created_at=timestamp,
+        )
+    if clarification is not None:
+        clarification_path = turn_root / f"{next_index:03d}_clarification.json"
+        write_json_immutable(clarification_path, clarification)
+        predecessors.append(
+            _predecessor("OWNER_BOUND_CLARIFICATION", clarification, clarification_path)
+        )
+        replay_references.append(str(clarification_path))
+        next_index += 1
+
+    binding_state = persisted_state if commitment is None else current
+    binding = create_production_conversation_flow_binding_v1(
+        request_identity=precedence["request_identity"],
+        request_hash=precedence["request_hash"],
+        state=binding_state,
+        source_turn_binding=source_turn,
+        request_classification=classification,
+        proposal=proposal,
+        proposal_validation=validation,
+        proposal_commit=commit,
+        route_sufficiency_status=route_status,
+        classification_owner=(
+            restored["production_conversation_flow_binding"]["classification_owner"]
+            if restored is not None
+            else "PLATFORM_QUERY_ROUTER"
+        ),
+        selection_owner=PLATFORM_QUERY_ROUTER_VERSION,
+        requested_target_flow_id=target,
+        permitted_next_flow_id=successor,
+        selection_disposition=selection_disposition,
+        clarification_envelope=clarification,
+        ordered_predecessor_references=predecessors,
+        owner_local_replay_references=sorted(set(replay_references)),
+        created_at=timestamp,
+    )
+    binding_path = turn_root / f"{next_index:03d}_flow_binding.json"
+    write_json_immutable(binding_path, binding)
+    return {
+        "human_intent_precedence_decision": precedence,
+        "request_classification": classification,
+        "conversation_identity": binding_state["envelope"]["conversation_identity"],
+        "conversation_state": binding_state,
+        "source_turn_binding": source_turn,
+        "deterministic_proposal": proposal,
+        "g61_proposal_assistance_disposition": (
+            "NOT_REQUIRED_EXISTING_G60_DETERMINISTIC_TYPED_PROTOCOL"
+        ),
+        "proposal_validation": validation,
+        "proposal_commit": commit,
+        "objective_readiness_report": objective_readiness,
+        "platform_flow_selection": route_capture,
+        "owner_bound_clarification_envelope": clarification,
+        "production_conversation_flow_binding": binding,
+        "production_conversation_flow_binding_reference": str(binding_path),
+        "production_conversation_replay_reference": str(turn_root),
+        "proposal_validation_precedes_commit": True,
+        "canonical_typed_semantic_composition": {
+            "control": control,
+            "candidate_review": deepcopy(candidate_review),
+            "expected_confirmation_action": expected_confirmation_action,
+            "expected_commit_action": expected_commit_action,
+            "objective_commitment": deepcopy(commitment),
+            "semantic_owner": "G59_CONVERSATION_LAYER",
+            "canonical_ingress_owner": "G66_CANONICAL_HUMAN_ENTRY_COMPOSITION",
+            "provider_assistance_invoked": False,
+        },
+        "objective_commitment": deepcopy(commitment),
+        "clarification_continuation_restored": restored is not None,
+        "conversation_working_memory_reused": restored is not None,
+        "human_intent_reclassified": False if restored is not None else True,
+        "request_classification_reconstructed_from_bound_replay": (
+            classification_reconstructed
+        ),
+        "platform_query_router_reinvoked": False if restored is not None else True,
+        "project_services_invoked": False,
+        "new_constitutional_owner_created": False,
+    }
+
+
+def _assert_canonical_source_references_for_typed_reduction(
+    *,
+    state: dict[str, Any],
+    runtime_root: str | Path,
+    workspace_identity: str | Path,
+    session_identity: str,
+    observed_at: str,
+) -> dict[str, Any]:
+    """Use the existing G59 correction path to bind G66 source evidence as Human."""
+
+    current = machine_v2.validate_conversation_state_machine_state_v2(state)
+    references = [
+        slot
+        for slot in current["semantic_memory"]["semantic_slots"]
+        if slot["slot_class"] == cwm_v2.SEMANTIC_REFERENCE
+        and slot["confidence_class"] == cwm_v2.CONTEXT_DERIVED
+    ]
+    for active in references:
+        provenance = []
+        for source in active["provenance"]:
+            asserted_source = deepcopy(source)
+            asserted_source["normalization_rule_ids"] = sorted(
+                set(asserted_source["normalization_rule_ids"])
+                | {"G66_13_CANONICAL_TYPED_SEMANTIC_COMPOSITION"}
+            )
+            asserted_source["human_disposition"] = "ASSERTED"
+            provenance.append(asserted_source)
+        incoming = slots_v2.create_semantic_slot_v2(
+            conversation_identity=current["envelope"]["conversation_identity"],
+            slot_class=active["slot_class"],
+            slot_role=active["slot_role"],
+            cardinality_key=active["cardinality_key"],
+            surface_value=active["surface_value"],
+            canonical_value=active["canonical_value"],
+            status=cwm_v2.ASSERTED,
+            completeness=cwm_v2.COMPLETE,
+            confidence_class=cwm_v2.HUMAN_ASSERTED,
+            materiality=active["materiality"],
+            provenance=provenance,
+            depends_on=active["depends_on"],
+            created_at=observed_at,
+        )
+        prepared = machine_v2.prepare_conversation_correction_v2(
+            current,
+            expected_revision=current["revision"],
+            incoming_slot=incoming,
+            observed_at=observed_at,
+        )
+        replacement = prepared["replacement_state"]
+        if not isinstance(replacement, dict):
+            _fail("canonical source-reference assertion produced no state change")
+        current = machine_v2.persist_conversation_state_machine_transition_v2(
+            runtime_root=str(runtime_root),
+            workspace_identity=str(workspace_identity),
+            session_identity=session_identity,
+            expected_revision=current["revision"],
+            replacement_state=replacement,
+            observed_at=observed_at,
+        )
+    return current
 
 
 def reconstruct_production_conversation_flow_binding_v1(
@@ -1191,6 +1651,15 @@ def _restore_owner_bound_clarification_continuation(
         reference["stage"]: load_json(Path(reference["replay_reference"]))
         for reference in binding["ordered_predecessor_references"]
     }
+    classification = predecessor_artifacts.get("REQUEST_CLASSIFICATION")
+    if isinstance(classification, dict):
+        classification = validate_self_knowledge_request_classification(
+            classification
+        )
+        if classification["artifact_hash"] != binding[
+            "request_classification_hash"
+        ]:
+            _fail("restored request classification evidence is inconsistent")
     binding_reference = _flow_binding_reference(binding)
     validation_reference = next(
         reference["replay_reference"]
@@ -1208,7 +1677,7 @@ def _restore_owner_bound_clarification_continuation(
     replay_root = str(Path(binding_reference).parent)
     return {
         "human_intent_precedence_decision": precedence,
-        "request_classification": None,
+        "request_classification": deepcopy(classification),
         "conversation_identity": state["envelope"]["conversation_identity"],
         "conversation_state": state,
         "source_turn_binding": None,
@@ -1247,6 +1716,32 @@ def _restore_owner_bound_clarification_continuation(
         "project_services_invoked": False,
         "new_constitutional_owner_created": False,
     }
+
+
+def _reconstruct_bound_request_classification(
+    *, proposal: Any, binding: dict[str, Any]
+) -> dict[str, Any]:
+    """Recover a pre-G66-13 classification only when exact hashes still bind."""
+
+    if not isinstance(proposal, dict):
+        _fail("legacy clarification proposal evidence is absent")
+    operations = proposal.get("proposed_semantic_operations")
+    if not isinstance(operations, list) or len(operations) != 1:
+        _fail("legacy clarification source operation is ambiguous")
+    operation = operations[0]
+    if not isinstance(operation, dict) or operation.get("slot_class") != (
+        cwm_v2.SEMANTIC_REFERENCE
+    ):
+        _fail("legacy clarification source operation is invalid")
+    source = operation.get("surface_value")
+    if not isinstance(source, str) or replay_hash(source) != binding["request_hash"]:
+        _fail("legacy clarification source request is inconsistent")
+    classification = validate_self_knowledge_request_classification(
+        classify_self_knowledge_request(source)
+    )
+    if classification["artifact_hash"] != binding["request_classification_hash"]:
+        _fail("legacy clarification classification reconstruction differs")
+    return classification
 
 
 def _project_context_for_clarification(
@@ -1515,6 +2010,64 @@ def _clarification_for_objective_readiness(
     )
 
 
+def _clarification_for_exact_objective_commitment(
+    *,
+    readiness: dict[str, Any],
+    readiness_reference: str,
+    precedence: dict[str, Any],
+    state: dict[str, Any],
+    expected_commit_action: str | None,
+    created_at: str,
+) -> dict[str, Any]:
+    action = _text(expected_commit_action, "expected_commit_action")
+    return create_owner_bound_clarification_envelope_v1(
+        originating_flow_id=CFA_OBJECTIVE_COMMITMENT,
+        originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY",
+        originating_artifact_reference=readiness_reference,
+        originating_artifact_hash=readiness["report_checksum"],
+        workspace_identity_hash=state["envelope"]["workspace_identity_hash"],
+        session_identity=precedence["session_identity"],
+        conversation_identity=state["envelope"]["conversation_identity"],
+        subject_identity="exact_objective_commitment",
+        expected_revision=state["revision"],
+        reason_code="EXACT_HUMAN_OBJECTIVE_COMMITMENT_REQUIRED",
+        required_field_or_evidence_codes=[action],
+        permitted_reply_kind="EXACT_HUMAN_OBJECTIVE_COMMIT_ACT",
+        created_at=created_at,
+        expires_at=state["envelope"]["expires_at"],
+    )
+
+
+def _clarification_for_exact_candidate_confirmation(
+    *,
+    readiness: dict[str, Any],
+    readiness_reference: str,
+    precedence: dict[str, Any],
+    state: dict[str, Any],
+    expected_confirmation_action: str | None,
+    created_at: str,
+) -> dict[str, Any]:
+    action = _text(
+        expected_confirmation_action, "expected_confirmation_action"
+    )
+    return create_owner_bound_clarification_envelope_v1(
+        originating_flow_id=CFA_OBJECTIVE_COMMITMENT,
+        originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY",
+        originating_artifact_reference=readiness_reference,
+        originating_artifact_hash=readiness["report_checksum"],
+        workspace_identity_hash=state["envelope"]["workspace_identity_hash"],
+        session_identity=precedence["session_identity"],
+        conversation_identity=state["envelope"]["conversation_identity"],
+        subject_identity="exact_candidate_confirmation",
+        expected_revision=state["revision"],
+        reason_code="EXACT_HUMAN_CANDIDATE_CONFIRMATION_REQUIRED",
+        required_field_or_evidence_codes=[action],
+        permitted_reply_kind="EXACT_HUMAN_CANDIDATE_CONFIRMATION_ACT",
+        created_at=created_at,
+        expires_at=state["envelope"]["expires_at"],
+    )
+
+
 def _turn_root(
     *,
     runtime_root: str | Path,
@@ -1567,6 +2120,19 @@ def _validate_predecessor_references(value: Any) -> None:
             "OBJECTIVE_READINESS"
         ) <= stages.index("PROPOSAL_COMMIT"):
             _fail("Objective Readiness precedes semantic Proposal Commit")
+    if "HUMAN_CONFIRMATION" in stages:
+        if "OBJECTIVE_READINESS" not in stages or stages.index(
+            "HUMAN_CONFIRMATION"
+        ) >= stages.index("OBJECTIVE_READINESS"):
+            _fail("Objective Readiness precedes exact Human confirmation")
+    if "OBJECTIVE_COMMITMENT" in stages:
+        if (
+            "HUMAN_CONFIRMATION" not in stages
+            or "OBJECTIVE_READINESS" not in stages
+            or stages.index("OBJECTIVE_COMMITMENT")
+            <= stages.index("OBJECTIVE_READINESS")
+        ):
+            _fail("Objective Commitment predecessor order is invalid")
     if "OWNER_BOUND_CLARIFICATION" in stages and "OBJECTIVE_READINESS" in stages:
         if stages.index("OWNER_BOUND_CLARIFICATION") <= stages.index(
             "OBJECTIVE_READINESS"

@@ -106,20 +106,27 @@ EXECUTION_PREPARED_AWAITING_AUTHORIZATION = (
 COMPLETE_PIPELINE_RETURNED_TO_AICLI = "COMPLETE_PIPELINE_RETURNED_TO_AICLI"
 
 
-def prepare_committed_objective_execution_v2(
+def admit_committed_objective_to_platform_core_v2(
     *,
     commitment_record: dict[str, Any],
     explicit_canonical_artifacts: list[dict[str, Any]],
+    explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
     runtime_root: str | Path,
     workspace: str | Path,
     session_id: str,
     human_actor: str,
     created_at: str,
 ) -> dict[str, Any]:
-    """Admit one committed Objective and prepare an authorization target."""
+    """Admit one exact G59 Commitment through Canonical HIR and Platform Core."""
 
     record = validate_objective_commitment_record_v2(commitment_record)
-    artifacts = _one_canonical_artifact(explicit_canonical_artifacts)
+    references = tuple(explicit_canonical_artifact_references)
+    if references:
+        if explicit_canonical_artifacts:
+            _fail("canonical artifact objects and references cannot be mixed")
+        artifacts: list[dict[str, Any]] = []
+    else:
+        artifacts = _one_canonical_artifact(explicit_canonical_artifacts)
     actor = _text(human_actor, "human_actor")
     session = _text(session_id, "session_id")
     timestamp = _text(created_at, "created_at")
@@ -158,7 +165,9 @@ def prepare_committed_objective_execution_v2(
         workspace=workspace,
         governed_runtime_runner=run_interactive_conversation,
         explicit_canonical_artifacts=artifacts,
+        explicit_canonical_artifact_references=references,
         operator_context="G60_02_COMMITTED_OBJECTIVE_HANDOFF",
+        presentation={"g60_02_committed_objective_record": record},
     )
     context = hir_admission.get("platform_core_project_services_context")
     if not isinstance(context, dict):
@@ -181,6 +190,74 @@ def prepare_committed_objective_execution_v2(
         "selected_capability_identifier"
     ) != PLATFORM_CHANGE_NORMALIZATION:
         _fail("committed Objective did not select the certified normalization capability")
+
+    return {
+        "integration_runtime_version": FIRST_COMPLETE_CONVERSATION_EXECUTION_INTEGRATION_V2,
+        "admission_status": "COMMITTED_OBJECTIVE_ADMITTED_TO_PLATFORM_CORE",
+        "commitment_record": record,
+        "handoff_artifact": handoff,
+        "hir_admission": hir_admission,
+        "platform_core_objective": objective,
+        "platform_core_admission": admission,
+        "semantic_capability_route": route,
+        "integration_root": str(root),
+        "human_actor": actor,
+        "session_id": session,
+        "workspace": str(Path(workspace).resolve()),
+        "created_at": timestamp,
+        "authorization_granted": False,
+        "worker_dispatched": False,
+        "execution_started": False,
+    }
+
+
+def validate_committed_objective_admission_transport_v2(
+    commitment_record: dict[str, Any],
+    *,
+    platform_core_prompt: str,
+) -> dict[str, Any]:
+    """Validate the exact G60 committed-Objective projection transported by HIR."""
+
+    record = validate_objective_commitment_record_v2(commitment_record)
+    if _committed_objective_prompt(record) != _text(
+        platform_core_prompt, "platform_core_prompt"
+    ):
+        _fail("Platform Core prompt differs from committed Objective projection")
+    return record
+
+
+def prepare_committed_objective_execution_v2(
+    *,
+    commitment_record: dict[str, Any],
+    explicit_canonical_artifacts: list[dict[str, Any]],
+    runtime_root: str | Path,
+    workspace: str | Path,
+    session_id: str,
+    human_actor: str,
+    created_at: str,
+) -> dict[str, Any]:
+    """Admit one committed Objective and prepare an authorization target."""
+
+    admitted = admit_committed_objective_to_platform_core_v2(
+        commitment_record=commitment_record,
+        explicit_canonical_artifacts=explicit_canonical_artifacts,
+        runtime_root=runtime_root,
+        workspace=workspace,
+        session_id=session_id,
+        human_actor=human_actor,
+        created_at=created_at,
+    )
+    record = admitted["commitment_record"]
+    actor = admitted["human_actor"]
+    session = admitted["session_id"]
+    timestamp = admitted["created_at"]
+    root = Path(admitted["integration_root"])
+    prompt = admitted["handoff_artifact"]["platform_core_prompt"]
+    handoff = admitted["handoff_artifact"]
+    hir_admission = admitted["hir_admission"]
+    objective = admitted["platform_core_objective"]
+    admission = admitted["platform_core_admission"]
+    route = admitted["semantic_capability_route"]
 
     token = record["commitment_identity"].removeprefix(
         "objective-commitment-local-sha256:"
@@ -780,7 +857,9 @@ __all__ = [
     "COMPLETE_PIPELINE_RETURNED_TO_AICLI",
     "EXECUTION_PREPARED_AWAITING_AUTHORIZATION",
     "FIRST_COMPLETE_CONVERSATION_EXECUTION_INTEGRATION_V2",
+    "admit_committed_objective_to_platform_core_v2",
     "authorize_and_execute_prepared_objective_v2",
     "prepare_committed_objective_execution_v2",
     "run_complete_conversation_execution_terminal_v2",
+    "validate_committed_objective_admission_transport_v2",
 ]
