@@ -1646,10 +1646,13 @@ def _objective_commitment_gate_project_context(
         expected_originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY",
     )
     required = ", ".join(clarification["required_field_or_evidence_codes"])
-    question = (
-        "Provide the missing Conversation evidence before Objective Commitment: "
-        f"{required}."
-    )
+    if clarification["reason_code"] == "OBJECTIVE_READINESS_REQUIRED":
+        question = f"Provide the next Conversation field exactly as: {required}."
+    else:
+        question = (
+            "Provide the missing Conversation evidence before Objective Commitment: "
+            f"{required}."
+        )
     development_intent = {
         "clarification_required": True,
         "clarification_questions": [question],

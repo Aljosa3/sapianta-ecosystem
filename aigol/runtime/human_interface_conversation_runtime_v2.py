@@ -526,6 +526,27 @@ def hir_semantic_turn_matches_next_required_v2(
     return slot_class == _next_required_slot_class(current)
 
 
+def hir_next_required_semantic_control_v2(
+    state: dict[str, Any],
+) -> str | None:
+    """Present the next required field through the existing closed G60 grammar."""
+
+    current = machine_v2.validate_conversation_state_machine_state_v2(state)
+    expected = _next_required_slot_class(current)
+    if expected is None:
+        return None
+    aliases = [
+        key
+        for key, (slot_class, _role, _cardinality_key) in _SEMANTIC_COMMANDS.items()
+        if slot_class == expected
+    ]
+    if len(aliases) != 1:
+        raise FailClosedRuntimeError(
+            "next required semantic field lacks one canonical control alias"
+        )
+    return f"{aliases[0]}: <value>"
+
+
 def _require_next_slot_class(state: dict[str, Any], slot_class: str) -> None:
     expected = _next_required_slot_class(state)
     if expected is None:
@@ -616,6 +637,7 @@ __all__ = [
     "confirm_hir_candidate_v2",
     "create_hir_conversation_session_v2",
     "create_hir_objective_commitment_v2",
+    "hir_next_required_semantic_control_v2",
     "hir_semantic_turn_matches_next_required_v2",
     "run_hir_conversation_terminal_v2",
 ]

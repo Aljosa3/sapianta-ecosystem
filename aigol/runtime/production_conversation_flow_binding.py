@@ -1984,14 +1984,7 @@ def _clarification_for_objective_readiness(
     state: dict[str, Any],
     created_at: str,
 ) -> dict[str, Any]:
-    required = sorted(
-        {
-            str(assessment["slot_class"])
-            for assessment in readiness["required_slot_assessments"]
-            if assessment["present"] is not True
-            or assessment["active_complete"] is not True
-        }
-    )
+    required_control = hir_v2.hir_next_required_semantic_control_v2(state)
     return create_owner_bound_clarification_envelope_v1(
         originating_flow_id=CFA_OBJECTIVE_COMMITMENT,
         originating_owner="CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY",
@@ -2003,7 +1996,9 @@ def _clarification_for_objective_readiness(
         subject_identity="objective_readiness",
         expected_revision=state["revision"],
         reason_code="OBJECTIVE_READINESS_REQUIRED",
-        required_field_or_evidence_codes=required or ["OBJECTIVE_READINESS"],
+        required_field_or_evidence_codes=[
+            required_control or "OBJECTIVE_READINESS"
+        ],
         permitted_reply_kind="CONVERSATION_SEMANTIC_INPUT_OR_EXACT_COMMIT_ACT",
         created_at=created_at,
         expires_at=state["envelope"]["expires_at"],
