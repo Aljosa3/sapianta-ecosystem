@@ -13,7 +13,10 @@ import argparse
 import json
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import replace
+import os
 from pathlib import Path
+import tempfile
 from typing import Any
 
 from aigol.runtime import codex_replacement_acceptance_prerequisite_binding_runtime as replacement_prerequisites
@@ -82,13 +85,18 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
     select_authorized_grounded_worker,
 )
 from aigol.runtime.canonical_human_entry_contract_v1 import (
+    ACTIVE_CONTINUATION,
+    CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
     CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
     CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
     HUMAN_ACTOR,
     OWNER_RESPONSE,
+    TERMINAL_CONTINUATION,
     UNKNOWN_ADVANCEMENT,
+    CanonicalContinuationEnvelopeV1,
     CanonicalHumanEntryRequestEnvelopeV1,
     CanonicalHumanEntryResponseEnvelopeV1,
+    validate_canonical_che_continuation_envelope_v1,
     validate_canonical_che_request_envelope_v1,
 )
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
@@ -143,6 +151,26 @@ G31_CONTENT_REJECTED = "REJECTED"
 G31_MUTATION_APPROVED = "APPROVED"
 G31_MUTATION_REJECTED = "REJECTED"
 
+CANONICAL_CHE_CONTINUATION_BINDING_VERSION = (
+    "G69_03_CANONICAL_CHE_CONTINUATION_BINDING_V1"
+)
+_CONTINUATION_AVAILABLE = "AVAILABLE"
+_CONTINUATION_CONSUMED = "CONSUMED"
+_CONTINUATION_BINDING_FIELDS = frozenset(
+    {
+        "binding_version",
+        "envelope",
+        "interface_identity",
+        "adapter_identity",
+        "workspace_identity",
+        "runtime_scope_identity",
+        "consumption_state",
+        "consumed_by_request_identity",
+        "consumed_by_idempotency_identity",
+        "binding_hash",
+    }
+)
+
 
 GovernedRuntimeRunner = Callable[..., dict[str, Any]]
 
@@ -173,6 +201,7 @@ def run_human_interface_runtime_entry(
     canonical_condensation_proposal_inputs: dict[str, Any] | None = None,
     worker_capability_completion_capture: dict[str, Any] | None = None,
     request_envelope: CanonicalHumanEntryRequestEnvelopeV1 | dict[str, Any] | None = None,
+    continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None = None,
 ) -> dict[str, Any] | CanonicalHumanEntryResponseEnvelopeV1:
     """Enter CHE through the canonical envelope or its legacy boundary adapter."""
 
@@ -225,6 +254,13 @@ def run_human_interface_runtime_entry(
                 governed_runtime_runner=governed_runtime_runner,
                 g31_human_actor_id=request.actor_identity,
             ),
+            continuation_envelope=continuation_envelope,
+            bind_continuation=True,
+        )
+
+    if continuation_envelope is not None:
+        raise FailClosedRuntimeError(
+            "CHE continuation envelope requires a canonical request envelope"
         )
 
     legacy_request = _legacy_canonical_che_request_envelope_v1(
@@ -276,7 +312,11 @@ def run_human_interface_runtime_entry(
         captured_owner_result.update(result)
         return result
 
-    _execute_canonical_che_request_v1(legacy_request, legacy_owner_execution)
+    _execute_canonical_che_request_v1(
+        legacy_request,
+        legacy_owner_execution,
+        bind_continuation=False,
+    )
     return captured_owner_result
 
 
@@ -285,14 +325,43 @@ def _execute_canonical_che_request_v1(
     owner_executor: Callable[
         [CanonicalHumanEntryRequestEnvelopeV1], dict[str, Any]
     ],
+    *,
+    continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None = None,
+    bind_continuation: bool = True,
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     canonical_request = validate_canonical_che_request_envelope_v1(request)
-    owner_result = owner_executor(canonical_request)
-    if not isinstance(owner_result, dict):
-        raise FailClosedRuntimeError(
-            "canonical CHE owner execution returned a malformed result"
+    scope_lock = (
+        _acquire_canonical_che_continuation_scope_v1(canonical_request)
+        if bind_continuation
+        else None
+    )
+    try:
+        prior_continuation = None
+        if bind_continuation:
+            prior_continuation = _prepare_canonical_che_continuation_v1(
+                canonical_request,
+                continuation_envelope,
+            )
+        owner_result = owner_executor(canonical_request)
+        if not isinstance(owner_result, dict):
+            raise FailClosedRuntimeError(
+                "canonical CHE owner execution returned a malformed result"
+            )
+        response = _canonical_che_response_from_owner_result(
+            canonical_request, owner_result
         )
-    return _canonical_che_response_from_owner_result(canonical_request, owner_result)
+        if not bind_continuation:
+            return response
+        issued_continuation = _issue_canonical_che_continuation_v1(
+            canonical_request,
+            response,
+            owner_result,
+            prior_continuation=prior_continuation,
+        )
+        return replace(response, continuation_envelope=issued_continuation)
+    finally:
+        if scope_lock is not None:
+            _release_canonical_che_continuation_scope_v1(scope_lock)
 
 
 def _run_human_interface_runtime_entry_owner_execution_v1(
@@ -4416,6 +4485,381 @@ def _looks_like_turn_replay_root(path: Path) -> bool:
             or (path / "turn_completion").exists()
         )
     )
+
+
+def _acquire_canonical_che_continuation_scope_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+) -> Path:
+    """Serialize one actor/session/workspace continuation transition."""
+
+    store = _canonical_che_continuation_store_v1(request.runtime_scope_identity)
+    store.mkdir(parents=True, exist_ok=True)
+    digest = replay_hash(
+        {
+            "actor_identity": request.actor_identity,
+            "session_identity": request.session_identity,
+            "workspace_identity": request.workspace_identity,
+            "runtime_scope_identity": request.runtime_scope_identity,
+        }
+    ).removeprefix("sha256:")
+    lock_path = store / f"scope-{digest}.lock"
+    try:
+        descriptor = os.open(
+            lock_path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(request.request_identity + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise FailClosedRuntimeError(
+            "CHE continuation transition is already in progress"
+        ) from exc
+    except OSError as exc:
+        raise FailClosedRuntimeError(
+            "CHE continuation transition could not be claimed"
+        ) from exc
+    return lock_path
+
+
+def _release_canonical_che_continuation_scope_v1(lock_path: Path) -> None:
+    try:
+        lock_path.unlink()
+    except OSError as exc:
+        raise FailClosedRuntimeError(
+            "CHE continuation transition claim could not be released"
+        ) from exc
+
+
+def _prepare_canonical_che_continuation_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None,
+) -> CanonicalContinuationEnvelopeV1 | None:
+    """Validate and single-use claim an opaque continuation before owner entry."""
+
+    if continuation_envelope is None:
+        active = _active_canonical_che_continuations_v1(request)
+        if active:
+            raise FailClosedRuntimeError(
+                "CHE continuation is required for the existing interaction"
+            )
+        return None
+
+    continuation = validate_canonical_che_continuation_envelope_v1(
+        continuation_envelope
+    )
+    if continuation.continuation_state == TERMINAL_CONTINUATION:
+        raise FailClosedRuntimeError("CHE terminal continuation cannot be resumed")
+
+    path = _canonical_che_continuation_binding_path(
+        request.runtime_scope_identity,
+        continuation.continuation_identity,
+    )
+    if not path.is_file():
+        raise FailClosedRuntimeError("CHE continuation is unknown")
+    record = _read_canonical_che_continuation_binding_v1(path)
+    recorded = CanonicalContinuationEnvelopeV1.from_dict(record["envelope"])
+
+    if continuation.session_identity != recorded.session_identity:
+        raise FailClosedRuntimeError("CHE continuation session is mismatched")
+    if continuation.actor_identity != recorded.actor_identity:
+        raise FailClosedRuntimeError("CHE continuation actor is mismatched")
+    if continuation.interaction_identity != recorded.interaction_identity:
+        raise FailClosedRuntimeError("CHE continuation interaction is mismatched")
+    if continuation.workspace_identity != recorded.workspace_identity:
+        raise FailClosedRuntimeError("CHE continuation workspace is mismatched")
+    if continuation.runtime_scope_identity != recorded.runtime_scope_identity:
+        raise FailClosedRuntimeError("CHE continuation runtime scope is mismatched")
+    if continuation.conversation_identity != recorded.conversation_identity:
+        raise FailClosedRuntimeError("CHE continuation Conversation is mismatched")
+    if continuation.continuation_sequence != recorded.continuation_sequence:
+        raise FailClosedRuntimeError("CHE continuation sequence is non-monotonic")
+    if (
+        continuation.previous_response_identity
+        != recorded.previous_response_identity
+    ):
+        raise FailClosedRuntimeError(
+            "CHE continuation previous response is invalid"
+        )
+    if continuation.request_identity != recorded.request_identity:
+        raise FailClosedRuntimeError("CHE continuation previous request is invalid")
+    if continuation.correlation_identity != recorded.correlation_identity:
+        raise FailClosedRuntimeError("CHE continuation correlation is invalid")
+    if continuation.to_dict() != recorded.to_dict():
+        raise FailClosedRuntimeError("CHE continuation binding is invalid")
+
+    if record["consumption_state"] == _CONTINUATION_CONSUMED:
+        if (
+            record["consumed_by_request_identity"] == request.request_identity
+            and record["consumed_by_idempotency_identity"]
+            == request.idempotency_identity
+        ):
+            raise FailClosedRuntimeError("CHE continuation is a duplicate")
+        raise FailClosedRuntimeError("CHE continuation is stale")
+    if record["consumption_state"] != _CONTINUATION_AVAILABLE:
+        raise FailClosedRuntimeError("CHE continuation binding state is invalid")
+
+    if request.session_identity != continuation.session_identity:
+        raise FailClosedRuntimeError("CHE continuation request session is mismatched")
+    if request.actor_identity != continuation.actor_identity:
+        raise FailClosedRuntimeError("CHE continuation request actor is mismatched")
+    if request.workspace_identity != continuation.workspace_identity:
+        raise FailClosedRuntimeError("CHE continuation request workspace is mismatched")
+    if request.runtime_scope_identity != continuation.runtime_scope_identity:
+        raise FailClosedRuntimeError(
+            "CHE continuation request runtime scope is mismatched"
+        )
+    if request.source_act_identity != continuation.expected_next_act_identity:
+        raise FailClosedRuntimeError(
+            "CHE continuation next act identity is invalid"
+        )
+    if request.request_identity == continuation.request_identity:
+        raise FailClosedRuntimeError("CHE continuation request identity was reused")
+    if request.order_identity == continuation.previous_order_identity:
+        raise FailClosedRuntimeError("CHE continuation order identity was reused")
+    if request.idempotency_identity == continuation.previous_idempotency_identity:
+        raise FailClosedRuntimeError(
+            "CHE continuation idempotency identity was reused"
+        )
+
+    claimed = dict(record)
+    claimed["consumption_state"] = _CONTINUATION_CONSUMED
+    claimed["consumed_by_request_identity"] = request.request_identity
+    claimed["consumed_by_idempotency_identity"] = request.idempotency_identity
+    claimed["binding_hash"] = _canonical_che_continuation_binding_hash_v1(
+        claimed
+    )
+    _write_canonical_che_continuation_binding_v1(path, claimed)
+    return continuation
+
+
+def _issue_canonical_che_continuation_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    response: CanonicalHumanEntryResponseEnvelopeV1,
+    owner_result: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> CanonicalContinuationEnvelopeV1:
+    """Issue one opaque next-turn binding without carrying owner state."""
+
+    conversation_identity = _canonical_che_conversation_identity(owner_result)
+    if (
+        prior_continuation is not None
+        and conversation_identity != prior_continuation.conversation_identity
+    ):
+        raise FailClosedRuntimeError(
+            "CHE restored a mismatched constitutional interaction"
+        )
+    if prior_continuation is None:
+        interaction_digest = replay_hash(
+            {
+                "actor_identity": request.actor_identity,
+                "session_identity": request.session_identity,
+                "workspace_identity": request.workspace_identity,
+                "runtime_scope_identity": request.runtime_scope_identity,
+                "request_identity": request.request_identity,
+                "conversation_identity": conversation_identity,
+            }
+        ).removeprefix("sha256:")
+        interaction_identity = f"CHE-INTERACTION-{interaction_digest}"
+        sequence = 1
+    else:
+        interaction_identity = prior_continuation.interaction_identity
+        sequence = prior_continuation.continuation_sequence + 1
+
+    state = (
+        TERMINAL_CONTINUATION
+        if response.response_type == "TERMINAL"
+        else ACTIVE_CONTINUATION
+    )
+    next_act_digest = replay_hash(
+        {
+            "interaction_identity": interaction_identity,
+            "conversation_identity": conversation_identity,
+            "previous_response_identity": response.response_identity,
+            "continuation_sequence": sequence,
+            "continuation_state": state,
+        }
+    ).removeprefix("sha256:")
+    expected_next_act_identity = f"CHE-NEXT-ACT-{next_act_digest}"
+    identity_seed = {
+        "contract_version": CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
+        "interaction_identity": interaction_identity,
+        "conversation_identity": conversation_identity,
+        "session_identity": request.session_identity,
+        "actor_identity": request.actor_identity,
+        "workspace_identity": request.workspace_identity,
+        "runtime_scope_identity": request.runtime_scope_identity,
+        "request_identity": request.request_identity,
+        "previous_response_identity": response.response_identity,
+        "previous_order_identity": request.order_identity,
+        "previous_idempotency_identity": request.idempotency_identity,
+        "continuation_sequence": sequence,
+        "expected_next_act_identity": expected_next_act_identity,
+        "continuation_state": state,
+        "correlation_identity": response.correlation_identity,
+    }
+    continuation_digest = replay_hash(identity_seed).removeprefix("sha256:")
+    continuation = CanonicalContinuationEnvelopeV1(
+        contract_version=CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
+        continuation_identity=f"CHE-CONTINUATION-{continuation_digest}",
+        interaction_identity=interaction_identity,
+        conversation_identity=conversation_identity,
+        session_identity=request.session_identity,
+        actor_identity=request.actor_identity,
+        workspace_identity=request.workspace_identity,
+        runtime_scope_identity=request.runtime_scope_identity,
+        request_identity=request.request_identity,
+        previous_response_identity=response.response_identity,
+        previous_order_identity=request.order_identity,
+        previous_idempotency_identity=request.idempotency_identity,
+        continuation_sequence=sequence,
+        expected_next_act_identity=expected_next_act_identity,
+        continuation_state=state,
+        correlation_identity=response.correlation_identity,
+        metadata={},
+    )
+    record = {
+        "binding_version": CANONICAL_CHE_CONTINUATION_BINDING_VERSION,
+        "envelope": continuation.to_dict(),
+        "interface_identity": request.interface_identity,
+        "adapter_identity": request.adapter_identity,
+        "workspace_identity": request.workspace_identity,
+        "runtime_scope_identity": request.runtime_scope_identity,
+        "consumption_state": _CONTINUATION_AVAILABLE,
+        "consumed_by_request_identity": None,
+        "consumed_by_idempotency_identity": None,
+        "binding_hash": "",
+    }
+    record["binding_hash"] = _canonical_che_continuation_binding_hash_v1(record)
+    path = _canonical_che_continuation_binding_path(
+        request.runtime_scope_identity,
+        continuation.continuation_identity,
+    )
+    if path.exists():
+        existing = _read_canonical_che_continuation_binding_v1(path)
+        if existing != record:
+            raise FailClosedRuntimeError("CHE continuation identity conflicts")
+    else:
+        _write_canonical_che_continuation_binding_v1(path, record)
+    return continuation
+
+
+def _canonical_che_conversation_identity(owner_result: dict[str, Any]) -> str:
+    identities: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key == "conversation_identity" and isinstance(item, str) and item:
+                    identities.add(item)
+                else:
+                    visit(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                visit(item)
+
+    visit(owner_result)
+    if len(identities) != 1:
+        raise FailClosedRuntimeError(
+            "CHE owner response does not identify one Conversation"
+        )
+    return next(iter(identities))
+
+
+def _active_canonical_che_continuations_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+) -> list[CanonicalContinuationEnvelopeV1]:
+    store = _canonical_che_continuation_store_v1(request.runtime_scope_identity)
+    if not store.exists():
+        return []
+    active: list[CanonicalContinuationEnvelopeV1] = []
+    for path in sorted(store.glob("binding-*.json")):
+        record = _read_canonical_che_continuation_binding_v1(path)
+        if record["consumption_state"] != _CONTINUATION_AVAILABLE:
+            continue
+        continuation = CanonicalContinuationEnvelopeV1.from_dict(record["envelope"])
+        if continuation.continuation_state != ACTIVE_CONTINUATION:
+            continue
+        if (
+            continuation.session_identity == request.session_identity
+            and continuation.actor_identity == request.actor_identity
+            and continuation.workspace_identity == request.workspace_identity
+            and continuation.runtime_scope_identity == request.runtime_scope_identity
+        ):
+            active.append(continuation)
+    return active
+
+
+def _canonical_che_continuation_store_v1(runtime_scope_identity: str) -> Path:
+    return Path(runtime_scope_identity) / "canonical_human_entry_continuations_v1"
+
+
+def _canonical_che_continuation_binding_path(
+    runtime_scope_identity: str,
+    continuation_identity: str,
+) -> Path:
+    digest = replay_hash(
+        {"continuation_identity": continuation_identity}
+    ).removeprefix("sha256:")
+    return _canonical_che_continuation_store_v1(runtime_scope_identity) / (
+        f"binding-{digest}.json"
+    )
+
+
+def _canonical_che_continuation_binding_hash_v1(record: dict[str, Any]) -> str:
+    content = {key: value for key, value in record.items() if key != "binding_hash"}
+    return replay_hash(content)
+
+
+def _read_canonical_che_continuation_binding_v1(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FailClosedRuntimeError("CHE continuation binding is unreadable") from exc
+    if not isinstance(value, dict) or set(value) != _CONTINUATION_BINDING_FIELDS:
+        raise FailClosedRuntimeError("CHE continuation binding structure is invalid")
+    if value["binding_version"] != CANONICAL_CHE_CONTINUATION_BINDING_VERSION:
+        raise FailClosedRuntimeError("CHE continuation binding version is invalid")
+    if value["consumption_state"] not in {
+        _CONTINUATION_AVAILABLE,
+        _CONTINUATION_CONSUMED,
+    }:
+        raise FailClosedRuntimeError("CHE continuation binding state is invalid")
+    CanonicalContinuationEnvelopeV1.from_dict(value["envelope"])
+    if value["binding_hash"] != _canonical_che_continuation_binding_hash_v1(value):
+        raise FailClosedRuntimeError("CHE continuation binding integrity is invalid")
+    return value
+
+
+def _write_canonical_che_continuation_binding_v1(
+    path: Path,
+    record: dict[str, Any],
+) -> None:
+    if set(record) != _CONTINUATION_BINDING_FIELDS:
+        raise FailClosedRuntimeError("CHE continuation binding structure is invalid")
+    serialized = canonical_serialize(record) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_name = ""
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".che-continuation-",
+            suffix=".tmp",
+            dir=path.parent,
+            text=True,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(serialized)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, path)
+    except OSError as exc:
+        raise FailClosedRuntimeError("CHE continuation binding write failed") from exc
+    finally:
+        if temporary_name and Path(temporary_name).exists():
+            Path(temporary_name).unlink()
 
 
 def _legacy_canonical_che_request_envelope_v1(

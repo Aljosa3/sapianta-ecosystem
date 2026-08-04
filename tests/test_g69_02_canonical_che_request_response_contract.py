@@ -226,7 +226,10 @@ def test_one_che_entry_and_owner_boundaries_remain_visible() -> None:
         inspect.getsourcefile(run_human_interface_runtime_entry) or ""
     ).read_text(encoding="utf-8")
 
-    assert list(signature.parameters)[-1] == "request_envelope"
+    assert list(signature.parameters)[-2:] == [
+        "request_envelope",
+        "continuation_envelope",
+    ]
     assert "compose_production_conversation_flow_binding_v1(" in module_source
     assert "conversation_result = governed_runtime_runner(" in module_source
     assert "request_envelope" in public_source

@@ -1,8 +1,9 @@
-"""Channel-neutral Canonical Human Entry request and response contracts.
+"""Channel-neutral Canonical Human Entry transport contracts.
 
 These immutable envelopes carry transport information only.  They do not
-represent continuation, Human authority acts, references, failures, semantic
-state, workflow state, or any downstream owner artifact.
+represent Human authority acts, references, failures, semantic state, workflow
+state, or any downstream owner artifact.  Continuation is an opaque binding
+contract: channels store and return it without interpreting its identities.
 """
 
 from __future__ import annotations
@@ -22,6 +23,9 @@ CANONICAL_CHE_REQUEST_CONTRACT_VERSION = (
 )
 CANONICAL_CHE_RESPONSE_CONTRACT_VERSION = (
     "G69_02_CANONICAL_CHE_RESPONSE_ENVELOPE_V1"
+)
+CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION = (
+    "G69_03_CANONICAL_CHE_CONTINUATION_ENVELOPE_V1"
 )
 
 HUMAN_ACTOR = "HUMAN"
@@ -62,6 +66,12 @@ ALLOWED_ADVANCEMENT_STATES = frozenset(
     {ADVANCED, NOT_ADVANCED, UNCHANGED, UNKNOWN_ADVANCEMENT}
 )
 
+ACTIVE_CONTINUATION = "ACTIVE"
+TERMINAL_CONTINUATION = "TERMINAL"
+ALLOWED_CONTINUATION_STATES = frozenset(
+    {ACTIVE_CONTINUATION, TERMINAL_CONTINUATION}
+)
+
 _REQUEST_FIELDS = frozenset(
     {
         "contract_version",
@@ -99,6 +109,28 @@ _RESPONSE_FIELDS = frozenset(
         "evidence_references",
         "replay_references",
         "certification_references",
+        "continuation_envelope",
+    }
+)
+_CONTINUATION_FIELDS = frozenset(
+    {
+        "contract_version",
+        "continuation_identity",
+        "interaction_identity",
+        "conversation_identity",
+        "session_identity",
+        "actor_identity",
+        "workspace_identity",
+        "runtime_scope_identity",
+        "request_identity",
+        "previous_response_identity",
+        "previous_order_identity",
+        "previous_idempotency_identity",
+        "continuation_sequence",
+        "expected_next_act_identity",
+        "continuation_state",
+        "correlation_identity",
+        "metadata",
     }
 )
 _FORBIDDEN_REQUEST_METADATA_TOKENS = frozenset(
@@ -277,6 +309,96 @@ class CanonicalHumanEntryRequestEnvelopeV1:
 
 
 @dataclass(frozen=True, slots=True)
+class CanonicalContinuationEnvelopeV1:
+    """Opaque immutable continuation returned by CHE and echoed by a HIC."""
+
+    contract_version: str
+    continuation_identity: str
+    interaction_identity: str
+    conversation_identity: str
+    session_identity: str
+    actor_identity: str
+    workspace_identity: str
+    runtime_scope_identity: str
+    request_identity: str
+    previous_response_identity: str
+    previous_order_identity: str
+    previous_idempotency_identity: str
+    continuation_sequence: int
+    expected_next_act_identity: str
+    continuation_state: str
+    correlation_identity: str
+    metadata: Mapping[str, Any]
+
+    def __post_init__(self) -> None:
+        if self.contract_version != CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION:
+            raise FailClosedRuntimeError(
+                "CHE continuation contract version is invalid"
+            )
+        for field_name in (
+            "continuation_identity",
+            "interaction_identity",
+            "conversation_identity",
+            "session_identity",
+            "actor_identity",
+            "workspace_identity",
+            "runtime_scope_identity",
+            "request_identity",
+            "previous_response_identity",
+            "previous_order_identity",
+            "previous_idempotency_identity",
+            "expected_next_act_identity",
+            "correlation_identity",
+        ):
+            _require_identity(getattr(self, field_name), field_name)
+        if (
+            not isinstance(self.continuation_sequence, int)
+            or isinstance(self.continuation_sequence, bool)
+            or self.continuation_sequence < 1
+        ):
+            raise FailClosedRuntimeError(
+                "CHE continuation sequence must be a positive integer"
+            )
+        if self.continuation_state not in ALLOWED_CONTINUATION_STATES:
+            raise FailClosedRuntimeError("CHE continuation state is invalid")
+        if not isinstance(self.metadata, Mapping):
+            raise FailClosedRuntimeError("CHE continuation metadata must be an object")
+        _validate_request_metadata(self.metadata)
+        metadata = _immutable_json(self.metadata)
+        object.__setattr__(self, "metadata", metadata)
+        canonical_serialize(self.to_dict())
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "contract_version": self.contract_version,
+            "continuation_identity": self.continuation_identity,
+            "interaction_identity": self.interaction_identity,
+            "conversation_identity": self.conversation_identity,
+            "session_identity": self.session_identity,
+            "actor_identity": self.actor_identity,
+            "workspace_identity": self.workspace_identity,
+            "runtime_scope_identity": self.runtime_scope_identity,
+            "request_identity": self.request_identity,
+            "previous_response_identity": self.previous_response_identity,
+            "previous_order_identity": self.previous_order_identity,
+            "previous_idempotency_identity": self.previous_idempotency_identity,
+            "continuation_sequence": self.continuation_sequence,
+            "expected_next_act_identity": self.expected_next_act_identity,
+            "continuation_state": self.continuation_state,
+            "correlation_identity": self.correlation_identity,
+            "metadata": _plain_json(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, envelope: dict[str, Any]) -> "CanonicalContinuationEnvelopeV1":
+        if not isinstance(envelope, dict) or set(envelope) != _CONTINUATION_FIELDS:
+            raise FailClosedRuntimeError(
+                "CHE continuation envelope structure is invalid"
+            )
+        return cls(**envelope)
+
+
+@dataclass(frozen=True, slots=True)
 class CanonicalHumanEntryResponseEnvelopeV1:
     """Immutable channel-neutral transport response produced by CHE."""
 
@@ -293,6 +415,7 @@ class CanonicalHumanEntryResponseEnvelopeV1:
     evidence_references: tuple[str, ...]
     replay_references: tuple[str, ...]
     certification_references: tuple[str, ...]
+    continuation_envelope: CanonicalContinuationEnvelopeV1 | None = None
 
     def __post_init__(self) -> None:
         if self.contract_version != CANONICAL_CHE_RESPONSE_CONTRACT_VERSION:
@@ -334,6 +457,14 @@ class CanonicalHumanEntryResponseEnvelopeV1:
                 field_name,
                 _immutable_string_tuple(getattr(self, field_name), field_name),
             )
+        if self.continuation_envelope is not None:
+            object.__setattr__(
+                self,
+                "continuation_envelope",
+                validate_canonical_che_continuation_envelope_v1(
+                    self.continuation_envelope
+                ),
+            )
         canonical_serialize(self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
@@ -351,6 +482,11 @@ class CanonicalHumanEntryResponseEnvelopeV1:
             "evidence_references": list(self.evidence_references),
             "replay_references": list(self.replay_references),
             "certification_references": list(self.certification_references),
+            "continuation_envelope": (
+                self.continuation_envelope.to_dict()
+                if self.continuation_envelope is not None
+                else None
+            ),
         }
 
     @classmethod
@@ -359,7 +495,31 @@ class CanonicalHumanEntryResponseEnvelopeV1:
     ) -> "CanonicalHumanEntryResponseEnvelopeV1":
         if not isinstance(envelope, dict) or set(envelope) != _RESPONSE_FIELDS:
             raise FailClosedRuntimeError("CHE response envelope structure is invalid")
-        return cls(**envelope)
+        normalized = dict(envelope)
+        continuation = normalized.get("continuation_envelope")
+        if isinstance(continuation, dict):
+            normalized["continuation_envelope"] = (
+                CanonicalContinuationEnvelopeV1.from_dict(continuation)
+            )
+        elif continuation is not None:
+            raise FailClosedRuntimeError(
+                "CHE response continuation envelope is invalid"
+            )
+        return cls(**normalized)
+
+
+def validate_canonical_che_continuation_envelope_v1(
+    envelope: Any,
+) -> CanonicalContinuationEnvelopeV1:
+    continuation = (
+        CanonicalContinuationEnvelopeV1.from_dict(envelope)
+        if isinstance(envelope, dict)
+        else envelope
+    )
+    if not isinstance(continuation, CanonicalContinuationEnvelopeV1):
+        raise FailClosedRuntimeError("CHE continuation envelope is invalid")
+    canonical_serialize(continuation.to_dict())
+    return continuation
 
 
 def validate_canonical_che_request_envelope_v1(
@@ -415,6 +575,22 @@ def deserialize_canonical_che_response_envelope_v1(
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     return CanonicalHumanEntryResponseEnvelopeV1.from_dict(
         _deserialize_object(serialized, "CHE response")
+    )
+
+
+def serialize_canonical_che_continuation_envelope_v1(
+    envelope: CanonicalContinuationEnvelopeV1,
+) -> str:
+    return canonical_serialize(
+        validate_canonical_che_continuation_envelope_v1(envelope).to_dict()
+    )
+
+
+def deserialize_canonical_che_continuation_envelope_v1(
+    serialized: str,
+) -> CanonicalContinuationEnvelopeV1:
+    return CanonicalContinuationEnvelopeV1.from_dict(
+        _deserialize_object(serialized, "CHE continuation")
     )
 
 

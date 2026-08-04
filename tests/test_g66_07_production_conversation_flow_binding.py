@@ -99,6 +99,7 @@ def test_canonical_entry_public_signature_retains_legacy_parameters() -> None:
         "canonical_condensation_proposal_inputs",
         "worker_capability_completion_capture",
         "request_envelope",
+        "continuation_envelope",
     ]
 
 
