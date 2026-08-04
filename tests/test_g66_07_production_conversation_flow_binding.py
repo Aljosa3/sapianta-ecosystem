@@ -73,7 +73,7 @@ def _compose(tmp_path: Path, request: str, *, session: str = "G66-07") -> dict:
     )
 
 
-def test_canonical_entry_public_signature_is_unchanged() -> None:
+def test_canonical_entry_public_signature_retains_legacy_parameters() -> None:
     assert list(inspect.signature(run_human_interface_runtime_entry).parameters) == [
         "interface_name",
         "session_id",
@@ -98,6 +98,7 @@ def test_canonical_entry_public_signature_is_unchanged() -> None:
         "g31_synthesis_preflight_prompt",
         "canonical_condensation_proposal_inputs",
         "worker_capability_completion_capture",
+        "request_envelope",
     ]
 
 

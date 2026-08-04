@@ -132,7 +132,9 @@ def test_clia_invokes_only_the_canonical_human_entry_runtime_function() -> None:
 
 def test_authenticated_binding_and_che_source_preserve_owner_order() -> None:
     transport_source = TRANSPORT_PATH.read_text(encoding="utf-8")
-    che_source = inspect.getsource(run_human_interface_runtime_entry)
+    che_source = Path(
+        inspect.getsourcefile(run_human_interface_runtime_entry) or ""
+    ).read_text(encoding="utf-8")
 
     assert "governed_runtime_runner=authenticated_human_interaction_runtime" in (
         transport_source

@@ -81,6 +81,16 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
     render_authorized_grounded_worker_selection,
     select_authorized_grounded_worker,
 )
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
+    CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+    HUMAN_ACTOR,
+    OWNER_RESPONSE,
+    UNKNOWN_ADVANCEMENT,
+    CanonicalHumanEntryRequestEnvelopeV1,
+    CanonicalHumanEntryResponseEnvelopeV1,
+    validate_canonical_che_request_envelope_v1,
+)
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
     EXECUTION_DECISION_APPROVED,
@@ -94,7 +104,7 @@ from aigol.runtime.platform_core_project_services import (
     prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
 )
-from aigol.runtime.transport.serialization import replay_hash
+from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 from aigol.workers import filesystem_replace_worker
 
 
@@ -139,6 +149,154 @@ GovernedRuntimeRunner = Callable[..., dict[str, Any]]
 
 def run_human_interface_runtime_entry(
     *,
+    interface_name: str | None = None,
+    session_id: str | None = None,
+    human_requests: list[str] | None = None,
+    created_at: str | None = None,
+    runtime_root: str | Path | None = None,
+    workspace: str | Path | None = None,
+    governed_runtime_runner: GovernedRuntimeRunner,
+    presentation: dict[str, Any] | None = None,
+    operator_context: str = "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+    explicit_canonical_artifacts: list[dict[str, Any]] | tuple[dict[str, Any], ...] = (),
+    explicit_canonical_artifact_references: list[Any] | tuple[Any, ...] = (),
+    approved_implementation_turn_binding: dict[str, Any] | None = None,
+    approved_development_composition_plan_hash: str | None = None,
+    approved_durable_governed_work_hash: str | None = None,
+    approved_proposal_preview_hash: str | None = None,
+    approved_approval_request_hash: str | None = None,
+    g31_application_state: dict[str, Any] | None = None,
+    g31_human_action: str | None = None,
+    g31_human_actor_id: str = "HUMAN_OPERATOR",
+    g31_worker_process_runner: Callable[..., Any] | None = None,
+    g31_synthesis_preflight_prompt: str | None = None,
+    canonical_condensation_proposal_inputs: dict[str, Any] | None = None,
+    worker_capability_completion_capture: dict[str, Any] | None = None,
+    request_envelope: CanonicalHumanEntryRequestEnvelopeV1 | dict[str, Any] | None = None,
+) -> dict[str, Any] | CanonicalHumanEntryResponseEnvelopeV1:
+    """Enter CHE through the canonical envelope or its legacy boundary adapter."""
+
+    if request_envelope is not None:
+        if any(
+            value is not None
+            for value in (
+                interface_name,
+                session_id,
+                human_requests,
+                created_at,
+                runtime_root,
+                workspace,
+                presentation,
+                approved_implementation_turn_binding,
+                approved_development_composition_plan_hash,
+                approved_durable_governed_work_hash,
+                approved_proposal_preview_hash,
+                approved_approval_request_hash,
+                g31_application_state,
+                g31_human_action,
+                g31_synthesis_preflight_prompt,
+                canonical_condensation_proposal_inputs,
+                worker_capability_completion_capture,
+            )
+        ) or explicit_canonical_artifacts or explicit_canonical_artifact_references:
+            raise FailClosedRuntimeError(
+                "canonical CHE request envelope cannot be mixed with legacy inputs"
+            )
+        if (
+            operator_context != "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+            or g31_human_actor_id != "HUMAN_OPERATOR"
+            or g31_worker_process_runner is not None
+        ):
+            raise FailClosedRuntimeError(
+                "canonical CHE request envelope cannot select a legacy workflow"
+            )
+        canonical_request = validate_canonical_che_request_envelope_v1(
+            request_envelope
+        )
+        return _execute_canonical_che_request_v1(
+            canonical_request,
+            lambda request: _run_human_interface_runtime_entry_owner_execution_v1(
+                interface_name=request.interface_identity,
+                session_id=request.session_identity,
+                human_requests=[_canonical_che_source_text(request)],
+                created_at=request.created_at,
+                runtime_root=request.runtime_scope_identity,
+                workspace=request.workspace_identity,
+                governed_runtime_runner=governed_runtime_runner,
+                g31_human_actor_id=request.actor_identity,
+            ),
+        )
+
+    legacy_request = _legacy_canonical_che_request_envelope_v1(
+        interface_name=interface_name,
+        session_id=session_id,
+        human_requests=human_requests,
+        created_at=created_at,
+        runtime_root=runtime_root,
+        workspace=workspace,
+        presentation=presentation,
+        actor_identity=g31_human_actor_id,
+    )
+    captured_owner_result: dict[str, Any] = {}
+
+    def legacy_owner_execution(
+        _request: CanonicalHumanEntryRequestEnvelopeV1,
+    ) -> dict[str, Any]:
+        result = _run_human_interface_runtime_entry_owner_execution_v1(
+            interface_name=_require_string(interface_name, "interface_name"),
+            session_id=_require_string(session_id, "session_id"),
+            human_requests=_require_legacy_human_requests(human_requests),
+            created_at=_require_string(created_at, "created_at"),
+            runtime_root=_require_legacy_path(runtime_root, "runtime_root"),
+            workspace=_require_legacy_path(workspace, "workspace"),
+            governed_runtime_runner=governed_runtime_runner,
+            presentation=presentation,
+            operator_context=operator_context,
+            explicit_canonical_artifacts=explicit_canonical_artifacts,
+            explicit_canonical_artifact_references=(
+                explicit_canonical_artifact_references
+            ),
+            approved_implementation_turn_binding=approved_implementation_turn_binding,
+            approved_development_composition_plan_hash=(
+                approved_development_composition_plan_hash
+            ),
+            approved_durable_governed_work_hash=approved_durable_governed_work_hash,
+            approved_proposal_preview_hash=approved_proposal_preview_hash,
+            approved_approval_request_hash=approved_approval_request_hash,
+            g31_application_state=g31_application_state,
+            g31_human_action=g31_human_action,
+            g31_human_actor_id=g31_human_actor_id,
+            g31_worker_process_runner=g31_worker_process_runner,
+            g31_synthesis_preflight_prompt=g31_synthesis_preflight_prompt,
+            canonical_condensation_proposal_inputs=(
+                canonical_condensation_proposal_inputs
+            ),
+            worker_capability_completion_capture=worker_capability_completion_capture,
+        )
+        captured_owner_result.update(result)
+        return result
+
+    _execute_canonical_che_request_v1(legacy_request, legacy_owner_execution)
+    return captured_owner_result
+
+
+def _execute_canonical_che_request_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    owner_executor: Callable[
+        [CanonicalHumanEntryRequestEnvelopeV1], dict[str, Any]
+    ],
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    canonical_request = validate_canonical_che_request_envelope_v1(request)
+    owner_result = owner_executor(canonical_request)
+    if not isinstance(owner_result, dict):
+        raise FailClosedRuntimeError(
+            "canonical CHE owner execution returned a malformed result"
+        )
+    return _canonical_che_response_from_owner_result(canonical_request, owner_result)
+
+
+def _run_human_interface_runtime_entry_owner_execution_v1(
+    *,
     interface_name: str,
     session_id: str,
     human_requests: list[str],
@@ -163,7 +321,7 @@ def run_human_interface_runtime_entry(
     canonical_condensation_proposal_inputs: dict[str, Any] | None = None,
     worker_capability_completion_capture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Enter the certified runtime from any Unified Human Interface."""
+    """Execute established owner behavior after canonical request validation."""
 
     interface = _require_string(interface_name, "interface_name")
     session = _require_string(session_id, "session_id")
@@ -4258,6 +4416,217 @@ def _looks_like_turn_replay_root(path: Path) -> bool:
             or (path / "turn_completion").exists()
         )
     )
+
+
+def _legacy_canonical_che_request_envelope_v1(
+    *,
+    interface_name: str | None,
+    session_id: str | None,
+    human_requests: list[str] | None,
+    created_at: str | None,
+    runtime_root: str | Path | None,
+    workspace: str | Path | None,
+    presentation: dict[str, Any] | None,
+    actor_identity: str,
+) -> CanonicalHumanEntryRequestEnvelopeV1:
+    """Translate only legacy transport fields at the CHE compatibility edge."""
+
+    interface = _require_string(interface_name, "interface_name")
+    session = _require_string(session_id, "session_id")
+    requests = _require_legacy_human_requests(human_requests)
+    created = _require_string(created_at, "created_at")
+    root = str(_require_legacy_path(runtime_root, "runtime_root"))
+    workspace_text = str(_require_legacy_path(workspace, "workspace"))
+    adapter = None
+    if isinstance(presentation, dict):
+        candidate = presentation.get("clia_adapter_identity")
+        if isinstance(candidate, str) and candidate.strip():
+            adapter = candidate
+    adapter_identity = adapter or f"LEGACY-COMPATIBILITY::{interface}"
+    source_payload: Any = requests[0] if len(requests) == 1 else list(requests)
+    identity_seed = {
+        "interface_identity": interface,
+        "adapter_identity": adapter_identity,
+        "actor_identity": actor_identity,
+        "session_identity": session,
+        "workspace_identity": workspace_text,
+        "runtime_scope_identity": root,
+        "source_payload": source_payload,
+        "created_at": created,
+    }
+    digest = replay_hash(identity_seed).removeprefix("sha256:")
+    return CanonicalHumanEntryRequestEnvelopeV1(
+        contract_version=CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
+        interface_identity=interface,
+        adapter_identity=adapter_identity,
+        actor_identity=_require_string(actor_identity, "g31_human_actor_id"),
+        actor_class=HUMAN_ACTOR,
+        session_identity=session,
+        workspace_identity=workspace_text,
+        runtime_scope_identity=root,
+        request_identity=f"CHE-LEGACY-REQUEST-{digest}",
+        source_act_identity=f"CHE-LEGACY-SOURCE-ACT-{digest}",
+        order_identity=f"CHE-LEGACY-ORDER-{digest}",
+        idempotency_identity=f"CHE-LEGACY-IDEMPOTENCY-{digest}",
+        source_payload=source_payload,
+        source_encoding="UTF-8",
+        source_modality="TEXT" if len(requests) == 1 else "TRANSPORT_COLLECTION",
+        declared_capabilities=("LEGACY_ARGUMENT_TRANSLATION",),
+        metadata={"transport_compatibility_mode": "LEGACY_CHE_ARGUMENTS"},
+        created_at=created,
+    )
+
+
+def _require_legacy_human_requests(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        raise ValueError("human_requests must be a list")
+    return value
+
+
+def _require_legacy_path(value: Any, field_name: str) -> str | Path:
+    if not isinstance(value, (str, Path)):
+        raise ValueError(f"{field_name} is required")
+    return value
+
+
+def _canonical_che_source_text(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+) -> str:
+    source_payload = request.to_dict()["source_payload"]
+    return (
+        source_payload
+        if isinstance(source_payload, str)
+        else canonical_serialize(source_payload)
+    )
+
+
+def _canonical_che_response_from_owner_result(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    owner_result: dict[str, Any],
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    """Project one owner result without exposing owner-internal structures."""
+
+    owner_status = _canonical_che_owner_status(owner_result)
+    presentations = _canonical_che_presentations(owner_result, owner_status)
+    evidence_references, replay_references, certification_references = (
+        _canonical_che_owner_references(owner_result)
+    )
+    correlation_seed = {
+        "contract_version": CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        "request_identity": request.request_identity,
+        "source_act_identity": request.source_act_identity,
+        "order_identity": request.order_identity,
+        "idempotency_identity": request.idempotency_identity,
+        "owner_status": owner_status,
+        "presentation_payload": presentations,
+        "evidence_references": evidence_references,
+        "replay_references": replay_references,
+        "certification_references": certification_references,
+    }
+    correlation_digest = replay_hash(correlation_seed).removeprefix("sha256:")
+    response_identity = f"CHE-RESPONSE-{correlation_digest}"
+    correlation_identity = (
+        f"CHE-CORRELATION-{request.request_identity}-{correlation_digest[:16]}"
+    )
+    return CanonicalHumanEntryResponseEnvelopeV1(
+        contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        response_identity=response_identity,
+        request_identity=request.request_identity,
+        response_type=OWNER_RESPONSE,
+        producing_owner="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        owner_status=owner_status,
+        advancement_state=UNKNOWN_ADVANCEMENT,
+        presentation_payload=presentations,
+        presentation_metadata={
+            "content_format": "ORDERED_TEXT_SEGMENTS",
+            "language": "und",
+            "projection_owner": "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        },
+        correlation_identity=correlation_identity,
+        evidence_references=evidence_references,
+        replay_references=replay_references,
+        certification_references=certification_references,
+    )
+
+
+def _canonical_che_owner_status(owner_result: dict[str, Any]) -> str:
+    for field_name in (
+        "canonical_runtime_entry_status",
+        "runtime_binding_status",
+        "canonical_condensation_entry_status",
+        "g31_semantic_validation_status",
+    ):
+        value = owner_result.get(field_name)
+        if isinstance(value, str) and value.strip():
+            return value
+    return "OWNER_RESPONSE_AVAILABLE"
+
+
+def _canonical_che_presentations(
+    owner_result: dict[str, Any], owner_status: str
+) -> tuple[str, ...]:
+    presentations: list[str] = []
+    g31_presentations = owner_result.get("g31_canonical_presentations")
+    if isinstance(g31_presentations, list):
+        presentations.extend(
+            item for item in g31_presentations if isinstance(item, str) and item
+        )
+    context = owner_result.get("platform_core_project_services_context")
+    if isinstance(context, dict):
+        conversation = context.get("human_conversation_experience")
+        if isinstance(conversation, dict):
+            for field_name in ("user_headline", "user_explanation"):
+                value = conversation.get(field_name)
+                if isinstance(value, str) and value:
+                    presentations.append(value)
+            questions = conversation.get("clarification_questions")
+            if isinstance(questions, list):
+                presentations.extend(
+                    item for item in questions if isinstance(item, str) and item
+                )
+    completion = owner_result.get("human_visible_completion_result")
+    if completion is not None:
+        presentations.append(
+            completion if isinstance(completion, str) else canonical_serialize(completion)
+        )
+    output_tail = owner_result.get("conversation_output_tail")
+    if isinstance(output_tail, list):
+        presentations.extend(
+            item for item in output_tail if isinstance(item, str) and item
+        )
+    if not presentations:
+        presentations.append(f"Canonical Human Entry owner status: {owner_status}")
+    return tuple(dict.fromkeys(presentations))
+
+
+def _canonical_che_owner_references(
+    owner_result: dict[str, Any],
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    evidence: set[str] = set()
+    replay: set[str] = set()
+    certification: set[str] = set()
+
+    def visit(value: Any, field_name: str = "") -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                visit(item, str(key))
+            return
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                visit(item, field_name)
+            return
+        if not isinstance(value, str) or not value:
+            return
+        normalized = field_name.lower()
+        if "certification" in normalized and "reference" in normalized:
+            certification.add(value)
+        elif "replay_reference" in normalized:
+            replay.add(value)
+        elif normalized.endswith("_hash") or normalized == "artifact_hash":
+            evidence.add(value)
+
+    visit(owner_result)
+    return tuple(sorted(evidence)), tuple(sorted(replay)), tuple(sorted(certification))
 
 
 def _require_string(value: Any, field_name: str) -> str:
