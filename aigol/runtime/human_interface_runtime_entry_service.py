@@ -86,18 +86,54 @@ from aigol.runtime.confirmed_grounded_execution_authorization_binding import (
 )
 from aigol.runtime.canonical_human_entry_contract_v1 import (
     ACTIVE_CONTINUATION,
+    ADVANCED,
     CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
+    CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
     CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
     CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+    DELIVERY_COMMITTED_NOT_ADVANCED,
+    DELIVERY_COMMITTED_RESPONSE_FOUND,
+    DELIVERY_ENTERED_NOT_ADVANCED,
+    DELIVERY_NOT_APPLICABLE,
+    DELIVERY_NOT_FOUND,
+    DELIVERY_OUTCOME_UNKNOWN,
+    DELIVERY_RESOLUTION_DISPOSITION,
+    DELIVERY_RESPONSE_COMMITTED_ACKNOWLEDGEMENT_UNKNOWN,
     HUMAN_ACTOR,
-    OWNER_RESPONSE,
+    INFORMATIONAL_DISPOSITION,
+    INFORMATIONAL_RESPONSE,
+    MANUAL_REVIEW_REQUIRED,
+    NO_RECOVERY_REQUIRED,
+    NOT_ADVANCED,
+    NOT_APPLICABLE,
+    NOT_RETRYABLE,
+    PENDING_DISPOSITION,
+    PENDING_RESPONSE,
+    QUERY_DELIVERY_STATUS,
+    REFERENCE_CREATED,
+    REFERENCE_NOT_CREATED,
+    REFERENCE_NOT_APPLICABLE,
+    REFUSED_ADVANCEMENT,
+    REFUSED_DISPOSITION,
+    REFUSAL_RESPONSE,
+    RESUBMIT_EXACT_REQUEST,
+    RESUBMIT_PERMITTED_CONTROL,
+    RETRYABLE,
+    TERMINAL_ADVANCEMENT,
     TERMINAL_CONTINUATION,
-    UNKNOWN_ADVANCEMENT,
+    TERMINAL_DISPOSITION,
+    TERMINAL_RESPONSE,
+    USE_RESOLVED_RESPONSE,
     CanonicalContinuationEnvelopeV1,
+    CanonicalHumanEntryDeliveryResolutionQueryV1,
+    CanonicalHumanEntryOwnerTransitionV1,
     CanonicalHumanEntryRequestEnvelopeV1,
     CanonicalHumanEntryResponseEnvelopeV1,
+    canonical_che_delivery_resolution_query_from_request_v1,
+    canonical_che_request_source_act_digest_v1,
     validate_canonical_che_continuation_envelope_v1,
     validate_canonical_che_request_envelope_v1,
+    validate_canonical_che_response_envelope_v1,
 )
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
@@ -111,6 +147,7 @@ from aigol.runtime.platform_core_project_services import (
     latest_platform_core_workspace_state,
     prepare_unified_human_interface_project_context,
     record_unified_human_interface_workspace_state,
+    replay_backed_uhi_clarification_state,
 )
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 from aigol.workers import filesystem_replace_worker
@@ -152,7 +189,7 @@ G31_MUTATION_APPROVED = "APPROVED"
 G31_MUTATION_REJECTED = "REJECTED"
 
 CANONICAL_CHE_CONTINUATION_BINDING_VERSION = (
-    "G69_03_CANONICAL_CHE_CONTINUATION_BINDING_V1"
+    "G69_05_CANONICAL_CHE_CONTINUATION_BINDING_V2"
 )
 _CONTINUATION_AVAILABLE = "AVAILABLE"
 _CONTINUATION_CONSUMED = "CONSUMED"
@@ -168,6 +205,40 @@ _CONTINUATION_BINDING_FIELDS = frozenset(
         "consumed_by_request_identity",
         "consumed_by_idempotency_identity",
         "binding_hash",
+    }
+)
+
+CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
+    "G69_05_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_V1"
+)
+_DELIVERY_RECORD_OUTCOME_UNKNOWN = DELIVERY_OUTCOME_UNKNOWN
+_DELIVERY_RECORD_ENTERED_NOT_ADVANCED = DELIVERY_ENTERED_NOT_ADVANCED
+_DELIVERY_RECORD_COMMITTED = (
+    DELIVERY_RESPONSE_COMMITTED_ACKNOWLEDGEMENT_UNKNOWN
+)
+_DELIVERY_RESOLUTION_RECORD_FIELDS = frozenset(
+    {
+        "record_version",
+        "request_identity",
+        "source_act_digest",
+        "request_binding_hash",
+        "idempotency_identity",
+        "actor_identity",
+        "session_identity",
+        "workspace_identity",
+        "runtime_scope_identity",
+        "interaction_identity",
+        "producing_owner",
+        "owner_state_identity",
+        "owner_revision_before",
+        "owner_revision_after",
+        "advancement_outcome",
+        "response_identity",
+        "serialized_response",
+        "response_hash",
+        "delivery_state",
+        "evidence_references",
+        "record_hash",
     }
 )
 
@@ -242,6 +313,17 @@ def run_human_interface_runtime_entry(
         canonical_request = validate_canonical_che_request_envelope_v1(
             request_envelope
         )
+        resolution_query = canonical_che_delivery_resolution_query_from_request_v1(
+            canonical_request
+        )
+        if resolution_query is not None:
+            if continuation_envelope is not None:
+                raise FailClosedRuntimeError(
+                    "CHE delivery resolution query cannot carry a continuation"
+                )
+            return _resolve_canonical_che_delivery_v1(
+                canonical_request, resolution_query
+            )
         return _execute_canonical_che_request_v1(
             canonical_request,
             lambda request: _run_human_interface_runtime_entry_owner_execution_v1(
@@ -330,35 +412,87 @@ def _execute_canonical_che_request_v1(
     bind_continuation: bool = True,
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     canonical_request = validate_canonical_che_request_envelope_v1(request)
+    if not bind_continuation:
+        owner_result = owner_executor(canonical_request)
+        if not isinstance(owner_result, dict):
+            raise FailClosedRuntimeError(
+                "canonical CHE owner execution returned a malformed result"
+            )
+        return _canonical_che_response_from_owner_result(
+            canonical_request,
+            owner_result,
+            prior_continuation=None,
+            strict_owner_projection=False,
+        )
+
     scope_lock = (
         _acquire_canonical_che_continuation_scope_v1(canonical_request)
         if bind_continuation
         else None
     )
     try:
-        prior_continuation = None
-        if bind_continuation:
+        supplied_continuation = (
+            validate_canonical_che_continuation_envelope_v1(continuation_envelope)
+            if continuation_envelope is not None
+            else None
+        )
+        existing_delivery = _existing_canonical_che_delivery_record_v1(
+            canonical_request
+        )
+        if existing_delivery is not None:
+            _validate_canonical_che_delivery_request_binding_v1(
+                existing_delivery,
+                canonical_request,
+                supplied_continuation,
+            )
+            if existing_delivery["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+                return _response_from_canonical_che_delivery_record_v1(
+                    existing_delivery
+                )
+            return _canonical_che_delivery_resolution_response_v1(
+                canonical_request,
+                existing_delivery,
+                status=existing_delivery["delivery_state"],
+            )
+
+        delivery_record = _begin_canonical_che_delivery_record_v1(
+            canonical_request, supplied_continuation
+        )
+        try:
             prior_continuation = _prepare_canonical_che_continuation_v1(
                 canonical_request,
-                continuation_envelope,
+                supplied_continuation,
             )
+            _validate_canonical_che_expected_owner_revision_v1(
+                canonical_request, prior_continuation
+            )
+        except Exception:
+            _mark_canonical_che_delivery_not_advanced_v1(delivery_record)
+            raise
         owner_result = owner_executor(canonical_request)
         if not isinstance(owner_result, dict):
             raise FailClosedRuntimeError(
                 "canonical CHE owner execution returned a malformed result"
             )
         response = _canonical_che_response_from_owner_result(
-            canonical_request, owner_result
+            canonical_request,
+            owner_result,
+            prior_continuation=prior_continuation,
+            strict_owner_projection=True,
         )
-        if not bind_continuation:
-            return response
         issued_continuation = _issue_canonical_che_continuation_v1(
             canonical_request,
             response,
             owner_result,
             prior_continuation=prior_continuation,
         )
-        return replace(response, continuation_envelope=issued_continuation)
+        final_response = replace(
+            response, continuation_envelope=issued_continuation
+        )
+        _commit_canonical_che_delivery_response_v1(
+            delivery_record, final_response
+        )
+        return final_response
     finally:
         if scope_lock is not None:
             _release_canonical_che_continuation_scope_v1(scope_lock)
@@ -4487,6 +4621,481 @@ def _looks_like_turn_replay_root(path: Path) -> bool:
     )
 
 
+def _canonical_che_delivery_store_v1(runtime_scope_identity: str) -> Path:
+    return Path(runtime_scope_identity) / "canonical_human_entry_delivery_resolution_v1"
+
+
+def _canonical_che_delivery_record_path_v1(
+    *,
+    runtime_scope_identity: str,
+    actor_identity: str,
+    session_identity: str,
+    workspace_identity: str,
+    idempotency_identity: str,
+) -> Path:
+    digest = replay_hash(
+        {
+            "actor_identity": actor_identity,
+            "session_identity": session_identity,
+            "workspace_identity": workspace_identity,
+            "runtime_scope_identity": runtime_scope_identity,
+            "idempotency_identity": idempotency_identity,
+        }
+    ).removeprefix("sha256:")
+    return _canonical_che_delivery_store_v1(runtime_scope_identity) / (
+        f"record-{digest}.json"
+    )
+
+
+def _canonical_che_delivery_request_binding_hash_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> str:
+    return replay_hash(
+        {
+            "request_identity": request.request_identity,
+            "source_act_digest": canonical_che_request_source_act_digest_v1(
+                request
+            ),
+            "order_identity": request.order_identity,
+            "idempotency_identity": request.idempotency_identity,
+            "actor_identity": request.actor_identity,
+            "session_identity": request.session_identity,
+            "workspace_identity": request.workspace_identity,
+            "runtime_scope_identity": request.runtime_scope_identity,
+            "interaction_identity": (
+                continuation.interaction_identity
+                if continuation is not None
+                else NOT_APPLICABLE
+            ),
+            "continuation_identity": (
+                continuation.continuation_identity
+                if continuation is not None
+                else NOT_APPLICABLE
+            ),
+        }
+    )
+
+
+def _canonical_che_delivery_record_hash_v1(record: dict[str, Any]) -> str:
+    return replay_hash(
+        {key: value for key, value in record.items() if key != "record_hash"}
+    )
+
+
+def _write_canonical_che_delivery_record_v1(
+    path: Path, record: dict[str, Any]
+) -> None:
+    if set(record) != _DELIVERY_RESOLUTION_RECORD_FIELDS:
+        raise FailClosedRuntimeError("CHE delivery record structure is invalid")
+    serialized = canonical_serialize(record) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_name = ""
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".che-delivery-",
+            suffix=".tmp",
+            dir=path.parent,
+            text=True,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(serialized)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, path)
+    except OSError as exc:
+        raise FailClosedRuntimeError("CHE delivery record write failed") from exc
+    finally:
+        if temporary_name and Path(temporary_name).exists():
+            Path(temporary_name).unlink()
+
+
+def _read_canonical_che_delivery_record_v1(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FailClosedRuntimeError("CHE delivery record is unreadable") from exc
+    if not isinstance(value, dict) or set(value) != (
+        _DELIVERY_RESOLUTION_RECORD_FIELDS
+    ):
+        raise FailClosedRuntimeError("CHE delivery record structure is invalid")
+    if value["record_version"] != CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION:
+        raise FailClosedRuntimeError("CHE delivery record version is invalid")
+    if value["delivery_state"] not in {
+        _DELIVERY_RECORD_OUTCOME_UNKNOWN,
+        _DELIVERY_RECORD_ENTERED_NOT_ADVANCED,
+        _DELIVERY_RECORD_COMMITTED,
+    }:
+        raise FailClosedRuntimeError("CHE delivery record state is invalid")
+    if not isinstance(value["evidence_references"], list) or any(
+        not isinstance(item, str) or not item
+        for item in value["evidence_references"]
+    ):
+        raise FailClosedRuntimeError("CHE delivery evidence references are invalid")
+    if value["record_hash"] != _canonical_che_delivery_record_hash_v1(value):
+        raise FailClosedRuntimeError("CHE delivery record integrity is invalid")
+    if value["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+        if not isinstance(value["serialized_response"], str):
+            raise FailClosedRuntimeError("CHE committed delivery response is absent")
+        try:
+            response_value = json.loads(value["serialized_response"])
+        except json.JSONDecodeError as exc:
+            raise FailClosedRuntimeError(
+                "CHE committed delivery response is invalid"
+            ) from exc
+        response = validate_canonical_che_response_envelope_v1(response_value)
+        if response.response_identity != value["response_identity"] or (
+            replay_hash(response.to_dict()) != value["response_hash"]
+        ):
+            raise FailClosedRuntimeError(
+                "CHE committed delivery response integrity is invalid"
+            )
+    return value
+
+
+def _existing_canonical_che_delivery_record_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+) -> dict[str, Any] | None:
+    path = _canonical_che_delivery_record_path_v1(
+        runtime_scope_identity=request.runtime_scope_identity,
+        actor_identity=request.actor_identity,
+        session_identity=request.session_identity,
+        workspace_identity=request.workspace_identity,
+        idempotency_identity=request.idempotency_identity,
+    )
+    return _read_canonical_che_delivery_record_v1(path) if path.is_file() else None
+
+
+def _validate_canonical_che_delivery_request_binding_v1(
+    record: dict[str, Any],
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> None:
+    expected = {
+        "request_identity": request.request_identity,
+        "source_act_digest": canonical_che_request_source_act_digest_v1(request),
+        "request_binding_hash": _canonical_che_delivery_request_binding_hash_v1(
+            request, continuation
+        ),
+        "idempotency_identity": request.idempotency_identity,
+        "actor_identity": request.actor_identity,
+        "session_identity": request.session_identity,
+        "workspace_identity": request.workspace_identity,
+        "runtime_scope_identity": request.runtime_scope_identity,
+    }
+    if any(record[key] != value for key, value in expected.items()):
+        raise FailClosedRuntimeError(
+            "CHE idempotency identity-content conflict"
+        )
+    if continuation is not None and record["interaction_identity"] not in {
+        continuation.interaction_identity,
+        NOT_APPLICABLE,
+    }:
+        raise FailClosedRuntimeError(
+            "CHE idempotency interaction identity conflict"
+        )
+
+
+def _begin_canonical_che_delivery_record_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> dict[str, Any]:
+    record = {
+        "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
+        "request_identity": request.request_identity,
+        "source_act_digest": canonical_che_request_source_act_digest_v1(request),
+        "request_binding_hash": _canonical_che_delivery_request_binding_hash_v1(
+            request, continuation
+        ),
+        "idempotency_identity": request.idempotency_identity,
+        "actor_identity": request.actor_identity,
+        "session_identity": request.session_identity,
+        "workspace_identity": request.workspace_identity,
+        "runtime_scope_identity": request.runtime_scope_identity,
+        "interaction_identity": (
+            continuation.interaction_identity
+            if continuation is not None
+            else NOT_APPLICABLE
+        ),
+        "producing_owner": NOT_APPLICABLE,
+        "owner_state_identity": NOT_APPLICABLE,
+        "owner_revision_before": NOT_APPLICABLE,
+        "owner_revision_after": NOT_APPLICABLE,
+        "advancement_outcome": DELIVERY_OUTCOME_UNKNOWN,
+        "response_identity": None,
+        "serialized_response": None,
+        "response_hash": None,
+        "delivery_state": _DELIVERY_RECORD_OUTCOME_UNKNOWN,
+        "evidence_references": [],
+        "record_hash": "",
+    }
+    record["record_hash"] = _canonical_che_delivery_record_hash_v1(record)
+    path = _canonical_che_delivery_record_path_v1(
+        runtime_scope_identity=request.runtime_scope_identity,
+        actor_identity=request.actor_identity,
+        session_identity=request.session_identity,
+        workspace_identity=request.workspace_identity,
+        idempotency_identity=request.idempotency_identity,
+    )
+    if path.exists():
+        raise FailClosedRuntimeError("CHE delivery record identity conflicts")
+    _write_canonical_che_delivery_record_v1(path, record)
+    return record
+
+
+def _mark_canonical_che_delivery_not_advanced_v1(record: dict[str, Any]) -> None:
+    updated = dict(record)
+    updated["advancement_outcome"] = NOT_ADVANCED
+    updated["delivery_state"] = _DELIVERY_RECORD_ENTERED_NOT_ADVANCED
+    updated["record_hash"] = _canonical_che_delivery_record_hash_v1(updated)
+    path = _canonical_che_delivery_record_path_v1(
+        runtime_scope_identity=updated["runtime_scope_identity"],
+        actor_identity=updated["actor_identity"],
+        session_identity=updated["session_identity"],
+        workspace_identity=updated["workspace_identity"],
+        idempotency_identity=updated["idempotency_identity"],
+    )
+    _write_canonical_che_delivery_record_v1(path, updated)
+
+
+def _commit_canonical_che_delivery_response_v1(
+    record: dict[str, Any], response: CanonicalHumanEntryResponseEnvelopeV1
+) -> None:
+    canonical_response = validate_canonical_che_response_envelope_v1(response)
+    transition = canonical_response.owner_transition
+    serialized_response = canonical_serialize(canonical_response.to_dict())
+    updated = dict(record)
+    updated.update(
+        {
+            "interaction_identity": (
+                canonical_response.continuation_envelope.interaction_identity
+                if canonical_response.continuation_envelope is not None
+                else record["interaction_identity"]
+            ),
+            "producing_owner": transition.producing_owner,
+            "owner_state_identity": transition.owner_state_identity,
+            "owner_revision_before": transition.owner_revision_before,
+            "owner_revision_after": transition.owner_revision_after,
+            "advancement_outcome": transition.advancement_outcome,
+            "response_identity": canonical_response.response_identity,
+            "serialized_response": serialized_response,
+            "response_hash": replay_hash(canonical_response.to_dict()),
+            "delivery_state": _DELIVERY_RECORD_COMMITTED,
+            "evidence_references": list(canonical_response.evidence_references),
+        }
+    )
+    updated["record_hash"] = _canonical_che_delivery_record_hash_v1(updated)
+    path = _canonical_che_delivery_record_path_v1(
+        runtime_scope_identity=updated["runtime_scope_identity"],
+        actor_identity=updated["actor_identity"],
+        session_identity=updated["session_identity"],
+        workspace_identity=updated["workspace_identity"],
+        idempotency_identity=updated["idempotency_identity"],
+    )
+    _write_canonical_che_delivery_record_v1(path, updated)
+
+
+def _response_from_canonical_che_delivery_record_v1(
+    record: dict[str, Any],
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    validated = _read_canonical_che_delivery_record_v1(
+        _canonical_che_delivery_record_path_v1(
+            runtime_scope_identity=record["runtime_scope_identity"],
+            actor_identity=record["actor_identity"],
+            session_identity=record["session_identity"],
+            workspace_identity=record["workspace_identity"],
+            idempotency_identity=record["idempotency_identity"],
+        )
+    )
+    if validated["delivery_state"] != _DELIVERY_RECORD_COMMITTED:
+        raise FailClosedRuntimeError("CHE delivery Response is not committed")
+    return CanonicalHumanEntryResponseEnvelopeV1.from_dict(
+        json.loads(validated["serialized_response"])
+    )
+
+
+def _resolve_canonical_che_delivery_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    query: CanonicalHumanEntryDeliveryResolutionQueryV1,
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    path = _canonical_che_delivery_record_path_v1(
+        runtime_scope_identity=request.runtime_scope_identity,
+        actor_identity=request.actor_identity,
+        session_identity=request.session_identity,
+        workspace_identity=request.workspace_identity,
+        idempotency_identity=query.target_idempotency_identity,
+    )
+    if not path.is_file():
+        return _canonical_che_delivery_resolution_response_v1(
+            request, None, status=DELIVERY_NOT_FOUND
+        )
+    record = _read_canonical_che_delivery_record_v1(path)
+    if (
+        record["request_identity"] != query.target_request_identity
+        or record["source_act_digest"] != query.target_source_act_digest
+        or record["interaction_identity"] != query.target_interaction_identity
+    ):
+        raise FailClosedRuntimeError("CHE delivery resolution query conflict")
+    if record["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+        status = (
+            DELIVERY_COMMITTED_NOT_ADVANCED
+            if record["advancement_outcome"]
+            in {NOT_ADVANCED, REFUSED_ADVANCEMENT}
+            else DELIVERY_COMMITTED_RESPONSE_FOUND
+        )
+    else:
+        status = record["delivery_state"]
+    return _canonical_che_delivery_resolution_response_v1(
+        request, record, status=status
+    )
+
+
+def _canonical_che_delivery_resolution_response_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    record: dict[str, Any] | None,
+    *,
+    status: str,
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    if status not in {
+        DELIVERY_NOT_FOUND,
+        DELIVERY_OUTCOME_UNKNOWN,
+        DELIVERY_ENTERED_NOT_ADVANCED,
+        DELIVERY_COMMITTED_RESPONSE_FOUND,
+        DELIVERY_COMMITTED_NOT_ADVANCED,
+    }:
+        raise FailClosedRuntimeError("CHE delivery resolution status is unsupported")
+    prior_response = None
+    if record is not None and record["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+        prior_response = _response_from_canonical_che_delivery_record_v1(record)
+    evidence = tuple(record["evidence_references"]) if record is not None else ()
+    replay_references = prior_response.replay_references if prior_response else ()
+    certification_references = (
+        prior_response.certification_references if prior_response else ()
+    )
+    if status == DELIVERY_NOT_FOUND:
+        advancement = NOT_ADVANCED
+        retryability = RETRYABLE
+        recovery = RESUBMIT_EXACT_REQUEST
+    elif status in {
+        DELIVERY_COMMITTED_RESPONSE_FOUND,
+        DELIVERY_COMMITTED_NOT_ADVANCED,
+    }:
+        advancement = record["advancement_outcome"]
+        retryability = NOT_RETRYABLE
+        recovery = USE_RESOLVED_RESPONSE
+    elif status == DELIVERY_ENTERED_NOT_ADVANCED:
+        advancement = NOT_ADVANCED
+        retryability = NOT_RETRYABLE
+        recovery = MANUAL_REVIEW_REQUIRED
+    else:
+        advancement = DELIVERY_OUTCOME_UNKNOWN
+        retryability = NOT_RETRYABLE
+        recovery = QUERY_DELIVERY_STATUS
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner="CANONICAL_HUMAN_ENTRY_TRANSPORT",
+        owner_state_identity=(
+            record["owner_state_identity"] if record is not None else NOT_APPLICABLE
+        ),
+        owner_revision_before=(
+            record["owner_revision_before"] if record is not None else NOT_APPLICABLE
+        ),
+        owner_revision_after=(
+            record["owner_revision_after"] if record is not None else NOT_APPLICABLE
+        ),
+        response_disposition=DELIVERY_RESOLUTION_DISPOSITION,
+        advancement_outcome=advancement,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=retryability,
+        recovery_requirement=recovery,
+        delivery_resolution_status=status,
+        resolved_response_identity=(
+            record["response_identity"] if prior_response is not None else None
+        ),
+        resolved_response_hash=(
+            record["response_hash"] if prior_response is not None else None
+        ),
+        replay_reference_status=(
+            REFERENCE_CREATED if replay_references else REFERENCE_NOT_CREATED
+        ),
+        certification_reference_status=(
+            REFERENCE_CREATED if certification_references else REFERENCE_NOT_CREATED
+        ),
+    )
+    identity_seed = {
+        "request_identity": request.request_identity,
+        "target_request_identity": (
+            record["request_identity"] if record is not None else NOT_APPLICABLE
+        ),
+        "delivery_resolution_status": status,
+        "resolved_response_identity": transition.resolved_response_identity,
+    }
+    digest = replay_hash(identity_seed).removeprefix("sha256:")
+    return CanonicalHumanEntryResponseEnvelopeV1(
+        contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        response_identity=f"CHE-DELIVERY-RESOLUTION-{digest}",
+        request_identity=request.request_identity,
+        response_type=INFORMATIONAL_RESPONSE,
+        producing_owner=transition.producing_owner,
+        owner_status=status,
+        advancement_state=advancement,
+        presentation_payload=(f"Canonical delivery resolution: {status}",),
+        presentation_metadata={
+            "content_format": "ORDERED_TEXT_SEGMENTS",
+            "language": "und",
+            "projection_owner": "CANONICAL_HUMAN_ENTRY_TRANSPORT",
+        },
+        correlation_identity=f"CHE-DELIVERY-CORRELATION-{digest}",
+        evidence_references=evidence,
+        replay_references=replay_references,
+        certification_references=certification_references,
+        owner_transition=transition,
+        continuation_envelope=None,
+    )
+
+
+def _validate_canonical_che_expected_owner_revision_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> None:
+    if continuation is None:
+        return
+    workspace_state = latest_platform_core_workspace_state(
+        Path(request.runtime_scope_identity) / request.session_identity
+    )
+    restored = replay_backed_uhi_clarification_state(workspace_state)
+    envelope = (
+        restored.get("owner_bound_clarification_envelope")
+        if isinstance(restored, dict)
+        else None
+    )
+    if not isinstance(envelope, dict):
+        raise FailClosedRuntimeError(
+            "CHE expected owner revision evidence is unavailable"
+        )
+    if envelope.get("conversation_identity") != (
+        continuation.expected_owner_state_identity
+    ):
+        raise FailClosedRuntimeError("CHE expected owner state is stale")
+    if envelope.get("expected_revision") != continuation.expected_owner_revision:
+        raise FailClosedRuntimeError("CHE expected owner revision is stale")
+
+
 def _acquire_canonical_che_continuation_scope_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
 ) -> Path:
@@ -4645,6 +5254,11 @@ def _issue_canonical_che_continuation_v1(
     """Issue one opaque next-turn binding without carrying owner state."""
 
     conversation_identity = _canonical_che_conversation_identity(owner_result)
+    transition = response.owner_transition
+    if transition.owner_state_identity != conversation_identity:
+        raise FailClosedRuntimeError(
+            "CHE owner transition state identity is inconsistent"
+        )
     if (
         prior_continuation is not None
         and conversation_identity != prior_continuation.conversation_identity
@@ -4671,19 +5285,18 @@ def _issue_canonical_che_continuation_v1(
 
     state = (
         TERMINAL_CONTINUATION
-        if response.response_type == "TERMINAL"
+        if response.response_type == TERMINAL_RESPONSE
         else ACTIVE_CONTINUATION
     )
-    next_act_digest = replay_hash(
-        {
-            "interaction_identity": interaction_identity,
-            "conversation_identity": conversation_identity,
-            "previous_response_identity": response.response_identity,
-            "continuation_sequence": sequence,
-            "continuation_state": state,
-        }
-    ).removeprefix("sha256:")
-    expected_next_act_identity = f"CHE-NEXT-ACT-{next_act_digest}"
+    expected_next_act_identity = (
+        transition.terminal_identity
+        if state == TERMINAL_CONTINUATION
+        else transition.next_act_identity
+    )
+    if not isinstance(expected_next_act_identity, str):
+        raise FailClosedRuntimeError(
+            "CHE owner transition does not provide the expected next act"
+        )
     identity_seed = {
         "contract_version": CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
         "interaction_identity": interaction_identity,
@@ -4698,6 +5311,8 @@ def _issue_canonical_che_continuation_v1(
         "previous_idempotency_identity": request.idempotency_identity,
         "continuation_sequence": sequence,
         "expected_next_act_identity": expected_next_act_identity,
+        "expected_owner_state_identity": transition.owner_state_identity,
+        "expected_owner_revision": transition.owner_revision_after,
         "continuation_state": state,
         "correlation_identity": response.correlation_identity,
     }
@@ -4717,6 +5332,8 @@ def _issue_canonical_che_continuation_v1(
         previous_idempotency_identity=request.idempotency_identity,
         continuation_sequence=sequence,
         expected_next_act_identity=expected_next_act_identity,
+        expected_owner_state_identity=transition.owner_state_identity,
+        expected_owner_revision=transition.owner_revision_after,
         continuation_state=state,
         correlation_identity=response.correlation_identity,
         metadata={},
@@ -4947,14 +5564,64 @@ def _canonical_che_source_text(
 def _canonical_che_response_from_owner_result(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     owner_result: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+    strict_owner_projection: bool,
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     """Project one owner result without exposing owner-internal structures."""
 
-    owner_status = _canonical_che_owner_status(owner_result)
-    presentations = _canonical_che_presentations(owner_result, owner_status)
     evidence_references, replay_references, certification_references = (
         _canonical_che_owner_references(owner_result)
     )
+    if strict_owner_projection:
+        transition, owner_status = _canonical_che_conversation_owner_projection_v1(
+            request,
+            owner_result,
+            prior_continuation=prior_continuation,
+            replay_references=replay_references,
+            certification_references=certification_references,
+        )
+    else:
+        owner_status = _canonical_che_owner_status(owner_result)
+        transition = CanonicalHumanEntryOwnerTransitionV1(
+            contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+            producing_owner="LEGACY_CHE_BOUNDARY_COMPATIBILITY",
+            owner_state_identity=NOT_APPLICABLE,
+            owner_revision_before=NOT_APPLICABLE,
+            owner_revision_after=NOT_APPLICABLE,
+            response_disposition=INFORMATIONAL_DISPOSITION,
+            advancement_outcome=NOT_ADVANCED,
+            next_act_identity=None,
+            next_act_kind=None,
+            next_act_target_identity=None,
+            next_act_target_digest=None,
+            next_act_expected_owner_revision=NOT_APPLICABLE,
+            permitted_controls=(),
+            payload_constraints={},
+            exact_human_act_required=False,
+            cancellation_permitted=False,
+            interruption_permitted=False,
+            refusal_identity=None,
+            refusal_type=NOT_APPLICABLE,
+            refusal_status=NOT_APPLICABLE,
+            terminal_identity=None,
+            terminal_type=NOT_APPLICABLE,
+            terminal_status=NOT_APPLICABLE,
+            retryability=NOT_APPLICABLE,
+            recovery_requirement=NOT_APPLICABLE,
+            delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+            resolved_response_identity=None,
+            resolved_response_hash=None,
+            replay_reference_status=(
+                REFERENCE_CREATED if replay_references else REFERENCE_NOT_APPLICABLE
+            ),
+            certification_reference_status=(
+                REFERENCE_CREATED
+                if certification_references
+                else REFERENCE_NOT_APPLICABLE
+            ),
+        )
+    presentations = _canonical_che_presentations(owner_result, owner_status)
     correlation_seed = {
         "contract_version": CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
         "request_identity": request.request_identity,
@@ -4966,31 +5633,252 @@ def _canonical_che_response_from_owner_result(
         "evidence_references": evidence_references,
         "replay_references": replay_references,
         "certification_references": certification_references,
+        "owner_transition": transition.to_dict(),
     }
     correlation_digest = replay_hash(correlation_seed).removeprefix("sha256:")
     response_identity = f"CHE-RESPONSE-{correlation_digest}"
     correlation_identity = (
         f"CHE-CORRELATION-{request.request_identity}-{correlation_digest[:16]}"
     )
+    response_type = {
+        PENDING_DISPOSITION: PENDING_RESPONSE,
+        INFORMATIONAL_DISPOSITION: INFORMATIONAL_RESPONSE,
+        REFUSED_DISPOSITION: REFUSAL_RESPONSE,
+        TERMINAL_DISPOSITION: TERMINAL_RESPONSE,
+    }[transition.response_disposition]
     return CanonicalHumanEntryResponseEnvelopeV1(
         contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
         response_identity=response_identity,
         request_identity=request.request_identity,
-        response_type=OWNER_RESPONSE,
-        producing_owner="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        response_type=response_type,
+        producing_owner=transition.producing_owner,
         owner_status=owner_status,
-        advancement_state=UNKNOWN_ADVANCEMENT,
+        advancement_state=transition.advancement_outcome,
         presentation_payload=presentations,
         presentation_metadata={
             "content_format": "ORDERED_TEXT_SEGMENTS",
             "language": "und",
-            "projection_owner": "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+            "projection_owner": "CANONICAL_HUMAN_ENTRY_TRANSPORT",
         },
         correlation_identity=correlation_identity,
         evidence_references=evidence_references,
         replay_references=replay_references,
         certification_references=certification_references,
+        owner_transition=transition,
     )
+
+
+def _canonical_che_conversation_owner_projection_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    owner_result: dict[str, Any],
+    *,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+    replay_references: tuple[str, ...],
+    certification_references: tuple[str, ...],
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    """Project only authenticated G66/Project Services owner result shapes."""
+
+    capture = owner_result.get("production_conversation_binding")
+    if not isinstance(capture, dict):
+        raise FailClosedRuntimeError(
+            "CHE owner result has no supported Conversation projection"
+        )
+    state = capture.get("conversation_state")
+    if not isinstance(state, dict):
+        raise FailClosedRuntimeError(
+            "CHE Conversation owner state projection is malformed"
+        )
+    conversation_identity = capture.get("conversation_identity")
+    revision_after = state.get("revision")
+    if not isinstance(conversation_identity, str) or not conversation_identity:
+        raise FailClosedRuntimeError("CHE Conversation identity is absent")
+    if (
+        not isinstance(revision_after, int)
+        or isinstance(revision_after, bool)
+        or revision_after < 0
+    ):
+        raise FailClosedRuntimeError("CHE Conversation revision is invalid")
+    revision_before = (
+        prior_continuation.expected_owner_revision
+        if prior_continuation is not None
+        else 0
+    )
+    if not isinstance(revision_before, int) or revision_after < revision_before:
+        raise FailClosedRuntimeError("CHE Conversation revision regressed")
+    if prior_continuation is not None and (
+        prior_continuation.expected_owner_state_identity != conversation_identity
+    ):
+        raise FailClosedRuntimeError("CHE Conversation state identity is stale")
+
+    clarification = owner_result.get("owner_bound_clarification_envelope")
+    if isinstance(clarification, dict):
+        return _canonical_che_pending_or_refused_conversation_projection_v1(
+            request=request,
+            capture=capture,
+            clarification=clarification,
+            conversation_identity=conversation_identity,
+            revision_before=revision_before,
+            revision_after=revision_after,
+            prior_continuation=prior_continuation,
+            replay_references=replay_references,
+            certification_references=certification_references,
+        )
+
+    context = owner_result.get("platform_core_project_services_context")
+    experience = (
+        context.get("human_conversation_experience")
+        if isinstance(context, dict)
+        else None
+    )
+    read_only_result = owner_result.get("governed_read_only_work_result")
+    if isinstance(experience, dict) and (
+        experience.get("response_mode") == "READ_ONLY_RESULT"
+        or isinstance(read_only_result, dict)
+    ):
+        terminal_digest = replay_hash(
+            {
+                "request_identity": request.request_identity,
+                "conversation_identity": conversation_identity,
+                "revision_after": revision_after,
+                "response_mode": experience.get("response_mode"),
+                "read_only_result_hash": (
+                    read_only_result.get("artifact_hash")
+                    if isinstance(read_only_result, dict)
+                    else None
+                ),
+            }
+        ).removeprefix("sha256:")
+        transition = CanonicalHumanEntryOwnerTransitionV1(
+            contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+            producing_owner="PLATFORM_CORE_PROJECT_SERVICES",
+            owner_state_identity=conversation_identity,
+            owner_revision_before=revision_before,
+            owner_revision_after=revision_after,
+            response_disposition=TERMINAL_DISPOSITION,
+            advancement_outcome=TERMINAL_ADVANCEMENT,
+            next_act_identity=None,
+            next_act_kind=None,
+            next_act_target_identity=None,
+            next_act_target_digest=None,
+            next_act_expected_owner_revision=NOT_APPLICABLE,
+            permitted_controls=(),
+            payload_constraints={},
+            exact_human_act_required=False,
+            cancellation_permitted=False,
+            interruption_permitted=False,
+            refusal_identity=None,
+            refusal_type=NOT_APPLICABLE,
+            refusal_status=NOT_APPLICABLE,
+            terminal_identity=f"CHE-TERMINAL-{terminal_digest}",
+            terminal_type="READ_ONLY_RESULT_COMPLETE",
+            terminal_status="TERMINAL_COMPLETE",
+            retryability=NOT_RETRYABLE,
+            recovery_requirement=NO_RECOVERY_REQUIRED,
+            delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+            resolved_response_identity=None,
+            resolved_response_hash=None,
+            replay_reference_status=(
+                REFERENCE_CREATED if replay_references else REFERENCE_NOT_CREATED
+            ),
+            certification_reference_status=(
+                REFERENCE_CREATED
+                if certification_references
+                else REFERENCE_NOT_CREATED
+            ),
+        )
+        return transition, "READ_ONLY_RESULT_COMPLETE"
+    raise FailClosedRuntimeError("CHE owner result shape is unsupported")
+
+
+def _canonical_che_pending_or_refused_conversation_projection_v1(
+    *,
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    capture: dict[str, Any],
+    clarification: dict[str, Any],
+    conversation_identity: str,
+    revision_before: int,
+    revision_after: int,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+    replay_references: tuple[str, ...],
+    certification_references: tuple[str, ...],
+) -> tuple[CanonicalHumanEntryOwnerTransitionV1, str]:
+    required = clarification.get("required_field_or_evidence_codes")
+    if (
+        clarification.get("conversation_identity") != conversation_identity
+        or clarification.get("expected_revision") != revision_after
+        or not isinstance(clarification.get("clarification_identity"), str)
+        or not isinstance(clarification.get("originating_owner"), str)
+        or not isinstance(clarification.get("permitted_reply_kind"), str)
+        or not isinstance(clarification.get("subject_identity"), str)
+        or not isinstance(clarification.get("originating_artifact_hash"), str)
+        or not isinstance(clarification.get("reason_code"), str)
+        or not isinstance(required, list)
+        or not required
+        or any(not isinstance(item, str) or not item for item in required)
+    ):
+        raise FailClosedRuntimeError(
+            "CHE owner-bound next-act projection is malformed"
+        )
+    advanced = revision_after > revision_before
+    refused = prior_continuation is not None and not advanced
+    refusal_identity = None
+    if refused:
+        refusal_identity = "CHE-REFUSAL-" + replay_hash(
+            {
+                "request_identity": request.request_identity,
+                "conversation_identity": conversation_identity,
+                "revision": revision_after,
+                "clarification_identity": clarification["clarification_identity"],
+            }
+        ).removeprefix("sha256:")
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=clarification["originating_owner"],
+        owner_state_identity=conversation_identity,
+        owner_revision_before=revision_before,
+        owner_revision_after=revision_after,
+        response_disposition=(
+            REFUSED_DISPOSITION if refused else PENDING_DISPOSITION
+        ),
+        advancement_outcome=(
+            REFUSED_ADVANCEMENT if refused else ADVANCED
+        ),
+        next_act_identity=clarification["clarification_identity"],
+        next_act_kind=clarification["permitted_reply_kind"],
+        next_act_target_identity=clarification["subject_identity"],
+        next_act_target_digest=clarification["originating_artifact_hash"],
+        next_act_expected_owner_revision=revision_after,
+        permitted_controls=tuple(required),
+        payload_constraints={
+            "permitted_reply_kind": clarification["permitted_reply_kind"],
+            "required_control_count": len(required),
+        },
+        exact_human_act_required=True,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=refusal_identity,
+        refusal_type="OWNER_INPUT_NOT_ADMITTED" if refused else NOT_APPLICABLE,
+        refusal_status="STABLE_REFUSAL" if refused else NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=RETRYABLE if refused else NOT_APPLICABLE,
+        recovery_requirement=(
+            RESUBMIT_PERMITTED_CONTROL if refused else NOT_APPLICABLE
+        ),
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=(
+            REFERENCE_CREATED if replay_references else REFERENCE_NOT_CREATED
+        ),
+        certification_reference_status=(
+            REFERENCE_CREATED
+            if certification_references
+            else REFERENCE_NOT_CREATED
+        ),
+    )
+    return transition, clarification["reason_code"]
 
 
 def _canonical_che_owner_status(owner_result: dict[str, Any]) -> str:

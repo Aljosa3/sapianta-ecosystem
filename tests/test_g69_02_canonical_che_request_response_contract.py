@@ -11,9 +11,16 @@ import pytest
 from aigol.runtime.canonical_human_entry_contract_v1 import (
     CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
     CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+    CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+    DELIVERY_NOT_APPLICABLE,
     HUMAN_ACTOR,
+    INFORMATIONAL_RESPONSE,
+    NOT_APPLICABLE,
+    NOT_ADVANCED,
     OWNER_RESPONSE,
-    UNKNOWN_ADVANCEMENT,
+    INFORMATIONAL_DISPOSITION,
+    REFERENCE_NOT_APPLICABLE,
+    CanonicalHumanEntryOwnerTransitionV1,
     CanonicalHumanEntryRequestEnvelopeV1,
     CanonicalHumanEntryResponseEnvelopeV1,
     deserialize_canonical_che_request_envelope_v1,
@@ -56,14 +63,46 @@ def _request(tmp_path: Path, *, payload="  Implement a validator.\n"):
 
 
 def _response() -> CanonicalHumanEntryResponseEnvelopeV1:
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner="G69-02-OWNER",
+        owner_state_identity=NOT_APPLICABLE,
+        owner_revision_before=NOT_APPLICABLE,
+        owner_revision_after=NOT_APPLICABLE,
+        response_disposition=INFORMATIONAL_DISPOSITION,
+        advancement_outcome=NOT_ADVANCED,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=NOT_APPLICABLE,
+        recovery_requirement=NOT_APPLICABLE,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
     return CanonicalHumanEntryResponseEnvelopeV1(
         contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
         response_identity="G69-02-RESPONSE-000001",
         request_identity="G69-02-REQUEST-000001",
-        response_type=OWNER_RESPONSE,
-        producing_owner="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
+        response_type=INFORMATIONAL_RESPONSE,
+        producing_owner=transition.producing_owner,
         owner_status="OWNER_RESPONSE_AVAILABLE",
-        advancement_state=UNKNOWN_ADVANCEMENT,
+        advancement_state=NOT_ADVANCED,
         presentation_payload=("Owner response available.",),
         presentation_metadata={
             "content_format": "ORDERED_TEXT_SEGMENTS",
@@ -73,6 +112,7 @@ def _response() -> CanonicalHumanEntryResponseEnvelopeV1:
         evidence_references=("sha256:" + "1" * 64,),
         replay_references=("/replay/G69-02",),
         certification_references=("/certification/G69-02",),
+        owner_transition=transition,
     )
 
 
@@ -169,7 +209,8 @@ def test_che_accepts_only_request_envelope_mode_and_returns_only_response_envelo
     assert response.request_identity == request.request_identity
     assert response.contract_version == CANONICAL_CHE_RESPONSE_CONTRACT_VERSION
     assert response.response_type == OWNER_RESPONSE
-    assert response.producing_owner == "CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY"
+    assert response.producing_owner == "CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY"
+    assert response.owner_transition.owner_revision_after == 1
     assert response.correlation_identity.startswith("CHE-CORRELATION-")
     serialized = serialize_canonical_che_response_envelope_v1(response)
     for forbidden in (

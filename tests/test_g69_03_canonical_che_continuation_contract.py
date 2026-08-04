@@ -110,6 +110,12 @@ def test_continuation_is_immutable_strict_and_deterministically_serialized(
     assert continuation.continuation_state == ACTIVE_CONTINUATION
     assert continuation.continuation_sequence == 1
     assert continuation.previous_response_identity == response.response_identity
+    assert continuation.expected_owner_state_identity == (
+        response.owner_transition.owner_state_identity
+    )
+    assert continuation.expected_owner_revision == (
+        response.owner_transition.owner_revision_after
+    )
     with pytest.raises(FrozenInstanceError):
         continuation.continuation_sequence = 2  # type: ignore[misc]
     with pytest.raises(TypeError):
@@ -210,21 +216,28 @@ def test_che_rejects_missing_duplicate_and_stale_continuations(tmp_path: Path) -
             governed_runtime_runner=_fail_runner,
         )
 
-    run_human_interface_runtime_entry(
-        request_envelope=missing_request,
+    valid_request = _request(
+        tmp_path,
+        3,
+        source_act_identity=continuation.expected_next_act_identity,
+    )
+    committed = run_human_interface_runtime_entry(
+        request_envelope=valid_request,
         continuation_envelope=continuation,
         governed_runtime_runner=_fail_runner,
     )
-    with pytest.raises(FailClosedRuntimeError, match="duplicate"):
-        run_human_interface_runtime_entry(
-            request_envelope=missing_request,
-            continuation_envelope=continuation,
-            governed_runtime_runner=_fail_runner,
-        )
+    duplicate = run_human_interface_runtime_entry(
+        request_envelope=valid_request,
+        continuation_envelope=continuation,
+        governed_runtime_runner=_fail_runner,
+    )
+    assert isinstance(committed, CanonicalHumanEntryResponseEnvelopeV1)
+    assert isinstance(duplicate, CanonicalHumanEntryResponseEnvelopeV1)
+    assert duplicate.to_dict() == committed.to_dict()
 
     stale_request = _request(
         tmp_path,
-        3,
+        4,
         source_act_identity=continuation.expected_next_act_identity,
     )
     with pytest.raises(FailClosedRuntimeError, match="stale"):
@@ -287,9 +300,14 @@ def test_che_rejects_unknown_terminal_and_invalid_next_act_continuations(
             governed_runtime_runner=_fail_runner,
         )
 
+    terminal_request = _request(
+        tmp_path,
+        3,
+        source_act_identity=continuation.expected_next_act_identity,
+    )
     with pytest.raises(FailClosedRuntimeError, match="terminal"):
         run_human_interface_runtime_entry(
-            request_envelope=request,
+            request_envelope=terminal_request,
             continuation_envelope=_changed(
                 continuation,
                 continuation_state=TERMINAL_CONTINUATION,
@@ -299,7 +317,7 @@ def test_che_rejects_unknown_terminal_and_invalid_next_act_continuations(
 
     invalid_act_request = _request(
         tmp_path,
-        2,
+        4,
         source_act_identity="WRONG-NEXT-ACT",
     )
     with pytest.raises(FailClosedRuntimeError, match="next act identity is invalid"):
