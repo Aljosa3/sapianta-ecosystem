@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+"""Repository-local launcher for passive CRO composition."""
+
+from aigol.runtime.constitutional_runtime_observatory.composition import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
