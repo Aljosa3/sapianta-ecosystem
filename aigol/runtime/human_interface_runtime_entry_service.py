@@ -135,6 +135,16 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     validate_canonical_che_request_envelope_v1,
     validate_canonical_che_response_envelope_v1,
 )
+from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    CLARIFICATION_RESPONSE,
+    COMMITMENT,
+    CONFIRMATION,
+    HUMAN_AUTHORITY_OWNER,
+    CanonicalHumanAuthorityActV1,
+    bind_canonical_human_authority_act_to_che_v1,
+    canonical_human_authority_act_from_request_v1,
+    validate_canonical_human_authority_act_v1,
+)
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
     EXECUTION_DECISION_APPROVED,
@@ -209,6 +219,9 @@ _CONTINUATION_BINDING_FIELDS = frozenset(
 )
 
 CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
+    "G69_07_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_V2"
+)
+_LEGACY_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
     "G69_05_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_V1"
 )
 _DELIVERY_RECORD_OUTCOME_UNKNOWN = DELIVERY_OUTCOME_UNKNOWN
@@ -228,6 +241,8 @@ _DELIVERY_RESOLUTION_RECORD_FIELDS = frozenset(
         "workspace_identity",
         "runtime_scope_identity",
         "interaction_identity",
+        "authority_act_identity",
+        "authority_act_digest",
         "producing_owner",
         "owner_state_identity",
         "owner_revision_before",
@@ -240,6 +255,10 @@ _DELIVERY_RESOLUTION_RECORD_FIELDS = frozenset(
         "evidence_references",
         "record_hash",
     }
+)
+_LEGACY_DELIVERY_RESOLUTION_RECORD_FIELDS = (
+    _DELIVERY_RESOLUTION_RECORD_FIELDS
+    - {"authority_act_identity", "authority_act_digest"}
 )
 
 
@@ -324,12 +343,23 @@ def run_human_interface_runtime_entry(
             return _resolve_canonical_che_delivery_v1(
                 canonical_request, resolution_query
             )
+        authority_act = canonical_human_authority_act_from_request_v1(
+            canonical_request
+        )
+        if authority_act is not None and continuation_envelope is None:
+            raise FailClosedRuntimeError(
+                "Human Authority Act requires a CHE continuation"
+            )
         return _execute_canonical_che_request_v1(
             canonical_request,
             lambda request: _run_human_interface_runtime_entry_owner_execution_v1(
                 interface_name=request.interface_identity,
                 session_id=request.session_identity,
-                human_requests=[_canonical_che_source_text(request)],
+                human_requests=[
+                    _canonical_che_authority_payload_text_v1(
+                        request, authority_act
+                    )
+                ],
                 created_at=request.created_at,
                 runtime_root=request.runtime_scope_identity,
                 workspace=request.workspace_identity,
@@ -338,6 +368,7 @@ def run_human_interface_runtime_entry(
             ),
             continuation_envelope=continuation_envelope,
             bind_continuation=True,
+            authority_act=authority_act,
         )
 
     if continuation_envelope is not None:
@@ -410,8 +441,14 @@ def _execute_canonical_che_request_v1(
     *,
     continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None = None,
     bind_continuation: bool = True,
+    authority_act: CanonicalHumanAuthorityActV1 | None = None,
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     canonical_request = validate_canonical_che_request_envelope_v1(request)
+    canonical_authority_act = (
+        validate_canonical_human_authority_act_v1(authority_act)
+        if authority_act is not None
+        else None
+    )
     if not bind_continuation:
         owner_result = owner_executor(canonical_request)
         if not isinstance(owner_result, dict):
@@ -455,13 +492,34 @@ def _execute_canonical_che_request_v1(
                 status=existing_delivery["delivery_state"],
             )
 
+        if canonical_authority_act is not None:
+            if supplied_continuation is None:
+                raise FailClosedRuntimeError(
+                    "Human Authority Act requires a CHE continuation"
+                )
+            if supplied_continuation.continuation_state == TERMINAL_CONTINUATION:
+                raise FailClosedRuntimeError(
+                    "Human Authority Act cannot target a terminal continuation"
+                )
+            _assert_canonical_che_authority_act_not_duplicate_v1(
+                canonical_request, canonical_authority_act
+            )
+            _validate_canonical_che_authority_owner_binding_v1(
+                canonical_request,
+                supplied_continuation,
+                canonical_authority_act,
+            )
+
         delivery_record = _begin_canonical_che_delivery_record_v1(
-            canonical_request, supplied_continuation
+            canonical_request,
+            supplied_continuation,
+            authority_act=canonical_authority_act,
         )
         try:
             prior_continuation = _prepare_canonical_che_continuation_v1(
                 canonical_request,
                 supplied_continuation,
+                authority_act=canonical_authority_act,
             )
             _validate_canonical_che_expected_owner_revision_v1(
                 canonical_request, prior_continuation
@@ -4715,9 +4773,27 @@ def _read_canonical_che_delivery_record_v1(path: Path) -> dict[str, Any]:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise FailClosedRuntimeError("CHE delivery record is unreadable") from exc
-    if not isinstance(value, dict) or set(value) != (
-        _DELIVERY_RESOLUTION_RECORD_FIELDS
+    if not isinstance(value, dict):
+        raise FailClosedRuntimeError("CHE delivery record structure is invalid")
+    if (
+        set(value) == _LEGACY_DELIVERY_RESOLUTION_RECORD_FIELDS
+        and value.get("record_version")
+        == _LEGACY_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION
     ):
+        if value.get("record_hash") != _canonical_che_delivery_record_hash_v1(
+            value
+        ):
+            raise FailClosedRuntimeError(
+                "CHE delivery record integrity is invalid"
+            )
+        value = {
+            **value,
+            "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
+            "authority_act_identity": NOT_APPLICABLE,
+            "authority_act_digest": NOT_APPLICABLE,
+        }
+        value["record_hash"] = _canonical_che_delivery_record_hash_v1(value)
+    if set(value) != _DELIVERY_RESOLUTION_RECORD_FIELDS:
         raise FailClosedRuntimeError("CHE delivery record structure is invalid")
     if value["record_version"] != CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION:
         raise FailClosedRuntimeError("CHE delivery record version is invalid")
@@ -4766,11 +4842,29 @@ def _existing_canonical_che_delivery_record_v1(
     return _read_canonical_che_delivery_record_v1(path) if path.is_file() else None
 
 
+def _assert_canonical_che_authority_act_not_duplicate_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    authority_act: CanonicalHumanAuthorityActV1,
+) -> None:
+    """Reject reuse of one authority identity before any owner invocation."""
+
+    store = _canonical_che_delivery_store_v1(request.runtime_scope_identity)
+    if not store.exists():
+        return
+    for path in sorted(store.glob("record-*.json")):
+        record = _read_canonical_che_delivery_record_v1(path)
+        if record["authority_act_identity"] == (
+            authority_act.authority_act_identity
+        ):
+            raise FailClosedRuntimeError("Human Authority Act is duplicate")
+
+
 def _validate_canonical_che_delivery_request_binding_v1(
     record: dict[str, Any],
     request: CanonicalHumanEntryRequestEnvelopeV1,
     continuation: CanonicalContinuationEnvelopeV1 | None,
 ) -> None:
+    authority_act = canonical_human_authority_act_from_request_v1(request)
     expected = {
         "request_identity": request.request_identity,
         "source_act_digest": canonical_che_request_source_act_digest_v1(request),
@@ -4782,6 +4876,16 @@ def _validate_canonical_che_delivery_request_binding_v1(
         "session_identity": request.session_identity,
         "workspace_identity": request.workspace_identity,
         "runtime_scope_identity": request.runtime_scope_identity,
+        "authority_act_identity": (
+            authority_act.authority_act_identity
+            if authority_act is not None
+            else NOT_APPLICABLE
+        ),
+        "authority_act_digest": (
+            replay_hash(authority_act.to_dict())
+            if authority_act is not None
+            else NOT_APPLICABLE
+        ),
     }
     if any(record[key] != value for key, value in expected.items()):
         raise FailClosedRuntimeError(
@@ -4799,6 +4903,8 @@ def _validate_canonical_che_delivery_request_binding_v1(
 def _begin_canonical_che_delivery_record_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     continuation: CanonicalContinuationEnvelopeV1 | None,
+    *,
+    authority_act: CanonicalHumanAuthorityActV1 | None = None,
 ) -> dict[str, Any]:
     record = {
         "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
@@ -4815,6 +4921,16 @@ def _begin_canonical_che_delivery_record_v1(
         "interaction_identity": (
             continuation.interaction_identity
             if continuation is not None
+            else NOT_APPLICABLE
+        ),
+        "authority_act_identity": (
+            authority_act.authority_act_identity
+            if authority_act is not None
+            else NOT_APPLICABLE
+        ),
+        "authority_act_digest": (
+            replay_hash(authority_act.to_dict())
+            if authority_act is not None
             else NOT_APPLICABLE
         ),
         "producing_owner": NOT_APPLICABLE,
@@ -5096,6 +5212,89 @@ def _validate_canonical_che_expected_owner_revision_v1(
         raise FailClosedRuntimeError("CHE expected owner revision is stale")
 
 
+def _canonical_che_authority_kind_for_owner_reply_v1(
+    permitted_reply_kind: Any,
+) -> str:
+    """Project an exact certified owner reply contract to the closed act kind."""
+
+    mapping = {
+        "OWNER_BOUND_REPLY": CLARIFICATION_RESPONSE,
+        "CONVERSATION_SEMANTIC_INPUT_OR_EXACT_COMMIT_ACT": (
+            CLARIFICATION_RESPONSE
+        ),
+        "EXACT_HUMAN_CANDIDATE_CONFIRMATION_ACT": CONFIRMATION,
+        "EXACT_HUMAN_OBJECTIVE_COMMIT_ACT": COMMITMENT,
+    }
+    if permitted_reply_kind not in mapping:
+        raise FailClosedRuntimeError(
+            "CHE owner reply contract has no canonical authority kind"
+        )
+    return mapping[permitted_reply_kind]
+
+
+def _validate_canonical_che_authority_owner_binding_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1,
+    authority_act: CanonicalHumanAuthorityActV1,
+) -> CanonicalHumanAuthorityActV1:
+    """Authenticate act bindings against current owner-issued evidence."""
+
+    workspace_state = latest_platform_core_workspace_state(
+        Path(request.runtime_scope_identity) / request.session_identity
+    )
+    restored = replay_backed_uhi_clarification_state(workspace_state)
+    envelope = (
+        restored.get("owner_bound_clarification_envelope")
+        if isinstance(restored, dict)
+        else None
+    )
+    if not isinstance(envelope, dict):
+        raise FailClosedRuntimeError(
+            "Human Authority Act owner binding evidence is unavailable"
+        )
+    for field_name in (
+        "clarification_identity",
+        "originating_owner",
+        "subject_identity",
+        "permitted_reply_kind",
+    ):
+        if not isinstance(envelope.get(field_name), str) or not envelope[field_name]:
+            raise FailClosedRuntimeError(
+                "Human Authority Act owner binding evidence is invalid"
+            )
+    if (
+        envelope.get("conversation_identity")
+        != continuation.expected_owner_state_identity
+        or envelope.get("conversation_identity")
+        != continuation.conversation_identity
+    ):
+        raise FailClosedRuntimeError(
+            "Human Authority Act owner state binding is invalid"
+        )
+    expected_revision = envelope.get("expected_revision")
+    if not isinstance(expected_revision, int) or isinstance(
+        expected_revision, bool
+    ):
+        raise FailClosedRuntimeError(
+            "Human Authority Act owner revision evidence is invalid"
+        )
+    return bind_canonical_human_authority_act_to_che_v1(
+        authority_act,
+        request,
+        continuation,
+        expected_authority_kind=(
+            _canonical_che_authority_kind_for_owner_reply_v1(
+                envelope["permitted_reply_kind"]
+            )
+        ),
+        expected_target_identity=envelope["clarification_identity"],
+        expected_target_revision=expected_revision,
+        expected_producing_owner=HUMAN_AUTHORITY_OWNER,
+        expected_owner=envelope["originating_owner"],
+        expected_authority_scope=envelope["subject_identity"],
+    )
+
+
 def _acquire_canonical_che_continuation_scope_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
 ) -> Path:
@@ -5145,6 +5344,8 @@ def _release_canonical_che_continuation_scope_v1(lock_path: Path) -> None:
 def _prepare_canonical_che_continuation_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None,
+    *,
+    authority_act: CanonicalHumanAuthorityActV1 | None = None,
 ) -> CanonicalContinuationEnvelopeV1 | None:
     """Validate and single-use claim an opaque continuation before owner entry."""
 
@@ -5220,9 +5421,14 @@ def _prepare_canonical_che_continuation_v1(
         raise FailClosedRuntimeError(
             "CHE continuation request runtime scope is mismatched"
         )
-    if request.source_act_identity != continuation.expected_next_act_identity:
+    if authority_act is None:
+        if request.source_act_identity != continuation.expected_next_act_identity:
+            raise FailClosedRuntimeError(
+                "CHE continuation next act identity is invalid"
+            )
+    elif request.source_act_identity != authority_act.authority_act_identity:
         raise FailClosedRuntimeError(
-            "CHE continuation next act identity is invalid"
+            "Human Authority Act request identity binding is invalid"
         )
     if request.request_identity == continuation.request_identity:
         raise FailClosedRuntimeError("CHE continuation request identity was reused")
@@ -5561,6 +5767,18 @@ def _canonical_che_source_text(
     )
 
 
+def _canonical_che_authority_payload_text_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    authority_act: CanonicalHumanAuthorityActV1 | None,
+) -> str:
+    """Forward the exact act payload through the temporary owner adapter."""
+
+    if authority_act is None:
+        return _canonical_che_source_text(request)
+    payload = authority_act.to_dict()["payload"]
+    return payload if isinstance(payload, str) else canonical_serialize(payload)
+
+
 def _canonical_che_response_from_owner_result(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     owner_result: dict[str, Any],
@@ -5852,6 +6070,18 @@ def _canonical_che_pending_or_refused_conversation_projection_v1(
         payload_constraints={
             "permitted_reply_kind": clarification["permitted_reply_kind"],
             "required_control_count": len(required),
+            "canonical_authority_act_binding": {
+                "authority_kind": (
+                    _canonical_che_authority_kind_for_owner_reply_v1(
+                        clarification["permitted_reply_kind"]
+                    )
+                ),
+                "target_identity": clarification["clarification_identity"],
+                "target_revision": revision_after,
+                "producing_owner": HUMAN_AUTHORITY_OWNER,
+                "expected_owner": clarification["originating_owner"],
+                "authority_scope": clarification["subject_identity"],
+            },
         },
         exact_human_act_required=True,
         cancellation_permitted=False,

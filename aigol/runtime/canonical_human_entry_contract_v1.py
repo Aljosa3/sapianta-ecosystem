@@ -1,9 +1,11 @@
 """Channel-neutral Canonical Human Entry transport contracts.
 
-These immutable envelopes carry transport information only.  They do not
-represent Human authority acts, references, failures, semantic state, workflow
-state, or any downstream owner artifact.  Continuation is an opaque binding
-contract: channels store and return it without interpreting its identities.
+These immutable envelopes carry transport information only.  An exclusive
+structured request may carry the separate Canonical Human Authority Act
+contract, but these envelopes do not themselves represent authority,
+references, failures, semantic state, workflow state, or a downstream owner
+artifact.  Continuation is an opaque binding contract: channels store and
+return it without interpreting its identities.
 """
 
 from __future__ import annotations
