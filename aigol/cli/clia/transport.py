@@ -6,6 +6,9 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from aigol.cli.aigol_cli import (
+    run_interactive_conversation as authenticated_human_interaction_runtime,
+)
 from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
@@ -93,7 +96,7 @@ def submit_clia_human_act_v1(
             created_at=session.created_at,
             runtime_root=session.runtime_root_reference,
             workspace=session.workspace_reference,
-            governed_runtime_runner=_development_only_governed_runtime_runner,
+            governed_runtime_runner=authenticated_human_interaction_runtime,
             presentation=transport_presentation,
             g31_human_actor_id=session.human_actor_reference,
         )
@@ -194,12 +197,6 @@ def run_clia_interactive_session_v1(
             continue
         append_clia_input_line_v1(session, line)
     return session
-
-
-def _development_only_governed_runtime_runner(*_args: Any, **_kwargs: Any) -> dict:
-    raise FailClosedRuntimeError(
-        "CLIA development skeleton has no production runtime-runner binding"
-    )
 
 
 def _require_exact_human_act(value: Any) -> str:

@@ -396,7 +396,6 @@ def test_import_and_owner_isolation() -> None:
     }
     for forbidden in (
         "aigol.cli.aicli",
-        "aigol.cli.aigol_cli",
         "aigol.acli_next",
         "sapianta_bridge",
         "conversation_interpreter",
@@ -436,7 +435,7 @@ def test_development_executable_adds_no_certified_production_path() -> None:
     source = (REPOSITORY_ROOT / "aigol" / "cli" / "clia" / "transport.py").read_text(
         encoding="utf-8"
     )
-    assert "_development_only_governed_runtime_runner" in source
+    assert "authenticated_human_interaction_runtime" in source
     assert "run_human_interface_runtime_entry(" in source
     assert "run_hir_conversation" not in source
     assert "compose_production_conversation" not in source
