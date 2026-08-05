@@ -16,6 +16,37 @@ import json
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from aigol.runtime.canonical_common_failure_presentation_owner_projection_contract_v1 import (
+    COMMON_FAILURE,
+    DELIVERY_RESOLUTION,
+    ERROR,
+    FAILURE,
+    HIGH,
+    HUMAN_AND_ELIGIBLE_SOURCE_VISIBLE,
+    INFORMATIONAL,
+    NEXT_ACT,
+    NON_RECOVERABLE,
+    NORMAL,
+    OWNER_FAILURE,
+    OWNER_OUTCOME,
+    OWNER_REFUSAL,
+    PENDING,
+    RECOVERABLE,
+    REFERENCE_UNAVAILABLE,
+    TERMINAL_OUTCOME,
+    TERMINAL_PRESENTATION,
+    UNKNOWN_DELIVERY,
+    WARNING,
+    CanonicalCommonFailureV1,
+    CanonicalOwnerProjectionV1,
+    CanonicalPresentationV1,
+    create_canonical_common_failure_v1,
+    create_canonical_owner_projection_v1,
+    create_canonical_presentation_v1,
+    validate_canonical_common_failure_v1,
+    validate_canonical_owner_projection_v1,
+    validate_canonical_presentation_v1,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
@@ -24,6 +55,9 @@ CANONICAL_CHE_REQUEST_CONTRACT_VERSION = (
     "G69_02_CANONICAL_CHE_REQUEST_ENVELOPE_V1"
 )
 CANONICAL_CHE_RESPONSE_CONTRACT_VERSION = (
+    "G69_10_CANONICAL_CHE_RESPONSE_ENVELOPE_V3"
+)
+LEGACY_CANONICAL_CHE_RESPONSE_CONTRACT_VERSION = (
     "G69_05_CANONICAL_CHE_RESPONSE_ENVELOPE_V2"
 )
 CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION = (
@@ -194,8 +228,16 @@ _RESPONSE_FIELDS = frozenset(
         "certification_references",
         "owner_transition",
         "continuation_envelope",
+        "owner_projection",
+        "presentation",
+        "common_failure",
     }
 )
+_LEGACY_RESPONSE_FIELDS = _RESPONSE_FIELDS - {
+    "owner_projection",
+    "presentation",
+    "common_failure",
+}
 _CONTINUATION_FIELDS = frozenset(
     {
         "contract_version",
@@ -803,6 +845,226 @@ class CanonicalContinuationEnvelopeV1:
         return cls(**envelope)
 
 
+def _canonical_che_outcome_contracts_v1(
+    *,
+    response_identity: str,
+    request_identity: str,
+    response_type: str,
+    owner_status: str,
+    presentation_payload: str | tuple[str, ...],
+    presentation_metadata: Mapping[str, Any],
+    transition: CanonicalHumanEntryOwnerTransitionV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> tuple[
+    CanonicalOwnerProjectionV1,
+    CanonicalPresentationV1,
+    CanonicalCommonFailureV1 | None,
+]:
+    """Translate certified CHE V2 facts into the universal G69-10 contracts."""
+
+    absent = NOT_APPLICABLE
+    next_act = {
+        "next_act_identity": transition.next_act_identity or absent,
+        "next_act_kind": transition.next_act_kind or absent,
+        "target_identity": transition.next_act_target_identity or absent,
+        "target_digest": transition.next_act_target_digest or absent,
+        "expected_owner_revision": transition.next_act_expected_owner_revision,
+        "permitted_controls": list(transition.permitted_controls),
+        "payload_constraints": _plain_json(transition.payload_constraints),
+        "exact_human_act_required": transition.exact_human_act_required,
+        "cancellation_permitted": transition.cancellation_permitted,
+        "interruption_permitted": transition.interruption_permitted,
+    }
+    terminal_state = {
+        "terminal": transition.response_disposition == TERMINAL_DISPOSITION,
+        "terminal_identity": transition.terminal_identity or absent,
+        "terminal_type": transition.terminal_type,
+        "terminal_status": transition.terminal_status,
+    }
+    continuation_projection = (
+        {
+            "continuation_identity": continuation.continuation_identity,
+            "continuation_state": continuation.continuation_state,
+            "expected_next_act_identity": continuation.expected_next_act_identity,
+            "expected_owner_state_identity": (
+                continuation.expected_owner_state_identity
+            ),
+            "expected_owner_revision": continuation.expected_owner_revision,
+        }
+        if continuation is not None
+        else {
+            "continuation_identity": absent,
+            "continuation_state": absent,
+            "expected_next_act_identity": absent,
+            "expected_owner_state_identity": absent,
+            "expected_owner_revision": absent,
+        }
+    )
+    owner_result_projection = {
+        "owner_status": owner_status,
+        "response_type": response_type,
+        "response_disposition": transition.response_disposition,
+        "retryability": transition.retryability,
+        "recovery_requirement": transition.recovery_requirement,
+        "refusal_type": transition.refusal_type,
+        "refusal_status": transition.refusal_status,
+        "delivery_resolution_status": transition.delivery_resolution_status,
+        "replay_reference_status": transition.replay_reference_status,
+        "certification_reference_status": (
+            transition.certification_reference_status
+        ),
+    }
+    projection = create_canonical_owner_projection_v1(
+        request_identity=request_identity,
+        response_identity=response_identity,
+        owner_identity=transition.producing_owner,
+        owner_state=transition.owner_state_identity,
+        owner_next_act=next_act,
+        owner_advancement=transition.advancement_outcome,
+        owner_revision_before=transition.owner_revision_before,
+        owner_revision=transition.owner_revision_after,
+        owner_terminal_state=terminal_state,
+        owner_continuation=continuation_projection,
+        owner_result_projection=owner_result_projection,
+        metadata={},
+    )
+
+    reference_projection = presentation_metadata.get(
+        "opaque_reference_validation"
+    )
+    reference_statuses = (
+        reference_projection.get("availability_statuses")
+        if isinstance(reference_projection, Mapping)
+        else None
+    )
+    reference_failed = (
+        isinstance(reference_statuses, (list, tuple))
+        and bool(reference_statuses)
+        and any(status != "AVAILABLE" for status in reference_statuses)
+    )
+    delivery_failed = transition.delivery_resolution_status in {
+        DELIVERY_NOT_FOUND,
+        DELIVERY_OUTCOME_UNKNOWN,
+        DELIVERY_ENTERED_NOT_ADVANCED,
+    }
+    owner_failed = any(
+        token in owner_status.upper()
+        for token in ("FAIL", "ERROR", "UNAVAILABLE", "INVALID")
+    )
+    refusal_failed = response_type == REFUSAL_RESPONSE
+    is_failure = refusal_failed or reference_failed or delivery_failed or owner_failed
+    if refusal_failed:
+        failure_kind = OWNER_REFUSAL
+    elif reference_failed:
+        failure_kind = REFERENCE_UNAVAILABLE
+    elif delivery_failed:
+        failure_kind = UNKNOWN_DELIVERY
+    else:
+        failure_kind = OWNER_FAILURE
+
+    presentation_state = {
+        PENDING_RESPONSE: PENDING,
+        INFORMATIONAL_RESPONSE: INFORMATIONAL,
+        REFUSAL_RESPONSE: FAILURE,
+        TERMINAL_RESPONSE: TERMINAL_PRESENTATION,
+    }[response_type]
+    if is_failure:
+        presentation_state = FAILURE
+    if transition.response_disposition == DELIVERY_RESOLUTION_DISPOSITION:
+        presentation_kind = DELIVERY_RESOLUTION
+    elif is_failure:
+        presentation_kind = COMMON_FAILURE
+    elif response_type == PENDING_RESPONSE:
+        presentation_kind = NEXT_ACT
+    elif response_type == TERMINAL_RESPONSE:
+        presentation_kind = TERMINAL_OUTCOME
+    else:
+        presentation_kind = OWNER_OUTCOME
+    messages = (
+        (presentation_payload,)
+        if isinstance(presentation_payload, str)
+        else presentation_payload
+    )
+    presentation = create_canonical_presentation_v1(
+        request_identity=request_identity,
+        response_identity=response_identity,
+        presentation_state=presentation_state,
+        presentation_kind=presentation_kind,
+        presentation_message=messages,
+        presentation_controls=transition.permitted_controls,
+        presentation_priority=HIGH if is_failure else NORMAL,
+        presentation_visibility=HUMAN_AND_ELIGIBLE_SOURCE_VISIBLE,
+        presentation_accessibility={
+            "ordered_text_available": True,
+            "structured_facts_available": True,
+            "language": presentation_metadata.get("language", "und"),
+            "reading_order": "DOCUMENT_ORDER",
+        },
+        presentation_metadata={
+            "source_content_format": presentation_metadata.get(
+                "content_format", "ORDERED_TEXT_SEGMENTS"
+            ),
+            "source_presentation_metadata_digest": replay_hash(
+                _plain_json(presentation_metadata)
+            ),
+        },
+    )
+    failure = None
+    if is_failure:
+        retryability = (
+            transition.retryability
+            if transition.retryability in {RETRYABLE, NOT_RETRYABLE}
+            else NOT_RETRYABLE
+        )
+        recoverability = (
+            RECOVERABLE
+            if retryability == RETRYABLE
+            or transition.recovery_requirement
+            not in {NO_RECOVERY_REQUIRED, NOT_APPLICABLE}
+            else NON_RECOVERABLE
+        )
+        failure_reason = (
+            transition.refusal_type
+            if refusal_failed
+            else (
+                ",".join(str(status) for status in reference_statuses)
+                if reference_failed
+                else (
+                    transition.delivery_resolution_status
+                    if delivery_failed
+                    else owner_status
+                )
+            )
+        )
+        failure_scope = (
+            transition.next_act_target_identity
+            or transition.owner_state_identity
+            or request_identity
+        )
+        failure = create_canonical_common_failure_v1(
+            failure_kind=failure_kind,
+            failure_scope=failure_scope,
+            failure_owner=transition.producing_owner,
+            severity=WARNING if delivery_failed else ERROR,
+            recoverability=recoverability,
+            retryability=retryability,
+            failure_reason=failure_reason,
+            owner_projection=projection,
+            continuation=continuation_projection,
+            revision=transition.owner_revision_after,
+            request_identity=request_identity,
+            response_identity=response_identity,
+            presentation_identity=presentation.presentation_identity,
+            metadata={
+                "recovery_requirement": transition.recovery_requirement,
+                "delivery_resolution_status": (
+                    transition.delivery_resolution_status
+                ),
+            },
+        )
+    return projection, presentation, failure
+
+
 @dataclass(frozen=True, slots=True)
 class CanonicalHumanEntryResponseEnvelopeV1:
     """Immutable channel-neutral transport response produced by CHE."""
@@ -822,6 +1084,9 @@ class CanonicalHumanEntryResponseEnvelopeV1:
     certification_references: tuple[str, ...]
     owner_transition: CanonicalHumanEntryOwnerTransitionV1
     continuation_envelope: CanonicalContinuationEnvelopeV1 | None = None
+    owner_projection: CanonicalOwnerProjectionV1 | None = None
+    presentation: CanonicalPresentationV1 | None = None
+    common_failure: CanonicalCommonFailureV1 | None = None
 
     def __post_init__(self) -> None:
         if self.contract_version != CANONICAL_CHE_RESPONSE_CONTRACT_VERSION:
@@ -901,6 +1166,52 @@ class CanonicalHumanEntryResponseEnvelopeV1:
                 raise FailClosedRuntimeError(
                     "CHE terminal Response cannot carry an active continuation"
                 )
+        expected_projection, expected_presentation, expected_failure = (
+            _canonical_che_outcome_contracts_v1(
+                response_identity=self.response_identity,
+                request_identity=self.request_identity,
+                response_type=self.response_type,
+                owner_status=self.owner_status,
+                presentation_payload=self.presentation_payload,
+                presentation_metadata=self.presentation_metadata,
+                transition=transition,
+                continuation=self.continuation_envelope,
+            )
+        )
+        projection = (
+            validate_canonical_owner_projection_v1(self.owner_projection)
+            if self.owner_projection is not None
+            else expected_projection
+        )
+        presentation = (
+            validate_canonical_presentation_v1(self.presentation)
+            if self.presentation is not None
+            else expected_presentation
+        )
+        failure = (
+            validate_canonical_common_failure_v1(self.common_failure)
+            if self.common_failure is not None
+            else expected_failure
+        )
+        if projection.to_dict() != expected_projection.to_dict():
+            raise FailClosedRuntimeError(
+                "CHE canonical Owner Projection binding is invalid"
+            )
+        if presentation.to_dict() != expected_presentation.to_dict():
+            raise FailClosedRuntimeError(
+                "CHE canonical Presentation binding is invalid"
+            )
+        if (failure is None) != (expected_failure is None) or (
+            failure is not None
+            and expected_failure is not None
+            and failure.to_dict() != expected_failure.to_dict()
+        ):
+            raise FailClosedRuntimeError(
+                "CHE canonical Common Failure binding is invalid"
+            )
+        object.__setattr__(self, "owner_projection", projection)
+        object.__setattr__(self, "presentation", presentation)
+        object.__setattr__(self, "common_failure", failure)
         canonical_serialize(self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
@@ -924,15 +1235,36 @@ class CanonicalHumanEntryResponseEnvelopeV1:
                 if self.continuation_envelope is not None
                 else None
             ),
+            "owner_projection": self.owner_projection.to_dict(),
+            "presentation": self.presentation.to_dict(),
+            "common_failure": (
+                self.common_failure.to_dict()
+                if self.common_failure is not None
+                else None
+            ),
         }
 
     @classmethod
     def from_dict(
         cls, envelope: dict[str, Any]
     ) -> "CanonicalHumanEntryResponseEnvelopeV1":
-        if not isinstance(envelope, dict) or set(envelope) != _RESPONSE_FIELDS:
+        if not isinstance(envelope, dict):
             raise FailClosedRuntimeError("CHE response envelope structure is invalid")
         normalized = dict(envelope)
+        fields = set(normalized)
+        if fields == _LEGACY_RESPONSE_FIELDS and normalized.get(
+            "contract_version"
+        ) == LEGACY_CANONICAL_CHE_RESPONSE_CONTRACT_VERSION:
+            normalized["contract_version"] = CANONICAL_CHE_RESPONSE_CONTRACT_VERSION
+            normalized.update(
+                {
+                    "owner_projection": None,
+                    "presentation": None,
+                    "common_failure": None,
+                }
+            )
+        elif fields != _RESPONSE_FIELDS:
+            raise FailClosedRuntimeError("CHE response envelope structure is invalid")
         owner_transition = normalized.get("owner_transition")
         if isinstance(owner_transition, dict):
             normalized["owner_transition"] = (
@@ -948,6 +1280,33 @@ class CanonicalHumanEntryResponseEnvelopeV1:
         elif continuation is not None:
             raise FailClosedRuntimeError(
                 "CHE response continuation envelope is invalid"
+            )
+        owner_projection = normalized.get("owner_projection")
+        if isinstance(owner_projection, dict):
+            normalized["owner_projection"] = CanonicalOwnerProjectionV1.from_dict(
+                owner_projection
+            )
+        elif owner_projection is not None:
+            raise FailClosedRuntimeError(
+                "CHE response canonical Owner Projection is invalid"
+            )
+        presentation = normalized.get("presentation")
+        if isinstance(presentation, dict):
+            normalized["presentation"] = CanonicalPresentationV1.from_dict(
+                presentation
+            )
+        elif presentation is not None:
+            raise FailClosedRuntimeError(
+                "CHE response canonical Presentation is invalid"
+            )
+        failure = normalized.get("common_failure")
+        if isinstance(failure, dict):
+            normalized["common_failure"] = CanonicalCommonFailureV1.from_dict(
+                failure
+            )
+        elif failure is not None:
+            raise FailClosedRuntimeError(
+                "CHE response canonical Common Failure is invalid"
             )
         return cls(**normalized)
 

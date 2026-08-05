@@ -102,6 +102,7 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     HUMAN_ACTOR,
     INFORMATIONAL_DISPOSITION,
     INFORMATIONAL_RESPONSE,
+    LEGACY_CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
     MANUAL_REVIEW_REQUIRED,
     NO_RECOVERY_REQUIRED,
     NOT_ADVANCED,
@@ -608,7 +609,11 @@ def _execute_canonical_che_request_v1(
             prior_continuation=prior_continuation,
         )
         final_response = replace(
-            response, continuation_envelope=issued_continuation
+            response,
+            continuation_envelope=issued_continuation,
+            owner_projection=None,
+            presentation=None,
+            common_failure=None,
         )
         _commit_canonical_che_delivery_response_v1(
             delivery_record, final_response
@@ -4883,8 +4888,14 @@ def _read_canonical_che_delivery_record_v1(path: Path) -> dict[str, Any]:
                 "CHE committed delivery response is invalid"
             ) from exc
         response = validate_canonical_che_response_envelope_v1(response_value)
+        response_hash_value = (
+            replay_hash(response_value)
+            if response_value.get("contract_version")
+            == LEGACY_CANONICAL_CHE_RESPONSE_CONTRACT_VERSION
+            else replay_hash(response.to_dict())
+        )
         if response.response_identity != value["response_identity"] or (
-            replay_hash(response.to_dict()) != value["response_hash"]
+            response_hash_value != value["response_hash"]
         ):
             raise FailClosedRuntimeError(
                 "CHE committed delivery response integrity is invalid"
@@ -6116,6 +6127,9 @@ def _canonical_che_bind_reference_projection_v1(
         response,
         presentation_metadata=metadata,
         evidence_references=tuple(dict.fromkeys(reference_evidence)),
+        owner_projection=None,
+        presentation=None,
+        common_failure=None,
     )
 
 
