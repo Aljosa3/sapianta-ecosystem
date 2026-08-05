@@ -145,6 +145,13 @@ from aigol.runtime.canonical_human_authority_act_contract_v1 import (
     canonical_human_authority_act_from_request_v1,
     validate_canonical_human_authority_act_v1,
 )
+from aigol.runtime.canonical_opaque_reference_contract_v1 import (
+    AVAILABLE as REFERENCE_AVAILABLE,
+    CanonicalOpaqueReferenceSetV1,
+    canonical_opaque_reference_set_from_request_v1,
+    canonical_opaque_reference_source_payload_from_request_v1,
+    validate_canonical_opaque_reference_set_v1,
+)
 from aigol.runtime.execution_authorization_runtime import render_execution_authorization_summary
 from aigol.runtime.grounded_execution_authorization_human_decision_binding import (
     EXECUTION_DECISION_APPROVED,
@@ -350,6 +357,9 @@ def run_human_interface_runtime_entry(
             raise FailClosedRuntimeError(
                 "Human Authority Act requires a CHE continuation"
             )
+        reference_set = canonical_opaque_reference_set_from_request_v1(
+            canonical_request, continuation_envelope
+        )
         return _execute_canonical_che_request_v1(
             canonical_request,
             lambda request: _run_human_interface_runtime_entry_owner_execution_v1(
@@ -357,18 +367,28 @@ def run_human_interface_runtime_entry(
                 session_id=request.session_identity,
                 human_requests=[
                     _canonical_che_authority_payload_text_v1(
-                        request, authority_act
+                        request, authority_act, reference_set
                     )
                 ],
                 created_at=request.created_at,
                 runtime_root=request.runtime_scope_identity,
                 workspace=request.workspace_identity,
                 governed_runtime_runner=governed_runtime_runner,
+                presentation=(
+                    {
+                        "canonical_opaque_reference_set": (
+                            reference_set.to_dict()
+                        )
+                    }
+                    if reference_set is not None
+                    else None
+                ),
                 g31_human_actor_id=request.actor_identity,
             ),
             continuation_envelope=continuation_envelope,
             bind_continuation=True,
             authority_act=authority_act,
+            reference_set=reference_set,
         )
 
     if continuation_envelope is not None:
@@ -442,6 +462,7 @@ def _execute_canonical_che_request_v1(
     continuation_envelope: CanonicalContinuationEnvelopeV1 | dict[str, Any] | None = None,
     bind_continuation: bool = True,
     authority_act: CanonicalHumanAuthorityActV1 | None = None,
+    reference_set: CanonicalOpaqueReferenceSetV1 | None = None,
 ) -> CanonicalHumanEntryResponseEnvelopeV1:
     canonical_request = validate_canonical_che_request_envelope_v1(request)
     canonical_authority_act = (
@@ -449,6 +470,19 @@ def _execute_canonical_che_request_v1(
         if authority_act is not None
         else None
     )
+    supplied_reference_set = (
+        validate_canonical_opaque_reference_set_v1(reference_set)
+        if reference_set is not None
+        else None
+    )
+    request_reference_set = canonical_opaque_reference_set_from_request_v1(
+        canonical_request, continuation_envelope
+    )
+    if supplied_reference_set != request_reference_set:
+        raise FailClosedRuntimeError(
+            "CHE opaque Reference Request binding is inconsistent"
+        )
+    canonical_reference_set = request_reference_set
     if not bind_continuation:
         owner_result = owner_executor(canonical_request)
         if not isinstance(owner_result, dict):
@@ -510,11 +544,36 @@ def _execute_canonical_che_request_v1(
                 canonical_authority_act,
             )
 
+        if canonical_reference_set is not None:
+            _assert_canonical_che_reference_retry_lineage_v1(
+                canonical_request, canonical_reference_set
+            )
+
         delivery_record = _begin_canonical_che_delivery_record_v1(
             canonical_request,
             supplied_continuation,
             authority_act=canonical_authority_act,
         )
+        if canonical_reference_set is not None:
+            unavailable_reference = next(
+                (
+                    reference
+                    for reference in canonical_reference_set.references
+                    if reference.availability_status != REFERENCE_AVAILABLE
+                ),
+                None,
+            )
+            if unavailable_reference is not None:
+                response = _canonical_che_reference_rejection_response_v1(
+                    canonical_request,
+                    canonical_reference_set,
+                    unavailable_reference,
+                    supplied_continuation,
+                )
+                _commit_canonical_che_delivery_response_v1(
+                    delivery_record, response
+                )
+                return response
         try:
             prior_continuation = _prepare_canonical_che_continuation_v1(
                 canonical_request,
@@ -538,6 +597,10 @@ def _execute_canonical_che_request_v1(
             prior_continuation=prior_continuation,
             strict_owner_projection=True,
         )
+        if canonical_reference_set is not None:
+            response = _canonical_che_bind_reference_projection_v1(
+                canonical_request, response, canonical_reference_set
+            )
         issued_continuation = _issue_canonical_che_continuation_v1(
             canonical_request,
             response,
@@ -5770,13 +5833,290 @@ def _canonical_che_source_text(
 def _canonical_che_authority_payload_text_v1(
     request: CanonicalHumanEntryRequestEnvelopeV1,
     authority_act: CanonicalHumanAuthorityActV1 | None,
+    reference_set: CanonicalOpaqueReferenceSetV1 | None = None,
 ) -> str:
     """Forward the exact act payload through the temporary owner adapter."""
 
     if authority_act is None:
+        if reference_set is not None:
+            payload = canonical_opaque_reference_source_payload_from_request_v1(
+                request
+            )
+            return (
+                payload
+                if isinstance(payload, str)
+                else canonical_serialize(payload)
+            )
         return _canonical_che_source_text(request)
     payload = authority_act.to_dict()["payload"]
     return payload if isinstance(payload, str) else canonical_serialize(payload)
+
+
+def _canonical_che_reference_projection_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    reference_set: CanonicalOpaqueReferenceSetV1,
+) -> dict[str, Any]:
+    """Project validated identity/order/status facts without referenced content."""
+
+    return {
+        "contract_version": reference_set.contract_version,
+        "request_identity": request.request_identity,
+        "source_act_identity": reference_set.source_act_identity,
+        "order_identity": reference_set.order_identity,
+        "interaction_identity": reference_set.interaction_identity,
+        "reference_set_identity": reference_set.reference_set_identity,
+        "ordered_reference_set_digest": (
+            reference_set.ordered_reference_set_digest
+        ),
+        "ordered_reference_identities": [
+            reference.reference_identity
+            for reference in reference_set.references
+        ],
+        "ordered_positions": [
+            reference.ordered_position
+            for reference in reference_set.references
+        ],
+        "availability_statuses": [
+            reference.availability_status
+            for reference in reference_set.references
+        ],
+        "validation_owner_identities": [
+            reference.validation_owner_identity
+            for reference in reference_set.references
+        ],
+        "validation_evidence_identities": [
+            reference.validation_evidence_identity
+            for reference in reference_set.references
+        ],
+        "validation_evidence_digests": [
+            reference.validation_evidence_digest
+            for reference in reference_set.references
+        ],
+        "retry_of_source_act_identity": (
+            reference_set.retry_of_source_act_identity
+        ),
+        "retry_of_order_identity": reference_set.retry_of_order_identity,
+        "retry_of_reference_set_digest": (
+            reference_set.retry_of_reference_set_digest
+        ),
+    }
+
+
+def _assert_canonical_che_reference_retry_lineage_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    reference_set: CanonicalOpaqueReferenceSetV1,
+) -> None:
+    """Require exact lineage for a corrected set and prohibit silent overwrite."""
+
+    store = _canonical_che_delivery_store_v1(request.runtime_scope_identity)
+    if not store.exists():
+        if reference_set.retry_of_reference_set_digest is not None:
+            raise FailClosedRuntimeError(
+                "opaque Reference retry lineage has no prior rejection"
+            )
+        return
+    prior_projections: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for path in sorted(store.glob("record-*.json")):
+        record = _read_canonical_che_delivery_record_v1(path)
+        if record["delivery_state"] != _DELIVERY_RECORD_COMMITTED:
+            continue
+        response = _response_from_canonical_che_delivery_record_v1(record)
+        metadata = response.to_dict()["presentation_metadata"]
+        projection = metadata.get("opaque_reference_validation")
+        if not isinstance(projection, dict):
+            continue
+        statuses = projection.get("availability_statuses")
+        if (
+            not isinstance(statuses, list)
+            or not statuses
+            or any(not isinstance(status, str) for status in statuses)
+        ):
+            raise FailClosedRuntimeError(
+                "committed opaque Reference projection is malformed"
+            )
+        if (
+            record["actor_identity"] == request.actor_identity
+            and record["session_identity"] == request.session_identity
+            and record["workspace_identity"] == request.workspace_identity
+        ):
+            prior_projections.append((record, projection))
+
+    same_digest_rejection = any(
+        projection.get("ordered_reference_set_digest")
+        == reference_set.ordered_reference_set_digest
+        and any(
+            status != REFERENCE_AVAILABLE
+            for status in projection["availability_statuses"]
+        )
+        for _, projection in prior_projections
+    )
+    if (
+        same_digest_rejection
+        and reference_set.retry_of_reference_set_digest is None
+    ):
+        raise FailClosedRuntimeError(
+            "rejected opaque Reference set requires explicit corrected retry lineage"
+        )
+
+    if reference_set.retry_of_reference_set_digest is None:
+        return
+    matching = [
+        (record, projection)
+        for record, projection in prior_projections
+        if projection.get("source_act_identity")
+        == reference_set.retry_of_source_act_identity
+        and projection.get("order_identity")
+        == reference_set.retry_of_order_identity
+        and projection.get("ordered_reference_set_digest")
+        == reference_set.retry_of_reference_set_digest
+    ]
+    if len(matching) != 1:
+        raise FailClosedRuntimeError(
+            "opaque Reference retry lineage is absent or ambiguous"
+        )
+    prior_record, prior_projection = matching[0]
+    if prior_record["interaction_identity"] != reference_set.interaction_identity:
+        raise FailClosedRuntimeError(
+            "opaque Reference retry interaction lineage is invalid"
+        )
+    statuses = prior_projection.get("availability_statuses")
+    if not isinstance(statuses, list) or not any(
+        status != REFERENCE_AVAILABLE for status in statuses
+    ):
+        raise FailClosedRuntimeError(
+            "opaque Reference retry must target a non-advancing rejection"
+        )
+
+
+def _canonical_che_reference_rejection_response_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    reference_set: CanonicalOpaqueReferenceSetV1,
+    failed_reference: Any,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    projection = _canonical_che_reference_projection_v1(
+        request, reference_set
+    )
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner=failed_reference.validation_owner_identity,
+        owner_state_identity=(
+            continuation.expected_owner_state_identity
+            if continuation is not None
+            else NOT_APPLICABLE
+        ),
+        owner_revision_before=(
+            continuation.expected_owner_revision
+            if continuation is not None
+            else NOT_APPLICABLE
+        ),
+        owner_revision_after=(
+            continuation.expected_owner_revision
+            if continuation is not None
+            else NOT_APPLICABLE
+        ),
+        response_disposition=INFORMATIONAL_DISPOSITION,
+        advancement_outcome=NOT_ADVANCED,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={
+            "failed_reference_identity": failed_reference.reference_identity,
+            "availability_status": failed_reference.availability_status,
+            "retryability": failed_reference.retryability,
+            "correction_requirement": failed_reference.correction_requirement,
+            "new_source_act_order_and_reference_set_required": (
+                failed_reference.retryability == RETRYABLE
+            ),
+        },
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=failed_reference.retryability,
+        recovery_requirement=(
+            RESUBMIT_PERMITTED_CONTROL
+            if failed_reference.retryability == RETRYABLE
+            else MANUAL_REVIEW_REQUIRED
+        ),
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
+    seed = {
+        "request_identity": request.request_identity,
+        "projection": projection,
+        "failed_reference_identity": failed_reference.reference_identity,
+        "transition": transition.to_dict(),
+    }
+    digest = replay_hash(seed).removeprefix("sha256:")
+    return CanonicalHumanEntryResponseEnvelopeV1(
+        contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        response_identity=f"CHE-OPAQUE-REFERENCE-RESPONSE-{digest}",
+        request_identity=request.request_identity,
+        response_type=INFORMATIONAL_RESPONSE,
+        producing_owner=failed_reference.validation_owner_identity,
+        owner_status=(
+            "OPAQUE_REFERENCE_" + failed_reference.availability_status
+        ),
+        advancement_state=NOT_ADVANCED,
+        presentation_payload=(
+            "Opaque Reference validation did not advance the owner.",
+            "Reference: " + failed_reference.reference_identity,
+            "Availability: " + failed_reference.availability_status,
+            "Correction: " + failed_reference.correction_requirement,
+        ),
+        presentation_metadata={
+            "content_format": "ORDERED_TEXT_SEGMENTS",
+            "language": "und",
+            "projection_owner": "CANONICAL_HUMAN_ENTRY_TRANSPORT",
+            "opaque_reference_validation": projection,
+        },
+        correlation_identity=f"CHE-OPAQUE-REFERENCE-CORRELATION-{digest}",
+        evidence_references=(
+            failed_reference.validation_evidence_identity,
+            failed_reference.validation_evidence_digest,
+        ),
+        replay_references=(),
+        certification_references=(),
+        owner_transition=transition,
+        continuation_envelope=continuation,
+    )
+
+
+def _canonical_che_bind_reference_projection_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    response: CanonicalHumanEntryResponseEnvelopeV1,
+    reference_set: CanonicalOpaqueReferenceSetV1,
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    projection = _canonical_che_reference_projection_v1(
+        request, reference_set
+    )
+    metadata = response.to_dict()["presentation_metadata"]
+    metadata["opaque_reference_validation"] = projection
+    reference_evidence: list[str] = list(response.evidence_references)
+    for reference in reference_set.references:
+        reference_evidence.extend(
+            (
+                reference.validation_evidence_identity,
+                reference.validation_evidence_digest,
+            )
+        )
+    return replace(
+        response,
+        presentation_metadata=metadata,
+        evidence_references=tuple(dict.fromkeys(reference_evidence)),
+    )
 
 
 def _canonical_che_response_from_owner_result(
