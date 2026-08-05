@@ -10,6 +10,18 @@ import subprocess
 import pytest
 
 from aigol.cli.clia import presentation, session, transport
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+    CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+    DELIVERY_NOT_APPLICABLE,
+    INFORMATIONAL_DISPOSITION,
+    INFORMATIONAL_RESPONSE,
+    NOT_ADVANCED,
+    NOT_APPLICABLE,
+    REFERENCE_NOT_APPLICABLE,
+    CanonicalHumanEntryOwnerTransitionV1,
+    CanonicalHumanEntryResponseEnvelopeV1,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 
 
@@ -28,15 +40,60 @@ def _open_session(identity: str = "CLIA-TEST-SESSION") -> session.CliaTransportS
     return value
 
 
-def _che_response(arguments: dict, **extra) -> dict:
-    return {
-        **arguments["presentation"],
-        "canonical_runtime_entry_service_version": "CHE-V1",
-        "canonical_runtime_entry_interface": arguments["interface_name"],
-        "canonical_runtime_entry_session_id": arguments["session_id"],
-        "canonical_runtime_entry_status": "CHE-RETURNED",
-        **extra,
-    }
+def _che_response(arguments: dict, **extra) -> CanonicalHumanEntryResponseEnvelopeV1:
+    request = arguments["request_envelope"]
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner="G68-01-TEST-OWNER",
+        owner_state_identity=NOT_APPLICABLE,
+        owner_revision_before=NOT_APPLICABLE,
+        owner_revision_after=NOT_APPLICABLE,
+        response_disposition=INFORMATIONAL_DISPOSITION,
+        advancement_outcome=NOT_ADVANCED,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=NOT_APPLICABLE,
+        recovery_requirement=NOT_APPLICABLE,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
+    return CanonicalHumanEntryResponseEnvelopeV1(
+        contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        response_identity=request.request_identity + ":RESPONSE",
+        request_identity=request.request_identity,
+        response_type=INFORMATIONAL_RESPONSE,
+        producing_owner=transition.producing_owner,
+        owner_status="CHE_RETURNED",
+        advancement_state=NOT_ADVANCED,
+        presentation_payload=("Exact owner response.",),
+        presentation_metadata={
+            "content_format": "ORDERED_TEXT_SEGMENTS",
+            "language": "und",
+            **extra,
+        },
+        correlation_identity=request.request_identity + ":CORRELATION",
+        evidence_references=(),
+        replay_references=(),
+        certification_references=(),
+        owner_transition=transition,
+    )
 
 
 def _reader(values: list[str]) -> tuple[Callable[[str], str], list[str]]:
@@ -88,21 +145,24 @@ def test_one_exact_human_act_calls_only_che_once(monkeypatch) -> None:
     )
 
     assert len(calls) == 1
-    assert calls[0]["interface_name"] == session.CLIA_INTERFACE_NAME
-    assert calls[0]["session_id"] == value.transport_session_identity
-    assert calls[0]["human_requests"] == ["action: create"]
-    assert calls[0]["g31_human_actor_id"] == "HUMAN-TEST"
+    request = calls[0]["request_envelope"]
+    assert request.interface_identity == session.CLIA_INTERFACE_NAME
+    assert request.session_identity == value.transport_session_identity
+    assert request.source_payload == "action: create"
+    assert request.actor_identity == "HUMAN-TEST"
     assert callable(calls[0]["governed_runtime_runner"])
-    assert result.che_response["owner_message"] == "exact owner response"
+    assert result.che_response["presentation_metadata"]["owner_message"] == (
+        "exact owner response"
+    )
     assert value.next_submission_sequence == 2
     assert value.status is session.CliaTransportStatus.OPEN
 
 
 def test_terminal_prompt_and_send_control_are_not_part_of_human_act(monkeypatch) -> None:
-    acts: list[list[str]] = []
+    acts: list[str] = []
 
     def fake_che(**kwargs):
-        acts.append(kwargs["human_requests"])
+        acts.append(kwargs["request_envelope"].source_payload)
         return _che_response(kwargs)
 
     monkeypatch.setattr(transport, "run_human_interface_runtime_entry", fake_che)
@@ -115,9 +175,9 @@ def test_terminal_prompt_and_send_control_are_not_part_of_human_act(monkeypatch)
         output_writer=output.append,
     )
 
-    assert acts == [["action: create"]]
+    assert acts == ["action: create"]
     assert prompts == ["clia> ", "... ", "clia> "]
-    assert all("clia>" not in act and "/send" not in act for act in acts[0])
+    assert "clia>" not in acts[0] and "/send" not in acts[0]
     assert value.status is session.CliaTransportStatus.CLOSED
 
 
@@ -125,7 +185,7 @@ def test_multiline_human_act_preserves_exact_order_and_content(monkeypatch) -> N
     acts: list[str] = []
 
     def fake_che(**kwargs):
-        acts.extend(kwargs["human_requests"])
+        acts.append(kwargs["request_envelope"].source_payload)
         return _che_response(kwargs)
 
     monkeypatch.setattr(transport, "run_human_interface_runtime_entry", fake_che)
@@ -261,7 +321,7 @@ def test_one_send_creates_one_invocation_and_second_empty_send_does_not(monkeypa
         output_writer=lambda _value: None,
     )
     assert len(calls) == 1
-    assert calls[0]["human_requests"] == ["one act"]
+    assert calls[0]["request_envelope"].source_payload == "one act"
 
 
 def test_unknown_delivery_fails_closed_and_never_retries(monkeypatch) -> None:
@@ -317,7 +377,10 @@ def test_response_fidelity_preserves_all_che_data(monkeypatch) -> None:
     heading, body = result.presentation.split("\n", 1)
     assert heading == presentation.CLIA_RESPONSE_HEADING
     assert json.loads(body) == result.che_response
-    assert {key: result.che_response[key] for key in exact_payload} == exact_payload
+    assert {
+        key: result.che_response["presentation_metadata"][key]
+        for key in exact_payload
+    } == exact_payload
 
 
 @pytest.mark.parametrize(
@@ -391,6 +454,8 @@ def test_import_and_owner_isolation() -> None:
         name for name in imported_modules if name.startswith("aigol.runtime")
     }
     assert runtime_imports == {
+        "aigol.runtime.canonical_hic_conformance_runtime_v1",
+        "aigol.runtime.canonical_human_entry_contract_v1",
         "aigol.runtime.human_interface_runtime_entry_service",
         "aigol.runtime.models",
     }
@@ -435,7 +500,7 @@ def test_development_executable_adds_no_certified_production_path() -> None:
     source = (REPOSITORY_ROOT / "aigol" / "cli" / "clia" / "transport.py").read_text(
         encoding="utf-8"
     )
-    assert "authenticated_human_interaction_runtime" in source
+    assert "reject_hic_owned_workflow_v1" in source
     assert "run_human_interface_runtime_entry(" in source
     assert "run_hir_conversation" not in source
     assert "compose_production_conversation" not in source

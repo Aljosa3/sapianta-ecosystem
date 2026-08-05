@@ -6,8 +6,14 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from aigol.cli.aigol_cli import (
-    run_interactive_conversation as authenticated_human_interaction_runtime,
+from aigol.runtime.canonical_hic_conformance_runtime_v1 import (
+    CLIA_CONFORMANCE_PROFILE_V1,
+    create_canonical_hic_text_request_v1,
+    reject_hic_owned_workflow_v1,
+)
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    CanonicalHumanEntryResponseEnvelopeV1,
+    validate_canonical_che_response_envelope_v1,
 )
 from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
@@ -19,12 +25,8 @@ from .presentation import (
     validate_clia_che_response_v1,
 )
 from .session import (
-    CLIA_ADAPTER_IDENTITY,
-    CLIA_CHANNEL_IDENTITY,
     CLIA_DEVELOPMENT_STATUS,
-    CLIA_INTERFACE_NAME,
     CLIA_MAX_HUMAN_ACT_CHARACTERS,
-    CLIA_TRANSPORT_VERSION,
     CliaTransportSession,
     acknowledge_clia_submission_v1,
     append_clia_input_line_v1,
@@ -59,6 +61,7 @@ class CliaDeliveryUncertainError(FailClosedRuntimeError):
 class CliaSubmissionResult:
     submission_identity: str
     che_response: dict[str, Any]
+    canonical_response: CanonicalHumanEntryResponseEnvelopeV1
     presentation: str
     development_status: str = CLIA_DEVELOPMENT_STATUS
 
@@ -80,25 +83,30 @@ def submit_clia_human_act_v1(
                 "CLIA submitted act does not match the exact local buffer"
             )
     submission_identity = begin_clia_submission_v1(session)
-    transport_presentation = {
-        "clia_transport_version": CLIA_TRANSPORT_VERSION,
-        "clia_adapter_identity": CLIA_ADAPTER_IDENTITY,
-        "clia_channel_identity": CLIA_CHANNEL_IDENTITY,
-        "clia_transport_session_identity": session.transport_session_identity,
-        "clia_submission_identity": submission_identity,
-        "clia_development_status": CLIA_DEVELOPMENT_STATUS,
-    }
+    request_identity = f"{submission_identity}:CHE-REQUEST"
+    source_act_identity = (
+        session.last_che_continuation_envelope.expected_next_act_identity
+        if session.last_che_continuation_envelope is not None
+        else f"{submission_identity}:SOURCE-ACT"
+    )
+    request = create_canonical_hic_text_request_v1(
+        profile=CLIA_CONFORMANCE_PROFILE_V1,
+        actor_identity=session.human_actor_reference,
+        session_identity=session.transport_session_identity,
+        workspace_identity=session.workspace_reference,
+        runtime_scope_identity=session.runtime_root_reference,
+        request_identity=request_identity,
+        source_act_identity=source_act_identity,
+        order_identity=f"{submission_identity}:ORDER",
+        idempotency_identity=f"{submission_identity}:IDEMPOTENCY",
+        exact_text=exact_act,
+        created_at=session.created_at,
+    )
     try:
         response = run_human_interface_runtime_entry(
-            interface_name=CLIA_INTERFACE_NAME,
-            session_id=session.transport_session_identity,
-            human_requests=[exact_act],
-            created_at=session.created_at,
-            runtime_root=session.runtime_root_reference,
-            workspace=session.workspace_reference,
-            governed_runtime_runner=authenticated_human_interaction_runtime,
-            presentation=transport_presentation,
-            g31_human_actor_id=session.human_actor_reference,
+            request_envelope=request,
+            continuation_envelope=session.last_che_continuation_envelope,
+            governed_runtime_runner=reject_hic_owned_workflow_v1,
         )
     except BaseException as exc:
         fail_clia_transport_session_v1(
@@ -109,12 +117,13 @@ def submit_clia_human_act_v1(
             "CLIA failed closed because CHE delivery could not be acknowledged"
         ) from exc
     try:
+        canonical_response = validate_canonical_che_response_envelope_v1(response)
         validated_response = validate_clia_che_response_v1(
-            response,
+            canonical_response,
             transport_session_identity=session.transport_session_identity,
             submission_identity=submission_identity,
         )
-        presentation = render_clia_che_response_v1(validated_response)
+        presentation = render_clia_che_response_v1(canonical_response)
     except FailClosedRuntimeError:
         fail_clia_transport_session_v1(
             session,
@@ -124,13 +133,13 @@ def submit_clia_human_act_v1(
     acknowledge_clia_submission_v1(
         session,
         submission_identity=submission_identity,
-        che_correlation_reference=validated_response[
-            "canonical_runtime_entry_session_id"
-        ],
+        che_correlation_reference=canonical_response.correlation_identity,
+        che_continuation_envelope=canonical_response.continuation_envelope,
     )
     return CliaSubmissionResult(
         submission_identity=submission_identity,
         che_response=deepcopy(validated_response),
+        canonical_response=canonical_response,
         presentation=presentation,
     )
 

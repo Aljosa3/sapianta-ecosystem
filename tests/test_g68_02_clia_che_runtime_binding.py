@@ -7,8 +7,22 @@ import json
 from pathlib import Path
 import subprocess
 
-from aigol.cli.aigol_cli import run_interactive_conversation
 from aigol.cli.clia import session, transport
+from aigol.runtime.canonical_hic_conformance_runtime_v1 import (
+    reject_hic_owned_workflow_v1,
+)
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+    CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+    DELIVERY_NOT_APPLICABLE,
+    INFORMATIONAL_DISPOSITION,
+    INFORMATIONAL_RESPONSE,
+    NOT_ADVANCED,
+    NOT_APPLICABLE,
+    REFERENCE_NOT_APPLICABLE,
+    CanonicalHumanEntryOwnerTransitionV1,
+    CanonicalHumanEntryResponseEnvelopeV1,
+)
 from aigol.runtime.human_interface_runtime_entry_service import (
     run_human_interface_runtime_entry,
 )
@@ -30,15 +44,62 @@ def _open_session(identity: str = "CLIA-G68-02-SESSION") -> session.CliaTranspor
     return value
 
 
-def _che_response(arguments: dict, **extra: object) -> dict:
-    return {
-        **arguments["presentation"],
-        "canonical_runtime_entry_service_version": "CHE-G68-02-TEST",
-        "canonical_runtime_entry_interface": arguments["interface_name"],
-        "canonical_runtime_entry_session_id": arguments["session_id"],
-        "canonical_runtime_entry_status": "CHE-RUNTIME-ENTRY-VERIFIED",
-        **extra,
-    }
+def _che_response(
+    arguments: dict, **extra: object
+) -> CanonicalHumanEntryResponseEnvelopeV1:
+    request = arguments["request_envelope"]
+    transition = CanonicalHumanEntryOwnerTransitionV1(
+        contract_version=CANONICAL_CHE_OWNER_TRANSITION_CONTRACT_VERSION,
+        producing_owner="G68-02-TEST-OWNER",
+        owner_state_identity=NOT_APPLICABLE,
+        owner_revision_before=NOT_APPLICABLE,
+        owner_revision_after=NOT_APPLICABLE,
+        response_disposition=INFORMATIONAL_DISPOSITION,
+        advancement_outcome=NOT_ADVANCED,
+        next_act_identity=None,
+        next_act_kind=None,
+        next_act_target_identity=None,
+        next_act_target_digest=None,
+        next_act_expected_owner_revision=NOT_APPLICABLE,
+        permitted_controls=(),
+        payload_constraints={},
+        exact_human_act_required=False,
+        cancellation_permitted=False,
+        interruption_permitted=False,
+        refusal_identity=None,
+        refusal_type=NOT_APPLICABLE,
+        refusal_status=NOT_APPLICABLE,
+        terminal_identity=None,
+        terminal_type=NOT_APPLICABLE,
+        terminal_status=NOT_APPLICABLE,
+        retryability=NOT_APPLICABLE,
+        recovery_requirement=NOT_APPLICABLE,
+        delivery_resolution_status=DELIVERY_NOT_APPLICABLE,
+        resolved_response_identity=None,
+        resolved_response_hash=None,
+        replay_reference_status=REFERENCE_NOT_APPLICABLE,
+        certification_reference_status=REFERENCE_NOT_APPLICABLE,
+    )
+    return CanonicalHumanEntryResponseEnvelopeV1(
+        contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
+        response_identity=request.request_identity + ":RESPONSE",
+        request_identity=request.request_identity,
+        response_type=INFORMATIONAL_RESPONSE,
+        producing_owner=transition.producing_owner,
+        owner_status="CHE_RUNTIME_ENTRY_VERIFIED",
+        advancement_state=NOT_ADVANCED,
+        presentation_payload=("Owner response available.",),
+        presentation_metadata={
+            "content_format": "ORDERED_TEXT_SEGMENTS",
+            "language": "und",
+            **extra,
+        },
+        correlation_identity=request.request_identity + ":CORRELATION",
+        evidence_references=(),
+        replay_references=(),
+        certification_references=(),
+        owner_transition=transition,
+    )
 
 
 def _transport_imports_and_calls() -> tuple[set[str], list[str]]:
@@ -72,61 +133,37 @@ def test_clia_passes_the_authenticated_runtime_binding_to_che_once(monkeypatch) 
     )
 
     assert len(calls) == 1
-    assert calls[0]["governed_runtime_runner"] is run_interactive_conversation
-    assert result.che_response["canonical_runtime_entry_status"] == (
-        "CHE-RUNTIME-ENTRY-VERIFIED"
+    assert calls[0]["governed_runtime_runner"] is reject_hic_owned_workflow_v1
+    assert result.che_response["owner_status"] == (
+        "CHE_RUNTIME_ENTRY_VERIFIED"
     )
 
 
 def test_instrumented_human_clia_che_hir_conversation_chain_is_exact(monkeypatch) -> None:
     events: list[str] = []
 
-    def conversation_entry() -> dict:
-        events.append("Conversation")
-        return {
-            "entered": True,
-            "repository_mutation_reached": False,
-            "worker_execution_reached": False,
-            "provider_execution_reached": False,
-            "replay_generation_reached": False,
-            "certification_reached": False,
-        }
-
-    def observed_hir(*_args, **_kwargs) -> dict:
-        events.append("HIR")
-        return conversation_entry()
-
     def observed_che(**kwargs) -> dict:
         events.append("CHE")
-        hir_result = kwargs["governed_runtime_runner"](
-            object(), input_func=lambda: "", output_func=lambda _value: None
-        )
-        return _che_response(kwargs, hir_result=hir_result)
+        assert kwargs["governed_runtime_runner"] is reject_hic_owned_workflow_v1
+        return _che_response(kwargs, owner_chain_selected_by="CHE")
 
-    monkeypatch.setattr(
-        transport, "authenticated_human_interaction_runtime", observed_hir
-    )
     monkeypatch.setattr(transport, "run_human_interface_runtime_entry", observed_che)
     result = transport.submit_clia_human_act_v1(
         session=_open_session(), human_act="exact Human act"
     )
 
-    assert events == ["CHE", "HIR", "Conversation"]
-    assert result.che_response["hir_result"] == {
-        "entered": True,
-        "repository_mutation_reached": False,
-        "worker_execution_reached": False,
-        "provider_execution_reached": False,
-        "replay_generation_reached": False,
-        "certification_reached": False,
-    }
+    assert events == ["CHE"]
+    assert result.che_response["presentation_metadata"][
+        "owner_chain_selected_by"
+    ] == "CHE"
 
 
 def test_clia_invokes_only_the_canonical_human_entry_runtime_function() -> None:
     imports, calls = _transport_imports_and_calls()
     assert calls.count("run_human_interface_runtime_entry") == 1
     assert "authenticated_human_interaction_runtime" not in calls
-    assert "aigol.cli.aigol_cli" in imports
+    assert "aigol.cli.aigol_cli" not in imports
+    assert "aigol.runtime.canonical_human_entry_contract_v1" in imports
     assert "aigol.runtime.human_interface_runtime_entry_service" in imports
 
 
@@ -136,7 +173,7 @@ def test_authenticated_binding_and_che_source_preserve_owner_order() -> None:
         inspect.getsourcefile(run_human_interface_runtime_entry) or ""
     ).read_text(encoding="utf-8")
 
-    assert "governed_runtime_runner=authenticated_human_interaction_runtime" in (
+    assert "governed_runtime_runner=reject_hic_owned_workflow_v1" in (
         transport_source
     )
     assert "compose_production_conversation_flow_binding_v1(" in che_source
@@ -159,8 +196,6 @@ def test_no_direct_clia_downstream_owner_import_or_call_exists() -> None:
         "constitutional_runtime_observatory",
     )
     for value in imports:
-        if value == "aigol.cli.aigol_cli":
-            continue
         assert not any(fragment in value for fragment in forbidden_fragments)
     assert not any(
         any(fragment in call.lower() for fragment in forbidden_fragments)
@@ -170,7 +205,7 @@ def test_no_direct_clia_downstream_owner_import_or_call_exists() -> None:
 
 def test_runtime_binding_transport_is_deterministic(monkeypatch) -> None:
     def observed_che(**kwargs):
-        assert kwargs["governed_runtime_runner"] is run_interactive_conversation
+        assert kwargs["governed_runtime_runner"] is reject_hic_owned_workflow_v1
         return _che_response(kwargs, owner_payload={"ordered": [1, 2, 3]})
 
     monkeypatch.setattr(transport, "run_human_interface_runtime_entry", observed_che)

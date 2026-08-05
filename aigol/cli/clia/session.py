@@ -6,11 +6,20 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from aigol.runtime.canonical_hic_conformance_runtime_v1 import (
+    CLIA_CONFORMANCE_PROFILE_V1,
+)
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    CanonicalContinuationEnvelopeV1,
+    validate_canonical_che_continuation_envelope_v1,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 
 
-CLIA_TRANSPORT_VERSION = "G68_01_CLIA_THIN_HIC_SKELETON_V1"
-CLIA_ADAPTER_IDENTITY = "CLIA_G68_01_DEVELOPMENT_HIC"
+CLIA_TRANSPORT_VERSION = (
+    "G69_13_COMPLETE_HIC_CONFORMANCE_AND_HISTORICAL_INDEPENDENCE_V1"
+)
+CLIA_ADAPTER_IDENTITY = CLIA_CONFORMANCE_PROFILE_V1.adapter_identity
 CLIA_CHANNEL_IDENTITY = "CLI"
 CLIA_INTERFACE_NAME = "CLIA"
 CLIA_DEVELOPMENT_STATUS = (
@@ -45,6 +54,7 @@ class CliaTransportSession:
     active_submission_identity: str | None = None
     last_submission_identity: str | None = None
     last_acknowledged_che_correlation_reference: str | None = None
+    last_che_continuation_envelope: CanonicalContinuationEnvelopeV1 | None = None
     transport_failure_reason: str | None = None
 
 
@@ -115,6 +125,23 @@ def validate_clia_transport_session_v1(session: Any) -> CliaTransportSession:
         value = getattr(session, field_name)
         if value is not None:
             _require_identity(value, field_name)
+    if session.last_che_continuation_envelope is not None:
+        continuation = validate_canonical_che_continuation_envelope_v1(
+            session.last_che_continuation_envelope
+        )
+        if any(
+            (
+                continuation.actor_identity != session.human_actor_reference,
+                continuation.session_identity
+                != session.transport_session_identity,
+                continuation.workspace_identity != session.workspace_reference,
+                continuation.runtime_scope_identity
+                != session.runtime_root_reference,
+            )
+        ):
+            raise FailClosedRuntimeError(
+                "CLIA Continuation transport binding is invalid"
+            )
     return session
 
 
@@ -181,6 +208,7 @@ def acknowledge_clia_submission_v1(
     *,
     submission_identity: str,
     che_correlation_reference: str,
+    che_continuation_envelope: CanonicalContinuationEnvelopeV1 | None = None,
 ) -> CliaTransportSession:
     _require_open_session(session)
     if session.active_submission_identity != submission_identity:
@@ -190,6 +218,13 @@ def acknowledge_clia_submission_v1(
     )
     session.last_acknowledged_che_correlation_reference = _require_identity(
         che_correlation_reference, "che_correlation_reference"
+    )
+    session.last_che_continuation_envelope = (
+        validate_canonical_che_continuation_envelope_v1(
+            che_continuation_envelope
+        )
+        if che_continuation_envelope is not None
+        else None
     )
     session.next_submission_sequence += 1
     session.active_submission_identity = None

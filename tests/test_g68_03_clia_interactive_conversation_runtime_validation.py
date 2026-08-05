@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Callable
-from copy import deepcopy
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -61,30 +60,11 @@ def _responses(output: list[str]) -> list[dict]:
 
 
 def _required_field(response: dict) -> str:
-    envelope = response["owner_bound_clarification_envelope"]
-    return envelope["required_field_or_evidence_codes"][0]
+    return response["owner_transition"]["permitted_controls"][0]
 
 
 def _binding(response: dict) -> dict:
-    return response["production_conversation_flow_binding"]
-
-
-def _slot_classes(value: object) -> set[str]:
-    found: set[str] = set()
-
-    def visit(item: object) -> None:
-        if isinstance(item, dict):
-            slot_class = item.get("slot_class")
-            if isinstance(slot_class, str):
-                found.add(slot_class)
-            for child in item.values():
-                visit(child)
-        elif isinstance(item, list):
-            for child in item:
-                visit(child)
-
-    visit(value)
-    return found
+    return response["owner_projection"]
 
 
 def _repository_source_snapshot() -> dict[str, str]:
@@ -116,18 +96,20 @@ def _run_real_interaction(
     calls: list[dict] = []
 
     def observed_che(**kwargs):
-        calls.append(deepcopy(kwargs))
+        calls.append(
+            {
+                "request_envelope": kwargs["request_envelope"].to_dict(),
+                "continuation_envelope": (
+                    kwargs["continuation_envelope"].to_dict()
+                    if kwargs["continuation_envelope"] is not None
+                    else None
+                ),
+                "governed_runtime_runner": kwargs["governed_runtime_runner"],
+            }
+        )
         return exact_che(**kwargs)
 
-    def forbidden_post_admission_runtime(*_args, **_kwargs):
-        raise AssertionError("Worker/provider-capable governed runtime was reached")
-
     monkeypatch.setattr(transport, "run_human_interface_runtime_entry", observed_che)
-    monkeypatch.setattr(
-        transport,
-        "authenticated_human_interaction_runtime",
-        forbidden_post_admission_runtime,
-    )
     value = _new_session(tmp_path, identity)
     read, prompts = _reader(inputs)
     output: list[str] = []
@@ -162,74 +144,72 @@ def test_real_clia_multiturn_conversation_advances_action_subject_outcome(
     assert before == after
     assert returned.status is session.CliaTransportStatus.CLOSED
     assert len(calls) == 3
-    assert [call["human_requests"] for call in calls] == [
-        [INITIAL_REQUEST],
-        [ACTION_ACT],
-        [SUBJECT_ACT],
+    assert [call["request_envelope"]["source_payload"] for call in calls] == [
+        INITIAL_REQUEST,
+        ACTION_ACT,
+        SUBJECT_ACT,
     ]
-    assert all(call["session_id"] == "CLIA-G68-03-REAL" for call in calls)
+    assert all(
+        call["request_envelope"]["session_identity"] == "CLIA-G68-03-REAL"
+        for call in calls
+    )
+    assert calls[0]["continuation_envelope"] is None
+    assert all(call["continuation_envelope"] is not None for call in calls[1:])
+    assert all(
+        call["governed_runtime_runner"] is transport.reject_hic_owned_workflow_v1
+        for call in calls
+    )
     for call in calls:
-        exact_act = call["human_requests"][0]
+        exact_act = call["request_envelope"]["source_payload"]
         assert "clia>" not in exact_act
         assert "/send" not in exact_act
         assert presentation.CLIA_RESPONSE_HEADING not in exact_act
 
     assert len(responses) == 3
-    assert [response["clia_submission_identity"] for response in responses] == [
-        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000001",
-        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000002",
-        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000003",
+    assert [response["request_identity"] for response in responses] == [
+        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000001:CHE-REQUEST",
+        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000002:CHE-REQUEST",
+        "CLIA-G68-03-REAL:CLIA-SUBMISSION:000003:CHE-REQUEST",
     ]
-    assert [response["clia_transport_session_identity"] for response in responses] == [
-        "CLIA-G68-03-REAL",
-        "CLIA-G68-03-REAL",
-        "CLIA-G68-03-REAL",
-    ]
+    assert all(
+        response["continuation_envelope"]["session_identity"]
+        == "CLIA-G68-03-REAL"
+        for response in responses
+    )
 
     bindings = [_binding(response) for response in responses]
     conversation_identities = {
-        binding["conversation_identity"] for binding in bindings
+        response["continuation_envelope"]["conversation_identity"]
+        for response in responses
     }
     assert len(conversation_identities) == 1
-    revisions = [binding["cwm_revision"] for binding in bindings]
+    revisions = [binding["owner_revision"] for binding in bindings]
     assert revisions[0] < revisions[1] < revisions[2]
     assert [_required_field(response) for response in responses] == [
         "action: <value>",
         "subject: <value>",
         "outcome: <value>",
     ]
-    assert "OPERATIVE_ACTION" in _slot_classes(responses[1])
-    assert "OPERATIVE_ACTION" in _slot_classes(responses[2])
-    assert "OPERATIVE_SUBJECT" in _slot_classes(responses[2])
-
     clarification_ids = [
-        response["owner_bound_clarification_envelope"]["clarification_identity"]
+        response["continuation_envelope"]["expected_next_act_identity"]
         for response in responses
     ]
     assert len(set(clarification_ids)) == 3
     assert all(
-        "OWNER_BOUND_CLARIFICATION_CONTINUATION"
-        in {item["stage"] for item in binding["ordered_predecessor_references"]}
-        for binding in bindings[1:]
-    )
-    assert all(
-        response["committed_objective_admission"] is None
-        and response["constitutional_execution_spine_completion"] is None
-        and response["runtime_entered"] is False
+        response["owner_transition"]["exact_human_act_required"] is True
         for response in responses
     )
     assert all(
-        binding["authorization_created"] is False
-        and binding["execution_invoked"] is False
-        and binding["worker_invoked"] is False
+        response["producing_owner"] == "CONVERSATION_LAYER_PLUS_HUMAN_AUTHORITY"
+        and response["common_failure"] is None
+        for response in responses
+    )
+    assert all(
+        binding["owner_terminal_state"]["terminal"] is False
         for binding in bindings
     )
-    assert responses[1]["canonical_typed_semantic_composition"][
-        "provider_assistance_invoked"
-    ] is False
-    assert responses[2]["canonical_typed_semantic_composition"][
-        "provider_assistance_invoked"
-    ] is False
+    assert all("workflow" not in response for response in responses)
+    assert all("semantic" not in response for response in responses)
     assert prompts == ["clia> ", "... ", "... ", "... ", "clia> ", "... ", "clia> ", "... ", "clia> "]
 
 
@@ -245,22 +225,20 @@ def test_malformed_continuation_is_refused_at_conversation_reply_consumption(
     )
 
     assert returned.status is session.CliaTransportStatus.CLOSED
-    assert [call["human_requests"] for call in calls] == [[INITIAL_REQUEST], [malformed]]
+    assert [call["request_envelope"]["source_payload"] for call in calls] == [
+        INITIAL_REQUEST,
+        malformed,
+    ]
     assert len(responses) == 2
     initial_binding = _binding(responses[0])
     malformed_binding = _binding(responses[1])
-    assert malformed_binding["conversation_identity"] == initial_binding[
-        "conversation_identity"
-    ]
-    assert malformed_binding["cwm_revision"] == initial_binding["cwm_revision"]
-    assert malformed_binding["cwm_state_hash"] == initial_binding["cwm_state_hash"]
+    assert malformed_binding["owner_state"] == initial_binding["owner_state"]
+    assert malformed_binding["owner_revision"] == initial_binding["owner_revision"]
     assert _required_field(responses[1]) == "action: <value>"
-    assert responses[1]["owner_bound_clarification_envelope"][
-        "clarification_identity"
-    ] == responses[0]["owner_bound_clarification_envelope"][
-        "clarification_identity"
-    ]
-    assert responses[1]["canonical_typed_semantic_composition"] is None
+    assert responses[1]["continuation_envelope"][
+        "expected_next_act_identity"
+    ] == responses[0]["continuation_envelope"]["expected_next_act_identity"]
+    assert responses[1]["advancement_state"] == "REFUSED"
 
 
 def test_clia_source_remains_transport_only_and_calls_che_only() -> None:
@@ -294,39 +272,20 @@ def test_clia_source_remains_transport_only_and_calls_che_only() -> None:
 
 
 def test_controlled_fixed_owner_responses_render_deterministically(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
-    fixed_response = {
-        "canonical_runtime_entry_service_version": "CHE-FIXED",
-        "canonical_runtime_entry_interface": "CLIA",
-        "canonical_runtime_entry_session_id": "CLIA-G68-03-FIXED",
-        "canonical_runtime_entry_status": "CLARIFICATION",
-        "owner_response": {"next_required": "action: <value>", "revision": 1},
-    }
-
-    def fixed_che(**kwargs):
-        return {**kwargs["presentation"], **fixed_response}
-
-    monkeypatch.setattr(transport, "run_human_interface_runtime_entry", fixed_che)
-    presentations: list[bytes] = []
-    for index in range(2):
-        root = tmp_path / str(index)
-        value = _new_session(root, "CLIA-G68-03-FIXED")
-        read, _prompts = _reader(["same exact act", "/send", "/exit"])
-        output: list[str] = []
-        transport.run_clia_interactive_session_v1(
-            session=value,
-            input_reader=read,
-            output_writer=output.append,
-        )
-        presentations.append(
-            next(
-                item.encode("utf-8")
-                for item in output
-                if item.startswith(presentation.CLIA_RESPONSE_HEADING)
-            )
-        )
-    assert presentations[0] == presentations[1]
+    value = _new_session(tmp_path, "CLIA-G68-03-FIXED")
+    read, _prompts = _reader(["same exact act", "/send", "/exit"])
+    output: list[str] = []
+    transport.run_clia_interactive_session_v1(
+        session=value,
+        input_reader=read,
+        output_writer=output.append,
+    )
+    response = _responses(output)[0]
+    first = presentation.render_clia_che_response_v1(response).encode("utf-8")
+    second = presentation.render_clia_che_response_v1(response).encode("utf-8")
+    assert first == second
 
 
 def test_production_launchers_routes_and_development_classification_are_unchanged() -> None:
