@@ -1,4 +1,4 @@
-"""Development-only Constitutional Line Interface for AiGOL."""
+"""Canonical production Constitutional Line Interface for AiGOL."""
 
 from .main import build_clia_parser, main
 from .presentation import render_clia_che_response_v1, validate_clia_che_response_v1
@@ -6,6 +6,8 @@ from .session import (
     CLIA_ADAPTER_IDENTITY,
     CLIA_CHANNEL_IDENTITY,
     CLIA_DEVELOPMENT_STATUS,
+    CLIA_PRODUCTION_STATUS,
+    CLIA_PRODUCTION_ADAPTER_IDENTITY,
     CLIA_INTERFACE_NAME,
     CLIA_TRANSPORT_VERSION,
     CliaTransportSession,
@@ -24,6 +26,8 @@ __all__ = [
     "CLIA_ADAPTER_IDENTITY",
     "CLIA_CHANNEL_IDENTITY",
     "CLIA_DEVELOPMENT_STATUS",
+    "CLIA_PRODUCTION_STATUS",
+    "CLIA_PRODUCTION_ADAPTER_IDENTITY",
     "CLIA_INTERFACE_NAME",
     "CLIA_LOCAL_HELP",
     "CLIA_TRANSPORT_VERSION",

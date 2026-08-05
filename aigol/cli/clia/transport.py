@@ -1,4 +1,4 @@
-"""CHE-only exact Human-act transport for the development CLIA skeleton."""
+"""CHE-only exact Human-act transport for the canonical production CLIA."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ from typing import Any, Callable
 
 from aigol.runtime.canonical_hic_conformance_runtime_v1 import (
     CLIA_CONFORMANCE_PROFILE_V1,
+    CLIA_PRODUCTION_PROFILE_V1,
     create_canonical_hic_text_request_v1,
     reject_hic_owned_workflow_v1,
+    validate_production_hic_activation_v1,
 )
 from aigol.runtime.canonical_human_entry_contract_v1 import (
     CanonicalHumanEntryResponseEnvelopeV1,
@@ -26,6 +28,8 @@ from .presentation import (
 )
 from .session import (
     CLIA_DEVELOPMENT_STATUS,
+    CLIA_PRODUCTION_ADAPTER_IDENTITY,
+    CLIA_PRODUCTION_STATUS,
     CLIA_MAX_HUMAN_ACT_CHARACTERS,
     CliaTransportSession,
     acknowledge_clia_submission_v1,
@@ -43,7 +47,7 @@ from .session import (
 
 CLIA_LOCAL_HELP = "\n".join(
     [
-        "CLIA development-only thin Human Interaction Channel transport.",
+        "CLIA canonical thin Human Interaction Channel transport.",
         "Enter exact text lines, then use one transport control:",
         "/send   submit the exact buffered Human act to Canonical Human Entry",
         "/cancel clear only the unsent local buffer",
@@ -63,7 +67,7 @@ class CliaSubmissionResult:
     che_response: dict[str, Any]
     canonical_response: CanonicalHumanEntryResponseEnvelopeV1
     presentation: str
-    development_status: str = CLIA_DEVELOPMENT_STATUS
+    production_status: str = CLIA_PRODUCTION_STATUS
 
 
 def submit_clia_human_act_v1(
@@ -82,6 +86,15 @@ def submit_clia_human_act_v1(
             raise FailClosedRuntimeError(
                 "CLIA submitted act does not match the exact local buffer"
             )
+    # This is a release-status gate only. It supplies no workflow, branch,
+    # semantic, or owner behavior to the HIC.
+    production = session.adapter_identity == CLIA_PRODUCTION_ADAPTER_IDENTITY
+    if production:
+        try:
+            validate_production_hic_activation_v1(session.runtime_root_reference)
+        except FailClosedRuntimeError as exc:
+            fail_clia_transport_session_v1(session, str(exc))
+            raise
     submission_identity = begin_clia_submission_v1(session)
     request_identity = f"{submission_identity}:CHE-REQUEST"
     source_act_identity = (
@@ -90,7 +103,11 @@ def submit_clia_human_act_v1(
         else f"{submission_identity}:SOURCE-ACT"
     )
     request = create_canonical_hic_text_request_v1(
-        profile=CLIA_CONFORMANCE_PROFILE_V1,
+        profile=(
+            CLIA_PRODUCTION_PROFILE_V1
+            if production
+            else CLIA_CONFORMANCE_PROFILE_V1
+        ),
         actor_identity=session.human_actor_reference,
         session_identity=session.transport_session_identity,
         workspace_identity=session.workspace_reference,

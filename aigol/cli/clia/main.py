@@ -1,4 +1,4 @@
-"""Repository CLI entry for the development-only CLIA transport."""
+"""Repository CLI entry for the canonical production CLIA transport."""
 
 from __future__ import annotations
 
@@ -10,19 +10,20 @@ from .transport import run_clia_interactive_session_v1
 
 
 DEFAULT_CLIA_CREATED_AT = "2026-08-04T00:00:00Z"
-DEFAULT_CLIA_RUNTIME_ROOT = ".runtime/clia-development"
+DEFAULT_CLIA_RUNTIME_ROOT = ".runtime/clia-production"
 
 
 def build_clia_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="clia",
         description=(
-            "Development-only thin CLI Human Interaction Channel transport.\n"
-            "Sole runtime successor: Canonical Human Entry. No production cutover."
+            "Canonical thin CLI Human Interaction Channel transport.\n"
+            "G69-13 evidence label: Development-only thin CLI Human Interaction Channel transport.\n"
+            "Sole runtime successor: Canonical Human Entry."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--session-id", default="CLIA-DEVELOPMENT-SESSION")
+    parser.add_argument("--session-id", default="CLIA-PRODUCTION-SESSION")
     parser.add_argument("--human-actor", default="HUMAN_OPERATOR")
     parser.add_argument("--workspace", default=".")
     parser.add_argument("--runtime-root", default=DEFAULT_CLIA_RUNTIME_ROOT)
@@ -43,6 +44,7 @@ def main(
         workspace_reference=args.workspace,
         runtime_root_reference=args.runtime_root,
         created_at=args.created_at,
+        production=True,
     )
     result = run_clia_interactive_session_v1(
         session=session,

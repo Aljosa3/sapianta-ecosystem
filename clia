@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Repository-local launcher for the development-only CLIA transport."""
+"""Repository-local launcher for the canonical production CLIA transport."""
 
 from aigol.cli.clia.main import main
 

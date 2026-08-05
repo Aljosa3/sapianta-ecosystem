@@ -39,8 +39,9 @@ CANONICAL_HIC_CONFORMANCE_VERSION = (
 )
 DEVELOPMENT_HIC = "DEVELOPMENT_HIC"
 CONFORMANCE_HARNESS = "CONFORMANCE_HARNESS"
+PRODUCTION_HIC = "PRODUCTION_HIC"
 ALLOWED_HIC_CERTIFICATION_SCOPES = frozenset(
-    {DEVELOPMENT_HIC, CONFORMANCE_HARNESS}
+    {DEVELOPMENT_HIC, CONFORMANCE_HARNESS, PRODUCTION_HIC}
 )
 ALLOWED_HIC_CHANNEL_KINDS = frozenset(
     {"CLI", "GUI", "REST", "BROWSER", "SPEECH", "AGENT_TO_AGENT"}
@@ -76,6 +77,17 @@ CLIA_CONFORMANCE_PROFILE_V1 = CanonicalHICProfileV1(
     adapter_identity="CLIA_G69_13_DEVELOPMENT_HIC",
     channel_kind="CLI",
     certification_scope=DEVELOPMENT_HIC,
+)
+
+# G69-13 remains immutable conformance evidence.  B10 promotes the same thin
+# CLIA HIC family through a distinct production identity so production
+# Requests cannot be confused with development evidence.
+CLIA_PRODUCTION_PROFILE_V1 = CanonicalHICProfileV1(
+    conformance_version=CANONICAL_HIC_CONFORMANCE_VERSION,
+    interface_identity="CLIA",
+    adapter_identity="CLIA_G69_19_PRODUCTION_HIC",
+    channel_kind="CLI",
+    certification_scope=PRODUCTION_HIC,
 )
 
 NON_CLI_CONFORMANCE_PROFILE_V1 = CanonicalHICProfileV1(
@@ -128,6 +140,16 @@ def reject_hic_owned_workflow_v1(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
     raise FailClosedRuntimeError(
         "a conformant HIC cannot supply historical or owner workflow behavior"
     )
+
+
+def validate_production_hic_activation_v1(runtime_root: str) -> dict[str, Any]:
+    """Validate release status without giving the HIC workflow knowledge."""
+
+    from aigol.runtime.constitutional_production_cutover_v1 import (
+        validate_active_constitutional_production_cutover_v1,
+    )
+
+    return validate_active_constitutional_production_cutover_v1(runtime_root)
 
 
 def create_canonical_hic_text_request_v1(

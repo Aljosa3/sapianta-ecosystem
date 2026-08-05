@@ -1,4 +1,4 @@
-"""Transport-local session state for the development-only CLIA skeleton."""
+"""Transport-local session state for the canonical production CLIA."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from typing import Any
 
 from aigol.runtime.canonical_hic_conformance_runtime_v1 import (
     CLIA_CONFORMANCE_PROFILE_V1,
+    CLIA_PRODUCTION_PROFILE_V1,
 )
 from aigol.runtime.canonical_human_entry_contract_v1 import (
     CanonicalContinuationEnvelopeV1,
@@ -20,11 +21,13 @@ CLIA_TRANSPORT_VERSION = (
     "G69_13_COMPLETE_HIC_CONFORMANCE_AND_HISTORICAL_INDEPENDENCE_V1"
 )
 CLIA_ADAPTER_IDENTITY = CLIA_CONFORMANCE_PROFILE_V1.adapter_identity
+CLIA_PRODUCTION_ADAPTER_IDENTITY = CLIA_PRODUCTION_PROFILE_V1.adapter_identity
 CLIA_CHANNEL_IDENTITY = "CLI"
 CLIA_INTERFACE_NAME = "CLIA"
 CLIA_DEVELOPMENT_STATUS = (
     "CLIA_IMPLEMENTED_AS_DEVELOPMENT_HIC_NOT_PRODUCTION_CUTOVER"
 )
+CLIA_PRODUCTION_STATUS = "CLIA_CANONICAL_PRODUCTION_HIC_G69_19"
 CLIA_MAX_INPUT_LINES = 128
 CLIA_MAX_HUMAN_ACT_CHARACTERS = 65_536
 
@@ -65,6 +68,7 @@ def create_clia_transport_session_v1(
     workspace_reference: str,
     runtime_root_reference: str,
     created_at: str,
+    production: bool = False,
 ) -> CliaTransportSession:
     session = CliaTransportSession(
         transport_session_identity=_require_identity(
@@ -80,6 +84,9 @@ def create_clia_transport_session_v1(
             runtime_root_reference, "runtime_root_reference"
         ),
         created_at=_require_identity(created_at, "created_at"),
+        adapter_identity=(
+            CLIA_PRODUCTION_ADAPTER_IDENTITY if production else CLIA_ADAPTER_IDENTITY
+        ),
     )
     validate_clia_transport_session_v1(session)
     return session
@@ -98,7 +105,10 @@ def validate_clia_transport_session_v1(session: Any) -> CliaTransportSession:
         "channel_identity",
     ):
         _require_identity(getattr(session, field_name), field_name)
-    if session.adapter_identity != CLIA_ADAPTER_IDENTITY:
+    if session.adapter_identity not in {
+        CLIA_ADAPTER_IDENTITY,
+        CLIA_PRODUCTION_ADAPTER_IDENTITY,
+    }:
         raise FailClosedRuntimeError("CLIA adapter identity is invalid")
     if session.channel_identity != CLIA_CHANNEL_IDENTITY:
         raise FailClosedRuntimeError("CLIA channel identity is invalid")
