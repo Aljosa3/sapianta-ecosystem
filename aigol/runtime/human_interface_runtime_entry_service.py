@@ -146,6 +146,20 @@ from aigol.runtime.canonical_human_authority_act_contract_v1 import (
     canonical_human_authority_act_from_request_v1,
     validate_canonical_human_authority_act_v1,
 )
+from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
+    CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
+    DELIVERY_OUTCOME_UNKNOWN as CORRELATION_DELIVERY_OUTCOME_UNKNOWN,
+    NOT_APPLICABLE as CORRELATION_NOT_APPLICABLE,
+    RECORDED as CORRELATION_RECORDED,
+    REFERENCE_CREATED as CORRELATION_REFERENCE_CREATED,
+    REFERENCE_NOT_CREATED as CORRELATION_REFERENCE_NOT_CREATED,
+    UNAVAILABLE_PRE_WRITE,
+    CanonicalCHEEvidenceCorrelationV1,
+    canonical_che_response_evidence_digest_v1,
+    create_canonical_che_evidence_correlation_v1,
+    persist_canonical_che_evidence_correlation_v1,
+    validate_canonical_che_evidence_correlation_v1,
+)
 from aigol.runtime.canonical_opaque_reference_contract_v1 import (
     AVAILABLE as REFERENCE_AVAILABLE,
     CanonicalOpaqueReferenceSetV1,
@@ -227,6 +241,9 @@ _CONTINUATION_BINDING_FIELDS = frozenset(
 )
 
 CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
+    "G69_11_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_V3"
+)
+_G69_07_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
     "G69_07_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_V2"
 )
 _LEGACY_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION = (
@@ -261,10 +278,18 @@ _DELIVERY_RESOLUTION_RECORD_FIELDS = frozenset(
         "response_hash",
         "delivery_state",
         "evidence_references",
+        "evidence_correlation",
         "record_hash",
     }
 )
 _LEGACY_DELIVERY_RESOLUTION_RECORD_FIELDS = (
+    _DELIVERY_RESOLUTION_RECORD_FIELDS
+    - {"authority_act_identity", "authority_act_digest", "evidence_correlation"}
+)
+_G69_07_DELIVERY_RESOLUTION_RECORD_FIELDS = (
+    _DELIVERY_RESOLUTION_RECORD_FIELDS - {"evidence_correlation"}
+)
+_G69_05_WITH_G69_11_CORRELATION_FIELDS = (
     _DELIVERY_RESOLUTION_RECORD_FIELDS
     - {"authority_act_identity", "authority_act_digest"}
 )
@@ -490,12 +515,29 @@ def _execute_canonical_che_request_v1(
             raise FailClosedRuntimeError(
                 "canonical CHE owner execution returned a malformed result"
             )
-        return _canonical_che_response_from_owner_result(
+        response = _canonical_che_response_from_owner_result(
             canonical_request,
             owner_result,
             prior_continuation=None,
             strict_owner_projection=False,
         )
+        compatibility_record = {
+            "actor_identity": canonical_request.actor_identity,
+            "session_identity": canonical_request.session_identity,
+            "workspace_identity": canonical_request.workspace_identity,
+            "runtime_scope_identity": canonical_request.runtime_scope_identity,
+            "idempotency_identity": canonical_request.idempotency_identity,
+        }
+        response, correlation = _canonical_che_bind_evidence_correlation_v1(
+            request=canonical_request,
+            delivery_record=compatibility_record,
+            response=response,
+            prior_continuation=None,
+            authority_act=None,
+            reference_set=None,
+        )
+        persist_canonical_che_evidence_correlation_v1(correlation)
+        return response
 
     scope_lock = (
         _acquire_canonical_che_continuation_scope_v1(canonical_request)
@@ -571,8 +613,16 @@ def _execute_canonical_che_request_v1(
                     unavailable_reference,
                     supplied_continuation,
                 )
+                response, correlation = _canonical_che_bind_evidence_correlation_v1(
+                    request=canonical_request,
+                    delivery_record=delivery_record,
+                    response=response,
+                    prior_continuation=supplied_continuation,
+                    authority_act=canonical_authority_act,
+                    reference_set=canonical_reference_set,
+                )
                 _commit_canonical_che_delivery_response_v1(
-                    delivery_record, response
+                    delivery_record, response, correlation
                 )
                 return response
         try:
@@ -585,19 +635,59 @@ def _execute_canonical_che_request_v1(
                 canonical_request, prior_continuation
             )
         except Exception:
-            _mark_canonical_che_delivery_not_advanced_v1(delivery_record)
-            raise
-        owner_result = owner_executor(canonical_request)
-        if not isinstance(owner_result, dict):
-            raise FailClosedRuntimeError(
-                "canonical CHE owner execution returned a malformed result"
+            correlation = _canonical_che_evidence_correlation_v1(
+                request=canonical_request,
+                delivery_record=delivery_record,
+                response=None,
+                continuation=supplied_continuation,
+                authority_act=canonical_authority_act,
+                reference_set=canonical_reference_set,
+                delivery_status=DELIVERY_ENTERED_NOT_ADVANCED,
+                evidence_status=UNAVAILABLE_PRE_WRITE,
             )
-        response = _canonical_che_response_from_owner_result(
-            canonical_request,
-            owner_result,
-            prior_continuation=prior_continuation,
-            strict_owner_projection=True,
-        )
+            _mark_canonical_che_delivery_not_advanced_v1(
+                delivery_record, correlation
+            )
+            persist_canonical_che_evidence_correlation_v1(correlation)
+            raise
+        try:
+            owner_result = owner_executor(canonical_request)
+            if not isinstance(owner_result, dict):
+                raise FailClosedRuntimeError(
+                    "canonical CHE owner execution returned a malformed result"
+                )
+            response = _canonical_che_response_from_owner_result(
+                canonical_request,
+                owner_result,
+                prior_continuation=prior_continuation,
+                strict_owner_projection=True,
+            )
+        except Exception:
+            correlation = _canonical_che_evidence_correlation_v1(
+                request=canonical_request,
+                delivery_record=delivery_record,
+                response=None,
+                continuation=prior_continuation,
+                authority_act=canonical_authority_act,
+                reference_set=canonical_reference_set,
+                delivery_status=DELIVERY_OUTCOME_UNKNOWN,
+                evidence_status=CORRELATION_DELIVERY_OUTCOME_UNKNOWN,
+            )
+            updated = dict(delivery_record)
+            updated["evidence_correlation"] = correlation.to_dict()
+            updated["record_hash"] = _canonical_che_delivery_record_hash_v1(
+                updated
+            )
+            path = _canonical_che_delivery_record_path_v1(
+                runtime_scope_identity=updated["runtime_scope_identity"],
+                actor_identity=updated["actor_identity"],
+                session_identity=updated["session_identity"],
+                workspace_identity=updated["workspace_identity"],
+                idempotency_identity=updated["idempotency_identity"],
+            )
+            _write_canonical_che_delivery_record_v1(path, updated)
+            persist_canonical_che_evidence_correlation_v1(correlation)
+            raise
         if canonical_reference_set is not None:
             response = _canonical_che_bind_reference_projection_v1(
                 canonical_request, response, canonical_reference_set
@@ -615,8 +705,20 @@ def _execute_canonical_che_request_v1(
             presentation=None,
             common_failure=None,
         )
+        final_response, correlation = _canonical_che_bind_evidence_correlation_v1(
+            request=canonical_request,
+            delivery_record=delivery_record,
+            response=final_response,
+            prior_continuation=prior_continuation,
+            authority_act=canonical_authority_act,
+            reference_set=canonical_reference_set,
+        )
+        if final_response.continuation_envelope is not None:
+            _persist_canonical_che_continuation_v1(
+                canonical_request, final_response.continuation_envelope
+            )
         _commit_canonical_che_delivery_response_v1(
-            delivery_record, final_response
+            delivery_record, final_response, correlation
         )
         return final_response
     finally:
@@ -4803,6 +4905,251 @@ def _canonical_che_delivery_request_binding_hash_v1(
     )
 
 
+def _canonical_che_delivery_record_identity_v1(record: dict[str, Any]) -> str:
+    return "CHE-DELIVERY-RECORD-" + replay_hash(
+        {
+            "actor_identity": record["actor_identity"],
+            "session_identity": record["session_identity"],
+            "workspace_identity": record["workspace_identity"],
+            "runtime_scope_identity": record["runtime_scope_identity"],
+            "idempotency_identity": record["idempotency_identity"],
+        }
+    ).removeprefix("sha256:")
+
+
+def _canonical_che_reference_correlations_v1(
+    reference_set: CanonicalOpaqueReferenceSetV1 | None,
+) -> tuple[dict[str, Any], ...]:
+    if reference_set is None:
+        return ()
+    return tuple(
+        {
+            "reference_identity": reference.reference_identity,
+            "ordered_position": reference.ordered_position,
+            "provenance_identity": reference.provenance_identity,
+            "content_owner_identity": reference.content_owner_identity,
+            "custody_owner_identity": reference.custody_owner_identity,
+            "validation_owner_identity": reference.validation_owner_identity,
+            "availability_status": reference.availability_status,
+            "integrity_algorithm": reference.integrity_algorithm,
+            "integrity_reference": reference.integrity_reference,
+            "validation_evidence_identity": reference.validation_evidence_identity,
+            "validation_evidence_digest": reference.validation_evidence_digest,
+            "retry_of_reference_set_digest": (
+                reference_set.retry_of_reference_set_digest or NOT_APPLICABLE
+            ),
+        }
+        for reference in reference_set.references
+    )
+
+
+def _canonical_che_evidence_correlation_v1(
+    *,
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    delivery_record: dict[str, Any],
+    response: CanonicalHumanEntryResponseEnvelopeV1 | None,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+    authority_act: CanonicalHumanAuthorityActV1 | None,
+    reference_set: CanonicalOpaqueReferenceSetV1 | None,
+    delivery_status: str,
+    evidence_status: str,
+) -> CanonicalCHEEvidenceCorrelationV1:
+    absent = CORRELATION_NOT_APPLICABLE
+    transition = response.owner_transition if response is not None else None
+    projection = response.owner_projection if response is not None else None
+    presentation = response.presentation if response is not None else None
+    failure = response.common_failure if response is not None else None
+    active_continuation = continuation or (
+        response.continuation_envelope if response is not None else None
+    )
+    interaction_identity = (
+        active_continuation.interaction_identity
+        if active_continuation is not None
+        else absent
+    )
+    conversation_identity = (
+        active_continuation.conversation_identity
+        if active_continuation is not None
+        else (
+            transition.owner_state_identity
+            if transition is not None
+            else absent
+        )
+    )
+    replay_references = response.replay_references if response is not None else ()
+    certification_references = (
+        response.certification_references if response is not None else ()
+    )
+    return create_canonical_che_evidence_correlation_v1(
+        contract_version=CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
+        interaction_identity=interaction_identity,
+        conversation_identity=conversation_identity,
+        session_identity=request.session_identity,
+        workspace_identity=request.workspace_identity,
+        runtime_scope_identity=request.runtime_scope_identity,
+        actor_identity=request.actor_identity,
+        source_channel_identity=request.interface_identity,
+        adapter_identity=request.adapter_identity,
+        request_identity=request.request_identity,
+        che_entry_identity="CHE-ENTRY-" + request.request_identity,
+        source_act_identity=request.source_act_identity,
+        source_act_digest=canonical_che_request_source_act_digest_v1(request),
+        order_identity=request.order_identity,
+        idempotency_identity=request.idempotency_identity,
+        continuation_identity=(
+            active_continuation.continuation_identity
+            if active_continuation is not None
+            else absent
+        ),
+        continuation_sequence=(
+            active_continuation.continuation_sequence
+            if active_continuation is not None
+            else absent
+        ),
+        authority_act_identity=(
+            authority_act.authority_act_identity if authority_act else absent
+        ),
+        authority_kind=(authority_act.authority_kind if authority_act else absent),
+        authority_requesting_owner_identity=(
+            authority_act.expected_owner if authority_act else absent
+        ),
+        authority_target_identity=(
+            authority_act.target_identity if authority_act else absent
+        ),
+        authority_target_revision=(
+            authority_act.target_revision if authority_act else absent
+        ),
+        authority_payload_digest=(
+            authority_act.payload_digest if authority_act else absent
+        ),
+        authority_result_identity=absent,
+        opaque_reference_set_identity=(
+            reference_set.reference_set_identity if reference_set else absent
+        ),
+        ordered_reference_set_digest=(
+            reference_set.ordered_reference_set_digest if reference_set else absent
+        ),
+        opaque_reference_correlations=(
+            _canonical_che_reference_correlations_v1(reference_set)
+        ),
+        producing_owner_identity=(
+            transition.producing_owner if transition is not None else absent
+        ),
+        owner_state_identity=(
+            transition.owner_state_identity if transition is not None else absent
+        ),
+        owner_revision_before=(
+            transition.owner_revision_before if transition is not None else absent
+        ),
+        owner_revision_after=(
+            transition.owner_revision_after if transition is not None else absent
+        ),
+        owner_advancement=(
+            transition.advancement_outcome if transition is not None else absent
+        ),
+        owner_disposition=(
+            transition.response_disposition if transition is not None else absent
+        ),
+        next_act_identity=(
+            (transition.next_act_identity or absent) if transition else absent
+        ),
+        refusal_identity=(
+            (transition.refusal_identity or absent) if transition else absent
+        ),
+        terminal_identity=(
+            (transition.terminal_identity or absent) if transition else absent
+        ),
+        owner_projection_identity=(
+            projection.projection_identity if projection is not None else absent
+        ),
+        failure_identity=(
+            failure.failure_identity if failure is not None else absent
+        ),
+        presentation_identity=(
+            presentation.presentation_identity if presentation is not None else absent
+        ),
+        response_identity=(response.response_identity if response else absent),
+        response_digest=(
+            canonical_che_response_evidence_digest_v1(response)
+            if response is not None
+            else absent
+        ),
+        delivery_record_identity=_canonical_che_delivery_record_identity_v1(
+            delivery_record
+        ),
+        delivery_status=delivery_status,
+        duplicate_resolution="ORIGINAL_DELIVERY",
+        acknowledgement_state=(
+            "UNKNOWN" if response is not None else absent
+        ),
+        replay_references=replay_references,
+        replay_status=(
+            CORRELATION_REFERENCE_CREATED
+            if replay_references
+            else CORRELATION_REFERENCE_NOT_CREATED
+        ),
+        certification_references=certification_references,
+        certification_status=(
+            CORRELATION_REFERENCE_CREATED
+            if certification_references
+            else CORRELATION_REFERENCE_NOT_CREATED
+        ),
+        evidence_status=evidence_status,
+        metadata={},
+    )
+
+
+def _canonical_che_bind_evidence_correlation_v1(
+    *,
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    delivery_record: dict[str, Any],
+    response: CanonicalHumanEntryResponseEnvelopeV1,
+    prior_continuation: CanonicalContinuationEnvelopeV1 | None,
+    authority_act: CanonicalHumanAuthorityActV1 | None,
+    reference_set: CanonicalOpaqueReferenceSetV1 | None,
+    delivery_status: str = DELIVERY_RESPONSE_COMMITTED_ACKNOWLEDGEMENT_UNKNOWN,
+) -> tuple[
+    CanonicalHumanEntryResponseEnvelopeV1,
+    CanonicalCHEEvidenceCorrelationV1,
+]:
+    correlation = _canonical_che_evidence_correlation_v1(
+        request=request,
+        delivery_record=delivery_record,
+        response=response,
+        continuation=prior_continuation,
+        authority_act=authority_act,
+        reference_set=reference_set,
+        delivery_status=delivery_status,
+        evidence_status=CORRELATION_RECORDED,
+    )
+    continuation = response.continuation_envelope
+    if continuation is not None and continuation != prior_continuation:
+        continuation = replace(
+            continuation, correlation_identity=correlation.correlation_identity
+        )
+    bound_response = replace(
+        response,
+        correlation_identity=correlation.correlation_identity,
+        continuation_envelope=continuation,
+        owner_projection=None,
+        presentation=None,
+        common_failure=None,
+    )
+    rebound = _canonical_che_evidence_correlation_v1(
+        request=request,
+        delivery_record=delivery_record,
+        response=bound_response,
+        continuation=prior_continuation,
+        authority_act=authority_act,
+        reference_set=reference_set,
+        delivery_status=delivery_status,
+        evidence_status=CORRELATION_RECORDED,
+    )
+    if rebound.correlation_identity != correlation.correlation_identity:
+        raise FailClosedRuntimeError("CHE evidence correlation is unstable")
+    return bound_response, rebound
+
+
 def _canonical_che_delivery_record_hash_v1(record: dict[str, Any]) -> str:
     return replay_hash(
         {key: value for key, value in record.items() if key != "record_hash"}
@@ -4859,6 +5206,42 @@ def _read_canonical_che_delivery_record_v1(path: Path) -> dict[str, Any]:
             "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
             "authority_act_identity": NOT_APPLICABLE,
             "authority_act_digest": NOT_APPLICABLE,
+            "evidence_correlation": None,
+        }
+        value["record_hash"] = _canonical_che_delivery_record_hash_v1(value)
+    elif (
+        set(value) == _G69_05_WITH_G69_11_CORRELATION_FIELDS
+        and value.get("record_version")
+        == _LEGACY_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION
+    ):
+        if value.get("record_hash") != _canonical_che_delivery_record_hash_v1(
+            value
+        ):
+            raise FailClosedRuntimeError(
+                "CHE delivery record integrity is invalid"
+            )
+        value = {
+            **value,
+            "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
+            "authority_act_identity": NOT_APPLICABLE,
+            "authority_act_digest": NOT_APPLICABLE,
+        }
+        value["record_hash"] = _canonical_che_delivery_record_hash_v1(value)
+    elif (
+        set(value) == _G69_07_DELIVERY_RESOLUTION_RECORD_FIELDS
+        and value.get("record_version")
+        == _G69_07_CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION
+    ):
+        if value.get("record_hash") != _canonical_che_delivery_record_hash_v1(
+            value
+        ):
+            raise FailClosedRuntimeError(
+                "CHE delivery record integrity is invalid"
+            )
+        value = {
+            **value,
+            "record_version": CANONICAL_CHE_DELIVERY_RESOLUTION_RECORD_VERSION,
+            "evidence_correlation": None,
         }
         value["record_hash"] = _canonical_che_delivery_record_hash_v1(value)
     if set(value) != _DELIVERY_RESOLUTION_RECORD_FIELDS:
@@ -4878,6 +5261,23 @@ def _read_canonical_che_delivery_record_v1(path: Path) -> dict[str, Any]:
         raise FailClosedRuntimeError("CHE delivery evidence references are invalid")
     if value["record_hash"] != _canonical_che_delivery_record_hash_v1(value):
         raise FailClosedRuntimeError("CHE delivery record integrity is invalid")
+    correlation_value = value["evidence_correlation"]
+    if correlation_value is not None:
+        correlation = validate_canonical_che_evidence_correlation_v1(
+            correlation_value
+        )
+        if correlation.delivery_record_identity != (
+            _canonical_che_delivery_record_identity_v1(value)
+        ):
+            raise FailClosedRuntimeError(
+                "CHE delivery evidence correlation binding is invalid"
+            )
+        if value["delivery_state"] == _DELIVERY_RECORD_COMMITTED and (
+            correlation.response_identity != value["response_identity"]
+        ):
+            raise FailClosedRuntimeError(
+                "CHE delivery Response correlation binding is invalid"
+            )
     if value["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
         if not isinstance(value["serialized_response"], str):
             raise FailClosedRuntimeError("CHE committed delivery response is absent")
@@ -5017,6 +5417,7 @@ def _begin_canonical_che_delivery_record_v1(
         "response_hash": None,
         "delivery_state": _DELIVERY_RECORD_OUTCOME_UNKNOWN,
         "evidence_references": [],
+        "evidence_correlation": None,
         "record_hash": "",
     }
     record["record_hash"] = _canonical_che_delivery_record_hash_v1(record)
@@ -5033,10 +5434,15 @@ def _begin_canonical_che_delivery_record_v1(
     return record
 
 
-def _mark_canonical_che_delivery_not_advanced_v1(record: dict[str, Any]) -> None:
+def _mark_canonical_che_delivery_not_advanced_v1(
+    record: dict[str, Any],
+    correlation: CanonicalCHEEvidenceCorrelationV1 | None = None,
+) -> None:
     updated = dict(record)
     updated["advancement_outcome"] = NOT_ADVANCED
     updated["delivery_state"] = _DELIVERY_RECORD_ENTERED_NOT_ADVANCED
+    if correlation is not None:
+        updated["evidence_correlation"] = correlation.to_dict()
     updated["record_hash"] = _canonical_che_delivery_record_hash_v1(updated)
     path = _canonical_che_delivery_record_path_v1(
         runtime_scope_identity=updated["runtime_scope_identity"],
@@ -5049,10 +5455,21 @@ def _mark_canonical_che_delivery_not_advanced_v1(record: dict[str, Any]) -> None
 
 
 def _commit_canonical_che_delivery_response_v1(
-    record: dict[str, Any], response: CanonicalHumanEntryResponseEnvelopeV1
+    record: dict[str, Any],
+    response: CanonicalHumanEntryResponseEnvelopeV1,
+    correlation: CanonicalCHEEvidenceCorrelationV1,
 ) -> None:
     canonical_response = validate_canonical_che_response_envelope_v1(response)
     transition = canonical_response.owner_transition
+    canonical_correlation = validate_canonical_che_evidence_correlation_v1(
+        correlation
+    )
+    if canonical_response.correlation_identity != (
+        canonical_correlation.correlation_identity
+    ):
+        raise FailClosedRuntimeError(
+            "CHE Response evidence correlation binding is invalid"
+        )
     serialized_response = canonical_serialize(canonical_response.to_dict())
     updated = dict(record)
     updated.update(
@@ -5072,6 +5489,7 @@ def _commit_canonical_che_delivery_response_v1(
             "response_hash": replay_hash(canonical_response.to_dict()),
             "delivery_state": _DELIVERY_RECORD_COMMITTED,
             "evidence_references": list(canonical_response.evidence_references),
+            "evidence_correlation": canonical_correlation.to_dict(),
         }
     )
     updated["record_hash"] = _canonical_che_delivery_record_hash_v1(updated)
@@ -5083,6 +5501,7 @@ def _commit_canonical_che_delivery_response_v1(
         idempotency_identity=updated["idempotency_identity"],
     )
     _write_canonical_che_delivery_record_v1(path, updated)
+    persist_canonical_che_evidence_correlation_v1(canonical_correlation)
 
 
 def _response_from_canonical_che_delivery_record_v1(
@@ -5236,7 +5655,7 @@ def _canonical_che_delivery_resolution_response_v1(
         "resolved_response_identity": transition.resolved_response_identity,
     }
     digest = replay_hash(identity_seed).removeprefix("sha256:")
-    return CanonicalHumanEntryResponseEnvelopeV1(
+    response = CanonicalHumanEntryResponseEnvelopeV1(
         contract_version=CANONICAL_CHE_RESPONSE_CONTRACT_VERSION,
         response_identity=f"CHE-DELIVERY-RESOLUTION-{digest}",
         request_identity=request.request_identity,
@@ -5257,6 +5676,24 @@ def _canonical_che_delivery_resolution_response_v1(
         owner_transition=transition,
         continuation_envelope=None,
     )
+    correlation_record = record or {
+        "actor_identity": request.actor_identity,
+        "session_identity": request.session_identity,
+        "workspace_identity": request.workspace_identity,
+        "runtime_scope_identity": request.runtime_scope_identity,
+        "idempotency_identity": request.idempotency_identity,
+    }
+    response, correlation = _canonical_che_bind_evidence_correlation_v1(
+        request=request,
+        delivery_record=correlation_record,
+        response=response,
+        prior_continuation=None,
+        authority_act=None,
+        reference_set=None,
+        delivery_status=status,
+    )
+    persist_canonical_che_evidence_correlation_v1(correlation)
+    return response
 
 
 def _validate_canonical_che_expected_owner_revision_v1(
@@ -5594,7 +6031,7 @@ def _issue_canonical_che_continuation_v1(
         "expected_owner_state_identity": transition.owner_state_identity,
         "expected_owner_revision": transition.owner_revision_after,
         "continuation_state": state,
-        "correlation_identity": response.correlation_identity,
+        "correlation_identity": NOT_APPLICABLE,
     }
     continuation_digest = replay_hash(identity_seed).removeprefix("sha256:")
     continuation = CanonicalContinuationEnvelopeV1(
@@ -5615,9 +6052,16 @@ def _issue_canonical_che_continuation_v1(
         expected_owner_state_identity=transition.owner_state_identity,
         expected_owner_revision=transition.owner_revision_after,
         continuation_state=state,
-        correlation_identity=response.correlation_identity,
+        correlation_identity=NOT_APPLICABLE,
         metadata={},
     )
+    return continuation
+
+
+def _persist_canonical_che_continuation_v1(
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1,
+) -> None:
     record = {
         "binding_version": CANONICAL_CHE_CONTINUATION_BINDING_VERSION,
         "envelope": continuation.to_dict(),
@@ -5641,7 +6085,6 @@ def _issue_canonical_che_continuation_v1(
             raise FailClosedRuntimeError("CHE continuation identity conflicts")
     else:
         _write_canonical_che_continuation_binding_v1(path, record)
-    return continuation
 
 
 def _canonical_che_conversation_identity(owner_result: dict[str, Any]) -> str:
