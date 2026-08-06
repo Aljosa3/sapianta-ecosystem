@@ -34,8 +34,13 @@ Successor corrections preserve the authenticated G71-01 evidence universe.
 G71-02B corrects M10 from `MIGRATE` to `SUPERSEDED` following G71-02A. G71-03
 corrects M04 from `MIGRATE` to `SUPERSEDED` after verifying that its sole
 historical failure terminates at the certified Platform Knowledge owner before
-M01 or M04 is entered. Neither correction changes a test artifact assignment,
-blocking-case count, runtime implementation, owner, or production path.
+M01 or M04 is entered. G71-05 reclassifies M01, M02, M05, M06, M07, M08,
+M09, and M11 after one authenticated Reuse Proof and G47 traversal reaches and
+fully discharges their certified owners. M12 remains `MIGRATE` after its owner
+fails closed on the absent Reuse Proof/G47 binding object; M13 remains
+`MIGRATE` because M12 prevents its owner from being reached. No correction
+changes a test artifact assignment, blocking-case count, runtime
+implementation, owner, or production path.
 
 Objective:
 
@@ -66,8 +71,8 @@ duplicated.
 
 | Classification | Responsibilities | Test artifacts | Blocking cases |
 |---|---:|---:|---:|
-| `MIGRATE` | 12 | 51 | 393 |
-| `SUPERSEDED` | 7 | 37 | 99 |
+| `MIGRATE` | 4 | 25 | 76 |
+| `SUPERSEDED` | 15 | 63 | 416 |
 | `COMPATIBILITY` | 4 | 9 | 42 |
 | `REMOVE` | 0 | 0 | 0 |
 | `REAL_CONSTITUTIONAL_GAP` | 0 | 0 | 0 |
@@ -278,7 +283,7 @@ G71-00 full regression
 -> 97 unique test artifacts
 -> assign all 97 artifacts to one responsibility each
 -> sum cluster cases by classification
--> 393 MIGRATE + 99 SUPERSEDED + 42 COMPATIBILITY
+-> 76 MIGRATE + 416 SUPERSEDED + 42 COMPATIBILITY
 -> 534 total
 -> 0 REMOVE cases
 -> 0 REAL_CONSTITUTIONAL_GAP cases
@@ -287,8 +292,8 @@ G71-00 full regression
 ### Responsibility-count reconciliation
 
 ~~~text
-12 MIGRATE responsibilities
-+ 7 SUPERSEDED responsibilities
+4 MIGRATE responsibilities
++ 15 SUPERSEDED responsibilities
 + 4 COMPATIBILITY responsibilities
 + 0 REMOVE responsibilities
 + 0 REAL_CONSTITUTIONAL_GAP responsibilities
@@ -326,15 +331,15 @@ all 23 records resolve to an existing certified owner/model
 
 | ID | Responsibility | Classification | Files | Cases | Certified justification |
 |---|---|---|---:|---:|---|
-| M01 | governed-development proposal, Reuse Proof, approval, and Certification composition | `MIGRATE` | 3 | 11 | CDP still requires governed proposal and exact evidence; callers lack current certified bindings |
-| M02 | governed repository mutation proposal and execution | `MIGRATE` | 1 | 9 | bounded authorized mutation remains a CDP responsibility; the historical workflow is not aligned |
+| M01 | governed-development proposal, Reuse Proof, approval, and Certification composition | `SUPERSEDED` | 3 | 11 | G71-05 reaches Project Services through authenticated Reuse Proof, binds `READY_FOR_FRESH_G47` to fresh G47 scope, and completes exact proposal, Human approval, external Certification, promotion evidence, and terminal completion |
+| M02 | governed repository mutation proposal and execution | `SUPERSEDED` | 1 | 9 | G71-05 executes the scope-bound repository-mutation component in an isolated authenticated repository and reaches `GOVERNED_REPOSITORY_MUTATION_COMPLETED` |
 | M03 | Product 1 decision-validation packet onboarding | `MIGRATE` | 1 | 1 | Product 1 AI Decision Validator remains the active product responsibility |
-| M05 | durable work, implementation-turn, and worker-payload binding | `MIGRATE` | 3 | 51 | CDP requires immutable work and exact lineage; historical schemas/callers need migration |
-| M06 | canonical repository and disposable-scope grounding | `MIGRATE` | 2 | 42 | mutation-boundary and target grounding remain certified safety responsibilities |
-| M07 | Human execution decision and execution authorization | `MIGRATE` | 3 | 62 | Human Authority and exact Authorization remain mandatory and owner-separated |
-| M08 | worker selection, assignment, dispatch, invocation, and activation | `MIGRATE` | 7 | 75 | the one owner chain still requires these transitions; old bindings do not match current contracts |
-| M09 | worker-result capture, synthesis preflight, evidence isolation, and semantic validation | `MIGRATE` | 4 | 39 | deterministic result validation and protected evidence remain certified responsibilities |
-| M11 | task-outcome Human review, continuation, and criteria/diff alignment | `MIGRATE` | 3 | 28 | Human review and exact acceptance evidence remain required after execution |
+| M05 | durable work, implementation-turn, and worker-payload binding | `SUPERSEDED` | 3 | 51 | G71-05 verifies the canonical implementation-turn binding, exact durable-work identity consumption, immutable Worker payload hash, and fail-closed pre-grounding dispatch boundary |
+| M06 | canonical repository and disposable-scope grounding | `SUPERSEDED` | 2 | 42 | G71-05 reaches the certified grounding owner and records `CANONICAL_REPOSITORY_SCOPE_GROUNDED` for exact source and focused-test targets |
+| M07 | Human execution decision and execution authorization | `SUPERSEDED` | 3 | 62 | G71-05 reaches the distinct Human decision and Authorization owners and records exact execution authorization without collapsing ownership |
+| M08 | worker selection, assignment, dispatch, invocation, and activation | `SUPERSEDED` | 7 | 75 | G71-05 traverses the existing singular Worker owner chain through selection, assignment, dispatch, invocation, and process activation |
+| M09 | worker-result capture, synthesis preflight, evidence isolation, and semantic validation | `SUPERSEDED` | 4 | 39 | G71-05 captures the semantic Worker result and completes deterministic validation through the existing result and evidence owners |
+| M11 | task-outcome Human review, continuation, and criteria/diff alignment | `SUPERSEDED` | 3 | 28 | G71-05 reaches the exact task-outcome review owner and records the Human `SATISFIED` decision against the authorized criteria and patch |
 | M12 | isolated patch application, replacement manifests, and focused validation | `MIGRATE` | 2 | 22 | pre-application isolation and deterministic validation remain required; the historical mechanism is non-normative |
 | M13 | disposable execution, acceptance prerequisites, Human content decision, and candidate provenance | `MIGRATE` | 5 | 20 | Human acceptance and exact candidate provenance remain certified safeguards |
 | M14 | mutation authorization through worker execution, result review, and terminal Certification | `MIGRATE` | 17 | 33 | authenticated mutation and complete execution lineage remain in the certified owner chain |
@@ -351,7 +356,8 @@ all 23 records resolve to an existing certified owner/model
 | C04 | historical worker identities and objective-intake forms | `COMPATIBILITY` | 2 | 13 | identity neutralization and historical intake remain compatibility/replay evidence only |
 
 Every row classifies the responsibility, not the historical implementation as
-a normative design. Later migration must be derived afresh through CDP.
+a normative design. Any remaining migration must be derived afresh through
+CDP.
 
 ### Complete artifact manifest
 
@@ -526,17 +532,17 @@ exactly one responsibility record.
 
 ### Migration priority list
 
-No migration is performed in G71-01. The later CDP ordering is:
+No migration is performed in G71-01 or by its successor verification reports.
+After G71-05, the remaining verification ordering is:
 
 | Priority | Records | Reason |
 |---:|---|---|
-| P0 | M01 | restore current Reuse Proof/proposal binding before downstream mutation work; M04 and M10 require no migration |
-| P1 | M05, M06, M07 | establish current durable-work lineage, exact scope, Human decision, and Authorization prerequisites |
-| P2 | M08, M09 | migrate the one worker owner chain and deterministic result/evidence validation |
-| P3 | M11, M12, M13, M14 | migrate Human outcome review, isolated application, acceptance, mutation, Replay review, and terminal Certification |
-| P4 | M02, M03 | validate governed repository mutation and Product 1 onboarding end to end only after the prerequisite chain is current |
+| P0 | M12 | retain migration classification: its certified owner is reached but fails closed because the Reuse Proof/G47 binding object is absent |
+| P1 | M13 | reverify only after M12 can complete; its acceptance/provenance owner is not reached in G71-05 |
+| P2 | M03, M14 | perform the separately authorized V2 presentation and terminal-chain verification |
 
-Each priority requires a separately authorized CDP generation. Priority does
+Any implementation priority requires a separately authorized CDP generation;
+forensic verification requires its own bounded authorization. Priority does
 not authorize mutation and does not permit copying historical behavior as the
 solution.
 
@@ -551,6 +557,14 @@ solution.
 | S05 | G66/G31 dynamic reachability remains current production proof | G69-19 active cutover and one-lineage validation |
 | M10 | historical tests treat route selection or repeated approval as sufficient to cross development admission | certified G19-04 selection-only routing plus existing exact Worker prompt and hash lineage; M01 retains Reuse Proof admission responsibility |
 | M04 | historical default-AICLI submission expects one approval to enter the old G15 continuation path for an already certified capability | certified Platform Knowledge result plus the G69 production owner chain; current routing correctly returns read-only certified-capability evidence and enters no continuation |
+| M01 | historical direct callers treat missing Reuse Proof/G47 evidence as a missing proposal or Certification owner | authenticated Project Services admission, fresh G47 scope binding, exact proposal, Human approval, external Certification/promotion evidence, and terminal completion |
+| M02 | historical mutation callers are treated as proof that the governed mutation owner is absent | exact scope-bound proposal and isolated `GOVERNED_REPOSITORY_MUTATION_COMPLETED` execution under the existing owner |
+| M05 | historical schemas are treated as proof that durable-work and Worker-payload binding are absent | canonical implementation-turn artifact, exact approved identity consumption, immutable payload lineage, and fail-closed dispatch before grounding |
+| M06 | upstream admission stops are treated as missing repository grounding | certified grounding owner with exact source/test targets and `CANONICAL_REPOSITORY_SCOPE_GROUNDED` status |
+| M07 | upstream stops are treated as missing Human decision or Authorization | distinct certified Human-decision and Authorization owners reached with execution authorization true |
+| M08 | inherited predecessor failures are treated as missing Worker transitions | singular certified Worker selection, assignment, dispatch, invocation, and activation chain |
+| M09 | unreachable post-execution assertions are treated as missing result validation | existing result capture, synthesis/evidence isolation, and deterministic semantic validation owners |
+| M11 | unreachable outcome assertions are treated as missing Human review | existing exact task-outcome review and Human satisfaction decision owner |
 
 No migration is required for the superseded authority claims. Physical
 retention, test retirement, or compatibility treatment remains a later
@@ -614,8 +628,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ### Required classification counts
 
-- `MIGRATE`: 12 responsibilities.
-- `SUPERSEDED`: 7 responsibilities.
+- `MIGRATE`: 4 responsibilities.
+- `SUPERSEDED`: 15 responsibilities.
 - `COMPATIBILITY`: 4 responsibilities.
 - `REMOVE`: 0 responsibilities.
 - `REAL_CONSTITUTIONAL_GAP`: 0 responsibilities.
@@ -631,9 +645,10 @@ missing Constitutional responsibility. CAP is therefore not invoked.
   artifact assignments.
 - Every record has exactly one allowed category and a certified owner/model
   justification.
-- Twelve responsibilities still exist and require later CDP migration.
-- Seven historical authority expectations are superseded by certified G69/G71
-  evidence.
+- Four responsibilities remain classified for migration or prerequisite
+  verification: M03, M12, M13, and M14.
+- Fifteen historical authority expectations are superseded by certified
+  G69/G71 evidence.
 - Four responsibility forms are compatibility-only and non-authoritative.
 - No artifact is classified for removal without compatibility verification.
 - No real Constitutional gap is established; CAP is not invoked.
@@ -670,12 +685,12 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 | authenticated baseline | G70-07 commit/tree/parent/subject and preserved G71-00 report | exact Git inspection | `PASS` |
 | repository reconstruction | G71-00 534-failure evidence | `pytest --lf --collect-only -q` | `PASS` |
 | historical capability inventory | 97 paths and 23 responsibility records | exact manifest extraction | `PASS` |
-| complete classification | 12/7/4/0/0 responsibility counts | category reconciliation | `PASS` |
+| complete classification | 4/15/4/0/0 responsibility counts | category reconciliation | `PASS` |
 | artifact coverage | all 97 paths assigned once | set equality: unmatched 0, missing 0, duplicate 0 | `PASS` |
-| case coverage | Migrate 393, Superseded 99, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
+| case coverage | Migrate 76, Superseded 416, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
 | Constitutional justification | certified owner/model on every record | record-by-record authority review | `PASS` |
-| migration priority | P0 through P4 dependency ordering | prerequisite review | `PASS` |
-| superseded inventory | S01 through S05 plus corrected M10 and M04 | certified replacement review | `PASS` |
+| migration priority | M12 then M13, with M03/M14 reserved for V2 | prerequisite review | `PASS` |
+| superseded inventory | S01 through S05 plus M10, M04, and eight G71-05 V1 records | certified replacement review | `PASS` |
 | compatibility inventory | C01 through C04 | noncanonical-value review | `PASS` |
 | removal inventory | no complete absence-of-value proof | fail-closed empty inventory | `PASS` |
 | real Gap inventory | every semantic responsibility has certified owner/model | G70-01 sufficiency review | `PASS` |
