@@ -30,6 +30,12 @@ Constitutional Production Readiness Certification.
 
 Reporting date: 2026-08-06.
 
+Successor correction: G71-02B preserves the authenticated G71-01 evidence
+universe and corrects only M10 from `MIGRATE` to `SUPERSEDED`, following the
+G71-02A Constitutional forensic verification. The correction changes no test
+artifact assignment, blocking-case count, runtime implementation, owner, or
+production path.
+
 Objective:
 
 Perform only a repository-wide Constitutional Migration Classification Audit.
@@ -59,8 +65,8 @@ duplicated.
 
 | Classification | Responsibilities | Test artifacts | Blocking cases |
 |---|---:|---:|---:|
-| `MIGRATE` | 14 | 54 | 398 |
-| `SUPERSEDED` | 5 | 34 | 94 |
+| `MIGRATE` | 13 | 52 | 394 |
+| `SUPERSEDED` | 6 | 36 | 98 |
 | `COMPATIBILITY` | 4 | 9 | 42 |
 | `REMOVE` | 0 | 0 | 0 |
 | `REAL_CONSTITUTIONAL_GAP` | 0 | 0 | 0 |
@@ -271,7 +277,7 @@ G71-00 full regression
 -> 97 unique test artifacts
 -> assign all 97 artifacts to one responsibility each
 -> sum cluster cases by classification
--> 398 MIGRATE + 94 SUPERSEDED + 42 COMPATIBILITY
+-> 394 MIGRATE + 98 SUPERSEDED + 42 COMPATIBILITY
 -> 534 total
 -> 0 REMOVE cases
 -> 0 REAL_CONSTITUTIONAL_GAP cases
@@ -280,8 +286,8 @@ G71-00 full regression
 ### Responsibility-count reconciliation
 
 ~~~text
-14 MIGRATE responsibilities
-+ 5 SUPERSEDED responsibilities
+13 MIGRATE responsibilities
++ 6 SUPERSEDED responsibilities
 + 4 COMPATIBILITY responsibilities
 + 0 REMOVE responsibilities
 + 0 REAL_CONSTITUTIONAL_GAP responsibilities
@@ -328,7 +334,6 @@ all 23 records resolve to an existing certified owner/model
 | M07 | Human execution decision and execution authorization | `MIGRATE` | 3 | 62 | Human Authority and exact Authorization remain mandatory and owner-separated |
 | M08 | worker selection, assignment, dispatch, invocation, and activation | `MIGRATE` | 7 | 75 | the one owner chain still requires these transitions; old bindings do not match current contracts |
 | M09 | worker-result capture, synthesis preflight, evidence isolation, and semantic validation | `MIGRATE` | 4 | 39 | deterministic result validation and protected evidence remain certified responsibilities |
-| M10 | governed request routing and worker-prompt fidelity | `MIGRATE` | 2 | 4 | exact responsibility routing and instruction fidelity remain CDP constraints |
 | M11 | task-outcome Human review, continuation, and criteria/diff alignment | `MIGRATE` | 3 | 28 | Human review and exact acceptance evidence remain required after execution |
 | M12 | isolated patch application, replacement manifests, and focused validation | `MIGRATE` | 2 | 22 | pre-application isolation and deterministic validation remain required; the historical mechanism is non-normative |
 | M13 | disposable execution, acceptance prerequisites, Human content decision, and candidate provenance | `MIGRATE` | 5 | 20 | Human acceptance and exact candidate provenance remain certified safeguards |
@@ -338,6 +343,7 @@ all 23 records resolve to an existing certified owner/model
 | S03 | deprecated AIGOL Next/AICLI default launch, compose, submission, and session behavior | `SUPERSEDED` | 4 | 14 | G69-19 makes CLIA the sole canonical HIC and explicitly deprecates these production-authority surfaces |
 | S04 | pre-G69 Platform/Core end-to-end production composition | `SUPERSEDED` | 3 | 7 | G69-15 through G69-19 provide the certified full branch, Replay/CRO, and cutover composition |
 | S05 | historical G66/G31 dynamic production reachability | `SUPERSEDED` | 1 | 2 | G69-19 establishes the current single production lineage; the prior reachability proof is not current authority |
+| M10 | governed request routing and worker-prompt fidelity | `SUPERSEDED` | 2 | 4 | G71-02A verifies that the certified router, owner separation, exact Worker prompt contract, prompt-hash lineage, and fail-closed substitution already supply M10; the historical failures stop at M01 Reuse Proof admission |
 | C01 | ACLI governed-development operator bridge | `COMPATIBILITY` | 1 | 13 | retained only for transitional operator/consumer behavior; not a canonical production HIC or normative path |
 | C02 | AICLI task-outcome and mutation-decision transport adapters | `COMPATIBILITY` | 3 | 12 | adapter transport remains useful for transitional consumers but has no semantic or production authority |
 | C03 | invocation, artifact-projection, and Replay reconstruction compatibility forms | `COMPATIBILITY` | 3 | 4 | historical schema/reconstruction forms are retained only for Replay and cross-version consumers |
@@ -402,11 +408,6 @@ exactly one responsibility record.
 - `tests/test_g31_20_codex_result_to_semantic_validation_binding.py`
 - `tests/test_g31_20c_codex_synthesis_preflight.py`
 - `tests/test_g31_20d_protected_evidence_isolation_and_validation_semantics.py`
-
-#### M10 — Request routing and prompt fidelity
-
-- `tests/test_g31_20e_governed_development_request_routing_reaudit.py`
-- `tests/test_g31_21b_codex_worker_prompt_fidelity_repair.py`
 
 #### M11 — Task-outcome Human review
 
@@ -496,6 +497,11 @@ exactly one responsibility record.
 
 - `tests/test_g66_12b_canonical_runtime_dynamic_reachability.py`
 
+#### M10 — Superseded request-routing and prompt-fidelity expectations
+
+- `tests/test_g31_20e_governed_development_request_routing_reaudit.py`
+- `tests/test_g31_21b_codex_worker_prompt_fidelity_repair.py`
+
 #### C01 — ACLI governed-development compatibility bridge
 
 - `tests/test_acli_governed_development_execution_bridge_v1.py`
@@ -523,7 +529,7 @@ No migration is performed in G71-01. The later CDP ordering is:
 
 | Priority | Records | Reason |
 |---:|---|---|
-| P0 | M10, M01, M04 | restore exact request routing, current Reuse Proof/proposal binding, and governed continuation before downstream mutation work |
+| P0 | M01, M04 | restore current Reuse Proof/proposal binding and governed continuation before downstream mutation work; M10 requires no migration |
 | P1 | M05, M06, M07 | establish current durable-work lineage, exact scope, Human decision, and Authorization prerequisites |
 | P2 | M08, M09 | migrate the one worker owner chain and deterministic result/evidence validation |
 | P3 | M11, M12, M13, M14 | migrate Human outcome review, isolated application, acceptance, mutation, Replay review, and terminal Certification |
@@ -542,6 +548,7 @@ solution.
 | S03 | AIGOL Next or default AICLI remains canonical production entry | G69-19 CLIA to sole CHE cutover |
 | S04 | pre-G69 Platform end-to-end composition remains production authority | G69-15 through G69-19 full production lineage |
 | S05 | G66/G31 dynamic reachability remains current production proof | G69-19 active cutover and one-lineage validation |
+| M10 | historical tests treat route selection or repeated approval as sufficient to cross development admission | certified G19-04 selection-only routing plus existing exact Worker prompt and hash lineage; M01 retains Reuse Proof admission responsibility |
 
 No migration is required for the superseded authority claims. Physical
 retention, test retirement, or compatibility treatment remains a later
@@ -605,8 +612,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ### Required classification counts
 
-- `MIGRATE`: 14 responsibilities.
-- `SUPERSEDED`: 5 responsibilities.
+- `MIGRATE`: 13 responsibilities.
+- `SUPERSEDED`: 6 responsibilities.
 - `COMPATIBILITY`: 4 responsibilities.
 - `REMOVE`: 0 responsibilities.
 - `REAL_CONSTITUTIONAL_GAP`: 0 responsibilities.
@@ -622,9 +629,9 @@ missing Constitutional responsibility. CAP is therefore not invoked.
   artifact assignments.
 - Every record has exactly one allowed category and a certified owner/model
   justification.
-- Fourteen responsibilities still exist and require later CDP migration.
-- Five historical authority expectations are superseded by certified G69
-  capabilities.
+- Thirteen responsibilities still exist and require later CDP migration.
+- Six historical authority expectations are superseded by certified G69/G71
+  evidence.
 - Four responsibility forms are compatibility-only and non-authoritative.
 - No artifact is classified for removal without compatibility verification.
 - No real Constitutional gap is established; CAP is not invoked.
@@ -661,12 +668,12 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 | authenticated baseline | G70-07 commit/tree/parent/subject and preserved G71-00 report | exact Git inspection | `PASS` |
 | repository reconstruction | G71-00 534-failure evidence | `pytest --lf --collect-only -q` | `PASS` |
 | historical capability inventory | 97 paths and 23 responsibility records | exact manifest extraction | `PASS` |
-| complete classification | 14/5/4/0/0 responsibility counts | category reconciliation | `PASS` |
+| complete classification | 13/6/4/0/0 responsibility counts | category reconciliation | `PASS` |
 | artifact coverage | all 97 paths assigned once | set equality: unmatched 0, missing 0, duplicate 0 | `PASS` |
-| case coverage | Migrate 398, Superseded 94, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
+| case coverage | Migrate 394, Superseded 98, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
 | Constitutional justification | certified owner/model on every record | record-by-record authority review | `PASS` |
 | migration priority | P0 through P4 dependency ordering | prerequisite review | `PASS` |
-| superseded inventory | S01 through S05 | certified replacement review | `PASS` |
+| superseded inventory | S01 through S05 plus corrected M10 | certified replacement review | `PASS` |
 | compatibility inventory | C01 through C04 | noncanonical-value review | `PASS` |
 | removal inventory | no complete absence-of-value proof | fail-closed empty inventory | `PASS` |
 | real Gap inventory | every semantic responsibility has certified owner/model | G70-01 sufficiency review | `PASS` |
