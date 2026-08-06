@@ -875,6 +875,40 @@ def _run_human_interface_runtime_entry_owner_execution_v1(
         "g60_02_committed_objective_record", None
     )
     approved_identity_consumption = None
+    authenticated_scope_binding = None
+    scope_binding_candidates = [
+        artifact
+        for artifact in explicit_canonical_artifacts
+        if isinstance(artifact, dict)
+        and artifact.get("artifact_type") == "REUSE_PROOF_G47_SCOPE_BINDING_V1"
+    ]
+    if len(scope_binding_candidates) > 1:
+        raise FailClosedRuntimeError(
+            "exactly one Reuse Proof/G47 scope binding may be transported"
+        )
+    if scope_binding_candidates:
+        from aigol.runtime.constitutional_reuse_proof_production_gate import (
+            validate_reuse_proof_g47_scope_binding,
+        )
+
+        authenticated_scope_binding = validate_reuse_proof_g47_scope_binding(
+            scope_binding_candidates[0]
+        )
+        if not isinstance(approved_implementation_turn_binding, dict):
+            raise FailClosedRuntimeError(
+                "Reuse Proof/G47 scope binding requires an approved implementation turn"
+            )
+        bound_turn = authenticated_scope_binding["g47_operational_record"].get(
+            "implementation_turn_binding"
+        )
+        if (
+            not isinstance(bound_turn, dict)
+            or bound_turn.get("artifact_hash")
+            != approved_implementation_turn_binding.get("artifact_hash")
+        ):
+            raise FailClosedRuntimeError(
+                "Reuse Proof/G47 scope binding implementation-turn lineage mismatch"
+            )
     if approved_implementation_turn_binding is not None:
         from aigol.runtime.platform_implementation_turn_durable_work_binding import (
             consume_approved_implementation_turn_binding,
@@ -1083,6 +1117,14 @@ def _run_human_interface_runtime_entry_owner_execution_v1(
             "canonical_runtime_entry_workspace": workspace_text,
             "platform_core_project_services_contexts": project_contexts,
             "platform_core_project_services_context": project_contexts[-1] if project_contexts else None,
+            "reuse_proof_g47_scope_binding": deepcopy(
+                authenticated_scope_binding
+            ),
+            "reuse_proof_g47_scope_binding_hash": (
+                authenticated_scope_binding.get("artifact_hash")
+                if isinstance(authenticated_scope_binding, dict)
+                else None
+            ),
             "production_conversation_bindings": (
                 production_conversation_bindings
                 if approved_implementation_turn_binding is None

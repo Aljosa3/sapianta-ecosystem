@@ -727,6 +727,23 @@ def run_reference_uhi_session(
                     governed_runtime_runner=run_interactive_conversation,
                     operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
                     explicit_canonical_artifact_references=artifact_references,
+                    explicit_canonical_artifacts=(
+                        (
+                            deepcopy(
+                                last_project_context[
+                                    "reuse_proof_g47_scope_binding"
+                                ]
+                            ),
+                        )
+                        if isinstance(last_project_context, dict)
+                        and isinstance(
+                            last_project_context.get(
+                                "reuse_proof_g47_scope_binding"
+                            ),
+                            dict,
+                        )
+                        else ()
+                    ),
                     approved_implementation_turn_binding=pending_summary.get(
                         "canonical_implementation_turn_binding"
                     ),
@@ -1127,6 +1144,21 @@ def run_reference_uhi_submit_session(
                 governed_runtime_runner=run_interactive_conversation,
                 operator_context="CANONICAL_HUMAN_INTERFACE_RUNTIME_ENTRY",
                 explicit_canonical_artifact_references=artifact_references,
+                explicit_canonical_artifacts=(
+                    (
+                        deepcopy(
+                            last_project_context[
+                                "reuse_proof_g47_scope_binding"
+                            ]
+                        ),
+                    )
+                    if isinstance(last_project_context, dict)
+                    and isinstance(
+                        last_project_context.get("reuse_proof_g47_scope_binding"),
+                        dict,
+                    )
+                    else ()
+                ),
                 approved_implementation_turn_binding=pending_summary.get(
                     "canonical_implementation_turn_binding"
                 ),
