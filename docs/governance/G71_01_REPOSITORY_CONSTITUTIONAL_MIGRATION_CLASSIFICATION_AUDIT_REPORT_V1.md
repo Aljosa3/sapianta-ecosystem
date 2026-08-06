@@ -49,10 +49,14 @@ provenance reconstruction, and reclassifies M13 to `SUPERSEDED`. G71-08 repairs
 only the boundary-whitespace drift in the existing M14 owner presentation
 projection, reconstructs the complete authenticated mutation, execution,
 Replay, termination, and terminal Certification lineage, and reclassifies M14
-to `SUPERSEDED`. No successor changes a Constitutional owner or production
-path. G71-06 through G71-08 are recorded separately in their implementation
-reports; the classification corrections introduce no additional owner or
-production path.
+to `SUPERSEDED`. G71-09 authenticates the existing Product 1 onboarding owner,
+exact request and packet identities, certified adapter, deterministic
+selection-to-invocation lifecycle, packet Replay, and terminal Platform
+presentation; it reclassifies M03 to `SUPERSEDED`. The sole historical M03
+failure remains confined to the deprecated AICLI presentation surface. No
+successor changes a Constitutional owner or production path. G71-06 through
+G71-09 are recorded separately in their implementation reports; the
+classification corrections introduce no additional owner or production path.
 
 Objective:
 
@@ -83,8 +87,8 @@ duplicated.
 
 | Classification | Responsibilities | Test artifacts | Blocking cases |
 |---|---:|---:|---:|
-| `MIGRATE` | 1 | 1 | 1 |
-| `SUPERSEDED` | 18 | 87 | 491 |
+| `MIGRATE` | 0 | 0 | 0 |
+| `SUPERSEDED` | 19 | 88 | 492 |
 | `COMPATIBILITY` | 4 | 9 | 42 |
 | `REMOVE` | 0 | 0 | 0 |
 | `REAL_CONSTITUTIONAL_GAP` | 0 | 0 | 0 |
@@ -295,7 +299,7 @@ G71-00 full regression
 -> 97 unique test artifacts
 -> assign all 97 artifacts to one responsibility each
 -> sum cluster cases by classification
--> 1 MIGRATE + 491 SUPERSEDED + 42 COMPATIBILITY
+-> 0 MIGRATE + 492 SUPERSEDED + 42 COMPATIBILITY
 -> 534 total
 -> 0 REMOVE cases
 -> 0 REAL_CONSTITUTIONAL_GAP cases
@@ -304,8 +308,8 @@ G71-00 full regression
 ### Responsibility-count reconciliation
 
 ~~~text
-1 MIGRATE responsibility
-+ 18 SUPERSEDED responsibilities
+0 MIGRATE responsibilities
++ 19 SUPERSEDED responsibilities
 + 4 COMPATIBILITY responsibilities
 + 0 REMOVE responsibilities
 + 0 REAL_CONSTITUTIONAL_GAP responsibilities
@@ -345,7 +349,7 @@ all 23 records resolve to an existing certified owner/model
 |---|---|---|---:|---:|---|
 | M01 | governed-development proposal, Reuse Proof, approval, and Certification composition | `SUPERSEDED` | 3 | 11 | G71-05 reaches Project Services through authenticated Reuse Proof, binds `READY_FOR_FRESH_G47` to fresh G47 scope, and completes exact proposal, Human approval, external Certification, promotion evidence, and terminal completion |
 | M02 | governed repository mutation proposal and execution | `SUPERSEDED` | 1 | 9 | G71-05 executes the scope-bound repository-mutation component in an isolated authenticated repository and reaches `GOVERNED_REPOSITORY_MUTATION_COMPLETED` |
-| M03 | Product 1 decision-validation packet onboarding | `MIGRATE` | 1 | 1 | Product 1 AI Decision Validator remains the active product responsibility |
+| M03 | Product 1 decision-validation packet onboarding | `SUPERSEDED` | 1 | 1 | G71-09 authenticates the existing `PRODUCT1_AI_DECISION_VALIDATOR` owner, exact request/source-manifest identity, certified G31-02 adapter, completed deterministic invocation lifecycle, exact packet hash, and reconstructable packet Replay; the historical failure is only a deprecated AICLI presentation expectation |
 | M05 | durable work, implementation-turn, and worker-payload binding | `SUPERSEDED` | 3 | 51 | G71-05 verifies the canonical implementation-turn binding, exact durable-work identity consumption, immutable Worker payload hash, and fail-closed pre-grounding dispatch boundary |
 | M06 | canonical repository and disposable-scope grounding | `SUPERSEDED` | 2 | 42 | G71-05 reaches the certified grounding owner and records `CANONICAL_REPOSITORY_SCOPE_GROUNDED` for exact source and focused-test targets |
 | M07 | Human execution decision and execution authorization | `SUPERSEDED` | 3 | 62 | G71-05 reaches the distinct Human decision and Authorization owners and records exact execution authorization without collapsing ownership |
@@ -544,17 +548,10 @@ exactly one responsibility record.
 
 ### Migration priority list
 
-No migration is performed in G71-01. After G71-08, the remaining separately
-authorized verification ordering is:
-
-| Priority | Records | Reason |
-|---:|---|---|
-| P0 | M03 | perform the separately authorized Product 1 onboarding verification |
-
-Any implementation priority requires a separately authorized CDP generation;
-forensic verification requires its own bounded authorization. Priority does
-not authorize mutation and does not permit copying historical behavior as the
-solution.
+No migration was performed in the original G71-01 audit. After G71-09, the
+corrected `MIGRATE` inventory and migration-priority list are empty. All 19
+surviving certified responsibilities are supplied by their existing owners;
+the four compatibility-only responsibilities remain non-authoritative.
 
 ### Superseded capability inventory
 
@@ -578,6 +575,7 @@ solution.
 | M12 | missing propagation is treated as a missing disposable-validation owner | existing M12 owner plus exact authenticated scope-binding transport through the certified canonical-artifact boundary |
 | M13 | upstream M12 stops are treated as missing acceptance and provenance owners | existing exact Human content-decision, Generated Content Acceptance, and accepted-content provenance owners with deterministic Replay reconstruction and a fail-closed M14 boundary |
 | M14 | boundary-whitespace failure at CHE response validation is treated as missing authorization or terminal owners | existing exact mutation authorization, authenticated request, Worker execution, result, validation, Replay review, governed termination, and final Certification owners after bounded presentation normalization |
+| M03 | one deprecated AICLI presentation assertion is treated as a missing Product 1 onboarding owner | certified `PRODUCT1_AI_DECISION_VALIDATOR` owner, exact authenticated request manifest, G31-02 adapter, deterministic packet identity, completed lifecycle, packet Replay, and terminal Product 1 presentation |
 
 No migration is required for the superseded authority claims. Physical
 retention, test retirement, or compatibility treatment remains a later
@@ -641,8 +639,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ### Required classification counts
 
-- `MIGRATE`: 1 responsibility.
-- `SUPERSEDED`: 18 responsibilities.
+- `MIGRATE`: 0 responsibilities.
+- `SUPERSEDED`: 19 responsibilities.
 - `COMPATIBILITY`: 4 responsibilities.
 - `REMOVE`: 0 responsibilities.
 - `REAL_CONSTITUTIONAL_GAP`: 0 responsibilities.
@@ -658,9 +656,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
   artifact assignments.
 - Every record has exactly one allowed category and a certified owner/model
   justification.
-- One responsibility remains classified for migration or prerequisite
-  verification: M03.
-- Eighteen historical authority expectations are superseded by certified
+- No responsibility remains classified for migration.
+- Nineteen historical authority expectations are superseded by certified
   G69/G71 evidence.
 - Four responsibility forms are compatibility-only and non-authoritative.
 - No artifact is classified for removal without compatibility verification.
@@ -675,8 +672,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ## Not Verified
 
-- No `MIGRATE` record has been implemented or repaired. Each requires a later
-  bounded CDP generation and fresh Constitution-derived design.
+- No further `MIGRATE` responsibility remains in the corrected G71-01
+  inventory. This does not retire or promote any historical test artifact.
 - No `SUPERSEDED` artifact has been deleted, disabled, or reclassified in
   executable code.
 - No `COMPATIBILITY` consumer inventory, external dependency audit, or
@@ -698,12 +695,12 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 | authenticated baseline | G70-07 commit/tree/parent/subject and preserved G71-00 report | exact Git inspection | `PASS` |
 | repository reconstruction | G71-00 534-failure evidence | `pytest --lf --collect-only -q` | `PASS` |
 | historical capability inventory | 97 paths and 23 responsibility records | exact manifest extraction | `PASS` |
-| complete classification | 1/18/4/0/0 responsibility counts | category reconciliation | `PASS` |
+| complete classification | 0/19/4/0/0 responsibility counts | category reconciliation | `PASS` |
 | artifact coverage | all 97 paths assigned once | set equality: unmatched 0, missing 0, duplicate 0 | `PASS` |
-| case coverage | Migrate 1, Superseded 491, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
+| case coverage | Migrate 0, Superseded 492, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
 | Constitutional justification | certified owner/model on every record | record-by-record authority review | `PASS` |
-| migration priority | only M03 remains separately authorized | prerequisite review | `PASS` |
-| superseded inventory | S01 through S05 plus M10, M04, eight G71-05 V1 records, migrated M12, discharged M13, and migrated M14 | certified replacement review | `PASS` |
+| migration priority | empty after G71-09 | prerequisite review | `PASS` |
+| superseded inventory | S01 through S05 plus M10, M04, eight G71-05 V1 records, migrated M12, discharged M13, migrated M14, and authenticated M03 | certified replacement review | `PASS` |
 | compatibility inventory | C01 through C04 | noncanonical-value review | `PASS` |
 | removal inventory | no complete absence-of-value proof | fail-closed empty inventory | `PASS` |
 | real Gap inventory | every semantic responsibility has certified owner/model | G70-01 sufficiency review | `PASS` |
