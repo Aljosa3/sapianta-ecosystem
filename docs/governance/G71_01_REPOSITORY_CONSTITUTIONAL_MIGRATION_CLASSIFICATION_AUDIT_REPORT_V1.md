@@ -30,11 +30,12 @@ Constitutional Production Readiness Certification.
 
 Reporting date: 2026-08-06.
 
-Successor correction: G71-02B preserves the authenticated G71-01 evidence
-universe and corrects only M10 from `MIGRATE` to `SUPERSEDED`, following the
-G71-02A Constitutional forensic verification. The correction changes no test
-artifact assignment, blocking-case count, runtime implementation, owner, or
-production path.
+Successor corrections preserve the authenticated G71-01 evidence universe.
+G71-02B corrects M10 from `MIGRATE` to `SUPERSEDED` following G71-02A. G71-03
+corrects M04 from `MIGRATE` to `SUPERSEDED` after verifying that its sole
+historical failure terminates at the certified Platform Knowledge owner before
+M01 or M04 is entered. Neither correction changes a test artifact assignment,
+blocking-case count, runtime implementation, owner, or production path.
 
 Objective:
 
@@ -65,8 +66,8 @@ duplicated.
 
 | Classification | Responsibilities | Test artifacts | Blocking cases |
 |---|---:|---:|---:|
-| `MIGRATE` | 13 | 52 | 394 |
-| `SUPERSEDED` | 6 | 36 | 98 |
+| `MIGRATE` | 12 | 51 | 393 |
+| `SUPERSEDED` | 7 | 37 | 99 |
 | `COMPATIBILITY` | 4 | 9 | 42 |
 | `REMOVE` | 0 | 0 | 0 |
 | `REAL_CONSTITUTIONAL_GAP` | 0 | 0 | 0 |
@@ -277,7 +278,7 @@ G71-00 full regression
 -> 97 unique test artifacts
 -> assign all 97 artifacts to one responsibility each
 -> sum cluster cases by classification
--> 394 MIGRATE + 98 SUPERSEDED + 42 COMPATIBILITY
+-> 393 MIGRATE + 99 SUPERSEDED + 42 COMPATIBILITY
 -> 534 total
 -> 0 REMOVE cases
 -> 0 REAL_CONSTITUTIONAL_GAP cases
@@ -286,8 +287,8 @@ G71-00 full regression
 ### Responsibility-count reconciliation
 
 ~~~text
-13 MIGRATE responsibilities
-+ 6 SUPERSEDED responsibilities
+12 MIGRATE responsibilities
++ 7 SUPERSEDED responsibilities
 + 4 COMPATIBILITY responsibilities
 + 0 REMOVE responsibilities
 + 0 REAL_CONSTITUTIONAL_GAP responsibilities
@@ -328,7 +329,6 @@ all 23 records resolve to an existing certified owner/model
 | M01 | governed-development proposal, Reuse Proof, approval, and Certification composition | `MIGRATE` | 3 | 11 | CDP still requires governed proposal and exact evidence; callers lack current certified bindings |
 | M02 | governed repository mutation proposal and execution | `MIGRATE` | 1 | 9 | bounded authorized mutation remains a CDP responsibility; the historical workflow is not aligned |
 | M03 | Product 1 decision-validation packet onboarding | `MIGRATE` | 1 | 1 | Product 1 AI Decision Validator remains the active product responsibility |
-| M04 | governed-development runtime continuation | `MIGRATE` | 1 | 1 | exact post-Human continuation remains in CDP, but the historical continuation binding drifts |
 | M05 | durable work, implementation-turn, and worker-payload binding | `MIGRATE` | 3 | 51 | CDP requires immutable work and exact lineage; historical schemas/callers need migration |
 | M06 | canonical repository and disposable-scope grounding | `MIGRATE` | 2 | 42 | mutation-boundary and target grounding remain certified safety responsibilities |
 | M07 | Human execution decision and execution authorization | `MIGRATE` | 3 | 62 | Human Authority and exact Authorization remain mandatory and owner-separated |
@@ -344,6 +344,7 @@ all 23 records resolve to an existing certified owner/model
 | S04 | pre-G69 Platform/Core end-to-end production composition | `SUPERSEDED` | 3 | 7 | G69-15 through G69-19 provide the certified full branch, Replay/CRO, and cutover composition |
 | S05 | historical G66/G31 dynamic production reachability | `SUPERSEDED` | 1 | 2 | G69-19 establishes the current single production lineage; the prior reachability proof is not current authority |
 | M10 | governed request routing and worker-prompt fidelity | `SUPERSEDED` | 2 | 4 | G71-02A verifies that the certified router, owner separation, exact Worker prompt contract, prompt-hash lineage, and fail-closed substitution already supply M10; the historical failures stop at M01 Reuse Proof admission |
+| M04 | governed-development runtime continuation | `SUPERSEDED` | 1 | 1 | G71-03 verifies that the historical AICLI request names an already certified end-to-end capability, terminates at the certified Platform Knowledge owner, and never enters M01 or M04; the G69 owner chain already supplies governed continuation |
 | C01 | ACLI governed-development operator bridge | `COMPATIBILITY` | 1 | 13 | retained only for transitional operator/consumer behavior; not a canonical production HIC or normative path |
 | C02 | AICLI task-outcome and mutation-decision transport adapters | `COMPATIBILITY` | 3 | 12 | adapter transport remains useful for transitional consumers but has no semantic or production authority |
 | C03 | invocation, artifact-projection, and Replay reconstruction compatibility forms | `COMPATIBILITY` | 3 | 4 | historical schema/reconstruction forms are retained only for Replay and cross-version consumers |
@@ -370,10 +371,6 @@ exactly one responsibility record.
 #### M03 — Product 1 decision-validation packet onboarding
 
 - `tests/test_g31_02_product1_decision_validation_packet_operational_onboarding.py`
-
-#### M04 — Governed-development runtime continuation
-
-- `tests/test_g15_runtime_06_governed_development_runtime_continuation.py`
 
 #### M05 — Durable work and worker-payload binding
 
@@ -502,6 +499,10 @@ exactly one responsibility record.
 - `tests/test_g31_20e_governed_development_request_routing_reaudit.py`
 - `tests/test_g31_21b_codex_worker_prompt_fidelity_repair.py`
 
+#### M04 — Superseded governed-development runtime-continuation expectation
+
+- `tests/test_g15_runtime_06_governed_development_runtime_continuation.py`
+
 #### C01 — ACLI governed-development compatibility bridge
 
 - `tests/test_acli_governed_development_execution_bridge_v1.py`
@@ -529,7 +530,7 @@ No migration is performed in G71-01. The later CDP ordering is:
 
 | Priority | Records | Reason |
 |---:|---|---|
-| P0 | M01, M04 | restore current Reuse Proof/proposal binding and governed continuation before downstream mutation work; M10 requires no migration |
+| P0 | M01 | restore current Reuse Proof/proposal binding before downstream mutation work; M04 and M10 require no migration |
 | P1 | M05, M06, M07 | establish current durable-work lineage, exact scope, Human decision, and Authorization prerequisites |
 | P2 | M08, M09 | migrate the one worker owner chain and deterministic result/evidence validation |
 | P3 | M11, M12, M13, M14 | migrate Human outcome review, isolated application, acceptance, mutation, Replay review, and terminal Certification |
@@ -549,6 +550,7 @@ solution.
 | S04 | pre-G69 Platform end-to-end composition remains production authority | G69-15 through G69-19 full production lineage |
 | S05 | G66/G31 dynamic reachability remains current production proof | G69-19 active cutover and one-lineage validation |
 | M10 | historical tests treat route selection or repeated approval as sufficient to cross development admission | certified G19-04 selection-only routing plus existing exact Worker prompt and hash lineage; M01 retains Reuse Proof admission responsibility |
+| M04 | historical default-AICLI submission expects one approval to enter the old G15 continuation path for an already certified capability | certified Platform Knowledge result plus the G69 production owner chain; current routing correctly returns read-only certified-capability evidence and enters no continuation |
 
 No migration is required for the superseded authority claims. Physical
 retention, test retirement, or compatibility treatment remains a later
@@ -612,8 +614,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ### Required classification counts
 
-- `MIGRATE`: 13 responsibilities.
-- `SUPERSEDED`: 6 responsibilities.
+- `MIGRATE`: 12 responsibilities.
+- `SUPERSEDED`: 7 responsibilities.
 - `COMPATIBILITY`: 4 responsibilities.
 - `REMOVE`: 0 responsibilities.
 - `REAL_CONSTITUTIONAL_GAP`: 0 responsibilities.
@@ -629,8 +631,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
   artifact assignments.
 - Every record has exactly one allowed category and a certified owner/model
   justification.
-- Thirteen responsibilities still exist and require later CDP migration.
-- Six historical authority expectations are superseded by certified G69/G71
+- Twelve responsibilities still exist and require later CDP migration.
+- Seven historical authority expectations are superseded by certified G69/G71
   evidence.
 - Four responsibility forms are compatibility-only and non-authoritative.
 - No artifact is classified for removal without compatibility verification.
@@ -668,12 +670,12 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 | authenticated baseline | G70-07 commit/tree/parent/subject and preserved G71-00 report | exact Git inspection | `PASS` |
 | repository reconstruction | G71-00 534-failure evidence | `pytest --lf --collect-only -q` | `PASS` |
 | historical capability inventory | 97 paths and 23 responsibility records | exact manifest extraction | `PASS` |
-| complete classification | 13/6/4/0/0 responsibility counts | category reconciliation | `PASS` |
+| complete classification | 12/7/4/0/0 responsibility counts | category reconciliation | `PASS` |
 | artifact coverage | all 97 paths assigned once | set equality: unmatched 0, missing 0, duplicate 0 | `PASS` |
-| case coverage | Migrate 394, Superseded 98, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
+| case coverage | Migrate 393, Superseded 99, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
 | Constitutional justification | certified owner/model on every record | record-by-record authority review | `PASS` |
 | migration priority | P0 through P4 dependency ordering | prerequisite review | `PASS` |
-| superseded inventory | S01 through S05 plus corrected M10 | certified replacement review | `PASS` |
+| superseded inventory | S01 through S05 plus corrected M10 and M04 | certified replacement review | `PASS` |
 | compatibility inventory | C01 through C04 | noncanonical-value review | `PASS` |
 | removal inventory | no complete absence-of-value proof | fail-closed empty inventory | `PASS` |
 | real Gap inventory | every semantic responsibility has certified owner/model | G70-01 sufficiency review | `PASS` |
