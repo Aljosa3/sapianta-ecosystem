@@ -2273,27 +2273,27 @@ def _continue_g31_application_transition(
             presentations.append(
                 render_authorized_grounded_worker_selection(
                     state["consumed_replacement_worker_selection_capture"]
-                )
+                ).strip()
             )
             presentations.append(
                 worker_request.render_worker_invocation_request_summary(
                     state["worker_invocation_request_capture"]
-                )
+                ).strip()
             )
             presentations.append(
                 worker_assignment.render_worker_assignment_summary(
                     state["worker_assignment_capture"]
-                )
+                ).strip()
             )
             presentations.append(
                 worker_dispatch.render_worker_dispatch_summary(
                     state["worker_dispatch_capture"]
-                )
+                ).strip()
             )
             presentations.append(
                 worker_invocation.render_worker_invocation_summary(
                     state["worker_invocation_capture"]
-                )
+                ).strip()
             )
             presentations.append(
                 "\n".join(

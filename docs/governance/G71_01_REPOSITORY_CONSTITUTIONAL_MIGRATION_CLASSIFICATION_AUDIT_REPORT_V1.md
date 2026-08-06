@@ -45,11 +45,14 @@ canonical-artifact transport boundary, verifies exact owner receipt, and
 reclassifies M12 to `SUPERSEDED`. G71-07 then reconstructs the now-reachable
 M13 chain through the existing Human content-decision, Generated Content
 Acceptance, and accepted-content provenance owners, verifies exact Replay and
-provenance reconstruction, and reclassifies M13 to `SUPERSEDED`. No successor
-changes a Constitutional owner or production path. G71-06's bounded
-lineage-propagation implementation and G71-07's bounded M13 discharge evidence
-are recorded separately in their implementation reports; the classification
-corrections introduce no additional runtime owner or production path.
+provenance reconstruction, and reclassifies M13 to `SUPERSEDED`. G71-08 repairs
+only the boundary-whitespace drift in the existing M14 owner presentation
+projection, reconstructs the complete authenticated mutation, execution,
+Replay, termination, and terminal Certification lineage, and reclassifies M14
+to `SUPERSEDED`. No successor changes a Constitutional owner or production
+path. G71-06 through G71-08 are recorded separately in their implementation
+reports; the classification corrections introduce no additional owner or
+production path.
 
 Objective:
 
@@ -80,8 +83,8 @@ duplicated.
 
 | Classification | Responsibilities | Test artifacts | Blocking cases |
 |---|---:|---:|---:|
-| `MIGRATE` | 2 | 18 | 34 |
-| `SUPERSEDED` | 17 | 70 | 458 |
+| `MIGRATE` | 1 | 1 | 1 |
+| `SUPERSEDED` | 18 | 87 | 491 |
 | `COMPATIBILITY` | 4 | 9 | 42 |
 | `REMOVE` | 0 | 0 | 0 |
 | `REAL_CONSTITUTIONAL_GAP` | 0 | 0 | 0 |
@@ -292,7 +295,7 @@ G71-00 full regression
 -> 97 unique test artifacts
 -> assign all 97 artifacts to one responsibility each
 -> sum cluster cases by classification
--> 34 MIGRATE + 458 SUPERSEDED + 42 COMPATIBILITY
+-> 1 MIGRATE + 491 SUPERSEDED + 42 COMPATIBILITY
 -> 534 total
 -> 0 REMOVE cases
 -> 0 REAL_CONSTITUTIONAL_GAP cases
@@ -301,8 +304,8 @@ G71-00 full regression
 ### Responsibility-count reconciliation
 
 ~~~text
-2 MIGRATE responsibilities
-+ 17 SUPERSEDED responsibilities
+1 MIGRATE responsibility
++ 18 SUPERSEDED responsibilities
 + 4 COMPATIBILITY responsibilities
 + 0 REMOVE responsibilities
 + 0 REAL_CONSTITUTIONAL_GAP responsibilities
@@ -351,7 +354,7 @@ all 23 records resolve to an existing certified owner/model
 | M11 | task-outcome Human review, continuation, and criteria/diff alignment | `SUPERSEDED` | 3 | 28 | G71-05 reaches the exact task-outcome review owner and records the Human `SATISFIED` decision against the authorized criteria and patch |
 | M12 | isolated patch application, replacement manifests, and focused validation | `SUPERSEDED` | 2 | 22 | G71-06 validates and transports the exact authenticated Reuse Proof/G47 scope-binding artifact through the existing CHE owner state; the certified M12 owner receives the unchanged digest and proceeds without owner or semantic redesign |
 | M13 | disposable execution, acceptance prerequisites, Human content decision, and candidate provenance | `SUPERSEDED` | 5 | 20 | G71-07 reaches the existing Human content-decision, Generated Content Acceptance, and accepted-content provenance owners from exact M12 completion; authenticated acceptance and provenance Replay reconstruct exactly while M14 authority remains false |
-| M14 | mutation authorization through worker execution, result review, and terminal Certification | `MIGRATE` | 17 | 33 | authenticated mutation and complete execution lineage remain in the certified owner chain |
+| M14 | mutation authorization through worker execution, result review, and terminal Certification | `SUPERSEDED` | 17 | 33 | G71-08 preserves the exact existing authorization and terminal owner chain, removes only boundary whitespace from its presentation projection, and reconstructs authenticated request, consumption, selection, assignment, dispatch, invocation, execution, result, validation, Replay review, termination, and final Certification evidence |
 | S01 | pre-G69 development UX, intent, project-context, and clarification orchestration | `SUPERSEDED` | 16 | 26 | G69 certified Conversation, branch composition, CDP, and owner contracts already supply the responsibility |
 | S02 | legacy HIR clarification, reference, attachment, and retry composition | `SUPERSEDED` | 10 | 45 | G69-02 through G69-13 establish canonical CHE/HIC transport and evidence contracts |
 | S03 | deprecated AIGOL Next/AICLI default launch, compose, submission, and session behavior | `SUPERSEDED` | 4 | 14 | G69-19 makes CLIA the sole canonical HIC and explicitly deprecates these production-authority surfaces |
@@ -541,12 +544,12 @@ exactly one responsibility record.
 
 ### Migration priority list
 
-No migration is performed in G71-01. After G71-07, the remaining separately
+No migration is performed in G71-01. After G71-08, the remaining separately
 authorized verification ordering is:
 
 | Priority | Records | Reason |
 |---:|---|---|
-| P0 | M03, M14 | perform the separately authorized Product 1 presentation and terminal-chain verification |
+| P0 | M03 | perform the separately authorized Product 1 onboarding verification |
 
 Any implementation priority requires a separately authorized CDP generation;
 forensic verification requires its own bounded authorization. Priority does
@@ -574,6 +577,7 @@ solution.
 | M11 | unreachable outcome assertions are treated as missing Human review | existing exact task-outcome review and Human satisfaction decision owner |
 | M12 | missing propagation is treated as a missing disposable-validation owner | existing M12 owner plus exact authenticated scope-binding transport through the certified canonical-artifact boundary |
 | M13 | upstream M12 stops are treated as missing acceptance and provenance owners | existing exact Human content-decision, Generated Content Acceptance, and accepted-content provenance owners with deterministic Replay reconstruction and a fail-closed M14 boundary |
+| M14 | boundary-whitespace failure at CHE response validation is treated as missing authorization or terminal owners | existing exact mutation authorization, authenticated request, Worker execution, result, validation, Replay review, governed termination, and final Certification owners after bounded presentation normalization |
 
 No migration is required for the superseded authority claims. Physical
 retention, test retirement, or compatibility treatment remains a later
@@ -637,8 +641,8 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 
 ### Required classification counts
 
-- `MIGRATE`: 2 responsibilities.
-- `SUPERSEDED`: 17 responsibilities.
+- `MIGRATE`: 1 responsibility.
+- `SUPERSEDED`: 18 responsibilities.
 - `COMPATIBILITY`: 4 responsibilities.
 - `REMOVE`: 0 responsibilities.
 - `REAL_CONSTITUTIONAL_GAP`: 0 responsibilities.
@@ -654,9 +658,9 @@ missing Constitutional responsibility. CAP is therefore not invoked.
   artifact assignments.
 - Every record has exactly one allowed category and a certified owner/model
   justification.
-- Two responsibilities remain classified for migration or prerequisite
-  verification: M03 and M14.
-- Seventeen historical authority expectations are superseded by certified
+- One responsibility remains classified for migration or prerequisite
+  verification: M03.
+- Eighteen historical authority expectations are superseded by certified
   G69/G71 evidence.
 - Four responsibility forms are compatibility-only and non-authoritative.
 - No artifact is classified for removal without compatibility verification.
@@ -694,12 +698,12 @@ missing Constitutional responsibility. CAP is therefore not invoked.
 | authenticated baseline | G70-07 commit/tree/parent/subject and preserved G71-00 report | exact Git inspection | `PASS` |
 | repository reconstruction | G71-00 534-failure evidence | `pytest --lf --collect-only -q` | `PASS` |
 | historical capability inventory | 97 paths and 23 responsibility records | exact manifest extraction | `PASS` |
-| complete classification | 2/17/4/0/0 responsibility counts | category reconciliation | `PASS` |
+| complete classification | 1/18/4/0/0 responsibility counts | category reconciliation | `PASS` |
 | artifact coverage | all 97 paths assigned once | set equality: unmatched 0, missing 0, duplicate 0 | `PASS` |
-| case coverage | Migrate 34, Superseded 458, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
+| case coverage | Migrate 1, Superseded 491, Compatibility 42 | arithmetic reconciliation to 534 | `PASS` |
 | Constitutional justification | certified owner/model on every record | record-by-record authority review | `PASS` |
-| migration priority | M03 and M14 remain separately authorized | prerequisite review | `PASS` |
-| superseded inventory | S01 through S05 plus M10, M04, eight G71-05 V1 records, migrated M12, and discharged M13 | certified replacement review | `PASS` |
+| migration priority | only M03 remains separately authorized | prerequisite review | `PASS` |
+| superseded inventory | S01 through S05 plus M10, M04, eight G71-05 V1 records, migrated M12, discharged M13, and migrated M14 | certified replacement review | `PASS` |
 | compatibility inventory | C01 through C04 | noncanonical-value review | `PASS` |
 | removal inventory | no complete absence-of-value proof | fail-closed empty inventory | `PASS` |
 | real Gap inventory | every semantic responsibility has certified owner/model | G70-01 sufficiency review | `PASS` |
