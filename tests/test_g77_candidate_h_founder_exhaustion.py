@@ -76,6 +76,8 @@ def test_divergent_retry_cannot_escape_exhaustion(tmp_path: Path) -> None:
     original = fixture[5]
     divergent_root = _model(
         "ConstitutionalRootEvolutionSnapshotV4",
+        predecessor_snapshot_pointer_identity=original.resulting_root.predecessor_snapshot_pointer_identity,
+        predecessor_snapshot_pointer_digest=original.resulting_root.predecessor_snapshot_pointer_digest,
         predecessor_snapshot_root_identity=original.resulting_root.predecessor_snapshot_root_identity,
         predecessor_snapshot_root_digest=original.resulting_root.predecessor_snapshot_root_digest,
         predecessor_root_generation=1,
@@ -91,7 +93,10 @@ def test_divergent_retry_cannot_escape_exhaustion(tmp_path: Path) -> None:
         effective_logical_instant="fixture:divergent-root-two",
     )
     divergent = replace(original, resulting_root=divergent_root)
-    with pytest.raises(CandidateOrchestrationError, match="FIXTURE_AUTHORITY_EXHAUSTED"):
+    with pytest.raises(
+        CandidateOrchestrationError,
+        match="RETAINED_ROOT_STATE_HISTORY_MISMATCH",
+    ):
         _invoke(fixture, composition=divergent)
 
 
@@ -118,6 +123,42 @@ def test_process_restart_does_not_restore_fixture_authority(tmp_path: Path) -> N
     assert after_restart.fixture_effects_applied == 0
     assert after_restart.outcome == "IDENTICAL_EXHAUSTED_OBSERVATION"
     assert after_restart.retained_root_cas.read_back == first.retained_root_cas.read_back
+
+
+def test_restart_before_effect_preserves_exact_authoritative_coordinate(
+    tmp_path: Path,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    reopened = CandidateHStore(tmp_path / "store")
+    result = _invoke(fixture, store=reopened)
+    assert result.retained_root_cas.outcome == "WON"
+    assert result.fixture_effects_applied == 1
+    assert result.retained_root_cas.read_back.slot_identity == (
+        fixture[5].retained_root_predecessor.slot_identity
+    )
+
+
+def test_unrelated_populated_coordinate_cannot_redirect_or_multiply_effect(
+    tmp_path: Path,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    predecessor = fixture[5].retained_root_predecessor
+    fixture[0].compare_and_swap(
+        owner=predecessor.owner,
+        slot_identity="fixture:unrelated-populated-coordinate",
+        slot_epoch="fixture:unrelated-epoch",
+        expected_slot_digest=None,
+        expected_status=None,
+        successor_status="CURRENT",
+        model=fixture[5].resulting_root,
+        logical_instant="fixture:unrelated-populated",
+    )
+    results = [_invoke(fixture), _invoke(fixture)]
+    assert sum(result.fixture_effects_applied for result in results) == 1
+    assert all(
+        result.retained_root_cas.read_back.slot_identity == predecessor.slot_identity
+        for result in results
+    )
 
 
 def test_retained_root_coordinate_remains_unique(tmp_path: Path) -> None:

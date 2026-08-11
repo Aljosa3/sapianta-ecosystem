@@ -12,7 +12,12 @@ from aigol.runtime.candidate_h_founder.authentication import (
     authenticate_fixture_candidate_h,
     fixture_ed25519_public_key,
 )
-from aigol.runtime.candidate_h_founder.cj1 import cj1_digest, cj1_identity, sha256_hex
+from aigol.runtime.candidate_h_founder.cj1 import (
+    cj1_digest,
+    cj1_encode,
+    cj1_identity,
+    sha256_hex,
+)
 from aigol.runtime.candidate_h_founder.models import MODEL_REGISTRY
 from aigol.runtime.candidate_h_founder.orchestration import (
     ROOT_OWNER,
@@ -20,7 +25,10 @@ from aigol.runtime.candidate_h_founder.orchestration import (
     FixtureForwardComposition,
     orchestrate_fixture_candidate_h,
 )
-from aigol.runtime.candidate_h_founder.persistence import CandidateHStore
+from aigol.runtime.candidate_h_founder.persistence import (
+    CandidateHStore,
+    CandidatePersistenceError,
+)
 from aigol.runtime.candidate_h_founder.validators import (
     ARTIFACT_IDENTITY_SPECS,
     NESTED_RECORD_CONSTANTS,
@@ -92,9 +100,9 @@ def _model(class_name: str, **changes: object):
     return _with_identity(model_type(**_values(model_type, **changes)))
 
 
-def _capacity():
+def _capacity(*, target: tuple[str, str] | None = None):
     premise = _hash_pair("external-premise-v1", "premise")
-    target = _hash_pair("founding-target-v5", "target")
+    target = target or _hash_pair("founding-target-v5", "target")
     external_capacity = _hash_pair("human-founder-capacity-v1", "capacity")
     actor = "fixture:human-actor"
     issued_at = "fixture:capacity-issued"
@@ -180,20 +188,40 @@ def _capacity():
     )
 
 
-def _commitment():
+def _commitment(
+    capacity=None,
+    manifest_pair: tuple[str, str] | None = None,
+):
     model_type = MODEL_REGISTRY["HumanFounderAuthenticationCommitmentV2"]
-    return model_type(
-        **_values(
-            model_type,
-            candidate_common_base_digest=f"sha256:{sha256_hex(b'one')}",
+    changes: dict[str, object] = {
+        "candidate_common_base_digest": f"sha256:{sha256_hex(b'one')}"
+    }
+    if capacity is not None:
+        changes.update(
+            human_founder_external_capacity_reference_identity=capacity.artifact_identity,
+            human_founder_external_capacity_reference_digest=capacity.artifact_digest,
         )
+    if manifest_pair is not None:
+        changes.update(
+            candidate_h_input_reference_manifest_identity=manifest_pair[0],
+            candidate_h_input_reference_manifest_digest=manifest_pair[1],
+        )
+    return model_type(
+        **_values(model_type, **changes)
     )
 
 
-def _authentication(tmp_path: Path, *, private_seed: bytes | None = SEED):
-    capacity = _capacity()
-    commitment = _commitment()
-    store = CandidateHStore(tmp_path / "store")
+def _authentication(
+    tmp_path: Path,
+    *,
+    private_seed: bytes | None = SEED,
+    store: CandidateHStore | None = None,
+    capacity=None,
+    commitment=None,
+):
+    capacity = capacity or _capacity()
+    commitment = commitment or _commitment(capacity)
+    store = store or CandidateHStore(tmp_path / "store")
     authentication_open = store.compare_and_swap(
         owner=OWNER,
         slot_identity=capacity.human_authentication_slot_identity,
@@ -247,6 +275,8 @@ def _decision(capacity, commitment, execution, *, disposition="ADOPT_EXACT_TARGE
         "ExternalConstituentHumanFirstAdoptionDecisionV2",
         human_founder_external_capacity_evidence_identity=capacity.artifact_identity,
         human_founder_external_capacity_evidence_digest=capacity.artifact_digest,
+        target_identity=capacity.target_identity,
+        target_digest=capacity.target_digest,
         authentication_commitment_identity=pair[0],
         authentication_commitment_digest=pair[1],
         authentication_result_read_back_identity=result.artifact_identity,
@@ -258,7 +288,7 @@ def _decision(capacity, commitment, execution, *, disposition="ADOPT_EXACT_TARGE
     )
 
 
-def _proof_set(decision, commitment, predecessor_root):
+def _proof_set(decision, commitment, predecessor_root, root_pointer):
     rows = []
     for rank, code in enumerate(PREDICATE_CODES, start=1):
         row = dict.fromkeys(PREDICATE_ROW_FIELDS, "fixture")
@@ -301,12 +331,59 @@ def _proof_set(decision, commitment, predecessor_root):
         current_root_identity=predecessor_root.root_identity,
         current_root_digest=predecessor_root.root_digest,
         current_root_generation=predecessor_root.root_generation,
+        current_root_pointer_identity=root_pointer[0],
+        current_root_pointer_digest=root_pointer[1],
     )
 
 
-def build_fixture(tmp_path: Path):
-    store, capacity, commitment, execution = _authentication(tmp_path)
-    decision = _decision(capacity, commitment, execution)
+def _target_v5(predecessor_root, root_pointer, **changes):
+    values = {
+        "founding_event_origin_root_pointer_identity": root_pointer[0],
+        "founding_event_origin_root_pointer_digest": root_pointer[1],
+        "founding_event_origin_root_identity": predecessor_root.root_identity,
+        "founding_event_origin_root_digest": predecessor_root.root_digest,
+        "founding_event_origin_root_generation": predecessor_root.root_generation,
+        "root_binding_mode": "STABLE_EVENT_ORIGIN_PLUS_PER_ATTEMPT_CURRENT_ROOT",
+    }
+    values.update(changes)
+    return _model(
+        "ConstitutionalMetaRepairInitialAdoptionTargetV5",
+        **values,
+    )
+
+
+def _manifest(capacity, target_pair, **changes):
+    lineage = [f"fixture:g77-lineage:{index}" for index in range(1, 8)]
+    model_type = MODEL_REGISTRY["CandidateHInputReferenceManifestV2"]
+    values = {
+        "producing_external_capacity_identity": capacity.artifact_identity,
+        "producing_external_capacity_digest": capacity.artifact_digest,
+        "external_premise_identity": capacity.external_premise_identity,
+        "external_premise_digest": capacity.external_premise_digest,
+        "target_v5_identity": target_pair[0],
+        "target_v5_digest": target_pair[1],
+        "candidate_h_contract_lineage": lineage,
+        "candidate_h_contract_lineage_root": cj1_digest(lineage),
+    }
+    values.update(changes)
+    model = model_type(**_values(model_type, **values))
+    payload = model.to_cj1_object()
+    return model, (
+        cj1_identity("human-founder-candidate-h-input-manifest-v2-sha256", payload),
+        cj1_digest(payload),
+    )
+
+
+def build_fixture(
+    tmp_path: Path,
+    *,
+    target_changes: dict[str, object] | None = None,
+    manifest_changes: dict[str, object] | None = None,
+    manifest_target_pair: tuple[str, str] | None = None,
+    capacity_target_pair: tuple[str, str] | None = None,
+    decision_target_pair: tuple[str, str] | None = None,
+    commitment_manifest_pair: tuple[str, str] | None = None,
+):
     predecessor_root = _model(
         "ConstitutionalRootEvolutionSnapshotV4",
         predecessor_root_generation=0,
@@ -315,17 +392,54 @@ def build_fixture(tmp_path: Path):
         source_evidence_registry_epoch=1,
         effective_logical_instant="fixture:root-one",
     )
+    root_pointer = _hash_pair("constitutional-root-pointer-v1", "root-one")
+    target = _target_v5(predecessor_root, root_pointer, **(target_changes or {}))
+    target_pair = (target.target_identity, target.target_digest)
+    authoritative_manifest_target = manifest_target_pair or target_pair
+    capacity = _capacity(target=capacity_target_pair or authoritative_manifest_target)
+    manifest, manifest_pair = _manifest(
+        capacity,
+        authoritative_manifest_target,
+        **(manifest_changes or {}),
+    )
+    commitment = _commitment(
+        capacity,
+        commitment_manifest_pair or manifest_pair,
+    )
+    store = CandidateHStore(tmp_path / "store")
+    store.write_immutable(target)
+    store.write_immutable(
+        manifest,
+        artifact_identity=manifest_pair[0],
+        artifact_digest=manifest_pair[1],
+        owner_bindings=OWNER_BINDINGS,
+    )
+    store, capacity, commitment, execution = _authentication(
+        tmp_path,
+        store=store,
+        capacity=capacity,
+        commitment=commitment,
+    )
+    decision = _decision(capacity, commitment, execution)
+    if decision_target_pair is not None:
+        decision = _with_identity(
+            replace(
+                decision,
+                target_identity=decision_target_pair[0],
+                target_digest=decision_target_pair[1],
+            )
+        )
     retained = store.compare_and_swap(
         owner=ROOT_OWNER,
-        slot_identity="fixture:retained-root",
-        slot_epoch=1,
+        slot_identity=root_pointer[0],
+        slot_epoch=root_pointer[1],
         expected_slot_digest=None,
         expected_status=None,
         successor_status="CURRENT",
         model=predecessor_root,
         logical_instant=predecessor_root.effective_logical_instant,
     ).read_back
-    proof_set = _proof_set(decision, commitment, predecessor_root)
+    proof_set = _proof_set(decision, commitment, predecessor_root, root_pointer)
     certification = _model(
         "ExternalConstituentFoundingEligibilityCertificationV3",
         proof_set_identity=proof_set.proof_set_identity,
@@ -333,6 +447,14 @@ def build_fixture(tmp_path: Path):
         current_root_identity=predecessor_root.root_identity,
         current_root_digest=predecessor_root.root_digest,
         current_root_generation=predecessor_root.root_generation,
+        current_root_pointer_identity=root_pointer[0],
+        current_root_pointer_digest=root_pointer[1],
+        attempt_kind="INITIAL_BEGIN",
+        attempt_sequence=1,
+        consuming_disposition_identity=None,
+        consuming_disposition_digest=None,
+        predecessor_attempt_terminal_read_back_identity=None,
+        predecessor_attempt_terminal_read_back_digest=None,
         certification_result="ELIGIBLE",
     )
     transition = _model(
@@ -346,6 +468,17 @@ def build_fixture(tmp_path: Path):
         predecessor_root_identity=predecessor_root.root_identity,
         predecessor_root_digest=predecessor_root.root_digest,
         predecessor_root_generation=predecessor_root.root_generation,
+        predecessor_root_pointer_identity=root_pointer[0],
+        predecessor_root_pointer_digest=root_pointer[1],
+        attempt_kind="INITIAL_BEGIN",
+        attempt_sequence=1,
+        consuming_disposition_identity=None,
+        consuming_disposition_digest=None,
+        predecessor_attempt_identity=None,
+        predecessor_attempt_terminal_read_back_identity=None,
+        predecessor_attempt_terminal_read_back_digest=None,
+        predecessor_abandoned_commitment_identity=None,
+        predecessor_abandoned_commitment_digest=None,
         reserved_successor_root_generation=2,
         reserved_successor_meta_repair_status="DORMANT",
         reserved_successor_cap_status="ACTIVE_SOLE_NORMAL_AMENDMENT_LIFECYCLE",
@@ -415,6 +548,8 @@ def build_fixture(tmp_path: Path):
     )
     root_commitment = _model(
         "ConstitutionalTerminalRootSemanticImageCommitmentV3",
+        predecessor_snapshot_pointer_identity=root_pointer[0],
+        predecessor_snapshot_pointer_digest=root_pointer[1],
         candidate_h_founding_transition_identity=transition.transition_identity,
         candidate_h_founding_transition_digest=transition.transition_digest,
         successor_cap_reachability_state_identity=cap.reachability_state_identity,
@@ -426,7 +561,11 @@ def build_fixture(tmp_path: Path):
         predecessor_root_generation=1,
         allocation_root_generation=1,
         reserved_terminal_root_generation=2,
+        attempt_kind="INITIAL_BEGIN",
         attempt_sequence=1,
+        predecessor_attempt_identity=None,
+        predecessor_attempt_terminal_read_back_identity=None,
+        predecessor_attempt_terminal_read_back_digest=None,
         token_ordinal=1,
         successor_normative_registry_entry_count=1,
         successor_source_evidence_registry_epoch=1,
@@ -443,6 +582,7 @@ def build_fixture(tmp_path: Path):
         next_token_ordinal=2,
         allocation_root_generation=1,
         terminal_root_generation=2,
+        attempt_kind="INITIAL_BEGIN",
         attempt_sequence=1,
         terminal_result="CONSUMED",
         terminal_failure_evidence_identity=None,
@@ -453,6 +593,8 @@ def build_fixture(tmp_path: Path):
     )
     resulting_root = _model(
         "ConstitutionalRootEvolutionSnapshotV4",
+        predecessor_snapshot_pointer_identity=root_pointer[0],
+        predecessor_snapshot_pointer_digest=root_pointer[1],
         predecessor_snapshot_root_identity=predecessor_root.root_identity,
         predecessor_snapshot_root_digest=predecessor_root.root_digest,
         predecessor_root_generation=1,
@@ -481,6 +623,7 @@ def build_fixture(tmp_path: Path):
         read_back_current_root_identity=resulting_root.root_identity,
         read_back_current_root_digest=resulting_root.root_digest,
         read_back_current_root_generation=2,
+        attempt_kind="INITIAL_BEGIN",
         attempt_sequence=1,
         predecessor_attempt_identity=None,
         predecessor_attempt_terminal_read_back_identity=None,
@@ -506,11 +649,11 @@ def build_fixture(tmp_path: Path):
         terminal,
         retained,
     )
-    return store, capacity, commitment, execution, decision, composition
+    return store, capacity, commitment, execution, decision, composition, manifest, target
 
 
 def _run(fixture):
-    store, capacity, commitment, execution, decision, composition = fixture
+    store, capacity, commitment, execution, decision, composition = fixture[:6]
     return orchestrate_fixture_candidate_h(
         store,
         capacity=capacity,
@@ -519,6 +662,55 @@ def _run(fixture):
         decision=decision,
         composition=composition,
     )
+
+
+def _replace_composition(fixture, **changes):
+    return replace(fixture[5], **changes)
+
+
+def _raw_record_path(store: CandidateHStore, identity: str) -> Path:
+    """Test-only hostile persistence injector; runtime uses public reads only."""
+
+    return store._record_path(identity)
+
+
+def _assert_pre_effect_failure(
+    fixture,
+    expected_code: str,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    composition=None,
+) -> None:
+    store = fixture[0]
+    writes = 0
+    swaps = 0
+    original_write = store.write_immutable
+    original_swap = store.compare_and_swap
+
+    def counted_write(*args, **kwargs):
+        nonlocal writes
+        writes += 1
+        return original_write(*args, **kwargs)
+
+    def counted_swap(*args, **kwargs):
+        nonlocal swaps
+        swaps += 1
+        return original_swap(*args, **kwargs)
+
+    monkeypatch.setattr(store, "write_immutable", counted_write)
+    monkeypatch.setattr(store, "compare_and_swap", counted_swap)
+    with pytest.raises(CandidateOrchestrationError) as exc_info:
+        orchestrate_fixture_candidate_h(
+            store,
+            capacity=fixture[1],
+            authentication_commitment=fixture[2],
+            authentication=fixture[3],
+            decision=fixture[4],
+            composition=fixture[5] if composition is None else composition,
+        )
+    assert exc_info.value.code == expected_code
+    assert writes == 0
+    assert swaps == 0
 
 
 def test_forward_fixture_preserves_zero_originating_authority(tmp_path: Path) -> None:
@@ -535,7 +727,9 @@ def test_root_human_entry_and_path_cardinality_remain_singular(tmp_path: Path) -
     result = _run(build_fixture(tmp_path))
     assert result.human_entry_points == 1
     assert result.retained_roots == 1
-    assert result.retained_root_cas.read_back.slot_identity == "fixture:retained-root"
+    assert result.retained_root_cas.read_back.slot_identity.startswith(
+        "constitutional-root-pointer-v1:"
+    )
     assert result.retained_root_cas.read_back.generation == 2
 
 
@@ -600,7 +794,7 @@ def test_missing_predecessor_and_root_mismatch_fail_closed(tmp_path: Path) -> No
 
 
 def test_refusal_is_terminal_without_forward_effect(tmp_path: Path) -> None:
-    store, capacity, commitment, execution, _, _ = build_fixture(tmp_path)
+    store, capacity, commitment, execution, _, _, _, _ = build_fixture(tmp_path)
     refusal = _decision(capacity, commitment, execution, disposition="REFUSE_EXACT_TARGET")
     result = orchestrate_fixture_candidate_h(
         store,
@@ -637,3 +831,417 @@ def test_orchestration_exports_no_begin_activation_or_deployment_entry() -> None
     assert "decision" in signature.parameters
     assert "root_factory" not in signature.parameters
     assert "human_choice" not in signature.parameters
+
+
+def test_stage4_failure_dominates_new_authority_failures(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = build_fixture(tmp_path)
+    broken_decision = replace(fixture[4], human_signature="fixture:forged")
+    broken = (*fixture[:4], broken_decision, *fixture[5:])
+    _raw_record_path(fixture[0], fixture[2].candidate_h_input_reference_manifest_identity).unlink()
+    _assert_pre_effect_failure(broken, "INVALID_PREDECESSOR", monkeypatch)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("missing", "MANIFEST_MISSING"),
+        ("malformed-cj1", "MANIFEST_CORRUPT"),
+        ("wrong-type", "MANIFEST_CORRUPT"),
+        ("wrong-version", "MANIFEST_CORRUPT"),
+        ("wrong-mapping", "MANIFEST_CORRUPT"),
+        ("multi-violation", "MANIFEST_CORRUPT"),
+        ("address", "MANIFEST_CONTENT_ADDRESS_MISMATCH"),
+    ],
+)
+def test_manifest_public_failure_mapping_and_collapse(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    path = _raw_record_path(
+        fixture[0], fixture[2].candidate_h_input_reference_manifest_identity
+    )
+    if mutation == "missing":
+        path.unlink()
+    elif mutation == "malformed-cj1":
+        path.write_bytes(b"not-cj1")
+    elif mutation == "address":
+        alternate, _ = _manifest(
+            fixture[1],
+            (fixture[7].target_identity, fixture[7].target_digest),
+            source_commitment_identity="fixture:alternate-source-commitment",
+        )
+        path.write_bytes(alternate.to_cj1_bytes())
+    else:
+        payload = fixture[6].to_cj1_object()
+        if mutation in {"wrong-type", "multi-violation"}:
+            payload["manifest_artifact_type"] = "WRONG_MANIFEST_TYPE"
+        if mutation in {"wrong-version", "multi-violation"}:
+            payload["manifest_artifact_version"] = "V999"
+        if mutation in {"wrong-mapping", "multi-violation"}:
+            payload["mapping_contract"] = "WRONG_MAPPING_CONTRACT"
+        path.write_bytes(cj1_encode(payload))
+    _assert_pre_effect_failure(fixture, expected, monkeypatch)
+
+
+def test_manifest_pair_domain_and_producing_capacity_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    wrong_pair = _hash_pair("wrong-manifest-domain", "wrong")
+    fixture = build_fixture(tmp_path / "domain", commitment_manifest_pair=wrong_pair)
+    _assert_pre_effect_failure(fixture, "MANIFEST_PAIR_MISMATCH", monkeypatch)
+
+    monkeypatch.undo()
+    identity = _hash_pair(
+        "human-founder-candidate-h-input-manifest-v2-sha256", "identity"
+    )[0]
+    mismatched_digest = _hash_pair("digest", "different")[1]
+    fixture = build_fixture(
+        tmp_path / "malformed", commitment_manifest_pair=(identity, mismatched_digest)
+    )
+    _assert_pre_effect_failure(fixture, "MANIFEST_PAIR_MISMATCH", monkeypatch)
+
+    monkeypatch.undo()
+    fixture = build_fixture(
+        tmp_path / "capacity",
+        manifest_changes={
+            "producing_external_capacity_identity": _hash_pair("capacity", "wrong")[0],
+            "producing_external_capacity_digest": _hash_pair("capacity", "wrong")[1],
+        },
+    )
+    _assert_pre_effect_failure(
+        fixture, "MANIFEST_PRODUCING_CAPACITY_MISMATCH", monkeypatch
+    )
+
+
+@pytest.mark.parametrize(
+    ("artifact", "expected"),
+    [("manifest", "MANIFEST_CORRUPT"), ("target", "TARGET_V5_CORRUPT")],
+)
+def test_unknown_public_read_code_collapses_to_relevant_corrupt_token(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    artifact: str,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    blocked_identity = (
+        fixture[2].candidate_h_input_reference_manifest_identity
+        if artifact == "manifest"
+        else fixture[7].target_identity
+    )
+    original_read = fixture[0].read_immutable
+
+    def unknown_code(model_type, address, **kwargs):
+        if address.artifact_identity == blocked_identity:
+            raise CandidatePersistenceError("FUTURE_UNKNOWN_READ_CODE", "opaque")
+        return original_read(model_type, address, **kwargs)
+
+    monkeypatch.setattr(fixture[0], "read_immutable", unknown_code)
+    _assert_pre_effect_failure(fixture, expected, monkeypatch)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("missing", "TARGET_V5_MISSING"),
+        ("malformed-cj1", "TARGET_V5_CORRUPT"),
+        ("wrong-type", "TARGET_V5_CORRUPT"),
+        ("wrong-version", "TARGET_V5_CORRUPT"),
+        ("wrong-owner", "TARGET_V5_CORRUPT"),
+        ("address", "TARGET_V5_CONTENT_ADDRESS_MISMATCH"),
+    ],
+)
+def test_target_v5_public_failure_mapping(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    path = _raw_record_path(fixture[0], fixture[7].target_identity)
+    if mutation == "missing":
+        path.unlink()
+    elif mutation == "malformed-cj1":
+        path.write_bytes(b"not-cj1")
+    elif mutation == "address":
+        alternate = _target_v5(
+            _model(
+                "ConstitutionalRootEvolutionSnapshotV4",
+                predecessor_root_generation=0,
+                root_generation=1,
+                normative_registry_entry_count=1,
+                source_evidence_registry_epoch=1,
+                effective_logical_instant="fixture:alternate-root-one",
+            ),
+            _hash_pair("constitutional-root-pointer-v1", "alternate-root-one"),
+        )
+        path.write_bytes(alternate.to_cj1_bytes())
+    else:
+        payload = fixture[7].to_cj1_object()
+        field, value = {
+            "wrong-type": ("artifact_type", "WrongTarget"),
+            "wrong-version": ("artifact_version", "V999"),
+            "wrong-owner": ("producing_owner", "fixture:wrong-owner"),
+        }[mutation]
+        payload[field] = value
+        path.write_bytes(cj1_encode(payload))
+    _assert_pre_effect_failure(fixture, expected, monkeypatch)
+
+
+def test_target_pair_capacity_decision_and_mode_precedence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    malformed = ("not-a-target-pair", "not-a-digest")
+    fixture = build_fixture(tmp_path / "pair", manifest_target_pair=malformed)
+    _assert_pre_effect_failure(fixture, "TARGET_V5_PAIR_MISMATCH", monkeypatch)
+
+    monkeypatch.undo()
+    alternate = _hash_pair("founding-target-v5", "alternate")
+    fixture = build_fixture(tmp_path / "capacity", capacity_target_pair=alternate)
+    _assert_pre_effect_failure(fixture, "CAPACITY_TARGET_V5_MISMATCH", monkeypatch)
+
+    monkeypatch.undo()
+    fixture = build_fixture(tmp_path / "decision", decision_target_pair=alternate)
+    _assert_pre_effect_failure(
+        fixture, "HUMAN_DECISION_TARGET_V5_MISMATCH", monkeypatch
+    )
+
+    monkeypatch.undo()
+    fixture = build_fixture(
+        tmp_path / "mode", target_changes={"root_binding_mode": "WRONG_MODE"}
+    )
+    _assert_pre_effect_failure(
+        fixture, "TARGET_V5_ROOT_BINDING_MODE_MISMATCH", monkeypatch
+    )
+
+
+def test_unreferenced_valid_manifest_and_target_are_not_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = build_fixture(tmp_path)
+    alternate_target = _target_v5(
+        _model(
+            "ConstitutionalRootEvolutionSnapshotV4",
+            predecessor_root_generation=0,
+            root_generation=1,
+            normative_registry_entry_count=1,
+            source_evidence_registry_epoch=1,
+            effective_logical_instant="fixture:unreferenced-root",
+        ),
+        _hash_pair("constitutional-root-pointer-v1", "unreferenced-root"),
+    )
+    fixture[0].write_immutable(alternate_target)
+    alternate_manifest, alternate_pair = _manifest(
+        fixture[1],
+        (alternate_target.target_identity, alternate_target.target_digest),
+        source_commitment_identity="fixture:unreferenced-manifest",
+    )
+    fixture[0].write_immutable(
+        alternate_manifest,
+        artifact_identity=alternate_pair[0],
+        artifact_digest=alternate_pair[1],
+        owner_bindings=OWNER_BINDINGS,
+    )
+    reads: list[str] = []
+    original_read = fixture[0].read_immutable
+
+    def observed_read(model_type, address, **kwargs):
+        reads.append(address.artifact_identity)
+        return original_read(model_type, address, **kwargs)
+
+    monkeypatch.setattr(fixture[0], "read_immutable", observed_read)
+    result = _run(fixture)
+    assert result.fixture_effects_applied == 1
+    assert alternate_pair[0] not in reads
+    assert alternate_target.target_identity not in reads
+
+
+@pytest.mark.parametrize(
+    ("field", "expected"),
+    [
+        ("proof_set", "PROOF_SET_AUTHORITATIVE_P_ROOT_MISMATCH"),
+        ("certification", "CERTIFICATION_AUTHORITATIVE_P_ROOT_MISMATCH"),
+        ("transition", "TRANSITION_AUTHORITATIVE_P_ROOT_MISMATCH"),
+        ("terminal_root_commitment", "TERMINAL_COMMITMENT_AUTHORITATIVE_P_ROOT_MISMATCH"),
+        ("resulting_root", "RESULTING_ROOT_AUTHORITATIVE_P_ROOT_MISMATCH"),
+    ],
+)
+def test_each_descendant_pointer_must_match_independent_target_authority(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    alternate = _hash_pair("constitutional-root-pointer-v1", field)
+    model = getattr(fixture[5], field)
+    prefix = {
+        "proof_set": "current_root_pointer",
+        "certification": "current_root_pointer",
+        "transition": "predecessor_root_pointer",
+        "terminal_root_commitment": "predecessor_snapshot_pointer",
+        "resulting_root": "predecessor_snapshot_pointer",
+    }[field]
+    divergent = replace(
+        model,
+        **{f"{prefix}_identity": alternate[0], f"{prefix}_digest": alternate[1]},
+    )
+    composition = _replace_composition(fixture, **{field: divergent})
+    _assert_pre_effect_failure(fixture, expected, monkeypatch, composition=composition)
+
+
+def test_coherent_descendant_pointer_substitution_cannot_create_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = build_fixture(tmp_path)
+    alternate = _hash_pair("constitutional-root-pointer-v1", "coherent-substitution")
+    c = fixture[5]
+    composition = replace(
+        c,
+        proof_set=replace(
+            c.proof_set,
+            current_root_pointer_identity=alternate[0],
+            current_root_pointer_digest=alternate[1],
+        ),
+        certification=replace(
+            c.certification,
+            current_root_pointer_identity=alternate[0],
+            current_root_pointer_digest=alternate[1],
+        ),
+        transition=replace(
+            c.transition,
+            predecessor_root_pointer_identity=alternate[0],
+            predecessor_root_pointer_digest=alternate[1],
+        ),
+        terminal_root_commitment=replace(
+            c.terminal_root_commitment,
+            predecessor_snapshot_pointer_identity=alternate[0],
+            predecessor_snapshot_pointer_digest=alternate[1],
+        ),
+        resulting_root=replace(
+            c.resulting_root,
+            predecessor_snapshot_pointer_identity=alternate[0],
+            predecessor_snapshot_pointer_digest=alternate[1],
+        ),
+    )
+    _assert_pre_effect_failure(
+        fixture,
+        "PROOF_SET_AUTHORITATIVE_P_ROOT_MISMATCH",
+        monkeypatch,
+        composition=composition,
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected"),
+    [
+        ("kind", "INITIAL_BEGIN_KIND_MISMATCH"),
+        ("sequence", "INITIAL_BEGIN_SEQUENCE_MISMATCH"),
+        ("predecessor", "INITIAL_BEGIN_PREDECESSOR_PRESENT"),
+    ],
+)
+def test_retry_and_initial_begin_substitution_fail_before_effect(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    proof = fixture[5].proof_set
+    if mutation == "kind":
+        proof = replace(proof, attempt_kind="RECOVERY_RETRY")
+    elif mutation == "sequence":
+        proof = replace(proof, attempt_sequence=2)
+    else:
+        proof = replace(proof, predecessor_attempt_identity="fixture:predecessor")
+    _assert_pre_effect_failure(
+        fixture,
+        expected,
+        monkeypatch,
+        composition=_replace_composition(fixture, proof_set=proof),
+    )
+
+
+def test_authoritative_pointer_and_origin_root_are_target_derived(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = build_fixture(
+        tmp_path / "pointer",
+        target_changes={
+            "founding_event_origin_root_pointer_identity": "malformed",
+            "founding_event_origin_root_pointer_digest": "malformed",
+        },
+    )
+    _assert_pre_effect_failure(fixture, "AUTHORITATIVE_P_ROOT_INVALID", monkeypatch)
+
+    monkeypatch.undo()
+    fixture = build_fixture(tmp_path / "root")
+    proof = replace(fixture[5].proof_set, current_root_generation=999)
+    _assert_pre_effect_failure(
+        fixture,
+        "AUTHORITATIVE_ORIGIN_ROOT_MISMATCH",
+        monkeypatch,
+        composition=_replace_composition(fixture, proof_set=proof),
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "expected"),
+    [
+        ("owner", "fixture:alternate-owner", "RETAINED_ROOT_OWNER_MISMATCH"),
+        ("slot_identity", "fixture:alternate-slot", "RETAINED_ROOT_IDENTITY_MISMATCH"),
+        ("slot_epoch", "fixture:alternate-epoch", "RETAINED_ROOT_EPOCH_MISMATCH"),
+    ],
+)
+def test_retained_coordinate_components_fail_in_exact_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: object,
+    expected: str,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    retained = replace(fixture[5].retained_root_predecessor, **{field: value})
+    _assert_pre_effect_failure(
+        fixture,
+        expected,
+        monkeypatch,
+        composition=_replace_composition(fixture, retained_root_predecessor=retained),
+    )
+
+
+def test_unrelated_populated_slot_is_ignored_and_stale_history_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixture = build_fixture(tmp_path / "unrelated")
+    fixture[0].compare_and_swap(
+        owner=ROOT_OWNER,
+        slot_identity="fixture:unrelated-root-coordinate",
+        slot_epoch=999,
+        expected_slot_digest=None,
+        expected_status=None,
+        successor_status="CURRENT",
+        model=fixture[5].resulting_root,
+        logical_instant="fixture:unrelated",
+        owner_bindings=OWNER_BINDINGS,
+    )
+    result = _run(fixture)
+    assert result.fixture_effects_applied == 1
+    assert result.retained_root_cas.read_back.slot_identity == (
+        fixture[5].retained_root_predecessor.slot_identity
+    )
+
+    monkeypatch.undo()
+    fixture = build_fixture(tmp_path / "stale")
+    stale = replace(fixture[5].retained_root_predecessor, current_status="STALE")
+    _assert_pre_effect_failure(
+        fixture,
+        "RETAINED_ROOT_STATE_HISTORY_MISMATCH",
+        monkeypatch,
+        composition=_replace_composition(fixture, retained_root_predecessor=stale),
+    )

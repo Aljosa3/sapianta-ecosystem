@@ -3,7 +3,8 @@
 The module consumes an already durable Stage-4 authentication execution and
 already formed constitutional evidence.  It validates the forward identity
 DAG, publishes immutable evidence through the existing Candidate store, and
-uses the caller-supplied retained-root coordinate for one fixture-only CAS.
+binds retained-root evidence to the authenticated TargetV5 origin coordinate
+for one fixture-only CAS.
 It does not choose a Human disposition, authenticate, sign, create a store or
 root coordinate, execute BEGIN, replay, activate, deploy, or create a
 production effect.
@@ -17,10 +18,12 @@ from typing import Final
 from .authentication import FixtureAuthenticationExecution
 from .cj1 import cj1_digest, cj1_identity
 from .models import (
+    CandidateHInputReferenceManifestV2,
     CandidateHFoundingAttemptTerminalReadBackV1,
     CandidateHOneShotDormancyRebaseGuardV2,
     ConstitutionalExistingOrdinaryRepairChainCensusV2,
     ConstitutionalMetaRepairStateV3,
+    ConstitutionalMetaRepairInitialAdoptionTargetV5,
     ConstitutionalMetaRepairTransitionV3,
     ConstitutionalRootEvolutionSnapshotV4,
     ConstitutionalRootSerializationCoordinatorStateV4,
@@ -54,6 +57,9 @@ from .validators import (
 
 
 ROOT_OWNER: Final = "CONSTITUTIONAL_ROOT_SERIALIZATION_CUSTODIAN"
+MANIFEST_IDENTITY_PREFIX: Final = "human-founder-candidate-h-input-manifest-v2-sha256:"
+TARGET_V5_IDENTITY_PREFIX: Final = "founding-target-v5:"
+TARGET_V5_ROOT_BINDING_MODE: Final = "STABLE_EVENT_ORIGIN_PLUS_PER_ATTEMPT_CURRENT_ROOT"
 
 
 class CandidateOrchestrationError(RuntimeError):
@@ -112,6 +118,59 @@ class FixtureOrchestrationExecution:
 def _require_equal(actual: object, expected: object, detail: str) -> None:
     if actual != expected:
         _fail("FORWARD_BINDING_MISMATCH", detail)
+
+
+def _require_content_pair(
+    identity: object,
+    digest: object,
+    *,
+    prefix: str | None,
+    token: str,
+    detail: str,
+) -> tuple[str, str]:
+    if not isinstance(identity, str) or not isinstance(digest, str):
+        _fail(token, detail)
+    if prefix is not None and not identity.startswith(prefix):
+        _fail(token, detail)
+    if ":" not in identity or not digest.startswith("sha256:"):
+        _fail(token, detail)
+    identity_hash = identity.rsplit(":", 1)[-1]
+    digest_hash = digest.removeprefix("sha256:")
+    if (
+        len(identity_hash) != 64
+        or len(digest_hash) != 64
+        or identity_hash != digest_hash
+        or any(character not in "0123456789abcdef" for character in identity_hash)
+    ):
+        _fail(token, detail)
+    return identity, digest
+
+
+def _read_authoritative_immutable(
+    store: CandidateHStore,
+    model_type: type,
+    pair: tuple[str, str],
+    *,
+    missing_token: str,
+    corrupt_token: str,
+    address_token: str,
+    owner_bindings: dict[str, str],
+):
+    try:
+        model, _ = store.read_immutable(
+            model_type,
+            ArtifactAddress(pair[0], pair[1]),
+            owner_bindings=owner_bindings,
+        )
+    except CandidatePersistenceError as exc:
+        if exc.code == "MISSING_IMMUTABLE_RECORD":
+            _fail(missing_token, exc.code)
+        if exc.code == "CORRUPT_IMMUTABLE_RECORD":
+            _fail(corrupt_token, exc.code)
+        if exc.code == "ARTIFACT_ADDRESS_MISMATCH":
+            _fail(address_token, exc.code)
+        _fail(corrupt_token, exc.code)
+    return model
 
 
 def _reference(evidence: object, owner_bindings: dict[str, str]) -> PredecessorReference:
@@ -208,6 +267,233 @@ def _validate_authentication_predecessor(
         result.signature_key_identity,
         "decision/signature key",
     )
+
+
+def _validate_initial_begin(composition: FixtureForwardComposition) -> None:
+    if composition.proof_set.attempt_kind != "INITIAL_BEGIN":
+        _fail("INITIAL_BEGIN_KIND_MISMATCH", "proof_set")
+    if composition.proof_set.attempt_sequence != 1:
+        _fail("INITIAL_BEGIN_SEQUENCE_MISMATCH", "proof_set")
+    forbidden_presence = (
+        ("proof_set.consuming_disposition_identity", composition.proof_set.consuming_disposition_identity),
+        ("proof_set.consuming_disposition_digest", composition.proof_set.consuming_disposition_digest),
+        ("proof_set.predecessor_attempt_identity", composition.proof_set.predecessor_attempt_identity),
+        (
+            "proof_set.predecessor_attempt_terminal_read_back_identity",
+            composition.proof_set.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "proof_set.predecessor_attempt_terminal_read_back_digest",
+            composition.proof_set.predecessor_attempt_terminal_read_back_digest,
+        ),
+        (
+            "proof_set.predecessor_abandoned_commitment_identity",
+            composition.proof_set.predecessor_abandoned_commitment_identity,
+        ),
+        (
+            "proof_set.predecessor_abandoned_commitment_digest",
+            composition.proof_set.predecessor_abandoned_commitment_digest,
+        ),
+        (
+            "certification.consuming_disposition_identity",
+            composition.certification.consuming_disposition_identity,
+        ),
+        (
+            "certification.consuming_disposition_digest",
+            composition.certification.consuming_disposition_digest,
+        ),
+        (
+            "certification.predecessor_attempt_terminal_read_back_identity",
+            composition.certification.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "certification.predecessor_attempt_terminal_read_back_digest",
+            composition.certification.predecessor_attempt_terminal_read_back_digest,
+        ),
+        ("transition.consuming_disposition_identity", composition.transition.consuming_disposition_identity),
+        ("transition.consuming_disposition_digest", composition.transition.consuming_disposition_digest),
+        ("transition.predecessor_attempt_identity", composition.transition.predecessor_attempt_identity),
+        (
+            "transition.predecessor_attempt_terminal_read_back_identity",
+            composition.transition.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "transition.predecessor_attempt_terminal_read_back_digest",
+            composition.transition.predecessor_attempt_terminal_read_back_digest,
+        ),
+        (
+            "transition.predecessor_abandoned_commitment_identity",
+            composition.transition.predecessor_abandoned_commitment_identity,
+        ),
+        (
+            "transition.predecessor_abandoned_commitment_digest",
+            composition.transition.predecessor_abandoned_commitment_digest,
+        ),
+        (
+            "terminal_root_commitment.predecessor_attempt_identity",
+            composition.terminal_root_commitment.predecessor_attempt_identity,
+        ),
+        (
+            "terminal_root_commitment.predecessor_attempt_terminal_read_back_identity",
+            composition.terminal_root_commitment.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "terminal_root_commitment.predecessor_attempt_terminal_read_back_digest",
+            composition.terminal_root_commitment.predecessor_attempt_terminal_read_back_digest,
+        ),
+        (
+            "terminal_coordinator_state.predecessor_attempt_identity",
+            composition.terminal_coordinator_state.predecessor_attempt_identity,
+        ),
+        (
+            "terminal_coordinator_state.predecessor_attempt_terminal_read_back_identity",
+            composition.terminal_coordinator_state.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "terminal_coordinator_state.predecessor_attempt_terminal_read_back_digest",
+            composition.terminal_coordinator_state.predecessor_attempt_terminal_read_back_digest,
+        ),
+        (
+            "attempt_terminal_read_back.predecessor_attempt_identity",
+            composition.attempt_terminal_read_back.predecessor_attempt_identity,
+        ),
+        (
+            "attempt_terminal_read_back.predecessor_attempt_terminal_read_back_identity",
+            composition.attempt_terminal_read_back.predecessor_attempt_terminal_read_back_identity,
+        ),
+        (
+            "attempt_terminal_read_back.predecessor_attempt_terminal_read_back_digest",
+            composition.attempt_terminal_read_back.predecessor_attempt_terminal_read_back_digest,
+        ),
+        (
+            "attempt_terminal_read_back.next_attempt_sequence",
+            composition.attempt_terminal_read_back.next_attempt_sequence,
+        ),
+    )
+    for field_name, value in forbidden_presence:
+        if value is not None:
+            _fail("INITIAL_BEGIN_PREDECESSOR_PRESENT", field_name)
+
+
+def _validate_authoritative_predecessors(
+    store: CandidateHStore,
+    capacity: HumanFounderExternalCapacityEvidenceV2,
+    commitment: HumanFounderAuthenticationCommitmentV2,
+    decision: ExternalConstituentHumanFirstAdoptionDecisionV2,
+    composition: FixtureForwardComposition,
+    owner_bindings: dict[str, str],
+) -> tuple[tuple[str, str], tuple[str, str, int]]:
+    manifest_pair = _require_content_pair(
+        commitment.candidate_h_input_reference_manifest_identity,
+        commitment.candidate_h_input_reference_manifest_digest,
+        prefix=MANIFEST_IDENTITY_PREFIX,
+        token="MANIFEST_PAIR_MISMATCH",
+        detail="commitment manifest pair",
+    )
+    manifest = _read_authoritative_immutable(
+        store,
+        CandidateHInputReferenceManifestV2,
+        manifest_pair,
+        missing_token="MANIFEST_MISSING",
+        corrupt_token="MANIFEST_CORRUPT",
+        address_token="MANIFEST_CONTENT_ADDRESS_MISMATCH",
+        owner_bindings=owner_bindings,
+    )
+    if (
+        manifest.producing_external_capacity_identity,
+        manifest.producing_external_capacity_digest,
+    ) != (capacity.artifact_identity, capacity.artifact_digest):
+        _fail("MANIFEST_PRODUCING_CAPACITY_MISMATCH", manifest_pair[0])
+    target_pair = _require_content_pair(
+        manifest.target_v5_identity,
+        manifest.target_v5_digest,
+        prefix=TARGET_V5_IDENTITY_PREFIX,
+        token="TARGET_V5_PAIR_MISMATCH",
+        detail="manifest TargetV5 pair",
+    )
+    if (capacity.target_identity, capacity.target_digest) != target_pair:
+        _fail("CAPACITY_TARGET_V5_MISMATCH", capacity.artifact_identity)
+    if (decision.target_identity, decision.target_digest) != target_pair:
+        _fail("HUMAN_DECISION_TARGET_V5_MISMATCH", decision.artifact_identity)
+    target = _read_authoritative_immutable(
+        store,
+        ConstitutionalMetaRepairInitialAdoptionTargetV5,
+        target_pair,
+        missing_token="TARGET_V5_MISSING",
+        corrupt_token="TARGET_V5_CORRUPT",
+        address_token="TARGET_V5_CONTENT_ADDRESS_MISMATCH",
+        owner_bindings=owner_bindings,
+    )
+    if target.root_binding_mode != TARGET_V5_ROOT_BINDING_MODE:
+        _fail("TARGET_V5_ROOT_BINDING_MODE_MISMATCH", target.target_identity)
+    _validate_initial_begin(composition)
+    authoritative_pointer = _require_content_pair(
+        target.founding_event_origin_root_pointer_identity,
+        target.founding_event_origin_root_pointer_digest,
+        prefix=None,
+        token="AUTHORITATIVE_P_ROOT_INVALID",
+        detail="TargetV5 founding origin pointer",
+    )
+    authoritative_root = (
+        target.founding_event_origin_root_identity,
+        target.founding_event_origin_root_digest,
+        target.founding_event_origin_root_generation,
+    )
+    supplied_roots = (
+        (
+            composition.proof_set.current_root_identity,
+            composition.proof_set.current_root_digest,
+            composition.proof_set.current_root_generation,
+        ),
+        (
+            composition.certification.current_root_identity,
+            composition.certification.current_root_digest,
+            composition.certification.current_root_generation,
+        ),
+        (
+            composition.transition.predecessor_root_identity,
+            composition.transition.predecessor_root_digest,
+            composition.transition.predecessor_root_generation,
+        ),
+        (
+            composition.resulting_root.predecessor_snapshot_root_identity,
+            composition.resulting_root.predecessor_snapshot_root_digest,
+            composition.resulting_root.predecessor_root_generation,
+        ),
+    )
+    if any(root != authoritative_root for root in supplied_roots):
+        _fail("AUTHORITATIVE_ORIGIN_ROOT_MISMATCH", target.target_identity)
+    pointer_bindings = (
+        (
+            "PROOF_SET_AUTHORITATIVE_P_ROOT_MISMATCH",
+            composition.proof_set.current_root_pointer_identity,
+            composition.proof_set.current_root_pointer_digest,
+        ),
+        (
+            "CERTIFICATION_AUTHORITATIVE_P_ROOT_MISMATCH",
+            composition.certification.current_root_pointer_identity,
+            composition.certification.current_root_pointer_digest,
+        ),
+        (
+            "TRANSITION_AUTHORITATIVE_P_ROOT_MISMATCH",
+            composition.transition.predecessor_root_pointer_identity,
+            composition.transition.predecessor_root_pointer_digest,
+        ),
+        (
+            "TERMINAL_COMMITMENT_AUTHORITATIVE_P_ROOT_MISMATCH",
+            composition.terminal_root_commitment.predecessor_snapshot_pointer_identity,
+            composition.terminal_root_commitment.predecessor_snapshot_pointer_digest,
+        ),
+        (
+            "RESULTING_ROOT_AUTHORITATIVE_P_ROOT_MISMATCH",
+            composition.resulting_root.predecessor_snapshot_pointer_identity,
+            composition.resulting_root.predecessor_snapshot_pointer_digest,
+        ),
+    )
+    for token, identity, digest in pointer_bindings:
+        if (identity, digest) != authoritative_pointer:
+            _fail(token, target.target_identity)
+    return authoritative_pointer, authoritative_root
 
 
 def _forward_dag(
@@ -386,21 +672,27 @@ def _validate_retained_root(
     store: CandidateHStore,
     composition: FixtureForwardComposition,
     owner_bindings: dict[str, str],
+    authoritative_pointer: tuple[str, str],
+    authoritative_root: tuple[str, str, int],
 ) -> ConstitutionalRootEvolutionSnapshotV4:
     c = composition
     predecessor = c.retained_root_predecessor
     if not isinstance(predecessor, SlotReadBack):
-        _fail("MISSING_RETAINED_ROOT", "SlotReadBack")
+        _fail("RETAINED_ROOT_STATE_HISTORY_MISMATCH", "SlotReadBack")
     if predecessor.owner != ROOT_OWNER:
         _fail("RETAINED_ROOT_OWNER_MISMATCH", predecessor.owner)
+    if predecessor.slot_identity != authoritative_pointer[0]:
+        _fail("RETAINED_ROOT_IDENTITY_MISMATCH", predecessor.slot_identity)
+    if predecessor.slot_epoch != authoritative_pointer[1]:
+        _fail("RETAINED_ROOT_EPOCH_MISMATCH", str(predecessor.slot_epoch))
     try:
         current = store.read_slot(
-            predecessor.owner,
-            predecessor.slot_identity,
-            predecessor.slot_epoch,
+            ROOT_OWNER,
+            authoritative_pointer[0],
+            authoritative_pointer[1],
         )
     except CandidatePersistenceError as exc:
-        _fail("MISSING_RETAINED_ROOT", str(exc))
+        _fail("RETAINED_ROOT_STATE_HISTORY_MISMATCH", exc.code)
     if current != predecessor:
         identical_terminal = (
             current.predecessor_slot_digest == predecessor.slot_digest
@@ -411,7 +703,7 @@ def _validate_retained_root(
             and current.logical_instant == c.resulting_root.effective_logical_instant
         )
         if not identical_terminal:
-            _fail("FIXTURE_AUTHORITY_EXHAUSTED", current.artifact_identity)
+            _fail("RETAINED_ROOT_STATE_HISTORY_MISMATCH", current.artifact_identity)
     try:
         predecessor_root, _ = store.read_immutable(
             ConstitutionalRootEvolutionSnapshotV4,
@@ -419,44 +711,50 @@ def _validate_retained_root(
             owner_bindings=owner_bindings,
         )
     except CandidatePersistenceError as exc:
-        _fail("MISSING_RETAINED_ROOT", str(exc))
-    _require_equal(
+        _fail("RETAINED_ROOT_STATE_HISTORY_MISMATCH", exc.code)
+    persisted_root = (
+        predecessor_root.root_identity,
+        predecessor_root.root_digest,
+        predecessor_root.root_generation,
+    )
+    retained_checks = (
+        (persisted_root, authoritative_root),
         (
-            c.resulting_root.predecessor_snapshot_root_identity,
-            c.resulting_root.predecessor_snapshot_root_digest,
-            c.resulting_root.predecessor_root_generation,
+            (
+                c.resulting_root.predecessor_snapshot_root_identity,
+                c.resulting_root.predecessor_snapshot_root_digest,
+                c.resulting_root.predecessor_root_generation,
+            ),
+            persisted_root,
         ),
-        (predecessor_root.root_identity, predecessor_root.root_digest, predecessor_root.root_generation),
-        "retained predecessor root",
-    )
-    _require_equal(
-        c.resulting_root.root_generation,
-        predecessor_root.root_generation + 1,
-        "successor root generation",
-    )
-    _require_equal(
-        (c.proof_set.current_root_identity, c.proof_set.current_root_digest, c.proof_set.current_root_generation),
-        (predecessor_root.root_identity, predecessor_root.root_digest, predecessor_root.root_generation),
-        "proof/current root",
-    )
-    _require_equal(
+        (c.resulting_root.root_generation, predecessor_root.root_generation + 1),
         (
-            c.certification.current_root_identity,
-            c.certification.current_root_digest,
-            c.certification.current_root_generation,
+            (
+                c.proof_set.current_root_identity,
+                c.proof_set.current_root_digest,
+                c.proof_set.current_root_generation,
+            ),
+            persisted_root,
         ),
-        (predecessor_root.root_identity, predecessor_root.root_digest, predecessor_root.root_generation),
-        "certification/current root",
-    )
-    _require_equal(
         (
-            c.transition.predecessor_root_identity,
-            c.transition.predecessor_root_digest,
-            c.transition.predecessor_root_generation,
+            (
+                c.certification.current_root_identity,
+                c.certification.current_root_digest,
+                c.certification.current_root_generation,
+            ),
+            persisted_root,
         ),
-        (predecessor_root.root_identity, predecessor_root.root_digest, predecessor_root.root_generation),
-        "transition/predecessor root",
+        (
+            (
+                c.transition.predecessor_root_identity,
+                c.transition.predecessor_root_digest,
+                c.transition.predecessor_root_generation,
+            ),
+            persisted_root,
+        ),
     )
+    if any(actual != expected for actual, expected in retained_checks):
+        _fail("RETAINED_ROOT_STATE_HISTORY_MISMATCH", predecessor.artifact_identity)
     return predecessor_root
 
 
@@ -523,7 +821,21 @@ def orchestrate_fixture_candidate_h(
         _fail("UNKNOWN_HUMAN_DISPOSITION", str(decision.decision))
     if not isinstance(composition, FixtureForwardComposition):
         _fail("MISSING_FORWARD_PREDECESSOR", "FixtureForwardComposition")
-    predecessor_root = _validate_retained_root(store, composition, owner_bindings)
+    authoritative_pointer, authoritative_root = _validate_authoritative_predecessors(
+        store,
+        capacity,
+        authentication_commitment,
+        decision,
+        composition,
+        owner_bindings,
+    )
+    predecessor_root = _validate_retained_root(
+        store,
+        composition,
+        owner_bindings,
+        authoritative_pointer,
+        authoritative_root,
+    )
     _validate_success_semantics(
         capacity,
         authentication_commitment,
@@ -563,9 +875,9 @@ def orchestrate_fixture_candidate_h(
     )
     predecessor = composition.retained_root_predecessor
     root_cas = store.compare_and_swap(
-        owner=predecessor.owner,
-        slot_identity=predecessor.slot_identity,
-        slot_epoch=predecessor.slot_epoch,
+        owner=ROOT_OWNER,
+        slot_identity=authoritative_pointer[0],
+        slot_epoch=authoritative_pointer[1],
         expected_slot_digest=predecessor.slot_digest,
         expected_status=predecessor.current_status,
         successor_status=predecessor.current_status,
