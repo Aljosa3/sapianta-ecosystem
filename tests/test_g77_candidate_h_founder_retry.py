@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import fields, replace
 from pathlib import Path
 
@@ -22,7 +24,9 @@ from aigol.runtime.candidate_h_founder.cj1 import (
 from aigol.runtime.candidate_h_founder.models import MODEL_REGISTRY
 from aigol.runtime.candidate_h_founder.persistence import (
     CandidateHStore,
+    CandidatePersistenceError,
     InjectedPersistenceCrash,
+    SubcontractAddress,
     SUBCONTRACT_KIND_SPECS,
 )
 from aigol.runtime.candidate_h_founder.validators import (
@@ -262,13 +266,37 @@ def _subcontract_bodies(store: CandidateHStore, execution) -> dict[str, dict[str
                 "AUTHENTICATION_TERMINAL_CAS_V1": execution.result.authentication_terminal_cas_digest,
                 "AUTHENTICATION_AUTHORITATIVE_READ_BACK_V1": execution.result.authoritative_read_back_digest,
             }[kind]
-            from aigol.runtime.candidate_h_founder.persistence import SubcontractAddress
-
             address = SubcontractAddress(kind, raw, digest_name)
         body = cj1_decode(store.read_subcontract(address).canonical_bytes)
         assert isinstance(body, dict)
         bodies[kind] = body
     return bodies
+
+
+def _filesystem_snapshot(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def _record_bodies(root: Path) -> list[dict[str, object]]:
+    bodies: list[dict[str, object]] = []
+    for path in (root / "records").glob("*.cj1"):
+        body = cj1_decode(path.read_bytes())
+        if isinstance(body, dict):
+            bodies.append(body)
+    return bodies
+
+
+def _result_identities(root: Path) -> set[str]:
+    return {
+        identity
+        for body in _record_bodies(root)
+        if isinstance((identity := body.get("artifact_identity")), str)
+        and identity.startswith("human-founder-auth-result-readback-v2:")
+    }
 
 
 def test_nine_subcontract_schema_golden_vectors(tmp_path: Path) -> None:
@@ -407,6 +435,255 @@ def test_competing_acceptances_have_one_winner_and_no_second_invocation(
     assert store.read_slot(
         OWNER, context.signer_available_read_back.slot_identity, 1
     ).artifact_identity == winner.result.signer_outcome_identity
+
+
+def test_terminal_restart_binds_persisted_completion_and_one_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, context = _seed_context(tmp_path)
+    first = authenticate_fixture_candidate_h(store, context)
+    root = tmp_path / "store"
+    initial = _filesystem_snapshot(root)
+    changed = replace(
+        context,
+        completion_logical_instant="fixture:different-completion",
+    )
+
+    def forbidden_sign(_: bytes, __: bytes) -> bytes:
+        raise AssertionError("terminal recovery invoked signer")
+
+    monkeypatch.setattr(authentication, "_ed25519_sign", forbidden_sign)
+    with pytest.raises(
+        CandidateAuthenticationError,
+        match="RETRY_TUPLE_MISMATCH:completion_logical_instant",
+    ):
+        authenticate_fixture_candidate_h(CandidateHStore(root), changed)
+    assert _filesystem_snapshot(root) == initial
+    assert _result_identities(root) == {first.result.artifact_identity}
+
+    for _ in range(3):
+        recovered = authenticate_fixture_candidate_h(CandidateHStore(root), context)
+        assert recovered.result == first.result
+        assert recovered.result_write.read_back == first.result_write.read_back
+    assert _result_identities(root) == {first.result.artifact_identity}
+
+
+def test_identical_signer_outcome_conflict_adopts_authoritative_winner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, context = _seed_context(tmp_path)
+    real_cas = CandidateHStore.compare_and_swap_subcontract
+    forced = False
+
+    def report_identical_conflict(self, **arguments):
+        nonlocal forced
+        result = real_cas(self, **arguments)
+        if (
+            not forced
+            and arguments["address"].subcontract_kind == "SIGNER_OUTCOME_V1"
+        ):
+            forced = True
+            return replace(result, outcome="CONFLICT")
+        return result
+
+    monkeypatch.setattr(
+        CandidateHStore,
+        "compare_and_swap_subcontract",
+        report_identical_conflict,
+    )
+    execution = authenticate_fixture_candidate_h(store, context)
+    assert forced
+    assert execution.outcome.outcome == "CONFLICT"
+    assert execution.outcome.read_back.artifact_identity == (
+        execution.result.signer_outcome_identity
+    )
+    assert _result_identities(tmp_path / "store") == {
+        execution.result.artifact_identity
+    }
+
+
+def test_competing_signer_outcomes_reject_loser_before_downstream_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, context = _seed_context(tmp_path)
+    root = tmp_path / "store"
+    real_cas = CandidateHStore.compare_and_swap_subcontract
+    barrier = threading.Barrier(2)
+    proposed_addresses: list[SubcontractAddress] = []
+
+    def synchronize_outcomes(self, **arguments):
+        if arguments["address"].subcontract_kind == "SIGNER_OUTCOME_V1":
+            proposed_addresses.append(arguments["address"])
+            barrier.wait(timeout=5)
+        return real_cas(self, **arguments)
+
+    monkeypatch.setattr(
+        CandidateHStore,
+        "compare_and_swap_subcontract",
+        synchronize_outcomes,
+    )
+    contexts = (
+        replace(context, completion_logical_instant="fixture:completion-a"),
+        replace(context, completion_logical_instant="fixture:completion-b"),
+    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [
+            pool.submit(
+                authenticate_fixture_candidate_h,
+                CandidateHStore(root),
+                competing_context,
+            )
+            for competing_context in contexts
+        ]
+    executions = []
+    errors = []
+    for future in futures:
+        try:
+            executions.append(future.result())
+        except CandidateAuthenticationError as exc:
+            errors.append(exc)
+
+    assert len(executions) == 1
+    assert len(errors) == 1
+    assert errors[0].code == "RETRY_TUPLE_MISMATCH"
+    winner = executions[0]
+    assert _result_identities(root) == {winner.result.artifact_identity}
+    assert len({address.identity for address in proposed_addresses}) == 2
+    losing_address = next(
+        address
+        for address in proposed_addresses
+        if address.identity != winner.result.signer_outcome_identity
+    )
+    with pytest.raises(CandidatePersistenceError, match="MISSING_IMMUTABLE_RECORD"):
+        CandidateHStore(root).read_subcontract(losing_address)
+    assert all(
+        body.get("signer_outcome_identity") != losing_address.identity
+        for body in _record_bodies(root)
+    )
+
+
+def test_identical_outer_terminal_conflict_adopts_authoritative_winner(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, context = _seed_context(tmp_path)
+    real_cas = CandidateHStore.compare_and_swap_subcontract
+    forced = False
+
+    def report_identical_conflict(self, **arguments):
+        nonlocal forced
+        result = real_cas(self, **arguments)
+        if (
+            not forced
+            and arguments["address"].subcontract_kind
+            == "AUTHENTICATION_TERMINAL_CAS_V1"
+        ):
+            forced = True
+            return replace(result, outcome="CONFLICT")
+        return result
+
+    monkeypatch.setattr(
+        CandidateHStore,
+        "compare_and_swap_subcontract",
+        report_identical_conflict,
+    )
+    execution = authenticate_fixture_candidate_h(store, context)
+    assert forced
+    assert execution.terminal.outcome == "CONFLICT"
+    assert execution.terminal.read_back.artifact_identity == (
+        execution.result.authentication_terminal_cas_identity
+    )
+    assert _result_identities(tmp_path / "store") == {
+        execution.result.artifact_identity
+    }
+
+
+def test_divergent_outer_terminal_conflict_stops_before_second_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, context = _seed_context(tmp_path)
+    first = authenticate_fixture_candidate_h(store, context)
+    root = tmp_path / "store"
+    initial = _filesystem_snapshot(root)
+    proof_identity, proof_digest = _hash_pair(
+        "external-one-use-proof-v1", "different-proof"
+    )
+    divergent = replace(
+        context,
+        one_use_non_equivocation_proof_identity=proof_identity,
+        one_use_non_equivocation_proof_digest=proof_digest,
+    )
+
+    def forbidden_sign(_: bytes, __: bytes) -> bytes:
+        raise AssertionError("terminal recovery invoked signer")
+
+    monkeypatch.setattr(authentication, "_ed25519_sign", forbidden_sign)
+    with pytest.raises(CandidateAuthenticationError, match="RETRY_TUPLE_MISMATCH"):
+        authenticate_fixture_candidate_h(CandidateHStore(root), divergent)
+    assert _filesystem_snapshot(root) == initial
+    assert _result_identities(root) == {first.result.artifact_identity}
+
+
+def test_crash_after_signer_outcome_binds_completion_on_restart(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store, context = _seed_context(tmp_path)
+    root = tmp_path / "store"
+    real_write = CandidateHStore.write_subcontract
+    fired = False
+
+    class LostOutcomeReadBackResponse(RuntimeError):
+        pass
+
+    def lose_outcome_read_back_response(
+        self,
+        address,
+        canonical_bytes,
+        **arguments,
+    ):
+        nonlocal fired
+        result = real_write(self, address, canonical_bytes, **arguments)
+        if (
+            not fired
+            and address.subcontract_kind == "SIGNER_OUTCOME_READ_BACK_V1"
+        ):
+            fired = True
+            raise LostOutcomeReadBackResponse
+        return result
+
+    monkeypatch.setattr(
+        CandidateHStore,
+        "write_subcontract",
+        lose_outcome_read_back_response,
+    )
+    with pytest.raises(LostOutcomeReadBackResponse):
+        authenticate_fixture_candidate_h(store, context)
+    assert fired
+    assert _result_identities(root) == set()
+    after_crash = _filesystem_snapshot(root)
+    monkeypatch.setattr(CandidateHStore, "write_subcontract", real_write)
+
+    changed = replace(
+        context,
+        completion_logical_instant="fixture:different-after-outcome",
+    )
+    with pytest.raises(
+        CandidateAuthenticationError,
+        match="RETRY_TUPLE_MISMATCH:completion_logical_instant",
+    ):
+        authenticate_fixture_candidate_h(CandidateHStore(root), changed)
+    assert _filesystem_snapshot(root) == after_crash
+    assert _result_identities(root) == set()
+
+    completed = authenticate_fixture_candidate_h(CandidateHStore(root), context)
+    replayed = authenticate_fixture_candidate_h(CandidateHStore(root), context)
+    assert replayed.result == completed.result
+    assert _result_identities(root) == {completed.result.artifact_identity}
 
 
 @pytest.mark.parametrize(

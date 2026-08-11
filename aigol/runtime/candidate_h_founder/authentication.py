@@ -280,6 +280,73 @@ def _require_slot(
         _fail("SUBCONTRACT_STATE_MISMATCH", detail)
 
 
+def _resolve_authoritative_cas(
+    store: CandidateHStore,
+    *,
+    subcontract_kind: str,
+    local_address: SubcontractAddress,
+    local_canonical_bytes: bytes,
+    result: CompareAndSwapResult,
+    owner: str,
+    slot_identity: str,
+    slot_epoch: object,
+    expected_slot_digest: str | None,
+    expected_status: str | None,
+    successor_status: str,
+    logical_instant: str,
+    detail: str,
+) -> tuple[SubcontractAddress, dict[str, object]]:
+    if not isinstance(result, CompareAndSwapResult) or result.outcome not in {
+        "WON",
+        "IDEMPOTENT",
+        "CONFLICT",
+    }:
+        _fail("RETRY_TUPLE_MISMATCH", f"{detail}:cas outcome")
+    read_back = result.read_back
+    if not isinstance(read_back, SlotReadBack):
+        _fail("RETRY_TUPLE_MISMATCH", f"{detail}:slot read-back")
+    authoritative_address = SubcontractAddress(
+        subcontract_kind,
+        read_back.artifact_identity,
+        read_back.artifact_digest,
+    )
+    authoritative = store.read_subcontract(authoritative_address)
+    if (
+        authoritative_address != local_address
+        or authoritative.address != authoritative_address
+        or authoritative.storage_digest != read_back.artifact_storage_digest
+        or (
+            read_back.owner,
+            read_back.slot_identity,
+            read_back.slot_epoch,
+            read_back.predecessor_slot_digest,
+            read_back.predecessor_status,
+            read_back.current_status,
+            read_back.artifact_identity,
+            read_back.artifact_digest,
+            read_back.logical_instant,
+        )
+        != (
+            owner,
+            slot_identity,
+            slot_epoch,
+            expected_slot_digest,
+            expected_status,
+            successor_status,
+            authoritative_address.identity,
+            authoritative_address.digest,
+            logical_instant,
+        )
+    ):
+        _fail("RETRY_TUPLE_MISMATCH", f"{detail}:authoritative binding")
+    if authoritative.canonical_bytes != local_canonical_bytes:
+        _fail("RETRY_TUPLE_MISMATCH", f"{detail}:canonical bytes")
+    authoritative_body = cj1_decode(authoritative.canonical_bytes)
+    if not isinstance(authoritative_body, dict):
+        _fail("RETRY_TUPLE_MISMATCH", f"{detail}:canonical body")
+    return authoritative_address, authoritative_body
+
+
 def _outcome_values(
     context: FixtureAuthenticationContext,
     message: bytes,
@@ -645,7 +712,8 @@ def authenticate_fixture_candidate_h(
             current_signer.artifact_digest,
         )
         persisted_outcome = store.read_subcontract(outcome_address)
-        outcome_body = cj1_decode(persisted_outcome.canonical_bytes)
+        outcome_bytes = persisted_outcome.canonical_bytes
+        outcome_body = cj1_decode(outcome_bytes)
         if not isinstance(outcome_body, dict):
             _fail("SUBCONTRACT_SCHEMA_MISMATCH", "persisted signer outcome")
         expected_pairs = {
@@ -729,6 +797,27 @@ def authenticate_fixture_candidate_h(
             logical_instant=context.completion_logical_instant,
         )
 
+    outcome_address, outcome_body = _resolve_authoritative_cas(
+        store,
+        subcontract_kind="SIGNER_OUTCOME_V1",
+        local_address=outcome_address,
+        local_canonical_bytes=outcome_bytes,
+        result=outcome,
+        owner=owner,
+        slot_identity=signer_slot_identity,
+        slot_epoch=signer_slot_epoch,
+        expected_slot_digest=accepted_slot_digest,
+        expected_status="ACCEPTED_IN_PROGRESS",
+        successor_status=outcome_body["outcome_status"],
+        logical_instant=outcome_body["completion_logical_instant"],
+        detail="signer outcome",
+    )
+    persisted_completion_logical_instant = outcome_body[
+        "completion_logical_instant"
+    ]
+    if context.completion_logical_instant != persisted_completion_logical_instant:
+        _fail("RETRY_TUPLE_MISMATCH", "completion_logical_instant")
+
     outcome_read_back_body = {
         "signer_outcome_identity": outcome_address.identity,
         "signer_outcome_digest": outcome_address.digest,
@@ -739,7 +828,7 @@ def authenticate_fixture_candidate_h(
         "invocation_sequence": 1,
         "signer_outcome_status": outcome_body["outcome_status"],
         "signature_digest": outcome_body["signature_digest"],
-        "completion_logical_instant": context.completion_logical_instant,
+        "completion_logical_instant": persisted_completion_logical_instant,
         "terminal_signer_slot_digest": outcome.read_back.slot_digest,
     }
     outcome_read_back_address, outcome_read_back_bytes = _subcontract(
@@ -776,7 +865,7 @@ def authenticate_fixture_candidate_h(
         ),
         "conflict_status": conflict_status,
         "capacity_permanently_exhausted": True,
-        "completion_logical_instant": context.completion_logical_instant,
+        "completion_logical_instant": persisted_completion_logical_instant,
         "producing_owner": owner,
         "human_authentication_slot_identity": capacity.human_authentication_slot_identity,
         "human_authentication_epoch": capacity.human_authentication_epoch,
@@ -794,8 +883,31 @@ def authenticate_fixture_candidate_h(
         successor_status=terminal_status,
         address=terminal_address,
         canonical_bytes=terminal_bytes,
-        logical_instant=context.completion_logical_instant,
+        logical_instant=persisted_completion_logical_instant,
     )
+
+    terminal_address, terminal_body = _resolve_authoritative_cas(
+        store,
+        subcontract_kind="AUTHENTICATION_TERMINAL_CAS_V1",
+        local_address=terminal_address,
+        local_canonical_bytes=terminal_bytes,
+        result=terminal,
+        owner=owner,
+        slot_identity=capacity.human_authentication_slot_identity,
+        slot_epoch=capacity.human_authentication_epoch,
+        expected_slot_digest=claim_slot_digest,
+        expected_status="AUTHENTICATING",
+        successor_status=terminal_status,
+        logical_instant=persisted_completion_logical_instant,
+        detail="authentication terminal",
+    )
+    terminal_status = terminal_body["terminal_authentication_slot_status"]
+    authentication_result = terminal_body["authentication_result"]
+    terminal_signature = terminal_body["signature"]
+    signature_verification_result = terminal_body[
+        "signature_verification_result"
+    ]
+    conflict_status = terminal_body["conflict_status"]
 
     authoritative_body = {
         "authentication_terminal_cas_identity": terminal_address.identity,
@@ -810,7 +922,7 @@ def authenticate_fixture_candidate_h(
         "terminal_authentication_slot_status": terminal_status,
         "authentication_result": authentication_result,
         "signature_digest": outcome_body["signature_digest"],
-        "completion_logical_instant": context.completion_logical_instant,
+        "completion_logical_instant": persisted_completion_logical_instant,
         "read_back_authentication_slot_digest": terminal.read_back.slot_digest,
     }
     authoritative_address, authoritative_bytes = _subcontract(
@@ -873,7 +985,7 @@ def authenticate_fixture_candidate_h(
         "retry_permitted": False,
         "second_authentication_permitted": False,
         "capacity_permanently_exhausted": True,
-        "completion_logical_instant": context.completion_logical_instant,
+        "completion_logical_instant": persisted_completion_logical_instant,
         "terminal": True,
     }
     result = _build_result(owner=owner, values=result_values)
