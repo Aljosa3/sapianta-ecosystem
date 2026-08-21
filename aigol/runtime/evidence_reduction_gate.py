@@ -32,6 +32,11 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     canonical_che_request_source_act_digest_v1,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.profile_a_authority_process_boundary import (
+    PROFILE_A_TEST_ONLY_ALLOW,
+    profile_a_context_is_production_v1,
+    validate_profile_a_authority_process_context_v1,
+)
 from aigol.runtime.transport.ledger import RuntimeLedger
 from aigol.runtime.transport.serialization import replay_hash, verify_replay_hash, with_replay_hash
 
@@ -641,7 +646,11 @@ def create_reduction_authorization(
 class BoundedEvidenceReductionGateV1:
     """One gate bound only by the fixed Profile A CHE/Replay composition."""
 
-    __slots__ = ("__authority_provenance_resolver", "__sealed")
+    __slots__ = (
+        "__authority_process_context",
+        "__authority_provenance_resolver",
+        "__sealed",
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if args or kwargs:
@@ -656,13 +665,24 @@ class BoundedEvidenceReductionGateV1:
             "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
             None,
         )
+        object.__setattr__(
+            self,
+            "_BoundedEvidenceReductionGateV1__authority_process_context",
+            None,
+        )
         object.__setattr__(self, "_BoundedEvidenceReductionGateV1__sealed", True)
 
     @classmethod
     def _from_profile_a_che_replay_owner_state(
         cls,
         resolver: _ProfileACheReplayOwnerStateResolverV1,
+        *,
+        _authority_process_context: Any = None,
     ) -> "BoundedEvidenceReductionGateV1":
+        authority_context = validate_profile_a_authority_process_context_v1(
+            _authority_process_context,
+            allow_zero_authority_test=True,
+        )
         if type(resolver) is not _ProfileACheReplayOwnerStateResolverV1:
             raise FailClosedRuntimeError(
                 "exact Profile A CHE/Replay owner-state resolver is required"
@@ -672,6 +692,11 @@ class BoundedEvidenceReductionGateV1:
             gate,
             "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
             resolver,
+        )
+        object.__setattr__(
+            gate,
+            "_BoundedEvidenceReductionGateV1__authority_process_context",
+            authority_context,
         )
         object.__setattr__(
             gate, "_BoundedEvidenceReductionGateV1__sealed", True
@@ -707,6 +732,7 @@ class BoundedEvidenceReductionGateV1:
             authority_provenance_reference=authority_provenance_reference,
             authority_evidence=authority_evidence,
             authority_provenance_resolver=self.__authority_provenance_resolver,
+            authority_process_context=self.__authority_process_context,
         )
 
     def record_decision(
@@ -753,18 +779,34 @@ class BoundedEvidenceReductionGateV1:
 
 
 def _compose_profile_a_bounded_evidence_reduction_gate_v1(
-    *,
-    runtime_scope_identity: str,
-    owner_state_identity: str,
+    *args: Any,
+    **kwargs: Any,
 ) -> BoundedEvidenceReductionGateV1:
-    """CHE-internal composition; neither input is an evaluation-call surface."""
+    """Reject the historical caller-importable allow composition surface."""
+
+    del args, kwargs
+    raise FailClosedRuntimeError(
+        "allow-capable composition requires the dedicated OS authority process"
+    )
+
+
+def _compose_profile_a_bounded_evidence_reduction_gate_inside_authority_process_v1(
+    *,
+    _authority_process_context: Any,
+) -> BoundedEvidenceReductionGateV1:
+    """Compose only after revalidating the OS/process authority context."""
+
+    authority_context = validate_profile_a_authority_process_context_v1(
+        _authority_process_context,
+        allow_zero_authority_test=True,
+    )
 
     resolver = _create_profile_a_che_replay_resolver_v1(
-        runtime_scope_identity=runtime_scope_identity,
-        owner_state_identity=owner_state_identity,
+        _authority_process_context=authority_context,
     )
     return BoundedEvidenceReductionGateV1._from_profile_a_che_replay_owner_state(
-        resolver
+        resolver,
+        _authority_process_context=authority_context,
     )
 
 
@@ -779,6 +821,7 @@ def _evaluate_evidence_reduction_gate(
     authority_provenance_reference: str | None,
     authority_evidence: dict[str, Any] | None = None,
     authority_provenance_resolver: Any,
+    authority_process_context: Any,
 ) -> dict[str, Any]:
     """Evaluate without side effects; every invalid condition returns denial."""
 
@@ -896,7 +939,17 @@ def _evaluate_evidence_reduction_gate(
             )
         )
 
-    decision = ALLOW_BOUNDED_EVIDENCE_REDUCTION if not failures else DO_NOT_REDUCE_EVIDENCE
+    if not failures:
+        if profile_a_context_is_production_v1(authority_process_context):
+            decision = ALLOW_BOUNDED_EVIDENCE_REDUCTION
+        else:
+            validate_profile_a_authority_process_context_v1(
+                authority_process_context,
+                allow_zero_authority_test=True,
+            )
+            decision = PROFILE_A_TEST_ONLY_ALLOW
+    else:
+        decision = DO_NOT_REDUCE_EVIDENCE
     input_hashes = {name: _fingerprint(value) for name, value in artifacts.items()}
     input_hashes["authority_provenance"] = authority_provenance_fingerprint
     basis = {

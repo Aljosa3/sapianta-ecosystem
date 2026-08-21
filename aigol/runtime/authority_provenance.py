@@ -36,6 +36,9 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     validate_canonical_che_request_envelope_v1,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.profile_a_authority_process_boundary import (
+    validate_profile_a_authority_process_context_v1,
+)
 from aigol.runtime.transport.serialization import canonical_serialize, replay_hash
 
 
@@ -868,32 +871,33 @@ def validate_profile_a_owner_state_event_v1(value: Any) -> dict[str, Any]:
 
 
 def _profile_a_owner_state_directory_v1(
-    runtime_scope_identity: str, owner_state_identity: str
+    owner_state_store_root: str, owner_state_identity: str
 ) -> Path:
-    runtime_scope = _text(runtime_scope_identity, "owner-state runtime scope")
+    storage_root = _text(owner_state_store_root, "owner-state storage root")
     owner_state = _text(owner_state_identity, "owner-state identity")
     digest = replay_hash(
         {"owner_state_identity": owner_state}
     ).removeprefix("sha256:")
-    return Path(runtime_scope) / PROFILE_A_OWNER_STATE_STORE / f"state-{digest}"
+    return Path(storage_root) / PROFILE_A_OWNER_STATE_STORE / f"state-{digest}"
 
 
 def _profile_a_owner_state_event_path_v1(
-    runtime_scope_identity: str,
+    owner_state_store_root: str,
     owner_state_identity: str,
     policy_revision: int,
 ) -> Path:
     return _profile_a_owner_state_directory_v1(
-        runtime_scope_identity, owner_state_identity
+        owner_state_store_root, owner_state_identity
     ) / f"event-{policy_revision:020d}.json"
 
 
 def _load_profile_a_owner_state_events_v1(
-    runtime_scope_identity: str,
+    che_runtime_scope_identity: str,
+    owner_state_store_root: str,
     owner_state_identity: str,
 ) -> tuple[dict[str, Any], ...]:
     directory = _profile_a_owner_state_directory_v1(
-        runtime_scope_identity, owner_state_identity
+        owner_state_store_root, owner_state_identity
     )
     if not directory.is_dir():
         raise FailClosedRuntimeError(
@@ -909,7 +913,7 @@ def _load_profile_a_owner_state_events_v1(
             ) from exc
         event = validate_profile_a_owner_state_event_v1(value)
         expected_path = _profile_a_owner_state_event_path_v1(
-            runtime_scope_identity,
+            owner_state_store_root,
             owner_state_identity,
             event["policy_revision"],
         )
@@ -918,14 +922,14 @@ def _load_profile_a_owner_state_events_v1(
                 "Profile A owner-state event is aliased or forked"
             )
         if (
-            event["runtime_scope_identity"] != runtime_scope_identity
+            event["runtime_scope_identity"] != che_runtime_scope_identity
             or event["owner_state_identity"] != owner_state_identity
         ):
             raise FailClosedRuntimeError(
                 "Profile A owner-state source binding is invalid"
             )
         correlation_path = canonical_che_evidence_correlation_record_path_v1(
-            runtime_scope_identity, event["correlation_identity"]
+            che_runtime_scope_identity, event["correlation_identity"]
         )
         persisted = read_canonical_che_evidence_correlation_v1(
             correlation_path
@@ -954,7 +958,12 @@ def _persist_profile_a_owner_state_authorization_v1(
     continuation: Any,
     authority_act: Any,
     correlation: Any,
+    _authority_process_context: Any = None,
 ) -> Path:
+    authority_context = validate_profile_a_authority_process_context_v1(
+        _authority_process_context,
+        allow_zero_authority_test=True,
+    )
     root = _create_profile_a_root_from_che_v1(
         request=request,
         continuation=continuation,
@@ -966,10 +975,47 @@ def _persist_profile_a_owner_state_authorization_v1(
     canonical_correlation = validate_canonical_che_evidence_correlation_v1(
         correlation
     )
+    if (
+        canonical_request.runtime_scope_identity
+        != authority_context.che_runtime_scope_identity
+        or canonical_correlation.runtime_scope_identity
+        != authority_context.che_runtime_scope_identity
+        or canonical_correlation.owner_state_identity
+        != authority_context.owner_state_identity
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A owner-state source is not the process startup binding"
+        )
+    existing_revision_path = _profile_a_owner_state_event_path_v1(
+        authority_context.owner_state_store_root,
+        authority_context.owner_state_identity,
+        canonical_act.target_revision,
+    )
+    if existing_revision_path.exists():
+        try:
+            existing_event = validate_profile_a_owner_state_event_v1(
+                json.loads(existing_revision_path.read_text(encoding="utf-8"))
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise FailClosedRuntimeError(
+                "Profile A owner-state event is unreadable"
+            ) from exc
+        if (
+            existing_event["runtime_scope_identity"]
+            != authority_context.che_runtime_scope_identity
+            or existing_event["owner_state_identity"]
+            != authority_context.owner_state_identity
+            or existing_event["provenance_root"] != root
+        ):
+            raise FailClosedRuntimeError(
+                "Profile A owner-state event identity conflicts"
+            )
+        return existing_revision_path
     try:
         prior_events = _load_profile_a_owner_state_events_v1(
-            canonical_request.runtime_scope_identity,
-            canonical_correlation.owner_state_identity,
+            authority_context.che_runtime_scope_identity,
+            authority_context.owner_state_store_root,
+            authority_context.owner_state_identity,
         )
     except FailClosedRuntimeError as exc:
         if "unavailable" not in str(exc) and "unresolved" not in str(exc):
@@ -1009,8 +1055,8 @@ def _persist_profile_a_owner_state_authorization_v1(
         expires_at=expires_at,
     )
     path = _profile_a_owner_state_event_path_v1(
-        canonical_request.runtime_scope_identity,
-        canonical_correlation.owner_state_identity,
+        authority_context.owner_state_store_root,
+        authority_context.owner_state_identity,
         event["policy_revision"],
     )
     if path.exists():
@@ -1060,14 +1106,13 @@ def _persist_profile_a_owner_state_authorization_v1(
     return path
 
 
-_PROFILE_A_RESOLVER_COMPOSITION_TOKEN = object()
-
-
 class _ProfileACheReplayOwnerStateResolverV1:
     """Read one fixed CHE/Replay owner state on every gate evaluation."""
 
     __slots__ = (
-        "__runtime_scope_identity",
+        "__authority_process_context",
+        "__che_runtime_scope_identity",
+        "__owner_state_store_root",
         "__owner_state_identity",
         "__sealed",
     )
@@ -1075,23 +1120,31 @@ class _ProfileACheReplayOwnerStateResolverV1:
     def __init__(
         self,
         *,
-        runtime_scope_identity: str,
-        owner_state_identity: str,
-        _composition_token: object,
+        _authority_process_context: Any,
     ) -> None:
-        if _composition_token is not _PROFILE_A_RESOLVER_COMPOSITION_TOKEN:
-            raise FailClosedRuntimeError(
-                "Profile A resolver requires fixed CHE composition"
-            )
+        authority_context = validate_profile_a_authority_process_context_v1(
+            _authority_process_context,
+            allow_zero_authority_test=True,
+        )
         object.__setattr__(
             self,
-            "_ProfileACheReplayOwnerStateResolverV1__runtime_scope_identity",
-            _text(runtime_scope_identity, "owner-state runtime scope"),
+            "_ProfileACheReplayOwnerStateResolverV1__authority_process_context",
+            authority_context,
+        )
+        object.__setattr__(
+            self,
+            "_ProfileACheReplayOwnerStateResolverV1__che_runtime_scope_identity",
+            authority_context.che_runtime_scope_identity,
+        )
+        object.__setattr__(
+            self,
+            "_ProfileACheReplayOwnerStateResolverV1__owner_state_store_root",
+            authority_context.owner_state_store_root,
         )
         object.__setattr__(
             self,
             "_ProfileACheReplayOwnerStateResolverV1__owner_state_identity",
-            _text(owner_state_identity, "owner-state identity"),
+            authority_context.owner_state_identity,
         )
         object.__setattr__(
             self, "_ProfileACheReplayOwnerStateResolverV1__sealed", True
@@ -1109,9 +1162,15 @@ class _ProfileACheReplayOwnerStateResolverV1:
         return self.__owner_state_identity
 
     def resolve(self, provenance_root_identity: str) -> tuple[dict[str, Any], str]:
+        validate_profile_a_authority_process_context_v1(
+            self.__authority_process_context,
+            allow_zero_authority_test=True,
+        )
         identity = _text(provenance_root_identity, "lookup reference")
         events = _load_profile_a_owner_state_events_v1(
-            self.__runtime_scope_identity, self.__owner_state_identity
+            self.__che_runtime_scope_identity,
+            self.__owner_state_store_root,
+            self.__owner_state_identity,
         )
         previous: dict[str, Any] | None = None
         seen_roots: set[str] = set()
@@ -1162,7 +1221,7 @@ class _ProfileACheReplayOwnerStateResolverV1:
             previous = event
         latest = events[-1]
         correlation_root = (
-            Path(self.__runtime_scope_identity)
+            Path(self.__che_runtime_scope_identity)
             / "canonical_che_evidence_correlations_v1"
         )
         observed_revisions: dict[int, set[str]] = {}
@@ -1218,7 +1277,8 @@ class _ProfileACheReplayOwnerStateResolverV1:
             )
         state_commitment = replay_hash(
             {
-                "runtime_scope_identity": self.__runtime_scope_identity,
+                "runtime_scope_identity": self.__che_runtime_scope_identity,
+                "owner_state_store_root": self.__owner_state_store_root,
                 "owner_state_identity": self.__owner_state_identity,
                 "latest_event_identity": latest["event_identity"],
                 "latest_event_hash": latest["event_hash"],
@@ -1230,12 +1290,10 @@ class _ProfileACheReplayOwnerStateResolverV1:
 
 
 def _create_profile_a_che_replay_resolver_v1(
-    *, runtime_scope_identity: str, owner_state_identity: str
+    *, _authority_process_context: Any
 ) -> _ProfileACheReplayOwnerStateResolverV1:
     return _ProfileACheReplayOwnerStateResolverV1(
-        runtime_scope_identity=runtime_scope_identity,
-        owner_state_identity=owner_state_identity,
-        _composition_token=_PROFILE_A_RESOLVER_COMPOSITION_TOKEN,
+        _authority_process_context=_authority_process_context,
     )
 
 

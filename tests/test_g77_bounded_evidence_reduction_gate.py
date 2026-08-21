@@ -4,12 +4,18 @@ from copy import deepcopy
 from dataclasses import replace
 import inspect
 import json
+import multiprocessing
+import os
 from pathlib import Path
+import socket
+import struct
 from tempfile import TemporaryDirectory
+import time
 
 import pytest
 
 import aigol.runtime.human_interface_runtime_entry_service as che_service
+import aigol.runtime.profile_a_authority_process_boundary as authority_boundary
 from aigol.runtime.authority_provenance import (
     AUTHORIZATION_OWNER_IDENTITY,
     BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
@@ -17,6 +23,7 @@ from aigol.runtime.authority_provenance import (
     PROFILE_A_OWNER_STATE_REVOKED,
     TrustedAuthorityProvenanceBindingV1,
     TrustedAuthorityProvenanceResolverV1,
+    _ProfileACheReplayOwnerStateResolverV1,
     _persist_profile_a_owner_state_authorization_v1,
     _profile_a_event_hash,
     _profile_a_event_identity,
@@ -49,6 +56,7 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     canonical_che_request_source_act_digest_v1,
 )
 from aigol.runtime.evidence_reduction_gate import (
+    ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1,
     AFTER_BOUNDARY,
     ALLOW_BOUNDED_EVIDENCE_REDUCTION,
     ARTICLE_10_EFFECTIVE_BOUNDARY_COMMIT,
@@ -57,6 +65,7 @@ from aigol.runtime.evidence_reduction_gate import (
     BEFORE_BOUNDARY,
     CLOSED,
     DO_NOT_REDUCE_EVIDENCE,
+    EVIDENCE_REDUCTION_GATE_VERSION,
     EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE,
     EFFECTIVE_GATE_REQUIRED,
     FULL_EVIDENCE_PRESENT,
@@ -68,6 +77,7 @@ from aigol.runtime.evidence_reduction_gate import (
     STOP_FURTHER_REDUCTION,
     BoundedEvidenceReductionGateV1,
     _compose_profile_a_bounded_evidence_reduction_gate_v1,
+    _compose_profile_a_bounded_evidence_reduction_gate_inside_authority_process_v1,
     calculate_gate_basis_hash,
     create_actual_reduction_manifest,
     create_article10_cohort_projection,
@@ -81,8 +91,21 @@ from aigol.runtime.evidence_reduction_gate import (
     validate_actual_reduction_manifest,
 )
 from aigol.runtime.models import FailClosedRuntimeError
+from aigol.runtime.profile_a_authority_process_boundary import (
+    PROFILE_A_EVALUATE_DECISION,
+    PROFILE_A_ISSUE_OWNER_STATE,
+    PROFILE_A_TEST_ONLY_ALLOW,
+    create_profile_a_zero_authority_test_context_v1,
+    request_profile_a_bounded_evidence_reduction_decision_v1,
+    request_profile_a_zero_authority_test_v1,
+    serve_profile_a_zero_authority_test_process_v1,
+)
 from aigol.runtime.transport.ledger import RuntimeLedger
-from aigol.runtime.transport.serialization import replay_hash, with_replay_hash
+from aigol.runtime.transport.serialization import (
+    canonical_serialize,
+    replay_hash,
+    with_replay_hash,
+)
 
 
 DOMAIN = "regulated-domain-alpha"
@@ -301,11 +324,16 @@ def _case(
     correlation_hash = replay_hash(correlation.to_dict())
 
     persist_canonical_che_evidence_correlation_v1(correlation)
+    authority_process_context = create_profile_a_zero_authority_test_context_v1(
+        che_runtime_scope_identity=runtime_scope_identity,
+        owner_state_identity=correlation.owner_state_identity,
+    )
     event_path = _persist_profile_a_owner_state_authorization_v1(
         request=che_request,
         continuation=che_continuation,
         authority_act=authority_act,
         correlation=correlation,
+        _authority_process_context=authority_process_context,
     )
     event = json.loads(event_path.read_text(encoding="utf-8"))
     provenance_root = event["provenance_root"]
@@ -327,9 +355,8 @@ def _case(
             json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n",
             encoding="utf-8",
         )
-    gate = _compose_profile_a_bounded_evidence_reduction_gate_v1(
-        runtime_scope_identity=runtime_scope_identity,
-        owner_state_identity=correlation.owner_state_identity,
+    gate = _compose_profile_a_bounded_evidence_reduction_gate_inside_authority_process_v1(
+        _authority_process_context=authority_process_context,
     )
     if authority_provenance_reference is None:
         authority_provenance_reference = provenance_root[
@@ -436,6 +463,7 @@ def _case(
         "_profile_a_event_path": event_path,
         "_profile_a_runtime_scope": runtime_scope_identity,
         "_profile_a_owner_state_identity": correlation.owner_state_identity,
+        "_authority_process_context": authority_process_context,
         "_temporary_directory": temporary_directory,
     }
 
@@ -545,6 +573,7 @@ def _append_profile_a_successor(case: dict) -> tuple[Path, dict]:
         continuation=second_continuation,
         authority_act=second_act,
         correlation=second_correlation,
+        _authority_process_context=case["_authority_process_context"],
     )
     event = json.loads(path.read_text(encoding="utf-8"))
     return path, event
@@ -574,15 +603,78 @@ def _clone_case_inputs(case: dict) -> dict:
     return cloned
 
 
-def _actual(case: dict, decision: dict) -> dict:
-    return create_actual_reduction_manifest(
-        manifest_id="ACTUAL-MANIFEST-1",
-        planned_manifest=case["planned_manifest"],
-        authorization=case["authorization"],
-        gate_decision=decision,
-        execution_evidence_reference="replay:separately-authorized-executor-evidence",
-        execution_evidence_hash=_hash("separately-authorized-executor-evidence"),
-        evidence_items=[
+def _start_zero_authority_process(
+    case: dict,
+    *,
+    maximum_requests: int,
+) -> tuple[multiprocessing.Process, Path]:
+    if not hasattr(socket, "SO_PEERCRED"):
+        pytest.skip("Profile A authority boundary requires Unix SO_PEERCRED")
+    context = case["_authority_process_context"]
+    endpoint = Path(context.socket_path)
+    process = multiprocessing.get_context("fork").Process(
+        target=serve_profile_a_zero_authority_test_process_v1,
+        kwargs={
+            "che_runtime_scope_identity": context.che_runtime_scope_identity,
+            "owner_state_identity": context.owner_state_identity,
+            "socket_path": context.socket_path,
+            "maximum_requests": maximum_requests,
+        },
+    )
+    process.start()
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        if endpoint.exists():
+            return process, endpoint
+        if not process.is_alive():
+            break
+        time.sleep(0.01)
+    process.join(timeout=1.0)
+    raise AssertionError(
+        f"zero-authority process failed to start: exit={process.exitcode}"
+    )
+
+
+def _join_zero_authority_process(process: multiprocessing.Process) -> None:
+    process.join(timeout=5.0)
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=2.0)
+        raise AssertionError("zero-authority process did not stop")
+    assert process.exitcode == 0
+
+
+def _zero_authority_structural_actual_manifest_for_c3(case: dict) -> dict:
+    """Build C3 validation input without fabricating production authority."""
+
+    return with_replay_hash(
+        {
+            "artifact_type": ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1,
+            "gate_version": EVIDENCE_REDUCTION_GATE_VERSION,
+            "manifest_id": "ZERO-AUTHORITY-C3-STRUCTURAL-MANIFEST-1",
+            "domain_id": case["planned_manifest"]["domain_id"],
+            "evidence_class": case["planned_manifest"]["evidence_class"],
+            "reduction_type": case["planned_manifest"]["reduction_type"],
+            "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+            "authorization_hash": case["authorization"]["replay_hash"],
+            "gate_decision_hash": _hash(
+                "zero-authority-no-production-gate-decision"
+            ),
+            "policy_hash": case["planned_manifest"]["policy_hash"],
+            "permanent_trail_id": case["planned_manifest"][
+                "permanent_trail_id"
+            ],
+            "permanent_trail_hash": case["planned_manifest"][
+                "permanent_trail_hash"
+            ],
+            "cohort_hash": case["planned_manifest"]["cohort_hash"],
+            "execution_evidence_reference": (
+                "zero-authority-test:no-production-execution"
+            ),
+            "execution_evidence_hash": _hash(
+                "zero-authority-no-production-execution"
+            ),
+            "evidence_items": [
             {
                 "evidence_id": "EVIDENCE-A",
                 "prior_hash": _hash("evidence-a"),
@@ -599,13 +691,19 @@ def _actual(case: dict, decision: dict) -> dict:
                 "retained_hash": _hash("evidence-b"),
                 "integrity_verified": True,
             },
-        ],
+            ],
+            "constitutional_replay_provenance_preserved": True,
+            "remaining_evidence_integrity_verified": True,
+            "disposition_record_complete": True,
+            "physical_reduction_performed_by_gate": False,
+            "full_replay_claimed": False,
+        }
     )
 
 
-def test_exact_allow_case_is_bounded_and_zero_side_effect() -> None:
+def test_exact_valid_case_is_test_only_and_zero_authority() -> None:
     decision = _evaluate(_case())
-    assert decision["decision"] == ALLOW_BOUNDED_EVIDENCE_REDUCTION
+    assert decision["decision"] == PROFILE_A_TEST_ONLY_ALLOW
     assert decision["failure_codes"] == []
     assert decision["side_effect_performed"] is False
     assert decision["physical_reduction_performed"] is False
@@ -695,7 +793,17 @@ def test_planned_manifest_tamper_denies_and_actual_manifest_tamper_fails_closed(
     assert _evaluate(tampered_case)["decision"] == DO_NOT_REDUCE_EVIDENCE
 
     decision = _evaluate(case)
-    actual = _actual(case, decision)
+    with pytest.raises(FailClosedRuntimeError, match="passing gate decision"):
+        create_actual_reduction_manifest(
+            manifest_id="ZERO-AUTHORITY-CANNOT-CREATE-ACTUAL",
+            planned_manifest=case["planned_manifest"],
+            authorization=case["authorization"],
+            gate_decision=decision,
+            execution_evidence_reference="zero-authority:no-execution",
+            execution_evidence_hash=_hash("zero-authority-no-execution"),
+            evidence_items=[],
+        )
+    actual = _zero_authority_structural_actual_manifest_for_c3(case)
     validate_actual_reduction_manifest(actual)
     tampered_actual = deepcopy(actual)
     tampered_actual["evidence_items"][0]["actual_disposition"] = "REMOVE"
@@ -706,16 +814,16 @@ def test_planned_manifest_tamper_denies_and_actual_manifest_tamper_fails_closed(
 @pytest.mark.parametrize(
     ("position", "state", "prior_valid", "expected_decision", "expected_cohort"),
     [
-        (BEFORE_BOUNDARY, FULL_EVIDENCE_PRESENT, False, ALLOW_BOUNDED_EVIDENCE_REDUCTION, EFFECTIVE_GATE_REQUIRED),
+        (BEFORE_BOUNDARY, FULL_EVIDENCE_PRESENT, False, PROFILE_A_TEST_ONLY_ALLOW, EFFECTIVE_GATE_REQUIRED),
         (
             BEFORE_BOUNDARY,
             AUTHORIZED_OR_PLANNED_INCOMPLETE,
             False,
-            ALLOW_BOUNDED_EVIDENCE_REDUCTION,
+            PROFILE_A_TEST_ONLY_ALLOW,
             REVALIDATION_UNDER_EFFECTIVE_GATE_REQUIRED,
         ),
-        (AT_BOUNDARY, FULL_EVIDENCE_PRESENT, False, ALLOW_BOUNDED_EVIDENCE_REDUCTION, EFFECTIVE_GATE_REQUIRED),
-        (AFTER_BOUNDARY, FULL_EVIDENCE_PRESENT, False, ALLOW_BOUNDED_EVIDENCE_REDUCTION, EFFECTIVE_GATE_REQUIRED),
+        (AT_BOUNDARY, FULL_EVIDENCE_PRESENT, False, PROFILE_A_TEST_ONLY_ALLOW, EFFECTIVE_GATE_REQUIRED),
+        (AFTER_BOUNDARY, FULL_EVIDENCE_PRESENT, False, PROFILE_A_TEST_ONLY_ALLOW, EFFECTIVE_GATE_REQUIRED),
         (
             BEFORE_BOUNDARY,
             PRIOR_VALID_REDUCTION_COMPLETE,
@@ -768,7 +876,7 @@ def test_existing_runtime_ledger_preserves_ordered_replay_lineage(tmp_path) -> N
     seed = ledger.append(runtime_id, "existing_replay_lineage", {"hash": _hash("existing")})
     case = _case()
     decision = _evaluate(case)
-    actual = _actual(case, decision)
+    actual = _zero_authority_structural_actual_manifest_for_c3(case)
 
     recorded = [
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=case["planned_manifest"]),
@@ -801,6 +909,14 @@ def test_topology_isolation_and_no_executor_authority() -> None:
 
 def test_previous_public_caller_composition_bypass_is_closed() -> None:
     case = _case()
+    with pytest.raises(
+        FailClosedRuntimeError,
+        match="dedicated OS authority process",
+    ):
+        _compose_profile_a_bounded_evidence_reduction_gate_v1(
+            runtime_scope_identity=case["_profile_a_runtime_scope"],
+            owner_state_identity=case["_profile_a_owner_state_identity"],
+        )
     synthetic_root = deepcopy(case["_provenance_root"])
     synthetic_root["provenance_root_identity"] = "CALLER-SYNTHETIC-ROOT"
     synthetic_root["boundary_commit"] = "f" * 40
@@ -859,7 +975,7 @@ def test_che_owner_path_projects_and_persists_only_exact_profile_a_action(
     observed: list[dict] = []
     monkeypatch.setattr(
         che_service,
-        "_persist_profile_a_owner_state_authorization_v1",
+        "request_profile_a_owner_state_issuance_v1",
         lambda **kwargs: observed.append(kwargs),
     )
     che_service._persist_profile_a_owner_state_authorization_if_applicable_v1(
@@ -1280,39 +1396,20 @@ def test_permanent_trail_in_actual_reduction_scope_fails_closed(
     match_kind: str,
 ) -> None:
     case = _case()
-    decision = _evaluate(case)
-    items = [
-        {
-            "evidence_id": "EVIDENCE-A",
-            "prior_hash": _hash("evidence-a"),
-            "actual_disposition": "CONDENSE",
-            "retained_reference": "trail:PERMANENT-TRAIL-1",
-            "retained_hash": case["permanent_trail"]["replay_hash"],
-            "integrity_verified": True,
-        },
-        {
-            "evidence_id": "EVIDENCE-B",
-            "prior_hash": _hash("evidence-b"),
-            "actual_disposition": "RETAIN",
-            "retained_reference": "evidence:EVIDENCE-B",
-            "retained_hash": _hash("evidence-b"),
-            "integrity_verified": True,
-        },
-    ]
+    actual = _zero_authority_structural_actual_manifest_for_c3(case)
+    forged_basis = deepcopy(actual)
+    forged_basis.pop("replay_hash")
     if match_kind == "identity":
-        items[0]["evidence_id"] = case["permanent_trail"]["trail_id"]
+        forged_basis["evidence_items"][0]["evidence_id"] = case[
+            "permanent_trail"
+        ]["trail_id"]
     else:
-        items[0]["prior_hash"] = case["permanent_trail"]["replay_hash"]
+        forged_basis["evidence_items"][0]["prior_hash"] = case[
+            "permanent_trail"
+        ]["replay_hash"]
+    forged = with_replay_hash(forged_basis)
     with pytest.raises(FailClosedRuntimeError, match="cannot reduce the permanent trail"):
-        create_actual_reduction_manifest(
-            manifest_id="ACTUAL-MANIFEST-TRAIL-ATTACK",
-            planned_manifest=case["planned_manifest"],
-            authorization=case["authorization"],
-            gate_decision=decision,
-            execution_evidence_reference="replay:executor",
-            execution_evidence_hash=_hash("executor"),
-            evidence_items=items,
-        )
+        validate_actual_reduction_manifest(forged)
 
 
 @pytest.mark.parametrize("match_kind", ["identity", "hash"])
@@ -1320,7 +1417,7 @@ def test_rehashed_actual_manifest_cannot_bypass_permanent_trail_exclusion(
     match_kind: str,
 ) -> None:
     case = _case()
-    actual = _actual(case, _evaluate(case))
+    actual = _zero_authority_structural_actual_manifest_for_c3(case)
     forged_basis = deepcopy(actual)
     forged_basis.pop("replay_hash")
     if match_kind == "identity":
@@ -1334,3 +1431,310 @@ def test_rehashed_actual_manifest_cannot_bypass_permanent_trail_exclusion(
     forged = with_replay_hash(forged_basis)
     with pytest.raises(FailClosedRuntimeError, match="cannot reduce the permanent trail"):
         validate_actual_reduction_manifest(forged)
+
+
+def test_dedicated_test_process_exercises_protocol_without_production_allow() -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=2
+    )
+    evidence = case["_provenance_root"]["owner_issued_authority_evidence"]
+    issuance = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_ISSUE_OWNER_STATE,
+        request_identity="TEST-PROCESS-ISSUE-1",
+        payload={
+            "request": evidence["che_request"],
+            "continuation": evidence["che_continuation"],
+            "authority_act": evidence["human_authority_act"],
+            "correlation": evidence["che_evidence_correlation"],
+        },
+    )
+    assert issuance["status"] == "COMPLETED"
+    assert issuance["boundary_mode"] == "ZERO_AUTHORITY_TEST"
+    assert set(issuance["result"]) == {
+        "owner_state_event_hash",
+        "owner_state_identity",
+    }
+
+    evaluated = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="TEST-PROCESS-EVALUATE-1",
+        payload={"decision_inputs": _decision_inputs(case)},
+    )
+    _join_zero_authority_process(process)
+    assert evaluated["status"] == "COMPLETED"
+    assert evaluated["result"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert ALLOW_BOUNDED_EVIDENCE_REDUCTION not in canonical_serialize(
+        evaluated
+    ).replace(PROFILE_A_TEST_ONLY_ALLOW, "")
+    assert evaluated["result"]["authority_paths"] == 1
+    assert evaluated["result"]["production_paths"] == 1
+    assert evaluated["result"]["physical_reduction_performed"] is False
+
+
+def test_direct_imported_composition_resolver_gate_token_and_persistence_deny() -> None:
+    case = _case()
+    context = case["_authority_process_context"]
+    evidence = case["_provenance_root"]["owner_issued_authority_evidence"]
+
+    with pytest.raises(FailClosedRuntimeError, match="OS process context"):
+        _persist_profile_a_owner_state_authorization_v1(
+            request=evidence["che_request"],
+            continuation=evidence["che_continuation"],
+            authority_act=evidence["human_authority_act"],
+            correlation=evidence["che_evidence_correlation"],
+        )
+    with pytest.raises(FailClosedRuntimeError, match="dedicated OS authority process"):
+        _compose_profile_a_bounded_evidence_reduction_gate_v1(
+            runtime_scope_identity=context.che_runtime_scope_identity,
+            owner_state_identity=context.owner_state_identity,
+        )
+    with pytest.raises(FailClosedRuntimeError, match="OS process context"):
+        _ProfileACheReplayOwnerStateResolverV1(
+            _authority_process_context=None
+        )
+    resolver = _ProfileACheReplayOwnerStateResolverV1(
+        _authority_process_context=context
+    )
+    with pytest.raises(FailClosedRuntimeError, match="OS process context"):
+        BoundedEvidenceReductionGateV1._from_profile_a_che_replay_owner_state(
+            resolver
+        )
+    assert not hasattr(
+        __import__(
+            "aigol.runtime.authority_provenance", fromlist=["unused"]
+        ),
+        "_PROFILE_A_RESOLVER_COMPOSITION_TOKEN",
+    )
+    assert _evaluate(case)["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+
+
+@pytest.mark.parametrize(
+    "substitution",
+    ["runtime_scope", "owner_state_identity", "principal_identity"],
+)
+def test_caller_selected_startup_binding_values_cannot_create_production_authority(
+    substitution: str,
+    tmp_path: Path,
+) -> None:
+    case = _case()
+    context = case["_authority_process_context"]
+    evidence = case["_provenance_root"]["owner_issued_authority_evidence"]
+    if substitution == "runtime_scope":
+        bad_request = deepcopy(evidence["che_request"])
+        bad_request["runtime_scope_identity"] = (tmp_path / "caller-root").as_posix()
+        with pytest.raises(FailClosedRuntimeError):
+            _persist_profile_a_owner_state_authorization_v1(
+                request=bad_request,
+                continuation=evidence["che_continuation"],
+                authority_act=evidence["human_authority_act"],
+                correlation=evidence["che_evidence_correlation"],
+                _authority_process_context=context,
+            )
+    elif substitution == "owner_state_identity":
+        wrong_context = create_profile_a_zero_authority_test_context_v1(
+            che_runtime_scope_identity=context.che_runtime_scope_identity,
+            owner_state_identity="CALLER-SELECTED-OWNER-STATE",
+            socket_path=(
+                Path(context.owner_state_store_root) / "wrong-owner.sock"
+            ),
+        )
+        with pytest.raises(FailClosedRuntimeError, match="startup binding"):
+            _persist_profile_a_owner_state_authorization_v1(
+                request=evidence["che_request"],
+                continuation=evidence["che_continuation"],
+                authority_act=evidence["human_authority_act"],
+                correlation=evidence["che_evidence_correlation"],
+                _authority_process_context=wrong_context,
+            )
+    else:
+        fake_context = authority_boundary._ProfileAAuthorityProcessContextV1(
+            boundary_mode=authority_boundary.PROFILE_A_PRODUCTION_MODE,
+            principal_identity=(
+                authority_boundary.PROFILE_A_AUTHORITY_PRINCIPAL_IDENTITY
+            ),
+            authority_uid=os.geteuid(),
+            canonical_entry_uid=os.geteuid() + 1,
+            ipc_gid=os.getegid(),
+            che_runtime_scope_identity=context.che_runtime_scope_identity,
+            owner_state_store_root=context.owner_state_store_root,
+            owner_state_identity=context.owner_state_identity,
+            socket_path=authority_boundary.PROFILE_A_PRODUCTION_SOCKET_PATH.as_posix(),
+            binding_hash=_hash("caller-binding"),
+            process_id=os.getpid(),
+        )
+        with pytest.raises(FailClosedRuntimeError):
+            authority_boundary.validate_profile_a_authority_process_context_v1(
+                fake_context,
+                allow_zero_authority_test=False,
+            )
+
+
+def test_production_request_fails_closed_when_process_or_binding_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    case = _case()
+    monkeypatch.setattr(
+        authority_boundary,
+        "PROFILE_A_PRODUCTION_BINDING_PATH",
+        tmp_path / "missing-production-binding.json",
+    )
+    decision = request_profile_a_bounded_evidence_reduction_decision_v1(
+        request_identity="PRODUCTION-PROCESS-UNAVAILABLE",
+        decision_inputs=_decision_inputs(case),
+    )
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert PROFILE_A_TEST_ONLY_ALLOW not in canonical_serialize(decision)
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_kernel_peer_credentials_reject_wrong_os_principal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    left, right = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        monkeypatch.setattr(
+            authority_boundary,
+            "_peer_credentials",
+            lambda connection: (os.getpid(), os.geteuid() + 1, os.getegid()),
+        )
+        with pytest.raises(FailClosedRuntimeError, match="OS peer"):
+            authority_boundary._authenticate_peer_uid(
+                left, os.geteuid()
+            )
+        monkeypatch.setattr(
+            authority_boundary,
+            "_peer_credentials",
+            lambda connection: (os.getpid(), os.geteuid(), os.getegid()),
+        )
+        authority_boundary._authenticate_peer_uid(left, os.geteuid())
+    finally:
+        left.close()
+        right.close()
+
+
+def test_malformed_ipc_fails_closed_without_authority_effect() -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=1
+    )
+    connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        connection.connect(endpoint.as_posix())
+        malformed = b"{"
+        connection.sendall(struct.pack("!I", len(malformed)) + malformed)
+        response = authority_boundary._recv_frame(connection)
+    finally:
+        connection.close()
+    _join_zero_authority_process(process)
+    assert response["status"] == "DENIED"
+    assert response["failure_code"] == "MALFORMED_OR_UNAUTHENTICATED_IPC"
+    assert response["result"] is None
+
+
+def test_ipc_replay_and_duplicate_request_deny() -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=2
+    )
+    payload = {"decision_inputs": _decision_inputs(case)}
+    first = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="DUPLICATE-IPC-REQUEST",
+        payload=payload,
+    )
+    second = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="DUPLICATE-IPC-REQUEST",
+        payload=payload,
+    )
+    _join_zero_authority_process(process)
+    assert first["status"] == "COMPLETED"
+    assert first["result"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert second["status"] == "DENIED"
+    assert second["failure_code"] == "IPC_REQUEST_REPLAYED_OR_DUPLICATE"
+    assert second["result"] is None
+
+
+def test_process_restart_preserves_duplicate_request_rejection() -> None:
+    case = _case()
+    payload = {"decision_inputs": _decision_inputs(case)}
+    first_process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=1
+    )
+    first = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="RESTART-CONTINUITY-REQUEST",
+        payload=payload,
+    )
+    _join_zero_authority_process(first_process)
+
+    second_process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=1
+    )
+    second = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="RESTART-CONTINUITY-REQUEST",
+        payload=payload,
+    )
+    _join_zero_authority_process(second_process)
+    assert first["status"] == "COMPLETED"
+    assert second["status"] == "DENIED"
+    assert second["failure_code"] == "IPC_REQUEST_REPLAYED_OR_DUPLICATE"
+
+
+def test_caller_injected_principal_or_store_fields_are_not_ipc_inputs() -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=1
+    )
+    response = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="CALLER-INJECTED-IPC-FIELDS",
+        payload={
+            "decision_inputs": _decision_inputs(case),
+            "principal_identity": "CALLER-PRINCIPAL",
+            "runtime_scope_identity": "/caller/root",
+            "owner_state_identity": "CALLER-OWNER-STATE",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert response["status"] == "DENIED"
+    assert response["failure_code"] == "AUTHORITY_REQUEST_FAILED_CLOSED"
+    assert response["result"] is None
+
+
+def test_test_principal_root_endpoint_and_response_cannot_be_promoted() -> None:
+    case = _case()
+    context = case["_authority_process_context"]
+    decision = _evaluate(case)
+    assert context.principal_identity == (
+        authority_boundary.PROFILE_A_TEST_PRINCIPAL_IDENTITY
+    )
+    assert "zero_authority_test" in context.owner_state_store_root
+    assert decision["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert decision["decision"] != ALLOW_BOUNDED_EVIDENCE_REDUCTION
+
+    production_shaped_context = replace(
+        context,
+        boundary_mode=authority_boundary.PROFILE_A_PRODUCTION_MODE,
+        principal_identity=(
+            authority_boundary.PROFILE_A_AUTHORITY_PRINCIPAL_IDENTITY
+        ),
+    )
+    with pytest.raises(FailClosedRuntimeError):
+        authority_boundary.validate_profile_a_authority_process_context_v1(
+            production_shaped_context,
+            allow_zero_authority_test=False,
+        )

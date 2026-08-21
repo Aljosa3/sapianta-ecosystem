@@ -149,7 +149,10 @@ from aigol.runtime.canonical_human_authority_act_contract_v1 import (
 )
 from aigol.runtime.authority_provenance import (
     BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
-    _persist_profile_a_owner_state_authorization_v1,
+)
+from aigol.runtime.profile_a_authority_process_boundary import (
+    request_profile_a_bounded_evidence_reduction_decision_v1,
+    request_profile_a_owner_state_issuance_v1,
 )
 from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
     CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
@@ -5828,11 +5831,24 @@ def _persist_profile_a_owner_state_authorization_if_applicable_v1(
         raise FailClosedRuntimeError(
             "Profile A owner-state authorization requires CHE continuation"
         )
-    _persist_profile_a_owner_state_authorization_v1(
+    request_profile_a_owner_state_issuance_v1(
         request=request,
         continuation=continuation,
         authority_act=authority_act,
         correlation=correlation,
+    )
+
+
+def request_profile_a_bounded_evidence_reduction_from_canonical_entry_v1(
+    *,
+    request_identity: str,
+    decision_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    """Use the one OS-authenticated authority-process decision path."""
+
+    return request_profile_a_bounded_evidence_reduction_decision_v1(
+        request_identity=request_identity,
+        decision_inputs=decision_inputs,
     )
 
 
