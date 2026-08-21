@@ -15,7 +15,8 @@ from aigol.runtime.authority_provenance import (
     AUTHORIZATION_OWNER_IDENTITY,
     BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
     OWNER_ISSUED_AUTHORIZATION_ACT_CLASS,
-    TrustedAuthorityProvenanceResolverV1,
+    _ProfileACheReplayOwnerStateResolverV1,
+    _create_profile_a_che_replay_resolver_v1,
 )
 from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
     RECORDED,
@@ -638,26 +639,44 @@ def create_reduction_authorization(
 
 
 class BoundedEvidenceReductionGateV1:
-    """One gate bound to a resolver fixed outside every evaluation call."""
+    """One gate bound only by the fixed Profile A CHE/Replay composition."""
 
     __slots__ = ("__authority_provenance_resolver", "__sealed")
 
-    def __init__(
-        self, authority_provenance_resolver: TrustedAuthorityProvenanceResolverV1
-    ) -> None:
-        if (
-            type(authority_provenance_resolver)
-            is not TrustedAuthorityProvenanceResolverV1
-        ):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if args or kwargs:
             raise FailClosedRuntimeError(
-                "exact trusted authority provenance resolver is required"
+                "evidence-reduction gate rejects caller-selected trust sources"
             )
+        # Public construction is intentionally usable only as a fail-closed
+        # gate.  The allow-capable resolver is installed exclusively through
+        # the internal fixed CHE/Replay composition below.
         object.__setattr__(
             self,
             "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
-            authority_provenance_resolver,
+            None,
         )
         object.__setattr__(self, "_BoundedEvidenceReductionGateV1__sealed", True)
+
+    @classmethod
+    def _from_profile_a_che_replay_owner_state(
+        cls,
+        resolver: _ProfileACheReplayOwnerStateResolverV1,
+    ) -> "BoundedEvidenceReductionGateV1":
+        if type(resolver) is not _ProfileACheReplayOwnerStateResolverV1:
+            raise FailClosedRuntimeError(
+                "exact Profile A CHE/Replay owner-state resolver is required"
+            )
+        gate = object.__new__(cls)
+        object.__setattr__(
+            gate,
+            "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
+            resolver,
+        )
+        object.__setattr__(
+            gate, "_BoundedEvidenceReductionGateV1__sealed", True
+        )
+        return gate
 
     def __setattr__(self, name: str, value: Any) -> None:
         if getattr(self, "_BoundedEvidenceReductionGateV1__sealed", False):
@@ -733,6 +752,22 @@ class BoundedEvidenceReductionGateV1:
         )
 
 
+def _compose_profile_a_bounded_evidence_reduction_gate_v1(
+    *,
+    runtime_scope_identity: str,
+    owner_state_identity: str,
+) -> BoundedEvidenceReductionGateV1:
+    """CHE-internal composition; neither input is an evaluation-call surface."""
+
+    resolver = _create_profile_a_che_replay_resolver_v1(
+        runtime_scope_identity=runtime_scope_identity,
+        owner_state_identity=owner_state_identity,
+    )
+    return BoundedEvidenceReductionGateV1._from_profile_a_che_replay_owner_state(
+        resolver
+    )
+
+
 def _evaluate_evidence_reduction_gate(
     *,
     policy: dict[str, Any] | None,
@@ -743,7 +778,7 @@ def _evaluate_evidence_reduction_gate(
     cohort: dict[str, Any] | None,
     authority_provenance_reference: str | None,
     authority_evidence: dict[str, Any] | None = None,
-    authority_provenance_resolver: TrustedAuthorityProvenanceResolverV1,
+    authority_provenance_resolver: Any,
 ) -> dict[str, Any]:
     """Evaluate without side effects; every invalid condition returns denial."""
 
@@ -1045,7 +1080,7 @@ def _authority_provenance_scope(
 
 def _validate_authority_provenance(
     *,
-    resolver: TrustedAuthorityProvenanceResolverV1,
+    resolver: Any,
     provenance_root_identity: str | None,
     policy: dict[str, Any],
     obligations: dict[str, Any],
@@ -1055,13 +1090,15 @@ def _validate_authority_provenance(
 ) -> str:
     """Resolve and bind one owner-produced root before CHE validation."""
 
-    if type(resolver) is not TrustedAuthorityProvenanceResolverV1:
+    if type(resolver) is not _ProfileACheReplayOwnerStateResolverV1:
         raise FailClosedRuntimeError(
             "authority provenance resolver is not constitutionally fixed"
         )
     if not isinstance(provenance_root_identity, str):
         raise FailClosedRuntimeError("authority provenance reference is missing")
-    root = resolver.resolve(provenance_root_identity)
+    root, owner_state_commitment = resolver.resolve(
+        provenance_root_identity
+    )
     expected_scope = _authority_provenance_scope(
         policy=policy,
         obligations=obligations,
@@ -1113,7 +1150,8 @@ def _validate_authority_provenance(
             "resolved_authority_evidence_fingerprint": (
                 authority_evidence_fingerprint
             ),
-            "resolver_boundary_commit": resolver.boundary_commit,
+            "profile_a_owner_state_identity": resolver.owner_state_identity,
+            "profile_a_owner_state_commitment": owner_state_commitment,
         }
     )
 

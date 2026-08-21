@@ -137,6 +137,7 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
     validate_canonical_che_response_envelope_v1,
 )
 from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    AUTHORIZATION,
     CLARIFICATION_RESPONSE,
     COMMITMENT,
     CONFIRMATION,
@@ -145,6 +146,10 @@ from aigol.runtime.canonical_human_authority_act_contract_v1 import (
     bind_canonical_human_authority_act_to_che_v1,
     canonical_human_authority_act_from_request_v1,
     validate_canonical_human_authority_act_v1,
+)
+from aigol.runtime.authority_provenance import (
+    BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
+    _persist_profile_a_owner_state_authorization_v1,
 )
 from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
     CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
@@ -560,6 +565,13 @@ def _execute_canonical_che_request_v1(
                 supplied_continuation,
             )
             if existing_delivery["delivery_state"] == _DELIVERY_RECORD_COMMITTED:
+                if canonical_authority_act is not None:
+                    _persist_profile_a_owner_state_authorization_if_applicable_v1(
+                        request=canonical_request,
+                        continuation=supplied_continuation,
+                        authority_act=canonical_authority_act,
+                        correlation=existing_delivery["evidence_correlation"],
+                    )
                 return _response_from_canonical_che_delivery_record_v1(
                     existing_delivery
                 )
@@ -720,6 +732,13 @@ def _execute_canonical_che_request_v1(
         _commit_canonical_che_delivery_response_v1(
             delivery_record, final_response, correlation
         )
+        if canonical_authority_act is not None:
+            _persist_profile_a_owner_state_authorization_if_applicable_v1(
+                request=canonical_request,
+                continuation=prior_continuation,
+                authority_act=canonical_authority_act,
+                correlation=correlation,
+            )
         return final_response
     finally:
         if scope_lock is not None:
@@ -5777,12 +5796,44 @@ def _canonical_che_authority_kind_for_owner_reply_v1(
         ),
         "EXACT_HUMAN_CANDIDATE_CONFIRMATION_ACT": CONFIRMATION,
         "EXACT_HUMAN_OBJECTIVE_COMMIT_ACT": COMMITMENT,
+        BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION: AUTHORIZATION,
     }
     if permitted_reply_kind not in mapping:
         raise FailClosedRuntimeError(
             "CHE owner reply contract has no canonical authority kind"
         )
     return mapping[permitted_reply_kind]
+
+
+def _persist_profile_a_owner_state_authorization_if_applicable_v1(
+    *,
+    request: CanonicalHumanEntryRequestEnvelopeV1,
+    continuation: CanonicalContinuationEnvelopeV1 | None,
+    authority_act: CanonicalHumanAuthorityActV1,
+    correlation: CanonicalCHEEvidenceCorrelationV1 | dict[str, Any],
+) -> None:
+    """Extend only the committed CHE owner-state path for Profile A C1."""
+
+    payload = authority_act.to_dict()["payload"]
+    if (
+        authority_act.authority_kind != AUTHORIZATION
+        or authority_act.authority_scope
+        != "BOUNDED_EVIDENCE_REDUCTION_POLICY"
+        or not isinstance(payload, dict)
+        or payload.get("command")
+        != "AUTHORIZE_BOUNDED_EVIDENCE_REDUCTION_POLICY"
+    ):
+        return
+    if continuation is None:
+        raise FailClosedRuntimeError(
+            "Profile A owner-state authorization requires CHE continuation"
+        )
+    _persist_profile_a_owner_state_authorization_v1(
+        request=request,
+        continuation=continuation,
+        authority_act=authority_act,
+        correlation=correlation,
+    )
 
 
 def _validate_canonical_che_authority_owner_binding_v1(
