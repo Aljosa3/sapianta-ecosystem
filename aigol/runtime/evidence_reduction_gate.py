@@ -33,8 +33,12 @@ from aigol.runtime.canonical_human_entry_contract_v1 import (
 )
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.profile_a_authority_process_boundary import (
+    PROFILE_A_ACTUAL_MANIFEST_CONSUMER,
+    PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE,
+    PROFILE_A_RUNTIMELEDGER_CONSUMER,
     PROFILE_A_TEST_ONLY_ALLOW,
-    profile_a_context_is_production_v1,
+    PROFILE_A_ZERO_AUTHORITY_TEST_MODE,
+    authenticate_profile_a_decision_origin_v1,
     validate_profile_a_authority_process_context_v1,
 )
 from aigol.runtime.transport.ledger import RuntimeLedger
@@ -249,6 +253,8 @@ _ARTIFACT_FIELDS = {
         "planned_manifest_hash",
         "authorization_hash",
         "gate_decision_hash",
+        "decision_origin_evidence",
+        "origin_verification",
         "policy_hash",
         "permanent_trail_id",
         "permanent_trail_hash",
@@ -940,14 +946,14 @@ def _evaluate_evidence_reduction_gate(
         )
 
     if not failures:
-        if profile_a_context_is_production_v1(authority_process_context):
-            decision = ALLOW_BOUNDED_EVIDENCE_REDUCTION
-        else:
-            validate_profile_a_authority_process_context_v1(
-                authority_process_context,
-                allow_zero_authority_test=True,
-            )
+        validated_context = validate_profile_a_authority_process_context_v1(
+            authority_process_context,
+            allow_zero_authority_test=True,
+        )
+        if validated_context.boundary_mode == PROFILE_A_ZERO_AUTHORITY_TEST_MODE:
             decision = PROFILE_A_TEST_ONLY_ALLOW
+        else:
+            decision = PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE
     else:
         decision = DO_NOT_REDUCE_EVIDENCE
     input_hashes = {name: _fingerprint(value) for name, value in artifacts.items()}
@@ -979,6 +985,8 @@ def create_actual_reduction_manifest(
     planned_manifest: dict[str, Any],
     authorization: dict[str, Any],
     gate_decision: dict[str, Any],
+    decision_origin_evidence: dict[str, Any],
+    origin_verification_request_identity: str,
     execution_evidence_reference: str,
     execution_evidence_hash: str,
     evidence_items: list[dict[str, Any]],
@@ -996,6 +1004,19 @@ def create_actual_reduction_manifest(
         raise FailClosedRuntimeError("actual manifest gate-to-plan binding mismatch")
     if gate_decision["input_hashes"].get("authorization") != _fingerprint(authorization):
         raise FailClosedRuntimeError("actual manifest gate-to-authorization binding mismatch")
+    canonical_manifest_id = _require_text(manifest_id, "manifest_id")
+    origin_verification = authenticate_profile_a_decision_origin_v1(
+        verification_request_identity=_require_text(
+            origin_verification_request_identity,
+            "origin_verification_request_identity",
+        ),
+        origin_evidence=decision_origin_evidence,
+        decision_hash=gate_decision["replay_hash"],
+        planned_manifest_hash=planned_manifest["replay_hash"],
+        authorization_hash=authorization["replay_hash"],
+        consumer_kind=PROFILE_A_ACTUAL_MANIFEST_CONSUMER,
+        effect_identity=canonical_manifest_id,
+    )
 
     actual_items = _manifest_items(evidence_items, actual=True)
     for item in actual_items:
@@ -1025,13 +1046,15 @@ def create_actual_reduction_manifest(
         {
             "artifact_type": ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1,
             "gate_version": EVIDENCE_REDUCTION_GATE_VERSION,
-            "manifest_id": _require_text(manifest_id, "manifest_id"),
+            "manifest_id": canonical_manifest_id,
             "domain_id": planned_manifest["domain_id"],
             "evidence_class": planned_manifest["evidence_class"],
             "reduction_type": planned_manifest["reduction_type"],
             "planned_manifest_hash": planned_manifest["replay_hash"],
             "authorization_hash": authorization["replay_hash"],
             "gate_decision_hash": gate_decision["replay_hash"],
+            "decision_origin_evidence": decision_origin_evidence,
+            "origin_verification": origin_verification,
             "policy_hash": planned_manifest["policy_hash"],
             "permanent_trail_id": planned_manifest["permanent_trail_id"],
             "permanent_trail_hash": planned_manifest["permanent_trail_hash"],
@@ -1081,6 +1104,14 @@ def validate_actual_reduction_manifest(artifact: dict[str, Any]) -> None:
         raise FailClosedRuntimeError("physical reduction is outside gate scope")
     if artifact.get("full_replay_claimed") is not False:
         raise FailClosedRuntimeError("manifest cannot claim full Replay")
+    if not isinstance(artifact.get("decision_origin_evidence"), dict):
+        raise FailClosedRuntimeError(
+            "actual reduction manifest decision origin is missing"
+        )
+    if not isinstance(artifact.get("origin_verification"), dict):
+        raise FailClosedRuntimeError(
+            "actual reduction manifest origin verification is missing"
+        )
 
 
 def record_reduction_evidence(
@@ -1088,6 +1119,7 @@ def record_reduction_evidence(
     ledger: RuntimeLedger,
     runtime_id: str,
     artifact: dict[str, Any],
+    origin_verification_request_identity: str | None = None,
 ) -> dict[str, Any]:
     """Append one validated artifact to an existing RuntimeLedger lineage."""
 
@@ -1104,6 +1136,18 @@ def record_reduction_evidence(
         )
     if artifact_type == ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1:
         validate_actual_reduction_manifest(artifact)
+        authenticate_profile_a_decision_origin_v1(
+            verification_request_identity=_require_text(
+                origin_verification_request_identity,
+                "origin_verification_request_identity",
+            ),
+            origin_evidence=artifact["decision_origin_evidence"],
+            decision_hash=artifact["gate_decision_hash"],
+            planned_manifest_hash=artifact["planned_manifest_hash"],
+            authorization_hash=artifact["authorization_hash"],
+            consumer_kind=PROFILE_A_RUNTIMELEDGER_CONSUMER,
+            effect_identity=f"{runtime_id}:{artifact['manifest_id']}",
+        )
     return ledger.append(
         runtime_id,
         f"evidence_reduction:{artifact_type.lower()}",

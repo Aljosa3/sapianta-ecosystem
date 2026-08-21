@@ -14,6 +14,7 @@ import time
 
 import pytest
 
+import aigol.runtime.evidence_reduction_gate as gate_module
 import aigol.runtime.human_interface_runtime_entry_service as che_service
 import aigol.runtime.profile_a_authority_process_boundary as authority_boundary
 from aigol.runtime.authority_provenance import (
@@ -94,7 +95,10 @@ from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.profile_a_authority_process_boundary import (
     PROFILE_A_EVALUATE_DECISION,
     PROFILE_A_ISSUE_OWNER_STATE,
+    PROFILE_A_TEST_ORIGIN_VERIFIED,
     PROFILE_A_TEST_ONLY_ALLOW,
+    PROFILE_A_TEST_VERIFICATION_CONSUMER,
+    PROFILE_A_VERIFY_DECISION_ORIGIN,
     create_profile_a_zero_authority_test_context_v1,
     request_profile_a_bounded_evidence_reduction_decision_v1,
     request_profile_a_zero_authority_test_v1,
@@ -660,6 +664,12 @@ def _zero_authority_structural_actual_manifest_for_c3(case: dict) -> dict:
             "gate_decision_hash": _hash(
                 "zero-authority-no-production-gate-decision"
             ),
+            "decision_origin_evidence": {
+                "zero_authority_structural_fixture": True,
+            },
+            "origin_verification": {
+                "verification_status": "ZERO_AUTHORITY_STRUCTURAL_ONLY",
+            },
             "policy_hash": case["planned_manifest"]["policy_hash"],
             "permanent_trail_id": case["planned_manifest"][
                 "permanent_trail_id"
@@ -799,6 +809,10 @@ def test_planned_manifest_tamper_denies_and_actual_manifest_tamper_fails_closed(
             planned_manifest=case["planned_manifest"],
             authorization=case["authorization"],
             gate_decision=decision,
+            decision_origin_evidence={"zero_authority": True},
+            origin_verification_request_identity=(
+                "ZERO-AUTHORITY-CANNOT-CREATE-ACTUAL-VERIFY"
+            ),
             execution_evidence_reference="zero-authority:no-execution",
             execution_evidence_hash=_hash("zero-authority-no-execution"),
             evidence_items=[],
@@ -887,11 +901,19 @@ def test_existing_runtime_ledger_preserves_ordered_replay_lineage(tmp_path) -> N
             artifact=decision,
             decision_inputs=_decision_inputs(case),
         ),
-        record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=actual),
     ]
+    with pytest.raises(FailClosedRuntimeError):
+        record_reduction_evidence(
+            ledger=ledger,
+            runtime_id=runtime_id,
+            artifact=actual,
+            origin_verification_request_identity=(
+                "ZERO-AUTHORITY-ACTUAL-RECORD-VERIFY"
+            ),
+        )
     reconstructed = ledger.read(runtime_id)
     assert reconstructed[0] == seed
-    assert [entry["sequence"] for entry in reconstructed] == list(range(5))
+    assert [entry["sequence"] for entry in reconstructed] == list(range(4))
     assert reconstructed[1:] == recorded
     assert all(entry["entry_hash"].startswith("sha256:") for entry in reconstructed)
     assert len({entry["entry_hash"] for entry in reconstructed}) == len(reconstructed)
@@ -1436,7 +1458,7 @@ def test_rehashed_actual_manifest_cannot_bypass_permanent_trail_exclusion(
 def test_dedicated_test_process_exercises_protocol_without_production_allow() -> None:
     case = _case()
     process, endpoint = _start_zero_authority_process(
-        case, maximum_requests=2
+        case, maximum_requests=3
     )
     evidence = case["_provenance_root"]["owner_issued_authority_evidence"]
     issuance = request_profile_a_zero_authority_test_v1(
@@ -1463,15 +1485,79 @@ def test_dedicated_test_process_exercises_protocol_without_production_allow() ->
         request_identity="TEST-PROCESS-EVALUATE-1",
         payload={"decision_inputs": _decision_inputs(case)},
     )
-    _join_zero_authority_process(process)
     assert evaluated["status"] == "COMPLETED"
-    assert evaluated["result"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert evaluated["result"]["decision"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert evaluated["result"]["origin_evidence"]["boundary_mode"] == (
+        "ZERO_AUTHORITY_TEST"
+    )
     assert ALLOW_BOUNDED_EVIDENCE_REDUCTION not in canonical_serialize(
-        evaluated
+        evaluated["result"]["decision"]
     ).replace(PROFILE_A_TEST_ONLY_ALLOW, "")
-    assert evaluated["result"]["authority_paths"] == 1
-    assert evaluated["result"]["production_paths"] == 1
-    assert evaluated["result"]["physical_reduction_performed"] is False
+    assert evaluated["result"]["decision"]["authority_paths"] == 1
+    assert evaluated["result"]["decision"]["production_paths"] == 1
+    assert (
+        evaluated["result"]["decision"]["physical_reduction_performed"]
+        is False
+    )
+
+    verified = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity="TEST-PROCESS-VERIFY-1",
+        payload={
+            "origin_evidence": evaluated["result"]["origin_evidence"],
+            "decision_hash": evaluated["result"]["decision"]["replay_hash"],
+            "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+            "authorization_hash": case["authorization"]["replay_hash"],
+            "consumer_kind": PROFILE_A_TEST_VERIFICATION_CONSUMER,
+            "effect_identity": "TEST-PROCESS-VERIFY-EFFECT-1",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert verified["status"] == "COMPLETED"
+    assert verified["result"]["verification_status"] == (
+        PROFILE_A_TEST_ORIGIN_VERIFIED
+    )
+
+
+def test_valid_decision_origin_cannot_be_replayed_for_same_consumer_stage() -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=3
+    )
+    evaluated = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="REPLAY-VALID-ORIGIN-EVALUATE",
+        payload={"decision_inputs": _decision_inputs(case)},
+    )
+    verification_payload = {
+        "origin_evidence": evaluated["result"]["origin_evidence"],
+        "decision_hash": evaluated["result"]["decision"]["replay_hash"],
+        "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+        "authorization_hash": case["authorization"]["replay_hash"],
+        "consumer_kind": PROFILE_A_TEST_VERIFICATION_CONSUMER,
+        "effect_identity": "REPLAY-VALID-ORIGIN-EFFECT-1",
+    }
+    first = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity="REPLAY-VALID-ORIGIN-VERIFY-1",
+        payload=verification_payload,
+    )
+    replayed = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity="REPLAY-VALID-ORIGIN-VERIFY-2",
+        payload={
+            **verification_payload,
+            "effect_identity": "REPLAY-VALID-ORIGIN-EFFECT-2",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert first["status"] == "COMPLETED"
+    assert replayed["status"] == "DENIED"
+    assert replayed["result"] is None
 
 
 def test_direct_imported_composition_resolver_gate_token_and_persistence_deny() -> None:
@@ -1586,11 +1672,12 @@ def test_production_request_fails_closed_when_process_or_binding_is_unavailable(
         request_identity="PRODUCTION-PROCESS-UNAVAILABLE",
         decision_inputs=_decision_inputs(case),
     )
-    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert decision["decision"]["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert decision["origin_evidence"] is None
     assert PROFILE_A_TEST_ONLY_ALLOW not in canonical_serialize(decision)
     assert (
         "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
-        in decision["failure_codes"]
+        in decision["decision"]["failure_codes"]
     )
 
 
@@ -1658,7 +1745,7 @@ def test_ipc_replay_and_duplicate_request_deny() -> None:
     )
     _join_zero_authority_process(process)
     assert first["status"] == "COMPLETED"
-    assert first["result"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert first["result"]["decision"]["decision"] == PROFILE_A_TEST_ONLY_ALLOW
     assert second["status"] == "DENIED"
     assert second["failure_code"] == "IPC_REQUEST_REPLAYED_OR_DUPLICATE"
     assert second["result"] is None
@@ -1738,3 +1825,198 @@ def test_test_principal_root_endpoint_and_response_cannot_be_promoted() -> None:
             production_shaped_context,
             allow_zero_authority_test=False,
         )
+
+
+def test_caller_domain_classification_replacement_has_zero_production_authority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _case()
+    monkeypatch.setattr(
+        gate_module,
+        "profile_a_context_is_production_v1",
+        lambda value: True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        authority_boundary,
+        "profile_a_context_is_production_v1",
+        lambda value: True,
+    )
+    decision = _evaluate(case)
+    assert decision["decision"] == PROFILE_A_TEST_ONLY_ALLOW
+    assert decision["decision"] != ALLOW_BOUNDED_EVIDENCE_REDUCTION
+
+
+def test_caller_created_allow_and_rehashed_decision_have_zero_downstream_effect(
+    tmp_path: Path,
+) -> None:
+    case = _case()
+    forged_basis = deepcopy(_evaluate(case))
+    forged_basis.pop("replay_hash")
+    forged_basis["decision"] = ALLOW_BOUNDED_EVIDENCE_REDUCTION
+    forged = with_replay_hash(forged_basis)
+    structural = _zero_authority_structural_actual_manifest_for_c3(case)
+    with pytest.raises(FailClosedRuntimeError):
+        create_actual_reduction_manifest(
+            manifest_id="CALLER-FORGED-ACTUAL-MANIFEST",
+            planned_manifest=case["planned_manifest"],
+            authorization=case["authorization"],
+            gate_decision=forged,
+            decision_origin_evidence={"caller_rebuilt": True},
+            origin_verification_request_identity="CALLER-FORGED-VERIFY",
+            execution_evidence_reference="caller:no-authority-effect",
+            execution_evidence_hash=_hash("caller-no-authority-effect"),
+            evidence_items=structural["evidence_items"],
+        )
+
+    ledger = RuntimeLedger(tmp_path)
+    with pytest.raises(FailClosedRuntimeError):
+        record_reduction_evidence(
+            ledger=ledger,
+            runtime_id="CALLER-FORGED-DOWNSTREAM-RECORD",
+            artifact=structural,
+            origin_verification_request_identity=(
+                "CALLER-FORGED-RECORD-VERIFY"
+            ),
+        )
+    assert ledger.read(
+        "CALLER-FORGED-DOWNSTREAM-RECORD", allow_missing=True
+    ) == []
+
+
+@pytest.mark.parametrize(
+    "attack",
+    ["rebuilt_receipt", "context_mismatch", "wrong_origin", "promoted_test"],
+)
+def test_decision_origin_receipt_substitution_denies(
+    attack: str,
+) -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=2
+    )
+    evaluated = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity=f"ORIGIN-SUBSTITUTION-EVALUATE-{attack}",
+        payload={"decision_inputs": _decision_inputs(case)},
+    )
+    origin = deepcopy(evaluated["result"]["origin_evidence"])
+    decision_hash = evaluated["result"]["decision"]["replay_hash"]
+    if attack == "rebuilt_receipt":
+        origin["receipt_identity"] = "CALLER-REBUILT-RECEIPT"
+        origin.pop("receipt_hash")
+        origin = with_replay_hash(origin, hash_field="receipt_hash")
+    elif attack == "context_mismatch":
+        origin["boundary_mode"] = authority_boundary.PROFILE_A_PRODUCTION_MODE
+        origin.pop("receipt_hash")
+        origin = with_replay_hash(origin, hash_field="receipt_hash")
+    elif attack == "wrong_origin":
+        origin["authority_process_identity"] = "CALLER-AUTHORITY-PROCESS"
+        origin.pop("receipt_hash")
+        origin = with_replay_hash(origin, hash_field="receipt_hash")
+    else:
+        decision_hash = _hash("caller-promoted-production-allow")
+    verified = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity=f"ORIGIN-SUBSTITUTION-VERIFY-{attack}",
+        payload={
+            "origin_evidence": origin,
+            "decision_hash": decision_hash,
+            "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+            "authorization_hash": case["authorization"]["replay_hash"],
+            "consumer_kind": PROFILE_A_TEST_VERIFICATION_CONSUMER,
+            "effect_identity": f"ORIGIN-SUBSTITUTION-EFFECT-{attack}",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert verified["status"] == "DENIED"
+    assert verified["result"] is None
+
+
+@pytest.mark.parametrize(
+    "lifecycle_change", ["stale", "superseded", "revoked", "rollback"]
+)
+def test_old_decision_origin_denies_after_lifecycle_change(
+    lifecycle_change: str,
+) -> None:
+    case = _case()
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=2
+    )
+    evaluated = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="OLD-ORIGIN-EVALUATE",
+        payload={"decision_inputs": _decision_inputs(case)},
+    )
+    if lifecycle_change == "stale":
+        path = case["_profile_a_event_path"]
+        event = json.loads(path.read_text(encoding="utf-8"))
+        event["expires_at"] = "2000-01-01T00:00:00Z"
+        _write_profile_a_event(path, event)
+    else:
+        latest_path, latest_event = _append_profile_a_successor(case)
+        if lifecycle_change == "revoked":
+            latest_event["event_kind"] = PROFILE_A_OWNER_STATE_REVOKED
+            _write_profile_a_event(latest_path, latest_event)
+        elif lifecycle_change == "rollback":
+            latest_path.unlink()
+    verified = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity=f"OLD-ORIGIN-VERIFY-AFTER-{lifecycle_change}",
+        payload={
+            "origin_evidence": evaluated["result"]["origin_evidence"],
+            "decision_hash": evaluated["result"]["decision"]["replay_hash"],
+            "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+            "authorization_hash": case["authorization"]["replay_hash"],
+            "consumer_kind": PROFILE_A_TEST_VERIFICATION_CONSUMER,
+            "effect_identity": f"OLD-ORIGIN-EFFECT-{lifecycle_change}",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert verified["status"] == "DENIED"
+    assert verified["result"] is None
+
+
+def test_inherited_module_replacement_cannot_promote_process_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    case = _case()
+    monkeypatch.setattr(
+        gate_module,
+        "profile_a_context_is_production_v1",
+        lambda value: True,
+        raising=False,
+    )
+    process, endpoint = _start_zero_authority_process(
+        case, maximum_requests=2
+    )
+    evaluated = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_EVALUATE_DECISION,
+        request_identity="INHERITED-REPLACEMENT-EVALUATE",
+        payload={"decision_inputs": _decision_inputs(case)},
+    )
+    verified = request_profile_a_zero_authority_test_v1(
+        socket_path=endpoint,
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity="INHERITED-REPLACEMENT-VERIFY",
+        payload={
+            "origin_evidence": evaluated["result"]["origin_evidence"],
+            "decision_hash": evaluated["result"]["decision"]["replay_hash"],
+            "planned_manifest_hash": case["planned_manifest"]["replay_hash"],
+            "authorization_hash": case["authorization"]["replay_hash"],
+            "consumer_kind": PROFILE_A_TEST_VERIFICATION_CONSUMER,
+            "effect_identity": "INHERITED-REPLACEMENT-EFFECT",
+        },
+    )
+    _join_zero_authority_process(process)
+    assert evaluated["result"]["decision"]["decision"] == (
+        PROFILE_A_TEST_ONLY_ALLOW
+    )
+    assert verified["result"]["verification_status"] == (
+        PROFILE_A_TEST_ORIGIN_VERIFIED
+    )

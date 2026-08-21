@@ -45,11 +45,25 @@ PROFILE_A_TEST_PRINCIPAL_IDENTITY = (
 PROFILE_A_TEST_ONLY_ALLOW = (
     "TEST_ONLY_ALLOW_BOUNDED_EVIDENCE_REDUCTION__ZERO_AUTHORITY"
 )
+PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE = (
+    "PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE__NO_CALLER_AUTHORITY_EFFECT"
+)
+PROFILE_A_PRODUCTION_ORIGIN_VERIFIED = (
+    "VERIFIED_PROFILE_A_PRODUCTION_AUTHORITY_PROCESS_ORIGIN"
+)
+PROFILE_A_TEST_ORIGIN_VERIFIED = (
+    "VERIFIED_PROFILE_A_ZERO_AUTHORITY_TEST_ORIGIN"
+)
 
 PROFILE_A_ISSUE_OWNER_STATE = "ISSUE_PROFILE_A_OWNER_STATE"
 PROFILE_A_EVALUATE_DECISION = "EVALUATE_BOUNDED_EVIDENCE_REDUCTION"
+PROFILE_A_VERIFY_DECISION_ORIGIN = "VERIFY_PROFILE_A_DECISION_ORIGIN"
 PROFILE_A_IPC_OPERATIONS = frozenset(
-    {PROFILE_A_ISSUE_OWNER_STATE, PROFILE_A_EVALUATE_DECISION}
+    {
+        PROFILE_A_ISSUE_OWNER_STATE,
+        PROFILE_A_EVALUATE_DECISION,
+        PROFILE_A_VERIFY_DECISION_ORIGIN,
+    }
 )
 
 PROFILE_A_PRODUCTION_BINDING_PATH = Path(
@@ -60,6 +74,22 @@ PROFILE_A_PRODUCTION_SOCKET_PATH = Path(
 )
 PROFILE_A_AUTHORITY_RECEIPT_DIRECTORY = (
     "profile_a_authority_ipc_receipts_v1"
+)
+PROFILE_A_DECISION_ORIGIN_DIRECTORY = (
+    "profile_a_decision_origin_receipts_v1"
+)
+PROFILE_A_DECISION_CONSUMPTION_DIRECTORY = (
+    "profile_a_decision_origin_consumptions_v1"
+)
+PROFILE_A_ACTUAL_MANIFEST_CONSUMER = "ACTUAL_MANIFEST_CREATION"
+PROFILE_A_RUNTIMELEDGER_CONSUMER = "RUNTIMELEDGER_ACTUAL_EFFECT_RECORDING"
+PROFILE_A_TEST_VERIFICATION_CONSUMER = "ZERO_AUTHORITY_TEST_VERIFICATION"
+PROFILE_A_DECISION_CONSUMERS = frozenset(
+    {
+        PROFILE_A_ACTUAL_MANIFEST_CONSUMER,
+        PROFILE_A_RUNTIMELEDGER_CONSUMER,
+        PROFILE_A_TEST_VERIFICATION_CONSUMER,
+    }
 )
 
 _BINDING_FIELDS = frozenset(
@@ -97,6 +127,39 @@ _RESPONSE_FIELDS = frozenset(
         "failure_code",
         "result",
         "response_hash",
+    }
+)
+_DECISION_ORIGIN_FIELDS = frozenset(
+    {
+        "origin_version",
+        "boundary_version",
+        "boundary_mode",
+        "authority_process_identity",
+        "authority_uid",
+        "binding_hash",
+        "request_identity",
+        "request_hash",
+        "correlation_identity",
+        "owner_state_identity",
+        "owner_state_commitment",
+        "policy_revision",
+        "subject",
+        "scope",
+        "immutable_input_identities",
+        "lifecycle_state",
+        "decision_identity",
+        "decision_hash",
+        "receipt_identity",
+        "receipt_hash",
+    }
+)
+_DECISION_RECORD_FIELDS = frozenset(
+    {
+        "record_version",
+        "origin_evidence",
+        "decision",
+        "decision_inputs",
+        "record_hash",
     }
 )
 _MAX_FRAME_BYTES = 8 * 1024 * 1024
@@ -561,6 +624,410 @@ def _receipt_path(
     )
 
 
+def _decision_origin_path(
+    context: _ProfileAAuthorityProcessContextV1, receipt_identity: str
+) -> Path:
+    digest = replay_hash(
+        {"receipt_identity": receipt_identity}
+    ).removeprefix("sha256:")
+    return (
+        Path(context.owner_state_store_root)
+        / PROFILE_A_DECISION_ORIGIN_DIRECTORY
+        / f"decision-{digest}.json"
+    )
+
+
+def _decision_consumption_path(
+    context: _ProfileAAuthorityProcessContextV1,
+    receipt_identity: str,
+    consumer_kind: str,
+) -> Path:
+    digest = replay_hash(
+        {
+            "receipt_identity": receipt_identity,
+            "consumer_kind": consumer_kind,
+        }
+    ).removeprefix("sha256:")
+    return (
+        Path(context.owner_state_store_root)
+        / PROFILE_A_DECISION_CONSUMPTION_DIRECTORY
+        / f"consumption-{digest}.json"
+    )
+
+
+def _decision_origin_bindings(
+    *,
+    context: _ProfileAAuthorityProcessContextV1,
+    request: Mapping[str, Any],
+    decision: Mapping[str, Any],
+    decision_inputs: Mapping[str, Any],
+) -> dict[str, Any]:
+    required_inputs = {
+        "policy",
+        "obligations",
+        "permanent_trail",
+        "planned_manifest",
+        "authorization",
+        "cohort",
+        "authority_provenance_reference",
+        "authority_evidence",
+    }
+    if set(decision_inputs) != required_inputs:
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin inputs are incomplete"
+        )
+    policy = decision_inputs["policy"]
+    planned = decision_inputs["planned_manifest"]
+    authorization = decision_inputs["authorization"]
+    permanent_trail = decision_inputs["permanent_trail"]
+    if not all(
+        isinstance(value, Mapping)
+        for value in (policy, planned, authorization, permanent_trail)
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin subject is unresolved"
+        )
+    input_identities = decision.get("input_hashes")
+    if not isinstance(input_identities, Mapping):
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin input identities are unresolved"
+        )
+    subject = {
+        "domain_id": _text(policy.get("domain_id"), "decision domain"),
+        "policy_id": _text(policy.get("policy_id"), "decision policy"),
+        "authority_id": _text(
+            policy.get("authority_id"), "decision authority"
+        ),
+        "subject_reference": _text(
+            permanent_trail.get("subject_reference"),
+            "decision subject reference",
+        ),
+    }
+    scope = {
+        "evidence_class": _text(
+            planned.get("evidence_class"), "decision evidence class"
+        ),
+        "reduction_type": _text(
+            planned.get("reduction_type"), "decision reduction type"
+        ),
+        "planned_manifest_hash": _text(
+            planned.get("replay_hash"), "planned manifest hash"
+        ),
+        "authorization_hash": _text(
+            authorization.get("replay_hash"), "authorization hash"
+        ),
+    }
+    return {
+        "correlation_identity": _text(
+            policy.get("authority_evidence_reference"),
+            "decision correlation identity",
+        ),
+        "owner_state_identity": context.owner_state_identity,
+        "owner_state_commitment": _text(
+            input_identities.get("authority_provenance"),
+            "owner-state commitment",
+        ),
+        "policy_revision": _text(
+            policy.get("policy_version"), "policy revision"
+        ),
+        "subject": subject,
+        "scope": scope,
+        "immutable_input_identities": _plain(input_identities),
+        "lifecycle_state": (
+            "CURRENT__NOT_EXPIRED__NOT_SUPERSEDED__NOT_REVOKED__LINEAGE_RESOLVED"
+        ),
+        "decision_identity": _text(
+            decision.get("decision_id"), "decision identity"
+        ),
+        "decision_hash": _text(
+            decision.get("replay_hash"), "decision hash"
+        ),
+        "request_identity": request["request_identity"],
+        "request_hash": request["request_hash"],
+    }
+
+
+def _materialize_process_decision(
+    context: _ProfileAAuthorityProcessContextV1,
+    decision: Mapping[str, Any],
+) -> dict[str, Any]:
+    value = _validate_hash_bound(decision, "replay_hash")
+    current = value.get("decision")
+    if context.boundary_mode == PROFILE_A_PRODUCTION_MODE:
+        if current == PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE:
+            basis = dict(value)
+            basis.pop("replay_hash")
+            basis["decision"] = "ALLOW_BOUNDED_EVIDENCE_REDUCTION"
+            return _with_hash(basis, "replay_hash")
+        if current == PROFILE_A_TEST_ONLY_ALLOW:
+            raise FailClosedRuntimeError(
+                "Profile A production process rejected test classification"
+            )
+        return value
+    if current == PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE or current == (
+        "ALLOW_BOUNDED_EVIDENCE_REDUCTION"
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A zero-authority process rejected production classification"
+        )
+    return value
+
+
+def _build_decision_origin_evidence(
+    *,
+    context: _ProfileAAuthorityProcessContextV1,
+    request: Mapping[str, Any],
+    decision: Mapping[str, Any],
+    decision_inputs: Mapping[str, Any],
+) -> dict[str, Any]:
+    bindings = _decision_origin_bindings(
+        context=context,
+        request=request,
+        decision=decision,
+        decision_inputs=decision_inputs,
+    )
+    seed = {
+        "origin_version": "PROFILE_A_OS_BOUND_DECISION_ORIGIN_V1",
+        "boundary_version": PROFILE_A_AUTHORITY_BOUNDARY_VERSION,
+        "boundary_mode": context.boundary_mode,
+        "authority_process_identity": context.principal_identity,
+        "authority_uid": context.authority_uid,
+        "binding_hash": context.binding_hash,
+        **bindings,
+    }
+    receipt_digest = replay_hash(seed).removeprefix("sha256:")
+    return _with_hash(
+        {
+            **seed,
+            "receipt_identity": (
+                f"PROFILE-A-DECISION-ORIGIN-{receipt_digest[:32]}"
+            ),
+        },
+        "receipt_hash",
+    )
+
+
+def _validate_decision_origin_evidence(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or set(value) != _DECISION_ORIGIN_FIELDS:
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin evidence fields are invalid"
+        )
+    evidence = _validate_hash_bound(value, "receipt_hash")
+    if (
+        evidence["origin_version"]
+        != "PROFILE_A_OS_BOUND_DECISION_ORIGIN_V1"
+        or evidence["boundary_version"]
+        != PROFILE_A_AUTHORITY_BOUNDARY_VERSION
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin evidence identity is invalid"
+        )
+    for field_name in (
+        "authority_process_identity",
+        "binding_hash",
+        "request_identity",
+        "request_hash",
+        "correlation_identity",
+        "owner_state_identity",
+        "owner_state_commitment",
+        "policy_revision",
+        "lifecycle_state",
+        "decision_identity",
+        "decision_hash",
+        "receipt_identity",
+    ):
+        _text(evidence[field_name], field_name.replace("_", " "))
+    _integer(evidence["authority_uid"], "origin authority UID")
+    if not all(
+        isinstance(evidence[field_name], dict)
+        for field_name in ("subject", "scope", "immutable_input_identities")
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin bound content is invalid"
+        )
+    return evidence
+
+
+def _store_decision_origin_record(
+    *,
+    context: _ProfileAAuthorityProcessContextV1,
+    request: Mapping[str, Any],
+    decision: Mapping[str, Any],
+    decision_inputs: Mapping[str, Any],
+) -> dict[str, Any]:
+    evidence = _build_decision_origin_evidence(
+        context=context,
+        request=request,
+        decision=decision,
+        decision_inputs=decision_inputs,
+    )
+    path = _decision_origin_path(context, evidence["receipt_identity"])
+    record = _with_hash(
+        {
+            "record_version": "PROFILE_A_PROTECTED_DECISION_RECORD_V1",
+            "origin_evidence": evidence,
+            "decision": _plain(decision),
+            "decision_inputs": _plain(decision_inputs),
+        },
+        "record_hash",
+    )
+    write_json_immutable(path, record)
+    return evidence
+
+
+def _load_decision_origin_record(
+    context: _ProfileAAuthorityProcessContextV1,
+    origin_evidence: Mapping[str, Any],
+) -> dict[str, Any]:
+    evidence = _validate_decision_origin_evidence(origin_evidence)
+    path = _decision_origin_path(context, evidence["receipt_identity"])
+    try:
+        record = load_json(path)
+    except (FailClosedRuntimeError, OSError, ValueError) as exc:
+        raise FailClosedRuntimeError(
+            "Profile A protected decision-origin record is unavailable"
+        ) from exc
+    if set(record) != _DECISION_RECORD_FIELDS:
+        raise FailClosedRuntimeError(
+            "Profile A protected decision-origin record fields are invalid"
+        )
+    record = _validate_hash_bound(record, "record_hash")
+    if (
+        record["record_version"]
+        != "PROFILE_A_PROTECTED_DECISION_RECORD_V1"
+        or record["origin_evidence"] != evidence
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A protected decision-origin record binding is invalid"
+        )
+    return record
+
+
+def _verify_decision_origin_inside_process(
+    *,
+    context: _ProfileAAuthorityProcessContextV1,
+    payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    from aigol.runtime.evidence_reduction_gate import (
+        _compose_profile_a_bounded_evidence_reduction_gate_inside_authority_process_v1,
+    )
+
+    expected = {
+        "origin_evidence",
+        "decision_hash",
+        "planned_manifest_hash",
+        "authorization_hash",
+        "consumer_kind",
+        "effect_identity",
+    }
+    if set(payload) != expected:
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin verification fields are invalid"
+        )
+    record = _load_decision_origin_record(
+        context, payload["origin_evidence"]
+    )
+    evidence = record["origin_evidence"]
+    consumer_kind = _text(payload["consumer_kind"], "origin consumer kind")
+    effect_identity = _text(payload["effect_identity"], "effect identity")
+    if consumer_kind not in PROFILE_A_DECISION_CONSUMERS:
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin consumer is not authorized"
+        )
+    if context.boundary_mode == PROFILE_A_PRODUCTION_MODE:
+        if consumer_kind == PROFILE_A_TEST_VERIFICATION_CONSUMER:
+            raise FailClosedRuntimeError(
+                "Profile A production origin rejected a test consumer"
+            )
+    elif consumer_kind != PROFILE_A_TEST_VERIFICATION_CONSUMER:
+        raise FailClosedRuntimeError(
+            "Profile A test origin rejected a production consumer"
+        )
+    if (
+        evidence["boundary_mode"] != context.boundary_mode
+        or evidence["authority_process_identity"] != context.principal_identity
+        or evidence["authority_uid"] != context.authority_uid
+        or evidence["binding_hash"] != context.binding_hash
+        or evidence["owner_state_identity"] != context.owner_state_identity
+        or evidence["decision_hash"] != payload["decision_hash"]
+        or evidence["scope"]["planned_manifest_hash"]
+        != payload["planned_manifest_hash"]
+        or evidence["scope"]["authorization_hash"]
+        != payload["authorization_hash"]
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin verification binding mismatch"
+        )
+    gate = (
+        _compose_profile_a_bounded_evidence_reduction_gate_inside_authority_process_v1(
+            _authority_process_context=context
+        )
+    )
+    recomputed = _materialize_process_decision(
+        context, gate.evaluate(**record["decision_inputs"])
+    )
+    if recomputed != record["decision"]:
+        raise FailClosedRuntimeError(
+            "Profile A decision origin is stale or no longer current"
+        )
+    expected_evidence = _build_decision_origin_evidence(
+        context=context,
+        request={
+            "request_identity": evidence["request_identity"],
+            "request_hash": evidence["request_hash"],
+        },
+        decision=recomputed,
+        decision_inputs=record["decision_inputs"],
+    )
+    if expected_evidence != evidence:
+        raise FailClosedRuntimeError(
+            "Profile A decision-origin evidence was reconstructed or altered"
+        )
+    if context.boundary_mode == PROFILE_A_PRODUCTION_MODE:
+        if recomputed.get("decision") != "ALLOW_BOUNDED_EVIDENCE_REDUCTION":
+            raise FailClosedRuntimeError(
+                "Profile A production decision origin is not allow-capable"
+            )
+        status = PROFILE_A_PRODUCTION_ORIGIN_VERIFIED
+    else:
+        if recomputed.get("decision") != PROFILE_A_TEST_ONLY_ALLOW:
+            raise FailClosedRuntimeError(
+                "Profile A test decision origin is not zero-authority"
+            )
+        status = PROFILE_A_TEST_ORIGIN_VERIFIED
+    consumption_path = _decision_consumption_path(
+        context, evidence["receipt_identity"], consumer_kind
+    )
+    if consumption_path.exists():
+        raise FailClosedRuntimeError(
+            "Profile A decision origin was already consumed for this effect"
+        )
+    consumption = _with_hash(
+        {
+            "consumption_version": "PROFILE_A_DECISION_CONSUMPTION_V1",
+            "boundary_mode": context.boundary_mode,
+            "receipt_identity": evidence["receipt_identity"],
+            "receipt_hash": evidence["receipt_hash"],
+            "decision_hash": evidence["decision_hash"],
+            "consumer_kind": consumer_kind,
+            "effect_identity": effect_identity,
+            "verification_status": status,
+        },
+        "consumption_hash",
+    )
+    write_json_immutable(consumption_path, consumption)
+    return {
+        "verification_status": status,
+        "receipt_identity": evidence["receipt_identity"],
+        "receipt_hash": evidence["receipt_hash"],
+        "decision_hash": evidence["decision_hash"],
+        "currentness": evidence["lifecycle_state"],
+        "consumer_kind": consumer_kind,
+        "effect_identity": effect_identity,
+        "consumption_hash": consumption["consumption_hash"],
+    }
+
+
 def _handle_request(
     context: _ProfileAAuthorityProcessContextV1,
     request: Mapping[str, Any],
@@ -617,7 +1084,7 @@ def _handle_request(
                 ),
                 "owner_state_identity": validated_context.owner_state_identity,
             }
-        else:
+        elif request["operation"] == PROFILE_A_EVALUATE_DECISION:
             if set(request["payload"]) != {"decision_inputs"} or not isinstance(
                 request["payload"]["decision_inputs"], dict
             ):
@@ -629,7 +1096,32 @@ def _handle_request(
                     _authority_process_context=validated_context
                 )
             )
-            result = gate.evaluate(**request["payload"]["decision_inputs"])
+            decision_inputs = request["payload"]["decision_inputs"]
+            decision = _materialize_process_decision(
+                validated_context,
+                gate.evaluate(**decision_inputs),
+            )
+            if decision.get("decision") in {
+                "ALLOW_BOUNDED_EVIDENCE_REDUCTION",
+                PROFILE_A_TEST_ONLY_ALLOW,
+            }:
+                origin_evidence = _store_decision_origin_record(
+                    context=validated_context,
+                    request=request,
+                    decision=decision,
+                    decision_inputs=decision_inputs,
+                )
+            else:
+                origin_evidence = None
+            result = {
+                "decision": decision,
+                "origin_evidence": origin_evidence,
+            }
+        else:
+            result = _verify_decision_origin_inside_process(
+                context=validated_context,
+                payload=request["payload"],
+            )
         response = _response(
             context=validated_context,
             request_identity=request["request_identity"],
@@ -842,7 +1334,7 @@ def request_profile_a_owner_state_issuance_v1(
 def request_profile_a_bounded_evidence_reduction_decision_v1(
     *, request_identity: str, decision_inputs: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Request one production decision; every boundary failure returns DENY."""
+    """Request one origin-bound production decision envelope."""
 
     from aigol.runtime.evidence_reduction_gate import BoundedEvidenceReductionGateV1
 
@@ -859,17 +1351,82 @@ def request_profile_a_bounded_evidence_reduction_decision_v1(
             response["status"] != "COMPLETED"
             or response["failure_code"] != "NONE"
             or not isinstance(result, dict)
+            or set(result) != {"decision", "origin_evidence"}
+            or not isinstance(result["decision"], dict)
+            or not isinstance(result["origin_evidence"], dict)
         ):
             raise FailClosedRuntimeError(
                 "Profile A authority decision failed closed"
             )
-        if result.get("decision") == PROFILE_A_TEST_ONLY_ALLOW:
+        if result["decision"].get("decision") == PROFILE_A_TEST_ONLY_ALLOW:
             raise FailClosedRuntimeError(
                 "Profile A production client rejected a test decision"
             )
+        origin = _validate_decision_origin_evidence(
+            result["origin_evidence"]
+        )
+        if (
+            origin["boundary_mode"] != PROFILE_A_PRODUCTION_MODE
+            or origin["authority_process_identity"]
+            != PROFILE_A_AUTHORITY_PRINCIPAL_IDENTITY
+            or origin["decision_hash"]
+            != result["decision"].get("replay_hash")
+        ):
+            raise FailClosedRuntimeError(
+                "Profile A production decision origin is invalid"
+            )
         return result
     except (FailClosedRuntimeError, OSError, TypeError, ValueError):
-        return BoundedEvidenceReductionGateV1().evaluate(**inputs)
+        return {
+            "decision": BoundedEvidenceReductionGateV1().evaluate(**inputs),
+            "origin_evidence": None,
+        }
+
+
+def authenticate_profile_a_decision_origin_v1(
+    *,
+    verification_request_identity: str,
+    origin_evidence: Mapping[str, Any],
+    decision_hash: str,
+    planned_manifest_hash: str,
+    authorization_hash: str,
+    consumer_kind: str,
+    effect_identity: str,
+) -> dict[str, Any]:
+    """Reauthenticate one decision at the fixed production process."""
+
+    ipc_request = _request(
+        operation=PROFILE_A_VERIFY_DECISION_ORIGIN,
+        request_identity=verification_request_identity,
+        payload={
+            "origin_evidence": origin_evidence,
+            "decision_hash": _text(decision_hash, "decision hash"),
+            "planned_manifest_hash": _text(
+                planned_manifest_hash, "planned manifest hash"
+            ),
+            "authorization_hash": _text(
+                authorization_hash, "authorization hash"
+            ),
+            "consumer_kind": _text(consumer_kind, "origin consumer kind"),
+            "effect_identity": _text(effect_identity, "effect identity"),
+        },
+    )
+    response = _production_request(ipc_request)
+    result = response["result"]
+    if (
+        response["status"] != "COMPLETED"
+        or response["failure_code"] != "NONE"
+        or not isinstance(result, dict)
+        or result.get("verification_status")
+        != PROFILE_A_PRODUCTION_ORIGIN_VERIFIED
+        or result.get("decision_hash") != decision_hash
+        or result.get("consumer_kind") != consumer_kind
+        or result.get("effect_identity") != effect_identity
+    ):
+        raise FailClosedRuntimeError(
+            "Profile A decision origin is not production-authenticated"
+        )
+    return result
 
 
 def request_profile_a_zero_authority_test_v1(
@@ -906,12 +1463,20 @@ if __name__ == "__main__":
 __all__ = [
     "PROFILE_A_AUTHORITY_BOUNDARY_VERSION",
     "PROFILE_A_AUTHORITY_PRINCIPAL_IDENTITY",
+    "PROFILE_A_ACTUAL_MANIFEST_CONSUMER",
     "PROFILE_A_EVALUATE_DECISION",
     "PROFILE_A_ISSUE_OWNER_STATE",
+    "PROFILE_A_PROCESS_INTERNAL_ALLOW_CANDIDATE",
     "PROFILE_A_PRODUCTION_BINDING_PATH",
+    "PROFILE_A_PRODUCTION_ORIGIN_VERIFIED",
     "PROFILE_A_PRODUCTION_SOCKET_PATH",
+    "PROFILE_A_RUNTIMELEDGER_CONSUMER",
     "PROFILE_A_TEST_ONLY_ALLOW",
+    "PROFILE_A_TEST_ORIGIN_VERIFIED",
+    "PROFILE_A_TEST_VERIFICATION_CONSUMER",
+    "PROFILE_A_VERIFY_DECISION_ORIGIN",
     "PROFILE_A_ZERO_AUTHORITY_TEST_MODE",
+    "authenticate_profile_a_decision_origin_v1",
     "create_profile_a_zero_authority_test_context_v1",
     "request_profile_a_bounded_evidence_reduction_decision_v1",
     "request_profile_a_owner_state_issuance_v1",
