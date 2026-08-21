@@ -11,6 +11,19 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Iterable
 
+from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
+    RECORDED,
+    validate_canonical_che_evidence_correlation_v1,
+)
+from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    AUTHORIZATION,
+    HUMAN_AUTHORITY_OWNER,
+    bind_canonical_human_authority_act_to_che_v1,
+    validate_canonical_human_authority_act_v1,
+)
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    canonical_che_request_source_act_digest_v1,
+)
 from aigol.runtime.models import FailClosedRuntimeError
 from aigol.runtime.transport.ledger import RuntimeLedger
 from aigol.runtime.transport.serialization import replay_hash, verify_replay_hash, with_replay_hash
@@ -18,6 +31,10 @@ from aigol.runtime.transport.serialization import replay_hash, verify_replay_has
 
 EVIDENCE_REDUCTION_GATE_VERSION = "G77_BOUNDED_FAIL_CLOSED_EVIDENCE_REDUCTION_GATE_V1"
 ARTICLE_10_EFFECTIVE_BOUNDARY_COMMIT = "4c2398380cb973ca522ccc2eb6e2ff22a5404296"
+EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE = "BOUNDED_EVIDENCE_REDUCTION_POLICY"
+AUTHORIZE_BOUNDED_EVIDENCE_REDUCTION_POLICY = (
+    "AUTHORIZE_BOUNDED_EVIDENCE_REDUCTION_POLICY"
+)
 
 DOMAIN_REDUCTION_POLICY_ARTIFACT_V1 = "DOMAIN_REDUCTION_POLICY_PROJECTION_V1"
 EVIDENCE_OBLIGATION_PROJECTION_ARTIFACT_V1 = "EVIDENCE_OBLIGATION_PROJECTION_V1"
@@ -153,6 +170,7 @@ _ARTIFACT_FIELDS = {
         "reduction_type",
         "evidence_items",
         "policy_hash",
+        "permanent_trail_id",
         "permanent_trail_hash",
         "cohort_hash",
         "article_10_boundary_commit",
@@ -214,6 +232,7 @@ _ARTIFACT_FIELDS = {
         "authorization_hash",
         "gate_decision_hash",
         "policy_hash",
+        "permanent_trail_id",
         "permanent_trail_hash",
         "cohort_hash",
         "execution_evidence_reference",
@@ -227,6 +246,44 @@ _ARTIFACT_FIELDS = {
         "replay_hash",
     },
 }
+
+
+def domain_reduction_policy_authority_payload(
+    *,
+    domain_id: str,
+    policy_id: str,
+    policy_version: str,
+    authority_id: str,
+    applicable_at_commit: str,
+    allowed_evidence_classes: list[str],
+    allowed_reduction_types: list[str],
+    obligations_hash: str,
+    permanent_trail_hash: str,
+    cohort_hash: str,
+) -> dict[str, Any]:
+    """Return the exact Human Authority payload for one policy snapshot."""
+
+    return {
+        "command": AUTHORIZE_BOUNDED_EVIDENCE_REDUCTION_POLICY,
+        "domain_id": _require_text(domain_id, "domain_id"),
+        "policy_id": _require_text(policy_id, "policy_id"),
+        "policy_version": _require_text(policy_version, "policy_version"),
+        "authority_id": _require_text(authority_id, "authority_id"),
+        "applicable_at_commit": _require_text(
+            applicable_at_commit, "applicable_at_commit"
+        ),
+        "allowed_evidence_classes": _text_list(
+            allowed_evidence_classes, "allowed_evidence_classes"
+        ),
+        "allowed_reduction_types": _text_list(
+            allowed_reduction_types, "allowed_reduction_types"
+        ),
+        "obligations_hash": _require_hash(obligations_hash, "obligations_hash"),
+        "permanent_trail_hash": _require_hash(
+            permanent_trail_hash, "permanent_trail_hash"
+        ),
+        "cohort_hash": _require_hash(cohort_hash, "cohort_hash"),
+    }
 
 
 def create_domain_reduction_policy_projection(
@@ -439,6 +496,7 @@ def create_planned_reduction_manifest(
     reduction_type: str,
     evidence_items: list[dict[str, str]],
     policy_hash: str,
+    permanent_trail_id: str,
     permanent_trail_hash: str,
     cohort_hash: str,
 ) -> dict[str, Any]:
@@ -457,6 +515,9 @@ def create_planned_reduction_manifest(
             "reduction_type": _require_text(reduction_type, "reduction_type"),
             "evidence_items": normalized_items,
             "policy_hash": _require_hash(policy_hash, "policy_hash"),
+            "permanent_trail_id": _require_text(
+                permanent_trail_id, "permanent_trail_id"
+            ),
             "permanent_trail_hash": _require_hash(permanent_trail_hash, "permanent_trail_hash"),
             "cohort_hash": _require_hash(cohort_hash, "cohort_hash"),
             "article_10_boundary_commit": ARTICLE_10_EFFECTIVE_BOUNDARY_COMMIT,
@@ -552,6 +613,7 @@ def evaluate_evidence_reduction_gate(
     planned_manifest: dict[str, Any] | None,
     authorization: dict[str, Any] | None,
     cohort: dict[str, Any] | None,
+    authority_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Evaluate without side effects; every invalid condition returns denial."""
 
@@ -633,6 +695,29 @@ def evaluate_evidence_reduction_gate(
         if authorization.get("bounded_scope") is not True:
             failures.append("AUTHORIZATION_OVERBROAD")
 
+    authority_evidence_fingerprint = _fingerprint(authority_evidence)
+    if all(
+        artifact is not None
+        for artifact in (policy, obligations, permanent_trail, authorization, cohort)
+    ) and not any(
+        code.endswith("_TAMPERED_OR_MALFORMED") for code in failures
+    ):
+        try:
+            authority_evidence_fingerprint = _validate_authority_evidence(
+                policy=policy,
+                obligations=obligations,
+                permanent_trail=permanent_trail,
+                authorization=authorization,
+                cohort=cohort,
+                authority_evidence=authority_evidence,
+            )
+        except FailClosedRuntimeError:
+            failures.append(
+                "AUTHORITY_EVIDENCE_MISSING"
+                if authority_evidence is None
+                else "AUTHORITY_EVIDENCE_UNVERIFIABLE"
+            )
+
     if not failures:
         failures.extend(
             _cross_binding_failures(
@@ -647,6 +732,7 @@ def evaluate_evidence_reduction_gate(
 
     decision = ALLOW_BOUNDED_EVIDENCE_REDUCTION if not failures else DO_NOT_REDUCE_EVIDENCE
     input_hashes = {name: _fingerprint(value) for name, value in artifacts.items()}
+    input_hashes["authority_evidence"] = authority_evidence_fingerprint
     basis = {
         "artifact_type": GATE_DECISION_ARTIFACT_V1,
         "gate_version": EVIDENCE_REDUCTION_GATE_VERSION,
@@ -693,6 +779,14 @@ def create_actual_reduction_manifest(
         raise FailClosedRuntimeError("actual manifest gate-to-authorization binding mismatch")
 
     actual_items = _manifest_items(evidence_items, actual=True)
+    for item in actual_items:
+        if item["actual_disposition"] in REDUCING_DISPOSITIONS and (
+            item["evidence_id"] == planned_manifest["permanent_trail_id"]
+            or item["prior_hash"] == planned_manifest["permanent_trail_hash"]
+        ):
+            raise FailClosedRuntimeError(
+                "actual reduction manifest cannot reduce the permanent trail"
+            )
     planned_by_id = {item["evidence_id"]: item for item in planned_manifest["evidence_items"]}
     actual_by_id = {item["evidence_id"]: item for item in actual_items}
     if set(actual_by_id) != set(planned_by_id):
@@ -720,6 +814,7 @@ def create_actual_reduction_manifest(
             "authorization_hash": authorization["replay_hash"],
             "gate_decision_hash": gate_decision["replay_hash"],
             "policy_hash": planned_manifest["policy_hash"],
+            "permanent_trail_id": planned_manifest["permanent_trail_id"],
             "permanent_trail_hash": planned_manifest["permanent_trail_hash"],
             "cohort_hash": planned_manifest["cohort_hash"],
             "execution_evidence_reference": _require_text(
@@ -744,7 +839,18 @@ def validate_actual_reduction_manifest(artifact: dict[str, Any]) -> None:
     """Verify the immutable disposition record without asserting data exists."""
 
     _validate_artifact(artifact, ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1)
-    _manifest_items(artifact.get("evidence_items"), actual=True)
+    items = _manifest_items(artifact.get("evidence_items"), actual=True)
+    if any(
+        item["actual_disposition"] in REDUCING_DISPOSITIONS
+        and (
+            item["evidence_id"] == artifact["permanent_trail_id"]
+            or item["prior_hash"] == artifact["permanent_trail_hash"]
+        )
+        for item in items
+    ):
+        raise FailClosedRuntimeError(
+            "actual reduction manifest cannot reduce the permanent trail"
+        )
     required_true = (
         "constitutional_replay_provenance_preserved",
         "remaining_evidence_integrity_verified",
@@ -759,7 +865,11 @@ def validate_actual_reduction_manifest(artifact: dict[str, Any]) -> None:
 
 
 def record_reduction_evidence(
-    *, ledger: RuntimeLedger, runtime_id: str, artifact: dict[str, Any]
+    *,
+    ledger: RuntimeLedger,
+    runtime_id: str,
+    artifact: dict[str, Any],
+    decision_inputs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Append one validated artifact to an existing RuntimeLedger lineage."""
 
@@ -770,12 +880,132 @@ def record_reduction_evidence(
     if artifact_type not in _KNOWN_ARTIFACT_TYPES:
         raise FailClosedRuntimeError("evidence-reduction artifact type is not recognized")
     _validate_artifact(artifact, artifact_type)
+    if artifact_type == GATE_DECISION_ARTIFACT_V1:
+        required_inputs = {
+            "policy",
+            "obligations",
+            "permanent_trail",
+            "planned_manifest",
+            "authorization",
+            "cohort",
+            "authority_evidence",
+        }
+        if not isinstance(decision_inputs, dict) or set(decision_inputs) != required_inputs:
+            raise FailClosedRuntimeError(
+                "gate decision recording requires exact immutable decision inputs"
+            )
+        recomputed = evaluate_evidence_reduction_gate(**decision_inputs)
+        if recomputed != artifact:
+            raise FailClosedRuntimeError(
+                "gate decision does not match recomputed bound inputs"
+            )
     if artifact_type == ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1:
         validate_actual_reduction_manifest(artifact)
     return ledger.append(
         runtime_id,
         f"evidence_reduction:{artifact_type.lower()}",
         artifact,
+    )
+
+
+def _validate_authority_evidence(
+    *,
+    policy: dict[str, Any],
+    obligations: dict[str, Any],
+    permanent_trail: dict[str, Any],
+    authorization: dict[str, Any],
+    cohort: dict[str, Any],
+    authority_evidence: dict[str, Any] | None,
+) -> str:
+    """Authenticate one policy through existing Human Authority and CHE facts."""
+
+    if not isinstance(authority_evidence, dict) or set(authority_evidence) != {
+        "human_authority_act",
+        "che_request",
+        "che_continuation",
+        "che_evidence_correlation",
+    }:
+        raise FailClosedRuntimeError("authority evidence bundle is incomplete")
+    act = validate_canonical_human_authority_act_v1(
+        authority_evidence["human_authority_act"]
+    )
+    correlation = validate_canonical_che_evidence_correlation_v1(
+        authority_evidence["che_evidence_correlation"]
+    )
+    expected_payload = domain_reduction_policy_authority_payload(
+        domain_id=policy["domain_id"],
+        policy_id=policy["policy_id"],
+        policy_version=policy["policy_version"],
+        authority_id=policy["authority_id"],
+        applicable_at_commit=policy["applicable_at_commit"],
+        allowed_evidence_classes=policy["allowed_evidence_classes"],
+        allowed_reduction_types=policy["allowed_reduction_types"],
+        obligations_hash=obligations["replay_hash"],
+        permanent_trail_hash=permanent_trail["replay_hash"],
+        cohort_hash=cohort["replay_hash"],
+    )
+    revision = _policy_revision(policy["policy_version"])
+    act = bind_canonical_human_authority_act_to_che_v1(
+        act,
+        authority_evidence["che_request"],
+        authority_evidence["che_continuation"],
+        expected_authority_kind=AUTHORIZATION,
+        expected_target_identity=policy["policy_id"],
+        expected_target_revision=revision,
+        expected_producing_owner=HUMAN_AUTHORITY_OWNER,
+        expected_owner=policy["authority_id"],
+        expected_authority_scope=EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE,
+    )
+    if (
+        act.authority_kind != AUTHORIZATION
+        or act.producing_owner != HUMAN_AUTHORITY_OWNER
+        or act.expected_owner != policy["authority_id"]
+        or act.authority_scope != EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE
+        or act.target_identity != policy["policy_id"]
+        or act.target_revision != revision
+        or act.to_dict()["payload"] != expected_payload
+    ):
+        raise FailClosedRuntimeError("Human Authority policy binding is invalid")
+    if (
+        correlation.evidence_status != RECORDED
+        or correlation.actor_identity != act.actor_identity
+        or correlation.request_identity != act.request_identity
+        or correlation.source_act_identity != act.authority_act_identity
+        or correlation.source_act_digest
+        != canonical_che_request_source_act_digest_v1(
+            authority_evidence["che_request"]
+        )
+        or correlation.continuation_identity != act.continuation_identity
+        or correlation.authority_act_identity != act.authority_act_identity
+        or correlation.authority_kind != act.authority_kind
+        or correlation.authority_requesting_owner_identity != act.expected_owner
+        or correlation.authority_target_identity != act.target_identity
+        or correlation.authority_target_revision != act.target_revision
+        or correlation.authority_payload_digest != act.payload_digest
+    ):
+        raise FailClosedRuntimeError("CHE authority correlation is invalid")
+    correlation_hash = replay_hash(correlation.to_dict())
+    bindings = (
+        policy["authority_evidence_reference"],
+        policy["currentness_evidence_reference"],
+        authorization["authority_evidence_reference"],
+    )
+    hashes = (
+        policy["authority_evidence_hash"],
+        policy["currentness_evidence_hash"],
+        authorization["authority_evidence_hash"],
+    )
+    if any(value != correlation.correlation_identity for value in bindings) or any(
+        value != correlation_hash for value in hashes
+    ):
+        raise FailClosedRuntimeError("authority evidence reference binding is invalid")
+    return replay_hash(
+        {
+            "human_authority_act": act.to_dict(),
+            "che_request": authority_evidence["che_request"],
+            "che_continuation": authority_evidence["che_continuation"],
+            "che_evidence_correlation": correlation.to_dict(),
+        }
     )
 
 
@@ -814,6 +1044,8 @@ def _cross_binding_failures(
         failures.append("AUTHORIZATION_TRAIL_MISMATCH")
     if planned_manifest["permanent_trail_hash"] != permanent_trail["replay_hash"]:
         failures.append("MANIFEST_TRAIL_MISMATCH")
+    if planned_manifest["permanent_trail_id"] != permanent_trail["trail_id"]:
+        failures.append("MANIFEST_TRAIL_IDENTITY_MISMATCH")
     if authorization["planned_manifest_hash"] != planned_manifest["replay_hash"]:
         failures.append("AUTHORIZATION_MANIFEST_MISMATCH")
     if planned_manifest["cohort_hash"] != cohort["replay_hash"]:
@@ -847,6 +1079,15 @@ def _cross_binding_failures(
     )
     if authorization["authorized_evidence_ids"] != reduced_ids:
         failures.append("AUTHORIZATION_SCOPE_MISMATCH")
+    if any(
+        item["planned_disposition"] in REDUCING_DISPOSITIONS
+        and (
+            item["evidence_id"] == permanent_trail["trail_id"]
+            or item["evidence_hash"] == permanent_trail["replay_hash"]
+        )
+        for item in planned_manifest["evidence_items"]
+    ):
+        failures.append("PERMANENT_TRAIL_IN_REDUCTION_SCOPE")
     return failures
 
 
@@ -902,6 +1143,13 @@ def _require_bool(value: Any, field_name: str) -> bool:
     if type(value) is not bool:
         raise FailClosedRuntimeError(f"{field_name} must be boolean")
     return value
+
+
+def _policy_revision(value: Any) -> int:
+    text = _require_text(value, "policy_version")
+    if len(text) < 2 or text[0] != "V" or not text[1:].isdigit():
+        raise FailClosedRuntimeError("policy_version cannot bind a CHE revision")
+    return int(text[1:])
 
 
 def _text_list(value: Any, field_name: str) -> list[str]:
@@ -984,6 +1232,7 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "create_permanent_trail_projection",
     "create_planned_reduction_manifest",
     "create_reduction_authorization",
+    "domain_reduction_policy_authority_payload",
     "evaluate_evidence_reduction_gate",
     "record_reduction_evidence",
     "validate_actual_reduction_manifest",

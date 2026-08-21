@@ -4,6 +4,29 @@ from copy import deepcopy
 
 import pytest
 
+from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
+    CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
+    NOT_APPLICABLE,
+    RECORDED,
+    create_canonical_che_evidence_correlation_v1,
+)
+from aigol.runtime.canonical_human_authority_act_contract_v1 import (
+    AUTHORIZATION,
+    CANONICAL_HUMAN_AUTHORITY_ACT_CAPABILITY,
+    CANONICAL_HUMAN_AUTHORITY_ACT_CONTRACT_VERSION,
+    HUMAN_AUTHORITY_OWNER,
+    CanonicalHumanAuthorityActV1,
+    canonical_human_authority_payload_digest_v1,
+)
+from aigol.runtime.canonical_human_entry_contract_v1 import (
+    ACTIVE_CONTINUATION,
+    CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
+    CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
+    HUMAN_ACTOR,
+    CanonicalContinuationEnvelopeV1,
+    CanonicalHumanEntryRequestEnvelopeV1,
+    canonical_che_request_source_act_digest_v1,
+)
 from aigol.runtime.evidence_reduction_gate import (
     AFTER_BOUNDARY,
     ALLOW_BOUNDED_EVIDENCE_REDUCTION,
@@ -13,6 +36,7 @@ from aigol.runtime.evidence_reduction_gate import (
     BEFORE_BOUNDARY,
     CLOSED,
     DO_NOT_REDUCE_EVIDENCE,
+    EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE,
     EFFECTIVE_GATE_REQUIRED,
     FULL_EVIDENCE_PRESENT,
     NO_STRICTER_RETENTION_REQUIRED,
@@ -29,6 +53,7 @@ from aigol.runtime.evidence_reduction_gate import (
     create_permanent_trail_projection,
     create_planned_reduction_manifest,
     create_reduction_authorization,
+    domain_reduction_policy_authority_payload,
     evaluate_evidence_reduction_gate,
     record_reduction_evidence,
     validate_actual_reduction_manifest,
@@ -61,6 +86,8 @@ def _case(
     obligation_overrides: dict | None = None,
     trail_overrides: dict | None = None,
     authorization_overrides: dict | None = None,
+    authority_evidence_override: dict | None = None,
+    permanent_trail_reduction_match: str | None = None,
 ) -> dict:
     cohort = create_article10_cohort_projection(
         evidence_id="EVIDENCE-SET-1",
@@ -69,22 +96,6 @@ def _case(
         boundary_state=boundary_state,
         prior_contract_validated=prior_contract_validated,
     )
-    policy_arguments = {
-        "domain_id": DOMAIN,
-        "policy_id": POLICY_ID,
-        "policy_version": POLICY_VERSION,
-        "authority_id": AUTHORITY_ID,
-        "authority_evidence_reference": "governance:authority-alpha",
-        "authority_evidence_hash": _hash("authority-alpha"),
-        "currentness_evidence_reference": "governance:policy-currentness",
-        "currentness_evidence_hash": _hash("policy-currentness"),
-        "applicable_at_commit": OBSERVED_COMMIT,
-        "allowed_evidence_classes": [EVIDENCE_CLASS],
-        "allowed_reduction_types": [REDUCTION_TYPE],
-    }
-    policy_arguments.update(policy_overrides or {})
-    policy = create_domain_reduction_policy_projection(**policy_arguments)
-
     statuses = {name: CLOSED for name in ("replay", "audit", "dispute", "correctness", "certification", "other")}
     statuses.update(obligation_statuses or {})
     obligation_arguments = {
@@ -115,24 +126,182 @@ def _case(
     trail_arguments.update(trail_overrides or {})
     trail = create_permanent_trail_projection(**trail_arguments)
 
+    authority_payload = domain_reduction_policy_authority_payload(
+        domain_id=DOMAIN,
+        policy_id=POLICY_ID,
+        policy_version=POLICY_VERSION,
+        authority_id=AUTHORITY_ID,
+        applicable_at_commit=OBSERVED_COMMIT,
+        allowed_evidence_classes=[EVIDENCE_CLASS],
+        allowed_reduction_types=[REDUCTION_TYPE],
+        obligations_hash=obligations["replay_hash"],
+        permanent_trail_hash=trail["replay_hash"],
+        cohort_hash=cohort["replay_hash"],
+    )
+    authority_act = CanonicalHumanAuthorityActV1(
+        contract_version=CANONICAL_HUMAN_AUTHORITY_ACT_CONTRACT_VERSION,
+        authority_act_identity="G77-REDUCTION-POLICY-AUTHORITY-ACT-1",
+        authority_kind=AUTHORIZATION,
+        interaction_identity="G77-REDUCTION-INTERACTION-1",
+        conversation_identity="G77-REDUCTION-CONVERSATION-1",
+        session_identity="G77-REDUCTION-SESSION-1",
+        actor_identity="G77-HUMAN-AUTHORITY-ACTOR",
+        request_identity="G77-REDUCTION-REQUEST-1",
+        continuation_identity="G77-REDUCTION-CONTINUATION-1",
+        target_identity=POLICY_ID,
+        target_revision=1,
+        producing_owner=HUMAN_AUTHORITY_OWNER,
+        expected_owner=AUTHORITY_ID,
+        authority_scope=EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE,
+        payload=authority_payload,
+        payload_digest=canonical_human_authority_payload_digest_v1(authority_payload),
+        metadata={"transport_fixture": "focused-g77-remediation"},
+    )
+    che_request = CanonicalHumanEntryRequestEnvelopeV1(
+        contract_version=CANONICAL_CHE_REQUEST_CONTRACT_VERSION,
+        interface_identity="G77-FOCUSED-TEST-CHANNEL",
+        adapter_identity="G77-FOCUSED-TEST-ADAPTER",
+        actor_identity=authority_act.actor_identity,
+        actor_class=HUMAN_ACTOR,
+        session_identity=authority_act.session_identity,
+        workspace_identity="G77-WORKSPACE",
+        runtime_scope_identity="G77-RUNTIME-SCOPE",
+        request_identity=authority_act.request_identity,
+        source_act_identity=authority_act.authority_act_identity,
+        order_identity="G77-ORDER-1",
+        idempotency_identity="G77-IDEMPOTENCY-1",
+        source_payload=authority_act.to_dict(),
+        source_encoding="UTF-8",
+        source_modality="STRUCTURED",
+        declared_capabilities=(CANONICAL_HUMAN_AUTHORITY_ACT_CAPABILITY,),
+        metadata={"transport_trace_identity": "G77-TRACE-1"},
+        created_at="2026-08-21T00:00:00Z",
+    )
+    che_continuation = CanonicalContinuationEnvelopeV1(
+        contract_version=CANONICAL_CHE_CONTINUATION_CONTRACT_VERSION,
+        continuation_identity=authority_act.continuation_identity,
+        interaction_identity=authority_act.interaction_identity,
+        conversation_identity=authority_act.conversation_identity,
+        session_identity=authority_act.session_identity,
+        actor_identity=authority_act.actor_identity,
+        workspace_identity=che_request.workspace_identity,
+        runtime_scope_identity=che_request.runtime_scope_identity,
+        request_identity="G77-PRIOR-REQUEST-1",
+        previous_response_identity="G77-PRIOR-RESPONSE-1",
+        previous_order_identity="G77-PRIOR-ORDER-1",
+        previous_idempotency_identity="G77-PRIOR-IDEMPOTENCY-1",
+        continuation_sequence=1,
+        expected_next_act_identity=POLICY_ID,
+        expected_owner_state_identity="G77-REDUCTION-POLICY-OWNER-STATE",
+        expected_owner_revision=1,
+        continuation_state=ACTIVE_CONTINUATION,
+        correlation_identity="G77-PRIOR-CORRELATION-1",
+        metadata={"transport_trace_identity": "G77-TRACE-1"},
+    )
+    correlation = create_canonical_che_evidence_correlation_v1(
+        contract_version=CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
+        interaction_identity=authority_act.interaction_identity,
+        conversation_identity=authority_act.conversation_identity,
+        session_identity=authority_act.session_identity,
+        workspace_identity="G77-WORKSPACE",
+        runtime_scope_identity="G77-RUNTIME-SCOPE",
+        actor_identity=authority_act.actor_identity,
+        source_channel_identity="G77-FOCUSED-TEST-CHANNEL",
+        adapter_identity="G77-FOCUSED-TEST-ADAPTER",
+        request_identity=authority_act.request_identity,
+        che_entry_identity="G77-CHE-ENTRY-1",
+        source_act_identity=authority_act.authority_act_identity,
+        source_act_digest=canonical_che_request_source_act_digest_v1(che_request),
+        order_identity="G77-ORDER-1",
+        idempotency_identity="G77-IDEMPOTENCY-1",
+        continuation_identity=authority_act.continuation_identity,
+        continuation_sequence=1,
+        authority_act_identity=authority_act.authority_act_identity,
+        authority_kind=authority_act.authority_kind,
+        authority_requesting_owner_identity=authority_act.expected_owner,
+        authority_target_identity=authority_act.target_identity,
+        authority_target_revision=authority_act.target_revision,
+        authority_payload_digest=authority_act.payload_digest,
+        authority_result_identity="G77-AUTHORITY-RESULT-1",
+        opaque_reference_set_identity=NOT_APPLICABLE,
+        ordered_reference_set_digest=NOT_APPLICABLE,
+        opaque_reference_correlations=(),
+        producing_owner_identity=AUTHORITY_ID,
+        owner_state_identity="G77-REDUCTION-POLICY-OWNER-STATE",
+        owner_revision_before=1,
+        owner_revision_after=2,
+        owner_advancement="ADVANCED",
+        owner_disposition="RECORDED",
+        next_act_identity=NOT_APPLICABLE,
+        refusal_identity=NOT_APPLICABLE,
+        terminal_identity=NOT_APPLICABLE,
+        owner_projection_identity="G77-OWNER-PROJECTION-1",
+        failure_identity=NOT_APPLICABLE,
+        presentation_identity="G77-PRESENTATION-1",
+        response_identity="G77-RESPONSE-1",
+        response_digest=_hash("authority-response"),
+        delivery_record_identity="G77-DELIVERY-1",
+        delivery_status=NOT_APPLICABLE,
+        duplicate_resolution=NOT_APPLICABLE,
+        acknowledgement_state=NOT_APPLICABLE,
+        replay_references=(),
+        replay_status=NOT_APPLICABLE,
+        certification_references=(),
+        certification_status=NOT_APPLICABLE,
+        evidence_status=RECORDED,
+        metadata={"transport_fixture": "focused-g77-remediation"},
+    )
+    authority_evidence = {
+        "human_authority_act": authority_act.to_dict(),
+        "che_request": che_request.to_dict(),
+        "che_continuation": che_continuation.to_dict(),
+        "che_evidence_correlation": correlation.to_dict(),
+    }
+    authority_evidence.update(authority_evidence_override or {})
+    correlation_reference = correlation.correlation_identity
+    correlation_hash = replay_hash(correlation.to_dict())
+
+    policy_arguments = {
+        "domain_id": DOMAIN,
+        "policy_id": POLICY_ID,
+        "policy_version": POLICY_VERSION,
+        "authority_id": AUTHORITY_ID,
+        "authority_evidence_reference": correlation_reference,
+        "authority_evidence_hash": correlation_hash,
+        "currentness_evidence_reference": correlation_reference,
+        "currentness_evidence_hash": correlation_hash,
+        "applicable_at_commit": OBSERVED_COMMIT,
+        "allowed_evidence_classes": [EVIDENCE_CLASS],
+        "allowed_reduction_types": [REDUCTION_TYPE],
+    }
+    policy_arguments.update(policy_overrides or {})
+    policy = create_domain_reduction_policy_projection(**policy_arguments)
+
+    planned_items = [
+        {
+            "evidence_id": "EVIDENCE-A",
+            "evidence_hash": _hash("evidence-a"),
+            "planned_disposition": "CONDENSE",
+        },
+        {
+            "evidence_id": "EVIDENCE-B",
+            "evidence_hash": _hash("evidence-b"),
+            "planned_disposition": "RETAIN",
+        },
+    ]
+    if permanent_trail_reduction_match == "identity":
+        planned_items[0]["evidence_id"] = trail["trail_id"]
+    elif permanent_trail_reduction_match == "hash":
+        planned_items[0]["evidence_hash"] = trail["replay_hash"]
+
     planned = create_planned_reduction_manifest(
         manifest_id="PLANNED-MANIFEST-1",
         domain_id=DOMAIN,
         evidence_class=EVIDENCE_CLASS,
         reduction_type=REDUCTION_TYPE,
-        evidence_items=[
-            {
-                "evidence_id": "EVIDENCE-A",
-                "evidence_hash": _hash("evidence-a"),
-                "planned_disposition": "CONDENSE",
-            },
-            {
-                "evidence_id": "EVIDENCE-B",
-                "evidence_hash": _hash("evidence-b"),
-                "planned_disposition": "RETAIN",
-            },
-        ],
+        evidence_items=planned_items,
         policy_hash=policy["replay_hash"],
+        permanent_trail_id=trail["trail_id"],
         permanent_trail_hash=trail["replay_hash"],
         cohort_hash=cohort["replay_hash"],
     )
@@ -150,11 +319,15 @@ def _case(
         "policy_version": POLICY_VERSION,
         "policy_hash": policy["replay_hash"],
         "authority_id": AUTHORITY_ID,
-        "authority_evidence_reference": "governance:authority-alpha",
-        "authority_evidence_hash": _hash("authority-alpha"),
+        "authority_evidence_reference": correlation_reference,
+        "authority_evidence_hash": correlation_hash,
         "evidence_class": EVIDENCE_CLASS,
         "reduction_type": REDUCTION_TYPE,
-        "authorized_evidence_ids": ["EVIDENCE-A"],
+        "authorized_evidence_ids": sorted(
+            item["evidence_id"]
+            for item in planned_items
+            if item["planned_disposition"] in {"REMOVE", "CONDENSE", "OTHER_REDUCTION"}
+        ),
         "gate_basis_hash": gate_basis_hash,
         "permanent_trail_hash": trail["replay_hash"],
         "planned_manifest_hash": planned["replay_hash"],
@@ -169,6 +342,7 @@ def _case(
         "planned_manifest": planned,
         "authorization": authorization,
         "cohort": cohort,
+        "authority_evidence": authority_evidence,
     }
 
 
@@ -375,7 +549,12 @@ def test_existing_runtime_ledger_preserves_ordered_replay_lineage(tmp_path) -> N
     recorded = [
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=case["planned_manifest"]),
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=case["authorization"]),
-        record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=decision),
+        record_reduction_evidence(
+            ledger=ledger,
+            runtime_id=runtime_id,
+            artifact=decision,
+            decision_inputs=case,
+        ),
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=actual),
     ]
     reconstructed = ledger.read(runtime_id)
@@ -394,3 +573,110 @@ def test_topology_isolation_and_no_executor_authority() -> None:
     assert decision["human_entry_paths"] == 1
     assert decision["physical_reduction_performed"] is False
     assert decision["semantic_authority_created"] is False
+
+
+def test_caller_minted_self_asserted_authority_cannot_allow() -> None:
+    case = _case()
+    case["authority_evidence"] = None
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert "AUTHORITY_EVIDENCE_MISSING" in decision["failure_codes"]
+
+
+def test_unverifiable_or_stale_correlated_authority_cannot_allow() -> None:
+    case = _case()
+    evidence = deepcopy(case["authority_evidence"])
+    evidence["che_evidence_correlation"]["authority_target_revision"] = 2
+    case["authority_evidence"] = evidence
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert "AUTHORITY_EVIDENCE_UNVERIFIABLE" in decision["failure_codes"]
+
+
+def test_rehashed_denial_changed_to_allow_cannot_be_recorded(tmp_path) -> None:
+    case = _case()
+    case["policy"] = None
+    denied = _evaluate(case)
+    assert denied["decision"] == DO_NOT_REDUCE_EVIDENCE
+    forged_basis = deepcopy(denied)
+    forged_basis.pop("replay_hash")
+    forged_basis["decision"] = ALLOW_BOUNDED_EVIDENCE_REDUCTION
+    forged_basis["failure_codes"] = []
+    forged = with_replay_hash(forged_basis)
+    with pytest.raises(FailClosedRuntimeError, match="does not match recomputed"):
+        record_reduction_evidence(
+            ledger=RuntimeLedger(tmp_path),
+            runtime_id="FORGED-GATE-DECISION",
+            artifact=forged,
+            decision_inputs=case,
+        )
+
+
+@pytest.mark.parametrize("match_kind", ["identity", "hash"])
+def test_permanent_trail_in_planned_reduction_scope_cannot_allow(
+    match_kind: str,
+) -> None:
+    decision = _evaluate(_case(permanent_trail_reduction_match=match_kind))
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert "PERMANENT_TRAIL_IN_REDUCTION_SCOPE" in decision["failure_codes"]
+
+
+@pytest.mark.parametrize("match_kind", ["identity", "hash"])
+def test_permanent_trail_in_actual_reduction_scope_fails_closed(
+    match_kind: str,
+) -> None:
+    case = _case()
+    decision = _evaluate(case)
+    items = [
+        {
+            "evidence_id": "EVIDENCE-A",
+            "prior_hash": _hash("evidence-a"),
+            "actual_disposition": "CONDENSE",
+            "retained_reference": "trail:PERMANENT-TRAIL-1",
+            "retained_hash": case["permanent_trail"]["replay_hash"],
+            "integrity_verified": True,
+        },
+        {
+            "evidence_id": "EVIDENCE-B",
+            "prior_hash": _hash("evidence-b"),
+            "actual_disposition": "RETAIN",
+            "retained_reference": "evidence:EVIDENCE-B",
+            "retained_hash": _hash("evidence-b"),
+            "integrity_verified": True,
+        },
+    ]
+    if match_kind == "identity":
+        items[0]["evidence_id"] = case["permanent_trail"]["trail_id"]
+    else:
+        items[0]["prior_hash"] = case["permanent_trail"]["replay_hash"]
+    with pytest.raises(FailClosedRuntimeError, match="cannot reduce the permanent trail"):
+        create_actual_reduction_manifest(
+            manifest_id="ACTUAL-MANIFEST-TRAIL-ATTACK",
+            planned_manifest=case["planned_manifest"],
+            authorization=case["authorization"],
+            gate_decision=decision,
+            execution_evidence_reference="replay:executor",
+            execution_evidence_hash=_hash("executor"),
+            evidence_items=items,
+        )
+
+
+@pytest.mark.parametrize("match_kind", ["identity", "hash"])
+def test_rehashed_actual_manifest_cannot_bypass_permanent_trail_exclusion(
+    match_kind: str,
+) -> None:
+    case = _case()
+    actual = _actual(case, _evaluate(case))
+    forged_basis = deepcopy(actual)
+    forged_basis.pop("replay_hash")
+    if match_kind == "identity":
+        forged_basis["evidence_items"][0]["evidence_id"] = actual[
+            "permanent_trail_id"
+        ]
+    else:
+        forged_basis["evidence_items"][0]["prior_hash"] = actual[
+            "permanent_trail_hash"
+        ]
+    forged = with_replay_hash(forged_basis)
+    with pytest.raises(FailClosedRuntimeError, match="cannot reduce the permanent trail"):
+        validate_actual_reduction_manifest(forged)
