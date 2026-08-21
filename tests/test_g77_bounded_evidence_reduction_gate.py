@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import inspect
 
 import pytest
 
+from aigol.runtime.authority_provenance import (
+    AUTHORIZATION_OWNER_IDENTITY,
+    BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
+    OWNER_ISSUED_AUTHORIZATION_ACT_CLASS,
+    TrustedAuthorityProvenanceBindingV1,
+    TrustedAuthorityProvenanceResolverV1,
+    create_authority_provenance_root_v1,
+)
 from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
     CANONICAL_CHE_EVIDENCE_CORRELATION_CONTRACT_VERSION,
     NOT_APPLICABLE,
@@ -45,6 +54,7 @@ from aigol.runtime.evidence_reduction_gate import (
     PRIOR_VALID_REDUCTION_COMPLETE,
     REVALIDATION_UNDER_EFFECTIVE_GATE_REQUIRED,
     STOP_FURTHER_REDUCTION,
+    BoundedEvidenceReductionGateV1,
     calculate_gate_basis_hash,
     create_actual_reduction_manifest,
     create_article10_cohort_projection,
@@ -54,7 +64,6 @@ from aigol.runtime.evidence_reduction_gate import (
     create_planned_reduction_manifest,
     create_reduction_authorization,
     domain_reduction_policy_authority_payload,
-    evaluate_evidence_reduction_gate,
     record_reduction_evidence,
     validate_actual_reduction_manifest,
 )
@@ -70,6 +79,8 @@ POLICY_ID = "DOMAIN-ALPHA-REDUCTION-POLICY"
 POLICY_VERSION = "V1"
 AUTHORITY_ID = "DOMAIN-ALPHA-HUMAN-AUTHORITY"
 OBSERVED_COMMIT = "8" * 40
+TRUSTED_BOUNDARY_COMMIT = "f" * 40
+PROVENANCE_ROOT_IDENTITY = "G77-PROFILE-B-ROOT-1"
 
 
 def _hash(label: str) -> str:
@@ -87,6 +98,10 @@ def _case(
     trail_overrides: dict | None = None,
     authorization_overrides: dict | None = None,
     authority_evidence_override: dict | None = None,
+    provenance_root_overrides: dict | None = None,
+    trusted_binding_overrides: dict | None = None,
+    authority_provenance_reference: str = PROVENANCE_ROOT_IDENTITY,
+    caller_authority_evidence: dict | None = None,
     permanent_trail_reduction_match: str | None = None,
 ) -> dict:
     cohort = create_article10_cohort_projection(
@@ -261,6 +276,56 @@ def _case(
     correlation_reference = correlation.correlation_identity
     correlation_hash = replay_hash(correlation.to_dict())
 
+    provenance_scope = {
+        "domain_id": DOMAIN,
+        "policy_id": POLICY_ID,
+        "policy_version": POLICY_VERSION,
+        "applicable_at_commit": OBSERVED_COMMIT,
+        "allowed_evidence_classes": [EVIDENCE_CLASS],
+        "allowed_reduction_types": [REDUCTION_TYPE],
+        "obligations_hash": obligations["replay_hash"],
+        "permanent_trail_hash": trail["replay_hash"],
+        "cohort_hash": cohort["replay_hash"],
+    }
+    provenance_root_arguments = {
+        "provenance_root_identity": PROVENANCE_ROOT_IDENTITY,
+        "boundary_commit": TRUSTED_BOUNDARY_COMMIT,
+        "authorization_owner_identity": AUTHORIZATION_OWNER_IDENTITY,
+        "authorization_act_class": OWNER_ISSUED_AUTHORIZATION_ACT_CLASS,
+        "action_kind": BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
+        "subject_identity": POLICY_ID,
+        "scope": provenance_scope,
+        "act_revision": 1,
+        "request_evidence_correlation_identity": correlation_reference,
+        "request_evidence_correlation_hash": correlation_hash,
+        "owner_issued_authority_evidence": authority_evidence,
+    }
+    provenance_root_arguments.update(provenance_root_overrides or {})
+    provenance_root = create_authority_provenance_root_v1(
+        **provenance_root_arguments
+    )
+    trusted_binding_arguments = {
+        "provenance_root_identity": provenance_root[
+            "provenance_root_identity"
+        ],
+        "immutable_content_hash": provenance_root["immutable_content_hash"],
+        "boundary_commit": TRUSTED_BOUNDARY_COMMIT,
+        "current_revision": provenance_root["act_revision"],
+        "current": True,
+        "superseded_by": None,
+    }
+    trusted_binding_arguments.update(trusted_binding_overrides or {})
+    resolver = TrustedAuthorityProvenanceResolverV1(
+        boundary_commit=TRUSTED_BOUNDARY_COMMIT,
+        roots=(provenance_root,),
+        bindings=(
+            TrustedAuthorityProvenanceBindingV1(
+                **trusted_binding_arguments
+            ),
+        ),
+    )
+    gate = BoundedEvidenceReductionGateV1(resolver)
+
     policy_arguments = {
         "domain_id": DOMAIN,
         "policy_id": POLICY_ID,
@@ -268,6 +333,12 @@ def _case(
         "authority_id": AUTHORITY_ID,
         "authority_evidence_reference": correlation_reference,
         "authority_evidence_hash": correlation_hash,
+        "authority_provenance_root_identity": provenance_root[
+            "provenance_root_identity"
+        ],
+        "authority_provenance_root_hash": provenance_root[
+            "immutable_content_hash"
+        ],
         "currentness_evidence_reference": correlation_reference,
         "currentness_evidence_hash": correlation_hash,
         "applicable_at_commit": OBSERVED_COMMIT,
@@ -321,6 +392,12 @@ def _case(
         "authority_id": AUTHORITY_ID,
         "authority_evidence_reference": correlation_reference,
         "authority_evidence_hash": correlation_hash,
+        "authority_provenance_root_identity": provenance_root[
+            "provenance_root_identity"
+        ],
+        "authority_provenance_root_hash": provenance_root[
+            "immutable_content_hash"
+        ],
         "evidence_class": EVIDENCE_CLASS,
         "reduction_type": REDUCTION_TYPE,
         "authorized_evidence_ids": sorted(
@@ -342,12 +419,26 @@ def _case(
         "planned_manifest": planned,
         "authorization": authorization,
         "cohort": cohort,
-        "authority_evidence": authority_evidence,
+        "authority_provenance_reference": authority_provenance_reference,
+        "authority_evidence": caller_authority_evidence,
+        "_gate": gate,
+        "_provenance_root": provenance_root,
     }
 
 
 def _evaluate(case: dict) -> dict:
-    return evaluate_evidence_reduction_gate(**case)
+    return case["_gate"].evaluate(**_decision_inputs(case))
+
+
+def _decision_inputs(case: dict) -> dict:
+    return {key: value for key, value in case.items() if not key.startswith("_")}
+
+
+def _clone_case_inputs(case: dict) -> dict:
+    cloned = deepcopy(_decision_inputs(case))
+    cloned["_gate"] = case["_gate"]
+    cloned["_provenance_root"] = deepcopy(case["_provenance_root"])
+    return cloned
 
 
 def _actual(case: dict, decision: dict) -> dict:
@@ -466,7 +557,7 @@ def test_authorization_manifest_mismatch_denies() -> None:
 
 def test_planned_manifest_tamper_denies_and_actual_manifest_tamper_fails_closed() -> None:
     case = _case()
-    tampered_case = deepcopy(case)
+    tampered_case = _clone_case_inputs(case)
     tampered_case["planned_manifest"]["evidence_items"][0]["planned_disposition"] = "REMOVE"
     assert _evaluate(tampered_case)["decision"] == DO_NOT_REDUCE_EVIDENCE
 
@@ -535,7 +626,7 @@ def test_gate_failure_has_no_filesystem_side_effect(tmp_path) -> None:
 
 def test_repeated_evaluation_is_deterministic() -> None:
     case = _case()
-    assert _evaluate(case) == _evaluate(deepcopy(case))
+    assert _evaluate(case) == _evaluate(_clone_case_inputs(case))
 
 
 def test_existing_runtime_ledger_preserves_ordered_replay_lineage(tmp_path) -> None:
@@ -549,11 +640,11 @@ def test_existing_runtime_ledger_preserves_ordered_replay_lineage(tmp_path) -> N
     recorded = [
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=case["planned_manifest"]),
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=case["authorization"]),
-        record_reduction_evidence(
+        case["_gate"].record_decision(
             ledger=ledger,
             runtime_id=runtime_id,
             artifact=decision,
-            decision_inputs=case,
+            decision_inputs=_decision_inputs(case),
         ),
         record_reduction_evidence(ledger=ledger, runtime_id=runtime_id, artifact=actual),
     ]
@@ -577,20 +668,185 @@ def test_topology_isolation_and_no_executor_authority() -> None:
 
 def test_caller_minted_self_asserted_authority_cannot_allow() -> None:
     case = _case()
-    case["authority_evidence"] = None
+    case["authority_evidence"] = deepcopy(
+        case["_provenance_root"]["owner_issued_authority_evidence"]
+    )
     decision = _evaluate(case)
     assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
-    assert "AUTHORITY_EVIDENCE_MISSING" in decision["failure_codes"]
+    assert "CALLER_AUTHORITY_EVIDENCE_FORBIDDEN" in decision["failure_codes"]
+
+
+def test_caller_human_actor_class_assertion_has_no_authorization_effect() -> None:
+    case = _case()
+    caller_bundle = deepcopy(
+        case["_provenance_root"]["owner_issued_authority_evidence"]
+    )
+    assert caller_bundle["che_request"]["actor_class"] == HUMAN_ACTOR
+    case["authority_evidence"] = caller_bundle
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert "CALLER_AUTHORITY_EVIDENCE_FORBIDDEN" in decision["failure_codes"]
+
+
+def test_internally_coherent_caller_minted_bundle_cannot_allow() -> None:
+    case = _case()
+    case["authority_evidence"] = deepcopy(
+        case["_provenance_root"]["owner_issued_authority_evidence"]
+    )
+    case["authority_provenance_reference"] = "CALLER-MINTED-ROOT"
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert {
+        "CALLER_AUTHORITY_EVIDENCE_FORBIDDEN",
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID",
+    }.issubset(decision["failure_codes"])
+
+
+def test_copied_valid_payload_without_resolvable_root_denies() -> None:
+    case = _case(authority_provenance_reference="UNRESOLVED-COPIED-ROOT")
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_provenance_root_identity_substitution_denies() -> None:
+    decision = _evaluate(
+        _case(authority_provenance_reference="SUBSTITUTED-PROVENANCE-ROOT")
+    )
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_caller_modified_authority_content_and_recomputed_hash_denies() -> None:
+    case = _case()
+    caller_bundle = deepcopy(
+        case["_provenance_root"]["owner_issued_authority_evidence"]
+    )
+    caller_bundle["human_authority_act"]["actor_identity"] = "CALLER-ACTOR"
+    caller_bundle["human_authority_act"]["payload_digest"] = replay_hash(
+        {"payload": caller_bundle["human_authority_act"]["payload"]}
+    )
+    case["authority_evidence"] = caller_bundle
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert "CALLER_AUTHORITY_EVIDENCE_FORBIDDEN" in decision["failure_codes"]
+
+
+@pytest.mark.parametrize(
+    ("root_overrides", "label"),
+    [
+        (
+            {"authorization_owner_identity": "CALLER-ASSERTED-HUMAN"},
+            "owner",
+        ),
+        ({"authorization_act_class": "CALLER-ACT-CLASS"}, "act class"),
+        ({"action_kind": "UNAUTHORIZED-HIGH-IMPACT-ACTION"}, "action kind"),
+        ({"subject_identity": "OTHER-POLICY"}, "subject"),
+    ],
+)
+def test_profile_b_root_semantic_mismatch_denies(
+    root_overrides: dict, label: str
+) -> None:
+    decision = _evaluate(_case(provenance_root_overrides=root_overrides))
+    assert label
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_profile_b_scope_mismatch_denies() -> None:
+    mismatched_scope = {
+        "domain_id": "OTHER-DOMAIN",
+        "policy_id": POLICY_ID,
+        "policy_version": POLICY_VERSION,
+        "applicable_at_commit": OBSERVED_COMMIT,
+        "allowed_evidence_classes": [EVIDENCE_CLASS],
+        "allowed_reduction_types": [REDUCTION_TYPE],
+        "obligations_hash": _hash("untrusted-obligations"),
+        "permanent_trail_hash": _hash("untrusted-trail"),
+        "cohort_hash": _hash("untrusted-cohort"),
+    }
+    decision = _evaluate(
+        _case(provenance_root_overrides={"scope": mismatched_scope})
+    )
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+@pytest.mark.parametrize(
+    "root_overrides",
+    [
+        {"request_evidence_correlation_identity": "OTHER-CORRELATION"},
+        {"request_evidence_correlation_hash": _hash("other-correlation")},
+    ],
+)
+def test_request_evidence_correlation_mismatch_denies(
+    root_overrides: dict,
+) -> None:
+    decision = _evaluate(_case(provenance_root_overrides=root_overrides))
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_missing_provenance_reference_denies() -> None:
+    case = _case()
+    case["authority_provenance_reference"] = None
+    decision = _evaluate(case)
+    assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
+
+
+def test_gate_caller_cannot_select_or_replace_resolver() -> None:
+    case = _case()
+    gate = case["_gate"]
+    assert "resolver" not in inspect.signature(gate.evaluate).parameters
+    with pytest.raises(
+        AttributeError, match="gate composition is immutable"
+    ):
+        setattr(
+            gate,
+            "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
+            object(),
+        )
+
+
+def test_trusted_resolver_exposes_no_write_or_registration_surface() -> None:
+    assert not any(
+        hasattr(TrustedAuthorityProvenanceResolverV1, name)
+        for name in ("write", "register", "append", "replace", "overwrite")
+    )
 
 
 def test_unverifiable_or_stale_correlated_authority_cannot_allow() -> None:
-    case = _case()
-    evidence = deepcopy(case["authority_evidence"])
-    evidence["che_evidence_correlation"]["authority_target_revision"] = 2
-    case["authority_evidence"] = evidence
+    case = _case(
+        trusted_binding_overrides={
+            "current": False,
+            "superseded_by": "G77-PROFILE-B-ROOT-2",
+        }
+    )
     decision = _evaluate(case)
     assert decision["decision"] == DO_NOT_REDUCE_EVIDENCE
-    assert "AUTHORITY_EVIDENCE_UNVERIFIABLE" in decision["failure_codes"]
+    assert (
+        "AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID"
+        in decision["failure_codes"]
+    )
 
 
 def test_rehashed_denial_changed_to_allow_cannot_be_recorded(tmp_path) -> None:
@@ -604,11 +860,23 @@ def test_rehashed_denial_changed_to_allow_cannot_be_recorded(tmp_path) -> None:
     forged_basis["failure_codes"] = []
     forged = with_replay_hash(forged_basis)
     with pytest.raises(FailClosedRuntimeError, match="does not match recomputed"):
-        record_reduction_evidence(
+        case["_gate"].record_decision(
             ledger=RuntimeLedger(tmp_path),
             runtime_id="FORGED-GATE-DECISION",
             artifact=forged,
-            decision_inputs=case,
+            decision_inputs=_decision_inputs(case),
+        )
+
+
+def test_gate_decision_cannot_be_recorded_through_unbound_ledger_helper(
+    tmp_path,
+) -> None:
+    decision = _evaluate(_case())
+    with pytest.raises(FailClosedRuntimeError, match="fixed trusted gate"):
+        record_reduction_evidence(
+            ledger=RuntimeLedger(tmp_path),
+            runtime_id="UNBOUND-GATE-DECISION",
+            artifact=decision,
         )
 
 

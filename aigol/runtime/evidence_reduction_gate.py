@@ -11,6 +11,12 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Iterable
 
+from aigol.runtime.authority_provenance import (
+    AUTHORIZATION_OWNER_IDENTITY,
+    BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION,
+    OWNER_ISSUED_AUTHORIZATION_ACT_CLASS,
+    TrustedAuthorityProvenanceResolverV1,
+)
 from aigol.runtime.canonical_che_evidence_correlation_contract_v1 import (
     RECORDED,
     validate_canonical_che_evidence_correlation_v1,
@@ -29,7 +35,9 @@ from aigol.runtime.transport.ledger import RuntimeLedger
 from aigol.runtime.transport.serialization import replay_hash, verify_replay_hash, with_replay_hash
 
 
-EVIDENCE_REDUCTION_GATE_VERSION = "G77_BOUNDED_FAIL_CLOSED_EVIDENCE_REDUCTION_GATE_V1"
+EVIDENCE_REDUCTION_GATE_VERSION = (
+    "G77_BOUNDED_FAIL_CLOSED_EVIDENCE_REDUCTION_GATE_PROFILE_B_C1_V1"
+)
 ARTICLE_10_EFFECTIVE_BOUNDARY_COMMIT = "4c2398380cb973ca522ccc2eb6e2ff22a5404296"
 EVIDENCE_REDUCTION_POLICY_AUTHORITY_SCOPE = "BOUNDED_EVIDENCE_REDUCTION_POLICY"
 AUTHORIZE_BOUNDED_EVIDENCE_REDUCTION_POLICY = (
@@ -100,6 +108,8 @@ _ARTIFACT_FIELDS = {
         "authority_id",
         "authority_evidence_reference",
         "authority_evidence_hash",
+        "authority_provenance_root_identity",
+        "authority_provenance_root_hash",
         "currentness_evidence_reference",
         "currentness_evidence_hash",
         "applicable_at_commit",
@@ -188,6 +198,8 @@ _ARTIFACT_FIELDS = {
         "authority_id",
         "authority_evidence_reference",
         "authority_evidence_hash",
+        "authority_provenance_root_identity",
+        "authority_provenance_root_hash",
         "evidence_class",
         "reduction_type",
         "authorized_evidence_ids",
@@ -294,6 +306,8 @@ def create_domain_reduction_policy_projection(
     authority_id: str,
     authority_evidence_reference: str,
     authority_evidence_hash: str,
+    authority_provenance_root_identity: str,
+    authority_provenance_root_hash: str,
     currentness_evidence_reference: str,
     currentness_evidence_hash: str,
     applicable_at_commit: str,
@@ -319,6 +333,14 @@ def create_domain_reduction_policy_projection(
                 authority_evidence_reference, "authority_evidence_reference"
             ),
             "authority_evidence_hash": _require_hash(authority_evidence_hash, "authority_evidence_hash"),
+            "authority_provenance_root_identity": _require_text(
+                authority_provenance_root_identity,
+                "authority_provenance_root_identity",
+            ),
+            "authority_provenance_root_hash": _require_hash(
+                authority_provenance_root_hash,
+                "authority_provenance_root_hash",
+            ),
             "currentness_evidence_reference": _require_text(
                 currentness_evidence_reference, "currentness_evidence_reference"
             ),
@@ -558,6 +580,8 @@ def create_reduction_authorization(
     authority_id: str,
     authority_evidence_reference: str,
     authority_evidence_hash: str,
+    authority_provenance_root_identity: str,
+    authority_provenance_root_hash: str,
     evidence_class: str,
     reduction_type: str,
     authorized_evidence_ids: list[str],
@@ -586,6 +610,14 @@ def create_reduction_authorization(
                 authority_evidence_reference, "authority_evidence_reference"
             ),
             "authority_evidence_hash": _require_hash(authority_evidence_hash, "authority_evidence_hash"),
+            "authority_provenance_root_identity": _require_text(
+                authority_provenance_root_identity,
+                "authority_provenance_root_identity",
+            ),
+            "authority_provenance_root_hash": _require_hash(
+                authority_provenance_root_hash,
+                "authority_provenance_root_hash",
+            ),
             "evidence_class": _require_text(evidence_class, "evidence_class"),
             "reduction_type": _require_text(reduction_type, "reduction_type"),
             "authorized_evidence_ids": _text_list(
@@ -605,7 +637,103 @@ def create_reduction_authorization(
     )
 
 
-def evaluate_evidence_reduction_gate(
+class BoundedEvidenceReductionGateV1:
+    """One gate bound to a resolver fixed outside every evaluation call."""
+
+    __slots__ = ("__authority_provenance_resolver", "__sealed")
+
+    def __init__(
+        self, authority_provenance_resolver: TrustedAuthorityProvenanceResolverV1
+    ) -> None:
+        if (
+            type(authority_provenance_resolver)
+            is not TrustedAuthorityProvenanceResolverV1
+        ):
+            raise FailClosedRuntimeError(
+                "exact trusted authority provenance resolver is required"
+            )
+        object.__setattr__(
+            self,
+            "_BoundedEvidenceReductionGateV1__authority_provenance_resolver",
+            authority_provenance_resolver,
+        )
+        object.__setattr__(self, "_BoundedEvidenceReductionGateV1__sealed", True)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if getattr(self, "_BoundedEvidenceReductionGateV1__sealed", False):
+            raise AttributeError("evidence-reduction gate composition is immutable")
+        object.__setattr__(self, name, value)
+
+    def evaluate(
+        self,
+        *,
+        policy: dict[str, Any] | None,
+        obligations: dict[str, Any] | None,
+        permanent_trail: dict[str, Any] | None,
+        planned_manifest: dict[str, Any] | None,
+        authorization: dict[str, Any] | None,
+        cohort: dict[str, Any] | None,
+        authority_provenance_reference: str | None,
+        authority_evidence: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Resolve provenance gate-side and evaluate without side effects."""
+
+        return _evaluate_evidence_reduction_gate(
+            policy=policy,
+            obligations=obligations,
+            permanent_trail=permanent_trail,
+            planned_manifest=planned_manifest,
+            authorization=authorization,
+            cohort=cohort,
+            authority_provenance_reference=authority_provenance_reference,
+            authority_evidence=authority_evidence,
+            authority_provenance_resolver=self.__authority_provenance_resolver,
+        )
+
+    def record_decision(
+        self,
+        *,
+        ledger: RuntimeLedger,
+        runtime_id: str,
+        artifact: dict[str, Any],
+        decision_inputs: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Recompute and append one decision through this same fixed gate."""
+
+        if not isinstance(ledger, RuntimeLedger):
+            raise FailClosedRuntimeError("existing RuntimeLedger is required")
+        _require_text(runtime_id, "runtime_id")
+        _validate_artifact(artifact, GATE_DECISION_ARTIFACT_V1)
+        required_inputs = {
+            "policy",
+            "obligations",
+            "permanent_trail",
+            "planned_manifest",
+            "authorization",
+            "cohort",
+            "authority_provenance_reference",
+            "authority_evidence",
+        }
+        if (
+            not isinstance(decision_inputs, dict)
+            or set(decision_inputs) != required_inputs
+        ):
+            raise FailClosedRuntimeError(
+                "gate decision recording requires exact immutable decision inputs"
+            )
+        recomputed = self.evaluate(**decision_inputs)
+        if recomputed != artifact:
+            raise FailClosedRuntimeError(
+                "gate decision does not match recomputed bound inputs"
+            )
+        return ledger.append(
+            runtime_id,
+            f"evidence_reduction:{GATE_DECISION_ARTIFACT_V1.lower()}",
+            artifact,
+        )
+
+
+def _evaluate_evidence_reduction_gate(
     *,
     policy: dict[str, Any] | None,
     obligations: dict[str, Any] | None,
@@ -613,7 +741,9 @@ def evaluate_evidence_reduction_gate(
     planned_manifest: dict[str, Any] | None,
     authorization: dict[str, Any] | None,
     cohort: dict[str, Any] | None,
+    authority_provenance_reference: str | None,
     authority_evidence: dict[str, Any] | None = None,
+    authority_provenance_resolver: TrustedAuthorityProvenanceResolverV1,
 ) -> dict[str, Any]:
     """Evaluate without side effects; every invalid condition returns denial."""
 
@@ -695,7 +825,11 @@ def evaluate_evidence_reduction_gate(
         if authorization.get("bounded_scope") is not True:
             failures.append("AUTHORIZATION_OVERBROAD")
 
-    authority_evidence_fingerprint = _fingerprint(authority_evidence)
+    authority_provenance_fingerprint = _fingerprint(
+        authority_provenance_reference
+    )
+    if authority_evidence is not None:
+        failures.append("CALLER_AUTHORITY_EVIDENCE_FORBIDDEN")
     if all(
         artifact is not None
         for artifact in (policy, obligations, permanent_trail, authorization, cohort)
@@ -703,20 +837,17 @@ def evaluate_evidence_reduction_gate(
         code.endswith("_TAMPERED_OR_MALFORMED") for code in failures
     ):
         try:
-            authority_evidence_fingerprint = _validate_authority_evidence(
+            authority_provenance_fingerprint = _validate_authority_provenance(
+                resolver=authority_provenance_resolver,
+                provenance_root_identity=authority_provenance_reference,
                 policy=policy,
                 obligations=obligations,
                 permanent_trail=permanent_trail,
                 authorization=authorization,
                 cohort=cohort,
-                authority_evidence=authority_evidence,
             )
         except FailClosedRuntimeError:
-            failures.append(
-                "AUTHORITY_EVIDENCE_MISSING"
-                if authority_evidence is None
-                else "AUTHORITY_EVIDENCE_UNVERIFIABLE"
-            )
+            failures.append("AUTHORITY_PROVENANCE_UNRESOLVED_OR_INVALID")
 
     if not failures:
         failures.extend(
@@ -732,7 +863,7 @@ def evaluate_evidence_reduction_gate(
 
     decision = ALLOW_BOUNDED_EVIDENCE_REDUCTION if not failures else DO_NOT_REDUCE_EVIDENCE
     input_hashes = {name: _fingerprint(value) for name, value in artifacts.items()}
-    input_hashes["authority_evidence"] = authority_evidence_fingerprint
+    input_hashes["authority_provenance"] = authority_provenance_fingerprint
     basis = {
         "artifact_type": GATE_DECISION_ARTIFACT_V1,
         "gate_version": EVIDENCE_REDUCTION_GATE_VERSION,
@@ -869,7 +1000,6 @@ def record_reduction_evidence(
     ledger: RuntimeLedger,
     runtime_id: str,
     artifact: dict[str, Any],
-    decision_inputs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Append one validated artifact to an existing RuntimeLedger lineage."""
 
@@ -881,30 +1011,110 @@ def record_reduction_evidence(
         raise FailClosedRuntimeError("evidence-reduction artifact type is not recognized")
     _validate_artifact(artifact, artifact_type)
     if artifact_type == GATE_DECISION_ARTIFACT_V1:
-        required_inputs = {
-            "policy",
-            "obligations",
-            "permanent_trail",
-            "planned_manifest",
-            "authorization",
-            "cohort",
-            "authority_evidence",
-        }
-        if not isinstance(decision_inputs, dict) or set(decision_inputs) != required_inputs:
-            raise FailClosedRuntimeError(
-                "gate decision recording requires exact immutable decision inputs"
-            )
-        recomputed = evaluate_evidence_reduction_gate(**decision_inputs)
-        if recomputed != artifact:
-            raise FailClosedRuntimeError(
-                "gate decision does not match recomputed bound inputs"
-            )
+        raise FailClosedRuntimeError(
+            "gate decisions must be recorded through their fixed trusted gate"
+        )
     if artifact_type == ACTUAL_REDUCTION_MANIFEST_ARTIFACT_V1:
         validate_actual_reduction_manifest(artifact)
     return ledger.append(
         runtime_id,
         f"evidence_reduction:{artifact_type.lower()}",
         artifact,
+    )
+
+
+def _authority_provenance_scope(
+    *,
+    policy: dict[str, Any],
+    obligations: dict[str, Any],
+    permanent_trail: dict[str, Any],
+    cohort: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "domain_id": policy["domain_id"],
+        "policy_id": policy["policy_id"],
+        "policy_version": policy["policy_version"],
+        "applicable_at_commit": policy["applicable_at_commit"],
+        "allowed_evidence_classes": policy["allowed_evidence_classes"],
+        "allowed_reduction_types": policy["allowed_reduction_types"],
+        "obligations_hash": obligations["replay_hash"],
+        "permanent_trail_hash": permanent_trail["replay_hash"],
+        "cohort_hash": cohort["replay_hash"],
+    }
+
+
+def _validate_authority_provenance(
+    *,
+    resolver: TrustedAuthorityProvenanceResolverV1,
+    provenance_root_identity: str | None,
+    policy: dict[str, Any],
+    obligations: dict[str, Any],
+    permanent_trail: dict[str, Any],
+    authorization: dict[str, Any],
+    cohort: dict[str, Any],
+) -> str:
+    """Resolve and bind one owner-produced root before CHE validation."""
+
+    if type(resolver) is not TrustedAuthorityProvenanceResolverV1:
+        raise FailClosedRuntimeError(
+            "authority provenance resolver is not constitutionally fixed"
+        )
+    if not isinstance(provenance_root_identity, str):
+        raise FailClosedRuntimeError("authority provenance reference is missing")
+    root = resolver.resolve(provenance_root_identity)
+    expected_scope = _authority_provenance_scope(
+        policy=policy,
+        obligations=obligations,
+        permanent_trail=permanent_trail,
+        cohort=cohort,
+    )
+    revision = _policy_revision(policy["policy_version"])
+    correlation_identity = root["request_evidence_correlation_identity"]
+    correlation_hash = root["request_evidence_correlation_hash"]
+    if (
+        root["authorization_owner_identity"] != AUTHORIZATION_OWNER_IDENTITY
+        or root["authorization_act_class"]
+        != OWNER_ISSUED_AUTHORIZATION_ACT_CLASS
+        or root["action_kind"]
+        != BOUNDED_EVIDENCE_REDUCTION_POLICY_AUTHORIZATION
+        or root["subject_identity"] != policy["policy_id"]
+        or root["scope"] != expected_scope
+        or root["act_revision"] != revision
+        or policy["authority_provenance_root_identity"]
+        != root["provenance_root_identity"]
+        or authorization["authority_provenance_root_identity"]
+        != root["provenance_root_identity"]
+        or policy["authority_provenance_root_hash"]
+        != root["immutable_content_hash"]
+        or authorization["authority_provenance_root_hash"]
+        != root["immutable_content_hash"]
+        or policy["authority_evidence_reference"] != correlation_identity
+        or policy["currentness_evidence_reference"] != correlation_identity
+        or authorization["authority_evidence_reference"] != correlation_identity
+        or policy["authority_evidence_hash"] != correlation_hash
+        or policy["currentness_evidence_hash"] != correlation_hash
+        or authorization["authority_evidence_hash"] != correlation_hash
+    ):
+        raise FailClosedRuntimeError(
+            "authority provenance owner, act, action, subject, scope, "
+            "revision, correlation, or root binding is invalid"
+        )
+    authority_evidence_fingerprint = _validate_authority_evidence(
+        policy=policy,
+        obligations=obligations,
+        permanent_trail=permanent_trail,
+        authorization=authorization,
+        cohort=cohort,
+        authority_evidence=root["owner_issued_authority_evidence"],
+    )
+    return replay_hash(
+        {
+            "provenance_root": root,
+            "resolved_authority_evidence_fingerprint": (
+                authority_evidence_fingerprint
+            ),
+            "resolver_boundary_commit": resolver.boundary_commit,
+        }
     )
 
 
@@ -982,6 +1192,15 @@ def _validate_authority_evidence(
         or correlation.authority_target_identity != act.target_identity
         or correlation.authority_target_revision != act.target_revision
         or correlation.authority_payload_digest != act.payload_digest
+        or correlation.producing_owner_identity != policy["authority_id"]
+        or correlation.owner_state_identity
+        != authority_evidence["che_continuation"][
+            "expected_owner_state_identity"
+        ]
+        or correlation.owner_revision_before != act.target_revision
+        or correlation.owner_revision_after != act.target_revision + 1
+        or correlation.owner_advancement != "ADVANCED"
+        or correlation.owner_disposition != "RECORDED"
     ):
         raise FailClosedRuntimeError("CHE authority correlation is invalid")
     correlation_hash = replay_hash(correlation.to_dict())
@@ -1223,6 +1442,7 @@ def _manifest_items(value: Any, *, actual: bool) -> list[dict[str, Any]]:
 
 
 __all__ = [name for name in globals() if name.isupper()] + [
+    "BoundedEvidenceReductionGateV1",
     "calculate_gate_basis_hash",
     "classify_article10_cohort",
     "create_actual_reduction_manifest",
@@ -1233,7 +1453,6 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "create_planned_reduction_manifest",
     "create_reduction_authorization",
     "domain_reduction_policy_authority_payload",
-    "evaluate_evidence_reduction_gate",
     "record_reduction_evidence",
     "validate_actual_reduction_manifest",
 ]
