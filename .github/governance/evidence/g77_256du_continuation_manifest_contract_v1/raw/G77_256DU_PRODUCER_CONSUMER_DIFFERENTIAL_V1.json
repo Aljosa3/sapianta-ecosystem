@@ -1,0 +1,72 @@
+{
+  "schema_id": "G77_256DU_PRODUCER_CONSUMER_DIFFERENTIAL_V1",
+  "required_head": "813fc56ef364247675e2ef07d9c27885626766c9",
+  "minimum_lineage_scope": "DT_FAILURE_AND_MANIFEST_AND_HARNESS__DQ_SUCCESSFUL_MANIFEST_AND_HARNESS__DP_PERSISTENT_SEAL_PATTERN__G48_STANDARD",
+  "dt_failure": {
+    "cryptographic_authenticity": "PASS",
+    "structural_schema_validity": "FAIL__MISSING_COMPLETED_PHASE_SEALS",
+    "semantic_contract_compatibility": "FAIL__PRODUCER_CONSUMER_DIALECT_MISMATCH",
+    "constitutional_admissibility": "FAIL_CLOSED_BEFORE_EXECUTION_CONTEXT_AND_P01",
+    "exception": "KeyError: 'completed_phase_seals'",
+    "historical_evidence_rewritten": false,
+    "e05_result": false
+  },
+  "producer_dialects": {
+    "DQ_SUCCESSFUL": {
+      "envelope_fields": ["manifest", "manifest_sha256", "schema_id"],
+      "manifest_fields": ["authority_lifecycle_state", "authorized_next_action", "auto_continuable", "checkpoint_is_authority", "completed_phase_seals", "constitutional_frontier", "current_spce_phase", "execution_counters", "final_execution_seal_identity", "first_failure_or_current_result", "generation_identity", "harness_identity", "manifest_is_authority", "minimum_lineage_artifact_count", "minimum_lineage_identities_and_hashes", "prohibited_actions", "required_head", "schema_id", "schema_identity", "teardown_state"],
+      "completed_phase_seal_item_fields": ["file_sha256", "identity", "sha256"],
+      "completed_phase_seal_item_file_sha256_optional_historically": true,
+      "authority_representation": "STRING_LIFECYCLE_STATE",
+      "lineage_representation": "ARRAY_OF_IDENTITY_AND_HASH_RECORDS",
+      "execution_counter_namespace": "MIXED_CORE_AND_CASE_SPECIFIC"
+    },
+    "DT_INCOMPATIBLE": {
+      "envelope_fields": ["manifest", "manifest_sha256", "schema_id"],
+      "manifest_fields": ["authority_state", "auto_continuable", "clrec_state", "completed_actions", "conversation_history_required", "cross_account_authority_reconstruction", "cross_account_frontier_reconstruction", "cross_account_minimum_lineage_reconstruction", "cross_account_state_reconstruction", "current_spce_phase", "evidence_hashes", "evidence_paths", "exact_next_legal_action", "execution_counter_reconstruction", "execution_counters", "execution_replay_required", "full_history_reconstruction_required", "generation_identity", "manifest_is_authority", "minimum_lineage", "not_completed_actions", "p11_state", "required_head", "retry_state", "schema_id", "selected_case_class", "selected_case_id", "source_tree", "spce_phase_reconstruction", "vm_state"],
+      "completed_phase_seals_present": false,
+      "authority_representation": "STRING_AUTHORITY_STATE",
+      "lineage_representation": "MINIMUM_LINEAGE_PLUS_PARALLEL_EVIDENCE_PATH_AND_HASH_ARRAYS",
+      "execution_counter_namespace": "MIXED_CORE_AND_E05_SPECIFIC"
+    },
+    "DP": {
+      "continuation_manifest_dialect_present": false,
+      "directly_relevant_reuse": "PERSISTENT_PHASE_AND_MATERIALIZATION_AND_FINAL_SEAL_PATTERN"
+    }
+  },
+  "consumer_contract_extracted_from_dq_and_dt_harnesses": {
+    "pre_update_required_reads": ["envelope.manifest", "envelope.manifest_sha256", "manifest.completed_phase_seals"],
+    "completed_phase_seal_item_reads": ["identity"],
+    "update_writes": ["authority_lifecycle_state", "authorized_next_action", "auto_continuable", "completed_phase_seals", "current_spce_phase", "execution_counters", "first_failure_or_current_result", "manifest_is_authority", "teardown_state"],
+    "historical_validation_limit": "MANIFEST_SHA256_ONLY_BEFORE_DIRECT_FIELD_ACCESS",
+    "dt_breakpoint": "DIRECT_ACCESS_TO_MANIFEST_COMPLETED_PHASE_SEALS"
+  },
+  "differential": {
+    "common_envelope_fields": ["manifest", "manifest_sha256", "schema_id"],
+    "common_manifest_fields": ["auto_continuable", "current_spce_phase", "execution_counters", "generation_identity", "manifest_is_authority", "required_head", "schema_id"],
+    "dq_only_manifest_fields": ["authority_lifecycle_state", "authorized_next_action", "checkpoint_is_authority", "completed_phase_seals", "constitutional_frontier", "final_execution_seal_identity", "first_failure_or_current_result", "harness_identity", "minimum_lineage_artifact_count", "minimum_lineage_identities_and_hashes", "prohibited_actions", "schema_identity", "teardown_state"],
+    "dt_only_manifest_fields": ["authority_state", "clrec_state", "completed_actions", "conversation_history_required", "cross_account_authority_reconstruction", "cross_account_frontier_reconstruction", "cross_account_minimum_lineage_reconstruction", "cross_account_state_reconstruction", "evidence_hashes", "evidence_paths", "exact_next_legal_action", "execution_counter_reconstruction", "execution_replay_required", "full_history_reconstruction_required", "minimum_lineage", "not_completed_actions", "p11_state", "retry_state", "selected_case_class", "selected_case_id", "source_tree", "spce_phase_reconstruction", "vm_state"],
+    "incompatible_dialect_count": 2,
+    "more_than_one_incompatible_dialect_exists": true
+  },
+  "canonical_v1_resolution": {
+    "reuse": "DQ_COMPLETED_PHASE_SEAL_PATTERN_PLUS_DP_DQ_SEALS_PLUS_DT_RECONSTRUCTION_INTENT",
+    "consolidation": "ONE_VERSIONED_CLOSED_SCHEMA_WITH_BOUND_PRODUCER_CONSUMER_AND_SCHEMA",
+    "case_counters_separated_from_core_execution_counters": true,
+    "structured_authority_state": true,
+    "completed_seals_file_and_inner_hash_bound": true,
+    "unknown_fields_fail_closed": true,
+    "parallel_continuation_system_created": false
+  },
+  "operational_counters": {
+    "vm_creation_count": 0,
+    "vm_boot_count": 0,
+    "human_operational_act_created_count": 0,
+    "p11_entry_count": 0,
+    "e05_case_execution_count": 0,
+    "p12_entry_count": 0,
+    "production_route_count": 0,
+    "execution_replay_count": 0
+  },
+  "auto_continuable": false
+}

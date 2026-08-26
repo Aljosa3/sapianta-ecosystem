@@ -1,0 +1,177 @@
+{
+  "schema_id": "G77_256DU_SPCE_PHASE_D_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DU_SPCE_PHASE_D_CHECKPOINT_V1",
+    "generation_identity": "G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1",
+    "required_head": "813fc56ef364247675e2ef07d9c27885626766c9",
+    "source_tree": "5476b7e70ac4b340c8984e6088be5b282fa148f1",
+    "dt_failure_frontier": {
+      "manifest_cryptographic_authenticity": "PASS",
+      "structural_schema_validity": "FAIL__MISSING_COMPLETED_PHASE_SEALS",
+      "semantic_contract_compatibility": "FAIL__PRODUCER_CONSUMER_DIALECT_MISMATCH",
+      "failure": "KeyError: 'completed_phase_seals'",
+      "failure_boundary": "BEFORE_EXECUTION_CONTEXT_AND_P01",
+      "e05_result": false,
+      "historical_evidence_rewritten": false
+    },
+    "canonical_contract": {
+      "state": "DEFINED_AND_PRE_MATERIALIZATION_COMPATIBILITY_CERTIFIED__REPOSITORY_SIDE_CANDIDATE",
+      "envelope_schema_id": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_ENVELOPE_V1",
+      "manifest_schema_id": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_V1",
+      "schema_identity": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1",
+      "manifest_schema_version": "1.0.0",
+      "canonical_serialization": "UTF8_SORTED_KEYS_COMPACT_JSON_EXACTLY_ONE_TRAILING_LF",
+      "auto_continuable": false,
+      "checkpoint_is_authority": false,
+      "manifest_is_authority": false
+    },
+    "compatibility_result": {
+      "producer_consumer_compatibility": "PASS",
+      "cryptographic_authenticity": "PASS",
+      "structural_schema_validity": "PASS",
+      "semantic_contract_compatibility": "PASS",
+      "constitutional_admissibility": "PASS",
+      "negative_case_count": 10,
+      "all_negative_cases_rejected_pre_materialization": true,
+      "pre_materialization_failure_detection_ready": true
+    },
+    "spce_phase_results": {
+      "phase_a": "PASS__TWO_INCOMPATIBLE_HISTORICAL_DIALECTS_AUTHENTICATED_AND_DIFFERENTIATED",
+      "phase_b": "PASS__ONE_CANONICAL_VERSIONED_CLOSED_FAIL_CLOSED_CONTRACT_DEFINED",
+      "phase_c": "PASS__PRODUCER_FIXTURE_ACCEPTED_AND_TEN_INCOMPATIBLE_MUTATIONS_REJECTED_PRE_MATERIALIZATION",
+      "phase_d": "PASS__SELF_AUTHENTICATING_REPOSITORY_RESIDENT_ZERO_OPERATION_CHECKPOINT_CREATED"
+    },
+    "authority_state": {
+      "lifecycle_state": "NOT_CREATED",
+      "act_identity": null,
+      "owner_revision": null,
+      "authority_survives": false,
+      "transferable": false,
+      "reusable": false,
+      "checkpoint_is_authority": false
+    },
+    "minimum_committed_lineage": [
+      {
+        "identity": "G77_256DT_G48_REPORT",
+        "path": "docs/governance/G77_256DT_ONE_FRESH_BOUNDED_E05_CONCURRENCY_GENERATION_AFTER_DS_FAIL_CLOSED_RECOVERY_WITH_PRE_MATERIALIZATION_SELF_AUTHENTICATION_AND_CROSS_ACCOUNT_RESUMABLE_SPCE_EVIDENCE_V1.md",
+        "sha256": "d3ee031ad7742e30c730ff4702a123b20fd6730d88a2a28ef2919b04398fcc4d",
+        "git_blob": "12b50eb27505639fbe0d13aed92a5936e852142f"
+      },
+      {
+        "identity": "G77_256DT_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/G77_256DT_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "7e230c1632b48c7ad119d89924957345ed7f8fdb2989415170d278d21e32cf39",
+        "git_blob": "ff28aef2f7863fe7e65a9298b2f9c6146e434651"
+      },
+      {
+        "identity": "G77_256DT_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/G77_256DT_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "sha256": "5cc3b0ed786e622da1a4789c6deefbc2d6b7997f05bd9cf38c270dadb51cf7f4",
+        "git_blob": "0497727800bca646555bc6b86630f5799f1d3c96"
+      },
+      {
+        "identity": "G77_256DT_MATERIALIZED_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/raw/G77_256DT_CONTINUATION_MANIFEST_MATERIALIZED_V1.json",
+        "sha256": "11d2a23cc0bbb8ddeaf394a64e7e95f3ceb620e834fe89f08e920c910f2f3869",
+        "git_blob": "0b4b07146d648a7de33acc74c4cc3196ada753e9"
+      },
+      {
+        "identity": "G77_256DT_HARNESS",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/harness/G77_256DT_P11_OPERATIONAL_HARNESS_V1.py",
+        "sha256": "6eb7a97686fd0846563d63c916d38b313dc6b824c82132b97be0f2df5c8038b2",
+        "git_blob": "096b309d651e4da4655afaf94f03e5010623c527"
+      },
+      {
+        "identity": "G77_256DQ_G48_REPORT",
+        "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+        "sha256": "6273d2df46687670d9f938874bf9b700f554b10feed5bb11892c462d5a7a6906",
+        "git_blob": "6afd5d762d24ca472b9dd2561bf77f0927946e34"
+      },
+      {
+        "identity": "G77_256DQ_TERMINAL_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_CONTINUATION_MANIFEST_V1.json",
+        "sha256": "3bd083eea99c203908d1b42e6a3065ee047c4fcaf3699681e41d613147fbfe79",
+        "git_blob": "989773417c31afab8849546d4ac9c543dd8dc2dc"
+      },
+      {
+        "identity": "G77_256DQ_HARNESS",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/harness/G77_256DQ_P11_OPERATIONAL_HARNESS_V1.py",
+        "sha256": "f045451bb5d6ec42a66081cca816593d9af6c0ef44ce56882182352539d182c6",
+        "git_blob": "d94c46ef78538508b22ee4e66ca87bc9e505e8c2"
+      },
+      {
+        "identity": "G77_256DP_G48_REPORT",
+        "path": "docs/governance/G77_256DP_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_FROM_PERSISTENT_EXECUTION_EVIDENCE_V1.md",
+        "sha256": "1d4a2f8cbe20143e5aa9511dd8778873c9b6c4be5214a206a0455e402883db66",
+        "git_blob": "d2af12452bf9bd891ac744fb402433a7d2e34266"
+      },
+      {
+        "identity": "G48_REPORTING_STANDARD",
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb",
+        "git_blob": "095c16f14c54d8b36330d47a653a122ee07a441c"
+      }
+    ],
+    "du_artifact_bindings": [
+      {
+        "identity": "G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1.md",
+        "sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "git_blob_if_available": null
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+        "sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "git_blob_if_available": null
+      },
+      {
+        "identity": "G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+        "sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "git_blob_if_available": null
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_PRODUCER_OUTPUT_FIXTURE_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/raw/G77_256DU_CANONICAL_PRODUCER_OUTPUT_FIXTURE_V1.json",
+        "sha256": "c5f00b5969fbb4369c024fa6ea52c8243b59c7feeab37f9543e015d7f5c90c64",
+        "git_blob_if_available": null
+      },
+      {
+        "identity": "G77_256DU_COMPATIBILITY_VALIDATION_EVIDENCE_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/raw/G77_256DU_COMPATIBILITY_VALIDATION_EVIDENCE_V1.json",
+        "sha256": "df4b1a4b1fc1244867a60a2598f851c6a4f6640a3d4c7bc6ac8867a50e0e14cb",
+        "git_blob_if_available": null
+      },
+      {
+        "identity": "G77_256DU_PRODUCER_CONSUMER_DIFFERENTIAL_V1",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/raw/G77_256DU_PRODUCER_CONSUMER_DIFFERENTIAL_V1.json",
+        "sha256": "09d5ce99d09398e687c950accb7b571f80dc8a3976b0aeb01132e0ff2a713526",
+        "git_blob_if_available": null
+      }
+    ],
+    "cross_account_clrec_assessment": {
+      "candidate_capability": "CONSTITUTIONAL_LLM_RESUMABLE_EXECUTION_CHECKPOINT",
+      "candidate_capability_state": "CANDIDATE_PRIMITIVE_ONLY",
+      "cross_account_continuation_ready": false,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "clrec_empirical_evidence": "ABSENT_FOR_CANONICAL_V1",
+      "clrec_constitutionally_certified": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "human_operational_act_created_count": 0,
+      "p11_entry_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0
+    },
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_DU_CONTRACT_EVIDENCE__THEN_SEPARATE_AUTHORIZATION_FOR_ANY_FUTURE_GENERATION_USING_CANONICAL_V1_PREFLIGHT",
+    "auto_continuable": false
+  },
+  "seal_sha256": "b61d6f4f8cb67856398196872a506b84189b38205e80fbf34553de62830016b9"
+}

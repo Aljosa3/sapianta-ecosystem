@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1",
+  "title": "SAPIANTA SPCE Canonical Continuation Manifest V1",
+  "type": "object",
+  "required": ["schema_id", "manifest", "manifest_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {"const": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_ENVELOPE_V1"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "manifest": {
+      "type": "object",
+      "required": [
+        "schema_id", "manifest_version", "generation_identity",
+        "required_head", "source_tree", "current_spce_phase",
+        "phase_sequence", "prior_manifest_sha256", "completed_phase_seals",
+        "execution_counters", "case_counters", "authority_state",
+        "lineage_bindings", "producer_binding", "consumer_binding",
+        "schema_binding", "frontier_state", "selected_case",
+        "first_failure_or_current_result", "teardown_state",
+        "final_execution_seal", "prohibited_actions",
+        "checkpoint_is_authority", "manifest_is_authority",
+        "auto_continuable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_id": {"const": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_V1"},
+        "manifest_version": {"const": "1.0.0"},
+        "generation_identity": {"$ref": "#/$defs/nonempty"},
+        "required_head": {"$ref": "#/$defs/gitObject"},
+        "source_tree": {"$ref": "#/$defs/gitObject"},
+        "current_spce_phase": {"$ref": "#/$defs/nonempty"},
+        "phase_sequence": {"type": "integer", "minimum": 0},
+        "prior_manifest_sha256": {
+          "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+        },
+        "completed_phase_seals": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sealBinding"}
+        },
+        "execution_counters": {"$ref": "#/$defs/executionCounters"},
+        "case_counters": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*_count$"},
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "authority_state": {"$ref": "#/$defs/authorityState"},
+        "lineage_bindings": {
+          "type": "array", "minItems": 1,
+          "items": {"$ref": "#/$defs/lineageBinding"}
+        },
+        "producer_binding": {"$ref": "#/$defs/fileBinding"},
+        "consumer_binding": {"$ref": "#/$defs/fileBinding"},
+        "schema_binding": {"$ref": "#/$defs/schemaBinding"},
+        "frontier_state": {
+          "type": "object",
+          "required": [
+            "constitutional_frontier", "exact_next_legal_action",
+            "continuation_mode", "requires_human_review"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "constitutional_frontier": {"$ref": "#/$defs/nonempty"},
+            "exact_next_legal_action": {"$ref": "#/$defs/nonempty"},
+            "continuation_mode": {
+              "enum": [
+                "PRE_MATERIALIZATION_VALIDATION_ONLY",
+                "SAME_LIVE_GENERATION_ONLY",
+                "FINALIZATION_ONLY",
+                "HUMAN_REVIEW_ONLY"
+              ]
+            },
+            "requires_human_review": {"const": true}
+          }
+        },
+        "selected_case": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["case_class", "case_id"],
+              "additionalProperties": false,
+              "properties": {
+                "case_class": {"$ref": "#/$defs/nonempty"},
+                "case_id": {"$ref": "#/$defs/nonempty"}
+              }
+            }
+          ]
+        },
+        "first_failure_or_current_result": {
+          "oneOf": [{"$ref": "#/$defs/nonempty"}, {"type": "null"}]
+        },
+        "teardown_state": {
+          "enum": ["NOT_APPLICABLE", "PENDING", "COMPLETE", "FAILED"]
+        },
+        "final_execution_seal": {
+          "oneOf": [{"$ref": "#/$defs/sealBinding"}, {"type": "null"}]
+        },
+        "prohibited_actions": {
+          "type": "array", "uniqueItems": true, "minItems": 8,
+          "items": {"$ref": "#/$defs/nonempty"},
+          "allOf": [
+            {"contains": {"const": "VM_CREATION"}},
+            {"contains": {"const": "VM_BOOT"}},
+            {"contains": {"const": "HUMAN_OPERATIONAL_ACT_CREATION"}},
+            {"contains": {"const": "P11_ENTRY"}},
+            {"contains": {"const": "P12_ENTRY"}},
+            {"contains": {"const": "E05_EXECUTION"}},
+            {"contains": {"const": "PRODUCTION_ROUTE"}},
+            {"contains": {"const": "EXECUTION_REPLAY"}}
+          ]
+        },
+        "checkpoint_is_authority": {"const": false},
+        "manifest_is_authority": {"const": false},
+        "auto_continuable": {"const": false},
+        "observations": {
+          "type": "array", "items": {"$ref": "#/$defs/nonempty"}
+        },
+        "extension_bindings": {
+          "type": "array", "items": {"$ref": "#/$defs/fileBinding"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gitObject": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "fileBinding": {
+      "type": "object",
+      "required": ["identity", "path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonempty"},
+        "path": {"$ref": "#/$defs/nonempty"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "schemaBinding": {
+      "type": "object",
+      "required": ["identity", "version", "path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"const": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1"},
+        "version": {"const": "1.0.0"},
+        "path": {"$ref": "#/$defs/nonempty"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sealBinding": {
+      "type": "object",
+      "required": ["identity", "path", "inner_sha256", "file_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonempty"},
+        "path": {"$ref": "#/$defs/nonempty"},
+        "inner_sha256": {"$ref": "#/$defs/sha256"},
+        "file_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "lineageBinding": {
+      "type": "object",
+      "required": ["identity", "path", "sha256", "git_blob"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonempty"},
+        "path": {"$ref": "#/$defs/nonempty"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "git_blob": {"$ref": "#/$defs/gitObject"}
+      }
+    },
+    "authorityState": {
+      "type": "object",
+      "required": [
+        "lifecycle_state", "act_identity", "owner_revision",
+        "authority_survives", "transferable", "reusable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "lifecycle_state": {
+          "enum": [
+            "NOT_CREATED", "AUTHORIZED_NOT_CREATED", "AVAILABLE", "CLAIMED",
+            "CONSUMED", "RECONCILIATION_REQUIRED", "REVOKED",
+            "SUPERSEDED", "EXPIRED", "NO_AUTHORITY_SURVIVES"
+          ]
+        },
+        "act_identity": {
+          "oneOf": [{"$ref": "#/$defs/nonempty"}, {"type": "null"}]
+        },
+        "owner_revision": {
+          "oneOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]
+        },
+        "authority_survives": {"type": "boolean"},
+        "transferable": {"const": false},
+        "reusable": {"const": false}
+      }
+    },
+    "executionCounters": {
+      "type": "object",
+      "required": [
+        "vm_creation_count", "vm_boot_count", "second_vm_count",
+        "automatic_retry_count", "repair_and_continue_count",
+        "commissioning_execution_count", "commissioning_pass_count",
+        "human_operational_act_created_count",
+        "human_operational_act_submitted_count",
+        "human_operational_act_claimed_count",
+        "human_operational_act_invoked_count",
+        "human_operational_act_terminally_bound_count",
+        "human_operational_act_permanently_exhausted_count",
+        "p11_entry_count", "p11_operational_invocation_count",
+        "p12_entry_count", "production_route_count",
+        "full_history_reconstruction_count", "execution_replay_count"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "vm_creation_count": {"type": "integer", "minimum": 0},
+        "vm_boot_count": {"type": "integer", "minimum": 0},
+        "second_vm_count": {"type": "integer", "minimum": 0},
+        "automatic_retry_count": {"type": "integer", "minimum": 0},
+        "repair_and_continue_count": {"type": "integer", "minimum": 0},
+        "commissioning_execution_count": {"type": "integer", "minimum": 0},
+        "commissioning_pass_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_created_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_submitted_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_claimed_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_invoked_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_terminally_bound_count": {"type": "integer", "minimum": 0},
+        "human_operational_act_permanently_exhausted_count": {"type": "integer", "minimum": 0},
+        "p11_entry_count": {"type": "integer", "minimum": 0},
+        "p11_operational_invocation_count": {"type": "integer", "minimum": 0},
+        "p12_entry_count": {"type": "integer", "minimum": 0},
+        "production_route_count": {"type": "integer", "minimum": 0},
+        "full_history_reconstruction_count": {"type": "integer", "minimum": 0},
+        "execution_replay_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
