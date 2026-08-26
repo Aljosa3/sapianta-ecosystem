@@ -1,0 +1,137 @@
+{
+  "schema_id": "G77_256DY_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DY_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256DY_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_UNKNOWN_AUTHORITY_P11_GENERATION_V1",
+    "required_head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+    "source_tree": "7fc9171363a281f748321c37f269d63a315d4594",
+    "selected_e05_vector": "UNKNOWN",
+    "qemu_process_absent": true,
+    "checkout_status_empty": true,
+    "checkout_head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+    "checkout_tree": "7fc9171363a281f748321c37f269d63a315d4594",
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "transient_material": {
+      "overlay": {
+        "path": "/tmp/g77_256dy/guest-overlay.qcow2",
+        "bytes": 21168128,
+        "sha256": "5b75e6c9f59b55334770015f36cf61eddb16568a82383d0a556fb69490826d89"
+      },
+      "overlay_qemu_img_check": "PASS",
+      "seed": {
+        "path": "/tmp/g77_256dy/nocloud-seed.img",
+        "bytes": 376832,
+        "sha256": "2b87154ed578dbf87ceae841a3df227e01567d0394008c9e1e82678c62249448"
+      },
+      "serial_source": {
+        "path": "/tmp/g77_256dy/serial.log",
+        "bytes": 88208,
+        "sha256": "0f883df08e939653f247ee0167168dcc73194e62a491c8eb22a57180bce7caca"
+      }
+    },
+    "persisted_evidence": {
+      "G77_256DN_P03_RAW_EVIDENCE_V1.jsonl": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DN_P03_RAW_EVIDENCE_V1.jsonl",
+        "bytes": 37395,
+        "sha256": "1e32311925c4bf6796bf0392a643edf9972e4de05ed1aa332bb57720dca43d2b"
+      },
+      "G77_256DN_SPCE_EXECUTION_SEAL_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DN_SPCE_EXECUTION_SEAL_V1.json",
+        "bytes": 625,
+        "sha256": "4fa695d908830d8314e4fff0b2519c4ac70dc5751c0062ece3fb1a0c390c5dc5"
+      },
+      "G77_256DY_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+        "bytes": 9632,
+        "sha256": "03e57b5c267157c14e50e3f02d26b1a5e412b244aefeb345f8ecf85f62ae8ef4"
+      },
+      "G77_256DY_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_EVIDENCE_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_EVIDENCE_V1.json",
+        "bytes": 1896,
+        "sha256": "3b189a37ce2ab0e37e23d3a4697fcc23a3fe477159494c2b2e5afbdf555486b9"
+      },
+      "G77_256DY_CLOUD_INIT_META_DATA_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_META_DATA_V1.yaml",
+        "bytes": 90,
+        "sha256": "795331b9c4e54c4860851e438ee9729ba0fd23e53e742df83b26bca41da7b56d"
+      },
+      "G77_256DY_CLOUD_INIT_NETWORK_CONFIG_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_NETWORK_CONFIG_V1.yaml",
+        "bytes": 26,
+        "sha256": "f4b767b0ddb3b9a3a69d40e33c5c4d6f26e6489085b58313f00eb0a5e1242a25"
+      },
+      "G77_256DY_CLOUD_INIT_USER_DATA_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_USER_DATA_V1.yaml",
+        "bytes": 1150,
+        "sha256": "3ca78941ef9d0f6095d9e1b94974e49e9460eb58136a2181188a30fbd31cad29"
+      },
+      "G77_256DY_CONTINUATION_MANIFEST_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CONTINUATION_MANIFEST_V1.json",
+        "bytes": 10570,
+        "sha256": "4f9cb8589bb3dc31a46a4bfe2a6838f6ae7aae8cf3da34e92113478cc0b9ebba"
+      },
+      "G77_256DY_GUEST_EXECUTION_SEAL_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_GUEST_EXECUTION_SEAL_V1.json",
+        "bytes": 2078,
+        "sha256": "262378cfbdd7f09aac82943fdaba429c0fe447bb009ac85e876e9ad13ceaae53"
+      },
+      "G77_256DY_GUEST_TEARDOWN_SEAL_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_GUEST_TEARDOWN_SEAL_V1.json",
+        "bytes": 1209,
+        "sha256": "31098adfcf34fe38944eef9e5bde4a35e7fb64deffd4b13957e0e7ecd17aac25"
+      },
+      "G77_256DY_PRE_ACT_CHECKPOINT_V1.json": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_PRE_ACT_CHECKPOINT_V1.json",
+        "bytes": 1764,
+        "sha256": "d948a53232b5069787a143e4e31e0b546c09a1989abf4454326b854004be61e8"
+      },
+      "G77_256DY_RAW_EXECUTION_EVIDENCE_V1.jsonl": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "bytes": 37719,
+        "sha256": "3ae3380bb7d008ac1ecc326458e9a98fe52c4c7da94e4b4dcf7955c288db139e"
+      },
+      "G77_256DY_SERIAL_CONSOLE_V1.log": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_SERIAL_CONSOLE_V1.log",
+        "bytes": 88208,
+        "sha256": "0f883df08e939653f247ee0167168dcc73194e62a491c8eb22a57180bce7caca"
+      }
+    },
+    "execution_counters": {
+      "automatic_retry_count": 0,
+      "e01_e12_execution_count": 1,
+      "e05_case_execution_count": 1,
+      "e05_concurrency_contender_count": 0,
+      "e05_concurrency_loser_count": 0,
+      "e05_concurrency_winner_count": 0,
+      "execution_replay_count": 0,
+      "full_history_reconstruction_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_creation_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "p01_p12_executed_count": 1,
+      "p01_p12_pass_count": 1,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "repair_and_continue_count": 0,
+      "second_vm_count": 0,
+      "vm_boot_count": 1,
+      "vm_creation_count": 1
+    },
+    "selected_vector_result": "PASS__UNKNOWN_AUTHORITY_DENIED_BEFORE_PRECLAIM_WITH_ZERO_EFFECT",
+    "raw_record_count": 20,
+    "teardown_pending": true,
+    "exact_next_legal_action": "REMOVE_DISPOSABLE_OVERLAY_SEED_SERIAL_AND_EXACT_TRANSIENT_WORKTREE__PRESERVE_REPOSITORY_EVIDENCE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "907a623b6ab5d39f1f8d6914e283b8c0d65965dff6440c6ebce2a9ea04f0e2fc"
+}

@@ -1,0 +1,157 @@
+{
+  "schema_id": "G77_256DY_SPCE_MATERIALIZATION_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DY_SPCE_MATERIALIZATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256DY_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_UNKNOWN_AUTHORITY_P11_GENERATION_V1",
+    "required_head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+    "source_tree": "7fc9171363a281f748321c37f269d63a315d4594",
+    "selected_e05_vector": "UNKNOWN",
+    "phase_a_checkpoint": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/G77_256DY_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "bytes": 11941,
+      "sha256": "a28eedbb7eeafca76bda569f0fa19b0de29023645d4705b0a91c2e1f73693589"
+    },
+    "canonical_v1_validation_evidence": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_EVIDENCE_V1.json",
+      "bytes": 1896,
+      "sha256": "3b189a37ce2ab0e37e23d3a4697fcc23a3fe477159494c2b2e5afbdf555486b9"
+    },
+    "pre_materialization_manifest": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "bytes": 9632,
+      "sha256": "03e57b5c267157c14e50e3f02d26b1a5e412b244aefeb345f8ecf85f62ae8ef4"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "checkout": {
+      "path": "/tmp/g77_256dy/checkout",
+      "head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+      "tree": "7fc9171363a281f748321c37f269d63a315d4594",
+      "status_empty": true,
+      "guest_export_read_only": true
+    },
+    "materialization": {
+      "overlay": {
+        "path": "/tmp/g77_256dy/guest-overlay.qcow2",
+        "bytes": 196664,
+        "sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2"
+      },
+      "overlay_qemu_img_check": "PASS",
+      "seed": {
+        "path": "/tmp/g77_256dy/nocloud-seed.img",
+        "bytes": 376832,
+        "sha256": "2b87154ed578dbf87ceae841a3df227e01567d0394008c9e1e82678c62249448"
+      },
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "pre_boot_seed_refresh_count": 1,
+      "finalized_seed_materialization_count": 1,
+      "pre_boot_refresh_reason": "DETACHED_WORKTREE_GIT_METADATA_REQUIRED_READ_ONLY_GUEST_EXPORT__DISCOVERED_AND_CLOSED_BEFORE_FIRST_BOOT"
+    },
+    "cloud_init": {
+      "G77_256DY_CLOUD_INIT_META_DATA_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_META_DATA_V1.yaml",
+        "bytes": 90,
+        "sha256": "795331b9c4e54c4860851e438ee9729ba0fd23e53e742df83b26bca41da7b56d"
+      },
+      "G77_256DY_CLOUD_INIT_NETWORK_CONFIG_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_NETWORK_CONFIG_V1.yaml",
+        "bytes": 26,
+        "sha256": "f4b767b0ddb3b9a3a69d40e33c5c4d6f26e6489085b58313f00eb0a5e1242a25"
+      },
+      "G77_256DY_CLOUD_INIT_USER_DATA_V1.yaml": {
+        "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CLOUD_INIT_USER_DATA_V1.yaml",
+        "bytes": 1150,
+        "sha256": "3ca78941ef9d0f6095d9e1b94974e49e9460eb58136a2181188a30fbd31cad29"
+      }
+    },
+    "harness": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/harness/G77_256DY_P11_OPERATIONAL_HARNESS_V1.py",
+      "bytes": 53404,
+      "sha256": "0ae786281c4a1296f0254f820f7528043de11c507aa4da998c533ec42e0a14dc"
+    },
+    "raw_schema": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/G77_256DY_RAW_EVIDENCE_SCHEMA_V1.json",
+      "bytes": 619,
+      "sha256": "de7412ce3d62ee442a18c2ec3f1393cddff63c4a8ed6381fbed78ea0d7b4d265"
+    },
+    "qemu_command": [
+      "qemu-system-x86_64",
+      "-name",
+      "g77-256dy-one-e05-unknown-authority",
+      "-machine",
+      "pc,accel=tcg",
+      "-cpu",
+      "max",
+      "-smp",
+      "2",
+      "-m",
+      "1536",
+      "-nodefaults",
+      "-no-reboot",
+      "-display",
+      "none",
+      "-monitor",
+      "none",
+      "-serial",
+      "file:/tmp/g77_256dy/serial.log",
+      "-drive",
+      "file=/tmp/g77_256dy/guest-overlay.qcow2,if=virtio,format=qcow2",
+      "-drive",
+      "file=/tmp/g77_256dy/nocloud-seed.img,if=virtio,format=raw,readonly=on",
+      "-device",
+      "virtio-rng-pci",
+      "-virtfs",
+      "local,path=/home/pisarna/work/sapianta/.git,mount_tag=aigol_git,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs",
+      "local,path=/tmp/g77_256dy/checkout,mount_tag=aigol_checkout,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs",
+      "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/harness,mount_tag=dp_harness,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs",
+      "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness,mount_tag=g77_harness,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs",
+      "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dy_p11_operational_v1/raw,mount_tag=g77_evidence,security_model=none,multidevs=remap",
+      "-nic",
+      "none"
+    ],
+    "completed_gates": [
+      "CANONICAL_V1_ALL_FOUR_PRE_MATERIALIZATION_GATES",
+      "DT_FAILURE_CLASS_REGRESSION_GATE",
+      "EXACT_CHECKOUT",
+      "ONE_OVERLAY",
+      "ONE_SEED",
+      "QEMU_IMG_CHECK",
+      "PRE_BOOT_DETACHED_WORKTREE_GIT_METADATA_READ_ONLY_EXPORT"
+    ],
+    "pending_gates": [
+      "CHECKPOINT_AUTHENTICATION",
+      "ONE_VM_BOOT",
+      "P01_P12_COMMISSIONING",
+      "ONE_UNKNOWN_AUTHORITY_E05_CASE",
+      "TEARDOWN",
+      "FINAL_SEAL",
+      "G48"
+    ],
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "p11_entry_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "exact_next_legal_action": "AUTHENTICATE_MATERIALIZATION_CHECKPOINT__THEN_BOOT_EXACTLY_ONE_NO_NIC_VM_ONCE",
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "1682977611d2d3cb8a0f8f287654e91c641905c546ba9419a0bcaddae4a31d6e"
+}

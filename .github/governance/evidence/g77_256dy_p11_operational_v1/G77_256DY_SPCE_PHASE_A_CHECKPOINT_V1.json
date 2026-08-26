@@ -1,0 +1,243 @@
+{
+  "schema_id": "G77_256DY_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DY_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256DY_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_UNKNOWN_AUTHORITY_P11_GENERATION_V1",
+    "required_head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+    "source_tree": "7fc9171363a281f748321c37f269d63a315d4594",
+    "entry_gate": {
+      "git_status_short": "",
+      "git_rev_parse_head": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+      "git_log_1_oneline": "94b4397e G77-256DX reduce P11 E05 completion frontier",
+      "result": "PASS"
+    },
+    "minimum_lineage": [
+      {
+        "identity": "G77_256CD_E01_E12_PLAN",
+        "path": "docs/governance/G77_256CD_P11_PRE_IMPLEMENTATION_EVIDENCE_GENERATION_AND_VALIDATION_PLAN_V1.md",
+        "sha256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670",
+        "git_blob": "af571dcc903c4609dc3eda958ac1f420cf0c92aa",
+        "bytes": 64845
+      },
+      {
+        "identity": "G77_256CC_D_A_CONTRACT",
+        "path": "docs/governance/G77_256CC_P11_SELECTED_D_A_CATEGORY_D_EXACT_BOUNDED_CONTRACT_DEFINITION_WITHOUT_IMPLEMENTATION_V1.md",
+        "sha256": "75222f6f1dfb2fb9a5d774a0517c7f3a8e133652edbffb34622dcafd9d0ecb4a",
+        "git_blob": "ac49602dde85cf364c2b3c3c7086882c358cb1e4",
+        "bytes": 50833
+      },
+      {
+        "identity": "G77_256DQ_G48_REPORT",
+        "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+        "sha256": "6273d2df46687670d9f938874bf9b700f554b10feed5bb11892c462d5a7a6906",
+        "git_blob": "6afd5d762d24ca472b9dd2561bf77f0927946e34",
+        "bytes": 31754
+      },
+      {
+        "identity": "G77_256DQ_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/G77_256DQ_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86",
+        "git_blob": "f0e4cbcd402d98428f4cf05166b423a1f41a9386",
+        "bytes": 7677
+      },
+      {
+        "identity": "G77_256DQ_TERMINAL_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_CONTINUATION_MANIFEST_V1.json",
+        "sha256": "3bd083eea99c203908d1b42e6a3065ee047c4fcaf3699681e41d613147fbfe79",
+        "git_blob": "989773417c31afab8849546d4ac9c543dd8dc2dc",
+        "bytes": 4922
+      },
+      {
+        "identity": "G77_256DQ_RAW_EXECUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "sha256": "3800184b49956536ae7ea3605df4d52607652b45de87b2635d8d8137d78474e4",
+        "git_blob": "c22c7bd883fe4dda85c266f513ff6ac56113aafb",
+        "bytes": 65772
+      },
+      {
+        "identity": "G77_256DU_G48_REPORT",
+        "path": "docs/governance/G77_256DU_SPCE_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_AND_PRE_MATERIALIZATION_PRODUCER_CONSUMER_COMPATIBILITY_CERTIFICATION_V1.md",
+        "sha256": "1a2cb18b92d843cb9297df0ceaf90f242e772d0ff4c22f1d49f75f3d33a1a3b2",
+        "git_blob": "b50122866ae44b05b0e693772be439427d313f4d",
+        "bytes": 24788
+      },
+      {
+        "identity": "G77_256DU_CONTRACT",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1.md",
+        "sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "git_blob": "52a581514b893781ae966de707916fcd952dcca3",
+        "bytes": 13898
+      },
+      {
+        "identity": "G77_256DU_SCHEMA",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+        "sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "git_blob": "88c860bbdfdc52045ec4fcacddb540655ebbba1b",
+        "bytes": 9820
+      },
+      {
+        "identity": "G77_256DU_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+        "sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "git_blob": "44b7138dcad33a70ab63f7b988857d04519986f6",
+        "bytes": 36468
+      },
+      {
+        "identity": "G77_256DW_G48_REPORT",
+        "path": "docs/governance/G77_256DW_ONE_FRESH_BOUNDED_E05_CONCURRENCY_GENERATION_USING_CERTIFIED_CANONICAL_V1_PRE_MATERIALIZATION_COMPATIBILITY_GATE_WITH_CROSS_ACCOUNT_RESUMABLE_SPCE_EVIDENCE_V1.md",
+        "sha256": "e838ed409132accd7640d1261ab1b8ef0dc30acac8388451976cb55c49d147ef",
+        "git_blob": "f802d701a70f8b72892ff3c1829594a16765142e",
+        "bytes": 22285
+      },
+      {
+        "identity": "G77_256DW_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/G77_256DW_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "171ab94dca82ded312e69f31478748c68031b5515b5583cd776e4149d03f34e0",
+        "git_blob": "ebf06d53ddf0e158426aa66e359c0c635106d1dc",
+        "bytes": 5745
+      },
+      {
+        "identity": "G77_256DW_TERMINAL_CANONICAL_V1_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_CANONICAL_CONTINUATION_MANIFEST_TERMINAL_V1.json",
+        "sha256": "5321ab9afac7369be5e9965977c545695ff23c63ca2a271fae852a02f8ce8368",
+        "git_blob": "c5d7c936abf09345de39c6438ea40151a2582652",
+        "bytes": 10200
+      },
+      {
+        "identity": "G77_256DW_RAW_EXECUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "sha256": "653d8edca05bd4b413c0445ee672b339f15e47fddc7d43097658018b4fb76171",
+        "git_blob": "573dba81137401ffbfce20ec019c8be18f8c230c",
+        "bytes": 70047
+      },
+      {
+        "identity": "G77_256DX_G48_REPORT",
+        "path": "docs/governance/G77_256DX_POST_DW_P11_E05_COMPLETION_REDUCTION_AND_EXACT_CD_FRONTIER_DETERMINATION_FROM_AUTHENTICATED_REPOSITORY_EVIDENCE_V1.md",
+        "sha256": "0ba6d2c226a8a58018c68a1ac4f738bb9446b7099e6a565124ddd95eb6af1316",
+        "git_blob": "0f422d739c234a022ac394a149567df5d1eefc66",
+        "bytes": 21760
+      },
+      {
+        "identity": "G77_256DX_PHASE_D_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256dx_p11_e05_completion_reduction_v1/G77_256DX_SPCE_PHASE_D_CHECKPOINT_V1.json",
+        "sha256": "52d486112e1093dcbe8629bed9eb1b3b9ed41cddebde1081609c9eab05f432f3",
+        "git_blob": "b9e834921d3a19efc71cbddaa107f394d7811ee3",
+        "bytes": 16214
+      },
+      {
+        "identity": "G48_REPORTING_STANDARD",
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb",
+        "git_blob": "095c16f14c54d8b36330d47a653a122ee07a441c",
+        "bytes": 21285
+      }
+    ],
+    "minimum_lineage_artifact_count": 17,
+    "case_selection": {
+      "selected_e05_vector": "UNKNOWN",
+      "case_class": "E05_NEGATIVE_AUTHORITY",
+      "case_id": "G77_256DY_E05_UNKNOWN_AUTHORITY_DENIAL_BEFORE_ATTEMPT_001",
+      "evidence_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/UNKNOWN",
+      "expected_authority_semantics": "OPAQUE_REFERENCE_WITH_NO_SUBMITTED_OR_AUTHORITATIVE_OWNER_STATE_IS_NOT_AUTHORITY",
+      "expected_denial_result": "FAIL_CLOSED_AT_D2_PROTECTED_AUTHORITY_RESOLUTION_BEFORE_PRECLAIM",
+      "expected_zero_effect_result": "ZERO_ACT_CLAIM_INVOCATION_LEDGER_P12_OR_PRODUCTION_EFFECT",
+      "selection_rationale": "EXPLICIT_CD_REQUIREMENT_AND_DX_GAP__EARLIEST_D2_RESOLUTION_DENIAL__NO_ACT_OR_STATE_TRANSITION_FIXTURE__MAXIMUM_REUSE_OF_DW_COMMISSIONING__NO_DQ_POSITIVE_OR_DW_CONCURRENCY_DUPLICATION",
+      "selection_source_bindings": [
+        "G77_256CD_E01_E12_PLAN:P11-E05_FIELDS_6_10",
+        "G77_256CC_D_A_CONTRACT:EXACT_REJECTION_SET",
+        "G77_256DX_PHASE_D_CHECKPOINT:NEGATIVE_AUTHORITY_VECTOR_MATRIX/UNKNOWN"
+      ],
+      "why_other_vector_not_required_first": "CD_IMPOSES_NO_ORDER_AMONG_DISTINCT_NEGATIVE_VECTORS__AMBIGUITY_CLOCK_STATE_COORDINATE_AND_COPY_VECTORS_REQUIRE_MORE_NEW_SEMANTIC_FIXTURE_SURFACE"
+    },
+    "canonical_v1": {
+      "contract_identity": "G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1",
+      "contract_version": "1.0.0",
+      "schema_identity": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1",
+      "schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "validator_identity": "G77_256DU_PRE_MATERIALIZATION_CONSUMER_VALIDATOR_V1",
+      "validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "all_four_gates_required": true,
+      "validation_must_precede_materialization": true
+    },
+    "dy_harness": {
+      "identity": "G77_256DY_P11_OPERATIONAL_HARNESS_V1",
+      "path": ".github/governance/evidence/g77_256dy_p11_operational_v1/harness/G77_256DY_P11_OPERATIONAL_HARNESS_V1.py",
+      "sha256": "0ae786281c4a1296f0254f820f7528043de11c507aa4da998c533ec42e0a14dc"
+    },
+    "dy_raw_schema": {
+      "identity": "G77_256DY_RAW_EVIDENCE_SCHEMA_V1",
+      "path": ".github/governance/evidence/g77_256dy_p11_operational_v1/G77_256DY_RAW_EVIDENCE_SCHEMA_V1.json",
+      "sha256": "de7412ce3d62ee442a18c2ec3f1393cddff63c4a8ed6381fbed78ea0d7b4d265"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "execution_budget": {
+      "vm_creation_count_max": 1,
+      "vm_boot_count_max": 1,
+      "second_vm_count": 0,
+      "e05_case_execution_count_max": 1,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "g3_entry_authorized": false
+    },
+    "execution_counters": {
+      "automatic_retry_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "execution_replay_count": 0,
+      "full_history_reconstruction_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "repair_and_continue_count": 0,
+      "second_vm_count": 0,
+      "vm_boot_count": 0,
+      "vm_creation_count": 0
+    },
+    "case_counters": {
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "e05_concurrency_contender_count": 0,
+      "e05_concurrency_loser_count": 0,
+      "e05_concurrency_winner_count": 0,
+      "p01_p12_executed_count": 0,
+      "p01_p12_pass_count": 0
+    },
+    "completed_gates": [
+      "ENTRY_GATE",
+      "MINIMUM_LINEAGE_AUTHENTICATION",
+      "DETERMINISTIC_SINGLE_VECTOR_SELECTION",
+      "HARNESS_AST",
+      "RAW_SCHEMA_PARSE",
+      "BASE_IMAGE_AUTHENTICATION",
+      "CANONICAL_V1_STATE_CONSTRUCTION"
+    ],
+    "pending_gates": [
+      "CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION",
+      "ONE_MATERIALIZATION",
+      "ONE_VM_BOOT",
+      "P01_P12_COMMISSIONING",
+      "ONE_UNKNOWN_AUTHORITY_E05_CASE",
+      "TEARDOWN",
+      "FINAL_SEAL",
+      "G48"
+    ],
+    "exact_next_legal_action": "VALIDATE_CANONICAL_V1_ALL_FOUR_GATES__FAIL_CLOSED_WITH_ZERO_VM_IF_ANY_GATE_FAILS",
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "f49846b0e3940f846ad539af07ff91bcbbe8ae53bb46e5b7f4bd007b8810ffb4"
+}
