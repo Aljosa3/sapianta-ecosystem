@@ -1,0 +1,103 @@
+{
+  "schema_id": "G77_256DN_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DN_SPCE_PHASE_A_CHECKPOINT_V1",
+    "phase": "PHASE_A_RECONSTRUCTION_AND_PREPARATION",
+    "phase_result": "PASS__ONE_OVERLAY_AND_SEED_MATERIALIZED__VM_NOT_STARTED",
+    "source": {
+      "commit": "e732a9009b61ff1efb3d70f307abe7fcdcd9db05",
+      "tree": "2ef0ea8d61586e09887723cb1b40b2cb6f29a04b"
+    },
+    "dm": {
+      "git_blob": "bb915fd41d7eb99dc7841f365177da3c1ec80639",
+      "raw_sha256": "0ec16200b0f7f4b417d4c7fafb50f033322a9b885170d913b505198ffa80a83c",
+      "diagnostic_seal_sha256": "72d07c6950d154f9578102f7ae611edac6737289763fefb27e8ad61dda38338f"
+    },
+    "da_comparator": {
+      "git_blob": "3eaa68065a03c038e0b9670fbcda53b3afb06968",
+      "raw_sha256": "7be68dd48bcadf6fb41f48780799e415d1ff1a7260c02f0cf7f0726b5d4a845a",
+      "p03_result": "PASS__18_OF_18_PERMISSION_DENIALS__FOUR_SAME_FILESYSTEM_RENAME_REPLACE_EACCES__TARGET_PRESERVED"
+    },
+    "minimum_lineage": {
+      "CK": "cfc92ee9e9f6c98fc429eefeccdb080dd4e85fe3c7ce41f8b62e9ce72981a374",
+      "CY": "16106915f2d09e16362d501c0094bd3479830fc3d132fd9ca3615a1702961c1c",
+      "DE": "994f000e74e4b2a163f1580d6b054719d37c4001ee461f9716a80c13047cff5d",
+      "DI": "7b35b21ae77594955f3cd74587c24c4a84f15f83d9bf6d86618d7a71f95a5f83",
+      "DL": "8381b8c09ba702843351cdfd4c1a520758c68b1f5de3ab8c6d3682760e75b52b",
+      "DK": "f42d9a307afdbdc7fb452ebfc13a0932b991f88afca546f3d5f6e4e889de14e9",
+      "G48": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb"
+    },
+    "diagnostic_harness": {
+      "path": ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness/G77_256DN_P03_DIAGNOSTIC_HARNESS_V1.py",
+      "sha256": "4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb",
+      "bytes": 18037,
+      "lines": 489
+    },
+    "evidence_schema": {
+      "path": ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/G77_256DN_P03_EVIDENCE_SCHEMA_V1.json",
+      "sha256": "a812d9163f67aa37fabd281de418bf29a7b6a3fd22a0066e5de02c8107f90a84"
+    },
+    "evidence_sink": ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/raw",
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS__NO_ERRORS"
+    },
+    "checkout": {
+      "host_path": "/tmp/g77_256dn/checkout",
+      "guest_path": "/mnt/aigol",
+      "expected_head": "e732a9009b61ff1efb3d70f307abe7fcdcd9db05",
+      "expected_tree": "2ef0ea8d61586e09887723cb1b40b2cb6f29a04b",
+      "host_status_empty": true,
+      "guest_export_read_only": true
+    },
+    "cloud_init": {
+      "user_data_sha256": "19f54a7d8c25d5e09db0b094558f492d2edbc2a8489a1f9aac974296e25c5f52",
+      "meta_data_sha256": "6b6844b1ccc454941bc37c079dc680b5c43ddad163e5ce98816215a69919027b",
+      "network_config_sha256": "639b6f419a9ac49312b218e12395dc7e7d623d96202c3315a92dcd19d6fa02ba"
+    },
+    "materialization": {
+      "overlay_path": "/tmp/g77_256dn/guest-overlay.qcow2",
+      "overlay_initial_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_initial_bytes": 196664,
+      "overlay_qemu_img_check": "PASS__NO_ERRORS",
+      "nocloud_seed_path": "/tmp/g77_256dn/nocloud-seed.img",
+      "nocloud_seed_sha256": "5e75b337ea85282171dd46a68e11e2a98c85ef5f0c1f37bf633b07a3f93208bb",
+      "nocloud_seed_bytes": 376832,
+      "vm_start_count": 0
+    },
+    "qemu_command": [
+      "qemu-system-x86_64",
+      "-name", "g77-256dn-p03-diagnostic",
+      "-machine", "pc,accel=tcg",
+      "-cpu", "max",
+      "-smp", "2",
+      "-m", "1536",
+      "-nodefaults",
+      "-no-reboot",
+      "-display", "none",
+      "-monitor", "none",
+      "-serial", "file:/tmp/g77_256dn/serial.log",
+      "-drive", "file=/tmp/g77_256dn/guest-overlay.qcow2,if=virtio,format=qcow2",
+      "-drive", "file=/tmp/g77_256dn/nocloud-seed.img,if=virtio,format=raw,readonly=on",
+      "-device", "virtio-rng-pci",
+      "-virtfs", "local,path=/tmp/g77_256dn/checkout,mount_tag=aigol_checkout,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness,mount_tag=g77_harness,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dn_p03_diagnostic_v1/raw,mount_tag=g77_evidence,security_model=none,multidevs=remap",
+      "-nic", "none"
+    ],
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "p11_entry_count": 0,
+      "e01_e12_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "full_history_reconstruction": false,
+    "seal_is_authority": false,
+    "exact_next_frontier": "START_THE_SINGLE_MATERIALIZED_NON_OPERATIONAL_P03_ONLY_VM_ONCE_AND_PERSIST_RAW_PER_PROBE_EVIDENCE_BEFORE_TEARDOWN"
+  },
+  "seal_sha256": "703ac9066e257330ad3ad6a6f1c70b79439932613a99757d71eaf8dbaecfa3eb"
+}

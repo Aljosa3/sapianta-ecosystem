@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "G77_256DN_P03_EVIDENCE_SCHEMA_V1",
+  "description": "Canonical JSON Lines record contract for one bounded non-operational P03-only diagnostic generation.",
+  "type": "object",
+  "required": ["schema_id", "record_type"],
+  "properties": {
+    "schema_id": {"const": "G77_256DN_P03_RAW_EVIDENCE_V1"},
+    "record_type": {
+      "enum": [
+        "harness_authentication",
+        "probe_context",
+        "prerequisite_failure",
+        "fixture",
+        "probe",
+        "aggregate",
+        "harness_failure",
+        "teardown"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_type": {"const": "probe"}}},
+      "then": {
+        "required": [
+          "role",
+          "effect",
+          "actor",
+          "endpoint_parent_before",
+          "target_before",
+          "source_before",
+          "source_inside_endpoint_parent",
+          "source_and_target_same_device",
+          "operation_succeeded",
+          "errno_number",
+          "errno_symbolic_name",
+          "source_exists_after",
+          "source_after",
+          "target_after",
+          "target_identity_preserved_after",
+          "classification"
+        ]
+      }
+    },
+    {
+      "if": {"properties": {"record_type": {"const": "aggregate"}}},
+      "then": {
+        "required": [
+          "result",
+          "probe_count",
+          "accepted_denial_count",
+          "rename_replace_probe_count",
+          "same_filesystem_rename_replace_count",
+          "successful_prohibited_effect_count",
+          "cross_filesystem_failure_count",
+          "unexpected_failure_count",
+          "all_target_identities_preserved",
+          "decision_rule"
+        ]
+      }
+    }
+  ]
+}
