@@ -1,0 +1,72 @@
+{
+  "schema_id": "G77_256DP_SPCE_MATERIALIZATION_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DP_SPCE_MATERIALIZATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256DP_ONE_FRESH_BOUNDED_NON_PRODUCTION_P11_GENERATION_V1",
+    "attempt_identity": "G77_256DP_G1_E12_ATTEMPT_001",
+    "source_head": "475088942b83cde3806025df00995effb310108a",
+    "source_tree": "29617d4b2e6c7b6e41c89907a2b2e27374e4ca91",
+    "phase_a_checkpoint_sha256": "148925373d819cbbc9979b46800fec2bb03e1b1bdf482f5a598b8e6c8dc03845",
+    "completed_gates": ["PHASE_A_CHECKPOINT_AUTHENTICATED", "EXACT_CHECKOUT_CLONED", "ONE_OVERLAY_CREATED", "ONE_SEED_CREATED", "OVERLAY_QEMU_IMG_CHECK"],
+    "pending_gates": ["ONE_VM_BOOT", "P01_P12_COMMISSIONING", "ACT_CREATION", "ACT_SUBMISSION", "P11_G1_E12_ONE_ATTEMPT", "TERMINAL_BIND", "PERMANENT_EXHAUSTION", "TEARDOWN", "G48_FINALIZATION"],
+    "checkout": {
+      "host_path": "/tmp/g77_256dp/checkout",
+      "expected_head": "475088942b83cde3806025df00995effb310108a",
+      "expected_tree": "29617d4b2e6c7b6e41c89907a2b2e27374e4ca91",
+      "host_status_empty": true,
+      "guest_export_read_only": true
+    },
+    "cloud_init": {
+      "user_data_sha256": "21063d3bf5bc6e019e7b6aac0474e838d733d6591953b43af4c1ae7fa4a8b668",
+      "meta_data_sha256": "8d445ddaa810d943566a39302a7a76999e3df7d9f39c7c0d8e27e8ede7658ec1",
+      "network_config_sha256": "f4b767b0ddb3b9a3a69d40e33c5c4d6f26e6489085b58313f00eb0a5e1242a25"
+    },
+    "materialization": {
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_initial_sha256": "57b1c578a8c11c11f901075e90ccb73548ea1851c1ffa37f8b128d7f38093ea7",
+      "overlay_initial_bytes": 196864,
+      "overlay_qemu_img_check": "PASS__NO_ERRORS",
+      "nocloud_seed_sha256": "8ba60fdb22a446c852e1878bf8f7d0206cccced5df70b7d2a7cd6cf1c94d68cc",
+      "nocloud_seed_bytes": 376832,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0
+    },
+    "qemu_command": [
+      "qemu-system-x86_64", "-name", "g77-256dp-one-p11",
+      "-machine", "pc,accel=tcg", "-cpu", "max", "-smp", "2", "-m", "1536",
+      "-nodefaults", "-no-reboot", "-display", "none", "-monitor", "none",
+      "-serial", "file:/tmp/g77_256dp/serial.log",
+      "-drive", "file=/tmp/g77_256dp/guest-overlay.qcow2,if=virtio,format=qcow2",
+      "-drive", "file=/tmp/g77_256dp/nocloud-seed.img,if=virtio,format=raw,readonly=on",
+      "-device", "virtio-rng-pci",
+      "-virtfs", "local,path=/tmp/g77_256dp/checkout,mount_tag=aigol_checkout,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dp_p11_operational_v1/harness,mount_tag=dp_harness,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness,mount_tag=g77_harness,security_model=none,readonly=on,multidevs=remap",
+      "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dp_p11_operational_v1/raw,mount_tag=g77_evidence,security_model=none,multidevs=remap",
+      "-nic", "none"
+    ],
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "human_operational_act_creation_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "authority_disposition": "GENERATION_AUTHORIZED__ACT_AUTHORIZED_BUT_NOT_CREATED__CHECKPOINT_IS_NOT_AUTHORITY",
+    "raw_evidence_identities": [],
+    "first_failure": null,
+    "teardown_state": "PENDING",
+    "current_frontier": "BOOT_THE_SINGLE_MATERIALIZED_VM_EXACTLY_ONCE",
+    "continuation": "ONE_BOOT_PERMITTED__NO_REPLAY__NO_RETRY__NO_SECOND_VM__ACT_ONLY_AFTER_ALL_P01_P12_GATES_PASS"
+  },
+  "seal_sha256": "134f4b14fb95612169b8c17e97c366b3b53aedcbaf330415a73b5346877e1e9a"
+}

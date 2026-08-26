@@ -1,0 +1,103 @@
+{
+  "schema_id": "G77_256DP_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DP_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256DP_ONE_FRESH_BOUNDED_NON_PRODUCTION_P11_GENERATION_V1",
+    "attempt_identity": "G77_256DP_G1_E12_ATTEMPT_001",
+    "planned_human_operational_act_identity": "G77_256DP_EXACT_CURRENT_ONE_USE_HUMAN_OPERATIONAL_ACT_001",
+    "source_head": "475088942b83cde3806025df00995effb310108a",
+    "source_tree": "29617d4b2e6c7b6e41c89907a2b2e27374e4ca91",
+    "initial_checkpoint": {
+      "git_status_short": "",
+      "git_rev_parse_head": "475088942b83cde3806025df00995effb310108a",
+      "git_log_1_oneline": "47508894 G77-256DO bind historical DL evidence gap decision",
+      "result": "PASS"
+    },
+    "minimum_authenticated_lineage": [
+      {"identity": "G77_256DO", "sha256": "c96685b941635aed646fd61a936d891a5e3c2758d5c3b22fcd744ceabff61adb", "git_blob": "133e25c4443d1db33eb52a07bc8942733beedbf1"},
+      {"identity": "G77_256DN", "sha256": "c2357e386d515633aa01429c9aa1ed14f87c5a0a8e212f28897354212adae25d"},
+      {"identity": "G77_256DK", "sha256": "f42d9a307afdbdc7fb452ebfc13a0932b991f88afca546f3d5f6e4e889de14e9"},
+      {"identity": "G77_256DI", "sha256": "7b35b21ae77594955f3cd74587c24c4a84f15f83d9bf6d86618d7a71f95a5f83"},
+      {"identity": "G77_256CH", "sha256": "d07f6eae99abd6f95b37553c84eb226298e40e5c61f42f5597980d784a16e2ce"},
+      {"identity": "G77_256CD", "sha256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670"},
+      {"identity": "G77_256CY", "sha256": "16106915f2d09e16362d501c0094bd3479830fc3d132fd9ca3615a1702961c1c"},
+      {"identity": "G77_256CK", "sha256": "cfc92ee9e9f6c98fc429eefeccdb080dd4e85fe3c7ce41f8b62e9ce72981a374"},
+      {"identity": "G77_256CG", "sha256": "ea02817baa1d28de78edc968d2962a116d5d9eddefbb5ab340b5d0f8de88acaa", "checkpoint": "bccbb46a65ebc0de7a0c421e4c871b8487d3bb0c"}
+    ],
+    "bound_implementation": [
+      {"path": "tests/p11_da_operational_consumer_v1.py", "sha256": "220e41ee3ea8fa6b21ecebe62aa4436b816d9b7678d251e18979fa87b160fc4e"},
+      {"path": "tests/p11_da_disposable_substrate_v1.py", "sha256": "a1b58fa8ddedb5058393aa23d815262c92c8b185c0b193764f77420313af0bab"},
+      {"path": "tests/p11_da_custody_process_v1.py", "sha256": "ffd663e68b0efcb1c960bc513a7911372ab06d07971aea071e98f502764ffd9c"},
+      {"path": "aigol/runtime/canonical_human_authority_act_contract_v1.py", "sha256": "905ce577c31c2c538033455d1633470a34e9f7a94edd6190d50932e97ba8ebc8"},
+      {"path": "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py", "sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5"}
+    ],
+    "diagnostic_evidence_reuse": {
+      "dn_harness_sha256": "4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb",
+      "dn_retained_raw_sha256": "ae386841e0d87c3f6b052d11ee92f39986eec0a713d2edacc2ffa032a93b0dcd",
+      "dn_guest_seal_sha256": "dda7990aa2bf5c04161d1d4b923860e291093dfe88c48cbb6a691a76cc2916ce",
+      "dn_final_seal_sha256": "f1b221e1efa6f228661c9bea112e5ff6f7f249b955588a697c6ff79667828005",
+      "historical_dl_gap_state": "KNOWN_UNRECOVERABLE_HISTORICAL_EVIDENCE_GAP",
+      "historical_dl_a_f_classification": "PERMANENTLY_INDETERMINATE_FROM_AVAILABLE_AUTHENTICATED_EVIDENCE",
+      "dn_current_p03_result": "PASS__PROSPECTIVE_EVIDENCE_ONLY",
+      "dn_evidence_may_reconstruct_dl": false,
+      "further_dl_root_cause_diagnostic_required": false
+    },
+    "harness_identity": {
+      "path": ".github/governance/evidence/g77_256dp_p11_operational_v1/harness/G77_256DP_P11_OPERATIONAL_HARNESS_V1.py",
+      "sha256": "049b9e1d78f34ef29f4fe3f5c0cdb2d79505949336256c7f37820926f12c2208",
+      "line_count": 1173,
+      "byte_count": 50690
+    },
+    "raw_evidence_schema_identity": {
+      "path": ".github/governance/evidence/g77_256dp_p11_operational_v1/G77_256DP_RAW_EVIDENCE_SCHEMA_V1.json",
+      "sha256": "b82fbdd58de2376c9cb52a9a703d2d84af9d30ccbe43620fe6ef4ead2bede53d"
+    },
+    "environment_plan": {
+      "base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "checkout_mount": "READ_ONLY_9P",
+      "harness_mount": "READ_ONLY_9P",
+      "evidence_mount": "WRITABLE_9P_REPOSITORY_RESIDENT_SINK",
+      "network": "NONE",
+      "vm_limit": 1
+    },
+    "authority_disposition": {
+      "generation_authorized": true,
+      "one_exact_current_human_operational_act_authorized": true,
+      "act_created": false,
+      "act_claimed": false,
+      "act_invoked": false,
+      "act_terminally_bound": false,
+      "act_permanently_exhausted": false,
+      "checkpoint_is_authority": false,
+      "authority_transferable_or_reusable": false
+    },
+    "completed_gates": ["MANDATORY_INITIAL_CHECKPOINT", "DO_BYTE_AUTHENTICATION", "MINIMUM_LINEAGE_AUTHENTICATION", "HARNESS_DEFINITION", "RAW_EVIDENCE_SCHEMA_DEFINITION", "HARNESS_COMPILE", "SCHEMA_PARSE"],
+    "pending_gates": ["VM_MATERIALIZATION", "VM_BOOT", "P01_P12_COMMISSIONING", "ACT_CREATION", "ACT_SUBMISSION", "P11_G1_E12_ONE_ATTEMPT", "TERMINAL_BIND", "PERMANENT_EXHAUSTION", "TEARDOWN", "G48_FINALIZATION"],
+    "execution_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "human_operational_act_creation_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "raw_evidence_identities": [],
+    "spce_phase": "PHASE_A_PRE_MATERIALIZATION",
+    "first_failure": null,
+    "teardown_state": "NOT_APPLICABLE_VM_NOT_CREATED",
+    "full_history_reconstruction": false,
+    "clrec_state": "CANDIDATE_ONLY__NOT_CERTIFIED",
+    "current_frontier": "MATERIALIZE_AT_MOST_ONE_DISPOSABLE_VM_THEN_RUN_P01_P12_GATES_BEFORE_ACT_CREATION",
+    "continuation": "AUTHORIZED_ONLY_WITHIN_THIS_EXACT_DP_GENERATION__NO_REPLAY__NO_RETRY__NO_SECOND_VM__NO_SECOND_ACT__NO_SECOND_ATTEMPT__NO_P12_ENTRY__NO_PRODUCTION"
+  },
+  "seal_sha256": "148925373d819cbbc9979b46800fec2bb03e1b1bdf482f5a598b8e6c8dc03845"
+}
