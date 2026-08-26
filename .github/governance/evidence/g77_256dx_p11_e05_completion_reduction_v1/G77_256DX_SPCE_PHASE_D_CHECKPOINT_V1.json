@@ -1,0 +1,327 @@
+{
+  "schema_id": "G77_256DX_SPCE_PHASE_D_CHECKPOINT_V1",
+  "seal_sha256": "d69f2fa33d4ffae1512a71e686dfc602d28fe52e585b0e52c3b21e269a47f8ef",
+  "seal": {
+    "schema_id": "G77_256DX_SPCE_PHASE_D_CHECKPOINT_INNER_V1",
+    "generation_identity": "G77_256DX_POST_DW_P11_E05_COMPLETION_REDUCTION_AND_EXACT_CD_FRONTIER_V1",
+    "required_head": "5d5c31edc829787af6b667fcc046c5e27df0f55b",
+    "source_tree": "ee9337a577ce5f59ce51a34ad0b793e41c4ee35a",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false,
+    "minimum_lineage_artifact_count": 13,
+    "artifact_bindings": [
+      {
+        "identity": "G77_256CD_E01_E12_PLAN",
+        "path": "docs/governance/G77_256CD_P11_PRE_IMPLEMENTATION_EVIDENCE_GENERATION_AND_VALIDATION_PLAN_V1.md",
+        "sha256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670",
+        "git_blob": "af571dcc903c4609dc3eda958ac1f420cf0c92aa",
+        "bytes": 64845
+      },
+      {
+        "identity": "G77_256CC_D_A_CONTRACT",
+        "path": "docs/governance/G77_256CC_P11_SELECTED_D_A_CATEGORY_D_EXACT_BOUNDED_CONTRACT_DEFINITION_WITHOUT_IMPLEMENTATION_V1.md",
+        "sha256": "75222f6f1dfb2fb9a5d774a0517c7f3a8e133652edbffb34622dcafd9d0ecb4a",
+        "git_blob": "ac49602dde85cf364c2b3c3c7086882c358cb1e4",
+        "bytes": 50833
+      },
+      {
+        "identity": "G77_256DQ_G48_REPORT",
+        "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+        "sha256": "6273d2df46687670d9f938874bf9b700f554b10feed5bb11892c462d5a7a6906",
+        "git_blob": "6afd5d762d24ca472b9dd2561bf77f0927946e34",
+        "bytes": 31754
+      },
+      {
+        "identity": "G77_256DQ_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/G77_256DQ_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86",
+        "git_blob": "f0e4cbcd402d98428f4cf05166b423a1f41a9386",
+        "bytes": 7677
+      },
+      {
+        "identity": "G77_256DQ_TERMINAL_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_CONTINUATION_MANIFEST_V1.json",
+        "sha256": "3bd083eea99c203908d1b42e6a3065ee047c4fcaf3699681e41d613147fbfe79",
+        "git_blob": "989773417c31afab8849546d4ac9c543dd8dc2dc",
+        "bytes": 4922
+      },
+      {
+        "identity": "G77_256DQ_RAW_EXECUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "sha256": "3800184b49956536ae7ea3605df4d52607652b45de87b2635d8d8137d78474e4",
+        "git_blob": "c22c7bd883fe4dda85c266f513ff6ac56113aafb",
+        "bytes": 65772
+      },
+      {
+        "identity": "G77_256DQ_GUEST_TEARDOWN_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_GUEST_TEARDOWN_SEAL_V1.json",
+        "sha256": "afb5f662c992278c20c1d6d2d3c397afa976ebacbaa3604fe7e797568c4b7c7b",
+        "git_blob": "6c4d2452a5f40cb02b4265792d3e0019d0a59b12",
+        "bytes": 904
+      },
+      {
+        "identity": "G77_256DW_G48_REPORT",
+        "path": "docs/governance/G77_256DW_ONE_FRESH_BOUNDED_E05_CONCURRENCY_GENERATION_USING_CERTIFIED_CANONICAL_V1_PRE_MATERIALIZATION_COMPATIBILITY_GATE_WITH_CROSS_ACCOUNT_RESUMABLE_SPCE_EVIDENCE_V1.md",
+        "sha256": "e838ed409132accd7640d1261ab1b8ef0dc30acac8388451976cb55c49d147ef",
+        "git_blob": "f802d701a70f8b72892ff3c1829594a16765142e",
+        "bytes": 22285
+      },
+      {
+        "identity": "G77_256DW_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/G77_256DW_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "171ab94dca82ded312e69f31478748c68031b5515b5583cd776e4149d03f34e0",
+        "git_blob": "ebf06d53ddf0e158426aa66e359c0c635106d1dc",
+        "bytes": 5745
+      },
+      {
+        "identity": "G77_256DW_HOST_TEARDOWN_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/G77_256DW_SPCE_HOST_TEARDOWN_CHECKPOINT_V1.json",
+        "sha256": "59bc2f41a30b4c90ee1848d48bd6a4422d0ba2dbe9ab409b1fd6e5ac985b3fa3",
+        "git_blob": "23bf38e1cc9f5bbc7137ea3e858adf2e9d3482cb",
+        "bytes": 2134
+      },
+      {
+        "identity": "G77_256DW_PHASE_E_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/G77_256DW_SPCE_PHASE_E_FINAL_CHECKPOINT_V1.json",
+        "sha256": "8698b4f5754e219d5654bd92b13cbbd684173157bf2b6020dafca5ea08ddaf32",
+        "git_blob": "a7d58df40b0b9418b8f9e2668870eb8c6643d00d",
+        "bytes": 9349
+      },
+      {
+        "identity": "G77_256DW_TERMINAL_CANONICAL_V1_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_CANONICAL_CONTINUATION_MANIFEST_TERMINAL_V1.json",
+        "sha256": "5321ab9afac7369be5e9965977c545695ff23c63ca2a271fae852a02f8ce8368",
+        "git_blob": "c5d7c936abf09345de39c6438ea40151a2582652",
+        "bytes": 10200
+      },
+      {
+        "identity": "G77_256DW_RAW_EXECUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "sha256": "653d8edca05bd4b413c0445ee672b339f15e47fddc7d43097658018b4fb76171",
+        "git_blob": "573dba81137401ffbfce20ec019c8be18f8c230c",
+        "bytes": 70047
+      }
+    ],
+    "e05_completion_matrix": [
+      {
+        "e05_obligation_id": "P11-E05/POSITIVE_AUTHORITY_BASELINE",
+        "e05_obligation_class": "E05_POSITIVE_AUTHORITY_BASELINE",
+        "required_result": "EXACT_CURRENT_NON_REVOKED_NON_SUPERSEDED_NON_EXPIRED_AVAILABLE_HUMAN_ACT__ONE_WINNING_CLAIM__TERMINAL_CONSUMPTION",
+        "authenticated_generation": "G77_256DQ",
+        "evidence_state": "SATISFIED",
+        "committed_evidence": [
+          "G77_256DQ_RAW_EXECUTION_EVIDENCE:p11_attempt_result:G2_E05_EXACT_CURRENT_AVAILABLE_ONE_WINNING_CLAIM_001",
+          "G77_256DQ_FINAL_EXECUTION_SEAL",
+          "G77_256DQ_G48_REPORT"
+        ]
+      },
+      {
+        "e05_obligation_id": "P11-E05/STATE_TRANSITION",
+        "e05_obligation_class": "E05_STATE_TRANSITION",
+        "required_result": "AUTHORITATIVE_OWNER_STATE_SERIALIZES_AVAILABLE_TO_CLAIMED_TO_CONSUMED__NO_RETURN_TO_AVAILABLE",
+        "authenticated_generation": "G77_256DQ_AND_G77_256DW",
+        "evidence_state": "SATISFIED",
+        "committed_evidence": [
+          "G77_256DQ_RAW_EXECUTION_EVIDENCE:owner_revisions_0_1_2",
+          "G77_256DW_RAW_EXECUTION_EVIDENCE:owner_revisions_0_1_2"
+        ]
+      },
+      {
+        "e05_obligation_id": "P11-E05/CONCURRENCY",
+        "e05_obligation_class": "E05_CONCURRENCY",
+        "required_result": "TWO_AUTHENTICATED_COMPETING_CLAIMS__AT_MOST_ONE_WINNER__LOSER_FAILS_CLOSED__ONE_INVOCATION__ACT_CONSUMED",
+        "authenticated_generation": "G77_256DW",
+        "evidence_state": "SATISFIED",
+        "committed_evidence": [
+          "G77_256DW_RAW_EXECUTION_EVIDENCE:p11_attempt_result:G77_256DW_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+          "G77_256DW_FINAL_EXECUTION_SEAL",
+          "G77_256DW_TERMINAL_CANONICAL_V1_MANIFEST"
+        ]
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "EVERY_CD_INVALID_AUTHORITY_VECTOR_DENIES_BEFORE_ATTEMPT_OR_REMAINS_NON_REUSABLE__ZERO_STATE_RETRY_AUTHORITY_OR_ROUTING_EFFECT",
+        "authenticated_generation": "PARTIAL__G77_256DW_COMPETING_CLAIM_ONLY",
+        "evidence_state": "UNSATISFIED",
+        "satisfied_vector": "COMPETING_CLAIM",
+        "remaining_vectors": [
+          "UNKNOWN",
+          "AMBIGUOUS",
+          "STALE",
+          "FUTURE",
+          "EXPIRED",
+          "REVOKED",
+          "SUPERSEDED",
+          "CONSUMED",
+          "WRONG_SCOPE",
+          "WRONG_CALLER",
+          "WRONG_ATTEMPT",
+          "WRONG_INPUT",
+          "WRONG_PROVENANCE",
+          "WRONG_CONTRACT",
+          "COHERENT_COPY"
+        ],
+        "committed_evidence": [
+          "G77_256DQ_G48_REPORT:EXPLICITLY_EXCLUDES_DISTINCT_NEGATIVE_STATE_CONCURRENCY_CAMPAIGN",
+          "G77_256DW_RAW_EXECUTION_EVIDENCE:COMPETING_CLAIM_ONLY"
+        ]
+      }
+    ],
+    "negative_authority_vector_matrix": [
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/UNKNOWN",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "UNKNOWN_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/AMBIGUOUS",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "AMBIGUOUS_AUTHORITY_DENIES_OR_REMAINS_NON_REUSABLE_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/STALE",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "STALE_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/FUTURE",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "FUTURE_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/EXPIRED",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "EXPIRED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/REVOKED",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "REVOKED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/SUPERSEDED",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "SUPERSEDED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/CONSUMED",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "CONSUMED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_SCOPE",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_SCOPE_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CALLER",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_CALLER_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_ATTEMPT",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_ATTEMPT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_INPUT",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_INPUT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_PROVENANCE",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_PROVENANCE_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CONTRACT",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "WRONG_CONTRACT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      },
+      {
+        "e05_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/COHERENT_COPY",
+        "e05_obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "required_result": "COHERENT_COPY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "authenticated_generation": "NONE__NOT_EXECUTED_IN_G77_256DQ_OR_G77_256DW",
+        "evidence_state": "UNSATISFIED"
+      }
+    ],
+    "e05_class_count": 4,
+    "e05_satisfied_class_count": 3,
+    "e05_remaining_class_count": 1,
+    "e05_total_obligation_count": 18,
+    "e05_satisfied_obligation_count": 3,
+    "e05_remaining_obligation_count": 15,
+    "remaining_negative_vector_count": 15,
+    "p11_e05_completion_state": "INCOMPLETE",
+    "next_cd_generation_id": "NOT_APPLICABLE__P11_E05_INCOMPLETE__G2_REMAINS_OPEN__NO_G3_ENTRY",
+    "next_cd_evidence_obligation": "P11-E05/NEGATIVE_AUTHORITY__REMAINING_15_CD_VECTORS",
+    "next_cd_constitutional_purpose": "COMPLETE_CURRENT_G2_WITH_INDEPENDENT_FAIL_CLOSED_DENIAL_EVIDENCE_FOR_EACH_REMAINING_INVALID_AUTHORITY_VECTOR_UNDER_SEPARATE_FUTURE_HUMAN_AUTHORIZATION",
+    "exact_next_constitutional_frontier": "HUMAN_SELECTION_AND_SEPARATE_AUTHORIZATION_OF_ONE_EXACT_REMAINING_CD_P11_E05_NEGATIVE_AUTHORITY_VECTOR__G2_REMAINS_OPEN__NO_G3_ENTRY_AUTHORIZED",
+    "conversation_history_required": false,
+    "full_history_reconstruction_required": false,
+    "execution_replay_required": false,
+    "clrec_empirical_support": "INCREASED__COMMITTED_DU_DW_REPOSITORY_EVIDENCE_RECONSTRUCTS_THE_INCOMPLETE_G2_FRONTIER_WITHOUT_CONVERSATION_OR_REPLAY",
+    "clrec_constitutionally_certified": false,
+    "spce_phase_results": {
+      "phase_a": "PASS__HEAD_AND_MINIMUM_COMMITTED_LINEAGE_AUTHENTICATED",
+      "phase_b": "PASS__FOUR_CLASS_E05_COMPLETION_MATRIX_CONSTRUCTED",
+      "phase_c": "PASS__INDEPENDENT_REDUCTION_INCOMPLETE__G2_REMAINS_OPEN",
+      "phase_d": "PASS__SELF_AUTHENTICATING_ZERO_OPERATION_CHECKPOINT_CREATED"
+    },
+    "execution_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "e05_concurrency_contender_count": 0,
+      "e05_concurrency_winner_count": 0,
+      "e05_concurrency_loser_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0
+    }
+  }
+}
