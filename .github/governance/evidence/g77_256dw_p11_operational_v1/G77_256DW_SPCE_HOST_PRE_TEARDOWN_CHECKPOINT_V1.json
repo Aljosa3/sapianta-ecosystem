@@ -1,0 +1,93 @@
+{
+  "schema_id": "G77_256DW_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DW_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256DW_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "required_head": "9f22ffe33626db267460fd731ad3fd23b7cbfbd5",
+    "source_tree": "9c41b28aba452809a2f17f8705596b3fbb690692",
+    "qemu_process_absent": true,
+    "checkout_status_empty": true,
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "transient_material": {
+      "overlay": {
+        "path": "/tmp/g77_256dw/guest-overlay.qcow2",
+        "bytes": 21889024,
+        "sha256": "eab70b2f044724daaddad18d5e43a012f323467a2ccbf4054ef276e8a90f3331"
+      },
+      "overlay_qemu_img_check": "PASS",
+      "seed": {
+        "path": "/tmp/g77_256dw/nocloud-seed.img",
+        "bytes": 376832,
+        "sha256": "f5d2f9fdaaf0f607f69f50a53fbd305f182c9df10e13995584fade7896725610"
+      },
+      "checkout_path": "/tmp/g77_256dw/checkout"
+    },
+    "raw_evidence": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+      "bytes": 70047,
+      "sha256": "653d8edca05bd4b413c0445ee672b339f15e47fddc7d43097658018b4fb76171"
+    },
+    "serial_console": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_SERIAL_CONSOLE_V1.log",
+      "bytes": 86900,
+      "sha256": "4fdc0ff8245067d9375245b4cd34f1a9249506d3228e7e601b6544769b039822"
+    },
+    "guest_execution_seal": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_GUEST_EXECUTION_SEAL_V1.json",
+      "bytes": 2263,
+      "sha256": "872ec8709b68b20fcc57f587de02535d04d2d180c005f69328e982329f487dda"
+    },
+    "guest_teardown_seal": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_GUEST_TEARDOWN_SEAL_V1.json",
+      "bytes": 1203,
+      "sha256": "4b0214bd0f5357077dbe07200fcee483b287bfb287f552f37a2f94ec2dfc538c"
+    },
+    "terminal_guest_manifest": {
+      "path": "/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dw_p11_operational_v1/raw/G77_256DW_CONTINUATION_MANIFEST_V1.json",
+      "bytes": 9402,
+      "sha256": "351157833e97adc647156217314b35b077c9c1991d2305a38bfc5607e1474564"
+    },
+    "execution_counters": {
+      "automatic_retry_count": 0,
+      "e01_e12_execution_count": 1,
+      "e05_case_execution_count": 1,
+      "e05_concurrency_contender_count": 2,
+      "e05_concurrency_loser_count": 1,
+      "e05_concurrency_winner_count": 1,
+      "execution_replay_count": 0,
+      "full_history_reconstruction_count": 0,
+      "human_operational_act_claimed_count": 1,
+      "human_operational_act_creation_count": 1,
+      "human_operational_act_invoked_count": 1,
+      "human_operational_act_permanently_exhausted_count": 1,
+      "human_operational_act_submitted_count": 1,
+      "human_operational_act_terminally_bound_count": 1,
+      "p01_p12_executed_count": 1,
+      "p01_p12_pass_count": 1,
+      "p11_entry_count": 2,
+      "p11_operational_invocation_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "repair_and_continue_count": 0,
+      "second_vm_count": 0,
+      "vm_boot_count": 1,
+      "vm_creation_count": 1
+    },
+    "e05_result": "PASS__TWO_AUTHENTICATED_CONTENDERS__EXACTLY_ONE_WINNER__ONE_LOSER_FAIL_CLOSED__ONE_INVOCATION__ACT_PERMANENTLY_EXHAUSTED",
+    "pending_gates": [
+      "HOST_TRANSIENT_TEARDOWN",
+      "FINAL_EXECUTION_SEAL",
+      "TERMINAL_MANIFEST",
+      "PHASE_E_CHECKPOINT",
+      "G48"
+    ],
+    "exact_next_legal_action": "REMOVE_EXACT_DW_TRANSIENT_ROOT__THEN_FINALIZATION_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "c92bc49fb2929d8c510c50772852f555878a4f6c691ef66f39b9dc3d63f3ebbf"
+}

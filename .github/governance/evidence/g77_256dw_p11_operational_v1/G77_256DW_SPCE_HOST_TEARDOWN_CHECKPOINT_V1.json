@@ -1,0 +1,53 @@
+{
+  "schema_id": "G77_256DW_SPCE_HOST_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DW_SPCE_HOST_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256DW_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "required_head": "9f22ffe33626db267460fd731ad3fd23b7cbfbd5",
+    "source_tree": "9c41b28aba452809a2f17f8705596b3fbb690692",
+    "transient_root_path": "/tmp/g77_256dw",
+    "transient_root_absent": true,
+    "qemu_process_absent": true,
+    "overlay_absent": true,
+    "seed_absent": true,
+    "checkout_absent": true,
+    "base_image_retained": true,
+    "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+    "base_image_qemu_img_check": "PASS",
+    "execution_counters": {
+      "automatic_retry_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "execution_replay_count": 0,
+      "full_history_reconstruction_count": 0,
+      "human_operational_act_claimed_count": 1,
+      "human_operational_act_created_count": 1,
+      "human_operational_act_invoked_count": 1,
+      "human_operational_act_permanently_exhausted_count": 1,
+      "human_operational_act_submitted_count": 1,
+      "human_operational_act_terminally_bound_count": 1,
+      "p11_entry_count": 2,
+      "p11_operational_invocation_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "repair_and_continue_count": 0,
+      "second_vm_count": 0,
+      "vm_boot_count": 1,
+      "vm_creation_count": 1
+    },
+    "case_counters": {
+      "e01_e12_execution_count": 1,
+      "e05_case_execution_count": 1,
+      "e05_concurrency_contender_count": 2,
+      "e05_concurrency_loser_count": 1,
+      "e05_concurrency_winner_count": 1,
+      "p01_p12_executed_count": 1,
+      "p01_p12_pass_count": 1
+    },
+    "teardown_state": "COMPLETE",
+    "exact_next_legal_action": "FINAL_EXECUTION_SEAL_TERMINAL_MANIFEST_PHASE_E_CHECKPOINT_AND_G48_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "f6439d15b291fa108ff8980608bed9781d9852a55d22bdc53f18900e266a05dc"
+}

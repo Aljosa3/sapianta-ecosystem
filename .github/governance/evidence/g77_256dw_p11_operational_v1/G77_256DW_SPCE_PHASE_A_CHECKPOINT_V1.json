@@ -1,0 +1,182 @@
+{
+  "schema_id": "G77_256DW_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DW_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256DW_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "required_head": "9f22ffe33626db267460fd731ad3fd23b7cbfbd5",
+    "source_tree": "9c41b28aba452809a2f17f8705596b3fbb690692",
+    "entry_gate": {
+      "git_status_short": "",
+      "git_rev_parse_head": "9f22ffe33626db267460fd731ad3fd23b7cbfbd5",
+      "git_log_1_oneline": "9f22ffe3 G77-256DU certify canonical continuation manifest contract",
+      "result": "PASS"
+    },
+    "minimum_lineage": [
+      {
+        "identity": "G77_256DU_CONTRACT",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1.md",
+        "sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "git_blob": "52a581514b893781ae966de707916fcd952dcca3"
+      },
+      {
+        "identity": "G77_256DU_SCHEMA",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+        "sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "git_blob": "88c860bbdfdc52045ec4fcacddb540655ebbba1b"
+      },
+      {
+        "identity": "G77_256DU_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+        "sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "git_blob": "44b7138dcad33a70ab63f7b988857d04519986f6"
+      },
+      {
+        "identity": "G77_256DU_FIXTURE",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/raw/G77_256DU_CANONICAL_PRODUCER_OUTPUT_FIXTURE_V1.json",
+        "sha256": "c5f00b5969fbb4369c024fa6ea52c8243b59c7feeab37f9543e015d7f5c90c64",
+        "git_blob": "ca7e908bbb794e76b1b795f2975bdeee0236467e"
+      },
+      {
+        "identity": "G77_256DU_VALIDATION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/raw/G77_256DU_COMPATIBILITY_VALIDATION_EVIDENCE_V1.json",
+        "sha256": "df4b1a4b1fc1244867a60a2598f851c6a4f6640a3d4c7bc6ac8867a50e0e14cb",
+        "git_blob": "744493de5385a4d5be840faddde482acbe213158"
+      },
+      {
+        "identity": "G77_256DU_PHASE_D_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_SPCE_PHASE_D_CHECKPOINT_V1.json",
+        "sha256": "990c1f4596b6a47f10526af3ea6162b096b5a69611eced3810ce0737d976215d",
+        "git_blob": "5481a335d76658a89150937543f0d1bd6a18ea39"
+      },
+      {
+        "identity": "G77_256DU_G48_REPORT",
+        "path": "docs/governance/G77_256DU_SPCE_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_AND_PRE_MATERIALIZATION_PRODUCER_CONSUMER_COMPATIBILITY_CERTIFICATION_V1.md",
+        "sha256": "1a2cb18b92d843cb9297df0ceaf90f242e772d0ff4c22f1d49f75f3d33a1a3b2",
+        "git_blob": "b50122866ae44b05b0e693772be439427d313f4d"
+      },
+      {
+        "identity": "G77_256DT_G48_REPORT",
+        "path": "docs/governance/G77_256DT_ONE_FRESH_BOUNDED_E05_CONCURRENCY_GENERATION_AFTER_DS_FAIL_CLOSED_RECOVERY_WITH_PRE_MATERIALIZATION_SELF_AUTHENTICATION_AND_CROSS_ACCOUNT_RESUMABLE_SPCE_EVIDENCE_V1.md",
+        "sha256": "d3ee031ad7742e30c730ff4702a123b20fd6730d88a2a28ef2919b04398fcc4d",
+        "git_blob": "12b50eb27505639fbe0d13aed92a5936e852142f"
+      },
+      {
+        "identity": "G77_256DT_PHASE_A_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/G77_256DT_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "sha256": "5cc3b0ed786e622da1a4789c6deefbc2d6b7997f05bd9cf38c270dadb51cf7f4",
+        "git_blob": "0497727800bca646555bc6b86630f5799f1d3c96"
+      },
+      {
+        "identity": "G77_256DT_CONCURRENCY_HARNESS",
+        "path": ".github/governance/evidence/g77_256dt_p11_operational_v1/harness/G77_256DT_P11_OPERATIONAL_HARNESS_V1.py",
+        "sha256": "6eb7a97686fd0846563d63c916d38b313dc6b824c82132b97be0f2df5c8038b2",
+        "git_blob": "096b309d651e4da4655afaf94f03e5010623c527"
+      },
+      {
+        "identity": "G77_256DQ_G48_REPORT",
+        "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+        "sha256": "6273d2df46687670d9f938874bf9b700f554b10feed5bb11892c462d5a7a6906",
+        "git_blob": "6afd5d762d24ca472b9dd2561bf77f0927946e34"
+      },
+      {
+        "identity": "G77_256DQ_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/G77_256DQ_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "sha256": "89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86",
+        "git_blob": "f0e4cbcd402d98428f4cf05166b423a1f41a9386"
+      },
+      {
+        "identity": "G48_REPORTING_STANDARD",
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb",
+        "git_blob": "095c16f14c54d8b36330d47a653a122ee07a441c"
+      }
+    ],
+    "minimum_lineage_artifact_count": 13,
+    "case_selection": {
+      "case_class": "E05_CONCURRENCY",
+      "case_id": "G77_256DW_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+      "evidence_obligation_id": "P11-E05",
+      "expected_invariant": "EXACTLY_TWO_AUTHENTICATED_CONTENDERS_OBSERVE_FRESH_AVAILABLE_REVISION_0__EXACTLY_ONE_WINNER__ONE_LOSER_FAILS_CLOSED__ONE_INVOCATION__ACT_PERMANENTLY_EXHAUSTED",
+      "selection_basis": "DT_SELECTED_BUT_DID_NOT_EXECUTE_THIS_EXACT_CONCURRENCY_CLASS__DQ_EXCLUDED_CONCURRENCY__DW_AUTHORIZES_ONE_FRESH_GENERATION"
+    },
+    "canonical_v1": {
+      "contract_version": "1.0.0",
+      "schema_identity": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1",
+      "schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "validator_identity": "G77_256DU_PRE_MATERIALIZATION_CONSUMER_VALIDATOR_V1",
+      "validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "all_four_gates_required": true,
+      "validation_must_precede_materialization": true
+    },
+    "dw_harness": {
+      "identity": "G77_256DW_P11_OPERATIONAL_HARNESS_V1",
+      "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/harness/G77_256DW_P11_OPERATIONAL_HARNESS_V1.py",
+      "sha256": "7f3d633f3e480ac2b555dd3169ea4ef3e4f593a6dec673ffd3e05c8333fe2ace"
+    },
+    "dw_raw_schema": {
+      "identity": "G77_256DW_RAW_EVIDENCE_SCHEMA_V1",
+      "path": ".github/governance/evidence/g77_256dw_p11_operational_v1/G77_256DW_RAW_EVIDENCE_SCHEMA_V1.json",
+      "sha256": "671c3c00822300a9016e49a192b35dd558aa75b8b4ed28dcb416ec7d4a60695d"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "execution_counters": {
+      "automatic_retry_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "execution_replay_count": 0,
+      "full_history_reconstruction_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "repair_and_continue_count": 0,
+      "second_vm_count": 0,
+      "vm_boot_count": 0,
+      "vm_creation_count": 0
+    },
+    "case_counters": {
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "e05_concurrency_contender_count": 0,
+      "e05_concurrency_loser_count": 0,
+      "e05_concurrency_winner_count": 0,
+      "p01_p12_executed_count": 0,
+      "p01_p12_pass_count": 0
+    },
+    "completed_gates": [
+      "ENTRY_GATE",
+      "MINIMUM_LINEAGE_AUTHENTICATION",
+      "CASE_SELECTION",
+      "HARNESS_AST",
+      "RAW_SCHEMA_PARSE",
+      "BASE_IMAGE_AUTHENTICATION",
+      "CANONICAL_V1_STATE_CONSTRUCTION"
+    ],
+    "pending_gates": [
+      "CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION",
+      "ONE_MATERIALIZATION",
+      "ONE_VM_BOOT",
+      "P01_P12",
+      "ONE_ACT",
+      "ONE_E05_CONCURRENCY_CASE",
+      "TEARDOWN",
+      "FINAL_SEAL",
+      "G48"
+    ],
+    "exact_next_legal_action": "VALIDATE_CANONICAL_V1_ALL_FOUR_GATES__FAIL_CLOSED_WITH_ZERO_VM_IF_ANY_GATE_FAILS",
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "744bfb4488015a2b4f247bc9ed7159180d56927227921404c6026f65bbbc1052"
+}

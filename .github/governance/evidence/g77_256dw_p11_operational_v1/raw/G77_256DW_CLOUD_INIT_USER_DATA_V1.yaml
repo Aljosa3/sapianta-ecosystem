@@ -1,0 +1,21 @@
+#cloud-config
+users: []
+disable_root: false
+ssh_pwauth: false
+runcmd:
+  - |
+    set -eu
+    export PYTHONDONTWRITEBYTECODE=1
+    mkdir -p /mnt/aigol /mnt/dp-harness /mnt/g77-harness /mnt/g77-evidence
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro aigol_checkout /mnt/aigol
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro dp_harness /mnt/dp-harness
+    mount -t 9p -o trans=virtio,version=9p2000.L,ro g77_harness /mnt/g77-harness
+    mount -t 9p -o trans=virtio,version=9p2000.L g77_evidence /mnt/g77-evidence
+    echo G77_256DW_BOOT_MARKER=PASS
+    set +e
+    /usr/bin/python3 /mnt/dp-harness/G77_256DW_P11_OPERATIONAL_HARNESS_V1.py 7f3d633f3e480ac2b555dd3169ea4ef3e4f593a6dec673ffd3e05c8333fe2ace 671c3c00822300a9016e49a192b35dd558aa75b8b4ed28dcb416ec7d4a60695d 9f22ffe33626db267460fd731ad3fd23b7cbfbd5 9c41b28aba452809a2f17f8705596b3fbb690692 4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb
+    dp_status=$?
+    set -e
+    echo G77_256DW_HARNESS_EXIT_STATUS=$dp_status
+    sync
+    poweroff -f
