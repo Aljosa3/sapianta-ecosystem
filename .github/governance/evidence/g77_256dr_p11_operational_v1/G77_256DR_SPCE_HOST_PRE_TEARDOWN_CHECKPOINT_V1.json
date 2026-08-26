@@ -1,0 +1,70 @@
+{
+  "schema_id": "G77_256DR_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DR_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256DR_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "source_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+    "source_tree": "66360dad89661b26636da7fcd0bf7640b562db95",
+    "phase_c_authentication_checkpoint": {
+      "file_sha256": "5812fbac8b0dc0ced4f2a1ab16c6122786023f16b1cbbe740982ada9ad51bc65",
+      "seal_sha256": "0b760a43db7ff7675a6ca5772dbb7b20310e9f01947719444806ad4197a962b6"
+    },
+    "recovery_execution_state": "E__CONTRADICTORY_OR_UNAUTHENTICATABLE_STATE",
+    "host_observation": {
+      "transient_root": "/tmp/g77_256dr",
+      "transient_root_exists": true,
+      "qemu_process_exists": false,
+      "qemu_process_identity": "NONE",
+      "dr_mount_exists": false,
+      "serial_log_exists": true,
+      "overlay_exists": true,
+      "seed_exists": true,
+      "checkout_exists": true
+    },
+    "transient_artifacts": {
+      "serial_log": {
+        "byte_count": 88278,
+        "line_count": 1030,
+        "sha256": "e5af085aa4154d7ed1abdc6fc6f6a1525903ffe37b4f7b062f455b95e4338296",
+        "persistent_copy_path": ".github/governance/evidence/g77_256dr_p11_operational_v1/raw/G77_256DR_SERIAL_CONSOLE_V1.log",
+        "persistent_copy_sha256": "e5af085aa4154d7ed1abdc6fc6f6a1525903ffe37b4f7b062f455b95e4338296"
+      },
+      "overlay": {
+        "byte_count": 21757952,
+        "sha256": "f986f64c230c4ef8c9a73bf9fd50a78e151d8074200cb9ed40f5e36a5e4e8091",
+        "qemu_img_check": "PASS__NO_ERRORS"
+      },
+      "nocloud_seed": {
+        "byte_count": 376832,
+        "sha256": "d14cc387cb7777af659d943e8908b774ec3275a5efe73b86803033ecef43388f",
+        "matches_materialization_checkpoint": true
+      },
+      "checkout": {
+        "expected_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+        "expected_tree": "66360dad89661b26636da7fcd0bf7640b562db95"
+      }
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "matches_phase_a_binding": true,
+      "qemu_img_check": "PASS__NO_ERRORS",
+      "disposition": "REUSABLE_BASE_IMAGE_OUTSIDE_DR_TRANSIENT_ROOT__DO_NOT_REMOVE"
+    },
+    "persistent_evidence_preservation": {
+      "raw_execution_evidence_sha256": "e5372d7c4e265f20a6a532adeeeae6417b1fb3e48f175d7000805daacb320fdf",
+      "guest_teardown_seal_sha256": "a35a35f2ffca0377db116411c081d95bb41d876053a6318384d4080a0f899a59",
+      "pre_recovery_manifest_sha256": "3ade3f029c543dbbe3b8a96e2422a8ed525132eb95e2a676756d4fe90433965e",
+      "serial_console_sha256": "e5af085aa4154d7ed1abdc6fc6f6a1525903ffe37b4f7b062f455b95e4338296",
+      "result": "PASS__REQUIRED_TRANSIENT_EVIDENCE_IDENTITIES_PERSISTED_BEFORE_HOST_TEARDOWN"
+    },
+    "authorized_teardown_target": "/tmp/g77_256dr",
+    "authorized_teardown_scope": "REMOVE_ONLY_SURVIVING_DR_TRANSIENT_ROOT_AFTER_PERSISTENCE_AND_AUTHENTICATION__NO_BASE_IMAGE_OR_REPOSITORY_EVIDENCE_REMOVAL",
+    "execution_replay_count": 0,
+    "automatic_retry_count": 0,
+    "second_vm_count": 0,
+    "auto_continuable": false,
+    "checkpoint_is_authority": false
+  },
+  "seal_sha256": "ff5aa4600ed597f5b65c5a6e1ae5e446e70504296c311b6bd74f949b2210f6af"
+}

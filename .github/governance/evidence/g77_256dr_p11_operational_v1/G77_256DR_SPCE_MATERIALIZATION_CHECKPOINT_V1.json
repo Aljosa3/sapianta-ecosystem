@@ -1,0 +1,89 @@
+{
+  "schema_id": "G77_256DR_SPCE_MATERIALIZATION_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DR_SPCE_MATERIALIZATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256DR_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "attempt_identity": "G77_256DR_E05_CONCURRENCY_ATTEMPT_001",
+    "source_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+    "source_tree": "66360dad89661b26636da7fcd0bf7640b562db95",
+    "selected_e05_case_class": "E05_CONCURRENCY",
+    "selected_e05_case_id": "G77_256DR_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+    "phase_a_checkpoint": {
+      "file_sha256": "dd5237ca59c37c2bb269841b517837363dbc7cee5479f0adb1a5c131bf52dc88",
+      "seal_sha256": "b2bbeec903842aace22b30ea8e582e9fe6072bdf1ca3d683a1e54d54c4d85d31"
+    },
+    "continuation_manifest_before_materialization": {
+      "byte_count": 2507,
+      "file_sha256": "42725504f5b39e6d250560290368ace0e1d2f6004477e5eaaa339c7d31fa69b6",
+      "manifest_sha256": "0abef7b9498fe032e86ab8af6cd3eb534a62fcc44746917153aec397c6a61dd5"
+    },
+    "checkout": {
+      "host_path": "/tmp/g77_256dr/checkout",
+      "expected_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+      "expected_tree": "66360dad89661b26636da7fcd0bf7640b562db95",
+      "host_status_empty": true,
+      "guest_export_read_only": true
+    },
+    "cloud_init": {
+      "meta_data_sha256": "53f8155373879029d4b973437c6cb7d16769c3489a2465b1ccc006636e0c186b",
+      "network_config_sha256": "f4b767b0ddb3b9a3a69d40e33c5c4d6f26e6489085b58313f00eb0a5e1242a25",
+      "user_data_sha256": "9cb51aefbf84b0806310c0e61d3679a372e24c66ec2991810ae77a7967712df1"
+    },
+    "materialization": {
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "overlay_initial_bytes": 196664,
+      "overlay_initial_sha256": "6ea4eed169518c646774cfbe2c7b8c00646a9cdead8798f7c94c786c6b6ce8b2",
+      "overlay_qemu_img_check": "PASS__NO_ERRORS",
+      "nocloud_seed_bytes": 376832,
+      "nocloud_seed_sha256": "d14cc387cb7777af659d943e8908b774ec3275a5efe73b86803033ecef43388f",
+      "vm_creation_count": 1,
+      "vm_boot_count": 0
+    },
+    "qemu_command": [
+      "qemu-system-x86_64", "-name", "g77-256dr-one-p11", "-machine", "pc,accel=tcg", "-cpu", "max", "-smp", "2", "-m", "1536", "-nodefaults", "-no-reboot", "-display", "none", "-monitor", "none", "-serial", "file:/tmp/g77_256dr/serial.log", "-drive", "file=/tmp/g77_256dr/guest-overlay.qcow2,if=virtio,format=qcow2", "-drive", "file=/tmp/g77_256dr/nocloud-seed.img,if=virtio,format=raw,readonly=on", "-device", "virtio-rng-pci", "-virtfs", "local,path=/tmp/g77_256dr/checkout,mount_tag=aigol_checkout,security_model=none,readonly=on,multidevs=remap", "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dr_p11_operational_v1/harness,mount_tag=dp_harness,security_model=none,readonly=on,multidevs=remap", "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness,mount_tag=g77_harness,security_model=none,readonly=on,multidevs=remap", "-virtfs", "local,path=/home/pisarna/work/sapianta/.github/governance/evidence/g77_256dr_p11_operational_v1/raw,mount_tag=g77_evidence,security_model=none,multidevs=remap", "-nic", "none"
+    ],
+    "execution_counters": {
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "completed_gates": [
+      "PHASE_A_CHECKPOINT_AUTHENTICATED",
+      "EARLY_CONTINUATION_MANIFEST_PERSISTED",
+      "EXACT_CHECKOUT_CLONED",
+      "ONE_OVERLAY_CREATED",
+      "ONE_SEED_CREATED",
+      "OVERLAY_QEMU_IMG_CHECK"
+    ],
+    "pending_gates": [
+      "ONE_VM_BOOT",
+      "P01_P12_COMMISSIONING",
+      "ACT_CREATION_AFTER_GATE_PASS",
+      "ONE_E05_CONCURRENCY_CASE",
+      "PHASE_C_AUTHENTICATION",
+      "TERMINAL_TEARDOWN",
+      "FINAL_INNER_AND_OUTER_SEALS",
+      "G48_FINALIZATION"
+    ],
+    "authority_disposition": "GENERATION_AUTHORIZED__ACT_AUTHORIZED_BUT_NOT_CREATED__CHECKPOINT_AND_MANIFEST_ARE_NOT_AUTHORITY",
+    "current_frontier": "BOOT_THE_SINGLE_MATERIALIZED_NO_NIC_VM_EXACTLY_ONCE",
+    "continuation": "ONE_BOOT_PERMITTED__ZERO_RETRY__NO_SECOND_VM__ACT_ONLY_AFTER_ALL_P01_P12_GATES_PASS__NO_CD_G3",
+    "auto_continuable": false,
+    "checkpoint_is_authority": false,
+    "first_failure": null,
+    "teardown_state": "PENDING"
+  },
+  "seal_sha256": "8bb5e9b8de216d19f6e0776e9cc797062ab48d344b69a0cb37d00330f9be9bbd"
+}

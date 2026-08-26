@@ -1,0 +1,116 @@
+{
+  "schema_id": "G77_256DR_SPCE_PHASE_C_AUTHENTICATION_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DR_SPCE_PHASE_C_AUTHENTICATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256DR_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "attempt_identity": "G77_256DR_E05_CONCURRENCY_ATTEMPT_001",
+    "source_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+    "source_tree": "66360dad89661b26636da7fcd0bf7640b562db95",
+    "selected_e05_case_class": "E05_CONCURRENCY",
+    "selected_e05_case_id": "G77_256DR_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+    "selected_e05_case_authentication": "OBSERVED_CONSISTENT_ACROSS_SURVIVING_DR_FILES__NOT_AUTHENTICATED_DUE_TO_INVALID_PHASE_A_AND_MATERIALIZATION_SEALS",
+    "recovery_execution_state": "E__CONTRADICTORY_OR_UNAUTHENTICATABLE_STATE",
+    "minimum_lineage_authentication_result": "FAIL__FIVE_OF_SIX_RECORDED_GIT_BLOBS_MATCH__DQ_G48_REPORT_RECORDED_GIT_BLOB_MISMATCH__ALL_SIX_RECORDED_SHA256_VALUES_MATCH",
+    "minimum_lineage_mismatch": {
+      "identity": "G77_256DQ_G48_REPORT",
+      "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+      "recorded_git_blob": "6afd5d04bd68264f92a0d71b628397013661a979",
+      "actual_git_blob": "6afd5d762d24ca472b9dd2561bf77f0927946e34",
+      "recorded_sha256_matches_actual": true
+    },
+    "phase_a_checkpoint": {
+      "file_sha256": "dd5237ca59c37c2bb269841b517837363dbc7cee5479f0adb1a5c131bf52dc88",
+      "embedded_seal_sha256": "b2bbeec903842aace22b30ea8e582e9fe6072bdf1ca3d683a1e54d54c4d85d31",
+      "recomputed_seal_sha256": "75b2c9655fe6da7a52f639a3ddd7d7069e1cfcf3565d1c7f933c0f3a399301b3",
+      "seal_hash_match": false,
+      "result": "FAIL__CHECKPOINT_SEAL_UNAUTHENTICATABLE"
+    },
+    "materialization_checkpoint": {
+      "file_sha256": "cd665dc5717a5b90f023cf9d53a93102fd57798acde72e16c8b2bd0cbbbb24d6",
+      "embedded_seal_sha256": "8bb5e9b8de216d19f6e0776e9cc797062ab48d344b69a0cb37d00330f9be9bbd",
+      "recomputed_seal_sha256": "889382e24b1c63949eabd95047d0b3a105356eb5d870ba8163aa4799ea1ced07",
+      "seal_hash_match": false,
+      "result": "FAIL__CHECKPOINT_SEAL_UNAUTHENTICATABLE"
+    },
+    "harness": {
+      "sha256": "d7aeaf3b4d989f9d4e404993844d81c6e91d12f294da270a9481d9b85f8a23e5",
+      "byte_count": 66148,
+      "line_count": 1496,
+      "ast_parse": "PASS"
+    },
+    "raw_schema": {
+      "sha256": "4982734a2e2e3288dda707062db0191cf3440f912079ad166e086d9ccc7ed740",
+      "duplicate_free_json_parse": "PASS"
+    },
+    "raw_execution_evidence": {
+      "sha256": "e5372d7c4e265f20a6a532adeeeae6417b1fb3e48f175d7000805daacb320fdf",
+      "byte_count": 1683,
+      "record_count": 2,
+      "sequence": "COMPLETE_CONTIGUOUS_0_1",
+      "canonical_jsonl": "PASS",
+      "record_types": [
+        "first_failure",
+        "guest_teardown"
+      ]
+    },
+    "guest_teardown_seal": {
+      "file_sha256": "a35a35f2ffca0377db116411c081d95bb41d876053a6318384d4080a0f899a59",
+      "raw_evidence_sha256": "e5372d7c4e265f20a6a532adeeeae6417b1fb3e48f175d7000805daacb320fdf",
+      "raw_record_count": 2,
+      "teardown_state": "COMPLETE",
+      "result": "PASS"
+    },
+    "pre_recovery_continuation_manifest": {
+      "file_sha256": "3ade3f029c543dbbe3b8a96e2422a8ed525132eb95e2a676756d4fe90433965e",
+      "embedded_manifest_sha256": "e0a764d6a2b2c48681de65be70009952a9f1c7703a251dacffdee0241cb87188",
+      "recomputed_manifest_sha256": "076a61f5408be9eb3bd9ca1f1af3cc926582c9aa439c2c1fa53f64b000f54d8a",
+      "hash_match": false,
+      "current_spce_phase": "PHASE_B_SINGLE_VM_MATERIALIZED_NOT_BOOTED",
+      "archived_path": ".github/governance/evidence/g77_256dr_p11_operational_v1/raw/G77_256DR_CONTINUATION_MANIFEST_PRE_RECOVERY_V1.json"
+    },
+    "terminal_failure": {
+      "first_failure": "RuntimeError: continuation manifest hash mismatch",
+      "failure_location": "FIRST_BOOT_HARNESS_INITIAL_MANIFEST_AUTHENTICATION_BEFORE_EXECUTION_CONTEXT_AND_P01",
+      "serial_console_sha256": "e5af085aa4154d7ed1abdc6fc6f6a1525903ffe37b4f7b062f455b95e4338296",
+      "serial_console_byte_count": 88278,
+      "serial_console_line_count": 1030,
+      "harness_exit_status": 1,
+      "serial_powerdown_state": "PASS__POWERING_OFF_AND_REBOOT_POWER_DOWN_PRESENT"
+    },
+    "execution_counters": {
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "concurrent_claim_contender_count": 0,
+      "winning_claim_count": 0,
+      "denied_competing_claim_count": 0,
+      "human_operational_act_creation_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "p01_p12_result": "NOT_RUN__FAILURE_PRECEDED_FIRST_COMMISSIONING_RECORD",
+    "e05_concurrency_result": "NOT_RUN__ZERO_CONTENDERS__ZERO_WINNERS__ZERO_LOSERS",
+    "authority_disposition": "NOT_CREATED__NO_HUMAN_OPERATIONAL_ACT_OR_AUTHORITY_SURVIVES",
+    "spce_phase_b_result": "FAIL_CLOSED__ONE_BOOT_TERMINATED_BEFORE_COMMISSIONING_DUE_TO_MANIFEST_HASH_MISMATCH",
+    "spce_phase_c_result": "FAIL_CLOSED__ORIGINAL_PHASE_A_AND_MATERIALIZATION_CHECKPOINT_SEALS_UNAUTHENTICATABLE__RAW_FAILURE_RECORDS_PRESERVED_AS_OBSERVED_EVIDENCE_ONLY",
+    "persistent_evidence_sufficient": "NO_FOR_CONSTITUTIONAL_DR_RECOVERY_OR_E05_OPERATIONAL_COMPLETION__YES_ONLY_FOR_PRESERVING_THE_OBSERVED_TWO_RECORD_FAIL_CLOSED_TRACE",
+    "execution_replay_required": false,
+    "new_vm_required": false,
+    "new_act_required": false,
+    "conversation_history_required": false,
+    "full_history_reconstruction_required": false,
+    "auto_continuable": false,
+    "checkpoint_is_authority": false,
+    "current_frontier": "HUMAN_REVIEW_OF_CONTRADICTORY_OR_UNAUTHENTICATABLE_DR_CHECKPOINT_EVIDENCE__NO_REPLAY_RETRY_OR_AUTOMATIC_CONTINUATION"
+  },
+  "seal_sha256": "0b760a43db7ff7675a6ca5772dbb7b20310e9f01947719444806ad4197a962b6"
+}

@@ -1,0 +1,78 @@
+{
+  "schema_id": "G77_256DR_CONTINUATION_MANIFEST_ENVELOPE_V1",
+  "manifest": {
+    "schema_id": "G77_256DR_CONTINUATION_MANIFEST_V1",
+    "generation_identity": "G77_256DR_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "required_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+    "current_spce_phase": "PHASE_B_SINGLE_VM_MATERIALIZED_NOT_BOOTED",
+    "selected_e05_case_class": "E05_CONCURRENCY",
+    "selected_e05_case_id": "G77_256DR_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+    "minimum_lineage_artifact_count": 6,
+    "completed_phase_seals": [
+      {
+        "identity": "G77_256DR_SPCE_PHASE_A_CHECKPOINT_V1",
+        "file_sha256": "dd5237ca59c37c2bb269841b517837363dbc7cee5479f0adb1a5c131bf52dc88",
+        "sha256": "b2bbeec903842aace22b30ea8e582e9fe6072bdf1ca3d683a1e54d54c4d85d31"
+      },
+      {
+        "identity": "G77_256DR_SPCE_MATERIALIZATION_CHECKPOINT_V1",
+        "file_sha256": "cd665dc5717a5b90f023cf9d53a93102fd57798acde72e16c8b2bd0cbbbb24d6",
+        "sha256": "8bb5e9b8de216d19f6e0776e9cc797062ab48d344b69a0cb37d00330f9be9bbd"
+      }
+    ],
+    "phase_a_checkpoint_identity": {
+      "path": ".github/governance/evidence/g77_256dr_p11_operational_v1/G77_256DR_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "dd5237ca59c37c2bb269841b517837363dbc7cee5479f0adb1a5c131bf52dc88",
+      "seal_sha256": "b2bbeec903842aace22b30ea8e582e9fe6072bdf1ca3d683a1e54d54c4d85d31"
+    },
+    "materialization_checkpoint_identity": {
+      "path": ".github/governance/evidence/g77_256dr_p11_operational_v1/G77_256DR_SPCE_MATERIALIZATION_CHECKPOINT_V1.json",
+      "file_sha256": "cd665dc5717a5b90f023cf9d53a93102fd57798acde72e16c8b2bd0cbbbb24d6",
+      "seal_sha256": "8bb5e9b8de216d19f6e0776e9cc797062ab48d344b69a0cb37d00330f9be9bbd"
+    },
+    "harness_identity": {
+      "sha256": "d7aeaf3b4d989f9d4e404993844d81c6e91d12f294da270a9481d9b85f8a23e5"
+    },
+    "schema_identity": {
+      "sha256": "4982734a2e2e3288dda707062db0191cf3440f912079ad166e086d9ccc7ed740"
+    },
+    "authority_lifecycle_state": "NOT_CREATED",
+    "execution_counters": {
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "authorized_next_action": "BOOT_THE_SINGLE_MATERIALIZED_NO_NIC_VM_EXACTLY_ONCE",
+    "prohibited_actions": [
+      "AUTOMATIC_RETRY",
+      "REPAIR_AND_RERUN",
+      "SECOND_VM",
+      "SECOND_ACT",
+      "SECOND_P11_ATTEMPT",
+      "SECOND_E05_CASE",
+      "P12_ENTRY",
+      "PRODUCTION_ROUTING",
+      "CD_G3_ENTRY",
+      "EXECUTION_REPLAY",
+      "FULL_HISTORY_RECONSTRUCTION",
+      "CLREC_CERTIFICATION"
+    ],
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false,
+    "teardown_state": "PENDING"
+  },
+  "manifest_sha256": "e0a764d6a2b2c48681de65be70009952a9f1c7703a251dacffdee0241cb87188"
+}

@@ -1,0 +1,167 @@
+{
+  "schema_id": "G77_256DR_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DR_SPCE_PHASE_A_CHECKPOINT_V1",
+    "spce_phase": "PHASE_A_PRE_MATERIALIZATION",
+    "generation_identity": "G77_256DR_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONCURRENCY_P11_GENERATION_V1",
+    "attempt_identity": "G77_256DR_E05_CONCURRENCY_ATTEMPT_001",
+    "source_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+    "source_tree": "66360dad89661b26636da7fcd0bf7640b562db95",
+    "initial_checkpoint": {
+      "git_status_short": "",
+      "git_rev_parse_head": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+      "git_log_1_oneline": "9a85057d G77-256DQ finalize persistent SPCE G2/E05 evidence",
+      "result": "PASS"
+    },
+    "minimum_lineage_authentication_result": "PASS__COMMITTED_DQ_TERMINAL_CHAIN_AND_CD_G2_E05_REMAINING_CASE_REQUIREMENTS_AUTHENTICATED",
+    "minimum_lineage_artifact_count": 6,
+    "minimum_lineage": [
+      {
+        "identity": "G77_256CD_PLAN",
+        "path": "docs/governance/G77_256CD_P11_PRE_IMPLEMENTATION_EVIDENCE_GENERATION_AND_VALIDATION_PLAN_V1.md",
+        "git_blob": "af571dcc903c4609dc3eda958ac1f420cf0c92aa",
+        "sha256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670"
+      },
+      {
+        "identity": "G77_256DQ_G48_REPORT",
+        "path": "docs/governance/G77_256DQ_CROSS_ACCOUNT_SPCE_RESUMABLE_FINALIZATION_OF_COMPLETED_G2_E05_FROM_PERSISTENT_REPOSITORY_EVIDENCE_V1.md",
+        "git_blob": "6afd5d04bd68264f92a0d71b628397013661a979",
+        "sha256": "6273d2df46687670d9f938874bf9b700f554b10feed5bb11892c462d5a7a6906"
+      },
+      {
+        "identity": "G77_256DQ_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/G77_256DQ_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "git_blob": "f0e4cbcd402d98428f4cf05166b423a1f41a9386",
+        "sha256": "89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86",
+        "inner_seal_sha256": "54f217a8326bdf7f0c81e8a153771a9a486ec3e6d42184c03f2fe09411e9d2e6"
+      },
+      {
+        "identity": "G77_256DQ_RAW_EXECUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+        "git_blob": "c22c7bd883fe4dda85c266f513ff6ac56113aafb",
+        "sha256": "3800184b49956536ae7ea3605df4d52607652b45de87b2635d8d8137d78474e4"
+      },
+      {
+        "identity": "G77_256DQ_GUEST_TEARDOWN_SEAL",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_GUEST_TEARDOWN_SEAL_V1.json",
+        "git_blob": "6c4d2452a5f40cb02b4265792d3e0019d0a59b12",
+        "sha256": "afb5f662c992278c20c1d6d2d3c397afa976ebacbaa3604fe7e797568c4b7c7b"
+      },
+      {
+        "identity": "G77_256DQ_CONTINUATION_MANIFEST",
+        "path": ".github/governance/evidence/g77_256dq_p11_operational_v1/raw/G77_256DQ_CONTINUATION_MANIFEST_V1.json",
+        "git_blob": "989773417c31afab8849546d4ac9c543dd8dc2dc",
+        "sha256": "3bd083eea99c203908d1b42e6a3065ee047c4fcaf3699681e41d613147fbfe79"
+      }
+    ],
+    "decision_spine": {
+      "selected_e05_case_class": "E05_CONCURRENCY",
+      "selected_e05_case_id": "G77_256DR_E05_TWO_AUTHENTICATED_CONCURRENT_CLAIM_CONTENDERS_EXACTLY_ONE_WINNER_001",
+      "why_this_case_is_minimum_next_case": "CD explicitly requires competing-claim validation and one concurrent winner maximum; authenticated DQ proves only the isolated positive baseline with zero competitors, so the atomic concurrent-claim boundary is the highest-necessity distinct unproven E05 case with minimum overlap.",
+      "evidence_obligation_id": "P11-E05",
+      "generation_order": "G2",
+      "excluded_scope": [
+        "ALL_OTHER_E05_NEGATIVE_STATE_OR_CONCURRENCY_CASES",
+        "CD_G3_AND_LATER_GENERATIONS",
+        "P12",
+        "PRODUCTION"
+      ]
+    },
+    "harness_identity": {
+      "path": ".github/governance/evidence/g77_256dr_p11_operational_v1/harness/G77_256DR_P11_OPERATIONAL_HARNESS_V1.py",
+      "sha256": "d7aeaf3b4d989f9d4e404993844d81c6e91d12f294da270a9481d9b85f8a23e5",
+      "byte_count": 66148,
+      "line_count": 1496
+    },
+    "raw_evidence_schema_identity": {
+      "path": ".github/governance/evidence/g77_256dr_p11_operational_v1/G77_256DR_RAW_EVIDENCE_SCHEMA_V1.json",
+      "schema_id": "G77_256DR_RAW_EVIDENCE_SCHEMA_V1",
+      "sha256": "4982734a2e2e3288dda707062db0191cf3440f912079ad166e086d9ccc7ed740"
+    },
+    "bound_implementation": [
+      {"path": "tests/p11_da_operational_consumer_v1.py", "sha256": "220e41ee3ea8fa6b21ecebe62aa4436b816d9b7678d251e18979fa87b160fc4e"},
+      {"path": "tests/p11_da_disposable_substrate_v1.py", "sha256": "a1b58fa8ddedb5058393aa23d815262c92c8b185c0b193764f77420313af0bab"},
+      {"path": "tests/p11_da_custody_process_v1.py", "sha256": "ffd663e68b0efcb1c960bc513a7911372ab06d07971aea071e98f502764ffd9c"},
+      {"path": "aigol/runtime/canonical_human_authority_act_contract_v1.py", "sha256": "905ce577c31c2c538033455d1633470a34e9f7a94edd6190d50932e97ba8ebc8"},
+      {"path": "aigol/runtime/canonical_che_evidence_correlation_contract_v1.py", "sha256": "75801995214e81419aab9a02326499c771ec0039658fb49598aa54bd033e13c5"},
+      {"path": ".github/governance/evidence/g77_256dn_p03_diagnostic_v1/harness/G77_256DN_P03_DIAGNOSTIC_HARNESS_V1.py", "sha256": "4e5d01699796d4bb451818408f7cd6a080b6d55fde518df8a9dd2acd3f1a73bb"}
+    ],
+    "environment_plan": {
+      "base_image_path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "base_image_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_format": "qcow2",
+      "base_image_check": "PASS",
+      "network": "NONE",
+      "vm_limit": 1,
+      "checkout_mount": "READ_ONLY_9P",
+      "harness_mount": "READ_ONLY_9P",
+      "evidence_mount": "WRITABLE_9P_REPOSITORY_RESIDENT_SINK"
+    },
+    "authority_contract": {
+      "generation_authorized": true,
+      "one_exact_current_human_operational_act_authorized": true,
+      "planned_act_identity": "G77_256DR_EXACT_CURRENT_ONE_USE_HUMAN_OPERATIONAL_ACT_001",
+      "act_created": false,
+      "act_claimed": false,
+      "act_invoked": false,
+      "act_terminally_bound": false,
+      "act_permanently_exhausted": false,
+      "authority_transferable_or_reusable": false,
+      "checkpoint_is_authority": false
+    },
+    "execution_counters": {
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e01_e12_execution_count": 0,
+      "e05_case_execution_count": 0,
+      "concurrent_claim_contender_count": 0,
+      "winning_claim_count": 0,
+      "denied_competing_claim_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "second_vm_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "completed_gates": [
+      "MANDATORY_INITIAL_CHECKPOINT",
+      "MINIMUM_LINEAGE_AUTHENTICATION",
+      "DQ_TERMINAL_CHAIN_AUTHENTICATION",
+      "CD_G2_E05_ORDER_AUTHENTICATION",
+      "ONE_CASE_DECISION_SPINE_SELECTION",
+      "HARNESS_DEFINITION",
+      "RAW_EVIDENCE_SCHEMA_DEFINITION",
+      "HARNESS_AST_PARSE",
+      "SCHEMA_PARSE",
+      "BASE_IMAGE_AUTHENTICATION"
+    ],
+    "pending_gates": [
+      "EARLY_CONTINUATION_MANIFEST",
+      "VM_MATERIALIZATION",
+      "ONE_VM_BOOT",
+      "P01_P12_COMMISSIONING",
+      "ACT_CREATION_AFTER_GATE_PASS",
+      "ONE_E05_CONCURRENCY_CASE",
+      "PHASE_C_AUTHENTICATION",
+      "TERMINAL_TEARDOWN",
+      "FINAL_INNER_AND_OUTER_SEALS",
+      "G48_FINALIZATION"
+    ],
+    "current_frontier": "CREATE_EARLY_CONTINUATION_MANIFEST_THEN_MATERIALIZE_AT_MOST_ONE_NO_NIC_VM",
+    "continuation": "AUTHORIZED_ONLY_WITHIN_THIS_EXACT_DR_GENERATION__ZERO_RETRY__NO_SECOND_VM__NO_SECOND_ACT__NO_SECOND_ATTEMPT__NO_SECOND_CASE__NO_P12__NO_PRODUCTION__NO_CD_G3",
+    "auto_continuable": false,
+    "checkpoint_is_authority": false,
+    "full_history_reconstruction_required": false,
+    "conversation_history_required": false,
+    "execution_replay_required": false,
+    "first_failure": null,
+    "teardown_state": "NOT_APPLICABLE_VM_NOT_CREATED"
+  },
+  "seal_sha256": "b2bbeec903842aace22b30ea8e582e9fe6072bdf1ca3d683a1e54d54c4d85d31"
+}
