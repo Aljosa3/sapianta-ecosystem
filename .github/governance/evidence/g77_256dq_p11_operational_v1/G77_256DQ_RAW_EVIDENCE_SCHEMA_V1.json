@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "G77_256DQ_RAW_EVIDENCE_SCHEMA_V1",
+  "type": "object",
+  "required": ["schema_id", "record_sequence", "record_type", "evidence_class", "facts"],
+  "properties": {
+    "schema_id": {"const": "G77_256DQ_RAW_EXECUTION_EVIDENCE_V1"},
+    "record_sequence": {"type": "integer", "minimum": 0},
+    "record_type": {"type": "string", "minLength": 1},
+    "evidence_class": {
+      "enum": ["FACT", "EVIDENCE", "INFERENCE", "HUMAN_DECISION", "NOT_EVALUATED", "NOT_AUTHORIZED"]
+    },
+    "facts": {"type": "object"}
+  },
+  "additionalProperties": false
+}
