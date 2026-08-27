@@ -1,0 +1,399 @@
+{
+  "schema_id": "G77_256EM_SPCE_PHASE_D_REDUCTION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EM_SPCE_PHASE_D_REDUCTION_CHECKPOINT_V1",
+    "generation_identity": "G77_256EM_CROSS_ACCOUNT_SPCE_CONTINUATION_AND_FINALIZATION_OF_INTERRUPTED_G77_256EL_POST_EK_REPOSITORY_ONLY_P11_E05_FRONTIER_REDUCTION_V1",
+    "reporting_date": "2026-08-27",
+    "entry_recovery": {
+      "required_head": "fc04a9d6987bb577f2a3eb0815030a61712b96ac",
+      "observed_head": "fc04a9d6987bb577f2a3eb0815030a61712b96ac",
+      "required_tree": "5ba63c215804b500a6a7aa8b43ba00ae13a14a00",
+      "observed_tree": "5ba63c215804b500a6a7aa8b43ba00ae13a14a00",
+      "required_commit_subject": "G77-256EK satisfy WRONG_CALLER through cross-account SPCE",
+      "observed_commit_subject": "G77-256EK satisfy WRONG_CALLER through cross-account SPCE",
+      "index_state_at_entry": "EMPTY",
+      "worktree_state_at_entry": "CLEAN",
+      "surviving_el_artifacts": [],
+      "unrelated_mutations": [],
+      "el_continuation_state": "A__NO_EL_ARTIFACTS_PERSISTED__SAFE_REPOSITORY_ONLY_REDUCTION_REQUIRES_RECOMPUTATION",
+      "result": "PASS"
+    },
+    "constitutional_basis": {
+      "authoritative_obligation_source": "docs/governance/G77_256CD_P11_PRE_IMPLEMENTATION_EVIDENCE_GENERATION_AND_VALIDATION_PLAN_V1.md",
+      "prior_exact_reduction": "docs/governance/G77_256DX_POST_DW_P11_E05_COMPLETION_REDUCTION_AND_EXACT_CD_FRONTIER_DETERMINATION_FROM_AUTHENTICATED_REPOSITORY_EVIDENCE_V1.md",
+      "unknown_satisfaction_source": "docs/governance/G77_256DY_ONE_FRESH_BOUNDED_P11_E05_UNKNOWN_NEGATIVE_AUTHORITY_GENERATION_AFTER_DX_EXACT_COMPLETION_REDUCTION_USING_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_AND_CROSS_ACCOUNT_RESUMABLE_SPCE_EVIDENCE_V1.md",
+      "wrong_caller_satisfaction_source": "docs/governance/G77_256EK_CROSS_ACCOUNT_SPCE_CONTINUATION_OF_INTERRUPTED_G77_256EJ_FROM_AUTHENTICATED_PHASE_A_V1.md",
+      "cd_e05_dependency_rule": "CATEGORY_C__D1__D2__D3_PRECLAIM_CLAIM__E12_COORDINATE_DEFINITIONS__OWNER_STATE_TRANSITIONS",
+      "cd_distinct_case_isolation_rule": "FRESH_OWNER_STATE_IDENTITY_AND_ACT_PER_MUTATION_OR_RACE_FAMILY__NO_CROSS_CASE_CURRENTNESS_LEAKAGE",
+      "cd_numeric_order_rule": "NO_NUMERIC_ORDER_REQUIRED",
+      "cd_within_e05_vector_priority_rule": "NONE_EXPLICITLY_DEFINED",
+      "enumeration_is_priority": false
+    },
+    "frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 5,
+      "e05_remaining_obligation_count": 13,
+      "wrong_caller_state": "SATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false,
+      "double_credit_count": 0,
+      "frontier_advanced_by_em": false
+    },
+    "obligation_matrix": [
+      {
+        "obligation_id": "P11-E05/POSITIVE_AUTHORITY_BASELINE",
+        "obligation_class": "E05_POSITIVE_AUTHORITY_BASELINE",
+        "obligation_semantics": "EXACT_CURRENT_NON_REVOKED_NON_SUPERSEDED_NON_EXPIRED_AVAILABLE_HUMAN_ACT__ONE_WINNING_CLAIM__TERMINAL_CONSUMPTION",
+        "satisfaction_state": "SATISFIED",
+        "satisfying_evidence": "G77_256DQ",
+        "evidence_binding": "DQ_FINAL_SEAL_SHA256_89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86__DQ_RAW_SHA256_3800184b49956536ae7ea3605df4d52607652b45de87b2635d8d8137d78474e4",
+        "dependencies": "CD_CATEGORY_C_D1_D2_D3_E12_OWNER_STATE__DQ_AUTHENTICATED",
+        "order_or_priority_if_explicitly_defined": "G2_AFTER_G1_E12_FIXTURE__NO_ORDER_WITHIN_E05",
+        "remaining_prerequisites": "NONE"
+      },
+      {
+        "obligation_id": "P11-E05/STATE_TRANSITION",
+        "obligation_class": "E05_STATE_TRANSITION",
+        "obligation_semantics": "AUTHORITATIVE_OWNER_STATE_SERIALIZES_AVAILABLE_0_TO_CLAIMED_1_TO_CONSUMED_2__NO_RETURN_TO_AVAILABLE",
+        "satisfaction_state": "SATISFIED",
+        "satisfying_evidence": "G77_256DQ_AND_G77_256DW",
+        "evidence_binding": "DQ_FINAL_SEAL_SHA256_89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86__DW_FINAL_SEAL_SHA256_171ab94dca82ded312e69f31478748c68031b5515b5583cd776e4149d03f34e0",
+        "dependencies": "AUTHORITATIVE_OWNER_STATE_AND_ONE_USE_ACT__AUTHENTICATED",
+        "order_or_priority_if_explicitly_defined": "NO_ORDER_WITHIN_E05",
+        "remaining_prerequisites": "NONE"
+      },
+      {
+        "obligation_id": "P11-E05/CONCURRENCY",
+        "obligation_class": "E05_CONCURRENCY",
+        "obligation_semantics": "TWO_AUTHENTICATED_COMPETING_CLAIMS__AT_MOST_ONE_WINNER__LOSER_FAILS_CLOSED__ONE_INVOCATION__ACT_CONSUMED",
+        "satisfaction_state": "SATISFIED",
+        "satisfying_evidence": "G77_256DW",
+        "evidence_binding": "DW_FINAL_SEAL_SHA256_171ab94dca82ded312e69f31478748c68031b5515b5583cd776e4149d03f34e0__DW_RAW_SHA256_653d8edca05bd4b413c0445ee672b339f15e47fddc7d43097658018b4fb76171",
+        "dependencies": "FRESH_AUTHORITATIVE_OWNER_STATE__TWO_AUTHENTICATED_CONTENDERS__AUTHENTICATED",
+        "order_or_priority_if_explicitly_defined": "NO_ORDER_WITHIN_E05",
+        "remaining_prerequisites": "NONE"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/UNKNOWN",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "UNKNOWN_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "SATISFIED",
+        "satisfying_evidence": "G77_256DY",
+        "evidence_binding": "DY_FINAL_SEAL_SHA256_b8b4f81506d41bd364edd28c53a1a6c0c3de5e9dbd68125fd46f9d203187f7ca__DY_RAW_SHA256_3ae3380bb7d008ac1ecc326458e9a98fe52c4c7da94e4b4dcf7955c288db139e",
+        "dependencies": "D1_FIXED_CALLER_AUTHENTICATION__D2_PROTECTED_RESOLUTION__EMPTY_AUTHORITATIVE_OWNER_STATE__AUTHENTICATED",
+        "order_or_priority_if_explicitly_defined": "NONE__DY_SELECTION_DID_NOT_CREATE_PERMANENT_CD_ORDER",
+        "remaining_prerequisites": "NONE"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CALLER",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_CALLER_DENIES_AT_D1_BEFORE_D2_AUTHORITY_RESOLUTION_AND_PRECLAIM_WITH_ZERO_EFFECT",
+        "satisfaction_state": "SATISFIED",
+        "satisfying_evidence": "G77_256EJ_SEALED_BY_G77_256EK",
+        "evidence_binding": "EJ_FINAL_SEAL_SHA256_e30b00e8939a55867f3c344e3183712122e2a10110eb8fa5f953d1c1edc5becf__EJ_RAW_SHA256_270e1029f0dcbd94421bb8815b588e30e9cefe3f6d3ca9709d49714cfa27bf6d__EK_REPORT_SHA256_c264da1ba6182e3b06e74096f221d104206f00b9ff56582fd396a71196be86b8",
+        "dependencies": "D1_FIXED_PEER_CREDENTIAL_AUTHENTICATION__DISTINCT_ACTUAL_AND_AUTHORIZED_CALLER_UIDS__AUTHENTICATED",
+        "order_or_priority_if_explicitly_defined": "NONE__HUMAN_AUTHORIZED_EJ_VECTOR_ONLY",
+        "remaining_prerequisites": "NONE"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/AMBIGUOUS",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "AMBIGUOUS_AUTHORITY_DENIES_OR_REMAINS_NON_REUSABLE_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_DQ_DW_DY_EJ_EK_LINEAGE",
+        "dependencies": "FRESH_ISOLATED_AMBIGUOUS_RESOLUTION_FIXTURE__D1_D2_D3_OBSERVATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/STALE",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "STALE_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_ACT_AND_AUTHORITATIVE_OWNER_REVISION__STALE_REFERENCE_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/FUTURE",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "FUTURE_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_ACT_OWNER_STATE_AND_AUTHENTICATED_TIME_FIXTURE__FUTURE_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/EXPIRED",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "EXPIRED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_ACT_OWNER_STATE_AND_AUTHENTICATED_TIME_FIXTURE__EXPIRY_STATE",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/REVOKED",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "REVOKED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_ACT_AND_AUTHORITATIVE_REVOKED_OWNER_STATE",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/SUPERSEDED",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "SUPERSEDED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_OLD_AND_REPLACEMENT_ACT_IDENTITIES__AUTHORITATIVE_SUPERSESSION_STATE",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/CONSUMED",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "CONSUMED_AUTHORITY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_ACT_FIRST_CONSUMPTION_AND_SEPARATELY_OBSERVED_REUSE_DENIAL__NO_SECOND_INVOCATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_SCOPE",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_SCOPE_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_VALID_ACT_AND_ISOLATED_SCOPE_COORDINATE_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_ATTEMPT",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_ATTEMPT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_VALID_ACT_AND_ISOLATED_ATTEMPT_IDENTITY_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_INPUT",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_INPUT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_VALID_ACT_AND_ISOLATED_CANONICAL_INPUT_IDENTITY_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_PROVENANCE",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_PROVENANCE_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_VALID_ACT_AND_ISOLATED_PROVENANCE_MUTATION__AUTHORITATIVE_RESOLUTION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CONTRACT",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "WRONG_CONTRACT_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_VALID_ACT_AND_ISOLATED_CONTRACT_IDENTITY_MUTATION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      },
+      {
+        "obligation_id": "P11-E05/NEGATIVE_AUTHORITY/COHERENT_COPY",
+        "obligation_class": "E05_NEGATIVE_AUTHORITY",
+        "obligation_semantics": "COHERENT_COPY_DENIES_BEFORE_ATTEMPT_WITH_ZERO_EFFECT",
+        "satisfaction_state": "UNSATISFIED",
+        "satisfying_evidence": "NONE",
+        "evidence_binding": "CD_REQUIRED__NO_MATCHING_EXECUTED_CASE_IN_AUTHENTICATED_LINEAGE",
+        "dependencies": "FRESH_AUTHORITATIVE_SOURCE_ACT__ISOLATED_BYTE_COHERENT_NON_AUTHORITATIVE_COPY__PROTECTED_RESOLUTION",
+        "order_or_priority_if_explicitly_defined": "NONE",
+        "remaining_prerequisites": "HUMAN_SELECTION__SEPARATE_OPERATIONAL_AUTHORIZATION__FRESH_ONE_SHOT_CHAIN"
+      }
+    ],
+    "historical_receipt_authentication": {
+      "admission_replay_required": false,
+      "admission_replay_performed": false,
+      "original_required_head": "0d9b72facc30fd4ade8046607c8fb3244ba4a517",
+      "original_required_tree": "9e97364af99784020217ecf5f743f8822195e59d",
+      "original_commit_subject": "G77-256EI harden exact DU prohibition producer",
+      "original_head_is_ancestor_of_current_ek_head": true,
+      "candidate_path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "candidate_file_sha256": "26dc22aab05519212c3f155a89564a023184f316e8b30c354ca12f10cc75b1f1",
+      "candidate_inner_sha256": "78c26ffaae93e0746ff66c2c8a96148e50f9038dde1754f4f49534eb8883e594",
+      "runtime_path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_CONTINUATION_MANIFEST_V1.json",
+      "runtime_file_sha256": "26dc22aab05519212c3f155a89564a023184f316e8b30c354ca12f10cc75b1f1",
+      "runtime_inner_sha256": "78c26ffaae93e0746ff66c2c8a96148e50f9038dde1754f4f49534eb8883e594",
+      "candidate_runtime_exact_bytes_equal": true,
+      "eb_receipt": {
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+        "file_sha256": "2c27b37828614389b70b7599367356e3906f463a1f7724a6690268d7f96e0ead",
+        "inner_sha256": "8bf9eff7b661dbc612b7b24ce3c450f1b0e49309c6af1d71670d5c174d29c936",
+        "schema_identity": "SAPIANTA_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_SCHEMA_V1",
+        "schema_sha256": "5b477ce183df65446aa1c3df3f8006856fce72b0771fcf04ff0c9cc6ae3a5f49",
+        "validator_identity": "G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATOR_V1",
+        "validator_sha256": "8e8171f757213f064cec463868408364175772e766615bd276ed7f0e28306b43",
+        "du_validator_identity": "G77_256DU_PRE_MATERIALIZATION_CONSUMER_VALIDATOR_V1",
+        "du_validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "historical_authentication": "PASS"
+      },
+      "ee_receipt": {
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_RUNTIME_CONSUMER_EE_RECEIPT_V1.json",
+        "file_sha256": "6599c21e0431e57f273928fb68fc2980d31a1d04ac59129ce0d2c19a3f3c8c2a",
+        "inner_sha256": "26fc6013410dde81ba4c14ea8d9632bb48adabcf2c3f4f4467b6eb408d0dc54e",
+        "schema_identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_SCHEMA_V1",
+        "schema_sha256": "b193f6d392b0f5b0be32041e554ce3ccc18288f68bab0880c27326cb42d2ccc0",
+        "validator_identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1",
+        "validator_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410",
+        "harness_path": ".github/governance/evidence/g77_256ej_p11_operational_v1/harness/G77_256EJ_P11_OPERATIONAL_HARNESS_V1.py",
+        "harness_sha256": "d978d9b6714f12be4f4ddff03bd9bc1ffc6ddf27f46e361595e0efe6a40e7105",
+        "historical_authentication": "PASS"
+      },
+      "phase_a_checkpoint": {
+        "file_sha256": "09f8876f39c118a0857485b3242524b27bb87424a7f66f810e7bb7cca0471148",
+        "inner_sha256": "e7528fb4f12d7a178834603de4cafeb83f671e066f80efdec28fba12506fe141"
+      },
+      "final_execution_seal": {
+        "file_sha256": "e30b00e8939a55867f3c344e3183712122e2a10110eb8fa5f953d1c1edc5becf",
+        "inner_sha256": "7350fb6c8d1d9498baf177ceb218dde9765f392ead93cf458c4159595b5ee7ce"
+      },
+      "terminal_manifest": {
+        "file_sha256": "7b969a00fa4877de8053daba4fbd091ca794ab8da9bed02f5a8fb52e97b46d78",
+        "inner_sha256": "4a1714eb944b3e14889c6ab0df02e7ecb7d0f0a4cdc2eb2f3abe243b905b0a8f"
+      },
+      "phase_d_checkpoint": {
+        "file_sha256": "b614094319c68bd7fb5e756ce4ed4ec1f24d65d5a577052044aaea8bf9f9ccc9",
+        "inner_sha256": "8adc4c37a705592dc084aa632171c5affafca4730211fda8e9aac189ac08fcc1"
+      },
+      "sealing_chain": "PASS__PHASE_A_BINDS_EB_EE_CANDIDATE_RUNTIME_AND_IDENTITIES__FINAL_SEAL_BINDS_PHASE_A_EB_EE_RAW_AND_HARNESS__TERMINAL_MANIFEST_BINDS_FINAL_SEAL__PHASE_D_BINDS_TERMINAL_MANIFEST_AND_5_OF_18_FRONTIER__EK_COMMIT_SEALS_ALL_BYTES",
+      "historical_eb_receipt_authentication": "PASS",
+      "historical_ee_receipt_authentication": "PASS"
+    },
+    "next_frontier_selection": {
+      "next_e05_selection_state": "HUMAN_SELECTION_REQUIRED",
+      "selection_reason": "CD_DEFINES_THE_SET_DEPENDENCIES_ISOLATION_AND_G2_POSITION_BUT_NO_WITHIN_E05_PRIORITY_OR_TIE_BREAK__ENUMERATION_ORDER_IS_NOT_AUTHORITY",
+      "minimum_candidate_count": 13,
+      "minimum_candidate_set": [
+        "P11-E05/NEGATIVE_AUTHORITY/AMBIGUOUS",
+        "P11-E05/NEGATIVE_AUTHORITY/STALE",
+        "P11-E05/NEGATIVE_AUTHORITY/FUTURE",
+        "P11-E05/NEGATIVE_AUTHORITY/EXPIRED",
+        "P11-E05/NEGATIVE_AUTHORITY/REVOKED",
+        "P11-E05/NEGATIVE_AUTHORITY/SUPERSEDED",
+        "P11-E05/NEGATIVE_AUTHORITY/CONSUMED",
+        "P11-E05/NEGATIVE_AUTHORITY/WRONG_SCOPE",
+        "P11-E05/NEGATIVE_AUTHORITY/WRONG_ATTEMPT",
+        "P11-E05/NEGATIVE_AUTHORITY/WRONG_INPUT",
+        "P11-E05/NEGATIVE_AUTHORITY/WRONG_PROVENANCE",
+        "P11-E05/NEGATIVE_AUTHORITY/WRONG_CONTRACT",
+        "P11-E05/NEGATIVE_AUTHORITY/COHERENT_COPY"
+      ],
+      "automatic_next_e05_execution_authorized": false,
+      "next_obligation_selected": false
+    },
+    "capability_reuse": [
+      {"capability": "EI_PRODUCER", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "REUSE_PRODUCER_IDENTITY_AND_CODE__GENERATE_FRESH_CANDIDATE_ONLY_AFTER_SEPARATE_AUTHORIZATION"},
+      {"capability": "DU_VALIDATION", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "REUSE_SCHEMA_AND_VALIDATOR__FRESH_CANDIDATE_VALIDATION_EVIDENCE_REQUIRED"},
+      {"capability": "EB_CANDIDATE_BOUND_VALIDATION", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "CONSUMED_EJ_RECEIPT_IS_HISTORICAL_ONLY__FRESH_CANDIDATE_BOUND_RECEIPT_REQUIRED"},
+      {"capability": "EE_RUNTIME_CONSUMER_BINDING", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "CONSUMED_EJ_RECEIPT_IS_HISTORICAL_ONLY__FRESH_RUNTIME_BINDING_RECEIPT_REQUIRED"},
+      {"capability": "P03_COMMISSIONING_INSTRUMENT", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "REUSE_COMMITTED_INSTRUMENT__FRESH_COMMISSIONING_CAPTURE_REQUIRED_FOR_ANY_AUTHORIZED_GENERATION"},
+      {"capability": "EJ_HARNESS_PATTERN", "reusable_capability": "PARTIAL", "fresh_one_shot_artifact_required": "YES", "boundary": "REUSE_STRUCTURE_AND_FAIL_CLOSED_OBSERVERS__VECTOR_SPECIFIC_FIXTURE_AND_HARNESS_IDENTITY_MUST_BE_FRESH"},
+      {"capability": "SPCE_PHASE_A_PATTERN", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "FRESH_PRE_OPERATION_CHECKPOINT_AND_IDENTITIES_REQUIRED"},
+      {"capability": "SPCE_MATERIALIZATION_PATTERN", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "NO_EJ_VM_OR_MATERIALIZATION_STATE_REUSE__FRESH_DISPOSABLE_SUBSTRATE_ONLY_IF_SEPARATELY_AUTHORIZED"},
+      {"capability": "SPCE_TEARDOWN_PATTERN", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "FRESH_GUEST_AND_HOST_TEARDOWN_EVIDENCE_REQUIRED"},
+      {"capability": "G48_REPORTING_PATTERN", "reusable_capability": "YES", "fresh_one_shot_artifact_required": "YES", "boundary": "REUSE_SIX_SECTION_STANDARD__FRESH_GENERATION_REPORT_REQUIRED"}
+    ],
+    "spce_clrec_assessment": {
+      "spce_phase_checkpoint_readiness": "PASS__R0_TO_R4_REPOSITORY_ONLY_CHECKPOINTABLE",
+      "spce_repository_resumability": "PASS__EM_RECOMPUTED_FROM_COMMITTED_EK_STATE",
+      "spce_cross_account_resumability": "PASS__NEW_ACCOUNT_CONTINUATION_COMPLETED_WITHOUT_EL_ARTIFACTS_OR_CONVERSATION_HISTORY",
+      "spce_operational_resumability": "NOT_EXERCISED__NO_OPERATIONAL_AUTHORITY",
+      "cross_account_continuation_used": true,
+      "cross_llm_continuation_used": "NOT_ESTABLISHED",
+      "cross_account_continuation_readiness": "PASS__EMPIRICALLY_SUPPORTED_FOR_REPOSITORY_ONLY_REDUCTION",
+      "cross_llm_continuation_readiness": "NOT_ESTABLISHED__NO_DIFFERENT_MODEL_IDENTITY_AUTHENTICATED",
+      "logical_state_resumability": "PASS",
+      "repository_evidence_resumability": "PASS",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "clrec_empirical_support": "INCREASED__CROSS_ACCOUNT_REPOSITORY_ONLY_REDUCTION_RECONSTRUCTED_FROM_AUTHENTICATED_COMMITTED_STATE",
+      "clrec_constitutionally_certified": false
+    },
+    "auto_continuation_assessment": {
+      "bounded_multi_frontier_auto_continuation_authority": "NONE_AUTHENTICATED",
+      "automatic_next_e05_execution_authorized": false
+    },
+    "reuse_impact": {
+      "capability_reuse_classes": "EI_DU_EB_EE_P03_SPCE_AND_G48_CAPABILITY_PATTERNS_REUSABLE__EJ_VECTOR_HARNESS_PARTIAL",
+      "fresh_artifact_requirements_for_next_generation": "FRESH_HUMAN_SELECTION_AND_AUTHORIZATION__VECTOR_FIXTURE__ONE_SHOT_CANDIDATE__DU_EB_EE_RECEIPTS__PHASE_A__MATERIALIZATION_EXECUTION_AND_TEARDOWN_EVIDENCE__FINAL_SEAL__G48_REPORT",
+      "existing_capability_became_unreachable": false,
+      "new_capability_created": "NONE__EM_CREATES_REPOSITORY_EVIDENCE_ONLY",
+      "parallel_execution_path_created": false,
+      "production_route_delta": 0
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "spce_phase_results": {
+      "r0_entry_recovery": "PASS__EXACT_CLEAN_EK_BASELINE__STATE_A_RECOMPUTATION",
+      "r1_frontier_authentication": "PASS__FIVE_DISTINCT_CREDITS__EIGHTEEN_ITEM_MATRIX__THIRTEEN_REMAIN",
+      "r2_historical_evidence_authentication": "PASS__EB_EE_BYTES_INNER_HASHES_ORIGINAL_BINDINGS_AND_EJ_EK_SEALING_CHAIN__NO_REPLAY",
+      "r3_next_frontier_reduction": "PASS__NO_CONSTITUTIONAL_TIE_BREAK__EXACT_THIRTEEN_ITEM_HUMAN_SELECTION_SET",
+      "r4_finalization": "PASS__SELF_AUTHENTICATING_REPOSITORY_REDUCTION_CHECKPOINT_PERSISTED"
+    },
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EM_POST_EK_FRONTIER_REDUCTION__THEN_HUMAN_SELECTION_FROM_THE_EXACT_AUTHENTICATED_MINIMUM_REMAINING_E05_CANDIDATE_SET__THEN_SEPARATE_OPERATIONAL_AUTHORIZATION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "e5c75e3b2a69aff946ffbf3be3626361d1c3645aa1b2e546eaeb044e668fa663"
+}
