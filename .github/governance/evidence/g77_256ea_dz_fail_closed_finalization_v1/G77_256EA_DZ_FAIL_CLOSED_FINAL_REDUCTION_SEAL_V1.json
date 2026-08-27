@@ -1,0 +1,84 @@
+{
+  "schema_id": "G77_256EA_DZ_FAIL_CLOSED_FINAL_REDUCTION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EA_DZ_FAIL_CLOSED_FINAL_REDUCTION_SEAL_V1",
+    "generation_identity": "G77_256EA_SAME_SESSION_DZ_FAIL_CLOSED_FINALIZATION_V1",
+    "required_head": "d28788f117cca6173b65faa46af34a0a0a902a71",
+    "source_tree": "a6d6498dcd25b51d78a6510b117715ec12823b3e",
+    "authentication_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ea_dz_fail_closed_finalization_v1/G77_256EA_DZ_AUTHENTICATION_AND_FAIL_CLOSED_REDUCTION_CHECKPOINT_V1.json",
+      "file_sha256": "7d9cbddb8b6148786e0c3e1fcbcae3ab14cbb78c0d504cc02914e24d1eb50c68",
+      "inner_sha256": "9e69bd51b49e1115ff03df414fd160808a04b97f7c66a1dbe21389030895c87e"
+    },
+    "executive_constitutional_result": "PASS__EA_FINALIZATION_FAILS_DZ_ADMISSION_CLOSED__PRESERVES_AUTHENTIC_OBSERVATION_AND_TEARDOWN__DENIES_E05_CREDIT",
+    "dz_pre_materialization_canonical_v1_validation": "INVALID",
+    "dz_pre_materialization_gate_constitutionally_admissible": false,
+    "post_execution_discovery_changes_historical_gate_result": false,
+    "post_execution_discovery_changes_current_knowledge": true,
+    "retroactive_certification_allowed": false,
+    "dz_e05_obligation_satisfied": false,
+    "e05_accounting": {
+      "total": 18,
+      "pre_dz_satisfied": 4,
+      "post_dz_satisfied": 4,
+      "remaining": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "cd_g2_state": "OPEN",
+      "cd_g3_entry_authorized": false
+    },
+    "historical_dz_execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "human_operational_act_created_count": 0,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0
+    },
+    "ea_continuation_counters": {
+      "new_vm_creation_count": 0,
+      "new_vm_boot_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "new_human_operational_act_count": 0,
+      "new_p11_entry_count": 0,
+      "new_p11_operational_invocation_count": 0,
+      "new_e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0
+    },
+    "dz_evidence_disposition": {
+      "raw_execution_evidence": "PRESERVED__OBSERVATIONAL_ONLY",
+      "teardown_evidence": "PRESERVED__AUTHENTIC",
+      "invalid_pre_manifest": "PRESERVED_DEFECT",
+      "self_test_validation_evidence": "PRESERVED_BUT_INVALID_AS_DZ_CANDIDATE_CERTIFICATION",
+      "materialization_checkpoint_false_gate_claim": "PRESERVED_AND_OVERRIDDEN_BY_EA_REDUCTION",
+      "terminal_manifest_stale_binding": "PRESERVED_DEFECT",
+      "phase_d_five_of_eighteen_claim": "INADMISSIBLE_AND_OVERRIDDEN_BY_EA_REDUCTION"
+    },
+    "continuity": {
+      "same_session_continuation_used": true,
+      "cross_account_handoff_required": false,
+      "full_history_reconstruction_used": false,
+      "persistent_evidence_sufficient_for_authentication": true,
+      "cross_account_continuation_readiness": "PARTIAL",
+      "cross_llm_continuation_readiness": "PARTIAL"
+    },
+    "clrec_empirical_support": "INCREASED",
+    "clrec_constitutionally_certified": false,
+    "final_validation": "PASS",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_DZ_PLUS_EA_FAIL_CLOSED_EVIDENCE__WRONG_CALLER_REMAINS_UNSATISFIED__SEPARATE_HUMAN_AUTHORIZATION_AND_FRESH_AUTHENTIC_PRE_MATERIALIZATION_VALIDATION_REQUIRED_BEFORE_ANY_NEW_E05_GENERATION__NO_G3_ENTRY",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "e5f20f4311ed9c43a03006400f68c2de7f65de0d075a24b7556e174f3b732460"
+}

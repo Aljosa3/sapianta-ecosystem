@@ -1,0 +1,81 @@
+{
+  "schema_id": "G77_256DZ_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DZ_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256DZ_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "d28788f117cca6173b65faa46af34a0a0a902a71",
+    "source_tree": "a6d6498dcd25b51d78a6510b117715ec12823b3e",
+    "selected_e05_vector": "WRONG_CALLER",
+    "operational_result": "PASS__D1_WRONG_CALLER_DENIED_BEFORE_D2_AND_PRECLAIM__ZERO_UNAUTHORIZED_EFFECT",
+    "commissioning_result": "PASS__P01_P12_12_OF_12",
+    "raw_evidence": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+      "bytes": 37729,
+      "sha256": "61c3b4b3d74e262cb64a5c24fb8ccb40282a6403924ab72b75705ace675da89d",
+      "record_count": 20,
+      "sequence_contiguous": true
+    },
+    "guest_execution_seal": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_GUEST_EXECUTION_SEAL_V1.json",
+      "sha256": "21fd72cf79f97dd3dcb258c256b9149bc9a02f347a2c55a7c977aaddec878a8c"
+    },
+    "guest_teardown_seal": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_GUEST_TEARDOWN_SEAL_V1.json",
+      "sha256": "9cf6c12a18c63bc1992419254cfa9625e9ac554078e25f04bc5198604a97d340",
+      "teardown_state": "COMPLETE"
+    },
+    "continuation_manifest": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_CONTINUATION_MANIFEST_V1.json",
+      "file_sha256": "f3351f7881d4f8f51754355c4c21dd2b862e61c95d627939cfd80b95dfc88625",
+      "inner_sha256": "a54285a29d7be5dad2ed2f6022a95e3d6e2d1fbdad1e0fe603b96c0d2c743f63"
+    },
+    "serial_console": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_SERIAL_CONSOLE_V1.log",
+      "bytes": 87765,
+      "sha256": "3b1b1edfdd402a8dffaf3238808eae247a9d762b172c6418add3e313208e6994"
+    },
+    "transient_state_before_host_teardown": {
+      "qemu_process_count": 0,
+      "transient_root": "/tmp/g77_256dz",
+      "transient_root_present": true,
+      "checkout_present": true,
+      "overlay_present": true,
+      "overlay_bytes": 21626880,
+      "overlay_sha256": "0c0f0a81f57bdd951c9667c372ce094a8ccf7939b3b9960e1593e78bd8cbd5de",
+      "overlay_qemu_img_check": "PASS",
+      "seed_present": true,
+      "seed_sha256": "66e0aa75011bb861bcb46def4e31a59e5c26e193764c22c1e2854bb2ec2a3bd4"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0
+    },
+    "exact_next_legal_action": "HOST_TRANSIENT_TEARDOWN_AND_FINALIZATION_ONLY__NO_EXECUTION_REPLAY_OR_NEXT_VECTOR",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "dec3b9fbb6e0c3882e708c493a40e8d821ee62f8fe17f8f5060a85dc72dbcddd"
+}

@@ -1,0 +1,153 @@
+{
+  "schema_id": "G77_256DZ_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256DZ_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256DZ_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "d28788f117cca6173b65faa46af34a0a0a902a71",
+    "source_tree": "a6d6498dcd25b51d78a6510b117715ec12823b3e",
+    "entry_gate": {
+      "git_status_short": "",
+      "observed_head": "d28788f117cca6173b65faa46af34a0a0a902a71",
+      "observed_log": "d28788f1 G77-256DY satisfy UNKNOWN P11 E05 negative authority vector",
+      "result": "PASS"
+    },
+    "case_selection": {
+      "selected_e05_vector": "WRONG_CALLER",
+      "evidence_obligation_id": "P11-E05/NEGATIVE_AUTHORITY/WRONG_CALLER",
+      "case_id": "G77_256DZ_E05_WRONG_CALLER_DENIAL_BEFORE_ATTEMPT_001",
+      "selection_rationale": "EXPLICIT_CD_OBLIGATION_UNSATISFIED_AFTER_DY__FIRST_D1_REJECTION_IN_CC_ACCEPTANCE_ALGORITHM__REUSES_FIXED_SO_PEERCRED_VERIFIER_AND_DW_DY_COMMISSIONING__NO_HUMAN_ACT_OWNER_STATE_OR_NEW_AUTHORITY_FIXTURE__ZERO_NEW_RUNTIME_PATH__MINIMUM_VM_TOKEN_AND_SEMANTIC_COST__INDEPENDENT_FAIL_CLOSED_INFORMATION_GAIN",
+      "non_selection_rationale_for_other_13_vectors": {
+        "AMBIGUOUS": "REQUIRES_DISTINCT_AMBIGUITY_AND_NON_REUSABILITY_FIXTURE",
+        "STALE": "REQUIRES_VALID_ACT_OWNER_STATE_AND_REVISION_MUTATION_FIXTURE",
+        "FUTURE": "REQUIRES_VALID_ACT_AND_CONTROLLED_CLOCK_FIXTURE",
+        "EXPIRED": "REQUIRES_VALID_ACT_OWNER_STATE_AND_CONTROLLED_CLOCK_FIXTURE",
+        "REVOKED": "REQUIRES_VALID_ACT_AND_AUTHORIZED_LIFECYCLE_TRANSITION_FIXTURE",
+        "SUPERSEDED": "REQUIRES_VALID_ACT_AND_AUTHORIZED_LIFECYCLE_TRANSITION_FIXTURE",
+        "CONSUMED": "REQUIRES_FULL_VALID_CLAIM_INVOCATION_AND_TERMINAL_STATE_FIXTURE",
+        "WRONG_SCOPE": "REQUIRES_CANONICAL_HUMAN_ACT_MUTATION_FIXTURE",
+        "WRONG_ATTEMPT": "REQUIRES_VALID_ACT_OWNER_STATE_AND_INPUT_COORDINATE_MUTATION",
+        "WRONG_INPUT": "REQUIRES_VALID_ACT_OWNER_STATE_AND_INPUT_COORDINATE_MUTATION",
+        "WRONG_PROVENANCE": "REQUIRES_VALID_ACT_OWNER_STATE_AND_PROVENANCE_MUTATION",
+        "WRONG_CONTRACT": "REQUIRES_VALID_ACT_OWNER_STATE_AND_CONTRACT_MUTATION",
+        "COHERENT_COPY": "REQUIRES_VALID_BASELINE_AND_COHERENT_COPY_ATTACK_FIXTURE"
+      },
+      "expected_denial_point": "D1_FIXED_PEER_CREDENTIAL_AUTHENTICATION_BEFORE_D2_PROTECTED_AUTHORITY_RESOLUTION_AND_PRECLAIM",
+      "expected_denial_error": "FailClosedRuntimeError: peer is not authorized for the fixed custody operation",
+      "expected_zero_effect_postcondition": "ZERO_HUMAN_ACT_OWNER_STATE_CLAIM_INVOCATION_RUNTIMELEDGER_P12_PRODUCTION_RETRY_REPLAY_OR_ALTERNATE_AUTHORITY_EFFECT"
+    },
+    "minimum_authenticated_lineage": {
+      "commit_count": 7,
+      "commits": {
+        "G77_256CC": "e50344417f7e5cdf5a8aa5ec20b43559feffa3ed",
+        "G77_256CD": "9154de15a4da10855b2b490a8f7eea7fddbcb5ed",
+        "G77_256DQ": "9a85057d546a3fb33fecce9b6eab8b6c1d38f9c1",
+        "G77_256DU": "9f22ffe33626db267460fd731ad3fd23b7cbfbd5",
+        "G77_256DW": "5d5c31edc829787af6b667fcc046c5e27df0f55b",
+        "G77_256DX": "94b4397ebc2f1828cf857a987507a886c9c09ec5",
+        "G77_256DY": "d28788f117cca6173b65faa46af34a0a0a902a71"
+      },
+      "authenticated_artifact_count": 22,
+      "critical_artifacts": {
+        "G77_256CC_CONTRACT_SHA256": "75222f6f1dfb2fb9a5d774a0517c7f3a8e133652edbffb34622dcafd9d0ecb4a",
+        "G77_256CD_PLAN_SHA256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670",
+        "G77_256DQ_FINAL_SEAL_SHA256": "89abf43f43ab95dbc0d1edf0d6b8fdbc9a75e915adc62f47513a738546edcd86",
+        "G77_256DU_CONTRACT_SHA256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "G77_256DU_SCHEMA_SHA256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "G77_256DU_VALIDATOR_SHA256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "G77_256DW_FINAL_SEAL_SHA256": "171ab94dca82ded312e69f31478748c68031b5515b5583cd776e4149d03f34e0",
+        "G77_256DX_PHASE_D_SHA256": "52d486112e1093dcbe8629bed9eb1b3b9ed41cddebde1081609c9eab05f432f3",
+        "G77_256DY_FINAL_SEAL_SHA256": "b8b4f81506d41bd364edd28c53a1a6c0c3de5e9dbd68125fd46f9d203187f7ca",
+        "G77_256DY_PHASE_D_SHA256": "a5a6a3662179e3ff4861500d4f0aeb4002e856967b00dbfedaa6fc0384314b4d"
+      },
+      "inner_seal_authentication": "PASS__DQ_DW_DX_DY_CANONICAL_INNER_PREIMAGES_RECOMPUTED",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false
+    },
+    "exact_harness_identity": {
+      "identity": "G77_256DZ_P11_OPERATIONAL_HARNESS_V1",
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/harness/G77_256DZ_P11_OPERATIONAL_HARNESS_V1.py",
+      "sha256": "2b688e7c2b200d90ea0a1f8ed30a761a502f0509d4701d7c437ae11bb17cb7d8"
+    },
+    "exact_schema_identity": {
+      "identity": "G77_256DZ_RAW_EVIDENCE_SCHEMA_V1",
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/G77_256DZ_RAW_EVIDENCE_SCHEMA_V1.json",
+      "sha256": "d016b98a17eaa1c4bd447c32ca205d0fbec3f19c5536e875c7692a99f56e6dcf"
+    },
+    "canonical_v1": {
+      "contract_identity": "G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1",
+      "contract_sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+      "schema_identity": "SAPIANTA_SPCE_CONTINUATION_MANIFEST_SCHEMA_V1",
+      "schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "validator_identity": "G77_256DU_PRE_MATERIALIZATION_CONSUMER_VALIDATOR_V1",
+      "validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "all_four_gates_required_before_materialization": true
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "qemu_img_check": "PASS"
+    },
+    "constitutional_frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "execution_budget": {
+      "vm_creation_count_max": 1,
+      "vm_boot_count_max": 1,
+      "second_vm_count": 0,
+      "e05_case_execution_count_max": 1,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "zero_initial_execution_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0
+    },
+    "completed_gates": [
+      "MANDATORY_ENTRY_GATE",
+      "MINIMUM_LINEAGE_AUTHENTICATION",
+      "DETERMINISTIC_ONE_VECTOR_SELECTION",
+      "BASE_IMAGE_AUTHENTICATION"
+    ],
+    "pending_gates": [
+      "CANONICAL_V1_PRE_MATERIALIZATION_FOUR_GATES",
+      "DT_MISSING_COMPLETED_PHASE_SEALS_REGRESSION",
+      "ONE_VM_MATERIALIZATION",
+      "ONE_VM_BOOT",
+      "P01_P12_COMMISSIONING",
+      "ONE_WRONG_CALLER_E05_DENIAL",
+      "TEARDOWN",
+      "FINALIZATION"
+    ],
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false,
+    "exact_next_legal_action": "CONSTRUCT_AND_INDEPENDENTLY_VALIDATE_CANONICAL_V1_PRE_MATERIALIZATION_MANIFEST"
+  },
+  "seal_sha256": "f886d5dd038ce4b05a56f86f4a6d9fa5f4fbddbecd708ad49e5c91f0cd8fc702"
+}

@@ -1,0 +1,82 @@
+{
+  "schema_id": "G77_256DZ_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256DZ_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256DZ_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "d28788f117cca6173b65faa46af34a0a0a902a71",
+    "source_tree": "a6d6498dcd25b51d78a6510b117715ec12823b3e",
+    "selected_e05_vector": "WRONG_CALLER",
+    "selected_e05_vector_result": "PASS__D1_FIXED_PEER_CREDENTIAL_DENIAL_BEFORE_D2_AND_PRECLAIM__ZERO_UNAUTHORIZED_EFFECT",
+    "final_execution_seal": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/G77_256DZ_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+      "bytes": 5940,
+      "file_sha256": "2bc252ecd59058fbfbf043c4021931871a9e3de3bfc28436fd8e20a5b330eae1",
+      "inner_sha256": "908de6f37fc1f38031b9f29a2ac2ab43015dbdc55c72b4a366a9fff111f05952"
+    },
+    "terminal_canonical_v1_manifest": {
+      "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_CANONICAL_CONTINUATION_MANIFEST_TERMINAL_V1.json",
+      "bytes": 11890,
+      "file_sha256": "929af9a9e894fb852d90f471512d1e3b667b79fa352d2e6b8cfa6dc1ec049eba",
+      "inner_sha256": "dbefe7d98cc2f187d03c794f4ebbea4c6c27ea8931ac2eb4225492d4a82b337f",
+      "manifest_authenticity_gate": "PASS",
+      "manifest_schema_validity_gate": "PASS",
+      "manifest_semantic_compatibility_gate": "PASS",
+      "manifest_constitutional_admissibility_gate": "PASS"
+    },
+    "execution_evidence": {
+      "raw_record_count": 20,
+      "raw_sequence_contiguous": true,
+      "raw_sha256": "61c3b4b3d74e262cb64a5c24fb8ccb40282a6403924ab72b75705ace675da89d",
+      "guest_execution_seal_sha256": "21fd72cf79f97dd3dcb258c256b9149bc9a02f347a2c55a7c977aaddec878a8c",
+      "guest_teardown_seal_sha256": "9cf6c12a18c63bc1992419254cfa9625e9ac554078e25f04bc5198604a97d340",
+      "host_teardown_checkpoint_sha256": "ef87dbfb496dc945a012efd4b1baa8ab1169bb1e5980a2aa80c0c7ed28a5ee9f"
+    },
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0
+    },
+    "completion_reduction": {
+      "previous_e05_total_obligation_count": 18,
+      "previous_e05_satisfied_obligation_count": 4,
+      "previous_e05_remaining_obligation_count": 14,
+      "new_e05_total_obligation_count": 18,
+      "new_e05_satisfied_obligation_count": 5,
+      "new_e05_remaining_obligation_count": 13,
+      "remaining_vectors": [
+        "AMBIGUOUS", "STALE", "FUTURE", "EXPIRED", "REVOKED", "SUPERSEDED",
+        "CONSUMED", "WRONG_SCOPE", "WRONG_ATTEMPT", "WRONG_INPUT",
+        "WRONG_PROVENANCE", "WRONG_CONTRACT", "COHERENT_COPY"
+      ],
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "conversation_history_required": false,
+    "full_history_reconstruction_required": false,
+    "execution_replay_required": false,
+    "final_validation": "PASS",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_DZ_EVIDENCE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_EXACTLY_ONE_OF_THIRTEEN_REMAINING_E05_NEGATIVE_AUTHORITY_OBLIGATIONS__NO_G3_ENTRY",
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "b019376da9e6d6c7a84b7e1e0d6bfcad1ab15341e850bb4e8e565eed5e01a5b2"
+}
