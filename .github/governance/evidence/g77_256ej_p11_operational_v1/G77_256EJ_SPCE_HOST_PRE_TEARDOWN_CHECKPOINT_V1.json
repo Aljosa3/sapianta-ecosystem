@@ -1,0 +1,116 @@
+{
+  "schema_id": "G77_256EJ_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EJ_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256EJ_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "0d9b72facc30fd4ade8046607c8fb3244ba4a517",
+    "required_tree": "9e97364af99784020217ecf5f743f8822195e59d",
+    "host_state": "AUTHENTICATED__VM_STOPPED__TRANSIENT_ROOT_PRESENT_PENDING_EXACT_TEARDOWN",
+    "qemu_invocation_exit_status": 0,
+    "qemu_process_absent": true,
+    "ej_mount_absent": true,
+    "serial_console": {
+      "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_SERIAL_CONSOLE_V1.log",
+      "file_sha256": "6df589b2aa3adec9a5f1fbd31e05b1e745d59942ac760586d66491c71f293e59",
+      "boot_marker_count": 1,
+      "harness_exit_status_zero_count": 1,
+      "power_down_marker_count": 1
+    },
+    "materialization_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/G77_256EJ_SPCE_MATERIALIZATION_CHECKPOINT_V1.json",
+      "file_sha256": "beb9979b449d3861b6a73df745c1a1fcefda591c7610843d6d0de8987f3f323d",
+      "inner_sha256": "9583c671d5e338882039f4d87587b7d9291a3cecd6ff2d8e3ba1ae0ea4ce3ad6"
+    },
+    "raw_execution_evidence": {
+      "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_RAW_EXECUTION_EVIDENCE_V1.jsonl",
+      "file_sha256": "270e1029f0dcbd94421bb8815b588e30e9cefe3f6d3ca9709d49714cfa27bf6d",
+      "record_count": 20,
+      "sequence": "0_THROUGH_19_CONTIGUOUS",
+      "schema_validation": "PASS",
+      "canonical_record_serialization": "PASS"
+    },
+    "guest_artifacts": [
+      {
+        "identity": "G77_256EJ_PRE_ACT_CHECKPOINT_V1",
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_PRE_ACT_CHECKPOINT_V1.json",
+        "file_sha256": "5f0e0276446d6f3de8cbb596818f701e7fab665594e15d28a362f689ebf77a43",
+        "authentication": "PASS"
+      },
+      {
+        "identity": "G77_256EJ_GUEST_EXECUTION_SEAL_V1",
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_GUEST_EXECUTION_SEAL_V1.json",
+        "file_sha256": "a222791a8c73d283fe884ff41e9ec8a9baae05883258e1abbd098269db5e29a1",
+        "authentication": "PASS"
+      },
+      {
+        "identity": "G77_256EJ_GUEST_TEARDOWN_SEAL_V1",
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_GUEST_TEARDOWN_SEAL_V1.json",
+        "file_sha256": "989db1c88e246858e917d334ce14c704f2bd05ac4ea37346b490fc33ccae8cb8",
+        "authentication": "PASS"
+      },
+      {
+        "identity": "G77_256EJ_CANONICAL_CONTINUATION_MANIFEST_TERMINAL_V1",
+        "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/raw/G77_256EJ_CONTINUATION_MANIFEST_TERMINAL_V1.json",
+        "file_sha256": "31f9e9f1e6a28ff11c661addaf725b84da4fbb2c63f866a59e07c4bdb5462d33",
+        "inner_sha256": "d90f95722b2ada51a763fbf1320af552073646eedf2651168ea72bd609856d71",
+        "du_four_gate_result": "PASS"
+      }
+    ],
+    "transient_material": {
+      "root": "/tmp/g77_256ej",
+      "root_present": true,
+      "checkout_path": "/tmp/g77_256ej/checkout",
+      "checkout_head": "0d9b72facc30fd4ade8046607c8fb3244ba4a517",
+      "checkout_tree": "9e97364af99784020217ecf5f743f8822195e59d",
+      "checkout_status_empty": true,
+      "overlay_path": "/tmp/g77_256ej/guest-overlay.qcow2",
+      "overlay_post_boot_sha256": "27fb83e7101c5de80fe787419d6c7288d2dd95e211868562bdaaf63babecec1a",
+      "overlay_qemu_img_check": "PASS__NO_ERRORS",
+      "seed_path": "/tmp/g77_256ej/nocloud-seed.img",
+      "seed_sha256": "6da2db8776d001e90c027fb7cef9e15a1d5392a4f184bc8525c652d749aa7003"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "expected_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "observed_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "unchanged": true
+    },
+    "execution_result": {
+      "commissioning_result": "PASS__P01_P12_12_OF_12",
+      "wrong_caller_result": "PASS__WRONG_CALLER_DENIED_AT_D1_BEFORE_D2_AND_PRECLAIM_WITH_ZERO_EFFECT",
+      "wrong_caller_state": "SATISFIED",
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 5,
+      "e05_remaining_obligation_count": 13,
+      "first_failure": null
+    },
+    "operational_counters": {
+      "candidate_generation_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "exact_next_legal_action": "REMOVE_ONLY_EXACT_EJ_TRANSIENT_ROOT__REAUTHENTICATE_BASE_IMAGE_AND_HOST_ABSENCE__THEN_FINALIZE_EVIDENCE_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "8207596d9e8ac4df6e83c9a52fe0e8bdd7ae06da7cb3e4e73f1e483da65684ef"
+}

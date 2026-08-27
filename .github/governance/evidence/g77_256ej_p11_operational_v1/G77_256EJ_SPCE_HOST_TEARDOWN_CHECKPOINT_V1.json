@@ -1,0 +1,66 @@
+{
+  "schema_id": "G77_256EJ_SPCE_HOST_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EJ_SPCE_HOST_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256EJ_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "0d9b72facc30fd4ade8046607c8fb3244ba4a517",
+    "required_tree": "9e97364af99784020217ecf5f743f8822195e59d",
+    "host_pre_teardown_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ej_p11_operational_v1/G77_256EJ_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1.json",
+      "file_sha256": "01c8b243afa7a185a295662cf43aa46cd1cecccf0aff6b68368146c9b4416406",
+      "inner_sha256": "8207596d9e8ac4df6e83c9a52fe0e8bdd7ae06da7cb3e4e73f1e483da65684ef"
+    },
+    "host_teardown": {
+      "qemu_process_count": 0,
+      "ej_mount_count": 0,
+      "transient_root_absent": true,
+      "overlay_absent": true,
+      "seed_absent": true,
+      "temporary_checkout_absent": true,
+      "serial_transient_source_absent": true,
+      "persisted_serial_console_present": true,
+      "teardown_state": "COMPLETE"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "sha256_after": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "byte_identical": true,
+      "qemu_img_check": "PASS__NO_ERRORS"
+    },
+    "persisted_execution_evidence": {
+      "raw_execution_sha256": "270e1029f0dcbd94421bb8815b588e30e9cefe3f6d3ca9709d49714cfa27bf6d",
+      "guest_execution_seal_sha256": "a222791a8c73d283fe884ff41e9ec8a9baae05883258e1abbd098269db5e29a1",
+      "guest_teardown_seal_sha256": "989db1c88e246858e917d334ce14c704f2bd05ac4ea37346b490fc33ccae8cb8",
+      "serial_console_sha256": "6df589b2aa3adec9a5f1fbd31e05b1e745d59942ac760586d66491c71f293e59"
+    },
+    "execution_counters": {
+      "candidate_generation_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 1,
+      "commissioning_pass_count": 1,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 1,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 1,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "exact_next_legal_action": "AUTHENTICATE_AND_PERSIST_FINAL_EXECUTION_SEAL__TERMINAL_CANONICAL_V1_MANIFEST__PHASE_D_FINAL_CHECKPOINT__AND_G48_REPORT_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "e0fb199c1d6771027116d93cc85286bb74696fcd0be1d14ebf05315e4257a054"
+}
