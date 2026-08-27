@@ -1,0 +1,124 @@
+{
+  "schema_id": "G77_256EE_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EE_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "finalization_continuation_identity": "G77_256EF_SAME_ACCOUNT_EE_FAIL_CLOSED_FINALIZATION_V1",
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "completed_phase_bindings": {
+      "phase_a": {
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "file_sha256": "e774c221c374bb72d46c9ecfd523f62eed804ecb500150118d8d6c0224d6133b",
+        "inner_sha256": "49af0bfb4c2b58d0859739447e0430185d695db199f26611117b80254380f2b7"
+      },
+      "phase_c": {
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1.json",
+        "file_sha256": "caeab5f01f2bea60ee823b6768e4f27f4b86a1435d2fe0c649aeffc14fa99e02",
+        "inner_sha256": "6399857ee01639ebe8e5b9264edbae2c5ff77bbb31c9c656f494bd72181dcc46"
+      },
+      "same_account_resumption": {
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EF_SPCE_RESUMPTION_AUTHENTICATION_CHECKPOINT_V1.json",
+        "file_sha256": "5dd19c9fb78387d502f76e161f4563fe5e3a07e8e3ac41e081cd3b8258fcfc38",
+        "inner_sha256": "ee2cdf195c97ea38e3e4ae8d0d479efee3bec788b4534a03fdbc79600a1cd08b"
+      }
+    },
+    "final_validation_seal": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_FINAL_VALIDATION_SEAL_V1.json",
+      "file_sha256": "a25b7a86946611fba55d999af32eb95be25fd30f94b8835e0e8398f6133ac437",
+      "inner_sha256": "34e1640e040b9c31d15b0da5f1393f7b3b3076cafffa54dd82caba703c9e45fc"
+    },
+    "binding_invocation_identity": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_BINDING_INVOCATION_IDENTITY_V1.json",
+      "file_sha256": "6f5b6436dc21ed186842560ad2693483c0bfed3f002de5f52e5586b8a5dddba3",
+      "inner_sha256": "5d05433b5b0f9769cfe12b603c0c64c2755e902a41753c96e22bfcede53b2d84",
+      "canonical_argument_vector_sha256": "56a5ca6f7b19f7f301816725b7ef42e8f1e4caccc8957c2261c96f81885369aa",
+      "derivation_replayed_validation": false
+    },
+    "success_conditions": {
+      "runtime_consumer_binding": "PASS",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_canonical_identity": "PASS",
+      "harness_consumer_path_binding": "PASS",
+      "eb_candidate_bound_receipt_reauthentication": "PASS",
+      "ee_binding_receipt_authentication": "PASS",
+      "binding_invocation_identity": "PASS",
+      "regression_matrix": "PASS__17_CASES__1_POSITIVE__16_NEGATIVE",
+      "historical_ec_ed_evidence_unchanged": "PASS",
+      "e05_frontier_unchanged": "PASS",
+      "zero_operational_effect": "PASS",
+      "index_state": "EMPTY"
+    },
+    "regression_cases": [
+      "POSITIVE_CANDIDATE_EQUALS_AUTHENTICATED_RUNTIME_INPUT__PASS",
+      "EXPECTED_RUNTIME_PATH_ABSENT__PASS",
+      "RUNTIME_PATH_DIFFERS_FROM_HARNESS_EXPECTATION__PASS",
+      "RUNTIME_BYTES_DIFFER_BY_ONE_BYTE__PASS",
+      "RUNTIME_SHA_MISMATCH__PASS",
+      "RUNTIME_INNER_SHA_MISMATCH__PASS",
+      "CANDIDATE_CHANGED_AFTER_EB_VALIDATION__PASS",
+      "RUNTIME_DERIVED_FROM_DIFFERENT_CANDIDATE__PASS",
+      "HARNESS_SHA_MISMATCH__PASS",
+      "HARNESS_EXPECTED_PATH_DECLARATION_MISMATCH__PASS",
+      "REQUIRED_HEAD_MISMATCH__PASS",
+      "REQUIRED_TREE_MISMATCH__PASS",
+      "NON_CANONICAL_RUNTIME_MANIFEST__PASS",
+      "VALID_CANDIDATE_MISSING_RUNTIME_BINDING__PASS",
+      "VALID_RUNTIME_MISSING_CANDIDATE_BOUND_EB_RECEIPT__PASS",
+      "POST_BINDING_RENAME_OR_SUBSTITUTION__PASS",
+      "RUNTIME_ACTUAL_PATH_RECEIPT_SUBSTITUTION__PASS"
+    ],
+    "historical_continuity": {
+      "ec_candidate_sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0",
+      "ec_harness_sha256": "56dd764d2ea05e53f4b4d3771c0d3a5092c4bf7735c29900d3292223c751a405",
+      "ec_failure_evidence_sha256": "e68edfb79176f66d55bbb231212b0226e23666787ecb0729248a17d906a32cb9",
+      "ed_report_sha256": "84e7427f297ec91f672c46507ba1521d6d775bbac3844d6c4a3ee534629b92ce",
+      "ec_failed_before_commissioning_preserved": true,
+      "wrong_caller_credit_added": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "spce_clrec_assessment": {
+      "logical_state_resumability": "EMPIRICALLY_OBSERVED__PASS",
+      "repository_evidence_resumability": "EMPIRICALLY_OBSERVED__PASS",
+      "same_account_continuation_readiness": "EMPIRICALLY_OBSERVED__PASS",
+      "cross_account_continuation_readiness": "STRUCTURALLY_SUPPORTED__NOT_YET_CERTIFIED",
+      "cross_llm_continuation_readiness": "STRUCTURALLY_SUPPORTED__NOT_YET_CERTIFIED",
+      "cognition_assisted_handoff": "EMPIRICALLY_OBSERVED__PASS",
+      "pre_materialization_fail_closed_readiness": "EMPIRICALLY_OBSERVED__REPOSITORY_SIDE_PASS",
+      "runtime_consumer_binding_readiness": "EMPIRICALLY_OBSERVED__REPOSITORY_SIDE_PASS",
+      "clrec_empirical_support": "INCREASED",
+      "clrec_constitutionally_certified": false
+    },
+    "final_validation": "PASS",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EE_RUNTIME_CONSUMER_BINDING_HARDENING__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_FRESH_BOUNDED_WRONG_CALLER_P11_E05_GENERATION_USING_BOTH_THE_AUTHENTIC_EB_CANDIDATE_BOUND_VALIDATION_RECEIPT_AND_THE_AUTHENTIC_EE_RUNTIME_CONSUMER_BINDING_RECEIPT",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "8d5496bb24fe9252e688d0a3a493f34b894c5b6532fd002c336dfd807f962e70"
+}

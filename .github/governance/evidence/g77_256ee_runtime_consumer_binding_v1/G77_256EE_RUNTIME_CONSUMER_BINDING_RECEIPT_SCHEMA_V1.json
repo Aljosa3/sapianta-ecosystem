@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_SCHEMA_V1",
+  "type": "object",
+  "required": ["schema_id", "receipt", "receipt_inner_sha256"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {"const": "G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_ENVELOPE_V1"},
+    "receipt_inner_sha256": {"$ref": "#/$defs/sha256"},
+    "receipt": {
+      "type": "object",
+      "required": [
+        "schema_id", "receipt_version", "generation_identity", "validation_mode",
+        "validation_profile", "validated_candidate", "candidate_bound_eb_receipt",
+        "runtime_consumer", "harness_binding", "identity_results",
+        "implementation_bindings", "git_binding",
+        "pre_materialization_runtime_path_binding_result", "prohibited_actions",
+        "receipt_is_authority", "auto_continuable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_id": {"const": "G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_V1"},
+        "receipt_version": {"const": "1.0.0"},
+        "generation_identity": {"const": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1"},
+        "validation_mode": {"const": "PRE_MATERIALIZATION_RUNTIME_CONSUMER_BINDING"},
+        "validation_profile": {"const": "DU_EB_CANONICAL_V1_RUNTIME_CONSUMER_BINDING_V1"},
+        "validated_candidate": {"$ref": "#/$defs/manifestBinding"},
+        "candidate_bound_eb_receipt": {
+          "type": "object",
+          "required": ["path", "file_sha256", "inner_sha256", "independent_verification"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {"$ref": "#/$defs/nonempty"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "inner_sha256": {"$ref": "#/$defs/sha256"},
+            "independent_verification": {"const": "PASS"}
+          }
+        },
+        "runtime_consumer": {
+          "type": "object",
+          "required": [
+            "guest_runtime_root", "expected_path", "expected_relative_path",
+            "repository_export_root", "actual_path", "file_sha256", "inner_sha256",
+            "file_kind", "symlink", "projection_completed_before_binding"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "guest_runtime_root": {"$ref": "#/$defs/nonempty"},
+            "expected_path": {"$ref": "#/$defs/nonempty"},
+            "expected_relative_path": {"$ref": "#/$defs/nonempty"},
+            "repository_export_root": {"$ref": "#/$defs/nonempty"},
+            "actual_path": {"$ref": "#/$defs/nonempty"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "inner_sha256": {"$ref": "#/$defs/sha256"},
+            "file_kind": {"const": "REGULAR_FILE"},
+            "symlink": {"const": false},
+            "projection_completed_before_binding": {"const": true}
+          }
+        },
+        "harness_binding": {
+          "type": "object",
+          "required": ["path", "file_sha256", "runtime_root_declaration", "expected_continuation_path"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {"$ref": "#/$defs/nonempty"},
+            "file_sha256": {"$ref": "#/$defs/sha256"},
+            "runtime_root_declaration": {"$ref": "#/$defs/nonempty"},
+            "expected_continuation_path": {"$ref": "#/$defs/nonempty"}
+          }
+        },
+        "identity_results": {
+          "type": "object",
+          "required": ["candidate_runtime_byte_identity", "candidate_runtime_semantic_identity", "harness_expected_path_identity"],
+          "additionalProperties": false,
+          "properties": {
+            "candidate_runtime_byte_identity": {"const": "PASS"},
+            "candidate_runtime_semantic_identity": {"const": "PASS"},
+            "harness_expected_path_identity": {"const": "PASS"}
+          }
+        },
+        "implementation_bindings": {
+          "type": "array",
+          "minItems": 5,
+          "items": {"$ref": "#/$defs/namedFileBinding"}
+        },
+        "git_binding": {
+          "type": "object",
+          "required": ["required_head", "required_tree"],
+          "additionalProperties": false,
+          "properties": {
+            "required_head": {"pattern": "^[0-9a-f]{40}$"},
+            "required_tree": {"pattern": "^[0-9a-f]{40}$"}
+          }
+        },
+        "pre_materialization_runtime_path_binding_result": {"const": "PASS"},
+        "prohibited_actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 8,
+          "items": {"$ref": "#/$defs/nonempty"}
+        },
+        "receipt_is_authority": {"const": false},
+        "auto_continuable": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifestBinding": {
+      "type": "object",
+      "required": ["path", "file_sha256", "inner_sha256", "canonical_serialization_state"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"$ref": "#/$defs/nonempty"},
+        "file_sha256": {"$ref": "#/$defs/sha256"},
+        "inner_sha256": {"$ref": "#/$defs/sha256"},
+        "canonical_serialization_state": {"const": "CANONICAL_V1_JSON"}
+      }
+    },
+    "namedFileBinding": {
+      "type": "object",
+      "required": ["identity", "path", "file_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonempty"},
+        "path": {"$ref": "#/$defs/nonempty"},
+        "file_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

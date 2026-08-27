@@ -1,0 +1,186 @@
+{
+  "schema_id": "G77_256EE_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EE_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "entry_gate": {
+      "worktree_state": "CLEAN",
+      "index_state": "EMPTY",
+      "observed_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+      "observed_log": "07057c41 G77-256ED finalize EC cross-account continuation fail closed",
+      "unrelated_mutation_count": 0,
+      "result": "PASS"
+    },
+    "authenticated_minimum_lineage": [
+      {
+        "identity": "G77_256DU_CANONICAL_V1_CONTRACT",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1.md",
+        "file_sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "git_blob": "52a581514b893781ae966de707916fcd952dcca3"
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_V1_SCHEMA",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+        "file_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "git_blob": "88c860bbdfdc52045ec4fcacddb540655ebbba1b"
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_V1_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+        "file_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "git_blob": "44b7138dcad33a70ab63f7b988857d04519986f6"
+      },
+      {
+        "identity": "G77_256EB_FINAL_VALIDATION_SEAL",
+        "path": ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v1/G77_256EB_FINAL_VALIDATION_SEAL_V1.json",
+        "file_sha256": "fd5242d03f7205807fc43f1919e062e80441a7d8200f3f3d4d2cc2aea9f4cc04",
+        "git_blob": "48c8358a09dcca986abf7ba1cdb8941d9e3d103c"
+      },
+      {
+        "identity": "G77_256EB_RECEIPT_SCHEMA",
+        "path": ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v1/G77_256EB_CANDIDATE_BOUND_VALIDATION_RECEIPT_SCHEMA_V1.json",
+        "file_sha256": "5b477ce183df65446aa1c3df3f8006856fce72b0771fcf04ff0c9cc6ae3a5f49",
+        "git_blob": "250b50d40e5b72cf3a7b5baf7b35a07891e90195"
+      },
+      {
+        "identity": "G77_256EB_CANDIDATE_BOUND_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256eb_candidate_bound_validation_receipt_v1/validator/G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATOR_V1.py",
+        "file_sha256": "8e8171f757213f064cec463868408364175772e766615bd276ed7f0e28306b43",
+        "git_blob": "556f8576417b64b7ce4e8802045acce7b784709d"
+      },
+      {
+        "identity": "G77_256DY_SUCCESSFUL_E05_BASELINE",
+        "path": ".github/governance/evidence/g77_256dy_p11_operational_v1/G77_256DY_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "file_sha256": "b8b4f81506d41bd364edd28c53a1a6c0c3de5e9dbd68125fd46f9d203187f7ca",
+        "git_blob": "a571c0cd93b94d637d1e0c80167c17a38178429a"
+      },
+      {
+        "identity": "G77_256EA_DZ_FAIL_CLOSED_REDUCTION",
+        "path": ".github/governance/evidence/g77_256ea_dz_fail_closed_finalization_v1/G77_256EA_DZ_FAIL_CLOSED_FINAL_REDUCTION_SEAL_V1.json",
+        "file_sha256": "5b1bcb0f4f73dcfa7749dfba0a312b2e9a4fec6febad07366a55b432a1f662aa",
+        "git_blob": "834b44325e7c8a20991a9ce1c48b3e0a0ec52f45"
+      },
+      {
+        "identity": "G77_256EC_VALIDATED_CANDIDATE",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+        "file_sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0",
+        "git_blob": "07b4f15bbfc23156cbc1e2f667ecfd0f67e1053e"
+      },
+      {
+        "identity": "G77_256EC_EB_RECEIPT",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_V1.json",
+        "file_sha256": "6e023aac90101553a3982d626d6acbc3cc140a9c18fa6f7ac69f0c0e69249453",
+        "git_blob": "1d435c428898a84a60574d332c2c9bc1670f0624"
+      },
+      {
+        "identity": "G77_256EC_RUNTIME_HARNESS",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/harness/G77_256EC_P11_OPERATIONAL_HARNESS_V1.py",
+        "file_sha256": "56dd764d2ea05e53f4b4d3771c0d3a5092c4bf7735c29900d3292223c751a405",
+        "git_blob": "18eb7d2514ef963840d0b16eda160690883b3273"
+      },
+      {
+        "identity": "G77_256EC_HOST_BOOT_FAILURE",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_HOST_BOOT_FAILURE_EVIDENCE_V1.json",
+        "file_sha256": "e68edfb79176f66d55bbb231212b0226e23666787ecb0729248a17d906a32cb9",
+        "git_blob": "af0c5c5b2286d2b0a6c4a8198cf66026536a76ae"
+      },
+      {
+        "identity": "G77_256EC_FINAL_EXECUTION_SEAL",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/G77_256EC_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "file_sha256": "71c744bd6ae0f10a61b14feffec6cbdd0ad28c377c09d5fd746c577c671dd9c9",
+        "git_blob": "bedc148cad75fe195fffc9d0399c549ef86039df"
+      },
+      {
+        "identity": "G77_256EC_PHASE_D",
+        "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/G77_256EC_SPCE_PHASE_D_FINAL_CHECKPOINT_V1.json",
+        "file_sha256": "53671cfd4b6ba9722f6b693d30c569f7718b7951ea18a8564e90c65adcccbf43",
+        "git_blob": "dc9f137850b0c6bac67dc945553298dacebfc793"
+      },
+      {
+        "identity": "G77_256ED_FAIL_CLOSED_REPORT",
+        "path": "docs/governance/G77_256ED_CROSS_ACCOUNT_SPCE_RESUMPTION_AND_FAIL_CLOSED_COMPLETION_OF_INTERRUPTED_G77_256EC_V1.md",
+        "file_sha256": "84e7427f297ec91f672c46507ba1521d6d775bbac3844d6c4a3ee534629b92ce",
+        "git_blob": "09d65ae5f9da06669c698e8586a439005b94fa2f"
+      },
+      {
+        "identity": "G77_256CD_E05_OBLIGATION_DEFINITION",
+        "path": "docs/governance/G77_256CD_P11_PRE_IMPLEMENTATION_EVIDENCE_GENERATION_AND_VALIDATION_PLAN_V1.md",
+        "file_sha256": "666162ed94c5b291c1694230cbdc2ea040ba2165817f3c325fe2979fe993b670",
+        "git_blob": "af571dcc903c4609dc3eda958ac1f420cf0c92aa"
+      },
+      {
+        "identity": "G48_REPORTING_STANDARD",
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "file_sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb",
+        "git_blob": "095c16f14c54d8b36330d47a653a122ee07a441c"
+      }
+    ],
+    "authenticated_defect": {
+      "validated_candidate_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "runtime_harness_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/harness/G77_256EC_P11_OPERATIONAL_HARNESS_V1.py",
+      "harness_runtime_root_declaration": "/mnt/g77-evidence",
+      "harness_expected_continuation_path": "/mnt/g77-evidence/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "required_repository_runtime_file": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "required_runtime_file_present_at_ec_boot": false,
+      "pre_materialization_canonical_validation": "PASS",
+      "exact_runtime_consumer_input_present_and_identical": "NOT_PROVEN__ACTUALLY_ABSENT",
+      "result": "PASS__ED_DEFECT_RECONSTRUCTED_FROM_REPOSITORY_EVIDENCE"
+    },
+    "minimum_hardening_design": {
+      "architecture": "VERSIONED_EE_ADAPTER_OVER_EXISTING_DU_CANONICAL_V1_AND_EB_CANDIDATE_BOUND_RECEIPT",
+      "runtime_path_source": "STATIC_AST_EXTRACTION_OF_RAW_ROOT_AND_CONTINUATION_MANIFEST_PATH_FROM_AUTHENTICATED_HARNESS",
+      "runtime_actual_path_derivation": "AUTHENTICATED_REPOSITORY_EXPORT_ROOT_PLUS_HARNESS_RELATIVE_RUNTIME_PATH",
+      "candidate_binding_source": "INDEPENDENT_EB_RECEIPT_REAUTHENTICATION",
+      "byte_identity_requirement": "EXACT_BYTES_EQUAL",
+      "semantic_identity_requirement": "CANONICAL_MANIFEST_INNER_SHA256_EQUAL",
+      "post_binding_verification": "REAUTHENTICATE_CANDIDATE_RUNTIME_HARNESS_EB_RECEIPT_HEAD_AND_TREE_FROM_RECEIPT",
+      "automatic_copy_or_repair": false,
+      "parallel_continuation_dialect_created": false
+    },
+    "required_regression_cases": [
+      "EXPECTED_RUNTIME_PATH_ABSENT",
+      "RUNTIME_PATH_DIFFERS_FROM_HARNESS_EXPECTATION",
+      "RUNTIME_BYTES_DIFFER_BY_ONE_BYTE",
+      "RUNTIME_SHA_MISMATCH",
+      "RUNTIME_INNER_SHA_MISMATCH",
+      "CANDIDATE_CHANGED_AFTER_EB_VALIDATION",
+      "RUNTIME_DERIVED_FROM_DIFFERENT_CANDIDATE",
+      "HARNESS_SHA_MISMATCH",
+      "HARNESS_EXPECTED_PATH_DECLARATION_MISMATCH",
+      "REQUIRED_HEAD_MISMATCH",
+      "REQUIRED_TREE_MISMATCH",
+      "NON_CANONICAL_RUNTIME_MANIFEST",
+      "VALID_CANDIDATE_MISSING_RUNTIME_BINDING",
+      "VALID_RUNTIME_MISSING_CANDIDATE_BOUND_EB_RECEIPT",
+      "POST_BINDING_RENAME_OR_SUBSTITUTION"
+    ],
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "phase_a_result": "PASS__MINIMUM_LINEAGE_AUTHENTICATED__EC_ED_DEFECT_RECONSTRUCTED__VERSIONED_DU_EB_ADAPTER_DESIGN_BOUNDED",
+    "exact_next_legal_action": "IMPLEMENT_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_SCHEMA_VALIDATOR_AND_FIXTURE__NO_VM_BOOT_OR_E05_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "49af0bfb4c2b58d0859739447e0430185d695db199f26611117b80254380f2b7"
+}

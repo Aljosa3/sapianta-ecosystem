@@ -1,0 +1,114 @@
+{
+  "schema_id": "G77_256EF_SPCE_RESUMPTION_AUTHENTICATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EF_SPCE_RESUMPTION_AUTHENTICATION_CHECKPOINT_V1",
+    "continued_generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "continuation_identity": "G77_256EF_SAME_ACCOUNT_EE_FAIL_CLOSED_FINALIZATION_V1",
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "entry_gate": {
+      "git_status_short": "?? .github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/",
+      "index_state": "EMPTY",
+      "observed_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+      "observed_log": "07057c41 G77-256ED finalize EC cross-account continuation fail closed",
+      "surviving_mutation_scope": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/",
+      "surviving_artifact_count_before_resumption_checkpoint": 11,
+      "unrelated_mutation_count": 0,
+      "commit_during_interruption": false,
+      "push_during_interruption": false,
+      "result": "PASS"
+    },
+    "surviving_phase_authentication": {
+      "phase_a": {
+        "state": "COMPLETE__AUTHENTICATED",
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+        "file_sha256": "e774c221c374bb72d46c9ecfd523f62eed804ecb500150118d8d6c0224d6133b",
+        "inner_sha256": "49af0bfb4c2b58d0859739447e0430185d695db199f26611117b80254380f2b7"
+      },
+      "phase_b": {
+        "state": "COMPLETE__IMPLEMENTATION_ARTIFACTS_AUTHENTICATED",
+        "contract_sha256": "a4cd5694f2a3f05ed3f41e1fd5c84b33ee54e6d48dd81496ca8ee20951d1bf8c",
+        "schema_sha256": "b193f6d392b0f5b0be32041e554ce3ccc18288f68bab0880c27326cb42d2ccc0",
+        "validator_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410"
+      },
+      "phase_c": {
+        "state": "COMPLETE__AUTHENTICATED_WITHOUT_MATRIX_REPLAY",
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1.json",
+        "file_sha256": "caeab5f01f2bea60ee823b6768e4f27f4b86a1435d2fe0c649aeffc14fa99e02",
+        "inner_sha256": "6399857ee01639ebe8e5b9264edbae2c5ff77bbb31c9c656f494bd72181dcc46"
+      },
+      "phase_d": {
+        "state": "INCOMPLETE_AT_INTERRUPTION",
+        "final_seal_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_FINAL_VALIDATION_SEAL_V1.json",
+        "incomplete_final_seal_file_sha256": "94f11854869563e6eb0871e0df8271aa0e359dbd576bc49d56725982c6c8f99e",
+        "recomputed_inner_sha256": "34e1640e040b9c31d15b0da5f1393f7b3b3076cafffa54dd82caba703c9e45fc",
+        "observed_outer_seal_sha256": "PENDING",
+        "phase_d_checkpoint_present": false,
+        "g48_report_present": false
+      },
+      "highest_authenticated_completed_spce_phase": "PHASE_C"
+    },
+    "targeted_reauthentication": {
+      "generated_json_parse_count": 9,
+      "generated_json_parse_result": "PASS",
+      "schema_meta_validation": "PASS",
+      "binding_receipt_schema_validation": "PASS",
+      "phase_a_inner_hash": "PASS",
+      "phase_c_inner_hash": "PASS",
+      "positive_candidate_inner_hash": "PASS",
+      "runtime_consumer_inner_hash": "PASS",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_canonical_identity": "PASS",
+      "eb_candidate_bound_receipt_reauthentication": "PASS",
+      "ee_binding_receipt_reauthentication": "PASS",
+      "harness_consumer_path_binding": "PASS",
+      "regression_case_count": 17,
+      "regression_positive_case_count": 1,
+      "regression_negative_case_count": 16,
+      "regression_failed_case_count": 0,
+      "regression_matrix_replayed": false
+    },
+    "scope_hygiene": {
+      "python_cache_count": 0,
+      "temporary_compiler_output_count": 0,
+      "ee_transient_tmp_root_count": 0,
+      "ee_qemu_process_count": 0,
+      "ee_mount_count": 0,
+      "overlay_count": 0,
+      "seed_count": 0,
+      "operational_substrate_created_by_ee": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "resumption_assessment": {
+      "same_account_continuation_used": true,
+      "conversation_history_used_as_authority": false,
+      "repository_evidence_sufficient": true,
+      "phase_a_regenerated": false,
+      "implementation_regenerated": false,
+      "phase_c_matrix_replayed": false,
+      "first_incomplete_boundary": "PHASE_D_OUTER_SEAL_AND_FINAL_REPORTING"
+    },
+    "resumption_result": "PASS__PHASE_A_B_C_AUTHENTICATED__RESUME_PHASE_D_ONLY",
+    "exact_next_legal_action": "COMPLETE_EXISTING_FINAL_SEAL_OUTER_HASH__CREATE_PHASE_D_CHECKPOINT_AND_SINGLE_G48_REPORT__NO_REPLAY_OR_OPERATIONAL_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "ee2cdf195c97ea38e3e4ae8d0d479efee3bec788b4534a03fdbc79600a1cd08b"
+}

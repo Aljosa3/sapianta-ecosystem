@@ -1,0 +1,43 @@
+{
+  "schema_id": "G77_256EE_BINDING_INVOCATION_IDENTITY_ENVELOPE_V1",
+  "invocation": {
+    "schema_id": "G77_256EE_BINDING_INVOCATION_IDENTITY_V1",
+    "generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "derivation_state": "PHASE_D_DERIVED_FROM_AUTHENTICATED_SURVIVING_RECEIPT__NO_VALIDATION_REPLAY",
+    "validator": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/validator/G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1.py",
+      "file_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410"
+    },
+    "canonical_argument_vector": [
+      "--validate-binding",
+      "--candidate",
+      ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/G77_256EE_CANONICAL_CONTINUATION_MANIFEST_CANDIDATE_V1.json",
+      "--eb-receipt",
+      ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/G77_256EE_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+      "--harness",
+      ".github/governance/evidence/g77_256ec_p11_operational_v1/harness/G77_256EC_P11_OPERATIONAL_HARNESS_V1.py",
+      "--runtime-export-root",
+      ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/runtime",
+      "--guest-runtime-root",
+      "/mnt/g77-evidence",
+      "--required-head",
+      "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+      "--required-tree",
+      "108179cfff9214d800ea98e6fab21c539395bbf1",
+      "--receipt-output",
+      ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_V1.json"
+    ],
+    "canonical_argument_vector_sha256": "56a5ca6f7b19f7f301816725b7ef42e8f1e4caccc8957c2261c96f81885369aa",
+    "binding_receipt": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_V1.json",
+      "file_sha256": "f1ef366054d9973fab56b1de38b66d2d4b7ec0ae7f171700958fe90cf3d71771",
+      "inner_sha256": "5dc0535cb9ec076c61a85b1b66a499366e0a1c28136365fa4aeadbaf9efb193f",
+      "independent_reauthentication": "PASS"
+    },
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "invocation_identity_is_authority": false,
+    "auto_continuable": false
+  },
+  "invocation_sha256": "5d05433b5b0f9769cfe12b603c0c64c2755e902a41753c96e22bfcede53b2d84"
+}

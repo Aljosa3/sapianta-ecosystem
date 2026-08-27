@@ -1,0 +1,151 @@
+{
+  "schema_id": "G77_256EE_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EE_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "phase_a_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "e774c221c374bb72d46c9ecfd523f62eed804ecb500150118d8d6c0224d6133b",
+      "inner_sha256": "49af0bfb4c2b58d0859739447e0430185d695db199f26611117b80254380f2b7"
+    },
+    "phase_c_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1.json",
+      "file_sha256": "caeab5f01f2bea60ee823b6768e4f27f4b86a1435d2fe0c649aeffc14fa99e02",
+      "inner_sha256": "6399857ee01639ebe8e5b9264edbae2c5ff77bbb31c9c656f494bd72181dcc46"
+    },
+    "binding_result": {
+      "candidate_to_runtime_continuation_binding": "PASS",
+      "pre_materialization_runtime_consumer_binding": "PASS",
+      "validated_candidate_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/G77_256EE_CANONICAL_CONTINUATION_MANIFEST_CANDIDATE_V1.json",
+      "validated_candidate_file_sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282",
+      "validated_candidate_inner_sha256": "6ed5fa200fd6fc2afad986497abe03e8e36a2bfc27036c6421152ce6f35a1571",
+      "runtime_consumer_expected_path": "/mnt/g77-evidence/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "runtime_consumer_actual_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/runtime/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "runtime_consumer_file_sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282",
+      "runtime_consumer_inner_sha256": "6ed5fa200fd6fc2afad986497abe03e8e36a2bfc27036c6421152ce6f35a1571",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_semantic_identity": "PASS",
+      "harness_expected_path_identity": "PASS",
+      "eb_receipt_linkage": "PASS",
+      "post_binding_reauthentication": "PASS"
+    },
+    "fail_closed_regression_matrix": {
+      "required_negative_case_count": 15,
+      "executed_negative_case_count": 16,
+      "passed_negative_case_count": 16,
+      "failed_negative_case_count": 0,
+      "positive_case_count": 1,
+      "overall_result": "PASS",
+      "missing_runtime_path_rejected_before_materialization": true,
+      "path_mismatch_rejected_before_materialization": true,
+      "one_byte_difference_rejected_before_materialization": true,
+      "runtime_sha_mismatch_rejected": true,
+      "runtime_inner_mismatch_rejected": true,
+      "candidate_changed_after_eb_rejected": true,
+      "different_candidate_runtime_rejected": true,
+      "harness_sha_mismatch_rejected": true,
+      "harness_expected_path_mismatch_rejected": true,
+      "head_mismatch_rejected": true,
+      "tree_mismatch_rejected": true,
+      "noncanonical_runtime_rejected": true,
+      "missing_runtime_binding_rejected": true,
+      "missing_eb_receipt_rejected": true,
+      "post_binding_rename_or_substitution_rejected": true
+    },
+    "architecture_assessment": {
+      "du_canonical_v1_reused": true,
+      "eb_candidate_bound_receipt_reused": true,
+      "versioned_adapter_created": true,
+      "second_validator_family_created": false,
+      "second_continuation_dialect_created": false,
+      "historical_du_eb_ec_ed_evidence_rewritten": false,
+      "automatic_projection_after_binding": false,
+      "runtime_path_fallback": false,
+      "parallel_runtime_flow_created": false,
+      "production_route_delta": 0
+    },
+    "artifact_bindings": [
+      {
+        "identity": "G77_256EE_CONTRACT",
+        "sha256": "a4cd5694f2a3f05ed3f41e1fd5c84b33ee54e6d48dd81496ca8ee20951d1bf8c"
+      },
+      {
+        "identity": "G77_256EE_SCHEMA",
+        "sha256": "b193f6d392b0f5b0be32041e554ce3ccc18288f68bab0880c27326cb42d2ccc0"
+      },
+      {
+        "identity": "G77_256EE_VALIDATOR",
+        "sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410"
+      },
+      {
+        "identity": "G77_256EE_POSITIVE_CANDIDATE",
+        "sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282"
+      },
+      {
+        "identity": "G77_256EE_POSITIVE_EB_RECEIPT",
+        "sha256": "affe26941288a8ffd5cdd4893982937c88cf6137615237d2a9eb77a61214a65a"
+      },
+      {
+        "identity": "G77_256EE_POSITIVE_RUNTIME_INPUT",
+        "sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282"
+      },
+      {
+        "identity": "G77_256EE_BINDING_RECEIPT",
+        "sha256": "f1ef366054d9973fab56b1de38b66d2d4b7ec0ae7f171700958fe90cf3d71771"
+      },
+      {
+        "identity": "G77_256EE_REGRESSION_EVIDENCE",
+        "sha256": "01bc4225f5ce2b2d93e62af6fec1c230498fe258dcf67f106d472c6a92ff178e"
+      }
+    ],
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "continuation_assessment": {
+      "logical_state_resumability": "REPOSITORY_SIDE_CANDIDATE__IMPROVED",
+      "cross_account_continuation_readiness": "REPOSITORY_SIDE_CANDIDATE__IMPROVED",
+      "cross_llm_continuation_readiness": "REPOSITORY_SIDE_CANDIDATE__IMPROVED",
+      "cognition_assisted_handoff": "REPOSITORY_SIDE_CANDIDATE__IMPROVED",
+      "pre_materialization_fail_closed_readiness": "EMPIRICALLY_PROVEN__REPOSITORY_SIDE",
+      "runtime_consumer_binding_readiness": "EMPIRICALLY_PROVEN__REPOSITORY_SIDE",
+      "clrec_empirical_support": "INCREASED",
+      "clrec_constitutionally_certified": false,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false
+    },
+    "final_validation": "PASS",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_FRESH_BOUNDED_WRONG_CALLER_P11_E05_GENERATION_USING_THE_AUTHENTIC_CANDIDATE_BOUND_AND_RUNTIME_CONSUMER_BOUND_PRE_MATERIALIZATION_VALIDATION_CHAIN",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "34e1640e040b9c31d15b0da5f1393f7b3b3076cafffa54dd82caba703c9e45fc"
+}

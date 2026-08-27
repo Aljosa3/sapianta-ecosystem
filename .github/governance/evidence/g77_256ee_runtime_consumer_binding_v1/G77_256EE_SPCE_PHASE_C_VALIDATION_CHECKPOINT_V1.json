@@ -1,0 +1,107 @@
+{
+  "schema_id": "G77_256EE_SPCE_PHASE_C_VALIDATION_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EE_SPCE_PHASE_C_VALIDATION_CHECKPOINT_V1",
+    "generation_identity": "G77_256EE_REPOSITORY_ONLY_RUNTIME_CONSUMER_BINDING_HARDENING_V1",
+    "required_head": "07057c4159ac6728bafde7618e1ad8f62f71ab0f",
+    "required_tree": "108179cfff9214d800ea98e6fab21c539395bbf1",
+    "phase_a_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "e774c221c374bb72d46c9ecfd523f62eed804ecb500150118d8d6c0224d6133b",
+      "inner_sha256": "49af0bfb4c2b58d0859739447e0430185d695db199f26611117b80254380f2b7"
+    },
+    "implementation_bindings": [
+      {
+        "identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_CONTRACT_V1",
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_CONTRACT_V1.md",
+        "file_sha256": "a4cd5694f2a3f05ed3f41e1fd5c84b33ee54e6d48dd81496ca8ee20951d1bf8c"
+      },
+      {
+        "identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_SCHEMA_V1",
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_SCHEMA_V1.json",
+        "file_sha256": "b193f6d392b0f5b0be32041e554ce3ccc18288f68bab0880c27326cb42d2ccc0"
+      },
+      {
+        "identity": "G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1",
+        "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/validator/G77_256EE_RUNTIME_CONSUMER_BINDING_VALIDATOR_V1.py",
+        "file_sha256": "5e4b35b3c7e7e23e5b7209c5f56e8a70055eac9a3deef32bc288b210e80f9410"
+      }
+    ],
+    "positive_fixture": {
+      "validated_candidate_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/G77_256EE_CANONICAL_CONTINUATION_MANIFEST_CANDIDATE_V1.json",
+      "validated_candidate_file_sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282",
+      "validated_candidate_inner_sha256": "6ed5fa200fd6fc2afad986497abe03e8e36a2bfc27036c6421152ce6f35a1571",
+      "candidate_bound_eb_receipt_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/G77_256EE_CANDIDATE_BOUND_EB_RECEIPT_V1.json",
+      "candidate_bound_eb_receipt_file_sha256": "affe26941288a8ffd5cdd4893982937c88cf6137615237d2a9eb77a61214a65a",
+      "candidate_bound_eb_receipt_inner_sha256": "68133dc645fc20cd93673cafdd235197f9341eff299c991f4da64d136ec8ce45",
+      "runtime_consumer_expected_path": "/mnt/g77-evidence/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "runtime_consumer_actual_path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/fixtures/positive/runtime/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "runtime_consumer_file_sha256": "43994f34905a8c5f2a52652879c69f177aa646300e5e08dbd7325ece85135282",
+      "runtime_consumer_inner_sha256": "6ed5fa200fd6fc2afad986497abe03e8e36a2bfc27036c6421152ce6f35a1571",
+      "candidate_runtime_byte_identity": "PASS",
+      "candidate_runtime_semantic_identity": "PASS",
+      "harness_expected_path_identity": "PASS"
+    },
+    "binding_receipt": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_RECEIPT_V1.json",
+      "file_sha256": "f1ef366054d9973fab56b1de38b66d2d4b7ec0ae7f171700958fe90cf3d71771",
+      "inner_sha256": "5dc0535cb9ec076c61a85b1b66a499366e0a1c28136365fa4aeadbaf9efb193f",
+      "independent_verification": "PASS",
+      "pre_materialization_runtime_path_binding_result": "PASS"
+    },
+    "regression_evidence": {
+      "path": ".github/governance/evidence/g77_256ee_runtime_consumer_binding_v1/G77_256EE_RUNTIME_CONSUMER_BINDING_REGRESSION_EVIDENCE_V1.json",
+      "file_sha256": "01bc4225f5ce2b2d93e62af6fec1c230498fe258dcf67f106d472c6a92ff178e",
+      "case_count": 17,
+      "positive_case_count": 1,
+      "negative_case_count": 16,
+      "required_negative_case_count": 15,
+      "failed_case_count": 0,
+      "overall_result": "PASS"
+    },
+    "harness_binding": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/harness/G77_256EC_P11_OPERATIONAL_HARNESS_V1.py",
+      "file_sha256": "56dd764d2ea05e53f4b4d3771c0d3a5092c4bf7735c29900d3292223c751a405",
+      "runtime_root_declaration": "/mnt/g77-evidence",
+      "expected_continuation_path": "/mnt/g77-evidence/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "static_extraction_result": "PASS"
+    },
+    "validation_results": {
+      "du_candidate_four_gate_result": "PASS",
+      "eb_candidate_bound_receipt_reauthentication": "PASS",
+      "ee_schema_meta_validation": "PASS",
+      "ee_receipt_schema_validation": "PASS",
+      "ee_receipt_independent_reauthentication": "PASS",
+      "candidate_runtime_byte_comparison": "PASS",
+      "candidate_runtime_semantic_comparison": "PASS",
+      "governance_conformance_pytest": "PASS__5_OF_5",
+      "governance_conformance_engine": "PASS__CONFORMANT__20_OF_20"
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "phase_c_result": "PASS__POSITIVE_BINDING_AND_ALL_SIXTEEN_NEGATIVE_REGRESSIONS_AUTHENTICATED__ZERO_OPERATIONAL_EXECUTION",
+    "exact_next_legal_action": "INDEPENDENT_PHASE_D_HASH_SCHEMA_GIT_SCOPE_AND_REPORT_AUTHENTICATION_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "6399857ee01639ebe8e5b9264edbae2c5ff77bbb31c9c656f494bd72181dcc46"
+}
