@@ -1,0 +1,88 @@
+{
+  "schema_id": "G77_256EC_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EC_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EC_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+    "source_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+    "selected_e05_vector": "WRONG_CALLER",
+    "selected_e05_vector_result": "NOT_EXECUTED__HARNESS_REFUSED_ENTRY_BEFORE_COMMISSIONING",
+    "first_failure": "RUNTIME_CONTINUATION_MANIFEST_PATH_ABSENT__FIRST_AND_ONLY_BOOT_CONSUMED",
+    "final_execution_seal": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/G77_256EC_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+      "file_sha256": "71c744bd6ae0f10a61b14feffec6cbdd0ad28c377c09d5fd746c577c671dd9c9",
+      "inner_sha256": "eddae7460dc69c8219e1aa090e223de9b9c5211c091c1c6723e26c9e116764ae"
+    },
+    "terminal_canonical_v1_manifest": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANONICAL_CONTINUATION_MANIFEST_TERMINAL_V1.json",
+      "file_sha256": "6a24c0d2c2ecd146e5d4d6bd6df82099f7e4934b85ca89693abd9b6755d2655f",
+      "inner_sha256": "97d6acb2b4895f90b68392cae39914ac77f8a6c3ec5f9d5274b60c3441525342",
+      "manifest_authenticity_gate": "PASS",
+      "manifest_schema_validity_gate": "PASS",
+      "manifest_semantic_compatibility_gate": "PASS",
+      "manifest_constitutional_admissibility_gate": "PASS"
+    },
+    "execution_evidence": {
+      "host_boot_failure_evidence_sha256": "e68edfb79176f66d55bbb231212b0226e23666787ecb0729248a17d906a32cb9",
+      "serial_console_sha256": "ea7c4cd6f4e33f99ca8ae88b9bc6b139e47421edeedb72323ca45d92370d3499",
+      "host_pre_teardown_checkpoint_sha256": "bf950b2da8d667c4b6ab56d748419b49d79912612950b6b02b0088c33f7444a5",
+      "host_teardown_checkpoint_sha256": "dcf1e573daadefc0664b492c419e3e9d531eed0e6aea9215c164706187ddc941",
+      "guest_raw_sequence": "NOT_CREATED__HARNESS_REFUSED_ENTRY",
+      "guest_execution_seal": "NOT_CREATED__HARNESS_REFUSED_ENTRY",
+      "guest_teardown_seal": "NOT_CREATED__HARNESS_REFUSED_ENTRY"
+    },
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "completion_reduction": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count_before": 4,
+      "e05_satisfied_obligation_count_after": 4,
+      "e05_remaining_obligation_count_after": 14,
+      "wrong_caller_state_after": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "continuation_assessment": {
+      "cross_account_continuation_used": true,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "logical_state_resumability": "PASS",
+      "physical_substrate_resumability": "PASS__DEPENDED_ON_SURVIVING_TRANSIENT_VM_FILES",
+      "cross_account_continuation_readiness": "PARTIAL",
+      "cross_llm_continuation_readiness": "PARTIAL",
+      "clrec_empirical_support": "INCREASED",
+      "clrec_constitutionally_certified": false
+    },
+    "finalization_validation": "PASS__FAIL_CLOSED_EVIDENCE_PERSISTED_AND_TEARDOWN_COMPLETE",
+    "operational_validation": "FAIL__COMMISSIONING_AND_WRONG_CALLER_NOT_EXECUTED",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_COMPLETED_G77_256EC_FAIL_CLOSED_EVIDENCE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ANY_FRESH_GENERATION_ADDRESSING_THE_RUNTIME_CONTINUATION_PATH_BINDING__WRONG_CALLER_REMAINS_UNSATISFIED__NO_G3_ENTRY",
+    "checkpoint_is_authority": false,
+    "manifest_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "6f0792725ce2d74eea2a01144b4d9c4544d91e04aa4a161c5c62bdd410511aab"
+}

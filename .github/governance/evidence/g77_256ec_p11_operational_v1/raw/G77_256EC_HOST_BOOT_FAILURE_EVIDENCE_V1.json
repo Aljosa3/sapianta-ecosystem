@@ -1,0 +1,72 @@
+{
+  "schema_id": "G77_256EC_HOST_BOOT_FAILURE_EVIDENCE_ENVELOPE_V1",
+  "evidence": {
+    "schema_id": "G77_256EC_HOST_BOOT_FAILURE_EVIDENCE_V1",
+    "generation_identity": "G77_256EC_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+    "source_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+    "selected_e05_vector": "WRONG_CALLER",
+    "cross_account_continuation_used": true,
+    "pre_boot_authentication_result": "PASS",
+    "first_and_only_boot": {
+      "qemu_process_exit_status": 0,
+      "boot_marker": "PASS",
+      "harness_exit_status": 1,
+      "poweroff_requested": true,
+      "power_down_observed": true,
+      "serial_console_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_SERIAL_CONSOLE_V1.log",
+      "serial_console_bytes": 88040,
+      "serial_console_sha256": "ea7c4cd6f4e33f99ca8ae88b9bc6b139e47421edeedb72323ca45d92370d3499"
+    },
+    "first_failure": {
+      "failure_class": "RUNTIME_CONTINUATION_MANIFEST_PATH_ABSENT",
+      "failure_phase": "FIRST_VM_BOOT__PRE_HARNESS__PRE_COMMISSIONING",
+      "serial_observation": "DY continuation manifest is absent",
+      "required_runtime_path": "/mnt/g77-evidence/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "required_repository_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "required_path_present_before_boot": false,
+      "surviving_pre_materialization_candidate_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "surviving_candidate_substitution_performed": false,
+      "repair_performed": false,
+      "retry_performed": false
+    },
+    "commissioning_result": "NOT_RUN__HARNESS_REFUSED_ENTRY_BEFORE_P01",
+    "wrong_caller_result": "NOT_RUN__COMMISSIONING_NOT_ENTERED",
+    "guest_execution_seal_state": "NOT_CREATED__HARNESS_REFUSED_ENTRY",
+    "guest_teardown_seal_state": "NOT_CREATED__HARNESS_REFUSED_ENTRY__GUEST_POWERED_OFF_BY_CLOUD_INIT",
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_accounting": {
+      "total_obligation_count": 18,
+      "satisfied_obligation_count_before": 4,
+      "satisfied_obligation_count_after": 4,
+      "remaining_obligation_count_after": 14,
+      "wrong_caller_state_after": "UNSATISFIED"
+    },
+    "constitutional_disposition": "FAIL_CLOSED__NO_COMMISSIONING_OR_E05_CREDIT__NO_REPAIR_RETRY_OR_SECOND_BOOT",
+    "evidence_is_authority": false,
+    "auto_continuable": false
+  },
+  "evidence_sha256": "bf90f7db74354811c185e0dc37263bb55b895804aacc1bda3048500bb443a1d3"
+}

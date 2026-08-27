@@ -1,0 +1,155 @@
+{
+  "schema_id": "G77_256EC_SPCE_FINAL_EXECUTION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EC_SPCE_FINAL_EXECUTION_SEAL_V1",
+    "generation_identity": "G77_256EC_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+    "source_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+    "selected_e05_vector": "WRONG_CALLER",
+    "selected_e05_vector_result": "NOT_EXECUTED__HARNESS_REFUSED_ENTRY_BEFORE_COMMISSIONING",
+    "cross_account_recovery_result": "FAIL_CLOSED__LOGICAL_STATE_AND_SURVIVING_SUBSTRATE_AUTHENTICATED__FIRST_BOOT_FAILED_BEFORE_HARNESS_ENTRY",
+    "first_failure": {
+      "failure_class": "RUNTIME_CONTINUATION_MANIFEST_PATH_ABSENT",
+      "failure_phase": "FIRST_VM_BOOT__PRE_HARNESS__PRE_COMMISSIONING",
+      "required_repository_path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CONTINUATION_MANIFEST_V1.json",
+      "serial_observation": "DY continuation manifest is absent",
+      "harness_exit_status": 1,
+      "repair_and_continue_allowed": false,
+      "automatic_retry_allowed": false,
+      "second_boot_allowed": false
+    },
+    "candidate_bound_pre_materialization_result": {
+      "eb_receipt_reauthentication": "PASS",
+      "candidate_file_sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0",
+      "candidate_inner_sha256": "b486f9787fa031c64ec55d70d66b29338a956044170878d695896b60e997605d",
+      "receipt_file_sha256": "6e023aac90101553a3982d626d6acbc3cc140a9c18fa6f7ac69f0c0e69249453",
+      "receipt_inner_sha256": "24d201d135ebec03d402fbd9c61d12ebc52e0baa69d84bf3f91fd69bfe16cbd1",
+      "manifest_authenticity_gate": "PASS",
+      "manifest_schema_validity_gate": "PASS",
+      "manifest_semantic_compatibility_gate": "PASS",
+      "manifest_constitutional_admissibility_gate": "PASS",
+      "candidate_bytes_unchanged": true
+    },
+    "commissioning_result": "NOT_RUN__HARNESS_REFUSED_ENTRY_BEFORE_P01",
+    "wrong_caller_result": "NOT_RUN__COMMISSIONING_NOT_ENTERED",
+    "zero_unauthorized_effect": {
+      "human_operational_act_created_count": 0,
+      "claim_count": 0,
+      "invocation_count": 0,
+      "runtime_ledger_append_count": 0,
+      "owner_state_transition_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "basis": "NO_HARNESS_ENTRY__NO_COMMISSIONING__NO_E05_CASE_EXECUTION"
+    },
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "teardown": {
+      "guest_teardown_seal_state": "NOT_CREATED__HARNESS_REFUSED_ENTRY",
+      "guest_poweroff_state": "COMPLETE__CLOUD_INIT_FORCED_POWEROFF_AFTER_HARNESS_EXIT",
+      "host_teardown_state": "COMPLETE",
+      "qemu_process_count": 0,
+      "ec_mount_count": 0,
+      "transient_root_absent": true,
+      "overlay_absent": true,
+      "seed_absent": true,
+      "temporary_checkout_absent": true,
+      "base_image_sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_sha256_after": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_byte_identical": true,
+      "base_image_qemu_img_check": "PASS"
+    },
+    "completion_reduction": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count_before": 4,
+      "e05_satisfied_obligation_count_after": 4,
+      "e05_remaining_obligation_count_after": 14,
+      "wrong_caller_state_after": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "cross_account_assessment": {
+      "cross_account_continuation_used": true,
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "logical_state_resumability": "PASS",
+      "physical_substrate_resumability": "PASS__DEPENDED_ON_SURVIVING_TRANSIENT_VM_FILES",
+      "cross_account_continuation_readiness": "PARTIAL",
+      "cross_llm_continuation_readiness": "PARTIAL",
+      "clrec_empirical_support": "INCREASED",
+      "clrec_constitutionally_certified": false
+    },
+    "artifact_bindings": [
+      {
+        "identity": "PHASE_A_CHECKPOINT",
+        "sha256": "cd33f98d0dd805147b4f9c011e53a3d4ea8333aa3d396b12da4cd2fc9050d0af"
+      },
+      {
+        "identity": "MATERIALIZATION_CHECKPOINT",
+        "sha256": "93aa1f123ada527644fd915674ac84c25b97d3079e62bbcd118a8520bd358edf"
+      },
+      {
+        "identity": "PRE_MATERIALIZATION_CANDIDATE",
+        "sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0"
+      },
+      {
+        "identity": "CANDIDATE_BOUND_RECEIPT",
+        "sha256": "6e023aac90101553a3982d626d6acbc3cc140a9c18fa6f7ac69f0c0e69249453"
+      },
+      {
+        "identity": "HOST_BOOT_FAILURE_EVIDENCE",
+        "sha256": "e68edfb79176f66d55bbb231212b0226e23666787ecb0729248a17d906a32cb9"
+      },
+      {
+        "identity": "SERIAL_CONSOLE",
+        "sha256": "ea7c4cd6f4e33f99ca8ae88b9bc6b139e47421edeedb72323ca45d92370d3499"
+      },
+      {
+        "identity": "HOST_PRE_TEARDOWN_CHECKPOINT",
+        "sha256": "bf950b2da8d667c4b6ab56d748419b49d79912612950b6b02b0088c33f7444a5"
+      },
+      {
+        "identity": "HOST_TEARDOWN_CHECKPOINT",
+        "sha256": "dcf1e573daadefc0664b492c419e3e9d531eed0e6aea9215c164706187ddc941"
+      },
+      {
+        "identity": "HARNESS",
+        "sha256": "56dd764d2ea05e53f4b4d3771c0d3a5092c4bf7735c29900d3292223c751a405"
+      },
+      {
+        "identity": "RAW_SCHEMA",
+        "sha256": "13ab40fb5bb9ce9c28399c8d3c9c48c448da4f8d42c16c35c8fad8d6736da582"
+      }
+    ],
+    "artifact_binding_count": 10,
+    "final_validation_state": "FAIL_CLOSED__FIRST_BOOT_CONSUMED__COMMISSIONING_AND_WRONG_CALLER_NOT_EXECUTED__NO_E05_CREDIT",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_COMPLETED_G77_256EC_FAIL_CLOSED_EVIDENCE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ANY_FRESH_GENERATION_ADDRESSING_THE_RUNTIME_CONTINUATION_PATH_BINDING__WRONG_CALLER_REMAINS_UNSATISFIED__NO_G3_ENTRY",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "eddae7460dc69c8219e1aa090e223de9b9c5211c091c1c6723e26c9e116764ae"
+}

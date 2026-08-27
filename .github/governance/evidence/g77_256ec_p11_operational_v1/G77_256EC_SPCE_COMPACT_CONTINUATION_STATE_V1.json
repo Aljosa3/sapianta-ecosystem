@@ -1,0 +1,74 @@
+{
+  "schema_id": "G77_256EC_SPCE_COMPACT_CONTINUATION_STATE_ENVELOPE_V1",
+  "state": {
+    "schema_id": "G77_256EC_SPCE_COMPACT_CONTINUATION_STATE_V1",
+    "generation_identity": "G77_256EC_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+    "required_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+    "selected_e05_vector": "WRONG_CALLER",
+    "expected_denial_semantics": "D1_PEER_AUTHENTICATION_DENIAL_BEFORE_D2_AUTHORITY_RESOLUTION_AND_PRECLAIM__ZERO_UNAUTHORIZED_EFFECT",
+    "candidate_binding": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "file_sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0",
+      "manifest_inner_sha256": "b486f9787fa031c64ec55d70d66b29338a956044170878d695896b60e997605d",
+      "canonical_serialization_state": "CANONICAL_V1_JSON"
+    },
+    "receipt_binding": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_V1.json",
+      "file_sha256": "6e023aac90101553a3982d626d6acbc3cc140a9c18fa6f7ac69f0c0e69249453",
+      "inner_sha256": "24d201d135ebec03d402fbd9c61d12ebc52e0baa69d84bf3f91fd69bfe16cbd1",
+      "independent_verification": "PASS",
+      "four_gate_result": "PASS"
+    },
+    "implementation_bindings": {
+      "eb_validator_sha256": "8e8171f757213f064cec463868408364175772e766615bd276ed7f0e28306b43",
+      "du_validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "du_schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "ec_builder_sha256": "18c3638c3e36b842e00d6e3bbc93e4226a46456d6d06a5bc98a2ef0279e1e829",
+      "ec_harness_sha256": "56dd764d2ea05e53f4b4d3771c0d3a5092c4bf7735c29900d3292223c751a405",
+      "ec_raw_schema_sha256": "13ab40fb5bb9ce9c28399c8d3c9c48c448da4f8d42c16c35c8fad8d6736da582"
+    },
+    "execution_budget": {
+      "vm_creation_count_maximum": 1,
+      "vm_boot_count_maximum": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "e05_case_execution_count_maximum": 1,
+      "selected_vector_count_maximum": 1
+    },
+    "current_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0
+    },
+    "frontier_before": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "exact_next_legal_action": "MATERIALIZE_EXACTLY_ONE_DISPOSABLE_NO_NIC_SUBSTRATE__AUTHENTICATE_CHECKPOINT__THEN_BOOT_ONCE",
+    "conversation_history_required": false,
+    "full_history_reconstruction_required": false,
+    "execution_replay_required": false,
+    "state_is_authority": false,
+    "auto_continuable": false
+  },
+  "state_sha256": "c65ee91fea07cb790e42956b786e3e751f1c1136a86170602b788df3ec67e169"
+}

@@ -1,0 +1,90 @@
+{
+  "schema_id": "G77_256EC_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EC_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256EC_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+    "source_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+    "selected_e05_vector": "WRONG_CALLER",
+    "pre_boot_reauthentication": {
+      "phase_a_checkpoint_inner_sha256": "2de2770d7036fd05c729901fbc1d23e90a29e19383d43c58aff00a0b4a887b34",
+      "materialization_checkpoint_inner_sha256": "6915fa1ec65de00385da226d0adca885c05b3a7304785c8fcf43b8b659787957",
+      "candidate_file_sha256": "6daace2b85d614d44c40916353b10a38d0b4c2697af393e064e18d6942da11c0",
+      "candidate_inner_sha256": "b486f9787fa031c64ec55d70d66b29338a956044170878d695896b60e997605d",
+      "receipt_file_sha256": "6e023aac90101553a3982d626d6acbc3cc140a9c18fa6f7ac69f0c0e69249453",
+      "receipt_inner_sha256": "24d201d135ebec03d402fbd9c61d12ebc52e0baa69d84bf3f91fd69bfe16cbd1",
+      "receipt_reauthentication_result": "PASS",
+      "four_gate_reexecution_result": "PASS",
+      "materialized_substrate_available": true,
+      "materialized_substrate_authentic": true
+    },
+    "operational_result": "FAIL_CLOSED__RUNTIME_CONTINUATION_MANIFEST_PATH_ABSENT__HARNESS_REFUSED_ENTRY",
+    "commissioning_result": "NOT_RUN__PRE_P01_FAILURE",
+    "wrong_caller_result": "NOT_RUN__PRE_COMMISSIONING_FAILURE",
+    "host_boot_failure_evidence": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_HOST_BOOT_FAILURE_EVIDENCE_V1.json",
+      "file_sha256": "e68edfb79176f66d55bbb231212b0226e23666787ecb0729248a17d906a32cb9",
+      "inner_sha256": "bf90f7db74354811c185e0dc37263bb55b895804aacc1bda3048500bb443a1d3"
+    },
+    "serial_console": {
+      "path": ".github/governance/evidence/g77_256ec_p11_operational_v1/raw/G77_256EC_SERIAL_CONSOLE_V1.log",
+      "bytes": 88040,
+      "lines": 1028,
+      "sha256": "ea7c4cd6f4e33f99ca8ae88b9bc6b139e47421edeedb72323ca45d92370d3499",
+      "boot_marker": "PASS",
+      "harness_exit_status": 1,
+      "power_down_observed": true
+    },
+    "transient_state_before_host_teardown": {
+      "qemu_process_count": 0,
+      "transient_root": "/tmp/g77_256ec",
+      "transient_root_present": true,
+      "checkout_present": true,
+      "checkout_head": "b1a13b2e0b77cfeeabd75b9b6b5474d0bbad7c37",
+      "checkout_tree": "542cbc8a986edf4cdbff3921ed46f8d362a7e107",
+      "checkout_status_empty": true,
+      "overlay_present": true,
+      "overlay_bytes": 21954560,
+      "overlay_sha256_after_boot": "f09008998a6793d54521a798f88d9edc90863fc2996ada4035fa1a12dbfe70a2",
+      "overlay_qemu_img_check": "PASS",
+      "seed_present": true,
+      "seed_bytes": 376832,
+      "seed_sha256": "c0445d656302740ada004893d46aa29644ffa8e5faccd6a589843adcaab7efd4",
+      "ec_mount_count": 0
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "sha256_pre_teardown": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "byte_identical": true,
+      "qemu_img_check": "PASS"
+    },
+    "execution_counters": {
+      "vm_creation_count": 1,
+      "vm_boot_count": 1,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "exact_next_legal_action": "HOST_TRANSIENT_TEARDOWN_AND_FAIL_CLOSED_FINALIZATION_ONLY__NO_REPAIR_RETRY_REBOOT_OR_E05_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "7d0bcb4769b7471254636361700be114ad7f0a2770670ee6af2386b234932c55"
+}
