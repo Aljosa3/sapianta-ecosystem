@@ -1,0 +1,109 @@
+{
+  "schema_id": "G77_256EW_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EW_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256EW_REPOSITORY_ONLY_CERTIFICATION_HARDENING_OF_REUSABLE_P11_SPCE_EXECUTION_SUBSTRATE_V1",
+    "required_head": "27f0e4a93a1eabb2d048c9196046b0491af8a665",
+    "required_tree": "d85e34df17f9cbe06e07d68ca4b0d12be16c2d61",
+    "artifact_bindings": [
+      {
+        "identity": "EW_SUBSTRATE_CONTRACT",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_CONTRACT_V1.md",
+        "sha256": "6be7cc0efd964801388f126e2786dc9f225c16c24f8590a9afa3d67cb4419466"
+      },
+      {
+        "identity": "EW_SUBSTRATE_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/validator/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_VALIDATOR_V1.py",
+        "sha256": "6d2e0f18fa9369e8b0dfceda3b767b1f11f3f778aca21408d3fda19bbcf74856"
+      },
+      {
+        "identity": "EW_SUBSTRATE_MANIFEST",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_MANIFEST_V1.json",
+        "sha256": "42744ccb19767a9f90ed909f3d99b05622053fd00e97886d8a331bcadfe8675c",
+        "inner_sha256": "affea45b58f265c094a921b65932d9f9d69c95e6fe4d4359af07432482f6660f"
+      },
+      {
+        "identity": "EW_G48_REPORT",
+        "path": "docs/governance/G77_256EW_REPOSITORY_ONLY_CERTIFICATION_HARDENING_OF_REUSABLE_P11_SPCE_EXECUTION_SUBSTRATE_V1.md",
+        "sha256": "e54c89a5df005c3bc076772bad6606def7665f0b32bc67f2e60b9807ab6aacd4"
+      },
+      {
+        "identity": "EW_PHASE_D_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_SPCE_PHASE_D_FINAL_CHECKPOINT_V1.json",
+        "sha256": "68d928db369653044cc41fe84da40fb02fbe4840907b2a8f0d043dd206100784",
+        "inner_sha256": "50619aa9feac108d5b9f9de794ff01fc15fa72204b8539a04caef9208a511b51"
+      }
+    ],
+    "validation": {
+      "final_validation": "PASS__EW_REPOSITORY_ONLY_SUBSTRATE_HARDENING__PARTIAL_EXACT_BLOCKERS_REMAIN__NO_OPERATIONAL_OR_CREDIT_EFFECT",
+      "ew_regression": "17_OF_17_PASS",
+      "eu_semantic_regression": "18_OF_18_PASS",
+      "qemu_canonicalizer_self_test": "PASS",
+      "manifest_component_bindings": "29_OF_29_PASS",
+      "json_unique_keys": "PASS",
+      "inner_hashes": "PASS",
+      "cross_artifact_hashes": "PASS",
+      "anti_parallelism": "PASS",
+      "g48_structure": "PASS",
+      "git_diff_check": "PASS",
+      "cache_hygiene": "PASS"
+    },
+    "freeze_reduction": {
+      "freeze_decision": "PARTIAL__EXACT_BLOCKERS_REMAIN",
+      "reusable_p11_spce_execution_substrate": "PARTIAL",
+      "B1": "OPEN__OPERATIONAL_EVIDENCE_REQUIRED",
+      "B2": "PARTIALLY_CLOSED",
+      "B3": "CLOSED",
+      "B4": "CLOSED",
+      "B5": "OPEN__HUMAN_AUTHORITY_REQUIRED",
+      "B6": "PARTIALLY_CLOSED",
+      "not_fully_closed_blocker_count": 4,
+      "legacy_component_counts_after": {
+        "CERTIFIED": 4,
+        "EVIDENCE_SUPPORTED": 13,
+        "REQUIRES_HARDENING": 2,
+        "VECTOR_SPECIFIC": 3
+      }
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_constitutional_credit": "UNSATISFIED",
+      "p12_entry_count": 0,
+      "production_route_count": 0
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "repository_state": {
+      "head_unchanged": true,
+      "tree_unchanged": true,
+      "index_empty": true,
+      "only_ew_authorized_uncommitted_files": true,
+      "no_qemu_process": true,
+      "no_ew_temporary_execution_substrate": true,
+      "no_ew_vm_overlay_or_seed": true,
+      "no_ew_cache_residue": true,
+      "nothing_staged": true,
+      "nothing_committed": true,
+      "nothing_pushed": true
+    },
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_EW__THEN_SEPARATE_HUMAN_CERTIFICATION_DECISION_FOR_THE_EXACT_MANIFEST_SCOPE__AND_SEPARATELY_AUTHORIZED_REPOSITORY_OR_OPERATIONAL_CLOSURE_OF_B1_B2_AND_B6_BEFORE_ANOTHER_FRESH_E05_EXECUTION",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "a7e910641f3f7397f2fcf3fedae0daacb2067b67844755444ebacd1012f5450c"
+}

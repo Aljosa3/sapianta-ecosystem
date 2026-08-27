@@ -1,0 +1,159 @@
+{
+  "schema_id": "G77_256EW_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EW_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EW_REPOSITORY_ONLY_CERTIFICATION_HARDENING_OF_REUSABLE_P11_SPCE_EXECUTION_SUBSTRATE_V1",
+    "mode": "REPOSITORY_ONLY",
+    "required_head": "27f0e4a93a1eabb2d048c9196046b0491af8a665",
+    "required_tree": "d85e34df17f9cbe06e07d68ca4b0d12be16c2d61",
+    "entry_gate": {
+      "result": "PASS",
+      "head_exact": true,
+      "tree_exact": true,
+      "lineage_exact": true,
+      "worktree_clean": true,
+      "index_empty": true,
+      "eu_definition_tracked_and_reachable": true
+    },
+    "spce_phases": {
+      "phase_a": "PASS__BASELINE_EU_EV_ET_DU_EI_EB_EE_ER_AND_G48_IDENTITIES_AUTHENTICATED",
+      "phase_b": "PASS__COMMON_SUBSTRATE_CONTRACT_MANIFEST_AND_VALIDATOR_EXTRACTED_WITHOUT_PARALLEL_OPERATIONAL_STACK",
+      "phase_c": "PASS__MANIFEST_COMPONENT_CONTRACT_MATRIX_AND_17_REGRESSIONS_VALIDATED",
+      "phase_d": "PASS__FAIL_CLOSED_PARTIAL_FREEZE_REPORT_CHECKPOINT_AND_SEAL_PREPARED"
+    },
+    "artifact_bindings": [
+      {
+        "identity": "EW_SUBSTRATE_CONTRACT",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_CONTRACT_V1.md",
+        "sha256": "6be7cc0efd964801388f126e2786dc9f225c16c24f8590a9afa3d67cb4419466"
+      },
+      {
+        "identity": "EW_SUBSTRATE_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/validator/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_VALIDATOR_V1.py",
+        "sha256": "6d2e0f18fa9369e8b0dfceda3b767b1f11f3f778aca21408d3fda19bbcf74856"
+      },
+      {
+        "identity": "EW_SUBSTRATE_MANIFEST",
+        "path": ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_MANIFEST_V1.json",
+        "sha256": "42744ccb19767a9f90ed909f3d99b05622053fd00e97886d8a331bcadfe8675c",
+        "inner_sha256": "affea45b58f265c094a921b65932d9f9d69c95e6fe4d4359af07432482f6660f"
+      },
+      {
+        "identity": "EW_G48_REPORT",
+        "path": "docs/governance/G77_256EW_REPOSITORY_ONLY_CERTIFICATION_HARDENING_OF_REUSABLE_P11_SPCE_EXECUTION_SUBSTRATE_V1.md",
+        "sha256": "e54c89a5df005c3bc076772bad6606def7665f0b32bc67f2e60b9807ab6aacd4"
+      }
+    ],
+    "validation": {
+      "final_validation": "PASS",
+      "manifest_unique_key_json": "PASS",
+      "manifest_inner_hash": "PASS",
+      "component_cross_bindings": "PASS__29_OF_29",
+      "legacy_22_component_matrix": "PASS__ONE_EXACT_DELTA",
+      "ew_regression_total": 17,
+      "ew_regression_pass": 17,
+      "ew_regression_fail": 0,
+      "eu_semantic_regression_total": 18,
+      "eu_semantic_regression_pass": 18,
+      "eu_semantic_regression_fail": 0,
+      "qemu_canonicalizer_self_test": "PASS",
+      "anti_parallelism": "PASS__NO_NEW_OPERATIONAL_STACK_OR_LAUNCH_PATH",
+      "operational_effect": 0,
+      "authority_effect": 0,
+      "credit_effect": 0
+    },
+    "blocker_status": {
+      "B1": "OPEN__OPERATIONAL_EVIDENCE_REQUIRED",
+      "B2": "PARTIALLY_CLOSED",
+      "B3": "CLOSED",
+      "B4": "CLOSED",
+      "B5": "OPEN__HUMAN_AUTHORITY_REQUIRED",
+      "B6": "PARTIALLY_CLOSED"
+    },
+    "legacy_component_counts": {
+      "before": {
+        "CERTIFIED": 4,
+        "EVIDENCE_SUPPORTED": 12,
+        "REQUIRES_HARDENING": 3,
+        "VECTOR_SPECIFIC": 3
+      },
+      "after": {
+        "CERTIFIED": 4,
+        "EVIDENCE_SUPPORTED": 13,
+        "REQUIRES_HARDENING": 2,
+        "VECTOR_SPECIFIC": 3
+      },
+      "classification_delta_count": 1,
+      "transition": "RAW_EVIDENCE_SCHEMA_AND_SEQUENCE__REQUIRES_HARDENING_TO_EVIDENCE_SUPPORTED"
+    },
+    "proof_load": {
+      "repetitive_proof_load_before": "HIGH",
+      "repetitive_proof_load_after": "MEDIUM__DERIVED__FULL_REDUCTION_CONDITIONAL_ON_CERTIFICATION_AND_OPERATIONAL_BINDINGS",
+      "common_proof_reuse_ratio": "DERIVED__MAJORITY_COMMON__NO_NUMERIC_MEASUREMENT",
+      "vector_specific_proof_ratio": "DERIVED__MINORITY_BUT_ALWAYS_FRESH__NO_NUMERIC_MEASUREMENT",
+      "expected_e05_generation_complexity_reduction": "MEDIUM__CURRENT_STRUCTURE__HIGH_IF_CERTIFIED_AND_B1_B2_B6_OPERATIONALLY_BOUND"
+    },
+    "frontier": {
+      "e05_before": "5/18",
+      "e05_after": "5/18",
+      "e05_remaining": 13,
+      "consumed_constitutional_credit": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false
+    },
+    "constitutional_health": "PASS__FAIL_CLOSED_PARTIAL_FREEZE_WITH_ZERO_OPERATIONAL_EFFECT",
+    "shadow_automation_readiness": "MEDIUM__IMPROVED_STRUCTURE__NOT_CERTIFIED_OR_OPERATIONALLY_BOUND",
+    "spce_clrec": {
+      "spce_continuation_used": true,
+      "spce_repository_resumability": "PASS",
+      "spce_cross_account_resumability": "PASS__COMMITTED_EV_EMPIRICAL_LINEAGE_REUSED",
+      "spce_operational_resumability": "NOT_APPLICABLE__EW_REPOSITORY_ONLY",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "cross_account_continuation_readiness": "PASS__EVIDENCE_SUPPORTED_NOT_SEPARATELY_CERTIFIED",
+      "cross_llm_continuation_used": "NOT_ESTABLISHED",
+      "cross_llm_continuation_readiness": "NOT_ESTABLISHED",
+      "clrec_empirical_support": "PARTIAL__CROSS_ACCOUNT_SUPPORTED__CROSS_LLM_NOT_ESTABLISHED",
+      "clrec_constitutionally_certified": false
+    },
+    "operational_counters": {
+      "fresh_operational_candidate_count": 0,
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "reuse_impact": {
+      "capability_reuse_delta": "INCREASED_COMMON_REPOSITORY_REUSE_WITHOUT_OPERATIONAL_PATH_CHANGE",
+      "production_path_delta": 0,
+      "parallel_flow_created": false,
+      "capability_reachability_loss": "NONE"
+    },
+    "freeze_decision": "PARTIAL__EXACT_BLOCKERS_REMAIN",
+    "reusable_p11_spce_execution_substrate": "PARTIAL",
+    "exact_mutation_scope": [
+      ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_CONTRACT_V1.md",
+      ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_MANIFEST_V1.json",
+      ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/validator/G77_256EW_P11_SPCE_REUSABLE_SUBSTRATE_VALIDATOR_V1.py",
+      ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_SPCE_PHASE_D_FINAL_CHECKPOINT_V1.json",
+      ".github/governance/evidence/g77_256ew_reusable_p11_spce_substrate_v1/G77_256EW_FINAL_VALIDATION_SEAL_V1.json",
+      "docs/governance/G77_256EW_REPOSITORY_ONLY_CERTIFICATION_HARDENING_OF_REUSABLE_P11_SPCE_EXECUTION_SUBSTRATE_V1.md"
+    ],
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_EW__THEN_SEPARATE_HUMAN_CERTIFICATION_DECISION_FOR_THE_EXACT_MANIFEST_SCOPE__AND_SEPARATELY_AUTHORIZED_REPOSITORY_OR_OPERATIONAL_CLOSURE_OF_B1_B2_AND_B6_BEFORE_ANOTHER_FRESH_E05_EXECUTION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "50619aa9feac108d5b9f9de794ff01fc15fa72204b8539a04caef9208a511b51"
+}
