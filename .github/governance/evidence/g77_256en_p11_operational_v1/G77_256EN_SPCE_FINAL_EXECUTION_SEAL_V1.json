@@ -1,0 +1,163 @@
+{
+  "schema_id": "G77_256EN_SPCE_FINAL_EXECUTION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EN_SPCE_FINAL_EXECUTION_SEAL_V1",
+    "generation_identity": "G77_256EN_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONSUMED_REUSE_P11_GENERATION_V1",
+    "required_head": "3693fbeb95b048a413a971b434d4f5326fe658a3",
+    "source_tree": "7a446c16136b6f1787b904fecc991a7a285c2990",
+    "selected_e05_vector": "CONSUMED",
+    "selected_e05_vector_result": "NOT_EXECUTED__MATERIALIZATION_CHECKPOINT_REAUTHENTICATION_FAILED_BEFORE_BOOT",
+    "en_recovery_state": "E__CONTRADICTORY_OR_UNAUTHENTICATABLE_STATE",
+    "cross_account_recovery_result": "FAIL_CLOSED__PHASE_A_AUTHENTIC__PHYSICAL_SUBSTRATE_MATCHED_RECORDED_IDENTITIES__MATERIALIZATION_CHECKPOINT_UNSEALED__NO_BOOT",
+    "first_failure": {
+      "failure_class": "MATERIALIZATION_CHECKPOINT_INNER_HASH_UNSEALED_PLACEHOLDER",
+      "failure_phase": "CROSS_ACCOUNT_PRE_BOOT_REAUTHENTICATION",
+      "checkpoint_path": ".github/governance/evidence/g77_256en_p11_operational_v1/G77_256EN_SPCE_MATERIALIZATION_CHECKPOINT_V1.json",
+      "embedded_inner_sha256": "PLACEHOLDER_CHECKPOINT_SHA",
+      "computed_inner_sha256": "98a7db370a9725c395523375c596a2e8621fa4569caf8eafaefd89e54bb1121d",
+      "repair_and_continue_allowed": false,
+      "automatic_retry_allowed": false,
+      "first_boot_allowed": false,
+      "second_boot_allowed": false
+    },
+    "phase_a_result": {
+      "checkpoint_reauthentication": "PASS",
+      "candidate_unchanged": "PASS",
+      "runtime_input_unchanged": "PASS",
+      "eb_receipt_reauthentication": "PASS__WITHOUT_REISSUANCE",
+      "du_four_gate_reexecution": "PASS",
+      "ee_receipt_reauthentication": "PASS__WITHOUT_REISSUANCE",
+      "candidate_runtime_identity": "PASS"
+    },
+    "materialization_result": "FAIL__UNAUTHENTICATED_UNSEALED_CHECKPOINT__NO_REPLAY_OR_REPAIR",
+    "commissioning_result": "NOT_RUN__BOOT_NOT_AUTHORIZED",
+    "consumed_result": "NOT_RUN__COMMISSIONING_NOT_REACHED",
+    "zero_second_effect": {
+      "second_protected_effect_count": 0,
+      "credit_awarded": false,
+      "basis": "NO_BOOT__NO_COMMISSIONING__NO_E05_CASE_EXECUTION"
+    },
+    "execution_counters": {
+      "fresh_candidate_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "counter_limitation": "VM_CREATION_COUNT_ONE_IS_PHYSICALLY_CORROBORATED_BUT_NOT_CRYPTOGRAPHICALLY_AUTHENTICATED_BY_THE_UNSEALED_INTERRUPTED_CHECKPOINT",
+    "teardown": {
+      "guest_execution_seal_state": "NOT_CREATED__NO_BOOT_AUTHORIZED",
+      "guest_teardown_seal_state": "NOT_CREATED__NO_BOOT_AUTHORIZED",
+      "serial_console_state": "NOT_CREATED__NO_BOOT_OCCURRED",
+      "host_teardown_state": "COMPLETE",
+      "qemu_process_count": 0,
+      "en_mount_count": 0,
+      "transient_root_absent": true,
+      "overlay_absent": true,
+      "seed_absent": true,
+      "temporary_checkout_absent": true,
+      "base_image_sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_sha256_after": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "base_image_byte_identical": true,
+      "base_image_qemu_img_check": "PASS"
+    },
+    "completion_reduction": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count_before": 5,
+      "e05_satisfied_obligation_count_after": 5,
+      "e05_remaining_obligation_count_after": 13,
+      "consumed_state_after": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false,
+      "p12_entry_authorized": false,
+      "production_route_authorized": false
+    },
+    "cross_account_assessment": {
+      "spce_continuation_used": true,
+      "same_account_continuation_used": false,
+      "cross_account_continuation_used": true,
+      "cross_llm_continuation_used": "NOT_ESTABLISHED",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "logical_state_resumability": "PASS",
+      "repository_evidence_resumability": "PARTIAL__PHASE_A_PASS__MATERIALIZATION_CHECKPOINT_FAIL",
+      "physical_substrate_resumability": "OBSERVED_PRESENT_AND_IDENTITY_MATCHED__OPERATIONAL_USE_BLOCKED_BY_UNSEALED_CHECKPOINT",
+      "spce_phase_checkpoint_readiness": "FAIL__MATERIALIZATION_CHECKPOINT_UNSEALED",
+      "spce_repository_resumability": "PARTIAL",
+      "spce_cross_account_resumability": "PARTIAL",
+      "spce_operational_resumability": "FAIL",
+      "cross_account_continuation_readiness": "PARTIAL",
+      "cross_llm_continuation_readiness": "NOT_ESTABLISHED",
+      "clrec_empirical_support": "PARTIAL__LOGICAL_RECONSTRUCTION_AND_FAIL_CLOSED_BOUNDARY_SUPPORTED__OPERATIONAL_RESUMPTION_NOT_DEMONSTRATED",
+      "clrec_constitutionally_certified": false
+    },
+    "artifact_bindings": [
+      {
+        "identity": "PHASE_A_CHECKPOINT",
+        "sha256": "36e7395215bd4f2613d6104adc4e479d420de8b50e331954e0cde9b755648dbe"
+      },
+      {
+        "identity": "UNSEALED_MATERIALIZATION_CHECKPOINT",
+        "sha256": "1d9ef7952761640ed3e085a9301f36d39f81a0bdef006a7403fd5d2fc64fa0b0"
+      },
+      {
+        "identity": "PRE_MATERIALIZATION_CANDIDATE",
+        "sha256": "8e6e53adf65f1e0be8fc1ca9ee4adc46ea5c5cd1a1ab99ca9d2200b8f85ce885"
+      },
+      {
+        "identity": "EB_RECEIPT",
+        "sha256": "b753dd1e466d49e0471d13295f57144a500311db4d9738376f1d9b68fb109d81"
+      },
+      {
+        "identity": "EE_RECEIPT",
+        "sha256": "c50c1fb8a0b0b350c9530ab2b09f03ac8d7e8519b376f9eaf9ad93b449b41e99"
+      },
+      {
+        "identity": "CROSS_ACCOUNT_RECOVERY_FAILURE_EVIDENCE",
+        "sha256": "7e9fcf24ec1b52332a8940288af23e27a034d6bb73b724948a002f026508b6a7"
+      },
+      {
+        "identity": "HOST_PRE_TEARDOWN_CHECKPOINT",
+        "sha256": "9f2c422c11a9e4a75e207501271bd7f0f683ab56a23cec511375a31b7f060297"
+      },
+      {
+        "identity": "HOST_TEARDOWN_CHECKPOINT",
+        "sha256": "25e9b4c03b3656ac8ddda9cc4dbe07513f427663144718b9c0c014596a4ee583"
+      },
+      {
+        "identity": "HARNESS",
+        "sha256": "202a480953bf30308102850a5f41d6e2db106e8a2dfcd0a176e19bc1b5cd1ff2"
+      },
+      {
+        "identity": "RAW_SCHEMA",
+        "sha256": "f5ddc9696f28336619c52ef93896d131218237d4778744574335e9c50d90c211"
+      }
+    ],
+    "artifact_binding_count": 10,
+    "final_validation_state": "FAIL_CLOSED__MATERIALIZATION_CHECKPOINT_UNAUTHENTICATED__NO_BOOT_COMMISSIONING_OR_CONSUMED_CREDIT__TEARDOWN_COMPLETE",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_COMPLETED_G77_256EN_FAIL_CLOSED_EVIDENCE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ANY_FRESH_GENERATION__CONSUMED_REMAINS_UNSATISFIED__NO_G3_ENTRY",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "ecdacab240a6f0ce00c665d5c5bfe468ed098ab753b876e3b498ae4b9ad28bee"
+}

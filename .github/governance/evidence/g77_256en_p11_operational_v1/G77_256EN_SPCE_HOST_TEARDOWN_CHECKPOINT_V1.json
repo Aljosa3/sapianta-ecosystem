@@ -1,0 +1,71 @@
+{
+  "schema_id": "G77_256EN_SPCE_HOST_TEARDOWN_CHECKPOINT_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EN_SPCE_HOST_TEARDOWN_CHECKPOINT_V1",
+    "generation_identity": "G77_256EN_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_CONSUMED_REUSE_P11_GENERATION_V1",
+    "required_head": "3693fbeb95b048a413a971b434d4f5326fe658a3",
+    "source_tree": "7a446c16136b6f1787b904fecc991a7a285c2990",
+    "selected_e05_vector": "CONSUMED",
+    "host_pre_teardown_checkpoint": {
+      "path": ".github/governance/evidence/g77_256en_p11_operational_v1/G77_256EN_SPCE_HOST_PRE_TEARDOWN_CHECKPOINT_V1.json",
+      "file_sha256": "9f2c422c11a9e4a75e207501271bd7f0f683ab56a23cec511375a31b7f060297",
+      "inner_sha256": "d0806bd2649f11510dbed9738d6290ad11b8985a12270c70603b5fc0b231b3c6"
+    },
+    "host_teardown": {
+      "qemu_process_count": 0,
+      "en_mount_count": 0,
+      "matching_transient_root_count": 0,
+      "transient_root_absent": true,
+      "overlay_absent": true,
+      "seed_absent": true,
+      "temporary_checkout_absent": true,
+      "serial_transient_source_absent": true,
+      "production_route_count": 0,
+      "teardown_state": "COMPLETE"
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "sha256_before": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "sha256_after": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "byte_identical": true,
+      "qemu_img_check": "PASS"
+    },
+    "persisted_failure_evidence": {
+      "path": ".github/governance/evidence/g77_256en_p11_operational_v1/raw/G77_256EN_CROSS_ACCOUNT_RECOVERY_FAILURE_EVIDENCE_V1.json",
+      "file_sha256": "7e9fcf24ec1b52332a8940288af23e27a034d6bb73b724948a002f026508b6a7",
+      "inner_sha256": "20609e5d6da02fd31f4fb457abe20ec3c2593fcba985298bf67bee0f4519a877",
+      "guest_execution_seal": "NOT_CREATED__NO_BOOT_AUTHORIZED",
+      "guest_teardown_seal": "NOT_CREATED__NO_BOOT_AUTHORIZED",
+      "serial_console": "NOT_CREATED__NO_BOOT_OCCURRED"
+    },
+    "execution_counters": {
+      "fresh_candidate_count": 1,
+      "vm_creation_count": 1,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "counter_limitation": "VM_CREATION_COUNT_ONE_IS_PHYSICALLY_CORROBORATED_BUT_THE_INTERRUPTED_MATERIALIZATION_CHECKPOINT_COUNTER_IS_NOT_CRYPTOGRAPHICALLY_AUTHENTICATED",
+    "exact_next_legal_action": "PERSIST_FAIL_CLOSED_FINAL_EXECUTION_SEAL__TERMINAL_CANONICAL_V1_MANIFEST__PHASE_D_CHECKPOINT__AND_G48_REPORT_ONLY",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "135059ba424ffc0f95a0422f54ef567245c322579c7c520c868e9ea53c6d19cf"
+}
