@@ -1,0 +1,84 @@
+{
+  "schema_id": "G77_256EI_SPCE_PHASE_D_FINAL_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EI_SPCE_PHASE_D_FINAL_CHECKPOINT_V1",
+    "generation_identity": "G77_256EI_REPOSITORY_ONLY_EXACT_DU_PROHIBITION_VOCABULARY_PRODUCER_HARDENING_V1",
+    "required_head": "da84f3e5c732c5467ea4f56db0338217f0929022",
+    "required_tree": "dbf4bfab2e3d90160998036042396b25491e6841",
+    "phase_sequence": {
+      "phase_a_authenticate": "PASS",
+      "phase_b_harden": "PASS__VERSIONED_SUCCESSOR_ONLY",
+      "phase_c_positive_fixture": "PASS",
+      "phase_c_du_schema": "PASS",
+      "phase_c_du_four_gates": "PASS",
+      "phase_c_eb_candidate_bound_validation": "PASS__REPOSITORY_ONLY__NO_OPERATIONAL_AUTHORITY",
+      "phase_c_ee_runtime_binding": "NOT_RUN__NOT_NECESSARY",
+      "phase_c_regression_matrix": "PASS__TWENTY_REQUIRED_PLUS_ONE_ADDITIONAL",
+      "phase_d_independent_finalization": "PASS"
+    },
+    "final_validation_seal": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/G77_256EI_FINAL_VALIDATION_SEAL_V1.json",
+      "file_sha256": "d546db91afa316839c8879516dca7a887f02dc49f5d8bf2d5ee997e94653bcc8",
+      "inner_sha256": "09aea9c20073e6c7d548f6a061bd4e8fe90f8354fce48c1cc1fc9a3912cbcf12"
+    },
+    "hardening_reduction": {
+      "producer_hardening_result": "PASS",
+      "exact_du_prohibition_vocabulary_preserved": true,
+      "qualified_replacements_can_substitute": false,
+      "duplicates_change_semantic_meaning": false,
+      "producer_can_silently_drop_required_token": false,
+      "producer_can_reinterpret_du_vocabulary": false,
+      "positive_fixture_result": "PASS",
+      "negative_regression_matrix_result": "PASS",
+      "historical_eg_candidate_remains_rejected": true
+    },
+    "unchanged_authorities": {
+      "du_contract_changed": false,
+      "du_schema_changed": false,
+      "du_validator_changed": false,
+      "historical_eg_evidence_changed": false,
+      "historical_eh_report_changed": false,
+      "new_canonical_v1_dialect_created": false,
+      "parallel_du_validator_created": false,
+      "parallel_eb_mechanism_created": false,
+      "parallel_ee_mechanism_created": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_frontier": {
+      "wrong_caller_state": "UNSATISFIED",
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "final_validation": "PASS__REPOSITORY_ONLY_PRODUCER_HARDENING",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EI_REPOSITORY_ONLY_PRODUCER_HARDENING__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_FRESH_BOUNDED_WRONG_CALLER_P11_E05_GENERATION_USING_THE_HARDENED_PRODUCER_AND_THE_EXISTING_AUTHENTIC_DU_EB_EE_CHAIN__NO_AUTOMATIC_OPERATIONAL_CONTINUATION",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "d7d1fec3a4138159faf821494402ce7b00a09a63a14709080df228e7531644e1"
+}

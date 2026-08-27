@@ -1,0 +1,132 @@
+{
+  "schema_id": "G77_256EI_FINAL_VALIDATION_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EI_FINAL_VALIDATION_SEAL_V1",
+    "generation_identity": "G77_256EI_REPOSITORY_ONLY_EXACT_DU_PROHIBITION_VOCABULARY_PRODUCER_HARDENING_V1",
+    "required_head": "da84f3e5c732c5467ea4f56db0338217f0929022",
+    "required_tree": "dbf4bfab2e3d90160998036042396b25491e6841",
+    "phase_a_checkpoint": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/G77_256EI_SPCE_PHASE_A_CHECKPOINT_V1.json",
+      "file_sha256": "31e8d1edb567388f65134373748ca7ce83b45016a5c6aef05cf5dec216d686f8",
+      "inner_sha256": "c607c956004cb2cbb9f1dbb86d79751d5164a1f35f2025acf67e97afd025c65b"
+    },
+    "producer": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/producer/G77_256EI_EXACT_DU_PROHIBITION_PRODUCER_V1.py",
+      "sha256": "501ec44273fce69b5eb5b30112ab857819d41066fb5f4afec4a7101110968ac9",
+      "identity_authenticated": true,
+      "cannot_reinterpret_du": true
+    },
+    "regression_runner": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/validation/G77_256EI_PRODUCER_HARDENING_REGRESSION_V1.py",
+      "sha256": "625e809e8fa9b53e5f2d2519b2da17af8f1a52c95562fa2cd87e4be9b72bb0ae"
+    },
+    "positive_fixture": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/fixtures/G77_256EI_POSITIVE_CANONICAL_V1_CANDIDATE_V1.json",
+      "file_sha256": "3a97bd67f18be54e99807dc81afc24c6e3f34573e9ea740cbb6792bab162d847",
+      "inner_sha256": "48cfed062fe53481d337447b9ba109815935175b102435c4878f595fbfe056c2",
+      "canonical_serialization": "PASS",
+      "du_schema_result": "PASS",
+      "du_four_gate_result": "PASS",
+      "operational_authority": false
+    },
+    "eb_receipt": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/G77_256EI_POSITIVE_EB_VALIDATION_RECEIPT_V1.json",
+      "file_sha256": "4c2ca87872af01800d5f0d30b22b1a4a2e32a75d63700c073522c00290b0c659",
+      "inner_sha256": "15267651179d64a459cabb5c55602939799392afe7d1f5adafb520589d2227b1",
+      "verification_result": "PASS",
+      "operational_authority": false
+    },
+    "validation_evidence": {
+      "path": ".github/governance/evidence/g77_256ei_producer_hardening_v1/G77_256EI_PRODUCER_HARDENING_VALIDATION_EVIDENCE_V1.json",
+      "file_sha256": "ec95c7c98139ac54090f07ce0994cb73c72058b97d716eb591dbd2732746c56e",
+      "inner_sha256": "1b5cb033fa814cd0eb0c0643a2062c6cd09b8dd42cf38a2a39daf708fb18d0ef",
+      "required_regression_case_count": 20,
+      "additional_regression_case_count": 1,
+      "total_regression_case_count": 21,
+      "regression_result": "PASS"
+    },
+    "du_identity": {
+      "contract_sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+      "schema_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+      "validator_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+      "contract_changed": false,
+      "schema_changed": false,
+      "validator_changed": false
+    },
+    "exact_du_prohibition_vocabulary": [
+      "E05_EXECUTION",
+      "EXECUTION_REPLAY",
+      "HUMAN_OPERATIONAL_ACT_CREATION",
+      "P11_ENTRY",
+      "P12_ENTRY",
+      "PRODUCTION_ROUTE",
+      "VM_BOOT",
+      "VM_CREATION"
+    ],
+    "historical_immutability": {
+      "eg_candidate_sha256": "d4e58b1c6f11d7617993ac6c559a7d29ffb96c6aaf034b71f9911a651111ebd4",
+      "eg_failure_sha256": "b0c66b7569edf4b594356afeacb81e3409e89292d75c22602fe07bf85e24d2c6",
+      "eh_report_sha256": "606fe0c8e748cab90becf729342b18d499261623156d03c32fa3f49c4bc3ec44",
+      "eg_candidate_changed": false,
+      "eg_evidence_changed": false,
+      "eh_report_changed": false,
+      "historical_first_authoritative_failure": "CONSTITUTIONAL_ADMISSIBILITY_FAILED",
+      "historical_eg_candidate_rejection_preserved": true
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "human_operational_act_terminally_bound_count": 0,
+      "human_operational_act_permanently_exhausted_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_frontier": {
+      "wrong_caller_state": "UNSATISFIED",
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "spce_clrec_assessment": {
+      "cross_account_continuation_used": true,
+      "logical_state_resumability": "PASS__REPOSITORY_STATE_AUTHENTICATED",
+      "repository_evidence_resumability": "PASS__EH_TO_EI_LINEAGE_CONTINUED",
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "execution_replay_required": false,
+      "materialization_replay_required": false,
+      "cross_account_continuation_readiness": "INCREASED__REPOSITORY_ONLY",
+      "cross_llm_continuation_readiness": "STRUCTURALLY_SUPPORTED__NOT_CONTROLLED_DIFFERENT_MODEL_EXPERIMENT",
+      "clrec_empirical_support": "INCREASED",
+      "clrec_constitutionally_certified": false
+    },
+    "producer_hardening_result": "PASS",
+    "exact_du_prohibition_vocabulary_preserved": true,
+    "positive_fixture_result": "PASS",
+    "negative_regression_matrix_result": "PASS",
+    "ee_validation_result": "NOT_RUN__NOT_NECESSARY_FOR_EXACT_PRODUCER_DEFECT_CLOSURE",
+    "final_validation": "PASS__REPOSITORY_ONLY_PRODUCER_HARDENING",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EI_REPOSITORY_ONLY_PRODUCER_HARDENING__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_FRESH_BOUNDED_WRONG_CALLER_P11_E05_GENERATION_USING_THE_HARDENED_PRODUCER_AND_THE_EXISTING_AUTHENTIC_DU_EB_EE_CHAIN__NO_AUTOMATIC_OPERATIONAL_CONTINUATION",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "09aea9c20073e6c7d548f6a061bd4e8fe90f8354fce48c1cc1fc9a3912cbcf12"
+}
