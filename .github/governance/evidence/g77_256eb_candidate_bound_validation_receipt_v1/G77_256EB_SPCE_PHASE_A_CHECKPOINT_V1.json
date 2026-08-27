@@ -1,0 +1,190 @@
+{
+  "schema_id": "G77_256EB_SPCE_PHASE_A_CHECKPOINT_ENVELOPE_V1",
+  "checkpoint": {
+    "schema_id": "G77_256EB_SPCE_PHASE_A_CHECKPOINT_V1",
+    "generation_identity": "G77_256EB_CANDIDATE_BOUND_PRE_MATERIALIZATION_VALIDATION_RECEIPT_HARDENING_V1",
+    "required_head": "cb6b5069cd235654f63c09537bfd8578f3a71da0",
+    "required_tree": "ecb07430e654cc9c3a71f5b65f4954847098c678",
+    "entry_gate": {
+      "git_status_short": "",
+      "index_state": "EMPTY",
+      "observed_head": "cb6b5069cd235654f63c09537bfd8578f3a71da0",
+      "observed_log": "cb6b5069 G77-256EA finalize DZ fail closed without E05 credit",
+      "unrelated_mutation_count": 0,
+      "result": "PASS"
+    },
+    "authenticated_minimum_lineage": [
+      {
+        "identity": "G77_256DU_CANONICAL_V1_CONTRACT",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_CONTRACT_V1.md",
+        "file_sha256": "e2fc8ddff0376f2e6acbd01f2cefb714dbd299baf1013d055d5ceeae251fed9e",
+        "git_blob": "52a581514b893781ae966de707916fcd952dcca3"
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_V1_SCHEMA",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/G77_256DU_CANONICAL_CONTINUATION_MANIFEST_SCHEMA_V1.json",
+        "file_sha256": "a21ba1567c65101a5f178afdfefb5d500c97fc2cc6a9eb9da6c9fb4cc914478e",
+        "git_blob": "88c860bbdfdc52045ec4fcacddb540655ebbba1b"
+      },
+      {
+        "identity": "G77_256DU_CANONICAL_V1_VALIDATOR",
+        "path": ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+        "file_sha256": "27457993a4e6b778cc65356cd9b17a1bf2665f4e6147608d27dc233ff512304d",
+        "git_blob": "44b7138dcad33a70ab63f7b988857d04519986f6"
+      },
+      {
+        "identity": "G77_256DY_VALID_E05_BASELINE_FINAL_SEAL",
+        "path": ".github/governance/evidence/g77_256dy_p11_operational_v1/G77_256DY_SPCE_FINAL_EXECUTION_SEAL_V1.json",
+        "file_sha256": "b8b4f81506d41bd364edd28c53a1a6c0c3de5e9dbd68125fd46f9d203187f7ca",
+        "git_blob": "a571c0cd93b94d637d1e0c80167c17a38178429a"
+      },
+      {
+        "identity": "G77_256DY_VALID_CANONICAL_V1_VALIDATION_BASELINE",
+        "path": ".github/governance/evidence/g77_256dy_p11_operational_v1/raw/G77_256DY_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_EVIDENCE_V1.json",
+        "file_sha256": "3b189a37ce2ab0e37e23d3a4697fcc23a3fe477159494c2b2e5afbdf555486b9",
+        "git_blob": "417d5ea9c8b201938f69a42382faf6c395a012b4"
+      },
+      {
+        "identity": "G77_256DZ_NON_CANONICAL_CANDIDATE",
+        "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+        "file_sha256": "190c06738defdb0d80e3f3bf0a67010276edd78f0432d7667281625a838bc708",
+        "git_blob": "0c4c7888f61548d9e3eb9cef68e504a596794f9e"
+      },
+      {
+        "identity": "G77_256DZ_SELF_TEST_SUBSTITUTION_EVIDENCE",
+        "path": ".github/governance/evidence/g77_256dz_p11_operational_v1/raw/G77_256DZ_CANONICAL_V1_PRE_MATERIALIZATION_VALIDATION_EVIDENCE_V1.json",
+        "file_sha256": "d7656426a102da1363dc0b1a9b4f1b52184e384a28513213d4b4a2f1f51d7213",
+        "git_blob": "8a3cb74d3576300af11c3b0f7471d86faca312eb"
+      },
+      {
+        "identity": "G77_256EA_FAIL_CLOSED_REDUCTION_CHECKPOINT",
+        "path": ".github/governance/evidence/g77_256ea_dz_fail_closed_finalization_v1/G77_256EA_DZ_AUTHENTICATION_AND_FAIL_CLOSED_REDUCTION_CHECKPOINT_V1.json",
+        "file_sha256": "7d9cbddb8b6148786e0c3e1fcbcae3ab14cbb78c0d504cc02914e24d1eb50c68",
+        "git_blob": "eb01d23431363eeb1772010d1acea72a6333b757"
+      },
+      {
+        "identity": "G77_256EA_FAIL_CLOSED_REDUCTION_SEAL",
+        "path": ".github/governance/evidence/g77_256ea_dz_fail_closed_finalization_v1/G77_256EA_DZ_FAIL_CLOSED_FINAL_REDUCTION_SEAL_V1.json",
+        "file_sha256": "5b1bcb0f4f73dcfa7749dfba0a312b2e9a4fec6febad07366a55b432a1f662aa",
+        "git_blob": "834b44325e7c8a20991a9ce1c48b3e0a0ec52f45"
+      },
+      {
+        "identity": "G77_256EA_G48_REPORT",
+        "path": "docs/governance/G77_256EA_SAME_SESSION_SPCE_FAIL_CLOSED_FINALIZATION_OF_G77_256DZ_AFTER_INVALID_PRE_MATERIALIZATION_CANONICAL_V1_VALIDATION_V1.md",
+        "file_sha256": "c6fc3ca451dfcca75b6bf521d009890b759efd7114b5c15afabfa0cee37971fb",
+        "git_blob": "c823de98d1a20497cf9aa96b2305e019584915eb"
+      },
+      {
+        "identity": "G48_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1",
+        "path": "docs/governance/G48_00_CONSTITUTIONAL_EVIDENCE_REPORTING_STANDARD_V1.md",
+        "file_sha256": "16508d1a77c4b3f07d37861e74d85f77896be16da01ca26cbc07a658ddf2c0eb",
+        "git_blob": "095c16f14c54d8b36330d47a653a122ee07a441c"
+      }
+    ],
+    "lineage_scope": {
+      "conversation_history_required": false,
+      "full_history_reconstruction_required": false,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_required": false,
+      "execution_replay_count": 0
+    },
+    "exact_defect": {
+      "ea_failure_class": "VALIDATOR_CLI_BRANCH_PRECEDENCE_PLUS_NON_CANONICAL_ACTUAL_MANIFEST",
+      "historical_ambiguous_argument_vector": [
+        "--self-test",
+        "--validate",
+        "<candidate>"
+      ],
+      "du_branch_precedence": "SELF_TEST_BRANCH_RETURNS_BEFORE_VALIDATE_BRANCH",
+      "dz_candidate_state": "NON_CANONICAL_AND_NOT_VALIDATED_BY_PERSISTED_SELF_TEST_EVIDENCE",
+      "gap_to_close": "NO_CRYPTOGRAPHIC_AND_SEMANTIC_BINDING_FROM_PASS_CLAIM_TO_EXACT_VALIDATED_CANDIDATE"
+    },
+    "minimum_hardening_selection": {
+      "selection": "EXPLICITLY_VERSIONED_EB_SUCCESSOR_WRAPPING_UNMODIFIED_DU_VALIDATOR_WITH_MUTUALLY_EXCLUSIVE_MODES_AND_SELF_AUTHENTICATING_CANDIDATE_BOUND_RECEIPT",
+      "rationale": "PRESERVES_HISTORICAL_DU_DZ_EA_BYTES__REUSES_DU_FOUR_GATE_SEMANTICS__ADDS_ONLY_MODE_EXCLUSIVITY_AND_RECEIPT_BINDING_VERIFICATION",
+      "new_authority_path": false,
+      "parallel_validator_family": false,
+      "production_path_change": "NONE"
+    },
+    "planned_receipt_bindings": [
+      "CANDIDATE_PATH",
+      "CANDIDATE_FILE_SHA256",
+      "CANDIDATE_CANONICAL_SERIALIZATION_STATE",
+      "VALIDATOR_PATH",
+      "VALIDATOR_FILE_SHA256",
+      "SCHEMA_PATH",
+      "SCHEMA_FILE_SHA256",
+      "VALIDATION_MODE",
+      "VALIDATION_PROFILE",
+      "CANONICAL_ARGUMENT_VECTOR",
+      "PROCESS_EXIT_STATUS",
+      "MANIFEST_AUTHENTICITY_GATE",
+      "MANIFEST_SCHEMA_VALIDITY_GATE",
+      "MANIFEST_SEMANTIC_COMPATIBILITY_GATE",
+      "MANIFEST_CONSTITUTIONAL_ADMISSIBILITY_GATE",
+      "OVERALL_RESULT",
+      "REQUIRED_HEAD",
+      "REQUIRED_TREE",
+      "RECEIPT_INNER_SHA256"
+    ],
+    "regression_matrix": [
+      "POSITIVE_CANONICAL_FIXTURE_PASS",
+      "CANDIDATE_BYTES_CHANGED_AFTER_VALIDATION_REJECTED",
+      "CANDIDATE_SHA_MISMATCH_REJECTED",
+      "VALIDATOR_SHA_MISMATCH_REJECTED",
+      "SCHEMA_SHA_MISMATCH_REJECTED",
+      "REQUIRED_HEAD_MISMATCH_REJECTED",
+      "REQUIRED_TREE_MISMATCH_REJECTED",
+      "SELF_TEST_RESULT_SUBSTITUTION_REJECTED",
+      "SELF_TEST_PLUS_VALIDATE_AMBIGUITY_REJECTED_BEFORE_ANY_PASS_CLAIM",
+      "NON_CANONICAL_CANDIDATE_BYTES_REJECTED",
+      "MISSING_GATE_RESULT_REJECTED",
+      "OVERALL_PASS_WITH_NON_PASS_GATE_REJECTED",
+      "RECEIPT_INNER_HASH_MISMATCH_REJECTED"
+    ],
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0
+    },
+    "constitutional_frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "prohibited_actions": [
+      "VM_CREATION",
+      "VM_BOOT",
+      "HUMAN_OPERATIONAL_ACT_CREATION",
+      "P11_ENTRY",
+      "E05_EXECUTION",
+      "P12_ENTRY",
+      "G3_ENTRY",
+      "PRODUCTION_ROUTE",
+      "EXECUTION_REPLAY",
+      "WRONG_CALLER_RETRY",
+      "STAGING",
+      "COMMIT",
+      "PUSH"
+    ],
+    "phase_a_result": "PASS__REPOSITORY_ONLY_HARDENING_AUTHORIZED_WITHIN_EXACT_SCOPE",
+    "checkpoint_is_authority": false,
+    "auto_continuable": false
+  },
+  "checkpoint_sha256": "734a0968824ca1412c19b1c736d365df7cebd4e03f23a90da2c30c8296855b67"
+}
