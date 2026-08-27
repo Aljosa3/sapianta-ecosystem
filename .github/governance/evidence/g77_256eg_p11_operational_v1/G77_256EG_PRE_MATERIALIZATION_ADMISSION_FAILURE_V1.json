@@ -1,0 +1,93 @@
+{
+  "schema_id": "G77_256EG_PRE_MATERIALIZATION_ADMISSION_FAILURE_ENVELOPE_V1",
+  "failure": {
+    "schema_id": "G77_256EG_PRE_MATERIALIZATION_ADMISSION_FAILURE_V1",
+    "generation_identity": "G77_256EG_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "selected_e05_vector": "WRONG_CALLER",
+    "required_head": "58d130f0504883d62bf8fbaefef98219568e62fa",
+    "required_tree": "fce92cb1601ad806af3ee8030ff49ca1cf81804d",
+    "failed_gate": "DU_CANONICAL_V1_CONSTITUTIONAL_ADMISSIBILITY_GATE",
+    "validation_command": [
+      "python",
+      ".github/governance/evidence/g77_256du_continuation_manifest_contract_v1/validator/G77_256DU_CONTINUATION_MANIFEST_COMPATIBILITY_VALIDATOR_V1.py",
+      "--validate",
+      ".github/governance/evidence/g77_256eg_p11_operational_v1/raw/G77_256EG_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json"
+    ],
+    "observed_exit_status": 1,
+    "observed_exception_type": "CompatibilityError",
+    "observed_failure_code": "CONSTITUTIONAL_ADMISSIBILITY_FAILED",
+    "observed_failure_message": "required prohibitions are absent",
+    "candidate": {
+      "path": ".github/governance/evidence/g77_256eg_p11_operational_v1/raw/G77_256EG_CANONICAL_CONTINUATION_MANIFEST_PRE_MATERIALIZATION_V1.json",
+      "file_sha256": "d4e58b1c6f11d7617993ac6c559a7d29ffb96c6aaf034b71f9911a651111ebd4",
+      "manifest_inner_sha256": "acbb0079f674a408b86fc28f7731ba15b46a21fe862bc49effb85b3674c17f79"
+    },
+    "du_required_prohibited_actions": [
+      "E05_EXECUTION",
+      "EXECUTION_REPLAY",
+      "HUMAN_OPERATIONAL_ACT_CREATION",
+      "P11_ENTRY",
+      "P12_ENTRY",
+      "PRODUCTION_ROUTE",
+      "VM_BOOT",
+      "VM_CREATION"
+    ],
+    "candidate_prohibited_actions": [
+      "E05_EXECUTION_BEFORE_EB_EE_ADMISSION",
+      "EXECUTION_REPLAY",
+      "HUMAN_OPERATIONAL_ACT_CREATION_BEFORE_COMMISSIONING",
+      "MATERIALIZATION_BEFORE_EB_EE_ADMISSION",
+      "P12_ENTRY",
+      "PRODUCTION_ROUTE",
+      "SECOND_VM",
+      "VM_BOOT_BEFORE_MATERIALIZATION_CHECKPOINT"
+    ],
+    "missing_exact_du_prohibitions": [
+      "E05_EXECUTION",
+      "HUMAN_OPERATIONAL_ACT_CREATION",
+      "P11_ENTRY",
+      "VM_BOOT",
+      "VM_CREATION"
+    ],
+    "admission_results": {
+      "du_canonical_v1": "FAIL_CLOSED__CONSTITUTIONAL_ADMISSIBILITY_FAILED",
+      "eb_candidate_bound_receipt": "NOT_ISSUED__DU_PREREQUISITE_FAILED",
+      "ee_runtime_consumer_binding_receipt": "NOT_ISSUED__EB_PREREQUISITE_FAILED",
+      "candidate_runtime_byte_identity": "NOT_EVALUATED__RUNTIME_PROJECTION_NOT_CREATED",
+      "candidate_runtime_canonical_identity": "NOT_EVALUATED__RUNTIME_PROJECTION_NOT_CREATED",
+      "harness_consumer_path_binding": "NOT_EVALUATED__EE_GATE_NOT_ENTERED"
+    },
+    "prohibited_followup": {
+      "repair_and_continue": false,
+      "candidate_regeneration": false,
+      "admission_retry": false,
+      "materialization": false,
+      "vm_boot": false,
+      "e05_execution": false
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "first_failure_is_execution_failure": false,
+    "failure_class": "PRE_MATERIALIZATION_ADMISSION_FAILURE",
+    "failure_result": "FAIL_CLOSED_BEFORE_MATERIALIZATION",
+    "failure_is_authority": false,
+    "auto_continuable": false
+  },
+  "failure_sha256": "46e74ebb932380ae3a768aa7bf09be97834a0064e7822f6de21af6911717430f"
+}

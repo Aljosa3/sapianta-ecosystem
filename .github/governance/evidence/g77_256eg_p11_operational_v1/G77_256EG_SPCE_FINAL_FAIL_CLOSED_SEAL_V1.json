@@ -1,0 +1,98 @@
+{
+  "schema_id": "G77_256EG_SPCE_FINAL_FAIL_CLOSED_SEAL_ENVELOPE_V1",
+  "seal": {
+    "schema_id": "G77_256EG_SPCE_FINAL_FAIL_CLOSED_SEAL_V1",
+    "generation_identity": "G77_256EG_ONE_FRESH_BOUNDED_NON_PRODUCTION_E05_WRONG_CALLER_P11_GENERATION_V1",
+    "required_head": "58d130f0504883d62bf8fbaefef98219568e62fa",
+    "required_tree": "fce92cb1601ad806af3ee8030ff49ca1cf81804d",
+    "selected_e05_vector": "WRONG_CALLER",
+    "phase_a_checkpoint": {
+      "path": ".github/governance/evidence/g77_256eg_p11_operational_v1/G77_256EG_SPCE_PHASE_A_FAIL_CLOSED_CHECKPOINT_V1.json",
+      "file_sha256": "aff49d4ee4eb33a546899e3b784bb4c6a14e843ed35ba0b691da7ad9d069b895",
+      "inner_sha256": "b857251327f473006691a26dd801b815fd155ee84d81dd13e3ea9964ddce16e6",
+      "result": "FAIL_CLOSED__PRE_MATERIALIZATION_DU_ADMISSION_FAILED"
+    },
+    "first_failure": {
+      "path": ".github/governance/evidence/g77_256eg_p11_operational_v1/G77_256EG_PRE_MATERIALIZATION_ADMISSION_FAILURE_V1.json",
+      "file_sha256": "b0c66b7569edf4b594356afeacb81e3409e89292d75c22602fe07bf85e24d2c6",
+      "inner_sha256": "46e74ebb932380ae3a768aa7bf09be97834a0064e7822f6de21af6911717430f",
+      "failure_code": "CONSTITUTIONAL_ADMISSIBILITY_FAILED",
+      "failure_message": "required prohibitions are absent"
+    },
+    "pre_materialization_reduction": {
+      "du_canonical_v1": "FAIL",
+      "eb_candidate_bound_receipt": "NOT_RUN",
+      "ee_runtime_consumer_binding_receipt": "NOT_RUN",
+      "candidate_runtime_byte_identity": "NOT_RUN",
+      "candidate_runtime_canonical_identity": "NOT_RUN",
+      "harness_consumer_path_binding": "NOT_RUN",
+      "materialization": "NOT_RUN",
+      "vm_boot": "NOT_RUN",
+      "commissioning": "NOT_RUN",
+      "wrong_caller_e05_observation": "NOT_RUN",
+      "terminal_canonical_v1_manifest": "NOT_CREATED__INVALID_PREDECESSOR_NOT_REPAIRED"
+    },
+    "failure_preservation": {
+      "candidate_regenerated": false,
+      "candidate_mutated_after_failure": false,
+      "du_admission_retried": false,
+      "eb_receipt_requested_after_failure": false,
+      "runtime_projection_created_after_failure": false,
+      "ee_receipt_requested_after_failure": false,
+      "repair_and_continue_performed": false,
+      "execution_replay_performed": false,
+      "materialization_replay_performed": false
+    },
+    "base_image": {
+      "path": "/tmp/g77_256cw.IkqZJN/noble-server-cloudimg-amd64.img",
+      "pre_generation_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "post_failure_sha256": "6e40c07ae715f744f84af0bec76415cc1987dd115b4b8de437818561f01a3733",
+      "unchanged": true,
+      "qemu_img_check": "PASS__NO_ERRORS",
+      "used": false
+    },
+    "teardown": {
+      "transient_root": "/tmp/g77_256eg",
+      "transient_root_created": false,
+      "transient_root_absent": true,
+      "qemu_process_created": false,
+      "qemu_process_absent": true,
+      "teardown_state": "NOT_APPLICABLE__NO_SUBSTRATE_CREATED"
+    },
+    "operational_counters": {
+      "vm_creation_count": 0,
+      "vm_boot_count": 0,
+      "second_vm_count": 0,
+      "automatic_retry_count": 0,
+      "repair_and_continue_count": 0,
+      "commissioning_execution_count": 0,
+      "commissioning_pass_count": 0,
+      "human_operational_act_created_count": 0,
+      "human_operational_act_submitted_count": 0,
+      "human_operational_act_claimed_count": 0,
+      "human_operational_act_invoked_count": 0,
+      "p11_entry_count": 0,
+      "p11_operational_invocation_count": 0,
+      "e05_case_execution_count": 0,
+      "p12_entry_count": 0,
+      "production_route_count": 0,
+      "full_history_reconstruction_count": 0,
+      "execution_replay_count": 0,
+      "materialization_replay_count": 0
+    },
+    "e05_frontier": {
+      "e05_total_obligation_count": 18,
+      "e05_satisfied_obligation_count": 4,
+      "e05_remaining_obligation_count": 14,
+      "wrong_caller_state": "UNSATISFIED",
+      "p11_e05_completion_state": "INCOMPLETE",
+      "g2_state": "OPEN",
+      "g3_entry_authorized": false
+    },
+    "final_validation": "PASS__FAIL_CLOSED_EVIDENCE_AUTHENTIC__OPERATIONAL_OBJECTIVE_NOT_EXECUTED",
+    "exact_next_constitutional_frontier": "HUMAN_REVIEW_AND_OPTIONAL_COMMIT_OF_G77_256EG_FAIL_CLOSED_PRE_MATERIALIZATION_ADMISSION_EVIDENCE__THEN_SEPARATE_HUMAN_AUTHORIZATION_FOR_ONE_FRESH_BOUNDED_WRONG_CALLER_GENERATION_WITH_A_NEW_CANONICAL_V1_CANDIDATE_THAT_PRESERVES_ALL_EXACT_DU_REQUIRED_PROHIBITIONS_BEFORE_EB_EE_ADMISSION__NO_G3_P12_OR_PRODUCTION",
+    "seal_is_authority": false,
+    "auto_continuable": false
+  },
+  "seal_sha256": "9115fd5676765a09f897d82fd41dff3385cbefc86c0c20043b659eb12efc0cc9"
+}
